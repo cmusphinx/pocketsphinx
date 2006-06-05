@@ -7,11 +7,9 @@ lmdata = goforward.16k				\
 	turtle.ctl				\
 	turtle.dic				\
 	turtle.handdict				\
-	turtle.hdict				\
 	turtle.lm				\
 	turtle.lm.DMP				\
 	turtle.sent				\
-	turtle.sent.arpabo			\
 	turtle.token				\
 	turtle.vocab
 
