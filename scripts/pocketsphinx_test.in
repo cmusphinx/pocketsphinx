@@ -1,0 +1,32 @@
+#!/bin/sh
+S2BATCH=@prefix@/bin/pocketsphinx_continuous
+HMM=@prefix@/share/pocketsphinx/model/hmm/wsj0
+TASK=@prefix@/share/pocketsphinx/model/lm/turtle
+CTLFILE=@prefix@/share/pocketsphinx/model/lm/turtle/turtle.ctl
+
+echo " "
+echo "sphinx2-test"
+echo "Run CMU Sphinx2 in Batch mode to decode an example utterance."
+echo " "
+
+$S2BATCH -adcin TRUE \
+    -adcext 16k \
+    -samp 16000 \
+    -ctlfn ${CTLFILE} \
+    -datadir ${TASK} \
+    -agcmax FALSE \
+    -fwdflat FALSE -bestpath FALSE \
+    -kbdumpdir ${TASK} -lmfn ${TASK}/turtle.lm \
+    -dictfn ${TASK}/turtle.dic \
+    -ndictfn ${HMM}/noisedict \
+    -mdeffn ${HMM}/mdef \
+    -meanfn ${HMM}/means \
+    -varfn ${HMM}/variances \
+    -tmatfn ${HMM}/transition_matrices \
+    -8bsen TRUE -sendumpfn ${HMM}/sendump \
+    -mmap TRUE
+
+echo ""
+echo "TEST FINISHED"
+echo "If you want to log the output to a file, add the flag"
+echo "-logfn <logfilename> to this script and rerun"

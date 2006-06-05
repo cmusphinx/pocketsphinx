@@ -1,0 +1,158 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "libsphinx2"=".\msdev\libsphinx2\libsphinx2.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "libsphinx2ad"=".\msdev\libsphinx2ad\libsphinx2ad.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "libsphinx2fe"=".\msdev\libsphinx2fe\libsphinx2fe.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "sphinx2_batch"=".\msdev\SphinxExamples\sphinx2_batch\sphinx2_batch.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2ad
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2fe
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sphinx2_client"=".\msdev\SphinxExamples\sphinx2_client\sphinx2_client.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2ad
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2fe
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sphinx2_continuous"=".\msdev\SphinxExamples\sphinx2_continuous\sphinx2_continuous.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2ad
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2fe
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sphinx2_ptt"=".\msdev\SphinxExamples\sphinx2_ptt\sphinx2_ptt.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2ad
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2fe
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sphinx2_server"=".\msdev\SphinxExamples\sphinx2_server\sphinx2_server.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2ad
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libsphinx2fe
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+

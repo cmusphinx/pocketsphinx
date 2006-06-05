@@ -1,0 +1,42 @@
+PocketSphinx 0.1
+
+This is PocketSphinx, one of Carnegie Mellon University's open source
+large vocabulary, speaker-independent continuous speech recognition
+engine. Please see the LICENSE file for terms of use.
+
+THIS IS A RESEARCH SYSTEM.  This is also an early release of a
+research system.  We know the APIs and function names are likely to
+change, and that several tools need to be made available to make this
+all complete.  With your help and contributions, this can progress in
+response to the needs and patches provided.
+
+To compile:
+
+-in a unix-like environment (such as linux, solaris etc):
+
+--if you downloaded directly from the CVS repository, you need to do
+this at least once to generate the "configure" file:
+
+% ./autogen.sh
+
+--if you downloaded the release version, or ran "autogen.sh" at least
+once, then compile and install:
+
+% ./configure
+% make clean all
+% make test
+% make install
+
+-in MS Windows (TM), under MS Visual C++ 6.0 (or better):
+
+-load sphinx2.dsw (located at the top level directory)
+-compile minimally the project 'pocketsphinx_continuous'
+
+MS Visual Studio will build the executables under .\bin\Release or
+.\bin\Debug (depending on the version you choose on MS Visual Studio),
+and the libraries under .\lib\Release or .\lib\Build.
+
+Test scripts are forthcoming for Windows.
+
+For up-to-date information, see http://www.pocketsphinx.org/
+

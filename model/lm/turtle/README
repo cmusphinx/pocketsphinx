@@ -1,0 +1,26 @@
+
+This directory contains a few files that sphinx2 can use for
+a simple "turtle graphics" or robot directing task.
+
+  turtle.corpus  is the original corpus as given to the lmtool web page.
+                 see the main website for more info at
+                   
+                     http://www.speech.cs.cmu.edu/sphinx/
+
+  turtle.dic     the pronunciation dictionary for the task
+
+  turtle.handdict where you add your own pronuciations (a hand-made
+                  dictionary)
+
+  turtle.lm      the actual ARPABO language model for the task
+
+  turtle.sent    the sentences as they were actually processed
+
+  turtle.token   token counts for each 'word'
+
+  turtle.vocab   the vocabulary of the task
+
+  goforward.16k a raw, 16-bit 16kHz audio file containing the utterance
+                'go forward ten meters'
+
+Not all of these are needed, but they're all here.

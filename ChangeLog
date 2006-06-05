@@ -1,0 +1,730 @@
+NOTE that this ChangeLog is not complete.  The CVS logs 
+contain more information.
+	
+	
+Tue Jan 25 14:14:58 PST 2000
+(Mandrake)
+
+converted everything to autoconf/automake/libtool/etc.
+
+-------------------------------------------------------------------------------
+
+Thu Jan 27 18:02:00 PST 2000
+(Mandrake)
+
+now I'm done corrupting the tree.  In theory, we now have a fully automated
+build system.  unfortunately we lost a few directories in the process, but
+that's okay.  The only major thing remaining on my TODO list at this point is
+to add a no-arch-dependant-code stub.  Still have to talk to kevin about this.
+
+-------------------------------------------------------------------------------
+
+Fri Jan 28 11:23:01 EST 2000
+(lenzo)
+
+Fixed up a few script paths in the .in files; now it appears
+to install the demos OK.  
+
+-------------------------------------------------------------------------------
+
+Mon Jan 31 13:48:06 PST 2000
+(Mandrake)
+
+test for EAGAIN in length testing, fixes potential linux processing bug under
+OSS.
+
+-------------------------------------------------------------------------------
+
+Fri Mar 10 11:51:32 EST 2000
+(lenzo)
+
+lots of stuff: new model/hmm/6k models with a new phoneset, more
+accurate.  added more examples; see sphinx-align, sphinx2-phone,
+sphinx2-test, sphinx2-simple.  EAGAIN patch, ad_freebsd.c. 
+
+	
+-------------------------------------------------------------------------------
+
+Mon Dec  4 17:57:05 EST 2000
+	 (lenzo)
+
+handling of 8k vs 16k models, small cleanup, and a big 
+set of changes from dhd (below)
+
+-------------------------------------------------------------------------------
+
+2000-12-04  David Huggins-Daines  <dhd@cepstral.com>
+	* .cvsignore: Add ignores for various generated files
+	* configure.in: Add some reasonable default CFLAGS.
+	Use the 'i386'sound module for all Linux (will probably still
+	break on big-endian machines though).  Patch originally from 
+	Chris Chimelis <chris@debian.org>
+
+	* include/CM_macros.h: Prototype functions, use 'const' for
+	input-only values (that are likely to be string constants).
+	* include/Makefile.am: These are exported header files.  So they
+	should be installed in $(pkglibdir), i.e. $(prefix)/include/sphinx2.
+	* include/ad.h: Remove cross-inclusion, to make this exportable.
+	Change #if WIN32 to #ifdef WIN32.
+	Don't assume that alpha == OSF1; patch from Chris Chimelis 
+	<chris@debian.org>
+	* include/byteorder.h: This is an internal header file, move it to
+	src/libsphinx2/include.
+	* include/c.h: Likewise (might want to change this file name)
+	* include/cdcn.h: Prototype all functions, use 'const' where
+	appropriate.
+	* include/cont_ad.h: Remove cross-inclusion, this is an exported
+	header file.
+	* include/dict.h: This is an exported header file, so move it to
+	the top-level include directory.  (I hope that was the intent of
+	separating out the includes like this...)  Also remove
+	cross-inclusions.
+	* include/err.h: Add 'const' in all relevant places.
+	* include/fbs.h: Remove cross-inclusion.
+	Add 'const' where it said /* READ-ONLY */ - isn't ANSI C great?
+	Add 'const' a bunch of other places.
+	Add prototypes for a few functions that may be externally useful.
+	* include/fe.h: Dead code.  Removed.
+	* include/hash.h: Remove cross-inclusion.
+	Use 'char const *' instead of caddr_t for hash keys, since they
+	are likely to be strings.
+	Prototype all exported functions.
+	Use a comment after #endif.
+	* include/list.h: Remove cross-inclusion.
+	Use #ifdef instead of #if.
+	Prototype all exported functions.
+	Use 'const' where appropriate.
+	* include/list.txt: Random junk in the repository?  Removed.
+	* include/lm_3g.h: Exported header file, move it here, remove
+	cross-inclusion, prototype functions, use 'const', etc.
+	* include/lmclass.h: Likewise (needed by lm_3g.h actually).
+	* include/log.h: Make LOG(), ADD(), FAST_DADD() macros more
+	readable.
+	Use a comment after #endif.
+	* include/new_fe.h: This should have been here instead of fe.h, so
+	move it here.
+	Add 'const' to input-only parameters that are pointers.
+	* include/new_fe_sp.h: This is an external header file, so move it
+	here.
+	Add 'const' to input-only parameters that are pointers (not as
+	many as I'd like, because the code clobbers some inputs).
+	* include/pconf.h: This is an internal header file.
+	* include/posixsock.h: Remove cross-inclusion.
+	* include/profile.h: Dead code alert!  Removed.  (and you could
+	just use gprof)
+	* include/s2params.h: Add 'const' where appropriate.
+	* include/scvq.h: Internal header file, moved (maybe ... could
+	move this back out if useful).
+	* include/str2words.h: Internal header file, moved.
+	
+	* model/hmm/6k/.cvsignore: Ignore generated files.
+
+	* scripts/sphinx2-align.in: Add #! line. patch from Joey Hess 
+	<joey@kitenet.net> 
+	* scripts/sphinx2-phone.in: Likewise.
+	* scripts/sphinx2-simple.in: Likewise.
+	* scripts/sphinx2-test.in: Likewise.
+
+	* src/examples/.cvsignore: Ignore generated files.
+	* src/examples/Makefile.am: Add raw2cep, commented.
+	Link everything against the shared library. patch from Joey Hess
+	<joey@kitenet.net> 
+	* src/examples/adplay.c: Sphinx2 includes are not system includes,
+	so use "" instead of <>.
+	* src/examples/adpow.c: Likewise.
+	* src/examples/adrec.c: Likewise.
+	* src/examples/allphone-test.c: Likewise.
+	* src/examples/batch.c: Likewise.
+	* src/examples/cdcn_test.c: Use "" instead of <> and include more
+	files (because of removed cross-inclusion.
+	* src/examples/clicore.c: Use #ifdef instead of #if.
+	#include <unistd.h> on Unix
+	* src/examples/client.c: Use "" instead of <>.
+	(send_line) Remove unused variable.
+	(main) Add return type.
+	* src/examples/cont_adseg.c: Use "" instead of <>.
+	(main) Add return type.
+	* src/examples/cont_fileseg.c: Likewise.
+	* src/examples/lm3g2dmp.c: Include <stdlib.h>
+	Use "" instead of <> for Sphinx2 headers.
+	Use #ifdef instead of #if.
+	Prototype functions.
+	Use 'const' in some prototypes.
+	* src/examples/server.c: Use #ifdef instead of #if.
+	Use "" instead of <>.
+	(main) Add return type and return value.
+	* src/examples/srvcore.c: Use #ifdef instead of #if.
+	#include <unistd.h> on Unix.
+	* src/examples/srvcore.h: Use #ifdef instead of #if.
+	* src/examples/tty-continuous.c: Use "" instead of <>.
+	Use #ifdef instead of #if.
+	(sleep_msec) Remove unused variable.
+	(sighandler) Catch SIGINT so we exit cleanly.
+	(main) Add return type.
+	(main) Catch SIGINT.
+	* src/examples/tty-ptt.c: Use #ifdef instead of #if.
+	Use "" instead of <>.
+	(main) Add return type and value.
+
+	* src/libsphinx2/include/Makefile.am: Internal headers, do not
+	install (but mark them as headers anyway).
+	* src/libsphinx2/include/basic_types.h: Remove cross-inclusion.
+	* src/libsphinx2/include/byteorder.h: Move this here, it's internal.
+	* src/libsphinx2/include/c.h: Likewise.
+	* src/libsphinx2/include/cache_lm.h: Use comment after #endif.
+	* src/libsphinx2/include/cepio.h: New file, adds prototypes for
+	stuff in cep_rw.c.
+	* src/libsphinx2/include/cviterbi4.h: Remove cross-includes.
+	* src/libsphinx2/include/dict.h: Move this out of here, it's external.
+	* src/libsphinx2/include/hmm_tied_r.h: Remove cross-includes, add
+	many prototypes.
+	* src/libsphinx2/include/kb_exports.h: Likewise.
+	* src/libsphinx2/include/linklist.h: New file.
+	* src/libsphinx2/include/lm.h: Remove cross-includes.
+	* src/libsphinx2/include/lm_3g.h: Move this out of here, it's external.
+	* src/libsphinx2/include/lmclass.h: Likewise.
+	* src/libsphinx2/include/new_fe.h: Likewise.
+	* src/libsphinx2/include/new_fe_sp.h: Likewise.
+	* src/libsphinx2/include/msd.h: Remove cross-includes.	
+	* src/libsphinx2/include/pconf.h: Move this in here, it's
+	internal.
+	Prototype things and add 'const' where appropriate.
+	* src/libsphinx2/include/phone.h: Remove cross-includes.
+	Prototype things and use 'const' where appropriate.
+	* src/libsphinx2/include/sc_vq_internal.h: Remove cross-includes.
+	* src/libsphinx2/include/scvq.h: This appears to be internal, move
+	it in here.
+	* src/libsphinx2/include/search.h: Remove cross-includes.
+	Prototype things.
+	* src/libsphinx2/include/search_const.h: Use comment after #endif.
+	* src/libsphinx2/include/str2words.h: This is internal, move it here.
+	* src/libsphinx2/include/strfuncs.h: New file, prototypes for
+	nxtarg.c, skipto.c, salloc.c, strcasecmp.c.
+	* src/libsphinx2/include/time_align.h: Remove cross-includes.
+	Prototype things.
+	Use 'const' where appropriate.
+
+	* src/libsphinx2/CM_funcs.c: Use #ifdef instead of #if.
+	Pull in some necessary #includes.
+	Use 'const' for input pointers in various functions.
+	Use void * instead of char * in various places.
+	* src/libsphinx2/ad_alpha.c: Use "" instead of <>.
+	* src/libsphinx2/ad_base.c: Likewise.
+	* src/libsphinx2/ad_i386_freebsd.c: Likewise.
+	* src/libsphinx2/ad_sgi.c: Likewise.
+	* src/libsphinx2/ad_sun4m.c: Likewise.
+	* src/libsphinx2/ad_i386_linux.c: Add some missing #includes.
+	(ad_open_sps): Pass the right arguments to fprintf().
+	* src/libsphinx2/agc_emax.c: Use "" instead of <>.
+	(agc_emax_proc): Use const for input pointer.
+	* src/libsphinx2/allphone.c: Add some missing #includes.
+	Use "" instead of <>.
+	Remove redundant forward declarations.
+	(allphone_init): Add return type.
+	* src/libsphinx2/alsa-ad_base.c: Add missing #include.
+	* src/libsphinx2/areadchar.c: Add missing #includes and use "".
+	* src/libsphinx2/areaddouble.c: Add missing #includes and use "".
+ 	Use #ifdef instead of #if.
+	Prototype function.
+	* src/libsphinx2/areadfloat.c: Likewise.
+	* src/libsphinx2/areadint.c: Likewise.
+	* src/libsphinx2/areadshort.c: Likewise.
+	* src/libsphinx2/awritechar.c: Likewise.
+	* src/libsphinx2/awritedouble.c: Likewise.
+	* src/libsphinx2/awritefloat.c: Likewise.
+	* src/libsphinx2/awriteint.c: Likewise.
+	* src/libsphinx2/awriteshort.c: Likewise.
+	Also add a warning about possibly clobbering our input data.
+	* src/libsphinx2/bisearch.c: Add prototype.
+	* src/libsphinx2/blk_cdcn_norm.c: Add prototypes (as much as possible).
+	* src/libsphinx2/cdcn_init.c: Likewise.
+	* src/libsphinx2/cdcn_norm.c: Likewise.
+	* src/libsphinx2/cdcn_update.c: Likewise.
+	* src/libsphinx2/cache_lm.c: Add missing #includes.
+	* src/libsphinx2/cep_rw.c: Add missing #includes.
+	Use #ifdef instead of #if.
+	Add 'const' where relevant.
+	* src/libsphinx2/cont_ad_base.c: Use "" instead of <>.
+	Remove redundant forward declarations.
+	(find_thresh) Fix use of uninitialized variable.
+	* src/libsphinx2/dict.c: Use #ifdef instead of #if.
+	Add missing #includes.
+	Forward-declare and prototype some static functions.
+	Remove redundant extern declarations.
+	Use prototypes.
+	Use 'const' where appropriate.
+	Add return types.
+	(dict_read): Fix comment w.r.t. <unk> (I think).
+	(dict_read): Remove unused variables and label.
+	(_new_dict_entry): Remove unused 'rname' variable.
+	* src/libsphinx2/eht_quit.c: Use ANSI varargs.
+	* src/libsphinx2/err.c: Reorder 'const' to be consistent ('const'
+	applies to its left-hand side, and 'const char' is an exception to
+	that rule).
+	Add prototypes.
+	Add 'const' where appropriate.
+	* src/libsphinx2/f2read.c: Add missing #includes.
+	Use prototypes and 'const'.
+	* src/libsphinx2/f2write.c: Likewise.
+	* src/libsphinx2/get_a_word.c: Remove dead code.
+	* src/libsphinx2/hash.c: Add missing #includes.
+	Use prototypes and 'const'.
+	Use 'exc' instead of 'exception' as argument name for 'exception'.
+	* src/libsphinx2/hmm_tied_r.c: Add missing #includes.
+	Add prototypes for static functions.
+	Use prototypes and 'const'.
+	Add extern declarations.
+	Make a comment w.r.t. the confusing and inconsistent use of three
+	different sets of byte-swaping functions and macros.
+	Cast int variables to size_t when comparing with size_t returns.
+	(load_senone_dists_8bits): Move declaration of 'j' inside #ifdef.
+	(read_dists): Remove unused variable and redundant forward decl.
+	(dist_min_max): Remove dead code, but also fix uninitialized value.
+	(readDistsOnly): Remove unused variable 'k'.
+	(transpose): Use 'const' for input-only pointer.
+	(cmp_arc): Make static, make prototype match that of qsort().
+	(cmp_sseq): Likewise.
+	(cmp_dmap): Likewise.
+	(hmm_tied_bin_parse): Remove unused variable 'tmp'.
+	(normalize_out): Add type for 'i'.
+	(insert_floor): Likewise.
+	(normalize_trans): Remove unused variable 'save_arc'.
+	(eq_dist): Move this to above where it's used.
+	(read_map): Remove unused variables 'silPhoneId', 'p', 'baseid'.
+	(add_member): Move this to above where it's used and make it 'static'.
+	(isa_member): Likewise.
+	(remove_all_members): Likewise.
+	(compute_diphone_senones): Remove unused variable 'p_type'.
+	Use 'const' where needed.
+	* src/libsphinx2/kb.c:  Use "" instead of <>.
+	Add 'const' where the compiler told me to (missed some things...)
+	Remove redundant forward declarations, add some.
+	Use prototypes, return values, and const in functions.
+	Use #ifdef instead of #if.
+	(kb_param): Add braces around initializers (ANSI-fication)
+	* src/libsphinx2/lab.c: Use "" instead of <>.
+	* src/libsphinx2/liklist.c: Likewise.
+	Use 'void *' instead of 'char *' (ANSI-fication).
+	* src/libsphinx2/list.c: Use "" instead of <>.
+	Use prototypes.
+	Use 'const' where appropriate.
+	(exception): Name parameter 'exc' not 'exception'.
+	Add return value.
+	(list_index): Cast pointer to (unsigned long) when passing to
+	fprintf for %d format.
+	* src/libsphinx2/live_norm.c: Use "" instead of <>.
+	Use prototypes.
+	* src/libsphinx2/lm.c: Use "" instead of <>.
+	* src/libsphinx2/lm_3g.c: #include <stdlib.h>
+	Use "" instead of <>.
+	Add one extern declaration, remove a whole bunch of redundant ones.
+	Use 'const' for string constants.
+	Prototype some static functions.
+	Use prototypes.
+	Use #ifdef instead of #if.
+	(NewModel) remove unused variable 'i'.
+	(ReadNgramCounts) remove unused variable 'c'.
+	(ReadUnigrams) remove unused variable 'ignored_prob'.
+	cast to (caddr_t) for hash key.
+	(ReadTrigrams) move declaration of 'tgoff' to smallest scope.
+	(lm_read_clm) remove unused varaiable 'file_pos'.
+	(lm_delete) cast to void * in call to listelem_free.
+	(lm3g_load) remove unused variables 'tmp_tg', 'tmp_log_t'.
+	Cast int variables to size_t when comparing with size_t returns.
+	(fmtdesc) use 'char const *' for string constants.
+	(lm3g_dmp) remove unused variable 'str'.
+	(lm3g_tg_score) remove unused variable 'bg'.
+	cast to void * in call to listelem_free.
+	* src/libsphinx2/lmclass.c: Use "" instead of <>.
+	Remove redundant extern declaration of salloc().
+	Use prototypes.
+	(lmclass_loadfile) initialize variable where it's tricky to tell
+	if it will or won't be used uninitialized.
+	(lmclass_loadfile) move declaration of 'LOGp' to smallest scope.
+	* src/libsphinx2/main.c: Use #ifdef instead of #if.
+	Use "" instead of <>.
+	Use 'const' for string constants.  Lots of them.
+	Use 'const' for input parameters where possible/appropriate.
+	Add some extern declarations.
+	(param) Add braces around initializers (ANSI-fication).
+	(run_ctl_file) Remove unused variable 'rname'.
+	(uttfile_open) Make 'ext' const.
+	(build_uttid) Remove unused variable 'i'.
+	(run_time_align_ctl_file) Remove unused variables
+	'startword_filename', 'sw_fp'.
+	Move 'align_all' to smallest scope and initialize.
+	(s2mfc_read) Remove unused variable 'tmp'.
+	(time_align_utterance) Add note about time_align.c clobbering
+	values that may be constant.
+	Remove unused variables 'i', 'j', 'k'.
+	Clarify some nested preprocessor conditionals.
+	Use 'const' for some things.
+	* src/libsphinx2/mulaw_base.c: Use "" instead of <>.
+	* src/libsphinx2/new_fe.c: Use "" instead of <>.
+	s/fe.h/new_fe.h/g.
+	Use 'const' for input pointers.
+	(fe_process_utt) Rearrange this a bit to make it const-clean for
+	input pointer 'spch'.
+	(fe_end_utt) Move 'i' to smallest scope, remove unused 'spbuf_len'.
+	* src/libsphixn2/new_fe_sp.c: Use "" instead of <>.
+	Use 'const' for input pointers (not everywhere I'd like...)
+	(fe_frame_to_fea) Remove unused variable 'i'.
+	Change assignment to comparison in conditional (see, that's what
+	happens when you don't use gcc -Wall).
+	(fe_spec_magnitude) Remove unused variable 'dummy'.
+	(fe_mel_cep) Remove unused variable 'first_run'.
+	(fe_fft) Change 'N' to 'n' in code (not comments though), because
+	some unwise Sphinx2 header file decided to #define N to something.
+	* src/libsphinx2/norm.c: "Fix" dprintf macro to not spew warnings.
+	* src/libsphinx2/nxtarg.c: Update the code to ANSI
+	* src/libsphinx2/pconf.c: Use "" instead of <>.
+	Prototype static functions.
+	Use full prototypes.
+	Make things const-clean.
+	Make internal functions 'static'.
+	Convert some flag variables from 'int32' to 'int'.
+	* src/libsphinx2/peek_length.c: Use #ifdef instead of #if.
+	Use "" instead of <>.
+	Use prototypes.
+	* src/libsphinx2/phone.c: Add missing #includes.
+	Use #ifdef instead of #if.
+	Use "" instead of <>.
+	Use prototypes.
+	(phone_read) remove unused variable 'phone_ptr' and unused label
+	'finish'.
+	(phone_id) make 'rname' const.
+	(mk_phone_map) conditionalize definition of 'voc', 'ust' on
+	VERBOSE_PHONE_MAP, and only declare some variables in that case,
+	too.
+	(phone_add_diphones) cast int keys to caddr_t for hash_add and
+	list_add.
+	* src/libsphinx2/play_win32.c: Use "" instead of <>.
+	* src/libsphinx2/rec_win32.c: Likewise.  (someone will have to
+	test these to make sure they still compile...)
+	* src/libsphinx2/r_agc_noise.c: Use "" instead of <>.
+	Use prototypes.
+	Don't use implicit 'int' (or int32 as it may be).
+	Make input pointers const.
+	Add return types.
+	(find_peak) move this up to before it's used.
+	(histo_add_c0) remove redundant comment.
+	* src/libsphinx2/resfft.c: Add missing #includes.
+	Use prototypes.
+	* src/libsphinx2/salloc.c: Use "" instead of <>.
+	Use prototypes and 'const'.
+	* src/libsphinx2/sc_cbook_r.c: Use "" instead of <>.
+	* src/libsphinx2/sc_vq.c: Use " instead of <>.
+	Use #ifdef instead of #if.
+	Remove unused variable 'useMeanNormalization'.
+	(cepDist0) remove unused variable 'src'.
+	(dcepDist0) remove unused variables 'src', 'tmp'.
+	(ddcepDist0) likewise.
+	(SCVQEndUtt) remove unused variables 'j', 'tmp'.
+	(SCVQComputeScores) remove unused variable 'i'.
+	(SCVQComputeScores_all) likewise.
+	(get_scores4_all) remove unused variable 'k'.
+	(get_scores4_8b) remove unused variables 'ts', 'at', 'ff', 'tt', 'ii'.
+	(get_scores4_8b_all) likewise, also 'bestscore'.
+	(get_scores2_8b_all) likewise.
+	* src/libsphinx2/search.c: Add missing #includes.
+	Use "" instead of <>.
+	Use #ifdef instead of #if.
+	Remove unused variable 'AllWordMode'.
+	Use prototypes.
+	Prototype some static functions.
+	Remove redundant extern declarations.
+	Use 'const' for string constants and variables that hold them.
+	(word_transition) remove unused variables 'prev_bp', 'prev_wid',
+	'prev_endframe', 'prev2_bp', 'prev2_wid', 'rcsize',
+	'newword_thresh', 'hmm', 'fwid0', 'fwid1'.
+	(search_initialize) remove unused variable 'i'.
+	remove redundant extern declaration.
+	(search_one_ply_fwd) declare this 'void', it doesn't return
+	anything useful, nor do any of its callers use its return value.
+	remove unused variables 'bs', 'awl'
+	(search_finish_fwd) delcare this 'void'.
+	remove unused variables 'idx', 'f', 'thmm', 'bp', 'bestbp',
+	'bestscpre', 'l_scr'.
+	(search_postprocess_bptable) declare this 'void'.
+	remove unused variables 'idx', 'i', 'j', 'w', 'awl', 'rhmm',
+	'hmm', 'thmm', 'acl'.
+	move declarations of 'bestbp', 'bestscore' to smallest scope and
+	give them defaults.
+	(seg_back_trace) remove unused variable 'probs'.
+	(init_search_tree) remove test/initialization of 'mpx' from loop.
+	(create_search_tree) move declaration of 'prev_hmm' to smallest
+	scope and give it a default.  test it for non-NULL instead of
+	confusingly testing the output of the search loops.
+	(destroy_fwdflat_chan) remove unused variable 'p'.
+	(search_fwdflat_frame) make this 'void'.
+	(fwdflat_word_transition) make this 'void'.
+	initialize defaults for 'best_silrc_score' and 'best_silrc_bp'.
+	(get_expand_wordlist) make this 'void'.
+	remove unused variable 'i'.
+	(topsen_init) remove unused variable 's'.
+	(compute_phone_active) move static variables for
+	DUMP_PHN_TOPSEN_SCR into this function.
+	remove unused variable 'n'.
+	(search_uttpscr2phlat_print) return something.
+	(vithist_dump) conditionalize on DUMP_VITHIST.
+	* src/libsphinx2/searchlat.c: Add missing #includes.
+	Use "" instead of <>.
+	Use #ifdef instead of #if.
+	Remove redundant extern declarations.
+	Use prototypes and return values.
+	(searchlat_set_rescore_lm) make this void.
+	remove unused variables 'str'.
+	move declarations of 'l', 'ascr', 'lscr' to smallest scope.
+	(build_lattice) remove redundant extern declaration
+	remove unused variables 'prev_node', 't_node', 't_link', 'prev_link'.
+	(lattice_rescore) move declaration of 'best' to smallest possible
+	scope and initialize.
+	initialize 'orig_lmname'.
+	(sort_lattice) move delcarations of 'node', 'prev_node', 'prev_m'
+	to smallest scope and initialize them.
+	(search_save_lattice) remove unused variable 'node'.
+	(searchSaveLatQueue) initialize 'minIndex'.
+	assign '\0' to first character to empty strings instead of using
+	sprintf().
+	* src/libsphinx2/skipto.c: Bring this code into the 20th century.
+	* src/libsphinx2/str2words.c: Use "" instead of <>.
+	* src/libsphinx2/strcasecmp.c: Use const, include "strfuncs.h".
+	* src/libsphinx2/time_align.c: Fix formatting.
+	Use "" instead of <>.
+	Remove redundant forward declarations.
+	Prototype some static functions.
+	Use 'const' for input pointers/string constants (except in one
+	case where noted - potential bug).
+	(constituent_cnt) change confusing empty 'for' loop to 'while' as
+	written in the holy text of Kernighan&Pike.
+	(cvt_uscores_to_sp) add parentheses around assignment to make GCC
+	happy.
+	(mk_compound_word_list) remove unused variables 'k', 'l',
+	'head_compound_word_cnt'.
+	(time_align_init) pass proper parameters to phone_to_id().
+	(add_triphone) remove unused variable 'j'.
+	(expand_phone_graph) remove unused variable 'k'.
+	(add_word) remove unused variable 'j'.
+	return something.
+	(mk_phone_graph) remove unused variables 'j', 'l', 'cur_word_id',
+	'cur_word', 'sp', 'fchar'.
+	(print_phone_graph) make this 'void'.
+	(mk_models) remove unused variables 'i', 'j', 'k'.
+	(evaluate_active_models_internal) remove unused variables 's1',
+	's2', 's3', 's4'
+	(prune_active_models) remove unused variable 'j'.
+	(print_active_models) dead code, conditionalized out.
+	(va_traverse_back_trace) move to before where it's used.
+	(time_align_word_sequence_init) remove unused variable 'j'.
+	(build_word_segment) remove unused variable 'utt_id'.
+	(build_phone_segment) likewise.
+	(time_align_word_sequence) remove unused variables 'j', 'k'.
+	move declaration of 'i' to smallest scope.
+	remove redundant extern declaration.
+	(time_align_seg_output) remove unused variable 'i'.
+	(time_align_best_word_string) remove unused variable 'i'.
+	chage comparison to assignment.
+	* src/libsphinx2/util.c: Use "" instead of <>.
+	* src/libsphinx2/uttproc.c: Use #ifdef instead of #if.
+	Use "" instead of <>.
+	Remove now-redundant extern declarations.
+	Add a bunch of extern declarations (should go in internal
+	header...)
+	Use prototypes.
+	Use const for input pointers.
+	(write_results) move 'dumplatdir' to smallest scope.
+	(uttproc_init) pass proper number of arguments to E_FATAL.
+	(uttproc_begin_utt) leftover_cep is (float *) not (float **) now.
+	(uttproc_align) remove unused variable 'fp'.
+		
+-------------------------------------------------------------------------------
+
+2000-12-05  Kevin A. Lenzo <lenzo@cs.cmu.edu>
+	* src/examples/lm3g2dmp.c: Removed unused variables "c", "max_new_oov",
+	"last_oov", "first_oov", "file_pos", "bg", "tg", "filename", "model",
+	"i", "n", "score", "wd", "line", "wid", "unkwid", "tmp_tg", 
+	"tmp_log_t", "ignored_prob", "str" as needed.  
+		
+
+-------------------------------------------------------------------------------
+
+2000-12-12 David Huggins-Daines  <dhd@cepstral.com>
+        * Split ad_* and cont_ad_* functions into libsphinx2ad and
+          give them more rational names.  Remove all dependencies on
+          libsphinx2 from them.
+
+        * Split fe_* functions into libsphinx2fe and give them more
+          rational names.  Change new_fe to fe and make new_fe_sp.h an
+          internal header file as it should be.  Remove all
+          dependencies on libsphinx2 from them.
+
+        * Link example programs against the above libraries.
+
+        * Rename main.c to fbs_main.c and kb.c to kb_main.c (in
+          preparation for splitting these off into another library),
+          rename kb_exports.h to kb.h.
+
+        * Use AC_CANONICAL_HOST to configure the audio library
+        * Generate ad.h from configure to remove ugly and broken #ifdefs
+        * Add a --with-alsa option to use ALSA instead of OSS on Linux
+        * Make the ALSA audio in/out compile (though it probably doesn't work)
+
+        * Fix a few broken things in the Makefile.am (oops).  It now
+          passes 'make distcheck' with flying colours.
+
+	* Reinstated raw2cep
+
+-------------------------------------------------------------------------------
+
+2000-12-12 Kevin A. Lenzo <lenzo@cs.cmu.edu>
+	* Removed the broken attila- and poe- demos
+
+	* added noisedict argument to point to the noiseword
+	  dictionary in the HMM dir; this significantly
+	  improves performance.   Added the arg for sphinx2-demo,
+	  sphinx2-phone, sphinx2-simple, sphinx2-test, sphinx2-align,
+	  and sphinx2-example.arg.
+
+	* Changed the paths in sphinx2-example.arg to be consistent
+	  with the default install location
+
+	* Added the magic string '*align_all*' at the top of
+	  demo.cor so that the sphinx2-align example can run
+	  correctly
+
+	* Use -agcemax TRUE for livemode, -agcmax TRUE for batch.
+
+-------------------------------------------------------------------------------
+
+2000-12-13 Kevin A. Lenzo <lenzo@cs.cmu.edu>
+	* Renamed turtle demo files from 'demo.*' to 'turtle.*'
+
+	* Explicitly made various functions return void in lm3g2dmp
+	  and cleaned up all the warnings.
+
+-------------------------------------------------------------------------------
+
+2001-01-26  David Huggins-Daines  <dhd@cepstral.com>
+
+	* src/examples/Makefile.am: Add things to INCLUDES to allow
+	building in a separate dir (due to autogenerated ad.h)
+	* src/libsphinx2ad/Makefile.am: Likewise.
+	* src/libsphinx2fe/Makefile.am: Likewise.
+	* src/libsphinx2/Makfile.am: Likewise.  Also add logmsg.c.
+	* src/libsphinx2/include/Makfile.am: Add logmsg.h.
+
+	* src/libsphinx2/logmsg.c: New file.
+	* src/libsphinx2/include/logmsg.h: New file.
+
+	* src/libsphinx2/err.c: Control verbosity.
+	* src/libsphinx2/fbs_main.c: Add '-verbose' command-line option
+	and verbosity_level global.  Change default for print_back_trace
+	to false, in keeping with the principle of least verbosity.  Also
+	use log_foo() instead of printf().
+	* src/libsphinx2/cep_rw.c: Use log_foo() instead of printf() and
+	remove extraneous fflush()es.
+	* src/libsphinx2/dict.c: Likewise.
+	* src/libsphinx2/hmm_tied_r.c: Likewise.
+	* src/libsphinx2/kb_main.c: Likewise.
+	* src/libsphinx2/live_norm.c: Likewise.
+	* src/libsphinx2/lm_3g.c: Likewise.
+	* src/libsphinx2/phone.c: Likewise.
+	* src/libsphinx2/sc_vq.c: Likewise.
+	* src/libsphinx2/search.c: Likewise.
+	* src/libsphinx2/searchlat.c: Likewise.
+	* src/libsphinx2/time_align.c: Likewise.
+	* src/libsphinx2/uttproc.c: Likewise.
+
+	* src/libsphinx2ad/ad_oss.c: Frob the input gain (possibly too
+	much), not the microphone output level.
+
+-------------------------------------------------------------------------------
+
+2001-01-26  Kevin A. Lenzo <lenzo@cs.cmu.edu>
+	* Integrated some comments and code from Heidi J. Fox
+	to make things work under solaris (not yet completed,
+	but someone can take another shot at it now)
+
+2001-03-30 Kevin A. Lenzo <lenzo@cs.cmu.edu> 
+	* added <string.h> to fe_interface.c and uttproc.c
+	* re-included the win32 tree in dist (thanks to Wei Xu)
+
+2001-06-02 Kevin A. Lenzo <lenzo@cs.cmu.edu>
+	* fixed a lookup bug in time_align.c (thanks to Yan Ke)
+	* Noted that most changes are actually now in the CVS 
+	  commits rathter than in this file...
+
+2001-09-18 Kevin A. Lenzo <lenzo@cs.cmu.edu>
+        * Added notes to sphinx2-demo	
+
+2001-10-23 Kevin A. Lenzo <lenzo@cs.cmu.edu>
+	* Made all error, warnings and info messages use the E_* macros
+	  in err.[ch].  This will make logmsg.[ch] irrelevant.
+	* Added error verbage to report more in several places,
+	  particularly in time_align.c.  Forced alignments were failing
+	  for people without apparent error; this is now reported with
+	  diagnosis.
+
+2001-10-26 Kevin A. Lenzo <lenzo@cs.cmu.edu>
+	* Fixed an error in raw2cep that prevented sphinx2 from reading
+	  the output .mfc files.
+	* Added dict_free to dict.c and dict.h for people who are 
+	  changing language models at run-time and want to free the
+	  prior dictionary to save memory.
+	
+2001-11-06 Kevin A. Lenzo <lenzo@cs.cmu.edu>
+	* Patch supplied by rkm (Ravi) for search.c fixes a serious error
+	  in search
+
+2001-12-06 Kevin A. Lenzo <lenzo@cs.cmu.edu>
+	* TCP server fixes in sphinx2-server (server.c, srvcore.c)
+	* Applied two patches from Thomas K. Harris <tkharris@cs.cmu.edu>
+	  - overflow check in log.h ADD macro, topN normalization fix
+	* Added win32 examples to EXTRA_DIST so they get included
+	* Checks and patches from Evandro Gouvea <egouvea@cs.cmu.edu> for
+	  win32 issues.
+	  - maintenance fixes for cygwin and visual studio builds
+	  - addition of example batch files
+	  - projects for each example program
+	* Fixes for Solaris from awb <awb@cs.cmu.edu>, though this
+	  probably still requires some tweaking.
+	* Makefile.am whitespace changes, small line continuation fix
+
+2001-12-07 Kevin A. Lenzo <lenzo@cs.cmu.edu>
+	* Changed default input gain to 80 (from 85).  80 seemed
+	  'too hot' on most machines.
+	* Consolidate byte order macros into byteorder.h.  Note
+	  that SWAPL and SWAP_L are both present and used (as reversed 
+	  senses) and this will have to be cleaned up. 
+	* Add __BIG_ENDIAN__ definition in configure.in
+	* Changed all unigram_t.wid to unigram_t.mapid (lm_3g)
+	* Define NULL for systems that don't (sun4m).
+	* Added headers, etc for sun4.  Everything now compiles
+	  under sun4 except the client/server code which can
+	  be commented out of the Makefile.
+	* Built and sphinx2-test ran successfully on SunOS 5.5.1
+	* Guarded unistd.h header includes behind ifdef conditions
+
+2004-07-16 Ravi Mosur (rkm@cs.cmu.edu)
+	* Support for FSGs added
+
+2004-07-23 Ravi Mosur (rkm@cs.cmu.edu)
+	* Some extensions to FSG code, including ability for an
+	  application to pass an in-memory FSG data structure to the
+	  FSG module.
+	* Log files modified to have same "look and feel".
+
+2004-12-09 Ravi Mosur (rkm@cs.cmu.edu)
+	* Support for continuous density acoustic models added.
+
+2005-01-21 Evandro Gouvea (egouvea@cs.cmu.edu)
+	* Rolled back dup2 fix for log files for windows.
+
+2005-01-26 Ravi Mosur (rkm@cs.cmu.edu)
+	* Added -maxhmmpf absolute pruning parameter for FSG mode.
+
+2005-01-26 Ravi Mosur (rkm@cs.cmu.edu)
+	* Added rawmode to cont_ad module.
+	* Fixed bug in cont_ad module that sometimes dropped final few frames.
+	* Fixed cont_ad module so cont_ad_read never crosses speech/silence
+	  boundary.

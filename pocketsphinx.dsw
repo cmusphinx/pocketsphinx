@@ -1,0 +1,89 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "pocketsphinx"=".\win32\msdev\pocketsphinx\pocketsphinx.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "pocketsphinx_allphone"=".\win32\msdev\pocketsphinx_allphone\pocketsphinx_allphone.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name pocketsphinx
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "pocketsphinx_batch"=".\win32\msdev\pocketsphinx_batch\pocketsphinx_batch.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name pocketsphinx
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "pocketsphinx_continuous"=".\win32\msdev\pocketsphinx_continuous\pocketsphinx_continuous.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name pocketsphinx
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "pocketsphinx_ptt"=".\win32\msdev\pocketsphinx_ptt\pocketsphinx_ptt.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name pocketsphinx
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+
