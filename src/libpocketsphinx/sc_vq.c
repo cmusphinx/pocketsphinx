@@ -1523,43 +1523,6 @@ static void get_scores1_8b_all (int32 *scores, vqFeature_t frm[][MAX_TOPN])
  * Parameter and setup code
  */
 
-/*
- * Read & initialize SC codebooks & output pdfs
- */
-int32 SCVQInitFeat(feat_t feat, char *meanPath, char *varPath, int32 *opdf)
-{
-    int32   *detP;
-
-    assert(((int32)feat < NUM_FEATURES) && ((int32)feat >= 0));
-    assert(meanPath != NULL);
-    assert(varPath != NULL);
-    assert(opdf != NULL);
-
-    if (readMeanCBFile(feat, means + (int32)feat, meanPath) < 0)
-	return -1;
-
-    detP = dets[(int32)feat] = detArr + (int32)feat * NUM_ALPHABET;
-    if (readVarCBFile(feat, detP, vars + (int32)feat, varPath) < 0) {
-	if (feat != POW_FEAT)
-	    return -1;
-	else {
-	    log_debug("Synthesizing power codebook variances\n");
-	    if (setPowVar(detP, vars + (int32)feat,
-			  (use20ms_diff_pow ? 0.125 : 0.05)) < 0)
-		return -1;
-	}
-    }
-    
-    if (prob_size == 32)
-	OPDF[(int32)feat] = opdf;
-    else if (prob_size == 8) {
-	OPDF_8B[(int32)feat] = (OPDF_8BIT_T *) opdf;
-    } else
-	E_FATAL("Illegal prob size: %d\n", prob_size);
-    
-    return 0;
-}
-
 int32 SCVQS3InitFeat(char *meanPath, char *varPath,
 		     int32 *opdf0, int32 *opdf1,
 		     int32 *opdf2, int32 *opdf3)

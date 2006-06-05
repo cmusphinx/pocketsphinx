@@ -187,8 +187,6 @@ static char *lm_tag_file_name = NULL;
 static char *lm_word_tags_file_name = NULL;
 static char const *lm_start_sym = "<s>";
 static char const *lm_end_sym = "</s>";
-static char *phone_file_name = NULL;
-static char *mapFileName = NULL;
 static char *mdefFileName = NULL;
 static char *meanFileName = NULL;
 static char *varFileName = NULL;
@@ -207,32 +205,10 @@ static char *noise_dict_file_name = NULL;
 static char *phonetp_file_name = NULL;
 static float32 ptplw = 5.0f;		/* Pulled out of thin air */
 static float32 uptpwt = 0.001f;		/* Pulled out of thin air */
-static char *hmm_dir = NULL;
-static char *hmm_dir_list = NULL;
-static char const *hmm_ext = "chmm";
-static double  hmm_smooth_min = 0.0000001f;
-static char const *cbdir = "./";	/* Code book dir */
-static char const *ccbfn = "cep.256";	/* Cepstrum Codebook file name */
-static char const *dcbfn = "d2cep.256";	/* Diff Cepstrum Codebook file name */
-static char const *pcbfn = "p3cep.256";	/* Power Codebook file name */
-static char const *xcbfn = "xcep.256";	/* Xcode Codebook file name */
-static float Cep_Floor  = 0.0001f;
-static float Dcep_Floor = 0.0001f;
-static float Pow_Floor  = 0.0001f;
 static int32 scVqTopN = 4;	/* Number of semi-contnuous entries to use */
 static int32 use20msDiffPow = FALSE;
 static int32 scvqDSRatio = 1; /* Frame downsampling ratio. */
 static double dcep80msWeight = 1.0;
-static char const *exts[4];
-static char const *cext = "CCODE";
-static char const *dext = "DCODE";
-static char const *pext = "PCODE";
-static char const *xext = NULL;
-static char const *code1_ext = "ccode";
-static char const *code2_ext = "d2code";
-static char const *code3_ext = "p3code";
-static char const *code4_ext = "xcode";
-static int32  num_cb = 4;		/* Number of code books */
 static char  *sendumpfile = NULL;	/* Senone probs dump file */
 static int32 use_s3semi = FALSE;        /* S3 models are semi-continuous */
 static int32 use_mmap = FALSE;          /* Use memory-mapped I/O for probs */
@@ -245,7 +221,6 @@ static float unigramWeight = 1.0f;	/* Unigram wieght */
 static double transSmooth = 0.0001f;	/* Transition smoothing floor */
 static double transWeight = 1.0f;	/* Transition Weight */
 static int32 NoLangModel = TRUE;
-static int32 useBigHmmFiles = FALSE;	/* use big hmms files for IO */
 static int32 useCiTrans = TRUE;		/* only ci transitions in hmms */
 static int32 useCiPhonesOnly = FALSE;	/* only ci phones */
 static int32 useWDPhonesOnly = FALSE;	/* only with in word phones */
@@ -319,8 +294,6 @@ config_t kb_param[] = {
 		FLOAT, (caddr_t) &s3varfloor },
 	{ "S3MixwFloor", "Mixture Weights Floor for S3 mixw file", "-mixwfloor",
 		FLOAT, (caddr_t) &s3mixwfloor },
-	{ "MapFile", "Distribution map", "-mapfn",
-		STRING, (caddr_t) &mapFileName }, 
 	{ "KDTreeFile", "kd-tree file for codebook", "-kdtreefn",
 	  	STRING, (caddr_t) &kdtree_file_name },
 	{ "KDTreeMaxDepth", "Maximum number of levels to evaluate in kd-tree", "-kdmaxdepth",
@@ -347,66 +320,20 @@ config_t kb_param[] = {
 		STRING, (caddr_t) &startsym_file }, 
 	{ "UseLeftContext", "Use the left context models", "-useleftcontext",
 		BOOL, (caddr_t) &use_left_context }, 
-	{ "PhoneFile", "Phone file name", "-phnfn",
-		STRING, (caddr_t) &phone_file_name }, 
-	{ "UseBigHmmFiles", "Use big hmm file format", "-usebighmm",
-		BOOL, (caddr_t) &useBigHmmFiles }, 
 	{ "UseCITransOnly", "Only use trans probs from CI phones", "-usecitrans",
 		BOOL, (caddr_t) &useCiTrans }, 
 	{ "UseCIPhonesOnly", "Only use CI phones", "-useciphones",
 		BOOL, (caddr_t) &useCiPhonesOnly }, 
 	{ "WordPhonesOnly", "Only use with in word phones", "-usewdphones",
 		BOOL, (caddr_t) &useWDPhonesOnly }, 
-	{ "CCodeExt", "CCode File Extension", "-cext",
-  	        STRING, (caddr_t) &cext }, 
-	{ "DCodeExt", "DCode File Extension", "-dext",
-  	        STRING, (caddr_t) &dext }, 
-	{ "PCodeExt", "PCode File Extension", "-pext",
-  	        STRING, (caddr_t) &pext }, 
-	{ "XCodeExt", "XCode File Extension (4 codebook only)", "-xext",
-	        STRING, (caddr_t) &xext }, 
-	{ "CodeBookDirectory", "Code book directory", "-cbdir",
-	    	STRING, (caddr_t) &cbdir }, 
-	{ "CCodeBookFileName", "CCode Book File Name", "-ccbfn",
-		STRING, (caddr_t) &ccbfn }, 
-	{ "DCodeBookFileName", "DCode Book File Name", "-dcbfn",
-	       	STRING, (caddr_t) &dcbfn }, 
-	{ "PCodeBookFileName", "PCode Book File Name", "-pcbfn",
-		STRING, (caddr_t) &pcbfn }, 
-	{ "XCodeBookFileName", "XCode Book File Name", "-xcbfn",
-		STRING, (caddr_t) &xcbfn }, 
 	{ "Use20msDiffPow", "Use 20 ms diff power instead of c0", "-use20msdp",
 		BOOL, (caddr_t) &use20msDiffPow }, 
 	{ "Dcep80msWeight", "Weight for dcep80ms", "-dcep80msweight",
 		DOUBLE, (caddr_t) &dcep80msWeight }, 
-	{ "CepFloor", "Floor of Cepstrum Variance", "-cepfloor",
-		FLOAT, (caddr_t) &Cep_Floor }, 
-	{ "DCepFloor", "Floor of Delta Cepstrum Variance", "-dcepfloor",
-		FLOAT, (caddr_t) &Dcep_Floor }, 
-	{ "XCepFloor", "Floor of XCepstrum Variance", "-xcepfloor",
-		FLOAT, (caddr_t) &Pow_Floor }, 
 	{ "TopNCodeWords", "Number of code words to use", "-top",
 		INT, (caddr_t) &scVqTopN }, 
 	{ "FrameDSRatio", "Downsample frame computation by this factor", "-dsratio",
 		INT, (caddr_t) &scvqDSRatio }, 
-	{ "HmmDirList", "Hmm Directory List", "-hmmdirlist",
-		STRING, (caddr_t) &hmm_dir_list }, 
-	{ "HmmDir", "Hmm Directory", "-hmmdir",
-		STRING, (caddr_t) &hmm_dir }, 
-	{ "HmmExt", "Hmm Extention", "-hmmext",
-		STRING, (caddr_t) &hmm_ext }, 
-	{ "Code1Ext", "Code1 Extention", "-code1ext",
-		STRING, (caddr_t) &code1_ext }, 
-	{ "Code2Ext", "Code2 Extention", "-code2ext",
-		STRING, (caddr_t) &code2_ext }, 
-	{ "Code3Ext", "Code3 Extention", "-code3ext",
-		STRING, (caddr_t) &code3_ext }, 
-	{ "Code4Ext", "Code4 Extention", "-code4ext",
-		STRING, (caddr_t) &code4_ext }, 
-	{ "NumCb", "Number of Codebooks", "-numcb",
-		INT, (caddr_t) &num_cb }, 
-	{ "HmmSmoothMin", "Hmm minimum output probability", "-hmmsm",
-	        DOUBLE, (caddr_t) &hmm_smooth_min }, 
 	{ "TransWeight", "Arc transition weight", "-transwt",
 	        DOUBLE,	(caddr_t) &transWeight }, 
 	{ "TransSmooth", "Minimum arc transition probability", "-transsm,",
@@ -580,7 +507,6 @@ void kb (int argc, char *argv[],
 	 float lw,	/* language weight */
 	 float pip)	/* phone insertion penalty */
 {
-    char hmm_file_name[256];
     int32 num_phones, num_ci_phones;
     int32 i, j, n, use_darpa_lm;
     float32 p, uptp;
@@ -597,33 +523,16 @@ void kb (int argc, char *argv[],
     pconf (argc, argv, kb_param, 0, 0, 0);
     
     /* Check various combinations of arguments. */
-    if (mdefFileName != NULL) {
-	if ((phone_file_name != NULL) || (mapFileName != NULL))
-	    E_FATAL("Must specify one of -mdeffn or (-phonefn,-mapfn)\n");
-    }
+    if (mdefFileName == NULL)
+	    E_FATAL("Must specify -mdeffn\n");
     
     if (Use8BitSenProb)
 	SCVQSetSenoneCompression (8);
 
-    if (mdefFileName != NULL) {
-	/* Read model definition. */
-	if ((mdef = bin_mdef_read(mdefFileName)) == NULL)
+    /* Read model definition. */
+    if ((mdef = bin_mdef_read(mdefFileName)) == NULL)
 	    E_FATAL("Failed to read model definition from %s\n", mdefFileName);
-	num_ci_phones = bin_mdef_n_ciphone(mdef);
-    }
-    else {
-      E_INFO("Reading phone file [%s]\n", phone_file_name);
-      if (phone_read (phone_file_name))
-	exit (-1);
-      if (useWDPhonesOnly)
-	phone_add_diphones();
-    
-      num_ci_phones = phoneCiCount();
-    
-      /* Read the distribution map file */
-      E_INFO("Reading map file [%s]\n", mapFileName);
-      read_map (mapFileName, TRUE /* useCiTrans compress */);
-    }
+    num_ci_phones = bin_mdef_n_ciphone(mdef);
 
     E_INFO("Reading dict file [%s]\n", dict_file_name);
     word_dict = dict_new ();
@@ -765,34 +674,8 @@ void kb (int argc, char *argv[],
     numSmds = hmm_num_sseq();
     smds = (SMD *) CM_calloc (numSmds, sizeof (SMD));
 
-    if (tmatFileName != NULL) {
-	    /* Use S3 transition matrix file. */
-	    tmat_init(tmatFileName, smds, transSmooth, TRUE);
-    }
-    else {
-	    /*
-	     * Read the hmm's into the SMD structures
-	     */
-	    if (useBigHmmFiles) {
-		    for (i = 0; i < num_ci_phones; i++) {
-			    sprintf (hmm_file_name, "%s.%s", phone_from_id (i),
-				     hmm_ext);
-	    
-			    hmm_tied_read_big_bin (hmm_dir_list, hmm_file_name, smds,
-						   transSmooth, NUMOFCODEENTRIES, TRUE,
-						   transWeight);
-		    }
-	    } else {
-		    for (i = 0; i < num_phones; i++) {
-			    if ((!useCiTrans) || (phone_id_to_base_id(i) == i)) {
-				    sprintf (hmm_file_name, "%s.%s", phone_from_id (i), hmm_ext);
-				    hmm_tied_read_bin (hmm_dir_list, hmm_file_name,
-						       &smds[hmm_pid2sid(i)], transSmooth,
-						       NUMOFCODEENTRIES, TRUE, transWeight);
-			    }
-		    }
-	    }
-    }
+    /* Use S3 transition matrix file. */
+    tmat_init(tmatFileName, smds, transSmooth, TRUE);
     
     /*
      *  Use Ci transitions ?
@@ -813,95 +696,46 @@ void kb (int argc, char *argv[],
      * Read the distributions and remap them to the correct locations
      * Also, read the codebooks.
      */
-    if (mdefFileName != NULL) {
-      /* If we are using cont_mgau, they get read in at the same time
-	 as the codebook. */
-      if ((meanFileName == NULL)
-	  || (varFileName == NULL)
-	  || (tmatFileName == NULL))
-	E_FATAL("No S3 mean/var/mixw/tmat files specified\n");
+    /* If we are using cont_mgau, they get read in at the same time
+       as the codebook. */
+    if ((meanFileName == NULL)
+	|| (varFileName == NULL)
+	|| (tmatFileName == NULL))
+	    E_FATAL("No S3 mean/var/mixw/tmat files specified\n");
 
-      /* Try to load them as continuous models (which are always
-       * single-stream), if not, use SCVQ. */
-      mgau = mgau_init (meanFileName, varFileName, s3varfloor,
-			mixwFileName, s3mixwfloor,
-			TRUE);
-      if (mgau == NULL) {
-	E_INFO("Using S3 semi-continuous models; initializing SCVQ module\n");
-	read_dists_s3(mixwFileName, NUMOFCODEENTRIES,
-		      s3mixwfloor, useCiPhonesOnly);
-	/* initialize semi-continuous acoustic and model scoring subsystem */
-	SCVQInit(scVqTopN, kb_get_total_dists(), 1,
-		 s3varfloor, use20msDiffPow);
-	if (kdtree_file_name)
-		SCVQLoadKDTree(kdtree_file_name, kdtree_maxdepth, kdtree_maxbbi);
-	SCVQSetdcep80msWeight (dcep80msWeight);
-	SCVQSetDownsamplingRatio (scvqDSRatio);
-	searchSetScVqTopN (scVqTopN);
+    /* Try to load them as continuous models (which are always
+     * single-stream), if not, use SCVQ. */
+    mgau = mgau_init (meanFileName, varFileName, s3varfloor,
+		      mixwFileName, s3mixwfloor,
+		      TRUE);
+    if (mgau == NULL) {
+	    E_INFO("Using S3 semi-continuous models; initializing SCVQ module\n");
+	    read_dists_s3(mixwFileName, NUMOFCODEENTRIES,
+			  s3mixwfloor, useCiPhonesOnly);
+	    /* initialize semi-continuous acoustic and model scoring subsystem */
+	    SCVQInit(scVqTopN, kb_get_total_dists(), 1,
+		     s3varfloor, use20msDiffPow);
+	    if (kdtree_file_name)
+		    SCVQLoadKDTree(kdtree_file_name, kdtree_maxdepth, kdtree_maxbbi);
+	    SCVQSetdcep80msWeight (dcep80msWeight);
+	    SCVQSetDownsamplingRatio (scvqDSRatio);
+	    searchSetScVqTopN (scVqTopN);
 
-	SCVQS3InitFeat(meanFileName, varFileName,
-		       kb_get_codebook_0_dist(),
-		       kb_get_codebook_1_dist(),
-		       kb_get_codebook_2_dist(),
-		       kb_get_codebook_3_dist());
-      }
-      else {
-	E_INFO("Using S3 continuous models\n");
-	use_s3semi = FALSE;
-	if (mixwFileName == NULL)
-	    E_FATAL("No S3 mixw file specified\n");
-	/* Allocate feature vector array (cep,dcep,pow,ddcep concatenated) */
-	s3feat = (float32 *) CM_calloc (CEP_VECLEN * 3, sizeof(float32));
-      }
-      remap_mdef (smds, mdef);
+	    SCVQS3InitFeat(meanFileName, varFileName,
+			   kb_get_codebook_0_dist(),
+			   kb_get_codebook_1_dist(),
+			   kb_get_codebook_2_dist(),
+			   kb_get_codebook_3_dist());
     }
-    else { /* mdefFileName == NULL */
-      E_INFO("Not using S3 continuous models; initializing SCVQ module\n");
-      read_dists (hmm_dir, code1_ext, code2_ext, code3_ext, code4_ext,
-		  NUMOFCODEENTRIES, hmm_smooth_min, useCiPhonesOnly);
-      remap (smds);
-
-      exts[0] = cext;
-      exts[1] = dext;
-      exts[2] = pext;
-      exts[3] = xext;
-      
-      if ((ccbfn == NULL) || (dcbfn == NULL) || (pcbfn == NULL) || (xcbfn == NULL))
-	E_FATAL("One or more codebooks not specified\n");
-      
-      /* initialize semi-continuous acoustic and model scoring subsystem */
-      SCVQInit(scVqTopN, kb_get_total_dists(), 1,
-	       (double) Cep_Floor, use20msDiffPow);
-      if (kdtree_file_name)
-	      SCVQLoadKDTree(kdtree_file_name, kdtree_maxdepth, kdtree_maxbbi);
-      SCVQSetdcep80msWeight (dcep80msWeight);
-      SCVQSetDownsamplingRatio (scvqDSRatio);
-      searchSetScVqTopN (scVqTopN);
-      
-      {
-	char mpath[MAXPATHLEN+1], vpath[MAXPATHLEN+1];
-	
-	sprintf(mpath, "%s/%s.vec", cbdir, ccbfn);
-	sprintf(vpath, "%s/%s.var", cbdir, ccbfn);
-	if (SCVQInitFeat(CEP_FEAT, mpath, vpath, kb_get_codebook_0_dist()) < 0)
-	  E_FATAL("SCVQInitFeat(%s,%s) failed\n", mpath, vpath);
-	
-	sprintf(mpath, "%s/%s.vec", cbdir, dcbfn);
-	sprintf(vpath, "%s/%s.var", cbdir, dcbfn);
-	if (SCVQInitFeat(DCEP_FEAT, mpath, vpath, kb_get_codebook_1_dist()) < 0)
-	  E_FATAL("SCVQInitFeat(%s,%s) failed\n", mpath, vpath);
-	
-	sprintf(mpath, "%s/%s.vec", cbdir, pcbfn);
-	sprintf(vpath, "%s/%s.var", cbdir, pcbfn);
-	if (SCVQInitFeat(POW_FEAT, mpath, vpath, kb_get_codebook_2_dist()) < 0)
-	  E_FATAL("SCVQInitFeat(%s,%s) failed\n", mpath, vpath);
-	
-	sprintf(mpath, "%s/%s.vec", cbdir, xcbfn);
-	sprintf(vpath, "%s/%s.var", cbdir, xcbfn);
-	if (SCVQInitFeat(DDCEP_FEAT, mpath, vpath, kb_get_codebook_3_dist()) < 0)
-	  E_FATAL("SCVQInitFeat(%s,%s) failed\n", mpath, vpath);
-      }
+    else {
+	    E_INFO("Using S3 continuous models\n");
+	    use_s3semi = FALSE;
+	    if (mixwFileName == NULL)
+		    E_FATAL("No S3 mixw file specified\n");
+	    /* Allocate feature vector array (cep,dcep,pow,ddcep concatenated) */
+	    s3feat = (float32 *) CM_calloc (CEP_VECLEN * 3, sizeof(float32));
     }
+    remap_mdef (smds, mdef);
     
     /*
      * Create phone transition logprobs matrix
