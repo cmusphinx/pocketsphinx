@@ -55,6 +55,7 @@
 
 
 #include <search_const.h>
+#include <fe.h>
 
 
 void time_align_set_beam_width(double bw);

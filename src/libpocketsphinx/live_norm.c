@@ -82,10 +82,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "err.h"
+#include <fixpoint.h>
+#include <fe.h>
+#include <err.h>
 
 #include "s2types.h"
-#include "fixpoint.h"
 
 static int   veclen;		/* the feature vector length */
 static mfcc_t *cur_mean = NULL;/* the mean subtracted from input frames */

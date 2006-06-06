@@ -87,32 +87,9 @@
 #ifndef __S2TYPES_H__
 #define __S2TYPES_H__
 
-
-#if defined(HAVE_LONG_LONG) && SIZEOF_LONG_LONG == 8
-typedef long long	int64;
-#else
-#ifdef __MSC_VER__
-typedef __int64		int64;
-#else
-typedef double		int64;
-#endif
-#endif
-typedef int		int32;
-typedef short		int16;
-typedef signed char	int8;
-typedef unsigned int	uint32;
-typedef unsigned short	uint16;
-typedef unsigned char	uint8;
-typedef float		float32;
-typedef double		float64;
-typedef unsigned char	boolean;
-
-/** Fixed-point computation type. */
-typedef int32 fixed32;
+#include "prim_type.h"
 
 #ifdef FIXED_POINT
-/** MFCC computation type. */
-typedef fixed32 mfcc_t;
 /** Gaussian mean storage type. */
 typedef fixed32 mean_t;
 /** Gaussian precision storage type. */
@@ -120,7 +97,6 @@ typedef int32 var_t;
 /** Language weight storage type. */
 typedef fixed32 lw_t;
 #else
-typedef float32 mfcc_t;
 typedef float32 mean_t;
 typedef float32 var_t;
 typedef float64 lw_t;
@@ -163,20 +139,6 @@ typedef float64 lw_t;
 #define MIN_NEG_FLOAT32		((float32) (-MIN_POS_FLOAT32))
 #define MAX_NEG_FLOAT64		((float64) (-MAX_POS_FLOAT64))
 #define MIN_NEG_FLOAT64		((float64) (-MIN_POS_FLOAT64))
-
-
-typedef union anytype_s {
-  boolean boolean;
-  int8 int8;
-  uint8 uint8;
-  int16 int16;
-  uint16 uint16;
-  int32 int32;
-  uint32 uint32;
-  float32 float32;
-  float64 float64;
-  void *ptr;
-} anytype_t;
 
 
 #endif

@@ -61,8 +61,11 @@
 
 #include <stdlib.h>
 
+#include <fixpoint.h>
+#include <fe.h>
+
 #include "s2types.h"
-#include "fixpoint.h"
+
 
 #ifdef DEBUG
 #define dprintf(x)	printf x

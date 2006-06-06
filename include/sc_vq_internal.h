@@ -76,5 +76,16 @@ typedef enum {SCVQ_HEAD, SCVQ_TAIL, SCVQ_DEQUEUE} ht_t;
 #define WORSE		<
 #define FARTHER		<
 
+#ifdef FIXED_POINT
+/** Subtract GMM component b (assumed to be positive) and saturate */
+#define GMMSUB(a,b) \
+	(((a)-(b) > a) ? (INT_MIN) : ((a)-(b)))
+/** Add GMM component b (assumed to be positive) and saturate */
+#define GMMADD(a,b) \
+	(((a)+(b) < a) ? (INT_MAX) : ((a)+(b)))
+#else
+#define GMMSUB(a,b) ((a)-(b))
+#define GMMADD(a,b) ((a)+(b))
+#endif
 
 #endif

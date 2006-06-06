@@ -46,9 +46,11 @@
 #ifndef __KDTREE_H__
 #define __KDTREE_H__
 
+#include <fixpoint.h>
+#include <fe.h>
+
 #include "s2types.h"
 #include "vector.h"
-#include "fixpoint.h"
 
 typedef struct kd_tree_node_s kd_tree_node_t;
 struct kd_tree_node_s {

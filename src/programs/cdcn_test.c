@@ -96,6 +96,8 @@ int main (int32 argc, char *argv[])
     
     /* Process "control file" input through stdin */
     while (fgets (line, sizeof(line), stdin) != NULL) {
+	int32 nfr;
+
 	if (uttproc_parse_ctlfile_entry (line, filename, &sf, &ef, idspec) < 0)
 	    continue;
 	assert ((sf < 0) && (ef < 0));	/* Processing entire input file */
@@ -112,11 +114,16 @@ int main (int32 argc, char *argv[])
 	fe_start_utt(fe);
 	nf = 0;
 	while ((k = adc_file_read (adbuf, 4096)) >= 0) {
-	    k = fe_process_utt (fe, adbuf, k, mfcbuf+nf);
+	    mfcc_t **temp_mfc;
+
+	    fe_process_utt (fe, adbuf, k, &temp_mfc, &nfr);
+	    fe_mfcc_to_float(fe, temp_mfc, (float32 **)temp_mfc, nfr);
+	    memcpy(mfcbuf[nf], temp_mfc[0], nfr * DEFAULT_NUM_CEPSTRA * sizeof(float32));
+	    fe_free_2d(temp_mfc);
 	    nf += k;
 	    /* WARNING!! No check for mfcbuf overflow */
 	}
-	fe_end_utt(fe, mfcbuf[nf]);
+	fe_end_utt(fe, mfcbuf[nf], &nfr);
 	fe_close(fe);
 	uttfile_close ();
 	

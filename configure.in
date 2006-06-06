@@ -39,111 +39,34 @@ AC_CHECK_TYPES(long long)
 AC_CHECK_SIZEOF(long long)
 
 dnl
-dnl Allow compilation for fixed or floating-point MFCC and GMM computation
+dnl Get SphinxBase source from command line if given
 dnl
-AC_ARG_ENABLE(fixed,
-	AC_HELP_STRING([--enable-fixed=RADIX],
-		       [Use 32-bit fixed-point for MFCC and GMM computation,
-		        optionally specifying a radix point]),[
-if test x$enableval = xyes; then
-   AC_DEFINE(FIXED_POINT)
-else
-   AC_DEFINE(FIXED_POINT)
-   AC_DEFINE_UNQUOTED(DEFAULT_RADIX,$enableval)
-fi])
+AC_ARG_WITH(sphinxbase,
+	AS_HELP_STRING([--with-sphinxbase=DIRECTORY],
+			[look for SphinxBase source files in DIRECTORY]),
+	sphinxbase=$withval)
 
 dnl
-dnl Enable 16-bit fixed-point (Q1.15) format for MFCC (less accurate, more fast)
+dnl Check for installed SphinxBase
+dnl FIXME: How do we find the installed headers robustly?
 dnl
-AC_ARG_ENABLE(fixed16,
-	AC_HELP_STRING([--enable-fixed16],
-		       [Use 16-bit fixed-point for MFCC computation]),[
-if test x$enableval = xyes; then
-   AC_DEFINE(FIXED_POINT)
-   AC_DEFINE(FIXED16)
-fi])
+AC_CHECK_HEADER(sphinxbase/sphinx_config.h,
+CPPFLAGS="-I/usr/include/sphinxbase -I/usr/local/include/sphinxbase",
+sphinxbase=$PWD/../sphinxbase)
 
 dnl
-dnl determine audio type or use none if none supported on this platform
+dnl Now verify SphinxBase if defined
 dnl
-
-ad_files=""
-ad_libs=""
-
-dnl Added from suggestion by 
-dnl Jasper van Veghel <jvveghel@vanboxtelsoftware.nl>, 02/03/2003:
-AC_ARG_WITH(alsa,
-           AC_HELP_STRING([--with-alsa], [Use ALSA library for sound I/O]),
-           [ad_files="ad_alsa.lo"
-            ad_backend="AD_BACKEND_ALSA"
-            ad_libs="-lasound"
-	    AC_DEFINE(AD_BACKEND_ALSA)
-            AC_CHECK_HEADER(sys/asoundlib.h,,
-                    AC_ERROR(ALSA header file <sys/asoundlib.h> not found!))]
-)
-
-if test "x$ad_files" = "x"; then
-        case $host in
-                *-*-linux*|*-*-uclinux*)
-                        ad_files="ad_oss.lo"
-                        ad_backend="AD_BACKEND_OSS"
-			AC_DEFINE(AD_BACKEND_OSS)
-                        ;;
-                # FIXME: isn't this the same OSS as on Linux?
-                *-*-freebsd*|*-*-netbsd*|*-*-openbsd*)
-                        ad_files="ad_oss_bsd.lo mulaw_base.lo"
-                        ad_libs="-lossaudio"
-                        ad_backend="AD_BACKEND_OSS_BSD"
-			AC_DEFINE(AD_BACKEND_OSS_BSD)
-                        ;;
-                *-*-osf*)
-                        ad_files="ad_osf.lo mulaw_base.lo"
-                        ad_backend="AD_BACKEND_OSF"
-			AC_DEFINE(AD_BACKEND_OSF)
-                        ;;
-                *-*-irix*)
-                        ad_files="ad_irix.lo mulaw_base.lo"
-                        ad_libs="-laudio"
-                        ad_backend="AD_BACKEND_IRIX"
-			AC_DEFINE(AD_BACKEND_IRIX)
-                        ;;
-                *-*-sunos4*)
-                        ad_files="ad_sunos.lo audio_utils_sunos.lo"
-                        ad_libs="-lm -lnsl -ldl"
-                        ad_backend="AD_BACKEND_SUNOS"
-			AC_DEFINE(AD_BACKEND_SUNOS)
-                        ;;
-                *-*-solaris*)
-                        ad_files="ad_sunos.lo audio_utils_sunos.lo"
-                        ad_libs="-lm -lnsl -lsocket -ldl"
-                        ad_backend="AD_BACKEND_SUNOS"
-			AC_DEFINE(AD_BACKEND_SUNOS)
-                        ;;
-                *-*-*cygwin*)
-                        ad_files="play_win32.lo rec_win32.lo"
-                        ad_libs="-lwinmm"
-                        ad_backend="AD_BACKEND_WIN32"
-			AC_DEFINE(AD_BACKEND_WIN32)
-                        ;;
-                *-*apple*-*)
-                        ad_files="ad_base.lo"
-                        ad_backend="AD_BACKEND_NONE"
-			AC_DEFINE(AD_BACKEND_NONE)
-                        ;;
-                *)
-                        ad_files="ad_base.lo"
-                        ad_backend="AD_BACKEND_NONE"
-                        AC_MSG_RESULT([No audio interface for host type $host.])
-			AC_DEFINE(AD_BACKEND_NONE)
-                        ;;
-        esac
+if test x$sphinxbase != x; then
+   AC_CHECK_FILE($sphinxbase/src/libsphinxutil/libsphinxutil.la, [
+CPPFLAGS="-I$sphinxbase/include $CPPFLAGS"
+LDFLAGS="$LDFLAGS -L$sphinxbase/src/libsphinxfe \
+		  -L$sphinxbase/src/libsphinxutil -L$sphinxbase/src/libsphinxad"],
+		   AC_ERROR([SphinxBase was not found in $sphinxbase]))
 fi
 
 AC_PATH_PROG(PERL,perl)
 AC_PATH_PROG(CSH,csh)
-AC_SUBST(ad_files)
-AC_SUBST(ad_libs)
-AC_SUBST(ad_backend)
 AC_SUBST(PERL)
 AC_SUBST(CSH)
 
@@ -152,10 +75,8 @@ AM_PROG_LIBTOOL
 AC_OUTPUT([
 Makefile
 include/Makefile
-include/ad_conf.h
 src/Makefile
 src/libpocketsphinx/Makefile
-src/libpocketsphinx_audio/Makefile
 src/programs/Makefile
 model/Makefile
 model/hmm/Makefile

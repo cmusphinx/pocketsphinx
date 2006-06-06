@@ -25,8 +25,7 @@ pocketsphinx_continuous_SOURCES =  tty-continuous.c
 pocketsphinx_ptt_SOURCES = tty-ptt.c
 
 LDADD = $(top_builddir)/src/libpocketsphinx/libpocketsphinx.la \
-	$(top_builddir)/src/libpocketsphinx_audio/libpocketsphinx_audio.la \
-	-lm @ad_libs@ 
+	-lsphinxutil -lsphinxfe -lsphinxad -lm
 
 INCLUDES = -I$(top_srcdir)/include \
        -I$(top_builddir)/include

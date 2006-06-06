@@ -68,8 +68,10 @@
 #include <string.h>
 #include <err.h>
 
+#include <fixpoint.h>
+#include <fe.h>
+
 #include "s2types.h"
-#include "fixpoint.h"
 
 static mfcc_t max = FLOAT2MFCC(10.0);	/* Estimated C0 max used for AGC in current utterance */
 /* Observed C0 max in current utterance (before update) */

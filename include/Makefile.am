@@ -1,37 +1,25 @@
 pkginclude_HEADERS = \
-	ad.h					\
 	basic_types.h				\
 	bin_mdef.h				\
-	bio.h					\
-	bitvec.h				\
 	blkarray_list.h				\
-	byteorder.h				\
 	cache_lm.h				\
-	case.h					\
 	cdcn.h					\
 	cdcn_internal.h				\
 	cepio.h					\
 	c.h					\
-	ckd_alloc.h				\
 	CM_macros.h				\
-	cont_ad.h				\
 	cont_mgau.h				\
 	cviterbi4.h				\
 	dict.h					\
-	err.h					\
 	fbs.h					\
-	fe.h					\
-	fixpoint.h				\
 	fsg_history.h				\
 	fsg_lextree.h				\
 	fsg_psubtree.h				\
 	fsg_search.h				\
-	glist.h					\
 	hash.h					\
 	hmm_tied_r.h				\
 	kb.h					\
 	kdtree.h				\
-	linklist.h				\
 	list.h					\
 	lm_3g.h					\
 	lmclass.h				\
@@ -59,7 +47,6 @@ pkginclude_HEADERS = \
 	senscr.h				\
 	smmap4f.h				\
 	sphinxp.h				\
-	str2words.h				\
 	strfuncs.h				\
 	time_align.h				\
 	tmat.h					\
@@ -67,6 +54,6 @@ pkginclude_HEADERS = \
 	win32sock.h				\
 	word_fsg.h
 
+
 EXTRA_DIST = \
-	README \
-	ad_conf.h.in
+	README

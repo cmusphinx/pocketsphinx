@@ -1247,7 +1247,8 @@ int32 uttproc_begin_utt (char const *id)
 
 int32 uttproc_rawdata (int16 *raw, int32 len, int32 block)
 {
-    int32 i, k, v;
+    int32 i, k, v, nfr;
+    mfcc_t **temp_mfc;
     
     for (i = 0; i < len; i++) {
         v = raw[i];
@@ -1291,29 +1292,18 @@ int32 uttproc_rawdata (int16 *raw, int32 len, int32 block)
     if (rawfp && (len > 0))
         fwrite (raw, sizeof(int16), len, rawfp);
     
-    /*    
-          if ((k = fe_raw2cep (raw, len, mfcbuf + n_rawfr)) < 0)
-          return -1;
-    */
-    if ((k = fe_process_utt (fe, raw, len, mfcbuf + n_rawfr)) < 0)
+    if ((k = fe_process_utt(fe, raw, len, &temp_mfc, &nfr)) < 0)
         return -1;
+    memcpy(mfcbuf[n_rawfr], temp_mfc[0], nfr * CEP_SIZE * sizeof(mfcc_t));
 
-    if (mfcfp && (k > 0)) {
-#ifdef FIXED_POINT
-        for (i = 0; i < k; ++i) {
-            int j;
-            for (j = 0; j < CEP_SIZE; ++j) {
-                float32 temp = FIX2FLOAT(mfcbuf[n_rawfr+i][j]);
-                fwrite (&temp, sizeof(float32), 1, mfcfp);
-            }
-        }
-#else
-        fwrite (mfcbuf[n_rawfr], sizeof(float), k * CEP_SIZE, mfcfp);
-#endif
+    if (mfcfp && (nfr > 0)) {
+	fe_mfcc_to_float(fe, temp_mfc, (float32 **)temp_mfc, nfr);
+        fwrite(temp_mfc, sizeof(float), nfr * CEP_SIZE, mfcfp);
     }
+    fe_free_2d(temp_mfc);
 
     if (livemode) {
-        mfc2feat_live (mfcbuf+n_rawfr, k);
+        mfc2feat_live (mfcbuf+n_rawfr, nfr);
 
         if (search_cep_i < cep_i)
             uttproc_frame ();
@@ -1323,7 +1313,7 @@ int32 uttproc_rawdata (int16 *raw, int32 len, int32 block)
                 uttproc_frame ();
         }
     } else
-        n_rawfr += k;
+        n_rawfr += nfr;
 
     return (n_featfr - n_searchfr);
 }
@@ -1382,7 +1372,7 @@ int32 uttproc_cepdata (float32 **cep, int32 nfr, int32 block)
 
 int32 uttproc_end_utt ( void )
 {
-    int32 i, k;
+    int32 i, k, nfr;
     mfcc_t cep[13], c0;
     mfcc_t *leftover_cep;
 
@@ -1410,7 +1400,7 @@ int32 uttproc_end_utt ( void )
 
     uttstate = nosearch ? UTTSTATE_IDLE : UTTSTATE_ENDED;
 
-    fe_end_utt(fe, leftover_cep);
+    fe_end_utt(fe, leftover_cep, &nfr);
 
     SCVQEndUtt();
     

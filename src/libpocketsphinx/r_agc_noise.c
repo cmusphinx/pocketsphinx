@@ -35,11 +35,12 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include "s2types.h"
-#include "fixpoint.h"
-#include "c.h"
+#include <fixpoint.h>
+#include <fe.h>
+#include <err.h>
 
-#include "err.h"
+#include "s2types.h"
+#include "c.h"
 
 static mfcc_t agc_thresh = FLOAT2MFCC(0.2);
 

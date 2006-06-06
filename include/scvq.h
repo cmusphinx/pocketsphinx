@@ -67,7 +67,8 @@
 #ifndef __SCVQ_H__
 #define __SCVQ_H__
 
-#include "fixpoint.h"
+#include <fixpoint.h>
+#include <fe.h>
 
 #define CEP_VECLEN	13
 #define POW_VECLEN	3
