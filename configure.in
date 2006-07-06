@@ -44,25 +44,46 @@ dnl
 AC_ARG_WITH(sphinxbase,
 	AS_HELP_STRING([--with-sphinxbase=DIRECTORY],
 			[look for SphinxBase source files in DIRECTORY]),
-	sphinxbase=$withval)
+			sphinxbase=$withval)
+
+dnl
+dnl Get SphinxBase build directory from command line if given
+dnl
+AC_ARG_WITH(sphinxbase-build,
+	AS_HELP_STRING([--with-sphinxbase-build=DIRECTORY],
+			[look for SphinxBase object files in DIRECTORY]),
+	sphinxbasebuild=$withval)
 
 dnl
 dnl Check for installed SphinxBase
 dnl FIXME: How do we find the installed headers robustly?
 dnl
 AC_CHECK_HEADER(sphinxbase/sphinx_config.h,
-CPPFLAGS="-I/usr/include/sphinxbase -I/usr/local/include/sphinxbase",
-sphinxbase=$PWD/../sphinxbase)
+CPPFLAGS="-I/usr/include/sphinxbase -I/usr/local/include/sphinxbase",[
+: ${sphinxbase=$PWD/../sphinxbase}
+])
+
 
 dnl
 dnl Now verify SphinxBase if defined
 dnl
+: ${sphinxbasebuild=$sphinxbase}
 if test x$sphinxbase != x; then
-   AC_CHECK_FILE($sphinxbase/src/libsphinxutil/libsphinxutil.la, [
-CPPFLAGS="-I$sphinxbase/include $CPPFLAGS"
-LDFLAGS="$LDFLAGS -L$sphinxbase/src/libsphinxfe \
-		  -L$sphinxbase/src/libsphinxutil -L$sphinxbase/src/libsphinxad"],
-		   AC_ERROR([SphinxBase was not found in $sphinxbase]))
+   AC_CHECK_FILE($sphinxbase/include/prim_type.h,CPPFLAGS="-I$sphinxbase/include $CPPFLAGS",
+   AC_ERROR(
+[SphinxBase headers not found in $sphinxbase.  Please use the
+--with-sphinxbase option to `configure' to specify the location of
+SphinxBase.  Run $0 --help for more information.]))
+fi
+if test x$sphinxbasebuild != x; then
+   AC_CHECK_FILE($sphinxbasebuild/src/libsphinxutil/libsphinxutil.la,
+[CPPFLAGS="-I$sphinxbasebuild/include $CPPFLAGS"
+LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxfe \
+		  -L$sphinxbasebuild/src/libsphinxutil -L$sphinxbasebuild/src/libsphinxad"],
+		   AC_ERROR(
+[SphinxBase libraries were not found in $sphinxbasebuild.
+Use the --with-sphinxbase-build option to `configure' to specify
+the build directory for SphinxBase.  Run $0 --help for more information.]))
 fi
 
 AC_PATH_PROG(PERL,perl)
