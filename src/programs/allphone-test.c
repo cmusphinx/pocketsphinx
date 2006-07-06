@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -62,29 +63,28 @@
  */
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
     char utt[4096];
     search_hyp_t *h;
-    
+
     /* argc, argv: The usual argument for batchmode allphone decoding. */
-    fbs_init (argc, argv);
+    fbs_init(argc, argv);
 
     for (;;) {
-	printf ("Audio filename (without extension): ");
-	if (scanf ("%s", utt) != 1)
-	    break;
+        printf("Audio filename (without extension): ");
+        if (scanf("%s", utt) != 1)
+            break;
 
-	printf ("%s:\n", utt);
+        printf("%s:\n", utt);
 
-	h = uttproc_allphone_file (utt);
-	
-	for (; h; h = h->next)
-	    printf ("%4d %4d %s\n", h->sf, h->ef, h->word);
-	printf ("\n");
+        h = uttproc_allphone_file(utt);
+
+        for (; h; h = h->next)
+            printf("%4d %4d %s\n", h->sf, h->ef, h->word);
+        printf("\n");
     }
-    
+
     fbs_end();
     return 0;
 }
-

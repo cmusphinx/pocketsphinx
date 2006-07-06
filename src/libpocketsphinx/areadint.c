@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -61,70 +62,69 @@
 #endif
 
 int
-areadint (char *file, int **data_ref, int *length_ref)
+areadint(char *file, int **data_ref, int *length_ref)
 {
-  int             fd;
-  int             length;
-  int             size, k;
-  int             offset;
-  char           *data;
-  struct stat     st_buf;
-  int             swap = 0;
+    int fd;
+    int length;
+    int size, k;
+    int offset;
+    char *data;
+    struct stat st_buf;
+    int swap = 0;
 
-  fd = open(file, O_RDONLY|O_BINARY, 0644);
+    fd = open(file, O_RDONLY | O_BINARY, 0644);
 
-  if (fd < 0)
-  {
-    fprintf (stderr, "areadint: %s: can't open: %s\n", file, strerror(errno));
-    return -1;
-  }
-  if (read (fd, (char *) &length, 4) != 4)
-  {
-    fprintf (stderr, "areadint: %s: can't read length: %s\n", file, strerror(errno));
-    close (fd);
-    return -1;
-  }
-  if (fstat (fd, &st_buf) < 0)
-  {
-    fprintf (stderr, "areadint: %s: can't get stat: %s\n", file, strerror(errno));
+    if (fd < 0) {
+        fprintf(stderr, "areadint: %s: can't open: %s\n", file,
+                strerror(errno));
+        return -1;
+    }
+    if (read(fd, (char *) &length, 4) != 4) {
+        fprintf(stderr, "areadint: %s: can't read length: %s\n", file,
+                strerror(errno));
+        close(fd);
+        return -1;
+    }
+    if (fstat(fd, &st_buf) < 0) {
+        fprintf(stderr, "areadint: %s: can't get stat: %s\n", file,
+                strerror(errno));
+        close(fd);
+        return -1;
+    }
+
+    if (length * sizeof(int) + 4 != st_buf.st_size) {
+        E_INFO("Byte reversing %s\n", file);
+        swap = 1;
+        SWAP_INT32(&length);
+    }
+
+    if (length * sizeof(int) + 4 != st_buf.st_size) {
+        E_ERROR("Header count %d = %d bytes does not match file size %d\n",
+                length, length * sizeof(int) + 4, st_buf.st_size);
+        return -1;
+    }
+
+    size = length * sizeof(int);
+    if (!(data = malloc((unsigned) size))) {
+        fprintf(stderr, "areadint: %s: can't alloc data\n", file);
+        close(fd);
+        return -1;
+    }
+    if ((k = read(fd, data, size)) != size) {
+        fprintf(stderr,
+                "areadint: %s: Expected size (%d) different from size read(%d)\n",
+                file, size, k);
+        close(fd);
+        free(data);
+        return -1;
+    }
     close(fd);
-    return -1;
-  }
+    *data_ref = (int *) data;
 
-  if (length * sizeof(int) + 4 != st_buf.st_size) {
-    E_INFO("Byte reversing %s\n", file);
-    swap = 1;
-    SWAP_INT32(&length);
-  }
+    if (swap)
+        for (offset = 0; offset < length; offset++)
+            SWAP_INT32(*data_ref + offset);
 
-  if (length * sizeof(int) + 4 != st_buf.st_size) {
-    E_ERROR("Header count %d = %d bytes does not match file size %d\n",
-	    length, length*sizeof(int) + 4, st_buf.st_size);
-    return -1;
-  }
-
-  size = length * sizeof (int);
-  if (!(data = malloc ((unsigned) size)))
-  {
-    fprintf (stderr, "areadint: %s: can't alloc data\n", file);
-    close (fd);
-    return -1;
-  }
-  if ((k = read (fd, data, size)) != size)
-  {
-    fprintf (stderr, "areadint: %s: Expected size (%d) different from size read(%d)\n",
-	     file, size, k);
-    close (fd);
-    free (data);
-    return -1;
-  }
-  close (fd);
-  *data_ref = (int *) data;
-
-  if (swap)
-    for(offset = 0; offset < length; offset++)
-      SWAP_INT32(*data_ref + offset);
-
-  *length_ref = length;
-  return length;
+    *length_ref = length;
+    return length;
 }

@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -102,7 +103,7 @@
 #include "cont_ad.h"
 #include "err.h"
 
-static FILE *infp;	/* File being segmented */
+static FILE *infp;              /* File being segmented */
 static int32 swap;
 
 /* Max size read by file_ad_read function on each invocation, for debugging */
@@ -120,32 +121,35 @@ static int32 max_ad_read_size;
  * This is it.  The ad_rec_t *r argument is ignored since there is no A/D
  * device involved.
  */
-static int32 file_ad_read (ad_rec_t *r, int16 *buf, int32 max)
+static int32
+file_ad_read(ad_rec_t * r, int16 * buf, int32 max)
 {
     int32 i, k;
-    
+
     if (max > max_ad_read_size)
-      max = max_ad_read_size;
-    
-    k = fread (buf, sizeof(int16), max, infp);
+        max = max_ad_read_size;
+
+    k = fread(buf, sizeof(int16), max, infp);
     if (swap) {
-	for (i = 0; i < k; i++) {
-	    buf[i] = ((buf[i] >> 8) & 0x00ff) | ((buf[i] << 8) & 0xff00);
-	}
+        for (i = 0; i < k; i++) {
+            buf[i] = ((buf[i] >> 8) & 0x00ff) | ((buf[i] << 8) & 0xff00);
+        }
     }
-    
+
     return ((k > 0) ? k : -1);
 }
 
 
-static void usagemsg (char *pgm)
+static void
+usagemsg(char *pgm)
 {
     E_INFO("Usage: %s \\\n", pgm);
     E_INFOCONT("\t[-? | -h] \\\n");
     E_INFOCONT("\t[-d | -debug] \\\n");
     E_INFOCONT("\t[-sps <sampling-rate> (16000)] \\\n");
     E_INFOCONT("\t[-b | -byteswap] \\\n");
-    E_INFOCONT("\t[{-s | -silsep} <length-silence-separator(sec) (0.5)]> \\\n");
+    E_INFOCONT
+        ("\t[{-s | -silsep} <length-silence-separator(sec) (0.5)]> \\\n");
     E_INFOCONT("\t[-w | -writeseg] \\\n");
     E_INFOCONT("\t[-min-noise <min-noise>] \\\n");
     E_INFOCONT("\t[-max-noise <max-noise>] \\\n");
@@ -168,7 +172,7 @@ static void usagemsg (char *pgm)
  * Utterances are written to files named 00000000.raw, 00000001.raw, 00000002.raw, etc.
  */
 int
-main (int32 argc, char **argv)
+main(int32 argc, char **argv)
 {
     cont_ad_t *cont;
     int32 uttid, uttlen, starttime, siltime, sps, debug, writeseg, rawmode;
@@ -190,7 +194,7 @@ main (int32 argc, char **argv)
     int32 total_speech_samples;
     float32 total_speech_sec;
     FILE *rawfp;
-    
+
     /* Set argument defaults */
     cont = NULL;
     sps = 16000;
@@ -207,133 +211,150 @@ main (int32 argc, char **argv)
     copyfile = NULL;
     rawfp = NULL;
     rawmode = 0;
-    
+
     /* Parse arguments */
     for (i = 1; i < argc; i++) {
-      if ((strcmp (argv[i], "-help") == 0)
-	  || (strcmp (argv[i], "-h") == 0)
-	  || (strcmp (argv[i], "-?") == 0)) {
-	usagemsg(argv[0]);
-      } else if ((strcmp (argv[i], "-debug") == 0)
-		 || (strcmp (argv[i], "-d") == 0)) {
-	debug = 1;
-      } else if (strcmp (argv[i], "-sps") == 0) {
-	i++;
-	if ((i == argc)
-	    || (sscanf (argv[i], "%d", &sps) != 1)
-	    || (sps <= 0)) {
-	  E_ERROR("Invalid -sps argument\n");
-	  usagemsg(argv[0]);
-	}
-      } else if ((strcmp (argv[i], "-byteswap") == 0)
-		 || (strcmp (argv[i], "-b") == 0)) {
-	swap = 1;
-      } else if ((strcmp (argv[i], "-silsep") == 0)
-		 || (strcmp (argv[i], "-s") == 0)) {
-	i++;
-	if ((i == argc)
-	    || (sscanf (argv[i], "%f", &endsil) != 1)
-	    || (endsil <= 0.0)) {
-	  E_ERROR("Invalid -silsep argument\n");
-	  usagemsg(argv[0]);
-	}
-      } else if ((strcmp (argv[i], "-writeseg") == 0)
-		 || (strcmp (argv[i], "-w") == 0)) {
-	writeseg = 1;
-      } else if (strcmp (argv[i], "-min-noise") == 0) {
-	i++;
-	if ((i == argc) ||
-	    (sscanf (argv[i], "%d", &min_noise) != 1) ||
-	    (min_noise < 0)) {
-	  E_ERROR("Invalid -min-noise argument\n");
-	  usagemsg(argv[0]);
-	}
-      } else if (strcmp (argv[i], "-max-noise") == 0) {
-	i++;
-	if ((i == argc) ||
-	    (sscanf (argv[i], "%d", &max_noise) != 1) ||
-	    (max_noise < 0)) {
-	  E_ERROR("Invalid -max-noise argument\n");
-	  usagemsg(argv[0]);
-	}
-      } else if (strcmp (argv[i], "-delta-sil") == 0) {
-	i++;
-	if ((i == argc) ||
-	    (sscanf (argv[i], "%d", &delta_sil) != 1) ||
-	    (delta_sil < 0)) {
-	  E_ERROR("Invalid -delta-sil argument\n");
-	  usagemsg(argv[0]);
-	}
-      } else if (strcmp (argv[i], "-delta-speech") == 0) {
-	i++;
-	if ((i == argc) ||
-	    (sscanf (argv[i], "%d", &delta_speech) != 1) ||
-	    (delta_speech < 0)) {
-	  E_ERROR("Invalid -delta-speech argument\n");
-	  usagemsg(argv[0]);
-	}
-      } else if (strcmp (argv[i], "-sil-onset") == 0) {
-	i++;
-	if ((i == argc) ||
-	    (sscanf (argv[i], "%d", &sil_onset) != 1) ||
-	    (sil_onset < 1)) {
-	  E_ERROR("Invalid -sil-onset argument\n");
-	  usagemsg(argv[0]);
-	}
-      } else if (strcmp (argv[i], "-speech-onset") == 0) {
-	i++;
-	if ((i == argc) ||
-	    (sscanf (argv[i], "%d", &speech_onset) != 1) ||
-	    (speech_onset < 1)) {
-	  E_ERROR("Invalid -speech-onset argument\n");
-	  usagemsg(argv[0]);
-	}
-      } else if (strcmp (argv[i], "-adapt-rate") == 0) {
-	i++;
-	if ((i == argc) ||
-	    (sscanf (argv[i], "%f", &adapt_rate) != 1) ||
-	    (adapt_rate < 0.0) || (adapt_rate > 1.0)) {
-	  E_ERROR("Invalid -adapt-rate argument\n");
-	  usagemsg(argv[0]);
-	}
-      } else if (strcmp (argv[i], "-max-adreadsize") == 0) {
-	i++;
-	if ((i == argc) ||
-	    (sscanf (argv[i], "%d", &max_ad_read_size) != 1) ||
-	    (max_ad_read_size < 1)) {
-	  E_ERROR("Invalid -max-adreadsize argument\n");
-	  usagemsg(argv[0]);
-	}
-      } else if (strcmp (argv[i], "-c") == 0) {
-	i++;
-	if (i == argc) {
-	  E_ERROR("Invalid -c argument\n");
-	  usagemsg(argv[0]);
-	}
-	copyfile = argv[i];
-      } else if ((strcmp (argv[i], "-rawmode") == 0)
-		 || (strcmp (argv[i], "-r") == 0)) {
-	rawmode = 1;
-      } else if (strcmp (argv[i], "-i") == 0) {
-	i++;
-	if (i == argc) {
-	  E_ERROR("Invalid -i argument\n");
-	  usagemsg(argv[0]);
-	}
-	infile = argv[i];
-      } else {
-	usagemsg(argv[0]);
-      }
+        if ((strcmp(argv[i], "-help") == 0)
+            || (strcmp(argv[i], "-h") == 0)
+            || (strcmp(argv[i], "-?") == 0)) {
+            usagemsg(argv[0]);
+        }
+        else if ((strcmp(argv[i], "-debug") == 0)
+                 || (strcmp(argv[i], "-d") == 0)) {
+            debug = 1;
+        }
+        else if (strcmp(argv[i], "-sps") == 0) {
+            i++;
+            if ((i == argc)
+                || (sscanf(argv[i], "%d", &sps) != 1)
+                || (sps <= 0)) {
+                E_ERROR("Invalid -sps argument\n");
+                usagemsg(argv[0]);
+            }
+        }
+        else if ((strcmp(argv[i], "-byteswap") == 0)
+                 || (strcmp(argv[i], "-b") == 0)) {
+            swap = 1;
+        }
+        else if ((strcmp(argv[i], "-silsep") == 0)
+                 || (strcmp(argv[i], "-s") == 0)) {
+            i++;
+            if ((i == argc)
+                || (sscanf(argv[i], "%f", &endsil) != 1)
+                || (endsil <= 0.0)) {
+                E_ERROR("Invalid -silsep argument\n");
+                usagemsg(argv[0]);
+            }
+        }
+        else if ((strcmp(argv[i], "-writeseg") == 0)
+                 || (strcmp(argv[i], "-w") == 0)) {
+            writeseg = 1;
+        }
+        else if (strcmp(argv[i], "-min-noise") == 0) {
+            i++;
+            if ((i == argc) ||
+                (sscanf(argv[i], "%d", &min_noise) != 1) ||
+                (min_noise < 0)) {
+                E_ERROR("Invalid -min-noise argument\n");
+                usagemsg(argv[0]);
+            }
+        }
+        else if (strcmp(argv[i], "-max-noise") == 0) {
+            i++;
+            if ((i == argc) ||
+                (sscanf(argv[i], "%d", &max_noise) != 1) ||
+                (max_noise < 0)) {
+                E_ERROR("Invalid -max-noise argument\n");
+                usagemsg(argv[0]);
+            }
+        }
+        else if (strcmp(argv[i], "-delta-sil") == 0) {
+            i++;
+            if ((i == argc) ||
+                (sscanf(argv[i], "%d", &delta_sil) != 1) ||
+                (delta_sil < 0)) {
+                E_ERROR("Invalid -delta-sil argument\n");
+                usagemsg(argv[0]);
+            }
+        }
+        else if (strcmp(argv[i], "-delta-speech") == 0) {
+            i++;
+            if ((i == argc) ||
+                (sscanf(argv[i], "%d", &delta_speech) != 1) ||
+                (delta_speech < 0)) {
+                E_ERROR("Invalid -delta-speech argument\n");
+                usagemsg(argv[0]);
+            }
+        }
+        else if (strcmp(argv[i], "-sil-onset") == 0) {
+            i++;
+            if ((i == argc) ||
+                (sscanf(argv[i], "%d", &sil_onset) != 1) ||
+                (sil_onset < 1)) {
+                E_ERROR("Invalid -sil-onset argument\n");
+                usagemsg(argv[0]);
+            }
+        }
+        else if (strcmp(argv[i], "-speech-onset") == 0) {
+            i++;
+            if ((i == argc) ||
+                (sscanf(argv[i], "%d", &speech_onset) != 1) ||
+                (speech_onset < 1)) {
+                E_ERROR("Invalid -speech-onset argument\n");
+                usagemsg(argv[0]);
+            }
+        }
+        else if (strcmp(argv[i], "-adapt-rate") == 0) {
+            i++;
+            if ((i == argc) ||
+                (sscanf(argv[i], "%f", &adapt_rate) != 1) ||
+                (adapt_rate < 0.0) || (adapt_rate > 1.0)) {
+                E_ERROR("Invalid -adapt-rate argument\n");
+                usagemsg(argv[0]);
+            }
+        }
+        else if (strcmp(argv[i], "-max-adreadsize") == 0) {
+            i++;
+            if ((i == argc) ||
+                (sscanf(argv[i], "%d", &max_ad_read_size) != 1) ||
+                (max_ad_read_size < 1)) {
+                E_ERROR("Invalid -max-adreadsize argument\n");
+                usagemsg(argv[0]);
+            }
+        }
+        else if (strcmp(argv[i], "-c") == 0) {
+            i++;
+            if (i == argc) {
+                E_ERROR("Invalid -c argument\n");
+                usagemsg(argv[0]);
+            }
+            copyfile = argv[i];
+        }
+        else if ((strcmp(argv[i], "-rawmode") == 0)
+                 || (strcmp(argv[i], "-r") == 0)) {
+            rawmode = 1;
+        }
+        else if (strcmp(argv[i], "-i") == 0) {
+            i++;
+            if (i == argc) {
+                E_ERROR("Invalid -i argument\n");
+                usagemsg(argv[0]);
+            }
+            infile = argv[i];
+        }
+        else {
+            usagemsg(argv[0]);
+        }
     }
-    
+
     if (infile == NULL) {
-      E_ERROR("No input file specified\n");
-      usagemsg(argv[0]);
+        E_ERROR("No input file specified\n");
+        usagemsg(argv[0]);
     }
-    
-    if ((infp = fopen (infile, "rb")) == NULL)
-	E_FATAL("fopen(%s,rb) failed\n", infile);
-    
+
+    if ((infp = fopen(infile, "rb")) == NULL)
+        E_FATAL("fopen(%s,rb) failed\n", infile);
+
     /*
      * Associate continuous listening module with opened input file and read function.
      * No A/D device is involved, but need to fill in ad->sps.
@@ -341,179 +362,181 @@ main (int32 argc, char **argv)
      */
     ad.sps = sps;
     ad.bps = sizeof(int16);
-    if (! rawmode)
-      cont = cont_ad_init (&ad, file_ad_read);
+    if (!rawmode)
+        cont = cont_ad_init(&ad, file_ad_read);
     else
-      cont = cont_ad_init_rawmode (&ad, file_ad_read);
-    
-    printf ("Calibrating ..."); fflush (stdout);
-    if (cont_ad_calib (cont) < 0)
-	printf (" failed; file too short?\n");
+        cont = cont_ad_init_rawmode(&ad, file_ad_read);
+
+    printf("Calibrating ...");
+    fflush(stdout);
+    if (cont_ad_calib(cont) < 0)
+        printf(" failed; file too short?\n");
     else
-	printf (" done\n");
-    rewind (infp);
-    
+        printf(" done\n");
+    rewind(infp);
+
     /* Convert desired min. inter-utterance silence duration to #samples */
     siltime = (int32) (endsil * sps);
-    
+
     /* Enable writing raw input to output by the cont module if specified */
     if (copyfile) {
-      if ((rawfp = fopen(copyfile, "wb")) == NULL)
-	E_ERROR("fopen(%s,wb) failed; not dumping raw file\n", copyfile);
-      else
-	cont_ad_set_rawfp (cont, rawfp);
+        if ((rawfp = fopen(copyfile, "wb")) == NULL)
+            E_ERROR("fopen(%s,wb) failed; not dumping raw file\n",
+                    copyfile);
+        else
+            cont_ad_set_rawfp(cont, rawfp);
     }
-    
+
     cont_ad_get_params(cont,
-		       &orig_delta_sil, &orig_delta_speech,
-		       &orig_min_noise, &orig_max_noise,
-		       &winsize,
-		       &orig_speech_onset, &orig_sil_onset,
-		       &leader, &trailer,
-		       &orig_adapt_rate);
-    
+                       &orig_delta_sil, &orig_delta_speech,
+                       &orig_min_noise, &orig_max_noise,
+                       &winsize,
+                       &orig_speech_onset, &orig_sil_onset,
+                       &leader, &trailer, &orig_adapt_rate);
+
     E_INFO("Default parameters:\n");
     E_INFOCONT("\tmin-noise = %d, max-noise = %d\n",
-	       orig_min_noise, orig_max_noise);
+               orig_min_noise, orig_max_noise);
     E_INFOCONT("\tdelta-sil = %d, delta-speech = %d\n",
-	       orig_delta_sil, orig_delta_speech);
+               orig_delta_sil, orig_delta_speech);
     E_INFOCONT("\tsil-onset = %d, speech-onset = %d\n",
-	       orig_sil_onset, orig_speech_onset);
+               orig_sil_onset, orig_speech_onset);
     E_INFOCONT("\tadapt_rate = %.3f\n", orig_adapt_rate);
-    
+
     if (min_noise < 0)
-      min_noise = orig_min_noise;
+        min_noise = orig_min_noise;
     if (max_noise < 0)
-      max_noise = orig_max_noise;
+        max_noise = orig_max_noise;
     if (delta_sil < 0)
-      delta_sil = orig_delta_sil;
+        delta_sil = orig_delta_sil;
     if (delta_speech < 0)
-      delta_speech = orig_delta_speech;
+        delta_speech = orig_delta_speech;
     if (sil_onset < 0)
-      sil_onset = orig_sil_onset;
+        sil_onset = orig_sil_onset;
     if (speech_onset < 0)
-      speech_onset = orig_speech_onset;
+        speech_onset = orig_speech_onset;
     if (adapt_rate < 0.0)
-      adapt_rate = orig_adapt_rate;
-    
+        adapt_rate = orig_adapt_rate;
+
     cont_ad_set_params(cont,
-		       delta_sil, delta_speech,
-		       min_noise, max_noise,
-		       winsize,
-		       speech_onset, sil_onset,
-		       leader, trailer,
-		       adapt_rate);
+                       delta_sil, delta_speech,
+                       min_noise, max_noise,
+                       winsize,
+                       speech_onset, sil_onset,
+                       leader, trailer, adapt_rate);
 
     E_INFO("Current parameters:\n");
     E_INFOCONT("\tmin-noise = %d, max-noise = %d\n", min_noise, max_noise);
-    E_INFOCONT("\tdelta-sil = %d, delta-speech = %d\n", delta_sil, delta_speech);
-    E_INFOCONT("\tsil-onset = %d, speech-onset = %d\n", sil_onset, speech_onset);
+    E_INFOCONT("\tdelta-sil = %d, delta-speech = %d\n", delta_sil,
+               delta_speech);
+    E_INFOCONT("\tsil-onset = %d, speech-onset = %d\n", sil_onset,
+               speech_onset);
     E_INFOCONT("\tadapt_rate = %.3f\n", adapt_rate);
-    
+
     E_INFO("Sampling rate: %d", sps);
     E_INFOCONT("; Byteswap: %s", swap ? "Yes" : "No");
     E_INFOCONT("; Max ad-read size: %d\n", max_ad_read_size);
-    
+
     if (debug)
-	cont_ad_set_logfp(cont, stdout);
-    
+        cont_ad_set_logfp(cont, stdout);
+
     total_speech_samples = 0;
     total_speech_sec = 0.0;
-    
+
     uttid = 0;
     uttlen = 0;
     starttime = 0;
     fp = NULL;
-    
+
     /* Process data */
     for (;;) {
         /* Get audio data from continuous listening module */
-        k = cont_ad_read (cont, buf, 4096);
-      
-        if (k < 0) {	/* End of input audio file; close any open output file and exit */
-	  if (fp != NULL) {
-	    fclose (fp);
-	    fp = NULL;
-	    
-	    printf ("Utt %08d, st= %8.2fs, et= %8.2fs, seg= %7.2fs (#samp= %10d)\n",
-		    uttid,
-		    (double)starttime/(double)sps,
-		    (double)(starttime+uttlen)/(double)sps,
-		    (double)uttlen/(double)sps,
-		    uttlen);
-	    fflush (stdout);
-	    
-	    total_speech_samples += uttlen;
-	    total_speech_sec += (double)uttlen/(double)sps;
-	    
-	    uttid++;
-	  }
-	  
-	  break;
-	}
-	
-	if (cont->state == CONT_AD_STATE_SIL) {	/* Silence data got */
-	  if (fp != NULL) {			/* Currently in an utterance */
-	    if (cont->seglen > siltime) {	/* Long enough silence detected; end the utterance */
-	      fclose (fp);
-	      fp = NULL;
-	      
-	      printf ("Utt %08d, st= %8.2fs, et= %8.2fs, seg= %7.2fs (#samp= %10d)\n",
-		      uttid,
-		      (double)starttime/(double)sps,
-		      (double)(starttime+uttlen)/(double)sps,
-		      (double)uttlen/(double)sps,
-		      uttlen);
-	      fflush (stdout);
-	      
-	      total_speech_samples += uttlen;
-	      total_speech_sec += (double)uttlen/(double)sps;
-	      
-	      uttid++;
-	    } else {
-	      /*
-	       * Short silence within utt; write it to output.  (Some extra trailing silence
-	       * is included in the utterance, as a result.  Not to worry about it.)
-	       */
-	      if (k > 0) {
-		fwrite (buf, sizeof(int16), k, fp);
-		uttlen += k;
-	      }
-	    }
-	  }
-	} else {
-	  assert (cont->state == CONT_AD_STATE_SPEECH);
-	  
-	  if (fp == NULL) {			/* Not in an utt; open a new output file */
-	    if (writeseg)
-	      sprintf (segfile, "%08d.raw", uttid);
-	    else
-	      strcpy (segfile, NULL_DEVICE);
-	    if ((fp = fopen(segfile, "wb")) == NULL)
-	      E_FATAL("fopen(%s,wb) failed\n", segfile);
-	    
-	    starttime = cont->read_ts - k;
-	    uttlen = 0;
-	  }
-	  
-	  /* Write data obtained to output file */
-	  if (k > 0) {
-	    fwrite (buf, sizeof(int16), k, fp);
-	    uttlen += k;
-	  }
-	}
+        k = cont_ad_read(cont, buf, 4096);
+
+        if (k < 0) {            /* End of input audio file; close any open output file and exit */
+            if (fp != NULL) {
+                fclose(fp);
+                fp = NULL;
+
+                printf
+                    ("Utt %08d, st= %8.2fs, et= %8.2fs, seg= %7.2fs (#samp= %10d)\n",
+                     uttid, (double) starttime / (double) sps,
+                     (double) (starttime + uttlen) / (double) sps,
+                     (double) uttlen / (double) sps, uttlen);
+                fflush(stdout);
+
+                total_speech_samples += uttlen;
+                total_speech_sec += (double) uttlen / (double) sps;
+
+                uttid++;
+            }
+
+            break;
+        }
+
+        if (cont->state == CONT_AD_STATE_SIL) { /* Silence data got */
+            if (fp != NULL) {   /* Currently in an utterance */
+                if (cont->seglen > siltime) {   /* Long enough silence detected; end the utterance */
+                    fclose(fp);
+                    fp = NULL;
+
+                    printf
+                        ("Utt %08d, st= %8.2fs, et= %8.2fs, seg= %7.2fs (#samp= %10d)\n",
+                         uttid, (double) starttime / (double) sps,
+                         (double) (starttime + uttlen) / (double) sps,
+                         (double) uttlen / (double) sps, uttlen);
+                    fflush(stdout);
+
+                    total_speech_samples += uttlen;
+                    total_speech_sec += (double) uttlen / (double) sps;
+
+                    uttid++;
+                }
+                else {
+                    /*
+                     * Short silence within utt; write it to output.  (Some extra trailing silence
+                     * is included in the utterance, as a result.  Not to worry about it.)
+                     */
+                    if (k > 0) {
+                        fwrite(buf, sizeof(int16), k, fp);
+                        uttlen += k;
+                    }
+                }
+            }
+        }
+        else {
+            assert(cont->state == CONT_AD_STATE_SPEECH);
+
+            if (fp == NULL) {   /* Not in an utt; open a new output file */
+                if (writeseg)
+                    sprintf(segfile, "%08d.raw", uttid);
+                else
+                    strcpy(segfile, NULL_DEVICE);
+                if ((fp = fopen(segfile, "wb")) == NULL)
+                    E_FATAL("fopen(%s,wb) failed\n", segfile);
+
+                starttime = cont->read_ts - k;
+                uttlen = 0;
+            }
+
+            /* Write data obtained to output file */
+            if (k > 0) {
+                fwrite(buf, sizeof(int16), k, fp);
+                uttlen += k;
+            }
+        }
     }
-    
+
     if (rawfp)
-      fclose(rawfp);
-    
+        fclose(rawfp);
+
     E_INFO("Total raw input speech = %d frames, %d samples, %.2f sec\n",
-	   cont->tot_frm, cont->tot_frm * cont->spf,
-	   (cont->tot_frm * cont->spf) / (float32) cont->sps);
+           cont->tot_frm, cont->tot_frm * cont->spf,
+           (cont->tot_frm * cont->spf) / (float32) cont->sps);
     E_INFO("Total speech detected = %d samples, %.2f sec\n",
-	   total_speech_samples, total_speech_sec);
-    
-    cont_ad_close (cont);
-    
+           total_speech_samples, total_speech_sec);
+
+    cont_ad_close(cont);
+
     return 0;
 }

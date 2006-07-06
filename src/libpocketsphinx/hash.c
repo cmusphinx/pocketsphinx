@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -93,8 +94,8 @@ int32 rehash_count = 0;
 int32 hash_rebuild = 0;
 int32 hash_rebuild_ent = 0;
 
-static int exception (char const *rname, char const *s, int exc);
-static int32 hash_in(hash_t *ht, char const *sym, caddr_t val);
+static int exception(char const *rname, char const *s, int exc);
+static int32 hash_in(hash_t * ht, char const *sym, caddr_t val);
 static int32 next_prime(int32 p);
 
 extern int mystrcasecmp(char const *, char const *);
@@ -108,54 +109,57 @@ extern int mystrcasecmp(char const *, char const *);
  * in a fatal error.
  */
 int32
-hash_add (hash_t *ht, char const *sym, caddr_t val)
+hash_add(hash_t * ht, char const *sym, caddr_t val)
 {
     static char const *rname = "hash_add";
 
     if ((ht == 0) || (sym == 0))
-	return exception (rname, "sym", ERR_ARG);
+        return exception(rname, "sym", ERR_ARG);
 
 #ifdef DEBUG
-    printf ("%s: %x %s %d\n", rname, ht, sym, val);
-    printf ("%s: inuse %d, size %d\n", rname, ht->inuse, ht->size);
+    printf("%s: %x %s %d\n", rname, ht, sym, val);
+    printf("%s: inuse %d, size %d\n", rname, ht->inuse, ht->size);
 #endif
-    
+
     /*
      * Make sure the Hash table isn't too full
      */
     if ((2 * ht->inuse) >= ht->size) {
-	int32 i;
-	int32 old_size = ht->size;
-	hent_t *tab, *old_tab = ht->tab;
+        int32 i;
+        int32 old_size = ht->size;
+        hent_t *tab, *old_tab = ht->tab;
 
-	if ((ht->inuse == 0) && (ht->size_hint > 0))
-	    ht->size = next_prime ((ht->size_hint * 2) + ht->size_hint + 2);
-	else
-	    ht->size = next_prime ((ht->inuse * 2) + ht->inuse + 2);
+        if ((ht->inuse == 0) && (ht->size_hint > 0))
+            ht->size = next_prime((ht->size_hint * 2) + ht->size_hint + 2);
+        else
+            ht->size = next_prime((ht->inuse * 2) + ht->inuse + 2);
 
         ht->inuse = 0;
-	ht->tab = (hent_t *) calloc ((size_t)ht->size, sizeof (hent_t));
-	
-	if (ht->tab == 0)
-	    return exception (rname, sym, ERR_MALLOC);
-	/*
-	 * Create new hash table from the old one.
-	 */
-	for (tab = old_tab, i = 0; i < old_size; i++, tab++) {
-	    if (tab->obj)
-		hash_in (ht, tab->obj, tab->val);
-	}
-	/*
-	 * Delete old hash table
-	 */
-	free (old_tab);
- 	hash_rebuild++; hash_rebuild_ent += ht->inuse;
+        ht->tab = (hent_t *) calloc((size_t) ht->size, sizeof(hent_t));
+
+        if (ht->tab == 0)
+            return exception(rname, sym, ERR_MALLOC);
+        /*
+         * Create new hash table from the old one.
+         */
+        for (tab = old_tab, i = 0; i < old_size; i++, tab++) {
+            if (tab->obj)
+                hash_in(ht, tab->obj, tab->val);
+        }
+        /*
+         * Delete old hash table
+         */
+        free(old_tab);
+        hash_rebuild++;
+        hash_rebuild_ent += ht->inuse;
     }
     /*
      * Hash 'sym' into ht
      */
-    if (hash_in (ht, sym, val)) {
-	E_FATAL ("\n%s: Error: [%s] hash conflict\nThere are two entries in the dictionary for [%s]\nPlease change or remove one of them and re-run.\n\n", rname, sym, sym);
+    if (hash_in(ht, sym, val)) {
+        E_FATAL
+            ("\n%s: Error: [%s] hash conflict\nThere are two entries in the dictionary for [%s]\nPlease change or remove one of them and re-run.\n\n",
+             rname, sym, sym);
     }
     return (0);
 }
@@ -168,14 +172,14 @@ hash_add (hash_t *ht, char const *sym, caddr_t val)
  *	This routine doesn't free the objects.
  */
 int
-hash_free (hash_t *ht)
+hash_free(hash_t * ht)
 {
     static char const *rname = "hash_free";
 
     if (ht == 0)
-	exception (rname, "", ERR_ARG);
+        exception(rname, "", ERR_ARG);
 
-    free (ht->tab);
+    free(ht->tab);
     ht->tab = 0;
     ht->size = 0;
     ht->inuse = 0;
@@ -194,16 +198,16 @@ hash_free (hash_t *ht)
  * NOTE: CASE-INSENSITIVE!!
  */
 int32
-hash_lookup (hash_t *ht, char const *sym, caddr_t *val)
+hash_lookup(hash_t * ht, char const *sym, caddr_t * val)
 {
     static char const *rname = "hash_lookup";
     register char const *cp;
     register unsigned char c;
-    register uint32    key;
-    register int32    i;
+    register uint32 key;
+    register int32 i;
 
     if ((ht == 0) || (sym == 0) || (val == 0))
-	return (exception (rname, sym, ERR_ARG));
+        return (exception(rname, sym, ERR_ARG));
 
     key = 0;
     i = -1;
@@ -217,32 +221,32 @@ hash_lookup (hash_t *ht, char const *sym, caddr_t *val)
     } while (*cp);
 */
     do {
-      c = tolower(*cp++);
-      c -='a' & 0x0F;
-      key = (key<<3) ^ c;
-    } while(*cp);
+        c = tolower(*cp++);
+        c -= 'a' & 0x0F;
+        key = (key << 3) ^ c;
+    } while (*cp);
 
     hash_count++;
-rehash:
+  rehash:
     if (ht->size == 0) {
-	/*
-	 * The hash table hasn't been built yet so this entry isn't in there
-	 */
-	if (val)
-	  *val = (caddr_t) key;
-	return (-1);
+        /*
+         * The hash table hasn't been built yet so this entry isn't in there
+         */
+        if (val)
+            *val = (caddr_t) key;
+        return (-1);
     }
 
     key %= ht->size;
 
     if (ht->tab[key].obj == 0) {
-	*val = (caddr_t) key;
-	return (-1);
+        *val = (caddr_t) key;
+        return (-1);
     }
 
     if (mystrcasecmp(ht->tab[key].obj, sym) == 0) {
-	*val = ht->tab[key].val;
-	return (0);
+        *val = ht->tab[key].val;
+        return (0);
     }
     key++;
     rehash_count++;
@@ -258,24 +262,23 @@ rehash:
  * wise return 0.
  */
 static int32
-hash_in (hash_t *ht, char const *sym, caddr_t val)
+hash_in(hash_t * ht, char const *sym, caddr_t val)
 {
     static char const *rname = "hash_in";
     caddr_t key;
 
     if ((ht == 0) || (sym == 0))
-	return (exception (rname, sym, ERR_ARG));
-    
+        return (exception(rname, sym, ERR_ARG));
+
     if (hash_lookup(ht, sym, &key)) {
         /* if lookup fails to find sym, key contains the hashed locn */
-	ht->tab[(int32)key].obj = sym;
-	ht->tab[(int32)key].val = val;
-	ht->inuse++;
+        ht->tab[(int32) key].obj = sym;
+        ht->tab[(int32) key].val = val;
+        ht->inuse++;
     }
-    else
-    {
-      if (key != val)
-	return (-1);
+    else {
+        if (key != val)
+            return (-1);
     }
     return (0);
 }
@@ -284,56 +287,56 @@ hash_in (hash_t *ht, char const *sym, caddr_t val)
  *------------------------------------------------------------*
  */
 static int
-exception (char const *rname, char const *s, int exc)
+exception(char const *rname, char const *s, int exc)
 {
     switch (exc) {
-	case ERR_ARG:
-	    fprintf (stderr, "%s: Bad Argument [%s]\n", rname, s);
-	    exit (-1);
-	    break;
-	case ERR_MALLOC:
-	    fprintf (stderr, "%s: Malloc failed [%s]\n", rname, s);
-	    exit (-1);
-	    break;
-	default:
-	    fprintf (stderr, "%s: [%s] Unknown Exception[%d]\n", rname, s,
-		     exc);
+    case ERR_ARG:
+        fprintf(stderr, "%s: Bad Argument [%s]\n", rname, s);
+        exit(-1);
+        break;
+    case ERR_MALLOC:
+        fprintf(stderr, "%s: Malloc failed [%s]\n", rname, s);
+        exit(-1);
+        break;
+    default:
+        fprintf(stderr, "%s: [%s] Unknown Exception[%d]\n", rname, s, exc);
     }
     return -1;
 }
 
 static int32
-next_prime (int32 p)
+next_prime(int32 p)
 {
-        register int32 k;
+    register int32 k;
 
-again:
-        for (k = 2; k <= p/2; k++)
-	    if ((p / k)*k == p)
-	        break;
-	if (k <= p/2) {
-	    p++;
-	    goto again;
-	}
-	return p;
+  again:
+    for (k = 2; k <= p / 2; k++)
+        if ((p / k) * k == p)
+            break;
+    if (k <= p / 2) {
+        p++;
+        goto again;
+    }
+    return p;
 }
 
-list_t *hash_to_list (hash_t *ht)
+list_t *
+hash_to_list(hash_t * ht)
 /*------------------------------------------------------------*
  * convert the hash table 'ht' to a list_t and return it.
  */
 {
     int32 i;
-    list_t* list;
+    list_t *list;
 
     list = new_list();
-    list->size_hint = ht->size+1;
-    
+    list->size_hint = ht->size + 1;
+
     for (i = 0; i < ht->size; i++) {
-	if (ht->tab[i].obj) {
-	    list_insert (list, ht->tab[i].val);
-	}
+        if (ht->tab[i].obj) {
+            list_insert(list, ht->tab[i].val);
+        }
     }
-    assert (list->in_use == ht->inuse);
+    assert(list->in_use == ht->inuse);
     return (list);
 }

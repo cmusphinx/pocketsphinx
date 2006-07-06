@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -74,22 +75,26 @@
 static char _argbreak;
 
 char *
-nxtarg (char **q, char const *brk)
+nxtarg(char **q, char const *brk)
 {
-	register char *front;
-	register char *back;
-	front = *q;			/* start of string */
-	/* leading blanks and tabs */
-	while (*front && (*front == ' ' || *front == '\t')) front++;
-	/* find break character at end */
-	if (brk == NULL)  brk = " ";
-	back = skipto (front,brk);
-	_argbreak = *back;
-	*q = (*back ? back+1 : back);	/* next arg start loc */
-	/* elim trailing blanks and tabs */
-	back -= 1;
-	while ((back >= front) && (*back == ' ' || *back == '\t')) back--;
-	back++;
-	if (*back)  *back = '\0';
-	return (front);
+    register char *front;
+    register char *back;
+    front = *q;                 /* start of string */
+    /* leading blanks and tabs */
+    while (*front && (*front == ' ' || *front == '\t'))
+        front++;
+    /* find break character at end */
+    if (brk == NULL)
+        brk = " ";
+    back = skipto(front, brk);
+    _argbreak = *back;
+    *q = (*back ? back + 1 : back);     /* next arg start loc */
+    /* elim trailing blanks and tabs */
+    back -= 1;
+    while ((back >= front) && (*back == ' ' || *back == '\t'))
+        back--;
+    back++;
+    if (*back)
+        *back = '\0';
+    return (front);
 }

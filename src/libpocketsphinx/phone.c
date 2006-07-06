@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -79,7 +80,8 @@
 #include "kb.h"
 
 
-static int32 parse_triphone(const char *instr, char *ciph, char *lc, char *rc, char *pc)
+static int32
+parse_triphone(const char *instr, char *ciph, char *lc, char *rc, char *pc)
 /*------------------------------------------------------------*
  * The ANSI standard scanf can't deal with empty field matches
  * so we have this routine.
@@ -98,7 +100,7 @@ static int32 parse_triphone(const char *instr, char *ciph, char *lc, char *rc, c
         *cp = *lp;
     *cp = '\0';
     if (*lp == '\0') {
-	return 1;
+        return 1;
     }
 
     /* parse leftcontext */
@@ -106,7 +108,7 @@ static int32 parse_triphone(const char *instr, char *ciph, char *lc, char *rc, c
         *cp = *lp;
     *cp = '\0';
     if (*lp == '\0') {
-	return 2;
+        return 2;
     }
 
     /* parse rightcontext */
@@ -114,19 +116,20 @@ static int32 parse_triphone(const char *instr, char *ciph, char *lc, char *rc, c
         *cp = *lp;
     *cp = '\0';
     if (*lp == '\0') {
-	return 3;
+        return 3;
     }
 
     /* parse positioncontext */
     for (lp++, cp = pc; (*lp != '\0'); lp++, cp++)
         *cp = *lp;
     *cp = '\0';
-    return 4;    
+    return 4;
 }
 
-int32 phone_map (int32 pid)
+int32
+phone_map(int32 pid)
 {
-	return pid;
+    return pid;
 }
 
 int32
@@ -139,10 +142,10 @@ phone_to_id(char const *phone_str, int verbose)
     bin_mdef_t *mdef = kb_mdef();
 
     /* Play it safe - subparts must be shorter than phone_str */
-    len = strlen(phone_str+1);
+    len = strlen(phone_str + 1);
     /* Do one malloc to avoid fragmentation on WinCE (and yet, this
      * may still be too many). */
-    ci = CM_calloc(len*4+1,1);
+    ci = CM_calloc(len * 4 + 1, 1);
     lc = ci + len;
     rc = lc + len;
     pc = rc + len;
@@ -150,38 +153,38 @@ phone_to_id(char const *phone_str, int verbose)
     len = parse_triphone(phone_str, ci, lc, rc, pc);
     cipid = bin_mdef_ciphone_id(mdef, ci);
     if (cipid == BAD_S3PID) {
-	free(ci);
-	return NO_PHONE;
+        free(ci);
+        return NO_PHONE;
     }
     if (len > 1) {
-	lcpid = bin_mdef_ciphone_id(mdef, lc);
-	rcpid = bin_mdef_ciphone_id(mdef, rc);
-	if (lcpid == BAD_S3PID || rcpid == BAD_S3PID) {
-	    free(ci);
-	    return NO_PHONE;
-	}
-	if (len == 4) {
-	    switch (*pc) {
-	    case 'b':
-		wpos = WORD_POSN_BEGIN;
-		break;
-	    case 'e':
-		wpos = WORD_POSN_END;
-		break;
-	    case 's':
-		wpos = WORD_POSN_SINGLE;
-		break;
-	    default:
-		wpos = WORD_POSN_INTERNAL;
-	    }
-	}
-	else {
-		wpos = WORD_POSN_INTERNAL;
-	}
-	pid = bin_mdef_phone_id(mdef, cipid, lcpid, rcpid, wpos);
+        lcpid = bin_mdef_ciphone_id(mdef, lc);
+        rcpid = bin_mdef_ciphone_id(mdef, rc);
+        if (lcpid == BAD_S3PID || rcpid == BAD_S3PID) {
+            free(ci);
+            return NO_PHONE;
+        }
+        if (len == 4) {
+            switch (*pc) {
+            case 'b':
+                wpos = WORD_POSN_BEGIN;
+                break;
+            case 'e':
+                wpos = WORD_POSN_END;
+                break;
+            case 's':
+                wpos = WORD_POSN_SINGLE;
+                break;
+            default:
+                wpos = WORD_POSN_INTERNAL;
+            }
+        }
+        else {
+            wpos = WORD_POSN_INTERNAL;
+        }
+        pid = bin_mdef_phone_id(mdef, cipid, lcpid, rcpid, wpos);
     }
     else
-	pid = cipid;
+        pid = cipid;
 
     free(ci);
     return pid;
@@ -208,9 +211,9 @@ phone_type(int32 phone_id)
 {
     bin_mdef_t *mdef = kb_mdef();
     if (bin_mdef_is_ciphone(mdef, phone_id))
-	return PT_CIPHONE;
+        return PT_CIPHONE;
     else
-	return PT_CDPHONE; /* No other kind of phone supported in S3. */
+        return PT_CDPHONE;      /* No other kind of phone supported in S3. */
 }
 
 int32

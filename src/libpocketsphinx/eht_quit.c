@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -101,13 +102,13 @@
 #include <stdarg.h>
 
 void
-quit (int status, char const *fmt, ...)
+quit(int status, char const *fmt, ...)
 {
-	va_list args;
+    va_list args;
 
-	fflush(stdout);
-	va_start(args, fmt);
-	(void) vfprintf(stderr, fmt, args);
-	va_end(args);
-	exit(status);
+    fflush(stdout);
+    va_start(args, fmt);
+    (void) vfprintf(stderr, fmt, args);
+    va_end(args);
+    exit(status);
 }

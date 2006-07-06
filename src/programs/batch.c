@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -47,11 +48,11 @@
 #include "fbs.h"
 
 int
-main (int32 argc, char *argv[])
+main(int32 argc, char *argv[])
 {
-    fbs_init (argc, argv);
+    fbs_init(argc, argv);
     /* That is it; fbs_init takes care of batch-mode processing */
 
-    fbs_end ();
+    fbs_end();
     return 0;
 }

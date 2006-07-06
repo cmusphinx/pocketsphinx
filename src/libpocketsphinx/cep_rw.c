@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -110,98 +111,104 @@
 #define ESUCCESS 0
 #endif
 
-int32 cep_read_bin (float32 **buf, int32 *len, char const *file)
+int32
+cep_read_bin(float32 ** buf, int32 * len, char const *file)
 {
-  int32 fd, floatCount, floatBytes, readBytes;
-  int32 byteReverse = FALSE;
-  int32 i, cnt;
-  struct stat st_buf;
+    int32 fd, floatCount, floatBytes, readBytes;
+    int32 byteReverse = FALSE;
+    int32 i, cnt;
+    struct stat st_buf;
 
 #ifdef WIN32
-  fd = open(file, O_RDONLY|O_BINARY, 0644);
+    fd = open(file, O_RDONLY | O_BINARY, 0644);
 #else
-  fd = open(file, O_RDONLY, 0644);
+    fd = open(file, O_RDONLY, 0644);
 #endif
 
-  if (fd < 0) {
-    E_ERROR("Couldn't open %s\n", file);
-    return errno;
-  }
+    if (fd < 0) {
+        E_ERROR("Couldn't open %s\n", file);
+        return errno;
+    }
 
-  /* assume float count file */
-  if (read(fd, (char *)&floatCount, sizeof(int32)) != sizeof(int32))
-    return errno;
+    /* assume float count file */
+    if (read(fd, (char *) &floatCount, sizeof(int32)) != sizeof(int32))
+        return errno;
 
-  if (fstat (fd, &st_buf) < 0) {
-    perror("cep_read_bin: fstat failed");
-    return errno;
-  }
+    if (fstat(fd, &st_buf) < 0) {
+        perror("cep_read_bin: fstat failed");
+        return errno;
+    }
 
-  /*  printf("Float count: %d st_buf.st_size: %d \n", floatCount, st_buf.st_size); */
+    /*  printf("Float count: %d st_buf.st_size: %d \n", floatCount, st_buf.st_size); */
 
-  /*
-   * Check if this is a byte reversed file !
-   */
-  if ((floatCount+4 != st_buf.st_size) &&
-      ((floatCount * sizeof(float32) + 4) != st_buf.st_size)) {
-	E_INFO("Byte reversing %s\n", file);
-	byteReverse = TRUE;
-	SWAP_INT32(&floatCount);
-  }
+    /*
+     * Check if this is a byte reversed file !
+     */
+    if ((floatCount + 4 != st_buf.st_size) &&
+        ((floatCount * sizeof(float32) + 4) != st_buf.st_size)) {
+        E_INFO("Byte reversing %s\n", file);
+        byteReverse = TRUE;
+        SWAP_INT32(&floatCount);
+    }
 
-  if (floatCount + 4 == st_buf.st_size) {
-	floatBytes = floatCount;
-	floatCount /= sizeof (float32);
-  }
-  else if (floatCount * sizeof(float32) + 4 == st_buf.st_size)
-	floatBytes = floatCount * sizeof(float32);
-  else {
-      E_ERROR("Header count %d does not match file size %d\n",
-	      floatCount, st_buf.st_size);
-      return -1;
-  }
+    if (floatCount + 4 == st_buf.st_size) {
+        floatBytes = floatCount;
+        floatCount /= sizeof(float32);
+    }
+    else if (floatCount * sizeof(float32) + 4 == st_buf.st_size)
+        floatBytes = floatCount * sizeof(float32);
+    else {
+        E_ERROR("Header count %d does not match file size %d\n",
+                floatCount, st_buf.st_size);
+        return -1;
+    }
 
-  /* malloc size to account for possibility of being a float count file */
-  if ((*buf = (float32 *)malloc(floatBytes)) == NULL)
-    return errno;
-  readBytes = read(fd, (char *)*buf, floatBytes);
+    /* malloc size to account for possibility of being a float count file */
+    if ((*buf = (float32 *) malloc(floatBytes)) == NULL)
+        return errno;
+    readBytes = read(fd, (char *) *buf, floatBytes);
 
-  if (readBytes != floatBytes) {
-    /* float count is actually a byte count of the file */
-    return errno;
-  }
-  *len = readBytes;
-  /*
-   * Reorder the bytes if needed
-   */
-  cnt = readBytes >> 2;
-  if (byteReverse) {
-	uint32 *ptr = (uint32 *) *buf;
-	for (i = 0; i < cnt; i++)
-	    SWAP_INT32(&ptr[i]);
-  }
-  if (close(fd) != ESUCCESS) return errno;
-  return ESUCCESS;
-}  
+    if (readBytes != floatBytes) {
+        /* float count is actually a byte count of the file */
+        return errno;
+    }
+    *len = readBytes;
+    /*
+     * Reorder the bytes if needed
+     */
+    cnt = readBytes >> 2;
+    if (byteReverse) {
+        uint32 *ptr = (uint32 *) * buf;
+        for (i = 0; i < cnt; i++)
+            SWAP_INT32(&ptr[i]);
+    }
+    if (close(fd) != ESUCCESS)
+        return errno;
+    return ESUCCESS;
+}
 
-int32 cep_write_bin(char const *file, float32 *buf, int32 len)
+int32
+cep_write_bin(char const *file, float32 * buf, int32 len)
 {
-  int32 fd;
+    int32 fd;
 
 #ifdef WIN32
- fd = open(file, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0644);
+    fd = open(file, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644);
 #else
-  fd = open(file, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+    fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 #endif
 
-  if (fd < 0) {
-    E_ERROR("Couldn't open %s for writing\n", file);
-    return errno;
-  }
-  len *= sizeof(float32);
-  if (write(fd, (char *)&len, sizeof(int32)) != sizeof(int32)) return -1;
-  if (write(fd, (char *)buf, len) != len) return -1;
-  if (close(fd) != ESUCCESS) return -1;
+    if (fd < 0) {
+        E_ERROR("Couldn't open %s for writing\n", file);
+        return errno;
+    }
+    len *= sizeof(float32);
+    if (write(fd, (char *) &len, sizeof(int32)) != sizeof(int32))
+        return -1;
+    if (write(fd, (char *) buf, len) != len)
+        return -1;
+    if (close(fd) != ESUCCESS)
+        return -1;
 
-  return ESUCCESS;
-}  
+    return ESUCCESS;
+}

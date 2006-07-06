@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -77,105 +78,113 @@
 
 static cache_lm_t *clm = NULL;
 
-int32 lm_tg_score (int32 w1, int32 w2, int32 w3)
+int32
+lm_tg_score(int32 w1, int32 w2, int32 w3)
 {
     int32 cscr, tscr, remwt;
     lm_t *lm3g;
-    
-    if (! clm)
-	return (lm3g_tg_score (w1, w2, w3));
-    
-    lm3g = lm_get_current ();
+
+    if (!clm)
+        return (lm3g_tg_score(w1, w2, w3));
+
+    lm3g = lm_get_current();
 
     /* Get cache LM score and apply language weight */
-    cscr = cache_lm_score (clm, w2, w3, &remwt);
+    cscr = cache_lm_score(clm, w2, w3, &remwt);
     cscr = LWMUL(cscr, lm3g->lw);
 
     /* Get static trigram LM score, apply remaining weight */
-    tscr = lm3g_tg_score (w1, w2, w3);
+    tscr = lm3g_tg_score(w1, w2, w3);
     tscr += LWMUL(remwt, lm3g->lw);
-    
+
     /* Return MAX of static trigram LM and dynamic cache LM scores (approx to sum) */
     return (cscr > tscr) ? cscr : tscr;
 }
 
-int32 lm_bg_score (int32 w1, int32 w2)
+int32
+lm_bg_score(int32 w1, int32 w2)
 {
     int32 cscr, tscr, remwt;
     lm_t *lm3g;
-    
-    if (! clm)
-	return (lm3g_bg_score (w1, w2));
-    
-    lm3g = lm_get_current ();
+
+    if (!clm)
+        return (lm3g_bg_score(w1, w2));
+
+    lm3g = lm_get_current();
 
     /* Get cache LM score and apply language weight */
-    cscr = cache_lm_score (clm, w1, w2, &remwt);
+    cscr = cache_lm_score(clm, w1, w2, &remwt);
     cscr = LWMUL(cscr, lm3g->lw);
 
     /* Get static trigram LM score, apply remaining weight */
-    tscr = lm3g_bg_score (w1, w2);
+    tscr = lm3g_bg_score(w1, w2);
     tscr += LWMUL(remwt, lm3g->lw);
-    
+
     /* Return MAX of static trigram LM and dynamic cache LM scores (approx to sum) */
     return (cscr > tscr) ? cscr : tscr;
 }
 
-int32 lm_ug_score (int32 w)
+int32
+lm_ug_score(int32 w)
 {
-    return (lm3g_ug_score (w));
+    return (lm3g_ug_score(w));
 }
 
-void lm_cache_lm_init ( void )
+void
+lm_cache_lm_init(void)
 {
     if (clm)
-	return;
-    
+        return;
+
     /* Hack!!  Hardwired parameters to cache_lm_init */
-    clm = cache_lm_init (0.0001, 0.001, 0.04, 100, 0.07);
+    clm = cache_lm_init(0.0001, 0.001, 0.04, 100, 0.07);
 }
 
-void lm_cache_lm_add_ug (int32 w)
+void
+lm_cache_lm_add_ug(int32 w)
 {
     int32 ugscr;
     lm_t *lm3g;
 
-    if (! clm)
-	return;
+    if (!clm)
+        return;
 
-    lm3g = lm_get_current ();
+    lm3g = lm_get_current();
     ugscr = lm3g_ug_score(w);
     ugscr = LWMUL(ugscr, lm3g->invlw);
     if (ugscr >= clm->ugprob_thresh)
-	return;
+        return;
 #if 0
     E_INFO("Adding unigram %s (scr %d, thresh %d) to cache LM\n",
-	   kb_get_word_str(w), ugscr, clm->ugprob_thresh);
+           kb_get_word_str(w), ugscr, clm->ugprob_thresh);
 #endif
-    cache_lm_add_ug (clm, w);
+    cache_lm_add_ug(clm, w);
 }
 
-void lm_cache_lm_add_bg (int32 w1, int32 w2)
+void
+lm_cache_lm_add_bg(int32 w1, int32 w2)
 {
-    if (! clm)
-	return;
+    if (!clm)
+        return;
 #if 0
     E_INFO("Adding bigram %s,%s to cache LM\n",
-	   kb_get_word_str (w1), kb_get_word_str (w2));
+           kb_get_word_str(w1), kb_get_word_str(w2));
 #endif
-    cache_lm_add_bg (clm, w1, w2);
+    cache_lm_add_bg(clm, w1, w2);
 }
 
-void lm_cache_lm_dump (char *file)
+void
+lm_cache_lm_dump(char *file)
 {
-    if (! clm)
-	return;
-    cache_lm_dump (clm, file);
+    if (!clm)
+        return;
+    cache_lm_dump(clm, file);
 }
 
-void lm_cache_lm_load (char *file)
+void
+lm_cache_lm_load(char *file)
 {
-    if (! clm)
-	return;
-    cache_lm_load (clm, file);
+    if (!clm)
+        return;
+    cache_lm_load(clm, file);
 }

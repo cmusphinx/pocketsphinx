@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -74,26 +75,26 @@
 #endif
 
 void
-norm_mean(mfcc_t *vec,		/* the data */
-	  int32	nvec,		/* number of vectors (frames) */
-	  int32	veclen)		/* number of elements (coefficients) per vector */
-{
-    static mfcc_t     *mean = 0;
-    mfcc_t              *data;
-    int32               i, f;
+norm_mean(mfcc_t * vec,         /* the data */
+          int32 nvec,           /* number of vectors (frames) */
+          int32 veclen)
+{                               /* number of elements (coefficients) per vector */
+    static mfcc_t *mean = 0;
+    mfcc_t *data;
+    int32 i, f;
 
     if (mean == 0)
-	mean = (mfcc_t *) calloc (veclen, sizeof (mfcc_t));
+        mean = (mfcc_t *) calloc(veclen, sizeof(mfcc_t));
 
     for (i = 0; i < veclen; i++)
-	mean[i] = 0;
+        mean[i] = 0;
 
     /*
      * Compute the sum
      */
     for (data = vec, f = 0; f < nvec; f++, data += veclen) {
-	for (i = 0; i < veclen; i++)
-	    mean[i] += data[i];
+        for (i = 0; i < veclen; i++)
+            mean[i] += data[i];
     }
 
     /*
@@ -101,16 +102,16 @@ norm_mean(mfcc_t *vec,		/* the data */
      */
     dprintf(("Mean Vector\n"));
     for (i = 0; i < veclen; i++) {
-	mean[i] /= nvec;
-	dprintf(("[%d]%.3f, ", i, MFCC2FLOAT(mean[i])));
+        mean[i] /= nvec;
+        dprintf(("[%d]%.3f, ", i, MFCC2FLOAT(mean[i])));
     }
     dprintf(("\n"));
-    
+
     /*
      * Normalize the data
      */
     for (data = vec, f = 0; f < nvec; f++, data += veclen) {
-	for (i = 0; i < veclen; i++)
-	    data[i] -= mean[i];
+        for (i = 0; i < veclen; i++)
+            data[i] -= mean[i];
     }
 }

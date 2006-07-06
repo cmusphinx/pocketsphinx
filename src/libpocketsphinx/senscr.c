@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
  * reserved.
@@ -89,75 +90,78 @@
  * 
  * Return value: the best senone score this frame.
  */
-static int32 best_senscr_all (int32 *senscr)
+static int32
+best_senscr_all(int32 * senscr)
 {
-  int32 b, i, j, k;
-  int32 n_ci;		/* #CI phones */
-  int32 *n_psen;	/* #Senones (CI+CD) for each CIphone */
-  int32 *bestpscr;	/* Best senone score (CI or CD) for each CIphone */
-  
-  n_ci = phoneCiCount();
-  n_psen = hmm_get_psen();
-  bestpscr = search_get_bestpscr();
-  
-  b = (int32) 0x80000000;
-  
-  for (i = 0; i < n_ci; i++) {
-    k = (int32) 0x80000000;
-    
-    /* Senones (CI+CD) for CIphone i are in one contiguous block */
-    for (j = n_psen[i]; j > 0; --j, senscr++)
-      if (k < *senscr)
-	k = *senscr;
-    
-    bestpscr[i] = k;
-    
-    if (b < k)
-      b = k;
-  }
-  
-  return b;
+    int32 b, i, j, k;
+    int32 n_ci;                 /* #CI phones */
+    int32 *n_psen;              /* #Senones (CI+CD) for each CIphone */
+    int32 *bestpscr;            /* Best senone score (CI or CD) for each CIphone */
+
+    n_ci = phoneCiCount();
+    n_psen = hmm_get_psen();
+    bestpscr = search_get_bestpscr();
+
+    b = (int32) 0x80000000;
+
+    for (i = 0; i < n_ci; i++) {
+        k = (int32) 0x80000000;
+
+        /* Senones (CI+CD) for CIphone i are in one contiguous block */
+        for (j = n_psen[i]; j > 0; --j, senscr++)
+            if (k < *senscr)
+                k = *senscr;
+
+        bestpscr[i] = k;
+
+        if (b < k)
+            b = k;
+    }
+
+    return b;
 }
 
 /* Like best_senscr_all, but using Sphinx3 model ordering. */
-static int32 best_senscr_all_s3 (int32 *senscr)
+static int32
+best_senscr_all_s3(int32 * senscr)
 {
-  int32 b, i, j, ci;
-  int32 *bestpscr;
-  bin_mdef_t *mdef;
-  
-  bestpscr = search_get_bestpscr();
-  mdef = kb_mdef();
-  
-  b = (int32) 0x80000000;
+    int32 b, i, j, ci;
+    int32 *bestpscr;
+    bin_mdef_t *mdef;
 
-  /* Initialize bestpscr with CI phones */
-  for (i = 0; i < bin_mdef_n_ciphone(mdef); ++i) {
-    bestpscr[i] = (int32) 0x80000000;
-    for (j = 0; j < bin_mdef_n_emit_state_phone(mdef, i); ++j, ++senscr) {
-      /* This assumes that CI phones have contiguous senones at the
-	 beginning of the mdef, which is *almost* certainly true. */
-      if (bestpscr[i] < *senscr)
-	bestpscr[i] = *senscr;
-      if (b < bestpscr[i])
-	b = bestpscr[i];
-    }
-  }
+    bestpscr = search_get_bestpscr();
+    mdef = kb_mdef();
 
-  /* Now do the rest of the senones */
-  for (i = mdef->n_ci_sen; i < mdef->n_sen; ++i, ++senscr) {
-    /* NOTE: This assumes that each CD senone corresponds to at most
-       one CI phone.  This is not always true, but we hope that taking
-       the first one will work okay. */
-    ci = mdef->sen2cimap[i];
-    if (bestpscr[ci] < *senscr) {
-      bestpscr[ci] = *senscr;
-      if (b < bestpscr[ci])
-	b = bestpscr[ci];
+    b = (int32) 0x80000000;
+
+    /* Initialize bestpscr with CI phones */
+    for (i = 0; i < bin_mdef_n_ciphone(mdef); ++i) {
+        bestpscr[i] = (int32) 0x80000000;
+        for (j = 0; j < bin_mdef_n_emit_state_phone(mdef, i);
+             ++j, ++senscr) {
+            /* This assumes that CI phones have contiguous senones at the
+               beginning of the mdef, which is *almost* certainly true. */
+            if (bestpscr[i] < *senscr)
+                bestpscr[i] = *senscr;
+            if (b < bestpscr[i])
+                b = bestpscr[i];
+        }
     }
-  }
-  
-  return b;
+
+    /* Now do the rest of the senones */
+    for (i = mdef->n_ci_sen; i < mdef->n_sen; ++i, ++senscr) {
+        /* NOTE: This assumes that each CD senone corresponds to at most
+           one CI phone.  This is not always true, but we hope that taking
+           the first one will work okay. */
+        ci = mdef->sen2cimap[i];
+        if (bestpscr[ci] < *senscr) {
+            bestpscr[ci] = *senscr;
+            if (b < bestpscr[ci])
+                b = bestpscr[ci];
+        }
+    }
+
+    return b;
 }
 
 
@@ -168,20 +172,21 @@ static int32 best_senscr_all_s3 (int32 *senscr)
  * 
  * Return value: the best senone score this frame.
  */
-static int32 best_senscr_active (int32 *senscr)
+static int32
+best_senscr_active(int32 * senscr)
 {
-  int32 b, i, s;
-  
-  b = (int32) 0x80000000;
+    int32 b, i, s;
 
-  for (i = 0; i < n_senone_active; i++) {
-    s = senone_active[i];
-    
-    if (b < senscr[s])
-      b = senscr[s];
-  }
-  
-  return b;
+    b = (int32) 0x80000000;
+
+    for (i = 0; i < n_senone_active; i++) {
+        s = senone_active[i];
+
+        if (b < senscr[s])
+            b = senscr[s];
+    }
+
+    return b;
 }
 
 
@@ -190,142 +195,140 @@ static int32 best_senscr_active (int32 *senscr)
  * cep, dcep and ddcep include c0, dc0, and ddc0, which should be
  * omitted.
  */
-static void s3feat_build (float *s3feat,
-			  mfcc_t *cep,
-			  mfcc_t *dcep,
-			  mfcc_t *pcep,
-			  mfcc_t *ddcep)
+static void
+s3feat_build(float *s3feat,
+             mfcc_t * cep, mfcc_t * dcep, mfcc_t * pcep, mfcc_t * ddcep)
 {
-  int32 i, j;
+    int32 i, j;
 
 #if 1
-  /* 1s_c_d_dd */
-  for (i = 0, j = 0; i < CEP_VECLEN; i++, j++)
-    s3feat[j] = MFCC2FLOAT(cep[i]);
-  for (i = 0; i < CEP_VECLEN; i++, j++)
-    s3feat[j] = MFCC2FLOAT(dcep[i]);
-  for (i = 0; i < CEP_VECLEN; i++, j++)
-    s3feat[j] = MFCC2FLOAT(ddcep[i]);
+    /* 1s_c_d_dd */
+    for (i = 0, j = 0; i < CEP_VECLEN; i++, j++)
+        s3feat[j] = MFCC2FLOAT(cep[i]);
+    for (i = 0; i < CEP_VECLEN; i++, j++)
+        s3feat[j] = MFCC2FLOAT(dcep[i]);
+    for (i = 0; i < CEP_VECLEN; i++, j++)
+        s3feat[j] = MFCC2FLOAT(ddcep[i]);
 #else
-  /* s3_1x39 */
-  for (i = 1, j = 0; i < CEP_VECLEN; i++, j++)	/* Omit cep[0] */
-    s3feat[j] = MFCC2FLOAT(cep[i]);
-  for (i = 1; i < CEP_VECLEN; i++, j++)		/* Omit dcep[0] */
-    s3feat[j] = MFCC2FLOAT(dcep[i]);
-  for (i = 0; i < POW_VECLEN; i++, j++)
-    s3feat[j] = MFCC2FLOAT(pcep[i]);
-  for (i = 1; i < CEP_VECLEN; i++, j++)		/* Omit ddcep[0] */
-    s3feat[j] = MFCC2FLOAT(ddcep[i]);
+    /* s3_1x39 */
+    for (i = 1, j = 0; i < CEP_VECLEN; i++, j++)        /* Omit cep[0] */
+        s3feat[j] = MFCC2FLOAT(cep[i]);
+    for (i = 1; i < CEP_VECLEN; i++, j++)       /* Omit dcep[0] */
+        s3feat[j] = MFCC2FLOAT(dcep[i]);
+    for (i = 0; i < POW_VECLEN; i++, j++)
+        s3feat[j] = MFCC2FLOAT(pcep[i]);
+    for (i = 1; i < CEP_VECLEN; i++, j++)       /* Omit ddcep[0] */
+        s3feat[j] = MFCC2FLOAT(ddcep[i]);
 #endif
 }
 
 
-static int32 senscr_compute (int32 *senscr,
-			     mfcc_t *cep,
-			     mfcc_t *dcep,
-			     mfcc_t *dcep_80ms,
-			     mfcc_t *pcep,
-			     mfcc_t *ddcep,
-			     int32 all)
+static int32
+senscr_compute(int32 * senscr,
+               mfcc_t * cep,
+               mfcc_t * dcep,
+               mfcc_t * dcep_80ms,
+               mfcc_t * pcep, mfcc_t * ddcep, int32 all)
 {
-  mgau_model_t *g;
-  
-  g = kb_s3model();
-  
-  if (g != NULL) {	/* Use S3 acoustic model */
-    int32 i, sid, best;
-    float32 *s3feat;
-    int32 ascr_sf;
+    mgau_model_t *g;
 
-    ascr_sf = kb_get_ascr_scale();
-    s3feat = kb_s3feat();
-    assert (s3feat != NULL);
-    
-    /* Build S3 format (single-stream) feature vector */
-    s3feat_build (s3feat, cep, dcep, pcep, ddcep);
-    
-    best = (int32)0x80000000;
-    
-    if (all) {
-      /* Evaluate all senones */
-      for (sid = 0; sid < mgau_n_mgau(g); sid++) {
-	senscr[sid] = mgau_eval (g, sid, NULL, s3feat);
-	if (ascr_sf != 0)
-	  senscr[sid] >>= ascr_sf;
-	
-	if (best < senscr[sid])
-	  best = senscr[sid];
-      }
-      /* Normalize scores */
-      for (sid = 0; sid < mgau_n_mgau(g); sid++)
-	senscr[sid] -= best;
+    g = kb_s3model();
+
+    if (g != NULL) {            /* Use S3 acoustic model */
+        int32 i, sid, best;
+        float32 *s3feat;
+        int32 ascr_sf;
+
+        ascr_sf = kb_get_ascr_scale();
+        s3feat = kb_s3feat();
+        assert(s3feat != NULL);
+
+        /* Build S3 format (single-stream) feature vector */
+        s3feat_build(s3feat, cep, dcep, pcep, ddcep);
+
+        best = (int32) 0x80000000;
+
+        if (all) {
+            /* Evaluate all senones */
+            for (sid = 0; sid < mgau_n_mgau(g); sid++) {
+                senscr[sid] = mgau_eval(g, sid, NULL, s3feat);
+                if (ascr_sf != 0)
+                    senscr[sid] >>= ascr_sf;
+
+                if (best < senscr[sid])
+                    best = senscr[sid];
+            }
+            /* Normalize scores */
+            for (sid = 0; sid < mgau_n_mgau(g); sid++)
+                senscr[sid] -= best;
+        }
+        else {
+            /* Evaluate only active senones */
+            for (i = 0; i < n_senone_active; i++) {
+                sid = senone_active[i];
+
+                senscr[sid] = mgau_eval(g, sid, NULL, s3feat);
+                if (ascr_sf != 0)
+                    senscr[sid] >>= ascr_sf;
+
+                if (best < senscr[sid])
+                    best = senscr[sid];
+            }
+
+            /* Normalize scores */
+            for (i = 0; i < n_senone_active; i++) {
+                sid = senone_active[i];
+                senscr[sid] -= best;
+            }
+        }
+        if (all)
+            return best_senscr_all_s3(senscr);
+        else
+            return best_senscr_active(senscr);
     }
     else {
-      /* Evaluate only active senones */
-      for (i = 0; i < n_senone_active; i++) {
-	sid = senone_active[i];
-	
-	senscr[sid] = mgau_eval (g, sid, NULL, s3feat);
-	if (ascr_sf != 0)
-	  senscr[sid] >>= ascr_sf;
-	
-	if (best < senscr[sid])
-	  best = senscr[sid];
-      }
-      
-      /* Normalize scores */
-      for (i = 0; i < n_senone_active; i++) {
-	sid = senone_active[i];
-	senscr[sid] -= best;
-      }
+        /* S2 (semi-continuous) senone scores */
+        if (all) {
+            SCVQScores_all(senscr, cep, dcep, dcep_80ms, pcep, ddcep);
+            if (kb_mdef())
+                return best_senscr_all_s3(senscr);
+            else
+                return best_senscr_all(senscr);
+        }
+        else {
+            SCVQScores(senscr, cep, dcep, dcep_80ms, pcep, ddcep);
+            return best_senscr_active(senscr);
+        }
     }
-    if (all)
-      return best_senscr_all_s3(senscr);
-    else
-      return best_senscr_active(senscr);
-  } else {
-    /* S2 (semi-continuous) senone scores */
-    if (all) {
-      SCVQScores_all(senscr, cep, dcep, dcep_80ms, pcep, ddcep);
-      if (kb_mdef())
-	return best_senscr_all_s3 (senscr);
-      else
-	return best_senscr_all (senscr);
-    } else {
-      SCVQScores(senscr, cep, dcep, dcep_80ms, pcep, ddcep);
-      return best_senscr_active (senscr);
-    }
-  }
 }
 
 
-int32 senscr_all (int32 *senscr,
-		  mfcc_t *cep,
-		  mfcc_t *dcep,
-		  mfcc_t *dcep_80ms,
-		  mfcc_t *pcep,
-		  mfcc_t *ddcep)
+int32
+senscr_all(int32 * senscr,
+           mfcc_t * cep,
+           mfcc_t * dcep,
+           mfcc_t * dcep_80ms, mfcc_t * pcep, mfcc_t * ddcep)
 {
-  return senscr_compute (senscr, cep, dcep, dcep_80ms, pcep, ddcep, TRUE);
+    return senscr_compute(senscr, cep, dcep, dcep_80ms, pcep, ddcep, TRUE);
 }
 
 
-int32 senscr_active (int32 *senscr,
-		     mfcc_t *cep,
-		     mfcc_t *dcep,
-		     mfcc_t *dcep_80ms,
-		     mfcc_t *pcep,
-		     mfcc_t *ddcep)
+int32
+senscr_active(int32 * senscr,
+              mfcc_t * cep,
+              mfcc_t * dcep,
+              mfcc_t * dcep_80ms, mfcc_t * pcep, mfcc_t * ddcep)
 {
-  return senscr_compute (senscr, cep, dcep, dcep_80ms, pcep, ddcep, FALSE);
+    return senscr_compute(senscr, cep, dcep, dcep_80ms, pcep, ddcep,
+                          FALSE);
 }
 
-void sen_active_clear ( void )
+void
+sen_active_clear(void)
 {
-  memset (senone_active_vec, 0,
-	  (kb_get_total_dists() + BITVEC_WIDTH-1)
-	  / BITVEC_WIDTH * sizeof(bitvec_t));
-  n_senone_active = 0;
+    memset(senone_active_vec, 0, (kb_get_total_dists() + BITVEC_WIDTH - 1)
+           / BITVEC_WIDTH * sizeof(bitvec_t));
+    n_senone_active = 0;
 }
 
 /* Some rather nasty macros for doing hmm_sen_active() in assembly. */
@@ -336,7 +339,7 @@ void sen_active_clear ( void )
       "ldr r4, [%0, r3, lsl #2]\n\t" /* word in vector */	\
       "and r1, r1, #31\n\t" /* sid%32 (bit) */		\
       "orr r4, r4, r2, lsl r1\n\t" /* set bit */	\
-      "str r4, [%0, r3, lsl #2]\n\t" /* store it back */
+      "str r4, [%0, r3, lsl #2]\n\t"    /* store it back */
 #define BITVEC_SET_NONMPX				\
   asm("mov r2, #1\n\t" /* one bit (for use below) */	\
       "ldr r1, [%1]\n\t" /* dist[0] */			\
@@ -383,199 +386,204 @@ void sen_active_clear ( void )
 #endif
 
 
-void rhmm_sen_active(ROOT_CHAN_T *rhmm)
+void
+rhmm_sen_active(ROOT_CHAN_T * rhmm)
 {
-  /* Not using kb_get_models() because this function is time-critical */
-  extern SMD *smds;
-  
-  if (rhmm->mpx) {
-    BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[0]].dist[0]);
-    BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[1]].dist[3]);
-    BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[2]].dist[6]);
-    BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[3]].dist[9]);
-    BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[4]].dist[12]);
-  } else {
-    int32 *dist = smds[rhmm->sseqid[0]].dist;
-    BITVEC_SET_NONMPX;
-  }
+    /* Not using kb_get_models() because this function is time-critical */
+    extern SMD *smds;
+
+    if (rhmm->mpx) {
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[0]].dist[0]);
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[1]].dist[3]);
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[2]].dist[6]);
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[3]].dist[9]);
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[4]].dist[12]);
+    }
+    else {
+        int32 *dist = smds[rhmm->sseqid[0]].dist;
+        BITVEC_SET_NONMPX;
+    }
 }
 
 
-void hmm_sen_active(CHAN_T *hmm)
+void
+hmm_sen_active(CHAN_T * hmm)
 {
-  /* Not using kb_get_models() because this function is time-critical */
-  extern SMD *smds;
-  int32 *dist;
-  
-  dist = smds[hmm->sseqid].dist;
-  BITVEC_SET_NONMPX;
+    /* Not using kb_get_models() because this function is time-critical */
+    extern SMD *smds;
+    int32 *dist;
+
+    dist = smds[hmm->sseqid].dist;
+    BITVEC_SET_NONMPX;
 }
 
 #ifdef BITVEC_SEN_ACTIVE
-int32 sen_active_flags2list ( void )
+int32
+sen_active_flags2list(void)
 {
-  int32 i, j, total_dists, total_bits;
-  bitvec_t *flagptr, bits;
-  
-  total_dists = kb_get_total_dists();
-  
-  j = 0;
-  total_bits = total_dists & -BITVEC_WIDTH;
-  for (i = 0, flagptr = senone_active_vec; i < total_bits; flagptr++) {
-    bits = *flagptr;
+    int32 i, j, total_dists, total_bits;
+    bitvec_t *flagptr, bits;
 
-    if (bits == 0) {
-      i += BITVEC_WIDTH;
-      continue;
+    total_dists = kb_get_total_dists();
+
+    j = 0;
+    total_bits = total_dists & -BITVEC_WIDTH;
+    for (i = 0, flagptr = senone_active_vec; i < total_bits; flagptr++) {
+        bits = *flagptr;
+
+        if (bits == 0) {
+            i += BITVEC_WIDTH;
+            continue;
+        }
+
+        if (bits & (1 << 0))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 1))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 2))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 3))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 4))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 5))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 6))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 7))
+            senone_active[j++] = i;
+        ++i;
+#if BITVEC_WIDTH > 8
+        if (bits & (1 << 8))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 9))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 10))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 11))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 12))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 13))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 14))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 15))
+            senone_active[j++] = i;
+        ++i;
+#if BITVEC_WIDTH == 32
+        if (bits & (1 << 16))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 17))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 18))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 19))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 20))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 21))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 22))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 23))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 24))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 25))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 26))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 27))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 28))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 29))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 30))
+            senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 31))
+            senone_active[j++] = i;
+        ++i;
+#endif                          /* BITVEC_WIDTH == 32 */
+#endif                          /* BITVEC_WIDTH > 8 */
     }
 
-    if (bits & (1<<0))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<1))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<2))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<3))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<4))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<5))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<6))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<7))
-      senone_active[j++] = i;
-    ++i;
-#if BITVEC_WIDTH > 8
-    if (bits & (1<<8))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<9))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<10))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<11))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<12))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<13))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<14))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<15))
-      senone_active[j++] = i;
-    ++i;
-#if BITVEC_WIDTH == 32
-    if (bits & (1<<16))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<17))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<18))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<19))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<20))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<21))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<22))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<23))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<24))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<25))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<26))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<27))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<28))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<29))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<30))
-      senone_active[j++] = i;
-    ++i;
-    if (bits & (1<<31))
-      senone_active[j++] = i;
-    ++i;
-#endif /* BITVEC_WIDTH == 32 */
-#endif /* BITVEC_WIDTH > 8 */
-  }
+    for (; i < total_dists; ++i)
+        if (*flagptr & (1 << (i % BITVEC_WIDTH)))
+            senone_active[j++] = i;
 
-  for (; i < total_dists; ++i)
-    if (*flagptr & (1<<(i % BITVEC_WIDTH)))
-      senone_active[j++] = i;
-  
-  n_senone_active = j;
-  
-  return j;
+    n_senone_active = j;
+
+    return j;
 }
 #else
-int32 sen_active_flags2list ( void )
+int32
+sen_active_flags2list(void)
 {
-  int32 i, j, total_dists, total_words, bits;
-  uint8 *flagptr;
-  
-  total_dists = kb_get_total_dists();
-  
-  j = 0;
-  total_words = total_dists & ~3;
-  for (i = 0, flagptr = senone_active_vec; i < total_words;) {
-    bits = *(int32 *)flagptr;
-    if (bits == 0) {
-      flagptr += 4;
-      i += 4;
-      continue;
+    int32 i, j, total_dists, total_words, bits;
+    uint8 *flagptr;
+
+    total_dists = kb_get_total_dists();
+
+    j = 0;
+    total_words = total_dists & ~3;
+    for (i = 0, flagptr = senone_active_vec; i < total_words;) {
+        bits = *(int32 *) flagptr;
+        if (bits == 0) {
+            flagptr += 4;
+            i += 4;
+            continue;
+        }
+        if (*flagptr++)
+            senone_active[j++] = i;
+        ++i;
+        if (*flagptr++)
+            senone_active[j++] = i;
+        ++i;
+        if (*flagptr++)
+            senone_active[j++] = i;
+        ++i;
+        if (*flagptr++)
+            senone_active[j++] = i;
+        ++i;
     }
-    if (*flagptr++)
-      senone_active[j++] = i;
-    ++i;
-    if (*flagptr++)
-      senone_active[j++] = i;
-    ++i;
-    if (*flagptr++)
-      senone_active[j++] = i;
-    ++i;
-    if (*flagptr++)
-      senone_active[j++] = i;
-    ++i;
-  }
 
-  for (; i < total_dists; ++i, ++flagptr)
-    if (*flagptr)
-      senone_active[j++] = i;
+    for (; i < total_dists; ++i, ++flagptr)
+        if (*flagptr)
+            senone_active[j++] = i;
 
-  n_senone_active = j;
-  
-  return j;
+    n_senone_active = j;
+
+    return j;
 }
 #endif

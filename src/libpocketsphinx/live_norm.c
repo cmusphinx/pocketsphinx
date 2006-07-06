@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -88,107 +89,113 @@
 
 #include "s2types.h"
 
-static int   veclen;		/* the feature vector length */
-static mfcc_t *cur_mean = NULL;/* the mean subtracted from input frames */
-static mfcc_t *sum = NULL;	/* the sum over input frames */
-static int   nframe;		/* the total number of input frames */
+static int veclen;              /* the feature vector length */
+static mfcc_t *cur_mean = NULL; /* the mean subtracted from input frames */
+static mfcc_t *sum = NULL;      /* the sum over input frames */
+static int nframe;              /* the total number of input frames */
 
-#define CMN_WIN_HWM	800	/* #frames after which window shifted */
+#define CMN_WIN_HWM	800     /* #frames after which window shifted */
 #define CMN_WIN		500
 
-int32 cepmean_set (mfcc_t *vec)
+int32
+cepmean_set(mfcc_t * vec)
 {
     int32 i;
-    
+
     for (i = 0; i < veclen; i++) {
-	cur_mean[i] = vec[i];
-	sum[i] = vec[i] * CMN_WIN;
+        cur_mean[i] = vec[i];
+        sum[i] = vec[i] * CMN_WIN;
     }
     nframe = CMN_WIN;
-    
+
     return 0;
 }
 
-int32 cepmean_get (mfcc_t *vec)
+int32
+cepmean_get(mfcc_t * vec)
 {
     int32 i;
-    
+
     for (i = 0; i < veclen; i++)
-	vec[i] = cur_mean[i];
+        vec[i] = cur_mean[i];
     return 0;
 }
 
-void mean_norm_init(int32 vlen)
+void
+mean_norm_init(int32 vlen)
 {
-    veclen   = vlen;
+    veclen = vlen;
     cur_mean = (mfcc_t *) calloc(veclen, sizeof(mfcc_t));
     cur_mean[0] = FLOAT2MFCC(8.0);
-    sum      = (mfcc_t *) calloc(veclen, sizeof(mfcc_t));
-    nframe   = 0;
-    E_INFO("mean[0]= %.2f, mean[1..%d]= 0.0\n", MFCC2FLOAT(cur_mean[0]), veclen-1);
+    sum = (mfcc_t *) calloc(veclen, sizeof(mfcc_t));
+    nframe = 0;
+    E_INFO("mean[0]= %.2f, mean[1..%d]= 0.0\n", MFCC2FLOAT(cur_mean[0]),
+           veclen - 1);
 }
 
 static void
-mean_norm_shiftwin ( void )
+mean_norm_shiftwin(void)
 {
     int32 i;
     mfcc_t sf;
 
-    sf = (FLOAT2MFCC(1.0)/nframe);
+    sf = (FLOAT2MFCC(1.0) / nframe);
     for (i = 0; i < veclen; i++)
-	cur_mean[i] = sum[i] / nframe; /* sum[i] * sf */
+        cur_mean[i] = sum[i] / nframe;  /* sum[i] * sf */
 
     /* Make the accumulation decay exponentially */
     if (nframe >= CMN_WIN_HWM) {
-	sf = CMN_WIN * sf;
-	for (i = 0; i < veclen; i++)
-	    sum[i] = MFCCMUL(sum[i], sf);
-	nframe = CMN_WIN;
+        sf = CMN_WIN * sf;
+        for (i = 0; i < veclen; i++)
+            sum[i] = MFCCMUL(sum[i], sf);
+        nframe = CMN_WIN;
     }
 }
 
-void mean_norm_acc_sub(mfcc_t *vec)
+void
+mean_norm_acc_sub(mfcc_t * vec)
 {
     int32 i;
 
     for (i = 0; i < veclen; i++) {
-	sum[i] += vec[i];
-	vec[i] -= cur_mean[i];
+        sum[i] += vec[i];
+        vec[i] -= cur_mean[i];
     }
 
     ++nframe;
 
     if (nframe > CMN_WIN_HWM)
-	mean_norm_shiftwin();
+        mean_norm_shiftwin();
 }
 
-void mean_norm_update(void)
+void
+mean_norm_update(void)
 {
     int32 i;
     mfcc_t sf;
-    
+
     if (nframe <= 0)
-	return;
-    
+        return;
+
     E_INFO("mean_norm_update: from < ");
     for (i = 0; i < veclen; i++)
-	E_INFOCONT("%5.2f ", MFCC2FLOAT(cur_mean[i]));
+        E_INFOCONT("%5.2f ", MFCC2FLOAT(cur_mean[i]));
     E_INFOCONT(">\n");
 
-    sf = (FLOAT2MFCC(1.0)/nframe);
+    sf = (FLOAT2MFCC(1.0) / nframe);
     for (i = 0; i < veclen; i++)
-	cur_mean[i] = sum[i] / nframe; /* sum[i] * sf; */
+        cur_mean[i] = sum[i] / nframe;  /* sum[i] * sf; */
 
     /* Make the accumulation decay exponentially */
     if (nframe > CMN_WIN_HWM) {
-	sf = CMN_WIN * sf;
-	for (i = 0; i < veclen; i++)
-	    sum[i] = MFCCMUL(sum[i], sf);
-	nframe = CMN_WIN;
+        sf = CMN_WIN * sf;
+        for (i = 0; i < veclen; i++)
+            sum[i] = MFCCMUL(sum[i], sf);
+        nframe = CMN_WIN;
     }
 
     E_INFO("mean_norm_update: to   < ");
     for (i = 0; i < veclen; i++)
-	E_INFOCONT("%5.2f ", MFCC2FLOAT(cur_mean[i]));
+        E_INFOCONT("%5.2f ", MFCC2FLOAT(cur_mean[i]));
     E_INFOCONT(">\n");
 }

@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
  * reserved.
@@ -103,7 +104,7 @@
 #define TMAT_PARAM_VERSION		"1.0"
 
 int
-tmat_init (char *file_name, SMD *smds, float64 tpfloor, int32 breport)
+tmat_init(char *file_name, SMD * smds, float64 tpfloor, int32 breport)
 {
     char tmp;
     int32 n_src, n_dst;
@@ -113,102 +114,110 @@ tmat_init (char *file_name, SMD *smds, float64 tpfloor, int32 breport)
     float32 **tp;
     int32 i, j, k, n_tmat, n_state, tp_per_tmat;
     char **argname, **argval;
-    
 
-    if(breport){
-      E_INFO("Reading HMM transition probability matrices: %s\n", file_name);
+
+    if (breport) {
+        E_INFO("Reading HMM transition probability matrices: %s\n",
+               file_name);
     }
 
     if ((fp = fopen(file_name, "rb")) == NULL)
-	E_FATAL_SYSTEM("fopen(%s,rb) failed\n", file_name);
-    
+        E_FATAL_SYSTEM("fopen(%s,rb) failed\n", file_name);
+
     /* Read header, including argument-value info and 32-bit byteorder magic */
-    if (bio_readhdr (fp, &argname, &argval, &byteswap) < 0)
-	E_FATAL("bio_readhdr(%s) failed\n", file_name);
-    
+    if (bio_readhdr(fp, &argname, &argval, &byteswap) < 0)
+        E_FATAL("bio_readhdr(%s) failed\n", file_name);
+
     /* Parse argument-value list */
     chksum_present = 0;
     for (i = 0; argname[i]; i++) {
-	if (strcmp (argname[i], "version") == 0) {
-	    if (strcmp(argval[i], TMAT_PARAM_VERSION) != 0)
-		E_WARN("Version mismatch(%s): %s, expecting %s\n",
-			file_name, argval[i], TMAT_PARAM_VERSION);
-	} else if (strcmp (argname[i], "chksum0") == 0) {
-	    chksum_present = 1;	/* Ignore the associated value */
-	}
+        if (strcmp(argname[i], "version") == 0) {
+            if (strcmp(argval[i], TMAT_PARAM_VERSION) != 0)
+                E_WARN("Version mismatch(%s): %s, expecting %s\n",
+                       file_name, argval[i], TMAT_PARAM_VERSION);
+        }
+        else if (strcmp(argname[i], "chksum0") == 0) {
+            chksum_present = 1; /* Ignore the associated value */
+        }
     }
-    bio_hdrarg_free (argname, argval);
+    bio_hdrarg_free(argname, argval);
     argname = argval = NULL;
-    
+
     chksum = 0;
-    
+
     /* Read #tmat, #from-states, #to-states, arraysize */
-    if ((bio_fread (&n_tmat, sizeof(int32), 1, fp, byteswap, &chksum) != 1) ||
-	(bio_fread (&n_src, sizeof(int32), 1, fp, byteswap, &chksum) != 1) ||
-	(bio_fread (&n_dst, sizeof(int32), 1, fp, byteswap, &chksum) != 1) ||
-	(bio_fread (&i, sizeof(int32), 1, fp, byteswap, &chksum) != 1)) {
-	E_FATAL("bio_fread(%s) (arraysize) failed\n", file_name);
+    if ((bio_fread(&n_tmat, sizeof(int32), 1, fp, byteswap, &chksum) != 1)
+        || (bio_fread(&n_src, sizeof(int32), 1, fp, byteswap, &chksum) !=
+            1)
+        || (bio_fread(&n_dst, sizeof(int32), 1, fp, byteswap, &chksum) !=
+            1)
+        || (bio_fread(&i, sizeof(int32), 1, fp, byteswap, &chksum) != 1)) {
+        E_FATAL("bio_fread(%s) (arraysize) failed\n", file_name);
     }
     if (n_tmat >= MAX_S3TMATID)
-	E_FATAL("%s: #tmat (%d) exceeds limit (%d)\n", file_name, n_tmat, MAX_S3TMATID);
-    if (n_dst != n_src+1)
-	E_FATAL("%s: #from-states(%d) != #to-states(%d)-1\n", file_name, n_src, n_dst);
+        E_FATAL("%s: #tmat (%d) exceeds limit (%d)\n", file_name, n_tmat,
+                MAX_S3TMATID);
+    if (n_dst != n_src + 1)
+        E_FATAL("%s: #from-states(%d) != #to-states(%d)-1\n", file_name,
+                n_src, n_dst);
     n_state = n_src;
-    
+
     if (i != n_tmat * n_src * n_dst) {
-	E_FATAL("%s: #float32s(%d) doesn't match dimensions: %d x %d x %d\n",
-		file_name, i, n_tmat, n_src, n_dst);
+        E_FATAL
+            ("%s: #float32s(%d) doesn't match dimensions: %d x %d x %d\n",
+             file_name, i, n_tmat, n_src, n_dst);
     }
 
     if (n_src != HMM_LAST_STATE)
-	E_FATAL("%s: #from-states(%d) is not %d\n", n_src, HMM_LAST_STATE);
+        E_FATAL("%s: #from-states(%d) is not %d\n", n_src, HMM_LAST_STATE);
 
     /* Temporary structure to read in the float data */
-    tp = (float32 **) ckd_calloc_2d (n_src, n_dst, sizeof(float32));
+    tp = (float32 **) ckd_calloc_2d(n_src, n_dst, sizeof(float32));
 
     /* Read transition matrices, normalize and floor them, and convert to logs3 domain */
     tp_per_tmat = n_src * n_dst;
     for (i = 0; i < n_tmat; i++) {
-	int arc;
+        int arc;
 
-	if (bio_fread (tp[0], sizeof(float32), tp_per_tmat, fp,
-		       byteswap, &chksum) != tp_per_tmat) {
-	    E_FATAL("fread(%s) (arraydata) failed\n", file_name);
-	}
-	
-	/* Normalize and floor */
-	arc = 0;
-	for (j = 0; j < n_src; j++) {
-	    if (vector_sum_norm (tp[j], n_dst) == 0.0)
-		E_WARN("Normalization failed for tmat %d from state %d\n", i, j);
-	    vector_nz_floor (tp[j], n_dst, tpfloor);
-	    vector_sum_norm (tp[j], n_dst);
+        if (bio_fread(tp[0], sizeof(float32), tp_per_tmat, fp,
+                      byteswap, &chksum) != tp_per_tmat) {
+            E_FATAL("fread(%s) (arraydata) failed\n", file_name);
+        }
 
-	    /* Convert to logs3.  We simply ignore the transitions
-	     * that aren't allowed by the Sphinx2 topology. */
-	    for (k = j; k < j + 3 && k < n_dst; k++) {
-		if (arc >= TRANS_CNT)
-		    E_FATAL("Number of arcs is greater than TRANS_CNT\n");
-		smds[i].dist[arc] = j; /* Actually unused. */
-		/* For these ones, we floor them even if they are
-		 * zero, otherwise HMM evaluation goes nuts. */
-		if (tp[j][k] == 0.0f)
-			tp[j][k] = tpfloor;
-		smds[i].tp[arc] = LOG(tp[j][k]);
-		++arc;
-	    }
-	}
+        /* Normalize and floor */
+        arc = 0;
+        for (j = 0; j < n_src; j++) {
+            if (vector_sum_norm(tp[j], n_dst) == 0.0)
+                E_WARN("Normalization failed for tmat %d from state %d\n",
+                       i, j);
+            vector_nz_floor(tp[j], n_dst, tpfloor);
+            vector_sum_norm(tp[j], n_dst);
+
+            /* Convert to logs3.  We simply ignore the transitions
+             * that aren't allowed by the Sphinx2 topology. */
+            for (k = j; k < j + 3 && k < n_dst; k++) {
+                if (arc >= TRANS_CNT)
+                    E_FATAL("Number of arcs is greater than TRANS_CNT\n");
+                smds[i].dist[arc] = j;  /* Actually unused. */
+                /* For these ones, we floor them even if they are
+                 * zero, otherwise HMM evaluation goes nuts. */
+                if (tp[j][k] == 0.0f)
+                    tp[j][k] = tpfloor;
+                smds[i].tp[arc] = LOG(tp[j][k]);
+                ++arc;
+            }
+        }
     }
 
-    ckd_free_2d ((void **) tp);
+    ckd_free_2d((void **) tp);
 
     if (chksum_present)
-	bio_verify_chksum (fp, byteswap, chksum);
+        bio_verify_chksum(fp, byteswap, chksum);
 
-    if (fread (&tmp, 1, 1, fp) == 1)
-	E_ERROR("Non-empty file beyond end of data\n");
+    if (fread(&tmp, 1, 1, fp) == 1)
+        E_ERROR("Non-empty file beyond end of data\n");
 
     fclose(fp);
-    
+
     return 0;
 }

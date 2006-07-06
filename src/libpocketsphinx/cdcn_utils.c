@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -43,18 +44,19 @@
  *                                                                         *
  ***************************************************************************/
 
-float dist(float *x, float *y, float *variance, int Ndim)
+float
+dist(float *x, float *y, float *variance, int Ndim)
 {
-	register int j;
-	register float distance, difference;
+    register int j;
+    register float distance, difference;
 
-	difference = x[0] - y[0];
-	distance = difference * difference / variance[0];
-	for (j = 1; j < Ndim; j++) {
-		difference = x[j] - y[j];
-		distance += difference * difference / variance[j];
-	}
-	return (distance);
+    difference = x[0] - y[0];
+    distance = difference * difference / variance[0];
+    for (j = 1; j < Ndim; j++) {
+        difference = x[j] - y[j];
+        distance += difference * difference / variance[j];
+    }
+    return (distance);
 }
 
 /*

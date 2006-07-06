@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -51,41 +52,38 @@
 #include "byteorder.h"
 
 int
-awriteshort (char const *file, short *data, int length)
+awriteshort(char const *file, short *data, int length)
 {
-  int             fd;
-  int             size;
-  int             offset;
+    int fd;
+    int size;
+    int offset;
 
-  if ((fd = open (file, O_CREAT | O_WRONLY | O_TRUNC, 0644)) < 0)
-  {
-    fprintf (stderr, "awriteshort: %s: can't create\n", file);
-    return -1;
-  }
+    if ((fd = open(file, O_CREAT | O_WRONLY | O_TRUNC, 0644)) < 0) {
+        fprintf(stderr, "awriteshort: %s: can't create\n", file);
+        return -1;
+    }
 
-  SWAP_BE_32(&length);
-  if (write (fd, (char *) &length, 4) != 4)
-  {
-    fprintf (stderr, "awriteshort: %s: can't write length\n", file);
-    close (fd);
-    return -1;
-  }
-  SWAP_BE_32(&length);
+    SWAP_BE_32(&length);
+    if (write(fd, (char *) &length, 4) != 4) {
+        fprintf(stderr, "awriteshort: %s: can't write length\n", file);
+        close(fd);
+        return -1;
+    }
+    SWAP_BE_32(&length);
 
-  /* FIXME: gack.  shouldn't modify data! */
-  for(offset = 0; offset < length; offset++)
-    SWAP_BE_16(data + offset);
-  size = length * sizeof (short);
-  if (write (fd, (char *) data, size) != size)
-  {
-    fprintf (stderr, "awriteshort: %s: can't write data\n", file);
-    close (fd);
-    return (-1);
-  }
-  for(offset = 0; offset < length; offset++)
-    SWAP_BE_16(data + offset);
+    /* FIXME: gack.  shouldn't modify data! */
+    for (offset = 0; offset < length; offset++)
+        SWAP_BE_16(data + offset);
+    size = length * sizeof(short);
+    if (write(fd, (char *) data, size) != size) {
+        fprintf(stderr, "awriteshort: %s: can't write data\n", file);
+        close(fd);
+        return (-1);
+    }
+    for (offset = 0; offset < length; offset++)
+        SWAP_BE_16(data + offset);
 
-  printf ("Wrote %d shorts in %s.\n", length, file);
-  close (fd);
-  return length;
+    printf("Wrote %d shorts in %s.\n", length, file);
+    close(fd);
+    return length;
 }

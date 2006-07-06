@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -63,30 +64,30 @@
 static int
 ulstrcmp(char const *str1, char const *str2)
 {
-    register char c1,c2;
+    register char c1, c2;
 
-    for(;;) {
-	c1 = *str1++;
-	if (c1 <= 'Z')
-	    if (c1 >= 'A')
-		c1 += 040;
-	c2 = *str2++;
-	if (c2 <= 'Z')
-	    if (c2 >= 'A')
-		c2 += 040;
-	if (c1 != c2)
-	    break;
-	if (c1 == '\0')
-	    return(0);
+    for (;;) {
+        c1 = *str1++;
+        if (c1 <= 'Z')
+            if (c1 >= 'A')
+                c1 += 040;
+        c2 = *str2++;
+        if (c2 <= 'Z')
+            if (c2 >= 'A')
+                c2 += 040;
+        if (c1 != c2)
+            break;
+        if (c1 == '\0')
+            return (0);
     }
-    return(c1 - c2);
+    return (c1 - c2);
 }
 
 int
-mystrcasecmp (char const *a, char const *b)
+mystrcasecmp(char const *a, char const *b)
 {
     if (a && b)
-	return ulstrcmp(a,b);
+        return ulstrcmp(a, b);
     else
-    	return 1;
+        return 1;
 }

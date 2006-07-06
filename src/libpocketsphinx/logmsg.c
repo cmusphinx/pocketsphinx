@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -72,9 +73,9 @@ void name (char const *fmt, ...)		\
    call a common function, however it might be useful to have them do
    different things in the future. */
 INST_LOGGER(log_error, stderr, 0)
-INST_LOGGER(E_WARN, stderr, 1)
-INST_LOGGER(E_INFO, stdout, 2)
-INST_LOGGER(log_debug, stdout, 3)
+    INST_LOGGER(E_WARN, stderr, 1)
+    INST_LOGGER(E_INFO, stdout, 2)
+    INST_LOGGER(log_debug, stdout, 3)
 
 /*
  * Local variables:

@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
  * reserved.
@@ -90,71 +91,78 @@
 /*
  * For now, allocate the entire lextree statically.
  */
-fsg_lextree_t *fsg_lextree_init (word_fsg_t *fsg)
+fsg_lextree_t *
+fsg_lextree_init(word_fsg_t * fsg)
 {
-  int32 s;
-  fsg_lextree_t *lextree;
-  fsg_pnode_t *pn;
-  
-  /* Allocate "this" structure */
-  lextree = (fsg_lextree_t *) ckd_calloc (1, sizeof(fsg_lextree_t));
-  
-  lextree->fsg = fsg;
-  
-  /* Allocate ptrs for lextree root, and allocated list for each state */
-  lextree->root = (fsg_pnode_t **) ckd_calloc (word_fsg_n_state(fsg),
-					       sizeof(fsg_pnode_t *));
-  lextree->alloc_head = (fsg_pnode_t **) ckd_calloc (word_fsg_n_state(fsg),
-						     sizeof(fsg_pnode_t *));
-  
-  /* Create lextree for each state */
-  lextree->n_pnode = 0;
-  for (s = 0; s < word_fsg_n_state(fsg); s++) {
-    lextree->root[s] = fsg_psubtree_init (fsg, s, &(lextree->alloc_head[s]));
-    
-    for (pn = lextree->alloc_head[s]; pn; pn = pn->alloc_next)
-      lextree->n_pnode++;
-  }
-  E_INFO("%d HMM nodes in lextree\n", lextree->n_pnode);
-  
+    int32 s;
+    fsg_lextree_t *lextree;
+    fsg_pnode_t *pn;
+
+    /* Allocate "this" structure */
+    lextree = (fsg_lextree_t *) ckd_calloc(1, sizeof(fsg_lextree_t));
+
+    lextree->fsg = fsg;
+
+    /* Allocate ptrs for lextree root, and allocated list for each state */
+    lextree->root = (fsg_pnode_t **) ckd_calloc(word_fsg_n_state(fsg),
+                                                sizeof(fsg_pnode_t *));
+    lextree->alloc_head =
+        (fsg_pnode_t **) ckd_calloc(word_fsg_n_state(fsg),
+                                    sizeof(fsg_pnode_t *));
+
+    /* Create lextree for each state */
+    lextree->n_pnode = 0;
+    for (s = 0; s < word_fsg_n_state(fsg); s++) {
+        lextree->root[s] =
+            fsg_psubtree_init(fsg, s, &(lextree->alloc_head[s]));
+
+        for (pn = lextree->alloc_head[s]; pn; pn = pn->alloc_next)
+            lextree->n_pnode++;
+    }
+    E_INFO("%d HMM nodes in lextree\n", lextree->n_pnode);
+
 #if __FSG_DBG__
-  fsg_lextree_dump (lextree, stdout);
+    fsg_lextree_dump(lextree, stdout);
 #endif
 
-  return lextree;
+    return lextree;
 }
 
 
-void fsg_lextree_dump (fsg_lextree_t *lextree, FILE *fp)
+void
+fsg_lextree_dump(fsg_lextree_t * lextree, FILE * fp)
 {
-  int32 s;
-  
-  for (s = 0; s < word_fsg_n_state(lextree->fsg); s++) {
-    fprintf (fp, "State %5d root %08x\n", s, (int32)lextree->root[s]);
-    fsg_psubtree_dump (lextree->alloc_head[s], fp);
-  }
-  fflush (fp);
+    int32 s;
+
+    for (s = 0; s < word_fsg_n_state(lextree->fsg); s++) {
+        fprintf(fp, "State %5d root %08x\n", s, (int32) lextree->root[s]);
+        fsg_psubtree_dump(lextree->alloc_head[s], fp);
+    }
+    fflush(fp);
 }
 
 
-void fsg_lextree_free (fsg_lextree_t *lextree)
+void
+fsg_lextree_free(fsg_lextree_t * lextree)
 {
-  int32 s;
-  
-  for (s = 0; s < word_fsg_n_state(lextree->fsg); s++)
-    fsg_psubtree_free (lextree->alloc_head[s]);
-  
-  ckd_free ((void *) lextree->root);
-  ckd_free ((void *) lextree->alloc_head);
-  ckd_free ((void *) lextree);
+    int32 s;
+
+    for (s = 0; s < word_fsg_n_state(lextree->fsg); s++)
+        fsg_psubtree_free(lextree->alloc_head[s]);
+
+    ckd_free((void *) lextree->root);
+    ckd_free((void *) lextree->alloc_head);
+    ckd_free((void *) lextree);
 }
 
 
-void fsg_lextree_utt_start (fsg_lextree_t *lextree)
-{  
+void
+fsg_lextree_utt_start(fsg_lextree_t * lextree)
+{
 }
 
 
-void fsg_lextree_utt_end (fsg_lextree_t *lextree)
+void
+fsg_lextree_utt_end(fsg_lextree_t * lextree)
 {
 }

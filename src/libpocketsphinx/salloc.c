@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -49,15 +50,16 @@
 #include "err.h"
 
 
-char *salloc (char const *str)
+char *
+salloc(char const *str)
 {
-    int32 len = strlen(str)+1;
+    int32 len = strlen(str) + 1;
     char *buf;
-    
-    if ((buf = (char *) malloc (len)) == NULL) {
-	E_FATAL("malloc(%d) failed\n", len);
+
+    if ((buf = (char *) malloc(len)) == NULL) {
+        E_FATAL("malloc(%d) failed\n", len);
     }
-	
-    strcpy (buf, str);
+
+    strcpy(buf, str);
     return (buf);
 }

@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -53,21 +54,21 @@
 
 
 /* You know, there's a bsearch() in the standard library. */
-int 
+int
 bisearch(char *table, int num_entries, int unit,
-	 int (*cmp_routine)(char const *, char const *),
-	 char *item)
+         int (*cmp_routine) (char const *, char const *), char *item)
 {
-  register int low = 0, high = num_entries, mid, c;
+    register int low = 0, high = num_entries, mid, c;
 
-  while (low < high)
-  {
-    mid = (low+high)/2;
-    c  = cmp_routine (table + unit*mid, item);
-    if (c == 0) return (mid);
-    else if (c < 0) low = mid + 1;
-    else high = mid;
-  }
-  return(0);
+    while (low < high) {
+        mid = (low + high) / 2;
+        c = cmp_routine(table + unit * mid, item);
+        if (c == 0)
+            return (mid);
+        else if (c < 0)
+            low = mid + 1;
+        else
+            high = mid;
+    }
+    return (0);
 }
-

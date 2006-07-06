@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -74,51 +75,46 @@
 #include "s2params.h"
 
 /* FIXME: prototype this in an internal header file somewhere. */
-int save_labs(SEGMENT_T *segs,
-	      int num_entries,
-	      const char *dirname,
-	      const char *filename,
-	      const char *extname,
-	      const char *labtype)
+int
+save_labs(SEGMENT_T * segs,
+          int num_entries,
+          const char *dirname,
+          const char *filename, const char *extname, const char *labtype)
 {
     int i;
     FILE *labfd;
     char *path;
 
-    path=(char *)malloc(strlen(dirname)+strlen(filename)+strlen(extname)+4);
-    sprintf(path,"%s/%s.%s",dirname,filename,extname);
+    path =
+        (char *) malloc(strlen(dirname) + strlen(filename) +
+                        strlen(extname) + 4);
+    sprintf(path, "%s/%s.%s", dirname, filename, extname);
 
-    if ((labfd = fopen(path,"w")) == NULL)
-    {
-	E_ERROR("Failed to open label file: %s\n", path);
-	free(path);
-	exit(1);
+    if ((labfd = fopen(path, "w")) == NULL) {
+        E_ERROR("Failed to open label file: %s\n", path);
+        free(path);
+        exit(1);
     }
-    
-    if (strcmp(labtype,"xlabel") == 0)
-    {
-	fprintf(labfd,"#\n");
-	for (i=0; i<num_entries; i++)
-	{
-	  fprintf(labfd,"%0.6f 125 %s ; %d\n", 
-		  /*		    segs[i].end * 0.00625,  */
-		  segs[i].end * 0.01,
-		  segs[i].name,
-		  segs[i].score);
-	}
+
+    if (strcmp(labtype, "xlabel") == 0) {
+        fprintf(labfd, "#\n");
+        for (i = 0; i < num_entries; i++) {
+            fprintf(labfd, "%0.6f 125 %s ; %d\n",
+                    /*                segs[i].end * 0.00625,  */
+                    segs[i].end * 0.01, segs[i].name, segs[i].score);
+        }
     }
 /*    else if (strcmp(labtype,"something else") == 0) */
 /*    {                                               */
 /*    }                                               */
-    else  
-    {   /* some CMU internal format -- does any one use this */
-	printf("%20s %4s %4s %s\n",
-	       "Phone", "Beg", "End", "Acoustic Score");
-	for (i=0; i<num_entries; i++)
-	{
-	    fprintf(labfd,"%20s %4d %4d %12d\n",
-		    segs[i].name, segs[i].start, segs[i].end, segs[i].score);
-	}
+    else {                      /* some CMU internal format -- does any one use this */
+        printf("%20s %4s %4s %s\n",
+               "Phone", "Beg", "End", "Acoustic Score");
+        for (i = 0; i < num_entries; i++) {
+            fprintf(labfd, "%20s %4d %4d %12d\n",
+                    segs[i].name, segs[i].start, segs[i].end,
+                    segs[i].score);
+        }
     }
     free(path);
     fclose(labfd);

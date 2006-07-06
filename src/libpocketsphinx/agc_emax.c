@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -73,21 +74,23 @@
 
 #include "s2types.h"
 
-static mfcc_t max = FLOAT2MFCC(10.0);	/* Estimated C0 max used for AGC in current utterance */
+static mfcc_t max = FLOAT2MFCC(10.0);   /* Estimated C0 max used for AGC in current utterance */
 /* Observed C0 max in current utterance (before update) */
 static mfcc_t obs_max = FLOAT2MFCC(-1000.0);
-static int obs_frame = 0;	/* Whether any data was observed after prev update */
-static int obs_utt = 0;		/* Whether any utterances have been observed */
+static int obs_frame = 0;       /* Whether any data was observed after prev update */
+static int obs_utt = 0;         /* Whether any utterances have been observed */
 static mfcc_t obs_max_sum = 0;
 
-int32 agcemax_set (double m)
+int32
+agcemax_set(double m)
 {
     max = FLOAT2MFCC(m);
     E_INFO("AGCEMax: %.2f\n", m);
     return 0;
 }
 
-double agcemax_get ( void )
+double
+agcemax_get(void)
 {
     return ((double) MFCC2FLOAT(max));
 }
@@ -95,45 +98,48 @@ double agcemax_get ( void )
 /* AGC_EMAX_PROC - do the agc
  *------------------------------------------------------------*
  */
-int agc_emax_proc (mfcc_t *ocep, mfcc_t const *icep, int veclen)
+int
+agc_emax_proc(mfcc_t * ocep, mfcc_t const *icep, int veclen)
 {
     if (icep[0] > obs_max) {
-	obs_max = icep[0];
-	obs_frame = 1;
+        obs_max = icep[0];
+        obs_frame = 1;
     }
-    
+
     /* It seems NOT changing the estimated max during an utterance is best */
 #if 0
     /* Adapt max rapidly to the current utt max and decay it very slowly. */
     if (icep[0] > max) {
-	max = icep[0];		/* Estimated max was too low */
-    } else if (obs_max < max) {
-	max -= 0.01;		/* Estimated max may be too high; reduce a bit */
+        max = icep[0];          /* Estimated max was too low */
+    }
+    else if (obs_max < max) {
+        max -= 0.01;            /* Estimated max may be too high; reduce a bit */
     }
 #endif
 
-    memcpy((char *)ocep, (char *)icep, sizeof(mfcc_t)*veclen);
+    memcpy((char *) ocep, (char *) icep, sizeof(mfcc_t) * veclen);
     ocep[0] -= max;
-    
+
     return 1;
 }
 
 /* Update estimated max for next utterance */
-void agc_emax_update ( void )
+void
+agc_emax_update(void)
 {
-    if (obs_frame) {	/* Update only if some data observed */
-	obs_max_sum += obs_max;
-	obs_utt++;
-	
-	/* Re-estimate max over past history; decay the history */
-	max = obs_max_sum / obs_utt;
-	if (obs_utt == 8) {
-	    obs_max_sum /= 2;
-	    obs_utt = 4;
-	}
+    if (obs_frame) {            /* Update only if some data observed */
+        obs_max_sum += obs_max;
+        obs_utt++;
+
+        /* Re-estimate max over past history; decay the history */
+        max = obs_max_sum / obs_utt;
+        if (obs_utt == 8) {
+            obs_max_sum /= 2;
+            obs_utt = 4;
+        }
     }
     E_INFO("C0Max: obs= %.2f, new= %.2f\n", obs_max, max);
-    
-    obs_max = FLOAT2MFCC(-1000.0); /* Less than any real C0 value (hopefully!!) */
+
+    obs_max = FLOAT2MFCC(-1000.0);      /* Less than any real C0 value (hopefully!!) */
     obs_frame = 0;
 }

@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -63,17 +64,17 @@
 #include "pconf.h"
 #include "strfuncs.h"
 
-static int SetVal(Config_t *cp, char const *str);
-static void SPrintVal(Config_t *cp, char *str);
-
+static int SetVal(Config_t * cp, char const *str);
+static void SPrintVal(Config_t * cp, char *str);
 
+
 /* PCONF
  *------------------------------------------------------------*
  */
 int
-pconf (int argc, char *argv[], config_t *config_p,
-       char **display, char **geometry,
-       char * (*GetDefault)(char const *, char const *))
+pconf(int argc, char *argv[], config_t * config_p,
+      char **display, char **geometry,
+      char *(*GetDefault) (char const *, char const *))
 {
     int32 i, parsed;
     int32 bad_usage = FALSE;
@@ -81,40 +82,40 @@ pconf (int argc, char *argv[], config_t *config_p,
     Config_t *cp;
 
     if (GetDefault) {
-	for (cp = (Config_t *) config_p; cp->arg_type != NOTYPE; cp++) {
-	    if ((str_p = GetDefault (argv[0], cp->LongName))) {
-		bad_usage |= SetVal (cp, str_p);
-	    }
-	}
+        for (cp = (Config_t *) config_p; cp->arg_type != NOTYPE; cp++) {
+            if ((str_p = GetDefault(argv[0], cp->LongName))) {
+                bad_usage |= SetVal(cp, str_p);
+            }
+        }
     }
 
     for (i = 1; i < argc; i++) {
-	for (parsed = FALSE, cp = (Config_t *) config_p;
-	     cp->arg_type != NOTYPE; cp++) {
-	    /* FIXME: do we *really* need our own strcasecmp? */
-	    if (mystrcasecmp (argv[i], cp->swtch) == 0) {
-		parsed = TRUE;
-		if (++i < argc)
-		    bad_usage |= SetVal (cp, argv[i]);
-		else
-		    bad_usage = TRUE;
-	    }
-	}
+        for (parsed = FALSE, cp = (Config_t *) config_p;
+             cp->arg_type != NOTYPE; cp++) {
+            /* FIXME: do we *really* need our own strcasecmp? */
+            if (mystrcasecmp(argv[i], cp->swtch) == 0) {
+                parsed = TRUE;
+                if (++i < argc)
+                    bad_usage |= SetVal(cp, argv[i]);
+                else
+                    bad_usage = TRUE;
+            }
+        }
 
-	if (parsed)
-	    continue;
-	if (geometry && (*argv[i] == '=')) {
-	    *geometry = argv[i];
-	    continue;
-	}
-	if (display && (strchr (argv[i], ':') != 0)) {
-	    *display = argv[i];
-	    continue;
-	}
-	if ((mystrcasecmp ("-?", argv[i]) == 0) ||
-	    (mystrcasecmp ("-help", argv[i]) == 0))
-	    pusage (argv[0], (Config_t *) config_p);
-	bad_usage = TRUE;
+        if (parsed)
+            continue;
+        if (geometry && (*argv[i] == '=')) {
+            *geometry = argv[i];
+            continue;
+        }
+        if (display && (strchr(argv[i], ':') != 0)) {
+            *display = argv[i];
+            continue;
+        }
+        if ((mystrcasecmp("-?", argv[i]) == 0) ||
+            (mystrcasecmp("-help", argv[i]) == 0))
+            pusage(argv[0], (Config_t *) config_p);
+        bad_usage = TRUE;
     }
     return (bad_usage);
 }
@@ -123,10 +124,9 @@ pconf (int argc, char *argv[], config_t *config_p,
  *------------------------------------------------------------*
  */
 int
-ppconf (int argc, char *argv[], config_t *config_p,
-	char **display, char **geometry,
-	char * (*GetDefault)(char const *, char const *),
-	char last)
+ppconf(int argc, char *argv[], config_t * config_p,
+       char **display, char **geometry,
+       char *(*GetDefault) (char const *, char const *), char last)
 {
     int32 i, parsed;
     int32 bad_usage = FALSE;
@@ -134,48 +134,51 @@ ppconf (int argc, char *argv[], config_t *config_p,
     Config_t *cp;
 
     if (GetDefault) {
-	for (cp = (Config_t *)config_p; cp->arg_type != NOTYPE; cp++) {
-		if ((str_p = GetDefault (argv[0], cp->LongName))) {
-		    bad_usage |= SetVal (cp, str_p);
-	    }
-	}
+        for (cp = (Config_t *) config_p; cp->arg_type != NOTYPE; cp++) {
+            if ((str_p = GetDefault(argv[0], cp->LongName))) {
+                bad_usage |= SetVal(cp, str_p);
+            }
+        }
     }
 
     for (i = 1; i < argc; i++) {
-	/* argument has been processed already */
-	if (argv[i][0] == '\0') continue;
+        /* argument has been processed already */
+        if (argv[i][0] == '\0')
+            continue;
 
-	for (parsed = FALSE, cp = (Config_t *)config_p;
-	     cp->arg_type != NOTYPE; cp++) {
-	    if (mystrcasecmp (argv[i], cp->swtch) == 0) {
-		parsed = TRUE;
-		/* remove this switch from consideration */
-		argv[i][0] = '\0';
-		if (++i < argc) {
-		    bad_usage |= SetVal (cp, argv[i]);
-		    argv[i][0] = '\0';
-		}
-		else bad_usage = TRUE;
-	    }
-	}
+        for (parsed = FALSE, cp = (Config_t *) config_p;
+             cp->arg_type != NOTYPE; cp++) {
+            if (mystrcasecmp(argv[i], cp->swtch) == 0) {
+                parsed = TRUE;
+                /* remove this switch from consideration */
+                argv[i][0] = '\0';
+                if (++i < argc) {
+                    bad_usage |= SetVal(cp, argv[i]);
+                    argv[i][0] = '\0';
+                }
+                else
+                    bad_usage = TRUE;
+            }
+        }
 
-	if (parsed || !last) continue;
+        if (parsed || !last)
+            continue;
 
-	if (geometry && (*argv[i] == '=')) {
-	    *geometry = argv[i];
-	    continue;
-	}
+        if (geometry && (*argv[i] == '=')) {
+            *geometry = argv[i];
+            continue;
+        }
 
-	if (display && (strchr (argv[i], ':') != 0)) {
-	    *display = argv[i];
-	    continue;
-	}
+        if (display && (strchr(argv[i], ':') != 0)) {
+            *display = argv[i];
+            continue;
+        }
 
-	if ((mystrcasecmp ("-?", argv[i]) == 0) ||
-	    (mystrcasecmp ("-help", argv[i]) == 0))
-	    pusage (argv[0], (Config_t *) config_p);
-	printf ("%s: Unrecognized argument, %s\n", argv[0], argv[i]);
-	bad_usage = TRUE;
+        if ((mystrcasecmp("-?", argv[i]) == 0) ||
+            (mystrcasecmp("-help", argv[i]) == 0))
+            pusage(argv[0], (Config_t *) config_p);
+        printf("%s: Unrecognized argument, %s\n", argv[0], argv[i]);
+        bad_usage = TRUE;
     }
     return (bad_usage);
 }
@@ -184,17 +187,17 @@ ppconf (int argc, char *argv[], config_t *config_p,
  *------------------------------------------------------------*
  */
 void
-pusage (char *prog, Config_t *cp)
+pusage(char *prog, Config_t * cp)
 {
     char valstr[256];
 
-    printf ("Usage: %s\n", prog);
+    printf("Usage: %s\n", prog);
     for (; cp->arg_type != NOTYPE; cp++) {
-	SPrintVal (cp, valstr);
-	printf (" [%s %s] %s - %s\n", cp->swtch, valstr,
-		cp->LongName, cp->Doc);
+        SPrintVal(cp, valstr);
+        printf(" [%s %s] %s - %s\n", cp->swtch, valstr,
+               cp->LongName, cp->Doc);
     }
-    exit (-1);
+    exit(-1);
 }
 
 /* env_scan: substitutes environment values into a string */
@@ -202,148 +205,148 @@ static char *
 env_scan(char const *str)
 {
     extern char *getenv();
-    char buf[1024];		/* buffer for temp use */
-    register char *p = buf;	/* holds place in the buffer */
-    char var[50];		/* holds the name of the env variable */
+    char buf[1024];             /* buffer for temp use */
+    register char *p = buf;     /* holds place in the buffer */
+    char var[50];               /* holds the name of the env variable */
     char *val;
 
     while (*str)
-	if (*str == '$') {
-	    if (*++str == '$') {
-		*p++ = *str++;
-		continue;
-	    }
-	    val = var;
-	    while (isalnum((unsigned char) *str) || *str == '_')
-		*val++ = *str++;
-	    *p = '\0';
-	    val = (val == var) ? "$" : getenv(var);
-	    if (val) {
-		strcat(p, val);
-		p += strlen(val);
-	    }
-	} else
-	    *p++ = *str++;
+        if (*str == '$') {
+            if (*++str == '$') {
+                *p++ = *str++;
+                continue;
+            }
+            val = var;
+            while (isalnum((unsigned char) *str) || *str == '_')
+                *val++ = *str++;
+            *p = '\0';
+            val = (val == var) ? "$" : getenv(var);
+            if (val) {
+                strcat(p, val);
+                p += strlen(val);
+            }
+        }
+        else
+            *p++ = *str++;
     *p = '\0';
     return salloc(buf);
 }
 
 static int
-SetVal (Config_t *cp, char const *str)
+SetVal(Config_t * cp, char const *str)
 {
     switch (cp->arg_type) {
     case CHAR:
-	*(cp->var.CharP) = (char) str[0];
-	break;
+        *(cp->var.CharP) = (char) str[0];
+        break;
     case BYTE:
-	*(cp->var.ByteP) = (char) atoi (str);
-	break;
+        *(cp->var.ByteP) = (char) atoi(str);
+        break;
     case U_BYTE:
-	*(cp->var.UByteP) = (u_char) atoi (str);
-	break;
+        *(cp->var.UByteP) = (u_char) atoi(str);
+        break;
     case SHORT:
-	*(cp->var.ShortP) = (int16) atoi (str);
-	break;
+        *(cp->var.ShortP) = (int16) atoi(str);
+        break;
     case U_SHORT:
-	*(cp->var.UShortP) = (uint16) atoi (str);
-	break;
+        *(cp->var.UShortP) = (uint16) atoi(str);
+        break;
     case INT:
-	*(cp->var.IntP) = (int32) atoi (str);
-	break;
+        *(cp->var.IntP) = (int32) atoi(str);
+        break;
     case U_INT:
-	*(cp->var.UIntP) = (u_int) atoi (str);
-	break;
+        *(cp->var.UIntP) = (u_int) atoi(str);
+        break;
     case FLOAT:
-	*(cp->var.FloatP) = (float) atof (str);
-	break;
+        *(cp->var.FloatP) = (float) atof(str);
+        break;
     case DOUBLE:
-	*(cp->var.DoubleP) = (double) atof (str);
-	break;
+        *(cp->var.DoubleP) = (double) atof(str);
+        break;
     case BOOL:
-	if ((mystrcasecmp ("on", str) == 0) ||
-	    (mystrcasecmp ("1", str) == 0) ||
-	    (mystrcasecmp ("t", str) == 0) ||
-	    (mystrcasecmp ("true", str) == 0) ||
-	    (mystrcasecmp ("y", str) == 0) ||
-	    (mystrcasecmp ("yes", str) == 0))
-	    *(cp->var.BoolP) = TRUE;
-	else
-	if ((mystrcasecmp ("off", str) == 0) ||
-	    (mystrcasecmp ("0", str) == 0) ||
-	    (mystrcasecmp ("f", str) == 0) ||
-	    (mystrcasecmp ("false", str) == 0) ||
-	    (mystrcasecmp ("n", str) == 0) ||
-	    (mystrcasecmp ("no", str) == 0))
-	    *(cp->var.BoolP) = FALSE;
-	else
-	    return (-1);
-	break;
+        if ((mystrcasecmp("on", str) == 0) ||
+            (mystrcasecmp("1", str) == 0) ||
+            (mystrcasecmp("t", str) == 0) ||
+            (mystrcasecmp("true", str) == 0) ||
+            (mystrcasecmp("y", str) == 0) ||
+            (mystrcasecmp("yes", str) == 0))
+            *(cp->var.BoolP) = TRUE;
+        else if ((mystrcasecmp("off", str) == 0) ||
+                 (mystrcasecmp("0", str) == 0) ||
+                 (mystrcasecmp("f", str) == 0) ||
+                 (mystrcasecmp("false", str) == 0) ||
+                 (mystrcasecmp("n", str) == 0) ||
+                 (mystrcasecmp("no", str) == 0))
+            *(cp->var.BoolP) = FALSE;
+        else
+            return (-1);
+        break;
     case STRING:
-	*(cp->var.StringP) = env_scan(str);
-	break;
+        *(cp->var.StringP) = env_scan(str);
+        break;
     case DATA_SRC:
-	if (mystrcasecmp("hsa", str) == 0)
-	    *(cp->var.DataSrcP) = SRC_HSA;
-	else if (mystrcasecmp("vqfile", str) == 0)
-	    *(cp->var.DataSrcP) = SRC_VQFILE;
-	else if (mystrcasecmp("adcfile", str) == 0)
-	    *(cp->var.DataSrcP) = SRC_ADCFILE;
-	else {
-	    printf ("Unknown data source %s\n", str);
-	    exit (-1);
-	}
-	break;
+        if (mystrcasecmp("hsa", str) == 0)
+            *(cp->var.DataSrcP) = SRC_HSA;
+        else if (mystrcasecmp("vqfile", str) == 0)
+            *(cp->var.DataSrcP) = SRC_VQFILE;
+        else if (mystrcasecmp("adcfile", str) == 0)
+            *(cp->var.DataSrcP) = SRC_ADCFILE;
+        else {
+            printf("Unknown data source %s\n", str);
+            exit(-1);
+        }
+        break;
     default:
-	fprintf (stderr, "bad param type %d\n", cp->arg_type);
-	return (-1);
+        fprintf(stderr, "bad param type %d\n", cp->arg_type);
+        return (-1);
     }
     return (0);
 }
 
 /* FIXME: potential buffer overruns? */
 static void
-SPrintVal (Config_t *cp, char *str)
+SPrintVal(Config_t * cp, char *str)
 {
     switch (cp->arg_type) {
     case CHAR:
-	sprintf (str, "%c", *(cp->var.CharP));
-	break;
+        sprintf(str, "%c", *(cp->var.CharP));
+        break;
     case BYTE:
-	sprintf (str, "%d", *(cp->var.ByteP));
-	break;
+        sprintf(str, "%d", *(cp->var.ByteP));
+        break;
     case U_BYTE:
-	sprintf (str, "%u", *(cp->var.UByteP));
-	break;
+        sprintf(str, "%u", *(cp->var.UByteP));
+        break;
     case SHORT:
-	sprintf (str, "%d", *(cp->var.ShortP));
-	break;
+        sprintf(str, "%d", *(cp->var.ShortP));
+        break;
     case U_SHORT:
-	sprintf (str, "%u", *(cp->var.UShortP));
-	break;
+        sprintf(str, "%u", *(cp->var.UShortP));
+        break;
     case INT:
-	sprintf (str, "%d", *(cp->var.IntP));
-	break;
+        sprintf(str, "%d", *(cp->var.IntP));
+        break;
     case U_INT:
-	sprintf (str, "%u", *(cp->var.UIntP));
-	break;
+        sprintf(str, "%u", *(cp->var.UIntP));
+        break;
     case FLOAT:
-	sprintf (str, "%f", *(cp->var.FloatP));
-	break;
+        sprintf(str, "%f", *(cp->var.FloatP));
+        break;
     case DOUBLE:
-	sprintf (str, "%f", *(cp->var.DoubleP));
-	break;
+        sprintf(str, "%f", *(cp->var.DoubleP));
+        break;
     case BOOL:
-	sprintf (str, "%s", (*(cp->var.BoolP) ? "TRUE" : "FALSE"));
-	break;
+        sprintf(str, "%s", (*(cp->var.BoolP) ? "TRUE" : "FALSE"));
+        break;
     case STRING:
         /* Some sprintfs don't like null %s arguments (!) */
-	if (*cp->var.StringP)
-	    sprintf (str, "%s", *(cp->var.StringP));
-	else
-	    sprintf (str, "(null)");
-	break;
+        if (*cp->var.StringP)
+            sprintf(str, "%s", *(cp->var.StringP));
+        else
+            sprintf(str, "(null)");
+        break;
     default:
-	sprintf (str, "bad param type %d\n", cp->arg_type);
+        sprintf(str, "bad param type %d\n", cp->arg_type);
     }
 }
 
@@ -358,77 +361,76 @@ SPrintVal (Config_t *cp, char *str)
  * fpconf
  */
 int
-fpconf (FILE *config_fp, Config_t config_p[],
-	char **display, char **geometry,
-	char * (*GetDefault)(char const *, char const *))
+fpconf(FILE * config_fp, Config_t config_p[],
+       char **display, char **geometry,
+       char *(*GetDefault) (char const *, char const *))
 {
     int parsed, read_mode = NAME, inchar;
     int bad_usage = FALSE;
     Config_t *cp;
-    char name[MAX_NAME_LEN+1], value[MAX_VALUE_LEN+1], name_fm[12],
-	value_fm[12];
+    char name[MAX_NAME_LEN + 1], value[MAX_VALUE_LEN + 1], name_fm[12],
+        value_fm[12];
 
     sprintf(name_fm, "%%%d[^:]", MAX_NAME_LEN);
     sprintf(value_fm, "%%%d[^\n]", MAX_VALUE_LEN);
 
     for (;;) {
-	inchar = fgetc(config_fp);
+        inchar = fgetc(config_fp);
 
-	if (inchar == EOF) {
-	    if (read_mode == VALUE)
-		fprintf(stderr, "Value expected after name, %s.\n", name);
+        if (inchar == EOF) {
+            if (read_mode == VALUE)
+                fprintf(stderr, "Value expected after name, %s.\n", name);
 
-	    return bad_usage;
-	}
-
-	if (inchar == '\n') {
-	    read_mode = NAME;
-	    continue;
+            return bad_usage;
         }
 
-	/* skip whitespace or comments */
-        if ( read_mode == COMMENT || inchar == ' ' || inchar == '\t')
-	    continue;
+        if (inchar == '\n') {
+            read_mode = NAME;
+            continue;
+        }
 
-	if ( inchar == ';') {
-	    read_mode = COMMENT;
-	    continue;
-	}
+        /* skip whitespace or comments */
+        if (read_mode == COMMENT || inchar == ' ' || inchar == '\t')
+            continue;
 
-	/* put first char of name or value back */
-	ungetc(inchar, config_fp);
+        if (inchar == ';') {
+            read_mode = COMMENT;
+            continue;
+        }
 
-	if (read_mode == NAME) {
-	    fscanf(config_fp, name_fm, name);
+        /* put first char of name or value back */
+        ungetc(inchar, config_fp);
 
-	    if (fgetc(config_fp) != ':') {
-		fprintf(stderr, "fpconf: Parameter name too int32.");
-		exit(-1);
-	    }
+        if (read_mode == NAME) {
+            fscanf(config_fp, name_fm, name);
 
-	    read_mode = VALUE;
-	    continue;
-	}
+            if (fgetc(config_fp) != ':') {
+                fprintf(stderr, "fpconf: Parameter name too int32.");
+                exit(-1);
+            }
 
-	if (read_mode == VALUE) {
-	    fscanf(config_fp, value_fm, value);
-	    read_mode = NAME;
-	}
+            read_mode = VALUE;
+            continue;
+        }
 
-	/* got a (name, value) pair */
+        if (read_mode == VALUE) {
+            fscanf(config_fp, value_fm, value);
+            read_mode = NAME;
+        }
 
-	for (parsed = FALSE, cp = config_p; cp->arg_type != NOTYPE; cp++) {
-	    if (mystrcasecmp (name, cp->LongName) == 0) {
-		parsed = TRUE;
-		bad_usage |= SetVal (cp, salloc(value));
+        /* got a (name, value) pair */
 
-	    }
-	}
+        for (parsed = FALSE, cp = config_p; cp->arg_type != NOTYPE; cp++) {
+            if (mystrcasecmp(name, cp->LongName) == 0) {
+                parsed = TRUE;
+                bad_usage |= SetVal(cp, salloc(value));
 
-	if (!parsed) {
-	    fprintf(stderr, "fpconf: Unknown parameter %s\n", name);
-	    bad_usage = TRUE;
-	}
+            }
+        }
+
+        if (!parsed) {
+            fprintf(stderr, "fpconf: Unknown parameter %s\n", name);
+            bad_usage = TRUE;
+        }
     }
 }
-

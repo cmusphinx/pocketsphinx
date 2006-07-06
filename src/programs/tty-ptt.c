@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -74,30 +75,32 @@
 #define LISTENTIME		5.0
 #define SAMPLE_RATE             16000
 
-static int32 last_fr;		/* Last frame for which partial result was reported */
+static int32 last_fr;           /* Last frame for which partial result was reported */
 static ad_rec_t *ad;
 
 /* Function for reporting partial recognition result */
-static void update_result ( void )
+static void
+update_result(void)
 {
     int32 fr;
     char *hyp;
-    
-    if (uttproc_partial_result (&fr, &hyp) < 0)
-	E_FATAL("uttproc_partial_result() failed\n");
+
+    if (uttproc_partial_result(&fr, &hyp) < 0)
+        E_FATAL("uttproc_partial_result() failed\n");
 
     if ((fr >= 0) && (fr != last_fr)) {
-	printf ("@Frm %d: %s\n", fr, hyp);
-	fflush (stdout);
-	last_fr = fr;
+        printf("@Frm %d: %s\n", fr, hyp);
+        fflush(stdout);
+        last_fr = fr;
     }
 }
 
 /* Determine if the user has indicated end of utterance (keyboard hit at end of utt) */
-static int32 speaking (int32 ns)
+static int32
+speaking(int32 ns)
 {
 #ifdef WIN32
-    return (ns > (LISTENTIME*DEFAULT_SAMPLES_PER_SEC)) ? 0 : 1;
+    return (ns > (LISTENTIME * DEFAULT_SAMPLES_PER_SEC)) ? 0 : 1;
 #else
     /* ------------------- Unix ------------------ */
     /* Check for a keyboard hit, BUT NON-BLOCKING */
@@ -105,140 +108,142 @@ static int32 speaking (int32 ns)
     struct timeval zero_tmo;
     int32 status;
     char line[1024];
-    
+
     FD_ZERO(&readfds);
-    FD_SET(0 /* stdin */, &readfds);
+    FD_SET(0 /* stdin */ , &readfds);
     zero_tmo.tv_sec = 0;
     zero_tmo.tv_usec = 0;
-    
-    status = (select(1, &readfds, NULL, NULL, &zero_tmo) <= 0);
-    if (! status) {	/* Assume user typed something at the terminal to stop speaking */
-	fgets (line, sizeof(line), stdin);
 
-	if (line[0] == 'r') {
-	    E_INFO("Stopping utt...\n");
-	    uttproc_stop_utt ();
-	    
-	    E_INFO("Restarting utt...\n");
-	    uttproc_restart_utt ();
-	    
-	    return 1;
-	}
+    status = (select(1, &readfds, NULL, NULL, &zero_tmo) <= 0);
+    if (!status) {              /* Assume user typed something at the terminal to stop speaking */
+        fgets(line, sizeof(line), stdin);
+
+        if (line[0] == 'r') {
+            E_INFO("Stopping utt...\n");
+            uttproc_stop_utt();
+
+            E_INFO("Restarting utt...\n");
+            uttproc_restart_utt();
+
+            return 1;
+        }
     }
-    
+
     return (status);
 #endif
 }
 
-static void ui_ready ( void )
+static void
+ui_ready(void)
 {
 #ifdef WIN32
-    printf ("\nSystem will listen for ~ %.1f sec of speech\n", LISTENTIME);
-    printf ("Hit <cr> before speaking: ");
+    printf("\nSystem will listen for ~ %.1f sec of speech\n", LISTENTIME);
+    printf("Hit <cr> before speaking: ");
 #else
-    printf ("\nHit <cr> BEFORE and AFTER speaking: ");
+    printf("\nHit <cr> BEFORE and AFTER speaking: ");
 #endif
-    fflush (stdout);
+    fflush(stdout);
 }
 
 /* Main utterance processing loop: decode each utt */
-static void utterance_loop()
+static void
+utterance_loop()
 {
     int32 fr;
     char *hyp;
     char line[1024];
     int16 adbuf[4096];
     int32 k;
-    int32 ns;		/* #Samples read from audio in this utterance */
-    int32 hwm;		/* High Water Mark: to know when to report partial result */
-	int32 recording;
-    
-    for (;;) {		/* Loop for each new utterance */
-	ui_ready ();
+    int32 ns;                   /* #Samples read from audio in this utterance */
+    int32 hwm;                  /* High Water Mark: to know when to report partial result */
+    int32 recording;
 
-	fgets (line, sizeof(line), stdin);
-	if ((line[0] == 'q') || (line[0] == 'Q'))
-	    return;
-	
-	ad_start_rec(ad);	/* Start A/D recording for this utterance */
-	recording = 1;
+    for (;;) {                  /* Loop for each new utterance */
+        ui_ready();
 
-	ns = 0;
-	hwm = 4000;	/* Next partial result reported after 4000 samples */
-	last_fr = -1;	/* Frame count at last partial result reported */
+        fgets(line, sizeof(line), stdin);
+        if ((line[0] == 'q') || (line[0] == 'Q'))
+            return;
 
-	/* Begin utterance */
-	if (uttproc_begin_utt (NULL) < 0)
-	    E_FATAL("uttproc_begin_utt() failed\n");
+        ad_start_rec(ad);       /* Start A/D recording for this utterance */
+        recording = 1;
 
-	/* Send audio data to decoder until end of utterance */
-	for (;;) {
-	    /*
-	     * Read audio data (NON-BLOCKING).  Use your favourite substitute here.
-	     * NOTE: In our implementation, ad_read returns -1 upon end of utterance.
-	     */
-	    if ((k = ad_read (ad, adbuf, 4096)) < 0)
-		break;
+        ns = 0;
+        hwm = 4000;             /* Next partial result reported after 4000 samples */
+        last_fr = -1;           /* Frame count at last partial result reported */
 
-	    /* Send whatever data was read above to decoder */
-	    uttproc_rawdata (adbuf, k, 0);
-	    ns += k;
+        /* Begin utterance */
+        if (uttproc_begin_utt(NULL) < 0)
+            E_FATAL("uttproc_begin_utt() failed\n");
 
-	    /* Time to report partial result? (every 4000 samples or 1/4 sec) */
-	    if (ns > hwm) {
-		update_result ();
-		hwm = ns+4000;
-	    }
+        /* Send audio data to decoder until end of utterance */
+        for (;;) {
+            /*
+             * Read audio data (NON-BLOCKING).  Use your favourite substitute here.
+             * NOTE: In our implementation, ad_read returns -1 upon end of utterance.
+             */
+            if ((k = ad_read(ad, adbuf, 4096)) < 0)
+                break;
 
-	    /*
-	     * Check for end of utterance indication from user.
-	     * NOTE: Our way of finishing an utterance is to stop the A/D, but
-	     * continue to read A/D data in order to empty system audio buffers.
-	     * The ad_read function returns -1 when audio recording has been stopped
-	     * and no more data is available, exiting this for-loop (see above).
-	     * Other implementations can adopt a different approach; eg, exit the
-	     * loop right here if (! speaking()).
-	     */
-	    if (recording && (! speaking(ns))) {
-		ad_stop_rec(ad);
-		E_INFO("A/D Stopped\n");
-		recording = 0;
-	    }
-	}
-	
-	uttproc_end_utt ();
-	
-	printf ("PLEASE WAIT...\n");
-	fflush (stdout);
+            /* Send whatever data was read above to decoder */
+            uttproc_rawdata(adbuf, k, 0);
+            ns += k;
 
-	for (;;) {
-	    if ((k = uttproc_result (&fr, &hyp, 0)) == 0) {
-		printf ("\nFINAL RESULT @frm %d: %s\n", fr, hyp);
-		break;
-	    }
-	    if (k < 0) {
-		E_INFO("uttproc_result_noblock() failed\n");
-		break;
-	    }
-	    if (! (k & 0x1f))
-		update_result ();
-	}
+            /* Time to report partial result? (every 4000 samples or 1/4 sec) */
+            if (ns > hwm) {
+                update_result();
+                hwm = ns + 4000;
+            }
+
+            /*
+             * Check for end of utterance indication from user.
+             * NOTE: Our way of finishing an utterance is to stop the A/D, but
+             * continue to read A/D data in order to empty system audio buffers.
+             * The ad_read function returns -1 when audio recording has been stopped
+             * and no more data is available, exiting this for-loop (see above).
+             * Other implementations can adopt a different approach; eg, exit the
+             * loop right here if (! speaking()).
+             */
+            if (recording && (!speaking(ns))) {
+                ad_stop_rec(ad);
+                E_INFO("A/D Stopped\n");
+                recording = 0;
+            }
+        }
+
+        uttproc_end_utt();
+
+        printf("PLEASE WAIT...\n");
+        fflush(stdout);
+
+        for (;;) {
+            if ((k = uttproc_result(&fr, &hyp, 0)) == 0) {
+                printf("\nFINAL RESULT @frm %d: %s\n", fr, hyp);
+                break;
+            }
+            if (k < 0) {
+                E_INFO("uttproc_result_noblock() failed\n");
+                break;
+            }
+            if (!(k & 0x1f))
+                update_result();
+        }
     }
 }
 
 int
-main (int32 argc, char *argv[])
+main(int32 argc, char *argv[])
 {
-    fbs_init (argc, argv);
-    
+    fbs_init(argc, argv);
+
     if ((ad = ad_open_sps(SAMPLE_RATE)) == NULL)
-	E_FATAL("ad_open_sps failed\n");
+        E_FATAL("ad_open_sps failed\n");
 
     E_INFO("%s COMPILED ON: %s, AT: %s\n\n", argv[0], __DATE__, __TIME__);
 
-    utterance_loop ();
-    
-    ad_close (ad);
-    fbs_end ();
+    utterance_loop();
+
+    ad_close(ad);
+    fbs_end();
     return 0;
 }
