@@ -62,6 +62,7 @@
 #endif                          /* GNUWINCE */
 #else                           /* !WIN32 */
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <sys/mman.h>
