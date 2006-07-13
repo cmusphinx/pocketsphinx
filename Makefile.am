@@ -12,7 +12,7 @@ EXTRA_DIST = autogen.sh \
 	win32/msdev/pocketsphinx_continuous/pocketsphinx_continuous.dsp \
 	win32/msdev/pocketsphinx_ptt/pocketsphinx_ptt.dsp
 
-test:
+check:
 	$(LIBTOOL) --mode=execute src/programs/pocketsphinx_batch \
 		-verbose 9 -adcin TRUE -adcext 16k -samp 16000 \
 		-ctlfn $(top_srcdir)/model/lm/turtle/turtle.ctl \
