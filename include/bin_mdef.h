@@ -59,8 +59,9 @@ extern "C" {
 #include "s3types.h"
 
 #define BIN_MDEF_FORMAT_VERSION 1
-#define BIN_MDEF_LITTLE_ENDIAN 0x46444d42 /* 'FDMB' */
-#define BIN_MDEF_BIG_ENDIAN    0x424d4446 /* 'BMDF' */
+/* Little-endian machines will write "BMDF" to disk, big-endian ones "FDMB". */
+#define BIN_MDEF_NATIVE_ENDIAN 0x46444d42 /* 'BMDF' in little-endian order */
+#define BIN_MDEF_OTHER_ENDIAN 0x424d4446  /* 'BMDF' in big-endian order */
 #ifdef __GNUC__
 #define ATTRIBUTE_PACKED __attribute__((packed))
 #else
