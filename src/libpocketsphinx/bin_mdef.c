@@ -297,9 +297,14 @@ bin_mdef_read(const char *filename)
         E_FATAL_SYSTEM("Failed to read byte-order marker from %s\n",
                        filename);
     swap = 0;
-    if (strncmp((char *) &val, "BMDF", 4)) {
+    if (val == BIN_MDEF_BIG_ENDIAN) {
         swap = 1;
         E_INFO("Must byte-swap %s\n", filename);
+    }
+    else if (val == BIN_MDEF_LITTLE_ENDIAN) {
+    }
+    else {
+        E_FATAL("Failed to read byte-order marker from %s\n", filename);
     }
     if (fread(&val, 4, 1, fh) != 1)
         E_FATAL_SYSTEM("Failed to read version from %s\n", filename);

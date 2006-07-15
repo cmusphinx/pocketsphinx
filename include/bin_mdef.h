@@ -59,6 +59,8 @@ extern "C" {
 #include "s3types.h"
 
 #define BIN_MDEF_FORMAT_VERSION 1
+#define BIN_MDEF_LITTLE_ENDIAN 0x46444d42 /* 'FDMB' */
+#define BIN_MDEF_BIG_ENDIAN    0x424d4446 /* 'BMDF' */
 #ifdef __GNUC__
 #define ATTRIBUTE_PACKED __attribute__((packed))
 #else
