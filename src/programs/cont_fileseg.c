@@ -109,7 +109,7 @@ static int32 swap;
 /* Max size read by file_ad_read function on each invocation, for debugging */
 static int32 max_ad_read_size;
 
-#if defined(WIN32)
+#if defined(WIN32) && !defined(GNUWINCE)
 #define NULL_DEVICE "NUL"
 #else
 #define NULL_DEVICE "/dev/null"

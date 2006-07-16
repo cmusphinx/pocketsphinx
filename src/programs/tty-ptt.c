@@ -60,7 +60,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(GNUWINCE)
 #include <time.h>
 #else
 #include <sys/types.h>
@@ -99,7 +99,7 @@ update_result(void)
 static int32
 speaking(int32 ns)
 {
-#ifdef WIN32
+#if defined(WIN32) && !defined(GNUWINCE)
     return (ns > (LISTENTIME * DEFAULT_SAMPLES_PER_SEC)) ? 0 : 1;
 #else
     /* ------------------- Unix ------------------ */
@@ -136,7 +136,7 @@ speaking(int32 ns)
 static void
 ui_ready(void)
 {
-#ifdef WIN32
+#if defined(WIN32) && !defined(GNUWINCE)
     printf("\nSystem will listen for ~ %.1f sec of speech\n", LISTENTIME);
     printf("Hit <cr> before speaking: ");
 #else

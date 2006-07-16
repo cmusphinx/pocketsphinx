@@ -69,7 +69,7 @@
 #include "cont_ad.h"
 #include "fbs.h"
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(GNUWINCE)
 #include <time.h>
 #else
 #include <sys/types.h>
@@ -84,7 +84,7 @@ static ad_rec_t *ad;
 static void
 sleep_msec(int32 ms)
 {
-#ifdef WIN32
+#if defined(WIN32) && !defined(GNUWINCE)
     Sleep(ms);
 #else
     /* ------------------- Unix ------------------ */
@@ -222,7 +222,9 @@ int
 main(int argc, char *argv[])
 {
     /* Make sure we exit cleanly (needed for profiling among other things) */
+#ifndef GNUWINCE /* Signals seem to be broken in arm-wince-pe. */
     signal(SIGINT, &sighandler);
+#endif
 
     fbs_init(argc, argv);
 
