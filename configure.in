@@ -66,16 +66,22 @@ CPPFLAGS="-I/usr/include/sphinxbase -I/usr/local/include/sphinxbase",[
 
 dnl
 dnl Now verify SphinxBase if defined
+dnl Sadly, this doesn't work when cross-compiling (for some dumb reason...)
 dnl
 : ${sphinxbasebuild=$sphinxbase}
-if test x$sphinxbase != x; then
+if test x$sphinxbase != x && test x$cross_compiling = xyes; then
+   CPPFLAGS="-I$sphinxbase/include -I$sphinxbasebuild/include $CPPFLAGS"
+   LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxfe \
+		     -L$sphinxbasebuild/src/libsphinxutil -L$sphinxbasebuild/src/libsphinxad"
+fi
+if test x$sphinxbase != x && test x$cross_compiling != xyes; then
    AC_CHECK_FILE($sphinxbase/include/prim_type.h,CPPFLAGS="-I$sphinxbase/include $CPPFLAGS",
    AC_ERROR(
 [SphinxBase headers not found in $sphinxbase.  Please use the
 --with-sphinxbase option to `configure' to specify the location of
 SphinxBase.  Run $0 --help for more information.]))
 fi
-if test x$sphinxbasebuild != x; then
+if test x$sphinxbasebuild != x && test x$cross_compiling != xyes; then
    AC_CHECK_FILE($sphinxbasebuild/src/libsphinxutil/libsphinxutil.la,
 [CPPFLAGS="-I$sphinxbasebuild/include $CPPFLAGS"
 LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxfe \
