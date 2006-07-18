@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\include" /I "..\..\..\src\libpocketsphinx\include" /I "..\..\..\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "FAST8B" /D "LM_CACHE_PROFLE" /D FBSVQ_V8=1 /D UNPADDED_CEP=1 /D "_AFXDLL" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "..\..\..\include" /I "..\..\..\src\libpocketsphinx\include" /I "..\..\..\..\sphinxbase\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "FAST8B" /D "LM_CACHE_PROFLE" /D FBSVQ_V8=1 /D UNPADDED_CEP=1 /D "_AFXDLL" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG" /d "_AFXDLL"
 BSC32=bscmake.exe
@@ -64,7 +64,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "Debug"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\include ..\..\..\src\libpocketsphinx\include" /I "..\..\..\src\libpocketsphinx\include" /I "..\..\..\include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /D "FAST8B" /D "LM_CACHE_PROFLE" /D FBSVQ_V8=1 /D UNPADDED_CEP=1 /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "..\..\..\include ..\..\..\src\libpocketsphinx\include" /I "..\..\..\..\sphinxbase\include" /I "..\..\..\include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_AFXDLL" /D "_MBCS" /D "FAST8B" /D "LM_CACHE_PROFLE" /D FBSVQ_V8=1 /D UNPADDED_CEP=1 /YX /FD /GZ /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -109,15 +109,7 @@ SOURCE=..\..\..\src\libpocketsphinx\bin_mdef.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\libpocketsphinx\bio.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\libpocketsphinx\bisearch.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\bitvec.c
 # End Source File
 # Begin Source File
 
@@ -130,10 +122,6 @@ SOURCE=..\..\..\src\libpocketsphinx\blkarray_list.c
 # Begin Source File
 
 SOURCE=..\..\..\src\libpocketsphinx\cache_lm.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\case.c
 # End Source File
 # Begin Source File
 
@@ -157,15 +145,7 @@ SOURCE=..\..\..\src\libpocketsphinx\cep_rw.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\libpocketsphinx\ckd_alloc.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\libpocketsphinx\CM_funcs.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx_audio\cont_ad_base.c
 # End Source File
 # Begin Source File
 
@@ -181,27 +161,11 @@ SOURCE=..\..\..\src\libpocketsphinx\eht_quit.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\libpocketsphinx\err.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\libpocketsphinx\fbs_main.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\libpocketsphinx\fe_interface.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\libpocketsphinx\fe_internal.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\fe_sigproc.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\fixlog.c
 # End Source File
 # Begin Source File
 
@@ -225,10 +189,6 @@ SOURCE=..\..\..\src\libpocketsphinx\get_a_word.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\libpocketsphinx\glist.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\libpocketsphinx\hash.c
 # End Source File
 # Begin Source File
@@ -246,10 +206,6 @@ SOURCE=..\..\..\src\libpocketsphinx\kdtree.c
 # Begin Source File
 
 SOURCE=..\..\..\src\libpocketsphinx\lab.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\linklist.c
 # End Source File
 # Begin Source File
 
@@ -309,19 +265,11 @@ SOURCE=..\..\..\src\libpocketsphinx\phone.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\libpocketsphinx_audio\play_win32.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\libpocketsphinx\prime.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\libpocketsphinx\r_agc_noise.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx_audio\rec_win32.c
 # End Source File
 # Begin Source File
 
@@ -362,10 +310,6 @@ SOURCE=..\..\..\src\libpocketsphinx\senscr.c
 # Begin Source File
 
 SOURCE=..\..\..\src\libpocketsphinx\skipto.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\str2words.c
 # End Source File
 # Begin Source File
 
@@ -425,10 +369,6 @@ SOURCE=..\..\..\include\bio.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\include\bitvec.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\include\blkarray_list.h
 # End Source File
 # Begin Source File
@@ -461,10 +401,6 @@ SOURCE=..\..\..\include\cepio.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\include\ckd_alloc.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\include\CM_macros.h
 # End Source File
 # Begin Source File
@@ -482,10 +418,6 @@ SOURCE=..\..\..\include\cviterbi4.h
 # Begin Source File
 
 SOURCE=..\..\..\include\dict.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\err.h
 # End Source File
 # Begin Source File
 
@@ -534,10 +466,6 @@ SOURCE=..\..\..\include\kb.h
 # Begin Source File
 
 SOURCE=..\..\..\include\kdtree.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\linklist.h
 # End Source File
 # Begin Source File
 
