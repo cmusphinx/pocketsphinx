@@ -5,7 +5,6 @@ SUBDIRS = src \
 
 EXTRA_DIST = autogen.sh \
 	pocketsphinx.dsw \
-	win32/PocketSphinx.dsw \
 	win32/msdev/pocketsphinx/pocketsphinx.dsp \
 	win32/msdev/pocketsphinx_allphone/pocketsphinx_allphone.dsp \
 	win32/msdev/pocketsphinx_batch/pocketsphinx_batch.dsp \
