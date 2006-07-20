@@ -60,9 +60,19 @@ dnl FIXME: How do we find the installed headers robustly?
 dnl
 AC_CHECK_HEADER(sphinxbase/sphinx_config.h,
 CPPFLAGS="-I/usr/include/sphinxbase -I/usr/local/include/sphinxbase",[
-: ${sphinxbase=$PWD/../sphinxbase}
+if test x$sphinxbase = x; then
+   # Look for sphinxbase in the parent directory
+   for sb in ../sphinxbase*; do
+       AC_MSG_CHECKING([for sphinxbase in $sb])
+       if test -f "$sb/include/prim_type.h"; then
+          sphinxbase="`pwd`/$sb"
+	  AC_MSG_RESULT(yes)
+       else
+	  AC_MSG_RESULT(no)
+       fi
+   done
+fi
 ])
-
 
 dnl
 dnl Now verify SphinxBase if defined
