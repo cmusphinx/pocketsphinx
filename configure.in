@@ -1,8 +1,8 @@
 dnl Welcome to the Sphinx-2 automated build system.
 dnl try not to hurt yourself ;)
 
-AC_INIT(configure.in)
-AM_INIT_AUTOMAKE(pocketsphinx,0.1)
+AC_INIT(pocketsphinx, 0.2)
+AM_INIT_AUTOMAKE([no-define dist-bzip2])
 
 CFLAGS=${CFLAGS:--g -O2 -Wall}
 
@@ -121,8 +121,12 @@ model/hmm/wsj0/Makefile
 model/hmm/tidigits/Makefile
 model/lm/Makefile
 model/lm/turtle/Makefile
+model/lm/swb/Makefile
+model/lm/tidigits/Makefile
 scripts/Makefile
 scripts/pocketsphinx_test
+scripts/pocketsphinx_swb
+scripts/pocketsphinx_tidigits
 ])
 
 chmod +x scripts/pocketsphinx_test

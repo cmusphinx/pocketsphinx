@@ -1,0 +1,24 @@
+#!/bin/sh
+S2CONTINUOUS=@prefix@/bin/pocketsphinx_continuous
+HMM=@prefix@/share/pocketsphinx/model/hmm/tidigits
+LM=@prefix@/share/pocketsphinx/model/lm/tidigits
+LMFILE=@prefix@/share/pocketsphinx/model/lm/tidigits/tidigits.lm
+DICT=@prefix@/share/pocketsphinx/model/lm/tidigits/tidigits.dic
+
+echo " "
+echo "pocketsphinx_tidigits:"
+echo "  Demo CMU PocketSphinx decoder with connected digit recognition."
+echo " "
+
+echo "<executing $S2CONTINUOUS, please wait>"
+$S2CONTINUOUS -live TRUE \
+	-fwdflat FALSE -bestpath FALSE \
+	-kbdumpdir ${LM} -lmfn ${LMFILE} \
+	-dictfn ${DICT} \
+	-mdeffn ${HMM}/mdef \
+	-meanfn ${HMM}/means \
+	-varfn ${HMM}/variances \
+	-tmatfn ${HMM}/transition_matrices \
+	-8bsen TRUE -sendumpfn ${HMM}/sendump \
+	-mmap TRUE
+

@@ -1,0 +1,24 @@
+#!/bin/sh
+S2CONTINUOUS=@prefix@/bin/pocketsphinx_continuous
+HMM=@prefix@/share/pocketsphinx/model/hmm/wsj0
+LM=@prefix@/share/pocketsphinx/model/lm/swb
+LMFILE=@prefix@/share/pocketsphinx/model/lm/swb/swb.lm
+DICT=@prefix@/share/pocketsphinx/model/lm/swb/swb.dic
+
+echo " "
+echo "pocketsphinx_swb:"
+echo "  Demo CMU PocketSphinx decoder with SWB language model."
+echo " "
+
+echo "<executing $S2CONTINUOUS, please wait>"
+$S2CONTINUOUS -live TRUE \
+	-fwdflat FALSE -bestpath FALSE \
+	-kbdumpdir ${LM} -lmfn ${LMFILE} \
+	-dictfn ${DICT} -ndictfn ${HMM}/noisedict \
+	-mdeffn ${HMM}/mdef \
+	-meanfn ${HMM}/means \
+	-varfn ${HMM}/variances \
+	-tmatfn ${HMM}/transition_matrices \
+	-8bsen TRUE -sendumpfn ${HMM}/sendump \
+	-mmap TRUE
+
