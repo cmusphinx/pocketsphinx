@@ -12,25 +12,39 @@ response to the needs and patches provided.
 
 To compile:
 
--in a unix-like environment (such as linux, solaris etc):
+First, you *must* have SphinxBase, which you can download from
+http://cmusphinx.org/.  You should download and unpack it to the same
+parent directory as PocketSphinx, so that the configure script and
+project files can find it.  On Windows, you will need to rename
+'sphinxbase-X.Y' (where X.Y is the SphinxBase version number) to
+simply 'sphinxbase' for this to work.
 
---if you downloaded directly from the CVS repository, you need to do
-this at least once to generate the "configure" file:
+In a unix-like environment (such as linux, solaris etc):
+
+ * build and optionally install SphinxBase.  If you want to use
+   fixed-point arithmetic, you *must* configure SphinxBase with the
+   --enable-fixed option.
+
+ * if you downloaded directly from the CVS repository, you need to do
+   this at least once to generate the "configure" file:
 
 % ./autogen.sh
 
---if you downloaded the release version, or ran "autogen.sh" at least
-once, then compile and install:
+ * if you downloaded the release version, or ran "autogen.sh" at least
+   once, then compile and install:
 
 % ./configure
 % make clean all
 % make test
 % make install
 
--in MS Windows (TM), under MS Visual C++ 6.0 (or better):
+In MS Windows (TM), under MS Visual C++ 6.0 (or better):
 
--load pocketsphinx.dsw (located at the top level directory)
--compile minimally the project 'pocketsphinx_continuous'
+ * compile all the projects in SphinxBase (from sphinxbase.dsw)
+
+ * load pocketsphinx.dsw (located at the top level directory)
+
+ * compile minimally the project 'pocketsphinx_continuous'
 
 MS Visual Studio will build the executables under .\bin\Release or
 .\bin\Debug (depending on the version you choose on MS Visual Studio),
