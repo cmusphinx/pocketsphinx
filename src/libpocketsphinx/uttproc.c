@@ -1346,7 +1346,8 @@ uttproc_rawdata(int16 * raw, int32 len, int32 block)
 
     if ((k = fe_process_utt(fe, raw, len, &temp_mfc, &nfr)) < 0)
         return -1;
-    memcpy(mfcbuf[n_rawfr], temp_mfc[0], nfr * CEP_SIZE * sizeof(mfcc_t));
+    if (nfr > 0)
+        memcpy(mfcbuf[n_rawfr], temp_mfc[0], nfr * CEP_SIZE * sizeof(mfcc_t));
 
     if (mfcfp && (nfr > 0)) {
         fe_mfcc_to_float(fe, temp_mfc, (float32 **) temp_mfc, nfr);
