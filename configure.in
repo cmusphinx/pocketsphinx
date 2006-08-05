@@ -1,4 +1,4 @@
-dnl Welcome to the Sphinx-2 automated build system.
+dnl Welcome to the Sphinx automated build system.
 dnl try not to hurt yourself ;)
 
 AC_INIT(pocketsphinx, 0.2)
