@@ -37,17 +37,6 @@
 
 /* KB.C - for compile_kb
  * 
- * $Log: kb_main.c,v $
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.12  2004/12/13 18:35:46  rkm
- * Changed flag -ascrwt to -ascrscale
- *
- * Revision 1.11  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 02-Dec-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Added acoustic score weight (applied only to S3 continuous
  * 		acoustic models).
@@ -144,7 +133,6 @@
 #include "s2types.h"
 #include "CM_macros.h"
 #include "basic_types.h"
-#include "cont_mgau.h"
 #include "search_const.h"
 #include "list.h"
 #include "hash.h"
@@ -392,17 +380,6 @@ static float phone_insertion_penalty;
 
 /* S3 model definition */
 static bin_mdef_t *mdef = NULL;
-
-/* S3 (continuous) acoustic model */
-static mgau_model_t *mgau = NULL;
-
-/*
- * Array for s3 format feature vector in any frame.
- * S3 feature vector = cep[12], dcep[12], pow[3], ddcep[12] concatenated
- * into a single vector.
- */
-static float32 *s3feat = NULL;
-
 
 int32
 kb_get_silence_word_id(void)
@@ -737,45 +714,29 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
      * Read the distributions and remap them to the correct locations
      * Also, read the codebooks.
      */
-    /* If we are using cont_mgau, they get read in at the same time
-       as the codebook. */
     if ((meanFileName == NULL)
         || (varFileName == NULL)
         || (tmatFileName == NULL))
         E_FATAL("No S3 mean/var/mixw/tmat files specified\n");
 
-    /* Try to load them as continuous models (which are always
-     * single-stream), if not, use SCVQ. */
-    mgau = mgau_init(meanFileName, varFileName, s3varfloor,
-                     mixwFileName, s3mixwfloor, TRUE);
-    if (mgau == NULL) {
-        E_INFO
-            ("Using S3 semi-continuous models; initializing SCVQ module\n");
-        read_dists_s3(mixwFileName, NUMOFCODEENTRIES, s3mixwfloor,
-                      useCiPhonesOnly);
-        /* initialize semi-continuous acoustic and model scoring subsystem */
-        SCVQInit(scVqTopN, kb_get_total_dists(), 1,
-                 s3varfloor, use20msDiffPow);
-        if (kdtree_file_name)
-            SCVQLoadKDTree(kdtree_file_name, kdtree_maxdepth,
-                           kdtree_maxbbi);
-        SCVQSetdcep80msWeight(dcep80msWeight);
-        SCVQSetDownsamplingRatio(scvqDSRatio);
-        searchSetScVqTopN(scVqTopN);
+    E_INFO
+        ("Initializing SCVQ module\n");
+    read_dists_s3(mixwFileName, NUMOFCODEENTRIES, s3mixwfloor,
+                  useCiPhonesOnly);
+    /* initialize semi-continuous acoustic and model scoring subsystem */
+    SCVQInit(scVqTopN, kb_get_total_dists(), 1,
+             s3varfloor, use20msDiffPow);
+    if (kdtree_file_name)
+        SCVQLoadKDTree(kdtree_file_name, kdtree_maxdepth,
+                       kdtree_maxbbi);
+    SCVQSetdcep80msWeight(dcep80msWeight);
+    SCVQSetDownsamplingRatio(scvqDSRatio);
+    searchSetScVqTopN(scVqTopN);
 
-        SCVQS3InitFeat(meanFileName, varFileName,
-                       kb_get_codebook_0_dist(),
-                       kb_get_codebook_1_dist(),
-                       kb_get_codebook_2_dist(), kb_get_codebook_3_dist());
-    }
-    else {
-        E_INFO("Using S3 continuous models\n");
-        use_s3semi = FALSE;
-        if (mixwFileName == NULL)
-            E_FATAL("No S3 mixw file specified\n");
-        /* Allocate feature vector array (cep,dcep,pow,ddcep concatenated) */
-        s3feat = (float32 *) CM_calloc(CEP_VECLEN * 3, sizeof(float32));
-    }
+    SCVQS3InitFeat(meanFileName, varFileName,
+                   kb_get_codebook_0_dist(),
+                   kb_get_codebook_1_dist(),
+                   kb_get_codebook_2_dist(), kb_get_codebook_3_dist());
     remap_mdef(smds, mdef);
 
     /*
@@ -1182,18 +1143,6 @@ kb_get_filler_pfpen(void)
     return filler_pfpen;
 }
 
-
-mgau_model_t *
-kb_s3model(void)
-{
-    return mgau;
-}
-
-float32 *
-kb_s3feat(void)
-{
-    return s3feat;
-}
 
 bin_mdef_t *
 kb_mdef(void)

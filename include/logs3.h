@@ -43,26 +43,6 @@
  * Copyright (c) 1997 Carnegie Mellon University.
  * ALL RIGHTS RESERVED.
  * **********************************************
- * 
- * HISTORY
- * 
- * $Log: logs3.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.1  2004/12/10 16:48:58  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 22-Nov-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Imported from s3.2, for supporting s3 format continuous
- * 		acoustic models.
- * 
- * 28-Apr-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added log_to_logs3_factor(), and logs3_to_p().
- * 
- * 05-Nov-95	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Created.
  */
 
 

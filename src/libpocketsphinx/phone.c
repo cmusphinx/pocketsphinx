@@ -38,13 +38,6 @@
 /*
  * HISTORY
  * 
- * $Log: phone.c,v $
- * Revision 1.1.1.1  2006/05/23 18:45:01  dhuggins
- * re-importation
- *
- * Revision 1.9  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
  * 
  * 11-Jun-89 Fil Alleva
  *	Fixed BUG that occured when $LPATH is not in the environment

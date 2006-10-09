@@ -42,14 +42,6 @@
  *
  * HISTORY
  * 
- * $Log: senscr.c,v $
- * Revision 1.1.1.1  2006/05/23 18:45:01  dhuggins
- * re-importation
- *
- * Revision 1.1  2004/12/10 16:48:57  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 02-Dec-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Added acoustic score weight (applied only to S3 continuous
  * 		acoustic models).
@@ -73,7 +65,6 @@
 #include "err.h"
 #include "ckd_alloc.h"
 #include "logs3.h"
-#include "cont_mgau.h"
 #include "kb.h"
 #include "scvq.h"
 #include "phone.h"
@@ -90,38 +81,6 @@
  * 
  * Return value: the best senone score this frame.
  */
-static int32
-best_senscr_all(int32 * senscr)
-{
-    int32 b, i, j, k;
-    int32 n_ci;                 /* #CI phones */
-    int32 *n_psen;              /* #Senones (CI+CD) for each CIphone */
-    int32 *bestpscr;            /* Best senone score (CI or CD) for each CIphone */
-
-    n_ci = phoneCiCount();
-    n_psen = hmm_get_psen();
-    bestpscr = search_get_bestpscr();
-
-    b = (int32) 0x80000000;
-
-    for (i = 0; i < n_ci; i++) {
-        k = (int32) 0x80000000;
-
-        /* Senones (CI+CD) for CIphone i are in one contiguous block */
-        for (j = n_psen[i]; j > 0; --j, senscr++)
-            if (k < *senscr)
-                k = *senscr;
-
-        bestpscr[i] = k;
-
-        if (b < k)
-            b = k;
-    }
-
-    return b;
-}
-
-/* Like best_senscr_all, but using Sphinx3 model ordering. */
 static int32
 best_senscr_all_s3(int32 * senscr)
 {
@@ -189,40 +148,6 @@ best_senscr_active(int32 * senscr)
     return b;
 }
 
-
-/*
- * Compute s3 feature vector from the given input vectors; note that
- * cep, dcep and ddcep include c0, dc0, and ddc0, which should be
- * omitted.
- */
-static void
-s3feat_build(float *s3feat,
-             mfcc_t * cep, mfcc_t * dcep, mfcc_t * pcep, mfcc_t * ddcep)
-{
-    int32 i, j;
-
-#if 1
-    /* 1s_c_d_dd */
-    for (i = 0, j = 0; i < CEP_VECLEN; i++, j++)
-        s3feat[j] = MFCC2FLOAT(cep[i]);
-    for (i = 0; i < CEP_VECLEN; i++, j++)
-        s3feat[j] = MFCC2FLOAT(dcep[i]);
-    for (i = 0; i < CEP_VECLEN; i++, j++)
-        s3feat[j] = MFCC2FLOAT(ddcep[i]);
-#else
-    /* s3_1x39 */
-    for (i = 1, j = 0; i < CEP_VECLEN; i++, j++)        /* Omit cep[0] */
-        s3feat[j] = MFCC2FLOAT(cep[i]);
-    for (i = 1; i < CEP_VECLEN; i++, j++)       /* Omit dcep[0] */
-        s3feat[j] = MFCC2FLOAT(dcep[i]);
-    for (i = 0; i < POW_VECLEN; i++, j++)
-        s3feat[j] = MFCC2FLOAT(pcep[i]);
-    for (i = 1; i < CEP_VECLEN; i++, j++)       /* Omit ddcep[0] */
-        s3feat[j] = MFCC2FLOAT(ddcep[i]);
-#endif
-}
-
-
 static int32
 senscr_compute(int32 * senscr,
                mfcc_t * cep,
@@ -230,75 +155,13 @@ senscr_compute(int32 * senscr,
                mfcc_t * dcep_80ms,
                mfcc_t * pcep, mfcc_t * ddcep, int32 all)
 {
-    mgau_model_t *g;
-
-    g = kb_s3model();
-
-    if (g != NULL) {            /* Use S3 acoustic model */
-        int32 i, sid, best;
-        float32 *s3feat;
-        int32 ascr_sf;
-
-        ascr_sf = kb_get_ascr_scale();
-        s3feat = kb_s3feat();
-        assert(s3feat != NULL);
-
-        /* Build S3 format (single-stream) feature vector */
-        s3feat_build(s3feat, cep, dcep, pcep, ddcep);
-
-        best = (int32) 0x80000000;
-
-        if (all) {
-            /* Evaluate all senones */
-            for (sid = 0; sid < mgau_n_mgau(g); sid++) {
-                senscr[sid] = mgau_eval(g, sid, NULL, s3feat);
-                if (ascr_sf != 0)
-                    senscr[sid] >>= ascr_sf;
-
-                if (best < senscr[sid])
-                    best = senscr[sid];
-            }
-            /* Normalize scores */
-            for (sid = 0; sid < mgau_n_mgau(g); sid++)
-                senscr[sid] -= best;
-        }
-        else {
-            /* Evaluate only active senones */
-            for (i = 0; i < n_senone_active; i++) {
-                sid = senone_active[i];
-
-                senscr[sid] = mgau_eval(g, sid, NULL, s3feat);
-                if (ascr_sf != 0)
-                    senscr[sid] >>= ascr_sf;
-
-                if (best < senscr[sid])
-                    best = senscr[sid];
-            }
-
-            /* Normalize scores */
-            for (i = 0; i < n_senone_active; i++) {
-                sid = senone_active[i];
-                senscr[sid] -= best;
-            }
-        }
-        if (all)
-            return best_senscr_all_s3(senscr);
-        else
-            return best_senscr_active(senscr);
+    if (all) {
+        SCVQScores_all(senscr, cep, dcep, dcep_80ms, pcep, ddcep);
+        return best_senscr_all_s3(senscr);
     }
     else {
-        /* S2 (semi-continuous) senone scores */
-        if (all) {
-            SCVQScores_all(senscr, cep, dcep, dcep_80ms, pcep, ddcep);
-            if (kb_mdef())
-                return best_senscr_all_s3(senscr);
-            else
-                return best_senscr_all(senscr);
-        }
-        else {
-            SCVQScores(senscr, cep, dcep, dcep_80ms, pcep, ddcep);
-            return best_senscr_active(senscr);
-        }
+        SCVQScores(senscr, cep, dcep, dcep_80ms, pcep, ddcep);
+        return best_senscr_active(senscr);
     }
 }
 

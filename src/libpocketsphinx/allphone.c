@@ -40,17 +40,6 @@
  *
  * HISTORY
  * 
- * $Log: allphone.c,v $
- * Revision 1.2  2006/05/26 13:52:46  dhuggins
- * fix a subtle allphone bug
- *
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.12  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 22-Nov-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Modified to use unified semi-continuous/continuous acoustic
  * 		model evaluation module (senscr).

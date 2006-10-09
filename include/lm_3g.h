@@ -33,43 +33,6 @@
 
 /*
  * lm_3g.h - darpa standard trigram language model header file
- *
- * HISTORY
- * 
- * $Log: lm_3g.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.8  2004/12/10 16:48:55  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 28-Oct-98	M K Ravishankar (rkm@cs) at Carnegie Mellon University
- * 		Added lm3g_access_type().
- * 
- * 14-Apr-98	M K Ravishankar (rkm@cs) at Carnegie Mellon University
- * 		Added lm3g_n_lm() and lm3g_index2name().
- * 
- * 02-Apr-97	M K Ravishankar (rkm@cs) at Carnegie Mellon University
- * 		Added lm3g_raw_score() and lm_t.invlw.
- * 		Changed lm_{u,b,t}g_score to lm3g_{u,b,t}g_score.
- * 
- * 01-Jul-95	M K Ravishankar (rkm@cs) at Carnegie Mellon University
- * 		Added tginfo_t to help speed up find_bg() and find_tg() searches.
- * 
- * Revision 1.1  2000/12/05 01:33:29  lenzo
- * files added or moved
- *
- * Revision 1.1.1.1  2000/01/28 22:08:58  lenzo
- * Initial import of sphinx2
- *
- *
- * Revision 6.5  93/10/27  17:47:04  rkm
- * *** empty log message ***
- * 
- * Revision 6.4  93/10/15  15:02:39  rkm
- * *** empty log message ***
- * 
  */
 
 #ifndef _LM_3G_H_

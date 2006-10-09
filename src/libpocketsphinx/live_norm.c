@@ -40,13 +40,6 @@
  * 
  * HISTORY
  * 
- * $Log: live_norm.c,v $
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.10  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
  * 
  * 20-Aug-98	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Added c0 to cepmean_set() and cepmean_get().  Changed initialization

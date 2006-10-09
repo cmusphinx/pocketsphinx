@@ -55,20 +55,6 @@
  *
  * Revision History
  * 
- * $Log: time_align.c,v $
- * Revision 1.1.1.1  2006/05/23 18:45:01  dhuggins
- * re-importation
- *
- * Revision 1.17  2005/07/21 20:05:52  egouvea
- * Fixed handling of compound word in the time aligner. Before the fix,
- * the code expected alternate pronunciations to be indicated by a single
- * digit. Changed it so the alternate marker could be anything
- * (e.g. A(MANUAL) instead of A(2)).
- *
- * Revision 1.16  2004/12/10 16:48:57  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 22-Nov-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Modified to use senscr module for senone score evaluation.
  * 

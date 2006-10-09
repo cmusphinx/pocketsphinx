@@ -3,12 +3,9 @@ pkginclude_HEADERS = \
 	bin_mdef.h				\
 	blkarray_list.h				\
 	cache_lm.h				\
-	cdcn.h					\
-	cdcn_internal.h				\
 	cepio.h					\
 	c.h					\
 	CM_macros.h				\
-	cont_mgau.h				\
 	cviterbi4.h				\
 	dict.h					\
 	fbs.h					\

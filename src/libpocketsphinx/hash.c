@@ -55,18 +55,6 @@
  *------------------------------------------------------------*
  * HISTORY
  * 
- * $Log: hash.c,v $
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.12  2005/07/21 20:03:53  egouvea
- * Fixed bug 1154352, seg fault when extended ascii is the only letter in
- * the word.
- *
- * Revision 1.11  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 27-Aug-94  M K Ravishankar (rkm@cs) at Carnegie-Mellon University
  * 	Changed hash_lookup to be case-insensitive.
  * 

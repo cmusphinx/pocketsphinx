@@ -39,20 +39,6 @@
  * 
  * HISTORY
  * 
- * $Log: uttproc.c,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.21  2005/05/24 20:55:24  rkm
- * Added -fsgbfs flag
- *
- * Revision 1.20  2005/01/20 00:09:43  egouvea
- * Replace subtraction of elements in FILETIME structure with a subtraction of 64 bit integers, and removed some warnings about type casting
- *
- * Revision 1.19  2004/12/10 16:48:57  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 22-Nov-2004  M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon Univ.
  *              Modified to use senscr module for senone score computation.
  * 
@@ -302,7 +288,6 @@
 #include "lmclass.h"
 #include "lm_3g.h"
 #include "kb.h"
-#include "cdcn.h"
 #include "fe.h"
 #include "fixpoint.h"
 #include "fbs.h"
@@ -313,8 +298,6 @@
 #define MAX_UTT_LEN     6000    /* #frames */
 #define MAX_CEP_LEN     (MAX_UTT_LEN*CEP_SIZE)
 #define MAX_POW_LEN     (MAX_UTT_LEN*POW_SIZE)
-
-static int32 frame_spacing;
 
 typedef enum { UTTSTATE_UNDEF = -1,
     UTTSTATE_IDLE = 0,
@@ -378,8 +361,6 @@ static int32 uttno;             /* A running sequence number assigned to every u
                                    an id for an utterance if uttid is undefined. */
 
 static search_hyp_t *utt_seghyp = NULL;
-
-static CDCN_type cdcn;
 
 static float TotalCPUTime, TotalElapsedTime, TotalSpeechTime;
 
@@ -1115,11 +1096,6 @@ uttproc_init(void)
             E_ERROR("fopen(%s,w) failed\n", fn);
     }
 
-    if ((fn = query_cdcn_file()) != NULL) {
-        E_INFO("Initializing CDCN module from %s\n", fn);
-        cdcn_init(fn, &cdcn);
-    }
-
     timing_init();
 
     uttstate = UTTSTATE_IDLE;
@@ -1178,12 +1154,6 @@ uttproc_init(void)
     }
 
     return 0;
-}
-
-CDCN_type *
-uttproc_get_cdcn_ptr(void)
-{
-    return &cdcn;
 }
 
 /*

@@ -38,14 +38,6 @@
 /*
  * HISTORY
  *
- * $Log: strcasecmp.c,v $
- * Revision 1.1.1.1  2006/05/23 18:45:01  dhuggins
- * re-importation
- *
- * Revision 1.7  2004/12/10 16:48:57  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 14-Oct-92 Eric Thayer (eht+@cmu.edu) Carnegie Mellon University
  *	added formal declarations for a and
  * 

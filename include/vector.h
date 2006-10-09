@@ -43,30 +43,6 @@
  * Copyright (c) 1997 Carnegie Mellon University.
  * ALL RIGHTS RESERVED.
  * **********************************************
- * 
- * HISTORY
- * 
- * $Log: vector.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:03  dhuggins
- * re-importation
- *
- * Revision 1.1  2004/12/10 16:48:58  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 22-Nov-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Imported from s3.2, for supporting s3 format continuous
- * 		acoustic models.
- * 
- * 10-Mar-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added vector_accum(), vector_vqlabel(), and vector_vqgen().
- * 
- * 09-Mar-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added vector_is_zero(), vector_cmp(), and vector_dist_eucl().
- * 		Changed the name vector_dist_eval to vector_dist_maha.
- * 
- * 30-Dec-95	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Created from Eric Thayer's version.
  */
 
 

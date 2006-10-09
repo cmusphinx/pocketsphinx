@@ -38,14 +38,6 @@
 /* 
  * HISTORY
  * 
- * $Log: dict.c,v $
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.14  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 05-Nov-98  M K Ravishankar (rkm@cs.cmu.edu) at Carnegie-Mellon University
  * 		dict_load now terminates program if input dictionary 
  *              contains errors.

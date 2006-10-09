@@ -37,19 +37,6 @@
 
 /*
  * add_table.c -- Addition table for LOG-based probability addition.
- * 
- * HISTORY
- * 
- * $Log: add-table.c,v $
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.6  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 01-Jan-95	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Created from Fil Alleva's original.
  */
 
 #include <s2types.h>

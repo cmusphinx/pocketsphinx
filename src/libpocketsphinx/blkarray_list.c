@@ -37,29 +37,6 @@
  * 
  * HISTORY
  * 
- * $Log: blkarray_list.c,v $
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.2  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * Revision 1.1  2004/07/16 00:57:11  egouvea
- * Added Ravi's implementation of FSG support.
- *
- * Revision 1.1.1.1  2004/03/29 20:42:01  rkm
- *
- *
- * Revision 1.2  2004/03/17 17:04:10  rkm
- * Bugfix: in freeing elements in blkarray_reset()
- *
- * Revision 1.1.1.1  2004/03/01 14:30:30  rkm
- *
- *
- * Revision 1.1  2004/02/26 01:14:48  rkm
- * *** empty log message ***
- *
- * 
  * 18-Feb-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
  * 		Started.
  */

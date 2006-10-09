@@ -33,23 +33,6 @@
 
 /*
  * s2params.h -- various (unfortunately) global params
- *
- * HISTORY
- * 
- * $Log: s2params.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.7  2005/06/07 02:34:52  dhdfu
- * Make these extern, as they ought to be (linking fails on Mac OS X otherwise)
- *
- * Revision 1.6  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 28-Mar-00	Alan W Black (awb@cs.cmu.edu) Created.
- *              (trying to collect together some random globals
- *               while hopefully not making thing worse).
  */
 
 

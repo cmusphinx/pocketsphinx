@@ -40,17 +40,6 @@
  *
  * HISTORY
  * 
- * $Log: cep_rw.c,v $
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.12  2005/09/01 21:10:32  dhdfu
- * Make codebook and mixture weight files byteorder-independent
- *
- * Revision 1.11  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 12-Mar-92  Eric Thayer (eht) at Carnegie-Mellon University
  *	Fixed byte reversal check.
  *

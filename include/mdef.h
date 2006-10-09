@@ -43,33 +43,6 @@
  * Copyright (c) 1999 Carnegie Mellon University.
  * ALL RIGHTS RESERVED.
  * **********************************************
- * 
- * HISTORY
- * 
- * $Log: mdef.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.1  2004/12/10 16:48:58  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 22-Nov-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Imported from s3.2, for supporting s3 format continuous
- * 		acoustic models.
- * 
- * 14-Oct-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
- * 		Added mdef_sseq2sen_active().
- * 
- * 30-Apr-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
- * 		Added senone-sequence id (ssid) to phone_t and appropriate functions to
- * 		maintain it.  Instead, moved state sequence info to mdef_t.
- * 
- * 13-Jul-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added mdef_phone_str().
- * 
- * 01-Jan-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Created.
  */
 
 

@@ -36,19 +36,6 @@
 
 /*
  * lm.h - Wrapper for all language models under one integrated look (ideally!).
- *
- * HISTORY
- * 
- * $Log: lm.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.7  2004/12/10 16:48:58  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 03-Apr-97	M K Ravishankar (rkm@cs) at Carnegie Mellon University
- * 		Started.
  */
 
 

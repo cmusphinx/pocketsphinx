@@ -31,22 +31,6 @@
  *
  */
 
-/* 
- * HISTORY
- * 
- * $Log: dict.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.8  2004/12/10 16:48:55  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * Spring 89, Fil Alleva (faa) at Carnegie Mellon
- * 	Created.
- */
-
-
 #ifndef _DICT_H_
 #define _DICT_H_
 

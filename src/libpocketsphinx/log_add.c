@@ -44,16 +44,6 @@
  * 
  * HISTORY
  * 
- * $Log: log_add.c,v $
- * Revision 1.1.1.1  2006/05/23 18:45:01  dhuggins
- * re-importation
- *
- * Revision 1.1  2005/10/04 02:06:51  dhuggins
- * Put the quantized log-add table in its place
- *
- * Revision 1.5  2004/12/10 16:48:55  rkm
- * Added continuous density acoustic model handling
- *
  * 
  * 16-May-95	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Created.

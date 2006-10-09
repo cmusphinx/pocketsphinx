@@ -43,31 +43,6 @@
  * Copyright (c) 1999 Carnegie Mellon University.
  * ALL RIGHTS RESERVED.
  * **********************************************
- * 
- * HISTORY
- * 
- * $Log: s3types.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:03  dhuggins
- * re-importation
- *
- * Revision 1.1  2004/12/10 16:48:58  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 22-Nov-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Imported from s3.2, for supporting s3 format continuous
- * 		acoustic models.
- * 
- * 13-May-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Changed typedef source for s3ssid_t from int32 to s3pid_t.
- * 		Changed s3senid_t from int16 to int32 (to conform with composite senid
- * 		which is int32).
- * 
- * 04-May-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added senone sequence ID (s3ssid_t).
- * 
- * 12-Jul-95	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Started.
  */
 
 

@@ -40,19 +40,6 @@
  * Copyright (c) 1996 Carnegie Mellon University.
  * ALL RIGHTS RESERVED.
  * **********************************************
- * 
- * HISTORY
- * 
- * $Log: mulaw.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.4  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 21-Jul-97	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Created from Sunil Issar's version.
  */
 
 

@@ -40,13 +40,6 @@
  * 
  * HISTORY
  * 
- * $Log: searchlat.c,v $
- * Revision 1.1.1.1  2006/05/23 18:45:01  dhuggins
- * re-importation
- *
- * Revision 1.12  2004/12/10 16:48:57  rkm
- * Added continuous density acoustic model handling
- *
  * 
  * 12-Aug-2004	M K Ravishankar (rkm@cs) at Carnegie Mellon University
  * 		Bugfix: Obtained current start_wid at the start of lattice_rescore().

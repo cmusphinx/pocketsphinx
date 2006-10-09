@@ -36,24 +36,6 @@
 
 /*
  * senscr.h -- 	Senone score computation module.
- * 		Hides details of s2 (semi-continuous) and s3 (continuous)
- * 		models, and computes generic "senone scores".
- *
- * HISTORY
- * 
- * $Log: senscr.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:03  dhuggins
- * re-importation
- *
- * Revision 1.1  2004/12/10 16:48:58  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 01-Dec-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added senone active flag related functions.
- * 
- * 18-Nov-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Started.
  */
 
 
@@ -94,9 +76,6 @@ extern int32 n_senone_active;		/* No. of entries in above active list */
 
 /*
  * Compute senone scores for the given feature data.
- * If a S3 acoustic (continuous HMM) model is loaded, the function uses it,
- * other it computes senone scores using the S2 (semicontinuous HMM) acoustic
- * model.
  * The feature data is five separate vectors: cep/dcep/dcep_80ms/pcep/ddcep.
  * If using S3, cep[1..12], dcep[1..12], pcep, and ddcep[1..12] are concatenated
  * into a single feature vector.

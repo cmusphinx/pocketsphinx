@@ -40,13 +40,6 @@
  * 
  * HISTORY
  * 
- * $Log: lmclass.c,v $
- * Revision 1.1.1.1  2006/05/23 18:45:00  dhuggins
- * re-importation
- *
- * Revision 1.7  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
  * 
  * 24-Mar-1998	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Started.

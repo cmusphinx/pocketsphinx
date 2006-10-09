@@ -40,14 +40,6 @@
  *
  * HISTORY
  * 
- * $Log: lab.c,v $
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.8  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 23-Oct-01    Kevin A. Lenzo (lenzo@cs.cmu.edu) Fixed the
  *              magic numbers in save_labs, but it's still hard-coded.
  *              This needs to be calculated from the sample rate and shift.

@@ -42,44 +42,6 @@
  *------------------------------------------------------------*
  * HISTORY
  *
- * $Log: hmm_tied_r.c,v $
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.15  2005/09/01 21:09:54  dhdfu
- * Really, actually, truly consolidate byteswapping operations into
- * byteorder.h.  Where unconditional byteswapping is needed, SWAP_INT32()
- * and SWAP_INT16() are to be used.  The WORDS_BIGENDIAN macro from
- * autoconf controls the functioning of the conditional swap macros
- * (SWAP_?[LW]) whose names and semantics have been regularized.
- * Private, adhoc macros have been removed.
- *
- * Revision 1.14  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 23-Jan-01    H J Fox (hjf@cs.brown.edu) at Brown University
- *              Hacked to run under Solaris 8 - flipped the byte swap
- *              condition.
- * 
- * Revision 1.4  2001/01/25 19:36:29  lenzo
- * Fixing some memory leaks
- *
- * Revision 1.3  2000/12/12 23:01:42  lenzo
- * Rationalizing libs and names some more.  Split a/d and fe libs out.
- *
- * Revision 1.2  2000/12/05 01:45:12  lenzo
- * Restructuring, hear rationalization, warning removal, ANSIfy
- *
- * Revision 1.1.1.1  2000/01/28 22:08:50  lenzo
- * Initial import of sphinx2
- *
- * Revision 8.4  94/05/10  10:46:37  rkm
- * Added original .map file timestamp info to map dump file.
- * 
- * Revision 8.3  94/04/22  13:51:27  rkm
- * *** empty log message ***
- * 
  * 14-Apr-94  M K Ravishankar (rkm@cs) at Carnegie-Mellon University
  * 	Added map-file dump and load facility for faster startup.
  * 

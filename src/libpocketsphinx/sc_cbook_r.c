@@ -40,14 +40,6 @@
  *
  * HISTORY
  * 
- * $Log: sc_cbook_r.c,v $
- * Revision 1.1.1.1  2006/05/23 18:45:01  dhuggins
- * re-importation
- *
- * Revision 1.7  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 19-Nov-97  M K Ravishankar (rkm@cs) at Carnegie-Mellon University
  * 	Added ability to read power variance file if it exists.
  * 
@@ -70,7 +62,6 @@
 #include "ckd_alloc.h"
 #include "bio.h"
 #include "err.h"
-#include "cont_mgau.h"
 
 #define MGAU_PARAM_VERSION	"1.0"   /* Sphinx-3 file format version for mean/var */
 #define TWO_PI 6.2831852        /* almost M_PI * 2.0 (why?) */

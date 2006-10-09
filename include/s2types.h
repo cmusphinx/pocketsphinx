@@ -40,47 +40,6 @@
  * Copyright (c) 1999 Carnegie Mellon University.
  * ALL RIGHTS RESERVED.
  * **********************************************
- * 
- * HISTORY
- * 
- * $Log: s2types.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.6  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 12-Mar-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
- * 		Added some useful constant definitions.
- * 
- * Revision 1.5  2004/07/16 00:57:10  egouvea
- * Added Ravi's implementation of FSG support.
- *
- * Revision 1.2  2004/05/27 14:22:57  rkm
- * FSG cross-word triphones completed (but for single-phone words)
- *
- * Revision 1.1.1.1  2004/03/01 14:30:20  rkm
- *
- *
- * Revision 1.3  2004/02/09 21:19:35  rkm
- * Added bool
- *
- * Revision 1.2  2004/01/23 19:20:03  rkm
- * *** empty log message ***
- *
- *
- * 02-Aug-1999  Kevin A. Lenzo (lenzo@cs.cmu.edu) at Carnegie Mellon
- *              Copied from s3 and cut out everything but the typedefs.
- * 
- * 12-Mar-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
- * 		Added arraysize_t, point_t, fpoint_t.
- * 
- * 01-Feb-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
- * 		Added anytype_t.
- * 
- * 08-31-95	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
- * 		Created.
  */
 
 

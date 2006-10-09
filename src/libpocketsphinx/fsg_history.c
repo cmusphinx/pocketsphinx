@@ -44,14 +44,6 @@
  * 
  * HISTORY
  * 
- * $Log: fsg_history.c,v $
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.3  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 25-Feb-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Started..
  */

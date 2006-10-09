@@ -34,34 +34,6 @@
  *
  */
 
-/* 
- * HISTORY
- * 
- * $Log: search.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:03  dhuggins
- * re-importation
- *
- * Revision 1.12  2005/05/24 20:55:25  rkm
- * Added -fsgbfs flag
- *
- * Revision 1.11  2005/01/20 15:11:47  rkm
- * Cleaned up pscr-related functions
- *
- * Revision 1.10  2004/12/10 16:48:58  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 24-Nov-2004	M K Ravishankar (rkm@cs) at Carnegie Mellon University
- * 		Added search_get_bestpscr() definition.
- * 
- * 12-Aug-2004	M K Ravishankar (rkm@cs) at Carnegie Mellon University
- * 		Added search_get_current_startwid().
- * 
- * 02-Aug-95	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Changed latnode_t.fef and latnode_t.lef to int32.
- */
-
-
 #ifndef _S2_SEARCH_H_
 #define _S2_SEARCH_H_	1
 

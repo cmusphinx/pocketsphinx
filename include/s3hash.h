@@ -43,33 +43,6 @@
  * Copyright (c) 1999 Carnegie Mellon University.
  * ALL RIGHTS RESERVED.
  * **********************************************
- * 
- * HISTORY
- * 
- * $Log: s3hash.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:03  dhuggins
- * re-importation
- *
- * Revision 1.1  2004/12/10 16:48:58  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 22-Nov-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Imported from s3.2, for supporting s3 format continuous
- * 		acoustic models.
- * 
- * 05-May-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
- * 		Removed hash_key2hash().  Added hash_enter_bkey() and hash_lookup_bkey(),
- * 		and len attribute to hash_entry_t.
- * 
- * 30-Apr-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
- * 		Added hash_key2hash().
- * 
- * 18-Jun-97	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
- * 		Included case sensitive/insensitive option.
- * 
- * 08-31-95	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
- * 		Created.
  */
 
 

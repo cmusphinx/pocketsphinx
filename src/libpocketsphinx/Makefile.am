@@ -13,15 +13,9 @@ libpocketsphinx_la_SOURCES = \
 	bin_mdef.c				\
 	bisearch.c				\
 	blkarray_list.c				\
-	blk_cdcn_norm.c				\
 	cache_lm.c				\
-	cdcn_init.c				\
-	cdcn_norm.c				\
-	cdcn_update.c				\
-	cdcn_utils.c				\
 	cep_rw.c				\
 	CM_funcs.c				\
-	cont_mgau.c				\
 	dict.c					\
 	eht_quit.c				\
 	fbs_main.c				\
@@ -49,9 +43,7 @@ libpocketsphinx_la_SOURCES = \
 	nxtarg.c				\
 	pconf.c					\
 	phone.c					\
-	prime.c					\
 	r_agc_noise.c				\
-	resfft.c				\
 	s2_mmap.c				\
 	s3hash.c				\
 	salloc.c				\
@@ -62,8 +54,8 @@ libpocketsphinx_la_SOURCES = \
 	senscr.c				\
 	skipto.c				\
 	strcasecmp.c				\
-	time_align.c				\
 	tmat.c					\
+	time_align.c				\
 	unlimit.c				\
 	util.c					\
 	uttproc.c				\

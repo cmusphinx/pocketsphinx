@@ -34,19 +34,6 @@
  *
  */
 
-/*
- * HISTORY
- * 
- * $Log: phone.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:03  dhuggins
- * re-importation
- *
- * Revision 1.7  2004/12/10 16:48:58  rkm
- * Added continuous density acoustic model handling
- *
- * 
- */
-
 
 #ifndef _PHONE_H_
 #define _PHONE_H_

@@ -5,21 +5,15 @@ bin_PROGRAMS = \
 	pocketsphinx_mdef_convert
 
 noinst_PROGRAMS = \
-	pocketsphinx_allphone \
 	cont_adseg \
-	cont_fileseg \
-	cdcn_test
+	cont_fileseg
 
-
-cdcn_test_SOURCES = cdcn_test.c
 
 cont_adseg_SOURCES = cont_adseg.c
 
 cont_fileseg_SOURCES = cont_fileseg.c
 
 pocketsphinx_mdef_convert_SOURCES = mdef_convert.c
-
-pocketsphinx_allphone_SOURCES = allphone-test.c
 
 pocketsphinx_batch_SOURCES = batch.c
 

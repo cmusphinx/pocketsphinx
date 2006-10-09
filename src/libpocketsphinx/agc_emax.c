@@ -40,14 +40,6 @@
  * 
  * HISTORY
  * 
- * $Log: agc_emax.c,v $
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.8  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 25-Aug-98	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Modified the update procedure for estimated max to simply average over
  * 		the last history, and decay the history.

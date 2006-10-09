@@ -39,28 +39,6 @@
  * DESCRIPTION
  *	Interface to Sphinx-II global knowledge base
  *-------------------------------------------------------------*
- * HISTORY
- * 
- * $Log: kb.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.10  2004/12/10 16:48:58  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 02-Dec-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Added acoustic score weight (applied only to S3 continuous
- * 		acoustic models).
- * 
- * 27-May-97	M K Ravishankar (rkm@cs) at Carnegie Mellon University
- * 		Added Bob Brennan's declarations kbAddGrammar() and kb_get_personaldic().
- * 
- * 02-Apr-97	M K Ravishankar (rkm@cs) at Carnegie Mellon University
- * 		Added dict_maxsize().
- * 
- * Spring 89, Fil Alleva (faa) at Carnegie Mellon
- *	Created.
  */
 
 
@@ -70,7 +48,6 @@
 #include "lm_3g.h"
 #include "msd.h"
 #include "dict.h"
-#include "cont_mgau.h"
 #include "bin_mdef.h"
 
 int32 kb_get_total_dists(void);
@@ -150,30 +127,9 @@ int32 **kb_get_phonetp ( void );
 float32 kb_get_filler_pfpen ( void );
 
 /*
- * Return the S3 (continuous) acoustic model object, if one has been read
- * in, otherwise NULL.
- */
-mgau_model_t *kb_s3model( void );
-
-/*
- * Return the S3 model definition object, if one has been read in,
+ * Return the model definition object, if one has been read in,
  * otherwise NULL.
  */
 bin_mdef_t *kb_mdef(void);
-
-/* Return ptr to array for storing s3 model senone scores */
-int32 *kb_s3senscr ( void );
-
-/* Return ptr to array for storing s3 model input feature vector */
-float32 *kb_s3feat ( void );
-
-/*
- * Return ptr to S3->S2 or S2->S3 senone reordering map table.  Senone
- * ordering in S3 is different from that in S2.  s2map[s3id] = s2id, and
- * s3map[s2id] = s3id.
- */
-int32 *kb_s3_s2_senmap ( void );	/* s2map */
-int32 *kb_s2_s3_senmap ( void );	/* s3map */
-
 
 #endif

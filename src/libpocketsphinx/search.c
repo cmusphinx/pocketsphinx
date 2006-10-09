@@ -38,26 +38,6 @@
 /*
  * search.c -- HMM-tree version
  * 
- * HISTORY
- *
- * $Log: search.c,v $
- * Revision 1.1.1.1  2006/05/23 18:45:01  dhuggins
- * re-importation
- *
- * Revision 1.17  2005/06/07 02:36:02  dhdfu
- * Forward-declaring functions inside functions apparently no longer
- * works in recent GCC versions (this code breaks on 3.3, 4.0).  No good
- * reason for it anyway...
- *
- * Revision 1.16  2005/05/24 20:55:24  rkm
- * Added -fsgbfs flag
- *
- * Revision 1.15  2005/01/20 15:11:47  rkm
- * Cleaned up pscr-related functions
- *
- * Revision 1.14  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
  * 
  * 01-Dec-2004	M K Ravishankar (rkm@cs) at Carnegie Mellon University
  * 		Consolidated senone_active updates into senscr.c.

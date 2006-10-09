@@ -40,14 +40,6 @@
  *
  * HISTORY
  * 
- * $Log: lm.c,v $
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.8  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 01-Apr-97	M K Ravishankar (rkm@cs) at Carnegie Mellon University
  * 		Started, based on earlier FBS6 version.
  */

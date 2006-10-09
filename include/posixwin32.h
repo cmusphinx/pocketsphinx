@@ -40,19 +40,6 @@
  * Copyright (c) 1996 Carnegie Mellon University.
  * ALL RIGHTS RESERVED.
  * **********************************************
- * 
- * HISTORY
- * 
- * $Log: posixwin32.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.6  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 16-May-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Copied from Chengxiang Lu and Brian Milnes original.
  */
 
 

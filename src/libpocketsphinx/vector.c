@@ -47,14 +47,6 @@
  * 
  * HISTORY
  * 
- * $Log: vector.c,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.1  2004/12/10 16:48:57  rkm
- * Added continuous density acoustic model handling
- *
- * 
  * 22-Nov-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Imported from s3.2, for supporting s3 format continuous
  * 		acoustic models.
