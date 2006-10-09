@@ -1277,10 +1277,6 @@ lm_set_current(char const *name)
 
     lmp = lmset[i].lm;
 
-#ifdef USE_ILM
-    ilm_set_lm(lmp);
-#endif
-
     return (0);
 }
 

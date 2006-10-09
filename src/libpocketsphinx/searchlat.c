@@ -119,11 +119,6 @@
 
 #define QUIT(x)		{fprintf x; exit(-1);}
 
-#ifdef USE_ILM
-#define lm_bg_score		ilm_bg_score
-#define lm_tg_score		ilm_tg_score
-#endif
-
 /* Externally obtained variables */
 static int32 finish_wid, start_wid, sil_wid, last_frame, sil_pen,
     filler_pen;

@@ -396,12 +396,6 @@ static char *dumplat_dir = NULL;
 
 static char utt_name[1024] = "";
 
-#ifdef USE_ILM
-/* Default weighting for ILM ug and bg cache probs (%) */
-static int32 ilm_ugcache_wt = 4;        /* ie 0.04 */
-static int32 ilm_bgcache_wt = 9;        /* ie 0.09 */
-#endif
-
 static mfcc_t *cep, *dcep, *dcep_80ms, *pcep, *ddcep;
 
 static int32 maxwpf = 100000000;        /* Max words recognized per frame */
@@ -692,13 +686,6 @@ config_t param[] = {
 
     {"LMCacheNumLines", "No. lines in LM cache", "-lmcachelines",
      INT, (caddr_t) & lm_cache_lines},
-#ifdef USE_ILM
-    {"ILMUGCacheWeight", "Weight(%) for ILM UG cache prob", "-ilmugwt",
-     INT, (caddr_t) & ilm_ugcache_wt},
-
-    {"ILMBGCacheWeight", "Weight(%) for ILM BG cache prob", "-ilmbgwt",
-     INT, (caddr_t) & ilm_bgcache_wt},
-#endif
     {"DumpLattice", "Dump Lattice", "-dumplatdir",
      STRING, (caddr_t) & dumplat_dir},
 
@@ -1108,15 +1095,6 @@ fbs_init(int32 argc, char **argv)
 
     E_INFO("libfbs/main COMPILED ON: %s, AT: %s\n\n", __DATE__, __TIME__);
 
-#if defined(PROF_TIME)
-    if (timer_open() < 0) {
-        E_FATAL("Could not open timer module\n");
-    }
-#endif
-#if defined(PROF_MEM)
-    _mtr_init();                /*  Turn on space metering a la Ravi */
-#endif
-
     /* Compatibility with old forwardonly flag */
     if (forward_only)
         bestpath_flag = FALSE;
@@ -1129,27 +1107,6 @@ fbs_init(int32 argc, char **argv)
 
     if (agcNoise || agcMax) {
         agc_set_threshold(agcThresh);
-#if 0
-        SCVQAgcSet(AGC_NONE);
-#endif
-    }
-    else {
-        if (agcBeta) {
-#if 0
-            SCVQAgcSet(AGC_BETA);
-            SCVQAgcInit(TRUE, 25);
-#else
-            E_FATAL("agc beta not supported\n");
-#endif
-        }
-        else {
-#if 0
-            if (agcEMax)
-                SCVQAgcSet(AGC_EMAX);
-            else
-                SCVQAgcSet(AGC_NONE);
-#endif
-        }
     }
 
     search_initialize();
@@ -1168,14 +1125,6 @@ fbs_init(int32 argc, char **argv)
     search_set_ip(insertion_penalty);
     search_set_skip_alt_frm(skip_alt_frm);
     search_set_fwdflat_bw(fwdflat_beam_width, fwdflat_new_word_beam_width);
-
-#if 0
-    SCVQSetSilCompression(compress);
-#endif
-
-#if defined(PROF_TIME)
-    timer_dump("Initialization");
-#endif
 
     /* Initialize dynamic data structures needed for utterance processing */
     uttproc_init();
@@ -1227,14 +1176,6 @@ fbs_init(int32 argc, char **argv)
                                     out_sent_filename);
 
         uttproc_end();
-
-#if defined(PROF_TIME)
-        timer_close();
-#endif
-#if defined(PROF_MEM)
-        _mtr_dump();
-#endif
-
         exit(0);
     }
 
@@ -1313,42 +1254,6 @@ run_ctl_file(char const *ctl_file_name)
             || ((line_no++ % ctl_incr) != 0))
             continue;
 
-#if 0
-        /* This stuff no longer works -- rkm@cs.cmu.edu (02/03/1999) */
-        /*
-         * Try to read the reference sentence (all this breaks with the new ctl format)
-         */
-        {
-            FILE *fp;
-            char file_name[1024];
-            char *ptr = strrchr(Utt, '/');
-
-            if (ptr == 0)
-                ptr = Utt;      /* if (wsj1Sent) trouble */
-            else {
-                if (wsj1Sent) {
-                    do {
-                        ptr--;
-                    } while (ptr >= Utt && *ptr != '/');
-                }
-                ptr++;
-            }
-
-            sprintf(file_name, "%s/%s.%s", sent_directory, ptr, sent_ext);
-            fp = fopen(file_name, "r");
-            if (fp != NULL) {
-                fgets(ref_sentence, sizeof(ref_sentence), fp);
-                if (ref_sentence[strlen(ref_sentence) - 1] == '\n')
-                    ref_sentence[strlen(ref_sentence) - 1] = '\0';
-                /* Kill '\n' */
-                fclose(fp);
-            }
-            else {
-                ref_sentence[0] = '\0';
-            }
-        }
-#endif
-
         /*
          * Set force_str
          */
@@ -1376,33 +1281,7 @@ run_ctl_file(char const *ctl_file_name)
         else
             uttproc_allphone_file(mfcfile);
 
-#if 0
-        /* This stuff no longer works -- rkm@cs.cmu.edu (02/03/1999) */
-        /*
-         * Write the correct file if one was specified.
-         */
-        if (correct_file_name) {
-            FILE *fp;
-            char *ptr = strrchr(Utt, '/');
-
-            if (ptr == 0)
-                ptr = Utt;
-            else
-                ptr++;
-
-            fp = CM_fopen(correct_file_name, "a");
-            fprintf(fp, "%s (%s)\n", ref_sentence, ptr);
-            fclose(fp);
-        }
-#endif
-
         ctl_count--;
-
-#if (defined(PROF_TIME) && 0)
-        /* This stuff no longer works -- rkm@cs.cmu.edu (02/03/1999) */
-        timer_dump(Utt);
-        fflush(stdout);
-#endif
     }
 
     if (ctl_fs != stdin)
@@ -1856,17 +1735,6 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
                 fclose(nbestfp);
         }
 
-#if 0                           /* Moved to uttproc.c (in uttproc_windup()) */
-        if (phone_conf) {
-            search_hyp_t *allp, *search_uttpscr2allphone();
-
-            allp = search_uttpscr2allphone();
-            search_hyp_free(allp);
-        }
-
-        if (pscr2lat)
-            search_uttpscr2phlat_print();
-#endif
     }
 
     return hypseg;              /* Linked list of hypothesis words */
@@ -2029,14 +1897,6 @@ query_compute_all_senones(void)
     return compute_all_senones;
 }
 
-#if 0
-char *
-query_utt_id(void)
-{
-    return (utt_name);
-}
-#endif
-
 int32
 query_lm_cache_lines(void)
 {
@@ -2066,20 +1926,6 @@ query_matchseg_file_name(void)
 {
     return (matchseg_file_name);
 }
-
-#ifdef USE_ILM
-int32
-query_ilm_ugcache_wt(void)
-{
-    return ilm_ugcache_wt;
-}
-
-int32
-query_ilm_bgcache_wt(void)
-{
-    return ilm_bgcache_wt;
-}
-#endif
 
 int32
 query_fwdtree_flag(void)

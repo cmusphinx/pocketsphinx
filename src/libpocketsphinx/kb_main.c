@@ -675,17 +675,8 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
 
             NoLangModel = FALSE;
         }
-
-#ifdef USE_ILM
-        /* Init ILM module (non-std-Darpa LM, eg ug/bg cache LM) */
-        ilm_init();
-#endif
     }
 
-#if 0
-    /* Compute the phrase lm probabilities */
-    computePhraseLMProbs();
-#endif
 
     num_phones = phone_count();
     numSmds = hmm_num_sseq();

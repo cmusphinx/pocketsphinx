@@ -241,11 +241,6 @@
 /* Turn this on to dump channels for debugging */
 #define __CHAN_DUMP__		0
 
-#ifdef USE_ILM
-#define lm_bg_score		ilm_bg_score
-#define lm_tg_score		ilm_tg_score
-#endif
-
 #define ISA_FILLER_WORD(x)	((x) >= SilenceWordId)
 #define ISA_REAL_WORD(x)	((x) < FinishWordId)
 
