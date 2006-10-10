@@ -69,7 +69,6 @@
 #include "CM_macros.h"
 #include "basic_types.h"
 #include "list.h"
-#include "hash.h"
 #include "phone.h"
 #include "search_const.h"
 #include "msd.h"

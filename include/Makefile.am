@@ -13,7 +13,6 @@ pkginclude_HEADERS = \
 	fsg_lextree.h				\
 	fsg_psubtree.h				\
 	fsg_search.h				\
-	hash.h					\
 	hmm_tied_r.h				\
 	kb.h					\
 	kdtree.h				\
@@ -35,7 +34,6 @@ pkginclude_HEADERS = \
 	s2io.h					\
 	s2params.h				\
 	s2types.h				\
-	s3hash.h				\
 	s3types.h				\
 	scvq.h					\
 	sc_vq_internal.h			\

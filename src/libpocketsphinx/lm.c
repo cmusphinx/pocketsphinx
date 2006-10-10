@@ -56,7 +56,6 @@
 #include "CM_macros.h"
 #include "basic_types.h"
 #include "list.h"
-#include "hash.h"
 #include "lmclass.h"
 #include "lm_3g.h"
 #include "lm.h"

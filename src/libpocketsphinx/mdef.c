@@ -151,8 +151,8 @@ ciphone_add(mdef_t * m, char *ci, s3pid_t p)
     assert(p < m->n_ciphone);
 
     m->ciphone[p].name = (char *) ckd_salloc(ci);
-    if (s3hash_enter(m->ciphone_ht, m->ciphone[p].name, p) != p)
-        E_FATAL("s3hash_enter(%s) failed; duplicate CIphone?\n",
+    if (hash_table_enter(m->ciphone_ht, m->ciphone[p].name, (void *)p) != (void *)p)
+        E_FATAL("hash_table_enter(%s) failed; duplicate CIphone?\n",
                 m->ciphone[p].name);
 }
 
@@ -218,12 +218,12 @@ triphone_add(mdef_t * m, int32 ci, int32 lc, int32 rc, int32 wpos, int32 p)
 s3cipid_t
 mdef_ciphone_id(mdef_t * m, char *ci)
 {
-    int32 id;
+    void *id;
 
     assert(m);
     assert(ci);
 
-    if (s3hash_lookup(m->ciphone_ht, ci, &id) < 0)
+    if (hash_table_lookup(m->ciphone_ht, ci, &id) < 0)
         return (BAD_S3CIPID);
     return ((s3cipid_t) id);
 }
@@ -532,6 +532,7 @@ parse_tri_line(mdef_t * m, char *line, int32 p)
         wpos = WORD_POSN_INTERNAL;
         break;
     default:
+        wpos = WORD_POSN_INTERNAL; /* Shut up the compiler */
         E_FATAL("Bad word-position spec: %s\n", line);
     }
 
@@ -556,25 +557,25 @@ parse_tri_line(mdef_t * m, char *line, int32 p)
 static void
 sseq_compress(mdef_t * m)
 {
-    s3hash_table_t *h;
+    hash_table_t *h;
     s3senid_t **sseq;
     int32 n_sseq;
     int32 p, j, k;
     glist_t g;
     gnode_t *gn;
-    s3hash_entry_t *he;
+    hash_entry_t *he;
 
     k = m->n_emit_state * sizeof(s3senid_t);
 
-    h = s3hash_new(m->n_phone, S3HASH_CASE_YES);
+    h = hash_table_new(m->n_phone, HASH_CASE_YES);
     n_sseq = 0;
 
     /* Identify unique senone-sequence IDs.  BUG: tmat-id not being considered!! */
     for (p = 0; p < m->n_phone; p++) {
         /* Add senone sequence to hash table */
-        if ((j =
-             s3hash_enter_bkey(h, (char *) (m->sseq[p]), k,
-                               n_sseq)) == n_sseq)
+        if ((j = (int32)
+             hash_table_enter_bkey(h, (char *) (m->sseq[p]), k,
+                                   (void *)n_sseq)) == n_sseq)
             n_sseq++;
 
         m->phone[p].ssid = j;
@@ -584,13 +585,13 @@ sseq_compress(mdef_t * m)
     sseq =
         (s3senid_t **) ckd_calloc_2d(n_sseq, m->n_emit_state,
                                      sizeof(s3senid_t));
-    g = s3hash_tolist(h, &j);
+    g = hash_table_tolist(h, &j);
     assert(j == n_sseq);
 
     for (gn = g; gn; gn = gnode_next(gn)) {
-        he = (s3hash_entry_t *) gnode_ptr(gn);
-        j = s3hash_entry_val(he);
-        memcpy(sseq[j], s3hash_entry_key(he), k);
+        he = (hash_entry_t *) gnode_ptr(gn);
+        j = (int32)hash_entry_val(he);
+        memcpy(sseq[j], hash_entry_key(he), k);
     }
     glist_free(g);
 
@@ -599,7 +600,7 @@ sseq_compress(mdef_t * m)
     m->sseq = sseq;
     m->n_sseq = n_sseq;
 
-    s3hash_free(h);
+    hash_table_free(h);
 }
 
 
@@ -710,7 +711,7 @@ mdef_init(char *mdeffile)
 
     /* Initialize ciphone info */
     m->n_ciphone = n_ci;
-    m->ciphone_ht = s3hash_new(n_ci, 1);        /* With case-insensitive string names */
+    m->ciphone_ht = hash_table_new(n_ci, 1);        /* With case-insensitive string names */
     m->ciphone = (ciphone_t *) ckd_calloc(n_ci, sizeof(ciphone_t));
 
     /* Initialize phones info (ciphones + triphones) */

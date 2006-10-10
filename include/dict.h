@@ -35,7 +35,8 @@
 #define _DICT_H_
 
 #include <sys/types.h>
-#include "hash.h"
+#include "hash_table.h"
+#include "glist.h"
 
 #define NO_WORD		-1
 
@@ -58,7 +59,7 @@ typedef struct dict_entry {
 }                   dict_entry_t;
 
 typedef struct _dict {
-    hash_t 		dict;
+    hash_table_t 	*dict;
     int32 		dict_entry_count;
     dict_entry_t	**dict_list;
     int32		ci_index_len;	 	/* number of indecies */
@@ -79,7 +80,7 @@ void dict_free (dictT *dict);
 dict_entry_t *dict_get_entry (dictT *dict, int i);
 int32 dict_count(dictT *dict);
 dictT *dict_new(void);
-list_t *dict_mtpList(void);
+glist_t dict_mtpList(void);
 int32 **dict_left_context_fwd(void);
 int32 **dict_right_context_fwd(void);
 int32 **dict_left_context_bwd(void);
@@ -90,7 +91,7 @@ int32 **dict_left_context_bwd_perm (void);
 int32 *dict_left_context_bwd_size (void);
 int32 dict_to_id(dictT *dict, char const *dict_str);
 char const *dictid_to_str(dictT *dict, int32 id);
-caddr_t dictStrToWordId (dictT *dict, char const *dict_str, int verbose);
+int32 dictStrToWordId (dictT *dict, char const *dict_str, int verbose);
 int32 dict_add_word (dictT *dict, char const *word, char const *pron);
 int32 dict_pron (dictT *dict, int32 w, int32 **pron);
 int32 dict_next_alt (dictT *dict, int32 w);

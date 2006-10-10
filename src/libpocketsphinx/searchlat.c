@@ -105,7 +105,6 @@
 #include "strfuncs.h"
 #include "linklist.h"
 #include "list.h"
-#include "hash.h"
 #include "err.h"
 #include "dict.h"
 #include "lm.h"

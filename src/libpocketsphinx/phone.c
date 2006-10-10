@@ -65,7 +65,6 @@
 #include "CM_macros.h"
 #include "strfuncs.h"
 #include "list.h"
-#include "hash.h"
 #include "phone.h"
 #include "bin_mdef.h"
 #include "c.h"

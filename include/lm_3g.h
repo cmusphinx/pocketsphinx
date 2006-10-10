@@ -41,7 +41,7 @@
 #include "s2types.h"
 #include "fixpoint.h"
 #include "lmclass.h"
-#include "hash.h"
+#include "hash_table.h"
 
 /* Type used to represent the language model weight. */
 #ifdef FIXED_POINT
@@ -164,7 +164,7 @@ typedef struct lm_s {
     tginfo_t **tginfo;	/* tginfo[lw2] is head of linked list of trigram information for
 			   some cached subset of bigrams (*,lw2). */
     
-    hash_t HT;		/* hash table for word-string->word-id map */
+    hash_table_t *HT;		/* hash table for word-string->word-id map */
 } lm_t, *LM;
 
 

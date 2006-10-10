@@ -223,7 +223,6 @@
 #include "basic_types.h"
 #include "strfuncs.h"
 #include "list.h"
-#include "hash.h"
 #include "search_const.h"
 #include "msd.h"
 #include "dict.h"

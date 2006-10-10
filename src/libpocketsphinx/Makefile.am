@@ -24,7 +24,6 @@ libpocketsphinx_la_SOURCES = \
 	fsg_psubtree.c				\
 	fsg_search.c				\
 	get_a_word.c				\
-	hash.c					\
 	hmm_tied_r.c				\
 	kb_main.c				\
 	kdtree.c				\
@@ -45,7 +44,6 @@ libpocketsphinx_la_SOURCES = \
 	phone.c					\
 	r_agc_noise.c				\
 	s2_mmap.c				\
-	s3hash.c				\
 	salloc.c				\
 	sc_cbook_r.c				\
 	sc_vq.c					\

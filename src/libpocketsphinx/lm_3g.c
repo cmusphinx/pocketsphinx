@@ -172,7 +172,7 @@
 #include "strfuncs.h"
 #include "linklist.h"
 #include "list.h"
-#include "hash.h"
+#include "hash_table.h"
 #include "err.h"
 #include "lmclass.h"
 #include "lm_3g.h"
@@ -397,25 +397,17 @@ NewModel(int32 n_ug, int32 n_bg, int32 n_tg, int32 n_dict)
     model->tcount = n_tg;
     model->dict_size = n_dict;
 
-    model->HT.size = 0;
-    model->HT.inuse = 0;
-    model->HT.tab = NULL;
+    model->HT = hash_table_new(n_ug, HASH_CASE_NO);
 
     return model;
 }
 
-#ifdef NO_DICT
-#define GET_WORD_IDX(w)		wstr2wid (lmp, w)
-#else
-#define GET_WORD_IDX(w)		dictStrToWordId (WordDict, w, FALSE)
-#endif
-
 static int32
 wstr2wid(lm_t * model, char *w)
 {
-    caddr_t val;
+    void *val;
 
-    if (hash_lookup(&(model->HT), w, &val) != 0)
+    if (hash_table_lookup(model->HT, w, &val) != 0)
         return NO_WORD;
     return ((int32) val);
 }
@@ -495,7 +487,7 @@ ReadUnigrams(FILE * fp, lm_t * model)
 
         /* Associate name with word id */
         word_str[wcnt] = (char *) salloc(name);
-        hash_add(&(model->HT), word_str[wcnt], (caddr_t) wcnt);
+        hash_table_enter(model->HT, word_str[wcnt], (void *) wcnt);
         model->unigrams[wcnt].prob1.f = p1;
         model->unigrams[wcnt].bo_wt1.f = bo_wt;
 
@@ -1107,7 +1099,7 @@ lm_read_clm(char const *filename,
 
     lm_add(lmname, model, lw, uw, wip);
 
-    hash_free(&(model->HT));
+    hash_table_free(model->HT);
     if (!do_mmap)
         for (i = 0; i < model->ucount; i++)
             free(word_str[i]);
@@ -1239,8 +1231,7 @@ lm_delete(char const *name)
         free(model->bo_wt2);
         free(model->prob3);
     }
-    if (model->HT.tab != NULL)
-        hash_free(&model->HT);
+    hash_table_free(model->HT);
 
     for (u = 0; u < model->max_ucount; u++)
         for (tginfo = model->tginfo[u]; tginfo; tginfo = next_tginfo) {

@@ -59,7 +59,7 @@
 #include "cache_lm.h"
 #include "linklist.h"
 #include "list.h"
-#include "hash.h"
+#include "hash_table.h"
 #include "dict.h"
 #include "lmclass.h"
 #include "lm_3g.h"

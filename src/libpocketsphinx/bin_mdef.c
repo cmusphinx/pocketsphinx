@@ -228,7 +228,7 @@ bin_mdef_read_text(const char *filename)
     }
 
     /* FIXME: Need an mdef_free().  For now we will do it manually. */
-    s3hash_free(mdef->ciphone_ht);
+    hash_table_free(mdef->ciphone_ht);
     for (i = 0; i < mdef->n_ciphone; ++i)
         ckd_free(mdef->ciphone[i].name);
     ckd_free(mdef->ciphone);

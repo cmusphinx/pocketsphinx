@@ -125,7 +125,7 @@
 #include "basic_types.h"
 #include "c.h"
 #include "list.h"
-#include "hash.h"
+#include "hash_table.h"
 #include "phone.h"
 #include "dict.h"
 #include "err.h"
@@ -164,17 +164,17 @@ static void _dict_list_add(dictT * dict, dict_entry_t * entry);
 static void dict_load(dictT * dict, char *filename, int32 * word_id,
                       int32 use_context, int32 isa_phrase_dict);
 
-static hash_t mtpHT;            /* Missing triphone hash table */
-static list_t *mtpList;
+static hash_table_t *mtpHT;     /* Missing triphone hash table */
+static glist_t mtpList;
 
-static hash_t lcHT;             /* Left context hash table */
+static hash_table_t *lcHT;      /* Left context hash table */
 static list_t lcList;
 static int32 **lcFwdTable;
 static int32 **lcBwdTable;
 static int32 **lcBwdPermTable;
 static int32 *lcBwdSizeTable;
 
-static hash_t rcHT;             /* Right context hash table */
+static hash_table_t *rcHT;      /* Right context hash table */
 static list_t rcList;
 static int32 **rcFwdTable;
 static int32 **rcFwdPermTable;
@@ -247,15 +247,21 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
         j += get_dict_size(startsym_file);
     /* FIXME: <unk> is no longer used, is this still correct? */
     j += 4;                     /* </s>, <s>, <unk> and <sil> */
-    dict->dict.size_hint = j;
+    if (dict->dict)
+        hash_table_free(dict->dict);
+    dict->dict = hash_table_new(j, HASH_CASE_NO);
 
+    /* Context table size hint: (#CI*#CI)/2 */
+    j = phoneCiCount();
+    j = ((j * j) >> 1) + 1;
+    mtpHT = hash_table_new(j, HASH_CASE_YES);
     if (use_context) {
-        /* Context table size hint: (#CI*#CI)/2 */
-        j = phoneCiCount();
-        j = ((j * j) >> 1) + 1;
-
-        lcHT.size_hint = j;
-        rcHT.size_hint = j;
+        if (lcHT)
+            hash_table_free(lcHT);
+        lcHT = hash_table_new(j, HASH_CASE_YES);
+        if (rcHT)
+            hash_table_free(rcHT);
+        rcHT = hash_table_new(j, HASH_CASE_YES);
         lcList.size_hint = j;
         rcList.size_hint = j;
     }
@@ -296,7 +302,7 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
             E_FATAL("Failed to add DUMMY(SIL) entry to dictionary\n");
 
         _dict_list_add(dict, entry);
-        hash_add(&dict->dict, entry->word, (caddr_t) word_id);
+        hash_table_enter(dict->dict, entry->word, (void *) word_id);
         entry->wid = word_id;
         entry->fwid = word_id;
         word_id++;
@@ -308,9 +314,9 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
      * Special case the silence word 'SIL'.
      */
     {
-        caddr_t val;
+        void *val;
 
-        if (hash_lookup(&dict->dict, kb_get_lm_end_sym(), &val)) {
+        if (hash_table_lookup(dict->dict, kb_get_lm_end_sym(), &val)) {
             /*
              * Check if there is a special end silence phone.
              */
@@ -326,7 +332,7 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
                     _new_dict_entry(kb_get_lm_end_sym(), "SILe", FALSE);
             }
             _dict_list_add(dict, entry);
-            hash_add(&dict->dict, entry->word, (caddr_t) word_id);
+            hash_table_enter(dict->dict, entry->word, (void *) word_id);
             entry->wid = word_id;
             entry->fwid = word_id;
             word_id++;
@@ -354,14 +360,14 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
                 if (!entry)
                     E_FATAL("Failed to add %s to dictionary\n", startsym);
                 _dict_list_add(dict, entry);
-                hash_add(&dict->dict, entry->word, (caddr_t) word_id);
+                hash_table_enter(dict->dict, entry->word, (void *) word_id);
                 entry->wid = word_id;
                 entry->fwid = word_id;
                 word_id++;
             }
         }
         /* Add the standard start symbol (<s>) if not already in dict */
-        if (hash_lookup(&dict->dict, kb_get_lm_start_sym(), &val)) {
+        if (hash_table_lookup(dict->dict, kb_get_lm_start_sym(), &val)) {
             /*
              * Check if there is a special begin silence phone.
              */
@@ -380,18 +386,18 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
                     E_FATAL("Failed to add <s>(SILb) to dictionary\n");
             }
             _dict_list_add(dict, entry);
-            hash_add(&dict->dict, entry->word, (caddr_t) word_id);
+            hash_table_enter(dict->dict, entry->word, (void *) word_id);
             entry->wid = word_id;
             entry->fwid = word_id;
             word_id++;
         }
 
-        if (hash_lookup(&dict->dict, "SIL", &val)) {
+        if (hash_table_lookup(dict->dict, "SIL", &val)) {
             entry = _new_dict_entry("SIL", "SIL", FALSE);
             if (!entry)
                 E_FATAL("Failed to add <sil>(SIL) to dictionary\n");
             _dict_list_add(dict, entry);
-            hash_add(&dict->dict, entry->word, (caddr_t) word_id);
+            hash_table_enter(dict->dict, entry->word, (void *) word_id);
             entry->wid = word_id;
             entry->fwid = word_id;
             word_id++;
@@ -410,10 +416,10 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
     buildEntryTable(&rcList, &rcBwdTable);
     buildExitTable(&rcList, &rcFwdTable, &rcFwdPermTable, &rcFwdSizeTable);
 
-    E_INFO("%5d unique triphones were mapped to ci phones\n", mtpHT.inuse);
-
-    mtpList = hash_to_list(&mtpHT);
-    hash_free(&mtpHT);
+    mtpList = hash_table_tolist(mtpHT, &i);
+    E_INFO("%5d unique triphones were mapped to ci phones\n", i);
+    hash_table_free(mtpHT);
+    mtpHT = NULL;
 
     return (retval);
 }
@@ -449,7 +455,7 @@ dict_free(dictT * dict)
     }
 
     free(dict->ci_index);
-    hash_free(&dict->dict);
+    hash_table_free(dict->dict);
     free(dict);
 }
 
@@ -488,7 +494,7 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
         }
 
         _dict_list_add(dict, entry);
-        hash_add(&dict->dict, entry->word, (caddr_t) * word_id);
+        hash_table_enter(dict->dict, entry->word, (void *) *word_id);
         entry->wid = *word_id;
         entry->fwid = *word_id;
         entry->lm_pprob = 0;
@@ -521,14 +527,14 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
                 p = 0;
 
             if ((p != 0) || (q != 0)) {
-                caddr_t wid;
+                void * wid;
 
                 if (p)
                     *p = '\0';
                 if (q)
                     *q = '\0';
 
-                if (hash_lookup(&dict->dict, dict_str, &wid)) {
+                if (hash_table_lookup(dict->dict, dict_str, &wid)) {
                     E_FATAL
                         ("%s: Missing first pronunciation for [%s]\nThis means that e.g. [%s(2)] was found with no [%s]\nPlease correct the dictionary and re-run.\n",
                          rname, dict_str, dict_str, dict_str);
@@ -541,7 +547,7 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
                 entry->fwid = (int32) wid;
                 {
                     while (dict->dict_list[(int32) wid]->alt >= 0)
-                        wid = (caddr_t) dict->dict_list[(int32) wid]->alt;
+                        wid = (void *) dict->dict_list[(int32) wid]->alt;
                     dict->dict_list[(int32) wid]->alt = *word_id;
                 }
             }
@@ -549,11 +555,11 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
              * Get the word id of the final word in the phrase
              */
             if ((r != 0) && isa_phrase_dict) {
-                caddr_t wid;
+                void * wid;
 
                 r += 1;
 
-                if (hash_lookup(&dict->dict, r, &wid)) {
+                if (hash_table_lookup(dict->dict, r, &wid)) {
                     E_INFO("%s: Missing first pronunciation for [%s]\n",
                            rname, r);
                 }
@@ -634,7 +640,7 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
             }
 
             _dict_list_add(dict, entry_copy);
-            hash_add(&dict->dict, entry_copy->word, (caddr_t) * word_id);
+            hash_table_enter(dict->dict, entry_copy->word, (void *) *word_id);
 
             *word_id = *word_id + 1;
         }
@@ -651,22 +657,22 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
     }
 }
 
-caddr_t
+int32
 dictStrToWordId(dictT * dict, char const *dict_str, int verbose)
 /*------------------------------------------------------------*
  * return the dict id for dict_str
  *------------------------------------------------------------*/
 {
     static char const *rname = "dict_to_id";
-    caddr_t dict_id;
+    void * dict_id;
 
-    if (hash_lookup(&dict->dict, dict_str, &dict_id)) {
+    if (hash_table_lookup(dict->dict, dict_str, &dict_id)) {
         if (verbose)
             fprintf(stderr, "%s: did not find %s\n", rname, dict_str);
-        return ((caddr_t) NO_WORD);
+        return NO_WORD;
     }
 
-    return (dict_id);
+    return (int32)dict_id;
 }
 
 int32
@@ -865,7 +871,7 @@ replace_dict_entry(dictT * dict,
     int32 pronoun_len = 0;
     int32 i;
     char triphoneStr[80];
-    caddr_t idx;
+    void * idx;
     int32 basewid;
 
     /* For the moment assume left/right context words... */
@@ -902,7 +908,7 @@ replace_dict_entry(dictT * dict,
         char *p = strrchr(word_str, '(');
         if (p && (word_str[strlen(word_str) - 1] == ')')) {
             *p = '\0';
-            if (hash_lookup(&dict->dict, word_str, &idx)) {
+            if (hash_table_lookup(dict->dict, word_str, &idx)) {
                 *p = '(';
                 E_ERROR("Base word missing for %s\n", word_str);
                 return 0;
@@ -917,7 +923,7 @@ replace_dict_entry(dictT * dict,
     /* Parse pron; for the moment, the boundary diphones must be already known... */
     i = 0;
     sprintf(triphoneStr, "%s(%%s,%s)b", phone[i], phone[i + 1]);
-    if (hash_lookup(&lcHT, triphoneStr, &idx) < 0) {
+    if (hash_table_lookup(lcHT, triphoneStr, &idx) < 0) {
         E_ERROR("Unknown left diphone '%s'\n", triphoneStr);
         return (0);
     }
@@ -933,7 +939,7 @@ replace_dict_entry(dictT * dict,
     }
 
     sprintf(triphoneStr, "%s(%s,%%s)e", phone[i], phone[i - 1]);
-    if (hash_lookup(&rcHT, triphoneStr, &idx) < 0) {
+    if (hash_table_lookup(rcHT, triphoneStr, &idx) < 0) {
         E_ERROR("Unknown right diphone '%s'\n", triphoneStr);
         return (0);
     }
@@ -995,7 +1001,7 @@ dict_add_word(dictT * dict, char const *word, char const *pron)
     if (!replace_dict_entry(dict, entry, word, pron, TRUE, new_entry))
         return -1;
 
-    hash_add(&dict->dict, entry->word, (caddr_t) wid);
+    hash_table_enter(dict->dict, entry->word, (void *) wid);
 
     return (wid);
 }
@@ -1006,16 +1012,13 @@ _dict_list_add(dictT * dict, dict_entry_t * entry)
 {
     if (!dict->dict_list)
         dict->dict_list = (dict_entry_t **)
-            CM_calloc(dict->dict.size_hint, sizeof(dict_entry_t *));
+            CM_calloc(hash_table_size(dict->dict), sizeof(dict_entry_t *));
 
-    if (dict->dict_entry_count >= dict->dict.size_hint) {
-        E_FATAL("dict size (%d) exceeded\n", dict->dict.size_hint);
-#if 0
-        dict->dict.size_hint = dict->dict_entry_count + 16;
+    if (dict->dict_entry_count >= hash_table_size(dict->dict)) {
+        E_FATAL("dict size (%d) exceeded\n", hash_table_size(dict->dict));
         dict->dict_list = (dict_entry_t **)
-            CM_recalloc(dict->dict_list, dict->dict.size_hint,
+            CM_recalloc(dict->dict_list, hash_table_size(dict->dict) + 16,
                         sizeof(dict_entry_t *));
-#endif
     }
 
     dict->dict_list[dict->dict_entry_count++] = entry;
@@ -1044,33 +1047,33 @@ dict_new(void)
 static void
 recordMissingTriphone(char *triphoneStr)
 {
-    caddr_t idx;
+    void * idx;
     char *cp;
 
-    if (-1 == hash_lookup(&mtpHT, triphoneStr, &idx)) {
+    if (-1 == hash_table_lookup(mtpHT, triphoneStr, &idx)) {
         cp = (char *) salloc(triphoneStr);
         E_INFO("Missing triphone: %s\n", triphoneStr);
-        hash_add(&mtpHT, cp, cp);
+        hash_table_enter(mtpHT, cp, cp);
     }
 }
 
-list_t *
+glist_t
 dict_mtpList(void)
 {
     return mtpList;
 }
 
 static int32
-addToContextTable(char *diphone, hash_t * table, list_t * list)
+addToContextTable(char *diphone, hash_table_t * table, list_t * list)
 {
-    caddr_t idx;
+    void * idx;
     char *cp;
 
-    if (-1 == hash_lookup(table, diphone, &idx)) {
+    if (-1 == hash_table_lookup(table, diphone, &idx)) {
         cp = (char *) salloc(diphone);
-        idx = (caddr_t) table->inuse;
+        idx = (void *) table->inuse;
         list_insert(list, cp);
-        hash_add(table, cp, idx);
+        hash_table_enter(table, cp, idx);
     }
     return ((int32) idx);
 }
@@ -1078,13 +1081,13 @@ addToContextTable(char *diphone, hash_t * table, list_t * list)
 static int32
 addToLeftContextTable(char *diphone)
 {
-    return addToContextTable(diphone, &lcHT, &lcList);
+    return addToContextTable(diphone, lcHT, &lcList);
 }
 
 static int32
 addToRightContextTable(char *diphone)
 {
-    return addToContextTable(diphone, &rcHT, &rcList);
+    return addToContextTable(diphone, rcHT, &rcList);
 }
 
 static int

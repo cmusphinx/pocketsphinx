@@ -53,7 +53,7 @@
 #include <stdio.h>
 #include "s2types.h"
 #include "s3types.h"
-#include "s3hash.h"
+#include "hash_table.h"
 
 
 /* Phoneme positions within a word: beginning, end, internal, single */
@@ -115,7 +115,7 @@ typedef struct {
     int32 n_sen;		/* #senones (CI+CD) */
     int32 n_tmat;		/* #transition matrices */
     
-    s3hash_table_t *ciphone_ht;	/* Hash table for mapping ciphone strings to ids */
+    hash_table_t *ciphone_ht;	/* Hash table for mapping ciphone strings to ids */
     ciphone_t *ciphone;		/* CI-phone information for all ciphones */
     phone_t *phone;		/* Information for all ciphones and triphones */
     s3senid_t **sseq;		/* Unique state (or senone) sequences in this model, shared

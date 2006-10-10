@@ -219,7 +219,6 @@
 #include "basic_types.h"
 #include "linklist.h"
 #include "list.h"
-#include "hash.h"
 #include "search_const.h"
 #include "err.h"
 #include "dict.h"

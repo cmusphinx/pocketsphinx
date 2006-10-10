@@ -72,7 +72,7 @@
 #include "search_const.h"
 #include "linklist.h"
 #include "list.h"
-#include "hash.h"
+#include "hash_table.h"
 #include "phone.h"
 #include "err.h"
 #include "log.h"

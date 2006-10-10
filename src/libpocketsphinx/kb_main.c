@@ -135,7 +135,6 @@
 #include "basic_types.h"
 #include "search_const.h"
 #include "list.h"
-#include "hash.h"
 #include "err.h"
 #include "ckd_alloc.h"
 #include "c.h"
@@ -1089,7 +1088,7 @@ kb_get_max_new_oov(void)
 int32
 dict_maxsize(void)
 {
-    return (word_dict->dict.size_hint);
+    return (hash_table_size(word_dict->dict));
 }
 
 
