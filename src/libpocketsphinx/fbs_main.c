@@ -201,7 +201,6 @@
 #include "basic_types.h"
 #include "strfuncs.h"
 #include "list.h"
-#include "hash.h"
 #include "search_const.h"
 #include "msd.h"
 #include "pconf.h"
@@ -218,7 +217,7 @@
 #include "cepio.h"
 #include "byteorder.h"
 #include "s2params.h"
-/* just for some params */
+#include "feat.h"
 #include "fe.h"
 
 /*
