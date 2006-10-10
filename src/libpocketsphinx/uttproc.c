@@ -1402,7 +1402,6 @@ int32
 uttproc_end_utt(void)
 {
     int32 i, k, nfr;
-    mfcc_t cep[13], c0;
     mfcc_t *leftover_cep;
 
     /* kal */
@@ -1436,23 +1435,12 @@ uttproc_end_utt(void)
     SCVQEndUtt();
 
     /* Update estimated CMN vector */
-    if (cmn == NORM_PRIOR) {
-        uttproc_cepmean_get(cep);
-        c0 = cep[0];
+    if (cmn == NORM_PRIOR)
         mean_norm_update();
-        uttproc_cepmean_get(cep);
 
-        /* Update estimated AGC Max (C0) */
-        if (agc == AGC_EMAX) {
-            agc_emax_update();
-        }
-    }
-    else {
-        /* Update estimated AGC Max (C0) */
-        if (agc == AGC_EMAX) {
-            agc_emax_update();
-        }
-    }
+    /* Update estimated AGC Max (C0) */
+    if (agc == AGC_EMAX)
+        agc_emax_update();
 
     if (silcomp == COMPRESS_PRIOR)
         compute_noise_level();
