@@ -77,7 +77,7 @@
 
 #define NUM_FEATURES	4
 
-typedef enum {CEP_FEAT=0, DCEP_FEAT=1, POW_FEAT=2, DDCEP_FEAT=3} feat_t;
+typedef enum {CEP_FEAT=0, DCEP_FEAT=1, POW_FEAT=2, DDCEP_FEAT=3} stream_t;
 
 typedef enum {AGC_NONE=0, AGC_BETA=1, AGC_NOISE=2, AGC_EMAX=3, AGC_MAX=4} scvq_agc_t;
 typedef enum {NORM_NONE=0, NORM_UTT=1, NORM_PRIOR=2} scvq_norm_t;
@@ -93,7 +93,7 @@ void SCVQEndUtt ( void );
 void SCVQAgcSet(scvq_agc_t agc_type);
 void SCVQAgcInit(int32 agcColdInit, int32 agcLookAhead);
 void SCVQSetSenoneCompression (int32 size);
-int32 SCVQInitFeat(feat_t feat, char *meanPath, char *varPath, int32 *opdf);
+int32 SCVQInitFeat(stream_t feat, char *meanPath, char *varPath, int32 *opdf);
 int32 SCVQS3InitFeat(char *meanPath, char *varPath,
 		     int32 *opdf0, int32 *opdf1,
 		     int32 *opdf2, int32 *opdf3);
@@ -125,8 +125,8 @@ void SCVQScores_all (int32 *scores,
 		     mfcc_t *ddcep);
 
 void setVarFloor(double aVal);
-int32  readMeanCBFile(feat_t feat, mean_t **CB, char *MeanCBFile);
-int32  readVarCBFile(feat_t feat, register int32 *det, var_t **CB, char *VarCBFile);
+int32  readMeanCBFile(stream_t feat, mean_t **CB, char *MeanCBFile);
+int32  readVarCBFile(stream_t feat, register int32 *det, var_t **CB, char *VarCBFile);
 int32  setPowVar(register int32 *det, var_t **CB, double pow_var);
 
 int32 s3_read_mgau(char *file_name, float32 **cb);

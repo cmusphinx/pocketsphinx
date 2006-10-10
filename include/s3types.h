@@ -128,7 +128,7 @@ typedef int16   	s3mgauid_t;	/* Mixture-gaussian codebook id */
 #define S3_SILENCE_CIPHONE	"SIL"
 
 #define S3_LOGPROB_ZERO		((int32) 0xc8000000)	/* Approx -infinity!! */
-#define S3_MAX_FRAMES		30000			/* Frame = 10msec */
+#define S3_MAX_FRAMES		15000			/* Frame = 10msec */
 
 
 #ifndef PI
