@@ -189,7 +189,7 @@ static int32 initial_dummy;     /* 1st placeholder for dynamic OOVs after initia
 static int32 first_dummy;       /* 1st dummy available for dynamic OOVs at any time */
 static int32 last_dummy;        /* last dummy available for dynamic OOVs */
 
-#define MAX_PRONOUN_LEN 	100
+#define MAX_PRONOUN_LEN 	150
 
 static int32
 get_dict_size(char *file)
@@ -681,8 +681,6 @@ dictid_to_str(dictT * dict, int32 id)
     return (dict->dict_list[id]->word);
 }
 
-#define MAX_PRONOUN_LEN 100
-
 static dict_entry_t *
 _new_dict_entry(char const *word_str, char const *pronoun_str,
                 int32 use_context)
@@ -703,6 +701,11 @@ _new_dict_entry(char const *word_str, char const *pronoun_str,
     position[0] = 'b';          /* First phone is at begginging */
 
     while (1) {
+	if (pronoun_len >= MAX_PRONOUN_LEN) {
+	    E_ERROR("'%s': Too many phones for bogus hard-coded limit (%d), skipping\n",
+		    word_str, MAX_PRONOUN_LEN);
+	    return NULL;
+	}
         phone[pronoun_len] = (char *) nxtarg(&pronoun_str, " \t");
         if (*phone[pronoun_len] == 0)
             break;
@@ -870,6 +873,11 @@ replace_dict_entry(dictT * dict,
 
     /* For the moment, no phrase dictionary stuff... */
     while (1) {
+	if (pronoun_len >= MAX_PRONOUN_LEN) {
+	    E_ERROR("'%s': Too many phones for bogus hard-coded limit (%d), skipping\n",
+		    word_str, MAX_PRONOUN_LEN);
+	    return 0;
+	}
         phone[pronoun_len] = (char *) nxtarg(&pronoun_str, " \t");
         if (*phone[pronoun_len] == 0)
             break;

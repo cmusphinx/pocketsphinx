@@ -1017,16 +1017,21 @@ lm_read_clm(char const *filename,
                                 lmclass_getprob(lmclass_word) * lw;
                         }
                     }
-                    else
-                        notindict++;
+		    else {
+			E_ERROR("'%s' is in LM class definition but not in dictionary\n",
+				lmclass_getword(lmclass_word));
+			notindict++;
+		    }
 
                     lmclass_word =
                         lmclass_nextword(LM_CLASSID_TO_CLASS
                                          (model, classid), lmclass_word);
                 }
             }
-            else
-                notindict++;
+            else {
+		E_ERROR("'%s' is in LM unigrams but not in dictionary\n", word_str[i]);
+		notindict++;
+	    }
         }
     }
     if (maperr)
