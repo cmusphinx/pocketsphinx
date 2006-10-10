@@ -230,12 +230,10 @@ static char *ctl_file_name = 0;
 static char *match_file_name = NULL;
 static char *matchseg_file_name = NULL;
 static char *logfn_arg = NULL;
-static char *correct_file_name = 0;
 static char *data_directory = 0;
 static char *cepdir = 0;
 static char *seg_data_directory = 0;
 static char const *sent_directory = ".";
-static char *utterance = 0;
 static int32 phone_conf = 0;
 static char *pscr2lat = NULL;   /* Directory for phone lattice files */
 
@@ -247,9 +245,6 @@ static char const *nbest_ext = "hyp";
 static int32 ctl_offset = 0;    /* No. of lines to skip at start of ctlfile */
 static int32 ctl_incr = 1;      /* Do every nth line in the ctl file */
 static int32 ctl_count = 0x7fffffff;    /* #lines to be processed */
-
-static char *force_str = 0;
-static char ref_sentence[2048];
 
 static char const *cep_ext = "mfc";
 static char const *sent_ext = "sent";
@@ -276,9 +271,7 @@ static int32 forward_only = FALSE;
 
 static int32 live = FALSE;
 
-static int32 forceRec = FALSE;
 static int32 agcNoise = FALSE;
-static int32 agcBeta = FALSE;
 static int32 agcMax = FALSE;
 static int32 agcEMax = FALSE;
 static int32 normalizeMean = TRUE;
@@ -286,7 +279,6 @@ static int32 normalizeMeanPrior = FALSE;
 static int32 compress = FALSE;
 static int32 compress_prior = FALSE;
 static float agcThresh = 0.2f;
-static int32 wsj1Sent = FALSE;
 
 static int32 writeScoreInMatchFile = TRUE;
 
@@ -310,9 +302,6 @@ int32 time_align_state = FALSE;
 
 /* State segmentation file (seg file) extension */
 static char *seg_file_ext = NULL;
-
-/* State-by-state score */
-static char *score_file_ext = NULL;
 
 /* For saving phone labels in alignment */
 char const *phonelabdirname = NULL;
@@ -429,20 +418,11 @@ config_t param[] = {
     /*
      * LongName, Documentation, Switch, TYPE, Address
      */
-    {"Force", "Force", "-force",
-     STRING, (caddr_t) & force_str},
-
     {"ArgFile", "Cmd line argument file", "-argfile",
      STRING, (caddr_t) & arg_file},
 
     {"AllPhoneMode", "All Phone Mode", "-allphone",
      BOOL, (caddr_t) & allphone_mode},
-
-    {"ForceRec", "ForceRec", "-forceRec",
-     BOOL, (caddr_t) & forceRec},
-
-    {"AgcBeta", "Use beta based AGC", "-agcbeta",
-     BOOL, (caddr_t) & agcBeta},
 
     {"AgcMax", "Use max based AGC", "-agcmax",
      BOOL, (caddr_t) & agcMax},
@@ -502,9 +482,6 @@ config_t param[] = {
      "-topsenthresh",
      INT, (caddr_t) & topsen_thresh},
 
-    {"wsj1Sent", "Sent_Dir using wsj1 format", "-wsj1Sent",
-     BOOL, (caddr_t) & wsj1Sent},
-
     {"ReportAltPron", "Report actual pronunciation in match file",
      "-reportpron",
      BOOL, (caddr_t) & report_altpron},
@@ -534,12 +511,6 @@ config_t param[] = {
 
     {"LogFileName", "Recognition ouput file name", "-logfn",
      STRING, (caddr_t) & logfn_arg},
-
-    {"CorrectFileName", "Reference ouput file name", "-correctfn",
-     STRING, (caddr_t) & correct_file_name},
-
-    {"Utterance", "Utterance name", "-utt",
-     STRING, (caddr_t) & utterance},
 
     {"DataDirectory", "Data directory", "-datadir",
      STRING, (caddr_t) & data_directory},
@@ -747,9 +718,6 @@ config_t param[] = {
 
     {"SegFileExt", "Seg file extension", "-segext",
      STRING, (caddr_t) & seg_file_ext},
-
-    {"ScoreFileExt", "Seg file extension", "-scoreext",
-     STRING, (caddr_t) & score_file_ext},
 
     {"OutSentFile", "output sentence file name", "-osentfn",
      STRING, (caddr_t) & out_sent_filename},
@@ -1252,13 +1220,6 @@ run_ctl_file(char const *ctl_file_name)
         if ((ctl_offset-- > 0) || (ctl_count <= 0)
             || ((line_no++ % ctl_incr) != 0))
             continue;
-
-        /*
-         * Set force_str
-         */
-        if (forceRec) {
-            force_str = ref_sentence;
-        }
 
         E_INFO("\nUtterance: %s\n", idspec);
 
@@ -1876,12 +1837,6 @@ time_align_utterance(char const *utt,
     TotalElapsedTime += MakeSeconds(&e_start, &e_stop);
     TotalSpeechTime += n_frames * 0.01;
 #endif                          /* WIN32 */
-}
-
-char const *
-get_ref_sent(void)
-{
-    return (ref_sentence);
 }
 
 char const *

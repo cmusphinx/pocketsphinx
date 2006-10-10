@@ -370,7 +370,6 @@ static int32 newword_penalty = 0;
 /* BestScoreTable[CurrentFrame] === BestScore */
 static int32 BestScoreTable[MAX_FRAMES];
 
-static int32 ForcedRecMode;
 static int32 compute_all_senones = TRUE;
 
 static int32 ChannelsPerFrameTarget = 0;        /* #channels to eval / frame */
@@ -414,9 +413,6 @@ static int32 HypTotalScore;
 static int32 TotalLangScore;
 
 static int32 hyp_alternates = FALSE;
-
-int32 ForceIds[256];
-int32 ForceLen = 0;
 
 static WORD_ID *single_phone_wid;       /* list of single-phone word ids */
 static int32 n_1ph_words;       /* #single phone words in dict (total) */
@@ -1982,8 +1978,6 @@ search_initialize(void)
     static void load_trace_wordlist();
 #endif
 
-    ForcedRecMode = FALSE;
-
     NumWords = kb_get_num_words();
     NumHmmModels = kb_get_num_models();
     TotalDists = kb_get_total_dists();
@@ -2096,50 +2090,6 @@ search_get_dist_scores(void)
     return distScores;
 }
 
-#if 0
-search_init(beam_width, all_word_mode, force_str)
-float beam_width;               /* Width of beam threshold */
-int32 all_word_mode;            /* True if we're to run in all_word_mode */
-char *force_str;                /* Non-NULL iff forced recognition mode */
-{
-    char *startWord;
-
-    /* For LISTEN project */
-    startWord = get_current_startword();
-    if (*startWord) {
-        StartWordId = kb_get_word_id(startWord);
-        E_INFO("startword %s -> %d (default is %d)\n",
-               startWord,
-               StartWordId, kb_get_word_id(kb_get_lm_start_sym()));
-        if (StartWordId == -1) {
-            StartWordId = kb_get_word_id(kb_get_lm_start_sym());
-            E_WARN("Using default startwordid %d\n", StartWordId);
-        }
-    }
-    else {
-        StartWordId = kb_get_word_id(kb_get_lm_start_sym());
-    }
-
-    LogBeamWidth = 8 * LOG(beam_width);
-
-    AllWordMode = all_word_mode;
-
-    /*
-     * If there is reference str we assume we are in forced rec mode
-     */
-    if (force_str) {
-        E_FATAL("forced recognition not implemented\n");
-        ForcedRecMode = TRUE;
-        ForceLen = parse_ref_str(force_str, ForceIds);
-    }
-    else {
-        ForceLen = 0;
-        ForcedRecMode = FALSE;
-    }
-
-    return 0;
-}
-#endif
 
 void
 search_set_startword(char const *str)
@@ -2829,7 +2779,7 @@ seg_back_trace(int32 bpidx, char const *pass)
     int32 f, latden;
     double perp;
 
-    altpron = query_report_altpron() || ForcedRecMode;
+    altpron = query_report_altpron();
 
     if (bpidx != NO_BP) {
         seg_back_trace(BPTable[bpidx].bp, pass);
@@ -2916,7 +2866,7 @@ partial_seg_back_trace(int32 bpidx)
     static int32 last_time;
     int32 altpron;
 
-    altpron = query_report_altpron() || ForcedRecMode;
+    altpron = query_report_altpron();
 
     if (bpidx != NO_BP) {
         partial_seg_back_trace(BPTable[bpidx].bp);
