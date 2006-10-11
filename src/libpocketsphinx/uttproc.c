@@ -836,7 +836,6 @@ mfc2feat_batch(mfcc_t ** mfc, int32 nfr)
 
         n_featfr++;
     }
-
     return 0;
 }
 
@@ -1320,7 +1319,7 @@ uttproc_rawdata(int16 * raw, int32 len, int32 block)
 
     if (mfcfp && (nfr > 0)) {
         fe_mfcc_to_float(fe, temp_mfc, (float32 **) temp_mfc, nfr);
-        fwrite(temp_mfc, sizeof(float), nfr * CEP_SIZE, mfcfp);
+        fwrite(temp_mfc[0], sizeof(float), nfr * CEP_SIZE, mfcfp);
     }
     fe_free_2d(temp_mfc);
 
