@@ -211,8 +211,7 @@ void compute_sen_active (void);
 void evaluateChannels (void);
 void pruneChannels (void);
 
-void search_fwd (mfcc_t *cep, mfcc_t *dcep,
-		 mfcc_t *dcep_80ms, mfcc_t *pcep, mfcc_t *ddcep);
+void search_fwd (mfcc_t **feat);
 void search_start_fwd (void);
 void search_finish_fwd (void);
 void search_one_ply_fwd (void);
@@ -225,8 +224,7 @@ void build_fwdflat_chan ( void );
 void destroy_fwdflat_chan ( void );
 void search_set_fwdflat_bw (double bw, double nwbw);
 void search_fwdflat_start ( void );
-void search_fwdflat_frame (mfcc_t *cep, mfcc_t *dcep,
-			   mfcc_t *dcep_80ms, mfcc_t *pcep, mfcc_t *ddcep);
+void search_fwdflat_frame (mfcc_t **feat);
 void compute_fwdflat_senone_active ( void );
 void fwdflat_eval_chan ( void );
 void fwdflat_prune_chan ( void );

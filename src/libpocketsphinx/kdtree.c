@@ -54,7 +54,7 @@
 #include "kdtree.h"
 #include "err.h"
 #include "ckd_alloc.h"
-#include "sc_vq_internal.h"
+#include "s2_semi_mgau.h"
 
 #define KDTREE_VERSION 1
 
@@ -89,15 +89,15 @@ read_tree_float(FILE * fp, const char *name, float32 * out, int32 optional)
 static int32
 read_bbi_list(FILE * fp, kd_tree_node_t * node, int32 maxbbi)
 {
-    uint8 bbi_list[NUM_ALPHABET];
+    uint8 bbi_list[S2_NUM_ALPHABET];
     int bbi, nbbi = 0, nr;
 
     if (maxbbi == -1)
-        maxbbi = NUM_ALPHABET;
+        maxbbi = S2_NUM_ALPHABET;
     if ((nr = read_tree_int(fp, "bbi", &bbi, TRUE)) < 0)
         return -1;
     if (nr > 1) {
-        if (bbi >= NUM_ALPHABET) {
+        if (bbi >= S2_NUM_ALPHABET) {
             E_ERROR("BBI Gaussian %d out of range! %d\n", bbi);
             return -1;
         }
@@ -106,7 +106,7 @@ read_bbi_list(FILE * fp, kd_tree_node_t * node, int32 maxbbi)
         while (fscanf(fp, "%d", &bbi)) {
             if (feof(fp))
                 break;
-            if (bbi >= NUM_ALPHABET) {
+            if (bbi >= S2_NUM_ALPHABET) {
                 E_ERROR("BBI Gaussian %d out of range!\n", bbi);
                 return -1;
             }
@@ -226,7 +226,7 @@ read_kd_trees(const char *infile, kd_tree_t *** out_trees,
         (*out_trees)[i] = tree = ckd_calloc(1, sizeof(*tree));
         if (read_tree_int(fp, "n_density", &n_density, FALSE) < 0)
             goto error_out;
-        if (n_density != NUM_ALPHABET) {
+        if (n_density != S2_NUM_ALPHABET) {
             E_ERROR("Number of densities (%d) must be 256!\n", n_density);
             goto error_out;
         }

@@ -147,7 +147,7 @@
 #include "lmclass.h"
 #include "lm_3g.h"
 #include "hmm_tied_r.h"
-#include "scvq.h"
+#include "s2_semi_mgau.h"
 #include "kb.h"
 #include "phone.h"
 #include "fbs.h"
@@ -200,7 +200,6 @@ static double dcep80msWeight = 1.0;
 static char *sendumpfile = NULL;        /* Senone probs dump file */
 static int32 use_s3semi = FALSE;        /* S3 models are semi-continuous */
 static int32 use_mmap = FALSE;  /* Use memory-mapped I/O for probs */
-static int32 Use8BitSenProb = FALSE;    /* TRUE=>use sen-probs compressed to 8bits */
 static int32 UseDarpaStandardLM = TRUE; /* FALSE => Use Roni Rosenfeld LM */
 static int32 UseBigramOnly = FALSE;     /* Only use bigram even is trigram is avaiable */
 static int32 UseWordPair = FALSE;       /* Use word pair probs only */
@@ -336,8 +335,6 @@ config_t kb_param[] = {
      DOUBLE, (caddr_t) & transSmooth},
     {"Unigram Weight", "Unigram weight, 0.0 - 1.0", "-ugwt",
      FLOAT, (caddr_t) & unigramWeight},
-    {"Use8BitSenProb", "#bits to use for senone probs = 8", "-8bsen",
-     BOOL, (caddr_t) & Use8BitSenProb},
     {"InsertionPenalty", "Penalty for word transitions", "-inspen",
      FLOAT, (caddr_t) & insertion_penalty},
     {"SilenceWordPenalty", "Penalty for silence word transitions",
@@ -378,7 +375,10 @@ static int32 **phonetp;
 static float phone_insertion_penalty;
 
 /* S3 model definition */
-static bin_mdef_t *mdef = NULL;
+static bin_mdef_t *mdef;
+
+/* S2 fast SCGMM computation object */
+static s2_semi_mgau_t *semi_mgau;
 
 int32
 kb_get_silence_word_id(void)
@@ -530,9 +530,6 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
     /* Check various combinations of arguments. */
     if (mdefFileName == NULL)
         E_FATAL("Must specify -mdeffn\n");
-
-    if (Use8BitSenProb)
-        SCVQSetSenoneCompression(8);
 
     /* Read model definition. */
     if ((mdef = bin_mdef_read(mdefFileName)) == NULL)
@@ -710,23 +707,20 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
         E_FATAL("No S3 mean/var/mixw/tmat files specified\n");
 
     E_INFO
-        ("Initializing SCVQ module\n");
-    read_dists_s3(mixwFileName, NUMOFCODEENTRIES, s3mixwfloor,
-                  useCiPhonesOnly);
-    /* initialize semi-continuous acoustic and model scoring subsystem */
-    SCVQInit(scVqTopN, kb_get_total_dists(), 1,
-             s3varfloor, use20msDiffPow);
+        ("Initializing SCGMM computation module\n");
+    semi_mgau = s2_semi_mgau_init(meanFileName,
+                                  varFileName,
+                                  s3varfloor,
+                                  mixwFileName,
+                                  s3mixwfloor,
+                                  scVqTopN);
     if (kdtree_file_name)
-        SCVQLoadKDTree(kdtree_file_name, kdtree_maxdepth,
-                       kdtree_maxbbi);
-    SCVQSetdcep80msWeight(dcep80msWeight);
-    SCVQSetDownsamplingRatio(scvqDSRatio);
+        s2_semi_mgau_load_kdtree(semi_mgau,
+                                 kdtree_file_name, kdtree_maxdepth,
+                                 kdtree_maxbbi);
+    semi_mgau->dcep80msWeight = dcep80msWeight;
+    semi_mgau->ds_ratio = scvqDSRatio;
     searchSetScVqTopN(scVqTopN);
-
-    SCVQS3InitFeat(meanFileName, varFileName,
-                   kb_get_codebook_0_dist(),
-                   kb_get_codebook_1_dist(),
-                   kb_get_codebook_2_dist(), kb_get_codebook_3_dist());
     remap_mdef(smds, mdef);
 
     /*
@@ -906,54 +900,6 @@ extern int32 *Out_Prob2;
 extern int32 *Out_Prob3;
 extern int32 *Out_Prob4;
 
-int32 *
-kb_get_codebook_0_dist(void)
-/*------------------------------------------------------------*
- * Return the permutted codebook 0 distributions.
- */
-{
-    /* UGLY coercion of various pointer types to (int32 *) */
-    if (Use8BitSenProb)
-        return ((int32 *) & (out_prob_8b[0]));
-    return (Out_Prob1);
-}
-
-int32 *
-kb_get_codebook_1_dist(void)
-/*------------------------------------------------------------*
- * Return the permutted codebook 1 distributions.
- */
-{
-    /* UGLY coercion of various pointer types to (int32 *) */
-    if (Use8BitSenProb)
-        return ((int32 *) & (out_prob_8b[1]));
-    return (Out_Prob2);
-}
-
-int32 *
-kb_get_codebook_2_dist(void)
-/*------------------------------------------------------------*
- * Return the permutted codebook 2 distributions.
- */
-{
-    /* UGLY coercion of various pointer types to (int32 *) */
-    if (Use8BitSenProb)
-        return ((int32 *) & (out_prob_8b[2]));
-    return (Out_Prob3);
-}
-
-int32 *
-kb_get_codebook_3_dist(void)
-/*------------------------------------------------------------*
- * Return the permutted codebook 3 distributions.
- */
-{
-    /* UGLY coercion of various pointer types to (int32 *) */
-    if (Use8BitSenProb)
-        return ((int32 *) & (out_prob_8b[3]));
-    return (Out_Prob4);
-}
-
 int32
 kb_get_dist_prob_bytes(void)
 /*------------------------------------------------------------*
@@ -1046,14 +992,6 @@ kb_get_mmap_flag(void)
     return use_mmap;
 }
 
-int32
-kb_get_senprob_size(void)
-{
-    if (Use8BitSenProb)
-        return 8;
-    return 32;
-}
-
 /* For LISTEN project */
 char *
 kb_get_startsym_file(void)
@@ -1138,4 +1076,10 @@ bin_mdef_t *
 kb_mdef(void)
 {
     return mdef;
+}
+
+s2_semi_mgau_t *
+kb_mgau(void)
+{
+    return semi_mgau;
 }

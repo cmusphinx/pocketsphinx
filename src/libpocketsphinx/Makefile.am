@@ -29,7 +29,6 @@ libpocketsphinx_la_SOURCES = \
 	kdtree.c				\
 	lab.c					\
 	list.c					\
-	live_norm.c				\
 	lm_3g.c					\
 	lm.c					\
 	lmclass.c				\
@@ -38,15 +37,12 @@ libpocketsphinx_la_SOURCES = \
 	logs3.c					\
 	longio.c				\
 	mdef.c					\
-	norm.c					\
 	nxtarg.c				\
 	pconf.c					\
 	phone.c					\
-	r_agc_noise.c				\
 	s2_mmap.c				\
+	s2_semi_mgau.c				\
 	salloc.c				\
-	sc_cbook_r.c				\
-	sc_vq.c					\
 	search.c				\
 	searchlat.c				\
 	senscr.c				\

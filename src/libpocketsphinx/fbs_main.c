@@ -204,7 +204,7 @@
 #include "search_const.h"
 #include "msd.h"
 #include "pconf.h"
-#include "scvq.h"
+#include "s2_semi_mgau.h"
 #include "dict.h"
 #include "err.h"
 #include "lmclass.h"
@@ -230,8 +230,7 @@ static char *ctl_file_name = 0;
 static char *match_file_name = NULL;
 static char *matchseg_file_name = NULL;
 static char *logfn_arg = NULL;
-static char *data_directory = 0;
-static char *cepdir = 0;
+char *data_directory = 0;
 static char *seg_data_directory = 0;
 static char const *sent_directory = ".";
 static int32 phone_conf = 0;
@@ -246,7 +245,7 @@ static int32 ctl_offset = 0;    /* No. of lines to skip at start of ctlfile */
 static int32 ctl_incr = 1;      /* Do every nth line in the ctl file */
 static int32 ctl_count = 0x7fffffff;    /* #lines to be processed */
 
-static char const *cep_ext = "mfc";
+char const *cep_ext = ".mfc";
 static char const *sent_ext = "sent";
 static float beam_width = 1e-6f;
 static float new_phone_beam_width = 1e-6f;
@@ -276,8 +275,6 @@ static int32 agcMax = FALSE;
 static int32 agcEMax = FALSE;
 static int32 normalizeMean = TRUE;
 static int32 normalizeMeanPrior = FALSE;
-static int32 compress = FALSE;
-static int32 compress_prior = FALSE;
 static float agcThresh = 0.2f;
 
 static int32 writeScoreInMatchFile = TRUE;
@@ -384,8 +381,6 @@ static char *dumplat_dir = NULL;
 
 static char utt_name[1024] = "";
 
-static mfcc_t *cep, *dcep, *dcep_80ms, *pcep, *ddcep;
-
 static int32 maxwpf = 100000000;        /* Max words recognized per frame */
 static int32 maxhmmpf = 1000000000;     /* Max active HMMs per frame */
 
@@ -401,9 +396,7 @@ int32 calc_phone_perp = TRUE;   /* whether to calculate phone perplexity */
 extern double MakeSeconds(struct timeval *, struct timeval *);
 #endif
 
-extern int32 uttproc_set_cmn(scvq_norm_t n);
-extern int32 uttproc_set_agc(scvq_agc_t a);
-extern int32 uttproc_set_silcmp(scvq_compress_t c);
+extern int32 uttproc_set_feat(feat_t *fcb);
 
 /* FIXME: These misc functions need a header file. */
 extern void unlimit(void);
@@ -442,15 +435,6 @@ config_t param[] = {
     {"NormalizeMeanPrior", "Normalize feature means with prior mean",
      "-nmprior",
      BOOL, (caddr_t) & normalizeMeanPrior},
-
-    {"CompressBackground", "Compress excess background frames",
-     "-compress",
-     BOOL, (caddr_t) & compress},
-
-    {"CompressPrior",
-     "Compress excess background frames based on prior utt",
-     "-compressprior",
-     BOOL, (caddr_t) & compress_prior},
 
     {"LiveData", "Get input from A/D hardware", "-live",
      BOOL, (caddr_t) & live},
@@ -516,7 +500,7 @@ config_t param[] = {
      STRING, (caddr_t) & data_directory},
 
     {"DataDirectory", "Data directory", "-cepdir",
-     STRING, (caddr_t) & cepdir},
+     STRING, (caddr_t) & data_directory},
 
     {"DataDirectory", "Data directory", "-vqdir",
      STRING, (caddr_t) & data_directory},
@@ -853,13 +837,12 @@ argfile_read(const int32 argc, char ***argv, const char *argfile)
     return (narg);
 }
 
-/* Set SCVQ parameters mean normalization, AGC, and silence compression */
 static void
-init_norm_agc_cmp(void)
+init_feat(void)
 {
-    scvq_agc_t agc;
-    scvq_norm_t norm;
-    scvq_compress_t cmp;
+    feat_t *fcb;
+    agc_type_t agc;
+    cmn_type_t norm;
 
     agc = AGC_NONE;
     if (agcNoise)
@@ -873,80 +856,23 @@ init_norm_agc_cmp(void)
         E_INFO("Live mode; AGC set to AGC_EMAX\n");
     }
 
-    norm = NORM_NONE;
+    norm = CMN_NONE;
     if (normalizeMean)
-        norm = normalizeMeanPrior ? NORM_PRIOR : NORM_UTT;
-    if ((!ctl_file_name) && live && (norm == NORM_UTT)) {
-        norm = NORM_PRIOR;
-        E_INFO("Live mode; MeanNorm set to NORM_PRIOR\n");
+        norm = normalizeMeanPrior ? CMN_PRIOR : CMN_CURRENT;
+    if ((!ctl_file_name) && live && (norm == CMN_CURRENT)) {
+        norm = CMN_PRIOR;
+        E_INFO("Live mode; CMN set to CMN_PRIOR\n");
     }
 
-    cmp = COMPRESS_NONE;
-    if (compress)
-        cmp = compress_prior ? COMPRESS_PRIOR : COMPRESS_UTT;
-    if ((!ctl_file_name) && live && (cmp == COMPRESS_UTT)) {
-        cmp = COMPRESS_PRIOR;
-        E_INFO("Live mode; Silence compression set to COMPRESS_PRIOR\n");
+    fcb = feat_init("s2_4x", norm, 0, agc, 1);
+
+    if (agcNoise || agcMax) {
+        agc_set_threshold(fcb->agc_struct, agcThresh);
     }
 
-    uttproc_set_cmn(norm);
-    uttproc_set_agc(agc);
-    uttproc_set_silcmp(cmp);
+    uttproc_set_feat(fcb);
 }
 
-static FILE *uttfp = NULL;
-static float32 *coeff;
-static int32 ncoeff;
-static int32 ncoeff_read;
-
-/*
- * Code for reading utterance data (A/D data) from a file, as per interface in ad.h.
- * This function is passed to uttproc for batch-mode processing of raw A/D data from
- * files.
- */
-int32
-adc_file_read(int16 * buf, int32 max)
-{
-    int32 i, n;
-
-    if (uttfp == NULL)
-        return -1;
-
-    if ((n = fread(buf, sizeof(int16), max, uttfp)) <= 0)
-        return -1;
-
-    /* Byte swap if necessary */
-#ifdef WORDS_BIGENDIAN
-    if (adc_endian == 1) {      /* Little endian adc file */
-        for (i = 0; i < n; i++)
-            SWAP_INT16(&buf[i]);
-    }
-#else
-    if (adc_endian == 0) {      /* Big endian adc file */
-        for (i = 0; i < n; i++)
-            SWAP_INT16(&buf[i]);
-    }
-#endif
-
-    return n;
-}
-
-/*
- * Code for reading passing cep data from a buffer (previously filled from a cep file)
- * to the decoder in batch mode.
- * This function is passed to uttproc for batch-mode processing of cep data from files.
- */
-static int32
-cep_buf_read(float32 * cepbuf)
-{
-    if (ncoeff_read >= ncoeff)
-        return -1;
-
-    memcpy(cepbuf, coeff + ncoeff_read, CEP_VECLEN * sizeof(float32));
-    ncoeff_read += CEP_VECLEN;
-
-    return 1;
-}
 
 static int32 final_argc;
 static char **final_argv;
@@ -1072,10 +998,6 @@ fbs_init(int32 argc, char **argv)
     /* Load the KB */
     kb(argc, argv, insertion_penalty, fwdtree_lw, phone_insertion_penalty);
 
-    if (agcNoise || agcMax) {
-        agc_set_threshold(agcThresh);
-    }
-
     search_initialize();
 
     search_set_beam_width(beam_width);
@@ -1096,13 +1018,13 @@ fbs_init(int32 argc, char **argv)
     /* Initialize dynamic data structures needed for utterance processing */
     uttproc_init();
 
+    /* Initialize feature computation. */
+    init_feat();
+
     if (rawlogdir)
         uttproc_set_rawlogdir(rawlogdir);
     if (mfclogdir)
         uttproc_set_mfclogdir(mfclogdir);
-
-    /* Initialize cepstral mean normalization, AGC, and silence compression options */
-    init_norm_agc_cmp();
 
     /* If multiple LMs present, choose the unnamed one by default */
     if (kb_get_fsg_file_name() == NULL) {
@@ -1156,33 +1078,105 @@ fbs_end(void)
     return 0;
 }
 
-/*
- * Too lazy to put this into uttproc.c.
- */
-int32
-uttproc_parse_ctlfile_entry(char *line,
-                            char *filename, int32 * sf, int32 * ef,
-                            char *idspec)
+FILE *
+adcfile_open(char const *utt)
 {
-    int32 k;
+    char inputfile[MAXPATHLEN];
+    FILE *uttfp;
+    int32 n, l;
 
-    *sf = *ef = -1;             /* Default; process entire file */
+    n = strlen(adc_ext);
+    l = strlen(utt);
+    if ((l > n + 1) && (utt[l - n - 1] == '.')
+        && (strcmp(utt + l - n, adc_ext) == 0))
+        adc_ext = "";          /* Extension already exists */
 
-    if ((k = sscanf(line, "%s %d %d %s", filename, sf, ef, idspec)) <= 0)
+    /* Build input filename */
+#ifdef WIN32
+    if (data_directory && (utt[0] != '/') && (utt[0] != '\\') &&
+        ((utt[0] != '.') || ((utt[1] != '/') && (utt[1] != '\\'))))
+        sprintf(inputfile, "%s/%s.%s", data_directory, utt, adc_ext);
+    else
+        sprintf(inputfile, "%s.%s", utt, adc_ext);
+#else
+    if (data_directory && (utt[0] != '/')
+        && ((utt[0] != '.') || (utt[1] != '/')))
+        sprintf(inputfile, "%s/%s.%s", data_directory, utt, adc_ext);
+    else
+        sprintf(inputfile, "%s.%s", utt, adc_ext);
+#endif
+
+    if ((uttfp = fopen(inputfile, "rb")) == NULL) {
+        E_FATAL("fopen(%s,rb) failed\n", inputfile);
+    }
+    if (adc_hdr > 0) {
+        if (fseek(uttfp, adc_hdr, SEEK_SET) < 0) {
+            E_ERROR("fseek(%s,%d) failed\n", inputfile, adc_hdr);
+            fclose(uttfp);
+            return NULL;
+        }
+    }
+#ifdef WORDS_BIGENDIAN
+    if (adc_endian == 1)    /* Little endian adc file */
+        E_INFO("Byte-reversing %s\n", inputfile);
+#else
+    if (adc_endian == 0)    /* Big endian adc file */
+        E_INFO("Byte-reversing %s\n", inputfile);
+#endif
+
+    return uttfp;
+}
+
+int32
+adc_file_read(FILE *uttfp, int16 * buf, int32 max)
+{
+    int32 i, n;
+
+    if (uttfp == NULL)
         return -1;
 
-    if (k == 1)
-        strcpy(idspec, filename);
-    else {
-        if ((k == 2) || (*sf < 0) || (*ef <= *sf)) {
-            E_ERROR("Bad ctlfile entry: %s\n", line);
-            return -1;
-        }
-        if (k == 3)
-            sprintf(idspec, "%s_%d_%d", filename, *sf, *ef);
-    }
+    if ((n = fread(buf, sizeof(int16), max, uttfp)) <= 0)
+        return -1;
 
-    return 0;
+    /* Byte swap if necessary */
+#ifdef WORDS_BIGENDIAN
+    if (adc_endian == 1) {      /* Little endian adc file */
+        for (i = 0; i < n; i++)
+            SWAP_INT16(&buf[i]);
+    }
+#else
+    if (adc_endian == 0) {      /* Big endian adc file */
+        for (i = 0; i < n; i++)
+            SWAP_INT16(&buf[i]);
+    }
+#endif
+
+    return n;
+}
+
+char *
+build_uttid(char const *utt)
+{
+    char const *utt_id;
+
+    /* Find uttid */
+#ifdef WIN32
+    {
+        int32 i;
+        for (i = strlen(utt) - 1;
+             (i >= 0) && (utt[i] != '\\') && (utt[i] != '/'); --i);
+        utt_id = utt + i;
+    }
+#else
+    utt_id = strrchr(utt, '/');
+#endif
+    if (utt_id)
+        utt_id++;
+    else
+        utt_id = utt;
+    strcpy(utt_name, utt_id);
+
+    return utt_name;
 }
 
 void
@@ -1246,146 +1240,6 @@ run_ctl_file(char const *ctl_file_name)
 
     if (ctl_fs != stdin)
         fclose(ctl_fs);
-}
-
-int32
-uttfile_open(char const *utt)
-{
-    char inputfile[MAXPATHLEN];
-    int32 n, l;
-    char const *file_ext;
-
-    /* Figure out file extension to be added, if any */
-    file_ext = adc_input ? adc_ext : cep_ext;
-    n = strlen(file_ext);
-    l = strlen(utt);
-    if ((l > n + 1) && (utt[l - n - 1] == '.')
-        && (strcmp(utt + l - n, file_ext) == 0))
-        file_ext = "";          /* Extension already exists */
-
-    /* Build input filename */
-#ifdef WIN32
-    if (data_directory && (utt[0] != '/') && (utt[0] != '\\') &&
-        ((utt[0] != '.') || ((utt[1] != '/') && (utt[1] != '\\'))))
-        sprintf(inputfile, "%s/%s.%s", data_directory, utt, file_ext);
-    else
-        sprintf(inputfile, "%s.%s", utt, file_ext);
-#else
-    if (data_directory && (utt[0] != '/')
-        && ((utt[0] != '.') || (utt[1] != '/')))
-        sprintf(inputfile, "%s/%s.%s", data_directory, utt, file_ext);
-    else
-        sprintf(inputfile, "%s.%s", utt, file_ext);
-#endif
-
-    if (adc_input) {
-        if ((uttfp = fopen(inputfile, "rb")) == NULL) {
-            E_FATAL("fopen(%s,rb) failed\n", inputfile);
-        }
-        if (adc_hdr > 0) {
-            if (fseek(uttfp, adc_hdr, SEEK_SET) < 0) {
-                E_ERROR("fseek(%s,%d) failed\n", inputfile, adc_hdr);
-                return -1;
-            }
-        }
-#ifdef WORDS_BIGENDIAN
-        if (adc_endian == 1)    /* Little endian adc file */
-            E_INFO("Byte-reversing %s\n", inputfile);
-#else
-        if (adc_endian == 0)    /* Big endian adc file */
-            E_INFO("Byte-reversing %s\n", inputfile);
-#endif
-    }
-    else {
-        if (cep_read_bin(&coeff, &ncoeff, inputfile) != 0) {
-            E_ERROR("Read(%s) failed\n", inputfile);
-            ncoeff = 0;
-            return -1;
-        }
-        ncoeff /= sizeof(float32);
-        ncoeff_read = 0;
-    }
-
-    return (0);
-}
-
-void
-uttfile_close(void)
-{
-    if (adc_input) {
-        if (uttfp)
-            fclose(uttfp);
-        uttfp = NULL;
-    }
-    else
-        free(coeff);
-}
-
-/* Return #frames converted to feature vectors; -1 if error */
-int32
-utt_file2feat(char *utt, int32 nosearch)
-{
-    static int16 *adbuf = NULL;
-    static float32 *mfcbuf = NULL;
-    int32 k;
-
-    if (uttfile_open(utt) < 0)
-        return -1;
-
-    if (uttproc_nosearch(nosearch) < 0)
-        return -1;
-
-    if (uttproc_begin_utt(utt_name) < 0)
-        return -1;
-
-    if (adc_input) {
-        if (!adbuf)
-            adbuf = (int16 *) CM_calloc(4096, sizeof(int16));
-
-        while ((k = adc_file_read(adbuf, 4096)) >= 0)
-            if (uttproc_rawdata(adbuf, k, 1) < 0)
-                return -1;
-    }
-    else {
-        if (!mfcbuf)
-            mfcbuf = (float32 *) CM_calloc(CEP_VECLEN, sizeof(float32));
-
-        while (cep_buf_read(mfcbuf) >= 0)
-            if (uttproc_cepdata(&mfcbuf, 1, 1) < 0)
-                return -1;
-    }
-
-    if (uttproc_end_utt() < 0)
-        return -1;
-
-    uttfile_close();
-
-    return (uttproc_get_featbuf(&cep, &dcep, &dcep_80ms, &pcep, &ddcep));
-}
-
-char *
-build_uttid(char const *utt)
-{
-    char const *utt_id;
-
-    /* Find uttid */
-#ifdef WIN32
-    {
-        int32 i;
-        for (i = strlen(utt) - 1;
-             (i >= 0) && (utt[i] != '\\') && (utt[i] != '/'); --i);
-        utt_id = utt + i;
-    }
-#else
-    utt_id = strrchr(utt, '/');
-#endif
-    if (utt_id)
-        utt_id++;
-    else
-        utt_id = utt;
-    strcpy(utt_name, utt_id);
-
-    return utt_name;
 }
 
 void
@@ -1465,7 +1319,7 @@ run_time_align_ctl_file(char const *utt_ctl_file_name,
         }
 
         build_uttid(Utt);
-        if ((n_featfr = utt_file2feat(Utt, 1)) < 0)
+        if ((n_featfr = uttproc_file2feat(Utt, 0, -1, 1)) < 0)
             E_ERROR("Failed to load %s\n", Utt);
         else {
             time_align_utterance(Utt,
@@ -1481,100 +1335,6 @@ run_time_align_ctl_file(char const *utt_ctl_file_name,
     fclose(pe_ctl_fs);
 }
 
-/*
- * Read specified segment [sf..ef] of Sphinx-II format mfc file and write to
- * specified output file.
- */
-void
-s2mfc_read(char *file, int32 sf, int32 ef, char *outfile)
-{
-    FILE *fp, *outfp;
-    int32 n_float32;
-    struct stat statbuf;
-    int32 i = 0, n, byterev, cepsize;
-    float tmpbuf[CEP_SIZE];
-
-    E_INFO("Extracting frames %d..%d from %s to %s\n", sf, ef, file,
-           outfile);
-
-    cepsize = CEP_SIZE;
-
-    /* Find filesize */
-    if (stat(file, &statbuf) != 0)
-        E_FATAL("stat(%s) failed\n", file);
-
-    fp = CM_fopen(file, "rb");
-    outfp = CM_fopen(outfile, "wb");
-
-    /* Read #floats in header */
-    if (fread(&n_float32, sizeof(int32), 1, fp) != 1)
-        E_FATAL("fread(%s) failed\n", file);
-
-    /* Check if n_float32 matches file size */
-    byterev = FALSE;
-    if ((n_float32 * sizeof(float) + 4) != statbuf.st_size) {
-        n = n_float32;
-        SWAP_INT32(&n);
-
-        if ((n * sizeof(float) + 4) != statbuf.st_size) {
-            E_FATAL("Header size field: %d(%08x); filesize: %d(%08x)\n",
-                    n_float32, n_float32, statbuf.st_size,
-                    statbuf.st_size);
-        }
-
-        n_float32 = n;
-        byterev = TRUE;
-    }
-    if (n_float32 <= 0)
-        E_FATAL("Header size field: %d\n", n_float32);
-
-    /* n = #frames of input */
-    n = n_float32 / cepsize;
-    if (n * cepsize != n_float32)
-        E_FATAL("Header size field: %d; not multiple of %d\n", n_float32,
-                cepsize);
-
-    if (sf > 0)
-        fseek(fp, sf * cepsize * sizeof(float), SEEK_CUR);
-
-    /* Read mfc data and write to outfile */
-    fwrite(&i, sizeof(int32), 1, outfp);
-    for (i = sf; i <= ef; i++) {
-        if (fread(tmpbuf, sizeof(float), cepsize, fp) != cepsize)
-            E_FATAL("fread(%s) failed\n", file);
-        if (fwrite(tmpbuf, sizeof(float), cepsize, outfp) != cepsize)
-            E_FATAL("fwrite(%s) failed\n", outfile);
-    }
-    fclose(fp);
-
-    fflush(outfp);
-    fseek(outfp, 0, SEEK_SET);
-    i = (ef - sf + 1) * cepsize;
-    if (byterev)
-        SWAP_INT32(&i);
-    fwrite(&i, sizeof(int32), 1, outfp);
-    fclose(outfp);
-}
-
-static int32
-mfcseg_extract(char *mfcfile, int32 sf, int32 ef, char *utt)
-{
-    char inputfile[1024], outputfile[1024];
-
-    assert(!adc_input);
-
-    if (cepdir && (mfcfile[0] != '/')
-        && ((mfcfile[0] != '.') || (mfcfile[1] != '/')))
-        sprintf(inputfile, "%s/%s.%s", cepdir, mfcfile, cep_ext);
-    else
-        sprintf(inputfile, "%s.%s", mfcfile, cep_ext);
-
-    sprintf(outputfile, "%s.%s", utt, cep_ext);
-
-    s2mfc_read(inputfile, sf, ef, outputfile);
-
-    return 0;
-}
 
 /*
  * Decode utterance.
@@ -1643,19 +1403,7 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
         uttproc_set_startword(startWord);
     }
 
-    if ((sf >= 0) && (ef > 0)) {
-        sprintf(utt, "./%s", utt_name);
-        mfcseg_extract(mfcfile, sf, ef, utt);
-        strcpy(mfcfile, utt);
-    }
-
-    ret = utt_file2feat(mfcfile, 0);
-
-    if ((sf >= 0) && (ef > 0)) {
-        strcat(utt, ".");
-        strcat(utt, cep_ext);
-        unlink(utt);
-    }
+    ret = uttproc_file2feat(mfcfile, sf, ef, 0);
 
     if (ret < 0)
         return NULL;
@@ -1712,6 +1460,7 @@ time_align_utterance(char const *utt,
                      int32 end_frame, char const *right_word)
 {
     int32 n_frames;
+    mfcc_t ***feat;
 #ifndef WIN32
     struct rusage start, stop;
     struct timeval e_start, e_stop;
@@ -1722,14 +1471,12 @@ time_align_utterance(char const *utt,
         return;
     }
 
-    if ((n_frames =
-         uttproc_get_featbuf(&cep, &dcep, &dcep_80ms, &pcep,
-                             &ddcep)) < 0) {
+    if ((n_frames = uttproc_get_featbuf(&feat)) < 0) {
         E_ERROR("#input speech frames = %d\n", n_frames);
         return;
     }
 
-    time_align_set_input(cep, dcep, dcep_80ms, pcep, ddcep, n_frames);
+    time_align_set_input(feat, n_frames);
 
 #ifndef WIN32
 #ifndef _HPUX_SOURCE

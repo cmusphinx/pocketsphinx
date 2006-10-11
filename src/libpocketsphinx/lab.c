@@ -59,7 +59,7 @@
 #include "search_const.h"
 #include "err.h"
 #include "log.h"
-#include "scvq.h"
+#include "s2_semi_mgau.h"
 #include "msd.h"
 #include "fbs.h"
 

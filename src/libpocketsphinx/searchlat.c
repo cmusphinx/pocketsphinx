@@ -155,8 +155,6 @@ static struct lattice_queue_s {
     struct permanent_lattice_s lattice;
     char lmName[256];
     char uttid[256];
-    int32 *comp2rawfr;
-    int32 n_featfr;
     int32 addIndex;
 } latQueue[MAX_LAT_QUEUE];
 static int32 latQueueInit = 0;
@@ -744,8 +742,8 @@ lattice_seg_back_trace(latlink_t * link)
                 E_FATAL("**ERROR** Increase HYP_SZ\n");
 
             hyp[seg].wid = link->from->wid;
-            hyp[seg].sf = uttproc_feat2rawfr(link->from->sf);
-            hyp[seg].ef = uttproc_feat2rawfr(link->ef);
+            hyp[seg].sf = link->from->sf;
+            hyp[seg].ef = link->ef;
 
             hyp[seg].latden = 0;
             hyp[seg].phone_perp = 0.0;
@@ -1084,8 +1082,8 @@ latpath_seg_back_trace(latpath_t * path)
         h = (search_hyp_t *) listelem_alloc(sizeof(search_hyp_t));
         h->wid = path->node->wid;
         h->word = kb_get_word_str(h->wid);
-        h->sf = uttproc_feat2rawfr(path->node->sf);
-        h->ef = uttproc_feat2rawfr(path->node->fef);    /* Approximately */
+        h->sf = path->node->sf;
+        h->ef = path->node->fef;    /* Approximately */
 
         h->next = head;
         head = h;
@@ -1439,8 +1437,6 @@ searchSetAltUttid(char *uttid)
             lattice.latnode_list = latQueue[i].lattice.latnode_list;
             lattice.start_node = latQueue[i].lattice.start_node;
             lattice.final_node = latQueue[i].lattice.final_node;
-            uttprocSetcomp2rawfr(latQueue[i].n_featfr,
-                                 latQueue[i].comp2rawfr);
 
             /* We also need to add code to set the language model for this uttid. */
             strcpy(altLMName, latQueue[i].lmName);
@@ -1466,8 +1462,6 @@ searchSaveLatQueue(char *uttid, char *lmName)
             latQueue[i].uttid[0] = '\0';
             latQueue[i].lmName[0] = '\0';
             latQueue[i].addIndex = -1;
-            latQueue[i].comp2rawfr = NULL;
-            latQueue[i].n_featfr = 0;
         }
         latQueueInit = 1;
     }
@@ -1501,17 +1495,6 @@ searchSaveLatQueue(char *uttid, char *lmName)
     latQueue[found].lattice.final_node = final_node;
     strcpy(latQueue[found].lmName, lmName);
     strcpy(latQueue[found].uttid, uttid);
-
-    if (latQueue[found].comp2rawfr != NULL)
-        free(latQueue[found].comp2rawfr);
-
-    latQueue[found].n_featfr = uttprocGetcomp2rawfr(&ptr);
-    latQueue[found].comp2rawfr = (int32 *) calloc(latQueue[found].n_featfr,
-                                                  sizeof(int32));
-
-    for (i = 0; i < latQueue[found].n_featfr; i++)
-        latQueue[found].comp2rawfr[i] = ptr[i];
-
     latQueue[found].addIndex = latQueueAddIndex++;
 
     latnode_list = NULL;

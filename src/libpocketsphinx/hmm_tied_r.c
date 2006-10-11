@@ -307,53 +307,6 @@ load_senone_dists_8bits(OPDF_8BIT_T * p,        /* Output probs, clustered */
 }
 
 static void
-dump_probs(int32 * p0, int32 * p1, int32 * p2, int32 * p3,      /* pdfs, may be transposed */
-           int32 r, int32 c,    /* rows, cols */
-           char const *file,    /* output file */
-           char const *dir)
-{                               /* **ORIGINAL** HMM directory */
-    FILE *fp;
-    int32 i, k;
-    static char const *title = "V6 Senone Probs, Smoothed, Normalized";
-
-    E_INFO("Dumping HMMs to dump file %s\n", file);
-
-    if ((fp = fopen(file, "wb")) == NULL) {
-        E_ERROR("fopen(%s,wb) failed\n", file);
-        return;
-    }
-
-    /* Write title size and title (directory name) */
-    k = strlen(title) + 1;      /* including trailing null-char */
-    fwrite_int32(fp, k);
-    fwrite(title, sizeof(char), k, fp);
-
-    /* Write header size and header (directory name) */
-    k = strlen(dir) + 1;        /* including trailing null-char */
-    fwrite_int32(fp, k);
-    fwrite(dir, sizeof(char), k, fp);
-
-    /* Write 0, terminating header strings */
-    fwrite_int32(fp, 0);
-
-    /* Write #rows, #cols; this also indicates whether pdfs already transposed */
-    fwrite_int32(fp, r);
-    fwrite_int32(fp, c);
-
-    /* Write pdfs */
-    for (i = 0; i < r * c; i++)
-        fwrite_int32(fp, p0[i]);
-    for (i = 0; i < r * c; i++)
-        fwrite_int32(fp, p1[i]);
-    for (i = 0; i < r * c; i++)
-        fwrite_int32(fp, p2[i]);
-    for (i = 0; i < r * c; i++)
-        fwrite_int32(fp, p3[i]);
-
-    fclose(fp);
-}
-
-static void
 dump_probs_8b(OPDF_8BIT_T * p,  /* pdfs, will be transposed */
               int32 r, int32 c, /* rows, cols */
               char const *file, /* output file */
@@ -425,7 +378,6 @@ read_dists_s3(char const *file_name, int32 numAlphabet,
     FILE *fp;
     int32 byteswap, chksum_present;
     uint32 chksum;
-    int32 *out[4];
     float32 *pdf;
     int32 i, f, c, n;
     int32 n_sen, n_ci;
@@ -437,7 +389,7 @@ read_dists_s3(char const *file_name, int32 numAlphabet,
     mdef = kb_mdef();
     n_ci = bin_mdef_n_ciphone(mdef);
     dumpfile = kb_get_senprob_dump_file();
-    if (dumpfile && kb_get_senprob_size() == 8) {
+    if (dumpfile) {
         if (load_senone_dists_8bits(out_prob_8b, numAlphabet,
                                     totalDists, dumpfile, file_name) == 0)
             return;
@@ -446,30 +398,18 @@ read_dists_s3(char const *file_name, int32 numAlphabet,
                 ("No senone dump file found, will compress mixture weights on-line\n");
     }
 
-    if (kb_get_senprob_size() == 8) {
-        out_prob_8b[0].id =
-            (unsigned char **) CM_2dcalloc(numAlphabet, totalDists,
-                                           sizeof(unsigned char));
-        out_prob_8b[1].id =
-            (unsigned char **) CM_2dcalloc(numAlphabet, totalDists,
-                                           sizeof(unsigned char));
-        out_prob_8b[2].id =
-            (unsigned char **) CM_2dcalloc(numAlphabet, totalDists,
-                                           sizeof(unsigned char));
-        out_prob_8b[3].id =
-            (unsigned char **) CM_2dcalloc(numAlphabet, totalDists,
-                                           sizeof(unsigned char));
-    }
-    else {
-        out[0] = Out_Prob1 =
-            (int32 *) CM_calloc(numAlphabet * totalDists, sizeof(int32));
-        out[1] = Out_Prob2 =
-            (int32 *) CM_calloc(numAlphabet * totalDists, sizeof(int32));
-        out[2] = Out_Prob3 =
-            (int32 *) CM_calloc(numAlphabet * totalDists, sizeof(int32));
-        out[3] = Out_Prob4 =
-            (int32 *) CM_calloc(numAlphabet * totalDists, sizeof(int32));
-    }
+    out_prob_8b[0].id =
+        (unsigned char **) CM_2dcalloc(numAlphabet, totalDists,
+                                       sizeof(unsigned char));
+    out_prob_8b[1].id =
+        (unsigned char **) CM_2dcalloc(numAlphabet, totalDists,
+                                       sizeof(unsigned char));
+    out_prob_8b[2].id =
+        (unsigned char **) CM_2dcalloc(numAlphabet, totalDists,
+                                       sizeof(unsigned char));
+    out_prob_8b[3].id =
+        (unsigned char **) CM_2dcalloc(numAlphabet, totalDists,
+                                       sizeof(unsigned char));
 
     E_INFO("Reading mixture weights file '%s'\n", file_name);
 
@@ -540,27 +480,19 @@ read_dists_s3(char const *file_name, int32 numAlphabet,
             vector_floor(pdf, n_comp, SmoothMin);
             vector_sum_norm(pdf, n_comp);
 
-            if (kb_get_senprob_size() == 8) {
-                /* Convert to logs3, quantize, and transpose */
-                for (c = 0; c < n_comp; c++) {
-                    int32 qscr;
+            /* Convert to logs3, quantize, and transpose */
+            for (c = 0; c < n_comp; c++) {
+                int32 qscr;
 
-                    qscr = LOG(pdf[c]);
-                    /* ** HACK!! ** hardwired threshold!!! */
-                    if (qscr < -161900)
-                        E_FATAL("**ERROR** Too low senone PDF value: %d\n",
-                                qscr);
-                    qscr = (511 - qscr) >> 10;
-                    if ((qscr > 255) || (qscr < 0))
-                        E_FATAL("scr(%d,%d,%d) = %d\n", f, c, i, qscr);
-                    out_prob_8b[f].id[c][i] = qscr;
-                }
-            }
-            else {
-                /* Convert to logs3 and transpose */
-                for (c = 0; c < n_comp; c++) {
-                    out[f][c * totalDists + i] = LOG(pdf[c]);
-                }
+                qscr = LOG(pdf[c]);
+                /* ** HACK!! ** hardwired threshold!!! */
+                if (qscr < -161900)
+                    E_FATAL("**ERROR** Too low senone PDF value: %d\n",
+                            qscr);
+                qscr = (511 - qscr) >> 10;
+                if ((qscr > 255) || (qscr < 0))
+                    E_FATAL("scr(%d,%d,%d) = %d\n", f, c, i, qscr);
+                out_prob_8b[f].id[c][i] = qscr;
             }
         }
     }
@@ -580,12 +512,8 @@ read_dists_s3(char const *file_name, int32 numAlphabet,
     E_INFO("Read %d x %d x %d mixture weights\n", n_sen, n_feat, n_comp);
 
     if ((dumpfile = kb_get_senprob_dump_file()) != NULL) {
-        if (kb_get_senprob_size() == 8)
-            dump_probs_8b(out_prob_8b, numAlphabet, totalDists, dumpfile,
-                          file_name);
-        else
-            dump_probs(Out_Prob1, Out_Prob2, Out_Prob3, Out_Prob4,
-                       numAlphabet, totalDists, dumpfile, file_name);
+        dump_probs_8b(out_prob_8b, numAlphabet, totalDists, dumpfile,
+                      file_name);
     }
 }
 

@@ -276,7 +276,7 @@
 #include "CM_macros.h"
 #include "basic_types.h"
 #include "err.h"
-#include "scvq.h"
+#include "s2_semi_mgau.h"
 #include "senscr.h"
 #include "search_const.h"
 #include "msd.h"
@@ -287,24 +287,27 @@
 #include "lmclass.h"
 #include "lm_3g.h"
 #include "kb.h"
+#include "feat.h"
 #include "fe.h"
 #include "fixpoint.h"
 #include "fbs.h"
 #include "search.h"
-#include <fsg_search.h>
+#include "fsg_search.h"
+#include "ckd_alloc.h"
 
 
 #define MAX_UTT_LEN     6000    /* #frames */
-#define MAX_CEP_LEN     (MAX_UTT_LEN*CEP_SIZE)
-#define MAX_POW_LEN     (MAX_UTT_LEN*POW_SIZE)
 
-typedef enum { UTTSTATE_UNDEF = -1,
+typedef enum {
+    UTTSTATE_UNDEF = -1,
     UTTSTATE_IDLE = 0,
     UTTSTATE_BEGUN = 1,
     UTTSTATE_ENDED = 2,
     UTTSTATE_STOPPED = 3
 } uttstate_t;
 static uttstate_t uttstate = UTTSTATE_UNDEF;
+/* Used to flag beginning of utterance in livemode. */
+static int32 uttstart;
 
 static int32 inputtype;
 #define INPUT_UNKNOWN   0
@@ -318,28 +321,17 @@ static int32 utt_ofl;           /* TRUE iff buffer limits overflowed in current 
 static int32 nosearch = 0;
 static int32 fsg_search_mode = FALSE;   /* Using FSM search structure */
 
+/* Feature computation object */
+static feat_t *fcb;
+
 /* MFC vectors for entire utt */
 static mfcc_t **mfcbuf;
-static int32 n_rawfr;           /* #raw frames before compression or feature computation */
+static int32 n_cepfr;          /* #input frames */
 
 /* Feature vectors for entire utt */
-static mfcc_t *cep_buf = NULL;
-static mfcc_t *dcep_buf;
-static mfcc_t *dcep_80ms_buf;
-static mfcc_t *pcep_buf;
-static mfcc_t *ddcep_buf;
+static mfcc_t ***feat_buf;
 static int32 n_featfr;          /* #features frames */
-static int32 n_compfr;          /* #compressed frames */
 static int32 n_searchfr;
-static int16 *comp2rawfr;       /* Compressed frame no. to original raw frame no. */
-
-static int32 pow_i, cep_i;      /* #feature frames total in current utt so far */
-static int32 search_cep_i, search_pow_i;        /* #frames already searched */
-
-/* CMN, AGC, silence compression; default values */
-static scvq_norm_t cmn = NORM_UTT;
-static scvq_agc_t agc = AGC_MAX;
-static scvq_compress_t silcomp = COMPRESS_NONE;
 
 static FILE *matchfp = NULL;
 static FILE *matchsegfp = NULL;
@@ -373,36 +365,6 @@ extern double win32_cputime();
 static struct rusage start, stop;
 static struct timeval e_start, e_stop;
 #endif
-
-
-/* FIXME: These are all internal to this module, but still should go
-   into internal header files... */
-
-/* live_norm.c */
-extern void mean_norm_init(int32 vlen);
-extern void mean_norm_update(void);
-extern void mean_norm_acc_sub(mfcc_t * vec);
-extern int32 cepmean_set(mfcc_t * vec);
-extern int32 cepmean_get(mfcc_t * vec);
-
-/* agc_emax.c */
-void agc_emax_update(void);
-extern int32 agcemax_set(double m);
-extern double agcemax_get(void);
-extern int agc_emax_proc(mfcc_t * ocep, mfcc_t const *icep, int veclen);
-
-/* norm.c */
-void norm_mean(mfcc_t * vec, int32 nvec, int32 veclen);
-
-/* r_agc_noise.c */
-extern int32 delete_background(mfcc_t * cep, int32 fcnt,
-                               int32 cf_cnt, double thresh);
-extern float histo_noise_level(mfcc_t * cep, int32 fcnt, int32 cf_cnt);
-extern int32 histo_add_c0(float c0);
-void compute_noise_level(void);
-void real_agc_noise(mfcc_t * cep,
-                    register int32 fcnt, register int32 cf_cnt);
-void agc_max(mfcc_t * cep, register int32 fcnt, register int32 cf_cnt);
 
 /* searchlat.c */
 void searchlat_set_rescore_lm(char const *lmname);
@@ -556,102 +518,10 @@ timing_end(void)
 static void
 feat_alloc(void)
 {
-    int32 k;
-
-    if (!cep_buf) {
-        cep_buf = (mfcc_t *) CM_calloc(MAX_CEP_LEN, sizeof(mfcc_t));
-        dcep_buf = (mfcc_t *) CM_calloc(MAX_CEP_LEN, sizeof(mfcc_t));
-        dcep_80ms_buf = (mfcc_t *) CM_calloc(MAX_CEP_LEN, sizeof(mfcc_t));
-        pcep_buf = (mfcc_t *) CM_calloc(MAX_POW_LEN, sizeof(mfcc_t));
-        ddcep_buf = (mfcc_t *) CM_calloc(MAX_CEP_LEN, sizeof(mfcc_t));
-
-        mfcbuf = (mfcc_t **) CM_calloc(MAX_UTT_LEN + 10, sizeof(mfcc_t *));
-        mfcbuf[0] =
-            (mfcc_t *) CM_calloc((MAX_UTT_LEN + 10) * CEP_SIZE,
-                                 sizeof(mfcc_t));
-        for (k = 1; k < MAX_UTT_LEN + 10; k++)
-            mfcbuf[k] = mfcbuf[k - 1] + CEP_SIZE;
+    if (!feat_buf) {
+        feat_buf = feat_array_alloc(fcb, MAX_UTT_LEN);
+        mfcbuf = (mfcc_t **) ckd_calloc_2d(MAX_UTT_LEN + 10, S2_CEP_VECLEN, sizeof(mfcc_t));
     }
-}
-
-int32
-uttproc_get_featbuf(mfcc_t ** cep, mfcc_t ** dcep, mfcc_t ** dcep_80ms,
-                    mfcc_t ** pcep, mfcc_t ** ddcep)
-{
-    *cep = cep_buf;
-    *dcep = dcep_buf;
-    *dcep_80ms = dcep_80ms_buf;
-    *pcep = pcep_buf;
-    *ddcep = ddcep_buf;
-
-    return n_featfr;
-}
-
-/*
- * Compute sphinx-II feature vectors (cep, dcep, ddcep, pow) from input melcep vector.
- * The input melcep vector has had mean normalization, agc, and silence compression
- * already applied to it.  Since dcep and ddcep look at cepstra from several adjacent
- * frames, no valid feature vectors are present for several frames (4) at either end
- * of each utterance.
- * Return 1 if a valid feature is computed for this input frame, 0 otherwise.
- */
-static int32
-compute_features(mfcc_t * cep_o,
-                 mfcc_t * dcep_o,
-                 mfcc_t * dcep_80ms_o,
-                 mfcc_t * pcep_o, mfcc_t * ddcep_o, mfcc_t * mfcc)
-{
-    mfcc_t *cep_in;
-    mfcc_t *dcep_in;
-    mfcc_t *dcep_80ms_in;
-    mfcc_t *pcep_in;
-    mfcc_t *ddcep_in;
-
-    if (SCVQComputeFeatures
-        (&cep_in, &dcep_in, &dcep_80ms_in, &pcep_in, &ddcep_in, mfcc)) {
-        memcpy(cep_o, cep_in, sizeof(mfcc_t) * CEP_SIZE);
-        memcpy(dcep_o, dcep_in, sizeof(mfcc_t) * CEP_SIZE);
-        memcpy(dcep_80ms_o, dcep_80ms_in, sizeof(mfcc_t) * CEP_SIZE);
-        memcpy(pcep_o, pcep_in, sizeof(mfcc_t) * POW_SIZE);
-        memcpy(ddcep_o, ddcep_in, sizeof(mfcc_t) * CEP_SIZE);
-
-#if 0
-        {
-            int32 d;
-
-            printf("C: ");
-            for (d = 0; d < CEP_SIZE; d++)
-                printf(" %7.3f", MFCC2FLOAT(cep_o[d]));
-            printf("\n");
-
-            printf("D: ");
-            for (d = 0; d < CEP_SIZE; d++)
-                printf(" %7.3f", MFCC2FLOAT(dcep_o[d]));
-            printf("\n");
-
-            printf("L: ");
-            for (d = 0; d < CEP_SIZE; d++)
-                printf(" %7.3f", MFCC2FLOAT(dcep_80ms_o[d]));
-            printf("\n");
-
-            printf("P: ");
-            for (d = 0; d < POW_SIZE; d++)
-                printf(" %7.3f", MFCC2FLOAT(pcep_o[d]));
-            printf("\n");
-
-            printf("2: ");
-            for (d = 0; d < CEP_SIZE; d++)
-                printf(" %7.3f", MFCC2FLOAT(ddcep_o[d]));
-            printf("\n");
-
-            printf("\n");
-        }
-#endif
-
-        return 1;
-    }
-    else
-        return 0;
 }
 
 static void
@@ -661,227 +531,27 @@ warn_notidle(char const *func)
         E_WARN("%s called when not in IDLE state\n", func);
 }
 
-static void
-mfc2feat_live_frame(mfcc_t * incep, int32 rawfr)
+int32
+uttproc_get_featbuf(mfcc_t ****feat)
 {
-    mfcc_t cep[CEP_SIZE];
-
-    if (cmn == NORM_PRIOR)
-        mean_norm_acc_sub(incep);
-
-    if (agc == AGC_EMAX)
-        agc_emax_proc(cep, incep, CEP_SIZE);
-    else {
-        memcpy(cep, incep, CEP_SIZE * sizeof(mfcc_t));
-    }
-
-    if ((!silcomp) || histo_add_c0(cep[0])) {
-        comp2rawfr[n_compfr++] = rawfr;
-
-        if (compute_features(cep_buf + cep_i,
-                             dcep_buf + cep_i,
-                             dcep_80ms_buf + cep_i,
-                             pcep_buf + pow_i, ddcep_buf + cep_i, cep)) {
-            cep_i += CEP_SIZE;
-            pow_i += POW_SIZE;
-
-            n_featfr++;
-        }
-    }
+    *feat = feat_buf;
+    return n_featfr;
 }
-
-/* Convert all given mfc vectors to feature vectors */
-static int32
-mfc2feat_live(mfcc_t ** mfc, int32 nfr)
-{
-    int32 i;
-
-    for (i = 0; i < nfr; i++, n_rawfr++)
-        mfc2feat_live_frame(mfc[i], n_rawfr);
-
-    return 0;
-}
-
-static int32
-cmn_batch(mfcc_t ** mfc, int32 nfr)
-{
-    int32 i;
-
-    if (cmn == NORM_UTT)
-        norm_mean(mfc[0], nfr, CEP_SIZE);
-    else if (cmn == NORM_PRIOR) {
-        for (i = 0; i < nfr; i++)
-            mean_norm_acc_sub(mfc[i]);
-    }
-
-    return 0;
-}
-
-static int32
-agc_batch(mfcc_t ** mfc, int32 nfr)
-{
-    int32 i;
-    mfcc_t agc_out[CEP_SIZE];
-
-    if (agc == AGC_NOISE) {
-        real_agc_noise(mfc[0], nfr, CEP_SIZE);
-    }
-    else if (agc == AGC_MAX) {
-        agc_max(mfc[0], nfr, CEP_SIZE);
-    }
-    else if (agc == AGC_EMAX) {
-        for (i = 0; i < nfr; i++) {
-            agc_emax_proc(agc_out, mfc[i], CEP_SIZE);
-            memcpy(mfc[i], agc_out, CEP_SIZE * sizeof(mfcc_t));
-        }
-    }
-    else
-        E_WARN("NO AGC\n");
-
-    return 0;
-}
-
-static int32
-silcomp_batch(mfcc_t ** mfc, int32 nfr)
-{
-    int32 i, j;
-    mfcc_t noiselevel;
-
-    if (silcomp == COMPRESS_PRIOR) {
-        j = 0;
-        for (i = 0; i < nfr; i++) {
-            if (histo_add_c0(mfc[i][0])) {
-                if (i != j)
-                    memcpy(mfc[j], mfc[i], sizeof(mfcc_t) * CEP_SIZE);
-
-                comp2rawfr[j++] = i;
-            }
-            /* Else skip the frame, don't copy across */
-        }
-        nfr = j;
-    }
-    else {
-        for (i = 0; i < nfr; i++)
-            comp2rawfr[i] = i;  /* HACK!! */
-
-        if (silcomp == COMPRESS_UTT) {
-            noiselevel = histo_noise_level(mfc[0], nfr, CEP_SIZE);
-            nfr = delete_background(mfc[0], nfr, CEP_SIZE, noiselevel);
-        }
-    }
-
-    return nfr;
-}
-
-static int32
-mfc2feat_batch(mfcc_t ** mfc, int32 nfr)
-{
-    int32 i, j, k;
-
-    cmn_batch(mfc, nfr);
-    agc_batch(mfc, nfr);
-    nfr = silcomp_batch(mfc, nfr);
-
-    assert(cep_i == 0);
-
-    /*
-     * HACK!! Hardwired knowledge that first and last 4 frames don't have features.
-     * Simply copy frame[4] into frame[0..3], and frame[n-4] into the last four.
-     */
-    cep_i = (CEP_SIZE << 2);
-    pow_i = (POW_SIZE << 2);
-    for (i = 0; i < nfr; i++) {
-        if (compute_features(cep_buf + cep_i,
-                             dcep_buf + cep_i,
-                             dcep_80ms_buf + cep_i,
-                             pcep_buf + pow_i,
-                             ddcep_buf + cep_i, mfc[i])) {
-            cep_i += CEP_SIZE;
-            pow_i += POW_SIZE;
-
-            n_featfr++;
-        }
-    }
-
-    /* Copy frame[4] into frame[0]..[3] */
-    for (i = 0, j = 0, k = 0; i < 4; i++, j += CEP_SIZE, k += POW_SIZE) {
-        memcpy(cep_buf + j, cep_buf + (CEP_SIZE << 2),
-               CEP_SIZE * sizeof(mfcc_t));
-        memcpy(dcep_buf + j, dcep_buf + (CEP_SIZE << 2),
-               CEP_SIZE * sizeof(mfcc_t));
-        memcpy(dcep_80ms_buf + j, dcep_80ms_buf + (CEP_SIZE << 2),
-               CEP_SIZE * sizeof(mfcc_t));
-        memcpy(ddcep_buf + j, ddcep_buf + (CEP_SIZE << 2),
-               CEP_SIZE * sizeof(mfcc_t));
-        memcpy(pcep_buf + k, pcep_buf + (POW_SIZE << 2),
-               POW_SIZE * sizeof(mfcc_t));
-
-        n_featfr++;
-    }
-    /* Similarly fill in the last 4 frames */
-    for (i = 0; i < 4; i++) {
-        memcpy(cep_buf + cep_i, cep_buf + (cep_i - CEP_SIZE),
-               CEP_SIZE * sizeof(mfcc_t));
-        memcpy(dcep_buf + cep_i, dcep_buf + (cep_i - CEP_SIZE),
-               CEP_SIZE * sizeof(mfcc_t));
-        memcpy(dcep_80ms_buf + cep_i, dcep_80ms_buf + (cep_i - CEP_SIZE),
-               CEP_SIZE * sizeof(mfcc_t));
-        memcpy(ddcep_buf + cep_i, ddcep_buf + (cep_i - CEP_SIZE),
-               CEP_SIZE * sizeof(mfcc_t));
-        memcpy(pcep_buf + pow_i, pcep_buf + (pow_i - POW_SIZE),
-               POW_SIZE * sizeof(mfcc_t));
-
-        cep_i += CEP_SIZE;
-        pow_i += POW_SIZE;
-
-        n_featfr++;
-    }
-    return 0;
-}
-
 
 static void
 uttproc_fsg_search_fwd(void)
 {
     int32 *senscore, best;
 
-#if 0
-    int32 i;
-
-    fprintf(stdout, "[%4d] CEP/DCEP/DCEP_80/DDCEP/POW\n",
-            fsg_search->frame);
-    for (i = 0; i < CEP_SIZE; i++) {
-        fprintf(stdout, "\t%12.4e", cep_buf[search_cep_i + i]);
-        fprintf(stdout, " %12.4e", dcep_buf[search_cep_i + i]);
-        fprintf(stdout, " %12.4e", dcep_80ms_buf[search_cep_i + i]);
-        fprintf(stdout, " %12.4e", ddcep_buf[search_cep_i + i]);
-        if (i < POW_SIZE)
-            fprintf(stdout, " %12.4e", pcep_buf[search_pow_i + i]);
-        fprintf(stdout, "\n");
-    }
-#endif
-
     senscore = search_get_dist_scores();        /* senone scores array */
 
     if (query_compute_all_senones()) {
-        best = senscr_all(senscore,
-                          cep_buf + search_cep_i,
-                          dcep_buf + search_cep_i,
-                          dcep_80ms_buf + search_cep_i,
-                          pcep_buf + search_pow_i,
-                          ddcep_buf + search_cep_i);
-
+        best = senscr_all(senscore, feat_buf[n_searchfr]);
         search_bestpscr2uttpscr(fsg_search->frame);
     }
     else {
         fsg_search_sen_active(fsg_search);
-
-        best = senscr_active(senscore,
-                             cep_buf + search_cep_i,
-                             dcep_buf + search_cep_i,
-                             dcep_80ms_buf + search_cep_i,
-                             pcep_buf + search_pow_i,
-                             ddcep_buf + search_cep_i);
+        best = senscr_active(senscore, feat_buf[n_searchfr]);
     }
 
     /* Note the best senone score for this frame */
@@ -903,20 +573,10 @@ uttproc_frame(void)
     if (fsg_search_mode)
         uttproc_fsg_search_fwd();
     else if (query_fwdtree_flag())
-        search_fwd(cep_buf + search_cep_i,
-                   dcep_buf + search_cep_i,
-                   dcep_80ms_buf + search_cep_i,
-                   pcep_buf + search_pow_i, ddcep_buf + search_cep_i);
+        search_fwd(feat_buf[n_searchfr]);
     else
-        search_fwdflat_frame(cep_buf + search_cep_i,
-                             dcep_buf + search_cep_i,
-                             dcep_80ms_buf + search_cep_i,
-                             pcep_buf + search_pow_i,
-                             ddcep_buf + search_cep_i);
-    search_cep_i += CEP_SIZE;
-    search_pow_i += POW_SIZE;
-
-    n_searchfr++;
+        search_fwdflat_frame(feat_buf[n_searchfr]);
+    ++n_searchfr;
 
     pr = query_report_partial_result();
     if ((pr > 0) && ((n_searchfr % pr) == 1)) {
@@ -943,14 +603,12 @@ uttproc_frame(void)
 static void
 fwdflat_search(int32 n_frames)
 {
-    int32 i, j, k;
+    int32 i;
 
     search_fwdflat_start();
 
-    for (i = 0, j = 0, k = 0; i < n_frames;
-         i++, j += CEP_SIZE, k += POW_SIZE)
-        search_fwdflat_frame(cep_buf + j, dcep_buf + j, dcep_80ms_buf + j,
-                             pcep_buf + k, ddcep_buf + j);
+    for (i = 0; i < n_frames; ++i)
+        search_fwdflat_frame(feat_buf[i]);
 
     search_fwdflat_finish();
 }
@@ -1078,11 +736,6 @@ uttproc_init(void)
     if (!fe)
         return -1;
 
-    mean_norm_init(CEP_SIZE);
-
-    feat_alloc();
-
-    comp2rawfr = (int16 *) CM_calloc(MAX_UTT_LEN, sizeof(int16));
     uttid = (char *) CM_calloc(UTTIDSIZE, 1);
 
     if ((fn = query_match_file_name()) != NULL) {
@@ -1195,26 +848,12 @@ uttproc_begin_utt(char const *id)
 
     inputtype = INPUT_UNKNOWN;
 
-    livemode = (nosearch ||
-                (cmn == NORM_UTT) ||
-                ((agc != AGC_EMAX) && (agc != AGC_NONE)) ||
-                (silcomp == COMPRESS_UTT)) ? 0 : 1;
+    livemode = !(nosearch ||
+                 (fcb->cmn == CMN_CURRENT) ||
+                 ((fcb->agc != AGC_EMAX) && (fcb->agc != AGC_NONE)));
     E_INFO("%s\n", livemode ? "Livemode" : "Batchmode");
 
-    /*
-     * One-time initialization of AGC as necessary. Done here rather than in
-     * uttproc_init because type of cmn/agc not known until now.
-     */
-    if ((uttno == 0) && (agc == AGC_EMAX)) {
-        if (cmn == NORM_PRIOR)
-            uttproc_agcemax_set(5.0);   /* Hack!! Hardwired max(C0) of 5.0 with CMN */
-        else
-            uttproc_agcemax_set(10.0);  /* Hack!! Hardwired max(C0) of 10.0 without CMN */
-    }
-
-    pow_i = cep_i = 0;
-    search_pow_i = search_cep_i = 0;
-    n_rawfr = n_featfr = n_searchfr = n_compfr = 0;
+    n_cepfr = n_featfr = n_searchfr = 0;
     utt_ofl = 0;
 
     uttno++;
@@ -1244,8 +883,6 @@ uttproc_begin_utt(char const *id)
 
     timing_start();
 
-    SCVQNewUtt();
-
     if (!nosearch) {
         if (fsg_search_mode)
             fsg_search_utt_start(fsg_search);
@@ -1258,6 +895,7 @@ uttproc_begin_utt(char const *id)
     search_uttpscr_reset();
 
     uttstate = UTTSTATE_BEGUN;
+    uttstart = TRUE;
 
     return 0;
 }
@@ -1301,7 +939,7 @@ uttproc_rawdata(int16 * raw, int32 len, int32 block)
     if (utt_ofl)
         return -1;
 
-    k = (MAX_UTT_LEN - n_rawfr) * fe_param.FRAME_RATE;
+    k = (MAX_UTT_LEN - n_cepfr) * fe_param.FRAME_RATE;
     if (len > k) {
         len = k;
         utt_ofl = 1;
@@ -1315,27 +953,32 @@ uttproc_rawdata(int16 * raw, int32 len, int32 block)
     if ((k = fe_process_utt(fe, raw, len, &temp_mfc, &nfr)) < 0)
         return -1;
     if (nfr > 0)
-        memcpy(mfcbuf[n_rawfr], temp_mfc[0], nfr * CEP_SIZE * sizeof(mfcc_t));
+        memcpy(mfcbuf[n_cepfr], temp_mfc[0], nfr * S2_CEP_VECLEN * sizeof(mfcc_t));
 
     if (mfcfp && (nfr > 0)) {
         fe_mfcc_to_float(fe, temp_mfc, (float32 **) temp_mfc, nfr);
-        fwrite(temp_mfc[0], sizeof(float), nfr * CEP_SIZE, mfcfp);
+        fwrite(temp_mfc[0], sizeof(float), nfr * S2_CEP_VECLEN, mfcfp);
     }
     fe_free_2d(temp_mfc);
 
     if (livemode) {
-        mfc2feat_live(mfcbuf + n_rawfr, nfr);
+        nfr = feat_s2mfc2feat_block(fcb, mfcbuf + n_cepfr, nfr,
+                                    uttstart, FALSE,
+                                    feat_buf + n_featfr);
+        uttstart = FALSE;
+        n_cepfr += nfr;
+        n_featfr += nfr;
 
-        if (search_cep_i < cep_i)
+        if (n_searchfr < n_featfr)
             uttproc_frame();
 
         if (block) {
-            while (search_cep_i < cep_i)
+            while (n_searchfr < n_featfr)
                 uttproc_frame();
         }
     }
     else
-        n_rawfr += nfr;
+        n_cepfr += nfr;
 
     return (n_featfr - n_searchfr);
 }
@@ -1359,7 +1002,7 @@ uttproc_cepdata(float32 ** cep, int32 nfr, int32 block)
     if (utt_ofl)
         return -1;
 
-    k = MAX_UTT_LEN - n_rawfr;
+    k = MAX_UTT_LEN - n_cepfr;
     if (nfr > k) {
         nfr = k;
         utt_ofl = 1;
@@ -1370,28 +1013,33 @@ uttproc_cepdata(float32 ** cep, int32 nfr, int32 block)
     for (i = 0; i < nfr; i++) {
 #ifdef FIXED_POINT
         int j;
-        for (j = 0; j < CEP_SIZE; ++j)
-            mfcbuf[n_rawfr + i][j] = FLOAT2FIX(cep[i][j]);
+        for (j = 0; j < S2_CEP_VECLEN; ++j)
+            mfcbuf[n_cepfr + i][j] = FLOAT2FIX(cep[i][j]);
 #else
-        memcpy(mfcbuf[i + n_rawfr], cep[i], CEP_SIZE * sizeof(float));
+        memcpy(mfcbuf[i + n_cepfr], cep[i], S2_CEP_VECLEN * sizeof(float));
 #endif
         if (mfcfp && (nfr > 0))
-            fwrite(cep[i], sizeof(float32), CEP_SIZE, mfcfp);
+            fwrite(cep[i], sizeof(float32), S2_CEP_VECLEN, mfcfp);
     }
 
     if (livemode) {
-        mfc2feat_live(mfcbuf + n_rawfr, nfr);
+        nfr = feat_s2mfc2feat_block(fcb, mfcbuf + n_cepfr, nfr,
+                                    uttstart, FALSE,
+                                    feat_buf + n_featfr);
+        uttstart = FALSE;
+        n_cepfr += nfr;
+        n_featfr += nfr;
 
-        if (search_cep_i < cep_i)
+        if (n_searchfr < n_featfr)
             uttproc_frame();
 
         if (block) {
-            while (search_cep_i < cep_i)
+            while (n_searchfr < n_featfr)
                 uttproc_frame();
         }
     }
     else
-        n_rawfr += nfr;
+        n_cepfr += nfr;
 
     return (n_featfr - n_searchfr);
 }
@@ -1403,7 +1051,7 @@ uttproc_end_utt(void)
     mfcc_t *leftover_cep;
 
     /* kal */
-    leftover_cep = (mfcc_t *) CM_calloc(MAX_CEP_LEN, sizeof(mfcc_t));
+    leftover_cep = ckd_calloc(S2_CEP_VECLEN, sizeof(mfcc_t));
 
     /* Dump samples histogram */
     k = 0;
@@ -1423,25 +1071,43 @@ uttproc_end_utt(void)
         return -1;
     }
 
-    if (!livemode)
-        mfc2feat_batch(mfcbuf, n_rawfr);
-
     uttstate = nosearch ? UTTSTATE_IDLE : UTTSTATE_ENDED;
 
-    fe_end_utt(fe, leftover_cep, &nfr);
+#if 0
+    if (inputtype == INPUT_RAW) {
+        fe_end_utt(fe, leftover_cep, &nfr);
+        if (nfr && mfcfp) {
+            fe_mfcc_to_float(fe, &leftover_cep, &leftover_cep, nfr);
+            fwrite(leftover_cep, sizeof(float32), nfr * S2_CEP_VECLEN, mfcfp);
+        }
 
-    SCVQEndUtt();
+        if (livemode) {
+            nfr = feat_s2mfc2feat_block(fcb, &leftover_cep, nfr,
+                                        uttstart, TRUE,
+                                        feat_buf + n_featfr);
+            uttstart = FALSE;
+            n_featfr += nfr;
+        }
+        else {
+            if (nfr) {
+                memcpy(mfcbuf[i + n_cepfr], leftover_cep,
+                       nfr * S2_CEP_VECLEN * sizeof(float));
+                n_cepfr += nfr;
+            }
+        }
+    }
+#endif
 
-    /* Update estimated CMN vector */
-    if (cmn == NORM_PRIOR)
-        mean_norm_update();
+    /* If we had file input, n_cepfr will be zero. */
+    if (n_cepfr) {
+        nfr = feat_s2mfc2feat_block(fcb, mfcbuf, n_cepfr,
+                                    TRUE, TRUE, feat_buf);
+        n_featfr += nfr;
+    }
 
-    /* Update estimated AGC Max (C0) */
-    if (agc == AGC_EMAX)
-        agc_emax_update();
-
-    if (silcomp == COMPRESS_PRIOR)
-        compute_noise_level();
+    /* Do any further searching necessary. */
+    while (n_searchfr < n_featfr)
+        uttproc_frame();
 
     if (rawfp) {
         fclose(rawfp);
@@ -1456,7 +1122,7 @@ uttproc_end_utt(void)
 
         fflush(mfcfp);
         fseek(mfcfp, 0, SEEK_SET);
-        k = n_rawfr * CEP_SIZE;
+        k = n_cepfr * S2_CEP_VECLEN;
         fwrite(&k, sizeof(int32), 1, mfcfp);
 
         fclose(mfcfp);
@@ -1478,8 +1144,7 @@ uttproc_abort_utt(void)
         return -1;
 
     /* Truncate utterance to the portion already processed */
-    cep_i = search_cep_i;
-    pow_i = search_pow_i;
+    n_featfr = n_searchfr;
 
     uttstate = UTTSTATE_IDLE;
 
@@ -1544,8 +1209,7 @@ uttproc_restart_utt(void)
         else
             search_fwdflat_start();
 
-        search_cep_i = 0;
-        search_pow_i = 0;
+        n_searchfr = 0;
         n_searchfr = 0;
     }
 
@@ -1583,15 +1247,15 @@ uttproc_result(int32 * fr, char **hyp, int32 block)
         return -1;
     }
 
-    if (search_cep_i < cep_i)
+    if (n_searchfr < n_featfr)
         uttproc_frame();
 
     if (block) {
-        while (search_cep_i < cep_i)
+        while (n_searchfr < n_featfr)
             uttproc_frame();
     }
 
-    if (search_cep_i < cep_i)
+    if (n_searchfr < n_featfr)
         return (n_featfr - n_searchfr);
 
     uttproc_windup(fr, hyp);
@@ -1917,67 +1581,15 @@ uttproc_set_startword(char const *str)
     return 0;
 }
 
-int32
-uttproc_set_cmn(scvq_norm_t n)
+void
+uttproc_set_feat(feat_t *new_fcb)
 {
-    warn_notidle("uttproc_set_cmn");
+    warn_notidle("uttproc_set_feat");
 
-    switch (n) {
-    case NORM_NONE:
-        E_INFO("CMN: None\n");
-        break;
-    case NORM_UTT:
-        E_INFO("CMN: Based on current utterance\n");
-        break;
-    case NORM_PRIOR:
-        E_INFO("CMN: Estimated, based on past history\n");
-        break;
-    default:
-        E_FATAL("CMN: Unknown type %d\n", n);
-        break;
-    }
-
-    cmn = n;
-
-    return 0;
-}
-
-int32
-uttproc_set_agc(scvq_agc_t a)
-{
-    warn_notidle("uttproc_set_agc");
-
-    agc = a;
-
-    switch (a) {
-    case AGC_NONE:
-        E_INFO("AGC: None\n");
-        break;
-    case AGC_EMAX:
-        E_INFO("AGC: MAX estimated from past history\n");
-        break;
-    case AGC_MAX:
-        E_INFO("AGC: MAX based on current utterance\n");
-        break;
-    default:
-        E_WARN("AGC: %d; Obsolete, use none, max, or emax\n", a);
-        break;
-    }
-
-    return 0;
-}
-
-int32
-uttproc_set_silcmp(scvq_compress_t c)
-{
-    warn_notidle("uttproc_set_silcmp");
-
-    if (c != COMPRESS_NONE)
-        E_WARN
-            ("Silence compression doesn't work well; use the cont_ad module instead\n");
-
-    silcomp = c;
-    return 0;
+    if (fcb)
+        feat_free(fcb);
+    fcb = new_fcb;
+    feat_alloc();
 }
 
 #if 0
@@ -2010,77 +1622,30 @@ uttproc_set_auto_uttid_prefix(char const *prefix)
     return 0;
 }
 
-int32
-uttprocGetcomp2rawfr(int16 ** ptr)
-{
-    *ptr = comp2rawfr;
-    return n_featfr;
-}
-
 void
-uttprocSetcomp2rawfr(int32 num, int32 const *ptr)
-{
-    int32 i;
-
-    n_featfr = num;
-    for (i = 0; i < num; i++)
-        comp2rawfr[i] = ptr[i];
-}
-
-int32
-uttproc_feat2rawfr(int32 fr)
-{
-    return fr;                  /* comp2rawfr[] is buggy :(  ignore it for now (rkm) */
-
-    if (fr >= n_featfr)
-        fr = n_featfr - 1;
-    if (fr < 0)
-        fr = 0;
-
-    return comp2rawfr[fr + 8] - 4;
-}
-
-int32
-uttproc_raw2featfr(int32 fr)
-{
-    int32 i;
-
-    fr += 4;
-    for (i = 0; (i < n_featfr) && (comp2rawfr[i] != fr); i++);
-    if (i >= n_featfr)
-        return -1;
-    return (i - 8);
-}
-
-int32
 uttproc_cepmean_set(mfcc_t * cep)
 {
     warn_notidle("uttproc_cepmean_set");
-
-    return (cepmean_set(cep));
+    cmn_prior_set(fcb->cmn_struct, cep);
 }
 
-int32
+void
 uttproc_cepmean_get(mfcc_t * cep)
 {
-    return (cepmean_get(cep));
+    cmn_prior_get(fcb->cmn_struct, cep);
 }
 
-int32
-uttproc_agcemax_set(mfcc_t c0max)
+void
+uttproc_agcemax_set(float32 c0max)
 {
     warn_notidle("uttproc_agcemax_set");
-    agcemax_set(c0max);
-    return 0;
+    agc_emax_set(fcb->agc_struct, c0max);
 }
 
-double
+float32
 uttproc_agcemax_get(void)
 {
-    extern double agcemax_get();
-
-    warn_notidle("uttproc_agcemax_get");
-    return agcemax_get();
+    return agc_emax_get(fcb->agc_struct);
 }
 
 int32
@@ -2126,23 +1691,106 @@ uttproc_set_mfclogdir(char const *dir)
     return 0;
 }
 
+int32
+uttproc_parse_ctlfile_entry(char *line,
+                            char *filename, int32 * sf, int32 * ef,
+                            char *idspec)
+{
+    int32 k;
+
+    *sf = *ef = -1;             /* Default; process entire file */
+
+    if ((k = sscanf(line, "%s %d %d %s", filename, sf, ef, idspec)) <= 0)
+        return -1;
+
+    if (k == 1)
+        strcpy(idspec, filename);
+    else {
+        if ((k == 2) || (*sf < 0) || (*ef <= *sf)) {
+            E_ERROR("Bad ctlfile entry: %s\n", line);
+            return -1;
+        }
+        if (k == 3)
+            sprintf(idspec, "%s_%d_%d", filename, *sf, *ef);
+    }
+
+    return 0;
+}
+
+/* Return #frames converted to feature vectors; -1 if error */
+int32
+uttproc_file2feat(const char *utt, int32 sf, int32 ef, int32 nosearch)
+{
+    FILE *uttfp;
+    char *utt_name;
+    extern char *data_directory;
+    extern const char *cep_ext;
+    extern int32 query_adc_input();
+
+    utt_name = build_uttid(utt);
+
+    if (query_adc_input()) {
+        int16 *adbuf;
+        int32 k;
+
+        inputtype = INPUT_RAW;
+        if ((uttfp = adcfile_open(utt)) == NULL)
+            return -1;
+
+        if (uttproc_nosearch(nosearch) < 0)
+            return -1;
+
+        if (uttproc_begin_utt(utt_name) < 0)
+            return -1;
+
+        adbuf = ckd_calloc(4096, sizeof(int16));
+        while ((k = adc_file_read(uttfp, adbuf, 4096)) >= 0) {
+            if (uttproc_rawdata(adbuf, k, 1) < 0) {
+                ckd_free(adbuf);
+                return -1;
+            }
+        }
+        ckd_free(adbuf);
+
+        if (uttproc_end_utt() < 0)
+            return -1;
+
+        return n_featfr;
+    }
+    else {
+        if (uttproc_nosearch(nosearch) < 0)
+            return -1;
+
+        if (uttproc_begin_utt(utt_name) < 0)
+            return -1;
+
+        n_cepfr = 0;
+        n_featfr = feat_s2mfc2feat(fcb, utt, data_directory, cep_ext,
+                                   sf, ef, feat_buf, MAX_UTT_LEN);
+
+        if (nosearch == FALSE) {
+            while (n_searchfr < n_featfr)
+                uttproc_frame();
+        }
+
+        if (uttproc_end_utt() < 0)
+            return -1;
+
+        return n_featfr;
+    }
+}
+
 search_hyp_t *
 uttproc_allphone_file(char const *utt)
 {
     int32 nfr;
-    extern search_hyp_t *allphone_utt();
-    extern char *build_uttid(const char *utt);  /* in fbs_main.c */
-    extern int32 utt_file2feat();       /* in fbs_main.c */
     search_hyp_t *hyplist, *h;
+    extern search_hyp_t * allphone_utt(int32 nfr, mfcc_t ***feat_buf);
 
-    build_uttid(utt);
-
-    if ((nfr = utt_file2feat(utt, 1)) < 0)
+    if ((nfr = uttproc_file2feat(utt, 0, -1, 1)) < 0)
         return NULL;
 
-    hyplist =
-        allphone_utt(nfr, cep_buf, dcep_buf, dcep_80ms_buf, pcep_buf,
-                     ddcep_buf);
+    hyplist = allphone_utt(nfr, feat_buf);
 
     /* Write match and matchseg files if needed */
     if (matchfp) {

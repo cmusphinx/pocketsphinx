@@ -46,12 +46,7 @@ void time_align_set_beam_width(double bw);
 
 int time_align_init(void);
 
-void time_align_set_input(mfcc_t *c,
-			  mfcc_t *d,
-			  mfcc_t *d_80,
-			  mfcc_t *p,
-			  mfcc_t *dd,
-			  int n_f);
+void time_align_set_input(mfcc_t ***feat, int n_f);
 
 int time_align_word_sequence(char const * utt,
 			     char const *left_word,

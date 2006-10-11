@@ -66,7 +66,7 @@
 #include "ckd_alloc.h"
 #include "logs3.h"
 #include "kb.h"
-#include "scvq.h"
+#include "s2_semi_mgau.h"
 #include "phone.h"
 #include "hmm_tied_r.h"
 #include "search.h"
@@ -149,41 +149,34 @@ best_senscr_active(int32 * senscr)
 }
 
 static int32
-senscr_compute(int32 * senscr,
-               mfcc_t * cep,
-               mfcc_t * dcep,
-               mfcc_t * dcep_80ms,
-               mfcc_t * pcep, mfcc_t * ddcep, int32 all)
+senscr_compute(int32 * senscr, mfcc_t **feat, int32 all)
 {
+    s2_semi_mgau_t *semi_mgau = kb_mgau();
+
     if (all) {
-        SCVQScores_all(senscr, cep, dcep, dcep_80ms, pcep, ddcep);
+        s2_semi_mgau_frame_eval(semi_mgau, feat, searchCurrentFrame(),
+                                senscr, TRUE);
         return best_senscr_all_s3(senscr);
     }
     else {
-        SCVQScores(senscr, cep, dcep, dcep_80ms, pcep, ddcep);
+        s2_semi_mgau_frame_eval(semi_mgau, feat, searchCurrentFrame(),
+                                senscr, FALSE);
         return best_senscr_active(senscr);
     }
 }
 
 
 int32
-senscr_all(int32 * senscr,
-           mfcc_t * cep,
-           mfcc_t * dcep,
-           mfcc_t * dcep_80ms, mfcc_t * pcep, mfcc_t * ddcep)
+senscr_all(int32 * senscr, mfcc_t **feat)
 {
-    return senscr_compute(senscr, cep, dcep, dcep_80ms, pcep, ddcep, TRUE);
+    return senscr_compute(senscr, feat, TRUE);
 }
 
 
 int32
-senscr_active(int32 * senscr,
-              mfcc_t * cep,
-              mfcc_t * dcep,
-              mfcc_t * dcep_80ms, mfcc_t * pcep, mfcc_t * ddcep)
+senscr_active(int32 * senscr, mfcc_t **feat)
 {
-    return senscr_compute(senscr, cep, dcep, dcep_80ms, pcep, ddcep,
-                          FALSE);
+    return senscr_compute(senscr, feat, FALSE);
 }
 
 void

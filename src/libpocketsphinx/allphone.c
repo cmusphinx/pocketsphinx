@@ -76,7 +76,7 @@
 #include "phone.h"
 #include "err.h"
 #include "log.h"
-#include "scvq.h"
+#include "s2_semi_mgau.h"
 #include "senscr.h"
 #include "msd.h"
 #include "dict.h"
@@ -370,12 +370,9 @@ allphone_result(void)
 }
 
 search_hyp_t *
-allphone_utt(int32 nfr,
-             mfcc_t * cep,
-             mfcc_t * dcep,
-             mfcc_t * dcep_80ms, mfcc_t * pcep, mfcc_t * ddcep)
+allphone_utt(int32 nfr, mfcc_t ***feat_buf)
 {
-    int32 i, f, c, p;
+    int32 i, f;
     int32 bestscr;
     int32 lastbp, bestbp;
 
@@ -389,9 +386,8 @@ allphone_utt(int32 nfr,
 
     renorm_scr[0] = 0;
 
-    for (f = 0, c = 0, p = 0; f < nfr; f++, c += CEP_SIZE, p += POW_SIZE) {
-        senscr_active(senscr, cep + c, dcep + c, dcep_80ms + c, pcep + p,
-                      ddcep + c);
+    for (f = 0; f < nfr; ++f) {
+        senscr_active(senscr, feat_buf[f]);
 
         if ((bestscr = allphone_eval_ci_chan(f)) <= WORST_SCORE) {
             E_ERROR("POOR MATCH: bestscore= %d\n", bestscr);

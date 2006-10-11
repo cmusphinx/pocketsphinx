@@ -233,7 +233,7 @@
 #include "phone.h"
 #include "log.h"
 #include "hmm_tied_r.h"
-#include "scvq.h"
+#include "s2_semi_mgau.h"
 #include "senscr.h"
 #include "s2params.h"
 #include "fbs.h"
@@ -255,11 +255,7 @@ int save_labs(SEGMENT_T * segs,
               const char *filename,
               const char *extname, const char *labtype);
 
-static mfcc_t *cep_f = NULL;
-static mfcc_t *dcep_f = NULL;
-static mfcc_t *dcep_80ms_f = NULL;
-static mfcc_t *pcep_f = NULL;
-static mfcc_t *ddcep_f = NULL;
+static mfcc_t ***feat_f;
 static int frame_cnt = 0;
 
 static dictT *WordDict;
@@ -541,16 +537,9 @@ time_align_init(void)
  * data.
  */
 void
-time_align_set_input(mfcc_t * c,
-                     mfcc_t * d,
-                     mfcc_t * d_80, mfcc_t * p, mfcc_t * dd, int n_f)
+time_align_set_input(mfcc_t ***feat, int n_f)
 {
-    cep_f = c;
-    dcep_f = d;
-    dcep_80ms_f = d_80;
-    pcep_f = p;
-    ddcep_f = dd;
-
+    feat_f = feat;
     frame_cnt = n_f;
 
 #if SHOW&SHOW_INVOKATION
@@ -2854,12 +2843,7 @@ time_align_word_sequence(char const *Utt,
         find_active_senones(all_models, cur_active_models, cur_active_cnt);
 
         /* compute the output probabilities for the active shared states */
-        probs_computed_cnt += senscr_active(distScores,
-                                            &cep_f[cur_frame * 13],
-                                            &dcep_f[cur_frame * 13],
-                                            &dcep_80ms_f[cur_frame * 13],
-                                            &pcep_f[cur_frame * 3],
-                                            &ddcep_f[cur_frame * 13]);
+        probs_computed_cnt += senscr_active(distScores, feat_f[cur_frame]);
 
 #if SHOW&SHOW_SUMMARY_INFO
         E_INFO("in> frame %d, %d active models\n", cur_frame,

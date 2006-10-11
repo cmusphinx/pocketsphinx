@@ -76,20 +76,13 @@ extern int32 n_senone_active;		/* No. of entries in above active list */
 
 /*
  * Compute senone scores for the given feature data.
- * The feature data is five separate vectors: cep/dcep/dcep_80ms/pcep/ddcep.
- * If using S3, cep[1..12], dcep[1..12], pcep, and ddcep[1..12] are concatenated
- * into a single feature vector.
+ * The feature data is in s2_4x format (4 streams, etc, etc)
  * The function also updates an array of best senone scores for each CIphone
  * (bestpscr) maintained by the search module.
  * 
  * Return value: the best senone score overall.
  */
-int32 senscr_all (int32 *senscr,
-		  mfcc_t *cep,
-		  mfcc_t *dcep,
-		  mfcc_t *dcep_80ms,
-		  mfcc_t *pcep,
-		  mfcc_t *ddcep);
+int32 senscr_all (int32 *senscr, mfcc_t **feat);
 
 /*
  * Like senscr_all above, except restricted to the currently active senones.
@@ -98,12 +91,8 @@ int32 senscr_all (int32 *senscr,
  * 
  * Return value: the best senone score overall (among the active ones).
  */
-int32 senscr_active (int32 *senscr,
-		     mfcc_t *cep,
-		     mfcc_t *dcep,
-		     mfcc_t *dcep_80ms,
-		     mfcc_t *pcep,
-		     mfcc_t *ddcep);
+int32 senscr_active (int32 *senscr, mfcc_t **feat);
+
 
 /*
  * Clear the global senone_active_flag array.

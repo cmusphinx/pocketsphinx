@@ -231,7 +231,7 @@
 #include "log.h"
 #include "c.h"
 #include "assert.h"
-#include "scvq.h"
+#include "s2_semi_mgau.h"
 #include "senscr.h"
 #include "fbs.h"
 #include "search.h"
@@ -2208,8 +2208,7 @@ compute_sen_active(void)
  * Tree-Search one frame forward.
  */
 void
-search_fwd(mfcc_t * cep, mfcc_t * dcep, mfcc_t * dcep_80ms, mfcc_t * pcep,
-           mfcc_t * ddcep)
+search_fwd(mfcc_t **feat)
 {
     int32 *newscr;
     int32 i, cf;
@@ -2227,11 +2226,11 @@ search_fwd(mfcc_t * cep, mfcc_t * dcep, mfcc_t * dcep_80ms, mfcc_t * pcep,
     if (!compute_all_senones) {
         compute_sen_active();
         topsen_score[cf] =
-            senscr_active(newscr, cep, dcep, dcep_80ms, pcep, ddcep);
+            senscr_active(newscr, feat);
     }
     else {
         topsen_score[cf] =
-            senscr_all(newscr, cep, dcep, dcep_80ms, pcep, ddcep);
+            senscr_all(newscr, feat);
 
         if (cf < MAX_FRAMES) {
             /* Save bestpscr in utt_pscr */
@@ -2824,8 +2823,8 @@ seg_back_trace(int32 bpidx, char const *pass)
                 E_FATAL("**ERROR** Increase HYP_SZ\n");
             hyp[seg].wid = altpron ? BPTable[bpidx].wid :
                 WordDict->dict_list[BPTable[bpidx].wid]->fwid;
-            hyp[seg].sf = uttproc_feat2rawfr(last_time + 1);
-            hyp[seg].ef = uttproc_feat2rawfr(BPTable[bpidx].frame);
+            hyp[seg].sf = last_time + 1;
+            hyp[seg].ef = BPTable[bpidx].frame;
             hyp[seg].ascr = a_scr;
             hyp[seg].lscr = l_scr;
             hyp[seg].latden = latden;
@@ -2878,8 +2877,8 @@ partial_seg_back_trace(int32 bpidx)
             hyp[seg].wid = altpron ?
                 BPTable[bpidx].wid : WordDict->dict_list[BPTable[bpidx].
                                                          wid]->fwid;
-            hyp[seg].sf = uttproc_feat2rawfr(last_time + 1);
-            hyp[seg].ef = uttproc_feat2rawfr(BPTable[bpidx].frame);
+            hyp[seg].sf = last_time + 1;
+            hyp[seg].ef = BPTable[bpidx].frame;
             seg++;
             hyp[seg].wid = -1;
         }
@@ -3159,7 +3158,7 @@ search_partial_result(int32 * fr, char **res)
     else
         hyp_str[0] = '\0';
 
-    *fr = uttproc_feat2rawfr(CurrentFrame);
+    *fr = CurrentFrame;
     *res = hyp_str;
 
     return 0;
@@ -3172,7 +3171,7 @@ search_partial_result(int32 * fr, char **res)
 int32
 search_result(int32 * fr, char **res)
 {
-    *fr = uttproc_feat2rawfr(LastFrame);
+    *fr = LastFrame;
     *res = hyp_str;
 
     return 0;
@@ -4223,18 +4222,17 @@ search_fwdflat_start(void)
 }
 
 void
-search_fwdflat_frame(mfcc_t * cep, mfcc_t * dcep, mfcc_t * dcep_80ms,
-                     mfcc_t * pcep, mfcc_t * ddcep)
+search_fwdflat_frame(mfcc_t **feat)
 {
     int32 nf, i, j;
     int32 *nawl;
 
     if (!compute_all_senones) {
         compute_fwdflat_senone_active();
-        senscr_active(distScores, cep, dcep, dcep_80ms, pcep, ddcep);
+        senscr_active(distScores, feat);
     }
     else {
-        senscr_all(distScores, cep, dcep, dcep_80ms, pcep, ddcep);
+        senscr_all(distScores, feat);
 
         if (CurrentFrame < MAX_FRAMES) {
             /* Save bestpscr in utt_pscr */

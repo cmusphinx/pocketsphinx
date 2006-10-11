@@ -49,6 +49,7 @@
 #include "msd.h"
 #include "dict.h"
 #include "bin_mdef.h"
+#include "s2_semi_mgau.h"
 
 int32 kb_get_total_dists(void);
 int32 kb_get_aw_tprob(void);
@@ -131,5 +132,11 @@ float32 kb_get_filler_pfpen ( void );
  * otherwise NULL.
  */
 bin_mdef_t *kb_mdef(void);
+
+/*
+ * Return the SCGMM computation object, if one has been read in,
+ * otherwise NULL.
+ */
+s2_semi_mgau_t *kb_mgau(void);
 
 #endif

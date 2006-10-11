@@ -675,43 +675,35 @@ char const *query_cdcn_file (void);
 
 /*
  * Set and get the current cepstral means for CMN.
- * Return value: 0 if successful, else -1.
  */
-int32 uttproc_cepmean_set (mfcc_t *cep);	/* Cepstral mean set to cep[0-12] */
-int32 uttproc_cepmean_get (mfcc_t *cep);	/* Current cepstral mean copied into cep[0-12] */
+void uttproc_cepmean_set (mfcc_t *cep);	/* Cepstral mean set to cep[0-12] */
+void uttproc_cepmean_get (mfcc_t *cep);	/* Current cepstral mean copied into cep[0-12] */
 
 /* Similarly, AGC-Estimated-Max */
-int32 uttproc_agcemax_set (mfcc_t c0max);
-double uttproc_agcemax_get ( void );
+void uttproc_agcemax_set (float32 c0max);
+float32 uttproc_agcemax_get ( void );
 
 void utt_seghyp_free(search_hyp_t *h);
 
 /* Read utterance data from a file (instead of from an audio device) -
    passed to uttproc for batch-mode processing. */
-int32 adc_file_read(int16 *buf, int32 max);
-
-/* Of course you have to know how to open that file (which was
-   cheerfully omitted from this header file in the past) */
-int uttfile_open(char const *utt);
+FILE *adcfile_open(char const *utt);
+int32 adc_file_read(FILE *uttfp, int16 *buf, int32 max);
 
 /* Misc. undocumented functions.  FIXME: These don't belong here! */
 char const *get_current_startword(void);
 char const *get_ref_sent(void);
 
+int32 uttproc_parse_ctlfile_entry(char *line,
+				  char *filename, int32 * sf, int32 * ef,
+				  char *idspec);
+char * build_uttid(char const *utt);
+int32 uttproc_file2feat(const char *utt, int32 sf, int32 ef, int32 nosearch);
 int32 uttproc_init(void);
 int32 uttproc_end(void);
-int32 uttproc_feat2rawfr (int32 fr);
-int32 uttproc_raw2featfr (int32 fr);
 void uttproc_align(char *sent); /* Really should be const */
 int32 uttproc_nosearch(int32 flag);
-int32 uttproc_get_featbuf (mfcc_t **cep, mfcc_t **dcep,
-			   mfcc_t **dcep_80ms, mfcc_t **pcep, mfcc_t **ddcep);
-void uttprocSetcomp2rawfr(int32 num, int32 const *ptr);
-int32 uttprocGetcomp2rawfr(int16 **ptr);
-
-void agc_set_threshold (float threshold);
-int32 cep_read_bin(float32 **buf, int32 *len, char const *file);
-int32 cep_write_bin(char const *file, float32 *buf, int32 len);
+int32 uttproc_get_featbuf(mfcc_t ****feat);
 
 
 #endif
