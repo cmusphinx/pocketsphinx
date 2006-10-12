@@ -38,6 +38,7 @@
 #ifndef __S2_SCVQ_INTERNAL_H__
 #define __S2_SCVQ_INTERNAL_H__		1
 
+#include <sphinx_config.h>
 
 #define NUM_ALPHABET	256
 /* centered 5 frame difference of c[0]...c[12] with centered 9 frame

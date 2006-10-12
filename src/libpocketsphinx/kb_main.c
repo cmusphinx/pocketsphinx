@@ -671,6 +671,11 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
     numSmds = hmm_num_sseq();
     smds = ckd_calloc(numSmds, sizeof(SMD));
 
+    if ((meanFileName == NULL)
+        || (varFileName == NULL)
+        || (tmatFileName == NULL))
+        E_FATAL("No S3 mean/var/tmat files specified\n");
+
     /* Use S3 transition matrix file. */
     tmat_init(tmatFileName, smds, transSmooth, TRUE);
 
@@ -694,11 +699,6 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
      * Read the distributions and remap them to the correct locations
      * Also, read the codebooks.
      */
-    if ((meanFileName == NULL)
-        || (varFileName == NULL)
-        || (tmatFileName == NULL))
-        E_FATAL("No S3 mean/var/mixw/tmat files specified\n");
-
     E_INFO
         ("Initializing SCGMM computation module\n");
     semi_mgau = s2_semi_mgau_init(meanFileName,

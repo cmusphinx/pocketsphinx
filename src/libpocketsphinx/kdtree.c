@@ -51,6 +51,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <sphinx_config.h>
+
 #include "kdtree.h"
 #include "err.h"
 #include "ckd_alloc.h"

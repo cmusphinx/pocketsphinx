@@ -108,6 +108,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
+#include <sphinx_config.h>
 
 #include "s3types.h"
 #include "log.h"
@@ -1486,9 +1487,6 @@ s3_read_mgau(const char *file_name, float32 ** cb)
             ("%s: #float32s(%d) doesn't match dimensions: %d x %d x %d\n",
              file_name, n, n_mgau, n_density, blk);
 
-    /* This gets a bit tricky, as SCVQ expects C0 to exist in
-     * the three cepstra streams even though it isn't used (this can
-     * be fixed but isn't yet). */
     for (i = 0; i < 4; ++i) {
         int j;
 
@@ -1598,15 +1596,15 @@ s2_semi_mgau_init(const char *mean_path, const char *var_path,
     }
 
     /* Read means and variances. */
-    if (s3_read_mgau(mean_path, s->means) < 0) {
+    if (s3_read_mgau(mean_path, (float32 **)s->means) < 0) {
         ckd_free(s);
         return NULL;
     }
-    if (s3_read_mgau(var_path, s->vars) < 0) {
+    if (s3_read_mgau(var_path, (float32 **)s->vars) < 0) {
         ckd_free(s);
         return NULL;
     }
-    /* Precompute means, variances, and determinants. */
+    /* Precompute (and fixed-point-ize) means, variances, and determinants. */
     for (i = 0; i < 4; ++i)
         s->dets[i] = s->detArr + i * S2_NUM_ALPHABET;
     s3_precomp(s->means, s->vars, s->dets, varfloor);
@@ -1617,6 +1615,8 @@ s2_semi_mgau_init(const char *mean_path, const char *var_path,
     s->CdWdPDFMod = read_dists_s3(s, mixw_path, mixwfloor);
     s->topN = topn;
     s->ds_ratio = 1;
+
+    s->dcep80msWeight = FLOAT2MFCC(1.0);
 
     return s;
 }

@@ -271,6 +271,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <sphinx_config.h>
 
 #include "s2types.h"
 #include "ckd_alloc.h"

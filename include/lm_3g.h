@@ -42,6 +42,7 @@
 #include "fixpoint.h"
 #include "lmclass.h"
 #include "hash_table.h"
+#include <sphinx_config.h>
 
 /* Type used to represent the language model weight. */
 #ifdef FIXED_POINT
