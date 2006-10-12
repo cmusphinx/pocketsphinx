@@ -39,58 +39,10 @@
 
 #include "bin_mdef.h"
 
-/*
- * Output PDF/feature (8-bit logprob ids).  Organized as follows (per feature):
- * 256 (int32)logprobs/codeword, pointed to by prob.  Senone probs for a given
- * codeword can only take on one of the associated 256 values, which approximate
- * the originally computed logprobs.  Therefore:
- *     LogProb(feature f, codeword c, senone s) =
- *         OPDF_8B[f]->prob[c][OPDF_8B[f]->id[c][s]]
- */
-typedef struct {
-    int32 **prob;	/* 2-D array, #codewords x 256 */
-    unsigned char **id;	/* 2-D array, #codewords x #senones */
-} OPDF_8BIT_T;
-extern OPDF_8BIT_T out_prob_8b[];
-
 int32 hmm_num_sseq(void);
 int32 hmm_pid2sid (int32 pid);
-
-void hmm_tied_read_bin (char const *dir_list,
-			char const *file,
-			SMD *smd,
-			double transSmooth,
-			int32 numAlphaExpected,
-			int norm,
-			double arcWeight);
-
-void hmm_tied_read_big_bin (char const  *dir_list,
-			    char const  *file,
-			    SMD   *smds,
-			    double transSmooth,
-			    int32  numAlphaExpected,
-			    int    norm,
-			    double arcWeight);
-
-void read_dists (char const *distDir,
-		 char const *Code_Ext0, char const *Code_Ext1,
-		 char const *Code_Ext2, char const *Code_Ext3,
-		 int32 numAlphabet,
-		 double SmoothMin,
-		 int32 useCiDistsOnly);
-
 void read_dists_s3(char const *mixwfn, int32 numAlphabet,
 		   double SmoothMin, int32 useCiDistsOnly);
-
-void readDistsOnly (
-	char const *distDir,
-	char const *Code_Ext0, char const *Code_Ext1,
-	char const *Code_Ext2, char const *Code_Ext3,
-	int32 numAlphabet,
-	int32 useCiDistsOnly);
-
-void read_map (char const *map_file, int32 compress);
-void remap (SMD *smdV);
 void remap_mdef (SMD *smdV, bin_mdef_t *mdef);
 
 int32 senid2pid (int32 senid);
