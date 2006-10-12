@@ -62,7 +62,7 @@
 #endif
 
 #include "s2types.h"
-#include "CM_macros.h"
+#include "ckd_alloc.h"
 #include "strfuncs.h"
 #include "list.h"
 #include "phone.h"
@@ -137,7 +137,7 @@ phone_to_id(char const *phone_str, int verbose)
     len = strlen(phone_str + 1);
     /* Do one malloc to avoid fragmentation on WinCE (and yet, this
      * may still be too many). */
-    ci = CM_calloc(len * 4 + 1, 1);
+    ci = ckd_calloc(len * 4 + 1, 1);
     lc = ci + len;
     rc = lc + len;
     pc = rc + len;

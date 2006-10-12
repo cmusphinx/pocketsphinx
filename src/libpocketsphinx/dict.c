@@ -121,8 +121,9 @@
 #include <sys/stat.h>
 
 #include "s2types.h"
-#include "CM_macros.h"
+#include "pio.h"
 #include "basic_types.h"
+#include "ckd_alloc.h"
 #include "c.h"
 #include "list.h"
 #include "hash_table.h"
@@ -198,7 +199,7 @@ get_dict_size(char *file)
     char line[1024];
     int32 n;
 
-    fp = CM_fopen(file, "r");
+    fp = myfopen(file, "r");
     for (n = 0;; n++)
         if (fgets(line, sizeof(line), fp) == NULL)
             break;
@@ -351,7 +352,7 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
 
             startsym_phone =
                 (phone_to_id("SILb", FALSE) == NO_PHONE) ? "SIL" : "SILb";
-            ssfp = CM_fopen(startsym_file, "r");
+            ssfp = myfopen(startsym_file, "r");
             while (fgets(line, sizeof(line), ssfp) != NULL) {
                 if (sscanf(line, "%s", startsym) != 1)
                     E_FATAL("File format error\n");
@@ -471,7 +472,7 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
     int32 start_wid = *word_id;
     int32 err = 0;
 
-    fs = CM_fopen(filename, "r");
+    fs = myfopen(filename, "r");
 
     fscanf(fs, "%s\n", dict_str);
     if (strcmp(dict_str, "!") != 0) {
@@ -956,9 +957,9 @@ replace_dict_entry(dictT * dict,
     free(entry->phone_ids);
     entry->word = (char *) salloc(word_str);
     entry->ci_phone_ids =
-        (int32 *) CM_calloc((size_t) pronoun_len, sizeof(int32));
+        ckd_calloc((size_t) pronoun_len, sizeof(int32));
     entry->phone_ids =
-        (int32 *) CM_calloc((size_t) pronoun_len, sizeof(int32));
+        ckd_calloc((size_t) pronoun_len, sizeof(int32));
     memcpy(entry->ci_phone_ids, ciPhoneId, pronoun_len * sizeof(int32));
     memcpy(entry->phone_ids, triphone_ids, pronoun_len * sizeof(int32));
 
@@ -1012,13 +1013,13 @@ _dict_list_add(dictT * dict, dict_entry_t * entry)
 {
     if (!dict->dict_list)
         dict->dict_list = (dict_entry_t **)
-            CM_calloc(hash_table_size(dict->dict), sizeof(dict_entry_t *));
+            ckd_calloc(hash_table_size(dict->dict), sizeof(dict_entry_t *));
 
     if (dict->dict_entry_count >= hash_table_size(dict->dict)) {
         E_FATAL("dict size (%d) exceeded\n", hash_table_size(dict->dict));
         dict->dict_list = (dict_entry_t **)
-            CM_recalloc(dict->dict_list, hash_table_size(dict->dict) + 16,
-                        sizeof(dict_entry_t *));
+            ckd_realloc(dict->dict_list,
+                        (hash_table_size(dict->dict) + 16) * sizeof(dict_entry_t *));
     }
 
     dict->dict_list[dict->dict_entry_count++] = entry;
@@ -1041,7 +1042,7 @@ dict_count(dictT * dict)
 dictT *
 dict_new(void)
 {
-    return (dictT *) CM_calloc(sizeof(dictT), 1);
+    return ckd_calloc(sizeof(dictT), 1);
 }
 
 static void
@@ -1115,14 +1116,14 @@ buildEntryTable(list_t * list, int32 *** table_p)
     int32 noContext = 0;
     int32 **table;
 
-    *table_p = (int32 **) CM_calloc(list->in_use, sizeof(int32 *));
+    *table_p = ckd_calloc(list->in_use, sizeof(int32 *));
     table = *table_p;
     E_INFO("Entry Context table contains\n\t%6d entries\n", list->in_use);
     E_INFO("\t%6d possible cross word triphones.\n",
            list->in_use * ciCount);
 
     for (i = 0; i < list->in_use; i++) {
-        table[i] = (int32 *) CM_calloc(ciCount, sizeof(int32));
+        table[i] = ckd_calloc(ciCount, sizeof(int32));
         for (j = 0; j < ciCount; j++) {
             /*
              * Look for the triphone
@@ -1176,12 +1177,12 @@ buildExitTable(list_t * list, int32 *** table_p, int32 *** permuTab_p,
     int32 ptab[128];
 
     *table_p =
-        (int32 **) CM_2dcalloc(list->in_use, ciCount + 1, sizeof(int32 *));
+        (int32 **) ckd_calloc_2d(list->in_use, ciCount + 1, sizeof(int32 *));
     table = *table_p;
     *permuTab_p =
-        (int32 **) CM_2dcalloc(list->in_use, ciCount + 1, sizeof(int32 *));
+        (int32 **) ckd_calloc_2d(list->in_use, ciCount + 1, sizeof(int32 *));
     permuTab = *permuTab_p;
-    *sizeTab_p = (int32 *) CM_calloc(list->in_use, sizeof(int32 *));
+    *sizeTab_p = ckd_calloc(list->in_use, sizeof(int32 *));
     sizeTab = *sizeTab_p;
 
     E_INFO("Exit Context table contains\n\t%6d entries\n", list->in_use);

@@ -53,7 +53,8 @@
 #include <math.h>
 
 #include "s2types.h"
-#include "CM_macros.h"
+#include "ckd_alloc.h"
+#include "pio.h"
 #include "str2words.h"
 #include "strfuncs.h"
 #include "err.h"
@@ -94,7 +95,7 @@ lmclass_newset(void)
 {
     lmclass_set_t set;
 
-    set = (lmclass_set_t) CM_calloc(1, sizeof(struct lmclass_set_s));
+    set = ckd_calloc(1, sizeof(struct lmclass_set_s));
     set->lmclass_list = NULL;
     return set;
 }
@@ -162,7 +163,7 @@ lmclass_loadfile(lmclass_set_t lmclass_set, char *file)
     assert(lmclass_set != NULL);
 
     E_INFO("Reading LM Class file '%s'\n", file);
-    fp = (FILE *) CM_fopen(file, "r");
+    fp = (FILE *) myfopen(file, "r");
 
     lineno = 0;
     for (;;) {                  /* Read successive LM classes in this file */
@@ -187,7 +188,7 @@ lmclass_loadfile(lmclass_set_t lmclass_set, char *file)
                    lineno, word[1]);
 
         /* Initialize a new LM class object */
-        lmclass = (lmclass_t) CM_calloc(1, sizeof(struct lmclass_s));
+        lmclass = ckd_calloc(1, sizeof(struct lmclass_s));
         lmclass->name = salloc(word[1]);
         lmclass->wordlist = NULL;
 
@@ -238,8 +239,7 @@ lmclass_loadfile(lmclass_set_t lmclass_set, char *file)
 
             /* Create a new word object */
             lmclass_word =
-                (lmclass_word_t) CM_calloc(1,
-                                           sizeof(struct lmclass_word_s));
+                ckd_calloc(1, sizeof(struct lmclass_word_s));
             lmclass_word->word = salloc(word[0]);
             lmclass_word->dictwid = -1; /* To be filled in by application */
             lmclass_word->LOGprob = LOGp;

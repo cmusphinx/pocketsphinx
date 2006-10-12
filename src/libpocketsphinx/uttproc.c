@@ -273,7 +273,7 @@
 #include <string.h>
 
 #include "s2types.h"
-#include "CM_macros.h"
+#include "ckd_alloc.h"
 #include "basic_types.h"
 #include "err.h"
 #include "s2_semi_mgau.h"
@@ -736,7 +736,7 @@ uttproc_init(void)
     if (!fe)
         return -1;
 
-    uttid = (char *) CM_calloc(UTTIDSIZE, 1);
+    uttid = ckd_calloc(UTTIDSIZE, 1);
 
     if ((fn = query_match_file_name()) != NULL) {
         if ((matchfp = fopen(fn, "w")) == NULL)

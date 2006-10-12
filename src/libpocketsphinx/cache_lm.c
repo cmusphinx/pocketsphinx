@@ -51,7 +51,7 @@
 #include <math.h>
 
 #include "s2types.h"
-#include "CM_macros.h"
+#include "ckd_alloc.h"
 #include "basic_types.h"
 #include "search_const.h"
 #include "msd.h"
@@ -81,7 +81,7 @@ cache_lm_init(double ug_thresh,
     cache_lm_t *lm;
     int32 i;
 
-    lm = (cache_lm_t *) CM_calloc(1, sizeof(cache_lm_t));
+    lm = ckd_calloc(1, sizeof(cache_lm_t));
 
     lm->ugprob_thresh = LOG(ug_thresh);
 
@@ -98,13 +98,12 @@ cache_lm_init(double ug_thresh,
     lm->log_remwt = LOG(1.0 - min_uw - bw);
 
     lm->n_word = dict_maxsize();
-    lm->clm_ug = (clm_ug_t *) CM_calloc(lm->n_word, sizeof(clm_ug_t));
+    lm->clm_ug = ckd_calloc(lm->n_word, sizeof(clm_ug_t));
     lm->sum_ugcount = 0;
 
     log0 = LOG(0.0);
     if (!log_count_tbl) {
-        log_count_tbl =
-            (int32 *) CM_calloc(LOG_COUNT_TBLSIZE, sizeof(int32));
+        log_count_tbl = ckd_calloc(LOG_COUNT_TBLSIZE, sizeof(int32));
         for (i = 0; i < LOG_COUNT_TBLSIZE; i++)
             log_count_tbl[i] = LOG((double) i);
     }

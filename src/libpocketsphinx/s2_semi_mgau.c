@@ -1211,6 +1211,68 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     return 0;
 }
 
+static void
+dump_probs_8b(unsigned char ***p,  /* pdfs, will be transposed */
+              int32 r, int32 c, /* rows, cols */
+              char const *file, /* output file */
+              char const *dir)
+{                               /* **ORIGINAL** HMM directory */
+    FILE *fp;
+    int32 f, i, k, aligned_c;
+    static char const *title = "V6 Senone Probs, Smoothed, Normalized";
+    static char const *clust_hdr = "cluster_count 0";
+
+    E_INFO("Dumping quantized HMMs to dump file %s\n", file);
+
+    if ((fp = fopen(file, "wb")) == NULL) {
+        E_ERROR("fopen(%s,wb) failed\n", file);
+        return;
+    }
+
+    /* Write title size and title (directory name) */
+    k = strlen(title) + 1;      /* including trailing null-char */
+    fwrite_int32(fp, k);
+    fwrite(title, sizeof(char), k, fp);
+
+    /* Write header size and header (directory name) */
+    k = strlen(dir) + 1;        /* including trailing null-char */
+    fwrite_int32(fp, k);
+    fwrite(dir, sizeof(char), k, fp);
+
+    /* Write cluster count = 0 to indicate this is pre-quantized */
+    k = strlen(clust_hdr) + 1;
+    fwrite_int32(fp, k);
+    fwrite(clust_hdr, sizeof(char), k, fp);
+
+    /* Pad it out for alignment purposes */
+    k = ftell(fp) & 3;
+    if (k > 0) {
+        fwrite_int32(fp, 4 - k);
+        fwrite("!!!!", 1, 4 - k, fp);
+    }
+
+    /* Write 0, terminating header strings */
+    fwrite_int32(fp, 0);
+
+    /* Align the number of pdfs to a 4-byte boundary. */
+    aligned_c = (c + 3) & ~3;
+
+    /* Write #rows, #cols; this also indicates whether pdfs already transposed */
+    fwrite_int32(fp, r);
+    fwrite_int32(fp, aligned_c);
+
+    /* Now write out the quantized senones. */
+    for (f = 0; f < 4; ++f) {
+        for (i = 0; i < r; i++) {
+            fwrite(p[f][i], sizeof(char), c, fp);
+            /* Pad them out for alignment purposes */
+            fwrite("\0\0\0\0", 1, aligned_c - c, fp);
+        }
+    }
+
+    fclose(fp);
+}
+
 static int32
 read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
 {
@@ -1340,6 +1402,11 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
     fclose(fp);
 
     E_INFO("Read %d x %d x %d mixture weights\n", n_sen, n_feat, n_comp);
+
+    if ((dumpfile = kb_get_senprob_dump_file()) != NULL) {
+        dump_probs_8b(s->OPDF_8B, S2_NUM_ALPHABET,
+                      n_sen, dumpfile, file_name);
+    }
     return n_sen;
 }
 

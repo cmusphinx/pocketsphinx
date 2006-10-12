@@ -166,7 +166,8 @@
 
 #include "s2types.h"
 #include "s2io.h"
-#include "CM_macros.h"
+#include "ckd_alloc.h"
+#include "pio.h"
 #include "basic_types.h"
 #include "assert.h"
 #include "strfuncs.h"
@@ -295,7 +296,7 @@ static void
 init_sorted_list(sorted_list_t * l)
 {
     l->list =
-        (sorted_entry_t *) CM_calloc(MAX_SORTED_ENTRIES,
+        ckd_calloc(MAX_SORTED_ENTRIES,
                                      sizeof(sorted_entry_t));
     l->list[0].val.f = MIN_PROB_F;
     l->list[0].lower = 0;
@@ -315,7 +316,7 @@ vals_in_sorted_list(sorted_list_t * l)
     log_t *vals;
     int32 i;
 
-    vals = (log_t *) CM_calloc(l->free, sizeof(log_t));
+    vals = ckd_calloc(l->free, sizeof(log_t));
     for (i = 0; i < l->free; i++)
         vals[i].f = l->list[i].val.f;
     return (vals);
@@ -369,7 +370,7 @@ NewUnigramTable(int32 n_ug)
     unigram_t *table;
     int32 i;
 
-    table = (unigram_t *) CM_calloc(n_ug, sizeof(unigram_t));
+    table = ckd_calloc(n_ug, sizeof(unigram_t));
     for (i = 0; i < n_ug; i++) {
         table[i].mapid = NO_WORD;
         table[i].prob1.f = -99.0;
@@ -387,10 +388,10 @@ NewModel(int32 n_ug, int32 n_bg, int32 n_tg, int32 n_dict)
 {
     lm_t *model;
 
-    model = (lm_t *) CM_calloc(1, sizeof(lm_t));
+    model = ckd_calloc(1, sizeof(lm_t));
     /* Only allocate the stuff that isn't done elsewhere */
     model->unigrams = NewUnigramTable(n_ug + 1);
-    model->dictwid_map = (int32 *) CM_calloc(n_dict, sizeof(int32));
+    model->dictwid_map = ckd_calloc(n_dict, sizeof(int32));
 
     model->max_ucount = model->ucount = n_ug;
     model->bcount = n_bg;
@@ -740,7 +741,7 @@ lm_file_open(char const *filename, int32 usepipe)
 #endif                          /* !GNUWINCE */
     }
     else {
-        fp = CM_fopen(filename, "r");
+        fp = myfopen(filename, "r");
     }
     return (fp);
 }
@@ -848,7 +849,7 @@ lm_read_clm(char const *filename,
 
     /* Allocate space for LM, including initial OOVs and placeholders; initialize it */
     model = lmp = NewModel(n_unigram, n_bigram, n_trigram, dict_size);
-    word_str = (char **) CM_calloc(n_unigram, sizeof(char *));
+    word_str = ckd_calloc(n_unigram, sizeof(char *));
 
     /* Create name for binary dump form of Darpa LM file */
     {
@@ -877,14 +878,14 @@ lm_read_clm(char const *filename,
          * followers (bigrams and trigrams, respectively) of previous entry.
          */
         model->bigrams =
-            (bigram_t *) CM_calloc(n_bigram + 1, sizeof(bigram_t));
+            ckd_calloc(n_bigram + 1, sizeof(bigram_t));
         if (n_trigram > 0)
             model->trigrams =
-                (trigram_t *) CM_calloc(n_trigram, sizeof(trigram_t));
+                ckd_calloc(n_trigram, sizeof(trigram_t));
 
         if (n_trigram > 0) {
             model->tseg_base =
-                (int32 *) CM_calloc((n_bigram + 1) / BG_SEG_SZ + 1,
+                ckd_calloc((n_bigram + 1) / BG_SEG_SZ + 1,
                                     sizeof(int32));
 #if 0
             E_INFO("%8d = tseg_base entries allocated\n",
@@ -952,14 +953,14 @@ lm_read_clm(char const *filename,
      */
     if (n_lmclass > 0) {
         model->lmclass =
-            (lmclass_t *) CM_calloc(n_lmclass, sizeof(lmclass_t));
+            ckd_calloc(n_lmclass, sizeof(lmclass_t));
         for (i = 0; i < n_lmclass; i++)
             model->lmclass[i] = lmclass[i];
     }
     else
         model->lmclass = NULL;
     model->n_lmclass = n_lmclass;
-    model->inclass_ugscore = (int32 *) CM_calloc(dict_size, sizeof(int32));
+    model->inclass_ugscore = ckd_calloc(dict_size, sizeof(int32));
 
     /*
      * Create mapping from dictionary ID to unigram index.  And also mapping for
@@ -1190,12 +1191,10 @@ lm_add(char const *lmname, lm_t * model, double lw, double uw, double wip)
         lm_delete(lmname);
 
     model->tginfo =
-        (tginfo_t **) CM_calloc(model->max_ucount, sizeof(tginfo_t *));
+        ckd_calloc(model->max_ucount, sizeof(tginfo_t *));
 
     if (n_lm == n_lm_alloc) {
-        lmset =
-            (struct lmset_s *) CM_recalloc(lmset, n_lm + 15,
-                                           sizeof(struct lmset_s));
+        lmset = ckd_realloc(lmset, (n_lm + 15) * sizeof(struct lmset_s));
         n_lm_alloc += 15;
     }
     lmset[n_lm].lm = model;
@@ -1475,7 +1474,7 @@ lm3g_load(char const *file, lm_t * model, char const *lmfile, int32 mtime)
     }
     else {
         model->bigrams =
-            (bigram_t *) CM_calloc(model->bcount + 1, sizeof(bigram_t));
+            ckd_calloc(model->bcount + 1, sizeof(bigram_t));
         if (fread(model->bigrams, sizeof(bigram_t), model->bcount + 1, fp)
             != (size_t) model->bcount + 1)
             E_FATAL("fread(bigrams) failed\n");
@@ -1499,7 +1498,7 @@ lm3g_load(char const *file, lm_t * model, char const *lmfile, int32 mtime)
         }
         else {
             model->trigrams =
-                (trigram_t *) CM_calloc(model->tcount, sizeof(trigram_t));
+                ckd_calloc(model->tcount, sizeof(trigram_t));
             if (fread
                 (model->trigrams, sizeof(trigram_t), model->tcount, fp)
                 != (size_t) model->tcount)
@@ -1520,7 +1519,7 @@ lm3g_load(char const *file, lm_t * model, char const *lmfile, int32 mtime)
         fseek(fp, offset, SEEK_SET);
     model->n_prob2 = k =
         fread_int32(fp, 1, 65535, "LM.n_prob2", 1, &do_swap);
-    model->prob2 = (log_t *) CM_calloc(k, sizeof(log_t));
+    model->prob2 = ckd_calloc(k, sizeof(log_t));
     if (fread(model->prob2, sizeof(log_t), k, fp) != (size_t) k)
         E_FATAL("fread(prob2) failed\n");
     if (do_swap)
@@ -1532,7 +1531,7 @@ lm3g_load(char const *file, lm_t * model, char const *lmfile, int32 mtime)
     if (model->tcount > 0) {
         k = fread_int32(fp, 1, 65535, "LM.n_bo_wt2", 1, &do_swap);
         model->n_bo_wt2 = k;
-        model->bo_wt2 = (log_t *) CM_calloc(k, sizeof(log_t));
+        model->bo_wt2 = ckd_calloc(k, sizeof(log_t));
         if (fread(model->bo_wt2, sizeof(log_t), k, fp) != (size_t) k)
             E_FATAL("fread(bo_wt2) failed\n");
         if (do_swap)
@@ -1545,7 +1544,7 @@ lm3g_load(char const *file, lm_t * model, char const *lmfile, int32 mtime)
     if (model->tcount > 0) {
         k = fread_int32(fp, 1, 65535, "LM.n_prob3", 1, &do_swap);
         model->n_prob3 = k;
-        model->prob3 = (log_t *) CM_calloc(k, sizeof(log_t));
+        model->prob3 = ckd_calloc(k, sizeof(log_t));
         if (fread(model->prob3, sizeof(log_t), k, fp) != (size_t) k)
             E_FATAL("fread(prob3) failed\n");
         if (do_swap)
@@ -1568,7 +1567,7 @@ lm3g_load(char const *file, lm_t * model, char const *lmfile, int32 mtime)
         else {
             k = (model->bcount + 1) / BG_SEG_SZ + 1;
             k = fread_int32(fp, k, k, "tseg_base size", 1, &do_swap);
-            model->tseg_base = (int32 *) CM_calloc(k, sizeof(int32));
+            model->tseg_base = ckd_calloc(k, sizeof(int32));
             if (fread(model->tseg_base, sizeof(int32), k, fp) !=
                 (size_t) k)
                 E_FATAL("fread(tseg_base) failed\n");
@@ -1589,7 +1588,7 @@ lm3g_load(char const *file, lm_t * model, char const *lmfile, int32 mtime)
     else {
         k = fread_int32(fp, 1, 0x7fffffff, "words string-length", 1,
                         &do_swap);
-        tmp_word_str = (char *) CM_calloc(k, sizeof(char));
+        tmp_word_str = ckd_calloc(k, sizeof(char));
         if (fread(tmp_word_str, sizeof(char), k, fp) != (size_t) k)
             E_FATAL("fread(word-string) failed\n");
     }

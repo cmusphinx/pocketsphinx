@@ -5,7 +5,6 @@ pkginclude_HEADERS = \
 	cache_lm.h				\
 	cepio.h					\
 	c.h					\
-	CM_macros.h				\
 	cviterbi4.h				\
 	dict.h					\
 	fbs.h					\

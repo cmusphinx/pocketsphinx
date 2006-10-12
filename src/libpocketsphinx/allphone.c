@@ -67,7 +67,6 @@
 #include <math.h>
 
 #include "s2types.h"
-#include "CM_macros.h"
 #include "basic_types.h"
 #include "search_const.h"
 #include "linklist.h"
@@ -86,6 +85,7 @@
 #include "kb.h"
 #include "fbs.h"
 #include "search.h"
+#include "ckd_alloc.h"
 
 static SMD *Models;             /* static model types */
 static int32 *senscr;
@@ -422,20 +422,18 @@ allphone_init(double bw, double exitbw, double pip)
 
     n_ciphone = phoneCiCount();
 
-    ci_chan = (CHAN_T *) CM_calloc(n_ciphone, sizeof(CHAN_T));
+    ci_chan = ckd_calloc(n_ciphone, sizeof(CHAN_T));
     for (i = 0; i < n_ciphone; i++) {
         ci_chan[i].sseqid = hmm_pid2sid(i);
         ci_chan[i].ciphone = i;
     }
 
-    renorm_scr = (int32 *) CM_calloc(MAX_FRAMES, sizeof(int32));
+    renorm_scr = ckd_calloc(MAX_FRAMES, sizeof(int32));
 
     Models = kb_get_models();
     senscr = search_get_dist_scores();
 
-    allphone_bp =
-        (allphone_bp_t *) CM_calloc(ALLPHONE_BP_MAX,
-                                    sizeof(allphone_bp_t));
+    allphone_bp = ckd_calloc(ALLPHONE_BP_MAX, sizeof(allphone_bp_t));
 
     allphone_bw = LOG(bw) * 8;
     allphone_exitbw = LOG(exitbw) * 8;

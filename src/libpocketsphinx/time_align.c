@@ -219,7 +219,7 @@
 
 /* CMU Speech stuff */
 #include "s2types.h"
-#include "CM_macros.h"
+#include "ckd_alloc.h"
 #include "basic_types.h"
 #include "strfuncs.h"
 #include "list.h"
@@ -509,19 +509,19 @@ time_align_init(void)
     sile_phone_id = phone_to_id("SILe", FALSE);
 
     state_bp_table =
-        (BACK_POINTER_T *) CM_calloc(max_state_bp_table_size,
+        ckd_calloc(max_state_bp_table_size,
                                      sizeof(BACK_POINTER_T));
     E_INFO("state_bp_table size %dK\n",
            max_state_bp_table_size * sizeof(BACK_POINTER_T) / 1024);
 
     phone_bp_table =
-        (BACK_POINTER_T *) CM_calloc(max_phone_bp_table_size,
+        ckd_calloc(max_phone_bp_table_size,
                                      sizeof(BACK_POINTER_T));
     E_INFO("phone_bp_table size %dK\n",
            max_phone_bp_table_size * sizeof(BACK_POINTER_T) / 1024);
 
     word_bp_table =
-        (BACK_POINTER_T *) CM_calloc(max_word_bp_table_size,
+        ckd_calloc(max_word_bp_table_size,
                                      sizeof(BACK_POINTER_T));
     E_INFO("word_bp_table size %dK\n",
            max_word_bp_table_size * sizeof(BACK_POINTER_T) / 1024);
@@ -1597,9 +1597,7 @@ ck_alloc(BACK_POINTER_T * bp_table,
         max_entries += size_increment;
         assert(max_entries >= entries_needed);
 
-        bp_table = (BACK_POINTER_T *) CM_recalloc(bp_table,
-                                                  max_entries,
-                                                  sizeof(BACK_POINTER_T));
+        bp_table = ckd_realloc(bp_table, max_entries * sizeof(BACK_POINTER_T));
 
         *in_out_max_entries = max_entries;
     }
@@ -2530,8 +2528,8 @@ time_align_word_sequence_init(
     print_models(model, model_cnt, *out_word_id_map, *out_boundary);
 #endif
 
-    active_models[0] = (int *) CM_calloc(model_cnt, sizeof(int));
-    active_models[1] = (int *) CM_calloc(model_cnt, sizeof(int));
+    active_models[0] = ckd_calloc(model_cnt, sizeof(int));
+    active_models[1] = ckd_calloc(model_cnt, sizeof(int));
 
     word_bp_table_next_free = 0;
     word_bp_table_frame_start = 0;
@@ -2928,8 +2926,8 @@ time_align_word_sequence(char const *Utt,
     n_state_segments = 0;
     best_word_string_len = 0;
     if (!wdseg) {
-        wdseg = (SEGMENT_T *) CM_calloc(MAX_FRAMES + 1, sizeof(SEGMENT_T));
-        phseg = (SEGMENT_T *) CM_calloc(MAX_FRAMES + 1, sizeof(SEGMENT_T));
+        wdseg = ckd_calloc(MAX_FRAMES + 1, sizeof(SEGMENT_T));
+        phseg = ckd_calloc(MAX_FRAMES + 1, sizeof(SEGMENT_T));
     }
 
     print_models(all_models, all_model_cnt, word_id_map, boundary);
@@ -3239,7 +3237,7 @@ time_align_get_segmentation(seg_kind_t kind, int *seg_cnt)
                             last_bp, NULL, cnt_state_segments);
     }
 
-    out_seg = (SEGMENT_T *) CM_calloc(n_state_segments, sizeof(SEGMENT_T));
+    out_seg = ckd_calloc(n_state_segments, sizeof(SEGMENT_T));
     out_seg_idx = 0;
 
     traverse_back_trace(word_bp_table,

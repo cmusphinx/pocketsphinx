@@ -197,7 +197,7 @@
 
 #include "c.h"
 #include "s2types.h"
-#include "CM_macros.h"
+#include "pio.h"
 #include "basic_types.h"
 #include "strfuncs.h"
 #include "list.h"
@@ -1193,7 +1193,7 @@ run_ctl_file(char const *ctl_file_name)
     search_hyp_t *hyp;
 
     if (strcmp(ctl_file_name, "-") != 0)
-        ctl_fs = CM_fopen(ctl_file_name, "r");
+        ctl_fs = myfopen(ctl_file_name, "r");
     else
         ctl_fs = stdin;
 
@@ -1270,11 +1270,11 @@ run_time_align_ctl_file(char const *utt_ctl_file_name,
     time_align_set_beam_width(beam_width);
     E_INFO("****** USING WIDE BEAM ****** (1e-9)\n");
 
-    utt_ctl_fs = CM_fopen(utt_ctl_file_name, "r");
-    pe_ctl_fs = CM_fopen(pe_ctl_file_name, "r");
+    utt_ctl_fs = myfopen(utt_ctl_file_name, "r");
+    pe_ctl_fs = myfopen(pe_ctl_file_name, "r");
 
     if (out_sent_file_name) {
-        out_sent_fs = CM_fopen(out_sent_file_name, "w");
+        out_sent_fs = myfopen(out_sent_file_name, "w");
     }
     else
         out_sent_fs = NULL;

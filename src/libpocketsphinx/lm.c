@@ -53,7 +53,6 @@
 #include <assert.h>
 
 #include "s2types.h"
-#include "CM_macros.h"
 #include "basic_types.h"
 #include "list.h"
 #include "lmclass.h"

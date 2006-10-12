@@ -130,7 +130,6 @@
 #include <assert.h>
 #include <time.h>
 #include <s2types.h>
-#include <CM_macros.h>
 #include <err.h>
 #include <str2words.h>
 #include <ckd_alloc.h>

@@ -215,7 +215,7 @@
 #include <math.h>
 
 #include "s2types.h"
-#include "CM_macros.h"
+#include "ckd_alloc.h"
 #include "basic_types.h"
 #include "linklist.h"
 #include "list.h"
@@ -1514,16 +1514,14 @@ last_phone_transition(void)
                 if (n_cand_sf >= cand_sf_alloc) {
                     if (cand_sf_alloc == 0) {
                         cand_sf =
-                            (cand_sf_t *) CM_calloc(CAND_SF_ALLOCSIZE,
+                            ckd_calloc(CAND_SF_ALLOCSIZE,
                                                     sizeof(cand_sf_t));
                         cand_sf_alloc = CAND_SF_ALLOCSIZE;
                     }
                     else {
                         cand_sf_alloc += CAND_SF_ALLOCSIZE;
-                        cand_sf = (cand_sf_t *) CM_recalloc(cand_sf,
-                                                            cand_sf_alloc,
-                                                            sizeof
-                                                            (cand_sf_t));
+                        cand_sf = ckd_realloc(cand_sf,
+                                              cand_sf_alloc * sizeof(cand_sf_t));
                         E_INFO("cand_sf[] increased to %d entries\n",
                                cand_sf_alloc);
                     }
@@ -2002,10 +2000,10 @@ search_initialize(void)
     RightContextBwd = dict_right_context_bwd();
     NumMainDictWords = dict_get_num_main_words(WordDict);
 
-    word_chan = (CHAN_T **) CM_calloc(NumWords, sizeof(CHAN_T *));
-    WordLatIdx = (int32 *) CM_calloc(NumWords, sizeof(int32));
-    zeroPermTab = (int32 *) CM_calloc(phoneCiCount(), sizeof(int32));
-    word_active = (int32 *) CM_calloc(NumWords, sizeof(int32));
+    word_chan = ckd_calloc(NumWords, sizeof(CHAN_T *));
+    WordLatIdx = ckd_calloc(NumWords, sizeof(int32));
+    zeroPermTab = ckd_calloc(phoneCiCount(), sizeof(int32));
+    word_active = ckd_calloc(NumWords, sizeof(int32));
 
     BPTableSize = MAX(25, NumWords / 1000) * MAX_FRAMES;
     BScoreStackSize = BPTableSize * 20;
@@ -2013,36 +2011,36 @@ search_initialize(void)
         BPTableSize = bptable_size;
         BScoreStackSize = BPTableSize * 20;     /* 20 = ave. rc fanout */
     }
-    BPTable = (BPTBL_T *) CM_calloc(BPTableSize, sizeof(BPTBL_T));
-    BScoreStack = (int32 *) CM_calloc(BScoreStackSize, sizeof(int32));
-    BPTableIdx = (int32 *) CM_calloc(MAX_FRAMES + 2, sizeof(int32));
+    BPTable = ckd_calloc(BPTableSize, sizeof(BPTBL_T));
+    BScoreStack = ckd_calloc(BScoreStackSize, sizeof(int32));
+    BPTableIdx = ckd_calloc(MAX_FRAMES + 2, sizeof(int32));
     BPTableIdx++;               /* Make BPTableIdx[-1] valid */
 
-    lattice_density = (int32 *) CM_calloc(MAX_FRAMES, sizeof(int32));
-    phone_perplexity = (double *) CM_calloc(MAX_FRAMES, sizeof(double));
+    lattice_density = ckd_calloc(MAX_FRAMES, sizeof(int32));
+    phone_perplexity = ckd_calloc(MAX_FRAMES, sizeof(double));
 
     init_search_tree(WordDict);
 
     active_word_list[0] =
-        (WORD_ID *) CM_calloc(2 * (NumWords + 1), sizeof(WORD_ID));
+        ckd_calloc(2 * (NumWords + 1), sizeof(WORD_ID));
     active_word_list[1] = active_word_list[0] + NumWords + 1;
 
-    bestbp_rc = (struct bestbp_rc_s *) CM_calloc(NumCiPhones,
+    bestbp_rc = ckd_calloc(NumCiPhones,
                                                  sizeof(struct
                                                         bestbp_rc_s));
 #if SEARCH_TRACE_CHAN_DETAILED
     load_trace_wordlist("_TRACEWORDS_");
 #endif
     lastphn_cand =
-        (lastphn_cand_t *) CM_calloc(NumWords, sizeof(lastphn_cand_t));
+        ckd_calloc(NumWords, sizeof(lastphn_cand_t));
 
-    senone_active = (int32 *) CM_calloc(TotalDists, sizeof(int32));
+    senone_active = ckd_calloc(TotalDists, sizeof(int32));
     senone_active_vec =
-        (bitvec_t *) CM_calloc((TotalDists + BITVEC_WIDTH - 1)
+        ckd_calloc((TotalDists + BITVEC_WIDTH - 1)
                                / BITVEC_WIDTH, sizeof(bitvec_t));
 
     last_ltrans =
-        (last_ltrans_t *) CM_calloc(NumWords, sizeof(last_ltrans_t));
+        ckd_calloc(NumWords, sizeof(last_ltrans_t));
 
     search_fwdflat_init();
     searchlat_init();
@@ -2067,10 +2065,10 @@ search_initialize(void)
     topsen_init();
 
     sc_scores =
-        (int32 **) CM_2dcalloc(topsen_window, TotalDists, sizeof(int32));
+        (int32 **) ckd_calloc_2d(topsen_window, TotalDists, sizeof(int32));
     distScores = sc_scores[0];
 
-    topsen_score = (int32 *) CM_calloc(MAX_FRAMES, sizeof(int32));
+    topsen_score = ckd_calloc(MAX_FRAMES, sizeof(int32));
 
     /*
      * Allocate bestscore/phone arrays:
@@ -2078,9 +2076,9 @@ search_initialize(void)
      * every frame.
      * utt_pscr = bestpscr, maintained for entire utterance.
      */
-    bestpscr = (int32 *) CM_calloc(NumCiPhones, sizeof(int32));
+    bestpscr = ckd_calloc(NumCiPhones, sizeof(int32));
     utt_pscr =
-        (int32 **) CM_2dcalloc(MAX_FRAMES, NumCiPhones, sizeof(int32));
+        (int32 **) ckd_calloc_2d(MAX_FRAMES, NumCiPhones, sizeof(int32));
 }
 
 
@@ -3203,7 +3201,7 @@ search_get_wordlist(int *len, char sep_char)
 
         ++flen;                 /* for the terminal '\0' */
 
-        fwrdl = (char *) CM_calloc(flen, sizeof(char));
+        fwrdl = ckd_calloc(flen, sizeof(char));
 
         for (i = 0, p = 0; i < dent_cnt; i++) {
             strcpy(&fwrdl[p], dents[i]->word);
@@ -3302,7 +3300,7 @@ load_trace_wordlist(char const *file)
     char wd[1000];
     int32 wid;
 
-    trace_wid = (char *) CM_calloc(NumWords, sizeof(char));
+    trace_wid = ckd_calloc(NumWords, sizeof(char));
     E_INFO("Looking for file trace-wordlist file %s\n", file);
     if ((fp = fopen(file, "r")) == NULL) {
         E_ERROR("fopen(%s,r) failed\n", file);
@@ -3441,7 +3439,7 @@ init_search_tree(dictT * dict)
     ROOT_CHAN_T *rhmm;
 
     homophone_set =
-        (WORD_ID *) CM_calloc(NumMainDictWords, sizeof(WORD_ID));
+        ckd_calloc(NumMainDictWords, sizeof(WORD_ID));
 
     /* Find #single phone words, and #unique first diphones (#root channels) in dict. */
     max_ph0 = -1;
@@ -3468,7 +3466,7 @@ init_search_tree(dictT * dict)
 
     /* Allocate and initialize root channels */
     root_chan =
-        (ROOT_CHAN_T *) CM_calloc(n_root_chan_alloc, sizeof(ROOT_CHAN_T));
+        ckd_calloc(n_root_chan_alloc, sizeof(ROOT_CHAN_T));
     for (i = 0; i < n_root_chan_alloc; i++) {
         root_chan[i].mpx = mpx;
         root_chan[i].penult_phn_wid = -1;
@@ -3481,10 +3479,10 @@ init_search_tree(dictT * dict)
 
     /* Allocate space for left-diphone -> root-chan map */
     first_phone_rchan_map =
-        (int32 *) CM_calloc(n_root_chan_alloc, sizeof(int32));
+        ckd_calloc(n_root_chan_alloc, sizeof(int32));
 
     /* Permanently allocate channels for single-phone words (1/word) */
-    rhmm = (ROOT_CHAN_T *) CM_calloc(n_1ph_words, sizeof(ROOT_CHAN_T));
+    rhmm = ckd_calloc(n_1ph_words, sizeof(ROOT_CHAN_T));
     i = 0;
     for (w = 0; w < NumWords; w++) {
         de = WordDict->dict_list[w];
@@ -3505,7 +3503,7 @@ init_search_tree(dictT * dict)
         i++;
     }
 
-    single_phone_wid = (WORD_ID *) CM_calloc(n_1ph_words, sizeof(WORD_ID));
+    single_phone_wid = ckd_calloc(n_1ph_words, sizeof(WORD_ID));
 
     /*
      * Create search tree once, without using LM, to know the max #nonroot chans.
@@ -3695,7 +3693,7 @@ create_search_tree(dictT * dict, int32 use_lm)
         if (active_chan_list[0] != NULL)
             free(active_chan_list[0]);
         active_chan_list[0] =
-            (CHAN_T **) CM_calloc(max_nonroot_chan * 2, sizeof(CHAN_T *));
+            ckd_calloc(max_nonroot_chan * 2, sizeof(CHAN_T *));
         active_chan_list[1] = active_chan_list[0] + max_nonroot_chan;
     }
 
@@ -4686,9 +4684,9 @@ get_expand_wordlist(int32 frm, int32 win)
 void
 search_fwdflat_init(void)
 {
-    fwdflat_wordlist = (int32 *) CM_calloc(NumWords + 1, sizeof(int32));
-    expand_word_flag = (char *) CM_calloc(NumWords, 1);
-    expand_word_list = (int32 *) CM_calloc(NumWords + 1, sizeof(int32));
+    fwdflat_wordlist = ckd_calloc(NumWords + 1, sizeof(int32));
+    expand_word_flag = ckd_calloc(NumWords, 1);
+    expand_word_list = ckd_calloc(NumWords + 1, sizeof(int32));
 
 #if 0
     E_INFO("MIN_EF_WIDTH = %d, MAX_SF_WIN = %d\n",
@@ -4748,12 +4746,12 @@ topsen_init(void)
     int32 p;                    /* ,s; */
     char const *phn_name;
 
-    npa = (int32 *) CM_calloc(NumCiPhones, sizeof(int32));
+    npa = ckd_calloc(NumCiPhones, sizeof(int32));
     npa_frm =
-        (int32 **) CM_2dcalloc(topsen_window, NumCiPhones, sizeof(int32));
+        (int32 **) ckd_calloc_2d(topsen_window, NumCiPhones, sizeof(int32));
 
     if (topsen_window > 1) {
-        filler_phone = (int32 *) CM_calloc(NumCiPhones, sizeof(int32));
+        filler_phone = ckd_calloc(NumCiPhones, sizeof(int32));
         for (p = 0; p < NumCiPhones; p++) {
             phn_name = phone_from_id(p);
             filler_phone[p] = (phn_name[0] == '+');
@@ -4803,7 +4801,7 @@ compute_phone_active(int32 topsenscr, int32 npa_th)
         int32 scaled_scr;
 
         if (!pscr)
-            pscr = (int16 *) CM_calloc(NumCiPhones, sizeof(int32));
+            pscr = ckd_calloc(NumCiPhones, sizeof(int32));
 
         for (i = 0; i < NumCiPhones; i++)
             pscr[i] = (int16) 0x8000;
@@ -4870,8 +4868,8 @@ search_uttpscr2phlat_print(FILE * outfp)
         return -1;
 #endif
 
-    pval = (int32 *) CM_calloc(NumCiPhones, sizeof(int32));
-    pid = (int32 *) CM_calloc(NumCiPhones, sizeof(int32));
+    pval = ckd_calloc(NumCiPhones, sizeof(int32));
+    pid = ckd_calloc(NumCiPhones, sizeof(int32));
 
     fprintf(outfp, " SFrm #Ph Phones (PhoneLattice) (%s)\n",
             uttproc_get_uttid());
@@ -5123,9 +5121,9 @@ search_uttpscr2allphone(void)
 
     if (allphone_vithist == NULL) {
         allphone_vithist =
-            (vithist_t **) CM_2dcalloc(MAX_FRAMES, NumCiPhones,
+            (vithist_t **) ckd_calloc_2d(MAX_FRAMES, NumCiPhones,
                                        sizeof(vithist_t));
-        allphone_pid = (int32 *) CM_calloc(NumCiPhones, sizeof(int32));
+        allphone_pid = ckd_calloc(NumCiPhones, sizeof(int32));
         for (i = 0; i < NumCiPhones; i++)
             allphone_pid[i] = i;
 
@@ -5181,10 +5179,10 @@ fwdtree_pscr_path(void)
         n_state += de->len;
     }
 
-    pscr_vithist = (vithist_t **) CM_2dcalloc(MAX_FRAMES, n_state,
+    pscr_vithist = (vithist_t **) ckd_calloc_2d(MAX_FRAMES, n_state,
                                               sizeof(vithist_t));
 
-    pscr_pid = (int32 *) CM_calloc(n_state, sizeof(int32));
+    pscr_pid = ckd_calloc(n_state, sizeof(int32));
     s = 0;
     for (i = 0; i < n_hyp_wid; i++) {
         de = WordDict->dict_list[hyp_wid[i]];
@@ -5192,7 +5190,7 @@ fwdtree_pscr_path(void)
             pscr_pid[s++] = de->ci_phone_ids[j];
     }
 
-    pscr_tmat = (char **) CM_2dcalloc(n_state, n_state, sizeof(char));
+    pscr_tmat = (char **) ckd_calloc_2d(n_state, n_state, sizeof(char));
     for (i = 1; i < n_state; i++)
         pscr_tmat[i - 1][i] = 1;
 
@@ -5243,10 +5241,10 @@ search_hyp_pscr_path(void)
         n_state += de->len;
     }
 
-    pseg_vithist = (vithist_t **) CM_2dcalloc(MAX_FRAMES, n_state,
+    pseg_vithist = (vithist_t **) ckd_calloc_2d(MAX_FRAMES, n_state,
                                               sizeof(vithist_t));
 
-    pseg_pid = (int32 *) CM_calloc(n_state, sizeof(int32));
+    pseg_pid = ckd_calloc(n_state, sizeof(int32));
     s = 0;
     for (i = 0; i < n_hyp_wid; i++) {
         de = WordDict->dict_list[hyp_wid[i]];
@@ -5255,7 +5253,7 @@ search_hyp_pscr_path(void)
     }
 
     /* Initialize transition matrix to allow only the linear path (falign) */
-    pseg_tmat = (int32 **) CM_2dcalloc(n_state, n_state, sizeof(int32));
+    pseg_tmat = (int32 **) ckd_calloc_2d(n_state, n_state, sizeof(int32));
     for (i = 0; i < n_state; i++)
         for (j = 0; j < n_state; j++)
             pseg_tmat[i][j] = WORST_SCORE;

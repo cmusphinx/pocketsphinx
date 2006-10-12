@@ -131,13 +131,13 @@
 #endif
 
 #include "s2types.h"
-#include "CM_macros.h"
 #include "basic_types.h"
 #include "search_const.h"
 #include "list.h"
 #include "err.h"
 #include "ckd_alloc.h"
 #include "c.h"
+#include "pio.h"
 #include "pconf.h"
 #include "log.h"
 #include "dict.h"
@@ -467,7 +467,7 @@ phonetp_load_file(char *file, int32 ** tp)
     int32 i, j, k, n;
 
     E_INFO("Reading phone transition counts file '%s'\n", file);
-    fp = CM_fopen(file, "r");
+    fp = myfopen(file, "r");
 
     while (fgets(line, sizeof(line), fp) != NULL) {
         if (line[0] == '#')
@@ -578,7 +578,7 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
 
             E_INFO("Reading LM control file '%s'\n", lm_ctl_filename);
 
-            ctlfp = CM_fopen(lm_ctl_filename, "r");
+            ctlfp = myfopen(lm_ctl_filename, "r");
             if (fscanf(ctlfp, "%s", str) == 1) {
                 if (strcmp(str, "{") == 0) {
                     /* Load LMclass files */
@@ -605,8 +605,7 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
 
             /* At this point if str[0] != '\0', we have an LM filename */
             n_lmclass = lmclass_get_nclass(lmclass_set);
-            lmclass =
-                (lmclass_t *) CM_calloc(n_lmclass, sizeof(lmclass_t));
+            lmclass = ckd_calloc(n_lmclass, sizeof(lmclass_t));
 
             /* Read in one LM at a time */
             while (str[0] != '\0') {
@@ -676,7 +675,7 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
 
     num_phones = phone_count();
     numSmds = hmm_num_sseq();
-    smds = (SMD *) CM_calloc(numSmds, sizeof(SMD));
+    smds = ckd_calloc(numSmds, sizeof(SMD));
 
     /* Use S3 transition matrix file. */
     tmat_init(tmatFileName, smds, transSmooth, TRUE);
@@ -727,8 +726,8 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
      * Create phone transition logprobs matrix
      */
     phonetp =
-        (int32 **) CM_2dcalloc(num_ci_phones, num_ci_phones,
-                               sizeof(int32));
+        (int32 **) ckd_calloc_2d(num_ci_phones, num_ci_phones,
+                                 sizeof(int32));
     if (phonetp_file_name) {
         /* Load phone transition counts file */
         phonetp_load_file(phonetp_file_name, phonetp);

@@ -100,7 +100,7 @@
 #include <assert.h>
 
 #include "s2types.h"
-#include "CM_macros.h"
+#include "ckd_alloc.h"
 #include "basic_types.h"
 #include "strfuncs.h"
 #include "linklist.h"
@@ -1275,9 +1275,7 @@ search_get_alt(int32 n,         /* In: No. of alternatives to look for */
         if (alt)
             free(alt);
         max_alt_hyp = (n + 255) & 0xffffff00;
-        alt =
-            (search_hyp_t **) CM_calloc(max_alt_hyp,
-                                        sizeof(search_hyp_t *));
+        alt = ckd_calloc(max_alt_hyp, sizeof(search_hyp_t *));
     }
 
     *alt_out = NULL;
@@ -1454,7 +1452,6 @@ void
 searchSaveLatQueue(char *uttid, char *lmName)
 {
     int32 i, found, addIndex, minIndex = 0;     /* FIXME: good default? */
-    int16 *ptr;
 
     if (!latQueueInit) {
         for (i = 0; i < MAX_LAT_QUEUE; i++) {
