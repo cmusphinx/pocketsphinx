@@ -48,10 +48,9 @@ test-debug:
 		-kbdumpdir $(top_srcdir)/model/lm/turtle \
 		-lmfn $(top_srcdir)/model/lm/turtle/turtle.lm \
 		-dictfn $(top_srcdir)/model/lm/turtle/turtle.dic \
-		-ndictfn $(top_srcdir)/model/hmm/6k/noisedict \
-		-mdeffn $(top_srcdir)/model/hmm/6k/Communicator.6000.bmdef \
-		-meanfn $(top_srcdir)/model/hmm/6k/means \
-		-varfn $(top_srcdir)/model/hmm/6k/variances \
-		-tmatfn $(top_srcdir)/model/hmm/6k/transition_matrices \
-		-8bsen TRUE -sendumpfn $(top_srcdir)/model/hmm/6k/sendump \
-		-cbdir $(top_srcdir)/model/hmm/6k -mmap TRUE
+		-mdeffn $(top_srcdir)/model/hmm/wsj0/mdef \
+		-meanfn $(top_srcdir)/model/hmm/wsj0/means \
+		-varfn $(top_srcdir)/model/hmm/wsj0/variances \
+		-tmatfn $(top_srcdir)/model/hmm/wsj0/transition_matrices \
+		-8bsen TRUE -sendumpfn $(top_srcdir)/model/hmm/wsj0/sendump \
+		-mmap TRUE
