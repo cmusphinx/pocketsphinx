@@ -1096,11 +1096,14 @@ uttproc_end_utt(void)
         }
     }
 
-    /* If we had file input, n_cepfr will be zero. */
-    if (n_cepfr) {
-        nfr = feat_s2mfc2feat_block(fcb, mfcbuf, n_cepfr,
-                                    TRUE, TRUE, feat_buf);
-        n_featfr += nfr;
+    /* Do feature computation if not in livemode. */
+    if (!livemode) {
+        /* If we had file input, n_cepfr will be zero. */
+        if (n_cepfr) {
+            nfr = feat_s2mfc2feat_block(fcb, mfcbuf, n_cepfr,
+                                        TRUE, TRUE, feat_buf);
+            n_featfr += nfr;
+        }
     }
 
     /* Do any further searching necessary. */
