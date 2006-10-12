@@ -5,7 +5,6 @@ pkginclude_HEADERS = \
 	cache_lm.h				\
 	cepio.h					\
 	c.h					\
-	cviterbi4.h				\
 	dict.h					\
 	fbs.h					\
 	fsg_history.h				\
@@ -28,7 +27,6 @@ pkginclude_HEADERS = \
 	mulaw.h					\
 	pconf.h					\
 	phone.h					\
-	posixsock.h				\
 	posixwin32.h				\
 	s2io.h					\
 	s2params.h				\
@@ -40,12 +38,10 @@ pkginclude_HEADERS = \
 	search.h				\
 	senscr.h				\
 	smmap4f.h				\
-	sphinxp.h				\
 	strfuncs.h				\
 	time_align.h				\
 	tmat.h					\
 	vector.h				\
-	win32sock.h				\
 	word_fsg.h
 
 

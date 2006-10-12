@@ -467,9 +467,6 @@ static int32 utt_pscr_valid = FALSE;
 static void topsen_init(void);
 static void compute_phone_active(int32 topsenscr, int32 npa_th);
 
-/* FIXME: put this in a header file */
-extern void quit(int status, char const *fmt, ...);
-
 int32
 context_frames(void)
 {

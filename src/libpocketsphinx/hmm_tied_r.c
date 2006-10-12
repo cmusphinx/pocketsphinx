@@ -73,7 +73,6 @@
 #include "msd.h"
 #include "magic.h"
 #include "log.h"
-#include "cviterbi4.h"
 #include "smmap4f.h"
 #include "dict.h"
 #include "lmclass.h"

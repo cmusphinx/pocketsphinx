@@ -16,7 +16,6 @@ libpocketsphinx_la_SOURCES = \
 	cache_lm.c				\
 	cep_rw.c				\
 	dict.c					\
-	eht_quit.c				\
 	fbs_main.c				\
 	fsg_history.c				\
 	fsg_lextree.c				\
