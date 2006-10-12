@@ -189,7 +189,7 @@ lmclass_loadfile(lmclass_set_t lmclass_set, char *file)
 
         /* Initialize a new LM class object */
         lmclass = ckd_calloc(1, sizeof(struct lmclass_s));
-        lmclass->name = salloc(word[1]);
+        lmclass->name = ckd_salloc(word[1]);
         lmclass->wordlist = NULL;
 
         /* Add the new class to the existing set */
@@ -240,7 +240,7 @@ lmclass_loadfile(lmclass_set_t lmclass_set, char *file)
             /* Create a new word object */
             lmclass_word =
                 ckd_calloc(1, sizeof(struct lmclass_word_s));
-            lmclass_word->word = salloc(word[0]);
+            lmclass_word->word = ckd_salloc(word[0]);
             lmclass_word->dictwid = -1; /* To be filled in by application */
             lmclass_word->LOGprob = LOGp;
 

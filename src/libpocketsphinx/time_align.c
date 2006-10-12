@@ -374,7 +374,7 @@ head_word_of(int k)
 char *
 cvt_uscores_to_sp(char const *word)
 {
-    char *wrk = salloc(word);
+    char *wrk = ckd_salloc(word);
     char *uscore;
 
     uscore = wrk;
@@ -1511,7 +1511,7 @@ mk_viterbi_decode_models(short *amatrix,
 
     model = calloc(node_cnt, sizeof(DYNMODEL_T));
     for (i = 0, sum_succ_cnt = 0; i < node_cnt; i++) {
-        model_name[i] = salloc(phone_from_id(phone_id_map[i]));
+        model_name[i] = ckd_salloc(phone_from_id(phone_id_map[i]));
         mk_model(amatrix, i, node_cnt, model, phone_id_map, &succ_cnt);
         sum_succ_cnt += succ_cnt;
     }

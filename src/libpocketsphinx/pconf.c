@@ -63,6 +63,7 @@
 #include "c.h"
 #include "pconf.h"
 #include "strfuncs.h"
+#include "ckd_alloc.h"
 
 static int SetVal(Config_t * cp, char const *str);
 static void SPrintVal(Config_t * cp, char *str);
@@ -229,7 +230,7 @@ env_scan(char const *str)
         else
             *p++ = *str++;
     *p = '\0';
-    return salloc(buf);
+    return ckd_salloc(buf);
 }
 
 static int
@@ -423,7 +424,7 @@ fpconf(FILE * config_fp, Config_t config_p[],
         for (parsed = FALSE, cp = config_p; cp->arg_type != NOTYPE; cp++) {
             if (mystrcasecmp(name, cp->LongName) == 0) {
                 parsed = TRUE;
-                bad_usage |= SetVal(cp, salloc(value));
+                bad_usage |= SetVal(cp, ckd_salloc(value));
 
             }
         }

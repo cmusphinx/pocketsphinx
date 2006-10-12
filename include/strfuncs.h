@@ -45,7 +45,6 @@ char *skipto(unsigned char *string,
 	     unsigned char const *charset);
 char *skipover (unsigned char *string,
 		unsigned char const *charset);
-char *salloc(char const *str);
 int mystrcasecmp(char const *a, char const *b);
 
 #endif /* _STRINGFUNCS_H_ */

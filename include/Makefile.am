@@ -19,7 +19,6 @@ pkginclude_HEADERS = \
 	lmclass.h				\
 	lm.h					\
 	log.h					\
-	logmsg.h				\
 	logs3.h					\
 	magic.h					\
 	mdef.h					\

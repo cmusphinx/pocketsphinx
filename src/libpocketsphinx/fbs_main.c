@@ -218,6 +218,7 @@
 #include "byteorder.h"
 #include "s2params.h"
 #include "feat.h"
+#include "ckd_alloc.h"
 #include "fe.h"
 
 /*
@@ -821,7 +822,7 @@ argfile_read(const int32 argc, char ***argv, const char *argfile)
             strncpy(argstr, lp + start, len);
             argstr[len] = '\0';
             lp = lp + next;
-            newargv[i] = salloc(argstr);
+            newargv[i] = ckd_salloc(argstr);
 
             i++;
         }

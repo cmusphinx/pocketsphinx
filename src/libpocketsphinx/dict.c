@@ -147,7 +147,6 @@
 #define QUIT(x)		{fprintf x; exit(-1);}
 
 /* FIXME: put these in a header file */
-extern char *salloc(char const *);
 extern char *nxtarg(char const **, char const *);
 
 extern int32 use_noise_words;
@@ -616,7 +615,7 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
              * Rename the word by appending "(0)" to indicate phrase
              */
             sprintf(tmpstr, "%s(0)", entry_copy->word);
-            entry_copy->word = (char *) salloc(tmpstr);
+            entry_copy->word = ckd_salloc(tmpstr);
 
             /*
              * Look up the first model
@@ -825,7 +824,7 @@ _new_dict_entry(char const *word_str, char const *pronoun_str,
     }
 
     entry = (dict_entry_t *) calloc((size_t) 1, sizeof(dict_entry_t));
-    entry->word = (char *) salloc(word_str);
+    entry->word = ckd_salloc(word_str);
     entry->len = pronoun_len;
     entry->mpx = use_context;
     entry->alt = -1;
@@ -955,7 +954,7 @@ replace_dict_entry(dictT * dict,
     free(entry->word);
     free(entry->ci_phone_ids);
     free(entry->phone_ids);
-    entry->word = (char *) salloc(word_str);
+    entry->word = ckd_salloc(word_str);
     entry->ci_phone_ids =
         ckd_calloc((size_t) pronoun_len, sizeof(int32));
     entry->phone_ids =
@@ -1052,7 +1051,7 @@ recordMissingTriphone(char *triphoneStr)
     char *cp;
 
     if (-1 == hash_table_lookup(mtpHT, triphoneStr, &idx)) {
-        cp = (char *) salloc(triphoneStr);
+        cp = ckd_salloc(triphoneStr);
         E_INFO("Missing triphone: %s\n", triphoneStr);
         hash_table_enter(mtpHT, cp, cp);
     }
@@ -1071,7 +1070,7 @@ addToContextTable(char *diphone, hash_table_t * table, list_t * list)
     char *cp;
 
     if (-1 == hash_table_lookup(table, diphone, &idx)) {
-        cp = (char *) salloc(diphone);
+        cp = ckd_salloc(diphone);
         idx = (void *) table->inuse;
         list_insert(list, cp);
         hash_table_enter(table, cp, idx);

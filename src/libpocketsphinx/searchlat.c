@@ -174,8 +174,7 @@ searchlat_set_rescore_lm(char const *lmname)
 {
     if (rescore_lmname)
         free(rescore_lmname);
-    if ((rescore_lmname = (char *) salloc(lmname)) == NULL)
-        E_ERROR("salloc('%s') failed\n", lmname);
+    rescore_lmname = ckd_salloc(lmname);
 }
 
 /*

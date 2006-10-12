@@ -487,7 +487,7 @@ ReadUnigrams(FILE * fp, lm_t * model)
             E_FATAL("Too many unigrams\n");
 
         /* Associate name with word id */
-        word_str[wcnt] = (char *) salloc(name);
+        word_str[wcnt] = ckd_salloc(name);
         hash_table_enter(model->HT, word_str[wcnt], (void *) wcnt);
         model->unigrams[wcnt].prob1.f = p1;
         model->unigrams[wcnt].bo_wt1.f = bo_wt;
@@ -1198,7 +1198,7 @@ lm_add(char const *lmname, lm_t * model, double lw, double uw, double wip)
         n_lm_alloc += 15;
     }
     lmset[n_lm].lm = model;
-    lmset[n_lm].name = salloc(lmname);
+    lmset[n_lm].name = ckd_salloc(lmname);
 
     lm_set_param(model, lw, uw, wip, FALSE);
 
@@ -1611,7 +1611,7 @@ lm3g_load(char const *file, lm_t * model, char const *lmfile, int32 mtime)
     else {
         j = 0;
         for (i = 0; i < model->ucount; i++) {
-            word_str[i] = (char *) salloc(tmp_word_str + j);
+            word_str[i] = ckd_salloc(tmp_word_str + j);
             j += strlen(word_str[i]) + 1;
         }
         free(tmp_word_str);
@@ -1738,7 +1738,7 @@ lmSetStartSym(char const *sym)
  * Description - reconfigure the start symbol
  */
 {
-    start_sym = (char *) salloc(sym);
+    start_sym = ckd_salloc(sym);
 }
 
 void
@@ -1747,7 +1747,7 @@ lmSetEndSym(char const *sym)
  * Description - reconfigure the end symbol
  */
 {
-    end_sym = (char *) salloc(sym);
+    end_sym = ckd_salloc(sym);
 }
 
 /*

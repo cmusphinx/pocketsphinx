@@ -31,16 +31,13 @@ libpocketsphinx_la_SOURCES = \
 	lm.c					\
 	lmclass.c				\
 	log_add.c				\
-	logmsg.c				\
 	logs3.c					\
-	longio.c				\
 	mdef.c					\
 	nxtarg.c				\
 	pconf.c					\
 	phone.c					\
 	s2_mmap.c				\
 	s2_semi_mgau.c				\
-	salloc.c				\
 	search.c				\
 	searchlat.c				\
 	senscr.c				\

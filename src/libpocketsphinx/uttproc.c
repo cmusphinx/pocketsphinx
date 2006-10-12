@@ -1619,7 +1619,7 @@ uttproc_set_auto_uttid_prefix(char const *prefix)
 {
     if (uttid_prefix)
         free(uttid_prefix);
-    uttid_prefix = salloc(prefix);
+    uttid_prefix = ckd_salloc(prefix);
     uttno = 0;
 
     return 0;
