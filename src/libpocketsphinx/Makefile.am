@@ -6,7 +6,6 @@ libpocketsphinx_la_LDFLAGS = -version-info 0:0:0
 
 libpocketsphinx_la_SOURCES = \
 	add-table.c				\
-	agc_emax.c				\
 	allphone.c				\
 	areadint.c				\
 	awriteshort.c				\
