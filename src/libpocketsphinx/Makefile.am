@@ -11,7 +11,6 @@ libpocketsphinx_la_SOURCES = \
 	areadint.c				\
 	awriteshort.c				\
 	bin_mdef.c				\
-	bisearch.c				\
 	blkarray_list.c				\
 	cache_lm.c				\
 	cep_rw.c				\
