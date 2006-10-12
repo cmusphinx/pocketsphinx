@@ -668,7 +668,6 @@ int32 query_compute_all_senones (void);
 int32 query_sampling_rate ( void );
 int32 query_doublebw ( void );
 int32 query_lattice_size ( void );
-char const *query_cdcn_file (void);
 
 
 /******************** Misc. mostly for internal use ********************/
