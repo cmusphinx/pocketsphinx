@@ -399,9 +399,7 @@ extern double MakeSeconds(struct timeval *, struct timeval *);
 
 extern int32 uttproc_set_feat(feat_t *fcb);
 
-/* FIXME: These misc functions need a header file. */
-extern void unlimit(void);
-int awriteshort(char const *file, short *data, int length);
+extern int awriteshort(char const *file, short *data, int length);
 
 extern void allphone_init(double, double, double);      /* dubya, dubya, dubya? */
 
@@ -938,8 +936,6 @@ uttproc_set_logfile(char const *file)
 int
 fbs_init(int32 argc, char **argv)
 {
-    unlimit();                  /* Remove memory size limits */
-
     /* Parse command line arguments */
     pconf(argc, argv, param, 0, 0, 0);
     if (arg_file) {

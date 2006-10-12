@@ -226,8 +226,6 @@ static int32 ascr_scale = 0;    /* Acoustic score scaling: SCALED DOWN by so
 static int32 max_new_oov = 0;   /* #new OOVs that can be added at run time */
 static float oov_ugprob = -4.5f;        /* (Actually log10(ugprob)) of OOVs */
 
-extern void unlimit(void);
-
 /* LM dump directory */
 static char *kb_dump_dir = NULL;
 
@@ -516,10 +514,6 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
     int32 i, j, n, use_darpa_lm;
     float32 p, uptp;
     int32 logp;
-
-    /* FIXME: This is evil.  But if we do it, let's prototype it
-       somewhere, OK? */
-    unlimit();                  /* Remove memory size limits */
 
     language_weight = lw;
     insertion_penalty = ip;
