@@ -27,6 +27,7 @@ pkginclude_HEADERS = \
 	pconf.h					\
 	phone.h					\
 	posixwin32.h				\
+	s2_semi_mgau.h				\
 	s2io.h					\
 	s2params.h				\
 	s2types.h				\
