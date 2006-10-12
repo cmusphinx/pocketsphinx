@@ -1073,7 +1073,6 @@ uttproc_end_utt(void)
 
     uttstate = nosearch ? UTTSTATE_IDLE : UTTSTATE_ENDED;
 
-#if 0
     if (inputtype == INPUT_RAW) {
         fe_end_utt(fe, leftover_cep, &nfr);
         if (nfr && mfcfp) {
@@ -1096,7 +1095,6 @@ uttproc_end_utt(void)
             }
         }
     }
-#endif
 
     /* If we had file input, n_cepfr will be zero. */
     if (n_cepfr) {
@@ -1106,8 +1104,10 @@ uttproc_end_utt(void)
     }
 
     /* Do any further searching necessary. */
-    while (n_searchfr < n_featfr)
-        uttproc_frame();
+    if (!nosearch) {
+        while (n_searchfr < n_featfr)
+            uttproc_frame();
+    }
 
     if (rawfp) {
         fclose(rawfp);
