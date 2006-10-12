@@ -53,79 +53,15 @@
  */
 
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
-#ifdef WIN32
-#include <fcntl.h>
-#else
-#include <sys/file.h>
-#endif
-
+#include <assert.h>
 #include "s2types.h"
-#include "basic_types.h"
-#include "list.h"
-#include "phone.h"
-#include "search_const.h"
-#include "msd.h"
-#include "magic.h"
-#include "log.h"
-#include "smmap4f.h"
-#include "dict.h"
-#include "lmclass.h"
-#include "lm_3g.h"
 #include "kb.h"
+#include "basic_types.h"
+#include "msd.h"
 #include "hmm_tied_r.h"
-#include "err.h"
-#include "s2io.h"
-#include "byteorder.h"
-#include "bio.h"
-#include "ckd_alloc.h"
-#include "vector.h"
-
-#define QUIT(x)		{fprintf x; exit(-1);}
-
-#define MGAU_MIXW_VERSION	"1.0"   /* Sphinx-3 file format version for mixw */
-#define MAX_ALPHABET		256
-
-#define HAS_ARC(fs,ts,S)	S->topo[((fs * S->stateCnt) + ts) / 32] & \
-				(1 << ((fs * S->stateCnt) + ts) % 32)
+#include "bin_mdef.h"
 
 int32 totalDists;               /* Total number of distributions */
-int32 *numDists;                /* Number of senones for each of the CI
-                                 * and WD base phone units.
-                                 */
-int32 *numDPDists;              /* Number of DiPhone senones. These are
-                                 * generated from the appropriate cd units.
-                                 */
-static int32 **distMap;         /* Distribution map
-                                 */
-static int32 *ssIdMap;          /* Senone sequence Id Map.
-                                 * ssIdMap[phone_id] == the senone sequence id.
-                                 */
-static int32 numSSeq = 0;       /* Number of unique senone sequences
-                                 */
-
-void
-remap(SMD * smdV)
-{                               /* smd pointer vector */
-
-/*------------------------------------------------------------*
- * DESCRIPTION
- *	Remap the distributions in the smd's.
- */
-    int32 i, j;
-
-    for (i = 0; i < numSSeq; i++) {
-        for (j = 0; j < TRANS_CNT; j++) {
-            smdV[i].dist[j] = distMap[i][smdV[i].dist[j]];
-        }
-    }
-    free(distMap);
-}
 
 void
 remap_mdef(SMD * smdV, bin_mdef_t * mdef)
@@ -140,15 +76,7 @@ remap_mdef(SMD * smdV, bin_mdef_t * mdef)
         for (j = 0; j < TRANS_CNT; j++)
             smdV[i].dist[j] = bin_mdef_sseq2sen(mdef, i, j / 3);
     }
-    free(distMap);
 }
-
-typedef struct {
-    int32 name;
-    int32 idx;
-} ARC;
-
-
 
 /* Call this only after entire kb loaded */
 void
@@ -156,7 +84,7 @@ hmm_tied_r_dumpssidlist()
 {
     SMD *models;
     FILE *dumpfp;
-    int32 i, j;
+    int32 i, j, numSSeq;
 
     models = kb_get_models();
     numSSeq = hmm_num_sseq();
@@ -171,12 +99,6 @@ hmm_tied_r_dumpssidlist()
     fclose(dumpfp);
 }
 
-
-#define MAX_MEMBERS 256
-
-int32 sets[NUMDISTRTYPES][MAX_MEMBERS];
-int32 set_size[NUMDISTRTYPES];
-
 int32
 hmm_num_sseq(void)
 /*------------------------------------------------------------*
@@ -184,15 +106,9 @@ hmm_num_sseq(void)
  * If the number is 0 we call this a fatal error.
  */
 {
-    bin_mdef_t *mdef;
-
-    if ((mdef = kb_mdef()) != NULL)
-        return bin_mdef_n_sseq(mdef);
-
-    if (numSSeq == 0) {
-        E_FATAL("numSSeq (number of senone sequences is 0\n");
-    }
-    return numSSeq;
+    bin_mdef_t *mdef = kb_mdef();
+    assert(mdef != NULL);
+    return bin_mdef_n_sseq(mdef);
 }
 
 int32
@@ -201,17 +117,7 @@ hmm_pid2sid(int32 pid)
  * Convert a phone id to a senone sequence id\
  */
 {
-    bin_mdef_t *mdef;
-
-    if ((mdef = kb_mdef()) != NULL)
-        return bin_mdef_pid2ssid(mdef, pid);
-
-    return ssIdMap[pid];
-}
-
-
-int32 *
-hmm_get_psen(void)
-{
-    return numDists;
+    bin_mdef_t *mdef = kb_mdef();
+    assert(mdef != NULL);
+    return bin_mdef_pid2ssid(mdef, pid);
 }
