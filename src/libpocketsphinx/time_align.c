@@ -2440,9 +2440,10 @@ print_models(DYNMODEL_T * models,
 }
 
 static int
-va_traverse_back_trace(BACK_POINTER_T * bp_table,
-                       int bp_idx,
-                       int *score, void (*segment_op) (), va_list ap)
+traverse_back_trace(BACK_POINTER_T * bp_table,
+                    int bp_idx,
+                    int *score, void (*segment_op) (int, int, int, int, void *),
+                    void *ap)
 {
     int prior_end;
     int prior_score;
@@ -2451,8 +2452,8 @@ va_traverse_back_trace(BACK_POINTER_T * bp_table,
 
     if (bp_idx) {
         prior_end =
-            va_traverse_back_trace(bp_table, bp_table[bp_idx].prev,
-                                   &prior_score, segment_op, ap);
+            traverse_back_trace(bp_table, bp_table[bp_idx].prev,
+                                &prior_score, segment_op, ap);
 
         cur_score = bp_table[bp_idx].score;
 
@@ -2472,21 +2473,6 @@ va_traverse_back_trace(BACK_POINTER_T * bp_table,
 
     *score = 0;
     return -1;
-}
-
-static int
-traverse_back_trace(BACK_POINTER_T * bp_table,
-                    int bp_idx, int *score, void (*segment_op) (), ...)
-{
-    int rv;
-    va_list ap;
-
-    va_start(ap, segment_op);
-
-    rv = va_traverse_back_trace(bp_table, bp_idx, score, segment_op, ap);
-
-    va_end(ap);
-    return rv;
 }
 
 static int
@@ -2585,10 +2571,10 @@ time_align_word_sequence_init(
 }
 
 void
-print_word_segment(int word_id, int begin, int end, int score, va_list ap)
+print_word_segment(int word_id, int begin, int end, int score, void *ap)
 {
     char *name;
-    char *utt_id = va_arg(ap, char *);
+    char *utt_id = ap;
 
     name = WordDict->dict_list[word_id]->word;
 
@@ -2601,7 +2587,7 @@ print_word_segment(int word_id, int begin, int end, int score, va_list ap)
 }
 
 void
-build_word_segment(int word_id, int begin, int end, int score, va_list ap)
+build_word_segment(int word_id, int begin, int end, int score, void *ap)
 {                               /* Gack!  not used... */
     char *name;
     /* char *utt_id = va_arg(ap, char *); */
@@ -2619,9 +2605,9 @@ build_word_segment(int word_id, int begin, int end, int score, va_list ap)
 }
 
 void
-append_word(int word_id, int begin, int end, int score, va_list ap)
+append_word(int word_id, int begin, int end, int score, void *ap)
 {
-    char *str = va_arg(ap, char *);
+    char *str = ap;
     char *name;
 
     if (word_id != start_word_id) {
@@ -2634,10 +2620,10 @@ append_word(int word_id, int begin, int end, int score, va_list ap)
 
 void
 print_phone_segment(int model_index,
-                    int begin, int end, int score, va_list ap)
+                    int begin, int end, int score, void *ap)
 {
     char *name = model_name[model_index];
-    char *utt_id = va_arg(ap, char *);
+    char *utt_id = ap;
 
     printf("%s:phone> %20s %4d %4d %15d\n",
            (utt_id != NULL ? utt_id : ""), name, begin, end, score);
@@ -2647,7 +2633,7 @@ print_phone_segment(int model_index,
 
 void
 build_phone_segment(int model_index,
-                    int begin, int end, int score, va_list ap)
+                    int begin, int end, int score, void *ap)
 {                               /* Not used (!) */
     char *name = model_name[model_index];
     /* char *utt_id = va_arg(ap, char *); */
@@ -2661,13 +2647,13 @@ build_phone_segment(int model_index,
 }
 
 void
-cnt_state_segments(int id, int begin, int end, int score, va_list ap)
+cnt_state_segments(int id, int begin, int end, int score, void *ap)
 {
     ++n_state_segments;
 }
 
 void
-cnt_word_segments(int id, int begin, int end, int score, va_list ap)
+cnt_word_segments(int id, int begin, int end, int score, void *ap)
 {
     best_word_string_len += (strlen(WordDict->dict_list[id]->word) + 1);
 
@@ -2676,12 +2662,12 @@ cnt_word_segments(int id, int begin, int end, int score, va_list ap)
 
 void
 print_state_segment(int state_id,
-                    int begin, int end, int score, va_list ap)
+                    int begin, int end, int score, void *ap)
 {
     char state_name[64];
     int mid;
     int state;
-    char *utt_id = va_arg(ap, char *);
+    char *utt_id = ap;
 
     mid = state_id / NODE_CNT;
     state = state_id % NODE_CNT;
@@ -3056,15 +3042,19 @@ time_align_word_sequence(char const *Utt,
     return 0;
 }
 
+struct seg_ptrs {
+    unsigned short *arr;
+    int *idx;
+};
+
 void
-next_state_segment(int state_id, int begin, int end, int score, va_list ap)
+next_state_segment(int state_id, int begin, int end, int score, void *ap)
 {
     int mid;
     int ci_id;
     int state;
     unsigned short frame_seg;
-    unsigned short *seg_arr = va_arg(ap, unsigned short *);
-    int *seg_idx = va_arg(ap, int *);
+    struct seg_ptrs *seg = ap;
 
     mid = state_id / NODE_CNT;
 
@@ -3079,25 +3069,25 @@ next_state_segment(int state_id, int begin, int end, int score, va_list ap)
     /* the high-bit of the short indicates the start frame of a phone
      * not sure where exactly this is used, but the old seg format
      * included it */
-    if ((*seg_idx == 0) || ((state == 0)
-                            && ((seg_arr[*seg_idx - 1] & 0x7fff) %
+    if ((*seg->idx == 0) || ((state == 0)
+                            && ((seg->arr[*seg->idx - 1] & 0x7fff) %
                                 (NODE_CNT - 1) != 0))) {
         frame_seg |= 0x8000;
     }
 
-    seg_arr[*seg_idx] = frame_seg;
-    (*seg_idx)++;
+    seg->arr[*seg->idx] = frame_seg;
+    (*seg->idx)++;
 }
 
 int
 time_align_seg_output(unsigned short **seg, int *seg_cnt)
 {
     int last_bp;
-    static unsigned short *seg_arr = NULL;
+    static struct seg_ptrs segptrs;
     static int seg_idx;
 
-    if (seg_arr)
-        free(seg_arr);
+    if (segptrs.arr)
+        free(segptrs.arr);
 
     last_bp = all_models[saved_final_model].sbp[NODE_CNT - 1];
 
@@ -3107,24 +3097,25 @@ time_align_seg_output(unsigned short **seg, int *seg_cnt)
 
     if (n_state_segments == 0) {
         traverse_back_trace(state_bp_table,
-                            last_bp, NULL, cnt_state_segments);
+                            last_bp, NULL, cnt_state_segments, NULL);
     }
 
-    seg_arr =
+    segptrs.arr =
         (unsigned short *) calloc(n_state_segments,
                                   sizeof(unsigned short));
 
-    if (seg_arr == NULL) {
+    if (segptrs.arr == NULL) {
         return NO_MEMORY;
     }
 
     seg_idx = 0;
+    segptrs.idx = &seg_idx;
 
     traverse_back_trace(state_bp_table,
                         last_bp,
-                        NULL, next_state_segment, seg_arr, &seg_idx);
+                        NULL, next_state_segment, &segptrs);
 
-    *seg = seg_arr;
+    *seg = segptrs.arr;
     *seg_cnt = n_state_segments;
 
     return 0;
@@ -3146,7 +3137,7 @@ time_align_best_word_string(void)
 
     if (n_word_segments == 0) {
         traverse_back_trace(word_bp_table,
-                            last_bp, NULL, cnt_word_segments);
+                            last_bp, NULL, cnt_word_segments, NULL);
     }
 
     best_word_string = calloc(best_word_string_len + 1, sizeof(char));
@@ -3161,20 +3152,25 @@ time_align_best_word_string(void)
     return best_word_string;
 }
 
+struct seg_info {
+    seg_kind_t kind;
+    SEGMENT_T *seg;
+    int *idx;
+};
+
 void
-append_segment(int id, int begin, int end, int score, va_list ap)
+append_segment(int id, int begin, int end, int score, void *ap)
 {
-    seg_kind_t kind = va_arg(ap, seg_kind_t);
-    SEGMENT_T *seg = va_arg(ap, SEGMENT_T *);
-    int *seg_idx = va_arg(ap, int *);
-    SEGMENT_T *this_seg = &seg[*seg_idx];
+    struct seg_info *seg = ap;
+    SEGMENT_T *this_seg;
     int mid, ci_id, state;
 
+    this_seg = &seg->seg[*seg->idx];
     this_seg->start = begin;
     this_seg->end = end;
     this_seg->score = score;
 
-    switch (kind) {
+    switch (seg->kind) {
     case STATE_SEGMENTATION:
 
         mid = id / NODE_CNT;
@@ -3197,10 +3193,10 @@ append_segment(int id, int begin, int end, int score, va_list ap)
         break;
 
     default:
-        E_FATAL("unhandled segment kind %d\n", kind);
+        E_FATAL("unhandled segment kind %d\n", seg->kind);
     }
 
-    (*seg_idx)++;
+    (*seg->idx)++;
 }
 
 SEGMENT_T *
@@ -3225,8 +3221,8 @@ time_align_get_segmentation(seg_kind_t kind, int *seg_cnt)
 #if 0
     int last_bp;
     int i;
-    SEGMENT_T *out_seg;
-    int out_seg_idx;
+    static struct seg_ptrs out;
+    static int seg_idx;
 
     last_bp = all_models[saved_final_model].sbp[NODE_CNT - 1];
     if (last_bp == NO_BP)
@@ -3234,17 +3230,17 @@ time_align_get_segmentation(seg_kind_t kind, int *seg_cnt)
 
     if (n_state_segments == 0) {
         traverse_back_trace(state_bp_table,
-                            last_bp, NULL, cnt_state_segments);
+                            last_bp, NULL, cnt_state_segments, NULL);
     }
 
-    out_seg = ckd_calloc(n_state_segments, sizeof(SEGMENT_T));
-    out_seg_idx = 0;
+    out.seg = ckd_calloc(n_state_segments, sizeof(SEGMENT_T));
+    out.seg_idx = &seg_idx;
 
     traverse_back_trace(word_bp_table,
                         last_bp,
-                        NULL, append_segment, kind, out_seg, &out_seg_idx);
+                        NULL, append_segment, kind, &out);
 
-    *seg_cnt = out_seg_idx;
-    return out_seg;
+    *seg_cnt = out.seg_idx;
+    return out.seg;
 #endif
 }
