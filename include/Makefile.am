@@ -32,8 +32,6 @@ pkginclude_HEADERS = \
 	s2params.h				\
 	s2types.h				\
 	s3types.h				\
-	scvq.h					\
-	sc_vq_internal.h			\
 	search_const.h				\
 	search.h				\
 	senscr.h				\

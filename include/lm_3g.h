@@ -159,7 +159,7 @@ typedef struct lm_s {
 				   in the LMclass structure, but copied here for speed */
     lw_t lw;          /* language weight */
     lw_t invlw;       /* 1.0/language weight */
-    lw_t uw;          /* unigram weight */
+    double uw;          /* unigram weight */
     int32 log_wip;      /* word insertion penalty */
     
     tginfo_t **tginfo;	/* tginfo[lw2] is head of linked list of trigram information for
