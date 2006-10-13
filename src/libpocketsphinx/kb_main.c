@@ -711,7 +711,7 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
         s2_semi_mgau_load_kdtree(semi_mgau,
                                  kdtree_file_name, kdtree_maxdepth,
                                  kdtree_maxbbi);
-    semi_mgau->dcep80msWeight = dcep80msWeight;
+    semi_mgau->dcep80msWeight = FLOAT2MFCC(dcep80msWeight);
     semi_mgau->ds_ratio = scvqDSRatio;
     searchSetScVqTopN(scVqTopN);
     remap_mdef(smds, mdef);
