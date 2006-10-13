@@ -1702,7 +1702,9 @@ uttproc_parse_ctlfile_entry(char *line,
 {
     int32 k;
 
-    *sf = *ef = -1;             /* Default; process entire file */
+    /* Default; process entire file */
+    *sf = 0;
+    *ef = -1;
 
     if ((k = sscanf(line, "%s %d %d %s", filename, sf, ef, idspec)) <= 0)
         return -1;
