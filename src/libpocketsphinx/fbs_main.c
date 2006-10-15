@@ -863,7 +863,7 @@ init_feat(void)
         E_INFO("Live mode; CMN set to CMN_PRIOR\n");
     }
 
-    fcb = feat_init("s2_4x", norm, 0, agc, 1);
+    fcb = feat_init("s2_4x", norm, 0, agc, 1, 13);
 
     if (agcNoise || agcMax) {
         agc_set_threshold(fcb->agc_struct, agcThresh);
