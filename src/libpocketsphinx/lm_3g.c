@@ -1761,8 +1761,8 @@ lm_set_param(lm_t * model, double lw, double uw,
     int32 i;
     int32 tmp1, tmp2;
     int32 logUW, logOneMinusUW, logUniform;
-    int16 *at = Addition_Table;
-    int32 ts = Table_Size;
+    int16 *at = fe_logadd_table;
+    int32 ts = fe_logadd_table_size;
 
     model->lw = FLOAT2LW(lw);
     model->invlw = FLOAT2LW(1.0 / lw);

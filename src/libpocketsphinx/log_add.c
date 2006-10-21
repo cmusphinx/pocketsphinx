@@ -64,7 +64,7 @@
  * (Although logically defined as a 2-d array, logadd_tbl is flattened out
  * below.)
  */
-unsigned char logadd_tbl[] = {
+const unsigned char logadd_tbl[] = {
     0,
     0,
     0,

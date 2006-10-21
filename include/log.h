@@ -47,32 +47,16 @@
 
 #include <math.h>
 
-extern int16 Addition_Table[];
-extern int32 Table_Size;
+/* Pull in the definitions from sphinxbase and redefine them for convenience here */
+#include <fixpoint.h>
 
-#define BASE		1.0001
-#define LOG_BASE	9.9995e-5
-#define MIN_LOG		-690810000
+#define BASE		FE_BASE
+#define LOG_BASE	FE_LOG_BASE
+#define MIN_LOG		FE_MIN_LOG
 #define MIN_DOUBLE	1e-300
-/*
- * Note that we are always dealing with values between 0.0 and 1.0 so the
- * log(x) is < 0.0 so the rounding uses -0.5 instead of +0.5
- */
-#define LOG(x)	((x == 0.0) ? MIN_LOG :					\
-			      ((x > 1.0) ?				\
-				 (int32) ((log (x) / LOG_BASE) + 0.5) :	\
-				 (int32) ((log (x) / LOG_BASE) - 0.5)))
-
-#define EXP(x)	(exp ((double) (x) * LOG_BASE))
-
-/* tkharris++ for additional overflow check */
-#define ADD(x,y) ((x) > (y) ? \
-                  (((y) <= MIN_LOG ||(x)-(y)>=Table_Size ||(x) - +(y)<0) ? \
-		           (x) : Addition_Table[(x) - (y)] + (x))	\
-		   : \
-		  (((x) <= MIN_LOG ||(y)-(x)>=Table_Size ||(y) - +(x)<0) ? \
-		          (y) : Addition_Table[(y) - (x)] + (y)))
-
+#define LOG(x) FE_LOG(x)
+#define EXP(x)	(exp ((double) (x) * FE_LOG_BASE))
+#define ADD(x,y) FE_LOG_ADD(x,y)
 #define FAST_ADD(res, x, y, table, table_size)		\
 {							\
 	int32 _d = (x) - (y);				\

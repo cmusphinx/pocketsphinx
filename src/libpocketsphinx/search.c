@@ -4702,8 +4702,8 @@ compute_phone_perplexity(void)
     double pp, sumpp;           /* phone probs */
     double logpp;               /* log phone probs */
     double perp;                /* Perplexity */
-    register int32 ts = Table_Size;
-    register int16 *at = Addition_Table;
+    register int32 ts = fe_logadd_table_size;
+    register int16 *at = fe_logadd_table;
 
     nf = searchFrame();
 
