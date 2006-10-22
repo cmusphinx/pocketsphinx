@@ -480,92 +480,6 @@ typedef struct lastphn_cand_s {
 static lastphn_cand_t *lastphn_cand;
 static int32 n_lastphn_cand;
 
-#if 0
-/*
- * Evaluate arcprobs of all active HMMs (actually sseqids) in current frame.
- */
-void
-evaluateModels(int32 fwd)
-{                               /* True for the forward direction */
-    long i, j, k;
-    int32 *ap;
-    int32 *tp;
-    int32 *dist, tmp, *apl;
-
-    for (j = n_phone_active, apl = phone_active; j > 0; --j, apl++) {
-        i = *apl;
-
-        ap = smds[i].arcProb;
-        tp = smds[i].tp;
-        dist = smds[i].dist;
-
-        tmp = senone_scores[dist[0]];
-        ap[0] = tp[0] + tmp;
-        ap[1] = tp[1] + tmp;
-        ap[2] = tp[2] + tmp;
-        tmp = senone_scores[dist[3]];
-        ap[3] = tp[3] + tmp;
-        ap[4] = tp[4] + tmp;
-        ap[5] = tp[5] + tmp;
-        tmp = senone_scores[dist[6]];
-        ap[6] = tp[6] + tmp;
-        ap[7] = tp[7] + tmp;
-        ap[8] = tp[8] + tmp;
-        tmp = senone_scores[dist[9]];
-        ap[9] = tp[9] + tmp;
-        ap[10] = tp[10] + tmp;
-        ap[11] = tp[11] + tmp;
-        tmp = senone_scores[dist[12]];
-        ap[12] = tp[12] + tmp;
-        ap[13] = tp[13] + tmp;
-    }
-    k = n_phone_active;
-
-#if SEARCH_PROFILE
-    n_phone_eval += k;
-#endif
-
-#if SEARCH_TRACE_CHAN
-    E_INFO("[%4d] %8d models evaluated\n", CurrentFrame, k);
-#endif
-}
-
-/*
- * Evaluate arc-probs of a single hmm (actually sseqid).
- */
-void
-eval_hmm_arcprob(int32 ssid)
-{
-    int32 *ap;
-    int32 *tp;
-    int32 *dist, tmp;
-
-    ap = smds[ssid].arcProb;
-    tp = smds[ssid].tp;
-    dist = smds[ssid].dist;
-
-    tmp = senone_scores[dist[0]];
-    ap[0] = tp[0] + tmp;
-    ap[1] = tp[1] + tmp;
-    ap[2] = tp[2] + tmp;
-    tmp = senone_scores[dist[3]];
-    ap[3] = tp[3] + tmp;
-    ap[4] = tp[4] + tmp;
-    ap[5] = tp[5] + tmp;
-    tmp = senone_scores[dist[6]];
-    ap[6] = tp[6] + tmp;
-    ap[7] = tp[7] + tmp;
-    ap[8] = tp[8] + tmp;
-    tmp = senone_scores[dist[9]];
-    ap[9] = tp[9] + tmp;
-    ap[10] = tp[10] + tmp;
-    ap[11] = tp[11] + tmp;
-    tmp = senone_scores[dist[12]];
-    ap[12] = tp[12] + tmp;
-    ap[13] = tp[13] + tmp;
-}
-#endif
-
 /* Node Plus Arc (mpx channel) */
 #define NPA(d,s,a)	(s + d->tp[a])
 
@@ -911,6 +825,9 @@ chan_dump(CHAN_T * chan, int32 frame, FILE * fp)
             chan->path[1],
             chan->path[2], chan->path[3], chan->path[4], chan->path[5]);
 }
+#else
+#define root_chan_dump(c,f,p)
+#define chan_dump(c,f,p)
 #endif /* __CHAN_DUMP__ */
 
 
@@ -944,18 +861,14 @@ eval_root_chan(void)
     k = 0;
     for (i = n_root_chan, rhmm = root_chan; i > 0; --i, rhmm++) {
         if (rhmm->active == cf) {
-#if __CHAN_DUMP__
             root_chan_dump(rhmm, cf, stdout);
-#endif
             if (rhmm->mpx) {
                 root_chan_v_mpx_eval(rhmm);
             }
             else {
                 root_chan_v_eval(rhmm);
             }
-#if __CHAN_DUMP__
             root_chan_dump(rhmm, cf, stdout);
-#endif
             if (bestscore < rhmm->bestscore)
                 bestscore = rhmm->bestscore;
 
@@ -991,13 +904,9 @@ eval_nonroot_chan(void)
     for (hmm = *(acl++); i > 0; --i, hmm = *(acl++)) {
 
         assert(hmm->active == cf);
-#if __CHAN_DUMP__
         chan_dump(hmm, cf, stdout);
-#endif
         chan_v_eval(hmm);
-#if __CHAN_DUMP__
         chan_dump(hmm, cf, stdout);
-#endif
         if (bestscore < hmm->bestscore)
             bestscore = hmm->bestscore;
     }
@@ -1035,13 +944,9 @@ eval_word_chan(void)
 
         for (hmm = word_chan[w]; hmm; hmm = hmm->next) {
             assert(hmm->active == cf);
-#if __CHAN_DUMP__
             chan_dump(hmm, cf, stdout);
-#endif
             chan_v_eval(hmm);
-#if __CHAN_DUMP__
             chan_dump(hmm, cf, stdout);
-#endif
 
             if (bestscore < hmm->bestscore)
                 bestscore = hmm->bestscore;
@@ -1060,18 +965,14 @@ eval_word_chan(void)
         if (rhmm->active < cf)
             continue;
 
-#if __CHAN_DUMP__
         root_chan_dump(rhmm, cf, stdout);
-#endif
         if (rhmm->mpx) {
             root_chan_v_mpx_eval(rhmm);
         }
         else {
             root_chan_v_eval(rhmm);
         }
-#if __CHAN_DUMP__
         root_chan_dump(rhmm, cf, stdout);
-#endif
 
         if ((bestscore < rhmm->bestscore) && (w != FinishWordId))
             bestscore = rhmm->bestscore;
