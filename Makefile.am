@@ -1,7 +1,8 @@
 SUBDIRS = src \
 	  model \
 	  include \
-	  scripts
+	  scripts \
+	  test
 
 EXTRA_DIST = autogen.sh \
 	pocketsphinx.dsw \
@@ -13,7 +14,7 @@ EXTRA_DIST = autogen.sh \
 
 check:
 	$(LIBTOOL) --mode=execute src/programs/pocketsphinx_batch \
-		-adcin TRUE -cepext 16k -samprate 16000 \
+		-adcin TRUE -cepext .16k -samprate 16000 \
 		-ctlfn $(top_srcdir)/model/lm/turtle/turtle.ctl \
 		-cepdir $(top_srcdir)/model/lm/turtle \
 		-langwt 6.5 -fwdflatlw 8.5 -bestpathlw 9.5 \
@@ -34,7 +35,7 @@ check:
 
 test-debug:
 	$(LIBTOOL) --mode=execute gdb --args src/programs/pocketsphinx_batch \
-		-adcin TRUE -cepext 16k -samprate 16000 \
+		-adcin TRUE -cepext .16k -samprate 16000 \
 		-ctlfn $(top_srcdir)/model/lm/turtle/turtle.ctl \
 		-ctloffset 0 -ctlcount 100000000 \
 		-cepdir $(top_srcdir)/model/lm/turtle \

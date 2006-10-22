@@ -127,6 +127,10 @@ scripts/Makefile
 scripts/pocketsphinx_test
 scripts/pocketsphinx_swb
 scripts/pocketsphinx_tidigits
+test/Makefile
+test/testfuncs.sh
+test/unit/Makefile
+test/regression/Makefile
 ])
 
 chmod +x scripts/pocketsphinx_test
