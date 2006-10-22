@@ -45,7 +45,7 @@ libpocketsphinx_la_SOURCES = \
 	vector.c				\
 	word_fsg.c
 
-noinst_HEADRS = uttproc.h allphone.h
+noinst_HEADERS = uttproc.h allphone.h
 
 INCLUDES = -I$(top_srcdir)/include \
            -I$(top_builddir)/include 
