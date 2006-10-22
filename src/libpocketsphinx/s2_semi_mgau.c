@@ -102,25 +102,30 @@
  *	Installed some efficiency improvements to acoustic scoring
  */
 
+/* System headers */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
+
+/* SphinxBase headers */
 #include <sphinx_config.h>
 #include <cmd_ln.h>
+#include <fixpoint.h>
+#include <ckd_alloc.h>
+#include <bio.h>
+#include <err.h>
 
+/* Local headers */
 #include "s3types.h"
 #include "log.h"
 #include "s2_semi_mgau.h"
-#include "err.h"
 #include "kdtree.h"
-#include "ckd_alloc.h"
-#include "bio.h"
-#include "fixpoint.h"
 #include "kb.h"
 #include "s2io.h"
+#include "senscr.h"
 
 #define MGAU_MIXW_VERSION	"1.0"   /* Sphinx-3 file format version for mixw */
 #define MGAU_PARAM_VERSION	"1.0"   /* Sphinx-3 file format version for mean/var */
@@ -168,30 +173,22 @@ extern const unsigned char logadd_tbl[];
 #endif
 
 /*
- * Array (list) of active senones in the current frame, and the active list
- * size.  Array allocated and maintained by the search module.
- * (Extern is ugly, but there it is, for now (rkm@cs).)
- */
-extern int32 *senone_active;
-extern int32 n_senone_active;
-
-/*
  * Compute senone scores.
  */
-static int32 SCVQComputeScores(s2_semi_mgau_t * s, int32 *senscr, int32 compallsen);
+static int32 SCVQComputeScores(s2_semi_mgau_t * s, int32 compallsen);
 
 /*
  * Optimization for various topN cases, PDF-size(#bits) cases of
  * SCVQCoomputeScores() and SCVQCoomputeScores_all().
  */
-static int32 get_scores4_8b(s2_semi_mgau_t * s, int32 *senscr);
-static int32 get_scores2_8b(s2_semi_mgau_t * s, int32 *senscr);
-static int32 get_scores1_8b(s2_semi_mgau_t * s, int32 *senscr);
-static int32 get_scores_8b(s2_semi_mgau_t * s, int32 *senscr);
-static int32 get_scores4_8b_all(s2_semi_mgau_t * s, int32 *senscr);
-static int32 get_scores2_8b_all(s2_semi_mgau_t * s, int32 *senscr);
-static int32 get_scores1_8b_all(s2_semi_mgau_t * s, int32 *senscr);
-static int32 get_scores_8b_all(s2_semi_mgau_t * s, int32 *senscr);
+static int32 get_scores4_8b(s2_semi_mgau_t * s);
+static int32 get_scores2_8b(s2_semi_mgau_t * s);
+static int32 get_scores1_8b(s2_semi_mgau_t * s);
+static int32 get_scores_8b(s2_semi_mgau_t * s);
+static int32 get_scores4_8b_all(s2_semi_mgau_t * s);
+static int32 get_scores2_8b_all(s2_semi_mgau_t * s);
+static int32 get_scores1_8b_all(s2_semi_mgau_t * s);
+static int32 get_scores_8b_all(s2_semi_mgau_t * s);
 
 static void
 cepDist0(s2_semi_mgau_t * s, int32 frame, mfcc_t * z)
@@ -673,7 +670,6 @@ powDist(s2_semi_mgau_t * s, int32 frame, mfcc_t * pz)
 int32
 s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
 			mfcc_t ** feat, int32 frame,
-			int32 *senscr,
 			int32 compallsen)
 {
     int i, j;
@@ -705,56 +701,56 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
         }
 
 
-    return SCVQComputeScores(s, senscr, compallsen);
+    return SCVQComputeScores(s, compallsen);
 }
 
 
 static int32
-SCVQComputeScores(s2_semi_mgau_t * s, int32 *senscr, int32 compallsen)
+SCVQComputeScores(s2_semi_mgau_t * s, int32 compallsen)
 {
     if (compallsen) {
 	switch (s->topN) {
 	case 4:
-	    return get_scores4_8b_all(s, senscr);
+	    return get_scores4_8b_all(s);
 	    break;
 	case 2:
-	    return get_scores2_8b_all(s, senscr);
+	    return get_scores2_8b_all(s);
 	    break;
 	case 1:
-	    return get_scores1_8b_all(s, senscr);
+	    return get_scores1_8b_all(s);
 	    break;
 	default:
-	    return get_scores_8b_all(s, senscr);
+	    return get_scores_8b_all(s);
 	    break;
 	}
     }
     else {
 	switch (s->topN) {
 	case 4:
-	    return get_scores4_8b(s, senscr);
+	    return get_scores4_8b(s);
 	    break;
 	case 2:
-	    return get_scores2_8b(s, senscr);
+	    return get_scores2_8b(s);
 	    break;
 	case 1:
-	    return get_scores1_8b(s, senscr);
+	    return get_scores1_8b(s);
 	    break;
 	default:
-	    return get_scores_8b(s, senscr);
+	    return get_scores_8b(s);
 	    break;
 	}
     }
 }
 
 static int32
-get_scores_8b(s2_semi_mgau_t * s, int32 *senscr)
+get_scores_8b(s2_semi_mgau_t * s)
 {
     E_FATAL("get_scores_8b() not implemented\n");
     return 0;
 }
 
 static int32
-get_scores_8b_all(s2_semi_mgau_t * s, int32 *senscr)
+get_scores_8b_all(s2_semi_mgau_t * s)
 {
     E_FATAL("get_scores_8b_all() not implemented\n");
     return 0;
@@ -767,14 +763,14 @@ get_scores_8b_all(s2_semi_mgau_t * s, int32 *senscr)
  * Also, uses true 8-bit probs, so addition in logspace is an easy lookup.
  */
 static int32
-get_scores4_8b(s2_semi_mgau_t * s, int32 *senscr)
+get_scores4_8b(s2_semi_mgau_t * s)
 {
     register int32 j, n, k;
     int32 tmp1, tmp2;
     unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
     int32 w0, w1, w2, w3;       /* weights */
 
-    memset(senscr, 0, s->CdWdPDFMod * sizeof(*senscr));
+    memset(senone_scores, 0, s->CdWdPDFMod * sizeof(*senone_scores));
     for (j = 0; j < S2_NUM_FEATURES; j++) {
         /* ptrs to senone prob ids */
         pid_cw0 = s->OPDF_8B[j][s->f[j][0].codeword];
@@ -814,14 +810,14 @@ get_scores4_8b(s2_semi_mgau_t * s, int32 *senscr)
             tmp2 = pid_cw3[n] + w3;
             tmp1 = LOG_ADD(tmp1, tmp2);
 
-            senscr[n] -= tmp1 << 10;
+            senone_scores[n] -= tmp1 << 10;
         }
     }
     return 0;
 }
 
 static int32
-get_scores4_8b_all(s2_semi_mgau_t * s, int32 *senscr)
+get_scores4_8b_all(s2_semi_mgau_t * s)
 {
     register int32 j, k;
     int32 tmp1, tmp2;
@@ -829,7 +825,7 @@ get_scores4_8b_all(s2_semi_mgau_t * s, int32 *senscr)
     int32 w0, w1, w2, w3;       /* weights */
 
     n_senone_active = s->CdWdPDFMod;
-    memset(senscr, 0, s->CdWdPDFMod * sizeof(*senscr));
+    memset(senone_scores, 0, s->CdWdPDFMod * sizeof(*senone_scores));
     for (j = 0; j < S2_NUM_FEATURES; j++) {
         /* ptrs to senone prob ids */
         pid_cw0 = s->OPDF_8B[j][s->f[j][0].codeword];
@@ -867,14 +863,14 @@ get_scores4_8b_all(s2_semi_mgau_t * s, int32 *senscr)
             tmp2 = pid_cw3[k] + w3;
             tmp1 = LOG_ADD(tmp1, tmp2);
 
-            senscr[k] -= tmp1 << 10;
+            senone_scores[k] -= tmp1 << 10;
         }
     }
     return 0;
 }
 
 static int32
-get_scores2_8b(s2_semi_mgau_t * s, int32 *senscr)
+get_scores2_8b(s2_semi_mgau_t * s)
 {
     register int32 n, k;
     int32 tmp1, tmp2;
@@ -882,7 +878,7 @@ get_scores2_8b(s2_semi_mgau_t * s, int32 *senscr)
         *pid_cw02, *pid_cw12, *pid_cw03, *pid_cw13;
     int32 w00, w10, w01, w11, w02, w12, w03, w13;
 
-    memset(senscr, 0, s->CdWdPDFMod * sizeof(*senscr));
+    memset(senone_scores, 0, s->CdWdPDFMod * sizeof(*senone_scores));
     /* ptrs to senone prob ids */
     pid_cw00 = s->OPDF_8B[0][s->f[0][0].codeword];
     pid_cw10 = s->OPDF_8B[0][s->f[0][1].codeword];
@@ -937,25 +933,25 @@ get_scores2_8b(s2_semi_mgau_t * s, int32 *senscr)
         tmp1 = pid_cw00[n] + w00;
         tmp2 = pid_cw10[n] + w10;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senscr[n] -= tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
         tmp1 = pid_cw01[n] + w01;
         tmp2 = pid_cw11[n] + w11;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senscr[n] -= tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
         tmp1 = pid_cw02[n] + w02;
         tmp2 = pid_cw12[n] + w12;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senscr[n] -= tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
         tmp1 = pid_cw03[n] + w03;
         tmp2 = pid_cw13[n] + w13;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senscr[n] -= tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
     }
     return 0;
 }
 
 static int32
-get_scores2_8b_all(s2_semi_mgau_t * s, int32 *senscr)
+get_scores2_8b_all(s2_semi_mgau_t * s)
 {
     register int32 n;
     int32 tmp1, tmp2;
@@ -964,7 +960,7 @@ get_scores2_8b_all(s2_semi_mgau_t * s, int32 *senscr)
     int32 w00, w10, w01, w11, w02, w12, w03, w13;
 
     n_senone_active = s->CdWdPDFMod;
-    memset(senscr, 0, s->CdWdPDFMod * sizeof(*senscr));
+    memset(senone_scores, 0, s->CdWdPDFMod * sizeof(*senone_scores));
     /* ptrs to senone prob ids */
     pid_cw00 = s->OPDF_8B[0][s->f[0][0].codeword];
     pid_cw10 = s->OPDF_8B[0][s->f[0][1].codeword];
@@ -1017,25 +1013,25 @@ get_scores2_8b_all(s2_semi_mgau_t * s, int32 *senscr)
         tmp1 = pid_cw00[n] + w00;
         tmp2 = pid_cw10[n] + w10;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senscr[n] -= tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
         tmp1 = pid_cw01[n] + w01;
         tmp2 = pid_cw11[n] + w11;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senscr[n] -= tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
         tmp1 = pid_cw02[n] + w02;
         tmp2 = pid_cw12[n] + w12;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senscr[n] -= tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
         tmp1 = pid_cw03[n] + w03;
         tmp2 = pid_cw13[n] + w13;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senscr[n] -= tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
     }
     return 0;
 }
 
 static int32
-get_scores1_8b(s2_semi_mgau_t * s, int32 *senscr)
+get_scores1_8b(s2_semi_mgau_t * s)
 {
     int32 j, k;
     unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
@@ -1050,17 +1046,18 @@ get_scores1_8b(s2_semi_mgau_t * s, int32 *senscr)
         j = senone_active[k];
 
         /* ** HACK!! ** <<10 hardwired!! */
-        senscr[j] =
+        senone_scores[j] =
             -((pid_cw0[j] + pid_cw1[j] + pid_cw2[j] + pid_cw3[j]) << 10);
     }
     return 0;
 }
 
 static int32
-get_scores1_8b_all(s2_semi_mgau_t * s, int32 *senscr)
+get_scores1_8b_all(s2_semi_mgau_t * s)
 {
     int32 j;
     unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
+    int *senscr = senone_scores;
 
     n_senone_active = s->CdWdPDFMod;
 

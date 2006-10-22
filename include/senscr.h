@@ -42,11 +42,10 @@
 #ifndef __SENSCR_H__
 #define __SENSCR_H__
 
+#include <fixpoint.h>
 
 #include "s2types.h"
-#include "fixpoint.h"
 #include "msd.h"
-
 
 /* Bit-vector operations for maintaining senone_active_vec */
 #define BITVEC_SEN_ACTIVE
@@ -64,6 +63,8 @@ typedef uint32 bitvec_t;
 typedef uint8 bitvec_t;
 #endif
 
+/* Array of senone scores for current frame */
+extern int32 *senone_scores;
 /*
  * Array (list) of active senones in the current frame, and the active list
  * size.  Array allocated and maintained by the search module.
@@ -73,8 +74,6 @@ extern bitvec_t *senone_active_vec;	/* Active/inactive bitvec for each senone */
 extern int32 *senone_active;		/* List of active senones */
 extern int32 n_senone_active;		/* No. of entries in above active list */
 
-/* Senone scores */
-extern int32 *distScores;
 
 /*
  * Compute senone scores for the given feature data.
@@ -84,7 +83,7 @@ extern int32 *distScores;
  * 
  * Return value: the best senone score overall.
  */
-int32 senscr_all (int32 *senscr, mfcc_t **feat);
+int32 senscr_all(mfcc_t **feat);
 
 /*
  * Like senscr_all above, except restricted to the currently active senones.
@@ -93,13 +92,13 @@ int32 senscr_all (int32 *senscr, mfcc_t **feat);
  * 
  * Return value: the best senone score overall (among the active ones).
  */
-int32 senscr_active (int32 *senscr, mfcc_t **feat);
+int32 senscr_active(mfcc_t **feat);
 
 
 /*
  * Clear the global senone_active_flag array.
  */
-void sen_active_clear ( void );
+void sen_active_clear(void);
 
 
 /*
@@ -115,7 +114,7 @@ void hmm_sen_active(CHAN_T *hmm);
  * (global) senone_active_flag array.  Also update n_senone_active.
  * Return value: number of active senones in the list built.
  */
-int32 sen_active_flags2list ( void );
+int32 sen_active_flags2list(void);
 
 
 #endif

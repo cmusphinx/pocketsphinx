@@ -209,15 +209,19 @@
  * not <s> (well, there's no transition to <s> in the LM).
  */
 
+/* System includes. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 
-#include "ckd_alloc.h"
-#include "err.h"
-#include "cmd_ln.h"
+/* SphinxBase includes. */
+#include <ckd_alloc.h>
+#include <err.h>
+#include <cmd_ln.h>
 
+/* Local includes. */
 #include "s2types.h"
 #include "basic_types.h"
 #include "linklist.h"
@@ -232,7 +236,6 @@
 #include "kb.h"
 #include "log.h"
 #include "c.h"
-#include "assert.h"
 #include "s2_semi_mgau.h"
 #include "senscr.h"
 #include "fbs.h"
@@ -371,11 +374,6 @@ static int32 scVqTopN = 4;
 static int32 CurrentFrame;
 static int32 LastFrame;
 
-
-int32 *distScores;       /* SC scores for current frame being searched */
-int32 *senone_active;           /* list of active senones in current frame */
-int32 n_senone_active;
-bitvec_t *senone_active_vec;
 static int32 n_senone_active_utt;
 
 static BPTBL_T *BPTable;        /* Forward pass lattice */
@@ -501,23 +499,23 @@ evaluateModels(int32 fwd)
         tp = smds[i].tp;
         dist = smds[i].dist;
 
-        tmp = distScores[dist[0]];
+        tmp = senone_scores[dist[0]];
         ap[0] = tp[0] + tmp;
         ap[1] = tp[1] + tmp;
         ap[2] = tp[2] + tmp;
-        tmp = distScores[dist[3]];
+        tmp = senone_scores[dist[3]];
         ap[3] = tp[3] + tmp;
         ap[4] = tp[4] + tmp;
         ap[5] = tp[5] + tmp;
-        tmp = distScores[dist[6]];
+        tmp = senone_scores[dist[6]];
         ap[6] = tp[6] + tmp;
         ap[7] = tp[7] + tmp;
         ap[8] = tp[8] + tmp;
-        tmp = distScores[dist[9]];
+        tmp = senone_scores[dist[9]];
         ap[9] = tp[9] + tmp;
         ap[10] = tp[10] + tmp;
         ap[11] = tp[11] + tmp;
-        tmp = distScores[dist[12]];
+        tmp = senone_scores[dist[12]];
         ap[12] = tp[12] + tmp;
         ap[13] = tp[13] + tmp;
     }
@@ -546,23 +544,23 @@ eval_hmm_arcprob(int32 ssid)
     tp = smds[ssid].tp;
     dist = smds[ssid].dist;
 
-    tmp = distScores[dist[0]];
+    tmp = senone_scores[dist[0]];
     ap[0] = tp[0] + tmp;
     ap[1] = tp[1] + tmp;
     ap[2] = tp[2] + tmp;
-    tmp = distScores[dist[3]];
+    tmp = senone_scores[dist[3]];
     ap[3] = tp[3] + tmp;
     ap[4] = tp[4] + tmp;
     ap[5] = tp[5] + tmp;
-    tmp = distScores[dist[6]];
+    tmp = senone_scores[dist[6]];
     ap[6] = tp[6] + tmp;
     ap[7] = tp[7] + tmp;
     ap[8] = tp[8] + tmp;
-    tmp = distScores[dist[9]];
+    tmp = senone_scores[dist[9]];
     ap[9] = tp[9] + tmp;
     ap[10] = tp[10] + tmp;
     ap[11] = tp[11] + tmp;
-    tmp = distScores[dist[12]];
+    tmp = senone_scores[dist[12]];
     ap[12] = tp[12] + tmp;
     ap[13] = tp[13] + tmp;
 }
@@ -580,11 +578,11 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
 
     s4 = chan->score[4];
     smd4 = &smds[chan->sseqid[4]];
-    s4 += distScores[smd4->dist[12]];
+    s4 += senone_scores[smd4->dist[12]];
 
     s3 = chan->score[3];
     smd3 = &smds[chan->sseqid[3]];
-    s3 += distScores[smd3->dist[9]];
+    s3 += senone_scores[smd3->dist[9]];
 
     t1 = NPA(smd4, s4, 13);
     t2 = NPA(smd3, s3, 11);
@@ -601,7 +599,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
 
     s2 = chan->score[2];
     smd2 = &smds[chan->sseqid[2]];
-    s2 += distScores[smd2->dist[6]];
+    s2 += senone_scores[smd2->dist[6]];
 
     t0 = NPA(smd4, s4, 12);
     t1 = NPA(smd3, s3, 10);
@@ -633,7 +631,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
 
     s1 = chan->score[1];
     smd1 = &smds[chan->sseqid[1]];
-    s1 += distScores[smd1->dist[3]];
+    s1 += senone_scores[smd1->dist[3]];
 
     t0 = NPA(smd3, s3, 9);
     t1 = NPA(smd2, s2, 7);
@@ -665,7 +663,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
 
     s0 = chan->score[0];
     smd0 = &smds[chan->sseqid[0]];
-    s0 += distScores[smd0->dist[0]];
+    s0 += senone_scores[smd0->dist[0]];
 
     t0 = NPA(smd2, s2, 6);
     t1 = NPA(smd1, s1, 4);
@@ -722,9 +720,9 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0;	\
 						\
     s4 = chan->score[4];			\
-    s4 += distScores[smd->dist[12]];		\
+    s4 += senone_scores[smd->dist[12]];		\
     s3 = chan->score[3];			\
-    s3 += distScores[smd->dist[9]];		\
+    s3 += senone_scores[smd->dist[9]];		\
     						\
     t1 = NPA(smd,s4,13);			\
     t2 = NPA(smd,s3,11);			\
@@ -739,7 +737,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     bestScore = s5;				\
     						\
     s2 = chan->score[2];			\
-    s2 += distScores[smd->dist[6]];		\
+    s2 += senone_scores[smd->dist[6]];		\
     						\
     t0 = NPA(smd,s4,12);			\
     t1 = NPA(smd,s3,10);			\
@@ -763,7 +761,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->score[4] = s4;			\
     						\
     s1 = chan->score[1];			\
-    s1 += distScores[smd->dist[3]];		\
+    s1 += senone_scores[smd->dist[3]];		\
     						\
     t0 = NPA(smd,s3,9);				\
     t1 = NPA(smd,s2,7);				\
@@ -787,7 +785,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->score[3] = s3;			\
     						\
     s0 = chan->score[0];			\
-    s0 += distScores[smd->dist[0]];		\
+    s0 += senone_scores[smd->dist[0]];		\
     						\
     t0 = NPA(smd,s2,6);				\
     t1 = NPA(smd,s1,4);				\
@@ -829,6 +827,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
 }						\
 
 
+#if __CHAN_DUMP__
 static void
 root_chan_dump(ROOT_CHAN_T * chan, int32 frame, FILE * fp)
 {
@@ -846,10 +845,10 @@ root_chan_dump(ROOT_CHAN_T * chan, int32 frame, FILE * fp)
                 smd1->dist[3],
                 smd2->dist[6], smd3->dist[9], smd4->dist[12]);
         fprintf(fp, "\tSENSCR %11d %11d %11d %11d %11d\n",
-                distScores[smd0->dist[0]],
-                distScores[smd1->dist[3]],
-                distScores[smd2->dist[6]],
-                distScores[smd3->dist[9]], distScores[smd4->dist[12]]);
+                senone_scores[smd0->dist[0]],
+                senone_scores[smd1->dist[3]],
+                senone_scores[smd2->dist[6]],
+                senone_scores[smd3->dist[9]], senone_scores[smd4->dist[12]]);
         fprintf(fp, "\tSCORES %11d %11d %11d %11d %11d %11d\n",
                 chan->score[0],
                 chan->score[1],
@@ -869,10 +868,10 @@ root_chan_dump(ROOT_CHAN_T * chan, int32 frame, FILE * fp)
                 smd0->dist[3],
                 smd0->dist[6], smd0->dist[9], smd0->dist[12]);
         fprintf(fp, "\tSENSCR %11d %11d %11d %11d %11d\n",
-                distScores[smd0->dist[0]],
-                distScores[smd0->dist[3]],
-                distScores[smd0->dist[6]],
-                distScores[smd0->dist[9]], distScores[smd0->dist[12]]);
+                senone_scores[smd0->dist[0]],
+                senone_scores[smd0->dist[3]],
+                senone_scores[smd0->dist[6]],
+                senone_scores[smd0->dist[9]], senone_scores[smd0->dist[12]]);
         fprintf(fp, "\tSCORES %11d %11d %11d %11d %11d %11d\n",
                 chan->score[0],
                 chan->score[1],
@@ -898,10 +897,10 @@ chan_dump(CHAN_T * chan, int32 frame, FILE * fp)
             smd->dist[0],
             smd->dist[3], smd->dist[6], smd->dist[9], smd->dist[12]);
     fprintf(fp, "\tSENSCR %11d %11d %11d %11d %11d\n",
-            distScores[smd->dist[0]],
-            distScores[smd->dist[3]],
-            distScores[smd->dist[6]],
-            distScores[smd->dist[9]], distScores[smd->dist[12]]);
+            senone_scores[smd->dist[0]],
+            senone_scores[smd->dist[3]],
+            senone_scores[smd->dist[6]],
+            senone_scores[smd->dist[9]], senone_scores[smd->dist[12]]);
     fprintf(fp, "\tSCORES %11d %11d %11d %11d %11d %11d\n",
             chan->score[0],
             chan->score[1],
@@ -912,6 +911,7 @@ chan_dump(CHAN_T * chan, int32 frame, FILE * fp)
             chan->path[1],
             chan->path[2], chan->path[3], chan->path[4], chan->path[5]);
 }
+#endif /* __CHAN_DUMP__ */
 
 
 void
@@ -2045,7 +2045,7 @@ search_initialize(void)
 
     sc_scores =
         (int32 **) ckd_calloc_2d(topsen_window, bin_mdef_n_sen(mdef), sizeof(int32));
-    distScores = sc_scores[0];
+    senone_scores = sc_scores[0];
 
     topsen_score = ckd_calloc(MAX_FRAMES, sizeof(int32));
 
@@ -2198,27 +2198,23 @@ compute_sen_active(void)
 void
 search_fwd(mfcc_t **feat)
 {
-    int32 *newscr;
     int32 i, cf;
 
     /* Rotate senone scores arrays by one frame, recycling the oldest one */
-    distScores = sc_scores[0];
+    senone_scores = sc_scores[0];
     for (i = 0; i < topsen_window - 1; i++)
         sc_scores[i] = sc_scores[i + 1];
-    sc_scores[topsen_window - 1] = distScores;
-    newscr = distScores;
+    sc_scores[topsen_window - 1] = senone_scores;
 
     /* Compute senone scores */
     cf = (topsen_window > 1) ? n_topsen_frm : CurrentFrame;
 
     if (!compute_all_senones) {
         compute_sen_active();
-        topsen_score[cf] =
-            senscr_active(newscr, feat);
+        topsen_score[cf] = senscr_active(feat);
     }
     else {
-        topsen_score[cf] =
-            senscr_all(newscr, feat);
+        topsen_score[cf] = senscr_all(feat);
 
         if (cf < MAX_FRAMES) {
             /* Save bestpscr in utt_pscr */
@@ -2236,11 +2232,9 @@ search_fwd(mfcc_t **feat)
          * frames, including the current frame.
          */
         compute_phone_active(topsen_score[cf], topsen_thresh);
-        distScores = sc_scores[0];
+        senone_scores = sc_scores[0];
         n_topsen_frm++;
     }
-    else
-        distScores = newscr;
 
     if ((topsen_window == 1) || (n_topsen_frm >= topsen_window))
         search_one_ply_fwd();
@@ -2533,7 +2527,7 @@ search_finish_fwd(void)
     if ((CurrentFrame > 0) && (topsen_window > 1)) {
         /* Wind up remaining frames */
         for (i = 1; i < topsen_window; i++) {
-            distScores = sc_scores[i];
+            senone_scores = sc_scores[i];
             search_one_ply_fwd();
         }
     }
@@ -4176,7 +4170,7 @@ search_fwdflat_start(void)
     n_senone_active_utt = 0;
 
     compute_all_senones = cmd_ln_boolean("-compallsen");
-    distScores = sc_scores[0];
+    senone_scores = sc_scores[0];
 
     if (!cmd_ln_boolean("-fwdtree")) {
         /* No tree-search run; include all words (upto </s>) in expansion list */
@@ -4203,10 +4197,10 @@ search_fwdflat_frame(mfcc_t **feat)
 
     if (!compute_all_senones) {
         compute_fwdflat_senone_active();
-        senscr_active(distScores, feat);
+        senscr_active(feat);
     }
     else {
-        senscr_all(distScores, feat);
+        senscr_all(feat);
 
         if (CurrentFrame < MAX_FRAMES) {
             /* Save bestpscr in utt_pscr */
@@ -4889,202 +4883,6 @@ search_uttpscr2phlat_print(FILE * outfp)
     return 0;
 }
 
-
-static void
-vithist_dump(FILE * fp, vithist_t ** vithist, int32 * pid, int32 nfr,
-             int32 n_state)
-{
-    int32 i, j;
-
-    for (i = 0; i < nfr; i++) {
-        fprintf(fp, "Frame %4d\n", i);
-        for (j = 0; j < n_state; j++) {
-            fprintf(fp, "\t%3d %4d %10d %3d %d %s\n", j,
-                    vithist[i][j].sf,
-                    vithist[i][j].score,
-                    vithist[i][j].pred,
-                    vithist[i][j].valid, phone_from_id(pid[j]));
-        }
-        fprintf(fp, "\n");
-    }
-    fflush(fp);
-}
-
-
-/*
- * Search a given CI-phone state-graph using utt_pscr scores for the best path.
- * Called with a completely initialized vithist matrix; in particular the start state.
- * (Not the most efficient, but can be used to search arbitrary phone-state graphs!)
- */
-static search_hyp_t *
-search_pscr_path(vithist_t ** vithist,  /* properly initialized */
-                 int32 ** tmat, /* Transition prob matrix [from][to] */
-                 int32 * pid,   /* CI-phoneid[0..n_state] */
-                 int32 n_state, /* #States in graph being searched */
-                 int32 minseg,  /* Min #frames per phone segment */
-                 double tprob,  /* State transition (exit) probability */
-                 int32 final_state)
-{                               /* Nominally, where search should exit */
-    int32 i, j, f, tp, newscore, bestscore, bestp, pred_bestp, nseg, nfrm;
-    search_hyp_t *head, *tmp;
-
-#if 0
-    if (topsen_window <= 1) {
-        E_ERROR("Must use -topsen prediction to use this feature\n");
-        return NULL;
-    }
-#else
-    if (!utt_pscr_valid)
-        return NULL;
-#endif
-
-    /* Strictly, nfrm may be greater than LastFrame, but... */
-    nfrm = LastFrame;
-
-    tp = LOG(tprob);
-
-    /* Search */
-    for (f = 0; f < nfrm; f++) {
-        /* Update path scores for current frame state scores */
-        for (i = 0; i < n_state; i++) {
-            if (vithist[f][i].valid) {
-                vithist[f][i].score += utt_pscr[f][pid[i]];
-
-                /* Propagate to next frame */
-                if (vithist[f][i].sf <= f - minseg) {
-                    for (j = 0; j < n_state; j++) {
-                        if (tmat[i][j] > WORST_SCORE) {
-                            newscore =
-                                vithist[f][i].score + tp + tmat[i][j];
-
-                            if ((!vithist[f + 1][j].valid)
-                                || (vithist[f + 1][j].score < newscore)) {
-                                vithist[f + 1][j].score = newscore;
-                                vithist[f + 1][j].pred = i;
-                                vithist[f + 1][j].sf = f + 1;
-                                vithist[f + 1][j].valid = 1;
-                            }
-                        }
-                    }
-                }
-                if ((!vithist[f + 1][i].valid)
-                    || (vithist[f + 1][i].score <= vithist[f][i].score)) {
-                    vithist[f + 1][i].score = vithist[f][i].score;
-                    vithist[f + 1][i].pred = i;
-                    vithist[f + 1][i].sf = vithist[f][i].sf;
-                    vithist[f + 1][i].valid = 1;
-                }
-            }
-        }
-    }
-
-#if 0
-    vithist_dump(stdout, vithist, pid, nfrm, n_state);
-#endif
-
-    /* Find proper final state to use */
-    if (vithist[nfrm - 1][final_state].pred < 0) {
-        assert(vithist[nfrm - 1][final_state].valid == 0);
-
-        bestscore = (int32) 0x80000000;
-        bestp = -1;
-        for (i = 0; i < n_state; i++) {
-            if (vithist[nfrm - 1][i].valid
-                && (vithist[nfrm - 1][i].score > bestscore)) {
-                bestscore = vithist[nfrm - 1][i].score;
-                bestp = i;
-            }
-        }
-        if (bestp < 0) {
-            E_ERROR("%s: search_pscr_path() failed\n",
-                    uttproc_get_uttid());
-            return NULL;
-        }
-
-        E_ERROR
-            ("%s: search_pscr_path() didn't reach final state %d; using state %d\n",
-             uttproc_get_uttid(), final_state, bestp);
-
-        final_state = bestp;
-    }
-
-    /* Backtrace.  (Hack!! Misuse of search_hyp_t to store phones, rather than words) */
-    head = (search_hyp_t *) listelem_alloc(sizeof(search_hyp_t));
-    head->wid = pid[final_state];
-    head->ef = nfrm - 1;
-    head->next = NULL;
-    head->ascr = vithist[nfrm - 1][final_state].score;  /* Fixed later */
-    nseg = 1;
-
-    bestp = final_state;
-    for (f = nfrm - 2; f >= 0; --f) {
-        pred_bestp = vithist[f + 1][bestp].pred;
-        assert(pred_bestp >= 0);
-        assert(vithist[f][pred_bestp].valid);
-
-        if (pred_bestp != bestp) {
-            head->sf = f + 1;
-            head->ascr -= (vithist[f][pred_bestp].score + tp);
-            head->lscr = tmat[pred_bestp][bestp];
-            head->ascr -= head->lscr;
-            tmp = (search_hyp_t *) listelem_alloc(sizeof(search_hyp_t));
-            tmp->wid = pid[pred_bestp];
-            tmp->ef = f;
-            tmp->next = head;
-            head = tmp;
-            head->ascr = vithist[f][pred_bestp].score;
-            head->lscr = 0;
-
-            nseg++;
-        }
-        bestp = pred_bestp;
-    }
-    head->sf = 0;
-
-    return head;
-}
-
-static void
-print_pscr_path(FILE * fp, search_hyp_t * hyp, char const *caption)
-{
-    search_hyp_t *h;
-    int32 pathascr, pathlscr, nf;
-
-    if (!hyp) {
-        E_ERROR("(%s) (%s) : none\n", caption, uttproc_get_uttid());
-        return;
-    }
-
-    fprintf(fp, "\t%4s %4s %10s %11s %10s %s (%s) (%s)\n",
-            "SFrm", "EFrm", "AScr/Frm", "AScr", "LScr", "Phone",
-            caption, uttproc_get_uttid());
-    fprintf(fp,
-            "\t------------------------------------------------------------\n");
-    fflush(fp);
-
-    pathascr = pathlscr = nf = 0;
-    for (h = hyp; h; h = h->next) {
-        fprintf(fp, "\t%4d %4d %10d %11d %10d %s\n",
-                h->sf, h->ef,
-                ((h->ef - h->sf) >= 0) ? h->ascr / (h->ef - h->sf + 1) : 0,
-                h->ascr, h->lscr, phone_from_id(h->wid));
-        pathascr += h->ascr;
-        pathlscr += h->lscr;
-
-        nf = h->ef;
-
-        fflush(fp);
-    }
-    nf++;
-
-    fprintf(fp,
-            "\t------------------------------------------------------------\n");
-    fprintf(fp, "\t%4d %4d %10d %11d %10d %s(TOTAL)\n", 0, nf - 1,
-            (pathascr + (nf >> 1)) / nf, pathascr, pathlscr,
-            uttproc_get_uttid());
-    fprintf(fp, "\n");
-    fflush(fp);
-}
 
 /*
  * Search bptable for word wid and return its BPTable index.

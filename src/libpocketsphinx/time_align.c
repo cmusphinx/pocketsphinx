@@ -1854,14 +1854,14 @@ evaluate_active_models_internal(int *phone_bnd_models,
             nsbp[state] =
                 new_state_bp(active_model, state, sbp[state], score);
 
-            T44 = T45 = score + distScores[dist[12]];
+            T44 = T45 = score + senone_scores[dist[12]];
             T44 += tp[12];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t12= %d ", distScores[dist[12]], T44);
+            printf("sc=%d t12= %d ", senone_scores[dist[12]], T44);
 #endif
             T45 += tp[13];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t13= %d ", distScores[dist[13]], T45);
+            printf("sc=%d t13= %d ", senone_scores[dist[13]], T45);
 #endif
         }
         else {
@@ -1881,19 +1881,19 @@ evaluate_active_models_internal(int *phone_bnd_models,
             nsbp[state] =
                 new_state_bp(active_model, state, sbp[state], score);
 
-            T33 = T34 = T35 = score + distScores[dist[9]];
+            T33 = T34 = T35 = score + senone_scores[dist[9]];
 
             T33 += tp[9];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t9= %d ", distScores[dist[9]], T33);
+            printf("sc=%d t9= %d ", senone_scores[dist[9]], T33);
 #endif
             T34 += tp[10];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t10= %d ", distScores[dist[10]], T34);
+            printf("sc=%d t10= %d ", senone_scores[dist[10]], T34);
 #endif
             T35 += tp[11];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t11= %d ", distScores[dist[11]], T35);
+            printf("sc=%d t11= %d ", senone_scores[dist[11]], T35);
 #endif
         }
         else {
@@ -1913,21 +1913,21 @@ evaluate_active_models_internal(int *phone_bnd_models,
             nsbp[state] =
                 new_state_bp(active_model, state, sbp[state], score);
 
-            T22 = T23 = T24 = score + distScores[dist[6]];
+            T22 = T23 = T24 = score + senone_scores[dist[6]];
 
             T22 += tp[6];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t6= %d ", distScores[dist[6]], T22);
+            printf("sc=%d t6= %d ", senone_scores[dist[6]], T22);
 #endif
 
             T23 += tp[7];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t7= %d ", distScores[dist[7]], T23);
+            printf("sc=%d t7= %d ", senone_scores[dist[7]], T23);
 #endif
 
             T24 += tp[8];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t8= %d ", distScores[dist[8]], T24);
+            printf("sc=%d t8= %d ", senone_scores[dist[8]], T24);
 #endif
         }
         else {
@@ -2006,21 +2006,21 @@ evaluate_active_models_internal(int *phone_bnd_models,
             nsbp[state] =
                 new_state_bp(active_model, state, sbp[state], score);
 
-            T11 = T12 = T13 = score + distScores[dist[3]];
+            T11 = T12 = T13 = score + senone_scores[dist[3]];
 
             T11 += tp[3];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t3= %d ", distScores[dist[3]], T11);
+            printf("sc=%d t3= %d ", senone_scores[dist[3]], T11);
 #endif
 
             T12 += tp[4];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t4= %d ", distScores[dist[4]], T12);
+            printf("sc=%d t4= %d ", senone_scores[dist[4]], T12);
 #endif
 
             T13 += tp[5];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t5= %d ", distScores[dist[5]], T13);
+            printf("sc=%d t5= %d ", senone_scores[dist[5]], T13);
 #endif
         }
         else {
@@ -2070,21 +2070,21 @@ evaluate_active_models_internal(int *phone_bnd_models,
             nsbp[state] =
                 new_state_bp(active_model, state, sbp[state], score);
 
-            T00 = T01 = T02 = score + distScores[dist[0]];
+            T00 = T01 = T02 = score + senone_scores[dist[0]];
 
             T00 += tp[0];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t0= %d ", distScores[dist[0]], T00);
+            printf("sc=%d t0= %d ", senone_scores[dist[0]], T00);
 #endif
 
             T01 += tp[1];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t1= %d ", distScores[dist[1]], T01);
+            printf("sc=%d t1= %d ", senone_scores[dist[1]], T01);
 #endif
 
             T02 += tp[2];
 #if SHOW&SHOW_MODEL_EVAL
-            printf("sc=%d t2= %d ", distScores[dist[2]], T02);
+            printf("sc=%d t2= %d ", senone_scores[dist[2]], T02);
 #endif
         }
         else {
@@ -2810,7 +2810,7 @@ time_align_word_sequence(char const *Utt,
         find_active_senones(all_models, cur_active_models, cur_active_cnt);
 
         /* compute the output probabilities for the active shared states */
-        probs_computed_cnt += senscr_active(distScores, feat_f[cur_frame]);
+        probs_computed_cnt += senscr_active(feat_f[cur_frame]);
 
 #if SHOW&SHOW_SUMMARY_INFO
         E_INFO("in> frame %d, %d active models\n", cur_frame,

@@ -72,6 +72,12 @@
 #include "search.h"
 #include "senscr.h"
 
+/* Global variables shared by search and GMM computations. */
+int32 *senone_scores;
+int32 *senone_active;
+int32 n_senone_active;
+bitvec_t *senone_active_vec;
+
 /*
  * Compute the best senone score from the given array of senone scores.
  * (All senones, not just active ones, should have been already computed
@@ -82,10 +88,11 @@
  * Return value: the best senone score this frame.
  */
 static int32
-best_senscr_all_s3(int32 * senscr)
+best_senscr_all_s3(void)
 {
     int32 b, i, j, ci;
     int32 *bestpscr;
+    int32 *senscr = senone_scores;
 
     bestpscr = search_get_bestpscr();
 
@@ -130,9 +137,10 @@ best_senscr_all_s3(int32 * senscr)
  * Return value: the best senone score this frame.
  */
 static int32
-best_senscr_active(int32 * senscr)
+best_senscr_active(void)
 {
     int32 b, i, s;
+    int32 *senscr = senone_scores;
 
     b = (int32) 0x80000000;
 
@@ -147,32 +155,30 @@ best_senscr_active(int32 * senscr)
 }
 
 static int32
-senscr_compute(int32 * senscr, mfcc_t **feat, int32 all)
+senscr_compute(mfcc_t **feat, int32 all)
 {
     if (all) {
-        s2_semi_mgau_frame_eval(semi_mgau, feat, searchCurrentFrame(),
-                                senscr, TRUE);
-        return best_senscr_all_s3(senscr);
+        s2_semi_mgau_frame_eval(semi_mgau, feat, searchCurrentFrame(), TRUE);
+        return best_senscr_all_s3();
     }
     else {
-        s2_semi_mgau_frame_eval(semi_mgau, feat, searchCurrentFrame(),
-                                senscr, FALSE);
-        return best_senscr_active(senscr);
+        s2_semi_mgau_frame_eval(semi_mgau, feat, searchCurrentFrame(), FALSE);
+        return best_senscr_active();
     }
 }
 
 
 int32
-senscr_all(int32 * senscr, mfcc_t **feat)
+senscr_all(mfcc_t **feat)
 {
-    return senscr_compute(senscr, feat, TRUE);
+    return senscr_compute(feat, TRUE);
 }
 
 
 int32
-senscr_active(int32 * senscr, mfcc_t **feat)
+senscr_active(mfcc_t **feat)
 {
-    return senscr_compute(senscr, feat, FALSE);
+    return senscr_compute(feat, FALSE);
 }
 
 void

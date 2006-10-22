@@ -387,7 +387,7 @@ allphone_utt(int32 nfr, mfcc_t ***feat_buf)
     renorm_scr[0] = 0;
 
     for (f = 0; f < nfr; ++f) {
-        senscr_active(distScores, feat_buf[f]);
+        senscr_active(feat_buf[f]);
 
         if ((bestscr = allphone_eval_ci_chan(f)) <= WORST_SCORE) {
             E_ERROR("POOR MATCH: bestscore= %d\n", bestscr);
