@@ -508,29 +508,26 @@ kb_init(void)
 
     lm_init();
 
-    numSmds = bin_mdef_n_sseq(mdef);
-    smds = ckd_calloc(numSmds, sizeof(SMD));
-
     /* Read acoustic model files. */
     if ((meanfn == NULL)
         || (varfn == NULL)
         || (tmatfn == NULL))
         E_FATAL("No mean/var/tmat files specified\n");
-    tmat_init(tmatfn, smds, cmd_ln_float32("-tmatfloor"), TRUE);
 
-    /*
-     *  Use Ci transitions ?
-     */
-    if (cmd_ln_boolean("-useciphones")) {
-        for (i = 0; i < num_phones; i++) {
-            if (hmm_pid2sid(phone_id_to_base_id(i)) != hmm_pid2sid(i)) {
-                /*
-                 * Just make a copy of the CI phone transitions
-                 */
-                memcpy(&smds[hmm_pid2sid(i)],
-                       &smds[hmm_pid2sid(phone_id_to_base_id(i))],
-                       sizeof(SMD));
-            }
+    /* Read transition matrices into "SMD" structures. */
+    numSmds = bin_mdef_n_sseq(mdef);
+    smds = ckd_calloc(numSmds, sizeof(SMD));
+    tmat_init(tmatfn, smds, cmd_ln_float32("-tmatfloor"), TRUE);
+    /* Always use CI transitions for CD phones (the ability to do
+     * otherwise is some Sphinx-II legacy thing). */
+    for (i = 0; i < num_phones; i++) {
+        if (hmm_pid2sid(phone_id_to_base_id(i)) != hmm_pid2sid(i)) {
+            /*
+             * Just make a copy of the CI phone transitions
+             */
+            memcpy(&smds[hmm_pid2sid(i)],
+                   &smds[hmm_pid2sid(phone_id_to_base_id(i))],
+                   sizeof(SMD));
         }
     }
 
