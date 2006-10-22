@@ -1,5 +1,6 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
- * Copyright (c) 1996-2000 Carnegie Mellon University.  All rights 
+ * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,25 +34,42 @@
  * ====================================================================
  *
  */
-/*********************************************************************
- *
- * File: s2io.h
- * 
- * Description: Various I/O functions that need a header file 
- * 
- * Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
- * 
- *********************************************************************/
+/* uttproc.h: Internal uttproc functions */
+#ifndef __UTTPROC_H__
+#define __UTTPROC_H__
 
-#ifndef S2IO_H
-#define S2IO_H
+#include <time.h>
+#include <feat.h>
+#include <prim_type.h>
 
-#include <stdio.h>
+int32 uttproc_init(void);
+int32 uttproc_end(void);
 
-int awriteshort(char const *file, short *data, int length);
-int fread_int32(FILE *fp, int min, int max, char const *name,
-		int do_swap, int *inout_swap);
-int fwrite_int32(FILE *fp, int val);
-void *s2_mmap(const char *filename);
+void uttproc_set_feat(feat_t *fcb);
 
-#endif /* S2IO_H */ 
+/* Build and store an utterance ID (called if none given) */
+char *build_uttid(char const *utt);
+
+/* Parses line of control file (with optional start and end frames and uttid) */
+int32 uttproc_parse_ctlfile_entry(char *line,
+				  char *filename, int32 * sf, int32 * ef,
+				  char *idspec);
+
+/* Returns #frames converted to feature vectors; -1 if error */
+int32 uttproc_file2feat(const char *utt, int32 sf, int32 ef, int32 nosearch);
+
+/* Returns a pointer to the internal feature buffer */
+int32 uttproc_get_featbuf(mfcc_t ****feat);
+
+/* Open an audio file. */
+FILE * adcfile_open(char const *utt);
+/* Read from audio file. */
+int32 adc_file_read(FILE *uttfp, int16 * buf, int32 max);
+
+/*------------------------------------------------------------------------*
+ * Compute an elapsed time from two timeval structs
+ */
+double MakeSeconds(struct timeval const *s, struct timeval const *e);
+
+
+#endif /* __UTTPROC_H__ */

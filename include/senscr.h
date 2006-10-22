@@ -73,6 +73,8 @@ extern bitvec_t *senone_active_vec;	/* Active/inactive bitvec for each senone */
 extern int32 *senone_active;		/* List of active senones */
 extern int32 n_senone_active;		/* No. of entries in above active list */
 
+/* Senone scores */
+extern int32 *distScores;
 
 /*
  * Compute senone scores for the given feature data.

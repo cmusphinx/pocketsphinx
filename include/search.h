@@ -144,8 +144,6 @@ int32 search_get_score(void);
 /* Total LM score for the utterance (is this reliable in N-gram mode?) */
 int32 search_get_lscr(void);
 
-int32 *search_get_dist_scores(void);	/* senone scores, updated/frame */
-
 /*
  * Get the HYP_SZ array of filtered hyp words (no <s>, </s>, fillers, or
  * null transitions) in this array.

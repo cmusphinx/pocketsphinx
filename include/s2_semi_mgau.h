@@ -77,7 +77,6 @@ struct s2_semi_mgau_s {
     uint32 kd_maxdepth;
     int32 kd_maxbbi;
     mfcc_t dcep80msWeight;
-    int32 use20ms_diff_pow;
 
     int32 num_frames;
     int32 ds_ratio;

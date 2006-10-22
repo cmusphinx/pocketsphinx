@@ -92,7 +92,7 @@ int32 *dict_left_context_bwd_size (void);
 int32 dict_to_id(dictT *dict, char const *dict_str);
 char const *dictid_to_str(dictT *dict, int32 id);
 int32 dictStrToWordId (dictT *dict, char const *dict_str, int verbose);
-int32 dict_add_word (dictT *dict, char const *word, char const *pron);
+int32 dict_add_word (dictT *dict, char const *word, char *pron);
 int32 dict_pron (dictT *dict, int32 w, int32 **pron);
 int32 dict_next_alt (dictT *dict, int32 w);
 int32 dict_write_oovdict (dictT *dict, char const *file);

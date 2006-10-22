@@ -66,6 +66,9 @@
 #include <assert.h>
 #include <math.h>
 
+#include <cmd_ln.h>
+#include <err.h>
+
 #include "s2types.h"
 #include "basic_types.h"
 #include "search_const.h"
@@ -73,7 +76,6 @@
 #include "list.h"
 #include "hash_table.h"
 #include "phone.h"
-#include "err.h"
 #include "log.h"
 #include "s2_semi_mgau.h"
 #include "senscr.h"
@@ -87,8 +89,7 @@
 #include "search.h"
 #include "ckd_alloc.h"
 
-static SMD *Models;             /* static model types */
-static int32 *senscr;
+extern SMD *smds;
 
 static CHAN_T *ci_chan;         /* hmm model instances for each CI phone */
 static int32 n_ciphone;
@@ -97,7 +98,6 @@ static int32 *renorm_scr;
 static int32 allphone_bw;       /* beam width */
 static int32 allphone_exitbw;   /* phone exit beam width */
 static int32 allphone_pip;      /* phone insertion penalty */
-static int32 **phonetp;         /* phone transition LOGprob */
 
 typedef struct {
     int32 f;
@@ -151,7 +151,7 @@ allphone_senone_active(void)
 
     n = 0;
     for (p = 0; p < n_ciphone; p++) {
-        dist = Models[ci_chan[p].sseqid].dist;
+        dist = smds[ci_chan[p].sseqid].dist;
         for (s = 0; s < TRANS_CNT; s += 3)
             senone_active[n++] = dist[s];
     }
@@ -306,7 +306,7 @@ allphone_backtrace(int32 bp)
         allp_seghyp = h;
     allp_seghyp_tail = h;
 
-    if (query_back_trace()) {
+    if (cmd_ln_boolean("-backtrace")) {
         printf("\t%5d %5d %10d %11d %s\n",
                allp_seghyp_tail->sf,
                allp_seghyp_tail->ef, (escr - bscr) / nf, escr - bscr,
@@ -344,7 +344,7 @@ allphone_result(void)
     else
         bestbp = i;
 
-    if (query_back_trace()) {
+    if (cmd_ln_boolean("-backtrace")) {
         printf("\t%5s %5s %10s %11s %s (Allphone) (%s)\n",
                "SFrm", "EFrm", "AScr/Frm", "AScr", "Phone",
                uttproc_get_uttid());
@@ -352,7 +352,7 @@ allphone_result(void)
             ("\t------------------------------------------------------------\n");
     }
     allphone_backtrace(bestbp);
-    if (query_back_trace() && (bestbp >= 0)) {
+    if (cmd_ln_boolean("-backtrace") && (bestbp >= 0)) {
         assert(allphone_bp[bestbp].f >= 0);
 
         scr = allphone_bp[bestbp].scr;
@@ -387,7 +387,7 @@ allphone_utt(int32 nfr, mfcc_t ***feat_buf)
     renorm_scr[0] = 0;
 
     for (f = 0; f < nfr; ++f) {
-        senscr_active(senscr, feat_buf[f]);
+        senscr_active(distScores, feat_buf[f]);
 
         if ((bestscr = allphone_eval_ci_chan(f)) <= WORST_SCORE) {
             E_ERROR("POOR MATCH: bestscore= %d\n", bestscr);
@@ -416,9 +416,14 @@ allphone_utt(int32 nfr, mfcc_t ***feat_buf)
 }
 
 void
-allphone_init(double bw, double exitbw, double pip)
+allphone_init()
 {
+    float32 bw, exitbw, pip;
     int32 i;
+
+    bw = cmd_ln_float32("-beam");
+    exitbw = cmd_ln_float32("-nwbeam");
+    pip = cmd_ln_float32("-phnpen");
 
     n_ciphone = phoneCiCount();
 
@@ -429,17 +434,11 @@ allphone_init(double bw, double exitbw, double pip)
     }
 
     renorm_scr = ckd_calloc(MAX_FRAMES, sizeof(int32));
-
-    Models = kb_get_models();
-    senscr = search_get_dist_scores();
-
     allphone_bp = ckd_calloc(ALLPHONE_BP_MAX, sizeof(allphone_bp_t));
 
     allphone_bw = LOG(bw) * 8;
     allphone_exitbw = LOG(exitbw) * 8;
     allphone_pip = LOG(pip);
-
-    phonetp = kb_get_phonetp();
 
     E_INFO("bw= %d, wordbw= %d, pip= %d\n",
            allphone_bw, allphone_exitbw, allphone_pip);

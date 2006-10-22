@@ -90,16 +90,18 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <ckd_alloc.h>
-#include <err.h>
-#include <fsg_psubtree.h>
-#include <kb.h>
-#include <dict.h>
-#include <phone.h>
-#include <log.h>
-#include <hmm_tied_r.h>
-#include <search.h>
 
+#include <ckd_alloc.h>
+#include <cmd_ln.h>
+#include <err.h>
+
+#include "fsg_psubtree.h"
+#include "kb.h"
+#include "dict.h"
+#include "phone.h"
+#include "log.h"
+#include "hmm_tied_r.h"
+#include "search.h"
 
 void
 fsg_pnode_add_all_ctxt(fsg_pnode_ctxt_t * ctxt)
@@ -144,7 +146,6 @@ psubtree_add_trans(fsg_pnode_t * root,
                    word_fsglink_t * fsglink,
                    int8 * lclist, int8 * rclist, fsg_pnode_t ** alloc_head)
 {
-    dictT *dict;
     int32 **lcfwd;              /* Uncompressed left cross-word context map;
                                    lcfwd[left-diphone][p] = SSID for p.left-diphone */
     int32 **lcbwd;              /* Compressed left cross-word context map;
@@ -174,11 +175,10 @@ psubtree_add_trans(fsg_pnode_t * root,
     fsg_pnode_t **ssid_pnode_map;       /* Temp array of ssid->pnode mapping */
     int32 i, j;
 
-    dict = kb_get_word_dict();
-    lw = kb_get_lw();
-    pip = (int32) (LOG(kb_get_pip()) * lw);
-    wip = (int32) (LOG(kb_get_wip()) * lw);
-    silcipid = kb_get_silence_ciphone_id();
+    lw = cmd_ln_float32("-langwt");
+    pip = (int32) (LOG(cmd_ln_float32("-phnpen")) * lw);
+    wip = (int32) (LOG(cmd_ln_float32("-inspen")) * lw);
+    silcipid = phone_to_id("SIL",  TRUE);
     n_ci = phoneCiCount();
 
     lcfwd = dict_left_context_fwd();
@@ -191,7 +191,7 @@ psubtree_add_trans(fsg_pnode_t * root,
     wid = word_fsglink_wid(fsglink);
     assert(wid >= 0);           /* Cannot be a null transition */
 
-    pronlen = dict_pronlen(dict, wid);
+    pronlen = dict_pronlen(word_dict, wid);
     assert(pronlen >= 1);
     if (pronlen > 255) {
         E_FATAL
@@ -206,8 +206,8 @@ psubtree_add_trans(fsg_pnode_t * root,
     pred = NULL;
 
     if (pronlen == 1) {         /* Single-phone word */
-        did = dict_phone(dict, wid, 0); /* Diphone ID or SSID */
-        if (dict_mpx(dict, wid)) {      /* Only non-filler words are mpx */
+        did = dict_phone(word_dict, wid, 0); /* Diphone ID or SSID */
+        if (dict_mpx(word_dict, wid)) {      /* Only non-filler words are mpx */
             /*
              * Left diphone ID for single-phone words already assumes SIL is right
              * context; only left contexts need to be handled.
@@ -236,7 +236,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                     pnode->next.fsglink = fsglink;
                     pnode->logs2prob =
                         word_fsglink_logs2prob(fsglink) + wip + pip;
-                    pnode->ci_ext = (int8) dict_ciphone(dict, wid, 0);
+                    pnode->ci_ext = (int8) dict_ciphone(word_dict, wid, 0);
                     pnode->ppos = 0;
                     pnode->leaf = TRUE;
                     pnode->sibling = root;      /* All root nodes linked together */
@@ -274,7 +274,7 @@ psubtree_add_trans(fsg_pnode_t * root,
         }
     }
     else {                      /* Multi-phone word */
-        assert(dict_mpx(dict, wid));    /* S2 HACK: pronlen>1 => mpx?? */
+        assert(dict_mpx(word_dict, wid));    /* S2 HACK: pronlen>1 => mpx?? */
 
         ssid_pnode_map =
             (fsg_pnode_t **) ckd_calloc(n_ci, sizeof(fsg_pnode_t *));
@@ -282,7 +282,7 @@ psubtree_add_trans(fsg_pnode_t * root,
         rc_pnodelist = NULL;
 
         for (p = 0; p < pronlen; p++) {
-            did = ssid = dict_phone(dict, wid, p);
+            did = ssid = dict_phone(word_dict, wid, p);
 
             if (p == 0) {       /* Root phone, handle required left contexts */
                 for (i = 0; lclist[i] >= 0; i++) {
@@ -300,7 +300,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                         pnode->hmm.sseqid = ssid;
                         pnode->logs2prob =
                             word_fsglink_logs2prob(fsglink) + wip + pip;
-                        pnode->ci_ext = (int8) dict_ciphone(dict, wid, 0);
+                        pnode->ci_ext = (int8) dict_ciphone(word_dict, wid, 0);
                         pnode->ppos = 0;
                         pnode->leaf = FALSE;
                         pnode->sibling = root;  /* All root nodes linked together */
@@ -324,7 +324,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                 pnode = (fsg_pnode_t *) ckd_calloc(1, sizeof(fsg_pnode_t));
                 pnode->hmm.sseqid = ssid;
                 pnode->logs2prob = pip;
-                pnode->ci_ext = (int8) dict_ciphone(dict, wid, p);
+                pnode->ci_ext = (int8) dict_ciphone(word_dict, wid, p);
                 pnode->ppos = p;
                 pnode->leaf = FALSE;
                 pnode->sibling = NULL;
@@ -362,7 +362,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                                                        (fsg_pnode_t));
                         pnode->hmm.sseqid = ssid;
                         pnode->logs2prob = pip;
-                        pnode->ci_ext = (int8) dict_ciphone(dict, wid, p);
+                        pnode->ci_ext = (int8) dict_ciphone(word_dict, wid, p);
                         pnode->ppos = p;
                         pnode->leaf = TRUE;
                         pnode->sibling = rc_pnodelist ?

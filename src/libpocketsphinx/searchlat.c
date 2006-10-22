@@ -101,6 +101,7 @@
 
 #include "s2types.h"
 #include "ckd_alloc.h"
+#include "cmd_ln.h"
 #include "basic_types.h"
 #include "strfuncs.h"
 #include "linklist.h"
@@ -119,9 +120,7 @@
 #define QUIT(x)		{fprintf x; exit(-1);}
 
 /* Externally obtained variables */
-static int32 finish_wid, start_wid, sil_wid, last_frame, sil_pen,
-    filler_pen;
-static dictT *dict;
+static int32 finish_wid, start_wid, sil_wid, last_frame, sil_pen, filler_pen;
 static BPTBL_T *bptbl;
 static int32 *BScoreStack;
 static int32 **rc_fwdperm;
@@ -457,7 +456,7 @@ build_lattice(int32 bptbl_sz)
 
         /* Skip if word not in LM */
         if ((!ISA_FILLER_WORD(wid))
-            && (!dictwd_in_lm(dict->dict_list[wid]->fwid)))
+            && (!dictwd_in_lm(word_dict->dict_list[wid]->fwid)))
             continue;
 
         /* See if bptbl entry <wid,sf> already in lattice */
@@ -549,7 +548,7 @@ build_lattice(int32 bptbl_sz)
             /* Find acoustic score from.sf->to.sf-1 with right context = to */
             if (bp_ptr->r_diph >= 0)
                 bss_offset =
-                    rc_fwdperm[bp_ptr->r_diph][dict->dict_list[to->wid]->
+                    rc_fwdperm[bp_ptr->r_diph][word_dict->dict_list[to->wid]->
                                                ci_phone_ids[0]];
             else
                 bss_offset = 0;
@@ -575,7 +574,7 @@ build_lattice(int32 bptbl_sz)
         node->lef = bptbl[node->lef].frame;
     }
 
-    if ((dumplatdir = query_dumplat_dir()) != NULL) {
+    if ((dumplatdir = cmd_ln_str("-dumplatdir")) != NULL) {
         char latfile[1024];
 
         sprintf(latfile, "%s/%s.lat", dumplatdir, uttproc_get_uttid());
@@ -585,7 +584,7 @@ build_lattice(int32 bptbl_sz)
     /* Change node->wid to base wid if not reporting actual pronunciations. */
     for (node = latnode_list; node; node = node->next) {
         if (!altpron)
-            node->wid = dict->dict_list[node->wid]->fwid;
+            node->wid = word_dict->dict_list[node->wid]->fwid;
     }
 
     /* Remove SIL and noise nodes from DAG; extend links through them */
@@ -644,7 +643,7 @@ bptbl2latdensity(int32 bptbl_sz, int32 * density)
 
         /* Skip if word not in LM */
         if ((!ISA_FILLER_WORD(wid))
-            && (!dictwd_in_lm(dict->dict_list[wid]->fwid)))
+            && (!dictwd_in_lm(word_dict->dict_list[wid]->fwid)))
             continue;
 
         /* See if bptbl entry <wid,sf> already in lattice */
@@ -720,7 +719,6 @@ bptbl2latdensity(int32 bptbl_sz, int32 * density)
 }
 
 static int32 seg;               /* for traversing hyp[] */
-extern int32 print_back_trace;
 
 static void
 lattice_seg_back_trace(latlink_t * link)
@@ -761,7 +759,7 @@ lattice_seg_back_trace(latlink_t * link)
             seg++;
             hyp[seg].wid = -1;
 
-            if (print_back_trace)
+            if (cmd_ln_boolean("-backtrace"))
                 printf("\t%4d %4d %10d %11d %11d %8d %6d %6.2f %s\n",
                        link->from->sf, link->ef,
                        (-(link->link_scr)) / (link->ef - link->from->sf +
@@ -769,14 +767,14 @@ lattice_seg_back_trace(latlink_t * link)
                        -(link->path_scr), seg_topsen_score(link->from->sf,
                                                            link->ef) /
                        (link->ef - link->from->sf + 1), latden, perp,
-                       dict->dict_list[link->from->wid]->word);
+                       word_dict->dict_list[link->from->wid]->word);
         }
     }
     else {
         seg = 0;
         hyp[0].wid = -1;
 
-        if (print_back_trace) {
+        if (cmd_ln_boolean("-backtrace")) {
             printf
                 ("\t%4s %4s %10s %11s %11s %8s %6s %6s %s (Bestpath) (%s)\n",
                  "SFrm", "EFrm", "AScr/Frm", "AScr", "PathScr", "BSDiff",
@@ -862,8 +860,8 @@ lattice_rescore(lw_t lwf)
         assert(!(ISA_FILLER_WORD(link->to->wid)));
 
         if (altpron) {
-            bw1 = dict->dict_list[start_wid]->fwid;
-            bw2 = dict->dict_list[link->to->wid]->fwid;
+            bw1 = word_dict->dict_list[start_wid]->fwid;
+            bw2 = word_dict->dict_list[link->to->wid]->fwid;
 
             link->path_scr =
                 link->link_scr + LWMUL(lm_bg_score(bw1, bw2), lwf);
@@ -889,8 +887,8 @@ lattice_rescore(lw_t lwf)
 
 #if 0
         printf("QHD %s.%d -> %s.%d (%d, %d)\n",
-               dict->dict_list[q_head->from->wid]->word, q_head->from->sf,
-               dict->dict_list[node->wid]->word, node->sf,
+               word_dict->dict_list[q_head->from->wid]->word, q_head->from->sf,
+               word_dict->dict_list[node->wid]->word, node->sf,
                q_head->link_scr, q_head->path_scr);
 #endif
 
@@ -898,9 +896,9 @@ lattice_rescore(lw_t lwf)
             assert(!(ISA_FILLER_WORD(link->to->wid)));
 
             if (altpron) {
-                bw0 = dict->dict_list[q_head->from->wid]->fwid;
-                bw1 = dict->dict_list[node->wid]->fwid;
-                bw2 = dict->dict_list[link->to->wid]->fwid;
+                bw0 = word_dict->dict_list[q_head->from->wid]->fwid;
+                bw1 = word_dict->dict_list[node->wid]->fwid;
+                bw2 = word_dict->dict_list[link->to->wid]->fwid;
 
                 score = q_head->path_scr + link->link_scr +
                     LWMUL(lm_tg_score(bw0, bw1, bw2), lwf);
@@ -1027,12 +1025,11 @@ search_get_lattice(void)
 void
 searchlat_init(void)
 {
-    start_wid = kb_get_word_id(kb_get_lm_start_sym());
-    finish_wid = kb_get_word_id(kb_get_lm_end_sym());
+    start_wid = kb_get_word_id(cmd_ln_str("-lmstartsym"));
+    finish_wid = kb_get_word_id(cmd_ln_str("-lmendsym"));
     sil_wid = kb_get_word_id("SIL");
-    dict = kb_get_word_dict();
     rc_fwdperm = dict_right_context_fwd_perm();
-    altpron = query_report_altpron();
+    altpron = cmd_ln_boolean("-reportpron");
 
     bptbl = search_get_bptable();
     BScoreStack = search_get_bscorestack();

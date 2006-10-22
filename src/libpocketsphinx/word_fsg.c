@@ -129,15 +129,17 @@
 #include <string.h>
 #include <assert.h>
 #include <time.h>
-#include <s2types.h>
 #include <err.h>
-#include <str2words.h>
 #include <ckd_alloc.h>
-#include <kb.h>
-#include <phone.h>
-#include <dict.h>
-#include <log.h>
-#include <word_fsg.h>
+#include <cmd_ln.h>
+
+#include "s2types.h"
+#include "str2words.h"
+#include "kb.h"
+#include "phone.h"
+#include "dict.h"
+#include "log.h"
+#include "word_fsg.h"
 
 
 #define __FSG_DBG__		0
@@ -344,7 +346,6 @@ word_fsg_null_trans_closure(word_fsg_t * fsg, glist_t nulls)
 static int32
 word_fsg_add_filler(word_fsg_t * fsg, float32 silprob, float32 fillprob)
 {
-    dictT *dict;
     int32 src;
     int32 wid, silwid, n_word;
     int32 n_trans;
@@ -354,9 +355,8 @@ word_fsg_add_filler(word_fsg_t * fsg, float32 silprob, float32 fillprob)
 
     assert(fsg);
 
-    dict = kb_get_word_dict();
-    silwid = kb_get_silence_word_id();
-    n_word = kb_get_num_words();
+    silwid = kb_get_word_id("SIL");
+    n_word = word_dict->dict_entry_count;
 
     logsilp = (int32) (LOG(silprob) * fsg->lw);
     logfillp = (int32) (LOG(fillprob) * fsg->lw);
@@ -399,13 +399,10 @@ word_fsg_lc_rc(word_fsg_t * fsg)
     word_fsglink_t *l;
     int32 silcipid;
     int32 endwid;
-    dictT *dict;
     int32 len;
 
-    dict = kb_get_word_dict();
-    endwid = kb_get_word_id(kb_get_lm_end_sym());
-
-    silcipid = kb_get_silence_ciphone_id();
+    endwid = kb_get_word_id(cmd_ln_str("-lmendsym"));
+    silcipid = phone_to_id("SIL", TRUE);
     assert(silcipid >= 0);
     n_ci = phoneCiCount();
     if (n_ci > 127) {
@@ -436,16 +433,16 @@ word_fsg_lc_rc(word_fsg_t * fsg)
                  * marking of a filler phone; but only filler words are supposed to
                  * use such phones, so we use that fact.  HACK!!  FRAGILE!!)
                  */
-                if (dict_is_filler_word(dict, l->wid)
+                if (dict_is_filler_word(word_dict, l->wid)
                     || (l->wid == endwid)) {
                     /* Filler phone; use silence phone as context */
                     fsg->rc[s][silcipid] = 1;
                     fsg->lc[d][silcipid] = 1;
                 }
                 else {
-                    len = dict_pronlen(dict, l->wid);
-                    fsg->rc[s][dict_ciphone(dict, l->wid, 0)] = 1;
-                    fsg->lc[d][dict_ciphone(dict, l->wid, len - 1)] = 1;
+                    len = dict_pronlen(word_dict, l->wid);
+                    fsg->rc[s][dict_ciphone(word_dict, l->wid, 0)] = 1;
+                    fsg->lc[d][dict_ciphone(word_dict, l->wid, len - 1)] = 1;
                 }
             }
         }
@@ -518,7 +515,6 @@ word_fsg_load(s2_fsg_t * fsg,
     word_fsg_t *word_fsg;
     s2_fsg_trans_t *trans;
     int32 n_trans, n_null_trans, n_alt_trans, n_filler_trans, n_unk;
-    dictT *dict;
     int32 wid;
     int32 logp;
     glist_t nulls;
@@ -549,8 +545,6 @@ word_fsg_load(s2_fsg_t * fsg,
             return NULL;
         }
     }
-
-    dict = kb_get_word_dict();
 
     word_fsg = (word_fsg_t *) ckd_calloc(1, sizeof(word_fsg_t));
     word_fsg->name = ckd_salloc(fsg->name ? fsg->name : "");
@@ -592,7 +586,7 @@ word_fsg_load(s2_fsg_t * fsg,
                 n_unk++;
             }
             else if (use_altpron) {
-                wid = dictid_to_baseid(dict, wid);
+                wid = dictid_to_baseid(word_dict, wid);
                 assert(wid >= 0);
             }
         }
@@ -615,8 +609,8 @@ word_fsg_load(s2_fsg_t * fsg,
 
             /* Add transitions for alternative pronunciations, if any */
             if (use_altpron) {
-                for (wid = dict_next_alt(dict, wid);
-                     wid >= 0; wid = dict_next_alt(dict, wid)) {
+                for (wid = dict_next_alt(word_dict, wid);
+                     wid >= 0; wid = dict_next_alt(word_dict, wid)) {
                     word_fsg_trans_add(word_fsg, i, j, logp, wid);
                     n_alt_trans++;
                     n_trans++;

@@ -173,6 +173,7 @@
  *		Created
  */
 
+/* System headers */
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -192,825 +193,75 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <stdlib.h>
 
-#include "c.h"
+/* SphinxBase headers */
+#include <fe.h>
+#include <feat.h>
+#include <ckd_alloc.h>
+#include <err.h>
+
+/* Local headers */
 #include "s2types.h"
-#include "pio.h"
-#include "basic_types.h"
-#include "strfuncs.h"
-#include "list.h"
-#include "search_const.h"
-#include "msd.h"
-#include "pconf.h"
-#include "s2_semi_mgau.h"
-#include "dict.h"
-#include "err.h"
-#include "lmclass.h"
-#include "lm_3g.h"
-#include "lm.h"
-#include "kb.h"
-#include "time_align.h"
+#include "cmdln_macro.h"
 #include "fbs.h"
-#include "search.h"
-#include "cepio.h"
+#include "pio.h"
+#include "s2io.h"
+#include "kb.h"
+#include "uttproc.h"
+#include "allphone.h"
 #include "byteorder.h"
-#include "s2params.h"
-#include "feat.h"
-#include "ckd_alloc.h"
-#include "fe.h"
+#include "time_align.h"
+#include "search.h"
 
-/*
- * #define QUIT(x)		{fprintf x; exit(-1);}
- */
+/* Static declarations for this file. */
+static search_hyp_t *run_sc_utterance(char *mfcfile, int32 sf, int32 ef,
+                                      char *idspec);
+static void init_feat(void);
 
-/* Default parameter initialization
- *----------------------------------*/
-static char *ctl_file_name = 0;
-static char *match_file_name = NULL;
-static char *matchseg_file_name = NULL;
-static char *logfn_arg = NULL;
-char *data_directory = 0;
-static char *seg_data_directory = 0;
-static char const *sent_directory = ".";
-static int32 phone_conf = 0;
-static char *pscr2lat = NULL;   /* Directory for phone lattice files */
+/* Command-line arguments (actually defined in cmdln_macro.h) */
+static const arg_t args_def[] = {
+    input_cmdln_options(),
+    waveform_to_cepstral_command_line_macro(),
+    output_cmdln_options(),
+    am_cmdln_options(),
+    lm_cmdln_options(),
+    dictionary_cmdln_options(),
+    fsg_cmdln_options(),
+    beam_cmdln_options(),
+    search_cmdln_options(),
+    time_align_cmdln_options(),
+    allphone_cmdln_options(),
+    CMDLN_EMPTY_OPTION
+};
 
-static int32 nbest = 0;         /* #N-best hypotheses to generate/utterance */
-static char const *nbest_dir = ".";
-static char const *nbest_ext = "hyp";
-
-
-static int32 ctl_offset = 0;    /* No. of lines to skip at start of ctlfile */
-static int32 ctl_incr = 1;      /* Do every nth line in the ctl file */
-static int32 ctl_count = 0x7fffffff;    /* #lines to be processed */
-
-char const *cep_ext = ".mfc";
-static char const *sent_ext = "sent";
-static float beam_width = 1e-6f;
-static float new_phone_beam_width = 1e-6f;
-static float last_phone_beam_width = 1e-5f;
-static float lastphone_alone_beam_width = 3e-4f;
-static float new_word_beam_width = 3e-4f;
-static float fwdflat_beam_width = 1e-8f;
-static float fwdflat_new_word_beam_width = 3e-4f;
-static float filler_word_penalty = 1e-8f;
-static float silence_word_penalty = 0.005f;
-static float phone_insertion_penalty = 1.0f;
-static float insertion_penalty = 0.65f;
-static float fwdtree_lw = 6.5f;
-static float fwdflat_lw = 8.5f;
-static float bestpath_lw = 9.5f;
-static float nw_pen = 1.0f;
-
-static int32 fwdtree_flag = TRUE;
-static int32 fwdflat_flag = TRUE;
-static int32 bestpath_flag = TRUE;
-static int32 forward_only = FALSE;
-
-static int32 live = FALSE;
-
-static int32 agcNoise = FALSE;
-static int32 agcMax = FALSE;
-static int32 agcEMax = FALSE;
-static int32 normalizeMean = TRUE;
-static int32 normalizeMeanPrior = FALSE;
-static float agcThresh = 0.2f;
-
-static int32 writeScoreInMatchFile = TRUE;
-
-/* if (skip_alt_frm) skip alternate frames in cross-phone transitions */
-static int32 skip_alt_frm = 0;
-
-/* BPTable size to allocate, use some default if max-int */
-static int32 lattice_size = 50000;
-
-/* # LM cache lines to allocate */
-static int32 lm_cache_lines = 100;
-
-extern int32 use_3g_in_fwd_pass;
-int32 use_3g_in_fwd_pass = TRUE;
-
-/* Phone Eval state */
-static char *time_align_ctl_file_name = NULL;
-int32 time_align_word = TRUE;
-int32 time_align_phone = TRUE;
-int32 time_align_state = FALSE;
-
-/* State segmentation file (seg file) extension */
-static char *seg_file_ext = NULL;
-
-/* For saving phone labels in alignment */
-char const *phonelabdirname = NULL;
-char const *phonelabextname = "lab";
-char const *phonelabtype = "xlabel";
-
-/* For saving word labels in alignment */
-char const *wordlabdirname = NULL;
-char const *wordlabextname = "wrd";
-char const *wordlabtype = "xlabel";
-
-/* "Best" alternative word sent output file */
-static char *out_sent_filename = NULL;
-
-static int32 allphone_mode = FALSE;
-
-/*
- * Top senones window (#frames) for predicting phone transitions.
- * If 1, do not use top senones to predict phones, transition to all.
- */
-static int32 topsen_window = 1;
-static int32 topsen_thresh = -60000;
-
-/*
- * In FSG mode, set to FALSE to force backtrace from FSG state that has best
- * path score even if it is not the final state.
- */
-static int32 fsg_backtrace_finalstate = TRUE;
-
-/* Local Storage
- *---------------*/
+/* Some static variables we still need here. */
 static float TotalElapsedTime;
 static float TotalCPUTime;
 static float TotalSpeechTime;
-
-/* Report actual pronunciation in output; default = report base pronunciation */
-static int32 report_altpron = FALSE;
-
-/* If > 0, report partial result string every so many frames, starting frame 1 */
-static int32 report_partial_result = 0;
-/*
- * If > 0, report partial results including segmentation every so many frames,
- * starting at frame 1.
- */
-static int32 report_partial_result_seg = 0;
-
-/* If (! compute_all_senones) compute only those needed by active channels */
-static int32 compute_all_senones = FALSE;
-
-/* Directory/Filenames for raw A/D and mfc data (written in live mode) */
-static char *rawlogdir = NULL;
-static char *mfclogdir = NULL;
-
-static int32 sampling_rate = 16000;
-/* Let all these be uninitialized (to zero) because we may determine
- * them based on sampling_rate if the user has not specified them. */
-static int32 n_mel_filt;
-static float lower_filt = -1.0f;        /* Someone might want this to be zero. */
-static float upper_filt = 0.0f;
-static float pre_emphasis_alpha = 0.0f;
-static int32 frame_rate;
-static int32 n_fft;
-static float window_length = 0.0f;
-
-static int32 adc_input = FALSE; /* TRUE <=> input utterances are raw A/D data */
-static char const *adc_ext = "raw";     /* Default format: raw */
-static int32 adc_endian = 1;    /* Default endian: little */
-static int32 adc_hdr = 0;       /* Default adc file header size */
-static int32 blocking_ad_read_p = FALSE;
-static int32 doublebw = 0;      /* Whether we're using double bandwidth for mel filters, default no */
-
-/* For LISTEN project: LM and startword names for different utts */
-char const *utt_lmname_dir = ".";
-char const *lmname_ext = "lmname";
-static char const *startWord_directory = ".";
-static char const *startWord_ext = "start";
-static char startWord[1024] = "";
-
-static char *dumplat_dir = NULL;
-
-static char utt_name[1024] = "";
-
-static int32 maxwpf = 100000000;        /* Max words recognized per frame */
-static int32 maxhmmpf = 1000000000;     /* Max active HMMs per frame */
-
-int32 print_back_trace = TRUE;
-static int32 print_short_back_trace = FALSE;
-static char *arg_file = NULL;
-int32 verbosity_level = 9;      /* rkm: Was 0 */
-
-/* FIXME: This is a hack until there is a fixed-point version of it. */
-int32 calc_phone_perp = TRUE;   /* whether to calculate phone perplexity */
-
-#ifndef WIN32
-extern double MakeSeconds(struct timeval *, struct timeval *);
-#endif
-
-extern int32 uttproc_set_feat(feat_t *fcb);
-
-extern int awriteshort(char const *file, short *data, int length);
-
-extern void allphone_init(double, double, double);      /* dubya, dubya, dubya? */
-
-/* Parameters for the search
- *---------------------------*/
-extern config_t kb_param[];
-config_t param[] = {
-    /*
-     * LongName, Documentation, Switch, TYPE, Address
-     */
-    {"ArgFile", "Cmd line argument file", "-argfile",
-     STRING, (caddr_t) & arg_file},
-
-    {"AllPhoneMode", "All Phone Mode", "-allphone",
-     BOOL, (caddr_t) & allphone_mode},
-
-    {"AgcMax", "Use max based AGC", "-agcmax",
-     BOOL, (caddr_t) & agcMax},
-
-    {"AgcEMax", "Use another max based AGC", "-agcemax",
-     BOOL, (caddr_t) & agcEMax},
-
-    {"AgcNoise", "Use Noise based AGC", "-agcnoise",
-     BOOL, (caddr_t) & agcNoise},
-
-    {"AgcThreshold", "Threshold for Noise based AGC", "-agcthresh",
-     FLOAT, (caddr_t) & agcThresh},
-
-    {"NormalizeMean", "Normalize the feature means to 0.0", "-normmean",
-     BOOL, (caddr_t) & normalizeMean},
-
-    {"NormalizeMeanPrior", "Normalize feature means with prior mean",
-     "-nmprior",
-     BOOL, (caddr_t) & normalizeMeanPrior},
-
-    {"LiveData", "Get input from A/D hardware", "-live",
-     BOOL, (caddr_t) & live},
-
-    {"A/D blocks on read", "A/D blocks on read", "-blockingad",
-     BOOL, (caddr_t) & blocking_ad_read_p},
-
-    {"CtlFileName", "Control file name", "-ctlfn",
-     STRING, (caddr_t) & ctl_file_name},
-
-    {"CtlLineOffset", "Number of Lines to skip in ctl file", "-ctloffset",
-     INT, (caddr_t) & ctl_offset},
-
-    {"CtlCount", "Number of lines to process in ctl file", "-ctlcount",
-     INT, (caddr_t) & ctl_count},
-
-    {"CtlLineIncr", "Do every nth line in the ctl file", "-ctlincr",
-     INT, (caddr_t) & ctl_incr},
-
-    {"ComputeAllSenones", "Compute all senone scores every frame",
-     "-compallsen",
-     BOOL, (caddr_t) & compute_all_senones},
-
-    {"TopSenonesFrames", "#frames top senones for predicting phones",
-     "-topsenfrm",
-     INT, (caddr_t) & topsen_window},
-
-    {"TopSenonesThresh", "Top senones threshold for predicting phones",
-     "-topsenthresh",
-     INT, (caddr_t) & topsen_thresh},
-
-    {"ReportAltPron", "Report actual pronunciation in match file",
-     "-reportpron",
-     BOOL, (caddr_t) & report_altpron},
-
-    {"ReportPartialResult", "Report partial results every so many frames",
-     "-partial",
-     INT, (caddr_t) & report_partial_result},
-
-    {"ReportPartialResultSeg",
-     "Report detailed partial results every so many frames", "-partialseg",
-     INT, (caddr_t) & report_partial_result_seg},
-
-    {"MatchFileName", "Recognition output file name", "-matchfn",
-     STRING, (caddr_t) & match_file_name},
-
-    {"MatchSegFileName", "Recognition output with segmentation",
-     "-matchsegfn",
-     STRING, (caddr_t) & matchseg_file_name},
-
-    {"PhoneConfidence", "Phone confidence", "-phoneconf",
-     BOOL, (caddr_t) & phone_conf},
-
-    {"PhoneLat",
-     "Directory for writing phone lattices based on best senone scores",
-     "-pscr2lat",
-     STRING, (caddr_t) & pscr2lat},
-
-    {"LogFileName", "Recognition ouput file name", "-logfn",
-     STRING, (caddr_t) & logfn_arg},
-
-    {"DataDirectory", "Data directory", "-datadir",
-     STRING, (caddr_t) & data_directory},
-
-    {"DataDirectory", "Data directory", "-cepdir",
-     STRING, (caddr_t) & data_directory},
-
-    {"DataDirectory", "Data directory", "-vqdir",
-     STRING, (caddr_t) & data_directory},
-
-    {"SegDataDirectory", "Data directory", "-segdir",
-     STRING, (caddr_t) & seg_data_directory},
-
-    {"CepExt", "Cepstrum File Extension", "-cepext",
-     STRING, (caddr_t) & cep_ext},
-
-    {"SentDir", "Sentence directory", "-sentdir",
-     STRING, (caddr_t) & sent_directory},
-
-    {"SentExt", "Sentence File Extension", "-sentext",
-     STRING, (caddr_t) & sent_ext},
-
-    {"PhoneLabDir", "Phone Label Directory", "-phonelabdir",
-     STRING, (caddr_t) & phonelabdirname},
-
-    {"PhoneLabExt", "Phone Label Extension (default lab)", "-phonelabext",
-     STRING, (caddr_t) & phonelabextname},
-
-    {"PhoneLabType", "Phone Label Type (default xlabel)", "-phonelabtype",
-     STRING, (caddr_t) & phonelabtype},
-
-    {"WordLabDir", "Word Label Directory", "-wordlabdir",
-     STRING, (caddr_t) & wordlabdirname},
-
-    {"WordLabExt", "Word Label Extension (default wrd)", "-wordlabext",
-     STRING, (caddr_t) & wordlabextname},
-
-    {"WordLabType", "Word Label Type (default xlabel)", "-wordlabtype",
-     STRING, (caddr_t) & wordlabtype},
-
-    {"LMNamesDir", "Directory for LM-name file for each utt", "-lmnamedir",
-     STRING, (caddr_t) & utt_lmname_dir},
-
-    {"LMNamesExt", "Filename extension for LM-name files", "-lmnameext",
-     STRING, (caddr_t) & lmname_ext},
-
-    {"StartWordDir", "Startword directory", "-startworddir",
-     STRING, (caddr_t) & startWord_directory},
-
-    {"StartWordExt", "StartWord File Extension", "-startwordext",
-     STRING, (caddr_t) & startWord_ext},
-
-    {"NbestDir", "N-best Hypotheses Directory", "-nbestdir",
-     STRING, (caddr_t) & nbest_dir},
-
-    {"NbestCount", "No. N-best Hypotheses", "-nbest",
-     INT, (caddr_t) & nbest},
-
-    {"NbestExt", "N-best Hypothesis File Extension", "-nbestext",
-     STRING, (caddr_t) & nbest_ext},
-
-    {"BeamWidth", "Beam Width", "-beam",
-     FLOAT, (caddr_t) & beam_width},
-
-    {"NewWordBeamWidth", "New Word Beam Width", "-nwbeam",
-     FLOAT, (caddr_t) & new_word_beam_width},
-
-    {"FwdFlatBeamWidth", "FwdFlat Beam Width", "-fwdflatbeam",
-     FLOAT, (caddr_t) & fwdflat_beam_width},
-
-    {"FwdFlatNewWordBeamWidth", "FwdFlat New Word Beam Width",
-     "-fwdflatnwbeam",
-     FLOAT, (caddr_t) & fwdflat_new_word_beam_width},
-
-    {"LastPhoneAloneBeamWidth", "Beam Width for Last Phones Only",
-     "-lponlybw",
-     FLOAT, (caddr_t) & lastphone_alone_beam_width},
-
-    {"LastPhoneAloneBeamWidth", "Beam Width for Last Phones Only",
-     "-lponlybeam",
-     FLOAT, (caddr_t) & lastphone_alone_beam_width},
-
-    {"NewPhoneBeamWidth", "New Phone Beam Width", "-npbeam",
-     FLOAT, (caddr_t) & new_phone_beam_width},
-
-    {"LastPhoneBeamWidth", "Last Phone Beam Width", "-lpbeam",
-     FLOAT, (caddr_t) & last_phone_beam_width},
-
-    {"PhoneInsertionPenalty", "Penalty for each phone used", "-phnpen",
-     FLOAT, (caddr_t) & phone_insertion_penalty},
-
-    {"InsertionPenalty", "Penalty for word transitions", "-inspen",
-     FLOAT, (caddr_t) & insertion_penalty},
-
-    {"NewWordPenalty", "Penalty for new word transitions", "-nwpen",
-     FLOAT, (caddr_t) & nw_pen},
-
-    {"SilenceWordPenalty", "Penalty for silence word transitions",
-     "-silpen",
-     FLOAT, (caddr_t) & silence_word_penalty},
-
-    {"FillerWordPenalty", "Penalty for filler word transitions",
-     "-fillpen",
-     FLOAT, (caddr_t) & filler_word_penalty},
-
-    {"LanguageWeight", "Weighting on Language Probabilities", "-langwt",
-     FLOAT, (caddr_t) & fwdtree_lw},
-
-    {"RescoreLanguageWeight", "LM prob weight for rescoring pass",
-     "-rescorelw",
-     FLOAT, (caddr_t) & bestpath_lw},
-
-    {"FwdFlatLanguageWeight",
-     "FwdFlat Weighting on Language Probabilities", "-fwdflatlw",
-     FLOAT, (caddr_t) & fwdflat_lw},
-
-    {"FwdTree", "Fwd tree search (1st pass)", "-fwdtree",
-     BOOL, (caddr_t) & fwdtree_flag},
-
-    {"FwdFlat", "Flat fwd search over fwdtree lattice", "-fwdflat",
-     BOOL, (caddr_t) & fwdflat_flag},
-
-    {"ForwardOnly", "Run only the forward pass", "-forwardonly",
-     BOOL, (caddr_t) & forward_only},
-
-    {"Bestpath", "Shortest path search over lattice", "-bestpath",
-     BOOL, (caddr_t) & bestpath_flag},
-
-    {"TrigramInFwdPass", "Use trigram (if available) in forward pass",
-     "-fwd3g",
-     BOOL, (caddr_t) & use_3g_in_fwd_pass},
-
-    {"SkipAltFrames", "Skip alternate frames in exiting phones",
-     "-skipalt",
-     INT, (caddr_t) & skip_alt_frm},
-
-    {"WriteScoreInMatchFile", "write score in the match file",
-     "-matchscore",
-     BOOL, (caddr_t) & writeScoreInMatchFile},
-
-    {"LatticeSizes", "BP and FP Tables Sizes", "-latsize",
-     INT, (caddr_t) & lattice_size},
-
-    {"LMCacheNumLines", "No. lines in LM cache", "-lmcachelines",
-     INT, (caddr_t) & lm_cache_lines},
-    {"DumpLattice", "Dump Lattice", "-dumplatdir",
-     STRING, (caddr_t) & dumplat_dir},
-
-    {"SamplingRate", "Sampling rate", "-samp",
-     INT, (caddr_t) & sampling_rate},
-
-    {"NumMelFilters", "Number of mel filters", "-nfilt",
-     INT, (caddr_t) & n_mel_filt},
-
-    {"LowerMelFilter", "Lower edge of mel filters", "-lowerf",
-     FLOAT, (caddr_t) & lower_filt},
-
-    {"UpperMelFilter", "Upper edge of mel filters", "-upperf",
-     FLOAT, (caddr_t) & upper_filt},
-
-    {"PreEmphasisAlpha", "Alpha coefficient for pre-emphasis", "-alpha",
-     FLOAT, (caddr_t) & pre_emphasis_alpha},
-
-    {"FrameRate", "Frame rate (number of frames per second)", "-frate",
-     INT, (caddr_t) & frame_rate},
-
-    {"NFFT", "Number of points for FFT", "-nfft",
-     INT, (caddr_t) & n_fft},
-
-    {"WindowLength", "Window length (in seconds) for FFT", "-wlen",
-     FLOAT, (caddr_t) & window_length},
-
-    {"UseADCInput", "Use raw ADC input", "-adcin",
-     BOOL, (caddr_t) & adc_input},
-
-    {"ADCFileExt", "ADC file extension", "-adcext",
-     STRING, (caddr_t) & adc_ext},
-
-    {"ADCByteOrder", "ADC file byte order (0:BIG/1:LITTLE)", "-adcendian",
-     INT, (caddr_t) & adc_endian},
-
-    {"ADCHdrSize", "ADC file header size", "-adchdr",
-     INT, (caddr_t) & adc_hdr},
-
-    {"UseDoubleBW", "Double bandwidth mel filter", "-doublebw",
-     BOOL, (caddr_t) & doublebw},
-
-    {"RawLogDir", "Log directory for raw output files)", "-rawlogdir",
-     STRING, (caddr_t) & rawlogdir},
-
-    {"MFCLogDir", "Log directory for MFC output files)", "-mfclogdir",
-     STRING, (caddr_t) & mfclogdir},
-
-    {"TimeAlignCtlFile", "Time align control file", "-tactlfn",
-     STRING, (caddr_t) & time_align_ctl_file_name},
-
-    {"TimeAlignWord", "Time Align Phone", "-taword",
-     BOOL, (caddr_t) & time_align_word},
-
-    {"TimeAlignPhone", "Time Align Phone", "-taphone",
-     BOOL, (caddr_t) & time_align_phone},
-
-    {"TimeAlignState", "Time Align State", "-tastate",
-     BOOL, (caddr_t) & time_align_state},
-
-    {"SegFileExt", "Seg file extension", "-segext",
-     STRING, (caddr_t) & seg_file_ext},
-
-    {"OutSentFile", "output sentence file name", "-osentfn",
-     STRING, (caddr_t) & out_sent_filename},
-
-    {"PrintBackTrace", "Print Back Trace", "-backtrace",
-     BOOL, (caddr_t) & print_back_trace},
-
-    {"PrintBackTrace", "Print Back Trace", "-shortbacktrace",
-     BOOL, (caddr_t) & print_short_back_trace},
-
-    {"MaxWordsPerFrame", "Limit words exiting per frame to this number",
-     "-maxwpf",
-     INT, (caddr_t) & maxwpf},
-
-    {"MaxHMMPerFrame",
-     "Limit HMMs evaluated per frame to this number (approx)", "-maxhmmpf",
-     INT, (caddr_t) & maxhmmpf},
-
-    {"VerbosityLevel", "Verbosity Level", "-verbose",
-     INT, (caddr_t) & verbosity_level},
-
-    {"FSGForceFinalState", "Force backtrace from FSG final state",
-     "-fsgbfs",
-     BOOL, (caddr_t) & fsg_backtrace_finalstate},
-
-    {"CalcPhonePerplexity", "Calculate phone perplexity (uses FPU)",
-     "-phperp",
-     BOOL, (caddr_t) & calc_phone_perp},
-
-    {0, 0, 0, NOTYPE, 0}
-};
-
-search_hyp_t *run_sc_utterance(char *mfcfile, int32 sf, int32 ef,
-                               char *idspec);
-
-static int32
-nextarg(char *line, int32 * start, int32 * len, int32 * next)
-{
-    int32 i, lineLen;
-
-    lineLen = strlen(line);
-
-    /* Find first non-space character */
-    for (i = 0; isspace((unsigned char) line[i]) && i < lineLen; i++);
-
-    if (i == lineLen)
-        return 1;
-
-    if (line[i] == '"') {
-        /* NOTE: No escape characters mechanism within quoted string */
-        i++;
-        for (*start = i; line[i] != '"' && i < lineLen; i++);
-        if (line[i] != '"')
-            return 1;
-        *len = i - *start;
-        *next = i + 1;
-        return 0;
-    }
-    else {
-        for (*start = i; !isspace((unsigned char) line[i]) && i < lineLen;
-             i++);
-        *len = i - *start;
-        *next = i;
-        return 0;
-    }
-}
-
-/*
- * Read arguments from file and append to command line arguments.
- * NOTE: Spaces inside arguments, and quote marks around arguments not handled correctly.
- */
-static int32
-argfile_read(const int32 argc, char ***argv, const char *argfile)
-{
-    FILE *fp;
-    int32 i, narg, len;
-    char argstr[1024];
-    char argline[4096];
-    char **newargv;
-    char *lp;
-    int32 start, next;
-
-    if ((fp = fopen(argfile, "r")) == NULL)
-        E_FATAL("fopen(%s,r) failed\n", argfile);
-
-    /* Count arguments */
-    narg = 0;
-    while (fgets(argline, sizeof(argline), fp) != NULL) {
-        if (argline[0] == '#')
-            continue;
-
-        lp = argline;
-
-        while (!nextarg(lp, &start, &len, &next)) {
-            lp = lp + next;
-            narg++;
-        }
-    }
-    rewind(fp);
-
-    /* Allocate space for arguments */
-    narg += argc;
-    newargv = (char **) malloc(narg * sizeof(char *));
-    if (newargv == NULL)
-        E_FATAL("malloc failed\n");
-
-    /* Read arguments */
-    newargv[0] = (*argv)[0];
-    i = 1;
-    while (fgets(argline, sizeof(argline), fp) != NULL) {
-        if (argline[0] == '#')
-            continue;
-
-        lp = argline;
-        while (!nextarg(lp, &start, &len, &next)) {
-            assert(i < narg);
-            strncpy(argstr, lp + start, len);
-            argstr[len] = '\0';
-            lp = lp + next;
-            newargv[i] = ckd_salloc(argstr);
-
-            i++;
-        }
-    }
-    fclose(fp);
-    assert(i == narg - argc + 1);
-
-    /* Copy initial argument list at the end */
-    for (i = 1, narg -= (argc - 1); i < argc; i++, narg++)
-        newargv[narg] = (*argv)[i];
-
-    *argv = newargv;
-    return (narg);
-}
-
-static void
-init_feat(void)
-{
-    feat_t *fcb;
-    agc_type_t agc;
-    cmn_type_t norm;
-
-    agc = AGC_NONE;
-    if (agcNoise)
-        agc = AGC_NOISE;
-    else if (agcMax)
-        agc = AGC_MAX;
-    else if (agcEMax)
-        agc = AGC_EMAX;
-    if ((!ctl_file_name) && live && (agc != AGC_NONE) && (agc != AGC_EMAX)) {
-        agc = AGC_EMAX;
-        E_INFO("Live mode; AGC set to AGC_EMAX\n");
-    }
-
-    norm = CMN_NONE;
-    if (normalizeMean)
-        norm = normalizeMeanPrior ? CMN_PRIOR : CMN_CURRENT;
-    if ((!ctl_file_name) && live && (norm == CMN_CURRENT)) {
-        norm = CMN_PRIOR;
-        E_INFO("Live mode; CMN set to CMN_PRIOR\n");
-    }
-
-    fcb = feat_init("s2_4x", norm, 0, agc, 1, 13);
-
-    if (agcNoise || agcMax) {
-        agc_set_threshold(fcb->agc_struct, agcThresh);
-    }
-
-    uttproc_set_feat(fcb);
-}
-
-
-static int32 final_argc;
-static char **final_argv;
-static FILE *logfp = NULL;
-static char logfile[4096];      /* Hack!! Hardwired constant 4096 */
-
-static void
-log_arglist(FILE * fp, int32 argc, char *argv[])
-{
-    int32 i;
-
-    /* Log the arguments */
-    for (i = 0; i < argc; i++) {
-        if (argv[i][0] == '-')
-            fprintf(fp, "\\\n ");
-        fprintf(fp, "%s ", argv[i]);
-    }
-    fprintf(fp, "\n\n");
-    fflush(fp);
-}
-
-/* Should be in uttproc.c, but ... */
-int32
-uttproc_set_logfile(char const *file)
-{
-    FILE *fp;
-
-    E_INFO("uttproc_set_logfile(%s)\n", file);
-
-    if ((fp = fopen(file, "w")) == NULL) {
-        E_ERROR("fopen(%s,w) failed; logfile unchanged\n", file);
-        return -1;
-    }
-    else {
-        if (logfp)
-            fclose(logfp);
-
-        logfp = fp;
-        /* 
-         * Rolled back the dup2() bug fix for windows only. In
-         * Microsoft Visual C, dup2 seems to cause problems in some
-         * applications: the files are opened, but nothing is written
-         * to it.
-         */
-#ifdef WIN32
-        *stdout = *logfp;
-        *stderr = *logfp;
-#else
-        dup2(fileno(logfp), 1);
-        dup2(fileno(logfp), 2);
-#endif
-
-        E_INFO("Previous logfile: '%s'\n", logfile);
-        strcpy(logfile, file);
-
-        log_arglist(logfp, final_argc, final_argv);
-    }
-
-    return 0;
-}
+/* FIXME FIXME FIXME fixed size buffer */
+static char utt_name[512];
 
 int
 fbs_init(int32 argc, char **argv)
 {
+    E_INFO("libpocketsphinx/fbs_main.c COMPILED ON: %s, AT: %s\n\n", __DATE__, __TIME__);
+
     /* Parse command line arguments */
-    pconf(argc, argv, param, 0, 0, 0);
-    if (arg_file) {
-        /* Read arguments from argfile */
-        argc = argfile_read(argc, &argv, arg_file);
-        pconf(argc, argv, param, 0, 0, 0);
-    }
-    final_argc = argc;
-    final_argv = argv;
-
-    /* Open logfile if specified; else log to stdout/stderr */
-    logfile[0] = '\0';
-    if (logfn_arg) {
-        if ((logfp = fopen(logfn_arg, "w")) == NULL) {
-            E_ERROR("fopen(%s,w) failed; logging to stdout/stderr\n",
-                    logfn_arg);
-        }
-        else {
-            strcpy(logfile, logfn_arg);
-            /* 
-             * Rolled back the dup2() bug fix for windows only. In
-             * Microsoft Visual C, dup2 seems to cause problems in
-             * some applications: the files are opened, but nothing is
-             * written to it.
-             */
-#ifdef WIN32
-            *stdout = *logfp;
-            *stderr = *logfp;
-#else
-            dup2(fileno(logfp), 1);
-            dup2(fileno(logfp), 2);
-#endif
-        }
-    }
-
-    /* These hardwired verbosity level constants should be changed! */
-    if (verbosity_level >= 2)
-        log_arglist(stdout, argc, argv);
-
-#ifndef WIN32
-    if (verbosity_level >= 2) {
-        system("hostname");
-        system("date");
-        printf("\n\n");
-    }
-#endif
-
-    E_INFO("libfbs/main COMPILED ON: %s, AT: %s\n\n", __DATE__, __TIME__);
+    cmd_ln_appl_enter(argc, argv,
+                      "pocketsphinx.args",
+                      (arg_t *)args_def);
 
     /* Compatibility with old forwardonly flag */
-    if (forward_only)
-        bestpath_flag = FALSE;
-    if ((!fwdtree_flag) && (!fwdflat_flag))
+    if ((!cmd_ln_boolean("-fwdtree")) && (!cmd_ln_boolean("-fwdflat")))
         E_FATAL
             ("At least one of -fwdtree and -fwdflat flags must be TRUE\n");
 
     /* Load the KB */
-    kb(argc, argv, insertion_penalty, fwdtree_lw, phone_insertion_penalty);
+    kb_init();
 
+    /* Initialize the search module */
     search_initialize();
-
-    search_set_beam_width(beam_width);
-    search_set_new_word_beam_width(new_word_beam_width);
-    search_set_new_phone_beam_width(new_phone_beam_width);
-    search_set_last_phone_beam_width(last_phone_beam_width);
-    search_set_lastphone_alone_beam_width(lastphone_alone_beam_width);
-    search_set_silence_word_penalty(silence_word_penalty,
-                                    phone_insertion_penalty);
-    search_set_filler_word_penalty(filler_word_penalty,
-                                   phone_insertion_penalty);
-    search_set_newword_penalty(nw_pen);
-    search_set_lw(fwdtree_lw, fwdflat_lw, bestpath_lw);
-    search_set_ip(insertion_penalty);
-    search_set_skip_alt_frm(skip_alt_frm);
-    search_set_fwdflat_bw(fwdflat_beam_width, fwdflat_new_word_beam_width);
 
     /* Initialize dynamic data structures needed for utterance processing */
     uttproc_init();
@@ -1018,13 +269,14 @@ fbs_init(int32 argc, char **argv)
     /* Initialize feature computation. */
     init_feat();
 
-    if (rawlogdir)
-        uttproc_set_rawlogdir(rawlogdir);
-    if (mfclogdir)
-        uttproc_set_mfclogdir(mfclogdir);
+    if (cmd_ln_str("-rawlogdir"))
+        uttproc_set_rawlogdir(cmd_ln_str("-rawlogdir"));
+    if (cmd_ln_str("-mfclogdir"))
+        uttproc_set_mfclogdir(cmd_ln_str("-mfclogdir"));
 
     /* If multiple LMs present, choose the unnamed one by default */
-    if (kb_get_fsg_file_name() == NULL) {
+    /* FIXME: Add a -lmname option, use it. */
+    if (cmd_ln_str("-fsgfn") == NULL) {
         if (get_n_lm() == 1) {
             if (uttproc_set_lm(get_current_lmname()) < 0)
                 E_FATAL("SetLM() failed\n");
@@ -1043,9 +295,8 @@ fbs_init(int32 argc, char **argv)
     if (kb_get_word_id("<s>") >= 0)
         uttproc_set_startword("<s>");
 
-    if (allphone_mode)
-        allphone_init(beam_width, new_word_beam_width,
-                      phone_insertion_penalty);
+    if (cmd_ln_boolean("-allphone"))
+        allphone_init();
 
     E_INFO("libfbs/main COMPILED ON: %s, AT: %s\n\n", __DATE__, __TIME__);
 
@@ -1053,13 +304,13 @@ fbs_init(int32 argc, char **argv)
      * Initialization complete; If there was a control file run batch
      */
 
-    if (ctl_file_name) {
-        if (!time_align_ctl_file_name)
-            run_ctl_file(ctl_file_name);
+    if (cmd_ln_str("-ctlfn")) {
+        if (!cmd_ln_str("-tactlfn"))
+            run_ctl_file(cmd_ln_str("-ctlfn"));
         else
-            run_time_align_ctl_file(ctl_file_name,
-                                    time_align_ctl_file_name,
-                                    out_sent_filename);
+            run_time_align_ctl_file(cmd_ln_str("-ctlfn"),
+                                    cmd_ln_str("-tactlfn"),
+                                    cmd_ln_str("-outsentfn"));
 
         uttproc_end();
         exit(0);
@@ -1075,13 +326,40 @@ fbs_end(void)
     return 0;
 }
 
+static void
+init_feat(void)
+{
+    feat_t *fcb;
+
+    fcb = feat_init("s2_4x",
+                    cmn_type_from_str(cmd_ln_str("-cmn")),
+                    cmd_ln_boolean("-varnorm"),
+                    agc_type_from_str(cmd_ln_str("-agc")),
+                    1, 13);
+
+    if (0 != strcmp(cmd_ln_str("-agc"), "none")) {
+        agc_set_threshold(fcb->agc_struct,
+                          cmd_ln_float32("-agcthresh"));
+    }
+
+    uttproc_set_feat(fcb);
+}
+
+/* FIXME... use I/O stuff in sphinxbase */
+static int32 adc_endian;
+
 FILE *
 adcfile_open(char const *utt)
 {
     char inputfile[MAXPATHLEN];
+    const char *adc_ext, *data_directory;
     FILE *uttfp;
-    int32 n, l;
+    int32 n, l, adc_hdr;
 
+    adc_ext = cmd_ln_str("-cepext");
+    adc_hdr = cmd_ln_int32("-adchdr");
+    adc_endian = strcmp(cmd_ln_str("-adcendian"), "big");
+    data_directory = cmd_ln_str("-cepdir");
     n = strlen(adc_ext);
     l = strlen(utt);
     if ((l > n + 1) && (utt[l - n - 1] == '.')
@@ -1188,12 +466,16 @@ run_ctl_file(char const *ctl_file_name)
     int32 line_no = 0;
     int32 sf, ef;
     search_hyp_t *hyp;
+    int32 ctl_offset, ctl_count, ctl_incr;
 
     if (strcmp(ctl_file_name, "-") != 0)
         ctl_fs = myfopen(ctl_file_name, "r");
     else
         ctl_fs = stdin;
 
+    ctl_offset = cmd_ln_int32("-ctloffset");
+    ctl_count = cmd_ln_int32("-ctlcount");
+    ctl_incr = cmd_ln_int32("-ctlincr");
     for (;;) {
         if (ctl_fs == stdin)
             E_INFO("\nInput file(no ext): ");
@@ -1214,9 +496,9 @@ run_ctl_file(char const *ctl_file_name)
 
         E_INFO("\nUtterance: %s\n", idspec);
 
-        if (!allphone_mode) {
+        if (!cmd_ln_boolean("-allphone")) {
             hyp = run_sc_utterance(mfcfile, sf, ef, idspec);
-            if (hyp && print_short_back_trace) {
+            if (hyp && cmd_ln_boolean("-shortbacktrace")) {
                 /* print backtrace summary */
                 fprintf(stdout, "SEG:");
                 for (; hyp; hyp = hyp->next)
@@ -1261,10 +543,10 @@ run_time_align_ctl_file(char const *utt_ctl_file_name,
     int32 end_frame;
     int32 n_featfr;
     int32 align_all = 0;
+    int32 ctl_offset, ctl_count, ctl_incr;
 
     time_align_init();
-    beam_width = 1e-9f;
-    time_align_set_beam_width(beam_width);
+    time_align_set_beam_width(1e-9f); /* FIXME: !!!??? */
     E_INFO("****** USING WIDE BEAM ****** (1e-9)\n");
 
     utt_ctl_fs = myfopen(utt_ctl_file_name, "r");
@@ -1276,6 +558,9 @@ run_time_align_ctl_file(char const *utt_ctl_file_name,
     else
         out_sent_fs = NULL;
 
+    ctl_offset = cmd_ln_int32("-ctloffset");
+    ctl_count = cmd_ln_int32("-ctlcount");
+    ctl_incr = cmd_ln_int32("-ctlincr");
     while (fscanf(utt_ctl_fs, "%s\n", Utt) != EOF) {
         fgets(time_align_spec, 1023, pe_ctl_fs);
 
@@ -1336,7 +621,7 @@ run_time_align_ctl_file(char const *utt_ctl_file_name,
 /*
  * Decode utterance.
  */
-search_hyp_t *
+static search_hyp_t *
 run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
 {
     char startword_filename[1000];
@@ -1345,17 +630,23 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
     char *finalhyp;
     char utt[1024];
     search_hyp_t *hypseg;
+    int32 nbest;
+    char *startWord_directory, *startWord_ext;
 
     strcpy(utt, idspec);
     build_uttid(utt);
 
-    if (nbest > 0)
-        bestpath_flag = 1;      /* Force creation of DAG */
+    startWord_directory = cmd_ln_str("-startworddir");
+    startWord_ext = cmd_ln_str("-startwordext");
+
+    nbest = cmd_ln_int32("-nbest");
 
     /* Select the LM for utt */
     if (get_n_lm() > 1) {
         FILE *lmname_fp;
         char utt_lmname_file[1000], lmname[1000];
+        char *utt_lmname_dir = cmd_ln_str("-lmnamedir");
+        char *lmname_ext = cmd_ln_str("-lmnameext");
 
         sprintf(utt_lmname_file, "%s/%s.%s", utt_lmname_dir, utt_name,
                 lmname_ext);
@@ -1392,6 +683,7 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
         sprintf(startword_filename, "%s.%s", utt, startWord_ext);
 #endif
     if ((sw_fp = fopen(startword_filename, "r")) != NULL) {
+        char startWord[512]; /* FIXME */
         fscanf(sw_fp, "%s", startWord);
         fclose(sw_fp);
 
@@ -1419,6 +711,8 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
             char nbestfile[4096];
             search_hyp_t *h, **alt;
             int32 i, n_alt, startwid;
+            char *nbest_dir = cmd_ln_str("-nbestdir");
+            char *nbest_ext = cmd_ln_str("-nbestext");
 
             startwid = kb_get_word_id("<s>");
             search_save_lattice();
@@ -1484,6 +778,10 @@ time_align_utterance(char const *utt,
 
     if (time_align_word_sequence(utt, left_word, pe_words, right_word) ==
         0) {
+        char *data_directory = cmd_ln_str("-cepdir");
+        char *seg_data_directory = cmd_ln_str("-segdir");
+        char *seg_file_ext = cmd_ln_str("-segext");
+
         if (seg_file_ext) {
             unsigned short *seg;
             int seg_cnt;
@@ -1581,241 +879,4 @@ time_align_utterance(char const *utt,
     TotalElapsedTime += MakeSeconds(&e_start, &e_stop);
     TotalSpeechTime += n_frames * 0.01;
 #endif                          /* WIN32 */
-}
-
-char const *
-get_current_startword(void)
-{
-    return startWord;
-}
-
-int32
-query_compute_all_senones(void)
-{
-    return compute_all_senones;
-}
-
-int32
-query_lm_cache_lines(void)
-{
-    return (lm_cache_lines);
-}
-
-int32
-query_report_altpron(void)
-{
-    return (report_altpron);
-}
-
-int32
-query_lattice_size(void)
-{
-    return (lattice_size);
-}
-
-char const *
-query_match_file_name(void)
-{
-    return (match_file_name);
-}
-
-char const *
-query_matchseg_file_name(void)
-{
-    return (matchseg_file_name);
-}
-
-int32
-query_fwdtree_flag(void)
-{
-    return fwdtree_flag;
-}
-
-int32
-query_fwdflat_flag(void)
-{
-    return fwdflat_flag;
-}
-
-int32
-query_bestpath_flag(void)
-{
-    return bestpath_flag;
-}
-
-int32
-query_topsen_window(void)
-{
-    return topsen_window;
-}
-
-int32
-query_topsen_thresh(void)
-{
-    return topsen_thresh;
-}
-
-int32
-query_blocking_ad_read(void)
-{
-    return (blocking_ad_read_p);
-}
-
-char const *
-query_dumplat_dir(void)
-{
-    return dumplat_dir;
-}
-
-int32
-query_adc_input(void)
-{
-    return adc_input;
-}
-
-int32
-set_adc_input(int32 value)
-{
-    int32 old_value;
-
-    old_value = adc_input;
-    adc_input = value;
-    return old_value;
-}
-
-void
-query_fe_params(param_t * param)
-{
-    param->SAMPLING_RATE = sampling_rate;
-    param->PRE_EMPHASIS_ALPHA = DEFAULT_PRE_EMPHASIS_ALPHA;
-    param->WINDOW_LENGTH = DEFAULT_WINDOW_LENGTH;
-    /* NOTE! This could be 256 for 8000Hz, but that requires that
-     * the acoustic models be retrained, and most 8k models are
-     * using 512 points.  So we will use DEFAULT_FFT_SIZE (512)
-     * everywhere. */
-    param->FFT_SIZE = DEFAULT_FFT_SIZE;
-    param->doublebw = doublebw;
-    if (param->doublebw) {
-        E_INFO("Will use double bandwidth in mel filter\n");
-    }
-    else {
-        E_INFO("Will not use double bandwidth in mel filter\n");
-    }
-
-    /* Provide some defaults based on sampling rate if the user
-     * hasn't. */
-    switch (sampling_rate) {
-    case 16000:
-        param->FRAME_RATE = 100;
-        param->NUM_FILTERS = DEFAULT_BB_NUM_FILTERS;
-        param->LOWER_FILT_FREQ = DEFAULT_BB_LOWER_FILT_FREQ;
-        param->UPPER_FILT_FREQ = DEFAULT_BB_UPPER_FILT_FREQ;
-        break;
-    case 11025:
-        /* Numbers from CALO project meeting data. */
-        param->FRAME_RATE = 105;
-        param->NUM_FILTERS = 36;
-        param->LOWER_FILT_FREQ = 130;
-        param->UPPER_FILT_FREQ = 5400;
-        break;
-    case 8000:
-        param->FRAME_RATE = 100;
-        param->NUM_FILTERS = DEFAULT_NB_NUM_FILTERS;
-        param->LOWER_FILT_FREQ = DEFAULT_NB_LOWER_FILT_FREQ;
-        param->UPPER_FILT_FREQ = DEFAULT_NB_UPPER_FILT_FREQ;
-        break;
-    }
-
-    if (n_mel_filt != 0)
-        param->NUM_FILTERS = n_mel_filt;
-    if (lower_filt != -1.0f)
-        param->LOWER_FILT_FREQ = lower_filt;
-    if (upper_filt != 0.0f)
-        param->UPPER_FILT_FREQ = upper_filt;
-    if (pre_emphasis_alpha != 0.0f)
-        param->PRE_EMPHASIS_ALPHA = pre_emphasis_alpha;
-    if (window_length != 0.0f)
-        param->WINDOW_LENGTH = window_length;
-    if (frame_rate != 0)
-        param->FRAME_RATE = frame_rate;
-    if (n_fft != 0)
-        param->FFT_SIZE = n_fft;
-}
-
-int32
-query_sampling_rate(void)
-{
-    return sampling_rate;
-}
-
-int32
-query_doublebw(void)
-{
-    return doublebw;
-}
-
-char const *
-query_ctlfile_name(void)
-{
-    return ctl_file_name;
-}
-
-int32
-query_phone_conf(void)
-{
-    return phone_conf;
-}
-
-char *
-query_pscr2lat(void)
-{
-    return pscr2lat;
-}
-
-int32
-query_maxwpf(void)
-{
-    return maxwpf;
-}
-
-int32
-query_maxhmmpf(void)
-{
-    return maxhmmpf;
-}
-
-int32
-query_back_trace(void)
-{
-    return print_back_trace;
-}
-
-int32
-query_ctl_offset(void)
-{
-    return ctl_offset;
-}
-
-int32
-query_ctl_count(void)
-{
-    return ctl_count;
-}
-
-int32
-query_report_partial_result(void)
-{
-    return report_partial_result;
-}
-
-int32
-query_report_partial_result_seg(void)
-{
-    return report_partial_result_seg;
-}
-
-int32
-query_fsg_backtrace_finalstate(void)
-{
-    return fsg_backtrace_finalstate;
 }

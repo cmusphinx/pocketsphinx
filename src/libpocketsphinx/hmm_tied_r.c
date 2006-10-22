@@ -61,8 +61,6 @@
 #include "hmm_tied_r.h"
 #include "bin_mdef.h"
 
-int32 totalDists;               /* Total number of distributions */
-
 void
 remap_mdef(SMD * smdV, bin_mdef_t * mdef)
 {
@@ -82,33 +80,19 @@ remap_mdef(SMD * smdV, bin_mdef_t * mdef)
 void
 hmm_tied_r_dumpssidlist()
 {
-    SMD *models;
     FILE *dumpfp;
     int32 i, j, numSSeq;
 
-    models = kb_get_models();
-    numSSeq = hmm_num_sseq();
+    numSSeq = bin_mdef_n_sseq(mdef);
     if ((dumpfp = fopen("ssid_list.txt", "w")) != NULL) {
         for (i = 0; i < numSSeq; i++) {
             fprintf(dumpfp, "%6d\t", i);
             for (j = 0; j < 5; j++)
-                fprintf(dumpfp, " %5d", models[i].dist[j * 3]);
+                fprintf(dumpfp, " %5d", smds[i].dist[j * 3]);
             fprintf(dumpfp, "\n");
         }
     }
     fclose(dumpfp);
-}
-
-int32
-hmm_num_sseq(void)
-/*------------------------------------------------------------*
- * Return number of unique senone sequences.
- * If the number is 0 we call this a fatal error.
- */
-{
-    bin_mdef_t *mdef = kb_mdef();
-    assert(mdef != NULL);
-    return bin_mdef_n_sseq(mdef);
 }
 
 int32
@@ -117,7 +101,5 @@ hmm_pid2sid(int32 pid)
  * Convert a phone id to a senone sequence id\
  */
 {
-    bin_mdef_t *mdef = kb_mdef();
-    assert(mdef != NULL);
     return bin_mdef_pid2ssid(mdef, pid);
 }

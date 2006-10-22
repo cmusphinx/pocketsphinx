@@ -138,7 +138,6 @@
 #include "ckd_alloc.h"
 #include "c.h"
 #include "pio.h"
-#include "pconf.h"
 #include "log.h"
 #include "dict.h"
 #include "msd.h"
@@ -154,293 +153,34 @@
 #include "mdef.h"
 #include "tmat.h"
 #include "search.h"
+#include "cmd_ln.h"
 
-static char *fsg_ctlfile_name = NULL;
-static char *fsg_file_name = NULL;
-/*
- * If (fsg_use_altpron) consider alternative pronunciations in addition to the
- * words explicitly mentioned in an FSG
- */
-static int32 fsg_use_altpron = TRUE;
-/*
- * If (fsg_use_filler) transparently insert silence and other filler words at
- * each state of the FSG.
- */
-static int32 fsg_use_filler = TRUE;
-
-static char *lm_file_name = NULL;
-static char *lm_ctl_filename = NULL;    /* Multiple LM filenames and assoc. LM names */
-static char *lmft_file_name = NULL;
-static char *lm_tag_file_name = NULL;
-static char *lm_word_tags_file_name = NULL;
-static char const *lm_start_sym = "<s>";
-static char const *lm_end_sym = "</s>";
-static char *mdefFileName = NULL;
-static char *meanFileName = NULL;
-static char *varFileName = NULL;
-static char *mixwFileName = NULL;
-static char *tmatFileName = NULL;
-static float32 s3varfloor = 0.0001f;
-static float32 s3mixwfloor = 0.0000001f;
-static char *kdtree_file_name = NULL;
-static uint32 kdtree_maxdepth = 0;
-static int32 kdtree_maxbbi = -1;
-static char *dict_file_name = NULL;
-static char *oov_dict_file_name = NULL;
-static char *personal_dict_file_name = NULL;
-static char *phrase_dict_file_name = NULL;
-static char *noise_dict_file_name = NULL;
-static char *phonetp_file_name = NULL;
-static float32 ptplw = 5.0f;    /* Pulled out of thin air */
-static float32 uptpwt = 0.001f; /* Pulled out of thin air */
-static int32 scVqTopN = 4;      /* Number of semi-contnuous entries to use */
-static int32 use20msDiffPow = FALSE;
-static int32 scvqDSRatio = 1;   /* Frame downsampling ratio. */
-static double dcep80msWeight = 1.0;
-static char *sendumpfile = NULL;        /* Senone probs dump file */
-static int32 use_s3semi = FALSE;        /* S3 models are semi-continuous */
-static int32 use_mmap = FALSE;  /* Use memory-mapped I/O for probs */
-static int32 UseDarpaStandardLM = TRUE; /* FALSE => Use Roni Rosenfeld LM */
-static int32 UseBigramOnly = FALSE;     /* Only use bigram even is trigram is avaiable */
-static int32 UseWordPair = FALSE;       /* Use word pair probs only */
-static int32 use_left_context = TRUE;
-static float unigramWeight = 1.0f;      /* Unigram wieght */
-static double transSmooth = 0.0001f;    /* Transition smoothing floor */
-static double transWeight = 1.0f;       /* Transition Weight */
-static int32 NoLangModel = TRUE;
-static int32 useCiTrans = TRUE; /* only ci transitions in hmms */
-static int32 useCiPhonesOnly = FALSE;   /* only ci phones */
-static int32 useWDPhonesOnly = FALSE;   /* only with in word phones */
-
-static float silence_word_penalty = 0.005f;
-static float insertion_penalty = 0.65f;
-static float filler_word_penalty = 1e-8f;
-
-/* Per frame penalty for filler words; no lang wt applied to this */
-static float filler_pfpen = 1.0f;       /* Default: no penalty (0 => infinite) */
-
-static float language_weight = 9.5f;
-static int32 ascr_scale = 0;    /* Acoustic score scaling: SCALED DOWN by so
-                                   many bits.  Applicable to S3 continuous
-                                   models only, not semi-continuous models */
-static int32 max_new_oov = 0;   /* #new OOVs that can be added at run time */
-static float oov_ugprob = -4.5f;        /* (Actually log10(ugprob)) of OOVs */
-
-/* LM dump directory */
-static char *kb_dump_dir = NULL;
-
-static char *startsym_file = NULL;      /* For LISTEN project */
-
-config_t kb_param[] = {
-    /*
-     * LongName, Documentation, Switch, TYPE, Address
-     */
-    {"FSGFile", "FSG language model file name", "-fsgfn",
-     STRING, (caddr_t) & fsg_file_name},
-    {"FSGCtlFile", "FSG language model control file name", "-fsgctlfn",
-     STRING, (caddr_t) & fsg_ctlfile_name},
-    {"FSGUseAltPron", "Use alternative pronunciations for FSG",
-     "-fsgusealtpron",
-     BOOL, (caddr_t) & fsg_use_altpron},
-    {"FSGUseFiller", "Insert filler words at each state", "-fsgusefiller",
-     BOOL, (caddr_t) & fsg_use_filler},
-    {"LmFile", "Language model file name", "-lmfn",
-     STRING, (caddr_t) & lm_file_name},
-    {"LmControlFile", "Language model control file name", "-lmctlfn",
-     STRING, (caddr_t) & lm_ctl_filename},
-    {"LmFTFile", "Language model (forward trigram) file name", "-lmftfn",
-     STRING, (caddr_t) & lmft_file_name},
-    {"LmTagFile", "Language model tag file name", "-lmtagfn",
-     STRING, (caddr_t) & lm_tag_file_name},
-    {"LmWordTagFile", "Language model word tag file name", "-lmwtagfn",
-     STRING, (caddr_t) & lm_word_tags_file_name},
-    {"LmStartSym", "Language model start symbol", "-lmstartsym",
-     STRING, (caddr_t) & lm_start_sym},
-    {"LmEndSym", "Language model end symbol", "-lmendsym",
-     STRING, (caddr_t) & lm_end_sym},
-    {"UseDarpaStandardLM", "Use DARPA standard LM", "-useDarpaLM",
-     BOOL, (caddr_t) & UseDarpaStandardLM},
-    {"UseBigramOnly", "Only use a bigram model", "-useBigramOnly",
-     BOOL, (caddr_t) & UseBigramOnly},
-    {"UseWordPair", "Use word pair probabilities", "-usewordpair",
-     BOOL, (caddr_t) & UseWordPair},
-    {"S3MdefFile", "Model Definition File", "-mdeffn",
-     STRING, (caddr_t) & mdefFileName},
-    {"UseS3Semi", "S3 Models are 4-stream semi-continuous (s2_4x)",
-     "-s3semi",
-     BOOL, (caddr_t) & use_s3semi},
-    {"S3MeanFile", "S3 Gauden Means File", "-meanfn",
-     STRING, (caddr_t) & meanFileName},
-    {"S3VarFile", "S3 Gauden Variances File", "-varfn",
-     STRING, (caddr_t) & varFileName},
-    {"S3MixwFile", "S3 Mixture Weights File", "-mixwfn",
-     STRING, (caddr_t) & mixwFileName},
-    {"S3TmatFile", "S3 Transition Matrices File", "-tmatfn",
-     STRING, (caddr_t) & tmatFileName},
-    {"S3VarFloor", "Variance Floor for S3 var file", "-varfloor",
-     FLOAT, (caddr_t) & s3varfloor},
-    {"S3MixwFloor", "Mixture Weights Floor for S3 mixw file", "-mixwfloor",
-     FLOAT, (caddr_t) & s3mixwfloor},
-    {"KDTreeFile", "kd-tree file for codebook", "-kdtreefn",
-     STRING, (caddr_t) & kdtree_file_name},
-    {"KDTreeMaxDepth", "Maximum number of levels to evaluate in kd-tree",
-     "-kdmaxdepth",
-     INT, (caddr_t) & kdtree_maxdepth},
-    {"KDTreeMaxBBI",
-     "Maximum number of BBI boxes to consider in kd-tree leaves",
-     "-kdmaxbbi",
-     INT, (caddr_t) & kdtree_maxbbi},
-    {"DictFile", "Dictionary file name", "-dictfn",
-     STRING, (caddr_t) & dict_file_name},
-    {"OOVDictFile", "OOV Dictionary file name", "-oovdictfn",
-     STRING, (caddr_t) & oov_dict_file_name},
-    {"PersonalDictFile", "Personal Dictionary file name", "-perdictfn",
-     STRING, (caddr_t) & personal_dict_file_name},
-    {"PhraseDictFile", "Phrase dictionary file name", "-pdictfn",
-     STRING, (caddr_t) & phrase_dict_file_name},
-    {"NoiseDictFile", "Noise Dictionary file name", "-ndictfn",
-     STRING, (caddr_t) & noise_dict_file_name},
-    {"PhoneTransCountsFile", "Phone transition counts file", "-phonetpfn",
-     STRING, (caddr_t) & phonetp_file_name},
-    {"PhoneTPLanguageWeight",
-     "Weighting on Phone Transition Probabilities", "-ptplw",
-     FLOAT, (caddr_t) & ptplw},
-    {"UniformPTPWeight", "Unigram phone transition prob weight", "-uptpwt",
-     FLOAT, (caddr_t) & uptpwt},
-    {"StartSymbolsFile", "Start symbols file name", "-startsymfn",
-     STRING, (caddr_t) & startsym_file},
-    {"UseLeftContext", "Use the left context models", "-useleftcontext",
-     BOOL, (caddr_t) & use_left_context},
-    {"UseCITransOnly", "Only use trans probs from CI phones",
-     "-usecitrans",
-     BOOL, (caddr_t) & useCiTrans},
-    {"UseCIPhonesOnly", "Only use CI phones", "-useciphones",
-     BOOL, (caddr_t) & useCiPhonesOnly},
-    {"WordPhonesOnly", "Only use with in word phones", "-usewdphones",
-     BOOL, (caddr_t) & useWDPhonesOnly},
-    {"Use20msDiffPow", "Use 20 ms diff power instead of c0", "-use20msdp",
-     BOOL, (caddr_t) & use20msDiffPow},
-    {"Dcep80msWeight", "Weight for dcep80ms", "-dcep80msweight",
-     DOUBLE, (caddr_t) & dcep80msWeight},
-    {"TopNCodeWords", "Number of code words to use", "-top",
-     INT, (caddr_t) & scVqTopN},
-    {"FrameDSRatio", "Downsample frame computation by this factor",
-     "-dsratio",
-     INT, (caddr_t) & scvqDSRatio},
-    {"TransWeight", "Arc transition weight", "-transwt",
-     DOUBLE, (caddr_t) & transWeight},
-    {"TransSmooth", "Minimum arc transition probability", "-transsm,",
-     DOUBLE, (caddr_t) & transSmooth},
-    {"Unigram Weight", "Unigram weight, 0.0 - 1.0", "-ugwt",
-     FLOAT, (caddr_t) & unigramWeight},
-    {"InsertionPenalty", "Penalty for word transitions", "-inspen",
-     FLOAT, (caddr_t) & insertion_penalty},
-    {"SilenceWordPenalty", "Penalty for silence word transitions",
-     "-silpen",
-     FLOAT, (caddr_t) & silence_word_penalty},
-    {"FillerWordPenalty", "Penalty for filler word transitions",
-     "-fillpen",
-     FLOAT, (caddr_t) & filler_word_penalty},
-    {"FillerPerFramePenalty", "Per frame penalty for filler words",
-     "-fpfpen",
-     FLOAT, (caddr_t) & filler_pfpen},
-    {"LanguageWeight", "Weighting on Language Probabilities", "-langwt",
-     FLOAT, (caddr_t) & language_weight},
-    {"AcousticWeight", "Weighting on Acoustic Scores", "-ascrscale",
-     INT, (caddr_t) & ascr_scale},
-    {"MaxNewOOV", "MAX New OOVs that can be added at run time",
-     "-maxnewoov",
-     INT, (caddr_t) & max_new_oov},
-    {"OOVUgProb", "OOV Unigram Log Prob", "-oovugprob",
-     FLOAT, (caddr_t) & oov_ugprob},
-    {"KBDumpDirectory", "KB dump directory", "-kbdumpdir",
-     STRING, (caddr_t) & kb_dump_dir},
-    {"SenoneProbDumpFile", "Senone Probs Dump File", "-sendumpfn",
-     STRING, (caddr_t) & sendumpfile},
-    {"UseMMAP", "Use memory-mapped I/O for distributions", "-mmap",
-     BOOL, (caddr_t) & use_mmap},
-
-    {0, 0, 0, NOTYPE, 0}
-};
-
-int32 num_alphabet = NUMOFCODEENTRIES;
-SMD *smds;                      /* Pointer to the smd's */
-int32 numSmds;                  /* Number of SMDs allocated */
+/* Transition matrices. */
+SMD *smds;
+int32 numSmds;
 dictT *word_dict;
 
 /* Phone transition LOG(probability) matrix */
-static int32 **phonetp;
-static float phone_insertion_penalty;
+int32 **phonetp;
 
 /* S3 model definition */
-static bin_mdef_t *mdef;
+bin_mdef_t *mdef;
 
 /* S2 fast SCGMM computation object */
-static s2_semi_mgau_t *semi_mgau;
+s2_semi_mgau_t *semi_mgau;
 
-int32
-kb_get_silence_word_id(void)
-{
-    return kb_get_word_id("SIL");
-}
-
-
-int32
-kb_get_silence_ciphone_id(void)
-{
-    return phone_to_id("SIL", TRUE);
-}
-
-
-float32
-kb_get_silpen(void)
-{
-    return silence_word_penalty;
-}
-
-
-float32
-kb_get_fillpen(void)
-{
-    return filler_word_penalty;
-}
-
-
-float32
-kb_get_pip(void)
-{
-    return phone_insertion_penalty;
-}
-
-
-float32
-kb_get_wip(void)
-{
-    return insertion_penalty;
-}
-
-
-float32
-kb_get_lw(void)
-{
-    return language_weight;
-}
-
-
-int32
-kb_get_ascr_scale(void)
-{
-    return ascr_scale;
-}
-
+/* Model file names */
+char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *sendumpfn;
 
 void
 kbAddGrammar(char const *fileName, char const *grammarName)
 {
-    lmSetStartSym(lm_start_sym);
-    lmSetEndSym(lm_end_sym);
-    lm_read(fileName, grammarName, language_weight, unigramWeight,
-            insertion_penalty);
+    lmSetStartSym(cmd_ln_str("-lmstartsym"));
+    lmSetEndSym(cmd_ln_str("-lmendsym"));
+    lm_read(fileName, grammarName,
+            cmd_ln_float32("-langwt"),
+            cmd_ln_float32("-ugwt"),
+            cmd_ln_float32("-inspen"));
 }
 
 static void
@@ -489,99 +229,103 @@ phonetp_load_file(char *file, int32 ** tp)
     fclose(fp);
 }
 
-
 static void
-phonetp_dump(int32 ** tp, int32 np)
+lm_init(void)
 {
-    int32 i, j;
+    char *lm_ctl_filename = cmd_ln_str("-lmctlfn");
+    char *lm_file_name = cmd_ln_str("-lmfn");
+    char *lm_start_sym = cmd_ln_str("-lmstartsym");
+    char *lm_end_sym = cmd_ln_str("-lmendsym");
 
-    E_INFO("Phone transition prob LOGprobs:\n");
-    for (i = 0; i < np; i++) {
-        for (j = 0; j < np; j++) {
-            E_INFOCONT("\t%s\t%s\t%10d\n", phone_from_id(i),
-                       phone_from_id(j), tp[i][j]);
+    lmSetStartSym(lm_start_sym);
+    lmSetEndSym(lm_end_sym);
+
+    /*
+     * Read control file describing multiple LMs, if specified.
+     * File format (optional stuff is indicated by enclosing in []):
+     * 
+     *   [{ LMClassFileName LMClassFilename ... }]
+     *   TrigramLMFileName LMName [{ LMClassName LMClassName ... }]
+     *   TrigramLMFileName LMName [{ LMClassName LMClassName ... }]
+     *   ...
+     * (There should be whitespace around the { and } delimiters.)
+     * 
+     * This is an extension of the older format that had only TrigramLMFilenName
+     * and LMName pairs.  The new format allows a set of LMClass files to be read
+     * in and referred to by the trigram LMs.  (Incidentally, if one wants to use
+     * LM classes in a trigram LM, one MUST use the -lmctlfn flag.  It is not
+     * possible to read in a class-based trigram LM using the -lmfn flag.)
+     * 
+     * No "comments" allowed in this file.
+     */
+    if (lm_ctl_filename) {
+        FILE *ctlfp;
+        char lmfile[4096], lmname[4096], str[4096];
+        lmclass_set_t lmclass_set;
+        lmclass_t *lmclass, cl;
+        int32 n_lmclass, n_lmclass_used;
+
+        lmclass_set = lmclass_newset();
+
+        E_INFO("Reading LM control file '%s'\n", lm_ctl_filename);
+
+        ctlfp = myfopen(lm_ctl_filename, "r");
+        if (fscanf(ctlfp, "%s", str) == 1) {
+            if (strcmp(str, "{") == 0) {
+                /* Load LMclass files */
+                while ((fscanf(ctlfp, "%s", str) == 1)
+                       && (strcmp(str, "}") != 0))
+                    lmclass_set = lmclass_loadfile(lmclass_set, str);
+
+                if (strcmp(str, "}") != 0)
+                    E_FATAL("Unexpected EOF(%s)\n", lm_ctl_filename);
+
+                if (fscanf(ctlfp, "%s", str) != 1)
+                    str[0] = '\0';
+            }
         }
-    }
-}
+        else
+            str[0] = '\0';
 
+        /* Fill in dictionary word id information for each LMclass word */
+        for (cl = lmclass_firstclass(lmclass_set);
+             lmclass_isclass(cl);
+             cl = lmclass_nextclass(lmclass_set, cl)) {
+            kb_init_lmclass_dictwid(cl);
+        }
 
-void
-kb(int argc, char *argv[], float ip,    /* word insertion penalty */
-   float lw,                    /* language weight */
-   float pip)
-{                               /* phone insertion penalty */
-    int32 num_phones, num_ci_phones;
-    int32 i, j, n, use_darpa_lm;
-    float32 p, uptp;
-    int32 logp;
+        /* At this point if str[0] != '\0', we have an LM filename */
+        n_lmclass = lmclass_get_nclass(lmclass_set);
+        lmclass = ckd_calloc(n_lmclass, sizeof(lmclass_t));
 
-    language_weight = lw;
-    insertion_penalty = ip;
-    phone_insertion_penalty = pip;
+        /* Read in one LM at a time */
+        while (str[0] != '\0') {
+            strcpy(lmfile, str);
+            if (fscanf(ctlfp, "%s", lmname) != 1)
+                E_FATAL("LMname missing after LMFileName '%s'\n",
+                        lmfile);
 
-    pconf(argc, argv, kb_param, 0, 0, 0);
+            n_lmclass_used = 0;
 
-    /* Check various combinations of arguments. */
-    if (mdefFileName == NULL)
-        E_FATAL("Must specify -mdeffn\n");
-
-    /* Read model definition. */
-    if ((mdef = bin_mdef_read(mdefFileName)) == NULL)
-        E_FATAL("Failed to read model definition from %s\n", mdefFileName);
-    num_ci_phones = bin_mdef_n_ciphone(mdef);
-
-    E_INFO("Reading dict file [%s]\n", dict_file_name);
-    word_dict = dict_new();
-    if (dict_read(word_dict, dict_file_name, phrase_dict_file_name,
-                  noise_dict_file_name, !useWDPhonesOnly)) {
-        exit(-1);
-    }
-
-    use_darpa_lm = TRUE;
-
-    if (use_darpa_lm) {
-        lmSetStartSym(lm_start_sym);
-        lmSetEndSym(lm_end_sym);
-
-        /*
-         * Read control file describing multiple LMs, if specified.
-         * File format (optional stuff is indicated by enclosing in []):
-         * 
-         *   [{ LMClassFileName LMClassFilename ... }]
-         *   TrigramLMFileName LMName [{ LMClassName LMClassName ... }]
-         *   TrigramLMFileName LMName [{ LMClassName LMClassName ... }]
-         *   ...
-         * (There should be whitespace around the { and } delimiters.)
-         * 
-         * This is an extension of the older format that had only TrigramLMFilenName
-         * and LMName pairs.  The new format allows a set of LMClass files to be read
-         * in and referred to by the trigram LMs.  (Incidentally, if one wants to use
-         * LM classes in a trigram LM, one MUST use the -lmctlfn flag.  It is not
-         * possible to read in a class-based trigram LM using the -lmfn flag.)
-         * 
-         * No "comments" allowed in this file.
-         */
-        if (lm_ctl_filename) {
-            FILE *ctlfp;
-            char lmfile[4096], lmname[4096], str[4096];
-            lmclass_set_t lmclass_set;
-            lmclass_t *lmclass, cl;
-            int32 n_lmclass, n_lmclass_used;
-
-            lmclass_set = lmclass_newset();
-
-            E_INFO("Reading LM control file '%s'\n", lm_ctl_filename);
-
-            ctlfp = myfopen(lm_ctl_filename, "r");
             if (fscanf(ctlfp, "%s", str) == 1) {
                 if (strcmp(str, "{") == 0) {
-                    /* Load LMclass files */
-                    while ((fscanf(ctlfp, "%s", str) == 1)
-                           && (strcmp(str, "}") != 0))
-                        lmclass_set = lmclass_loadfile(lmclass_set, str);
-
+                    /* LM uses classes; read their names */
+                    while ((fscanf(ctlfp, "%s", str) == 1) &&
+                           (strcmp(str, "}") != 0)) {
+                        if (n_lmclass_used >= n_lmclass)
+                            E_FATAL
+                                ("Too many LM classes specified for '%s'\n",
+                                 lmfile);
+                        lmclass[n_lmclass_used] =
+                            lmclass_get_lmclass(lmclass_set, str);
+                        if (!
+                            (lmclass_isclass(lmclass[n_lmclass_used])))
+                            E_FATAL("LM class '%s' not found\n", str);
+                        n_lmclass_used++;
+                    }
                     if (strcmp(str, "}") != 0)
-                        E_FATAL("Unexpected EOF(%s)\n", lm_ctl_filename);
+                        E_FATAL("Unexpected EOF(%s)\n",
+                                lm_ctl_filename);
 
                     if (fscanf(ctlfp, "%s", str) != 1)
                         str[0] = '\0';
@@ -590,141 +334,62 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
             else
                 str[0] = '\0';
 
-            /* Fill in dictionary word id information for each LMclass word */
-            for (cl = lmclass_firstclass(lmclass_set);
-                 lmclass_isclass(cl);
-                 cl = lmclass_nextclass(lmclass_set, cl)) {
-                kb_init_lmclass_dictwid(cl);
-            }
-
-            /* At this point if str[0] != '\0', we have an LM filename */
-            n_lmclass = lmclass_get_nclass(lmclass_set);
-            lmclass = ckd_calloc(n_lmclass, sizeof(lmclass_t));
-
-            /* Read in one LM at a time */
-            while (str[0] != '\0') {
-                strcpy(lmfile, str);
-                if (fscanf(ctlfp, "%s", lmname) != 1)
-                    E_FATAL("LMname missing after LMFileName '%s'\n",
-                            lmfile);
-
-                n_lmclass_used = 0;
-
-                if (fscanf(ctlfp, "%s", str) == 1) {
-                    if (strcmp(str, "{") == 0) {
-                        /* LM uses classes; read their names */
-                        while ((fscanf(ctlfp, "%s", str) == 1) &&
-                               (strcmp(str, "}") != 0)) {
-                            if (n_lmclass_used >= n_lmclass)
-                                E_FATAL
-                                    ("Too many LM classes specified for '%s'\n",
-                                     lmfile);
-                            lmclass[n_lmclass_used] =
-                                lmclass_get_lmclass(lmclass_set, str);
-                            if (!
-                                (lmclass_isclass(lmclass[n_lmclass_used])))
-                                E_FATAL("LM class '%s' not found\n", str);
-                            n_lmclass_used++;
-                        }
-                        if (strcmp(str, "}") != 0)
-                            E_FATAL("Unexpected EOF(%s)\n",
-                                    lm_ctl_filename);
-
-                        if (fscanf(ctlfp, "%s", str) != 1)
-                            str[0] = '\0';
-                    }
-                }
-                else
-                    str[0] = '\0';
-
-                if (n_lmclass_used > 0)
-                    lm_read_clm(lmfile, lmname,
-                                language_weight, unigramWeight,
-                                insertion_penalty, lmclass,
-                                n_lmclass_used);
-                else
-                    lm_read(lmfile, lmname,
-                            language_weight, unigramWeight,
-                            insertion_penalty);
-            }
-
-            fclose(ctlfp);
-            NoLangModel = FALSE;
+            if (n_lmclass_used > 0)
+                lm_read_clm(lmfile, lmname,
+                            cmd_ln_float32("-langwt"),
+                            cmd_ln_float32("-ugwt"),
+                            cmd_ln_float32("-inspen"),
+                            lmclass, n_lmclass_used);
+            else
+                lm_read(lmfile, lmname,
+                        cmd_ln_float32("-langwt"),
+                        cmd_ln_float32("-ugwt"),
+                        cmd_ln_float32("-inspen"));
         }
 
-        /* Read "base" LM file, if specified */
-        if (lm_file_name) {
-            lmSetStartSym(lm_start_sym);
-            lmSetEndSym(lm_end_sym);
-            lm_read(lm_file_name, "", language_weight, unigramWeight,
-                    insertion_penalty);
-
-            /* Make initial OOV list known to this base LM */
-            lm_init_oov();
-
-            NoLangModel = FALSE;
-        }
+        fclose(ctlfp);
     }
 
+    /* Read "base" LM file, if specified */
+    if (lm_file_name) {
+        lmSetStartSym(lm_start_sym);
+        lmSetEndSym(lm_end_sym);
+        lm_read(lm_file_name, "",
+                cmd_ln_float32("-langwt"),
+                cmd_ln_float32("-ugwt"),
+                cmd_ln_float32("-inspen"));
 
-    num_phones = phone_count();
-    numSmds = hmm_num_sseq();
-    smds = ckd_calloc(numSmds, sizeof(SMD));
-
-    if ((meanFileName == NULL)
-        || (varFileName == NULL)
-        || (tmatFileName == NULL))
-        E_FATAL("No S3 mean/var/tmat files specified\n");
-
-    /* Use S3 transition matrix file. */
-    tmat_init(tmatFileName, smds, transSmooth, TRUE);
-
-    /*
-     *  Use Ci transitions ?
-     */
-    if (useCiTrans) {
-        for (i = 0; i < num_phones; i++) {
-            if (hmm_pid2sid(phone_id_to_base_id(i)) != hmm_pid2sid(i)) {
-                /*
-                 * Just make a copy of the CI phone transitions
-                 */
-                memcpy(&smds[hmm_pid2sid(i)],
-                       &smds[hmm_pid2sid(phone_id_to_base_id(i))],
-                       sizeof(SMD));
-            }
-        }
+        /* Make initial OOV list known to this base LM */
+        lm_init_oov();
     }
+}
 
-    /*
-     * Read the distributions and remap them to the correct locations
-     * Also, read the codebooks.
-     */
-    E_INFO
-        ("Initializing SCGMM computation module\n");
-    semi_mgau = s2_semi_mgau_init(meanFileName,
-                                  varFileName,
-                                  s3varfloor,
-                                  mixwFileName,
-                                  s3mixwfloor,
-                                  scVqTopN);
-    if (kdtree_file_name)
-        s2_semi_mgau_load_kdtree(semi_mgau,
-                                 kdtree_file_name, kdtree_maxdepth,
-                                 kdtree_maxbbi);
-    semi_mgau->dcep80msWeight = FLOAT2MFCC(dcep80msWeight);
-    semi_mgau->ds_ratio = scvqDSRatio;
-    searchSetScVqTopN(scVqTopN);
-    remap_mdef(smds, mdef);
+static void
+dict_init(void)
+{
+    E_INFO("Reading dict file [%s]\n", cmd_ln_str("-dictfn"));
+    word_dict = dict_new();
+    if (dict_read(word_dict, cmd_ln_str("-dictfn"), cmd_ln_str("-pdictfn"),
+                  cmd_ln_str("-ndictfn"), !cmd_ln_boolean("-usewdphones"))) {
+        exit(-1);
+    }
+}
 
-    /*
-     * Create phone transition logprobs matrix
-     */
+static void
+phonetp_init(int32 num_ci_phones)
+{
+    int i, j, n, logp;
+    float32 p, uptp;
+    float32 pip = cmd_ln_float32("-phnpen");
+    float32 ptplw = cmd_ln_float32("-ptplw");
+    float32 uptpwt = cmd_ln_float32("-uptpwt");
+
     phonetp =
         (int32 **) ckd_calloc_2d(num_ci_phones, num_ci_phones,
                                  sizeof(int32));
-    if (phonetp_file_name) {
+    if (cmd_ln_str("-phonetpfn")) {
         /* Load phone transition counts file */
-        phonetp_load_file(phonetp_file_name, phonetp);
+        phonetp_load_file(cmd_ln_str("-phonetpfn"), phonetp);
     }
     else {
         /* No transition probs file specified; use uniform probs */
@@ -761,168 +426,151 @@ kb(int argc, char *argv[], float ip,    /* word insertion penalty */
             }
         }
     }
-#if 0
-    hmm_tied_r_dumpssidlist();
-    phonetp_dump(phonetp, num_ci_phones);
-#endif
 }
 
+/* FIXME: Should go in libutil, eventually */
+#include <stdarg.h>
 
-#if 0
-computePhraseLMProbs()
+static char *
+string_join(const char *base, ...)
 {
-    int32 wcnt = dict_count(word_dict);
-    int32 i;
-    char stmp[256];
-    char *p, *q, *r;
+    va_list args;
+    size_t len;
+    const char *c;
+    char *out;
 
-    for (i = 0; i < wcnt; i++) {
-        int32 prob = 0;
-        /*
-         * Is this a phrase word ?
-         */
-        if (word_dict->dict_list[i]->wid != word_dict->dict_list[i]->fwid) {
-            strcpy(stmp, word_dict->dict_list[i]->word);
+    va_start(args, base);
+    len = strlen(base);
+    while ((c = va_arg(args, const char *)) != NULL) {
+        len += strlen(c);
+    }
+    len++;
+    va_end(args);
 
-            q = stmp;
-            p = index(q, '_');
-            if (p) {
-                *p = '\0';
-                p++;
-            }
-            while (q && p) {
-                r = index(p, '_');
-                if (r) {
-                    *r = '\0';
-                    r++;
-                }
-                /*
-                 * Look out for alternate pronuciations in phrases and strip the
-                 * modifier
-                 */
-                {
-                    char *lp = rindex(p, '(');
-                    char *rp = rindex(p, ')');
-                    if (lp && rp) {
-                        *lp = '\0';
-                    }
-                }
-                prob += lmLogProbability(langModel, q, p);
-                q = p;
-                p = r;
-            }
+    out = ckd_calloc(len, 1);
+    va_start(args, base);
+    strcpy(out, base);
+    while ((c = va_arg(args, const char *)) != NULL) {
+        strcat(out, c);
+    }
+    va_end(args);
 
-            E_INFO("Phrase log prob [%20s] = %8d\n",
-                   word_dict->dict_list[i]->word, prob);
-            word_dict->dict_list[i]->lm_pprob = prob;
+    return out;
+}
+
+void
+kb_init(void)
+{
+    int32 num_phones, num_ci_phones, i;
+
+    /* Get acoustic model filenames */
+    if ((hmmdir = cmd_ln_str("-hmm")) != NULL) {
+        FILE *tmp;
+
+        mdeffn = string_join(hmmdir, "/mdef", NULL);
+        meanfn = string_join(hmmdir, "/means", NULL);
+        varfn = string_join(hmmdir, "/variances", NULL);
+        mixwfn = string_join(hmmdir, "/mixture_weights", NULL);
+        tmatfn = string_join(hmmdir, "/transition_matrices", NULL);
+
+        /* Special case - make sure this one actually exists */
+        sendumpfn = string_join(hmmdir, "/sendump", NULL);
+        if ((tmp = fopen(sendumpfn, "rb")) == NULL) {
+            ckd_free(sendumpfn);
+            sendumpfn = NULL;
+        }
+        else {
+            fclose(tmp);
         }
     }
-}
-#endif
+    if (cmd_ln_str("-mdeffn"))
+        mdeffn = cmd_ln_str("-mdeffn");
+    if (cmd_ln_str("-meanfn"))
+        meanfn = cmd_ln_str("-meanfn");
+    if (cmd_ln_str("-varfn"))
+        varfn = cmd_ln_str("-varfn");
+    if (cmd_ln_str("-mixwfn"))
+        mixwfn = cmd_ln_str("-mixwfn");
+    if (cmd_ln_str("-tmatfn"))
+        tmatfn = cmd_ln_str("-tmatfn");
+    if (cmd_ln_str("-sendumpfn"))
+        sendumpfn = cmd_ln_str("-sendumpfn");
 
-extern int32 totalDists;
-int32
-kb_get_total_dists(void)
-{
-    return totalDists;
-}
+    /* Read model definition. */
+    if (mdeffn == NULL)
+        E_FATAL("Must specify -mdeffn or -hmm\n");
+    if ((mdef = bin_mdef_read(mdeffn)) == NULL)
+        E_FATAL("Failed to read model definition from %s\n", mdeffn);
+    num_ci_phones = bin_mdef_n_ciphone(mdef);
+    num_phones = bin_mdef_n_phone(mdef);
 
-int32
-kb_get_aw_tprob(void)
-/*------------------------------------------------------------*
- * Return the All_Word Transition Probability
- */
-{
-    return (language_weight *
-            (LOG(1.0 / word_dict->dict_entry_count) -
-             LOG(insertion_penalty)));
-}
+    dict_init();
 
-int32
-kb_get_num_models(void)
-/*------------------------------------------------------------*
- * Return the number of unique hmm models.
- */
-{
-    return hmm_num_sseq();
-}
+    lm_init();
 
-int32
-kb_get_num_dist(void)
-/*------------------------------------------------------------*
- * Return the number of distributions.
- */
-{
-    return 5;
-}
+    numSmds = bin_mdef_n_sseq(mdef);
+    smds = ckd_calloc(numSmds, sizeof(SMD));
 
-int32
-kb_get_num_model_instances(void)
-/*------------------------------------------------------------*
- * Return the number of hmm model instances.
- */
-{
-    register int32 i, tot = 0;
+    /* Read acoustic model files. */
+    if ((meanfn == NULL)
+        || (varfn == NULL)
+        || (tmatfn == NULL))
+        E_FATAL("No mean/var/tmat files specified\n");
+    tmat_init(tmatfn, smds, cmd_ln_float32("-tmatfloor"), TRUE);
 
-    for (i = 0; i < word_dict->dict_entry_count; i++) {
-        tot += word_dict->dict_list[i]->len + 10;
+    /*
+     *  Use Ci transitions ?
+     */
+    if (cmd_ln_boolean("-useciphones")) {
+        for (i = 0; i < num_phones; i++) {
+            if (hmm_pid2sid(phone_id_to_base_id(i)) != hmm_pid2sid(i)) {
+                /*
+                 * Just make a copy of the CI phone transitions
+                 */
+                memcpy(&smds[hmm_pid2sid(i)],
+                       &smds[hmm_pid2sid(phone_id_to_base_id(i))],
+                       sizeof(SMD));
+            }
+        }
     }
-    return tot;
+
+    /*
+     * Read the distributions and remap them to the correct locations
+     * Also, read the codebooks.
+     */
+    E_INFO("Initializing SCGMM computation module\n");
+    semi_mgau = s2_semi_mgau_init(meanfn,
+                                  varfn,
+                                  cmd_ln_float32("-varfloor"),
+                                  mixwfn,
+                                  cmd_ln_float32("-mixwfloor"),
+                                  cmd_ln_int32("-top"));
+    if (cmd_ln_str("-kdtreefn"))
+        s2_semi_mgau_load_kdtree(semi_mgau,
+                                 cmd_ln_str("-kdtreefn"),
+                                 cmd_ln_int32("-kdmaxdepth"),
+                                 cmd_ln_int32("-kdmaxbbi"));
+    semi_mgau->dcep80msWeight = FLOAT2MFCC(cmd_ln_float32("-dcep80msweight"));
+    semi_mgau->ds_ratio = cmd_ln_int32("-dsratio");
+    searchSetScVqTopN(cmd_ln_int32("-top"));
+    remap_mdef(smds, mdef);
+
+    /*
+     * Create phone transition logprobs matrix
+     */
+    phonetp_init(num_ci_phones);
 }
 
-int32
-kb_get_num_words(void)
-/*------------------------------------------------------------*
- * Return the number of words.
- */
+char *
+kb_get_senprob_dump_file(void)
 {
-    return word_dict->dict_entry_count;
-}
-
-SMD *
-kb_get_models(void)
-/*------------------------------------------------------------*
- * Return the a pointer to the hmm models
- */
-{
-    return smds;
-}
-
-extern int32 *Out_Prob1;
-extern int32 *Out_Prob2;
-extern int32 *Out_Prob3;
-extern int32 *Out_Prob4;
-
-int32
-kb_get_dist_prob_bytes(void)
-/*------------------------------------------------------------*
- * Return kbh.dist_prob_bytes
- */
-{
-    return 4;
+    return sendumpfn;
 }
 
 int32
 kb_get_word_id(char const *word)
 {
-#if 0
-    static char const *rname = "kb_get_word_id";
-    register int32 i, id = -1;
-
-    for (i = 0; i < word_dict->dict_entry_count; i++) {
-        if (mystrcasecmp(word, word_dict->dict_list[i]->word) == 0) {
-            id = i;
-            break;
-        }
-    }
-    if (id == -1) {
-        E_WARN("%s: Couldn't find word \"%s\"\n", rname, word);
-    }
-
-    return id;
-#else
     return (dict_to_id(word_dict, word));
-#endif
 }
 
 char *
@@ -931,93 +579,51 @@ kb_get_word_str(int32 wid)
     return (word_dict->dict_list[wid]->word);
 }
 
-dictT *
-kb_get_word_dict(void)
-{
-    return word_dict;
-}
-
-int32
-kb_get_num_codebooks(void)
-{
-    return 4;
-}
-
-int
-kb_get_darpa_lm_flag(void)
-{
-    return UseDarpaStandardLM;
-}
-
-int
-kb_get_no_lm_flag(void)
-{
-    return NoLangModel;
-}
-
 char const *
 kb_get_lm_start_sym(void)
 {
-    return lm_start_sym;
+    return cmd_ln_str("-lmstartsym");
 }
 
 char const *
 kb_get_lm_end_sym(void)
 {
-    return lm_end_sym;
-}
-
-char *
-kb_get_dump_dir(void)
-{
-    return kb_dump_dir;
-}
-
-char *
-kb_get_senprob_dump_file(void)
-{
-    return sendumpfile;
-}
-
-int32
-kb_get_mmap_flag(void)
-{
-    return use_mmap;
+    return cmd_ln_str("-lmendsym");
 }
 
 /* For LISTEN project */
 char *
 kb_get_startsym_file(void)
 {
-    return startsym_file;
+    return cmd_ln_str("-startsymfn");
 }
 
 char *
 kb_get_oovdic(void)
 {
-    return oov_dict_file_name;
+    return cmd_ln_str("-oovdictfn");
 }
 
 char *
 kb_get_personaldic(void)
 {
-    return personal_dict_file_name;
+    return cmd_ln_str("-pdictfn");
 }
 
 double
 kb_get_oov_ugprob(void)
 {
-    return (oov_ugprob);
+    return cmd_ln_float32("-oovugprob");
 }
 
 int32
 kb_get_max_new_oov(void)
 {
-    return (max_new_oov);
+    return cmd_ln_int32("-maxnewoov");
 }
 
 int32
-dict_maxsize(void)
+kb_dict_maxsize(void)
 {
     return (hash_table_size(word_dict->dict));
 }
@@ -1026,53 +632,26 @@ dict_maxsize(void)
 char *
 kb_get_fsg_file_name(void)
 {
-    return fsg_file_name;
+    return cmd_ln_str("-fsgfn");
 }
 
 
 char *
 kb_get_fsg_ctlfile_name(void)
 {
-    return fsg_ctlfile_name;
+    return cmd_ln_str("-fsgctlfn");
 }
 
 
 int32
 query_fsg_use_altpron(void)
 {
-    return fsg_use_altpron;
+    return cmd_ln_boolean("-fsgusealtpron");
 }
 
 
 int32
 query_fsg_use_filler(void)
 {
-    return fsg_use_filler;
-}
-
-
-int32 **
-kb_get_phonetp(void)
-{
-    return phonetp;
-}
-
-
-float32
-kb_get_filler_pfpen(void)
-{
-    return filler_pfpen;
-}
-
-
-bin_mdef_t *
-kb_mdef(void)
-{
-    return mdef;
-}
-
-s2_semi_mgau_t *
-kb_mgau(void)
-{
-    return semi_mgau;
+    return cmd_ln_boolean("-fsgusefiller");
 }

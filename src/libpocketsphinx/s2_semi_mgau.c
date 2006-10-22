@@ -109,6 +109,7 @@
 #include <limits.h>
 #include <math.h>
 #include <sphinx_config.h>
+#include <cmd_ln.h>
 
 #include "s3types.h"
 #include "log.h"
@@ -160,7 +161,7 @@ static const int32 fLenMap[S2_NUM_FEATURES] = {
 #define GMMADD(a,b) \
 	(((a)+(b) < a) ? (INT_MAX) : ((a)+(b)))
 
-extern unsigned char logadd_tbl[];
+extern const unsigned char logadd_tbl[];
 
 #ifndef MIN
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -173,8 +174,6 @@ extern unsigned char logadd_tbl[];
  */
 extern int32 *senone_active;
 extern int32 n_senone_active;
-/* Number of senones (FIXME) */
-extern int32 totalDists;
 
 /*
  * Compute senone scores.
@@ -1106,9 +1105,9 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     int n_clust = 256;          /* Number of clusters (if zero, we are just using
                                  * 8-bit quantized weights) */
     int r = S2_NUM_ALPHABET;
-    int c = totalDists;
+    int c = bin_mdef_n_sen(mdef);
 
-    use_mmap = kb_get_mmap_flag();
+    use_mmap = cmd_ln_boolean("-mmap");
 
     if ((fp = fopen(file, "rb")) == NULL)
         return -1;
@@ -1293,7 +1292,7 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
     dumpfile = kb_get_senprob_dump_file();
     if (dumpfile) {
         if (load_senone_dists_8bits(s, dumpfile) == 0)
-            return totalDists;
+            return bin_mdef_n_sen(mdef);
         else
             E_INFO
                 ("No senone dump file found, will compress mixture weights on-line\n");
@@ -1585,8 +1584,6 @@ s2_semi_mgau_init(const char *mean_path, const char *var_path,
     int i;
 
     s = ckd_calloc(1, sizeof(*s));
-
-    s->use20ms_diff_pow = FALSE;
 
     for (i = 0; i < S2_MAX_TOPN; i++) {
         s->lxfrm[i].val.dist = s->ldfrm[i].val.dist =

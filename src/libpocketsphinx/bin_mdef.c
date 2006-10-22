@@ -54,9 +54,6 @@
 #include "byteorder.h"
 #include "err.h"
 
-/* FIXME: Sphinx-II legacy bogosity. */
-extern int32 totalDists;
-
 bin_mdef_t *
 bin_mdef_read_text(const char *filename)
 {
@@ -86,9 +83,6 @@ bin_mdef_read_text(const char *filename)
     mdef->sseq = NULL;          /* We are taking over this one. */
     mdef->cd2cisen = NULL;      /* And this one. */
     mdef->sen2cimap = NULL;     /* And this one. */
-
-    /* Set totalDists like read_map() would have done for S2 models. */
-    totalDists = mdef->n_sen;
 
     /* Get the phone names.  If they are not sorted
      * ASCII-betically then we are in a world of hurt and
@@ -406,9 +400,6 @@ bin_mdef_read(const char *filename)
         for (i = 1; i < m->n_sseq; ++i)
             m->sseq[i] = m->sseq[i - 1] + m->sseq_len[i - 1];
     }
-
-    /* Set totalDists like read_map() would have done for S2 models. */
-    totalDists = m->n_sen;
 
     /* Now build the CD-to-CI mappings using the senone sequences.
      * This is the only really accurate way to do it, though it is

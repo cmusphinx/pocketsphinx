@@ -214,13 +214,15 @@
 #include <string.h>
 #include <math.h>
 
-#include "s2types.h"
 #include "ckd_alloc.h"
+#include "err.h"
+#include "cmd_ln.h"
+
+#include "s2types.h"
 #include "basic_types.h"
 #include "linklist.h"
 #include "list.h"
 #include "search_const.h"
-#include "err.h"
 #include "dict.h"
 #include "msd.h"
 #include "lm.h"
@@ -314,17 +316,9 @@ static int32 NumWords;          /* Total #words in dictionary */
 static int32 NumMainDictWords;  /* #words in main dictionary, excluding fillers
                                    (i.e., <s>, </s>, <sil>, and noise words).
                                    These come first in WordDict. */
-static int32 NumHmmModels;
 static int32 NumCiPhones;
-static int32 TotalDists;
 
-static SMD *Models;
-static dictT *WordDict;
 static LM LangModel = NULL;
-static int32 UsingDarpaLM;
-static int32 NoLangModel;
-static int32 AllWordTProb;
-/* static int32 AllWordMode; */
 
 static int32 StartWordId;
 static int32 FinishWordId;
@@ -340,7 +334,6 @@ static int32 **LeftContextBwdPerm;
 static int32 *LeftContextBwdSize;
 static int32 **RightContextBwd;
 
-static int32 *distScores;       /* SC scores for current frame being searched */
 static int32 **sc_scores;       /* SC scores for several frames in advance */
 
 static int32 BestScore;         /* Best among all phones */
@@ -378,10 +371,8 @@ static int32 scVqTopN = 4;
 static int32 CurrentFrame;
 static int32 LastFrame;
 
-extern int32 use_3g_in_fwd_pass;
 
-extern int32 calc_phone_perp;
-
+int32 *distScores;       /* SC scores for current frame being searched */
 int32 *senone_active;           /* list of active senones in current frame */
 int32 n_senone_active;
 bitvec_t *senone_active_vec;
@@ -491,8 +482,6 @@ typedef struct lastphn_cand_s {
 static lastphn_cand_t *lastphn_cand;
 static int32 n_lastphn_cand;
 
-extern int32 print_back_trace;
-
 #if 0
 /*
  * Evaluate arcprobs of all active HMMs (actually sseqids) in current frame.
@@ -508,9 +497,9 @@ evaluateModels(int32 fwd)
     for (j = n_phone_active, apl = phone_active; j > 0; --j, apl++) {
         i = *apl;
 
-        ap = Models[i].arcProb;
-        tp = Models[i].tp;
-        dist = Models[i].dist;
+        ap = smds[i].arcProb;
+        tp = smds[i].tp;
+        dist = smds[i].dist;
 
         tmp = distScores[dist[0]];
         ap[0] = tp[0] + tmp;
@@ -553,9 +542,9 @@ eval_hmm_arcprob(int32 ssid)
     int32 *tp;
     int32 *dist, tmp;
 
-    ap = Models[ssid].arcProb;
-    tp = Models[ssid].tp;
-    dist = Models[ssid].dist;
+    ap = smds[ssid].arcProb;
+    tp = smds[ssid].tp;
+    dist = smds[ssid].dist;
 
     tmp = distScores[dist[0]];
     ap[0] = tp[0] + tmp;
@@ -590,11 +579,11 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     SMD *smd0, *smd1, *smd2, *smd3, *smd4;
 
     s4 = chan->score[4];
-    smd4 = &Models[chan->sseqid[4]];
+    smd4 = &smds[chan->sseqid[4]];
     s4 += distScores[smd4->dist[12]];
 
     s3 = chan->score[3];
-    smd3 = &Models[chan->sseqid[3]];
+    smd3 = &smds[chan->sseqid[3]];
     s3 += distScores[smd3->dist[9]];
 
     t1 = NPA(smd4, s4, 13);
@@ -611,7 +600,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     bestScore = s5;
 
     s2 = chan->score[2];
-    smd2 = &Models[chan->sseqid[2]];
+    smd2 = &smds[chan->sseqid[2]];
     s2 += distScores[smd2->dist[6]];
 
     t0 = NPA(smd4, s4, 12);
@@ -643,7 +632,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->score[4] = s4;
 
     s1 = chan->score[1];
-    smd1 = &Models[chan->sseqid[1]];
+    smd1 = &smds[chan->sseqid[1]];
     s1 += distScores[smd1->dist[3]];
 
     t0 = NPA(smd3, s3, 9);
@@ -675,7 +664,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->score[3] = s3;
 
     s0 = chan->score[0];
-    smd0 = &Models[chan->sseqid[0]];
+    smd0 = &smds[chan->sseqid[0]];
     s0 += distScores[smd0->dist[0]];
 
     t0 = NPA(smd2, s2, 6);
@@ -846,11 +835,11 @@ root_chan_dump(ROOT_CHAN_T * chan, int32 frame, FILE * fp)
     SMD *smd0, *smd1, *smd2, *smd3, *smd4;
 
     if (chan->mpx) {
-        smd0 = &(Models[chan->sseqid[0]]);
-        smd1 = &(Models[chan->sseqid[1]]);
-        smd2 = &(Models[chan->sseqid[2]]);
-        smd3 = &(Models[chan->sseqid[3]]);
-        smd4 = &(Models[chan->sseqid[4]]);
+        smd0 = &(smds[chan->sseqid[0]]);
+        smd1 = &(smds[chan->sseqid[1]]);
+        smd2 = &(smds[chan->sseqid[2]]);
+        smd3 = &(smds[chan->sseqid[3]]);
+        smd4 = &(smds[chan->sseqid[4]]);
         fprintf(fp, "[%4d] MPX (%5d %5d %5d %5d %5d)\n",
                 frame,
                 smd0->dist[0],
@@ -873,7 +862,7 @@ root_chan_dump(ROOT_CHAN_T * chan, int32 frame, FILE * fp)
                 chan->path[3], chan->path[4], chan->path[5]);
     }
     else {
-        smd0 = &(Models[chan->sseqid[0]]);
+        smd0 = &(smds[chan->sseqid[0]]);
         fprintf(fp, "[%4d] ROOT SSID %5d (%5d %5d %5d %5d %5d)\n",
                 frame, chan->sseqid[0],
                 smd0->dist[0],
@@ -903,7 +892,7 @@ chan_dump(CHAN_T * chan, int32 frame, FILE * fp)
 {
     SMD *smd;
 
-    smd = &(Models[chan->sseqid]);
+    smd = &(smds[chan->sseqid]);
     fprintf(fp, "[%4d] SSID %5d (%5d %5d %5d %5d %5d)\n",
             frame, chan->sseqid,
             smd->dist[0],
@@ -930,7 +919,7 @@ root_chan_v_eval(ROOT_CHAN_T * chan)
 {
     SMD *smd0;
 
-    smd0 = &(Models[chan->sseqid[0]]);
+    smd0 = &(smds[chan->sseqid[0]]);
     CHAN_V_EVAL(chan, smd0);
 }
 
@@ -940,7 +929,7 @@ chan_v_eval(CHAN_T * chan)
 {
     SMD *smd0;
 
-    smd0 = &(Models[chan->sseqid]);
+    smd0 = &(smds[chan->sseqid]);
     CHAN_V_EVAL(chan, smd0);
 }
 
@@ -1122,9 +1111,9 @@ cache_bptable_paths(int32 bp)
         prev_bp = BPTable[prev_bp].bp;
         w = BPTable[prev_bp].wid;
     }
-    bpe->real_fwid = WordDict->dict_list[w]->fwid;
+    bpe->real_fwid = word_dict->dict_list[w]->fwid;
 
-    if (use_3g_in_fwd_pass) {
+    if (cmd_ln_boolean("-fwd3g")) {
         prev_bp = BPTable[prev_bp].bp;
         bpe->prev_real_fwid =
             (prev_bp != NO_BP) ? BPTable[prev_bp].real_fwid : -1;
@@ -1164,7 +1153,7 @@ save_bwd_ptr(WORD_ID w, int32 score, int32 path, int32 rc)
             return;
         }
 
-        de = WordDict->dict_list[w];
+        de = word_dict->dict_list[w];
         WordLatIdx[w] = BPIdx;
         bpe = &(BPTable[BPIdx]);
         bpe->wid = w;
@@ -1319,7 +1308,7 @@ prune_root_chan(void)
                 if (newphone_score > lastphn_thresh) {
                     for (w = rhmm->penult_phn_wid; w >= 0;
                          w = homophone_set[w]) {
-                        de = WordDict->dict_list[w];
+                        de = word_dict->dict_list[w];
                         if (npa[de->ci_phone_ids[de->len - 1]]) {
                             candp = lastphn_cand + n_lastphn_cand;
                             n_lastphn_cand++;
@@ -1408,7 +1397,7 @@ prune_nonroot_chan(void)
                 if (newphone_score > lastphn_thresh) {
                     for (w = hmm->info.penult_phn_wid; w >= 0;
                          w = homophone_set[w]) {
-                        de = WordDict->dict_list[w];
+                        de = word_dict->dict_list[w];
                         if (npa[de->ci_phone_ids[de->len - 1]]) {
                             candp = lastphn_cand + n_lastphn_cand;
                             n_lastphn_cand++;
@@ -1492,7 +1481,7 @@ last_phone_transition(void)
              0) ? RightContextFwdPerm[bpe->r_diph] : zeroPermTab;
 
         /* Subtract starting score for candidate, leave it with only word score */
-        de = WordDict->dict_list[candp->wid];
+        de = word_dict->dict_list[candp->wid];
         ciph0 = de->ci_phone_ids[0];
         candp->score -= BScoreStack[bpe->s_idx + rcpermtab[ciph0]];
 
@@ -1552,7 +1541,7 @@ last_phone_transition(void)
             /* For each candidate at the start frame find bp->cand transition-score */
             for (j = cand_sf[i].cand; j >= 0; j = candp->next) {
                 candp = &(lastphn_cand[j]);
-                de = WordDict->dict_list[candp->wid];
+                de = word_dict->dict_list[candp->wid];
                 ciph0 = de->ci_phone_ids[0];
                 fwid2 = de->fwid;
 
@@ -1712,7 +1701,7 @@ alloc_all_rc(int32 w)
     int32 *sseq_rc;             /* list of sseqid for all possible right context for w */
     int32 i;
 
-    de = WordDict->dict_list[w];
+    de = word_dict->dict_list[w];
 
     assert(de->mpx);
 
@@ -1821,7 +1810,7 @@ word_transition(void)
             continue;
         k++;
 
-        de = WordDict->dict_list[bpe->wid];
+        de = word_dict->dict_list[bpe->wid];
         rcpermtab =
             (bpe->r_diph >=
              0) ? RightContextFwdPerm[bpe->r_diph] : zeroPermTab;
@@ -1884,7 +1873,7 @@ word_transition(void)
 
         for (i = 0; i < n_1ph_LMwords; i++) {
             w = single_phone_wid[i];
-            de = WordDict->dict_list[w];
+            de = word_dict->dict_list[w];
             fwid2 = de->fwid;
 
             newscore = rcss[rcpermtab[de->ci_phone_ids[0]]];
@@ -1907,7 +1896,7 @@ word_transition(void)
 
         if ((newscore = last_ltrans[w].dscr + pip) > thresh) {
             bpe = BPTable + last_ltrans[w].bp;
-            pde = WordDict->dict_list[bpe->wid];
+            pde = word_dict->dict_list[bpe->wid];
 
             if ((rhmm->active < cf) || (rhmm->score[0] < newscore)) {
                 rhmm->score[0] = newscore;
@@ -1958,7 +1947,7 @@ dump_hmm_tp(void)
         ssid = hmm_pid2sid(p);
         printf("sseqid(%s)= %d, ", phone_from_id(p), ssid);
         for (t = 0; t < 14; t++)
-            printf(" %6d", Models[ssid].tp[t]);
+            printf(" %6d", smds[ssid].tp[t]);
         printf("\n");
     }
 }
@@ -1967,23 +1956,16 @@ dump_hmm_tp(void)
 void
 search_initialize(void)
 {
-    int32 bptable_size = query_lattice_size();
+    int32 bptable_size = cmd_ln_int32("-latsize");
 
 #if SEARCH_TRACE_CHAN_DETAILED
     static void load_trace_wordlist();
 #endif
 
-    NumWords = kb_get_num_words();
-    NumHmmModels = kb_get_num_models();
-    TotalDists = kb_get_total_dists();
-    Models = kb_get_models();
-    WordDict = kb_get_word_dict();
-    StartWordId = kb_get_word_id(kb_get_lm_start_sym());
-    FinishWordId = kb_get_word_id(kb_get_lm_end_sym());
+    NumWords = word_dict->dict_entry_count;
+    StartWordId = kb_get_word_id(cmd_ln_str("-lmstartsym"));
+    FinishWordId = kb_get_word_id(cmd_ln_str("-lmendsym"));
     SilenceWordId = kb_get_word_id("SIL");
-    UsingDarpaLM = kb_get_darpa_lm_flag();
-    AllWordTProb = kb_get_aw_tprob();
-    NoLangModel = kb_get_no_lm_flag();
     SilencePhoneId = phone_to_id("SIL", TRUE);
     NumCiPhones = phoneCiCount();
 
@@ -1995,7 +1977,7 @@ search_initialize(void)
     LeftContextBwdPerm = dict_left_context_bwd_perm();
     LeftContextBwdSize = dict_left_context_bwd_size();
     RightContextBwd = dict_right_context_bwd();
-    NumMainDictWords = dict_get_num_main_words(WordDict);
+    NumMainDictWords = dict_get_num_main_words(word_dict);
 
     word_chan = ckd_calloc(NumWords, sizeof(CHAN_T *));
     WordLatIdx = ckd_calloc(NumWords, sizeof(int32));
@@ -2016,7 +1998,7 @@ search_initialize(void)
     lattice_density = ckd_calloc(MAX_FRAMES, sizeof(int32));
     phone_perplexity = ckd_calloc(MAX_FRAMES, sizeof(double));
 
-    init_search_tree(WordDict);
+    init_search_tree(word_dict);
 
     active_word_list[0] =
         ckd_calloc(2 * (NumWords + 1), sizeof(WORD_ID));
@@ -2031,9 +2013,9 @@ search_initialize(void)
     lastphn_cand =
         ckd_calloc(NumWords, sizeof(lastphn_cand_t));
 
-    senone_active = ckd_calloc(TotalDists, sizeof(int32));
+    senone_active = ckd_calloc(bin_mdef_n_sen(mdef), sizeof(int32));
     senone_active_vec =
-        ckd_calloc((TotalDists + BITVEC_WIDTH - 1)
+        ckd_calloc((bin_mdef_n_sen(mdef) + BITVEC_WIDTH - 1)
                                / BITVEC_WIDTH, sizeof(bitvec_t));
 
     last_ltrans =
@@ -2049,11 +2031,11 @@ search_initialize(void)
      * Frames window size for predicting phones based on topsen.
      * If 1, no prediction; use all phones.
      */
-    if ((topsen_window = query_topsen_window()) < 1)
+    if ((topsen_window = cmd_ln_int32("-topsenfrm")) < 1)
         E_FATAL("topsen window = %d\n", topsen_window);
 
     E_INFO("topsen-window = %d, ", topsen_window);
-    topsen_thresh = query_topsen_thresh();
+    topsen_thresh = cmd_ln_int32("-topsenthresh");
     if (topsen_window > 1)
         E_INFOCONT("threshold = %d\n", topsen_thresh);
     else
@@ -2062,7 +2044,7 @@ search_initialize(void)
     topsen_init();
 
     sc_scores =
-        (int32 **) ckd_calloc_2d(topsen_window, TotalDists, sizeof(int32));
+        (int32 **) ckd_calloc_2d(topsen_window, bin_mdef_n_sen(mdef), sizeof(int32));
     distScores = sc_scores[0];
 
     topsen_score = ckd_calloc(MAX_FRAMES, sizeof(int32));
@@ -2076,13 +2058,24 @@ search_initialize(void)
     bestpscr = ckd_calloc(NumCiPhones, sizeof(int32));
     utt_pscr =
         (int32 **) ckd_calloc_2d(MAX_FRAMES, NumCiPhones, sizeof(int32));
-}
 
-
-int32 *
-search_get_dist_scores(void)
-{
-    return distScores;
+    search_set_beam_width(cmd_ln_float32("-beam"));
+    search_set_new_word_beam_width(cmd_ln_float32("-nwbeam"));
+    search_set_new_phone_beam_width(cmd_ln_float32("-npbeam"));
+    search_set_last_phone_beam_width(cmd_ln_float32("-lpbeam"));
+    search_set_lastphone_alone_beam_width(cmd_ln_float32("-lponlybeam"));
+    search_set_silence_word_penalty(cmd_ln_float32("-silpen"),
+                                    cmd_ln_float32("-phnpen"));
+    search_set_filler_word_penalty(cmd_ln_float32("-fillpen"),
+                                    cmd_ln_float32("-phnpen"));
+    search_set_newword_penalty(cmd_ln_float32("-nwpen"));
+    search_set_lw(cmd_ln_float32("-langwt"),
+                  cmd_ln_float32("-fwdflatlw"),
+                  cmd_ln_float32("-bestpathlw"));
+    search_set_ip(cmd_ln_float32("-inspen"));
+    search_set_skip_alt_frm(cmd_ln_boolean("-skipalt"));
+    search_set_fwdflat_bw(cmd_ln_float32("-fwdflatbeam"),
+                          cmd_ln_float32("-fwdflatnwbeam"));
 }
 
 
@@ -2095,12 +2088,12 @@ search_set_startword(char const *str)
     startWord = str;
     if (*startWord) {
         if ((StartWordId = kb_get_word_id(startWord)) < 0) {
-            startWord = kb_get_lm_start_sym();
+            startWord = cmd_ln_str("-lmstartsym");
             StartWordId = kb_get_word_id(startWord);
         }
     }
     else {
-        startWord = kb_get_lm_start_sym();
+        startWord = cmd_ln_str("-lmstartsym");
         StartWordId = kb_get_word_id(startWord);
     }
     E_INFO("startword= %s (id= %d)\n", startWord, StartWordId);
@@ -2314,7 +2307,7 @@ search_start_fwd(void)
 
         /* Insert first context word */
         BPTableIdx[1] = 1;
-        de = WordDict->dict_list[context_word[0]];
+        de = word_dict->dict_list[context_word[0]];
         rcsize = (de->mpx && (de->len > 1)) ?
             RightContextFwdSize[de->phone_ids[de->len - 1]] : 1;
         lscr = lm_bg_score(StartWordId, context_word[0]);
@@ -2326,7 +2319,7 @@ search_start_fwd(void)
         /* Insert 2nd context word, if any */
         if (context_word[1] >= 0) {
             BPTableIdx[2] = 2;
-            de = WordDict->dict_list[context_word[1]];
+            de = word_dict->dict_list[context_word[1]];
             rcsize = (de->mpx && (de->len > 1)) ?
                 RightContextFwdSize[de->phone_ids[de->len - 1]] : 1;
             lscr +=
@@ -2354,7 +2347,7 @@ search_start_fwd(void)
         rhmm->active = CurrentFrame;    /* Frame in which active */
     }
 
-    compute_all_senones = query_compute_all_senones()
+    compute_all_senones = cmd_ln_boolean("-compallsen")
         || (topsen_window > 1);
 
     if (topsen_window > 1) {
@@ -2390,7 +2383,7 @@ pruneChannels(void)
 
     /* Set the dynamic beam based on maxhmmpf here. */
     DynamicLogBeamWidth = LogBeamWidth;
-    maxhmmpf = query_maxhmmpf();
+    maxhmmpf = cmd_ln_int32("-maxhmmpf");
     cf = CurrentFrame;
     if (n_root_chan_eval + n_nonroot_chan_eval > maxhmmpf) {
         /* Build a histogram to approximately prune them. */
@@ -2478,7 +2471,7 @@ search_one_ply_fwd(void)
     pruneChannels();
 
     /* Apply absolute pruning to word-exits, if specified */
-    if ((n = query_maxwpf()) < NumWords)
+    if ((n = cmd_ln_int32("-maxwpf")) < NumWords)
         bptable_maxwpf(n);
 
     /* Do inter-word transitions */
@@ -2589,23 +2582,10 @@ search_finish_fwd(void)
 
     /* Obtain lattice density and phone perplexity info for this utterance */
     bptbl2latdensity(BPIdx, lattice_density);
-    if (calc_phone_perp)
+    if (cmd_ln_boolean("-phperp"))
         compute_phone_perplexity();
 
     search_postprocess_bptable(FLOAT2LW(1.0), "FWDTREE");
-
-#if 0
-    /* Get pscr-score for fwdtree recognition */
-    {
-        search_hyp_t *pscrpath;
-        static search_hyp_t *fwdtree_pscr_path(void);
-
-        if (query_phone_conf()) {
-            pscrpath = fwdtree_pscr_path();
-            search_hyp_free(pscrpath);
-        }
-    }
-#endif
 
 #if SEARCH_PROFILE
     if (LastFrame > 0) {
@@ -2726,7 +2706,7 @@ search_hyp_to_str(void)
     hyp_str[0] = '\0';
     k = 0;
     for (i = 0; hyp[i].wid >= 0; i++) {
-        wd = WordIdToStr(WordDict, hyp[i].wid);
+        wd = WordIdToStr(word_dict, hyp[i].wid);
         l = strlen(wd);
 
         if (k + l > 4090)
@@ -2773,7 +2753,7 @@ seg_back_trace(int32 bpidx, char const *pass)
     int32 f, latden;
     double perp;
 
-    altpron = query_report_altpron();
+    altpron = cmd_ln_boolean("-reportpron");
 
     if (bpidx != NO_BP) {
         seg_back_trace(BPTable[bpidx].bp, pass);
@@ -2802,14 +2782,14 @@ seg_back_trace(int32 bpidx, char const *pass)
             perp /= seg_len;
         }
 
-        if (print_back_trace)
+        if (cmd_ln_boolean("-backtrace"))
             printf("\t%4d %4d %10d %11d %8d %8d %6d %6.2f %s\n",
                    last_time + 1, BPTable[bpidx].frame,
                    a_scr_norm, a_scr, l_scr,
                    /* BestScoreTable[BPTable[bpidx].frame] -  BPTable[bpidx].score */
                    topsenscr_norm,
                    latden, perp,
-                   WordIdToStr(WordDict, BPTable[bpidx].wid));
+                   WordIdToStr(word_dict, BPTable[bpidx].wid));
         hyp_wid[n_hyp_wid++] = BPTable[bpidx].wid;
 
         /* Store hypothesis word sequence and segmentation */
@@ -2817,7 +2797,7 @@ seg_back_trace(int32 bpidx, char const *pass)
             if (seg >= HYP_SZ - 1)
                 E_FATAL("**ERROR** Increase HYP_SZ\n");
             hyp[seg].wid = altpron ? BPTable[bpidx].wid :
-                WordDict->dict_list[BPTable[bpidx].wid]->fwid;
+                word_dict->dict_list[BPTable[bpidx].wid]->fwid;
             hyp[seg].sf = last_time + 1;
             hyp[seg].ef = BPTable[bpidx].frame;
             hyp[seg].ascr = a_scr;
@@ -2833,7 +2813,7 @@ seg_back_trace(int32 bpidx, char const *pass)
         last_time = BPTable[bpidx].frame;
     }
     else {
-        if (print_back_trace) {
+        if (cmd_ln_boolean("-backtrace")) {
             printf("\t%4s %4s %10s %11s %8s %8s %6s %6s %s (%s) (%s)\n",
                    "SFrm", "Efrm", "AScr/Frm", "AScr", "LScr", "BSDiff",
                    "LatDen", "PhPerp", "Word", pass, uttproc_get_uttid());
@@ -2860,7 +2840,7 @@ partial_seg_back_trace(int32 bpidx)
     static int32 last_time;
     int32 altpron;
 
-    altpron = query_report_altpron();
+    altpron = cmd_ln_boolean("-reportpron");
 
     if (bpidx != NO_BP) {
         partial_seg_back_trace(BPTable[bpidx].bp);
@@ -2870,7 +2850,7 @@ partial_seg_back_trace(int32 bpidx)
             if (seg >= HYP_SZ - 1)
                 E_FATAL("**ERROR** Increase HYP_SZ\n");
             hyp[seg].wid = altpron ?
-                BPTable[bpidx].wid : WordDict->dict_list[BPTable[bpidx].
+                BPTable[bpidx].wid : word_dict->dict_list[BPTable[bpidx].
                                                          wid]->fwid;
             hyp[seg].sf = last_time + 1;
             hyp[seg].ef = BPTable[bpidx].frame;
@@ -3073,7 +3053,6 @@ search_set_lw(double p1lw, double p2lw, double p3lw)
     E_INFO("LW = fwdtree: %.1f, fwdflat: %.1f, bestpath: %.1f\n",
            LW2FLOAT(fwdtree_lw), LW2FLOAT(fwdflat_lw),
            LW2FLOAT(bestpath_lw));
-    E_INFO("Log2(AscrScale) = %d\n", kb_get_ascr_scale());
 }
 
 void
@@ -3185,8 +3164,8 @@ search_get_hyp(void)
 char *
 search_get_wordlist(int *len, char sep_char)
 {
-    dict_entry_t **dents = WordDict->dict_list;
-    int32 dent_cnt = WordDict->dict_entry_count;
+    dict_entry_t **dents = word_dict->dict_list;
+    int32 dent_cnt = word_dict->dict_entry_count;
     int32 i, p;
     static char *fwrdl = NULL;
     static int32 flen = 0;
@@ -3281,7 +3260,7 @@ search_dump_lattice_ascii(char const *file)
                 seg_topsen_score(sf, BPTable[i].frame),
                 BPTable[i].lscr,
                 BPTable[i].bp,
-                BPTable[i].wid, WordDict->dict_list[BPTable[i].wid]->word);
+                BPTable[i].wid, word_dict->dict_list[BPTable[i].wid]->word);
     }
 
     fclose(fp);
@@ -3304,7 +3283,7 @@ load_trace_wordlist(char const *file)
         return;
     }
     while (fscanf(fp, "%s", wd) == 1) {
-        wid = dictStrToWordId(WordDict, wd, TRUE);
+        wid = dictStrToWordId(word_dict, wd, TRUE);
         trace_wid[wid] = 1;
     }
     fclose(fp);
@@ -3324,7 +3303,7 @@ dump_traceword_chan(void)
         if (!trace_wid[w])
             continue;
 
-        de = WordDict->dict_list[w];
+        de = word_dict->dict_list[w];
         if (de->len == 1)
             continue;
 
@@ -3406,7 +3385,7 @@ dump_traceword_chan(void)
         if (!trace_wid[w])
             continue;
 
-        de = WordDict->dict_list[w];
+        de = word_dict->dict_list[w];
         printf("[%4d] Trace %5d=wid %s\n", cf, w, de->word);
         for (hmm = word_chan[w]; hmm; hmm = hmm->next) {
             printf("    %4d=A %d=ss", hmm->active, hmm->sseqid);
@@ -3482,7 +3461,7 @@ init_search_tree(dictT * dict)
     rhmm = ckd_calloc(n_1ph_words, sizeof(ROOT_CHAN_T));
     i = 0;
     for (w = 0; w < NumWords; w++) {
-        de = WordDict->dict_list[w];
+        de = word_dict->dict_list[w];
         if (de->len != 1)
             continue;
 
@@ -3830,7 +3809,7 @@ search_set_current_lm(void)
 
     if (LangModel)
         delete_search_tree();
-    create_search_tree(WordDict, 1);
+    create_search_tree(word_dict, 1);
     LangModel = lm;
 }
 
@@ -3855,7 +3834,7 @@ compute_seg_scores(lw_t lwf)
             continue;
         }
 
-        de = WordDict->dict_list[bpe->wid];
+        de = word_dict->dict_list[bpe->wid];
         p_bpe = &(BPTable[bpe->bp]);
         rcpermtab = (p_bpe->r_diph >= 0) ?
             RightContextFwdPerm[p_bpe->r_diph] : zeroPermTab;
@@ -3961,7 +3940,7 @@ build_fwdflat_wordlist(void)
     latnode_t *node, *prevnode, *nextnode;
     dict_entry_t *de;
 
-    if (!query_fwdtree_flag()) {
+    if (!cmd_ln_boolean("-fwdtree")) {
         /* No tree-search run; include all words in expansion list */
         for (i = 0; i < StartWordId; i++)
             fwdflat_wordlist[i] = i;
@@ -3980,7 +3959,7 @@ build_fwdflat_wordlist(void)
         if ((wid >= SilenceWordId) || (wid == StartWordId))
             continue;
 
-        de = WordDict->dict_list[wid];
+        de = word_dict->dict_list[wid];
         for (node = frm_wordlist[sf]; node && (node->wid != wid);
              node = node->next);
 
@@ -4042,7 +4021,7 @@ destroy_frm_wordlist(void)
     latnode_t *node, *tnode;
     int32 f;
 
-    if (!query_fwdtree_flag())
+    if (!cmd_ln_boolean("-fwdtree"))
         return;
 
     for (f = 0; f <= LastFrame; f++) {
@@ -4063,7 +4042,7 @@ build_fwdflat_chan(void)
 
     for (i = 0; fwdflat_wordlist[i] >= 0; i++) {
         wid = fwdflat_wordlist[i];
-        de = WordDict->dict_list[wid];
+        de = word_dict->dict_list[wid];
 
         if (de->len == 1)
             continue;
@@ -4121,7 +4100,7 @@ destroy_fwdflat_chan(void)
 
     for (i = 0; fwdflat_wordlist[i] >= 0; i++) {
         wid = fwdflat_wordlist[i];
-        de = WordDict->dict_list[wid];
+        de = word_dict->dict_list[wid];
 
         if (de->len == 1)
             continue;
@@ -4196,15 +4175,15 @@ search_fwdflat_start(void)
     n_fwdflat_word_transition = 0;
     n_senone_active_utt = 0;
 
-    compute_all_senones = query_compute_all_senones();
+    compute_all_senones = cmd_ln_boolean("-compallsen");
     distScores = sc_scores[0];
 
-    if (!query_fwdtree_flag()) {
+    if (!cmd_ln_boolean("-fwdtree")) {
         /* No tree-search run; include all words (upto </s>) in expansion list */
         j = 0;
 
         for (i = 0; i < StartWordId; i++) {
-            if (dictwd_in_lm(WordDict->dict_list[i]->fwid)) {
+            if (dictwd_in_lm(word_dict->dict_list[i]->fwid)) {
                 expand_word_list[j] = i;
                 expand_word_flag[i] = 1;
                 j++;
@@ -4376,7 +4355,7 @@ fwdflat_prune_chan(void)
     pip = logPhoneInsertionPenalty;
 
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
-        de = WordDict->dict_list[w];
+        de = word_dict->dict_list[w];
 
         rhmm = (ROOT_CHAN_T *) word_chan[w];
         if (rhmm->active == cf) {
@@ -4503,7 +4482,7 @@ fwdflat_word_transition(void)
         if (bp->wid == FinishWordId)
             continue;
 
-        de = WordDict->dict_list[bp->wid];
+        de = word_dict->dict_list[bp->wid];
         rcpermtab =
             (bp->r_diph >=
              0) ? RightContextFwdPerm[bp->r_diph] : zeroPermTab;
@@ -4511,7 +4490,7 @@ fwdflat_word_transition(void)
 
         for (i = 0; expand_word_list[i] >= 0; i++) {
             w = expand_word_list[i];
-            newde = WordDict->dict_list[w];
+            newde = word_dict->dict_list[w];
             newscore = rcss[rcpermtab[newde->ci_phone_ids[0]]];
             newscore +=
                 LWMUL(lm_tg_score
@@ -4651,7 +4630,7 @@ get_expand_wordlist(int32 frm, int32 win)
     int32 f, sf, ef, nwd;
     latnode_t *node;
 
-    if (!query_fwdtree_flag()) {
+    if (!cmd_ln_boolean("-fwdtree")) {
         n_fwdflat_word_transition += StartWordId;
         return;
     }
@@ -5107,116 +5086,6 @@ print_pscr_path(FILE * fp, search_hyp_t * hyp, char const *caption)
     fflush(fp);
 }
 
-search_hyp_t *
-search_uttpscr2allphone(void)
-{
-    static vithist_t **allphone_vithist = NULL;
-    static int32 **allphone_tmat;
-    static int32 *allphone_pid;
-    search_hyp_t *allp;
-    int32 i, j, nfrm;
-
-    if (allphone_vithist == NULL) {
-        allphone_vithist =
-            (vithist_t **) ckd_calloc_2d(MAX_FRAMES, NumCiPhones,
-                                       sizeof(vithist_t));
-        allphone_pid = ckd_calloc(NumCiPhones, sizeof(int32));
-        for (i = 0; i < NumCiPhones; i++)
-            allphone_pid[i] = i;
-
-        allphone_tmat = kb_get_phonetp();
-    }
-
-    /* Strictly, nfrm may be greater than LastFrame, but... */
-    nfrm = LastFrame;
-
-    /* Start search with silencephoneid; all others inactive */
-    for (i = 0; i < nfrm; i++) {
-        for (j = 0; j < NumCiPhones; j++) {
-            allphone_vithist[i][j].score = WORST_SCORE;
-            allphone_vithist[i][j].sf = 0;
-            allphone_vithist[i][j].pred = -1;
-            allphone_vithist[i][j].valid = 0;
-        }
-    }
-    allphone_vithist[0][SilencePhoneId].score = 0;
-    allphone_vithist[0][SilencePhoneId].valid = 1;
-
-    allp = search_pscr_path(allphone_vithist,
-                            allphone_tmat,
-                            allphone_pid,
-                            NumCiPhones,
-                            MIN_ALLPHONE_SEG,
-                            kb_get_pip(), SilencePhoneId);
-
-    print_pscr_path(stdout, allp, "Allphone-PSCR");
-
-    return allp;
-}
-
-
-#if 0
-/*
- * Needs to be modified to use phonetp matrix instead of binary yes/no.
- */
-static search_hyp_t *
-fwdtree_pscr_path(void)
-{
-    int32 n_state;
-    int32 i, j, s;
-    dict_entry_t *de;
-    vithist_t **pscr_vithist;
-    char **pscr_tmat;
-    int32 *pscr_pid;
-    search_hyp_t *hyp;
-
-    n_state = 0;
-    for (i = 0; i < n_hyp_wid; i++) {
-        de = WordDict->dict_list[hyp_wid[i]];
-        n_state += de->len;
-    }
-
-    pscr_vithist = (vithist_t **) ckd_calloc_2d(MAX_FRAMES, n_state,
-                                              sizeof(vithist_t));
-
-    pscr_pid = ckd_calloc(n_state, sizeof(int32));
-    s = 0;
-    for (i = 0; i < n_hyp_wid; i++) {
-        de = WordDict->dict_list[hyp_wid[i]];
-        for (j = 0; j < de->len; j++)
-            pscr_pid[s++] = de->ci_phone_ids[j];
-    }
-
-    pscr_tmat = (char **) ckd_calloc_2d(n_state, n_state, sizeof(char));
-    for (i = 1; i < n_state; i++)
-        pscr_tmat[i - 1][i] = 1;
-
-    /* Start search with silencephoneid; all others inactive */
-    for (i = 0; i < n_topsen_frm; i++) {
-        for (j = 0; j < n_state; j++) {
-            pscr_vithist[i][j].score = WORST_SCORE;
-            pscr_vithist[i][j].sf = 0;
-            pscr_vithist[i][j].pred = -1;
-        }
-    }
-    pscr_vithist[0][0].score = 0;
-
-    hyp = search_pscr_path(pscr_vithist,
-                           pscr_tmat,
-                           pscr_pid,
-                           n_state, 1, PHONE_TRANS_PROB, n_state - 1);
-
-    free(pscr_vithist);
-    free(pscr_pid);
-    free(pscr_tmat);
-
-    print_pscr_path(stdout, hyp, "FwdTree-PSCR");
-
-    return hyp;
-}
-#endif
-
-
 /*
  * Obtain phone segmentation for word sequence in hyp_wid, based on pscr
  * scores.
@@ -5234,7 +5103,7 @@ search_hyp_pscr_path(void)
 
     n_state = 0;
     for (i = 0; i < n_hyp_wid; i++) {
-        de = WordDict->dict_list[hyp_wid[i]];
+        de = word_dict->dict_list[hyp_wid[i]];
         n_state += de->len;
     }
 
@@ -5244,7 +5113,7 @@ search_hyp_pscr_path(void)
     pseg_pid = ckd_calloc(n_state, sizeof(int32));
     s = 0;
     for (i = 0; i < n_hyp_wid; i++) {
-        de = WordDict->dict_list[hyp_wid[i]];
+        de = word_dict->dict_list[hyp_wid[i]];
         for (j = 0; j < de->len; j++)
             pseg_pid[s++] = de->ci_phone_ids[j];
     }
@@ -5275,7 +5144,7 @@ search_hyp_pscr_path(void)
     pseg_hyp = search_pscr_path(pseg_vithist,
                                 pseg_tmat,
                                 pseg_pid,
-                                n_state, 3, kb_get_pip(), n_state - 1);
+                                n_state, 3, cmd_ln_float32("-phnpen"), n_state - 1);
 
     free(pseg_vithist);
     free(pseg_pid);
@@ -5299,7 +5168,7 @@ search_bptbl_wordlist(int32 wid, int32 frm)
 
     first = BPTableIdx[frm];
     for (b = BPIdx - 1; b >= first; --b) {
-        if (wid == WordDict->dict_list[BPTable[b].wid]->fwid)
+        if (wid == word_dict->dict_list[BPTable[b].wid]->fwid)
             return b;
     }
     return -1;
@@ -5310,7 +5179,7 @@ search_bptbl_pred(int32 b)
 {
     for (b = BPTable[b].bp; ISA_FILLER_WORD(BPTable[b].wid);
          b = BPTable[b].bp);
-    return (WordDict->dict_list[BPTable[b].wid]->fwid);
+    return (word_dict->dict_list[BPTable[b].wid]->fwid);
 }
 
 

@@ -167,6 +167,7 @@
 #include "s2types.h"
 #include "s2io.h"
 #include "ckd_alloc.h"
+#include "cmd_ln.h"
 #include "pio.h"
 #include "basic_types.h"
 #include "assert.h"
@@ -185,13 +186,8 @@
 #include "fbs.h"
 #include "byteorder.h"
 
-#ifdef NO_DICT
-#define NO_WORD	-1
-#else
 #include "c.h"
 #include "dict.h"
-static dictT *WordDict;
-#endif
 
 #define UG_MAPID(m,u)		((m)->unigrams[u].mapid)
 #define UG_PROB_F(m,u)		((m)->unigrams[u].prob1.f)
@@ -791,7 +787,7 @@ lm_read_clm(char const *filename,
 
     E_INFO("Reading LM file %s (name \"%s\")\n", filename, lmname);
 
-    do_mmap = kb_get_mmap_flag();
+    do_mmap = cmd_ln_boolean("-mmap");
 
     /* Make sure no LM with same lmname already exists; if so, delete it */
     if (lmname_to_id(lmname) >= 0)
@@ -815,19 +811,12 @@ lm_read_clm(char const *filename,
     if (stat(filename, &statbuf) < 0)
         E_FATAL("stat(%s) failed\n", filename);
 
-#ifndef NO_DICT
-    WordDict = kb_get_word_dict();
-#endif
-
     /* Read #unigrams, #bigrams, #trigrams from file */
     ReadNgramCounts(fp, &n_unigram, &n_bigram, &n_trigram);
     E_INFO("ngrams 1=%d, 2=%d, 3=%d\n", n_unigram, n_bigram, n_trigram);
 
     /* Determine dictionary size (for dict-wid -> LM-wid map) */
-#ifdef NO_DICT
-    dict_size = n_unigram;
-#else
-    dict_size = kb_get_num_words();
+    dict_size = word_dict->dict_entry_count;
     E_INFO("%d words in dictionary\n", dict_size);
 
     /*
@@ -840,9 +829,8 @@ lm_read_clm(char const *filename,
         n_unigram += (last_oov - first_oov + 1);
     }
     /* Add space for words added in at run time */
-    max_new_oov = kb_get_max_new_oov();
+    max_new_oov = cmd_ln_int32("-maxnewoov");
     n_unigram += max_new_oov;
-#endif
 
     if (dict_size >= 65535)
         E_FATAL("#dict-words(%d) > 65534\n", dict_size);
@@ -862,7 +850,7 @@ lm_read_clm(char const *filename,
              --i);
 #endif
         i++;
-        kbdumpdir = kb_get_dump_dir();
+        kbdumpdir = cmd_ln_str("-lmdumpdir");
         /* form dumpfilename */
         if (kbdumpdir)
             sprintf(dumpfile, "%s/%s.DMP", kbdumpdir, filename + i);
@@ -973,11 +961,7 @@ lm_read_clm(char const *filename,
 
     maperr = 0;
     for (i = 0; i < model->ucount; i++) {
-#ifndef NO_DICT
         model->unigrams[i].mapid = kb_get_word_id(word_str[i]);
-#else
-        E_FATAL("Cannot run standalone, without a dictionary\n");
-#endif
         classid = lm_get_classid(model, word_str[i]);
 
         if (model->unigrams[i].mapid >= 0) {    /* unigram[i] is a dictionary word */
@@ -1131,11 +1115,11 @@ lm_init_oov(void)
     E_INFO("Adding %d initial OOV words to LM\n",
            last_oov - first_oov + 1);
 
-    oov_ugprob = kb_get_oov_ugprob();
+    oov_ugprob = cmd_ln_float32("-oovugprob");
 
     for (i = first_oov; i <= last_oov; i++) {
         /* Add only base pronunciations */
-        if ((baseid = dictid_to_baseid(WordDict, i)) == i) {
+        if ((baseid = dictid_to_baseid(word_dict, i)) == i) {
             if ((j = lm_add_word(model, i)) >= 0)
                 model->dictwid_map[i] = j;
         }
@@ -1154,13 +1138,13 @@ lm_add_word(lm_t * model, int32 dictwid)
     /* Make sure new word not already in LM */
     if (model->dictwid_map[dictwid] >= 0) {
         E_WARN("lm_add_word: Word '%s' already in LM, ignored\n",
-               dictid_to_str(WordDict, dictwid));
+               dictid_to_str(word_dict, dictwid));
         return model->dictwid_map[dictwid];
     }
 
     if (model->ucount >= model->max_ucount) {
         E_ERROR("lm_add_word(%s) failed; LM full\n",
-                dictid_to_str(WordDict, dictwid));
+                dictid_to_str(word_dict, dictwid));
         return -1;
     }
 
@@ -1374,7 +1358,7 @@ lm3g_load(char const *file, lm_t * model, char const *lmfile, int32 mtime)
         E_FATAL("Wrong header %s\n", darpa_hdr);
     E_INFO("%s\n", str);
 
-    do_mmap = kb_get_mmap_flag();
+    do_mmap = cmd_ln_boolean("-mmap");
     if (do_mmap) {
         if (do_swap) {
             E_INFO
@@ -1814,67 +1798,6 @@ lm_set_param(lm_t * model, double lw, double uw,
     }
 }
 
-#ifdef NO_DICT
-main(argc, argv)
-int32 argc;
-char *argv[];
-{
-    lm_t *model;
-    int32 i, n, score;
-    float lw, uw, wip;
-    char wd[3][100], line[1000];
-    int32 wid[3];
-    int32 unkwid;
-
-    if (argc < 4)
-        E_FATAL("Usage: %s <lw> <uw> <wip> [LM-file]\n", argv[0]);
-    if (sscanf(argv[1], "%f", &lw) != 1)
-        E_FATAL("Usage: %s <lw> <uw> <wip> [LM-file]\n", argv[0]);
-    if (sscanf(argv[2], "%f", &uw) != 1)
-        E_FATAL("Usage: %s <lw> <uw> <wip> [LM-file]\n", argv[0]);
-    if (sscanf(argv[3], "%f", &wip) != 1)
-        E_FATAL("Usage: %s <lw> <uw> <wip> [LM-file]\n", argv[0]);
-    if (argc == 5)
-        lm_read(argv[4], lw, uw, wip, 1.0);
-    else
-        lm_read("/net/alf8/cdrom/wsj1/grammar/tgboc20o.nvp", lw, uw, wip,
-                1.0);
-
-    lmSetParameters(model, 0);
-
-    unkwid = wstr2wid(model, "<UNK>");
-    for (;;) {
-        printf("Enter 1, 2, or 3 words: ");
-        fgets(line, sizeof(line), stdin);
-        if (((n = sscanf(line, "%s %s %s", wd[0], wd[1], wd[2])) < 1)
-            || (n > 3))
-            break;
-        for (i = 0; i < n; i++)
-            if ((wid[i] = wstr2wid(model, wd[i])) == NO_WORD) {
-                printf("  %s -> <UNK>\n", wd[i]);
-                wid[i] = unkwid;
-            }
-
-        switch (n) {
-        case 1:
-            score = unigram_score(wid[0]);
-            printf("unigram_score(%d) = %d\n", wid[0], score);
-            break;
-        case 2:
-            score = bigram_score(wid[0], wid[1]);
-            printf("bigram_score(%d, %d) = %d\n", wid[0], wid[1], score);
-            break;
-        case 3:
-            score = trigram_score(wid[0], wid[1], wid[2]);
-            printf("trigram_score(%d, %d, %d) = %d\n",
-                   wid[0], wid[1], wid[2], score);
-            break;
-        default:
-            break;
-        }
-    }
-}
-#endif
 
 #define BINARY_SEARCH_THRESH	16
 
@@ -1949,8 +1872,8 @@ lm3g_bg_score(int32 w1, int32 w2)
 
 #if 0
     printf("      %5d %5d -> %8d (%16s %16s)\n", w1, w2, score,
-           WordDict->dict_list[UG_MAPID(lm, lw1)]->word,
-           WordDict->dict_list[UG_MAPID(lm, lw2)]->word);
+           word_dict->dict_list[UG_MAPID(lm, lw1)]->word,
+           word_dict->dict_list[UG_MAPID(lm, lw2)]->word);
 #endif
 
     return (score);
@@ -2072,9 +1995,9 @@ lm3g_tg_score(int32 w1, int32 w2, int32 w3)
 
 #if 0
     printf("%5d %5d %5d -> %8d (%16s %16s %16s)\n", w1, w2, w3, score,
-           WordDict->dict_list[UG_MAPID(lm, lw1)]->word,
-           WordDict->dict_list[UG_MAPID(lm, lw2)]->word,
-           WordDict->dict_list[UG_MAPID(lm, lw3)]->word);
+           word_dict->dict_list[UG_MAPID(lm, lw1)]->word,
+           word_dict->dict_list[UG_MAPID(lm, lw2)]->word,
+           word_dict->dict_list[UG_MAPID(lm, lw3)]->word);
 #endif
 
     return (score);

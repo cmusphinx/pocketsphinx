@@ -52,15 +52,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
 #include <err.h>
 #include <ckd_alloc.h>
-#include <search.h>
-#include <fsg_search.h>
-#include <senscr.h>
-#include <kb.h>
-#include <fbs.h>
-#include <dict.h>
-#include <log.h>
+#include <cmd_ln.h>
+
+#include "search.h"
+#include "phone.h"
+#include "fsg_search.h"
+#include "senscr.h"
+#include "kb.h"
+#include "fbs.h"
+#include "dict.h"
+#include "log.h"
 
 
 #define FSG_SEARCH_IDLE		0
@@ -113,9 +117,9 @@ fsg_search_init(word_fsg_t * fsg)
     search->wbeam = search->wbeam_orig;
 
     /* LM related weights/penalties */
-    lw = kb_get_lw();
-    pip = (int32) (LOG(kb_get_pip()) * lw);
-    wip = (int32) (LOG(kb_get_wip()) * lw);
+    lw = cmd_ln_float32("-langwt");
+    pip = (int32) (LOG(cmd_ln_float32("-phnpen")) * lw);
+    wip = (int32) (LOG(cmd_ln_float32("-inspen")) * lw);
 
     E_INFO("FSG(beam: %d, pbeam: %d, wbeam: %d; wip: %d, pip: %d)\n",
            search->beam_orig, search->pbeam_orig, search->wbeam_orig,
@@ -343,7 +347,7 @@ fsg_search_hmm_eval(fsg_search_t * search)
     search->n_hmm_eval += n;
 
     /* Adjust beams if #active HMMs larger than absolute threshold */
-    if (n > query_maxhmmpf()) {
+    if (n > cmd_ln_int32("-maxhmmpf")) {
         /*
          * Too many HMMs active; reduce the beam factor applied to the default
          * beams, but not if the factor is already at a floor (0.1).
@@ -414,7 +418,6 @@ fsg_search_pnode_exit(fsg_search_t * search, fsg_pnode_t * pnode)
 {
     CHAN_T *hmm;
     word_fsglink_t *fl;
-    dictT *dict;
     int32 wid, endwid;
     fsg_pnode_ctxt_t ctxt;
 
@@ -425,8 +428,7 @@ fsg_search_pnode_exit(fsg_search_t * search, fsg_pnode_t * pnode)
     fl = fsg_pnode_fsglink(pnode);
     assert(fl);
 
-    dict = kb_get_word_dict();
-    endwid = kb_get_word_id(kb_get_lm_end_sym());
+    endwid = kb_get_word_id(cmd_ln_str("-lmendsym"));
 
     wid = word_fsglink_wid(fl);
     assert(wid >= 0);
@@ -441,8 +443,8 @@ fsg_search_pnode_exit(fsg_search_t * search, fsg_pnode_t * pnode)
      * Check if this is filler or single phone word; these do not model right
      * context (i.e., the exit score applies to all right contexts).
      */
-    if (dict_is_filler_word(dict, wid) ||
-        (wid == endwid) || (dict_pronlen(dict, wid) == 1)) {
+    if (dict_is_filler_word(word_dict, wid) ||
+        (wid == endwid) || (dict_pronlen(word_dict, wid) == 1)) {
         /* Create a dummy context structure that applies to all right contexts */
         fsg_pnode_add_all_ctxt(&ctxt);
 
@@ -747,7 +749,7 @@ fsg_search_utt_start(fsg_search_t * search)
     search->pbeam = search->pbeam_orig;
     search->wbeam = search->wbeam_orig;
 
-    silcipid = kb_get_silence_ciphone_id();
+    silcipid = phone_to_id("SIL",  TRUE);
 
     /* Initialize EVERYTHING to be inactive */
     assert(search->pnode_active == NULL);
@@ -835,14 +837,11 @@ fsg_search_hyp_filter(fsg_search_t * search)
     int32 i;
     int32 startwid, finishwid;
     int32 altpron;
-    dictT *dict;
 
     filt_hyp = search_get_hyp();
-    startwid = kb_get_word_id(kb_get_lm_start_sym());
-    finishwid = kb_get_word_id(kb_get_lm_end_sym());
-    dict = kb_get_word_dict();
-
-    altpron = query_report_altpron();
+    startwid = kb_get_word_id(cmd_ln_str("-lmstartsym"));
+    finishwid = kb_get_word_id(cmd_ln_str("-lmendsym"));
+    altpron = cmd_ln_boolean("-reportpron");
 
     i = 0;
     for (hyp = search->hyp; hyp; hyp = hyp->next) {
@@ -855,7 +854,7 @@ fsg_search_hyp_filter(fsg_search_t * search)
 
         /* Replace specific word pronunciation ID with base ID */
         if (!altpron)
-            filt_hyp[i].wid = dictid_to_baseid(dict, filt_hyp[i].wid);
+            filt_hyp[i].wid = dictid_to_baseid(word_dict, filt_hyp[i].wid);
 
         i++;
         if ((i + 1) >= HYP_SZ)
@@ -1021,8 +1020,8 @@ fsg_search_utt_end(fsg_search_t * search)
     char file[4096];
 
     /* Write history table if needed */
-    if (query_dumplat_dir()) {
-        sprintf(file, "%s/%s.hist", query_dumplat_dir(),
+    if (cmd_ln_str("-dumplatdir")) {
+        sprintf(file, "%s/%s.hist", cmd_ln_str("-dumplatdir"),
                 uttproc_get_uttid());
         if ((latfp = fopen(file, "w")) == NULL)
             E_ERROR("fopen(%s,w) failed\n", file);
@@ -1037,9 +1036,9 @@ fsg_search_utt_end(fsg_search_t * search)
      * First check if the final state has been reached; otherwise just use
      * the best scoring state.
      */
-    fsg_search_history_backtrace(search, query_fsg_backtrace_finalstate());
+    fsg_search_history_backtrace(search, cmd_ln_boolean("-fsgbfs"));
 
-    if (query_back_trace())
+    if (cmd_ln_boolean("-backtrace"))
         fsg_search_hyp_dump(search, stdout);
 
     search_result(&nfr, &result);

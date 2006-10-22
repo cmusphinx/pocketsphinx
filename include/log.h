@@ -85,6 +85,6 @@
  */
 #define LOG_ADD(p1,p2)	(logadd_tbl[(p1<<8)+(p2)])
 
-extern unsigned char logadd_tbl[];
+extern const unsigned char logadd_tbl[];
 
 #endif /* _LOG_H_ */

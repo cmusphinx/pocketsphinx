@@ -6,7 +6,6 @@ libpocketsphinx_la_LDFLAGS = -version-info 0:0:0
 
 libpocketsphinx_la_SOURCES = \
 	allphone.c				\
-	areadint.c				\
 	awriteshort.c				\
 	bin_mdef.c				\
 	blkarray_list.c				\
@@ -31,7 +30,6 @@ libpocketsphinx_la_SOURCES = \
 	logs3.c					\
 	mdef.c					\
 	nxtarg.c				\
-	pconf.c					\
 	phone.c					\
 	s2_mmap.c				\
 	s2_semi_mgau.c				\
@@ -46,6 +44,8 @@ libpocketsphinx_la_SOURCES = \
 	uttproc.c				\
 	vector.c				\
 	word_fsg.c
+
+noinst_HEADRS = uttproc.h allphone.h
 
 INCLUDES = -I$(top_srcdir)/include \
            -I$(top_builddir)/include 

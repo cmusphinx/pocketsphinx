@@ -119,18 +119,21 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <assert.h>
+
+#include <cmd_ln.h>
+#include <ckd_alloc.h>
+#include <pio.h>
+#include <hash_table.h>
+#include <err.h>
 
 #include "s2types.h"
-#include "pio.h"
+#include "strfuncs.h"
 #include "basic_types.h"
-#include "ckd_alloc.h"
 #include "c.h"
 #include "list.h"
-#include "hash_table.h"
 #include "phone.h"
 #include "dict.h"
-#include "err.h"
-#include "assert.h"
 #include "search_const.h"
 #include "lmclass.h"
 #include "lm_3g.h"
@@ -146,9 +149,6 @@
 
 #define QUIT(x)		{fprintf x; exit(-1);}
 
-/* FIXME: put these in a header file */
-extern char *nxtarg(char const **, char const *);
-
 extern int32 use_noise_words;
 
 static void buildEntryTable(list_t * list, int32 *** table_p);
@@ -157,8 +157,8 @@ static void buildExitTable(list_t * list, int32 *** table_p,
 static int32 addToLeftContextTable(char *diphone);
 static int32 addToRightContextTable(char *diphone);
 static void recordMissingTriphone(char *triphoneStr);
-static dict_entry_t *_new_dict_entry(char const *word_str,
-                                     char const *pronoun_str,
+static dict_entry_t *_new_dict_entry(char *word_str,
+                                     char *pronoun_str,
                                      int32 use_context);
 static void _dict_list_add(dictT * dict, dict_entry_t * entry);
 static void dict_load(dictT * dict, char *filename, int32 * word_id,
@@ -234,16 +234,16 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
         j += get_dict_size(p_filename);
     if (n_filename)
         j += get_dict_size(n_filename);
-    if ((oovdic = kb_get_oovdic()) != NULL)
+    if ((oovdic = cmd_ln_str("-oovdictfn")) != NULL)
         j += get_dict_size(oovdic);
-    if ((personalDic = kb_get_personaldic()) != NULL) {
+    if ((personalDic = cmd_ln_str("-pdictfn")) != NULL) {
         if (stat(personalDic, &statbuf) == 0)   /* personalDic exists */
             j += get_dict_size(personalDic);
     }
 
-    if ((max_new_oov = kb_get_max_new_oov()) > 0)
+    if ((max_new_oov = cmd_ln_int32("-maxnewoov")) > 0)
         j += max_new_oov;
-    if ((startsym_file = kb_get_startsym_file()) != NULL)
+    if ((startsym_file = cmd_ln_str("-startsymfn")) != NULL)
         j += get_dict_size(startsym_file);
     /* FIXME: <unk> is no longer used, is this still correct? */
     j += 4;                     /* </s>, <s>, <unk> and <sil> */
@@ -276,9 +276,9 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
     /* Add words with known pronunciations but which are OOVs wrt LM */
     first_initial_oov = word_id;
 
-    if ((oovdic = kb_get_oovdic()) != NULL)
+    if ((oovdic = cmd_ln_str("-oovdictfn")) != NULL)
         dict_load(dict, oovdic, &word_id, use_context, FALSE);
-    if ((personalDic = kb_get_personaldic()) != NULL) {
+    if ((personalDic = cmd_ln_str("-pdictfn")) != NULL) {
         if (stat(personalDic, &statbuf) == 0)
             dict_load(dict, personalDic, &word_id, use_context, FALSE);
     }
@@ -287,7 +287,7 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
 
     /* Placeholders (dummy pronunciations) for new words that can be added at runtime */
     initial_dummy = first_dummy = word_id;
-    if ((max_new_oov = kb_get_max_new_oov()) > 0)
+    if ((max_new_oov = cmd_ln_int32("-maxnewoov")) > 0)
         E_INFO("Allocating %d placeholders for new OOVs\n", max_new_oov);
     for (i = 0; i < max_new_oov; i++) {
         char tmpstr[100], pronstr[100];
@@ -316,20 +316,20 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
     {
         void *val;
 
-        if (hash_table_lookup(dict->dict, kb_get_lm_end_sym(), &val)) {
+        if (hash_table_lookup(dict->dict, cmd_ln_str("-lmendsym"), &val)) {
             /*
              * Check if there is a special end silence phone.
              */
             if (NO_PHONE == phone_to_id("SILe", FALSE)) {
-                entry = _new_dict_entry(kb_get_lm_end_sym(), "SIL", FALSE);
+                entry = _new_dict_entry(cmd_ln_str("-lmendsym"), "SIL", FALSE);
                 if (!entry)
                     E_FATAL("Failed to add </s>(SIL) to dictionary\n");
             }
             else {
                 E_INFO("Using special end silence for %s\n",
-                       kb_get_lm_end_sym());
+                       cmd_ln_str("-lmendsym"));
                 entry =
-                    _new_dict_entry(kb_get_lm_end_sym(), "SILe", FALSE);
+                    _new_dict_entry(cmd_ln_str("-lmendsym"), "SILe", FALSE);
             }
             _dict_list_add(dict, entry);
             hash_table_enter(dict->dict, entry->word, (void *) word_id);
@@ -342,15 +342,15 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
         dict->filler_start = word_id;
 
         /* Add [multiple] start symbols to dictionary (LISTEN project) */
-        if ((startsym_file = kb_get_startsym_file()) != NULL) {
+        if ((startsym_file = cmd_ln_str("-startsymfn")) != NULL) {
             FILE *ssfp;
             char line[1000], startsym[1000];
-            char const *startsym_phone;
+            char *startsym_phone;
 
             E_INFO("Reading start-syms file %s\n", startsym_file);
 
             startsym_phone =
-                (phone_to_id("SILb", FALSE) == NO_PHONE) ? "SIL" : "SILb";
+                ckd_salloc((phone_to_id("SILb", FALSE) == NO_PHONE) ? "SIL" : "SILb");
             ssfp = myfopen(startsym_file, "r");
             while (fgets(line, sizeof(line), ssfp) != NULL) {
                 if (sscanf(line, "%s", startsym) != 1)
@@ -365,23 +365,24 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
                 entry->fwid = word_id;
                 word_id++;
             }
+            ckd_free(startsym_phone);
         }
         /* Add the standard start symbol (<s>) if not already in dict */
-        if (hash_table_lookup(dict->dict, kb_get_lm_start_sym(), &val)) {
+        if (hash_table_lookup(dict->dict, cmd_ln_str("-lmstartsym"), &val)) {
             /*
              * Check if there is a special begin silence phone.
              */
             if (NO_PHONE == phone_to_id("SILb", FALSE)) {
                 entry =
-                    _new_dict_entry(kb_get_lm_start_sym(), "SIL", FALSE);
+                    _new_dict_entry(cmd_ln_str("-lmstartsym"), "SIL", FALSE);
                 if (!entry)
                     E_FATAL("Failed to add <s>(SIL) to dictionary\n");
             }
             else {
                 E_INFO("Using special begin silence for %s\n",
-                       kb_get_lm_start_sym());
+                       cmd_ln_str("-lmstartsym"));
                 entry =
-                    _new_dict_entry(kb_get_lm_start_sym(), "SILb", FALSE);
+                    _new_dict_entry(cmd_ln_str("-lmstartsym"), "SILb", FALSE);
                 if (!entry)
                     E_FATAL("Failed to add <s>(SILb) to dictionary\n");
             }
@@ -688,8 +689,7 @@ dictid_to_str(dictT * dict, int32 id)
 }
 
 static dict_entry_t *
-_new_dict_entry(char const *word_str, char const *pronoun_str,
-                int32 use_context)
+_new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
 {
     dict_entry_t *entry;
     char *phone[MAX_PRONOUN_LEN];
@@ -861,8 +861,9 @@ _new_dict_entry(char const *word_str, char const *pronoun_str,
  */
 static int32
 replace_dict_entry(dictT * dict,
-                   dict_entry_t * entry, char const *word_str,
-                   char const *pronoun_str,
+                   dict_entry_t * entry,
+                   char const *word_str,
+                   char *pronoun_str,
                    int32 use_context, int32 new_entry)
 {
     char *phone[MAX_PRONOUN_LEN];
@@ -981,7 +982,7 @@ replace_dict_entry(dictT * dict,
  * Return the word id of the entry updated if successful.  If any error, return -1.
  */
 int32
-dict_add_word(dictT * dict, char const *word, char const *pron)
+dict_add_word(dictT * dict, char const *word, char *pron)
 {
     dict_entry_t *entry;
     int32 wid, new_entry;
@@ -1307,7 +1308,7 @@ dict_left_context_bwd_size(void)
 int32
 dict_get_num_main_words(dictT * dict)
 {
-    return ((int32) dictStrToWordId(dict, kb_get_lm_end_sym(), FALSE));
+    return ((int32) dictStrToWordId(dict, cmd_ln_str("-lmendsym"), FALSE));
 }
 
 int32

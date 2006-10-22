@@ -240,6 +240,8 @@
 #include "senscr.h"
 #include "search.h"
 #include "err.h"
+#include "uttproc.h"
+#include "cmd_ln.h"
 
 /* This module stuff */
 #include "time_align.h"
@@ -257,8 +259,6 @@ int save_labs(SEGMENT_T * segs,
 
 static mfcc_t ***feat_f;
 static int frame_cnt = 0;
-
-static dictT *WordDict;
 
 static int *active_models[2];
 
@@ -292,14 +292,7 @@ static int max_state_bp_table_size = STATE_BP_TABLE_SIZE_INCREMENT;
 static DYNMODEL_T *all_models = NULL;
 static int all_model_cnt;
 
-static SMD *Models;
-
-static int32 *distScores;
-
-static int32 totalDists;
-
 static int32 beam_width;
-
 static int32 n_word_segments = 0;
 static int32 n_phone_segments = 0;
 static int32 n_state_segments = 0;
@@ -358,7 +351,7 @@ constituent_cnt(char const *compound_word)
 char *
 head_word_of(int k)
 {
-    dict_entry_t *cmpnd_wrd = WordDict->dict_list[k];
+    dict_entry_t *cmpnd_wrd = word_dict->dict_list[k];
     static char head_word[1024];
     char *uscore;
 
@@ -407,7 +400,7 @@ COMPOUND_WORD_T *
 mk_compound_word_list(int *out_cnt)
 {
     int i, j;
-    dict_entry_t **dict_list = WordDict->dict_list;
+    dict_entry_t **dict_list = word_dict->dict_list;
     char *word;
     char *alt_marker;
     int compound_word_cnt;
@@ -416,7 +409,7 @@ mk_compound_word_list(int *out_cnt)
 
     E_INFO("Scanning dictionary for compound words: ");
 
-    for (i = 0, compound_word_cnt = 0; i < WordDict->dict_entry_count; i++) {
+    for (i = 0, compound_word_cnt = 0; i < word_dict->dict_entry_count; i++) {
         word = dict_list[i]->word;
         if (strchr(word + 1, '_') != NULL) {
             /* there is at least one underscore in the word
@@ -430,7 +423,7 @@ mk_compound_word_list(int *out_cnt)
     compound_word_id = (int *) calloc(compound_word_cnt, sizeof(int));
 
     /* rescan the dict to find the word id's of the compound words */
-    for (i = 0, j = 0; i < WordDict->dict_entry_count; i++) {
+    for (i = 0, j = 0; i < word_dict->dict_entry_count; i++) {
         word = dict_list[i]->word;
         if (strchr(word + 1, '_') != NULL) {
             /* there is at least one underscore in the word
@@ -494,11 +487,6 @@ time_align_init(void)
 #endif
 
     E_INFO("rcsid == %s\n", rcsid);
-
-    WordDict = kb_get_word_dict();
-    totalDists = kb_get_total_dists();
-    distScores = search_get_dist_scores();
-    Models = kb_get_models();
 
     sil_word_id = kb_get_word_id("SIL");
     start_word_id = kb_get_word_id("<s>");
@@ -1145,7 +1133,7 @@ add_word(short *amatrix,
     }
 
     do {
-        cur_word = WordDict->dict_list[cur_word_id];
+        cur_word = word_dict->dict_list[cur_word_id];
 
         phone_id_map[new_node] = cur_word->ci_phone_ids[0];
         word_id_map[new_node] = cur_word_id;
@@ -1271,8 +1259,8 @@ mk_phone_graph(short *amatrix,
         return -1;
     }
 
-    left_word = WordDict->dict_list[left_word_id];
-    right_word = WordDict->dict_list[right_word_id];
+    left_word = word_dict->dict_list[left_word_id];
+    right_word = word_dict->dict_list[right_word_id];
 
     for (i = 0; i < MAX_COMPOUND_LEN; i++) {
         end_list_index[i] = i;
@@ -1846,9 +1834,9 @@ evaluate_active_models_internal(int *phone_bnd_models,
         pbp = all_models[active_model].pbp;
         sbp = all_models[active_model].sbp;
 
-        dist = Models[sseq_id].dist;    /* seno associated w/ transitions */
+        dist = smds[sseq_id].dist;    /* seno associated w/ transitions */
 
-        tp = Models[sseq_id].tp;        /* transition probabilities */
+        tp = smds[sseq_id].tp;        /* transition probabilities */
 
 #if SHOW&SHOW_MODEL_EVAL
         printf("%s: %d [%d, %d, %d, %d, %d]\n",
@@ -2291,7 +2279,7 @@ print_active_models(int *model_index,
                         name = "<root>";
                     }
                     else {
-                        name = (WordDict->dict_list[id])->word;
+                        name = (word_dict->dict_list[id])->word;
                     }
                     printf(" %12s(%4d)",
                            name, word_bp_table[wbp[j]].end_frame);
@@ -2361,7 +2349,7 @@ print_word_back_pointers(int from,      /* starting back pointer index */
     printf("new word back pointers this frame\n");
     for (; from < stop_before; from++) {
         printf("%s[%d]: %d] %d\n",
-               (WordDict->dict_list[word_bp_table[from].id])->word,
+               (word_dict->dict_list[word_bp_table[from].id])->word,
                word_bp_table[from].id,
                word_bp_table[from].end_frame, word_bp_table[from].score);
     }
@@ -2414,7 +2402,7 @@ print_models(DYNMODEL_T * models,
     for (i = 0; i < n_models; i++) {
         if (boundary[i]) {
             sprintf(word_string, "[%s]",
-                    (WordDict->dict_list[word_id_map[i]])->word);
+                    (word_dict->dict_list[word_id_map[i]])->word);
         }
         else {
             word_string[0] = '\0';
@@ -2426,7 +2414,7 @@ print_models(DYNMODEL_T * models,
 
             if (boundary[k]) {
                 sprintf(word_string, "[%s]",
-                        (WordDict->dict_list[word_id_map[k]])->word);
+                        (word_dict->dict_list[word_id_map[k]])->word);
             }
             else {
                 word_string[0] = '\0';
@@ -2576,7 +2564,7 @@ print_word_segment(int word_id, int begin, int end, int score, void *ap)
     char *name;
     char *utt_id = ap;
 
-    name = WordDict->dict_list[word_id]->word;
+    name = word_dict->dict_list[word_id]->word;
 
     printf("%s:word> %20s %4d %4d %15d\n",
            (utt_id != NULL ? utt_id : ""), name, begin, end, score);
@@ -2592,7 +2580,7 @@ build_word_segment(int word_id, int begin, int end, int score, void *ap)
     char *name;
     /* char *utt_id = va_arg(ap, char *); */
 
-    name = WordDict->dict_list[word_id]->word;
+    name = word_dict->dict_list[word_id]->word;
 
     wdseg[n_word_segments].name = name;
     wdseg[n_word_segments].start = begin;
@@ -2611,7 +2599,7 @@ append_word(int word_id, int begin, int end, int score, void *ap)
     char *name;
 
     if (word_id != start_word_id) {
-        name = WordDict->dict_list[word_id]->word;
+        name = word_dict->dict_list[word_id]->word;
 
         strcat((char *) str, name);
         strcat((char *) str, " ");
@@ -2655,7 +2643,7 @@ cnt_state_segments(int id, int begin, int end, int score, void *ap)
 void
 cnt_word_segments(int id, int begin, int end, int score, void *ap)
 {
-    best_word_string_len += (strlen(WordDict->dict_list[id]->word) + 1);
+    best_word_string_len += (strlen(word_dict->dict_list[id]->word) + 1);
 
     ++n_word_segments;
 }
@@ -2692,7 +2680,7 @@ find_active_senones(DYNMODEL_T * all_models,
 
     for (i = 0; i < active_cnt; i++) {
         trans_to_senone_id =
-            Models[all_models[active_index[i]].sseq_id].dist;
+            smds[all_models[active_index[i]].sseq_id].dist;
 
         for (j = 0; j < 14; j += 3) {   /* HACK!!  Hardwired #transitions(14) */
             k = trans_to_senone_id[j];
@@ -2726,7 +2714,7 @@ lm_score(char const *left_word, char const *middle_words,
 
         wid = kb_get_word_id(cur_word_str);
 
-        base_wid = WordDict->dict_list[wid]->fwid;
+        base_wid = word_dict->dict_list[wid]->fwid;
 
         wn2 = wn1;
         wn1 = wn;
@@ -2771,11 +2759,6 @@ time_align_word_sequence(char const *Utt,
     int total_models_evaluated;
     int total_model_boundaries_crossed;
     int total_models_pruned;
-
-    extern int32 time_align_word;       /* Whether to output word alignment */
-    extern int32 time_align_phone;      /* Whether to output phone alignment */
-    extern int32 time_align_state;      /* Whether to output state alignment */
-    extern char *build_uttid(const char *utt);  /* in fbs_main.c */
 
     assert(frame_cnt > 0);
     assert(left_word != NULL);
@@ -2933,7 +2916,7 @@ time_align_word_sequence(char const *Utt,
          */
         traverse_back_trace(word_bp_table,
                             bp, NULL, build_word_segment, lcl_utt_id);
-        if (time_align_word) {
+        if (cmd_ln_boolean("-taword")) {
             int32 i;
             printf("\n\t%5s %5s %10s %11s %s (Word-falign) (%s)\n",
                    "SFrm", "EFrm", "AScr/Frm", "AScr", "Word", lcl_utt_id);
@@ -2974,7 +2957,7 @@ time_align_word_sequence(char const *Utt,
          */
         traverse_back_trace(phone_bp_table,
                             bp, NULL, build_phone_segment, lcl_utt_id);
-        if (time_align_phone) {
+        if (cmd_ln_boolean("-taphone")) {
             int32 i;
             /*
                for (i = 0; i < n_phone_segments; i++) {
@@ -3005,14 +2988,17 @@ time_align_word_sequence(char const *Utt,
                    lcl_utt_id);
         }
 
-        if (phonelabdirname) {
+        if (cmd_ln_str("-phonelabdir")) {
             save_labs(phseg, n_phone_segments,
-                      phonelabdirname, Utt, phonelabextname, phonelabtype);
+                      cmd_ln_str("-phonelabdir"),
+                      Utt,
+                      cmd_ln_str("-phonelabext"),
+                      cmd_ln_str("-phonelabtype"));
         }
 #endif
 
 #if (1||(SHOW&SHOW_BEST_STATE_PATH))
-        if (time_align_state) {
+        if (cmd_ln_boolean("-tastate")) {
             bp = all_models[final_model].sbp[NODE_CNT - 1];
             /*
                printf("%20s %4s %4s %s\n",
@@ -3029,9 +3015,7 @@ time_align_word_sequence(char const *Utt,
     }
 
     E_INFO("acscr> %d\n", all_models[final_model].score[NODE_CNT - 1]);
-
-    if (kb_get_no_lm_flag() == FALSE)
-        E_INFO("lmscr> %d\n", lm_score(left_word, word_seq, right_word));
+    E_INFO("lmscr> %d\n", lm_score(left_word, word_seq, right_word));
 
     free(active_models[0]);
     free(active_models[1]);
@@ -3189,7 +3173,7 @@ append_segment(int id, int begin, int end, int score, void *ap)
 
     case WORD_SEGMENTATION:
         this_seg->id = id;
-        this_seg->name = WordDict->dict_list[id]->word;
+        this_seg->name = word_dict->dict_list[id]->word;
         break;
 
     default:

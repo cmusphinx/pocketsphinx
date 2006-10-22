@@ -263,15 +263,22 @@
 #include <windows.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #else
+#include <sys/file.h>
 #include <sys/time.h>
+#include <sys/param.h>
 #include <sys/resource.h>
 #include <unistd.h>
 #endif
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 #include <sphinx_config.h>
+#include <cmd_ln.h>
 
 #include "s2types.h"
 #include "ckd_alloc.h"
@@ -295,7 +302,7 @@
 #include "search.h"
 #include "fsg_search.h"
 #include "ckd_alloc.h"
-
+#include "uttproc.h"
 
 #define MAX_UTT_LEN     6000    /* #frames */
 
@@ -542,17 +549,15 @@ uttproc_get_featbuf(mfcc_t ****feat)
 static void
 uttproc_fsg_search_fwd(void)
 {
-    int32 *senscore, best;
+    int32 best;
 
-    senscore = search_get_dist_scores();        /* senone scores array */
-
-    if (query_compute_all_senones()) {
-        best = senscr_all(senscore, feat_buf[n_searchfr]);
+    if (cmd_ln_boolean("-compallsen")) {
+        best = senscr_all(distScores, feat_buf[n_searchfr]);
         search_bestpscr2uttpscr(fsg_search->frame);
     }
     else {
         fsg_search_sen_active(fsg_search);
-        best = senscr_active(senscore, feat_buf[n_searchfr]);
+        best = senscr_active(distScores, feat_buf[n_searchfr]);
     }
 
     /* Note the best senone score for this frame */
@@ -573,13 +578,13 @@ uttproc_frame(void)
     /* Search one frame */
     if (fsg_search_mode)
         uttproc_fsg_search_fwd();
-    else if (query_fwdtree_flag())
+    else if (cmd_ln_boolean("-fwdtree"))
         search_fwd(feat_buf[n_searchfr]);
     else
         search_fwdflat_frame(feat_buf[n_searchfr]);
     ++n_searchfr;
 
-    pr = query_report_partial_result();
+    pr = cmd_ln_boolean("-partial");
     if ((pr > 0) && ((n_searchfr % pr) == 1)) {
         /* Report partial result string */
         uttproc_partial_result(&frm, &str);
@@ -587,7 +592,7 @@ uttproc_frame(void)
         fflush(stdout);
     }
 
-    pr = query_report_partial_result_seg();
+    pr = cmd_ln_boolean("-partialseg");
     if ((pr > 0) && ((n_searchfr % pr) == 1)) {
         /* Report partial result segmentation */
         uttproc_partial_result_seg(&frm, &hyp);
@@ -657,52 +662,23 @@ write_results(char const *hyp, int32 aborted)
 static void
 uttproc_windup(int32 * fr, char **hyp)
 {
-    char *dir;
-    char filename[4096];
-    FILE *pscrlat_fp;
-
     /* Wind up first pass and run next pass, if necessary */
     if (fsg_search_mode)
         fsg_search_utt_end(fsg_search);
     else {
-        if (query_fwdtree_flag()) {
+        if (cmd_ln_boolean("-fwdtree")) {
             search_finish_fwd();
 
-            if (query_fwdflat_flag() && (searchFrame() > 0))
+            if (cmd_ln_boolean("-fwdflat") && (searchFrame() > 0))
                 fwdflat_search(n_featfr);
         }
         else
             search_fwdflat_finish();
 
         /* Run bestpath pass if specified */
-        if ((searchFrame() > 0) && query_bestpath_flag())
+        /* FIXME: If we are doing N-best we also need to do this. */
+        if ((searchFrame() > 0) && cmd_ln_boolean("-bestpath"))
             bestpath_search();
-    }
-
-    /* Moved out of the above else clause (rkm:2005/03/08) */
-    if (query_phone_conf()) {
-        search_hyp_t *pseg, *search_hyp_pscr_path(),
-            *search_uttpscr2allphone();
-
-        /* Obtain pscr-based phone segmentation for hypothesis */
-        pseg = search_hyp_pscr_path();
-        search_hyp_free(pseg);
-
-        /* Obtain pscr-based allphone segmentation */
-        pseg = search_uttpscr2allphone();
-        search_hyp_free(pseg);
-    }
-
-    /* Moved out of the above else clause (rkm:2005/03/02) */
-    if ((dir = query_pscr2lat()) != NULL) {
-        sprintf(filename, "%s/%s.pscrlat", dir, uttid);
-
-        if ((pscrlat_fp = fopen(filename, "w")) == NULL)
-            E_ERROR("fopen(%s,w) failed\n", filename);
-        else {
-            search_uttpscr2phlat_print(pscrlat_fp);
-            fclose(pscrlat_fp);
-        }
     }
 
     search_result(fr, hyp);
@@ -719,7 +695,6 @@ uttproc_windup(int32 * fr, char **hyp)
  */
 
 static fe_t *fe;
-static param_t fe_param;
 
 int32
 uttproc_init(void)
@@ -731,19 +706,18 @@ uttproc_init(void)
         return -1;
     }
 
-    query_fe_params(&fe_param);
-    fe = fe_init(&fe_param);
+    fe = fe_init_auto();
 
     if (!fe)
         return -1;
 
     uttid = ckd_calloc(UTTIDSIZE, 1);
 
-    if ((fn = query_match_file_name()) != NULL) {
+    if ((fn = cmd_ln_str("-matchfn")) != NULL) {
         if ((matchfp = fopen(fn, "w")) == NULL)
             E_ERROR("fopen(%s,w) failed\n", fn);
     }
-    if ((fn = query_matchseg_file_name()) != NULL) {
+    if ((fn = cmd_ln_str("-matchsegfn")) != NULL) {
         if ((matchsegfp = fopen(fn, "w")) == NULL)
             E_ERROR("fopen(%s,w) failed\n", fn);
     }
@@ -764,7 +738,7 @@ uttproc_init(void)
 
         fsg_search = fsg_search_init(NULL);
 
-        fsgfile = kb_get_fsg_file_name();
+        fsgfile = cmd_ln_str("-fsgfn");
 
         fsg_search_mode = (fsgfile != NULL);
 
@@ -781,7 +755,7 @@ uttproc_init(void)
                 ("FSG Mode; lextree, flat, bestpath searches disabled\n");
         }
 
-        fsgctlfile = kb_get_fsg_ctlfile_name();
+        fsgctlfile = cmd_ln_str("-fsgctlfn");
         if (fsgctlfile) {
             if ((ctlfp = fopen(fsgctlfile, "r")) == NULL) {
                 /* Should this be E_ERROR?? */
@@ -887,7 +861,7 @@ uttproc_begin_utt(char const *id)
     if (!nosearch) {
         if (fsg_search_mode)
             fsg_search_utt_start(fsg_search);
-        else if (query_fwdtree_flag())
+        else if (cmd_ln_boolean("-fwdtree"))
             search_start_fwd();
         else
             search_fwdflat_start();
@@ -940,7 +914,7 @@ uttproc_rawdata(int16 * raw, int32 len, int32 block)
     if (utt_ofl)
         return -1;
 
-    k = (MAX_UTT_LEN - n_cepfr) * fe_param.FRAME_RATE;
+    k = (MAX_UTT_LEN - n_cepfr) * fe->FRAME_RATE;
     if (len > k) {
         len = k;
         utt_ofl = 1;
@@ -1156,7 +1130,7 @@ uttproc_abort_utt(void)
         if (fsg_search_mode)
             fsg_search_utt_end(fsg_search);
         else {
-            if (query_fwdtree_flag())
+            if (cmd_ln_boolean("-fwdtree"))
                 search_finish_fwd();
             else
                 search_fwdflat_finish();
@@ -1185,7 +1159,7 @@ uttproc_stop_utt(void)
         if (fsg_search_mode)
             fsg_search_utt_end(fsg_search);
         else {
-            if (query_fwdtree_flag())
+            if (cmd_ln_boolean("-fwdtree"))
                 search_finish_fwd();
             else
                 search_fwdflat_finish();
@@ -1208,7 +1182,7 @@ uttproc_restart_utt(void)
     if (!nosearch) {
         if (fsg_search_mode)
             fsg_search_utt_start(fsg_search);
-        else if (query_fwdtree_flag())
+        else if (cmd_ln_boolean("-fwdtree"))
             search_start_fwd();
         else
             search_fwdflat_start();
@@ -1478,10 +1452,11 @@ uttproc_load_fsgfile(char *fsgfile)
     word_fsg_t *fsg;
 
     fsg = word_fsg_readfile(fsgfile,
-                            query_fsg_use_altpron(),
-                            query_fsg_use_filler(),
-                            kb_get_silpen(),
-                            kb_get_fillpen(), kb_get_lw());
+                            cmd_ln_boolean("-fsgusealtpron"),
+                            cmd_ln_boolean("-fsgusefiller"),
+                            cmd_ln_float32("-silpen"),
+                            cmd_ln_float32("-fillpen"),
+                            cmd_ln_float32("-langwt"));
     if (!fsg)
         return NULL;
 
@@ -1729,13 +1704,10 @@ uttproc_file2feat(const char *utt, int32 sf, int32 ef, int32 nosearch)
 {
     FILE *uttfp;
     char *utt_name;
-    extern char *data_directory;
-    extern const char *cep_ext;
-    extern int32 query_adc_input();
 
     utt_name = build_uttid(utt);
 
-    if (query_adc_input()) {
+    if (cmd_ln_boolean("-adcin")) {
         int16 *adbuf;
         int32 k;
 
@@ -1771,7 +1743,9 @@ uttproc_file2feat(const char *utt, int32 sf, int32 ef, int32 nosearch)
             return -1;
 
         n_cepfr = 0;
-        n_featfr = feat_s2mfc2feat(fcb, utt, data_directory, cep_ext,
+        n_featfr = feat_s2mfc2feat(fcb, utt,
+                                   cmd_ln_str("-cepdir"),
+                                   cmd_ln_str("-cepext"),
                                    sf, ef, feat_buf, MAX_UTT_LEN);
 
         if (nosearch == FALSE) {
@@ -1814,4 +1788,43 @@ uttproc_allphone_file(char const *utt)
     }
 
     return hyplist;
+}
+
+static FILE *logfp;
+static char logfile[MAXPATHLEN]; /* FIXME buffer */
+int32
+uttproc_set_logfile(char const *file)
+{
+    FILE *fp;
+
+    E_INFO("uttproc_set_logfile(%s)\n", file);
+
+    if ((fp = fopen(file, "w")) == NULL) {
+        E_ERROR("fopen(%s,w) failed; logfile unchanged\n", file);
+        return -1;
+    }
+    else {
+        if (logfp)
+            fclose(logfp);
+
+        logfp = fp;
+        /* 
+         * Rolled back the dup2() bug fix for windows only. In
+         * Microsoft Visual C, dup2 seems to cause problems in some
+         * applications: the files are opened, but nothing is written
+         * to it.
+         */
+#ifdef WIN32
+        *stdout = *logfp;
+        *stderr = *logfp;
+#else
+        dup2(fileno(logfp), 1);
+        dup2(fileno(logfp), 2);
+#endif
+
+        E_INFO("Previous logfile: '%s'\n", logfile);
+        strcpy(logfile, file);
+    }
+
+    return 0;
 }

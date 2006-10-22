@@ -4,6 +4,7 @@ pkginclude_HEADERS = \
 	blkarray_list.h				\
 	cache_lm.h				\
 	cepio.h					\
+	cmdln_macro.h				\
 	c.h					\
 	dict.h					\
 	fbs.h					\
@@ -24,7 +25,6 @@ pkginclude_HEADERS = \
 	mdef.h					\
 	msd.h					\
 	mulaw.h					\
-	pconf.h					\
 	phone.h					\
 	posixwin32.h				\
 	s2_semi_mgau.h				\

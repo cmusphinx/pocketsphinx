@@ -409,9 +409,6 @@ void time_align_utterance (char const *utt,
 			   int32 end_frame,
 			   char const *right_word);
 
-/* Function used internally to decode each utt in ctlfile */
-search_hyp_t *run_sc_utterance (char *mfcfile, int32 sf, int32 ef, char *idspec);
-
 /* Other batch mode processing API */
 void run_ctl_file (char const *ctl_file_name);
 void run_time_align_ctl_file (char const *utt_ctl_file_name,
@@ -621,88 +618,5 @@ char const *uttproc_get_uttid ( void );
  * given below.  (So the uttid is formatted "%s%08d", prefix, sequence_no.)
  */
 int32 uttproc_set_auto_uttid_prefix (char const *prefix);
-
-
-/*************************** Config queries ***************************/
-
-/* Set up front-end parameters. */
-void query_fe_params(param_t *param);
-
-/* Control file listing files to be processed, one file per utterance */
-char const *query_ctlfile_name ( void );
-/* No of initial control file entries to be skipped */
-int32 query_ctl_offset ( void );
-/* No of control file entries to process (after skipping ctloffset) */
-int32 query_ctl_count ( void );
-
-/* Hypothesis file */
-char const *query_match_file_name (void);
-char const *query_matchseg_file_name (void);
-/* If not NULL, dump word lattice to this directory */
-char const *query_dumplat_dir (void);
-/* If TRUE, produce detailed backtrace in logfile */
-int32 query_back_trace ( void );
-/* If FALSE, backtrace from FSG state with best score, instead of final state */
-int32 query_fsg_backtrace_finalstate ( void );
-/* If TRUE, report exact pronunciation in hypothesis instead of just base word */
-int32 query_report_altpron ( void );
-/* If TRUE, perform allphone decoding as well (approx, for diagnostics) */
-int32 query_phone_conf ( void );
-/* If non-NULL, directory for writing phone lattice files (for diagnostics) */
-char *query_pscr2lat ( void );
-/* If > 0, report partial result every so many frames (in batch mode) */
-int32 query_report_partial_result ( void );
-int32 query_report_partial_result_seg ( void );
-
-int32 query_fwdtree_flag ( void );
-int32 query_fwdflat_flag ( void );
-int32 query_bestpath_flag ( void );
-int32 query_topsen_window ( void );
-int32 query_topsen_thresh ( void );
-
-/* Absolute pruning thresholds for words exiting, active HMMs per frame (approx) */
-int32 query_maxwpf ( void );
-int32 query_maxhmmpf ( void );
-
-int32 query_compute_all_senones (void);
-int32 query_sampling_rate ( void );
-int32 query_doublebw ( void );
-int32 query_lattice_size ( void );
-
-
-/******************** Misc. mostly for internal use ********************/
-
-/*
- * Set and get the current cepstral means for CMN.
- */
-void uttproc_cepmean_set (mfcc_t *cep);	/* Cepstral mean set to cep[0-12] */
-void uttproc_cepmean_get (mfcc_t *cep);	/* Current cepstral mean copied into cep[0-12] */
-
-/* Similarly, AGC-Estimated-Max */
-void uttproc_agcemax_set (float32 c0max);
-float32 uttproc_agcemax_get ( void );
-
-void utt_seghyp_free(search_hyp_t *h);
-
-/* Read utterance data from a file (instead of from an audio device) -
-   passed to uttproc for batch-mode processing. */
-FILE *adcfile_open(char const *utt);
-int32 adc_file_read(FILE *uttfp, int16 *buf, int32 max);
-
-/* Misc. undocumented functions.  FIXME: These don't belong here! */
-char const *get_current_startword(void);
-char const *get_ref_sent(void);
-
-int32 uttproc_parse_ctlfile_entry(char *line,
-				  char *filename, int32 * sf, int32 * ef,
-				  char *idspec);
-char * build_uttid(char const *utt);
-int32 uttproc_file2feat(const char *utt, int32 sf, int32 ef, int32 nosearch);
-int32 uttproc_init(void);
-int32 uttproc_end(void);
-void uttproc_align(char *sent); /* Really should be const */
-int32 uttproc_nosearch(int32 flag);
-int32 uttproc_get_featbuf(mfcc_t ****feat);
-
 
 #endif

@@ -94,8 +94,6 @@
 
 #define MODEL_DEF_VERSION	"0.3"
 
-extern int32 totalDists;
-
 void
 mdef_dump(FILE * fp, mdef_t * m)
 {
@@ -723,9 +721,6 @@ mdef_init(char *mdeffile)
         (s3senid_t **) ckd_calloc_2d(m->n_phone, m->n_emit_state,
                                      sizeof(s3senid_t));
     m->sseq = senmap;           /* TEMPORARY; until it is compressed into just the unique ones */
-
-    /* Set totalDists like read_map() would have done for S2 models. */
-    totalDists = m->n_sen;
 
     /* Allocate initial space for <ci,lc,rc,wpos> -> pid mapping */
     m->wpos_ci_lclist =

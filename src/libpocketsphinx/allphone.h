@@ -1,5 +1,6 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
- * Copyright (c) 1996-2000 Carnegie Mellon University.  All rights 
+ * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,25 +34,11 @@
  * ====================================================================
  *
  */
-/*********************************************************************
- *
- * File: s2io.h
- * 
- * Description: Various I/O functions that need a header file 
- * 
- * Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
- * 
- *********************************************************************/
+/* allphone.h: Internal allphone functions */
+#ifndef __ALLPHONE_H__
+#define __ALLPHONE_H__
 
-#ifndef S2IO_H
-#define S2IO_H
+search_hyp_t *allphone_utt(int32 nfr, mfcc_t ***feat_buf);
+void allphone_init(void);
 
-#include <stdio.h>
-
-int awriteshort(char const *file, short *data, int length);
-int fread_int32(FILE *fp, int min, int max, char const *name,
-		int do_swap, int *inout_swap);
-int fwrite_int32(FILE *fp, int val);
-void *s2_mmap(const char *filename);
-
-#endif /* S2IO_H */ 
+#endif /* __ALLPHONE_H__ */

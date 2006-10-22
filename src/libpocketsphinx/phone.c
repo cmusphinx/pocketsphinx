@@ -131,7 +131,6 @@ phone_to_id(char const *phone_str, int verbose)
     int32 cipid, lcpid, rcpid, pid;
     word_posn_t wpos;
     size_t len;
-    bin_mdef_t *mdef = kb_mdef();
 
     /* Play it safe - subparts must be shorter than phone_str */
     len = strlen(phone_str + 1);
@@ -185,8 +184,7 @@ phone_to_id(char const *phone_str, int verbose)
 char const *
 phone_from_id(int32 phone_id)
 {
-    static char buf[1024];
-    bin_mdef_t *mdef = kb_mdef();
+    static char buf[1024]; /* FIXME: static buffer */
     bin_mdef_phone_str(mdef, phone_id, buf);
     return buf;
 }
@@ -194,14 +192,12 @@ phone_from_id(int32 phone_id)
 int32
 phone_id_to_base_id(int32 phone_id)
 {
-    bin_mdef_t *mdef = kb_mdef();
     return bin_mdef_pid2ci(mdef, phone_id);
 }
 
 int32
 phone_type(int32 phone_id)
 {
-    bin_mdef_t *mdef = kb_mdef();
     if (bin_mdef_is_ciphone(mdef, phone_id))
         return PT_CIPHONE;
     else
@@ -218,13 +214,11 @@ phone_len(int32 phone_id)
 int32
 phoneCiCount(void)
 {
-    bin_mdef_t *mdef = kb_mdef();
     return bin_mdef_n_ciphone(mdef);
 }
 
 int32
 phone_count(void)
 {
-    bin_mdef_t *mdef = kb_mdef();
     return bin_mdef_n_phone(mdef);
 }

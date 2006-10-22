@@ -97,7 +97,7 @@ cache_lm_init(double ug_thresh,
 
     lm->log_remwt = LOG(1.0 - min_uw - bw);
 
-    lm->n_word = dict_maxsize();
+    lm->n_word = kb_dict_maxsize();
     lm->clm_ug = ckd_calloc(lm->n_word, sizeof(clm_ug_t));
     lm->sum_ugcount = 0;
 

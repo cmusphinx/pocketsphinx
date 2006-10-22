@@ -86,10 +86,8 @@ best_senscr_all_s3(int32 * senscr)
 {
     int32 b, i, j, ci;
     int32 *bestpscr;
-    bin_mdef_t *mdef;
 
     bestpscr = search_get_bestpscr();
-    mdef = kb_mdef();
 
     b = (int32) 0x80000000;
 
@@ -151,8 +149,6 @@ best_senscr_active(int32 * senscr)
 static int32
 senscr_compute(int32 * senscr, mfcc_t **feat, int32 all)
 {
-    s2_semi_mgau_t *semi_mgau = kb_mgau();
-
     if (all) {
         s2_semi_mgau_frame_eval(semi_mgau, feat, searchCurrentFrame(),
                                 senscr, TRUE);
@@ -182,7 +178,7 @@ senscr_active(int32 * senscr, mfcc_t **feat)
 void
 sen_active_clear(void)
 {
-    memset(senone_active_vec, 0, (kb_get_total_dists() + BITVEC_WIDTH - 1)
+    memset(senone_active_vec, 0, (bin_mdef_n_sen(mdef) + BITVEC_WIDTH - 1)
            / BITVEC_WIDTH * sizeof(bitvec_t));
     n_senone_active = 0;
 }
@@ -245,9 +241,6 @@ sen_active_clear(void)
 void
 rhmm_sen_active(ROOT_CHAN_T * rhmm)
 {
-    /* Not using kb_get_models() because this function is time-critical */
-    extern SMD *smds;
-
     if (rhmm->mpx) {
         BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[0]].dist[0]);
         BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[1]].dist[3]);
@@ -265,8 +258,6 @@ rhmm_sen_active(ROOT_CHAN_T * rhmm)
 void
 hmm_sen_active(CHAN_T * hmm)
 {
-    /* Not using kb_get_models() because this function is time-critical */
-    extern SMD *smds;
     int32 *dist;
 
     dist = smds[hmm->sseqid].dist;
@@ -280,7 +271,7 @@ sen_active_flags2list(void)
     int32 i, j, total_dists, total_bits;
     bitvec_t *flagptr, bits;
 
-    total_dists = kb_get_total_dists();
+    total_dists = bin_mdef_n_sen(mdef);
 
     j = 0;
     total_bits = total_dists & -BITVEC_WIDTH;
@@ -409,7 +400,7 @@ sen_active_flags2list(void)
     int32 i, j, total_dists, total_words, bits;
     uint8 *flagptr;
 
-    total_dists = kb_get_total_dists();
+    total_dists = bin_mdef_n_sen(mdef);
 
     j = 0;
     total_words = total_dists & ~3;
