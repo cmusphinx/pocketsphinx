@@ -203,6 +203,7 @@
 
 /* Local headers */
 #include "s2types.h"
+#include "strfuncs.h"
 #include "cmdln_macro.h"
 #include "fbs.h"
 #include "pio.h"
@@ -351,35 +352,22 @@ static int32 adc_endian;
 FILE *
 adcfile_open(char const *utt)
 {
-    char inputfile[MAXPATHLEN];
     const char *adc_ext, *data_directory;
     FILE *uttfp;
+    char *inputfile;
     int32 n, l, adc_hdr;
 
     adc_ext = cmd_ln_str("-cepext");
     adc_hdr = cmd_ln_int32("-adchdr");
     adc_endian = strcmp(cmd_ln_str("-adcendian"), "big");
     data_directory = cmd_ln_str("-cepdir");
-    n = strlen(adc_ext);
-    l = strlen(utt);
-    if ((l > n + 1) && (utt[l - n - 1] == '.')
-        && (strcmp(utt + l - n, adc_ext) == 0))
-        adc_ext = "";          /* Extension already exists */
 
     /* Build input filename */
-#ifdef WIN32
-    if (data_directory && (utt[0] != '/') && (utt[0] != '\\') &&
-        ((utt[0] != '.') || ((utt[1] != '/') && (utt[1] != '\\'))))
-        sprintf(inputfile, "%s/%s.%s", data_directory, utt, adc_ext);
-    else
-        sprintf(inputfile, "%s.%s", utt, adc_ext);
-#else
-    if (data_directory && (utt[0] != '/')
-        && ((utt[0] != '.') || (utt[1] != '/')))
-        sprintf(inputfile, "%s/%s.%s", data_directory, utt, adc_ext);
-    else
-        sprintf(inputfile, "%s.%s", utt, adc_ext);
-#endif
+    n = strlen(adc_ext);
+    l = strlen(utt);
+    if ((n <= l) && (0 == strcmp(utt + l - n, adc_ext)))
+        adc_ext = "";          /* Extension already exists */
+    inputfile = string_join(data_directory, "/", utt, adc_ext, NULL);
 
     if ((uttfp = fopen(inputfile, "rb")) == NULL) {
         E_FATAL("fopen(%s,rb) failed\n", inputfile);
@@ -388,6 +376,7 @@ adcfile_open(char const *utt)
         if (fseek(uttfp, adc_hdr, SEEK_SET) < 0) {
             E_ERROR("fseek(%s,%d) failed\n", inputfile, adc_hdr);
             fclose(uttfp);
+            ckd_free(inputfile);
             return NULL;
         }
     }
@@ -398,6 +387,7 @@ adcfile_open(char const *utt)
     if (adc_endian == 0)    /* Big endian adc file */
         E_INFO("Byte-reversing %s\n", inputfile);
 #endif
+    ckd_free(inputfile);
 
     return uttfp;
 }

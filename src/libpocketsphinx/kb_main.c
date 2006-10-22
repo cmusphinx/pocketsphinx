@@ -118,6 +118,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <math.h>
 #include <string.h>
 #include <assert.h>
@@ -428,10 +429,7 @@ phonetp_init(int32 num_ci_phones)
     }
 }
 
-/* FIXME: Should go in libutil, eventually */
-#include <stdarg.h>
-
-static char *
+char *
 string_join(const char *base, ...)
 {
     va_list args;

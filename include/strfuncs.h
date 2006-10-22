@@ -40,11 +40,16 @@
 #ifndef _STRINGFUNCS_H_
 #define _STRINGFUNCS_H_
 
+#include <stdarg.h>
+
 char *nxtarg (char **q, char const *brk);
 char *skipto(unsigned char *string,
 	     unsigned char const *charset);
 char *skipover (unsigned char *string,
 		unsigned char const *charset);
 int mystrcasecmp(char const *a, char const *b);
+
+/* This one is okay.  It needs to go in SphinxBase. */
+char *string_join(const char *base, ...);
 
 #endif /* _STRINGFUNCS_H_ */
