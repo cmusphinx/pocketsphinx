@@ -386,11 +386,7 @@
     { "-usewdphones",						\
       ARG_BOOLEAN,						\
       "no",							\
-      "Use within-word phones only" },				\
-    { "-useciphones",						\
-      ARG_BOOLEAN,						\
-      "no",							\
-      "Use context-independent phones only" }
+      "Use within-word phones only" }
 
 /** Command-line options for acoustic modeling */
 #define am_cmdln_options()							\
