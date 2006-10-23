@@ -166,7 +166,5 @@ typedef struct ROOT_CHAN_S
     FRAME_ID active;
 } ROOT_CHAN_T;
 
-void chan_dump (CHAN_T *chan, int32 frame, FILE *fp);	/* Debug dump */
-
 
 #endif /* _NEWMSD_H_ */

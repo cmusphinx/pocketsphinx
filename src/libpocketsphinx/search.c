@@ -479,26 +479,35 @@ typedef struct lastphn_cand_s {
 static lastphn_cand_t *lastphn_cand;
 static int32 n_lastphn_cand;
 
-/* Node Plus Arc (mpx channel) */
-#define NPA(d,s,a)	(s + d->tp[a])
+/* Get senone indices and scores from SMD structures */
+#define mpx_sseq2sen(c,ss,st) \
+    (c->sseqid[ss] == -1 ? -1 : smds[c->sseqid[ss]].senone[st])
+#define mpx_sseq2score(c,ss,st) \
+    (c->sseqid[ss] == -1 ? WORST_SCORE : senone_scores[smds[c->sseqid[ss]].senone[st]])
+/* Node probability plus transition probability */
+#define NPA(smd,score,from,to)	((score) + (smd)->tp[(from*3)+(to-from)])
 
 void
 root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
 {
     int32 bestScore;
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0;
-    SMD *smd0, *smd1, *smd2, *smd3, *smd4;
+    SMD *smd0;
 
-    s4 = chan->score[4];
-    smd4 = &smds[chan->sseqid[4]];
-    s4 += senone_scores[smd4->senone[4]];
-
-    s3 = chan->score[3];
-    smd3 = &smds[chan->sseqid[3]];
-    s3 += senone_scores[smd3->senone[3]];
-
-    t1 = NPA(smd4, s4, 13);
-    t2 = NPA(smd3, s3, 11);
+    smd0 = &smds[chan->sseqid[0]];
+    /* Don't propagate WORST_SCORE */
+    if (chan->sseqid[4] == -1)
+        s4 = t1 = WORST_SCORE;
+    else {
+        s4 = chan->score[4] + mpx_sseq2score(chan, 4, 4);
+        t1 = NPA(smd0, s4, 4, 5);
+    }
+    if (chan->sseqid[3] == -1)
+        s3 = t2 = WORST_SCORE;
+    else {
+        s3 = chan->score[3] + mpx_sseq2score(chan, 3, 3);
+        t2 = NPA(smd0, s3, 3, 5);
+    }
     if (t1 > t2) {
         s5 = t1;
         chan->path[5] = chan->path[4];
@@ -510,13 +519,19 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->score[5] = s5;
     bestScore = s5;
 
-    s2 = chan->score[2];
-    smd2 = &smds[chan->sseqid[2]];
-    s2 += senone_scores[smd2->senone[2]];
+    /* Don't propagate WORST_SCORE */
+    if (chan->sseqid[2] == -1)
+        s2 = t2 = WORST_SCORE;
+    else {
+        s2 = chan->score[2] + mpx_sseq2score(chan, 2, 2);
+        t2 = NPA(smd0, s2, 2, 4);
+    }
 
-    t0 = NPA(smd4, s4, 12);
-    t1 = NPA(smd3, s3, 10);
-    t2 = NPA(smd2, s2, 8);
+    t0 = t1 = WORST_SCORE;
+    if (s4 != WORST_SCORE)
+        t0 = NPA(smd0, s4, 4, 4);
+    if (s3 != WORST_SCORE)
+        t1 = NPA(smd0, s3, 3, 4);
     if (t0 > t1) {
         if (t2 > t0) {
             s4 = t2;
@@ -542,13 +557,18 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
         bestScore = s4;
     chan->score[4] = s4;
 
-    s1 = chan->score[1];
-    smd1 = &smds[chan->sseqid[1]];
-    s1 += senone_scores[smd1->senone[1]];
-
-    t0 = NPA(smd3, s3, 9);
-    t1 = NPA(smd2, s2, 7);
-    t2 = NPA(smd1, s1, 5);
+    /* Don't propagate WORST_SCORE */
+    if (chan->sseqid[1] == -1)
+        s1 = t2 = WORST_SCORE;
+    else {
+        s1 = chan->score[1] + mpx_sseq2score(chan, 1, 1);
+        t2 = NPA(smd0, s1, 1, 3);
+    }
+    t0 = t1 = WORST_SCORE;
+    if (s3 != WORST_SCORE)
+        t0 = NPA(smd0, s3, 3, 3);
+    if (s2 != WORST_SCORE)
+        t1 = NPA(smd0, s2, 2, 3);
     if (t0 > t1) {
         if (t2 > t0) {
             s3 = t2;
@@ -574,13 +594,15 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
         bestScore = s3;
     chan->score[3] = s3;
 
-    s0 = chan->score[0];
-    smd0 = &smds[chan->sseqid[0]];
-    s0 += senone_scores[smd0->senone[0]];
+    s0 = chan->score[0] + mpx_sseq2score(chan, 0, 0);
 
-    t0 = NPA(smd2, s2, 6);
-    t1 = NPA(smd1, s1, 4);
-    t2 = NPA(smd0, s0, 2);
+    /* Don't propagate WORST_SCORE */
+    t0 = t1 = WORST_SCORE;
+    if (s2 != WORST_SCORE)
+        t0 = NPA(smd0, s2, 2, 2);
+    if (s1 != WORST_SCORE)
+        t1 = NPA(smd0, s1, 1, 2);
+    t2 = NPA(smd0, s0, 0, 2);
     if (t0 > t1) {
         if (t2 > t0) {
             s2 = t2;
@@ -606,8 +628,11 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
         bestScore = s2;
     chan->score[2] = s2;
 
-    t0 = NPA(smd1, s1, 3);
-    t1 = NPA(smd0, s0, 1);
+    /* Don't propagate WORST_SCORE */
+    t0 = WORST_SCORE;
+    if (s1 != WORST_SCORE)
+        t0 = NPA(smd0, s1, 1, 1);
+    t1 = NPA(smd0, s0, 0, 1);
     if (t0 > t1) {
         s1 = t0;
     }
@@ -620,7 +645,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
         bestScore = s1;
     chan->score[1] = s1;
 
-    s0 = NPA(smd0, s0, 0);
+    s0 = NPA(smd0, s0, 0, 0);
     if (s0 > bestScore)
         bestScore = s0;
     chan->score[0] = s0;
@@ -633,12 +658,12 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0;	\
 						\
     s4 = chan->score[4];			\
-    s4 += senone_scores[smd->senone[4]];		\
+    s4 += senone_scores[smd->senone[4]];	\
     s3 = chan->score[3];			\
-    s3 += senone_scores[smd->senone[3]];		\
+    s3 += senone_scores[smd->senone[3]];	\
     						\
-    t1 = NPA(smd,s4,13);			\
-    t2 = NPA(smd,s3,11);			\
+    t1 = NPA(smd,s4,4,5);			\
+    t2 = NPA(smd,s3,3,5);			\
     if (t1 > t2) {				\
 	s5 = t1;				\
 	chan->path[5]  = chan->path[4];		\
@@ -650,11 +675,11 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     bestScore = s5;				\
     						\
     s2 = chan->score[2];			\
-    s2 += senone_scores[smd->senone[2]];		\
+    s2 += senone_scores[smd->senone[2]];	\
     						\
-    t0 = NPA(smd,s4,12);			\
-    t1 = NPA(smd,s3,10);			\
-    t2 = NPA(smd,s2,8);				\
+    t0 = NPA(smd,s4,4,4);			\
+    t1 = NPA(smd,s3,3,4);			\
+    t2 = NPA(smd,s2,2,4);			\
     if (t0 > t1) {				\
 	if (t2 > t0) {				\
 	    s4 = t2;				\
@@ -674,11 +699,11 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->score[4] = s4;			\
     						\
     s1 = chan->score[1];			\
-    s1 += senone_scores[smd->senone[1]];		\
+    s1 += senone_scores[smd->senone[1]];	\
     						\
-    t0 = NPA(smd,s3,9);				\
-    t1 = NPA(smd,s2,7);				\
-    t2 = NPA(smd,s1,5);				\
+    t0 = NPA(smd,s3,3,3);			\
+    t1 = NPA(smd,s2,2,3);			\
+    t2 = NPA(smd,s1,1,3);			\
     if (t0 > t1) {				\
 	if (t2 > t0) {				\
 	    s3 = t2;				\
@@ -698,11 +723,11 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->score[3] = s3;			\
     						\
     s0 = chan->score[0];			\
-    s0 += senone_scores[smd->senone[0]];		\
+    s0 += senone_scores[smd->senone[0]];	\
     						\
-    t0 = NPA(smd,s2,6);				\
-    t1 = NPA(smd,s1,4);				\
-    t2 = NPA(smd,s0,2);				\
+    t0 = NPA(smd,s2,2,2);			\
+    t1 = NPA(smd,s1,1,2);			\
+    t2 = NPA(smd,s0,0,2);			\
     if (t0 > t1) {				\
 	if (t2 > t0) {				\
 	    s2 = t2;				\
@@ -721,8 +746,8 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     if (s2 > bestScore) bestScore = s2;		\
     chan->score[2] = s2;			\
     						\
-    t0 = NPA(smd,s1,3);				\
-    t1 = NPA(smd,s0,1);				\
+    t0 = NPA(smd,s1,1,1);			\
+    t1 = NPA(smd,s0,0,1);			\
     if (t0 > t1) {				\
 	s1 = t0;				\
     } else {					\
@@ -732,7 +757,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     if (s1 > bestScore) bestScore = s1;		\
     chan->score[1] = s1;			\
     						\
-    s0 = NPA(smd,s0,0);				\
+    s0 = NPA(smd,s0,0,0);			\
     if (s0 > bestScore) bestScore = s0;		\
     chan->score[0] = s0;			\
     						\
@@ -742,71 +767,77 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
 
 #if __CHAN_DUMP__
 static void
-root_chan_dump(ROOT_CHAN_T * chan, int32 frame, FILE * fp)
+root_chan_dump(const char *msg, ROOT_CHAN_T * chan, int32 frame, FILE * fp)
 {
-    SMD *smd0, *smd1, *smd2, *smd3, *smd4;
-
     if (chan->mpx) {
-        smd0 = &(smds[chan->sseqid[0]]);
-        smd1 = &(smds[chan->sseqid[1]]);
-        smd2 = &(smds[chan->sseqid[2]]);
-        smd3 = &(smds[chan->sseqid[3]]);
-        smd4 = &(smds[chan->sseqid[4]]);
-        fprintf(fp, "[%4d] MPX (%5d %5d %5d %5d %5d)\n",
-                frame,
-                smd0->senone[0],
-                smd1->senone[1],
-                smd2->senone[2], smd3->senone[3], smd4->senone[4]);
+        fprintf(fp, "[%4d] %s MPX (%5d %5d %5d %5d %5d)\n",
+                frame, msg,
+                mpx_sseq2sen(chan, 0, 0),
+                mpx_sseq2sen(chan, 1, 1),
+                mpx_sseq2sen(chan, 2, 2),
+                mpx_sseq2sen(chan, 3, 3),
+                mpx_sseq2sen(chan, 4, 4));
         fprintf(fp, "\tSENSCR %11d %11d %11d %11d %11d\n",
-                senone_scores[smd0->senone[0]],
-                senone_scores[smd1->senone[1]],
-                senone_scores[smd2->senone[2]],
-                senone_scores[smd3->senone[3]], senone_scores[smd4->senone[4]]);
+                mpx_sseq2score(chan, 0, 0),
+                mpx_sseq2score(chan, 1, 1),
+                mpx_sseq2score(chan, 2, 2),
+                mpx_sseq2score(chan, 3, 3),
+                mpx_sseq2score(chan, 4, 4));
         fprintf(fp, "\tSCORES %11d %11d %11d %11d %11d %11d\n",
                 chan->score[0],
                 chan->score[1],
                 chan->score[2],
-                chan->score[3], chan->score[4], chan->score[5]);
+                chan->score[3],
+                chan->score[4],
+                chan->score[5]);
         fprintf(fp, "\tPATHS  %11d %11d %11d %11d %11d %11d\n",
                 chan->path[0],
                 chan->path[1],
                 chan->path[2],
-                chan->path[3], chan->path[4], chan->path[5]);
+                chan->path[3],
+                chan->path[4],
+                chan->path[5]);
     }
     else {
-        smd0 = &(smds[chan->sseqid[0]]);
-        fprintf(fp, "[%4d] ROOT SSID %5d (%5d %5d %5d %5d %5d)\n",
-                frame, chan->sseqid[0],
-                smd0->senone[0],
-                smd0->senone[1],
-                smd0->senone[2], smd0->senone[3], smd0->senone[4]);
+        fprintf(fp, "[%4d] %s ROOT SSID %5d (%5d %5d %5d %5d %5d)\n",
+                frame, msg, chan->sseqid[0],
+                mpx_sseq2sen(chan, 0, 0),
+                mpx_sseq2sen(chan, 0, 1),
+                mpx_sseq2sen(chan, 0, 2),
+                mpx_sseq2sen(chan, 0, 3),
+                mpx_sseq2sen(chan, 0, 4));
         fprintf(fp, "\tSENSCR %11d %11d %11d %11d %11d\n",
-                senone_scores[smd0->senone[0]],
-                senone_scores[smd0->senone[1]],
-                senone_scores[smd0->senone[2]],
-                senone_scores[smd0->senone[3]], senone_scores[smd0->senone[4]]);
+                mpx_sseq2score(chan, 0, 0),
+                mpx_sseq2score(chan, 0, 1),
+                mpx_sseq2score(chan, 0, 2),
+                mpx_sseq2score(chan, 0, 3),
+                mpx_sseq2score(chan, 0, 4));
         fprintf(fp, "\tSCORES %11d %11d %11d %11d %11d %11d\n",
                 chan->score[0],
                 chan->score[1],
                 chan->score[2],
-                chan->score[3], chan->score[4], chan->score[5]);
+                chan->score[3],
+                chan->score[4],
+                chan->score[5]);
         fprintf(fp, "\tPATHS  %11d %11d %11d %11d %11d %11d\n",
                 chan->path[0],
                 chan->path[1],
                 chan->path[2],
-                chan->path[3], chan->path[4], chan->path[5]);
+                chan->path[3],
+                chan->path[4],
+                chan->path[5]);
     }
 }
 
 
 void
-chan_dump(CHAN_T * chan, int32 frame, FILE * fp)
+chan_dump(const char *msg, CHAN_T * chan, int32 frame, FILE * fp)
 {
     SMD *smd;
 
     smd = &(smds[chan->sseqid]);
-    fprintf(fp, "[%4d] SSID %5d (%5d %5d %5d %5d %5d)\n",
-            frame, chan->sseqid,
+    fprintf(fp, "[%4d] %s SSID %5d (%5d %5d %5d %5d %5d)\n",
+            frame, msg, chan->sseqid,
             smd->senone[0],
             smd->senone[1], smd->senone[2], smd->senone[3], smd->senone[4]);
     fprintf(fp, "\tSENSCR %11d %11d %11d %11d %11d\n",
@@ -825,8 +856,8 @@ chan_dump(CHAN_T * chan, int32 frame, FILE * fp)
             chan->path[2], chan->path[3], chan->path[4], chan->path[5]);
 }
 #else
-#define root_chan_dump(c,f,p)
-#define chan_dump(c,f,p)
+#define root_chan_dump(m,c,f,p)
+#define chan_dump(m,c,f,p)
 #endif /* __CHAN_DUMP__ */
 
 
@@ -860,14 +891,14 @@ eval_root_chan(void)
     k = 0;
     for (i = n_root_chan, rhmm = root_chan; i > 0; --i, rhmm++) {
         if (rhmm->active == cf) {
-            root_chan_dump(rhmm, cf, stdout);
+            root_chan_dump("BEFORE(root)", rhmm, cf, stdout);
             if (rhmm->mpx) {
                 root_chan_v_mpx_eval(rhmm);
             }
             else {
                 root_chan_v_eval(rhmm);
             }
-            root_chan_dump(rhmm, cf, stdout);
+            root_chan_dump("AFTER(root)", rhmm, cf, stdout);
             if (bestscore < rhmm->bestscore)
                 bestscore = rhmm->bestscore;
 
@@ -903,9 +934,9 @@ eval_nonroot_chan(void)
     for (hmm = *(acl++); i > 0; --i, hmm = *(acl++)) {
 
         assert(hmm->active == cf);
-        chan_dump(hmm, cf, stdout);
+        chan_dump("BEFORE(nonroot)", hmm, cf, stdout);
         chan_v_eval(hmm);
-        chan_dump(hmm, cf, stdout);
+        chan_dump("AFTER(nonroot)", hmm, cf, stdout);
         if (bestscore < hmm->bestscore)
             bestscore = hmm->bestscore;
     }
@@ -943,9 +974,9 @@ eval_word_chan(void)
 
         for (hmm = word_chan[w]; hmm; hmm = hmm->next) {
             assert(hmm->active == cf);
-            chan_dump(hmm, cf, stdout);
+            chan_dump("BEFORE(word)", hmm, cf, stdout);
             chan_v_eval(hmm);
-            chan_dump(hmm, cf, stdout);
+            chan_dump("AFTER(word)", hmm, cf, stdout);
 
             if (bestscore < hmm->bestscore)
                 bestscore = hmm->bestscore;
@@ -964,14 +995,14 @@ eval_word_chan(void)
         if (rhmm->active < cf)
             continue;
 
-        root_chan_dump(rhmm, cf, stdout);
+        root_chan_dump("BEFORE(1ph)", rhmm, cf, stdout);
         if (rhmm->mpx) {
             root_chan_v_mpx_eval(rhmm);
         }
         else {
             root_chan_v_eval(rhmm);
         }
-        root_chan_dump(rhmm, cf, stdout);
+        root_chan_dump("AFTER(1ph)", rhmm, cf, stdout);
 
         if ((bestscore < rhmm->bestscore) && (w != FinishWordId))
             bestscore = rhmm->bestscore;
@@ -1844,7 +1875,7 @@ dump_hmm_tp(void)
     int32 p, ssid, t;
 
     for (p = 0; p < NumCiPhones; p++) {
-        ssid = hmm_pid2sid(p);
+        ssid = bin_mdef_pid2ssid(mdef, p);
         printf("sseqid(%s)= %d, ", phone_from_id(p), ssid);
         for (t = 0; t < 14; t++)
             printf(" %6d", smds[ssid].tp[t]);
@@ -3335,8 +3366,10 @@ init_search_tree(dictT * dict)
         root_chan[i].mpx = mpx;
         root_chan[i].penult_phn_wid = -1;
         root_chan[i].active = -1;
-        for (s = 0; s < NODE_CNT; s++)
+        for (s = 0; s < NODE_CNT; s++) {
             root_chan[i].score[s] = WORST_SCORE;
+            root_chan[i].sseqid[s] = -1;
+        }
         root_chan[i].bestscore = WORST_SCORE;
         root_chan[i].next = NULL;
     }
@@ -3353,13 +3386,15 @@ init_search_tree(dictT * dict)
         if (de->len != 1)
             continue;
 
-        rhmm[i].sseqid[0] = de->phone_ids[0];
         rhmm[i].diphone = de->phone_ids[0];
         rhmm[i].ciphone = de->ci_phone_ids[0];
         rhmm[i].mpx = de->mpx;
         rhmm[i].active = -1;
-        for (s = 0; s < NODE_CNT; s++)
+        for (s = 0; s < NODE_CNT; s++) {
             rhmm[i].score[s] = WORST_SCORE;
+            rhmm[i].sseqid[s] = -1;
+        }
+        rhmm[i].sseqid[0] = de->phone_ids[0];
         rhmm[i].bestscore = WORST_SCORE;
         rhmm[i].next = NULL;
 
@@ -3945,8 +3980,8 @@ build_fwdflat_chan(void)
         rhmm->active = -1;
         rhmm->bestscore = WORST_SCORE;
         for (s = 0; s < HMM_LAST_STATE; s++) {
-            rhmm->sseqid[s] = 0;
             rhmm->score[s] = WORST_SCORE;
+            rhmm->sseqid[s] = -1;
         }
         rhmm->sseqid[0] = rhmm->diphone;
 

@@ -201,10 +201,14 @@ rhmm_sen_active(ROOT_CHAN_T * rhmm)
 {
     if (rhmm->mpx) {
         BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[0]].senone[0]);
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[1]].senone[1]);
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[2]].senone[2]);
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[3]].senone[3]);
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[4]].senone[4]);
+        if (rhmm->sseqid[1] != -1)
+            BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[1]].senone[1]);
+        if (rhmm->sseqid[2] != -1)
+            BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[2]].senone[2]);
+        if (rhmm->sseqid[3] != -1)
+            BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[3]].senone[3]);
+        if (rhmm->sseqid[4] != -1)
+            BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[4]].senone[4]);
     }
     else {
         int32 *senone = smds[rhmm->sseqid[0]].senone;
