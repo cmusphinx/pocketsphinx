@@ -200,18 +200,18 @@ sen_active_clear(void)
       "str r4, [%0, r3, lsl #2]\n\t"    /* store it back */
 #define BITVEC_SET_NONMPX				\
   asm("mov r2, #1\n\t" /* one bit (for use below) */	\
-      "ldr r1, [%1]\n\t" /* dist[0] */			\
+      "ldr r1, [%1]\n\t" /* senone[0] */			\
       ASM_BITVEC_SET					\
-      "ldr r1, [%1, #12]\n\t" /* dist[3] */		\
+      "ldr r1, [%1, #12]\n\t" /* senone[3] */		\
       ASM_BITVEC_SET					\
-      "ldr r1, [%1, #24]\n\t" /* dist[6] */		\
+      "ldr r1, [%1, #24]\n\t" /* senone[6] */		\
       ASM_BITVEC_SET					\
-      "ldr r1, [%1, #36]\n\t" /* dist[9] */		\
+      "ldr r1, [%1, #36]\n\t" /* senone[9] */		\
       ASM_BITVEC_SET					\
-      "ldr r1, [%1, #48]\n\t" /* dist[12] */		\
+      "ldr r1, [%1, #48]\n\t" /* senone[12] */		\
       ASM_BITVEC_SET					\
       : 						\
-      : "r" (senone_active_vec), "r" (dist)		\
+      : "r" (senone_active_vec), "r" (senone)		\
       : "r1", "r2", "r3", "r4", "memory");
 #elif defined(BFIN)
   /* This is somewhat faster due to parallel issue (still needs work). */
@@ -219,7 +219,7 @@ sen_active_clear(void)
   asm("R0 = 1 (X);\n\t" /* one bit (for use below) */					\
       "R4 = 31 (X);\n\t" /* five bits (for use below) */				\
       "M0 = 12;\n\t" /* 3 words */							\
-      "R1 = [%1++M0];\n\t" /* dist[0] */						\
+      "R1 = [%1++M0];\n\t" /* senone[0] */						\
       "P1 = 5;\n\t"									\
       "LSETUP (0f,1f) LC0 = P1;\n\t"							\
       "0:\n\t"										\
@@ -232,15 +232,15 @@ sen_active_clear(void)
       "1:\n\t"										\
       "[P1] = R3;\n\t" /* store it back */						\
       : 										\
-      : "a" (senone_active_vec), "b" (dist)						\
+      : "a" (senone_active_vec), "b" (senone)						\
       : "M0", "P1", "P2", "R1", "R2", "R3", "R4", "memory", "cc");
 #else
 #define BITVEC_SET_NONMPX			\
-  BITVEC_SET(senone_active_vec, dist[0]);	\
-  BITVEC_SET(senone_active_vec, dist[3]);	\
-  BITVEC_SET(senone_active_vec, dist[6]);	\
-  BITVEC_SET(senone_active_vec, dist[9]);	\
-  BITVEC_SET(senone_active_vec, dist[12]);
+  BITVEC_SET(senone_active_vec, senone[0]);	\
+  BITVEC_SET(senone_active_vec, senone[3]);	\
+  BITVEC_SET(senone_active_vec, senone[6]);	\
+  BITVEC_SET(senone_active_vec, senone[9]);	\
+  BITVEC_SET(senone_active_vec, senone[12]);
 #endif
 
 
@@ -248,14 +248,14 @@ void
 rhmm_sen_active(ROOT_CHAN_T * rhmm)
 {
     if (rhmm->mpx) {
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[0]].dist[0]);
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[1]].dist[3]);
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[2]].dist[6]);
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[3]].dist[9]);
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[4]].dist[12]);
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[0]].senone[0]);
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[1]].senone[3]);
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[2]].senone[6]);
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[3]].senone[9]);
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[4]].senone[12]);
     }
     else {
-        int32 *dist = smds[rhmm->sseqid[0]].dist;
+        int32 *senone = smds[rhmm->sseqid[0]].senone;
         BITVEC_SET_NONMPX;
     }
 }
@@ -264,9 +264,8 @@ rhmm_sen_active(ROOT_CHAN_T * rhmm)
 void
 hmm_sen_active(CHAN_T * hmm)
 {
-    int32 *dist;
-
-    dist = smds[hmm->sseqid].dist;
+    int32 *senone;
+    senone = smds[hmm->sseqid].senone;
     BITVEC_SET_NONMPX;
 }
 

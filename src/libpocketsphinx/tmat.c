@@ -198,7 +198,6 @@ tmat_init(char *file_name, SMD * smds, float64 tpfloor, int32 breport)
             for (k = j; k < j + 3 && k < n_dst; k++) {
                 if (arc >= TRANS_CNT)
                     E_FATAL("Number of arcs is greater than TRANS_CNT\n");
-                smds[i].dist[arc] = j;  /* Actually unused. */
                 /* For these ones, we floor them even if they are
                  * zero, otherwise HMM evaluation goes nuts. */
                 if (tp[j][k] == 0.0f)

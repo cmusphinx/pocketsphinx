@@ -112,7 +112,7 @@
 
 typedef struct StaticModel
 {
-    int32 dist[TRANS_CNT];	/* Which distribution */
+    int32 senone[TRANS_CNT];	/* Which senone */
     int32 tp[TRANS_CNT];	/* Transition probabilities */
     int32 arcProb[TRANS_CNT];	/* Acoustic Prob + Transition Prob */
 } SMD;				/* Static Model Data */

@@ -1834,7 +1834,7 @@ evaluate_active_models_internal(int *phone_bnd_models,
         pbp = all_models[active_model].pbp;
         sbp = all_models[active_model].sbp;
 
-        dist = smds[sseq_id].dist;    /* seno associated w/ transitions */
+        dist = smds[sseq_id].senone;    /* seno associated w/ transitions */
 
         tp = smds[sseq_id].tp;        /* transition probabilities */
 
@@ -2680,7 +2680,7 @@ find_active_senones(DYNMODEL_T * all_models,
 
     for (i = 0; i < active_cnt; i++) {
         trans_to_senone_id =
-            smds[all_models[active_index[i]].sseq_id].dist;
+            smds[all_models[active_index[i]].sseq_id].senone;
 
         for (j = 0; j < 14; j += 3) {   /* HACK!!  Hardwired #transitions(14) */
             k = trans_to_senone_id[j];

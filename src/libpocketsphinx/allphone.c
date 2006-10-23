@@ -151,7 +151,7 @@ allphone_senone_active(void)
 
     n = 0;
     for (p = 0; p < n_ciphone; p++) {
-        dist = smds[ci_chan[p].sseqid].dist;
+        dist = smds[ci_chan[p].sseqid].senone;
         for (s = 0; s < TRANS_CNT; s += 3)
             senone_active[n++] = dist[s];
     }

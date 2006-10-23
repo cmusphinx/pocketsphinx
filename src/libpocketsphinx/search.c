@@ -321,7 +321,7 @@ static int32 NumMainDictWords;  /* #words in main dictionary, excluding fillers
                                    These come first in WordDict. */
 static int32 NumCiPhones;
 
-static LM LangModel = NULL;
+static lm_t *LangModel = NULL;
 
 static int32 StartWordId;
 static int32 FinishWordId;
@@ -369,7 +369,6 @@ static int32 BestScoreTable[MAX_FRAMES];
 static int32 compute_all_senones = TRUE;
 
 static int32 ChannelsPerFrameTarget = 0;        /* #channels to eval / frame */
-static int32 scVqTopN = 4;
 
 static int32 CurrentFrame;
 static int32 LastFrame;
@@ -492,11 +491,11 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
 
     s4 = chan->score[4];
     smd4 = &smds[chan->sseqid[4]];
-    s4 += senone_scores[smd4->dist[12]];
+    s4 += senone_scores[smd4->senone[12]];
 
     s3 = chan->score[3];
     smd3 = &smds[chan->sseqid[3]];
-    s3 += senone_scores[smd3->dist[9]];
+    s3 += senone_scores[smd3->senone[9]];
 
     t1 = NPA(smd4, s4, 13);
     t2 = NPA(smd3, s3, 11);
@@ -513,7 +512,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
 
     s2 = chan->score[2];
     smd2 = &smds[chan->sseqid[2]];
-    s2 += senone_scores[smd2->dist[6]];
+    s2 += senone_scores[smd2->senone[6]];
 
     t0 = NPA(smd4, s4, 12);
     t1 = NPA(smd3, s3, 10);
@@ -545,7 +544,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
 
     s1 = chan->score[1];
     smd1 = &smds[chan->sseqid[1]];
-    s1 += senone_scores[smd1->dist[3]];
+    s1 += senone_scores[smd1->senone[3]];
 
     t0 = NPA(smd3, s3, 9);
     t1 = NPA(smd2, s2, 7);
@@ -577,7 +576,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
 
     s0 = chan->score[0];
     smd0 = &smds[chan->sseqid[0]];
-    s0 += senone_scores[smd0->dist[0]];
+    s0 += senone_scores[smd0->senone[0]];
 
     t0 = NPA(smd2, s2, 6);
     t1 = NPA(smd1, s1, 4);
@@ -634,9 +633,9 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0;	\
 						\
     s4 = chan->score[4];			\
-    s4 += senone_scores[smd->dist[12]];		\
+    s4 += senone_scores[smd->senone[12]];		\
     s3 = chan->score[3];			\
-    s3 += senone_scores[smd->dist[9]];		\
+    s3 += senone_scores[smd->senone[9]];		\
     						\
     t1 = NPA(smd,s4,13);			\
     t2 = NPA(smd,s3,11);			\
@@ -651,7 +650,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     bestScore = s5;				\
     						\
     s2 = chan->score[2];			\
-    s2 += senone_scores[smd->dist[6]];		\
+    s2 += senone_scores[smd->senone[6]];		\
     						\
     t0 = NPA(smd,s4,12);			\
     t1 = NPA(smd,s3,10);			\
@@ -675,7 +674,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->score[4] = s4;			\
     						\
     s1 = chan->score[1];			\
-    s1 += senone_scores[smd->dist[3]];		\
+    s1 += senone_scores[smd->senone[3]];		\
     						\
     t0 = NPA(smd,s3,9);				\
     t1 = NPA(smd,s2,7);				\
@@ -699,7 +698,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->score[3] = s3;			\
     						\
     s0 = chan->score[0];			\
-    s0 += senone_scores[smd->dist[0]];		\
+    s0 += senone_scores[smd->senone[0]];		\
     						\
     t0 = NPA(smd,s2,6);				\
     t1 = NPA(smd,s1,4);				\
@@ -755,14 +754,14 @@ root_chan_dump(ROOT_CHAN_T * chan, int32 frame, FILE * fp)
         smd4 = &(smds[chan->sseqid[4]]);
         fprintf(fp, "[%4d] MPX (%5d %5d %5d %5d %5d)\n",
                 frame,
-                smd0->dist[0],
-                smd1->dist[3],
-                smd2->dist[6], smd3->dist[9], smd4->dist[12]);
+                smd0->senone[0],
+                smd1->senone[3],
+                smd2->senone[6], smd3->senone[9], smd4->senone[12]);
         fprintf(fp, "\tSENSCR %11d %11d %11d %11d %11d\n",
-                senone_scores[smd0->dist[0]],
-                senone_scores[smd1->dist[3]],
-                senone_scores[smd2->dist[6]],
-                senone_scores[smd3->dist[9]], senone_scores[smd4->dist[12]]);
+                senone_scores[smd0->senone[0]],
+                senone_scores[smd1->senone[3]],
+                senone_scores[smd2->senone[6]],
+                senone_scores[smd3->senone[9]], senone_scores[smd4->senone[12]]);
         fprintf(fp, "\tSCORES %11d %11d %11d %11d %11d %11d\n",
                 chan->score[0],
                 chan->score[1],
@@ -778,14 +777,14 @@ root_chan_dump(ROOT_CHAN_T * chan, int32 frame, FILE * fp)
         smd0 = &(smds[chan->sseqid[0]]);
         fprintf(fp, "[%4d] ROOT SSID %5d (%5d %5d %5d %5d %5d)\n",
                 frame, chan->sseqid[0],
-                smd0->dist[0],
-                smd0->dist[3],
-                smd0->dist[6], smd0->dist[9], smd0->dist[12]);
+                smd0->senone[0],
+                smd0->senone[3],
+                smd0->senone[6], smd0->senone[9], smd0->senone[12]);
         fprintf(fp, "\tSENSCR %11d %11d %11d %11d %11d\n",
-                senone_scores[smd0->dist[0]],
-                senone_scores[smd0->dist[3]],
-                senone_scores[smd0->dist[6]],
-                senone_scores[smd0->dist[9]], senone_scores[smd0->dist[12]]);
+                senone_scores[smd0->senone[0]],
+                senone_scores[smd0->senone[3]],
+                senone_scores[smd0->senone[6]],
+                senone_scores[smd0->senone[9]], senone_scores[smd0->senone[12]]);
         fprintf(fp, "\tSCORES %11d %11d %11d %11d %11d %11d\n",
                 chan->score[0],
                 chan->score[1],
@@ -808,13 +807,13 @@ chan_dump(CHAN_T * chan, int32 frame, FILE * fp)
     smd = &(smds[chan->sseqid]);
     fprintf(fp, "[%4d] SSID %5d (%5d %5d %5d %5d %5d)\n",
             frame, chan->sseqid,
-            smd->dist[0],
-            smd->dist[3], smd->dist[6], smd->dist[9], smd->dist[12]);
+            smd->senone[0],
+            smd->senone[3], smd->senone[6], smd->senone[9], smd->senone[12]);
     fprintf(fp, "\tSENSCR %11d %11d %11d %11d %11d\n",
-            senone_scores[smd->dist[0]],
-            senone_scores[smd->dist[3]],
-            senone_scores[smd->dist[6]],
-            senone_scores[smd->dist[9]], senone_scores[smd->dist[12]]);
+            senone_scores[smd->senone[0]],
+            senone_scores[smd->senone[3]],
+            senone_scores[smd->senone[6]],
+            senone_scores[smd->senone[9]], senone_scores[smd->senone[12]]);
     fprintf(fp, "\tSCORES %11d %11d %11d %11d %11d %11d\n",
             chan->score[0],
             chan->score[1],
@@ -2880,12 +2879,6 @@ void
 search_set_channels_per_frame_target(int32 cpf)
 {
     ChannelsPerFrameTarget = cpf;
-}
-
-void
-searchSetScVqTopN(int32 topN)
-{
-    scVqTopN = topN;
 }
 
 int32

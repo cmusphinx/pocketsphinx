@@ -547,7 +547,6 @@ kb_init(void)
                                  cmd_ln_int32("-kdmaxbbi"));
     semi_mgau->dcep80msWeight = FLOAT2MFCC(cmd_ln_float32("-dcep80msweight"));
     semi_mgau->ds_ratio = cmd_ln_int32("-dsratio");
-    searchSetScVqTopN(cmd_ln_int32("-top"));
     remap_mdef(smds, mdef);
 
     /*

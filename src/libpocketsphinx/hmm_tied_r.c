@@ -72,7 +72,7 @@ remap_mdef(SMD * smdV, bin_mdef_t * mdef)
          * per-CIphone, so they will always be sequential within a
          * senone sequence.  */
         for (j = 0; j < TRANS_CNT; j++)
-            smdV[i].dist[j] = bin_mdef_sseq2sen(mdef, i, j / 3);
+            smdV[i].senone[j] = bin_mdef_sseq2sen(mdef, i, j / 3);
     }
 }
 
@@ -88,7 +88,7 @@ hmm_tied_r_dumpssidlist()
         for (i = 0; i < numSSeq; i++) {
             fprintf(dumpfp, "%6d\t", i);
             for (j = 0; j < 5; j++)
-                fprintf(dumpfp, " %5d", smds[i].dist[j * 3]);
+                fprintf(dumpfp, " %5d", smds[i].senone[j * 3]);
             fprintf(dumpfp, "\n");
         }
     }
