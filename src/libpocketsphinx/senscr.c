@@ -189,70 +189,22 @@ sen_active_clear(void)
     n_senone_active = 0;
 }
 
-/* Some rather nasty macros for doing hmm_sen_active() in assembly. */
-#ifdef __arm__
-  /* Sadly, this isn't actually faster, even if it looks nicer. */
-#define ASM_BITVEC_SET					\
-      "mov r3, r1, lsr #5\n\t" /* sid/32 (word) */	\
-      "ldr r4, [%0, r3, lsl #2]\n\t" /* word in vector */	\
-      "and r1, r1, #31\n\t" /* sid%32 (bit) */		\
-      "orr r4, r4, r2, lsl r1\n\t" /* set bit */	\
-      "str r4, [%0, r3, lsl #2]\n\t"    /* store it back */
-#define BITVEC_SET_NONMPX				\
-  asm("mov r2, #1\n\t" /* one bit (for use below) */	\
-      "ldr r1, [%1]\n\t" /* senone[0] */			\
-      ASM_BITVEC_SET					\
-      "ldr r1, [%1, #12]\n\t" /* senone[3] */		\
-      ASM_BITVEC_SET					\
-      "ldr r1, [%1, #24]\n\t" /* senone[6] */		\
-      ASM_BITVEC_SET					\
-      "ldr r1, [%1, #36]\n\t" /* senone[9] */		\
-      ASM_BITVEC_SET					\
-      "ldr r1, [%1, #48]\n\t" /* senone[12] */		\
-      ASM_BITVEC_SET					\
-      : 						\
-      : "r" (senone_active_vec), "r" (senone)		\
-      : "r1", "r2", "r3", "r4", "memory");
-#elif defined(BFIN)
-  /* This is somewhat faster due to parallel issue (still needs work). */
-#define BITVEC_SET_NONMPX								\
-  asm("R0 = 1 (X);\n\t" /* one bit (for use below) */					\
-      "R4 = 31 (X);\n\t" /* five bits (for use below) */				\
-      "M0 = 12;\n\t" /* 3 words */							\
-      "R1 = [%1++M0];\n\t" /* senone[0] */						\
-      "P1 = 5;\n\t"									\
-      "LSETUP (0f,1f) LC0 = P1;\n\t"							\
-      "0:\n\t"										\
-      "R2 = R1 >> 5;\n\t" /* sid/32 (word) */						\
-      "P2 = R2;\n\t"									\
-      "P1 = %0 + (P2 << 2);\n\t"							\
-      "R1 = R1 & R4;\n\t" /* sid%32 (bit) */						\
-      "R2 = LSHIFT R0 BY R1.L || R3 = [P1] || R1 = [%1++M0];\n\t" /* shift, load */	\
-      "R3 = R3 | R2;\n\t"  /* set bit */						\
-      "1:\n\t"										\
-      "[P1] = R3;\n\t" /* store it back */						\
-      : 										\
-      : "a" (senone_active_vec), "b" (senone)						\
-      : "M0", "P1", "P2", "R1", "R2", "R3", "R4", "memory", "cc");
-#else
 #define BITVEC_SET_NONMPX			\
   BITVEC_SET(senone_active_vec, senone[0]);	\
+  BITVEC_SET(senone_active_vec, senone[1]);	\
+  BITVEC_SET(senone_active_vec, senone[2]);	\
   BITVEC_SET(senone_active_vec, senone[3]);	\
-  BITVEC_SET(senone_active_vec, senone[6]);	\
-  BITVEC_SET(senone_active_vec, senone[9]);	\
-  BITVEC_SET(senone_active_vec, senone[12]);
-#endif
-
+  BITVEC_SET(senone_active_vec, senone[4]);
 
 void
 rhmm_sen_active(ROOT_CHAN_T * rhmm)
 {
     if (rhmm->mpx) {
         BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[0]].senone[0]);
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[1]].senone[3]);
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[2]].senone[6]);
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[3]].senone[9]);
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[4]].senone[12]);
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[1]].senone[1]);
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[2]].senone[2]);
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[3]].senone[3]);
+        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[4]].senone[4]);
     }
     else {
         int32 *senone = smds[rhmm->sseqid[0]].senone;

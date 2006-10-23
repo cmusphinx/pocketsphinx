@@ -67,12 +67,9 @@ remap_mdef(SMD * smdV, bin_mdef_t * mdef)
     int32 i, j;
 
     for (i = 0; i < bin_mdef_n_sseq(mdef); i++) {
-        /* This looks like a hack, but it really isn't, because the
-         * distribution IDs in the mdef are global rather than
-         * per-CIphone, so they will always be sequential within a
-         * senone sequence.  */
-        for (j = 0; j < TRANS_CNT; j++)
-            smdV[i].senone[j] = bin_mdef_sseq2sen(mdef, i, j / 3);
+        for (j = 0; j < NODE_CNT-1; j++) {
+            smdV[i].senone[j] = bin_mdef_sseq2sen(mdef, i, j);
+        }
     }
 }
 
@@ -87,8 +84,8 @@ hmm_tied_r_dumpssidlist()
     if ((dumpfp = fopen("ssid_list.txt", "w")) != NULL) {
         for (i = 0; i < numSSeq; i++) {
             fprintf(dumpfp, "%6d\t", i);
-            for (j = 0; j < 5; j++)
-                fprintf(dumpfp, " %5d", smds[i].senone[j * 3]);
+            for (j = 0; j < NODE_CNT-1; j++)
+                fprintf(dumpfp, " %5d", smds[i].senone[j]);
             fprintf(dumpfp, "\n");
         }
     }

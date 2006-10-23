@@ -147,13 +147,13 @@ allphone_start_utt(void)
 static void
 allphone_senone_active(void)
 {
-    int32 p, s, n, *dist;
+    int32 p, s, n;
 
     n = 0;
     for (p = 0; p < n_ciphone; p++) {
-        dist = smds[ci_chan[p].sseqid].senone;
-        for (s = 0; s < TRANS_CNT; s += 3)
-            senone_active[n++] = dist[s];
+        for (s = 0; s < NODE_CNT-1; ++s) {
+            senone_active[n++] = smds[ci_chan[p].sseqid].senone[s];
+        }
     }
     n_senone_active = n;
 }
