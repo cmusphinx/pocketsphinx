@@ -573,79 +573,8 @@ kb_get_word_str(int32 wid)
     return (word_dict->dict_list[wid]->word);
 }
 
-char const *
-kb_get_lm_start_sym(void)
-{
-    return cmd_ln_str("-lmstartsym");
-}
-
-char const *
-kb_get_lm_end_sym(void)
-{
-    return cmd_ln_str("-lmendsym");
-}
-
-/* For LISTEN project */
-char *
-kb_get_startsym_file(void)
-{
-    return cmd_ln_str("-startsymfn");
-}
-
-char *
-kb_get_oovdic(void)
-{
-    return cmd_ln_str("-oovdictfn");
-}
-
-char *
-kb_get_personaldic(void)
-{
-    return cmd_ln_str("-pdictfn");
-}
-
-double
-kb_get_oov_ugprob(void)
-{
-    return cmd_ln_float32("-oovugprob");
-}
-
-int32
-kb_get_max_new_oov(void)
-{
-    return cmd_ln_int32("-maxnewoov");
-}
-
 int32
 kb_dict_maxsize(void)
 {
     return (hash_table_size(word_dict->dict));
-}
-
-
-char *
-kb_get_fsg_file_name(void)
-{
-    return cmd_ln_str("-fsgfn");
-}
-
-
-char *
-kb_get_fsg_ctlfile_name(void)
-{
-    return cmd_ln_str("-fsgctlfn");
-}
-
-
-int32
-query_fsg_use_altpron(void)
-{
-    return cmd_ln_boolean("-fsgusealtpron");
-}
-
-
-int32
-query_fsg_use_filler(void)
-{
-    return cmd_ln_boolean("-fsgusefiller");
 }
