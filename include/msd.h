@@ -114,7 +114,6 @@ typedef struct StaticModel
 {
     int32 senone[NODE_CNT-1];	/* Which senone (last state is non-emitting) */
     int32 tp[TRANS_CNT];	/* Transition probabilities */
-    int32 arcProb[TRANS_CNT];	/* Acoustic Prob + Transition Prob */
 } SMD;				/* Static Model Data */
 
 /*
