@@ -68,7 +68,6 @@
 #include "kb.h"
 #include "s2_semi_mgau.h"
 #include "phone.h"
-#include "hmm_tied_r.h"
 #include "search.h"
 #include "senscr.h"
 
@@ -189,30 +188,26 @@ sen_active_clear(void)
     n_senone_active = 0;
 }
 
-#define BITVEC_SET_NONMPX			\
-  BITVEC_SET(senone_active_vec, senone[0]);	\
-  BITVEC_SET(senone_active_vec, senone[1]);	\
-  BITVEC_SET(senone_active_vec, senone[2]);	\
-  BITVEC_SET(senone_active_vec, senone[3]);	\
-  BITVEC_SET(senone_active_vec, senone[4]);
-
 void
 rhmm_sen_active(ROOT_CHAN_T * rhmm)
 {
     if (rhmm->mpx) {
-        BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[0]].senone[0]);
+        BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],0));
         if (rhmm->sseqid[1] != -1)
-            BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[1]].senone[1]);
+            BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[1],1));
         if (rhmm->sseqid[2] != -1)
-            BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[2]].senone[2]);
+            BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[2],2));
         if (rhmm->sseqid[3] != -1)
-            BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[3]].senone[3]);
+            BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[3],3));
         if (rhmm->sseqid[4] != -1)
-            BITVEC_SET(senone_active_vec, smds[rhmm->sseqid[4]].senone[4]);
+            BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[4],4));
     }
     else {
-        int32 *senone = smds[rhmm->sseqid[0]].senone;
-        BITVEC_SET_NONMPX;
+        BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],0));
+        BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],1));
+        BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],2));
+        BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],3));
+        BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],4));
     }
 }
 
@@ -220,9 +215,11 @@ rhmm_sen_active(ROOT_CHAN_T * rhmm)
 void
 hmm_sen_active(CHAN_T * hmm)
 {
-    int32 *senone;
-    senone = smds[hmm->sseqid].senone;
-    BITVEC_SET_NONMPX;
+    BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,0));
+    BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,1));
+    BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,2));
+    BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,3));
+    BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,4));
 }
 
 #ifdef BITVEC_SEN_ACTIVE

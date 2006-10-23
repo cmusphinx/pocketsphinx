@@ -103,8 +103,71 @@
 
 #define TMAT_PARAM_VERSION		"1.0"
 
-int
-tmat_init(char *file_name, SMD * smds, float64 tpfloor, int32 breport)
+
+void
+tmat_dump(tmat_t * tmat, FILE * fp)
+{
+    int32 i, src, dst;
+
+    for (i = 0; i < tmat->n_tmat; i++) {
+        fprintf(fp, "TMAT %d = %d x %d\n", i, tmat->n_state,
+                tmat->n_state + 1);
+        for (src = 0; src < tmat->n_state; src++) {
+            for (dst = 0; dst <= tmat->n_state; dst++)
+                fprintf(fp, " %12d", tmat->tp[i][src][dst]);
+            fprintf(fp, "\n");
+        }
+        fprintf(fp, "\n");
+    }
+    fflush(fp);
+}
+
+
+/*
+ * Check model tprob matrices that they conform to upper-triangular assumption;
+ * i.e. no "backward" transitions allowed.
+ */
+int32
+tmat_chk_uppertri(tmat_t * tmat)
+{
+    int32 i, src, dst;
+
+    /* Check that each tmat is upper-triangular */
+    for (i = 0; i < tmat->n_tmat; i++) {
+        for (dst = 0; dst < tmat->n_state; dst++)
+            for (src = dst + 1; src < tmat->n_state; src++)
+                if (tmat->tp[i][src][dst] > MIN_LOG) {
+                    E_ERROR("tmat[%d][%d][%d] = %d\n",
+                            i, src, dst, tmat->tp[i][src][dst]);
+                    return -1;
+                }
+    }
+
+    return 0;
+}
+
+
+int32
+tmat_chk_1skip(tmat_t * tmat)
+{
+    int32 i, src, dst;
+
+    for (i = 0; i < tmat->n_tmat; i++) {
+        for (src = 0; src < tmat->n_state; src++)
+            for (dst = src + 3; dst <= tmat->n_state; dst++)
+                if (tmat->tp[i][src][dst] > MIN_LOG) {
+                    E_ERROR("tmat[%d][%d][%d] = %d\n",
+                            i, src, dst, tmat->tp[i][src][dst]);
+                    return -1;
+                }
+    }
+
+    return 0;
+}
+
+
+tmat_t *
+tmat_init(char *file_name, float64 tpfloor, int32 breport)
 {
     char tmp;
     int32 n_src, n_dst;
@@ -112,14 +175,17 @@ tmat_init(char *file_name, SMD * smds, float64 tpfloor, int32 breport)
     int32 byteswap, chksum_present;
     uint32 chksum;
     float32 **tp;
-    int32 i, j, k, n_tmat, n_state, tp_per_tmat;
+    int32 i, j, k, tp_per_tmat;
     char **argname, **argval;
+    tmat_t *t;
 
 
     if (breport) {
         E_INFO("Reading HMM transition probability matrices: %s\n",
                file_name);
     }
+
+    t = (tmat_t *) ckd_calloc(1, sizeof(tmat_t));
 
     if ((fp = fopen(file_name, "rb")) == NULL)
         E_FATAL_SYSTEM("fopen(%s,rb) failed\n", file_name);
@@ -146,7 +212,8 @@ tmat_init(char *file_name, SMD * smds, float64 tpfloor, int32 breport)
     chksum = 0;
 
     /* Read #tmat, #from-states, #to-states, arraysize */
-    if ((bio_fread(&n_tmat, sizeof(int32), 1, fp, byteswap, &chksum) != 1)
+    if ((bio_fread(&(t->n_tmat), sizeof(int32), 1, fp, byteswap, &chksum)
+         != 1)
         || (bio_fread(&n_src, sizeof(int32), 1, fp, byteswap, &chksum) !=
             1)
         || (bio_fread(&n_dst, sizeof(int32), 1, fp, byteswap, &chksum) !=
@@ -154,38 +221,37 @@ tmat_init(char *file_name, SMD * smds, float64 tpfloor, int32 breport)
         || (bio_fread(&i, sizeof(int32), 1, fp, byteswap, &chksum) != 1)) {
         E_FATAL("bio_fread(%s) (arraysize) failed\n", file_name);
     }
-    if (n_tmat >= MAX_S3TMATID)
-        E_FATAL("%s: #tmat (%d) exceeds limit (%d)\n", file_name, n_tmat,
-                MAX_S3TMATID);
+    if (t->n_tmat >= MAX_S3TMATID)
+        E_FATAL("%s: #tmat (%d) exceeds limit (%d)\n", file_name,
+                t->n_tmat, MAX_S3TMATID);
     if (n_dst != n_src + 1)
         E_FATAL("%s: #from-states(%d) != #to-states(%d)-1\n", file_name,
                 n_src, n_dst);
-    n_state = n_src;
+    t->n_state = n_src;
 
-    if (i != n_tmat * n_src * n_dst) {
+    if (i != t->n_tmat * n_src * n_dst) {
         E_FATAL
             ("%s: #float32s(%d) doesn't match dimensions: %d x %d x %d\n",
-             file_name, i, n_tmat, n_src, n_dst);
+             file_name, i, t->n_tmat, n_src, n_dst);
     }
 
-    if (n_src != HMM_LAST_STATE)
-        E_FATAL("%s: #from-states(%d) is not %d\n", n_src, HMM_LAST_STATE);
+    /* Allocate memory for tmat data */
+    t->tp =
+        (int32 ***) ckd_calloc_3d(t->n_tmat, n_src, n_dst, sizeof(int32));
 
     /* Temporary structure to read in the float data */
     tp = (float32 **) ckd_calloc_2d(n_src, n_dst, sizeof(float32));
 
-    /* Read transition matrices, normalize and floor them, and convert to logs3 domain */
+    /* Read transition matrices, normalize and floor them, and convert to log domain */
     tp_per_tmat = n_src * n_dst;
-    for (i = 0; i < n_tmat; i++) {
-        int arc;
-
+    for (i = 0; i < t->n_tmat; i++) {
+        int arc = 0;
         if (bio_fread(tp[0], sizeof(float32), tp_per_tmat, fp,
                       byteswap, &chksum) != tp_per_tmat) {
             E_FATAL("fread(%s) (arraydata) failed\n", file_name);
         }
 
         /* Normalize and floor */
-        arc = 0;
         for (j = 0; j < n_src; j++) {
             if (vector_sum_norm(tp[j], n_dst) == 0.0)
                 E_WARN("Normalization failed for tmat %d from state %d\n",
@@ -193,17 +259,18 @@ tmat_init(char *file_name, SMD * smds, float64 tpfloor, int32 breport)
             vector_nz_floor(tp[j], n_dst, tpfloor);
             vector_sum_norm(tp[j], n_dst);
 
-            /* Convert to logs3.  We simply ignore the transitions
-             * that aren't allowed by the Sphinx2 topology. */
-            for (k = j; k < j + 3 && k < n_dst; k++) {
-                if (arc >= TRANS_CNT)
-                    E_FATAL("Number of arcs is greater than TRANS_CNT\n");
+            /* Convert to logs3. */
+            for (k = 0; k < n_dst; k++) {
                 /* For these ones, we floor them even if they are
                  * zero, otherwise HMM evaluation goes nuts. */
-                if (tp[j][k] == 0.0f)
+                if (k >= j && k-j < 3 && tp[j][k] == 0.0f)
                     tp[j][k] = tpfloor;
-                smds[i].tp[arc] = LOG(tp[j][k]);
-                ++arc;
+                t->tp[i][j][k] = LOG(tp[j][k]);
+#if 0
+                if (tp[j][k] > 0.0f)
+                    printf("%d,%d,%d (%d) = %f = %d\n",
+                           i, j, k, arc++, tp[j][k], t->tp[i][j][k]);
+#endif
             }
         }
     }
@@ -218,5 +285,34 @@ tmat_init(char *file_name, SMD * smds, float64 tpfloor, int32 breport)
 
     fclose(fp);
 
-    return 0;
+
+    if (tmat_chk_uppertri(t) < 0)
+        E_FATAL("Tmat not upper triangular\n");
+    if (tmat_chk_1skip(t) < 0)
+        E_FATAL("Topology not Left-to-Right or Bakis\n");
+
+    return t;
+}
+
+void
+tmat_report(tmat_t * t)
+{
+    E_INFO_NOFN("Initialization of tmat_t, report:\n");
+    E_INFO_NOFN("Read %d transition matrices of size %dx%d\n",
+                t->n_tmat, t->n_state, t->n_state + 1);
+    E_INFO_NOFN("\n");
+
+}
+
+/* 
+ *  RAH, Free memory allocated in tmat_init ()
+ */
+void
+tmat_free(tmat_t * t)
+{
+    if (t) {
+        if (t->tp)
+            ckd_free_3d((void ***) t->tp);
+        ckd_free((void *) t);
+    }
 }

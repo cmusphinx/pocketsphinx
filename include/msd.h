@@ -107,14 +107,7 @@
 #include "search_const.h"
 #include "basic_types.h"
 
-#define TRANS_CNT	((HMM_LAST_STATE*3)-1)	/* No. of trans. in Sphinx HMM */
 #define NODE_CNT	(HMM_LAST_STATE+1)	/* No. of nodes in Sphinx HMM */
-
-typedef struct StaticModel
-{
-    int32 senone[NODE_CNT-1];	/* Which senone (last state is non-emitting) */
-    int32 tp[TRANS_CNT];	/* Transition probabilities */
-} SMD;				/* Static Model Data */
 
 /*
  * HMM instance (channel) data type.  Not the first HMM for words, which multiplex HMMs
@@ -130,7 +123,7 @@ typedef struct CHAN_S
     int32    score[NODE_CNT];	/* dynamic score (prob) per state */
     FRAME_ID path[NODE_CNT];	/* dynamic history pointer per state */
     SSEQ_ID  sseqid;		/* parent static model (actually senone-seq id) */
-    int32    ciphone;
+    int32    ciphone;		/* NOTE: assumption that this is the same as tmat ID */
     int32    bestscore;		/* among score[]; for pruning */
     union {
 	WORD_ID penult_phn_wid;	/* list of words whose last phone follows this one;

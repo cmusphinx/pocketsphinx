@@ -100,7 +100,6 @@
 #include "dict.h"
 #include "phone.h"
 #include "log.h"
-#include "hmm_tied_r.h"
 #include "search.h"
 
 void

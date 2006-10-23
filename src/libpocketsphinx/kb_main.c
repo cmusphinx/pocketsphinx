@@ -146,7 +146,6 @@
 #include "lm.h"
 #include "lmclass.h"
 #include "lm_3g.h"
-#include "hmm_tied_r.h"
 #include "s2_semi_mgau.h"
 #include "kb.h"
 #include "phone.h"
@@ -156,10 +155,11 @@
 #include "search.h"
 #include "cmd_ln.h"
 
-/* Transition matrices. */
-SMD *smds;
-int32 numSmds;
+/* Dictionary. */
 dictT *word_dict;
+
+/* Transition matrices. */
+tmat_t *tmat;
 
 /* Phone transition LOG(probability) matrix */
 int32 **phonetp;
@@ -459,7 +459,7 @@ string_join(const char *base, ...)
 void
 kb_init(void)
 {
-    int32 num_phones, num_ci_phones, i;
+    int32 num_phones, num_ci_phones;
 
     /* Get acoustic model filenames */
     if ((hmmdir = cmd_ln_str("-hmm")) != NULL) {
@@ -512,27 +512,10 @@ kb_init(void)
         || (tmatfn == NULL))
         E_FATAL("No mean/var/tmat files specified\n");
 
-    /* Read transition matrices into "SMD" structures. */
-    numSmds = bin_mdef_n_sseq(mdef);
-    smds = ckd_calloc(numSmds, sizeof(SMD));
-    tmat_init(tmatfn, smds, cmd_ln_float32("-tmatfloor"), TRUE);
-    /* Always use CI transitions for CD phones (the ability to do
-     * otherwise is some Sphinx-II legacy thing). */
-    for (i = 0; i < num_phones; i++) {
-        if (hmm_pid2sid(phone_id_to_base_id(i)) != hmm_pid2sid(i)) {
-            /*
-             * Just make a copy of the CI phone transitions
-             */
-            memcpy(&smds[hmm_pid2sid(i)],
-                   &smds[hmm_pid2sid(phone_id_to_base_id(i))],
-                   sizeof(SMD));
-        }
-    }
+    /* Read transition matrices. */
+    tmat = tmat_init(tmatfn, cmd_ln_float32("-tmatfloor"), TRUE);
 
-    /*
-     * Read the distributions and remap them to the correct locations
-     * Also, read the codebooks.
-     */
+    /* Read the acoustic models. */
     E_INFO("Initializing SCGMM computation module\n");
     semi_mgau = s2_semi_mgau_init(meanfn,
                                   varfn,
@@ -547,7 +530,6 @@ kb_init(void)
                                  cmd_ln_int32("-kdmaxbbi"));
     semi_mgau->dcep80msWeight = FLOAT2MFCC(cmd_ln_float32("-dcep80msweight"));
     semi_mgau->ds_ratio = cmd_ln_int32("-dsratio");
-    remap_mdef(smds, mdef);
 
     /*
      * Create phone transition logprobs matrix

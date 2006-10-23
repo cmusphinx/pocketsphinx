@@ -232,7 +232,6 @@
 #include "kb.h"
 #include "phone.h"
 #include "log.h"
-#include "hmm_tied_r.h"
 #include "s2_semi_mgau.h"
 #include "senscr.h"
 #include "s2params.h"
@@ -1458,10 +1457,14 @@ mk_model(short *amatrix,
 
     cur_model->model_best_score = WORST_SCORE;
 
-    if (phone_id_map[node] == NO_EVAL)
+    if (phone_id_map[node] == NO_EVAL) {
         cur_model->sseq_id = NO_EVAL;
-    else
-        cur_model->sseq_id = hmm_pid2sid(phone_id_map[node]);
+        cur_model->tmat_id = 0; /* BOGUS */
+    }
+    else {
+        cur_model->sseq_id = bin_mdef_pid2ssid(mdef,phone_id_map[node]);
+        cur_model->tmat_id = bin_mdef_pid2ci(mdef,phone_id_map[node]);
+    }
 
     for (i = 0; i < NODE_CNT; i++) {
         cur_model->score[i] = WORST_SCORE;
@@ -1785,13 +1788,6 @@ evaluate_active_models_internal(int *phone_bnd_models,
     /* this keeps track of which state to compute output scores for */
     int state;
 
-    /* local copy of model transition probably table */
-    int *tp;
-
-    /* local copy of the senone indexes for each state of the model */
-    /* fbs v6 uses int16 indices and fbs8 uses int32 */
-    int32 *dist;
-
     /* local pointer to the best scoring path to the states in a model */
     int *scores;
 
@@ -1814,29 +1810,31 @@ evaluate_active_models_internal(int *phone_bnd_models,
     int t10, t11, t12;
     int t20, t21, t22;
 
-    /* local copy of the senone sequence id of the model currently being evaluated */
-    int sseq_id;
-
-    /* index of the model currently being evaluated */
-    int active_model;
-
     local_best_score = *in_out_best_score;
 
     for (i = 0, j = 0; i < n_models; i++) {
+        /* local copy of model transition probably table */
+        int32 **tp;
+        /* local copy of the senone indexes for each state of the model */
+        s3senid_t *dist;
+        /* local copy of the senone sequence id of the model currently being evaluated */
+        int sseq_id;
+        /* local copy of the transition matrix id of the model currently being evaluated */
+        int tmat_id;
+        /* index of the model currently being evaluated */
+        int active_model;
 
         model_best_score = WORST_SCORE;
-
         active_model = active_model_index[i];
-
         sseq_id = all_models[active_model].sseq_id;
+        tmat_id = all_models[active_model].tmat_id;
         scores = all_models[active_model].score;
         wbp = all_models[active_model].wbp;
         pbp = all_models[active_model].pbp;
         sbp = all_models[active_model].sbp;
 
-        dist = smds[sseq_id].senone;    /* seno associated w/ transitions */
-
-        tp = smds[sseq_id].tp;        /* transition probabilities */
+        tp = tmat->tp[tmat_id];
+        dist = mdef->sseq[sseq_id];
 
 #if SHOW&SHOW_MODEL_EVAL
         printf("%s: %d [%d, %d, %d, %d, %d]\n",
@@ -1855,11 +1853,11 @@ evaluate_active_models_internal(int *phone_bnd_models,
                 new_state_bp(active_model, state, sbp[state], score);
 
             T44 = T45 = score + senone_scores[dist[4]];
-            T44 += tp[12];
+            T44 += tp[4][4];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t12= %d ", senone_scores[dist[4]], T44);
 #endif
-            T45 += tp[13];
+            T45 += tp[4][5];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t13= %d ", senone_scores[dist[4]], T45);
 #endif
@@ -1883,15 +1881,15 @@ evaluate_active_models_internal(int *phone_bnd_models,
 
             T33 = T34 = T35 = score + senone_scores[dist[3]];
 
-            T33 += tp[9];
+            T33 += tp[3][3];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t9= %d ", senone_scores[dist[3]], T33);
 #endif
-            T34 += tp[10];
+            T34 += tp[3][4];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t10= %d ", senone_scores[dist[3]], T34);
 #endif
-            T35 += tp[11];
+            T35 += tp[3][5];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t11= %d ", senone_scores[dist[3]], T35);
 #endif
@@ -1915,17 +1913,17 @@ evaluate_active_models_internal(int *phone_bnd_models,
 
             T22 = T23 = T24 = score + senone_scores[dist[2]];
 
-            T22 += tp[6];
+            T22 += tp[2][2];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t6= %d ", senone_scores[dist[2]], T22);
 #endif
 
-            T23 += tp[7];
+            T23 += tp[2][3];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t7= %d ", senone_scores[dist[2]], T23);
 #endif
 
-            T24 += tp[8];
+            T24 += tp[2][4];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t8= %d ", senone_scores[dist[2]], T24);
 #endif
@@ -2008,17 +2006,17 @@ evaluate_active_models_internal(int *phone_bnd_models,
 
             T11 = T12 = T13 = score + senone_scores[dist[1]];
 
-            T11 += tp[3];
+            T11 += tp[1][1];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t3= %d ", senone_scores[dist[1]], T11);
 #endif
 
-            T12 += tp[4];
+            T12 += tp[1][2];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t4= %d ", senone_scores[dist[1]], T12);
 #endif
 
-            T13 += tp[5];
+            T13 += tp[1][3];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t5= %d ", senone_scores[dist[1]], T13);
 #endif
@@ -2072,17 +2070,17 @@ evaluate_active_models_internal(int *phone_bnd_models,
 
             T00 = T01 = T02 = score + senone_scores[dist[0]];
 
-            T00 += tp[0];
+            T00 += tp[0][0];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t0= %d ", senone_scores[dist[0]], T00);
 #endif
 
-            T01 += tp[1];
+            T01 += tp[0][1];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t1= %d ", senone_scores[dist[0]], T01);
 #endif
 
-            T02 += tp[2];
+            T02 += tp[0][2];
 #if SHOW&SHOW_MODEL_EVAL
             printf("sc=%d t2= %d ", senone_scores[dist[0]], T02);
 #endif
@@ -2672,15 +2670,14 @@ void
 find_active_senones(DYNMODEL_T * all_models,
                     int *active_index, int active_cnt)
 {
-    /* v6 uses int16 and v8 uses int32 */
-    int32 *trans_to_senone_id;
+    s3senid_t *trans_to_senone_id;
     int i, j, k;
 
     sen_active_clear();
 
     for (i = 0; i < active_cnt; i++) {
         trans_to_senone_id =
-            smds[all_models[active_index[i]].sseq_id].senone;
+            mdef->sseq[all_models[active_index[i]].sseq_id];
 
         for (j = 0; j < NODE_CNT-1; j++) {
             k = trans_to_senone_id[j];

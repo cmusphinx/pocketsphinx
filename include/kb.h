@@ -46,8 +46,8 @@
 #define _KB_EXPORTS_H_
 
 #include "lm_3g.h"
-#include "msd.h"
 #include "dict.h"
+#include "tmat.h"
 #include "bin_mdef.h"
 #include "s2_semi_mgau.h"
 
@@ -65,12 +65,9 @@ int32 kb_dict_maxsize(void);
 
 char * kb_get_senprob_dump_file(void);
 
-/* Global HMM inventory. */
-extern SMD *smds;
-extern int32 numSmds;
-
 /* Global model definition. */
 extern bin_mdef_t *mdef;
+extern tmat_t *tmat;
 
 /* Global model set. */
 extern s2_semi_mgau_t *semi_mgau;

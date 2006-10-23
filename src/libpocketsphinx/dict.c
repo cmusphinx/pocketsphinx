@@ -138,7 +138,6 @@
 #include "lmclass.h"
 #include "lm_3g.h"
 #include "msd.h"
-#include "hmm_tied_r.h"
 #include "kb.h"
 
 #ifdef DEBUG
@@ -628,7 +627,7 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
                         entry->word);
             }
 
-            entry_copy->phone_ids[1] = hmm_pid2sid(pid);
+            entry_copy->phone_ids[1] = bin_mdef_pid2ssid(mdef,pid);
             /*
              * Look up remaining models
              */
@@ -637,7 +636,7 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
                 pid = phone_to_id(tmpstr, TRUE);
                 if (pid == NO_PHONE)
                     exit(-1);
-                entry_copy->phone_ids[i] = hmm_pid2sid(pid);
+                entry_copy->phone_ids[i] = bin_mdef_pid2ssid(mdef,pid);
             }
 
             _dict_list_add(dict, entry_copy);
@@ -766,7 +765,7 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
                 triphone_ids[i] = phone_to_id(phone[i], TRUE);
                 recordMissingTriphone(triphoneStr);
             }
-            triphone_ids[i] = hmm_pid2sid(phone_map(triphone_ids[i]));
+            triphone_ids[i] = bin_mdef_pid2ssid(mdef, phone_map(triphone_ids[i]));
         }
 
         for (i = 1; i < pronoun_len - 1; i++) {
@@ -777,7 +776,7 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
                 triphone_ids[i] = phone_to_id(phone[i], TRUE);
                 recordMissingTriphone(triphoneStr);
             }
-            triphone_ids[i] = hmm_pid2sid(triphone_ids[i]);
+            triphone_ids[i] = bin_mdef_pid2ssid(mdef,triphone_ids[i]);
         }
 
         if (use_context) {
@@ -793,7 +792,7 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
                 triphone_ids[i] = phone_to_id(phone[i], TRUE);
                 recordMissingTriphone(triphoneStr);
             }
-            triphone_ids[i] = hmm_pid2sid(phone_map(triphone_ids[i]));
+            triphone_ids[i] = bin_mdef_pid2ssid(mdef,phone_map(triphone_ids[i]));
         }
     }
 
@@ -819,7 +818,7 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
             if (triphone_ids[0] < 0) {
                 triphone_ids[0] = phone_to_id(phone[0], TRUE);
             }
-            triphone_ids[i] = hmm_pid2sid(triphone_ids[i]);
+            triphone_ids[i] = bin_mdef_pid2ssid(mdef,triphone_ids[i]);
         }
     }
 
@@ -936,7 +935,7 @@ replace_dict_entry(dictT * dict,
         triphone_ids[i] = phone_to_id(triphoneStr, FALSE);
         if (triphone_ids[i] < 0)
             triphone_ids[i] = phone_to_id(phone[i], TRUE);
-        triphone_ids[i] = hmm_pid2sid(triphone_ids[i]);
+        triphone_ids[i] = bin_mdef_pid2ssid(mdef,triphone_ids[i]);
     }
 
     sprintf(triphoneStr, "%s(%s,%%s)e", phone[i], phone[i - 1]);
@@ -1153,7 +1152,7 @@ buildEntryTable(list_t * list, int32 *** table_p)
                 table[i][j] = phone_to_id(stmp, TRUE);
                 noContext++;
             }
-            table[i][j] = hmm_pid2sid(phone_map(table[i][j]));
+            table[i][j] = bin_mdef_pid2ssid(mdef,phone_map(table[i][j]));
         }
     }
     E_INFO("\t%6d triphones\n\t%6d pseudo diphones\n\t%6d uniphones\n",
@@ -1219,7 +1218,7 @@ buildExitTable(list_t * list, int32 *** table_p, int32 *** permuTab_p,
                 table[i][j] = phone_to_id(stmp, TRUE);
                 noContext++;
             }
-            table[i][j] = hmm_pid2sid(phone_map(table[i][j]));
+            table[i][j] = bin_mdef_pid2ssid(mdef,phone_map(table[i][j]));
         }
     }
     /*

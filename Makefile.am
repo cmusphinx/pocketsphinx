@@ -31,7 +31,7 @@ check:
 		-varfn $(top_srcdir)/model/hmm/wsj0/variances \
 		-tmatfn $(top_srcdir)/model/hmm/wsj0/transition_matrices \
 		-sendumpfn $(top_srcdir)/model/hmm/wsj0/sendump \
-		-mmap TRUE
+		-mmap FALSE
 
 test-debug:
 	$(LIBTOOL) --mode=execute gdb --args src/programs/pocketsphinx_batch \

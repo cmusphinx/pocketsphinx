@@ -92,6 +92,7 @@ typedef struct compound_word_struct {
 typedef struct dynmodel_struct {
     int model_best_score;	/* over all states in the model, the best score */
     int sseq_id;		/* senone sequence */
+    int tmat_id;		/* transition matrix */
     int score[NODE_CNT];	/* best acoustic score to each state */
     int wbp[NODE_CNT];		/* word back pointer table index per state*/
     int pbp[NODE_CNT];		/* phone back pointer table index per state */

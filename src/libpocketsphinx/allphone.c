@@ -81,15 +81,12 @@
 #include "senscr.h"
 #include "msd.h"
 #include "dict.h"
-#include "hmm_tied_r.h"
 #include "lmclass.h"
 #include "lm_3g.h"
 #include "kb.h"
 #include "fbs.h"
 #include "search.h"
 #include "ckd_alloc.h"
-
-extern SMD *smds;
 
 static CHAN_T *ci_chan;         /* hmm model instances for each CI phone */
 static int32 n_ciphone;
@@ -152,7 +149,7 @@ allphone_senone_active(void)
     n = 0;
     for (p = 0; p < n_ciphone; p++) {
         for (s = 0; s < NODE_CNT-1; ++s) {
-            senone_active[n++] = smds[ci_chan[p].sseqid].senone[s];
+            senone_active[n++] = bin_mdef_sseq2sen(mdef, ci_chan[p].sseqid, s);
         }
     }
     n_senone_active = n;
@@ -429,7 +426,7 @@ allphone_init()
 
     ci_chan = ckd_calloc(n_ciphone, sizeof(CHAN_T));
     for (i = 0; i < n_ciphone; i++) {
-        ci_chan[i].sseqid = hmm_pid2sid(i);
+        ci_chan[i].sseqid = bin_mdef_pid2ssid(mdef, i);
         ci_chan[i].ciphone = i;
     }
 

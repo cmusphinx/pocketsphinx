@@ -12,7 +12,6 @@ pkginclude_HEADERS = \
 	fsg_lextree.h				\
 	fsg_psubtree.h				\
 	fsg_search.h				\
-	hmm_tied_r.h				\
 	kb.h					\
 	kdtree.h				\
 	list.h					\
