@@ -653,15 +653,13 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->bestscore = bestScore;
 }
 
+#define nmpx_sseq2score(smd,st) (senone_scores[smd->senone[st]])
 #define CHAN_V_EVAL(chan,smd) {			\
     int32 bestScore;				\
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0;	\
 						\
-    s4 = chan->score[4];			\
-    s4 += senone_scores[smd->senone[4]];	\
-    s3 = chan->score[3];			\
-    s3 += senone_scores[smd->senone[3]];	\
-    						\
+    s4 = chan->score[4] + nmpx_sseq2score(smd, 4); \
+    s3 = chan->score[3] + nmpx_sseq2score(smd, 3); \
     t1 = NPA(smd,s4,4,5);			\
     t2 = NPA(smd,s3,3,5);			\
     if (t1 > t2) {				\
@@ -674,9 +672,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->score[5] = s5;			\
     bestScore = s5;				\
     						\
-    s2 = chan->score[2];			\
-    s2 += senone_scores[smd->senone[2]];	\
-    						\
+    s2 = chan->score[2] + nmpx_sseq2score(smd, 2); \
     t0 = NPA(smd,s4,4,4);			\
     t1 = NPA(smd,s3,3,4);			\
     t2 = NPA(smd,s2,2,4);			\
@@ -698,9 +694,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     if (s4 > bestScore) bestScore = s4;		\
     chan->score[4] = s4;			\
     						\
-    s1 = chan->score[1];			\
-    s1 += senone_scores[smd->senone[1]];	\
-    						\
+    s1 = chan->score[1] + nmpx_sseq2score(smd, 1); \
     t0 = NPA(smd,s3,3,3);			\
     t1 = NPA(smd,s2,2,3);			\
     t2 = NPA(smd,s1,1,3);			\
@@ -722,9 +716,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     if (s3 > bestScore) bestScore = s3;		\
     chan->score[3] = s3;			\
     						\
-    s0 = chan->score[0];			\
-    s0 += senone_scores[smd->senone[0]];	\
-    						\
+    s0 = chan->score[0] + nmpx_sseq2score(smd, 0); \
     t0 = NPA(smd,s2,2,2);			\
     t1 = NPA(smd,s1,1,2);			\
     t2 = NPA(smd,s0,0,2);			\
@@ -1645,6 +1637,7 @@ alloc_all_rc(int32 w)
         word_chan[w] = hmm;
 
         hmm->info.rc_id = 0;
+        hmm->ciphone = de->ci_phone_ids[de->len - 1];
         hmm->bestscore = WORST_SCORE;
         hmm->score[0] = WORST_SCORE;
         hmm->score[1] = WORST_SCORE;
@@ -1664,6 +1657,7 @@ alloc_all_rc(int32 w)
             hmm = thmm;
 
             hmm->info.rc_id = i;
+            hmm->ciphone = de->ci_phone_ids[de->len - 1];
             hmm->bestscore = WORST_SCORE;
             hmm->score[0] = WORST_SCORE;
             hmm->score[1] = WORST_SCORE;
