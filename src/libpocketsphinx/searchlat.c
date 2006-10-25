@@ -724,12 +724,9 @@ static void
 lattice_seg_back_trace(latlink_t * link)
 {
     int32 f, latden;
-    int32 *lattice_density, *search_get_lattice_density();
-    double *phone_perplexity, *search_get_phone_perplexity();
-    double perp;
+    int32 *lattice_density;
 
     lattice_density = search_get_lattice_density();
-    phone_perplexity = search_get_phone_perplexity();
 
     if (link) {
         lattice_seg_back_trace(link->best_prev);
@@ -743,30 +740,26 @@ lattice_seg_back_trace(latlink_t * link)
             hyp[seg].ef = link->ef;
 
             hyp[seg].latden = 0;
-            hyp[seg].phone_perp = 0.0;
 
             for (f = link->from->sf; f <= link->ef; f++) {
                 hyp[seg].latden += lattice_density[f];
-                hyp[seg].phone_perp += phone_perplexity[f];
             }
             if ((link->ef - link->from->sf + 1) > 0) {
                 hyp[seg].latden /= (link->ef - link->from->sf + 1);
-                hyp[seg].phone_perp /= (link->ef - link->from->sf + 1);
             }
             latden = hyp[seg].latden;
-            perp = hyp[seg].phone_perp;
 
             seg++;
             hyp[seg].wid = -1;
 
             if (cmd_ln_boolean("-backtrace"))
-                printf("\t%4d %4d %10d %11d %11d %8d %6d %6.2f %s\n",
+                printf("\t%4d %4d %10d %11d %11d %8d %6d %s\n",
                        link->from->sf, link->ef,
                        (-(link->link_scr)) / (link->ef - link->from->sf +
                                               1), -(link->link_scr),
                        -(link->path_scr), seg_topsen_score(link->from->sf,
                                                            link->ef) /
-                       (link->ef - link->from->sf + 1), latden, perp,
+                       (link->ef - link->from->sf + 1), latden,
                        word_dict->dict_list[link->from->wid]->word);
         }
     }
@@ -776,9 +769,9 @@ lattice_seg_back_trace(latlink_t * link)
 
         if (cmd_ln_boolean("-backtrace")) {
             printf
-                ("\t%4s %4s %10s %11s %11s %8s %6s %6s %s (Bestpath) (%s)\n",
+                ("\t%4s %4s %10s %11s %11s %8s %6s %s (Bestpath) (%s)\n",
                  "SFrm", "EFrm", "AScr/Frm", "AScr", "PathScr", "BSDiff",
-                 "LatDen", "PhPerp", "Word", uttproc_get_uttid());
+                 "LatDen", "Word", uttproc_get_uttid());
             printf
                 ("\t------------------------------------------------------------------------\n");
         }

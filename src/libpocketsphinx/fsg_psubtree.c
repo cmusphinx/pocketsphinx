@@ -174,9 +174,9 @@ psubtree_add_trans(fsg_pnode_t * root,
     fsg_pnode_t **ssid_pnode_map;       /* Temp array of ssid->pnode mapping */
     int32 i, j;
 
-    lw = cmd_ln_float32("-langwt");
-    pip = (int32) (LOG(cmd_ln_float32("-phnpen")) * lw);
-    wip = (int32) (LOG(cmd_ln_float32("-inspen")) * lw);
+    lw = cmd_ln_float32("-lw");
+    pip = (int32) (LOG(cmd_ln_float32("-pip")) * lw);
+    wip = (int32) (LOG(cmd_ln_float32("-wip")) * lw);
     silcipid = phone_to_id("SIL",  TRUE);
     n_ci = phoneCiCount();
 

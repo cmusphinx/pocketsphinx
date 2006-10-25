@@ -277,7 +277,7 @@ fbs_init(int32 argc, char **argv)
 
     /* If multiple LMs present, choose the unnamed one by default */
     /* FIXME: Add a -lmname option, use it. */
-    if (cmd_ln_str("-fsgfn") == NULL) {
+    if (cmd_ln_str("-fsg") == NULL) {
         if (get_n_lm() == 1) {
             if (uttproc_set_lm(get_current_lmname()) < 0)
                 E_FATAL("SetLM() failed\n");
@@ -305,13 +305,13 @@ fbs_init(int32 argc, char **argv)
      * Initialization complete; If there was a control file run batch
      */
 
-    if (cmd_ln_str("-ctlfn")) {
-        if (!cmd_ln_str("-tactlfn"))
-            run_ctl_file(cmd_ln_str("-ctlfn"));
+    if (cmd_ln_str("-ctl")) {
+        if (!cmd_ln_str("-tactl"))
+            run_ctl_file(cmd_ln_str("-ctl"));
         else
-            run_time_align_ctl_file(cmd_ln_str("-ctlfn"),
-                                    cmd_ln_str("-tactlfn"),
-                                    cmd_ln_str("-outsentfn"));
+            run_time_align_ctl_file(cmd_ln_str("-ctl"),
+                                    cmd_ln_str("-tactl"),
+                                    cmd_ln_str("-outsent"));
 
         uttproc_end();
         exit(0);
@@ -332,11 +332,11 @@ init_feat(void)
 {
     feat_t *fcb;
 
-    fcb = feat_init("s2_4x",
+    fcb = feat_init(cmd_ln_str("-feat"),
                     cmn_type_from_str(cmd_ln_str("-cmn")),
                     cmd_ln_boolean("-varnorm"),
                     agc_type_from_str(cmd_ln_str("-agc")),
-                    1, 13);
+                    1, cmd_ln_int32("-ceplen"));
 
     if (0 != strcmp(cmd_ln_str("-agc"), "none")) {
         agc_set_threshold(fcb->agc_struct,

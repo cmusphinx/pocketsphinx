@@ -584,7 +584,7 @@ uttproc_frame(void)
         search_fwdflat_frame(feat_buf[n_searchfr]);
     ++n_searchfr;
 
-    pr = cmd_ln_boolean("-partial");
+    pr = cmd_ln_boolean("-phypdump");
     if ((pr > 0) && ((n_searchfr % pr) == 1)) {
         /* Report partial result string */
         uttproc_partial_result(&frm, &str);
@@ -592,7 +592,7 @@ uttproc_frame(void)
         fflush(stdout);
     }
 
-    pr = cmd_ln_boolean("-partialseg");
+    pr = cmd_ln_boolean("-phypsegdump");
     if ((pr > 0) && ((n_searchfr % pr) == 1)) {
         /* Report partial result segmentation */
         uttproc_partial_result_seg(&frm, &hyp);
@@ -713,11 +713,11 @@ uttproc_init(void)
 
     uttid = ckd_calloc(UTTIDSIZE, 1);
 
-    if ((fn = cmd_ln_str("-matchfn")) != NULL) {
+    if ((fn = cmd_ln_str("-hyp")) != NULL) {
         if ((matchfp = fopen(fn, "w")) == NULL)
             E_ERROR("fopen(%s,w) failed\n", fn);
     }
-    if ((fn = cmd_ln_str("-matchsegfn")) != NULL) {
+    if ((fn = cmd_ln_str("-hypseg")) != NULL) {
         if ((matchsegfp = fopen(fn, "w")) == NULL)
             E_ERROR("fopen(%s,w) failed\n", fn);
     }
@@ -738,7 +738,7 @@ uttproc_init(void)
 
         fsg_search = fsg_search_init(NULL);
 
-        fsgfile = cmd_ln_str("-fsgfn");
+        fsgfile = cmd_ln_str("-fsg");
 
         fsg_search_mode = (fsgfile != NULL);
 
@@ -1456,7 +1456,7 @@ uttproc_load_fsgfile(char *fsgfile)
                             cmd_ln_boolean("-fsgusefiller"),
                             cmd_ln_float32("-silpen"),
                             cmd_ln_float32("-fillpen"),
-                            cmd_ln_float32("-langwt"));
+                            cmd_ln_float32("-lw"));
     if (!fsg)
         return NULL;
 

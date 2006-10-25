@@ -109,10 +109,10 @@ typedef struct latnode_s {
 /* Interface */
 void search_initialize (void);
 void search_set_beam_width (double beam);
-void search_set_new_word_beam_width (float beam);
-void search_set_lastphone_alone_beam_width (float beam);
-void search_set_new_phone_beam_width (float beam);
-void search_set_last_phone_beam_width (float beam);
+void search_set_new_word_beam_width (double beam);
+void search_set_lastphone_alone_beam_width (double beam);
+void search_set_new_phone_beam_width (double beam);
+void search_set_last_phone_beam_width (double beam);
 
 /* Get logs2 beam, phone-exit beam, word-exit beam */
 void search_get_logbeams (int32 *b, int32 *pb, int32 *wb);

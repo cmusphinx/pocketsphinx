@@ -386,7 +386,6 @@ static int32 *WordLatIdx;       /* BPTable index for any word in current frame;
 static int32 BPTblOflMsg;       /* Whether BPtable overflow msg has been printed */
 
 static int32 *lattice_density;  /* #words/frame in lattice */
-static double *phone_perplexity;        /* How sharply phones are discriminated/frame */
 
 static int32 *zeroPermTab;
 
@@ -1907,7 +1906,6 @@ search_initialize(void)
     BPTableIdx++;               /* Make BPTableIdx[-1] valid */
 
     lattice_density = ckd_calloc(MAX_FRAMES, sizeof(int32));
-    phone_perplexity = ckd_calloc(MAX_FRAMES, sizeof(double));
 
     init_search_tree(word_dict);
 
@@ -1970,23 +1968,23 @@ search_initialize(void)
     utt_pscr =
         (int32 **) ckd_calloc_2d(MAX_FRAMES, NumCiPhones, sizeof(int32));
 
-    search_set_beam_width(cmd_ln_float32("-beam"));
-    search_set_new_word_beam_width(cmd_ln_float32("-nwbeam"));
-    search_set_new_phone_beam_width(cmd_ln_float32("-npbeam"));
-    search_set_last_phone_beam_width(cmd_ln_float32("-lpbeam"));
-    search_set_lastphone_alone_beam_width(cmd_ln_float32("-lponlybeam"));
+    search_set_beam_width(cmd_ln_float64("-beam"));
+    search_set_new_word_beam_width(cmd_ln_float64("-wbeam"));
+    search_set_new_phone_beam_width(cmd_ln_float64("-pbeam"));
+    search_set_last_phone_beam_width(cmd_ln_float64("-lpbeam"));
+    search_set_lastphone_alone_beam_width(cmd_ln_float64("-lponlybeam"));
     search_set_silence_word_penalty(cmd_ln_float32("-silpen"),
-                                    cmd_ln_float32("-phnpen"));
+                                    cmd_ln_float32("-pip"));
     search_set_filler_word_penalty(cmd_ln_float32("-fillpen"),
-                                    cmd_ln_float32("-phnpen"));
+                                    cmd_ln_float32("-pip"));
     search_set_newword_penalty(cmd_ln_float32("-nwpen"));
-    search_set_lw(cmd_ln_float32("-langwt"),
+    search_set_lw(cmd_ln_float32("-lw"),
                   cmd_ln_float32("-fwdflatlw"),
                   cmd_ln_float32("-bestpathlw"));
-    search_set_ip(cmd_ln_float32("-inspen"));
+    search_set_ip(cmd_ln_float32("-wip"));
     search_set_skip_alt_frm(cmd_ln_boolean("-skipalt"));
-    search_set_fwdflat_bw(cmd_ln_float32("-fwdflatbeam"),
-                          cmd_ln_float32("-fwdflatnwbeam"));
+    search_set_fwdflat_bw(cmd_ln_float64("-fwdflatbeam"),
+                          cmd_ln_float64("-fwdflatwbeam"));
 }
 
 
@@ -2424,7 +2422,6 @@ search_one_ply_fwd(void)
     lm_next_frame();
 }
 
-static void compute_phone_perplexity(void);
 void
 search_finish_fwd(void)
 {
@@ -2487,9 +2484,6 @@ search_finish_fwd(void)
 
     /* Obtain lattice density and phone perplexity info for this utterance */
     bptbl2latdensity(BPIdx, lattice_density);
-    if (cmd_ln_boolean("-phperp"))
-        compute_phone_perplexity();
-
     search_postprocess_bptable(FLOAT2LW(1.0), "FWDTREE");
 
 #if SEARCH_PROFILE
@@ -2680,7 +2674,6 @@ seg_back_trace(int32 bpidx, char const *pass)
         perp = 0.0;
         for (f = last_time + 1; f <= BPTable[bpidx].frame; f++) {
             latden += lattice_density[f];
-            perp += phone_perplexity[f];
         }
         if (seg_len > 0) {
             latden /= seg_len;
@@ -2688,12 +2681,12 @@ seg_back_trace(int32 bpidx, char const *pass)
         }
 
         if (cmd_ln_boolean("-backtrace"))
-            printf("\t%4d %4d %10d %11d %8d %8d %6d %6.2f %s\n",
+            printf("\t%4d %4d %10d %11d %8d %8d %6d %s\n",
                    last_time + 1, BPTable[bpidx].frame,
                    a_scr_norm, a_scr, l_scr,
                    /* BestScoreTable[BPTable[bpidx].frame] -  BPTable[bpidx].score */
                    topsenscr_norm,
-                   latden, perp,
+                   latden,
                    WordIdToStr(word_dict, BPTable[bpidx].wid));
         hyp_wid[n_hyp_wid++] = BPTable[bpidx].wid;
 
@@ -2719,9 +2712,9 @@ seg_back_trace(int32 bpidx, char const *pass)
     }
     else {
         if (cmd_ln_boolean("-backtrace")) {
-            printf("\t%4s %4s %10s %11s %8s %8s %6s %6s %s (%s) (%s)\n",
+            printf("\t%4s %4s %10s %11s %8s %8s %6s %s (%s) (%s)\n",
                    "SFrm", "Efrm", "AScr/Frm", "AScr", "LScr", "BSDiff",
-                   "LatDen", "PhPerp", "Word", pass, uttproc_get_uttid());
+                   "LatDen", "Word", pass, uttproc_get_uttid());
             printf
                 ("\t---------------------------------------------------------------------\n");
         }
@@ -2838,7 +2831,7 @@ search_get_lscr(void)
 void
 search_set_beam_width(double beam)
 {
-    DynamicLogBeamWidth = LogBeamWidth = 8 * LOG(beam);
+    DynamicLogBeamWidth = LogBeamWidth = LOG(beam);
     E_INFO("%8d = beam width\n", LogBeamWidth);
 }
 
@@ -2846,9 +2839,9 @@ search_set_beam_width(double beam)
  *-------------------------------------------------------------*
  */
 void
-search_set_new_word_beam_width(float beam)
+search_set_new_word_beam_width(double beam)
 {
-    NewWordLogBeamWidth = 8 * LOG(beam);
+    NewWordLogBeamWidth = LOG(beam);
     E_INFO("%8d = new word beam width\n", NewWordLogBeamWidth);
 }
 
@@ -2856,9 +2849,9 @@ search_set_new_word_beam_width(float beam)
  *-------------------------------------------------------------*
  */
 void
-search_set_lastphone_alone_beam_width(float beam)
+search_set_lastphone_alone_beam_width(double beam)
 {
-    LastPhoneAloneLogBeamWidth = 8 * LOG(beam);
+    LastPhoneAloneLogBeamWidth = LOG(beam);
     E_INFO("%8d = Last phone alone beam width\n",
            LastPhoneAloneLogBeamWidth);
 }
@@ -2867,9 +2860,9 @@ search_set_lastphone_alone_beam_width(float beam)
  *-------------------------------------------------------------*
  */
 void
-search_set_new_phone_beam_width(float beam)
+search_set_new_phone_beam_width(double beam)
 {
-    NewPhoneLogBeamWidth = 8 * LOG(beam);
+    NewPhoneLogBeamWidth = LOG(beam);
     E_INFO("%8d = new phone beam width\n", NewPhoneLogBeamWidth);
 }
 
@@ -2877,9 +2870,9 @@ search_set_new_phone_beam_width(float beam)
  *-------------------------------------------------------------*
  */
 void
-search_set_last_phone_beam_width(float beam)
+search_set_last_phone_beam_width(double beam)
 {
-    LastPhoneLogBeamWidth = 8 * LOG(beam);
+    LastPhoneLogBeamWidth = LOG(beam);
     E_INFO("%8d = last phone beam width\n", LastPhoneLogBeamWidth);
 }
 
@@ -3772,12 +3765,6 @@ search_get_lattice_density(void)
     return lattice_density;
 }
 
-double *
-search_get_phone_perplexity(void)
-{
-    return phone_perplexity;
-}
-
 void
 search_set_hyp_total_score(int32 score)
 {
@@ -4028,8 +4015,8 @@ destroy_fwdflat_chan(void)
 void
 search_set_fwdflat_bw(double bw, double nwbw)
 {
-    FwdflatLogBeamWidth = 8 * LOG(bw);
-    FwdflatLogWordBeamWidth = 8 * LOG(nwbw);
+    FwdflatLogBeamWidth = LOG(bw);
+    FwdflatLogWordBeamWidth = LOG(nwbw);
     E_INFO("Flat-pass bw = %.1e (%d), nwbw = %.1e (%d)\n",
            bw, FwdflatLogBeamWidth, nwbw, FwdflatLogWordBeamWidth);
 }
@@ -4579,47 +4566,6 @@ search_fwdflat_init(void)
 
 #define DUMP_PHN_TOPSEN_SCR	0
 
-static void
-compute_phone_perplexity(void)
-{
-    int32 f, nf, p, sum, prob;
-    double pp, sumpp;           /* phone probs */
-    double logpp;               /* log phone probs */
-    double perp;                /* Perplexity */
-    register int32 ts = fe_logadd_table_size;
-    register int16 *at = fe_logadd_table;
-
-    nf = searchFrame();
-
-    for (f = 0; f < nf - topsen_window; f++) {
-        /* Find Sum(pscr[p]) over p */
-        sum = utt_pscr[f][0];
-        for (p = 1; p < NumCiPhones; p++) {
-            prob = utt_pscr[f][p];
-            FAST_ADD(sum, sum, prob, at, ts);
-        }
-
-        perp = 0.0;
-        sumpp = 0.0;
-        for (p = 0; p < NumCiPhones; p++) {
-            /* Find phone posterior probability (normalize) */
-            logpp = utt_pscr[f][p];
-            logpp -= sum;
-            /* Convert to linear domain. */
-            logpp *= LOG_BASE;
-            pp = exp(logpp);
-            /* H = - sum P(x) log P(x) */
-            perp -= pp * logpp;
-
-            sumpp += pp;
-        }
-
-        phone_perplexity[f] = perp;
-    }
-
-    for (; f <= nf; f++)
-        phone_perplexity[f] = 1.0;
-}
 
 static void
 topsen_init(void)

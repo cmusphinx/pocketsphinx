@@ -49,7 +49,7 @@
       ARG_BOOLEAN,									\
       "no",										\
       "Get input from audio hardware" },						\
-{ "-ctlfn",										\
+{ "-ctl",										\
       ARG_STRING,									\
       NULL,										\
       "Control file listing utterances to be processed" },				\
@@ -124,34 +124,30 @@
       ARG_BOOLEAN,								\
       "no",									\
       "Print short back trace of recognition results" },			\
-{ "-partial",									\
+{ "-phypdump",									\
       ARG_BOOLEAN,								\
       "no",									\
       "Report partial results every so many frames" },				\
-{ "-partialseg",								\
+{ "-phypsegdump",								\
       ARG_BOOLEAN,								\
       "no",									\
       "Report detailed partial results every so many frames" },			\
-{ "-matchfn",									\
+{ "-hyp",									\
       ARG_STRING,								\
       NULL,									\
       "Recognition output file name" },						\
-{ "-matchsegfn",								\
+{ "-hypseg",									\
       ARG_STRING,								\
       NULL,									\
       "Recognition output with segmentation file name" },			\
 { "-matchscore",								\
       ARG_BOOLEAN,								\
-      "yes",									\
-      "Report score in match file" },						\
+      "no",									\
+      "Report score in hyp file" },						\
 { "-reportpron",								\
       ARG_BOOLEAN,								\
       "no",									\
       "Report alternate pronunciations in match file" },			\
-{ "-phperp",									\
-      ARG_BOOLEAN,								\
-      "no",									\
-      "Calclute phone perplexity (requires FPU operations)" },			\
 { "-pscr2lat",									\
       ARG_STRING,								\
       NULL,									\
@@ -176,88 +172,92 @@
 /** Options defining beam width parameters for tuning the search. */
 #define beam_cmdln_options()									\
 { "-beam",											\
-      ARG_FLOAT32,										\
-      "1e-6",											\
+      ARG_FLOAT64,										\
+      "1e-48",											\
       "Beam width applied to every frame in Viterbi search (smaller values mean wider beam)" },	\
-{ "-nwbeam",											\
-      ARG_FLOAT32,										\
-      "1e-6",											\
+{ "-wbeam",											\
+      ARG_FLOAT64,										\
+      "1e-48",											\
       "Beam width applied to word exits" },							\
-{ "-npbeam",											\
-      ARG_FLOAT32,										\
-      "1e-6",											\
+{ "-pbeam",											\
+      ARG_FLOAT64,										\
+      "1e-48",											\
       "Beam width applied to phone transitions" },						\
 { "-lpbeam",											\
-      ARG_FLOAT32,										\
-      "1e-5",											\
+      ARG_FLOAT64,										\
+      "1e-40",											\
       "Beam width applied to last phone in words" },						\
 { "-lponlybeam",										\
-      ARG_FLOAT32,										\
-      "3e-4",											\
+      ARG_FLOAT64,										\
+      "1e-28",											\
       "Beam width applied to last phone in single-phone words" },				\
 { "-fwdflatbeam",										\
-      ARG_FLOAT32,										\
-      "1e-8",											\
+      ARG_FLOAT64,										\
+      "1e-64",											\
       "Beam width applied to every frame in second-pass flat search" },				\
-{ "-fwdflatnwbeam",										\
-      ARG_FLOAT32,										\
-      "3e-4",											\
+{ "-fwdflatwbeam",										\
+      ARG_FLOAT64,										\
+      "1e-28",											\
       "Beam width applied to word exits in second-pass flat search" }
 
 /** Options defining other parameters for tuning the search. */
-#define search_cmdln_options()									\
-{ "-compallsen",										\
-      ARG_BOOLEAN,										\
-      "no",											\
-      "Compute all senone scores in every frame (can be faster when there are many senones)" },	\
-{ "-topsenfrm",											\
-      ARG_INT32,										\
-      "1",											\
-      "Number of frames' top senones to use in phoneme lookahead (needs -compallsen yes)" },	\
-{ "-topsenthresh",										\
-      ARG_INT32,										\
-      "-60000",											\
-      "Threshold for top senones to use in phoneme lookahead" },				\
-{ "-fwdtree",											\
-      ARG_BOOLEAN,										\
-      "yes",											\
-      "Run forward lexicon-tree search (1st pass)" },						\
-{ "-fwdflat",											\
-      ARG_BOOLEAN,										\
-      "yes",											\
-      "Run forward flat-lexicon search over word lattice (2nd pass)" },				\
-{ "-bestpath",											\
-      ARG_BOOLEAN,										\
-      "yes",											\
-      "Run bestpath (Dijkstra) search over word lattice (3rd pass)" },				\
-{ "-fwd3g",											\
-      ARG_BOOLEAN,										\
-      "yes",											\
-      "Use trigrams in first pass search" },							\
-{ "-skipalt",											\
-      ARG_BOOLEAN,										\
-      "no",											\
-      "Skip alternate frames in exiting phones" },						\
-{ "-latsize",											\
-      ARG_INT32,										\
-      "50000",											\
-      "Lattice size" },										\
-{ "-maxwpf",											\
-      ARG_INT32,										\
-      "100000",											\
-      "Maximum number of distinct word exits to maintain at each frame (approx)" },		\
-{ "-maxhmmpf",											\
-      ARG_INT32,										\
-      "100000",											\
-      "Maximum number of active HMMs to maintain at each frame (approx)" },			\
-{ "-fsgbfs",											\
-      ARG_BOOLEAN,										\
-      "yes",											\
+#define search_cmdln_options()                                                                  \
+{ "-compallsen",                                                                                \
+      ARG_BOOLEAN,                                                                              \
+      "no",                                                                                     \
+      "Compute all senone scores in every frame (can be faster when there are many senones)" }, \
+{ "-topsenfrm",                                                                                 \
+      ARG_INT32,                                                                                \
+      "1",                                                                                      \
+      "Number of frames' top senones to use in phoneme lookahead (needs -compallsen yes)" },    \
+{ "-topsenthresh",                                                                              \
+      ARG_INT32,                                                                                \
+      "-60000",                                                                                 \
+      "Threshold for top senones to use in phoneme lookahead" },                                \
+{ "-fwdtree",                                                                                   \
+      ARG_BOOLEAN,                                                                              \
+      "yes",                                                                                    \
+      "Run forward lexicon-tree search (1st pass)" },                                           \
+{ "-fwdflat",                                                                                   \
+      ARG_BOOLEAN,                                                                              \
+      "yes",                                                                                    \
+      "Run forward flat-lexicon search over word lattice (2nd pass)" },                         \
+{ "-bestpath",                                                                                  \
+      ARG_BOOLEAN,                                                                              \
+      "yes",                                                                                    \
+      "Run bestpath (Dijkstra) search over word lattice (3rd pass)" },                          \
+{ "-fwd3g",                                                                                     \
+      ARG_BOOLEAN,                                                                              \
+      "yes",                                                                                    \
+      "Use trigrams in first pass search" },                                                    \
+{ "-skipalt",                                                                                   \
+      ARG_BOOLEAN,                                                                              \
+      "no",                                                                                     \
+      "Skip alternate frames in exiting phones" },                                              \
+{ "-latsize",                                                                                   \
+      ARG_INT32,                                                                                \
+      "50000",                                                                                  \
+      "Lattice size" },                                                                         \
+{ "-maxwpf",                                                                                    \
+      ARG_INT32,                                                                                \
+      "100000",                                                                                 \
+      "Maximum number of distinct word exits to maintain at each frame (approx)" },             \
+{ "-maxhmmpf",                                                                                  \
+      ARG_INT32,                                                                                \
+      "100000",                                                                                 \
+      "Maximum number of active HMMs to maintain at each frame (approx)" },                     \
+{ "-maxhistpf",                                                                                 \
+      ARG_INT32,                                                                                \
+      "100",                                                                                    \
+      "Max no. of histories to maintain at each frame (UNUSED)" },                              \
+{ "-fsgbfs",                                                                                    \
+      ARG_BOOLEAN,                                                                              \
+      "yes",                                                                                    \
       "Force backtrace from FSG final state"}
 
 /** Command-line options for finite state grammars. */
 #define fsg_cmdln_options()						\
-{ "-fsgfn",								\
+{ "-fsg",								\
       ARG_STRING,							\
       NULL,								\
       "Finite state grammar"},						\
@@ -276,7 +276,7 @@
 
 /** Command-line options for statistical language models. */
 #define lm_cmdln_options()								\
-{ "-lmfn",										\
+{ "-lm",										\
       ARG_STRING,									\
       NULL,										\
       "Word trigram language model input file" },					\
@@ -316,7 +316,7 @@
       ARG_STRING,									\
       NULL,										\
       "Filename extension for start-word files"},					\
-{ "-langwt",										\
+{ "-lw",										\
       ARG_FLOAT32,									\
       "6.5",										\
       "Language model probability weight" },						\
@@ -328,7 +328,7 @@
       ARG_FLOAT32,									\
       "9.5",										\
       "Language model probability weight for bestpath search" },			\
-{ "-inspen",										\
+{ "-wip",										\
       ARG_FLOAT32,									\
       "0.65",										\
       "Word insertion penalty" },							\
@@ -336,11 +336,11 @@
       ARG_FLOAT32,									\
       "1.0",										\
       "New word transition penalty" },							\
-{ "-phnpen",										\
+{ "-pip",										\
       ARG_FLOAT32,									\
       "1.0",										\
       "Phone insertion penalty" },							\
-{ "-ugwt",										\
+{ "-uw",										\
       ARG_FLOAT32,									\
       "1.0",										\
       "Unigram weight" }, 								\
@@ -355,23 +355,23 @@
 
 /** Command-line options for dictionaries. */
 #define dictionary_cmdln_options()				\
-    { "-dictfn",						\
+    { "-dict",							\
       REQARG_STRING,						\
       NULL,							\
       "Main pronunciation dictionary (lexicon) input file" },	\
-    { "-ndictfn",						\
+    { "-fdict",							\
       ARG_STRING,						\
       NULL,							\
       "Noise word pronunciation dictionary input file" },	\
-    { "-oovdictfn",						\
+    { "-oovdict",						\
       ARG_STRING,						\
       NULL,							\
       "OOV dictionary input file" },				\
-    { "-perdictfn",						\
+    { "-perdict",						\
       ARG_STRING,						\
       NULL,							\
       "Personal dictionary input file" },			\
-    { "-pdictfn",						\
+    { "-pdict",							\
       ARG_STRING,						\
       NULL,							\
       "Noise dictionary input file" },				\
@@ -389,79 +389,96 @@
       "Use within-word phones only" }
 
 /** Command-line options for acoustic modeling */
-#define am_cmdln_options()							\
-{ "-hmm",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Directory containing acoustic model files."},				\
-{ "-mdeffn",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Model definition input file" },						\
-{ "-tmatfn",									\
-      ARG_STRING,								\
-      NULL,									\
-      "HMM state transition matrix input file" },				\
-{ "-tmatfloor",									\
-      ARG_FLOAT32,								\
-      "0.0001",									\
-      "HMM state transition probability floor (applied to -tmat file)" },	\
-{ "-meanfn",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Mixture gaussian means input file" },					\
-{ "-varfn",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Mixture gaussian variances input file" },				\
-{ "-varfloor",									\
-      ARG_FLOAT32,								\
-      "0.0001",									\
-      "Mixture gaussian variance floor (applied to data from -var file)" },	\
-{ "-mixwfn",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Senone mixture weights input file" },					\
-{ "-mixwfloor",									\
-      ARG_FLOAT32,								\
-      "0.0000001",								\
-      "Senone mixture weights floor (applied to data from -mixw file)" },	\
-{ "-sendumpfn",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Senone dump (compressed mixture weights) input file" },			\
-{ "-mmap",									\
-      ARG_BOOLEAN,								\
-      "yes",									\
-      "Use memory-mapped I/O (if possible) for model files" },			\
-{ "-dcep80msweight",								\
-      ARG_FLOAT32,								\
-      "1.0",									\
-      "Weight for long-time (80ms) delta-cepstrum features" },			\
-{ "-dsratio",									\
-      ARG_INT32,								\
-      "1",									\
-      "Frame GMM computation downsampling ratio" },				\
-{ "-top",									\
-      ARG_INT32,								\
-      "4",									\
-      "Number of top Gaussians to use in scoring" },				\
-{ "-kdtreefn",									\
-      ARG_STRING,								\
-      NULL,									\
-      "kd-Tree file for Gaussian selection" },					\
-{ "-kdmaxdepth",								\
-      ARG_INT32,								\
-      "0",									\
-      "Maximum depth of kd-Trees to use" },					\
-{ "-kdmaxbbi",									\
-      ARG_INT32,								\
-      "-1",									\
-      "Maximum number of Gaussians per leaf node in kd-Trees" }
+#define am_cmdln_options()                                                      \
+{ "-feat",                                                                      \
+      ARG_STRING,                                                               \
+      "s2_4x",                                                                  \
+      "Feature stream type: (many options, must be s2_4x for now)" },           \
+{ "-ceplen",                                                                    \
+      ARG_INT32,                                                                \
+      "13",                                                                     \
+     "Number of components in the input feature vector (must be 13 for now)" }, \
+{ "-hmm",                                                                       \
+      ARG_STRING,                                                               \
+      NULL,                                                                     \
+      "Directory containing acoustic model files."},                            \
+{ "-mdef",                                                                      \
+      ARG_STRING,                                                               \
+      NULL,                                                                     \
+      "Model definition input file" },                                          \
+{ "-tmat",                                                                      \
+      ARG_STRING,                                                               \
+      NULL,                                                                     \
+      "HMM state transition matrix input file" },                               \
+{ "-tmatfloor",                                                                 \
+      ARG_FLOAT32,                                                              \
+      "0.0001",                                                                 \
+      "HMM state transition probability floor (applied to -tmat file)" },       \
+{ "-mean",                                                                      \
+      ARG_STRING,                                                               \
+      NULL,                                                                     \
+      "Mixture gaussian means input file" },                                    \
+{ "-var",                                                                       \
+      ARG_STRING,                                                               \
+      NULL,                                                                     \
+      "Mixture gaussian variances input file" },                                \
+{ "-varfloor",                                                                  \
+      ARG_FLOAT32,                                                              \
+      "0.0001",                                                                 \
+      "Mixture gaussian variance floor (applied to data from -var file)" },     \
+{ "-mixw",                                                                      \
+      ARG_STRING,                                                               \
+      NULL,                                                                     \
+      "Senone mixture weights input file" },                                    \
+{ "-mixwfloor",                                                                 \
+      ARG_FLOAT32,                                                              \
+      "0.0000001",                                                              \
+      "Senone mixture weights floor (applied to data from -mixw file)" },       \
+{ "-sendump",                                                                   \
+      ARG_STRING,                                                               \
+      NULL,                                                                     \
+      "Senone dump (compressed mixture weights) input file" },                  \
+{ "-mmap",                                                                      \
+      ARG_BOOLEAN,                                                              \
+      "yes",                                                                    \
+      "Use memory-mapped I/O (if possible) for model files" },                  \
+{ "-dcep80msweight",                                                            \
+      ARG_FLOAT32,                                                              \
+      "1.0",                                                                    \
+      "Weight for long-time (80ms) delta-cepstrum features" },                  \
+{ "-dsratio",                                                                   \
+      ARG_INT32,                                                                \
+      "1",                                                                      \
+      "Frame GMM computation downsampling ratio" },                             \
+{ "-topn",                                                                      \
+      ARG_INT32,                                                                \
+      "4",                                                                      \
+      "Number of top Gaussians to use in scoring" },                            \
+{ "-kdtree",                                                                    \
+      ARG_STRING,                                                               \
+      NULL,                                                                     \
+      "kd-Tree file for Gaussian selection" },                                  \
+{ "-kdmaxdepth",                                                                \
+      ARG_INT32,                                                                \
+      "0",                                                                      \
+      "Maximum depth of kd-Trees to use" },                                     \
+{ "-kdmaxbbi",                                                                  \
+      ARG_INT32,                                                                \
+      "-1",                                                                     \
+      "Maximum number of Gaussians per leaf node in kd-Trees" },                \
+{ "-vqeval",                                                                    \
+      ARG_INT32,                                                                \
+      "3",                                                                      \
+      "Number of subvectors to use for SubVQ-based"                             \
+      " frame evaluation (3 for all) (UNUSED)"},                                \
+{ "-logbase",                                                                   \
+      ARG_FLOAT32,                                                              \
+      "1.0001",                                                                 \
+      "Base in which all log-likelihoods calculated (UNUSED)" }
 
 /** Options for force alignment mode. */
 #define time_align_cmdln_options()						\
-{ "-tactlfn",									\
+{ "-tactl",									\
       ARG_STRING,								\
       NULL,									\
       "Time align control (input sentence) file" },				\
@@ -477,7 +494,7 @@
       ARG_BOOLEAN,								\
       "no",									\
       "Time align states" },							\
-{ "-osentfn",									\
+{ "-outsent",									\
       ARG_STRING,								\
       NULL,									\
       "Output sentence file name" },						\
@@ -508,7 +525,7 @@
       ARG_BOOLEAN,							\
       "no",								\
       "Do phoneme recognition" },					\
-{"-phonetpfn",								\
+{"-phonetp",								\
      ARG_STRING,							\
      NULL,								\
      "Phone transition probabilities inputfile (default: flat probs)"},	\

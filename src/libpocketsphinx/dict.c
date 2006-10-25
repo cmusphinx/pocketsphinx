@@ -233,9 +233,9 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
         j += get_dict_size(p_filename);
     if (n_filename)
         j += get_dict_size(n_filename);
-    if ((oovdic = cmd_ln_str("-oovdictfn")) != NULL)
+    if ((oovdic = cmd_ln_str("-oovdict")) != NULL)
         j += get_dict_size(oovdic);
-    if ((personalDic = cmd_ln_str("-pdictfn")) != NULL) {
+    if ((personalDic = cmd_ln_str("-pdict")) != NULL) {
         if (stat(personalDic, &statbuf) == 0)   /* personalDic exists */
             j += get_dict_size(personalDic);
     }
@@ -275,9 +275,9 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
     /* Add words with known pronunciations but which are OOVs wrt LM */
     first_initial_oov = word_id;
 
-    if ((oovdic = cmd_ln_str("-oovdictfn")) != NULL)
+    if ((oovdic = cmd_ln_str("-oovdict")) != NULL)
         dict_load(dict, oovdic, &word_id, use_context, FALSE);
-    if ((personalDic = cmd_ln_str("-pdictfn")) != NULL) {
+    if ((personalDic = cmd_ln_str("-pdict")) != NULL) {
         if (stat(personalDic, &statbuf) == 0)
             dict_load(dict, personalDic, &word_id, use_context, FALSE);
     }

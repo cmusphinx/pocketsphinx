@@ -415,12 +415,13 @@ allphone_utt(int32 nfr, mfcc_t ***feat_buf)
 void
 allphone_init()
 {
-    float32 bw, exitbw, pip;
+    float64 bw, exitbw;
+    float32 pip;
     int32 i;
 
-    bw = cmd_ln_float32("-beam");
-    exitbw = cmd_ln_float32("-nwbeam");
-    pip = cmd_ln_float32("-phnpen");
+    bw = cmd_ln_float64("-beam");
+    exitbw = cmd_ln_float64("-wbeam");
+    pip = cmd_ln_float32("-pip");
 
     n_ciphone = phoneCiCount();
 
@@ -433,8 +434,8 @@ allphone_init()
     renorm_scr = ckd_calloc(MAX_FRAMES, sizeof(int32));
     allphone_bp = ckd_calloc(ALLPHONE_BP_MAX, sizeof(allphone_bp_t));
 
-    allphone_bw = LOG(bw) * 8;
-    allphone_exitbw = LOG(exitbw) * 8;
+    allphone_bw = LOG(bw);
+    allphone_exitbw = LOG(exitbw);
     allphone_pip = LOG(pip);
 
     E_INFO("bw= %d, wordbw= %d, pip= %d\n",

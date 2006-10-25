@@ -179,9 +179,9 @@ kbAddGrammar(char const *fileName, char const *grammarName)
     lmSetStartSym(cmd_ln_str("-lmstartsym"));
     lmSetEndSym(cmd_ln_str("-lmendsym"));
     lm_read(fileName, grammarName,
-            cmd_ln_float32("-langwt"),
-            cmd_ln_float32("-ugwt"),
-            cmd_ln_float32("-inspen"));
+            cmd_ln_float32("-lw"),
+            cmd_ln_float32("-uw"),
+            cmd_ln_float32("-wip"));
 }
 
 static void
@@ -234,7 +234,7 @@ static void
 lm_init(void)
 {
     char *lm_ctl_filename = cmd_ln_str("-lmctlfn");
-    char *lm_file_name = cmd_ln_str("-lmfn");
+    char *lm_file_name = cmd_ln_str("-lm");
     char *lm_start_sym = cmd_ln_str("-lmstartsym");
     char *lm_end_sym = cmd_ln_str("-lmendsym");
 
@@ -255,7 +255,7 @@ lm_init(void)
      * and LMName pairs.  The new format allows a set of LMClass files to be read
      * in and referred to by the trigram LMs.  (Incidentally, if one wants to use
      * LM classes in a trigram LM, one MUST use the -lmctlfn flag.  It is not
-     * possible to read in a class-based trigram LM using the -lmfn flag.)
+     * possible to read in a class-based trigram LM using the -lm flag.)
      * 
      * No "comments" allowed in this file.
      */
@@ -337,15 +337,15 @@ lm_init(void)
 
             if (n_lmclass_used > 0)
                 lm_read_clm(lmfile, lmname,
-                            cmd_ln_float32("-langwt"),
-                            cmd_ln_float32("-ugwt"),
-                            cmd_ln_float32("-inspen"),
+                            cmd_ln_float32("-lw"),
+                            cmd_ln_float32("-uw"),
+                            cmd_ln_float32("-wip"),
                             lmclass, n_lmclass_used);
             else
                 lm_read(lmfile, lmname,
-                        cmd_ln_float32("-langwt"),
-                        cmd_ln_float32("-ugwt"),
-                        cmd_ln_float32("-inspen"));
+                        cmd_ln_float32("-lw"),
+                        cmd_ln_float32("-uw"),
+                        cmd_ln_float32("-wip"));
         }
 
         fclose(ctlfp);
@@ -356,9 +356,9 @@ lm_init(void)
         lmSetStartSym(lm_start_sym);
         lmSetEndSym(lm_end_sym);
         lm_read(lm_file_name, "",
-                cmd_ln_float32("-langwt"),
-                cmd_ln_float32("-ugwt"),
-                cmd_ln_float32("-inspen"));
+                cmd_ln_float32("-lw"),
+                cmd_ln_float32("-uw"),
+                cmd_ln_float32("-wip"));
 
         /* Make initial OOV list known to this base LM */
         lm_init_oov();
@@ -368,10 +368,10 @@ lm_init(void)
 static void
 dict_init(void)
 {
-    E_INFO("Reading dict file [%s]\n", cmd_ln_str("-dictfn"));
+    E_INFO("Reading dict file [%s]\n", cmd_ln_str("-dict"));
     word_dict = dict_new();
-    if (dict_read(word_dict, cmd_ln_str("-dictfn"), cmd_ln_str("-pdictfn"),
-                  cmd_ln_str("-ndictfn"), !cmd_ln_boolean("-usewdphones"))) {
+    if (dict_read(word_dict, cmd_ln_str("-dict"), cmd_ln_str("-pdict"),
+                  cmd_ln_str("-fdict"), !cmd_ln_boolean("-usewdphones"))) {
         exit(-1);
     }
 }
@@ -381,16 +381,16 @@ phonetp_init(int32 num_ci_phones)
 {
     int i, j, n, logp;
     float32 p, uptp;
-    float32 pip = cmd_ln_float32("-phnpen");
+    float32 pip = cmd_ln_float32("-pip");
     float32 ptplw = cmd_ln_float32("-ptplw");
     float32 uptpwt = cmd_ln_float32("-uptpwt");
 
     phonetp =
         (int32 **) ckd_calloc_2d(num_ci_phones, num_ci_phones,
                                  sizeof(int32));
-    if (cmd_ln_str("-phonetpfn")) {
+    if (cmd_ln_str("-phonetp")) {
         /* Load phone transition counts file */
-        phonetp_load_file(cmd_ln_str("-phonetpfn"), phonetp);
+        phonetp_load_file(cmd_ln_str("-phonetp"), phonetp);
     }
     else {
         /* No transition probs file specified; use uniform probs */
@@ -481,18 +481,18 @@ kb_init(void)
             fclose(tmp);
         }
     }
-    if (cmd_ln_str("-mdeffn"))
-        mdeffn = cmd_ln_str("-mdeffn");
-    if (cmd_ln_str("-meanfn"))
-        meanfn = cmd_ln_str("-meanfn");
-    if (cmd_ln_str("-varfn"))
-        varfn = cmd_ln_str("-varfn");
-    if (cmd_ln_str("-mixwfn"))
-        mixwfn = cmd_ln_str("-mixwfn");
-    if (cmd_ln_str("-tmatfn"))
-        tmatfn = cmd_ln_str("-tmatfn");
-    if (cmd_ln_str("-sendumpfn"))
-        sendumpfn = cmd_ln_str("-sendumpfn");
+    if (cmd_ln_str("-mdef"))
+        mdeffn = cmd_ln_str("-mdef");
+    if (cmd_ln_str("-mean"))
+        meanfn = cmd_ln_str("-mean");
+    if (cmd_ln_str("-var"))
+        varfn = cmd_ln_str("-var");
+    if (cmd_ln_str("-mixw"))
+        mixwfn = cmd_ln_str("-mixw");
+    if (cmd_ln_str("-tmat"))
+        tmatfn = cmd_ln_str("-tmat");
+    if (cmd_ln_str("-sendump"))
+        sendumpfn = cmd_ln_str("-sendump");
 
     /* Read model definition. */
     if (mdeffn == NULL)
@@ -522,10 +522,10 @@ kb_init(void)
                                   cmd_ln_float32("-varfloor"),
                                   mixwfn,
                                   cmd_ln_float32("-mixwfloor"),
-                                  cmd_ln_int32("-top"));
-    if (cmd_ln_str("-kdtreefn"))
+                                  cmd_ln_int32("-topn"));
+    if (cmd_ln_str("-kdtree"))
         s2_semi_mgau_load_kdtree(semi_mgau,
-                                 cmd_ln_str("-kdtreefn"),
+                                 cmd_ln_str("-kdtree"),
                                  cmd_ln_int32("-kdmaxdepth"),
                                  cmd_ln_int32("-kdmaxbbi"));
     semi_mgau->dcep80msWeight = FLOAT2MFCC(cmd_ln_float32("-dcep80msweight"));
