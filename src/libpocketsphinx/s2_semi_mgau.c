@@ -1111,7 +1111,16 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
 
     E_INFO("Loading senones from dump file %s\n", file);
     /* Read title size, title */
-    n = fread_int32(fp, 1, 999, "Title length", 0, &do_swap);
+    fread(&n, 1, sizeof(n), fp);
+    /* This is extremely bogus */
+    do_swap = 0;
+    if (n < 1 || n > 999) {
+        SWAP_INT32(&n);
+        if (n < 1 || n > 999) {
+            E_FATAL("Title length %s in dump file %s out of range\n", n, file);
+        }
+        do_swap = 1;
+    }
     if (do_swap && use_mmap) {
         E_ERROR("Dump file is byte-swapped, cannot use memory-mapping\n");
         use_mmap = 0;
@@ -1123,7 +1132,8 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     E_INFO("%s\n", line);
 
     /* Read header size, header */
-    n = fread_int32(fp, 1, 999, "Header length", 1, &do_swap);
+    fread(&n, 1, sizeof(n), fp);
+    if (do_swap) SWAP_INT32(&n);
     if (fread(line, sizeof(char), n, fp) != n)
         E_FATAL("Cannot read header\n");
     if (line[n - 1] != '\0')
@@ -1131,7 +1141,8 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
 
     /* Read other header strings until string length = 0 */
     for (;;) {
-        n = fread_int32(fp, 0, 999, "string length", 1, &do_swap);
+        fread(&n, 1, sizeof(n), fp);
+        if (do_swap) SWAP_INT32(&n);
         if (n == 0)
             break;
         if (fread(line, sizeof(char), n, fp) != n)
@@ -1143,8 +1154,10 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     }
 
     /* Read #codewords, #pdfs */
-    fread_int32(fp, r, r, "#codewords", 1, &do_swap);
-    c = fread_int32(fp, c, (c + 3) & ~3, "#pdfs", 1, &do_swap);
+    fread(&r, 1, sizeof(r), fp);
+    if (do_swap) SWAP_INT32(&r);
+    fread(&c, 1, sizeof(c), fp);
+    if (do_swap) SWAP_INT32(&c);
 
     if (n_clust) {
 	E_ERROR ("Dump file is incompatible with PocketSphinx\n");
@@ -1226,6 +1239,7 @@ dump_probs_8b(unsigned char ***p,  /* pdfs, will be transposed */
         return;
     }
 
+#define fwrite_int32(f,v) fwrite(&v,sizeof(v),1,f)
     /* Write title size and title (directory name) */
     k = strlen(title) + 1;      /* including trailing null-char */
     fwrite_int32(fp, k);
@@ -1244,12 +1258,14 @@ dump_probs_8b(unsigned char ***p,  /* pdfs, will be transposed */
     /* Pad it out for alignment purposes */
     k = ftell(fp) & 3;
     if (k > 0) {
-        fwrite_int32(fp, 4 - k);
-        fwrite("!!!!", 1, 4 - k, fp);
+        k = 4 - k;
+        fwrite_int32(fp, k);
+        fwrite("!!!!", 1, 4, fp);
     }
 
     /* Write 0, terminating header strings */
-    fwrite_int32(fp, 0);
+    k = 0;
+    fwrite_int32(fp, k);
 
     /* Align the number of pdfs to a 4-byte boundary. */
     aligned_c = (c + 3) & ~3;

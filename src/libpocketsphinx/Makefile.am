@@ -38,7 +38,6 @@ libpocketsphinx_la_SOURCES = \
 	strcasecmp.c				\
 	tmat.c					\
 	time_align.c				\
-	util.c					\
 	uttproc.c				\
 	vector.c				\
 	word_fsg.c
