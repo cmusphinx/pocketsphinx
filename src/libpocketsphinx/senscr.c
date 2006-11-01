@@ -77,6 +77,9 @@ int32 *senone_active;
 int32 n_senone_active;
 bitvec_t *senone_active_vec;
 
+/* Record senone scores for all frames for multi-pass search. */
+int32 **past_senone_scores;
+
 /*
  * Compute the best senone score from the given array of senone scores.
  * (All senones, not just active ones, should have been already computed
@@ -154,30 +157,40 @@ best_senscr_active(void)
 }
 
 static int32
-senscr_compute(mfcc_t **feat, int32 all)
+senscr_compute(mfcc_t **feat, int32 frame_idx, int32 all)
 {
+    int32 best;
+
     if (all) {
-        s2_semi_mgau_frame_eval(semi_mgau, feat, searchCurrentFrame(), TRUE);
-        return best_senscr_all_s3();
+        s2_semi_mgau_frame_eval(semi_mgau, feat, frame_idx, TRUE);
+        best = best_senscr_all_s3();
+        if (past_senone_scores) {
+            if (past_senone_scores[frame_idx] == NULL)
+                past_senone_scores[frame_idx] = ckd_calloc(bin_mdef_n_sen(mdef),
+                                                           sizeof(int32));
+            memcpy(past_senone_scores[frame_idx], senone_scores,
+                   bin_mdef_n_sen(mdef) * sizeof(int32));
+        }
     }
     else {
-        s2_semi_mgau_frame_eval(semi_mgau, feat, searchCurrentFrame(), FALSE);
-        return best_senscr_active();
+        s2_semi_mgau_frame_eval(semi_mgau, feat, frame_idx, FALSE);
+        best = best_senscr_active();
     }
+    return best;
 }
 
 
 int32
-senscr_all(mfcc_t **feat)
+senscr_all(mfcc_t **feat, int32 frame_idx)
 {
-    return senscr_compute(feat, TRUE);
+    return senscr_compute(feat, frame_idx, TRUE);
 }
 
 
 int32
-senscr_active(mfcc_t **feat)
+senscr_active(mfcc_t **feat, int32 frame_idx)
 {
-    return senscr_compute(feat, FALSE);
+    return senscr_compute(feat, frame_idx, FALSE);
 }
 
 void

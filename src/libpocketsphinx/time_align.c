@@ -2807,7 +2807,7 @@ time_align_word_sequence(char const *Utt,
         find_active_senones(all_models, cur_active_models, cur_active_cnt);
 
         /* compute the output probabilities for the active shared states */
-        probs_computed_cnt += senscr_active(feat_f[cur_frame]);
+        probs_computed_cnt += senscr_active(feat_f[cur_frame], cur_frame);
 
 #if SHOW&SHOW_SUMMARY_INFO
         E_INFO("in> frame %d, %d active models\n", cur_frame,

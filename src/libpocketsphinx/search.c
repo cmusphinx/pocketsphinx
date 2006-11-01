@@ -1925,6 +1925,15 @@ search_initialize(void)
         ckd_calloc((bin_mdef_n_sen(mdef) + BITVEC_WIDTH - 1)
                                / BITVEC_WIDTH, sizeof(bitvec_t));
 
+    /* If we are computing all senones, and doing two-pass search,
+     * cache the senone scores from the first pass (trading off memory
+     * for speed). */
+    if (cmd_ln_boolean("-compallsen")
+        && cmd_ln_boolean("-fwdtree")
+        && cmd_ln_boolean("-fwdflat")) {
+        past_senone_scores = ckd_calloc(MAX_FRAMES, sizeof(int32 *));
+    }
+
     last_ltrans =
         ckd_calloc(NumWords, sizeof(last_ltrans_t));
 
@@ -2115,10 +2124,10 @@ search_fwd(mfcc_t **feat)
 
     if (!compute_all_senones) {
         compute_sen_active();
-        topsen_score[cf] = senscr_active(feat);
+        topsen_score[cf] = senscr_active(feat, CurrentFrame);
     }
     else {
-        topsen_score[cf] = senscr_all(feat);
+        topsen_score[cf] = senscr_all(feat, CurrentFrame);
     }
     n_senone_active_utt += n_senone_active;
 
@@ -4091,17 +4100,23 @@ search_fwdflat_frame(mfcc_t **feat)
     int32 nf, i, j;
     int32 *nawl;
 
-    if (!compute_all_senones) {
-        compute_fwdflat_senone_active();
-        senscr_active(feat);
-    }
-    else {
-        senscr_all(feat);
-    }
-    n_senone_active_utt += n_senone_active;
-
     if (CurrentFrame >= MAX_FRAMES - 1)
         return;
+
+    if (cmd_ln_boolean("-fwdtree") && compute_all_senones) {
+        n_senone_active = bin_mdef_n_sen(mdef);
+        senone_scores = past_senone_scores[CurrentFrame];
+    }
+    else {
+        if (!compute_all_senones) {
+            compute_fwdflat_senone_active();
+            senscr_active(feat, CurrentFrame);
+        }
+        else {
+            senscr_all(feat, CurrentFrame);
+        }
+    }
+    n_senone_active_utt += n_senone_active;
 
     BPTableIdx[CurrentFrame] = BPIdx;
 

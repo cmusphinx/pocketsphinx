@@ -74,6 +74,11 @@ extern bitvec_t *senone_active_vec;	/* Active/inactive bitvec for each senone */
 extern int32 *senone_active;		/* List of active senones */
 extern int32 n_senone_active;		/* No. of entries in above active list */
 
+extern int32 **past_senone_scores;  /* Senone scores for all frames */
+extern int32 **past_senone_active;  /* Senone indices for all frames */
+extern int32 *past_n_senone_active; /* Senone counts for all frames */
+extern int32 *past_n_senone_alloc;  /* Allocated size of scores/indices */
+
 
 /*
  * Compute senone scores for the given feature data.
@@ -83,7 +88,7 @@ extern int32 n_senone_active;		/* No. of entries in above active list */
  * 
  * Return value: the best senone score overall.
  */
-int32 senscr_all(mfcc_t **feat);
+int32 senscr_all(mfcc_t **feat, int32 frame_idx);
 
 /*
  * Like senscr_all above, except restricted to the currently active senones.
@@ -92,7 +97,7 @@ int32 senscr_all(mfcc_t **feat);
  * 
  * Return value: the best senone score overall (among the active ones).
  */
-int32 senscr_active(mfcc_t **feat);
+int32 senscr_active(mfcc_t **feat, int32 frame_idx);
 
 
 /*

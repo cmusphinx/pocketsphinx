@@ -552,11 +552,11 @@ uttproc_fsg_search_fwd(void)
     int32 best;
 
     if (cmd_ln_boolean("-compallsen")) {
-        best = senscr_all(feat_buf[n_searchfr]);
+        best = senscr_all(feat_buf[n_searchfr], n_searchfr);
     }
     else {
         fsg_search_sen_active(fsg_search);
-        best = senscr_active(feat_buf[n_searchfr]);
+        best = senscr_active(feat_buf[n_searchfr], n_searchfr);
     }
 
     /* Note the best senone score for this frame */
