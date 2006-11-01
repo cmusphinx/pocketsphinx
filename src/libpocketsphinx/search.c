@@ -1925,13 +1925,13 @@ search_initialize(void)
         ckd_calloc((bin_mdef_n_sen(mdef) + BITVEC_WIDTH - 1)
                                / BITVEC_WIDTH, sizeof(bitvec_t));
 
-    /* If we are computing all senones, and doing two-pass search,
-     * cache the senone scores from the first pass (trading off memory
-     * for speed). */
-    if (cmd_ln_boolean("-compallsen")
-        && cmd_ln_boolean("-fwdtree")
-        && cmd_ln_boolean("-fwdflat")) {
+    /* If we are doing two-pass search, cache the senone scores from
+     * the first pass (trading off memory for speed). */
+    if (cmd_ln_boolean("-fwdtree")
+        && cmd_ln_boolean("-fwdflat")
+        && cmd_ln_boolean("-cachesen")) {
         past_senone_scores = ckd_calloc(MAX_FRAMES, sizeof(int32 *));
+        past_senone_active_vec = ckd_calloc(MAX_FRAMES, sizeof(bitvec_t *));
     }
 
     last_ltrans =
@@ -4103,9 +4103,50 @@ search_fwdflat_frame(mfcc_t **feat)
     if (CurrentFrame >= MAX_FRAMES - 1)
         return;
 
-    if (cmd_ln_boolean("-fwdtree") && compute_all_senones) {
-        n_senone_active = bin_mdef_n_sen(mdef);
-        senone_scores = past_senone_scores[CurrentFrame];
+    if (past_senone_scores) {
+        if (compute_all_senones) {
+            n_senone_active = bin_mdef_n_sen(mdef);
+            senone_scores = past_senone_scores[CurrentFrame];
+        }
+        else {
+            int32 i, nwords, tmp_n_senone_active;
+            static int32 *tmp_senone_active;
+
+            compute_fwdflat_senone_active();
+            /* Find the shortlist of senones which are in the current
+             * vector and not in the previous one. */
+            /* NOTE: the active list has already been generated from
+             * the current vector, so we can clobber it with impunity. */
+            nwords = (bin_mdef_n_sen(mdef) + BITVEC_WIDTH - 1) / BITVEC_WIDTH;
+            for (i = 0; i < nwords; ++i) {
+                senone_active_vec[i] = senone_active_vec[i] & 
+                    ~past_senone_active_vec[CurrentFrame][i];
+            }
+            /* HACK: Swap out the active list temporarily (abuse of static
+             * variables) */
+            if (tmp_senone_active == NULL)
+                tmp_senone_active = ckd_calloc(bin_mdef_n_sen(mdef), sizeof(int32));
+            tmp_n_senone_active = n_senone_active;
+            memcpy(tmp_senone_active, senone_active, n_senone_active * sizeof(int32));
+            sen_active_flags2list();
+
+            /* Compute this reduced shortlist */
+            senone_scores = sc_scores[0];
+            s2_semi_mgau_frame_eval(semi_mgau, feat, CurrentFrame, FALSE);
+
+            /* Intersect the senone scores */
+            for (i = 0; i < n_senone_active; ++i) {
+                int32 n = senone_active[i];
+                past_senone_scores[CurrentFrame][n] = senone_scores[n];
+            }
+            senone_scores = past_senone_scores[CurrentFrame];
+            /* Only count the ones we actually computed */
+            n_senone_active_utt += n_senone_active;
+
+            /* Swap back the original active list */
+            memcpy(senone_active, tmp_senone_active, n_senone_active * sizeof(int32));
+            n_senone_active = tmp_n_senone_active;
+        }
     }
     else {
         if (!compute_all_senones) {
@@ -4115,8 +4156,8 @@ search_fwdflat_frame(mfcc_t **feat)
         else {
             senscr_all(feat, CurrentFrame);
         }
+        n_senone_active_utt += n_senone_active;
     }
-    n_senone_active_utt += n_senone_active;
 
     BPTableIdx[CurrentFrame] = BPIdx;
 

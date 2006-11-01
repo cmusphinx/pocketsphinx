@@ -1117,7 +1117,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     if (n < 1 || n > 999) {
         SWAP_INT32(&n);
         if (n < 1 || n > 999) {
-            E_FATAL("Title length %s in dump file %s out of range\n", n, file);
+            E_FATAL("Title length %x in dump file %s out of range\n", n, file);
         }
         do_swap = 1;
     }

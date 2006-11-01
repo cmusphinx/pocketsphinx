@@ -254,6 +254,10 @@
       ARG_INT32,                                                                                \
       "25",                                                                    	                \
       "Window of frames in lattice to search for successor words in fwdflat search " },         \
+{ "-cachesen",                                                                                   \
+      ARG_BOOLEAN,                                                                              \
+      "no",                                                                                     \
+      "Cache senone scores from first pass search" },                                           \
 { "-fsgbfs",                                                                                    \
       ARG_BOOLEAN,                                                                              \
       "yes",                                                                                    \

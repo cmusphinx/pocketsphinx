@@ -80,6 +80,15 @@ bitvec_t *senone_active_vec;
 /* Record senone scores for all frames for multi-pass search. */
 int32 **past_senone_scores;
 
+/* This works somewhat differently when we are not computing all
+ * senones.  We can't count on the same senones being computed at each
+ * successive pass, but we can make the broad assumption that the
+ * earlier passes compute a rough superset of the later passes.
+ * Therefore we can take a quick intersection of the active lists to
+ * get a shortlist of the senones that actually need to be
+ * computed. */
+bitvec_t **past_senone_active_vec;
+
 /*
  * Compute the best senone score from the given array of senone scores.
  * (All senones, not just active ones, should have been already computed
@@ -164,17 +173,28 @@ senscr_compute(mfcc_t **feat, int32 frame_idx, int32 all)
     if (all) {
         s2_semi_mgau_frame_eval(semi_mgau, feat, frame_idx, TRUE);
         best = best_senscr_all_s3();
-        if (past_senone_scores) {
-            if (past_senone_scores[frame_idx] == NULL)
-                past_senone_scores[frame_idx] = ckd_calloc(bin_mdef_n_sen(mdef),
-                                                           sizeof(int32));
-            memcpy(past_senone_scores[frame_idx], senone_scores,
-                   bin_mdef_n_sen(mdef) * sizeof(int32));
-        }
     }
     else {
         s2_semi_mgau_frame_eval(semi_mgau, feat, frame_idx, FALSE);
+        if (past_senone_active_vec) {
+            int32 nwords;
+
+            nwords = (bin_mdef_n_sen(mdef) + BITVEC_WIDTH - 1) / BITVEC_WIDTH;
+            if (past_senone_active_vec[frame_idx] == NULL) {
+                past_senone_active_vec[frame_idx] = ckd_calloc(nwords, sizeof(bitvec_t));
+            }
+            memcpy(past_senone_active_vec[frame_idx], senone_active_vec,
+                   nwords * sizeof(bitvec_t));
+        }
         best = best_senscr_active();
+    }
+
+    if (past_senone_scores) {
+        if (past_senone_scores[frame_idx] == NULL)
+            past_senone_scores[frame_idx] = ckd_calloc(bin_mdef_n_sen(mdef),
+                                                       sizeof(int32));
+        memcpy(past_senone_scores[frame_idx], senone_scores,
+               bin_mdef_n_sen(mdef) * sizeof(int32));
     }
     return best;
 }
