@@ -1095,8 +1095,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
 {
     FILE *fp;
     char line[1000];
-    size_t n;
-    int32 i;
+    int32 i, n;
     int32 use_mmap, do_swap;
     size_t filesize, offset;
     int n_clust = 256;          /* Number of clusters (if zero, we are just using
@@ -1111,7 +1110,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
 
     E_INFO("Loading senones from dump file %s\n", file);
     /* Read title size, title */
-    fread(&n, 1, sizeof(n), fp);
+    fread(&n, sizeof(int32), 1, fp);
     /* This is extremely bogus */
     do_swap = 0;
     if (n < 1 || n > 999) {
