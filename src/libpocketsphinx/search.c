@@ -447,8 +447,6 @@ static int32 *filler_phone;     /* filler_phone[p] = 1 iff p is filler */
 
 static int32 *topsen_score;     /* Top senone score in each frame */
 static int32 *bestpscr;         /* Best senone score within each phone in frame */
-static int32 **utt_pscr = NULL; /* bestpscr for entire utt */
-static int32 utt_pscr_valid = FALSE;
 
 static void topsen_init(void);
 static void compute_phone_active(int32 topsenscr, int32 npa_th);
@@ -1959,14 +1957,11 @@ search_initialize(void)
     topsen_score = ckd_calloc(MAX_FRAMES, sizeof(int32));
 
     /*
-     * Allocate bestscore/phone arrays:
+     * Allocate bestscore/phone array:
      * bestpscr = single array of best-senone-based CIphones scores, updated
      * every frame.
-     * utt_pscr = bestpscr, maintained for entire utterance.
      */
     bestpscr = ckd_calloc(NumCiPhones, sizeof(int32));
-    utt_pscr =
-        (int32 **) ckd_calloc_2d(MAX_FRAMES, NumCiPhones, sizeof(int32));
 
     search_set_beam_width(cmd_ln_float64("-beam"));
     search_set_new_word_beam_width(cmd_ln_float64("-wbeam"));
@@ -2124,14 +2119,6 @@ search_fwd(mfcc_t **feat)
     }
     else {
         topsen_score[cf] = senscr_all(feat);
-
-        if (cf < MAX_FRAMES) {
-            /* Save bestpscr in utt_pscr */
-            for (i = 0; i < NumCiPhones; i++)
-                utt_pscr[cf][i] = bestpscr[i];
-
-            utt_pscr_valid = TRUE;
-        }
     }
     n_senone_active_utt += n_senone_active;
 
@@ -2260,8 +2247,6 @@ search_start_fwd(void)
             memset(npa_frm[i], 0, NumCiPhones * sizeof(int32));
     }
     n_topsen_frm = 0;
-
-    utt_pscr_valid = FALSE;
 }
 
 void
@@ -3841,18 +3826,23 @@ build_fwdflat_wordlist(void)
 
     memset(frm_wordlist, 0, MAX_FRAMES * sizeof(latnode_t *));
 
+    /* Scan the backpointer table for all active words and record
+     * their exit frames.  (FIXME: potential slowdown here) */
     for (i = 0, bp = BPTable; i < BPIdx; i++, bp++) {
         sf = (bp->bp < 0) ? 0 : BPTable[bp->bp].frame + 1;
         ef = bp->frame;
         wid = bp->wid;
 
+        /* Ignore silence and <s> */
         if ((wid >= SilenceWordId) || (wid == StartWordId))
             continue;
 
+        /* Look for it in the wordlist. */
         de = word_dict->dict_list[wid];
         for (node = frm_wordlist[sf]; node && (node->wid != wid);
              node = node->next);
 
+        /* Update last end frame. */
         if (node)
             node->lef = ef;
         else {
@@ -3867,6 +3857,7 @@ build_fwdflat_wordlist(void)
     }
 
     /* Eliminate "unlikely" words, for which there are too few end points */
+    /* FIXME: Another linear search. */
     for (f = 0; f <= LastFrame; f++) {
         prevnode = NULL;
         for (node = frm_wordlist[f]; node; node = nextnode) {
@@ -3930,16 +3921,20 @@ build_fwdflat_chan(void)
     ROOT_CHAN_T *rhmm;
     CHAN_T *hmm, *prevhmm;
 
+    /* Build word HMMs for each word in the lattice. */
     for (i = 0; fwdflat_wordlist[i] >= 0; i++) {
         wid = fwdflat_wordlist[i];
         de = word_dict->dict_list[wid];
 
+        /* Omit single-phone words (??) */
         if (de->len == 1)
             continue;
 
         assert(de->mpx);
         assert(word_chan[wid] == NULL);
 
+        /* Multiplex root HMM for first phone (one root per word, flat
+         * lexicon) */
         rhmm = (ROOT_CHAN_T *) listelem_alloc(sizeof(ROOT_CHAN_T));
         rhmm->diphone = de->phone_ids[0];
         rhmm->ciphone = de->ci_phone_ids[0];
@@ -3951,7 +3946,9 @@ build_fwdflat_chan(void)
             rhmm->sseqid[s] = -1;
         }
         rhmm->sseqid[0] = rhmm->diphone;
+        rhmm->next = NULL;
 
+        /* HMMs for word-internal phones */
         prevhmm = NULL;
         for (p = 1; p < de->len - 1; p++) {
             hmm = (CHAN_T *) listelem_alloc(sizeof(CHAN_T));
@@ -3960,6 +3957,7 @@ build_fwdflat_chan(void)
             hmm->info.rc_id = p + 1 - de->len;
             hmm->active = -1;
             hmm->bestscore = WORST_SCORE;
+            hmm->next = NULL;
             for (s = 0; s < HMM_LAST_STATE; s++)
                 hmm->score[s] = WORST_SCORE;
 
@@ -3971,8 +3969,10 @@ build_fwdflat_chan(void)
             prevhmm = hmm;
         }
 
+        /* Right-context phones */
         alloc_all_rc(wid);
 
+        /* Link in just allocated right-context phones */
         if (prevhmm)
             prevhmm->next = word_chan[wid];
         else
@@ -4098,14 +4098,6 @@ search_fwdflat_frame(mfcc_t **feat)
     }
     else {
         senscr_all(feat);
-
-        if (CurrentFrame < MAX_FRAMES) {
-            /* Save bestpscr in utt_pscr */
-            for (i = 0; i < NumCiPhones; i++)
-                utt_pscr[CurrentFrame][i] = bestpscr[i];
-
-            utt_pscr_valid = TRUE;
-        }
     }
     n_senone_active_utt += n_senone_active;
 
@@ -4199,6 +4191,7 @@ fwdflat_eval_chan(void)
 
     n_fwdflat_words += i;
 
+    /* Scan all active words. */
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
         rhmm = (ROOT_CHAN_T *) word_chan[w];
         if (rhmm->active == cf) {
@@ -4249,66 +4242,74 @@ fwdflat_prune_chan(void)
     wordthresh = BestScore + FwdflatLogWordBeamWidth;
     pip = logPhoneInsertionPenalty;
 
+    /* Scan all active words. */
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
         de = word_dict->dict_list[w];
 
         rhmm = (ROOT_CHAN_T *) word_chan[w];
-        if (rhmm->active == cf) {
-            if (rhmm->bestscore > thresh) {
-                rhmm->active = nf;
-                word_active[w] = 1;
+        /* Propagate active root channels */
+        if (rhmm->active == cf && rhmm->bestscore > thresh) {
+            rhmm->active = nf;
+            word_active[w] = 1;
 
-                /* Transitions out of root channel */
-                newscore = rhmm->score[HMM_LAST_STATE];
-                if (rhmm->next) {
-                    assert(de->len > 1);
+            /* Transitions out of root channel */
+            newscore = rhmm->score[HMM_LAST_STATE];
+            if (rhmm->next) {
+                assert(de->len > 1);
 
-                    newscore += +pip;
-                    if (newscore > thresh) {
-                        hmm = rhmm->next;
-                        if (hmm->info.rc_id >= 0) {
-                            for (; hmm; hmm = hmm->next) {
-                                if ((hmm->active < cf)
-                                    || (hmm->score[0] < newscore)) {
-                                    hmm->score[0] = newscore;
-                                    hmm->path[0] =
-                                        rhmm->path[HMM_LAST_STATE];
-                                    hmm->active = nf;
-                                }
-                            }
-                        }
-                        else {
+                newscore += +pip;
+                if (newscore > thresh) {
+                    hmm = rhmm->next;
+                    /* Enter all right context phones */
+                    if (hmm->info.rc_id >= 0) {
+                        for (; hmm; hmm = hmm->next) {
                             if ((hmm->active < cf)
                                 || (hmm->score[0] < newscore)) {
                                 hmm->score[0] = newscore;
-                                hmm->path[0] = rhmm->path[HMM_LAST_STATE];
+                                hmm->path[0] =
+                                    rhmm->path[HMM_LAST_STATE];
                                 hmm->active = nf;
                             }
                         }
                     }
-                }
-                else {
-                    assert(de->len == 1);
-
-                    if (newscore > wordthresh) {
-                        save_bwd_ptr(w, newscore,
-                                     rhmm->path[HMM_LAST_STATE], 0);
+                    /* Just a normal word internal phone */
+                    else {
+                        if ((hmm->active < cf)
+                            || (hmm->score[0] < newscore)) {
+                            hmm->score[0] = newscore;
+                            hmm->path[0] = rhmm->path[HMM_LAST_STATE];
+                            hmm->active = nf;
+                        }
                     }
+                }
+            }
+            else {
+                assert(de->len == 1);
+
+                /* Word exit for single-phone words (where did their
+                 * whmms come from?) */
+                if (newscore > wordthresh) {
+                    save_bwd_ptr(w, newscore,
+                                 rhmm->path[HMM_LAST_STATE], 0);
                 }
             }
         }
 
+        /* Transitions out of non-root channels. */
         for (hmm = rhmm->next; hmm; hmm = hmm->next) {
             if (hmm->active >= cf) {
+                /* Propagate forward HMMs inside the beam. */
                 if (hmm->bestscore > thresh) {
                     hmm->active = nf;
                     word_active[w] = 1;
 
                     newscore = hmm->score[HMM_LAST_STATE];
+                    /* Word-internal phones */
                     if (hmm->info.rc_id < 0) {
                         newscore += pip;
                         if (newscore > thresh) {
                             nexthmm = hmm->next;
+                            /* Enter all right-context phones. */
                             if (nexthmm->info.rc_id >= 0) {
                                 for (; nexthmm; nexthmm = nexthmm->next) {
                                     if ((nexthmm->active < cf)
@@ -4320,6 +4321,7 @@ fwdflat_prune_chan(void)
                                     }
                                 }
                             }
+                            /* Enter single word-internal phone. */
                             else {
                                 if ((nexthmm->active < cf)
                                     || (nexthmm->score[0] < newscore)) {
@@ -4331,6 +4333,7 @@ fwdflat_prune_chan(void)
                             }
                         }
                     }
+                    /* Right-context phones - apply word beam and exit. */
                     else {
                         if (newscore > wordthresh) {
                             save_bwd_ptr(w, newscore,
@@ -4339,6 +4342,7 @@ fwdflat_prune_chan(void)
                         }
                     }
                 }
+                /* Zero out inactive HMMs. */
                 else if (hmm->active != nf) {
                     hmm->bestscore = WORST_SCORE;
                     for (s = 0; s < HMM_LAST_STATE; s++)
@@ -4368,8 +4372,11 @@ fwdflat_word_transition(void)
     best_silrc_score = WORST_SCORE;
     lwf = fwdflat_fwdtree_lw_ratio;
 
+    /* Search for all words starting within a window of this frame.
+     * These are the successors for words exiting now. */
     get_expand_wordlist(cf, MAX_SF_WIN);
 
+    /* Scan words exited in current frame */
     for (b = BPTableIdx[cf]; b < BPIdx; b++) {
         bp = BPTable + b;
         WordLatIdx[bp->wid] = NO_BP;
@@ -4383,9 +4390,12 @@ fwdflat_word_transition(void)
              0) ? RightContextFwdPerm[bp->r_diph] : zeroPermTab;
         rcss = BScoreStack + bp->s_idx;
 
+        /* Transition to all successor words. */
         for (i = 0; expand_word_list[i] >= 0; i++) {
             w = expand_word_list[i];
             newde = word_dict->dict_list[w];
+            /* Get the exit score we recorded in save_bwd_ptr(), or
+             * something approximating it. */
             newscore = rcss[rcpermtab[newde->ci_phone_ids[0]]];
             newscore +=
                 LWMUL(lm_tg_score
@@ -4393,6 +4403,7 @@ fwdflat_word_transition(void)
                       lwf);
             newscore += pip;
 
+            /* Enter the next word */
             if (newscore > thresh) {
                 rhmm = (ROOT_CHAN_T *) word_chan[w];
                 if ((rhmm->active < cf) || (rhmm->score[0] < newscore)) {
@@ -4409,6 +4420,7 @@ fwdflat_word_transition(void)
             }
         }
 
+        /* Get the best exit into silence. */
         if (best_silrc_score < rcss[rcpermtab[SilencePhoneId]]) {
             best_silrc_score = rcss[rcpermtab[SilencePhoneId]];
             best_silrc_bp = b;
@@ -4651,95 +4663,6 @@ compute_phone_active(int32 topsenscr, int32 npa_th)
     }
 }
 
-int32 **
-search_get_uttpscr(void)
-{
-    return utt_pscr;
-}
-
-
-/*
- * Pscr-based search: A node in the full, #frames x #states, Viterbi search
- * lattice.
- */
-typedef struct {
-    int32 score;                /* Viterbi search path score */
-    int16 sf;                   /* Start frame */
-    int16 pred;                 /* Predecessor state in previous frame (may be itself) */
-    int32 valid;                /* Whether this node has been reached during search */
-} vithist_t;
-
-/* Min frames for each phone in allphone decoding */
-#define MIN_ALLPHONE_SEG	3
-#if 0
-#define PHONE_TRANS_PROB	0.0001
-#endif
-
-
-/*
- * Dump a "phone lattice" to the given file:
- *   For each frame, determine the CIphones with top scoring senones, threshold
- *   and sort them in descending order.  (Threshold based on topsen_thresh.)
- */
-int32
-search_uttpscr2phlat_print(FILE * outfp)
-{
-    int32 *pval, *pid;
-    int32 f, i, p, nf, maxp, best, np;
-
-#if 0
-    if (topsen_window == 1)
-        return -1;              /* No lattice available */
-#else
-    if (!utt_pscr_valid)
-        return -1;
-#endif
-
-    pval = ckd_calloc(NumCiPhones, sizeof(int32));
-    pid = ckd_calloc(NumCiPhones, sizeof(int32));
-
-    fprintf(outfp, " SFrm #Ph Phones (PhoneLattice) (%s)\n",
-            uttproc_get_uttid());
-    fprintf(outfp, "----------------------------------------------\n");
-
-    /* Strictly, #frames may be > LastFrame, but... */
-    nf = LastFrame;
-
-    for (f = 0; f < nf; f++) {
-        for (p = 0; p < NumCiPhones; p++)
-            pval[p] = utt_pscr[f][p];
-
-        best = (int32) 0x80000000;
-        np = 0;
-        for (i = 0; i < NumCiPhones; i++) {
-            maxp = 0;
-            for (p = 1; p < NumCiPhones; p++) {
-                if (pval[p] > pval[maxp])
-                    maxp = p;
-            }
-            if (pval[maxp] - (topsen_thresh >> 1) >= best)      /* Why >>1? */
-                pid[np++] = maxp;
-            else
-                break;
-            if (best < pval[maxp])
-                best = pval[maxp];
-            pval[maxp] = (int32) 0x80000000;
-        }
-
-        fprintf(outfp, "%5d %3d", f, np);
-        for (i = 0; i < np; i++)
-            fprintf(outfp, " %s", phone_from_id(pid[i]));
-        fprintf(outfp, "\n");
-    }
-    fprintf(outfp, "----------------------------------------------\n");
-    fflush(outfp);
-
-    free(pval);
-    free(pid);
-
-    return 0;
-}
-
 
 /*
  * Search bptable for word wid and return its BPTable index.
@@ -4789,27 +4712,6 @@ int32 *
 search_get_bestpscr(void)
 {
     return bestpscr;
-}
-
-
-void
-search_bestpscr2uttpscr(int32 fr)
-{
-    int32 p;
-
-    if (fr < MAX_FRAMES) {
-        for (p = 0; p < NumCiPhones; p++)
-            utt_pscr[fr][p] = bestpscr[p];
-
-        utt_pscr_valid = TRUE;
-    }
-}
-
-
-void
-search_uttpscr_reset(void)
-{
-    utt_pscr_valid = FALSE;
 }
 
 

@@ -148,10 +148,6 @@
       ARG_BOOLEAN,								\
       "no",									\
       "Report alternate pronunciations in match file" },			\
-{ "-pscr2lat",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Directory for writing phone lattices based on best senone scores" },	\
 { "-nbestdir",									\
       ARG_STRING,								\
       NULL,									\

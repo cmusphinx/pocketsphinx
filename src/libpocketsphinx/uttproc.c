@@ -553,7 +553,6 @@ uttproc_fsg_search_fwd(void)
 
     if (cmd_ln_boolean("-compallsen")) {
         best = senscr_all(feat_buf[n_searchfr]);
-        search_bestpscr2uttpscr(fsg_search->frame);
     }
     else {
         fsg_search_sen_active(fsg_search);
@@ -866,8 +865,6 @@ uttproc_begin_utt(char const *id)
         else
             search_fwdflat_start();
     }
-
-    search_uttpscr_reset();
 
     uttstate = UTTSTATE_BEGUN;
     uttstart = TRUE;

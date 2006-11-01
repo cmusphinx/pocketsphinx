@@ -161,16 +161,7 @@ BPTBL_T *search_get_bptable ( void );
 void search_postprocess_bptable (lw_t lwf, char const *pass);
 int32 *search_get_bscorestack ( void );
 lw_t search_get_lw ( void );
-int32 **search_get_uttpscr ( void );
 
-/*
- * Dump a "phone lattice" to the given file:
- *   For each frame, determine the CIphones with top scoring senones, threshold
- *   and sort them in descending order.  (Threshold based on topsen_thresh.)
- */
-int32 search_uttpscr2phlat_print (FILE *outfp);
-
-search_hyp_t *search_uttpscr2allphone ( void );
 void search_remove_context (search_hyp_t *hyp);
 void search_hyp_to_str ( void );
 void search_hyp_free (search_hyp_t *h);
@@ -251,19 +242,6 @@ void search_chan_deactivate(CHAN_T *);
 
 /* Note the top senone score for the given frame */
 void search_set_topsen_score (int32 frm, int32 score);
-
-/*
- * Return the array that maintains the best senone score (CI or CD) for
- * each CI phone.  (The array is updated every frame by the senone score
- * evaluation module.)
- */
-int32 *search_get_bestpscr( void );
-
-/* Copy bestpscr to uttpscr[currentframe] */
-void search_bestpscr2uttpscr (int32 currentframe);
-
-/* Reset the uttpscr valid flag */
-void search_uttpscr_reset ( void );
 
 /*
  * Set the hyp_wid (and n_hyp_wid) global variables in search.c to the given
