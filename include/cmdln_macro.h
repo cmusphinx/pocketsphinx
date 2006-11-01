@@ -246,6 +246,14 @@
       ARG_INT32,                                                                                \
       "100",                                                                                    \
       "Max no. of histories to maintain at each frame (UNUSED)" },                              \
+{ "-fwdflatefwid",                                                                              \
+      ARG_INT32,                                                                                \
+      "4",                                                                     	                \
+      "Minimum number of end frames for a word to be searched in fwdflat search" },             \
+{ "-fwdflatsfwin",                                                                              \
+      ARG_INT32,                                                                                \
+      "25",                                                                    	                \
+      "Window of frames in lattice to search for successor words in fwdflat search " },         \
 { "-fsgbfs",                                                                                    \
       ARG_BOOLEAN,                                                                              \
       "yes",                                                                                    \

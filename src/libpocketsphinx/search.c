@@ -3804,8 +3804,8 @@ static int32 n_fwdflat_word_transition;
 static char *expand_word_flag = NULL;
 static int32 *expand_word_list = NULL;
 
-#define MIN_EF_WIDTH		4
-#define MAX_SF_WIN		25
+static int32 min_ef_width = 4;
+static int32 max_sf_win = 25;
 
 static void
 build_fwdflat_wordlist(void)
@@ -3827,7 +3827,7 @@ build_fwdflat_wordlist(void)
     memset(frm_wordlist, 0, MAX_FRAMES * sizeof(latnode_t *));
 
     /* Scan the backpointer table for all active words and record
-     * their exit frames.  (FIXME: potential slowdown here) */
+     * their exit frames. */
     for (i = 0, bp = BPTable; i < BPIdx; i++, bp++) {
         sf = (bp->bp < 0) ? 0 : BPTable[bp->bp].frame + 1;
         ef = bp->frame;
@@ -3857,12 +3857,11 @@ build_fwdflat_wordlist(void)
     }
 
     /* Eliminate "unlikely" words, for which there are too few end points */
-    /* FIXME: Another linear search. */
     for (f = 0; f <= LastFrame; f++) {
         prevnode = NULL;
         for (node = frm_wordlist[f]; node; node = nextnode) {
             nextnode = node->next;
-            if ((node->lef - node->fef < MIN_EF_WIDTH) ||
+            if ((node->lef - node->fef < min_ef_width) ||
                 ((node->wid == FinishWordId)
                  && (node->lef < LastFrame - 1))) {
                 if (!prevnode)
@@ -4374,7 +4373,7 @@ fwdflat_word_transition(void)
 
     /* Search for all words starting within a window of this frame.
      * These are the successors for words exiting now. */
-    get_expand_wordlist(cf, MAX_SF_WIN);
+    get_expand_wordlist(cf, max_sf_win);
 
     /* Scan words exited in current frame */
     for (b = BPTableIdx[cf]; b < BPIdx; b++) {
@@ -4568,10 +4567,10 @@ search_fwdflat_init(void)
     expand_word_flag = ckd_calloc(NumWords, 1);
     expand_word_list = ckd_calloc(NumWords + 1, sizeof(int32));
 
-#if 0
-    E_INFO("MIN_EF_WIDTH = %d, MAX_SF_WIN = %d\n",
-           MIN_EF_WIDTH, MAX_SF_WIN);
-#endif
+    min_ef_width = cmd_ln_int32("-fwdflatefwid");
+    max_sf_win = cmd_ln_int32("-fwdflatsfwin");
+    E_INFO("fwdflat: min_ef_width = %d, max_sf_win = %d\n",
+           min_ef_width, max_sf_win);
 }
 
 /* ------------------ CODE FOR TOP SENONES BASED SEARCH PRUNING ----------------- */
