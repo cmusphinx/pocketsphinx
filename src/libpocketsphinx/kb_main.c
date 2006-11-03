@@ -173,6 +173,34 @@ s2_semi_mgau_t *semi_mgau;
 /* Model file names */
 char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *sendumpfn;
 
+/* FIXME: Should go in sphinxbase */
+char *
+string_join(const char *base, ...)
+{
+    va_list args;
+    size_t len;
+    const char *c;
+    char *out;
+
+    va_start(args, base);
+    len = strlen(base);
+    while ((c = va_arg(args, const char *)) != NULL) {
+        len += strlen(c);
+    }
+    len++;
+    va_end(args);
+
+    out = ckd_calloc(len, 1);
+    va_start(args, base);
+    strcpy(out, base);
+    while ((c = va_arg(args, const char *)) != NULL) {
+        strcat(out, c);
+    }
+    va_end(args);
+
+    return out;
+}
+
 void
 kbAddGrammar(char const *fileName, char const *grammarName)
 {
@@ -368,12 +396,28 @@ lm_init(void)
 static void
 dict_init(void)
 {
+    char *fdictfn = NULL;
+
     E_INFO("Reading dict file [%s]\n", cmd_ln_str("-dict"));
     word_dict = dict_new();
-    if (dict_read(word_dict, cmd_ln_str("-dict"), cmd_ln_str("-pdict"),
-                  cmd_ln_str("-fdict"), !cmd_ln_boolean("-usewdphones"))) {
-        exit(-1);
+    /* Look for noise word dictionary in the HMM directory if not given */
+    if (cmd_ln_str("-hmm") && !cmd_ln_str("-fdict")) {
+        FILE *tmp;
+        fdictfn = string_join(hmmdir, "/noisedict", NULL);
+        if ((tmp = fopen(fdictfn, "r")) == NULL) {
+            ckd_free(fdictfn);
+            fdictfn = NULL;
+        }
+        fclose(tmp);
     }
+
+    if (dict_read(word_dict, cmd_ln_str("-dict"), cmd_ln_str("-pdict"),
+                  (fdictfn != NULL) ? fdictfn : cmd_ln_str("-fdict"),
+                  !cmd_ln_boolean("-usewdphones"))) {
+        ckd_free(fdictfn);
+        E_FATAL("Failed to read dictionaries\n");
+    }
+    ckd_free(fdictfn);
 }
 
 static void
@@ -427,33 +471,6 @@ phonetp_init(int32 num_ci_phones)
             }
         }
     }
-}
-
-char *
-string_join(const char *base, ...)
-{
-    va_list args;
-    size_t len;
-    const char *c;
-    char *out;
-
-    va_start(args, base);
-    len = strlen(base);
-    while ((c = va_arg(args, const char *)) != NULL) {
-        len += strlen(c);
-    }
-    len++;
-    va_end(args);
-
-    out = ckd_calloc(len, 1);
-    va_start(args, base);
-    strcpy(out, base);
-    while ((c = va_arg(args, const char *)) != NULL) {
-        strcat(out, c);
-    }
-    va_end(args);
-
-    return out;
 }
 
 void
