@@ -1,10 +1,12 @@
 # Utility functions and parameters for regression tests
 
 # Predefined directories you may need
-# Stupid broken RedHat autoconf doesn't do @abs_top_srcdir@
+# Stupid broken CMU Facilities autoconf doesn't do @abs_top_srcdir@
 builddir=../"@top_builddir@"
 sourcedir=../"@top_srcdir@"
 tests=$sourcedir/test
+data=$sourcedir/test/data
+model=$sourcedir/model
 
 # Automatically report failures on exit
 failures=""
@@ -13,7 +15,7 @@ trap "report_failures" 0
 run_program() {
     program="$1"
     shift
-    $builddir/libtool --mode=execute "$builddir/src/$program/$program" $@
+    $builddir/libtool --mode=execute "$builddir/src/programs/$program" $@
 }
 
 pass() {
