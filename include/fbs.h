@@ -200,8 +200,6 @@
 
 /*
  * Recognition result (hypothesis) with word segmentation information.
- *
- * FIXME: should this be in search.h?
  */
 typedef struct search_hyp_s {
     char const *word;	/* READ-ONLY */
@@ -215,9 +213,6 @@ typedef struct search_hyp_s {
     int32 latden;	/* Average lattice density in segment.  Larger values imply
 			   more confusion and less certainty about the result.  To use
 			   it for rejection, cutoffs must be found independently */
-    double phone_perp;	/* Average phone perplexity in segment.  Larger values imply
-			   more confusion and less certainty.  To use it for rejection,
-			   cutoffs must be found independently. */
 } search_hyp_t;
 
 

@@ -2476,7 +2476,7 @@ search_finish_fwd(void)
         rhmm->bestscore = WORST_SCORE;
     }
 
-    /* Obtain lattice density and phone perplexity info for this utterance */
+    /* Obtain lattice density info for this utterance */
     bptbl2latdensity(BPIdx, lattice_density);
     search_postprocess_bptable(FLOAT2LW(1.0), "FWDTREE");
 
@@ -2627,7 +2627,7 @@ seg_topsen_score(int32 sf, int32 ef)
 
 /* SEG_BACK_TRACE
  *-------------------------------------------------------------*
- * Print32 out the backtrace
+ * Print out the backtrace
  */
 static void
 seg_back_trace(int32 bpidx, char const *pass)
@@ -2644,7 +2644,6 @@ seg_back_trace(int32 bpidx, char const *pass)
     int32 altpron;
     int32 topsenscr_norm;
     int32 f, latden;
-    double perp;
 
     altpron = cmd_ln_boolean("-reportpron");
 
@@ -2663,15 +2662,13 @@ seg_back_trace(int32 bpidx, char const *pass)
 
         TotalLangScore += l_scr;
 
-        /* Fill in lattice density and perplexity information for this word */
+        /* Fill in lattice density information for this word */
         latden = 0;
-        perp = 0.0;
         for (f = last_time + 1; f <= BPTable[bpidx].frame; f++) {
             latden += lattice_density[f];
         }
         if (seg_len > 0) {
             latden /= seg_len;
-            perp /= seg_len;
         }
 
         if (cmd_ln_boolean("-backtrace"))
@@ -2695,7 +2692,6 @@ seg_back_trace(int32 bpidx, char const *pass)
             hyp[seg].ascr = a_scr;
             hyp[seg].lscr = l_scr;
             hyp[seg].latden = latden;
-            hyp[seg].phone_perp = perp;
             seg++;
 
             hyp[seg].wid = -1;
@@ -4109,6 +4105,7 @@ search_fwdflat_frame(mfcc_t **feat)
             senone_scores = past_senone_scores[CurrentFrame];
         }
         else {
+#if 1
             int32 i, nwords, tmp_n_senone_active;
             static int32 *tmp_senone_active;
 
@@ -4132,6 +4129,7 @@ search_fwdflat_frame(mfcc_t **feat)
 
             /* Compute this reduced shortlist */
             senone_scores = sc_scores[0];
+            /* FIXME: This recomputes the codebook, which we'd rather not do. */
             s2_semi_mgau_frame_eval(semi_mgau, feat, CurrentFrame, FALSE);
 
             /* Intersect the senone scores */
@@ -4146,6 +4144,17 @@ search_fwdflat_frame(mfcc_t **feat)
             /* Swap back the original active list */
             memcpy(senone_active, tmp_senone_active, n_senone_active * sizeof(int32));
             n_senone_active = tmp_n_senone_active;
+#else
+            int32 i;
+
+            senone_scores = past_senone_scores[CurrentFrame];
+            compute_fwdflat_senone_active();
+            for (i = 0; i < n_senone_active; ++i) {
+                if (!BITVEC_ISSET(past_senone_active_vec[CurrentFrame], senone_active[i])) {
+                    senone_scores[senone_active[i]] = -500000; /* HACK */
+                }
+            }
+#endif
         }
     }
     else {

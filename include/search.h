@@ -118,7 +118,6 @@ void search_set_last_phone_beam_width (double beam);
 void search_get_logbeams (int32 *b, int32 *pb, int32 *wb);
 
 void search_set_channels_per_frame_target (int32 cpf);
-void searchSetScVqTopN (int32 topN);
 int32 searchFrame (void);
 void searchSetFrame (int32 frame);
 int32 searchCurrentFrame (void);
@@ -134,7 +133,6 @@ void search_set_hyp_total_lscr (int32 lscr);
 void search_set_context (int32 w1, int32 w2);
 void search_set_startword (char const *str);
 int32 search_get_current_startwid ( void );
-
 
 int32 search_result(int32 *fr, char **res);	/* Decoded result as a single string */
 int32 search_partial_result (int32 *fr, char **res);

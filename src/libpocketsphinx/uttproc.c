@@ -632,23 +632,29 @@ write_results(char const *hyp, int32 aborted)
         fflush(matchfp);
     }
 
+    /* Changed this to use Sphinx3 format */
     if (matchsegfp) {
-        fprintf(matchsegfp, "%s ", uttid);
         seghyp = search_get_hyp();
+        fprintf(matchsegfp, "%s S %d T %d A %d L %d", uttid,
+                0, /* FIXME: scaling factors not recorded? */
+                search_get_score(),
+                search_get_score - search_get_lscr(),
+                search_get_lscr());
         for (i = 0; seghyp[i].wid >= 0; i++) {
-            fprintf(matchsegfp, " %d %d %s",
+            fprintf(matchsegfp, " %d %d %d %s",
                     seghyp[i].sf,
-                    (seghyp[i].ef - seghyp[i].sf + 1),
+                    seghyp[i].ascr,
+                    lm3g_raw_score(seghyp[i].lscr),
                     kb_get_word_str(seghyp[i].wid));
         }
-        fprintf(matchsegfp, "\n");
+        fprintf(matchsegfp, " %d\n", searchFrame());
         fflush(matchsegfp);
     }
 
 #if 0
     {
         char const *dumplatdir;
-        if ((dumplatdir = query_dumplat_dir()) != NULL) {
+        if ((dumplatdir = cmd_ln_str("-dumplatdir")) != NULL) {
             char fplatfile[1024];
 
             sprintf(fplatfile, "%s/%s.fplat", dumplatdir, uttid);
