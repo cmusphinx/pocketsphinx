@@ -254,16 +254,26 @@
  *     (tree or flag), there should be an explicit uttproc_set_firstpass() call.
  */
 
+/* System Headers */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#ifndef _WIN32
+#include <sys/resource.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/param.h>
+#include <unistd.h> /* dup2() */
+#endif
+
+/* SphinxBase headers */
 #include <sphinx_config.h>
 #include <cmd_ln.h>
 
+/* Local headers */
 #include "s2types.h"
 #include "ckd_alloc.h"
 #include "basic_types.h"

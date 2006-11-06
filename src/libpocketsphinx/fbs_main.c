@@ -179,6 +179,12 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
+#ifndef _WIN32
+#include <sys/resource.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/param.h>
+#endif
 
 /* SphinxBase headers */
 #include <fe.h>
