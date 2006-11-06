@@ -10,7 +10,6 @@ libpocketsphinx_la_SOURCES = \
 	bin_mdef.c				\
 	blkarray_list.c				\
 	cache_lm.c				\
-	cep_rw.c				\
 	dict.c					\
 	fbs_main.c				\
 	fsg_history.c				\
