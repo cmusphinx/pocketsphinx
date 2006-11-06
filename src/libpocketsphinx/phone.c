@@ -133,7 +133,7 @@ phone_to_id(char const *phone_str, int verbose)
     size_t len;
 
     /* Play it safe - subparts must be shorter than phone_str */
-    len = strlen(phone_str + 1);
+    len = strlen(phone_str) + 1;
     /* Do one malloc to avoid fragmentation on WinCE (and yet, this
      * may still be too many). */
     ci = ckd_calloc(len * 4 + 1, 1);
