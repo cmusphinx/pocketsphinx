@@ -47,6 +47,23 @@
 #include "s2types.h"
 #include "fbs.h"
 
+#ifdef _WIN32_WCE
+#include <windows.h>
+
+int WINAPI
+WinMain(HINSTANCE hInstance,
+        HINSTANCE hPrevInstance,
+        LPTSTR lpCmdLine, int nCmdShow)
+{
+    static char *fake_argv[] = { "pocketsphinx_batch.exe", NULL };
+
+    /* FIXME: This needs serious improvement. */
+    fbs_init(1, fake_argv);
+
+    fbs_end();
+    return 0;
+}
+#else
 int
 main(int32 argc, char *argv[])
 {
@@ -56,3 +73,4 @@ main(int32 argc, char *argv[])
     fbs_end();
     return 0;
 }
+#endif

@@ -429,8 +429,10 @@ timing_start(void)
 # endif
     gettimeofday(&e_start, 0);
 #else                           /* _WIN32 */
+# ifdef _WIN32_WCE
+    e_start = (float) GetTickCount() / 1000;
+# else
     e_start = (float) clock() / CLOCKS_PER_SEC;
-# ifndef _WIN32_WCE
     GetProcessTimes(pid, &t_create, &t_exit, &kst, &ust);
 # endif /* !_WIN32_WCE */
 #endif                          /* _WIN32 */
@@ -450,8 +452,10 @@ timing_stop(int32 nfr)
 
 #if defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
     /* ---------------- _WIN32 ---------------- */
+# ifdef _WIN32_WCE
+    e_stop = (float) GetTickCount() / 1000;
+# else
     e_stop = (float) clock() / CLOCKS_PER_SEC;
-# ifndef _WIN32_WCE
     GetProcessTimes(pid, &t_create, &t_exit, &ket, &uet);
 # endif
 

@@ -878,17 +878,27 @@ word_fsg_free(word_fsg_t * fsg)
 void
 word_fsg_write(word_fsg_t * fsg, FILE * fp)
 {
-    time_t tp;
     int32 i, j;
     gnode_t *gn;
     word_fsglink_t *tl;
+#ifdef _WIN32_WCE
+    DWORD tp = GetTickCount();
+#else
+    time_t tp = time(NULL);
+#endif
 
     assert(fsg);
 
-    time(&tp);
-    if (tp > 0)
+    if (tp > 0) {
+#ifdef _WIN32_WCE
+        fprintf(fp, "%c WORD-FSG; %d\n", WORD_FSG_COMMENT_CHAR,
+                tp); /* FIXME: Totally wrong, but I have no idea how
+                        to get the time on WinCE. */
+#else
         fprintf(fp, "%c WORD-FSG; %s\n", WORD_FSG_COMMENT_CHAR,
                 ctime(&tp));
+#endif
+    }
     else
         fprintf(fp, "%c WORD-FSG\n", WORD_FSG_COMMENT_CHAR);
     fprintf(fp, "%s\n", WORD_FSG_BEGIN_DECL);
