@@ -258,22 +258,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#if defined(WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
-#include <io.h>
-#include <windows.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#else
-#include <sys/file.h>
-#include <sys/time.h>
-#include <sys/param.h>
-#include <sys/resource.h>
-#include <unistd.h>
-#endif
-
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
@@ -364,13 +348,14 @@ static search_hyp_t *utt_seghyp = NULL;
 
 static float TotalCPUTime, TotalElapsedTime, TotalSpeechTime;
 
-#if defined(WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
+#if defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
+#include <windows.h>
 static float e_start, e_stop;
 static HANDLE pid;
 static FILETIME t_create, t_exit, kst, ket, ust, uet;
 static double lowscale, highscale;
 extern double win32_cputime();
-#else
+#else /* Not Windows */
 static struct rusage start, stop;
 static struct timeval e_start, e_stop;
 #endif
@@ -381,7 +366,7 @@ void searchlat_set_rescore_lm(char const *lmname);
 static fsg_search_t *fsg_search;
 
 
-#if defined(WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
+#if defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
 
 /* The FILETIME manual page says: "It is not recommended that you add
  * and subtract values from the FILETIME structure to obtain relative
@@ -422,7 +407,7 @@ MakeSeconds(struct timeval const *s, struct timeval const *e)
 static void
 timing_init(void)
 {
-#if defined(WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
+#if defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
     lowscale = 1e-7;
     highscale = 65536.0 * 65536.0 * lowscale;
 
@@ -438,15 +423,17 @@ timing_init(void)
 static void
 timing_start(void)
 {
-#if !(defined(WIN32) && !defined(GNUWINCE) && !defined(CYGWIN))
-#if !(defined(_HPUX_SOURCE) || defined(GNUWINCE))
+#if !(defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN))
+# if !(defined(_HPUX_SOURCE) || defined(GNUWINCE))
     getrusage(RUSAGE_SELF, &start);
-#endif
+# endif
     gettimeofday(&e_start, 0);
-#else                           /* WIN32 */
+#else                           /* _WIN32 */
     e_start = (float) clock() / CLOCKS_PER_SEC;
+# ifndef _WIN32_WCE
     GetProcessTimes(pid, &t_create, &t_exit, &kst, &ust);
-#endif                          /* WIN32 */
+# endif /* !_WIN32_WCE */
+#endif                          /* _WIN32 */
 }
 
 /*
@@ -461,16 +448,20 @@ timing_stop(int32 nfr)
     E_INFO(" %5.2f SoS", searchFrame() * 0.01);
     TotalSpeechTime += searchFrame() * 0.01f;
 
-#if defined(WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
-    /* ---------------- WIN32 ---------------- */
+#if defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
+    /* ---------------- _WIN32 ---------------- */
     e_stop = (float) clock() / CLOCKS_PER_SEC;
+# ifndef _WIN32_WCE
     GetProcessTimes(pid, &t_create, &t_exit, &ket, &uet);
+# endif
 
     E_INFOCONT(", %6.2f sec elapsed", (e_stop - e_start));
     E_INFOCONT(", %5.2f xRT", (e_stop - e_start) / (searchFrame() * 0.01));
+# ifndef _WIN32_WCE
     E_INFOCONT(", %6.2f sec CPU", win32_cputime(&ust, &uet));
     E_INFOCONT(", %5.2f xRT",
                win32_cputime(&ust, &uet) / (searchFrame() * 0.01));
+# endif
 
     TotalCPUTime += (float) win32_cputime(&ust, &uet);
     TotalElapsedTime += (e_stop - e_start);
@@ -1094,10 +1085,6 @@ uttproc_end_utt(void)
     if (rawfp) {
         fclose(rawfp);
         rawfp = NULL;
-#if defined(WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
-        if (_chmod(rawfilename, _S_IREAD) < 0)
-            E_ERROR("chmod(%s,READONLY) failed\n", rawfilename);
-#endif
     }
     if (mfcfp) {
         int32 k;
@@ -1818,9 +1805,11 @@ uttproc_set_logfile(char const *file)
          * applications: the files are opened, but nothing is written
          * to it.
          */
-#ifdef WIN32
+#if defined(_WIN32)
+#ifndef _WIN32_WCE /* FIXME: Possible? */
         *stdout = *logfp;
         *stderr = *logfp;
+#endif
 #else
         dup2(fileno(logfp), 1);
         dup2(fileno(logfp), 2);

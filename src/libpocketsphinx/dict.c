@@ -108,17 +108,9 @@
  *	
  */
 
-#ifdef WIN32
-#include <fcntl.h>
-#else
-#include <sys/file.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <assert.h>
 
 #include <cmd_ln.h>
@@ -222,7 +214,6 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
     char *oovdic;
     char *personalDic;
     char *startsym_file;
-    struct stat statbuf;
 
     /*
      * Find size of dictionary and set hash and list table size hints.
@@ -236,8 +227,12 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
     if ((oovdic = cmd_ln_str("-oovdict")) != NULL)
         j += get_dict_size(oovdic);
     if ((personalDic = cmd_ln_str("-pdict")) != NULL) {
-        if (stat(personalDic, &statbuf) == 0)   /* personalDic exists */
+        FILE *tmp;
+        /* personalDic exists */
+        if ((tmp = fopen(personalDic, "r")) != NULL)
             j += get_dict_size(personalDic);
+        if (tmp)
+            fclose(tmp);
     }
 
     if ((max_new_oov = cmd_ln_int32("-maxnewoov")) > 0)
@@ -278,8 +273,12 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
     if ((oovdic = cmd_ln_str("-oovdict")) != NULL)
         dict_load(dict, oovdic, &word_id, use_context, FALSE);
     if ((personalDic = cmd_ln_str("-pdict")) != NULL) {
-        if (stat(personalDic, &statbuf) == 0)
+        FILE *tmp;
+        /* personalDic exists */
+        if ((tmp = fopen(personalDic, "r")) != NULL)
             dict_load(dict, personalDic, &word_id, use_context, FALSE);
+        if (tmp != NULL)
+            fclose(tmp);
     }
 
     last_initial_oov = word_id - 1;
@@ -478,7 +477,7 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
         E_INFO("%s: first line of %s was %s, expecting '!'\n",
                rname, filename, dict_str);
         E_INFO("%s: will assume first line contains a word\n", rname);
-        rewind(fs);
+        fseek(fs, 0, SEEK_SET);
     }
 
     pronoun_str[0] = '\0';

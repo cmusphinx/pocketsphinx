@@ -123,13 +123,6 @@
 #include <string.h>
 #include <assert.h>
 #include <limits.h>
-#if defined(WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
-#include <fcntl.h>
-#include <io.h>
-#else
-#include <unistd.h>
-#include <sys/param.h>
-#endif
 
 #include "s2types.h"
 #include "basic_types.h"

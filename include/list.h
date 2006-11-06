@@ -46,11 +46,7 @@
 #ifndef _LIST_H_
 #define _LIST_H_
 
-#include <sys/types.h>
-
-#if defined(WIN32)
-#include <posixwin32.h>
-#endif
+#include "posixwin32.h"
 
 typedef struct {
     int32	size_hint;		/* For initial allocation */

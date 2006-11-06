@@ -41,32 +41,24 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
 
-#if defined(WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
-#include <io.h>
-#else
-#include <sys/file.h>
-#include <unistd.h>
-#endif
 #include "byteorder.h"
 
 int
 awriteshort(char const *file, short *data, int length)
 {
-    int fd;
-    int size;
+	FILE *fd;
     int offset;
 
-    if ((fd = open(file, O_CREAT | O_WRONLY | O_TRUNC, 0644)) < 0) {
+    if ((fd = fopen(file, "wb")) == NULL) {
         fprintf(stderr, "awriteshort: %s: can't create\n", file);
         return -1;
     }
 
     SWAP_BE_32(&length);
-    if (write(fd, (char *) &length, 4) != 4) {
+    if (fwrite((char *) &length, 4, 1, fd) != 1) {
         fprintf(stderr, "awriteshort: %s: can't write length\n", file);
-        close(fd);
+        fclose(fd);
         return -1;
     }
     SWAP_BE_32(&length);
@@ -74,16 +66,15 @@ awriteshort(char const *file, short *data, int length)
     /* FIXME: gack.  shouldn't modify data! */
     for (offset = 0; offset < length; offset++)
         SWAP_BE_16(data + offset);
-    size = length * sizeof(short);
-    if (write(fd, (char *) data, size) != size) {
+    if (fwrite((char *) data, sizeof(short), length, fd) != length) {
         fprintf(stderr, "awriteshort: %s: can't write data\n", file);
-        close(fd);
+        fclose(fd);
         return (-1);
     }
     for (offset = 0; offset < length; offset++)
         SWAP_BE_16(data + offset);
 
     printf("Wrote %d shorts in %s.\n", length, file);
-    close(fd);
+    fclose(fd);
     return length;
 }

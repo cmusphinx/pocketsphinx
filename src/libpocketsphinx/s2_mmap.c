@@ -51,7 +51,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #ifdef GNUWINCE
 #include <sys/wcebase.h>
 #include <sys/wcetypes.h>
@@ -60,7 +60,7 @@
 #else
 #include <windows.h>
 #endif                          /* GNUWINCE */
-#else                           /* !WIN32 */
+#else                           /* !_WIN32 */
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>

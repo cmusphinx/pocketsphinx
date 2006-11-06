@@ -161,8 +161,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
 #include "s2types.h"
 #include "s2io.h"
@@ -222,9 +220,9 @@ static int32 get_dict_size(int32 *inout_n_unigram, char const *lmname);
 static int32 lmtext_load(char const  *filename, char const *lmname,
                          lm_t **out_model);
 static int32 lm3g_load(char const *file, char const *lmname,
-                       lm_t **out_model, char const *lmfile, int32 mtime);
+                       lm_t **out_model, char const *lmfile);
 static int32 lm3g_dump(char const *file, lm_t * model,
-                       char const *lmfile, int32 mtime);
+                       char const *lmfile);
 static void lm_set_param(lm_t * model, double lw, double uw,
                          double wip, int32 word_pair);
 
@@ -721,14 +719,15 @@ ReadTrigrams(FILE * fp, lm_t * model, int32 idfmt)
 static FILE *
 lm_file_open(char const *filename, int32 usepipe)
 {
-    char command[1024];
     FILE *fp;
 
     if (usepipe) {
-#ifdef GNUWINCE
+#if defined(_WIN32_WCE) || defined(GNUWINCE)
         E_FATAL("No popen() on WinCE\n");
 #else
+        char command[1024];
 #ifdef WIN32
+        /* FIXME: COMPLETELY BOGUS!!! */
         sprintf(command, "D:\\compress\\gzip.exe -d -c %s", filename);
         if ((fp = _popen(command, "r")) == NULL)
             E_FATAL("Cannot popen %s\n", command);
@@ -793,7 +792,6 @@ lmtext_load(char const *filename, char const *lmname, lm_t **out_model)
 {
     FILE *fp;
     size_t k;
-    struct stat statbuf;
     int32 usingPipe = FALSE;
     int32 n_unigram;
     int32 n_bigram;
@@ -817,8 +815,6 @@ lmtext_load(char const *filename, char const *lmname, lm_t **out_model)
     idfmt = ((k > 3) && (strncmp(filename + k - 3, "-id", 3) == 0));
 
     fp = lm_file_open(filename, usingPipe);
-    if (stat(filename, &statbuf) < 0)
-        E_FATAL("stat(%s) failed\n", filename);
 
     /* Read #unigrams, #bigrams, #trigrams from file */
     ReadNgramCounts(fp, &n_unigram, &n_bigram, &n_trigram);
@@ -906,10 +902,10 @@ lmtext_load(char const *filename, char const *lmname, lm_t **out_model)
     /* Now dump this file if requrested. */
     /* HACK!! to avoid unnecessarily creating dump files for small LMs */
     if (kbdumpdir && (model->bcount + model->tcount > 200000))
-        lm3g_dump(dumpfile, model, filename, (int32) statbuf.st_mtime);
+        lm3g_dump(dumpfile, model, filename);
 
     if (usingPipe) {
-#ifdef GNUWINCE
+#if defined(_WIN32_WCE) || defined(GNUWINCE)
         E_FATAL("No popen() on WinCE!\n");
 #else                           /* !GNUWINCE */
 #ifdef WIN32
@@ -951,7 +947,7 @@ lm_read_clm(char const *filename,
         lm_delete(lmname);
 
     /* Try to read it as a dump file. */
-    if (lm3g_load(filename, lmname, &model, filename, 0) < 0) {
+    if (lm3g_load(filename, lmname, &model, filename) < 0) {
         if (lmtext_load(filename, lmname, &model) < 0) {
             E_FATAL("Failed to load LM (text or dump format) from %s\n", filename);
         }
@@ -1354,7 +1350,7 @@ int32 wid;
  */
 static int32
 lm3g_load(char const *file, char const *lmname,
-          lm_t **out_model, char const *lmfile, int32 mtime)
+          lm_t **out_model, char const *lmfile)
 {
     int32 i, j, k, vn, ts, err;
     int32 n_unigram;
@@ -1422,12 +1418,9 @@ lm3g_load(char const *file, char const *lmname,
     fread(&vn, sizeof(vn), 1, fp);
     if (do_swap) SWAP_INT32(&vn);
     if (vn <= 0) {
-        /* read and compare timestamps */
+        /* read and don't compare timestamps (we don't care) */
         fread(&ts, sizeof(ts), 1, fp);
         if (do_swap) SWAP_INT32(&ts);
-        if (ts < mtime) {
-            E_WARN("**WARNING** LM file newer than dump file\n");
-        }
 
         /* read and skip format description */
         for (;;) {
@@ -1688,7 +1681,7 @@ static char const *fmtdesc[] = {
  * We don't swap bytes because it could be mmap()ed
  */
 static int32
-lm3g_dump(char const *file, lm_t * model, char const *lmfile, int32 mtime)
+lm3g_dump(char const *file, lm_t * model, char const *lmfile)
 {
     int32 i, k, zero = 0;
     FILE *fp;
@@ -1711,7 +1704,7 @@ lm3g_dump(char const *file, lm_t * model, char const *lmfile, int32 mtime)
     /* Write version# and LM file modification date */
     k = -1;
     fwrite_int32(fp, k);       /* version # */
-    fwrite_int32(fp, mtime);
+    fwrite_int32(fp, k);       /* ignore modification date */
 
     /* Write file format description into header */
     for (i = 0; fmtdesc[i] != NULL; i++) {

@@ -105,10 +105,6 @@ SOURCE=..\..\..\src\libpocketsphinx\cache_lm.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\libpocketsphinx\cep_rw.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\libpocketsphinx\dict.c
 # End Source File
 # Begin Source File

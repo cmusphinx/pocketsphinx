@@ -55,12 +55,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef WIN32
-#include <fcntl.h>
-#else
-#include <sys/file.h>
-#endif
-
 #include "s2types.h"
 #include "ckd_alloc.h"
 #include "strfuncs.h"

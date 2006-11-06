@@ -178,21 +178,6 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
-
-#if defined(WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
-#include <fcntl.h>
-#include <io.h>
-#else
-#include <sys/file.h>
-#include <sys/errno.h>
-#include <sys/param.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <unistd.h>
-#endif
-
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <stdlib.h>
 
 /* SphinxBase headers */
@@ -743,7 +728,7 @@ time_align_utterance(char const *utt,
 {
     int32 n_frames;
     mfcc_t ***feat;
-#ifndef WIN32
+#ifndef _WIN32
     struct rusage start, stop;
     struct timeval e_start, e_stop;
 #endif
@@ -760,12 +745,12 @@ time_align_utterance(char const *utt,
 
     time_align_set_input(feat, n_frames);
 
-#ifndef WIN32
+#ifndef _WIN32
 #ifndef _HPUX_SOURCE
     getrusage(RUSAGE_SELF, &start);
 #endif                          /* _HPUX_SOURCE */
     gettimeofday(&e_start, 0);
-#endif                          /* WIN32 */
+#endif                          /* _WIN32 */
 
     if (time_align_word_sequence(utt, left_word, pe_words, right_word) ==
         0) {
@@ -844,7 +829,7 @@ time_align_utterance(char const *utt,
         E_ERROR("No alignment for %s\n", utt_name);
     }
 
-#ifndef WIN32
+#ifndef _WIN32
 #ifndef _HPUX_SOURCE
     getrusage(RUSAGE_SELF, &stop);
 #endif                          /* _HPUX_SOURCE */
@@ -869,5 +854,5 @@ time_align_utterance(char const *utt,
     TotalCPUTime += MakeSeconds(&start.ru_utime, &stop.ru_utime);
     TotalElapsedTime += MakeSeconds(&e_start, &e_stop);
     TotalSpeechTime += n_frames * 0.01;
-#endif                          /* WIN32 */
+#endif                          /* _WIN32 */
 }

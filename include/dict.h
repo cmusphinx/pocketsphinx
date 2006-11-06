@@ -34,7 +34,6 @@
 #ifndef _DICT_H_
 #define _DICT_H_
 
-#include <sys/types.h>
 #include "hash_table.h"
 #include "glist.h"
 

@@ -293,7 +293,7 @@ allphone_backtrace(int32 bp)
     h->wid = allphone_bp[bp].p;
     /* The result of phone_from_id is ephemeral in PocketSphinx.  So
      * makesure to use allphone_utt_seghyp_free(). */
-    h->word = strdup(phone_from_id(allphone_bp[bp].p));
+    h->word = ckd_salloc(phone_from_id(allphone_bp[bp].p));
     h->sf = bf;
     h->ef = allphone_bp[bp].f;
     h->next = NULL;
