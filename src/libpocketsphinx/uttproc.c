@@ -303,6 +303,7 @@
 #include "fsg_search.h"
 #include "ckd_alloc.h"
 #include "uttproc.h"
+#include "posixwin32.h"
 
 #define MAX_UTT_LEN     6000    /* #frames */
 
@@ -638,7 +639,7 @@ write_results(char const *hyp, int32 aborted)
         fprintf(matchsegfp, "%s S %d T %d A %d L %d", uttid,
                 0, /* FIXME: scaling factors not recorded? */
                 search_get_score(),
-                search_get_score - search_get_lscr(),
+                search_get_score() - search_get_lscr(),
                 search_get_lscr());
         for (i = 0; seghyp[i].wid >= 0; i++) {
             fprintf(matchsegfp, " %d %d %d %s",

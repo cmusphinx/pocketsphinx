@@ -214,6 +214,7 @@
 #include "byteorder.h"
 #include "time_align.h"
 #include "search.h"
+#include "posixwin32.h"
 
 /* Static declarations for this file. */
 static search_hyp_t *run_sc_utterance(char *mfcfile, int32 sf, int32 ef,

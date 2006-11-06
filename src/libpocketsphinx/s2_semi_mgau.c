@@ -126,6 +126,7 @@
 #include "kb.h"
 #include "s2io.h"
 #include "senscr.h"
+#include "posixwin32.h"
 
 #define MGAU_MIXW_VERSION	"1.0"   /* Sphinx-3 file format version for mixw */
 #define MGAU_PARAM_VERSION	"1.0"   /* Sphinx-3 file format version for mean/var */
