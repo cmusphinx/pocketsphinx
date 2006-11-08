@@ -450,10 +450,6 @@
       ARG_BOOLEAN,                                                              \
       "yes",                                                                    \
       "Use memory-mapped I/O (if possible) for model files" },                  \
-{ "-dcep80msweight",                                                            \
-      ARG_FLOAT32,                                                              \
-      "1.0",                                                                    \
-      "Weight for long-time (80ms) delta-cepstrum features" },                  \
 { "-dsratio",                                                                   \
       ARG_INT32,                                                                \
       "1",                                                                      \
