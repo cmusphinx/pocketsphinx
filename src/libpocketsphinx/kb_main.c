@@ -164,7 +164,7 @@ bin_mdef_t *mdef;
 s2_semi_mgau_t *semi_mgau;
 
 /* Model file names */
-char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *sendumpfn;
+char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *kdtreefn, *sendumpfn;
 
 /* FIXME: Should go in sphinxbase */
 char *
@@ -401,7 +401,9 @@ dict_init(void)
             ckd_free(fdictfn);
             fdictfn = NULL;
         }
-        fclose(tmp);
+        else {
+            fclose(tmp);
+        }
     }
 
     if (dict_read(word_dict, cmd_ln_str("-dict"), cmd_ln_str("-pdict"),
@@ -481,7 +483,7 @@ kb_init(void)
         mixwfn = string_join(hmmdir, "/mixture_weights", NULL);
         tmatfn = string_join(hmmdir, "/transition_matrices", NULL);
 
-        /* Special case - make sure this one actually exists */
+        /* These ones are optional, so make sure they exist. */
         sendumpfn = string_join(hmmdir, "/sendump", NULL);
         if ((tmp = fopen(sendumpfn, "rb")) == NULL) {
             ckd_free(sendumpfn);
@@ -490,19 +492,44 @@ kb_init(void)
         else {
             fclose(tmp);
         }
+        kdtreefn = string_join(hmmdir, "/kdtrees", NULL);
+        if ((tmp = fopen(kdtreefn, "rb")) == NULL) {
+            ckd_free(kdtreefn);
+            kdtreefn = NULL;
+        }
+        else {
+            fclose(tmp);
+        }
     }
-    if (cmd_ln_str("-mdef"))
+    /* Allow overrides from the command line */
+    if (cmd_ln_str("-mdef")) {
+        ckd_free(mdeffn);
         mdeffn = cmd_ln_str("-mdef");
-    if (cmd_ln_str("-mean"))
+    }
+    if (cmd_ln_str("-mean")) {
+        ckd_free(meanfn);
         meanfn = cmd_ln_str("-mean");
-    if (cmd_ln_str("-var"))
+    }
+    if (cmd_ln_str("-var")) {
+        ckd_free(varfn);
         varfn = cmd_ln_str("-var");
-    if (cmd_ln_str("-mixw"))
+    }
+    if (cmd_ln_str("-mixw")) {
+        ckd_free(mixwfn);
         mixwfn = cmd_ln_str("-mixw");
-    if (cmd_ln_str("-tmat"))
+    }
+    if (cmd_ln_str("-tmat")) {
+        ckd_free(tmatfn);
         tmatfn = cmd_ln_str("-tmat");
-    if (cmd_ln_str("-sendump"))
+    }
+    if (cmd_ln_str("-sendump")) {
+        ckd_free(sendumpfn);
         sendumpfn = cmd_ln_str("-sendump");
+    }
+    if (cmd_ln_str("-kdtree")) {
+        ckd_free(kdtreefn);
+        sendumpfn = cmd_ln_str("-kdtree");
+    }
 
     /* Read model definition. */
     if (mdeffn == NULL)
@@ -533,12 +560,11 @@ kb_init(void)
                                   mixwfn,
                                   cmd_ln_float32("-mixwfloor"),
                                   cmd_ln_int32("-topn"));
-    if (cmd_ln_str("-kdtree"))
+    if (kdtreefn)
         s2_semi_mgau_load_kdtree(semi_mgau,
-                                 cmd_ln_str("-kdtree"),
+                                 kdtreefn,
                                  cmd_ln_int32("-kdmaxdepth"),
                                  cmd_ln_int32("-kdmaxbbi"));
-    semi_mgau->dcep80msWeight = FLOAT2MFCC(cmd_ln_float32("-dcep80msweight"));
     semi_mgau->ds_ratio = cmd_ln_int32("-dsratio");
 
     /*
