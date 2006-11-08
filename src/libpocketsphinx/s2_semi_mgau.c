@@ -192,35 +192,35 @@ static int32 get_scores1_8b_all(s2_semi_mgau_t * s);
 static int32 get_scores_8b_all(s2_semi_mgau_t * s);
 
 static void
-cepDist0(s2_semi_mgau_t * s, int32 frame, mfcc_t * z)
+mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
 {
     register int32 i, j, k, cw;
     vqFeature_t *worst, *best, *topn, *cur;     /*, *src; */
     mean_t diff, sqdiff, compl; /* diff, diff^2, component likelihood */
     mfcc_t *obs;
     mean_t *mean;
-    var_t *var = s->vars[(int32) CEP_FEAT];
-    int32 *det = s->dets[(int32) CEP_FEAT], *detP;
+    var_t *var = s->vars[feat];
+    int32 *det = s->dets[feat], *detP;
     int32 *detE = det + S2_NUM_ALPHABET;
     var_t d;
     kd_tree_node_t *node;
     vqFeature_t vtmp;
 
-    best = topn = s->f[CEP_FEAT];
+    best = topn = s->f[feat];
     assert(z != NULL);
     assert(topn != NULL);
     memcpy(topn, s->lcfrm, sizeof(vqFeature_t) * s->topN);
     worst = topn + (s->topN - 1);
     if (s->kdtrees)
         node =
-            eval_kd_tree(s->kdtrees[(int32) CEP_FEAT], z, s->kd_maxdepth);
+            eval_kd_tree(s->kdtrees[feat], z, s->kd_maxdepth);
     else
         node = NULL;
     /* initialize topn codewords to topn codewords from previous frame */
     for (i = 0; i < s->topN; i++) {
         cw = topn[i].codeword;
-        mean = s->means[(int32) CEP_FEAT] + cw * CEP_VECLEN + 1;
-        var = s->vars[(int32) CEP_FEAT] + cw * CEP_VECLEN + 1;
+        mean = s->means[feat] + cw * CEP_VECLEN + 1;
+        var = s->vars[feat] + cw * CEP_VECLEN + 1;
         d = det[cw];
         obs = z;
         for (j = 1; j < CEP_VECLEN; j++) {
@@ -247,8 +247,8 @@ cepDist0(s2_semi_mgau_t * s, int32 frame, mfcc_t * z)
                                                                kd_maxbbi);
         for (i = 0; i < maxbbi; ++i) {
             cw = node->bbi[i];
-            mean = s->means[(int32) CEP_FEAT] + cw * CEP_VECLEN + 1;
-            var = s->vars[(int32) CEP_FEAT] + cw * CEP_VECLEN + 1;
+            mean = s->means[feat] + cw * CEP_VECLEN + 1;
+            var = s->vars[feat] + cw * CEP_VECLEN + 1;
             d = det[cw];
             obs = z;
             for (j = 1; (j < CEP_VECLEN) && (d >= worst->val.dist); j++) {
@@ -278,8 +278,8 @@ cepDist0(s2_semi_mgau_t * s, int32 frame, mfcc_t * z)
         }
     }
     else {
-        mean = s->means[(int32) CEP_FEAT];
-        var = s->vars[(int32) CEP_FEAT];
+        mean = s->means[feat];
+        var = s->vars[feat];
         for (detP = det, ++mean, ++var; detP < detE; detP++, ++mean, ++var) {
             d = *detP;
             obs = z;
@@ -317,7 +317,6 @@ cepDist0(s2_semi_mgau_t * s, int32 frame, mfcc_t * z)
 
     memcpy(s->lcfrm, topn, sizeof(vqFeature_t) * s->topN);
 }
-
 
 static void
 dcepDist0(s2_semi_mgau_t * s, int32 frame, mfcc_t * dzs, mfcc_t * dzl)
@@ -479,140 +478,6 @@ dcepDist0(s2_semi_mgau_t * s, int32 frame, mfcc_t * dzs, mfcc_t * dzl)
 }
 
 static void
-ddcepDist0(s2_semi_mgau_t * s, int32 frame, mfcc_t * z)
-{
-    register int32 i, j, k, cw;
-    vqFeature_t *worst, *best, *topn, *cur;     /*, *src; */
-    mean_t diff, sqdiff, compl;
-    mfcc_t *obs;
-    mean_t *mean;
-    var_t *var;
-    int32 *det = s->dets[(int32) DDCEP_FEAT];
-    int32 *detE = det + S2_NUM_ALPHABET;
-    int32 *detP;                /*, tmp; */
-    var_t d;
-    kd_tree_node_t *node;
-    vqFeature_t vtmp;
-
-    best = topn = s->f[DDCEP_FEAT];
-    assert(z != NULL);
-    assert(topn != NULL);
-
-    if (s->kdtrees)
-        node =
-            eval_kd_tree(s->kdtrees[(int32) DDCEP_FEAT], z,
-                         s->kd_maxdepth);
-    else
-        node = NULL;
-
-    memcpy(topn, s->lxfrm, sizeof(vqFeature_t) * s->topN);
-    worst = topn + (s->topN - 1);
-    /* initialize topn codewords to topn codewords from previous frame */
-    for (i = 0; i < s->topN; i++) {
-        cw = topn[i].codeword;
-        mean = s->means[(int32) DDCEP_FEAT] + cw * CEP_VECLEN + 1;
-        var = s->vars[(int32) DDCEP_FEAT] + cw * CEP_VECLEN + 1;
-        d = det[cw];
-        obs = z;
-        for (j = 1; j < CEP_VECLEN; j++) {
-            diff = *obs++ - *mean++;
-            sqdiff = MFCCMUL(diff, diff);
-            compl = MFCCMUL(sqdiff, *var);
-            d = GMMSUB(d, compl);
-            ++var;
-        }
-        topn[i].val.dist = (int32) d;
-        if (i == 0)
-            continue;
-        vtmp = topn[i];
-        for (j = i - 1; j >= 0 && (int32) d > topn[j].val.dist; j--) {
-            topn[j + 1] = topn[j];
-        }
-        topn[j + 1] = vtmp;
-    }
-    if (frame % s->ds_ratio)
-        return;
-    if (node) {
-        uint32 maxbbi = s->kd_maxbbi == -1 ? node->n_bbi : MIN(node->n_bbi,
-                                                               s->
-                                                               kd_maxbbi);
-        for (i = 0; i < maxbbi; ++i) {
-            cw = node->bbi[i];
-            mean = s->means[(int32) DDCEP_FEAT] + cw * CEP_VECLEN + 1;
-            var = s->vars[(int32) DDCEP_FEAT] + cw * CEP_VECLEN + 1;
-            d = det[cw];
-            obs = z;
-            for (j = 1; (j < CEP_VECLEN) && (d >= worst->val.dist); j++) {
-                diff = *obs++ - *mean++;
-                sqdiff = MFCCMUL(diff, diff);
-                compl = MFCCMUL(sqdiff, *var);
-                d = GMMSUB(d, compl);
-                ++var;
-            }
-            if (j < CEP_VECLEN)
-                continue;
-            if (d < worst->val.dist)
-                continue;
-            for (k = 0; k < s->topN; k++) {
-                /* already there, so don't need to insert */
-                if (topn[k].codeword == cw)
-                    break;
-            }
-            if (k < s->topN)
-                continue;       /* already there.  Don't insert */
-            /* remaining code inserts codeword and dist in correct spot */
-            for (cur = worst - 1;
-                 cur >= best && (int32) d >= cur->val.dist; --cur)
-                memcpy(cur + 1, cur, sizeof(vqFeature_t));
-            ++cur;
-            cur->codeword = cw;
-            cur->val.dist = (int32) d;
-        }
-    }
-    else {
-        mean = s->means[(int32) DDCEP_FEAT];
-        var = s->vars[(int32) DDCEP_FEAT];
-        for (detP = det, ++mean, ++var; detP < detE; detP++, ++mean, ++var) {
-            d = *detP;
-            obs = z;
-            cw = detP - det;
-            for (j = 1; (j < CEP_VECLEN) && (d >= worst->val.dist); j++) {
-                diff = *obs++ - *mean++;
-                sqdiff = MFCCMUL(diff, diff);
-                compl = MFCCMUL(sqdiff, *var);
-                d = GMMSUB(d, compl);
-                ++var;
-            }
-            if (j < CEP_VECLEN) {
-                /* terminated early, so not in topn */
-                mean += (CEP_VECLEN - j);
-                var += (CEP_VECLEN - j);
-                continue;
-            }
-            if (d < worst->val.dist)
-                continue;
-
-            for (i = 0; i < s->topN; i++) {
-                /* already there, so don't need to insert */
-                if (topn[i].codeword == cw)
-                    break;
-            }
-            if (i < s->topN)
-                continue;       /* already there.  Don't insert */
-            /* remaining code inserts codeword and dist in correct spot */
-            for (cur = worst - 1;
-                 cur >= best && (int32) d >= cur->val.dist; --cur)
-                memcpy(cur + 1, cur, sizeof(vqFeature_t));
-            ++cur;
-            cur->codeword = cw;
-            cur->val.dist = (int32) d;
-        }
-    }
-
-    memcpy(s->lxfrm, topn, sizeof(vqFeature_t) * s->topN);
-}
-
-static void
 powDist(s2_semi_mgau_t * s, int32 frame, mfcc_t * pz)
 {
     register int32 i, j, cw;
@@ -676,14 +541,11 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
     int i, j;
     int32 tmp[S2_NUM_FEATURES];
 
-    cepDist0(s, frame, feat[CEP_FEAT]);
-
+    mgau_dist(s, frame, CEP_FEAT, feat[CEP_FEAT]);
     dcepDist0(s, frame, feat[DCEP_FEAT],
               feat[DCEP_FEAT] + CEP_VECLEN - 1);
-
     powDist(s, frame, feat[POW_FEAT]);
-
-    ddcepDist0(s, frame, feat[DDCEP_FEAT]);
+    mgau_dist(s, frame, DDCEP_FEAT, feat[DDCEP_FEAT]);
 
     /* normalize the topN feature scores */
     for (j = 0; j < S2_NUM_FEATURES; j++) {
