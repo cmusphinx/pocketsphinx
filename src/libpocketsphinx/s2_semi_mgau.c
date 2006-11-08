@@ -133,21 +133,11 @@
 
 /* centered 5 frame difference of c[0]...c[12] with centered 9 frame
  * of c[1]...c[12].  Don't ask me why it was designed this way! */
-#define DCEP_VECLEN	25
-#define DCEP_LONGWEIGHT	0.5
-#define POW_VECLEN	3       /* pow, diff pow, diff diff pow */
-
-#define CEP_VECLEN	13
+#define DCEP_VECLEN	24
+#define CEP_VECLEN	12
 #define POW_VECLEN	3
-#define CEP_SIZE	CEP_VECLEN
-#define POW_SIZE	POW_VECLEN
-
 #define NONE		-1
 #define WORST_DIST	(int32)(0x80000000)
-#define BTR		>
-#define NEARER		>
-#define WORSE		<
-#define FARTHER		<
 
 enum { CEP_FEAT = 0, DCEP_FEAT = 1, POW_FEAT = 2, DDCEP_FEAT = 3 };
 static const int32 fLenMap[S2_NUM_FEATURES] = {
@@ -192,38 +182,27 @@ static int32 get_scores1_8b_all(s2_semi_mgau_t * s);
 static int32 get_scores_8b_all(s2_semi_mgau_t * s);
 
 static void
-mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
+eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
 {
-    register int32 i, j, k, cw;
-    vqFeature_t *worst, *best, *topn, *cur;     /*, *src; */
-    mean_t diff, sqdiff, compl; /* diff, diff^2, component likelihood */
-    mfcc_t *obs;
-    mean_t *mean;
-    var_t *var = s->vars[feat];
-    int32 *det = s->dets[feat], *detP;
-    int32 *detE = det + S2_NUM_ALPHABET;
-    var_t d;
-    kd_tree_node_t *node;
-    vqFeature_t vtmp;
+    int32 i, ceplen;
+    vqFeature_t *topn;
 
-    best = topn = s->f[feat];
-    assert(z != NULL);
-    assert(topn != NULL);
-    memcpy(topn, s->lcfrm, sizeof(vqFeature_t) * s->topN);
-    worst = topn + (s->topN - 1);
-    if (s->kdtrees)
-        node =
-            eval_kd_tree(s->kdtrees[feat], z, s->kd_maxdepth);
-    else
-        node = NULL;
-    /* initialize topn codewords to topn codewords from previous frame */
+    topn = s->f[feat];
+    ceplen = fLenMap[feat];
+
     for (i = 0; i < s->topN; i++) {
+        mean_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
+        vqFeature_t vtmp;
+        var_t *var, d;
+        mfcc_t *obs;
+        int32 cw, j;
+
         cw = topn[i].codeword;
-        mean = s->means[feat] + cw * CEP_VECLEN + 1;
-        var = s->vars[feat] + cw * CEP_VECLEN + 1;
-        d = det[cw];
+        mean = s->means[feat] + cw * ceplen;
+        var = s->vars[feat] + cw * ceplen;
+        d = s->dets[feat][cw];
         obs = z;
-        for (j = 1; j < CEP_VECLEN; j++) {
+        for (j = 0; j < ceplen; j++) {
             diff = *obs++ - *mean++;
             sqdiff = MFCCMUL(diff, diff);
             compl = MFCCMUL(sqdiff, *var);
@@ -239,83 +218,146 @@ mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
         }
         topn[j + 1] = vtmp;
     }
+}
+
+static void
+eval_cb_kdtree(s2_semi_mgau_t *s, int32 feat, mfcc_t *z,
+               kd_tree_node_t *node, uint32 maxbbi)
+{
+    vqFeature_t *worst, *best, *topn;
+    int32 i, ceplen;
+
+    best = topn = s->f[feat];
+    worst = topn + (s->topN - 1);
+    ceplen = fLenMap[feat];
+
+    for (i = 0; i < maxbbi; ++i) {
+        mean_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
+        var_t *var, d;
+        mfcc_t *obs;
+        vqFeature_t *cur;
+        int32 cw, j, k;
+
+        cw = node->bbi[i];
+        mean = s->means[feat] + cw * ceplen;
+        var = s->vars[feat] + cw * ceplen;
+        d = s->dets[feat][cw];
+        obs = z;
+        for (j = 0; (j < ceplen) && (d >= worst->val.dist); j++) {
+            diff = *obs++ - *mean++;
+            sqdiff = MFCCMUL(diff, diff);
+            compl = MFCCMUL(sqdiff, *var);
+            d = GMMSUB(d, compl);
+            ++var;
+        }
+        if (j < ceplen)
+            continue;
+        if (d < worst->val.dist)
+            continue;
+        for (k = 0; k < s->topN; k++) {
+            /* already there, so don't need to insert */
+            if (topn[k].codeword == cw)
+                break;
+        }
+        if (k < s->topN)
+            continue;       /* already there.  Don't insert */
+        /* remaining code inserts codeword and dist in correct spot */
+        for (cur = worst - 1; cur >= best && d >= cur->val.dist; --cur)
+            memcpy(cur + 1, cur, sizeof(vqFeature_t));
+        ++cur;
+        cur->codeword = cw;
+        cur->val.dist = (int32) d;
+    }
+}
+
+static void
+eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
+{
+    vqFeature_t *worst, *best, *topn;
+    mean_t *mean;
+    var_t *var;
+    int32 *det, *detP, *detE;
+    int32 i, ceplen;
+
+    best = topn = s->f[feat];
+    worst = topn + (s->topN - 1);
+    mean = s->means[feat];
+    var = s->vars[feat];
+    det = s->dets[feat];
+    detE = det + S2_NUM_ALPHABET;
+    ceplen = fLenMap[feat];
+
+    for (detP = det; detP < detE; ++detP) {
+        mean_t diff, sqdiff, compl; /* diff, diff^2, component likelihood */
+        var_t d;
+        mfcc_t *obs;
+        vqFeature_t *cur;
+        int32 cw, j;
+
+        d = *detP;
+        obs = z;
+        cw = detP - det;
+        for (j = 0; (j < ceplen) && (d >= worst->val.dist); ++j) {
+            diff = *obs++ - *mean++;
+            sqdiff = MFCCMUL(diff, diff);
+            compl = MFCCMUL(sqdiff, *var);
+            d = GMMSUB(d, compl);
+            ++var;
+        }
+        if (j < ceplen) {
+            /* terminated early, so not in topn */
+            mean += (ceplen - j);
+            var += (ceplen - j);
+            continue;
+        }
+        if (d < worst->val.dist)
+            continue;
+        for (i = 0; i < s->topN; i++) {
+            /* already there, so don't need to insert */
+            if (topn[i].codeword == cw)
+                break;
+        }
+        if (i < s->topN)
+            continue;       /* already there.  Don't insert */
+        /* remaining code inserts codeword and dist in correct spot */
+        for (cur = worst - 1; cur >= best && d >= cur->val.dist; --cur)
+            memcpy(cur + 1, cur, sizeof(vqFeature_t));
+        ++cur;
+        cur->codeword = cw;
+        cur->val.dist = (int32) d;
+    }
+}
+
+static void
+mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
+{
+    /* Initialize topn codewords to topn codewords from previous
+     * frame, and calculate their densities. */
+    memcpy(s->f[feat], s->lcfrm, sizeof(vqFeature_t) * s->topN);
+    eval_topn(s, feat, z);
+
+    /* If this frame is skipped, do nothing else. */
     if (frame % s->ds_ratio)
         return;
-    if (node) {
-        uint32 maxbbi = s->kd_maxbbi == -1 ? node->n_bbi : MIN(node->n_bbi,
-                                                               s->
-                                                               kd_maxbbi);
-        for (i = 0; i < maxbbi; ++i) {
-            cw = node->bbi[i];
-            mean = s->means[feat] + cw * CEP_VECLEN + 1;
-            var = s->vars[feat] + cw * CEP_VECLEN + 1;
-            d = det[cw];
-            obs = z;
-            for (j = 1; (j < CEP_VECLEN) && (d >= worst->val.dist); j++) {
-                diff = *obs++ - *mean++;
-                sqdiff = MFCCMUL(diff, diff);
-                compl = MFCCMUL(sqdiff, *var);
-                d = GMMSUB(d, compl);
-                ++var;
-            }
-            if (j < CEP_VECLEN)
-                continue;
-            if (d < worst->val.dist)
-                continue;
-            for (k = 0; k < s->topN; k++) {
-                /* already there, so don't need to insert */
-                if (topn[k].codeword == cw)
-                    break;
-            }
-            if (k < s->topN)
-                continue;       /* already there.  Don't insert */
-            /* remaining code inserts codeword and dist in correct spot */
-            for (cur = worst - 1; cur >= best && d >= cur->val.dist; --cur)
-                memcpy(cur + 1, cur, sizeof(vqFeature_t));
-            ++cur;
-            cur->codeword = cw;
-            cur->val.dist = (int32) d;
-        }
+
+    /* Evaluate the rest of the codebook (or subset thereof). */
+    if (s->kdtrees) {
+        kd_tree_node_t *node;
+        uint32 maxbbi;
+
+        node =
+            eval_kd_tree(s->kdtrees[feat], z, s->kd_maxdepth);
+        maxbbi = s->kd_maxbbi == -1 ? node->n_bbi : MIN(node->n_bbi,
+                                                        s->
+                                                        kd_maxbbi);
+        eval_cb_kdtree(s, feat, z, node, maxbbi);
     }
     else {
-        mean = s->means[feat];
-        var = s->vars[feat];
-        for (detP = det, ++mean, ++var; detP < detE; detP++, ++mean, ++var) {
-            d = *detP;
-            obs = z;
-            cw = detP - det;
-            for (j = 1; (j < CEP_VECLEN) && (d >= worst->val.dist); j++) {
-                diff = *obs++ - *mean++;
-                sqdiff = MFCCMUL(diff, diff);
-                compl = MFCCMUL(sqdiff, *var);
-                d = GMMSUB(d, compl);
-                ++var;
-            }
-            if (j < CEP_VECLEN) {
-                /* terminated early, so not in topn */
-                mean += (CEP_VECLEN - j);
-                var += (CEP_VECLEN - j);
-                continue;
-            }
-            if (d < worst->val.dist)
-                continue;
-            for (i = 0; i < s->topN; i++) {
-                /* already there, so don't need to insert */
-                if (topn[i].codeword == cw)
-                    break;
-            }
-            if (i < s->topN)
-                continue;       /* already there.  Don't insert */
-            /* remaining code inserts codeword and dist in correct spot */
-            for (cur = worst - 1; cur >= best && d >= cur->val.dist; --cur)
-                memcpy(cur + 1, cur, sizeof(vqFeature_t));
-            ++cur;
-            cur->codeword = cw;
-            cur->val.dist = (int32) d;
-        }
+        eval_cb(s, feat, z);
     }
 
-    memcpy(s->lcfrm, topn, sizeof(vqFeature_t) * s->topN);
+    /* Make a copy of current topn. */
+    memcpy(s->lcfrm, s->f[feat], sizeof(vqFeature_t) * s->topN);
 }
 
 static void
@@ -339,10 +381,9 @@ dcepDist0(s2_semi_mgau_t * s, int32 frame, mfcc_t * dzs, mfcc_t * dzl)
     assert(topn != NULL);
 
     if (s->kdtrees) {
-        mfcc_t dceps[(CEP_VECLEN - 1) * 2];
-        memcpy(dceps, dzs, (CEP_VECLEN - 1) * sizeof(*dzs));
-        memcpy(dceps + CEP_VECLEN - 1, dzl,
-               (CEP_VECLEN - 1) * sizeof(*dzl));
+        mfcc_t dceps[DCEP_VECLEN];
+        memcpy(dceps, dzs, CEP_VECLEN * sizeof(*dzs));
+        memcpy(dceps + CEP_VECLEN, dzl, CEP_VECLEN * sizeof(*dzl));
         node =
             eval_kd_tree(s->kdtrees[(int32) DCEP_FEAT], dceps,
                          s->kd_maxdepth);
@@ -355,20 +396,20 @@ dcepDist0(s2_semi_mgau_t * s, int32 frame, mfcc_t * dzs, mfcc_t * dzl)
     /* initialize topn codewords to topn codewords from previous frame */
     for (i = 0; i < s->topN; i++) {
         cw = topn[i].codeword;
-        mean = s->means[(int32) DCEP_FEAT] + cw * DCEP_VECLEN + 1;
-        var = s->vars[(int32) DCEP_FEAT] + cw * DCEP_VECLEN + 1;
+        mean = s->means[(int32) DCEP_FEAT] + cw * DCEP_VECLEN;
+        var = s->vars[(int32) DCEP_FEAT] + cw * DCEP_VECLEN;
         d = det[cw];
         obs1 = dzs;
         obs2 = dzl;
-        for (j = 1; j < CEP_VECLEN; j++, obs1++, obs2++, mean++, var++) {
+        for (j = 0; j < CEP_VECLEN; j++, obs1++, obs2++, mean++, var++) {
             diff = *obs1 - *mean;
             sqdiff = MFCCMUL(diff, diff);
             compl = MFCCMUL(sqdiff, *var);
             d = GMMSUB(d, compl);
             diff =
-                MFCCMUL((*obs2 - mean[CEP_VECLEN - 1]), s->dcep80msWeight);
+                MFCCMUL((*obs2 - mean[CEP_VECLEN]), s->dcep80msWeight);
             sqdiff = MFCCMUL(diff, diff);
-            compl = MFCCMUL(sqdiff, var[CEP_VECLEN - 1]);
+            compl = MFCCMUL(sqdiff, var[CEP_VECLEN]);
             d = GMMSUB(d, compl);
         }
         topn[i].val.dist = (int32) d;
@@ -388,22 +429,22 @@ dcepDist0(s2_semi_mgau_t * s, int32 frame, mfcc_t * dzs, mfcc_t * dzl)
                                                                kd_maxbbi);
         for (i = 0; i < maxbbi; ++i) {
             cw = node->bbi[i];
-            mean = s->means[(int32) DCEP_FEAT] + cw * DCEP_VECLEN + 1;
-            var = s->vars[(int32) DCEP_FEAT] + cw * DCEP_VECLEN + 1;
+            mean = s->means[(int32) DCEP_FEAT] + cw * DCEP_VECLEN;
+            var = s->vars[(int32) DCEP_FEAT] + cw * DCEP_VECLEN;
             d = det[cw];
             obs1 = dzs;
             obs2 = dzl;
-            for (j = 1; j < CEP_VECLEN && (d NEARER worst->val.dist);
+            for (j = 0; j < CEP_VECLEN && (d > worst->val.dist);
                  j++, obs1++, obs2++, mean++, var++) {
                 diff = *obs1 - *mean;
                 sqdiff = MFCCMUL(diff, diff);
                 compl = MFCCMUL(sqdiff, *var);
                 d = GMMSUB(d, compl);
                 diff =
-                    MFCCMUL((*obs2 - mean[CEP_VECLEN - 1]),
+                    MFCCMUL((*obs2 - mean[CEP_VECLEN]),
                             s->dcep80msWeight);
                 sqdiff = MFCCMUL(diff, diff);
-                compl = MFCCMUL(sqdiff, var[CEP_VECLEN - 1]);
+                compl = MFCCMUL(sqdiff, var[CEP_VECLEN]);
                 d = GMMSUB(d, compl);
             }
             if (j < CEP_VECLEN)
@@ -435,22 +476,23 @@ dcepDist0(s2_semi_mgau_t * s, int32 frame, mfcc_t * dzs, mfcc_t * dzl)
             obs1 = dzs;         /* reset observed */
             obs2 = dzl;         /* reset observed */
             cw = detP - det;
-            for (j = 1, ++mean, ++var;
-                 (j < CEP_VECLEN) && (d NEARER worst->val.dist);
+            for (j = 0; (j < CEP_VECLEN) && (d > worst->val.dist);
                  j++, obs1++, obs2++, mean++, var++) {
                 diff = *obs1 - *mean;
                 sqdiff = MFCCMUL(diff, diff);
                 compl = MFCCMUL(sqdiff, *var);
                 d = GMMSUB(d, compl);
                 diff =
-                    MFCCMUL((*obs2 - mean[CEP_VECLEN - 1]),
+                    MFCCMUL((*obs2 - mean[CEP_VECLEN]),
                             s->dcep80msWeight);
                 sqdiff = MFCCMUL(diff, diff);
-                compl = MFCCMUL(sqdiff, var[CEP_VECLEN - 1]);
+                compl = MFCCMUL(sqdiff, var[CEP_VECLEN]);
                 d = GMMSUB(d, compl);
             }
-            mean += CEP_VECLEN - 1;
-            var += CEP_VECLEN - 1;
+            mean += CEP_VECLEN;
+            var += CEP_VECLEN;
+            /* mean and var were not incremented in the loop, so add
+             * CEP_VECLEN - j here */
             if (j < CEP_VECLEN) {
                 mean += (CEP_VECLEN - j);
                 var += (CEP_VECLEN - j);
@@ -518,7 +560,7 @@ powDist(s2_semi_mgau_t * s, int32 frame, mfcc_t * pz)
         nextBest = *dP++;
         cw = 0;
         for (; dP < dE; dP++) {
-            if (*dP NEARER nextBest) {
+            if (*dP > nextBest) {
                 nextBest = *dP;
                 cw = dP - dist;
             }
@@ -542,8 +584,7 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
     int32 tmp[S2_NUM_FEATURES];
 
     mgau_dist(s, frame, CEP_FEAT, feat[CEP_FEAT]);
-    dcepDist0(s, frame, feat[DCEP_FEAT],
-              feat[DCEP_FEAT] + CEP_VECLEN - 1);
+    dcepDist0(s, frame, feat[DCEP_FEAT], feat[DCEP_FEAT] + CEP_VECLEN);
     powDist(s, frame, feat[POW_FEAT]);
     mgau_dist(s, frame, DDCEP_FEAT, feat[DDCEP_FEAT]);
 
@@ -1362,28 +1403,16 @@ s3_read_mgau(const char *file_name, float32 ** cb)
              file_name, n, n_mgau, n_density, blk);
 
     for (i = 0; i < 4; ++i) {
-        int j;
-
         cb[i] =
             (float32 *) ckd_calloc(S2_NUM_ALPHABET * fLenMap[i],
                                    sizeof(float32));
 
-        if (veclen[i] == fLenMap[i]) {  /* Not true except for POW_FEAT */
+        if (veclen[i] == fLenMap[i]) {
             if (bio_fread
                 (cb[i], sizeof(float32), S2_NUM_ALPHABET * fLenMap[i], fp,
                  byteswap, &chksum) != S2_NUM_ALPHABET * fLenMap[i])
                 E_FATAL("fread(%s, %d) of feat %d failed\n", file_name,
                         S2_NUM_ALPHABET * fLenMap[i], i);
-        }
-        else if (veclen[i] < fLenMap[i]) {
-            for (j = 0; j < S2_NUM_ALPHABET; ++j) {
-                if (bio_fread
-                    ((cb[i] + j * fLenMap[i]) + (fLenMap[i] - veclen[i]),
-                     sizeof(float32), veclen[i], fp, byteswap,
-                     &chksum) != veclen[i])
-                    E_FATAL("fread(%s, %d) in feat %d failed\n", file_name,
-                            veclen[i], i);
-            }
         }
         else
             E_FATAL("%s: feature %d length %d is not <= expected %d\n",
@@ -1431,12 +1460,6 @@ s3_precomp(mean_t ** means, var_t ** vars, int32 ** dets, float32 vFloor)
 #ifdef FIXED_POINT
                 *mp = FLOAT2FIX(*fmp);
 #endif
-                /* Omit C0 for cepstral features (but not pow_feat!) */
-                if (j == 0 && feat != POW_FEAT) {
-                    *vp = 0;
-                    continue;
-                }
-
                 /* Always do these pre-calculations in floating point */
                 fvar = *(float32 *) vp;
                 if (fvar < vFloor)
