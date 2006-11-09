@@ -898,8 +898,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
 }
 
 static void
-dump_probs_8b(unsigned char ***p,  /* pdfs, will be transposed */
-              int32 r, int32 c, /* rows, cols */
+dump_probs_8b(s2_semi_mgau_t *s,
               char const *file, /* output file */
               char const *dir)
 {                               /* **ORIGINAL** HMM directory */
@@ -944,18 +943,18 @@ dump_probs_8b(unsigned char ***p,  /* pdfs, will be transposed */
     fwrite_int32(fp, k);
 
     /* Align the number of pdfs to a 4-byte boundary. */
-    aligned_c = (c + 3) & ~3;
+    aligned_c = (s->n_density + 3) & ~3;
 
     /* Write #rows, #cols; this also indicates whether pdfs already transposed */
-    fwrite_int32(fp, r);
+    fwrite_int32(fp, s->CdWdPDFMod);
     fwrite_int32(fp, aligned_c);
 
     /* Now write out the quantized senones. */
-    for (f = 0; f < 4; ++f) {
-        for (i = 0; i < r; i++) {
-            fwrite(p[f][i], sizeof(char), c, fp);
+    for (f = 0; f < s->n_feat; ++f) {
+        for (i = 0; i < s->CdWdPDFMod; i++) {
+            fwrite(s->OPDF_8B[f][i], sizeof(char), s->n_density, fp);
             /* Pad them out for alignment purposes */
-            fwrite("\0\0\0\0", 1, aligned_c - c, fp);
+            fwrite("\0\0\0\0", 1, aligned_c - s->n_density, fp);
         }
     }
 
@@ -1083,8 +1082,7 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
     E_INFO("Read %d x %d x %d mixture weights\n", n_sen, n_feat, n_comp);
 
     if ((dumpfile = kb_get_senprob_dump_file()) != NULL) {
-        dump_probs_8b(s->OPDF_8B, s->n_density,
-                      n_sen, dumpfile, file_name);
+        dump_probs_8b(s, dumpfile, file_name);
     }
     return n_sen;
 }
