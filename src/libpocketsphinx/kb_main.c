@@ -528,7 +528,7 @@ kb_init(void)
     }
     if (cmd_ln_str("-kdtree")) {
         ckd_free(kdtreefn);
-        sendumpfn = cmd_ln_str("-kdtree");
+        kdtreefn = cmd_ln_str("-kdtree");
     }
 
     /* Read model definition. */
