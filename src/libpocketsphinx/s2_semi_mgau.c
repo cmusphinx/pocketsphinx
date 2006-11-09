@@ -274,7 +274,7 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
     mean = s->means[feat];
     var = s->vars[feat];
     det = s->dets[feat];
-    detE = det + S2_NUM_ALPHABET;
+    detE = det + s->n_density;
     ceplen = feat_stream_len(fcb, feat);
 
     for (detP = det; detP < detE; ++detP) {
@@ -323,7 +323,7 @@ mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
 {
     /* Initialize topn codewords to topn codewords from previous
      * frame, and calculate their densities. */
-    memcpy(s->f[feat], s->lcfrm, sizeof(vqFeature_t) * s->topN);
+    memcpy(s->f[feat], s->lastf[feat], sizeof(vqFeature_t) * s->topN);
     eval_topn(s, feat, z);
 
     /* If this frame is skipped, do nothing else. */
@@ -347,7 +347,7 @@ mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
     }
 
     /* Make a copy of current topn. */
-    memcpy(s->lcfrm, s->f[feat], sizeof(vqFeature_t) * s->topN);
+    memcpy(s->lastf[feat], s->f[feat], sizeof(vqFeature_t) * s->topN);
 }
 
 /*
@@ -355,26 +355,25 @@ mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
  */
 int32
 s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
-			mfcc_t ** feat, int32 frame,
+			mfcc_t ** featbuf, int32 frame,
 			int32 compallsen)
 {
     int i, j;
-    int32 tmp[S2_NUM_FEATURES];
 
-    for (i = 0; i < S2_NUM_FEATURES; ++i)
-        mgau_dist(s, frame, i, feat[i]);
+    for (i = 0; i < s->n_feat; ++i)
+        mgau_dist(s, frame, i, featbuf[i]);
 
     /* normalize the topN feature scores */
-    for (j = 0; j < S2_NUM_FEATURES; j++) {
-        tmp[j] = s->f[j][0].val.score;
+    for (j = 0; j < s->n_feat; j++) {
+        s->score_tmp[j] = s->f[j][0].val.score;
     }
     for (i = 1; i < s->topN; i++)
-        for (j = 0; j < S2_NUM_FEATURES; j++) {
-            tmp[j] = ADD(tmp[j], s->f[j][i].val.score);
+        for (j = 0; j < s->n_feat; j++) {
+            s->score_tmp[j] = ADD(s->score_tmp[j], s->f[j][i].val.score);
         }
     for (i = 0; i < s->topN; i++)
-        for (j = 0; j < S2_NUM_FEATURES; j++) {
-            s->f[j][i].val.score -= tmp[j];
+        for (j = 0; j < s->n_feat; j++) {
+            s->f[j][i].val.score -= s->score_tmp[j];
             if (s->f[j][i].val.score > 0)
                 s->f[j][i].val.score = INT_MIN; /* tkharris++ */
             /* E_FATAL("**ERROR** VQ score= %d\n", f[j][i].val.score); */
@@ -451,7 +450,7 @@ get_scores4_8b(s2_semi_mgau_t * s)
     int32 w0, w1, w2, w3;       /* weights */
 
     memset(senone_scores, 0, s->CdWdPDFMod * sizeof(*senone_scores));
-    for (j = 0; j < S2_NUM_FEATURES; j++) {
+    for (j = 0; j < s->n_feat; j++) {
         /* ptrs to senone prob ids */
         pid_cw0 = s->OPDF_8B[j][s->f[j][0].codeword];
         pid_cw1 = s->OPDF_8B[j][s->f[j][1].codeword];
@@ -506,7 +505,7 @@ get_scores4_8b_all(s2_semi_mgau_t * s)
 
     n_senone_active = s->CdWdPDFMod;
     memset(senone_scores, 0, s->CdWdPDFMod * sizeof(*senone_scores));
-    for (j = 0; j < S2_NUM_FEATURES; j++) {
+    for (j = 0; j < s->n_feat; j++) {
         /* ptrs to senone prob ids */
         pid_cw0 = s->OPDF_8B[j][s->f[j][0].codeword];
         pid_cw1 = s->OPDF_8B[j][s->f[j][1].codeword];
@@ -762,8 +761,8 @@ s2_semi_mgau_load_kdtree(s2_semi_mgau_t * s, const char *kdtree_path,
     if (read_kd_trees(kdtree_path, &s->kdtrees, &s->n_kdtrees,
                       maxdepth, maxbbi) == -1)
         E_FATAL("Failed to read kd-trees from %s\n", kdtree_path);
-    if (s->n_kdtrees != S2_NUM_FEATURES)
-        E_FATAL("Number of kd-trees != %d\n", S2_NUM_FEATURES);
+    if (s->n_kdtrees != s->n_feat)
+        E_FATAL("Number of kd-trees != %d\n", s->n_feat);
 
     s->kd_maxdepth = maxdepth;
     s->kd_maxbbi = maxbbi;
@@ -780,7 +779,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     size_t filesize, offset;
     int n_clust = 256;          /* Number of clusters (if zero, we are just using
                                  * 8-bit quantized weights) */
-    int r = S2_NUM_ALPHABET;
+    int r = s->n_density;
     int c = bin_mdef_n_sen(mdef);
 
     use_mmap = cmd_ln_boolean("-mmap");
@@ -866,29 +865,27 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
 
     /* Allocate memory for pdfs */
     if (use_mmap) {
-        for (i = 0; i < 4; i++) {
+        s->OPDF_8B = ckd_calloc(s->n_feat + 1, sizeof(unsigned char**));
+        for (i = 0; i < s->n_feat; i++) {
             /* Pointers into the mmap()ed 2d array */
 	    s->OPDF_8B[i] = 
-                (unsigned char **) ckd_calloc(r + 1, sizeof(unsigned char *));
+                (unsigned char **) ckd_calloc(r, sizeof(unsigned char *));
         }
 
 	/* Use the last index to hide a pointer to the entire file's memory */
-        s->OPDF_8B[r] = s2_mmap(file);
-        for (n = 0; n < 4; n++) {
+        s->OPDF_8B[s->n_feat] = s2_mmap(file);
+        for (n = 0; n < s->n_feat; n++) {
             for (i = 0; i < r; i++) {
-                s->OPDF_8B[n][i] = (char *) ((caddr_t) s->OPDF_8B[r] + offset);
+                s->OPDF_8B[n][i] = (char *) ((caddr_t) s->OPDF_8B[s->n_feat] + offset);
                 offset += c;
             }
         }
     }
     else {
-        for (i = 0; i < 4; i++) {
-	    s->OPDF_8B[i] =
-                (unsigned char **) ckd_calloc_2d(r, c,
-						 sizeof(unsigned char));
-        }
+        s->OPDF_8B = (unsigned char ***)
+            ckd_calloc_3d(s->n_feat, r, c, sizeof(unsigned char));
         /* Read pdf values and ids */
-        for (n = 0; n < 4; n++) {
+        for (n = 0; n < s->n_feat; n++) {
             for (i = 0; i < r; i++) {
                 if (fread(s->OPDF_8B[n][i], sizeof(unsigned char), c, fp) != (size_t) c)
                     E_FATAL("fread failed\n");
@@ -1033,18 +1030,8 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
     }
 
     /* Quantized mixture weight arrays. */
-    s->OPDF_8B[0] =
-        (unsigned char **) ckd_calloc_2d(S2_NUM_ALPHABET, n_sen,
-                                         sizeof(unsigned char));
-    s->OPDF_8B[1] =
-        (unsigned char **) ckd_calloc_2d(S2_NUM_ALPHABET, n_sen,
-                                         sizeof(unsigned char));
-    s->OPDF_8B[2] =
-        (unsigned char **) ckd_calloc_2d(S2_NUM_ALPHABET, n_sen,
-                                         sizeof(unsigned char));
-    s->OPDF_8B[3] =
-        (unsigned char **) ckd_calloc_2d(S2_NUM_ALPHABET, n_sen,
-                                         sizeof(unsigned char));
+    s->OPDF_8B = (unsigned char ***)
+        ckd_calloc_3d(s->n_feat, s->n_density, n_sen, sizeof(unsigned char));
 
     /* Temporary structure to read in floats before conversion to (int32) logs3 */
     pdf = (float32 *) ckd_calloc(n_comp, sizeof(float32));
@@ -1096,7 +1083,7 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
     E_INFO("Read %d x %d x %d mixture weights\n", n_sen, n_feat, n_comp);
 
     if ((dumpfile = kb_get_senprob_dump_file()) != NULL) {
-        dump_probs_8b(s->OPDF_8B, S2_NUM_ALPHABET,
+        dump_probs_8b(s->OPDF_8B, s->n_density,
                       n_sen, dumpfile, file_name);
     }
     return n_sen;
@@ -1104,8 +1091,8 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
 
 
 /* Read a Sphinx3 mean or variance file. */
-int32
-s3_read_mgau(const char *file_name, float32 ** cb)
+static int32
+s3_read_mgau(s2_semi_mgau_t *s, const char *file_name, float32 ***out_cb)
 {
     char tmp;
     FILE *fp;
@@ -1113,7 +1100,7 @@ s3_read_mgau(const char *file_name, float32 ** cb)
     int32 n_mgau;
     int32 n_feat;
     int32 n_density;
-    int32 veclen[4];
+    int32 *veclen;
     int32 byteswap, chksum_present;
     char **argname, **argval;
     uint32 chksum;
@@ -1153,22 +1140,36 @@ s3_read_mgau(const char *file_name, float32 ** cb)
     /* #Features/codebook */
     if (bio_fread(&n_feat, sizeof(int32), 1, fp, byteswap, &chksum) != 1)
         E_FATAL("fread(%s) (#features) failed\n", file_name);
-    if (n_feat != 4)
-        E_FATAL("#Features streams(%d) != 4\n", n_feat);
+    if (s->n_feat == 0)
+        s->n_feat = n_feat;
+    else if (n_feat != s->n_feat)
+        E_FATAL("#Features streams(%d) != %d\n", n_feat, s->n_feat);
 
     /* #Gaussian densities/feature in each codebook */
-    if (bio_fread(&n_density, sizeof(int32), 1, fp, byteswap, &chksum) !=
-        1)
+    if (bio_fread(&n_density, sizeof(int32), 1, fp,
+                  byteswap, &chksum) != 1)
         E_FATAL("fread(%s) (#density/codebook) failed\n", file_name);
-    if (n_density != S2_NUM_ALPHABET)
+    if (s->n_density == 0)
+        s->n_density = n_density;
+    else if (n_density != s->n_density)
         E_FATAL("%s: Number of densities per feature(%d) != %d\n",
-                file_name, n_mgau, S2_NUM_ALPHABET);
+                file_name, n_mgau, s->n_density);
 
     /* Vector length of feature stream */
-    if (bio_fread(&veclen, sizeof(int32), 4, fp, byteswap, &chksum) != 4)
+    if (s->veclen == NULL)
+        s->veclen = ckd_calloc(s->n_feat, sizeof(int32));
+    veclen = ckd_calloc(s->n_feat, sizeof(int32));
+    if (bio_fread(veclen, sizeof(int32), s->n_feat,
+                  fp, byteswap, &chksum) != s->n_feat)
         E_FATAL("fread(%s) (feature vector-length) failed\n", file_name);
-    for (i = 0, blk = 0; i < 4; ++i)
+    for (i = 0, blk = 0; i < s->n_feat; ++i) {
+        if (s->veclen[i] == 0)
+            s->veclen[i] = veclen[i];
+        else if (veclen[i] != s->veclen[i])
+            E_FATAL("feature stream length %d is inconsistent (%d != %d)\n",
+                    i, veclen[i], s->veclen[i]);
         blk += veclen[i];
+    }
 
     /* #Floats to follow; for the ENTIRE SET of CODEBOOKS */
     if (bio_fread(&n, sizeof(int32), 1, fp, byteswap, &chksum) != 1)
@@ -1178,21 +1179,19 @@ s3_read_mgau(const char *file_name, float32 ** cb)
             ("%s: #float32s(%d) doesn't match dimensions: %d x %d x %d\n",
              file_name, n, n_mgau, n_density, blk);
 
-    for (i = 0; i < 4; ++i) {
-        cb[i] =
-            (float32 *) ckd_calloc(S2_NUM_ALPHABET * feat_stream_len(fcb, i),
+    *out_cb = ckd_calloc(s->n_feat, sizeof(float32 *));
+    for (i = 0; i < s->n_feat; ++i) {
+        (*out_cb)[i] =
+            (float32 *) ckd_calloc(n_density * veclen[i],
                                    sizeof(float32));
-
-        if (veclen[i] != feat_stream_len(fcb, i))
-            E_FATAL("%s: feature %d length %d is not <= expected %d\n",
-                    file_name, i, veclen[i], feat_stream_len(fcb, i));
         if (bio_fread
-            (cb[i], sizeof(float32),
-             S2_NUM_ALPHABET * feat_stream_len(fcb, i), fp,
-             byteswap, &chksum) != S2_NUM_ALPHABET * feat_stream_len(fcb, i))
+            ((*out_cb)[i], sizeof(float32),
+             n_density * veclen[i], fp,
+             byteswap, &chksum) != n_density * veclen[i])
             E_FATAL("fread(%s, %d) of feat %d failed\n", file_name,
-                    S2_NUM_ALPHABET * feat_stream_len(fcb, i), i);
+                    n_density * veclen[i], i);
     }
+    ckd_free(veclen);
 
     if (chksum_present)
         bio_verify_chksum(fp, byteswap, chksum);
@@ -1208,24 +1207,24 @@ s3_read_mgau(const char *file_name, float32 ** cb)
     return n;
 }
 
-int32
-s3_precomp(mean_t ** means, var_t ** vars, int32 ** dets, float32 vFloor)
+static int32
+s3_precomp(s2_semi_mgau_t *s, float32 vFloor)
 {
     int feat;
 
-    for (feat = 0; feat < 4; ++feat) {
+    for (feat = 0; feat < s->n_feat; ++feat) {
         float32 *fmp;
         mean_t *mp;
         var_t *vp;
         int32 *dp, vecLen, i;
 
-        vecLen = feat_stream_len(fcb, feat);
-        fmp = (float32 *) means[feat];
-        mp = means[feat];
-        vp = vars[feat];
-        dp = dets[feat];
+        vecLen = s->veclen[feat];
+        fmp = (float32 *) s->means[feat];
+        mp = s->means[feat];
+        vp = s->vars[feat];
+        dp = s->dets[feat];
 
-        for (i = 0; i < S2_NUM_ALPHABET; ++i) {
+        for (i = 0; i < s->n_density; ++i) {
             int32 d, j;
 
             d = 0;
@@ -1258,26 +1257,20 @@ s2_semi_mgau_init(const char *mean_path, const char *var_path,
 
     s = ckd_calloc(1, sizeof(*s));
 
-    for (i = 0; i < S2_MAX_TOPN; i++) {
-        s->lxfrm[i].val.dist = s->ldfrm[i].val.dist =
-            s->lcfrm[i].val.dist = WORST_DIST;
-        s->lxfrm[i].codeword = s->ldfrm[i].codeword =
-            s->lcfrm[i].codeword = i;
-    }
-
     /* Read means and variances. */
-    if (s3_read_mgau(mean_path, (float32 **)s->means) < 0) {
+    if (s3_read_mgau(s, mean_path, (float32 ***)&s->means) < 0) {
+        /* FIXME: This actually is not enough to really free everything. */
         ckd_free(s);
         return NULL;
     }
-    if (s3_read_mgau(var_path, (float32 **)s->vars) < 0) {
+    if (s3_read_mgau(s, var_path, (float32 ***)&s->vars) < 0) {
+        /* FIXME: This actually is not enough to really free everything. */
         ckd_free(s);
         return NULL;
     }
     /* Precompute (and fixed-point-ize) means, variances, and determinants. */
-    for (i = 0; i < 4; ++i)
-        s->dets[i] = s->detArr + i * S2_NUM_ALPHABET;
-    s3_precomp(s->means, s->vars, s->dets, varfloor);
+    s->dets = (int32 **)ckd_calloc_2d(s->n_feat, s->n_density, sizeof(int32));
+    s3_precomp(s, varfloor);
 
     /* Read mixture weights (gives us CdWdPDFMod = number of
      * mixture weights per codeword, which is fixed at the number
@@ -1285,6 +1278,23 @@ s2_semi_mgau_init(const char *mean_path, const char *var_path,
     s->CdWdPDFMod = read_dists_s3(s, mixw_path, mixwfloor);
     s->topN = topn;
     s->ds_ratio = 1;
+
+    /* Top-N scores from current, previous frame */
+    s->f = (vqFeature_t **) ckd_calloc_2d(s->n_feat, topn,
+                                          sizeof(vqFeature_t));
+    s->lastf = (vqFeature_t **) ckd_calloc_2d(s->n_feat, topn,
+                                              sizeof(vqFeature_t));
+    for (i = 0; i < s->n_feat; ++i) {
+        int32 j;
+
+        for (j = 0; j < topn; ++j) {
+            s->lastf[i][j].val.dist = WORST_DIST;
+            s->lastf[i][j].codeword = j;
+        }
+    }
+
+    /* Temporary array used in senone eval */
+    s->score_tmp = ckd_calloc(s->n_feat, sizeof(int32));
 
     return s;
 }

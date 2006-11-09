@@ -46,10 +46,6 @@
 #include "fe.h"
 #include "kdtree.h"
 
-#define S2_NUM_ALPHABET	256
-#define S2_NUM_FEATURES	4
-#define S2_MAX_TOPN	6	/* max number of TopN codewords */
-
 typedef struct {
     union {
         int32	score;
@@ -61,15 +57,18 @@ typedef vqFeature_t *vqFrame_t;
 
 typedef struct s2_semi_mgau_s s2_semi_mgau_t;
 struct s2_semi_mgau_s {
-    int32   detArr[S2_NUM_FEATURES*S2_NUM_ALPHABET];	/* storage for det vectors */
-    int32   *dets[S2_NUM_FEATURES];	/* det values foreach feature */
-    mean_t  *means[S2_NUM_FEATURES];	/* mean vectors foreach feature */
-    var_t   *vars[S2_NUM_FEATURES];	/* var vectors foreach feature */
+    int32   **dets;	/* det values foreach feature */
+    mean_t  **means;	/* mean vectors foreach feature */
+    var_t   **vars;	/* var vectors foreach feature */
 
-    unsigned char **OPDF_8B[4]; /* mixture weights */
+    unsigned char ***OPDF_8B; /* mixture weights */
 
-    int32 topN;
-    int32 CdWdPDFMod;
+    int32 n_feat;	/* Number of feature streams */
+    int32 *veclen;	/* Length of feature streams */
+    int32 n_density;	/* Number of mixtures per codebook */
+
+    int32 topN;		/* Number of top densities to compute (<S2_MAX_TOPN) */
+    int32 CdWdPDFMod;	/* Legacy thing, actually means number of mixw */
 
     kd_tree_t **kdtrees;
     uint32 n_kdtrees;
@@ -79,11 +78,9 @@ struct s2_semi_mgau_s {
     int32 num_frames;
     int32 ds_ratio;
 
-    vqFeature_t f[S2_NUM_FEATURES][S2_MAX_TOPN];
-    vqFeature_t lcfrm[S2_MAX_TOPN];
-    vqFeature_t ldfrm[S2_MAX_TOPN];
-    vqFeature_t lxfrm[S2_MAX_TOPN];
-    vqFeature_t vtmp;
+    /* Top-N scores and codewords from current, last frame. */
+    vqFeature_t **f, **lastf;
+    int32 *score_tmp;
 };
 
 s2_semi_mgau_t *s2_semi_mgau_init(const char *mean_path, const char *var_path,
@@ -93,7 +90,7 @@ s2_semi_mgau_t *s2_semi_mgau_init(const char *mean_path, const char *var_path,
 void s2_semi_mgau_free(s2_semi_mgau_t *s);
 
 int32 s2_semi_mgau_frame_eval(s2_semi_mgau_t *s,
-			      mfcc_t **feat,
+			      mfcc_t **featbuf,
 			      int32 frame,
                               int32 compallsen);
 
