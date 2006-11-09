@@ -7,12 +7,11 @@ SUBDIRS = src \
 EXTRA_DIST = autogen.sh \
 	pocketsphinx.dsw \
 	win32/msdev/pocketsphinx/pocketsphinx.dsp \
-	win32/msdev/pocketsphinx_allphone/pocketsphinx_allphone.dsp \
 	win32/msdev/pocketsphinx_batch/pocketsphinx_batch.dsp \
 	win32/msdev/pocketsphinx_continuous/pocketsphinx_continuous.dsp \
 	win32/msdev/pocketsphinx_ptt/pocketsphinx_ptt.dsp
 
-check:
+test:
 	$(LIBTOOL) --mode=execute src/programs/pocketsphinx_batch \
 		-adcin TRUE -cepext .16k -samprate 16000 \
 		-ctl $(top_srcdir)/model/lm/turtle/turtle.ctl \
