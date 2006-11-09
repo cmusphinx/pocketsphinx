@@ -537,7 +537,8 @@ feat_alloc(void)
         ckd_free_2d((void **)mfcbuf);
     }
     feat_buf = feat_array_alloc(fcb, MAX_UTT_LEN);
-    mfcbuf = (mfcc_t **) ckd_calloc_2d(MAX_UTT_LEN + 10, S2_CEP_VECLEN, sizeof(mfcc_t));
+    mfcbuf = (mfcc_t **) ckd_calloc_2d(MAX_UTT_LEN + 10,
+                                       feat_cepsize(fcb), sizeof(mfcc_t));
 }
 
 static void
@@ -939,11 +940,11 @@ uttproc_rawdata(int16 * raw, int32 len, int32 block)
     if ((k = fe_process_utt(fe, raw, len, &temp_mfc, &nfr)) < 0)
         return -1;
     if (nfr > 0)
-        memcpy(mfcbuf[n_cepfr], temp_mfc[0], nfr * S2_CEP_VECLEN * sizeof(mfcc_t));
+        memcpy(mfcbuf[n_cepfr], temp_mfc[0], nfr * feat_cepsize(fcb) * sizeof(mfcc_t));
 
     if (mfcfp && (nfr > 0)) {
         fe_mfcc_to_float(fe, temp_mfc, (float32 **) temp_mfc, nfr);
-        fwrite(temp_mfc[0], sizeof(float), nfr * S2_CEP_VECLEN, mfcfp);
+        fwrite(temp_mfc[0], sizeof(float), nfr * feat_cepsize(fcb), mfcfp);
     }
     fe_free_2d(temp_mfc);
 
@@ -999,13 +1000,13 @@ uttproc_cepdata(float32 ** cep, int32 nfr, int32 block)
     for (i = 0; i < nfr; i++) {
 #ifdef FIXED_POINT
         int j;
-        for (j = 0; j < S2_CEP_VECLEN; ++j)
+        for (j = 0; j < feat_cepsize(fcb); ++j)
             mfcbuf[n_cepfr + i][j] = FLOAT2FIX(cep[i][j]);
 #else
-        memcpy(mfcbuf[i + n_cepfr], cep[i], S2_CEP_VECLEN * sizeof(float));
+        memcpy(mfcbuf[i + n_cepfr], cep[i], feat_cepsize(fcb) * sizeof(float));
 #endif
         if (mfcfp && (nfr > 0))
-            fwrite(cep[i], sizeof(float32), S2_CEP_VECLEN, mfcfp);
+            fwrite(cep[i], sizeof(float32), feat_cepsize(fcb), mfcfp);
     }
 
     if (livemode) {
@@ -1037,7 +1038,7 @@ uttproc_end_utt(void)
     mfcc_t *leftover_cep;
 
     /* kal */
-    leftover_cep = ckd_calloc(S2_CEP_VECLEN, sizeof(mfcc_t));
+    leftover_cep = ckd_calloc(feat_cepsize(fcb), sizeof(mfcc_t));
 
     /* Dump samples histogram */
     k = 0;
@@ -1063,7 +1064,7 @@ uttproc_end_utt(void)
         fe_end_utt(fe, leftover_cep, &nfr);
         if (nfr && mfcfp) {
             fe_mfcc_to_float(fe, &leftover_cep, &leftover_cep, nfr);
-            fwrite(leftover_cep, sizeof(float32), nfr * S2_CEP_VECLEN, mfcfp);
+            fwrite(leftover_cep, sizeof(float32), nfr * feat_cepsize(fcb), mfcfp);
         }
 
         if (livemode) {
@@ -1076,7 +1077,7 @@ uttproc_end_utt(void)
         else {
             if (nfr) {
                 memcpy(mfcbuf[i + n_cepfr], leftover_cep,
-                       nfr * S2_CEP_VECLEN * sizeof(float));
+                       nfr * feat_cepsize(fcb) * sizeof(float));
                 n_cepfr += nfr;
             }
         }
@@ -1107,7 +1108,7 @@ uttproc_end_utt(void)
 
         fflush(mfcfp);
         fseek(mfcfp, 0, SEEK_SET);
-        k = n_cepfr * S2_CEP_VECLEN;
+        k = n_cepfr * feat_cepsize(fcb);
         fwrite(&k, sizeof(int32), 1, mfcfp);
 
         fclose(mfcfp);

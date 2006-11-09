@@ -401,11 +401,11 @@
 { "-feat",                                                                      \
       ARG_STRING,                                                               \
       "s2_4x",                                                                  \
-      "Feature stream type: (many options, must be s2_4x for now)" },           \
+      "Feature stream type, depends on the acoustic model" },                   \
 { "-ceplen",                                                                    \
       ARG_INT32,                                                                \
       "13",                                                                     \
-     "Number of components in the input feature vector (must be 13 for now)" }, \
+     "Number of components in the input feature vector" },			\
 { "-hmm",                                                                       \
       ARG_STRING,                                                               \
       NULL,                                                                     \

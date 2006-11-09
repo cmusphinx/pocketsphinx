@@ -42,9 +42,6 @@
 #include <feat.h>
 #include <prim_type.h>
 
-/* Dimensionality of the input features (fixed for now). */
-#define S2_CEP_VECLEN  13
-
 int32 uttproc_init(void);
 int32 uttproc_end(void);
 

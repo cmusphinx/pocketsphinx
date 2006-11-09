@@ -127,7 +127,6 @@
 #include "s2io.h"
 #include "senscr.h"
 #include "posixwin32.h"
-#include "uttproc.h" /* for fcb */
 
 #define MGAU_MIXW_VERSION	"1.0"   /* Sphinx-3 file format version for mixw */
 #define MGAU_PARAM_VERSION	"1.0"   /* Sphinx-3 file format version for mean/var */
@@ -178,7 +177,7 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
     vqFeature_t *topn;
 
     topn = s->f[feat];
-    ceplen = feat_stream_len(fcb, feat);
+    ceplen = s->veclen[feat];
 
     for (i = 0; i < s->topN; i++) {
         mean_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
@@ -219,7 +218,7 @@ eval_cb_kdtree(s2_semi_mgau_t *s, int32 feat, mfcc_t *z,
 
     best = topn = s->f[feat];
     worst = topn + (s->topN - 1);
-    ceplen = feat_stream_len(fcb, feat);
+    ceplen = s->veclen[feat];
 
     for (i = 0; i < maxbbi; ++i) {
         mean_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
@@ -275,7 +274,7 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
     var = s->vars[feat];
     det = s->dets[feat];
     detE = det + s->n_density;
-    ceplen = feat_stream_len(fcb, feat);
+    ceplen = s->veclen[feat];
 
     for (detP = det; detP < detE; ++detP) {
         mean_t diff, sqdiff, compl; /* diff, diff^2, component likelihood */
@@ -1020,8 +1019,8 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
         || (bio_fread(&n, sizeof(int32), 1, fp, byteswap, &chksum) != 1)) {
         E_FATAL("bio_fread(%s) (arraysize) failed\n", file_name);
     }
-    if (n_feat != 4)
-        E_FATAL("#Features streams(%d) != 4\n", n_feat);
+    if (n_feat != s->n_feat)
+        E_FATAL("#Features streams(%d) != %d\n", n_feat, s->n_feat);
     if (n != n_sen * n_feat * n_comp) {
         E_FATAL
             ("%s: #float32s(%d) doesn't match header dimensions: %d x %d x %d\n",
