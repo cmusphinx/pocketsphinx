@@ -49,7 +49,6 @@
 #define S2_NUM_ALPHABET	256
 #define S2_NUM_FEATURES	4
 #define S2_MAX_TOPN	6	/* max number of TopN codewords */
-#define S2_CEP_VECLEN   13
 
 typedef struct {
     union {

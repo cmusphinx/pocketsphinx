@@ -325,7 +325,7 @@ static int32 nosearch = 0;
 static int32 fsg_search_mode = FALSE;   /* Using FSM search structure */
 
 /* Feature computation object */
-static feat_t *fcb;
+feat_t *fcb;
 
 /* MFC vectors for entire utt */
 static mfcc_t **mfcbuf;
@@ -532,10 +532,12 @@ timing_end(void)
 static void
 feat_alloc(void)
 {
-    if (!feat_buf) {
-        feat_buf = feat_array_alloc(fcb, MAX_UTT_LEN);
-        mfcbuf = (mfcc_t **) ckd_calloc_2d(MAX_UTT_LEN + 10, S2_CEP_VECLEN, sizeof(mfcc_t));
+    if (feat_buf) {
+        feat_array_free(feat_buf);
+        ckd_free_2d((void **)mfcbuf);
     }
+    feat_buf = feat_array_alloc(fcb, MAX_UTT_LEN);
+    mfcbuf = (mfcc_t **) ckd_calloc_2d(MAX_UTT_LEN + 10, S2_CEP_VECLEN, sizeof(mfcc_t));
 }
 
 static void
@@ -1568,8 +1570,6 @@ uttproc_set_startword(char const *str)
 void
 uttproc_set_feat(feat_t *new_fcb)
 {
-    warn_notidle("uttproc_set_feat");
-
     if (fcb)
         feat_free(fcb);
     fcb = new_fcb;

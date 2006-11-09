@@ -250,6 +250,11 @@ fbs_init(int32 argc, char **argv)
         E_FATAL
             ("At least one of -fwdtree and -fwdflat flags must be TRUE\n");
 
+    /* Initialize feature computation.  We have to do this first
+     * because the acoustic models (loaded in kb_init()) have to match
+     * the feature type and parameters. */
+    init_feat();
+
     /* Load the KB */
     kb_init();
 
@@ -258,9 +263,6 @@ fbs_init(int32 argc, char **argv)
 
     /* Initialize dynamic data structures needed for utterance processing */
     uttproc_init();
-
-    /* Initialize feature computation. */
-    init_feat();
 
     if (cmd_ln_str("-rawlogdir"))
         uttproc_set_rawlogdir(cmd_ln_str("-rawlogdir"));

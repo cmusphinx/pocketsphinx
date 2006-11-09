@@ -42,10 +42,17 @@
 #include <feat.h>
 #include <prim_type.h>
 
+/* Dimensionality of the input features (fixed for now). */
+#define S2_CEP_VECLEN  13
+
 int32 uttproc_init(void);
 int32 uttproc_end(void);
 
+/* Set the feature computation object. */
 void uttproc_set_feat(feat_t *fcb);
+
+/* The global feature computation object. */
+extern feat_t *fcb;
 
 /* Build and store an utterance ID (called if none given) */
 char *build_uttid(char const *utt);

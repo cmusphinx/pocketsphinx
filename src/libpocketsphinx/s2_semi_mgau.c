@@ -127,22 +127,12 @@
 #include "s2io.h"
 #include "senscr.h"
 #include "posixwin32.h"
+#include "uttproc.h" /* for fcb */
 
 #define MGAU_MIXW_VERSION	"1.0"   /* Sphinx-3 file format version for mixw */
 #define MGAU_PARAM_VERSION	"1.0"   /* Sphinx-3 file format version for mean/var */
-
-/* centered 5 frame difference of c[0]...c[12] with centered 9 frame
- * of c[1]...c[12].  Don't ask me why it was designed this way! */
-#define DCEP_VECLEN	24
-#define CEP_VECLEN	12
-#define POW_VECLEN	3
 #define NONE		-1
 #define WORST_DIST	(int32)(0x80000000)
-
-enum { CEP_FEAT = 0, DCEP_FEAT = 1, POW_FEAT = 2, DDCEP_FEAT = 3 };
-static const int32 fLenMap[S2_NUM_FEATURES] = {
-    CEP_VECLEN, DCEP_VECLEN, POW_VECLEN, CEP_VECLEN
-};
 
 /*
  * In terms of already shifted and negated quantities (i.e. dealing with
@@ -188,7 +178,7 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
     vqFeature_t *topn;
 
     topn = s->f[feat];
-    ceplen = fLenMap[feat];
+    ceplen = feat_stream_len(fcb, feat);
 
     for (i = 0; i < s->topN; i++) {
         mean_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
@@ -229,7 +219,7 @@ eval_cb_kdtree(s2_semi_mgau_t *s, int32 feat, mfcc_t *z,
 
     best = topn = s->f[feat];
     worst = topn + (s->topN - 1);
-    ceplen = fLenMap[feat];
+    ceplen = feat_stream_len(fcb, feat);
 
     for (i = 0; i < maxbbi; ++i) {
         mean_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
@@ -285,7 +275,7 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
     var = s->vars[feat];
     det = s->dets[feat];
     detE = det + S2_NUM_ALPHABET;
-    ceplen = fLenMap[feat];
+    ceplen = feat_stream_len(fcb, feat);
 
     for (detP = det; detP < detE; ++detP) {
         mean_t diff, sqdiff, compl; /* diff, diff^2, component likelihood */
@@ -371,10 +361,8 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
     int i, j;
     int32 tmp[S2_NUM_FEATURES];
 
-    mgau_dist(s, frame, CEP_FEAT, feat[CEP_FEAT]);
-    mgau_dist(s, frame, DCEP_FEAT, feat[DCEP_FEAT]);
-    mgau_dist(s, frame, DDCEP_FEAT, feat[DDCEP_FEAT]);
-    mgau_dist(s, frame, POW_FEAT, feat[POW_FEAT]);
+    for (i = 0; i < S2_NUM_FEATURES; ++i)
+        mgau_dist(s, frame, i, feat[i]);
 
     /* normalize the topN feature scores */
     for (j = 0; j < S2_NUM_FEATURES; j++) {
@@ -1192,19 +1180,18 @@ s3_read_mgau(const char *file_name, float32 ** cb)
 
     for (i = 0; i < 4; ++i) {
         cb[i] =
-            (float32 *) ckd_calloc(S2_NUM_ALPHABET * fLenMap[i],
+            (float32 *) ckd_calloc(S2_NUM_ALPHABET * feat_stream_len(fcb, i),
                                    sizeof(float32));
 
-        if (veclen[i] == fLenMap[i]) {
-            if (bio_fread
-                (cb[i], sizeof(float32), S2_NUM_ALPHABET * fLenMap[i], fp,
-                 byteswap, &chksum) != S2_NUM_ALPHABET * fLenMap[i])
-                E_FATAL("fread(%s, %d) of feat %d failed\n", file_name,
-                        S2_NUM_ALPHABET * fLenMap[i], i);
-        }
-        else
+        if (veclen[i] != feat_stream_len(fcb, i))
             E_FATAL("%s: feature %d length %d is not <= expected %d\n",
-                    file_name, i, veclen[i], fLenMap[i]);
+                    file_name, i, veclen[i], feat_stream_len(fcb, i));
+        if (bio_fread
+            (cb[i], sizeof(float32),
+             S2_NUM_ALPHABET * feat_stream_len(fcb, i), fp,
+             byteswap, &chksum) != S2_NUM_ALPHABET * feat_stream_len(fcb, i))
+            E_FATAL("fread(%s, %d) of feat %d failed\n", file_name,
+                    S2_NUM_ALPHABET * feat_stream_len(fcb, i), i);
     }
 
     if (chksum_present)
@@ -1232,7 +1219,7 @@ s3_precomp(mean_t ** means, var_t ** vars, int32 ** dets, float32 vFloor)
         var_t *vp;
         int32 *dp, vecLen, i;
 
-        vecLen = fLenMap[(int32) feat];
+        vecLen = feat_stream_len(fcb, feat);
         fmp = (float32 *) means[feat];
         mp = means[feat];
         vp = vars[feat];
