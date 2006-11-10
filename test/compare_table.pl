@@ -58,8 +58,8 @@ if ((open (FN1, "<$fn1")) and (open (FN2, "<$fn2"))) {
       last;
     }
     for (my $i = 0; $i <= $#field1; $i++) {
-      if (($field1[$i] !~ m/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/) or
-	  ($field2[$i] !~ m/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/)) {
+      if (($field1[$i] !~ m/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\)?$/) or
+	  ($field2[$i] !~ m/^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?\)?$/)) {
 	# Check if any of the tokens in the line is a string rather
 	# than a number, and compare the strings
 	if ($field1[$i] ne $field2[$i]) {
