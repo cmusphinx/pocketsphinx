@@ -261,7 +261,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#ifndef _WIN32
+#if !defined(_WIN32)
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -1820,7 +1820,7 @@ uttproc_set_logfile(char const *file)
          * applications: the files are opened, but nothing is written
          * to it.
          */
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(GNUWINCE)
 #ifndef _WIN32_WCE /* FIXME: Possible? */
         *stdout = *logfp;
         *stderr = *logfp;

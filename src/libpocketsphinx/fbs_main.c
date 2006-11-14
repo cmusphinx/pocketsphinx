@@ -179,11 +179,15 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
-#ifndef _WIN32
+#if !defined(_WIN32) || defined(__CYGWIN_)
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/param.h>
+#endif
+
+#if defined(GNUWINCE)
+#include <unistd.h>
 #endif
 
 /* SphinxBase headers */
@@ -736,7 +740,7 @@ time_align_utterance(char const *utt,
 {
     int32 n_frames;
     mfcc_t ***feat;
-#ifndef _WIN32
+#if !(defined(_WIN32) || defined(GNUWINCE))
     struct rusage start, stop;
     struct timeval e_start, e_stop;
 #endif
@@ -753,7 +757,7 @@ time_align_utterance(char const *utt,
 
     time_align_set_input(feat, n_frames);
 
-#ifndef _WIN32
+#if !(defined(_WIN32) || defined(GNUWINCE))
 #ifndef _HPUX_SOURCE
     getrusage(RUSAGE_SELF, &start);
 #endif                          /* _HPUX_SOURCE */
@@ -837,7 +841,7 @@ time_align_utterance(char const *utt,
         E_ERROR("No alignment for %s\n", utt_name);
     }
 
-#ifndef _WIN32
+#if !(defined(_WIN32) || defined(GNUWINCE))
 #ifndef _HPUX_SOURCE
     getrusage(RUSAGE_SELF, &stop);
 #endif                          /* _HPUX_SOURCE */

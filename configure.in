@@ -15,10 +15,7 @@ case $host in
      arm-wince-pe*)
 	CFLAGS=${CFLAGS:--march=armv4 -mapcs-32 -malignment-traps}
 	LIBS='-lc -lgcc -lwinsock -lcoredll'
-	AC_DEFINE(NEWLIB)
-	AC_DEFINE(SARM)
-	AC_DEFINE(WIN32)
-	AC_DEFINE(GNUWINCE)
+	CFLAGS="$CFLAGS -DNEWLIB -DSARM -DWIN32 -DGNUWINCE"
 	;;
      *uclinux*)
 	# uClinux needs special "flat" binaries

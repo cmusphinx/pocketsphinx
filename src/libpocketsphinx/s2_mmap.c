@@ -51,7 +51,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(GNUWINCE)
+
 #ifdef GNUWINCE
 #include <sys/wcebase.h>
 #include <sys/wcetypes.h>
@@ -59,13 +60,16 @@
 #include <sys/wcefile.h>
 #else
 #include <windows.h>
-#endif                          /* GNUWINCE */
+#endif
+
 #else                           /* !_WIN32 */
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <sys/mman.h>
+
 #endif
 
 #if defined(UNDER_CE) || defined(GNUWINCE)
