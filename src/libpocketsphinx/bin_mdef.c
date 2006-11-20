@@ -62,7 +62,7 @@ bin_mdef_read_text(const char *filename)
     int i, nodes, ci_idx, lc_idx, rc_idx;
     int nchars;
 
-    if ((mdef = mdef_init((char *) filename)) == NULL)
+    if ((mdef = mdef_init((char *) filename, TRUE)) == NULL)
         return NULL;
 
     bmdef = ckd_calloc(1, sizeof(*bmdef));
@@ -221,15 +221,7 @@ bin_mdef_read_text(const char *filename)
         }
     }
 
-    /* FIXME: Need an mdef_free().  For now we will do it manually. */
-    hash_table_free(mdef->ciphone_ht);
-    for (i = 0; i < mdef->n_ciphone; ++i)
-        ckd_free(mdef->ciphone[i].name);
-    ckd_free(mdef->ciphone);
-    ckd_free(mdef->phone);
-    ckd_free(mdef->ciphone2n_cd_sen);
-    ckd_free_2d((void **) mdef->wpos_ci_lclist);
-    ckd_free(mdef);
+    mdef_free(mdef);
 
     bmdef->alloc_mode = BIN_MDEF_FROM_TEXT;
     return bmdef;
@@ -725,7 +717,7 @@ bin_mdef_phone_str(bin_mdef_t * m, s3pid_t pid, char *buf)
     if (pid < m->n_ciphone)
         sprintf(buf, "%s", bin_mdef_ciphone_str(m, (s3cipid_t) pid));
     else {
-        sprintf(buf, "%s(%s,%s)%c",
+        sprintf(buf, "%s %s %s %c",
                 bin_mdef_ciphone_str(m, m->phone[pid].info.cd.ctx[0]),
                 bin_mdef_ciphone_str(m, m->phone[pid].info.cd.ctx[1]),
                 bin_mdef_ciphone_str(m, m->phone[pid].info.cd.ctx[2]),

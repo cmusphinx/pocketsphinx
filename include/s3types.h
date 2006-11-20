@@ -120,17 +120,6 @@ typedef int16   	s3mgauid_t;	/* Mixture-gaussian codebook id */
 #define IS_S3MGAUID(m)	((m)>=0)
 #define MAX_S3MGAUID	((int32)0x00007ffe)
 
-/* Some of these shouldn't be used with S2 */
-#define S3_START_WORD		"<s>"
-#define S3_FINISH_WORD		"</s>"
-#define S3_SILENCE_WORD		"<sil>"
-#define S3_UNKNOWN_WORD		"<UNK>"
-#define S3_SILENCE_CIPHONE	"SIL"
-
-#define S3_LOGPROB_ZERO		((int32) 0xc8000000)	/* Approx -infinity!! */
-#define S3_MAX_FRAMES		15000			/* Frame = 10msec */
-
-
 #ifndef PI
 #define PI		3.14159265358979323846
 #endif
