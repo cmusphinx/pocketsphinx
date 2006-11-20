@@ -9,22 +9,15 @@ echo "sphinx2-test"
 echo "Run CMU Sphinx2 in Batch mode to decode an example utterance."
 echo " "
 
-$S2BATCH -adcin TRUE \
-    -adcext 16k \
-    -samp 16000 \
-    -ctlfn ${CTLFILE} \
-    -datadir ${TASK} \
-    -agcmax FALSE \
-    -fwdflat FALSE -bestpath FALSE \
-    -kbdumpdir ${TASK} -lmfn ${TASK}/turtle.lm \
-    -dictfn ${TASK}/turtle.dic \
-    -ndictfn ${HMM}/noisedict \
-    -mdeffn ${HMM}/mdef \
-    -meanfn ${HMM}/means \
-    -varfn ${HMM}/variances \
-    -tmatfn ${HMM}/transition_matrices \
-    -8bsen TRUE -sendumpfn ${HMM}/sendump \
-    -mmap TRUE
+$S2BATCH -adcin yes \
+    -cepext 16k \
+    -samprate 16000 \
+    -agc none \
+    -fwdflat no -bestpath no \
+    -lm ${TASK}/turtle.lm \
+    -dict ${TASK}/turtle.dic \
+    -hmm ${HMM} \
+    -mmap yes
 
 echo ""
 echo "TEST FINISHED"
