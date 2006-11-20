@@ -61,7 +61,6 @@
 #include "list.h"
 #include "phone.h"
 #include "bin_mdef.h"
-#include "c.h"
 #include "err.h"
 #include "kb.h"
 

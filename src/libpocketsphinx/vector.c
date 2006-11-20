@@ -77,7 +77,6 @@
 #include "ckd_alloc.h"
 #include "bitvec.h"
 #include "vector.h"
-#include "logs3.h"
 
 #if (WIN32)
 #define srandom	srand

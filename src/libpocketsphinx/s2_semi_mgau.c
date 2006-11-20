@@ -1049,7 +1049,7 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
             vector_floor(pdf, n_comp, SmoothMin);
             vector_sum_norm(pdf, n_comp);
 
-            /* Convert to logs3, quantize, and transpose */
+            /* Convert to LOG, quantize, and transpose */
             for (c = 0; c < n_comp; c++) {
                 int32 qscr;
 

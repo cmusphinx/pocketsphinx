@@ -183,8 +183,6 @@
 #include "kb.h"
 #include "fbs.h"
 #include "byteorder.h"
-
-#include "c.h"
 #include "dict.h"
 
 #define UG_MAPID(m,u)		((m)->unigrams[u].mapid)

@@ -64,7 +64,6 @@
 #include "s3types.h"
 #include "err.h"
 #include "ckd_alloc.h"
-#include "logs3.h"
 #include "kb.h"
 #include "s2_semi_mgau.h"
 #include "phone.h"

@@ -3,9 +3,7 @@ pkginclude_HEADERS = \
 	bin_mdef.h				\
 	blkarray_list.h				\
 	cache_lm.h				\
-	cepio.h					\
 	cmdln_macro.h				\
-	c.h					\
 	dict.h					\
 	fbs.h					\
 	fsg_history.h				\
@@ -19,11 +17,9 @@ pkginclude_HEADERS = \
 	lmclass.h				\
 	lm.h					\
 	log.h					\
-	logs3.h					\
 	magic.h					\
 	mdef.h					\
 	msd.h					\
-	mulaw.h					\
 	phone.h					\
 	posixwin32.h				\
 	s2_semi_mgau.h				\
@@ -34,7 +30,6 @@ pkginclude_HEADERS = \
 	search_const.h				\
 	search.h				\
 	senscr.h				\
-	smmap4f.h				\
 	strfuncs.h				\
 	time_align.h				\
 	tmat.h					\

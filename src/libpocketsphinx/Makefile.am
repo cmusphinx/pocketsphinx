@@ -24,7 +24,6 @@ libpocketsphinx_la_SOURCES = \
 	lm.c					\
 	lmclass.c				\
 	log_add.c				\
-	logs3.c					\
 	mdef.c					\
 	nxtarg.c				\
 	phone.c					\

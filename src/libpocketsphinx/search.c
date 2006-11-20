@@ -235,7 +235,6 @@
 #include "phone.h"
 #include "kb.h"
 #include "log.h"
-#include "c.h"
 #include "s2_semi_mgau.h"
 #include "senscr.h"
 #include "fbs.h"
@@ -1892,7 +1891,11 @@ search_initialize(void)
     zeroPermTab = ckd_calloc(phoneCiCount(), sizeof(int32));
     word_active = ckd_calloc(NumWords, sizeof(int32));
 
-    BPTableSize = MAX(25, NumWords / 1000) * MAX_FRAMES;
+    if (NumWords / 1000 < 25)
+        BPTableSize = 25 * MAX_FRAMES;
+    else
+        BPTableSize = NumWords / 1000 * MAX_FRAMES;
+
     BScoreStackSize = BPTableSize * 20;
     if ((bptable_size > 0) && (bptable_size < 0x7fffffff)) {
         BPTableSize = bptable_size;
