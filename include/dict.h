@@ -68,7 +68,6 @@ typedef struct _dict {
 
 int32 dict_read (dictT *dict,
 		 char *filename,	/* Main dict file */
-		 char *p_filename,	/* Phrase dict file */
 		 char *n_filename,	/* Noise dict file */
 		 int32 use_context);
 

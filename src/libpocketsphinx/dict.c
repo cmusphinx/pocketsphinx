@@ -153,7 +153,7 @@ static dict_entry_t *_new_dict_entry(char *word_str,
                                      int32 use_context);
 static void _dict_list_add(dictT * dict, dict_entry_t * entry);
 static void dict_load(dictT * dict, char *filename, int32 * word_id,
-                      int32 use_context, int32 isa_phrase_dict);
+                      int32 use_context);
 
 static hash_table_t *mtpHT;     /* Missing triphone hash table */
 static glist_t mtpList;
@@ -200,7 +200,6 @@ get_dict_size(char *file)
 
 int32
 dict_read(dictT * dict, char *filename, /* Main dict file */
-          char *p_filename,     /* Phrase dict file */
           char *n_filename,     /* Noise dict file */
           int32 use_context)
 /*------------------------------------------------------------*
@@ -220,13 +219,11 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
      * (Otherwise, the simple-minded PC malloc library goes berserk.)
      */
     j = get_dict_size(filename);
-    if (p_filename)
-        j += get_dict_size(p_filename);
     if (n_filename)
         j += get_dict_size(n_filename);
     if ((oovdic = cmd_ln_str("-oovdict")) != NULL)
         j += get_dict_size(oovdic);
-    if ((personalDic = cmd_ln_str("-pdict")) != NULL) {
+    if ((personalDic = cmd_ln_str("-perdict")) != NULL) {
         FILE *tmp;
         /* personalDic exists */
         if ((tmp = fopen(personalDic, "r")) != NULL)
@@ -261,22 +258,18 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
     }
 
     /* Load dictionaries */
-    dict_load(dict, filename, &word_id,
-              use_context, FALSE /* is a phrase dictionary */ );
-    if (p_filename)
-        dict_load(dict, p_filename, &word_id, TRUE,     /* use_context */
-                  TRUE /* is a phrase dictionary */ );
+    dict_load(dict, filename, &word_id, use_context);
 
     /* Add words with known pronunciations but which are OOVs wrt LM */
     first_initial_oov = word_id;
 
     if ((oovdic = cmd_ln_str("-oovdict")) != NULL)
-        dict_load(dict, oovdic, &word_id, use_context, FALSE);
-    if ((personalDic = cmd_ln_str("-pdict")) != NULL) {
+        dict_load(dict, oovdic, &word_id, use_context);
+    if ((personalDic = cmd_ln_str("-perdict")) != NULL) {
         FILE *tmp;
         /* personalDic exists */
         if ((tmp = fopen(personalDic, "r")) != NULL)
-            dict_load(dict, personalDic, &word_id, use_context, FALSE);
+            dict_load(dict, personalDic, &word_id, use_context);
         if (tmp != NULL)
             fclose(tmp);
     }
@@ -314,7 +307,7 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
     {
         void *val;
 
-        if (hash_table_lookup(dict->dict, cmd_ln_str("-lmendsym"), &val)) {
+        if (hash_table_lookup(dict->dict, cmd_ln_str("-lmendsym"), &val) != 0) {
             /*
              * Check if there is a special end silence phone.
              */
@@ -366,7 +359,7 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
             ckd_free(startsym_phone);
         }
         /* Add the standard start symbol (<s>) if not already in dict */
-        if (hash_table_lookup(dict->dict, cmd_ln_str("-lmstartsym"), &val)) {
+        if (hash_table_lookup(dict->dict, cmd_ln_str("-lmstartsym"), &val) != 0) {
             /*
              * Check if there is a special begin silence phone.
              */
@@ -391,7 +384,8 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
             word_id++;
         }
 
-        if (hash_table_lookup(dict->dict, "SIL", &val)) {
+        /* Finally create a silence phone if it isn't there already. */
+        if (hash_table_lookup(dict->dict, "SIL", &val) != 0) {
             entry = _new_dict_entry("SIL", "SIL", FALSE);
             if (!entry)
                 E_FATAL("Failed to add <sil>(SIL) to dictionary\n");
@@ -404,8 +398,7 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
     }
 
     if (n_filename)
-        dict_load(dict, n_filename, &word_id, FALSE,    /* use_context */
-                  FALSE /* is a phrase dict */ );
+        dict_load(dict, n_filename, &word_id, FALSE /* use_context */);
 
     E_INFO("LEFT CONTEXT TABLES\n");
     buildEntryTable(&lcList, &lcFwdTable);
@@ -422,19 +415,6 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
 
     return (retval);
 }
-
-#if 0
-/*
- * Replace _ (underscores) in a compound word by spaces
- */
-void
-chk_compound_word(char *str)
-{
-    for (; *str; str++)
-        if (*str == '_')
-            *str = ' ';
-}
-#endif
 
 void
 dict_free(dictT * dict)
@@ -459,8 +439,7 @@ dict_free(dictT * dict)
 }
 
 static void
-dict_load(dictT * dict, char *filename, int32 * word_id,
-          int32 use_context, int32 isa_phrase_dict)
+dict_load(dictT * dict, char *filename, int32 * word_id, int32 use_context)
 {
     static char const *rname = "dict_load";
     char dict_str[1024];
@@ -482,9 +461,6 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
 
     pronoun_str[0] = '\0';
     while (EOF != fscanf(fs, "%s%[^\n]\n", dict_str, pronoun_str)) {
-#if 0
-        chk_compound_word(dict_str);
-#endif
         entry = _new_dict_entry(dict_str, pronoun_str, use_context);
         if (!entry) {
             E_ERROR("Failed to add %s to dictionary\n", dict_str);
@@ -505,17 +481,6 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
          */
         {
             char *p = strrchr(dict_str, '(');
-            char *q = strchr(dict_str, '_');
-            char *r = strrchr(dict_str, '_');
-
-            /*
-             * If this isn't a phrase dictionary then an '_' is an underscore
-             * and the phrase actually appears in the LM.
-             */
-            if (!isa_phrase_dict) {
-                q = 0;
-                r = 0;
-            }
 
             /*
              * For alternate pron. the last car of the word must be ')'
@@ -523,17 +488,15 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
              * "(LEFT_PAREN"
              */
             if (dict_str[strlen(dict_str) - 1] != ')')
-                p = 0;
+                p = NULL;
 
-            if ((p != 0) || (q != 0)) {
-                void * wid;
+            if (p != NULL) {
+                void *wid;
 
                 if (p)
                     *p = '\0';
-                if (q)
-                    *q = '\0';
 
-                if (hash_table_lookup(dict->dict, dict_str, &wid)) {
+                if (hash_table_lookup(dict->dict, dict_str, &wid) != 0) {
                     E_FATAL
                         ("%s: Missing first pronunciation for [%s]\nThis means that e.g. [%s(2)] was found with no [%s]\nPlease correct the dictionary and re-run.\n",
                          rname, dict_str, dict_str, dict_str);
@@ -550,100 +513,9 @@ dict_load(dictT * dict, char *filename, int32 * word_id,
                     dict->dict_list[(int32) wid]->alt = *word_id;
                 }
             }
-            /*
-             * Get the word id of the final word in the phrase
-             */
-            if ((r != 0) && isa_phrase_dict) {
-                void * wid;
-
-                r += 1;
-
-                if (hash_table_lookup(dict->dict, r, &wid)) {
-                    E_INFO("%s: Missing first pronunciation for [%s]\n",
-                           rname, r);
-                }
-                E_INFO("phrase transcription for [%s](wid = %d)\n",
-                       entry->word, (int32) wid);
-                entry->fwid = (int32) wid;
-            }
         }
 
         *word_id = *word_id + 1;
-
-#ifdef PHRASE_DEP_MODELS
-        /*
-         * Build a dict entry  for the with in word model
-         * cooresponding to this 'phrase'
-         * 
-         * DOES THIS LOOK LIKE a HACK to YOU...??? It does to me too.
-         * Here is the story.
-         *       These within word models are int32er than standard models.
-         * They are multiples of five states int32, + 1. (for the dummy state).
-         * The problem is that the decoder only deals with one flavor of model.
-         * So what we do else where is break up these big models into little 5 state
-         * models. For instance if phrase ARE_THE we have the trabnscription.
-         *      ARE_THE         AA R & DH AX
-         *                      AA ARE_THE AX
-         *                      AA ARE_THE ARE_THE(1) AX
-         * Get the idea?
-         * This code is NOT!!!! DEBUGED !!!!
-         */
-        if (isa_phrase_dict) {
-            char tmpstr[256];
-            int32 pid, i;
-            dict_entry_t *entry_copy =
-                (dict_entry_t *) calloc((size_t) 1, sizeof(dict_entry_t));
-
-            /*
-             * Copy the entry and make the required edits
-             */
-            memcpy(entry_copy, entry, sizeof(dict_entry_t));
-            /*
-             * Update the alt pronunciation index pointers
-             */
-            entry->alt = *word_id;
-            entry_copy->alt = -1;
-            /*
-             * Make new list of CD phones
-             */
-            entry_copy->phone_ids =
-                (int32 *) calloc((size_t) entry->len, sizeof(int32));
-            memcpy(entry_copy->phone_ids, entry->phone_ids,
-                   sizeof(int32) * entry->len);
-            /*
-             * Rename the word by appending "(0)" to indicate phrase
-             */
-            sprintf(tmpstr, "%s(0)", entry_copy->word);
-            entry_copy->word = ckd_salloc(tmpstr);
-
-            /*
-             * Look up the first model
-             */
-            pid = phone_to_id(entry->word, TRUE);
-
-            if (phone_type(pid) != PT_WWPHONE) {
-                E_FATAL("%s: No with in word for for %s\n", rname,
-                        entry->word);
-            }
-
-            entry_copy->phone_ids[1] = bin_mdef_pid2ssid(mdef,pid);
-            /*
-             * Look up remaining models
-             */
-            for (i = 2; i < entry_copy->len - 2; i++) {
-                sprintf(tmpstr, "%s(%d)", entry->word, i - 1);
-                pid = phone_to_id(tmpstr, TRUE);
-                if (pid == NO_PHONE)
-                    exit(-1);
-                entry_copy->phone_ids[i] = bin_mdef_pid2ssid(mdef,pid);
-            }
-
-            _dict_list_add(dict, entry_copy);
-            hash_table_enter(dict->dict, entry_copy->word, (void *) *word_id);
-
-            *word_id = *word_id + 1;
-        }
-#endif
     }
 
     E_INFO("%6d = words in file [%s]\n", *word_id - start_wid, filename);

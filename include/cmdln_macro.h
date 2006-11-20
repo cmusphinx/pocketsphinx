@@ -379,10 +379,6 @@
       ARG_STRING,						\
       NULL,							\
       "Personal dictionary input file" },			\
-    { "-pdict",							\
-      ARG_STRING,						\
-      NULL,							\
-      "Noise dictionary input file" },				\
     { "-maxnewoov",						\
       ARG_INT32,						\
       "0",							\

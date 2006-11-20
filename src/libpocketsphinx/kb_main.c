@@ -406,7 +406,7 @@ dict_init(void)
         }
     }
 
-    if (dict_read(word_dict, cmd_ln_str("-dict"), cmd_ln_str("-pdict"),
+    if (dict_read(word_dict, cmd_ln_str("-dict"),
                   (fdictfn != NULL) ? fdictfn : cmd_ln_str("-fdict"),
                   !cmd_ln_boolean("-usewdphones"))) {
         ckd_free(fdictfn);
