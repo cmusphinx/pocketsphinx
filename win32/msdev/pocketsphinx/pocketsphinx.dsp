@@ -161,10 +161,6 @@ SOURCE=..\..\..\src\libpocketsphinx\log_add.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\libpocketsphinx\logs3.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\libpocketsphinx\mdef.c
 # End Source File
 # Begin Source File
