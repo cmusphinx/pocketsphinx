@@ -60,8 +60,7 @@
 #include <assert.h>
 #include <math.h>
 
-#include "s2types.h"
-#include "s3types.h"
+#include "sphinx_types.h"
 #include "err.h"
 #include "ckd_alloc.h"
 #include "kb.h"

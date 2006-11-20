@@ -102,5 +102,8 @@ typedef float64 lw_t;
 #define MAX_NEG_FLOAT64		((float64) (-MAX_POS_FLOAT64))
 #define MIN_NEG_FLOAT64		((float64) (-MIN_POS_FLOAT64))
 
+#ifndef PI
+#define PI		3.14159265358979323846
+#endif
 
 #endif

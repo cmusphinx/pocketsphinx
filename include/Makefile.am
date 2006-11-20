@@ -26,7 +26,6 @@ pkginclude_HEADERS = \
 	s2io.h					\
 	s2params.h				\
 	s2types.h				\
-	s3types.h				\
 	search_const.h				\
 	search.h				\
 	senscr.h				\

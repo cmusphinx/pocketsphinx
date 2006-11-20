@@ -49,7 +49,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
 #include "bin_mdef.h"
+#include "s2types.h"
 #include "ckd_alloc.h"
 #include "byteorder.h"
 #include "err.h"

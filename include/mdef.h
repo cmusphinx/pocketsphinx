@@ -52,8 +52,7 @@
 
 
 #include <stdio.h>
-#include "s2types.h"
-#include "s3types.h"
+#include "sphinx_types.h"
 #include "hash_table.h"
 
 #ifdef __cplusplus

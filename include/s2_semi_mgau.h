@@ -42,7 +42,7 @@
 #ifndef __S2_SEMI_MGAU_H__
 #define __S2_SEMI_MGAU_H__
 
-#include "s3types.h"
+#include "sphinx_types.h"
 #include "fe.h"
 #include "kdtree.h"
 

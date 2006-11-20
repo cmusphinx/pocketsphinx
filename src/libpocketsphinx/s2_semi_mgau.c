@@ -119,7 +119,8 @@
 #include <err.h>
 
 /* Local headers */
-#include "s3types.h"
+#include "s2types.h"
+#include "sphinx_types.h"
 #include "log.h"
 #include "s2_semi_mgau.h"
 #include "kdtree.h"

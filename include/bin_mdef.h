@@ -56,7 +56,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include "mdef.h"
-#include "s3types.h"
+#include "sphinx_types.h"
 
 #define BIN_MDEF_FORMAT_VERSION 1
 /* Little-endian machines will write "BMDF" to disk, big-endian ones "FDMB". */
