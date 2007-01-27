@@ -133,6 +133,8 @@ s2_mmap(const char *filename)
     if (fstat(fd, &buf) == -1)
         E_FATAL_SYSTEM("Failed to stat %s", filename);
     rv = mmap(NULL, buf.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    if (rv == (void *)-1)
+        E_FATAL_SYSTEM("Failed to mmap %d bytes", buf.st_size);
     close(fd);
     return rv;
 }
