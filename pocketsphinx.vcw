@@ -3,6 +3,18 @@ Microsoft eMbedded Visual Tools Workspace File, Format Version 4.00
 
 ###############################################################################
 
+Project: "libpocketsphinx"=".\WIN32\MSDEV\libpocketsphinx\libpocketsphinx.vcp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "pocketsphinx"=".\WIN32\MSDEV\pocketsphinx\pocketsphinx.vcp" - Package Owner=<4>
 
 Package=<5>

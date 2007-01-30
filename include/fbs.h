@@ -191,6 +191,17 @@
 #include "s2types.h"
 #include "fe.h"
 
+/* Win32/WinCE DLL gunk */
+#ifdef _WIN32
+#ifdef LIBPOCKETSPHINX_EXPORTS
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT __declspec(dllimport)
+#endif
+#else /* !_WIN32 */
+#define EXPORT
+#endif
+
 /*
  * The decoder is set up to process one finite-duration utterance at a time.  The
  * maximum duration of an utterance is about 60sec, though other resource limits,
@@ -224,14 +235,14 @@ typedef struct search_hyp_s {
  * batch mode and exit the application.
  * Return value: 0 if successful, -1 otherwise.
  */
-int32 fbs_init (int32 argc, char **argv);	/* Arguments for initialization */
+EXPORT int32 fbs_init (int32 argc, char **argv);	/* Arguments for initialization */
 
 
 /*
  * Called before quitting the application to tie up loose ends in the decoder.
  * Return value: 0 if successful, -1 otherwise.
  */
-int32 fbs_end ( void );
+EXPORT int32 fbs_end ( void );
 
 
 /******************************* Decoding *******************************/
@@ -244,7 +255,7 @@ int32 fbs_end ( void );
  * instead.
  * Return value: 0 if successful, else -1.
  */
-int32 uttproc_begin_utt (char const *uttid);
+EXPORT int32 uttproc_begin_utt (char const *uttid);
 
 
 /*
@@ -264,9 +275,9 @@ int32 uttproc_begin_utt (char const *uttid);
  * Return value: #frames internally queued up and remaining to be decoded; -1 if any
  * error occurs.
  */
-int32 uttproc_rawdata (int16 *raw,	/* In: Block of int16 samples */
-		       int32 nsample,	/* In: #Samples in above block; can be 0!! */
-		       int32 block);	/* In: if !0, process all data before returning */
+EXPORT int32 uttproc_rawdata (int16 *raw,	/* In: Block of int16 samples */
+			      int32 nsample,	/* In: #Samples in above block; can be 0!! */
+			      int32 block);	/* In: if !0, process all data before returning */
 
 
 /*
@@ -275,9 +286,9 @@ int32 uttproc_rawdata (int16 *raw,	/* In: Block of int16 samples */
  * Return value: #frames internally queued up and remaining to be decoded; -1 if any
  * error occurs.
  */
-int32 uttproc_cepdata (float32 **cep,	/* In: cep[i] = i-th frame of cepstrum data */
-		       int32 nfrm,	/* In: #frames of cep data; can be 0!! */
-		       int32 block);	/* In: if !0, process all data before returning */
+EXPORT int32 uttproc_cepdata (float32 **cep,	/* In: cep[i] = i-th frame of cepstrum data */
+			      int32 nfrm,	/* In: #frames of cep data; can be 0!! */
+			      int32 block);	/* In: if !0, process all data before returning */
 
 
 /*
@@ -286,7 +297,7 @@ int32 uttproc_cepdata (float32 **cep,	/* In: cep[i] = i-th frame of cepstrum dat
  * result.
  * Return value: 0 if successful, else -1.
  */
-int32 uttproc_end_utt ( void );
+EXPORT int32 uttproc_end_utt ( void );
 
 
 /*
@@ -299,12 +310,12 @@ int32 uttproc_end_utt ( void );
  * final result is not yet available.  If 0, frm and hyp contain the final recognition
  * result.  If there is any error, the function returns -1.
  */
-int32 uttproc_result (int32 *frm,	/* Out: *frm = #frames in current utterance */
-		      char **hyp,	/* Out: *hyp = recognition string; READ-ONLY.
-					   Contents clobbered by the next uttproc_result
-					   or uttproc_partial_result call */
-		      int32 block);	/* In: If !0, process all data and return final
-					   result */
+EXPORT int32 uttproc_result (int32 *frm,	/* Out: *frm = #frames in current utterance */
+			     char **hyp,	/* Out: *hyp = recognition string; READ-ONLY.
+						   Contents clobbered by the next uttproc_result
+						   or uttproc_partial_result call */
+			     int32 block);	/* In: If !0, process all data and return final
+						   result */
 
 /*
  * Like uttproc_result, but returns a list of word segmentations instead of the full
@@ -312,33 +323,33 @@ int32 uttproc_result (int32 *frm,	/* Out: *frm = #frames in current utterance */
  * the next call to any of the result functions.
  * Use uttproc_result or uttproc_result_seg to obtain the final result, but not both!
  */
-int32 uttproc_result_seg (int32 *frm,		/* Out: *frm = #frames in utterance */
-			  search_hyp_t **hyp,	/* Out: *hyp = first element in NULL
-						   terminated linked list of word
-						   segmentations */
-			  int32 block);
+EXPORT int32 uttproc_result_seg (int32 *frm,		/* Out: *frm = #frames in utterance */
+				 search_hyp_t **hyp,	/* Out: *hyp = first element in NULL
+							   terminated linked list of word
+							   segmentations */
+				 int32 block);
 
 /*
  * Obtain a partial recognition result in the middle of an utterance.  This function can
  * be called anytime after uttproc_begin_utt and before the final uttproc_result.
  * Return value: 0 if successful, else -1.
  */
-int32 uttproc_partial_result (int32 *frm,  /* Out: *frm = #frames processed
-					      corresponding to the partial result */
-			      char **hyp); /* Out: *hyp = partial recognition string,
-					      READ-ONLY.  Contents clobbered by the next
-					      uttproc_result or uttproc_partial_result
-					      call. */
+EXPORT int32 uttproc_partial_result (int32 *frm,  /* Out: *frm = #frames processed
+						     corresponding to the partial result */
+				     char **hyp); /* Out: *hyp = partial recognition string,
+						     READ-ONLY.  Contents clobbered by the next
+						     uttproc_result or uttproc_partial_result
+						     call. */
 
 /*
  * Like uttproc_partial_result, but returns a list of word segmentations instead of
  * the partial recognition string.  The list of word segmentations is READ-ONLY, and
  * clobbered by the next call to any of the result functions.
  */
-int32 uttproc_partial_result_seg (int32 *frm,
-				  search_hyp_t **hyp);	/* Out: *hyp = first element in
-							   NULL terminated linked list
-							   of word segmentations */
+EXPORT int32 uttproc_partial_result_seg (int32 *frm,
+					 search_hyp_t **hyp);	/* Out: *hyp = first element in
+								   NULL terminated linked list
+								   of word segmentations */
 
 /*
  * Called instead of uttproc_end_utt to abort the current utterance immediately.  No
@@ -346,7 +357,7 @@ int32 uttproc_partial_result_seg (int32 *frm,
  * uttproc_end_utt.
  * Return value: 0 if successful, else -1.
  */
-int32 uttproc_abort_utt ( void );
+EXPORT int32 uttproc_abort_utt ( void );
 
 
 /*
@@ -360,8 +371,8 @@ int32 uttproc_abort_utt ( void );
  * This operation cannot be performed after uttproc_end_utt.
  * Return value: 0 if successful, else -1.
  */
-int32 uttproc_stop_utt ( void );
-int32 uttproc_restart_utt ( void );
+EXPORT int32 uttproc_stop_utt ( void );
+EXPORT int32 uttproc_restart_utt ( void );
 
 
 /*
@@ -375,14 +386,14 @@ int32 uttproc_restart_utt ( void );
  *     On return, alt_out[i] = i-th hypothesis generated.
  * Return value: #alternative hypotheses returned; -1 if error.
  */
-int32 search_get_alt (int32 n,			/* In: No. of alternatives to produce */
-		      int32 sf, int32 ef,	/* In: Start/End frame */
-		      int32 w1, int32 w2,	/* In: context words */
-		      search_hyp_t ***alt_out);	/* Out: array of alternatives */
+EXPORT int32 search_get_alt (int32 n,			/* In: No. of alternatives to produce */
+			     int32 sf, int32 ef,	/* In: Start/End frame */
+			     int32 w1, int32 w2,	/* In: context words */
+			     search_hyp_t ***alt_out);	/* Out: array of alternatives */
 
 
 /* Should be called before search_get_alt */
-void search_save_lattice ( void );
+EXPORT void search_save_lattice ( void );
 
 
 /*
@@ -392,17 +403,17 @@ void search_save_lattice ( void );
  * segments; it may be NULL.  It is a READ-ONLY list.  It will be clobbered by the next
  * call to this function.
  */
-search_hyp_t *uttproc_allphone_file (char const *file);	/* Without filename extension */
+EXPORT search_hyp_t *uttproc_allphone_file (char const *file);	/* Without filename extension */
 
 
 /* Force alignment API */
-void time_align_utterance (char const *utt,
-			   FILE *out_sent_fp,
-			   char const *left_word,
-			   int32 begin_frame,
-			   char *pe_words, /* FIXME: should be const */
-			   int32 end_frame,
-			   char const *right_word);
+EXPORT void time_align_utterance (char const *utt,
+				  FILE *out_sent_fp,
+				  char const *left_word,
+				  int32 begin_frame,
+				  char *pe_words, /* FIXME: should be const */
+				  int32 end_frame,
+				  char const *right_word);
 
 /* Other batch mode processing API */
 void run_ctl_file (char const *ctl_file_name);
@@ -419,11 +430,11 @@ void run_time_align_ctl_file (char const *utt_ctl_file_name,
  * undefined at this point; use uttproc_set_lm(lmname) immediately afterwards.
  * Return value: 0 if successful, else -1.
  */
-int32 lm_read (char const *lmfile,	/* In: LM file name */
-	       char const *lmname,	/* In: LM name associated with this model */
-	       double lw,		/* In: Language weight; typically 6.5-9.5 */
-	       double uw,		/* In: Unigram weight; typically 0.5 */
-	       double wip);		/* In: Word insertion penalty; typically 0.65 */
+EXPORT int32 lm_read (char const *lmfile,	/* In: LM file name */
+		      char const *lmname,	/* In: LM name associated with this model */
+		      double lw,		/* In: Language weight; typically 6.5-9.5 */
+		      double uw,		/* In: Unigram weight; typically 0.5 */
+		      double wip);		/* In: Word insertion penalty; typically 0.65 */
 
 
 /*
@@ -431,7 +442,7 @@ int32 lm_read (char const *lmfile,	/* In: LM file name */
  * point.  Use uttproc_set_lm(...) immediately afterwards.
  * Return value: 0 if successful, else -1.
  */
-int32 lm_delete (char const *lmname);
+EXPORT int32 lm_delete (char const *lmname);
 
 
 /*
@@ -440,7 +451,7 @@ int32 lm_delete (char const *lmname);
  * sets the decoder in n-gram decoding mode.
  * Return value: 0 if successful, else -1.
  */
-int32 uttproc_set_lm (char const *lmname);
+EXPORT int32 uttproc_set_lm (char const *lmname);
 
 
 /*
@@ -448,14 +459,14 @@ int32 uttproc_set_lm (char const *lmname);
  * a new unigram).
  * Return value: 0 if successful, else -1.
  */
-int32 uttproc_lmupdate (char const *lmname);
+EXPORT int32 uttproc_lmupdate (char const *lmname);
 
 
 /*
  * Set the N-gram LM start symbol to the given value.
  * Explicitly reqeusted by some projects.  (Okay, but other stuff uses it anyway.)
  */
-int32 uttproc_set_startword (char const *startword);
+EXPORT int32 uttproc_set_startword (char const *startword);
 
 
 /*
@@ -466,8 +477,8 @@ int32 uttproc_set_startword (char const *startword);
  * wd2 can be NULL to clear any history information.
  * Return value: 0 if successful, else -1.
  */
-int32 uttproc_set_context (char const *wd1, /* In: First word of history (possibly NULL) */
-			   char const *wd2);/* In: Last (most recent) history (maybe NULL) */
+EXPORT int32 uttproc_set_context (char const *wd1, /* In: First word of history (possibly NULL) */
+				  char const *wd2);/* In: Last (most recent) history (maybe NULL) */
 
 
 /****************************** FSG related ******************************/
@@ -511,7 +522,7 @@ typedef struct s2_fsg_s {
  * if any error.  This pointer is invalid after the FSG is deleted
  * (via uttproc_del_fsg()).
  */
-char *uttproc_load_fsgfile (char *fsgfile);
+EXPORT char *uttproc_load_fsgfile (char *fsgfile);
 
 
 /*
@@ -524,22 +535,22 @@ char *uttproc_load_fsgfile (char *fsgfile);
  * Return value: 1 if successfully loaded, 0 if any error.
  * (This function specifically requested by some applications.)
  */
-int32 uttproc_load_fsg (s2_fsg_t *fsg,
-			int32 use_altpron,	/* Whether to automatically
-						   insert all the alternative
-						   pronunciations for each
-						   transition */
-			int32 use_filler,	/* Whether to automatically
-						   insert filler (e.g., silence)
-						   transitions (self-loops) at
-						   each state. */
-			float32 silprob,	/* Probability for automatically
+EXPORT int32 uttproc_load_fsg (s2_fsg_t *fsg,
+			       int32 use_altpron,	/* Whether to automatically
+							   insert all the alternative
+							   pronunciations for each
+							   transition */
+			       int32 use_filler,	/* Whether to automatically
+							   insert filler (e.g., silence)
+							   transitions (self-loops) at
+							   each state. */
+			       float32 silprob,	/* Probability for automatically
 						   added silence transitions */
-			float32 fillprob,	/* Probability for automatically
-						   added non-silence
-						   filler transitions */
-			float32 lw);		/* Language weight applied to
-						   all transition probs */
+			       float32 fillprob,	/* Probability for automatically
+							   added non-silence
+							   filler transitions */
+			       float32 lw);		/* Language weight applied to
+							   all transition probs */
 
 /*
  * Set the currently active FSG to the given named FSG.  Cannot be performed in
@@ -547,7 +558,7 @@ int32 uttproc_load_fsg (s2_fsg_t *fsg,
  * mode.
  * Return value: 0 if successful, else -1.
  */
-int32 uttproc_set_fsg (char *fsgname);
+EXPORT int32 uttproc_set_fsg (char *fsgname);
 
 
 /*
@@ -556,13 +567,13 @@ int32 uttproc_set_fsg (char *fsgname);
  * performed in the middle of an utterance.
  * Return value: 0 if successful, else -1.
  */
-int32 uttproc_del_fsg (char *fsgname);
+EXPORT int32 uttproc_del_fsg (char *fsgname);
 
 
 /*
  * Whether the current utterance was (is) decoded in FSG search mode.
  */
-boolean uttproc_fsg_search_mode ( void );
+EXPORT boolean uttproc_fsg_search_mode ( void );
 
 
 /*
@@ -571,8 +582,8 @@ boolean uttproc_fsg_search_mode ( void );
  * if the recognition hypothesis returned by the decoder terminated in the final
  * state or not.
  */
-int32 uttproc_get_fsg_start_state ( void );
-int32 uttproc_get_fsg_final_state ( void );
+EXPORT int32 uttproc_get_fsg_start_state ( void );
+EXPORT int32 uttproc_get_fsg_final_state ( void );
 
 
 /*
@@ -581,8 +592,8 @@ int32 uttproc_get_fsg_final_state ( void );
  * in the midst of one.  Return the previous start (or final) state for this
  * FSG if successful.  Return -1 if any error.
  */
-int32 uttproc_set_fsg_start_state (int32 state);
-int32 uttproc_set_fsg_final_state (int32 state);
+EXPORT int32 uttproc_set_fsg_start_state (int32 state);
+EXPORT int32 uttproc_set_fsg_final_state (int32 state);
 
 
 /************************** Logging related **************************/
@@ -593,25 +604,25 @@ int32 uttproc_set_fsg_final_state (int32 state);
  * the utterance id associated with the current utterance (see uttproc_begin_utt).
  * Return value: 0 if successful, else -1.
  */
-int32 uttproc_set_rawlogdir (char const *dir);
-int32 uttproc_set_mfclogdir (char const *dir);
+EXPORT int32 uttproc_set_rawlogdir (char const *dir);
+EXPORT int32 uttproc_set_mfclogdir (char const *dir);
 
 
 /* Logfile can be changed in between utterances.  Return value: 0 if ok, else -1 */
-int32 uttproc_set_logfile (char const *file);
+EXPORT int32 uttproc_set_logfile (char const *file);
 
 
 /*
  * Obtain the uttid for the most recent utterance (in progress or just finished)
  * Return value: pointer to READ-ONLY string that is the utterance id.
  */
-char const *uttproc_get_uttid ( void );
+EXPORT char const *uttproc_get_uttid ( void );
 
 
 /*
  * For automatically generated uttid's (see uttproc_begin_utt), also use the prefix
  * given below.  (So the uttid is formatted "%s%08d", prefix, sequence_no.)
  */
-int32 uttproc_set_auto_uttid_prefix (char const *prefix);
+EXPORT int32 uttproc_set_auto_uttid_prefix (char const *prefix);
 
 #endif

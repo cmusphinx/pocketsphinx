@@ -205,6 +205,4 @@ void	lm3g_cache_reset (void);
 void	lm3g_cache_stats_dump (FILE *file);
 void	lm_next_frame (void);
 
-int32   lm_delete (char const *name);
-
 #endif /* _LM_3G_H_ */
