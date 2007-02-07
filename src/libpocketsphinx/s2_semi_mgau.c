@@ -782,6 +782,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     int r = s->n_density;
     int c = bin_mdef_n_sen(mdef);
 
+    s->CdWdPDFMod = c;
     use_mmap = cmd_ln_boolean("-mmap");
 
     if ((fp = fopen(file, "rb")) == NULL)
@@ -836,6 +837,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     if (do_swap) SWAP_INT32(&r);
     fread(&c, 1, sizeof(c), fp);
     if (do_swap) SWAP_INT32(&c);
+    E_INFO("Rows: %d, Columns: %d\n", r, c);
 
     if (n_clust) {
 	E_ERROR ("Dump file is incompatible with PocketSphinx\n");
@@ -903,7 +905,7 @@ dump_probs_8b(s2_semi_mgau_t *s,
               char const *dir)
 {                               /* **ORIGINAL** HMM directory */
     FILE *fp;
-    int32 f, i, k, aligned_c;
+    int32 f, r, k, aligned_c;
     static char const *title = "V6 Senone Probs, Smoothed, Normalized";
     static char const *clust_hdr = "cluster_count 0";
 
@@ -935,7 +937,7 @@ dump_probs_8b(s2_semi_mgau_t *s,
     if (k > 0) {
         k = 4 - k;
         fwrite_int32(fp, k);
-        fwrite("!!!!", 1, 4, fp);
+        fwrite("!!!!", 1, k, fp);
     }
 
     /* Write 0, terminating header strings */
@@ -943,18 +945,22 @@ dump_probs_8b(s2_semi_mgau_t *s,
     fwrite_int32(fp, k);
 
     /* Align the number of pdfs to a 4-byte boundary. */
-    aligned_c = (s->n_density + 3) & ~3;
+    aligned_c = (s->CdWdPDFMod + 3) & ~3;
+    E_INFO("Rows: %d Columns: %d (from %d)\n",
+           s->n_density, aligned_c, s->CdWdPDFMod);
 
     /* Write #rows, #cols; this also indicates whether pdfs already transposed */
-    fwrite_int32(fp, s->CdWdPDFMod);
+    fwrite_int32(fp, s->n_density);
     fwrite_int32(fp, aligned_c);
 
     /* Now write out the quantized senones. */
     for (f = 0; f < s->n_feat; ++f) {
-        for (i = 0; i < s->CdWdPDFMod; i++) {
-            fwrite(s->OPDF_8B[f][i], sizeof(char), s->n_density, fp);
+        for (r = 0; r < s->n_density; r++) {
+            fwrite(s->OPDF_8B[f][r], sizeof(char), s->CdWdPDFMod, fp);
             /* Pad them out for alignment purposes */
-            fwrite("\0\0\0\0", 1, aligned_c - s->n_density, fp);
+            if (aligned_c > s->CdWdPDFMod) {
+                fwrite("\0\0\0\0", 1, aligned_c - s->CdWdPDFMod, fp);
+            }
         }
     }
 
@@ -1027,6 +1033,11 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
             ("%s: #float32s(%d) doesn't match header dimensions: %d x %d x %d\n",
              file_name, i, n_sen, n_feat, n_comp);
     }
+
+    /* CdWdPDFMod = number of mixture weights per codeword, which is
+     * fixed at the number of senones since we have only one codebook.
+     * FIXME: This is a bogus legacy value and will be gone soon. */
+    s->CdWdPDFMod = n_sen;
 
     /* Quantized mixture weight arrays. */
     s->OPDF_8B = (unsigned char ***)
@@ -1270,10 +1281,8 @@ s2_semi_mgau_init(const char *mean_path, const char *var_path,
     s->dets = (int32 **)ckd_calloc_2d(s->n_feat, s->n_density, sizeof(int32));
     s3_precomp(s, varfloor);
 
-    /* Read mixture weights (gives us CdWdPDFMod = number of
-     * mixture weights per codeword, which is fixed at the number
-     * of senones since we have only one codebook) */
-    s->CdWdPDFMod = read_dists_s3(s, mixw_path, mixwfloor);
+    /* Read mixture weights */
+    read_dists_s3(s, mixw_path, mixwfloor);
     s->topN = topn;
     s->ds_ratio = 1;
 
