@@ -1730,10 +1730,12 @@ uttproc_file2feat(const char *utt, int32 sf, int32 ef, int32 nosearch)
         adbuf = ckd_calloc(4096, sizeof(int16));
         while ((k = adc_file_read(uttfp, adbuf, 4096)) >= 0) {
             if (uttproc_rawdata(adbuf, k, 1) < 0) {
+                fclose(uttfp);
                 ckd_free(adbuf);
                 return -1;
             }
         }
+        fclose(uttfp);
         ckd_free(adbuf);
 
         if (uttproc_end_utt() < 0)
