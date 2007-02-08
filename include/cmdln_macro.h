@@ -177,7 +177,7 @@
       "Beam width applied to every frame in Viterbi search (smaller values mean wider beam)" },	\
 { "-wbeam",											\
       ARG_FLOAT64,										\
-      "1e-48",											\
+      "7e-29",											\
       "Beam width applied to word exits" },							\
 { "-pbeam",											\
       ARG_FLOAT64,										\
@@ -189,7 +189,7 @@
       "Beam width applied to last phone in words" },						\
 { "-lponlybeam",										\
       ARG_FLOAT64,										\
-      "1e-28",											\
+      "7e-29",											\
       "Beam width applied to last phone in single-phone words" },				\
 { "-fwdflatbeam",										\
       ARG_FLOAT64,										\
@@ -197,7 +197,7 @@
       "Beam width applied to every frame in second-pass flat search" },				\
 { "-fwdflatwbeam",										\
       ARG_FLOAT64,										\
-      "1e-28",											\
+      "7e-29",											\
       "Beam width applied to word exits in second-pass flat search" }
 
 /** Options defining other parameters for tuning the search. */
