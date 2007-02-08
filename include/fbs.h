@@ -193,7 +193,7 @@
 
 /* Win32/WinCE DLL gunk */
 #ifdef _WIN32
-#ifdef LIBPOCKETSPHINX_EXPORTS
+#ifdef POCKETSPHINX_EXPORTS
 #define EXPORT __declspec(dllexport)
 #else
 #define EXPORT __declspec(dllimport)

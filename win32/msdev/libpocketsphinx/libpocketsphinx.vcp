@@ -2,8 +2,8 @@
 # Microsoft eMbedded Visual Tools Generated Build File, Format Version 6.02
 # ** DO NOT EDIT **
 
-# TARGTYPE "Win32 (WCE emulator) Dynamic-Link Library" 0xa602
-# TARGTYPE "Win32 (WCE ARMV4) Dynamic-Link Library" 0xa302
+# TARGTYPE "Win32 (WCE ARMV4) Static Library" 0xa304
+# TARGTYPE "Win32 (WCE emulator) Static Library" 0xa604
 
 CFG=libpocketsphinx - Win32 (WCE emulator) Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
@@ -18,10 +18,10 @@ CFG=libpocketsphinx - Win32 (WCE emulator) Debug
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "libpocketsphinx - Win32 (WCE emulator) Release" (based on "Win32 (WCE emulator) Dynamic-Link Library")
-!MESSAGE "libpocketsphinx - Win32 (WCE emulator) Debug" (based on "Win32 (WCE emulator) Dynamic-Link Library")
-!MESSAGE "libpocketsphinx - Win32 (WCE ARMV4) Release" (based on "Win32 (WCE ARMV4) Dynamic-Link Library")
-!MESSAGE "libpocketsphinx - Win32 (WCE ARMV4) Debug" (based on "Win32 (WCE ARMV4) Dynamic-Link Library")
+!MESSAGE "libpocketsphinx - Win32 (WCE emulator) Release" (based on "Win32 (WCE emulator) Static Library")
+!MESSAGE "libpocketsphinx - Win32 (WCE emulator) Debug" (based on "Win32 (WCE emulator) Static Library")
+!MESSAGE "libpocketsphinx - Win32 (WCE ARMV4) Release" (based on "Win32 (WCE ARMV4) Static Library")
+!MESSAGE "libpocketsphinx - Win32 (WCE ARMV4) Debug" (based on "Win32 (WCE ARMV4) Static Library")
 !MESSAGE 
 
 # Begin Project
@@ -45,23 +45,16 @@ CFG=libpocketsphinx - Win32 (WCE emulator) Debug
 # PROP Intermediate_Dir "emulatorRel"
 # PROP CPU_ID "{32E52003-403E-442D-BE48-DE10F8C6131D}"
 # PROP Platform_ID "{8A9A2F80-6887-11D3-842E-005004848CBA}"
-# PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-RSC=rc.exe
-# ADD BASE RSC /l 0x409 /d UNDER_CE=$(CEVersion) /d _WIN32_WCE=$(CEVersion) /d "UNICODE" /d "_UNICODE" /d "NDEBUG" /d "$(CePlatform)" /d "_X86_" /d "x86" /d "_i386_" /r
-# ADD RSC /l 0x409 /d UNDER_CE=$(CEVersion) /d _WIN32_WCE=$(CEVersion) /d "UNICODE" /d "_UNICODE" /d "NDEBUG" /d "$(CePlatform)" /d "_X86_" /d "x86" /d "_i386_" /r
 CPP=cl.exe
-# ADD BASE CPP /nologo /W3 /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D "_i386_" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_X86_" /D "x86" /D "NDEBUG" /D "_USRDLL" /D "LIBPOCKETSPHINX_EXPORTS" /YX /Gs8192 /GF /O2  /c
-# ADD CPP /nologo /W3 /I "../../../include" /I "../../../../sphinxbase/include" /I "../../../../sphinxbase/include/wince" /D "_i386_" /D "_X86_" /D "x86" /D "NDEBUG" /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_USRDLL" /D "LIBPOCKETSPHINX_EXPORTS" /D "HAVE_CONFIG_H" /YX /Gs8192 /GF /O2  /c
-MTL=midl.exe
-# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
+# ADD BASE CPP /nologo /W3 /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D "_i386_" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_X86_" /D "x86" /D "NDEBUG" /D "_LIB" /YX /Gs8192 /GF /O2 /c
+# ADD CPP /nologo /W3 /I "../../../include" /I "../../../../sphinxbase/include" /I "../../../../sphinxbase/include/wince" /D "_i386_" /D "_X86_" /D "x86" /D "NDEBUG" /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_LIB" /D "HAVE_CONFIG_H" /YX /Gs8192 /GF /O2 /c
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo
+# ADD LIB32 /nologo
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 commctrl.lib coredll.lib $(CEx86Corelibc)   /nologo /base:"0x00100000" /stack:0x10000,0x1000 /entry:"_DllMainCRTStartup" /dll /nodefaultlib:"OLDNAMES.lib" /nodefaultlib:$(CENoDefaultLib) /subsystem:$(CESubsystem) /MACHINE:IX86
-# ADD LINK32 $(CEx86Corelibc) coredll.lib libsphinxfe.lib libsphinxfeat.lib libsphinxad.lib libsphinxutil.lib /nologo /base:"0x00100000" /stack:0x10000,0x1000 /entry:"_DllMainCRTStartup" /dll /nodefaultlib:"OLDNAMES.lib" /nodefaultlib:$(CENoDefaultLib) /libpath:"../../../../sphinxbase/lib/emulatorRel" /subsystem:$(CESubsystem) /MACHINE:IX86
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
 
@@ -78,23 +71,16 @@ LINK32=link.exe
 # PROP Intermediate_Dir "emulatorDbg"
 # PROP CPU_ID "{32E52003-403E-442D-BE48-DE10F8C6131D}"
 # PROP Platform_ID "{8A9A2F80-6887-11D3-842E-005004848CBA}"
-# PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-RSC=rc.exe
-# ADD BASE RSC /l 0x409 /d UNDER_CE=$(CEVersion) /d _WIN32_WCE=$(CEVersion) /d "UNICODE" /d "_UNICODE" /d "DEBUG" /d "$(CePlatform)" /d "_X86_" /d "x86" /d "_i386_" /r
-# ADD RSC /l 0x409 /d UNDER_CE=$(CEVersion) /d _WIN32_WCE=$(CEVersion) /d "UNICODE" /d "_UNICODE" /d "DEBUG" /d "$(CePlatform)" /d "_X86_" /d "x86" /d "_i386_" /r
 CPP=cl.exe
-# ADD BASE CPP /nologo /W3 /Zi /Od /D "DEBUG" /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D "_i386_" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_X86_" /D "x86" /D "_USRDLL" /D "LIBPOCKETSPHINX_EXPORTS" /YX /Gs8192 /GF  /c
-# ADD CPP /nologo /W3 /Zi /Od /I "../../../include" /I "../../../../sphinxbase/include" /I "../../../../sphinxbase/include/wince" /D "DEBUG" /D "_i386_" /D "_X86_" /D "x86" /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_USRDLL" /D "LIBPOCKETSPHINX_EXPORTS" /D "HAVE_CONFIG_H" /YX /Gs8192 /GF  /c
-MTL=midl.exe
-# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
+# ADD BASE CPP /nologo /W3 /Zi /Od /D "DEBUG" /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D "_i386_" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_X86_" /D "x86" /D "_LIB" /YX /Gs8192 /GF /c
+# ADD CPP /nologo /W3 /Zi /Od /I "../../../include" /I "../../../../sphinxbase/include" /I "../../../../sphinxbase/include/wince" /D "DEBUG" /D "_i386_" /D "_X86_" /D "x86" /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_LIB" /D "HAVE_CONFIG_H" /YX /Gs8192 /GF /c
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo
+# ADD LIB32 /nologo
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 commctrl.lib coredll.lib $(CEx86Corelibc)   /nologo /base:"0x00100000" /stack:0x10000,0x1000 /entry:"_DllMainCRTStartup" /dll /debug /nodefaultlib:"OLDNAMES.lib" /nodefaultlib:$(CENoDefaultLib) /subsystem:$(CESubsystem) /MACHINE:IX86
-# ADD LINK32 $(CEx86Corelibc) coredll.lib libsphinxfe.lib libsphinxfeat.lib libsphinxad.lib libsphinxutil.lib /nologo /base:"0x00100000" /stack:0x10000,0x1000 /entry:"_DllMainCRTStartup" /dll /debug /nodefaultlib:"OLDNAMES.lib" /nodefaultlib:$(CENoDefaultLib) /libpath:"../../../../sphinxbase/lib/emulatorDbg" /subsystem:$(CESubsystem) /MACHINE:IX86
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
@@ -111,23 +97,16 @@ LINK32=link.exe
 # PROP Intermediate_Dir "ARMV4Rel"
 # PROP CPU_ID "{ECBEA43D-CD7B-4852-AD55-D4227B5D624B}"
 # PROP Platform_ID "{8A9A2F80-6887-11D3-842E-005004848CBA}"
-# PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-RSC=rc.exe
-# ADD BASE RSC /l 0x409 /d UNDER_CE=$(CEVersion) /d _WIN32_WCE=$(CEVersion) /d "NDEBUG" /d "UNICODE" /d "_UNICODE" /d "$(CePlatform)" /d "ARM" /d "_ARM_" /d "ARMV4" /r
-# ADD RSC /l 0x409 /d UNDER_CE=$(CEVersion) /d _WIN32_WCE=$(CEVersion) /d "NDEBUG" /d "UNICODE" /d "_UNICODE" /d "$(CePlatform)" /d "ARM" /d "_ARM_" /d "ARMV4" /r
 CPP=clarm.exe
-# ADD BASE CPP /nologo /W3 /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D "ARM" /D "_ARM_" /D "ARMV4" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "NDEBUG" /D "_USRDLL" /D "LIBPOCKETSPHINX_EXPORTS" /YX /O2 /M$(CECrtMT)  /c
-# ADD CPP /nologo /W3 /I "../../../include" /I "../../../../sphinxbase/include" /I "../../../../sphinxbase/include/wince" /D "ARM" /D "_ARM_" /D "ARMV4" /D "NDEBUG" /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_USRDLL" /D "LIBPOCKETSPHINX_EXPORTS" /D "HAVE_CONFIG_H" /YX /O2 /M$(CECrtMT)  /c
-MTL=midl.exe
-# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
+# ADD BASE CPP /nologo /W3 /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D "NDEBUG" /D "ARM" /D "_ARM_" /D "ARMV4" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_LIB" /YX /O2 /M$(CECrtMT) /c
+# ADD CPP /nologo /W3 /I "../../../include" /I "../../../../sphinxbase/include" /I "../../../../sphinxbase/include/wince" /D "NDEBUG" /D "ARM" /D "_ARM_" /D "ARMV4" /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_LIB" /D "HAVE_CONFIG_H" /YX /O2 /M$(CECrtMT) /c
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo
+# ADD LIB32 /nologo
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 commctrl.lib coredll.lib   /nologo /base:"0x00100000" /stack:0x10000,0x1000 /entry:"_DllMainCRTStartup" /dll /nodefaultlib:"$(CENoDefaultLib)" /subsystem:$(CESubsystem) /align:"4096" /MACHINE:ARM
-# ADD LINK32 coredll.lib libsphinxfe.lib libsphinxfeat.lib libsphinxad.lib libsphinxutil.lib /nologo /base:"0x00100000" /stack:0x10000,0x1000 /entry:"_DllMainCRTStartup" /dll /nodefaultlib:"$(CENoDefaultLib)" /libpath:"../../../../sphinxbase/lib/ARMV4Rel" /subsystem:$(CESubsystem) /align:"4096" /MACHINE:ARM
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
 
@@ -144,23 +123,16 @@ LINK32=link.exe
 # PROP Intermediate_Dir "ARMV4Dbg"
 # PROP CPU_ID "{ECBEA43D-CD7B-4852-AD55-D4227B5D624B}"
 # PROP Platform_ID "{8A9A2F80-6887-11D3-842E-005004848CBA}"
-# PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-RSC=rc.exe
-# ADD BASE RSC /l 0x409 /d UNDER_CE=$(CEVersion) /d _WIN32_WCE=$(CEVersion) /d "DEBUG" /d "UNICODE" /d "_UNICODE" /d "$(CePlatform)" /d "ARM" /d "_ARM_" /d "ARMV4" /r
-# ADD RSC /l 0x409 /d UNDER_CE=$(CEVersion) /d _WIN32_WCE=$(CEVersion) /d "DEBUG" /d "UNICODE" /d "_UNICODE" /d "$(CePlatform)" /d "ARM" /d "_ARM_" /d "ARMV4" /r
 CPP=clarm.exe
-# ADD BASE CPP /nologo /W3 /Zi /Od /D "DEBUG" /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D "ARM" /D "_ARM_" /D "ARMV4" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_USRDLL" /D "LIBPOCKETSPHINX_EXPORTS" /YX /M$(CECrtMTDebug)  /c
-# ADD CPP /nologo /W3 /Zi /Od /I "../../../include" /I "../../../../sphinxbase/include" /I "../../../../sphinxbase/include/wince" /D "DEBUG" /D "ARM" /D "_ARM_" /D "ARMV4" /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_USRDLL" /D "LIBPOCKETSPHINX_EXPORTS" /D "HAVE_CONFIG_H" /YX /M$(CECrtMTDebug)  /c
-MTL=midl.exe
-# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
+# ADD BASE CPP /nologo /W3 /Zi /Od /D "DEBUG" /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D "ARM" /D "_ARM_" /D "ARMV4" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_LIB" /YX /M$(CECrtMTDebug) /c
+# ADD CPP /nologo /W3 /Zi /Od /I "../../../include" /I "../../../../sphinxbase/include" /I "../../../../sphinxbase/include/wince" /D "DEBUG" /D "ARM" /D "_ARM_" /D "ARMV4" /D _WIN32_WCE=$(CEVersion) /D "$(CePlatform)" /D UNDER_CE=$(CEVersion) /D "UNICODE" /D "_UNICODE" /D "_LIB" /D "HAVE_CONFIG_H" /YX /M$(CECrtMTDebug) /c
+LIB32=link.exe -lib
+# ADD BASE LIB32 /nologo
+# ADD LIB32 /nologo
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 commctrl.lib coredll.lib   /nologo /base:"0x00100000" /stack:0x10000,0x1000 /entry:"_DllMainCRTStartup" /dll /debug /nodefaultlib:"$(CENoDefaultLib)" /subsystem:$(CESubsystem) /align:"4096" /MACHINE:ARM
-# ADD LINK32 coredll.lib libsphinxfe.lib libsphinxfeat.lib libsphinxad.lib libsphinxutil.lib /nologo /base:"0x00100000" /stack:0x10000,0x1000 /entry:"_DllMainCRTStartup" /dll /debug /nodefaultlib:"$(CENoDefaultLib)" /libpath:"../../../../sphinxbase/lib/ARMV4Dbg" /subsystem:$(CESubsystem) /align:"4096" /MACHINE:ARM
 
 !ENDIF 
 
@@ -189,7 +161,6 @@ DEP_CPP_ALLPH=\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\linklist.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -212,32 +183,10 @@ DEP_CPP_ALLPH=\
 	
 NODEP_CPP_ALLPH=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_ALLPH=\
-	{$(INCLUDE)}"linklist.h"\
-	{$(INCLUDE)}"phone.h"\
-	
-NODEP_CPP_ALLPH=\
-	"..\..\..\src\libpocketsphinx\basic_types.h"\
-	"..\..\..\src\libpocketsphinx\ckd_alloc.h"\
-	"..\..\..\src\libpocketsphinx\dict.h"\
-	"..\..\..\src\libpocketsphinx\fbs.h"\
-	"..\..\..\src\libpocketsphinx\hash_table.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\lm_3g.h"\
-	"..\..\..\src\libpocketsphinx\lmclass.h"\
-	"..\..\..\src\libpocketsphinx\log.h"\
-	"..\..\..\src\libpocketsphinx\msd.h"\
-	"..\..\..\src\libpocketsphinx\s2_semi_mgau.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\search_const.h"\
-	"..\..\..\src\libpocketsphinx\senscr.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_ALLPH=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
@@ -272,6 +221,43 @@ DEP_CPP_ALLPH=\
 	
 NODEP_CPP_ALLPH=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_ALLPH=\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\linklist.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_ALLPH=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -359,7 +345,6 @@ DEP_CPP_BIN_M=\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\bin_mdef.h"\
 	"..\..\..\include\mdef.h"\
@@ -367,6 +352,7 @@ DEP_CPP_BIN_M=\
 	
 NODEP_CPP_BIN_M=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
@@ -399,7 +385,6 @@ DEP_CPP_BIN_M=\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\bin_mdef.h"\
 	"..\..\..\include\mdef.h"\
@@ -407,6 +392,7 @@ DEP_CPP_BIN_M=\
 	
 NODEP_CPP_BIN_M=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -514,7 +500,6 @@ DEP_CPP_CACHE=\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\linklist.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -535,30 +520,10 @@ DEP_CPP_CACHE=\
 	
 NODEP_CPP_CACHE=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_CACHE=\
-	{$(INCLUDE)}"linklist.h"\
-	
-NODEP_CPP_CACHE=\
-	"..\..\..\src\libpocketsphinx\basic_types.h"\
-	"..\..\..\src\libpocketsphinx\cache_lm.h"\
-	"..\..\..\src\libpocketsphinx\ckd_alloc.h"\
-	"..\..\..\src\libpocketsphinx\dict.h"\
-	"..\..\..\src\libpocketsphinx\err.h"\
-	"..\..\..\src\libpocketsphinx\hash_table.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\lm_3g.h"\
-	"..\..\..\src\libpocketsphinx\lmclass.h"\
-	"..\..\..\src\libpocketsphinx\log.h"\
-	"..\..\..\src\libpocketsphinx\msd.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\search_const.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_CACHE=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
@@ -590,6 +555,40 @@ DEP_CPP_CACHE=\
 	
 NODEP_CPP_CACHE=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_CACHE=\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\linklist.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\cache_lm.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_CACHE=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -645,7 +644,6 @@ DEP_CPP_DICT_=\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\pio.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -666,26 +664,11 @@ DEP_CPP_DICT_=\
 	
 NODEP_CPP_DICT_=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\c.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_DICT_=\
-	{$(INCLUDE)}"phone.h"\
-	
-NODEP_CPP_DICT_=\
-	"..\..\..\src\libpocketsphinx\basic_types.h"\
-	"..\..\..\src\libpocketsphinx\dict.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\lm_3g.h"\
-	"..\..\..\src\libpocketsphinx\lmclass.h"\
-	"..\..\..\src\libpocketsphinx\msd.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\search_const.h"\
-	"..\..\..\src\libpocketsphinx\strfuncs.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_DICT_=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
@@ -718,6 +701,42 @@ DEP_CPP_DICT_=\
 	
 NODEP_CPP_DICT_=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_DICT_=\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\pio.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_DICT_=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\c.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -778,7 +797,6 @@ DEP_CPP_FBS_M=\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\pio.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -805,28 +823,10 @@ DEP_CPP_FBS_M=\
 	
 NODEP_CPP_FBS_M=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_FBS_M=\
-	"..\..\..\src\libpocketsphinx\allphone.h"\
-	"..\..\..\src\libpocketsphinx\uttproc.h"\
-	
-NODEP_CPP_FBS_M=\
-	"..\..\..\src\libpocketsphinx\byteorder.h"\
-	"..\..\..\src\libpocketsphinx\cmdln_macro.h"\
-	"..\..\..\src\libpocketsphinx\fbs.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\pio.h"\
-	"..\..\..\src\libpocketsphinx\posixwin32.h"\
-	"..\..\..\src\libpocketsphinx\s2io.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\strfuncs.h"\
-	"..\..\..\src\libpocketsphinx\time_align.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_FBS_M=\
 	"..\..\..\..\sphinxbase\include\agc.h"\
@@ -869,6 +869,51 @@ DEP_CPP_FBS_M=\
 	
 NODEP_CPP_FBS_M=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_FBS_M=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
+	"..\..\..\..\sphinxbase\include\byteorder.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\pio.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\cmdln_macro.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\posixwin32.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2io.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\time_align.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	"..\..\..\src\libpocketsphinx\allphone.h"\
+	"..\..\..\src\libpocketsphinx\uttproc.h"\
+	
+NODEP_CPP_FBS_M=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -933,7 +978,6 @@ DEP_CPP_FSG_H=\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -958,15 +1002,10 @@ DEP_CPP_FSG_H=\
 	
 NODEP_CPP_FSG_H=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_FSG_H=\
-	{$(INCLUDE)}"phone.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_FSG_H=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
@@ -1001,6 +1040,43 @@ DEP_CPP_FSG_H=\
 	
 NODEP_CPP_FSG_H=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_FSG_H=\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\blkarray_list.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\fsg_history.h"\
+	"..\..\..\include\fsg_psubtree.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	"..\..\..\include\word_fsg.h"\
+	
+NODEP_CPP_FSG_H=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -1157,7 +1233,6 @@ DEP_CPP_FSG_P=\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -1181,21 +1256,10 @@ DEP_CPP_FSG_P=\
 	
 NODEP_CPP_FSG_P=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_FSG_P=\
-	{$(INCLUDE)}"phone.h"\
-	
-NODEP_CPP_FSG_P=\
-	"..\..\..\src\libpocketsphinx\dict.h"\
-	"..\..\..\src\libpocketsphinx\fsg_psubtree.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\log.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_FSG_P=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
@@ -1230,6 +1294,43 @@ DEP_CPP_FSG_P=\
 	
 NODEP_CPP_FSG_P=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_FSG_P=\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\fsg_psubtree.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	"..\..\..\include\word_fsg.h"\
+	
+NODEP_CPP_FSG_P=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -1287,7 +1388,6 @@ DEP_CPP_FSG_S=\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -1316,23 +1416,10 @@ DEP_CPP_FSG_S=\
 	
 NODEP_CPP_FSG_S=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_FSG_S=\
-	{$(INCLUDE)}"phone.h"\
-	
-NODEP_CPP_FSG_S=\
-	"..\..\..\src\libpocketsphinx\dict.h"\
-	"..\..\..\src\libpocketsphinx\fbs.h"\
-	"..\..\..\src\libpocketsphinx\fsg_search.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\log.h"\
-	"..\..\..\src\libpocketsphinx\senscr.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_FSG_S=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
@@ -1372,6 +1459,48 @@ DEP_CPP_FSG_S=\
 	
 NODEP_CPP_FSG_S=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_FSG_S=\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\blkarray_list.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\fsg_history.h"\
+	"..\..\..\include\fsg_lextree.h"\
+	"..\..\..\include\fsg_psubtree.h"\
+	"..\..\..\include\fsg_search.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	"..\..\..\include\word_fsg.h"\
+	
+NODEP_CPP_FSG_S=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -1435,7 +1564,6 @@ DEP_CPP_KB_MA=\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\pio.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -1457,34 +1585,12 @@ DEP_CPP_KB_MA=\
 	
 NODEP_CPP_KB_MA=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\c.h"\
+	"..\..\..\include\s3types.h"\
+	"..\..\..\include\smmap4f.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_KB_MA=\
-	{$(INCLUDE)}"phone.h"\
-	
-NODEP_CPP_KB_MA=\
-	"..\..\..\src\libpocketsphinx\basic_types.h"\
-	"..\..\..\src\libpocketsphinx\ckd_alloc.h"\
-	"..\..\..\src\libpocketsphinx\cmd_ln.h"\
-	"..\..\..\src\libpocketsphinx\dict.h"\
-	"..\..\..\src\libpocketsphinx\err.h"\
-	"..\..\..\src\libpocketsphinx\fbs.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\lm_3g.h"\
-	"..\..\..\src\libpocketsphinx\lmclass.h"\
-	"..\..\..\src\libpocketsphinx\log.h"\
-	"..\..\..\src\libpocketsphinx\mdef.h"\
-	"..\..\..\src\libpocketsphinx\msd.h"\
-	"..\..\..\src\libpocketsphinx\pio.h"\
-	"..\..\..\src\libpocketsphinx\s2_semi_mgau.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\search_const.h"\
-	"..\..\..\src\libpocketsphinx\tmat.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_KB_MA=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
@@ -1518,6 +1624,44 @@ DEP_CPP_KB_MA=\
 	
 NODEP_CPP_KB_MA=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_KB_MA=\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\pio.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_KB_MA=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\c.h"\
+	"..\..\..\include\s3types.h"\
+	"..\..\..\include\smmap4f.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -1571,7 +1715,6 @@ DEP_CPP_KDTRE=\
 	"..\..\..\..\sphinxbase\include\fe.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
@@ -1580,6 +1723,7 @@ DEP_CPP_KDTRE=\
 	
 NODEP_CPP_KDTRE=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
@@ -1609,7 +1753,6 @@ DEP_CPP_KDTRE=\
 	"..\..\..\..\sphinxbase\include\fe.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
@@ -1618,6 +1761,7 @@ DEP_CPP_KDTRE=\
 	
 NODEP_CPP_KDTRE=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -1653,7 +1797,6 @@ DEP_CPP_LAB_C=\
 	"..\..\..\..\sphinxbase\include\fe.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\fbs.h"\
@@ -1666,6 +1809,9 @@ DEP_CPP_LAB_C=\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\time_align.h"\
 	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_LAB_C=\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
@@ -1697,7 +1843,6 @@ DEP_CPP_LAB_C=\
 	"..\..\..\..\sphinxbase\include\fe.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\fbs.h"\
@@ -1710,6 +1855,9 @@ DEP_CPP_LAB_C=\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\time_align.h"\
 	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_LAB_C=\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -1793,7 +1941,6 @@ DEP_CPP_LM_C1e=\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -1811,6 +1958,9 @@ DEP_CPP_LM_C1e=\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_LM_C1e=\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
@@ -1851,7 +2001,6 @@ DEP_CPP_LM_C1e=\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -1869,6 +2018,9 @@ DEP_CPP_LM_C1e=\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_LM_C1e=\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -1921,7 +2073,6 @@ DEP_CPP_LM_3G=\
 	"..\..\..\..\sphinxbase\include\linklist.h"\
 	"..\..\..\..\sphinxbase\include\pio.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -1944,35 +2095,11 @@ DEP_CPP_LM_3G=\
 	
 NODEP_CPP_LM_3G=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\c.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_LM_3G=\
-	{$(INCLUDE)}"linklist.h"\
-	
-NODEP_CPP_LM_3G=\
-	"..\..\..\src\libpocketsphinx\basic_types.h"\
-	"..\..\..\src\libpocketsphinx\byteorder.h"\
-	"..\..\..\src\libpocketsphinx\ckd_alloc.h"\
-	"..\..\..\src\libpocketsphinx\cmd_ln.h"\
-	"..\..\..\src\libpocketsphinx\dict.h"\
-	"..\..\..\src\libpocketsphinx\err.h"\
-	"..\..\..\src\libpocketsphinx\fbs.h"\
-	"..\..\..\src\libpocketsphinx\hash_table.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\lm_3g.h"\
-	"..\..\..\src\libpocketsphinx\lmclass.h"\
-	"..\..\..\src\libpocketsphinx\log.h"\
-	"..\..\..\src\libpocketsphinx\msd.h"\
-	"..\..\..\src\libpocketsphinx\pio.h"\
-	"..\..\..\src\libpocketsphinx\s2io.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\search_const.h"\
-	"..\..\..\src\libpocketsphinx\strfuncs.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_LM_3G=\
 	"..\..\..\..\sphinxbase\include\byteorder.h"\
@@ -2009,6 +2136,46 @@ DEP_CPP_LM_3G=\
 	
 NODEP_CPP_LM_3G=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_LM_3G=\
+	"..\..\..\..\sphinxbase\include\byteorder.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\linklist.h"\
+	"..\..\..\..\sphinxbase\include\pio.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2io.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_LM_3G=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\c.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -2160,14 +2327,17 @@ SOURCE=..\..\..\src\libpocketsphinx\mdef.c
 DEP_CPP_MDEF_=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\s2types.h"\
 	
 NODEP_CPP_MDEF_=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
@@ -2190,14 +2360,17 @@ NODEP_CPP_MDEF_=\
 DEP_CPP_MDEF_=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\s2types.h"\
 	
 NODEP_CPP_MDEF_=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -2263,7 +2436,6 @@ DEP_CPP_PHONE=\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -2284,23 +2456,11 @@ DEP_CPP_PHONE=\
 	
 NODEP_CPP_PHONE=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\c.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_PHONE=\
-	{$(INCLUDE)}"phone.h"\
-	
-NODEP_CPP_PHONE=\
-	"..\..\..\src\libpocketsphinx\bin_mdef.h"\
-	"..\..\..\src\libpocketsphinx\ckd_alloc.h"\
-	"..\..\..\src\libpocketsphinx\err.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\strfuncs.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_PHONE=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
@@ -2331,6 +2491,40 @@ DEP_CPP_PHONE=\
 	
 NODEP_CPP_PHONE=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_PHONE=\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_PHONE=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\c.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -2437,7 +2631,6 @@ DEP_CPP_S2_SE=\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -2460,6 +2653,7 @@ DEP_CPP_S2_SE=\
 	
 NODEP_CPP_S2_SE=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
@@ -2513,7 +2707,6 @@ DEP_CPP_S2_SE=\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -2536,6 +2729,7 @@ DEP_CPP_S2_SE=\
 	
 NODEP_CPP_S2_SE=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -2595,7 +2789,6 @@ DEP_CPP_SEARC=\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\linklist.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -2618,30 +2811,11 @@ DEP_CPP_SEARC=\
 	
 NODEP_CPP_SEARC=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\c.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_SEARC=\
-	{$(INCLUDE)}"linklist.h"\
-	{$(INCLUDE)}"phone.h"\
-	
-NODEP_CPP_SEARC=\
-	"..\..\..\src\libpocketsphinx\basic_types.h"\
-	"..\..\..\src\libpocketsphinx\dict.h"\
-	"..\..\..\src\libpocketsphinx\fbs.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\lm_3g.h"\
-	"..\..\..\src\libpocketsphinx\lmclass.h"\
-	"..\..\..\src\libpocketsphinx\log.h"\
-	"..\..\..\src\libpocketsphinx\msd.h"\
-	"..\..\..\src\libpocketsphinx\s2_semi_mgau.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\search_const.h"\
-	"..\..\..\src\libpocketsphinx\senscr.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_SEARC=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
@@ -2676,6 +2850,44 @@ DEP_CPP_SEARC=\
 	
 NODEP_CPP_SEARC=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_SEARC=\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\linklist.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_SEARC=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\c.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -2734,7 +2946,6 @@ DEP_CPP_SEARCH=\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\linklist.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -2755,30 +2966,10 @@ DEP_CPP_SEARCH=\
 	
 NODEP_CPP_SEARCH=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_SEARCH=\
-	{$(INCLUDE)}"linklist.h"\
-	
-NODEP_CPP_SEARCH=\
-	"..\..\..\src\libpocketsphinx\basic_types.h"\
-	"..\..\..\src\libpocketsphinx\ckd_alloc.h"\
-	"..\..\..\src\libpocketsphinx\cmd_ln.h"\
-	"..\..\..\src\libpocketsphinx\dict.h"\
-	"..\..\..\src\libpocketsphinx\err.h"\
-	"..\..\..\src\libpocketsphinx\fbs.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\lm_3g.h"\
-	"..\..\..\src\libpocketsphinx\lmclass.h"\
-	"..\..\..\src\libpocketsphinx\msd.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\search_const.h"\
-	"..\..\..\src\libpocketsphinx\strfuncs.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_SEARCH=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
@@ -2811,6 +3002,41 @@ DEP_CPP_SEARCH=\
 	
 NODEP_CPP_SEARCH=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_SEARCH=\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\linklist.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_SEARCH=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -2865,7 +3091,6 @@ DEP_CPP_SENSC=\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -2886,23 +3111,11 @@ DEP_CPP_SENSC=\
 	
 NODEP_CPP_SENSC=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\logs3.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_SENSC=\
-	{$(INCLUDE)}"phone.h"\
-	
-NODEP_CPP_SENSC=\
-	"..\..\..\src\libpocketsphinx\ckd_alloc.h"\
-	"..\..\..\src\libpocketsphinx\err.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\s2_semi_mgau.h"\
-	"..\..\..\src\libpocketsphinx\senscr.h"\
-	"..\..\..\src\libpocketsphinx\sphinx_types.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_SENSC=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
@@ -2933,6 +3146,40 @@ DEP_CPP_SENSC=\
 	
 NODEP_CPP_SENSC=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_SENSC=\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_SENSC=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\logs3.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -3051,7 +3298,6 @@ DEP_CPP_TIME_=\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -3078,36 +3324,10 @@ DEP_CPP_TIME_=\
 	
 NODEP_CPP_TIME_=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_TIME_=\
-	"..\..\..\src\libpocketsphinx\uttproc.h"\
-	{$(INCLUDE)}"phone.h"\
-	
-NODEP_CPP_TIME_=\
-	"..\..\..\src\libpocketsphinx\basic_types.h"\
-	"..\..\..\src\libpocketsphinx\ckd_alloc.h"\
-	"..\..\..\src\libpocketsphinx\cmd_ln.h"\
-	"..\..\..\src\libpocketsphinx\dict.h"\
-	"..\..\..\src\libpocketsphinx\err.h"\
-	"..\..\..\src\libpocketsphinx\fbs.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\lm_3g.h"\
-	"..\..\..\src\libpocketsphinx\lmclass.h"\
-	"..\..\..\src\libpocketsphinx\log.h"\
-	"..\..\..\src\libpocketsphinx\msd.h"\
-	"..\..\..\src\libpocketsphinx\s2_semi_mgau.h"\
-	"..\..\..\src\libpocketsphinx\s2params.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\search_const.h"\
-	"..\..\..\src\libpocketsphinx\senscr.h"\
-	"..\..\..\src\libpocketsphinx\strfuncs.h"\
-	"..\..\..\src\libpocketsphinx\time_align.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_TIME_=\
 	"..\..\..\..\sphinxbase\include\agc.h"\
@@ -3148,6 +3368,49 @@ DEP_CPP_TIME_=\
 	
 NODEP_CPP_TIME_=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_TIME_=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2params.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
+	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\time_align.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	"..\..\..\src\libpocketsphinx\uttproc.h"\
+	
+NODEP_CPP_TIME_=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -3209,7 +3472,6 @@ DEP_CPP_TMAT_=\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\log.h"\
@@ -3221,6 +3483,7 @@ DEP_CPP_TMAT_=\
 	
 NODEP_CPP_TMAT_=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
@@ -3255,7 +3518,6 @@ DEP_CPP_TMAT_=\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\log.h"\
@@ -3267,6 +3529,7 @@ DEP_CPP_TMAT_=\
 	
 NODEP_CPP_TMAT_=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -3314,7 +3577,6 @@ DEP_CPP_UTTPR=\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\linklist.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -3344,37 +3606,10 @@ DEP_CPP_UTTPR=\
 	
 NODEP_CPP_UTTPR=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_UTTPR=\
-	"..\..\..\src\libpocketsphinx\uttproc.h"\
-	{$(INCLUDE)}"linklist.h"\
-	
-NODEP_CPP_UTTPR=\
-	"..\..\..\src\libpocketsphinx\basic_types.h"\
-	"..\..\..\src\libpocketsphinx\ckd_alloc.h"\
-	"..\..\..\src\libpocketsphinx\dict.h"\
-	"..\..\..\src\libpocketsphinx\err.h"\
-	"..\..\..\src\libpocketsphinx\fbs.h"\
-	"..\..\..\src\libpocketsphinx\fe.h"\
-	"..\..\..\src\libpocketsphinx\feat.h"\
-	"..\..\..\src\libpocketsphinx\fixpoint.h"\
-	"..\..\..\src\libpocketsphinx\fsg_search.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\lm_3g.h"\
-	"..\..\..\src\libpocketsphinx\lmclass.h"\
-	"..\..\..\src\libpocketsphinx\msd.h"\
-	"..\..\..\src\libpocketsphinx\posixwin32.h"\
-	"..\..\..\src\libpocketsphinx\s2_semi_mgau.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\search_const.h"\
-	"..\..\..\src\libpocketsphinx\senscr.h"\
-	"..\..\..\src\libpocketsphinx\strfuncs.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_UTTPR=\
 	"..\..\..\..\sphinxbase\include\agc.h"\
@@ -3419,6 +3654,53 @@ DEP_CPP_UTTPR=\
 	
 NODEP_CPP_UTTPR=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_UTTPR=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\linklist.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\blkarray_list.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\fsg_history.h"\
+	"..\..\..\include\fsg_lextree.h"\
+	"..\..\..\include\fsg_psubtree.h"\
+	"..\..\..\include\fsg_search.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\posixwin32.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
+	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	"..\..\..\include\word_fsg.h"\
+	"..\..\..\src\libpocketsphinx\uttproc.h"\
+	
+NODEP_CPP_UTTPR=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -3483,13 +3765,14 @@ DEP_CPP_VECTO=\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\vector.h"\
 	
 NODEP_CPP_VECTO=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\logs3.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
@@ -3517,13 +3800,14 @@ DEP_CPP_VECTO=\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\vector.h"\
 	
 NODEP_CPP_VECTO=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\logs3.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -3561,7 +3845,6 @@ DEP_CPP_WORD_=\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\str2words.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
@@ -3585,23 +3868,10 @@ DEP_CPP_WORD_=\
 	
 NODEP_CPP_WORD_=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE emulator) Debug"
-
-DEP_CPP_WORD_=\
-	{$(INCLUDE)}"phone.h"\
-	
-NODEP_CPP_WORD_=\
-	"..\..\..\src\libpocketsphinx\dict.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\log.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\str2words.h"\
-	"..\..\..\src\libpocketsphinx\word_fsg.h"\
-	
-
-!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
 
 DEP_CPP_WORD_=\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
@@ -3636,6 +3906,43 @@ DEP_CPP_WORD_=\
 	
 NODEP_CPP_WORD_=\
 	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_WORD_=\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\str2words.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	"..\..\..\include\word_fsg.h"\
+	
+NODEP_CPP_WORD_=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	"..\..\..\include\s3types.h"\
 	
 
 !ELSEIF  "$(CFG)" == "libpocketsphinx - Win32 (WCE ARMV4) Debug"
@@ -3688,58 +3995,6 @@ SOURCE=..\..\..\src\libpocketsphinx\allphone.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\include\basic_types.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\bin_mdef.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\blkarray_list.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\cache_lm.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\cmdln_macro.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\dict.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\fbs.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\fsg_history.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\fsg_lextree.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\fsg_psubtree.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\fsg_search.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\kb.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\kdtree.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\include\list.h
 # End Source File
 # Begin Source File
@@ -3748,51 +4003,7 @@ SOURCE=..\..\..\include\lm.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\include\lm_3g.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\lmclass.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\log.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\include\magic.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\mdef.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\msd.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\phone.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\posixwin32.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\s2_semi_mgau.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\s2io.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\s2params.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\s2types.h
 # End Source File
 # Begin Source File
 
@@ -3800,40 +4011,8 @@ SOURCE=..\..\..\include\search.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\include\search_const.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\senscr.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\strfuncs.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\time_align.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\tmat.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\libpocketsphinx\uttproc.h
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\vector.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\include\word_fsg.h
-# End Source File
-# End Group
-# Begin Group "Resource Files"
-
-# PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # End Group
 # End Target
 # End Project
