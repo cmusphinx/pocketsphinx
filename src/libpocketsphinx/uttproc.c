@@ -926,7 +926,10 @@ uttproc_rawdata(int16 * raw, int32 len, int32 block)
     if (utt_ofl)
         return -1;
 
-    k = (MAX_UTT_LEN - n_cepfr) * fe->FRAME_RATE;
+    /* FRAME_SHIFT is SAMPLING_RATE/FRAME_RATE, thus resulting in
+     * number of sample per frame.
+     */
+    k = (MAX_UTT_LEN - n_cepfr) * fe->FRAME_SHIFT;
     if (len > k) {
         len = k;
         utt_ofl = 1;
@@ -937,8 +940,16 @@ uttproc_rawdata(int16 * raw, int32 len, int32 block)
     if (rawfp && (len > 0))
         fwrite(raw, sizeof(int16), len, rawfp);
 
-    if ((k = fe_process_utt(fe, raw, len, &temp_mfc, &nfr)) < 0)
-        return -1;
+    k = fe_process_utt(fe, raw, len, &temp_mfc, &nfr);
+    if (k != FE_SUCCESS) {
+        if (k == FE_ZERO_ENERGY_ERROR) {
+            E_WARN("uttproc_rawdata processed some frames with zero energy. "
+                   "Consider using -dither.\n");
+        } else {
+            return -1;
+        }
+    }
+
     if (nfr > 0)
         memcpy(mfcbuf[n_cepfr], temp_mfc[0], nfr * feat_cepsize(fcb) * sizeof(mfcc_t));
 
