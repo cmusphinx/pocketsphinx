@@ -341,6 +341,30 @@ init_feat(void)
                           cmd_ln_float32("-agcthresh"));
     }
 
+    if (0 == strcmp(cmd_ln_str("-cmn"), "prior")) {
+        mfcc_t *cmninit;
+        char *c, *cc, *vallist;
+        size_t nvals, ceplen;
+
+        ceplen = cmd_ln_int32("-ceplen");
+        vallist = ckd_salloc(cmd_ln_str("-cmninit"));
+        cmninit = ckd_calloc(ceplen, sizeof(*cmninit));
+        c = vallist;
+        nvals = 0;
+        while (nvals < ceplen && (cc = strchr(c, ',')) != NULL) {
+            *cc = '\0';
+            cmninit[nvals] = FLOAT2MFCC(atof(c));
+            c = cc + 1;
+            ++nvals;
+        }
+        if (nvals < ceplen && *c != '\0') {
+            cmninit[nvals] = FLOAT2MFCC(atof(c));
+        }
+        cmn_prior_set(fcb->cmn_struct, cmninit);
+        ckd_free(cmninit);
+        ckd_free(vallist);
+    }
+
     uttproc_set_feat(fcb);
 }
 

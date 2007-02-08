@@ -97,6 +97,10 @@
       ARG_STRING,									\
       "current",									\
       "Cepstral mean normalization scheme ('current', 'prior', or 'none')" },		\
+{ "-cmninit",										\
+      ARG_STRING,									\
+      "8.0",										\
+      "Initial values (comma-separated) for cepstral mean when 'prior' is used" },	\
 { "-varnorm",										\
       ARG_BOOLEAN,									\
       "no",										\
