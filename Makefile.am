@@ -4,12 +4,17 @@ SUBDIRS = src \
 	  scripts \
 	  test
 
-EXTRA_DIST = autogen.sh \
-	pocketsphinx.dsw \
-	win32/msdev/pocketsphinx/pocketsphinx.dsp \
-	win32/msdev/pocketsphinx_batch/pocketsphinx_batch.dsp \
-	win32/msdev/pocketsphinx_continuous/pocketsphinx_continuous.dsp \
-	win32/msdev/pocketsphinx_ptt/pocketsphinx_ptt.dsp
+EXTRA_DIST = autogen.sh							\
+	pocketsphinx.dsw						\
+	pocketsphinx.vcw						\
+	win32/msdev/libpocketsphinx/libpocketsphinx.dsp			\
+	win32/msdev/pocketsphinx/pocketsphinx.dsp			\
+	win32/msdev/pocketsphinx_batch/pocketsphinx_batch.dsp		\
+	win32/msdev/pocketsphinx_continuous/pocketsphinx_continuous.dsp	\
+	win32/msdev/pocketsphinx_ptt/pocketsphinx_ptt.dsp		\
+	win32/msdev/libpocketsphinx/libpocketsphinx.vcp			\
+	win32/msdev/pocketsphinx/pocketsphinx.vcp			\
+	win32/msdev/pocketsphinx_batch/pocketsphinx_batch.vcp
 
 test:
 	$(LIBTOOL) --mode=execute src/programs/pocketsphinx_batch \
