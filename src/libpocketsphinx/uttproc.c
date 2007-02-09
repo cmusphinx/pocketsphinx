@@ -1732,11 +1732,15 @@ uttproc_file2feat(const char *utt, int32 sf, int32 ef, int32 nosearch)
         if ((uttfp = adcfile_open(utt)) == NULL)
             return -1;
 
-        if (uttproc_nosearch(nosearch) < 0)
+        if (uttproc_nosearch(nosearch) < 0) {
+            fclose(uttfp);
             return -1;
+        }
 
-        if (uttproc_begin_utt(utt_name) < 0)
+        if (uttproc_begin_utt(utt_name) < 0) {
+            fclose(uttfp);
             return -1;
+        }
 
         adbuf = ckd_calloc(4096, sizeof(int16));
         while ((k = adc_file_read(uttfp, adbuf, 4096)) >= 0) {
