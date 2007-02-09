@@ -273,17 +273,19 @@ fbs_init(int32 argc, char **argv)
     if (cmd_ln_str("-mfclogdir"))
         uttproc_set_mfclogdir(cmd_ln_str("-mfclogdir"));
 
-    /* If multiple LMs present, choose the unnamed one by default */
-    /* FIXME: Add a -lmname option, use it. */
+    /* If multiple LMs present, make sure we get a default. */
     if (cmd_ln_str("-fsg") == NULL) {
         if (get_n_lm() == 1) {
             if (uttproc_set_lm(get_current_lmname()) < 0)
                 E_FATAL("SetLM() failed\n");
         }
         else {
-            if (uttproc_set_lm("") < 0)
-                E_WARN
-                    ("SetLM(\"\") failed; application must set one before recognition\n");
+            if (cmd_ln_str("-lmname")) {
+                if (uttproc_set_lm(cmd_ln_str("-lmname")) < 0)
+                    E_FATAL("SetLM(%s) failed\n", cmd_ln_str("-lmname"));
+            }
+            else if (uttproc_set_lm(get_current_lmname()) < 0)
+                E_FATAL("SetLM() failed\n");
         }
     }
     else {
@@ -644,6 +646,8 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
     search_hyp_t *hypseg;
     int32 nbest;
     char *startWord_directory, *startWord_ext;
+    char *utt_lmname_dir = cmd_ln_str("-lmnamedir");
+    char *lmname_ext = cmd_ln_str("-lmnameext");
 
     strcpy(utt, idspec);
     build_uttid(utt);
@@ -654,11 +658,9 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
     nbest = cmd_ln_int32("-nbest");
 
     /* Select the LM for utt */
-    if (get_n_lm() > 1) {
+    if (utt_lmname_dir) {
         FILE *lmname_fp;
         char utt_lmname_file[1000], lmname[1000];
-        char *utt_lmname_dir = cmd_ln_str("-lmnamedir");
-        char *lmname_ext = cmd_ln_str("-lmnameext");
 
         sprintf(utt_lmname_file, "%s/%s.%s", utt_lmname_dir, utt_name,
                 lmname_ext);
