@@ -314,8 +314,8 @@
       "Start symbols file name"},							\
 { "-lmname",										\
       ARG_STRING,									\
-      NULL,										\
-      "Default LM-name to use (from -lmctlfn)"},					\
+      "default",									\
+      "Which language model in -lmctlfn to use by default"},				\
 { "-lmnamedir",										\
       ARG_STRING,									\
       NULL,										\

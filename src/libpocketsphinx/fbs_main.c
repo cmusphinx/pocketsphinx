@@ -645,21 +645,18 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
     char utt[1024];
     search_hyp_t *hypseg;
     int32 nbest;
-    char *startWord_directory, *startWord_ext;
+    char *startWord_directory = cmd_ln_str("-startworddir");
     char *utt_lmname_dir = cmd_ln_str("-lmnamedir");
-    char *lmname_ext = cmd_ln_str("-lmnameext");
 
     strcpy(utt, idspec);
     build_uttid(utt);
-
-    startWord_directory = cmd_ln_str("-startworddir");
-    startWord_ext = cmd_ln_str("-startwordext");
 
     nbest = cmd_ln_int32("-nbest");
 
     /* Select the LM for utt */
     if (utt_lmname_dir) {
         FILE *lmname_fp;
+        char *lmname_ext = cmd_ln_str("-lmnameext");
         char utt_lmname_file[1000], lmname[1000];
 
         sprintf(utt_lmname_file, "%s/%s.%s", utt_lmname_dir, utt_name,
@@ -683,27 +680,30 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
     }
 
     /* Select startword for utt (LISTEN project) */
+    if (startWord_directory) {
+        char *startWord_ext = cmd_ln_str("-startwordext");
 #ifdef WIN32
-    if (startWord_directory && (utt[0] != '\\') && (utt[0] != '/'))
-        sprintf(startword_filename, "%s/%s.%s",
-                startWord_directory, utt, startWord_ext);
-    else
-        sprintf(startword_filename, "%s.%s", utt, startWord_ext);
+        if (startWord_directory && (utt[0] != '\\') && (utt[0] != '/'))
+            sprintf(startword_filename, "%s/%s.%s",
+                    startWord_directory, utt, startWord_ext);
+        else
+            sprintf(startword_filename, "%s.%s", utt, startWord_ext);
 #else
-    if (startWord_directory && (utt[0] != '/'))
-        sprintf(startword_filename, "%s/%s.%s",
-                startWord_directory, utt, startWord_ext);
-    else
-        sprintf(startword_filename, "%s.%s", utt, startWord_ext);
+        if (startWord_directory && (utt[0] != '/'))
+            sprintf(startword_filename, "%s/%s.%s",
+                    startWord_directory, utt, startWord_ext);
+        else
+            sprintf(startword_filename, "%s.%s", utt, startWord_ext);
 #endif
-    if ((sw_fp = fopen(startword_filename, "r")) != NULL) {
-        char startWord[512]; /* FIXME */
-        fscanf(sw_fp, "%s", startWord);
-        fclose(sw_fp);
+        if ((sw_fp = fopen(startword_filename, "r")) != NULL) {
+            char startWord[512]; /* FIXME */
+            fscanf(sw_fp, "%s", startWord);
+            fclose(sw_fp);
 
-        E_INFO("startWord: %s\n", startWord);
+            E_INFO("startWord: %s\n", startWord);
 
-        uttproc_set_startword(startWord);
+            uttproc_set_startword(startWord);
+        }
     }
 
     ret = uttproc_file2feat(mfcfile, sf, ef, 0);
