@@ -362,7 +362,9 @@ init_feat(void)
         if (nvals < ceplen && *c != '\0') {
             cmninit[nvals] = FLOAT2MFCC(atof(c));
         }
-        cmn_prior_set(fcb->cmn_struct, cmninit);
+        /* Don't use cmn_prior_set here as it overly biases the
+         * initial estimate. */
+        memcpy(fcb->cmn_struct->cmn_mean, cmninit, ceplen * sizeof(*cmninit));
         ckd_free(cmninit);
         ckd_free(vallist);
     }
