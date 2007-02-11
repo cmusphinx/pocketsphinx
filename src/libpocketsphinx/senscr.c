@@ -105,24 +105,14 @@ best_senscr_all_s3(void)
 
     bestpscr = search_get_bestpscr();
 
+    /* Note that this is actually a very large negative number */
     b = (int32) 0x80000000;
-
-    /* Initialize bestpscr with CI phones */
     for (i = 0; i < bin_mdef_n_ciphone(mdef); ++i) {
         bestpscr[i] = (int32) 0x80000000;
-        for (j = 0; j < bin_mdef_n_emit_state_phone(mdef, i);
-             ++j, ++senscr) {
-            /* This assumes that CI phones have contiguous senones at the
-               beginning of the mdef, which is *almost* certainly true. */
-            if (bestpscr[i] < *senscr)
-                bestpscr[i] = *senscr;
-            if (b < bestpscr[i])
-                b = bestpscr[i];
-        }
     }
 
     /* Now do the rest of the senones */
-    for (i = mdef->n_ci_sen; i < mdef->n_sen; ++i, ++senscr) {
+    for (i = 0; i < mdef->n_sen; ++i, ++senscr) {
         /* NOTE: This assumes that each CD senone corresponds to at most
            one CI phone.  This is not always true, but we hope that taking
            the first one will work okay. */
