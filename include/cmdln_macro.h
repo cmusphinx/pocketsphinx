@@ -240,12 +240,12 @@
       "Lattice size" },                                                                         \
 { "-maxwpf",                                                                                    \
       ARG_INT32,                                                                                \
-      "100000",                                                                                 \
-      "Maximum number of distinct word exits to maintain at each frame (approx)" },             \
+      "-1",                                                                                     \
+      "Maximum number of distinct word exits at each frame (or -1 for no pruning)" },           \
 { "-maxhmmpf",                                                                                  \
       ARG_INT32,                                                                                \
-      "100000",                                                                                 \
-      "Maximum number of active HMMs to maintain at each frame (approx)" },                     \
+      "-1",                                                                                     \
+      "Maximum number of active HMMs to maintain at each frame (or -1 for no pruning)" },       \
 { "-maxhistpf",                                                                                 \
       ARG_INT32,                                                                                \
       "100",                                                                                    \

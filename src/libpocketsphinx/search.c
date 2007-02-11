@@ -2285,7 +2285,7 @@ pruneChannels(void)
     DynamicLogBeamWidth = LogBeamWidth;
     maxhmmpf = cmd_ln_int32("-maxhmmpf");
     cf = CurrentFrame;
-    if (n_root_chan_eval + n_nonroot_chan_eval > maxhmmpf) {
+    if (maxhmmpf != -1 && n_root_chan_eval + n_nonroot_chan_eval > maxhmmpf) {
         /* Build a histogram to approximately prune them. */
         int32 bins[256], bw, nhmms, i;
         ROOT_CHAN_T *rhmm;
@@ -2371,7 +2371,8 @@ search_one_ply_fwd(void)
     pruneChannels();
 
     /* Apply absolute pruning to word-exits, if specified */
-    if ((n = cmd_ln_int32("-maxwpf")) < NumWords)
+    n = cmd_ln_int32("-maxwpf");
+    if (n != -1 && n < NumWords)
         bptable_maxwpf(n);
 
     /* Do inter-word transitions */
