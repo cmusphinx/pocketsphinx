@@ -366,6 +366,7 @@ lm_init(void)
                         cmd_ln_float32("-uw"),
                         cmd_ln_float32("-wip"));
         }
+        ckd_free(lmclass);
 
         fclose(ctlfp);
     }

@@ -409,6 +409,16 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
 
     mtpList = hash_table_tolist(mtpHT, &i);
     E_INFO("%5d unique triphones were mapped to ci phones\n", i);
+    /* Free all the strings in mtpHT.  FIXME: There should be a
+     * function for this in libutil. */
+    for (i = 0; i < mtpHT->size; ++i) {
+        hash_entry_t *e;
+
+        ckd_free(mtpHT->table[i].val);
+        for (e = mtpHT->table[i].next; e; e = e->next) {
+            ckd_free(e->val);
+        }
+    }
     hash_table_free(mtpHT);
     mtpHT = NULL;
 
