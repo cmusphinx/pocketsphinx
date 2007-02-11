@@ -99,7 +99,7 @@ bitvec_t **past_senone_active_vec;
 static int32
 best_senscr_all_s3(void)
 {
-    int32 b, i, j, ci;
+    int32 b, i, ci;
     int32 *bestpscr;
     int32 *senscr = senone_scores;
 
@@ -107,16 +107,16 @@ best_senscr_all_s3(void)
 
     /* Note that this is actually a very large negative number */
     b = (int32) 0x80000000;
-    for (i = 0; i < bin_mdef_n_ciphone(mdef); ++i) {
-        bestpscr[i] = (int32) 0x80000000;
-    }
+    for (i = 0; i < bin_mdef_n_ciphone(mdef); ++i)
+        bestpscr[i] = 0x80000000;
 
-    /* Now do the rest of the senones */
     for (i = 0; i < mdef->n_sen; ++i, ++senscr) {
         /* NOTE: This assumes that each CD senone corresponds to at most
            one CI phone.  This is not always true, but we hope that taking
            the first one will work okay. */
         ci = mdef->sen2cimap[i];
+        if (ci == BAD_S3CIPID)
+            continue;
         if (bestpscr[ci] < *senscr) {
             bestpscr[ci] = *senscr;
             if (b < bestpscr[ci])

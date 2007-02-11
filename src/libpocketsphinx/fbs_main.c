@@ -344,28 +344,22 @@ init_feat(void)
     }
 
     if (0 == strcmp(cmd_ln_str("-cmn"), "prior")) {
-        mfcc_t *cmninit;
         char *c, *cc, *vallist;
-        size_t nvals, ceplen;
+        int32 nvals;
 
-        ceplen = cmd_ln_int32("-ceplen");
         vallist = ckd_salloc(cmd_ln_str("-cmninit"));
-        cmninit = ckd_calloc(ceplen, sizeof(*cmninit));
         c = vallist;
         nvals = 0;
-        while (nvals < ceplen && (cc = strchr(c, ',')) != NULL) {
+        while (nvals < fcb->cmn_struct->veclen
+               && (cc = strchr(c, ',')) != NULL) {
             *cc = '\0';
-            cmninit[nvals] = FLOAT2MFCC(atof(c));
+            fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof(c));
             c = cc + 1;
             ++nvals;
         }
-        if (nvals < ceplen && *c != '\0') {
-            cmninit[nvals] = FLOAT2MFCC(atof(c));
+        if (nvals < fcb->cmn_struct->veclen && *c != '\0') {
+            fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof(c));
         }
-        /* Don't use cmn_prior_set here as it overly biases the
-         * initial estimate. */
-        memcpy(fcb->cmn_struct->cmn_mean, cmninit, ceplen * sizeof(*cmninit));
-        ckd_free(cmninit);
         ckd_free(vallist);
     }
 
