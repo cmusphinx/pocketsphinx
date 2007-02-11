@@ -63,11 +63,11 @@
 #include <setjmp.h>
 #include <string.h>
 
+#include "fbs.h"
 #include "s2types.h"
 #include "err.h"
 #include "ad.h"
 #include "cont_ad.h"
-#include "fbs.h"
 
 #if defined(WIN32) && !defined(GNUWINCE)
 #include <time.h>

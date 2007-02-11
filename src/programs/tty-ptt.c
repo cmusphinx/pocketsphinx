@@ -67,10 +67,10 @@
 #include <sys/time.h>
 #endif
 
+#include "fbs.h"
 #include "s2types.h"
 #include "err.h"
 #include "ad.h"
-#include "fbs.h"
 
 #define LISTENTIME		5.0
 #define SAMPLE_RATE             16000

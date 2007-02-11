@@ -192,7 +192,7 @@
 #include "fe.h"
 
 /* Win32/WinCE DLL gunk */
-#if defined(_WIN32) && !defined(LIBPOCKETSPHINX)
+#if defined(_WIN32) && !defined(LIBPOCKETSPHINX) && !defined(CYGWIN)
 #ifdef POCKETSPHINX_EXPORTS
 #define EXPORT __declspec(dllexport)
 #else
