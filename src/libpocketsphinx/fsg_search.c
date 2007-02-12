@@ -309,7 +309,7 @@ fsg_search_hmm_eval(fsg_search_t * search)
     fsg_pnode_t *pnode;
     CHAN_T *hmm;
     int32 bestscore;
-    int32 n;
+    int32 n, maxhmmpf;
 
     bestscore = (int32) 0x80000000;
 
@@ -347,7 +347,8 @@ fsg_search_hmm_eval(fsg_search_t * search)
     search->n_hmm_eval += n;
 
     /* Adjust beams if #active HMMs larger than absolute threshold */
-    if (n > cmd_ln_int32("-maxhmmpf")) {
+    maxhmmpf = cmd_ln_int32("-maxhmmpf");
+    if (maxhmmpf != -1 && n > maxhmmpf) {
         /*
          * Too many HMMs active; reduce the beam factor applied to the default
          * beams, but not if the factor is already at a floor (0.1).
