@@ -12,6 +12,7 @@ run_program pocketsphinx_batch \
     -ctl $data/tidigits/tidigits.ctl \
     -cepdir $data/tidigits \
     -hyp $bn.match \
+    -wbeam 1e-48 \
     > $bn.log 2>&1
 
 # Test whether it actually completed
