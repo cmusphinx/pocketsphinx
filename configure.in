@@ -2,7 +2,7 @@ dnl Welcome to the Sphinx automated build system.
 dnl try not to hurt yourself ;)
 
 AC_INIT(pocketsphinx, 0.3)
-AM_INIT_AUTOMAKE([no-define dist-bzip2])
+AM_INIT_AUTOMAKE([no-define dist-bzip2 dist-zip])
 
 CFLAGS=${CFLAGS:--g -O2 -Wall}
 
