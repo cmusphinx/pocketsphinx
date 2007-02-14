@@ -2128,10 +2128,10 @@ search_fwd(mfcc_t **feat)
 
     if (!compute_all_senones) {
         compute_sen_active();
-        topsen_score[cf] = senscr_active(feat, CurrentFrame);
+        topsen_score[cf] = senscr_active(feat, cf);
     }
     else {
-        topsen_score[cf] = senscr_all(feat, CurrentFrame);
+        topsen_score[cf] = senscr_all(feat, cf);
     }
     n_senone_active_utt += n_senone_active;
 
