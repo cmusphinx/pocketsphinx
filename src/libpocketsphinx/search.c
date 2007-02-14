@@ -1512,7 +1512,7 @@ last_phone_transition(void)
             }
             if (k > 0) {
                 assert(!word_active[w]);
-
+                assert(word_dict->dict_list[w]->len > 1);
                 *(nawl++) = w;
                 word_active[w] = 1;
             }
@@ -1582,6 +1582,7 @@ prune_word_chan(void)
             }
         }
         if ((k > 0) && (!word_active[w])) {
+            assert(word_dict->dict_list[w]->len > 1);
             *(nawl++) = w;
             word_active[w] = 1;
         }
@@ -2174,8 +2175,8 @@ search_start_fwd(void)
 
     lm3g_cache_reset();
 
-    n_active_chan[0] = 0;
-    n_active_word[0] = 0;
+    n_active_chan[0] = n_active_chan[1] = 0;
+    n_active_word[0] = n_active_word[1] = 0;
 
     BestScore = 0;
     renormalized = 0;
@@ -2230,9 +2231,6 @@ search_start_fwd(void)
                 save_bwd_ptr(context_word[1], lscr, 1, i);
             WordLatIdx[context_word[0]] = NO_BP;
             CurrentFrame++;
-
-            n_active_chan[1] = 0;
-            n_active_word[1] = 0;
         }
 
         /* Search from silence */
@@ -2468,6 +2466,8 @@ search_finish_fwd(void)
     i = n_active_word[nf & 0x1];
     awl = active_word_list[nf & 0x1];
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
+        /* Don't accidentally free single-channel words! */
+        assert(word_dict->dict_list[w]->len > 1);
         word_active[w] = 0;
         free_all_rc(w);
     }
