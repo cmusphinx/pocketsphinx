@@ -1114,8 +1114,6 @@ uttproc_end_utt(void)
             /* Be (bug?) compatible with Sphinx2, and discard the last
              * frames since their dynamic coefficients are somewhat
              * bogus. */
-            E_INFO("n_featfr was %d, is now %d\n", n_featfr,
-                   n_featfr + nfr - feat_window_size(fcb));
             n_featfr += nfr - feat_window_size(fcb);
             if (n_featfr < 0)
                 n_featfr = 0;
