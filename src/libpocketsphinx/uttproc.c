@@ -1111,6 +1111,14 @@ uttproc_end_utt(void)
             nfr = feat_s2mfc2feat_block(fcb, &leftover_cep, nfr,
                                         uttstart, TRUE,
                                         feat_buf + n_featfr);
+            /* Be (bug?) compatible with Sphinx2, and discard the last
+             * frames since their dynamic coefficients are somewhat
+             * bogus. */
+            E_INFO("n_featfr was %d, is now %d\n", n_featfr,
+                   n_featfr + nfr - feat_window_size(fcb));
+            n_featfr += nfr - feat_window_size(fcb);
+            if (n_featfr < 0)
+                n_featfr = 0;
             uttstart = FALSE;
         }
         else {
