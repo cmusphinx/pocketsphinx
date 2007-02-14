@@ -1,3 +1,11 @@
+2007-01-26  David Huggins-Daines  <dhuggins@cs.cmu.edu>
+
+	* all: PocketSphinx 0.3
+	* all: Compiles for bfin-uclinux, arm-linux, arm-wince-pe with GCC
+	* all: Compiles (untested) for WinCE using embedded VC++ 4.0
+	* all: Somewhat faster than the last release
+	* all: Regression test suite
+
 2006-08-05  David Huggins-Daines  <dhuggins@cs.cmu.edu>
 
 	* The first "real" PocketSphinx release.
