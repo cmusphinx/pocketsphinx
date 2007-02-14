@@ -890,12 +890,18 @@ uttproc_begin_utt(char const *id)
 static int32
 discard_start_frames(feat_t *fcb, mfcc_t ***feat_buf, int32 n_cepfr, int32 nfr)
 {
-    int32 discard; /* How many to throw away */
+    int32 i, j, discard; /* How many to throw away */
 
     discard = feat_window_size(fcb) - n_cepfr;
     if (discard > nfr)
         discard = nfr;
-    memmove(feat_buf, feat_buf + discard, nfr - discard);
+    /* Move some memory around. */
+    for (i = 0; i < nfr - discard; ++i) {
+        for (j = 0; j < feat_n_stream(fcb); ++j) {
+            memcpy(feat_buf[i][j], feat_buf[i + discard][j],
+                   feat_stream_len(fcb, j) * sizeof(mfcc_t));
+        }
+    }
     nfr -= discard;
     return nfr;
 }
@@ -1105,12 +1111,6 @@ uttproc_end_utt(void)
             nfr = feat_s2mfc2feat_block(fcb, &leftover_cep, nfr,
                                         uttstart, TRUE,
                                         feat_buf + n_featfr);
-            /* Be (bug?) compatible with Sphinx2, and discard the last
-             * frames since their dynamic coefficients are somewhat
-             * bogus. */
-            n_featfr += nfr - feat_window_size(fcb);
-            if (n_featfr < 0)
-                n_featfr = 0;
             uttstart = FALSE;
         }
         else {
@@ -1131,12 +1131,9 @@ uttproc_end_utt(void)
             /* Be (bug?) compatible with Sphinx2, and discard the
              * first and last frames */
             nfr -= feat_window_size(fcb) * 2;
-            if (nfr > 0) {
-                memmove(feat_buf, feat_buf + feat_window_size(fcb), nfr);
-            }
-            else {
+            if (nfr < 0)
                 nfr = 0;
-            }
+            n_searchfr += feat_window_size(fcb);
             n_featfr += nfr;
         }
     }
