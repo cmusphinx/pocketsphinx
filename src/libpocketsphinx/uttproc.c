@@ -887,6 +887,19 @@ uttproc_begin_utt(char const *id)
     return 0;
 }
 
+static int32
+discard_start_frames(feat_t *fcb, mfcc_t ***feat_buf, int32 n_cepfr, int32 nfr)
+{
+    int32 discard; /* How many to throw away */
+
+    discard = feat_window_size(fcb) - n_cepfr;
+    if (discard > nfr)
+        discard = nfr;
+    memmove(feat_buf, feat_buf + discard, nfr - discard);
+    nfr -= discard;
+    return nfr;
+}
+
 int32
 uttproc_rawdata(int16 * raw, int32 len, int32 block)
 {
@@ -963,6 +976,11 @@ uttproc_rawdata(int16 * raw, int32 len, int32 block)
         nfr = feat_s2mfc2feat_block(fcb, mfcbuf + n_cepfr, nfr,
                                     uttstart, FALSE,
                                     feat_buf + n_featfr);
+        /* Be (bug?) compatible with Sphinx2, and discard the first
+         * frames, since their dynamic coefficients are somewhat
+         * bogus. */
+        if (n_cepfr < feat_window_size(fcb))
+            nfr = discard_start_frames(fcb, feat_buf, n_cepfr, nfr);
         uttstart = FALSE;
         n_cepfr += nfr;
         n_featfr += nfr;
@@ -1024,6 +1042,11 @@ uttproc_cepdata(float32 ** cep, int32 nfr, int32 block)
         nfr = feat_s2mfc2feat_block(fcb, mfcbuf + n_cepfr, nfr,
                                     uttstart, FALSE,
                                     feat_buf + n_featfr);
+        /* Be (bug?) compatible with Sphinx2, and discard the first
+         * frames, since their dynamic coefficients are somewhat
+         * bogus. */
+        if (n_cepfr < feat_window_size(fcb))
+            nfr = discard_start_frames(fcb, feat_buf, n_cepfr, nfr);
         uttstart = FALSE;
         n_cepfr += nfr;
         n_featfr += nfr;
@@ -1082,8 +1105,13 @@ uttproc_end_utt(void)
             nfr = feat_s2mfc2feat_block(fcb, &leftover_cep, nfr,
                                         uttstart, TRUE,
                                         feat_buf + n_featfr);
+            /* Be (bug?) compatible with Sphinx2, and discard the last
+             * frames since their dynamic coefficients are somewhat
+             * bogus. */
+            n_featfr += nfr - feat_window_size(fcb);
+            if (n_featfr < 0)
+                n_featfr = 0;
             uttstart = FALSE;
-            n_featfr += nfr;
         }
         else {
             if (nfr) {
@@ -1100,6 +1128,15 @@ uttproc_end_utt(void)
         if (n_cepfr) {
             nfr = feat_s2mfc2feat_block(fcb, mfcbuf, n_cepfr,
                                         TRUE, TRUE, feat_buf);
+            /* Be (bug?) compatible with Sphinx2, and discard the
+             * first and last frames */
+            nfr -= feat_window_size(fcb) * 2;
+            if (nfr > 0) {
+                memmove(feat_buf, feat_buf + feat_window_size(fcb), nfr);
+            }
+            else {
+                nfr = 0;
+            }
             n_featfr += nfr;
         }
     }
