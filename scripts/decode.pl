@@ -117,14 +117,14 @@ copy "$DEC_CFG_GIF_DIR/green-ball.gif", "$DEC_CFG_BASE_DIR/.decode.$part.state.g
 open LOG,">$logfile";
 
 ### now actually start  (this will clobber the previous logfile)
-$DECODER = "$DEC_CFG_BIN_DIR/sphinx2_batch";
+$DECODER = "$DEC_CFG_BIN_DIR/pocketsphinx_batch";
 
 if (open PIPE, "\"$DECODER\" " .
     "-hmm \"$hmm_dir\" " .
     "-lw $DEC_CFG_LANGUAGEWEIGHT  " .
     "-feat $DEC_CFG_FEATURE " .
     "-beam $DEC_CFG_BEAMWIDTH " .
-    "-nwbeam $DEC_CFG_WORDBEAM " .
+    "-wbeam $DEC_CFG_WORDBEAM " .
     "-dict \"$DEC_CFG_DICTIONARY\" " .
     "-lm \"$DEC_CFG_LANGUAGEMODEL\" " .
     "-wip 0.2 " .

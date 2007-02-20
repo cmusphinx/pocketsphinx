@@ -56,13 +56,13 @@ my $align = "/afs/cs.cmu.edu/user/robust/archive/third_party_packages/NIST_scori
 if (lc($task) eq "an4") {
   $langmodel = " an4.ug.lm";
   $langweight = 10;
-  $beam = 1e-10;
-  $wbeam = 1e-6;
+  $beam = 1e-80;
+  $wbeam = 1e-48;
 } elsif (lc($task) eq "rm1") {
   $langmodel = " rm1.bigram.arpabo";
   $langweight = 10;
-  $beam = 1e-10;
-  $wbeam = 1e-6;
+  $beam = 1e-80;
+  $wbeam = 1e-48;
 } else {
   die "Task not previously defined. User has to provide language model and supporting variables\n";
 }
