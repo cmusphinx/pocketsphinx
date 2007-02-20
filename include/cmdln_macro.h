@@ -43,6 +43,12 @@
 #include <cmd_ln.h>
 #include <fe.h> /* For waveform_to_cepstral_command_line_macro() */
 
+#ifdef WORDS_BIGENDIAN
+#define NATIVE_ENDIAN "big"
+#else
+#define NATIVE_ENDIAN "little"
+#endif
+
 /** Options defining speech data input */
 #define input_cmdln_options()								\
 { "-live",										\
@@ -71,7 +77,7 @@
       "Input is raw audio data" },							\
 { "-adcendian",										\
       ARG_STRING,									\
-      "little",										\
+      NATIVE_ENDIAN,									\
       "Byte order for raw audio files (little/big)" },					\
 { "-adchdr",										\
       ARG_INT32,									\
