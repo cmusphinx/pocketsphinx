@@ -179,9 +179,9 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
-#if !defined(_WIN32) || defined(__CYGWIN_)
-#include <sys/resource.h>
+#if !defined(_WIN32) || defined(__CYGWIN__)
 #include <sys/time.h>
+#include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/param.h>
 #endif

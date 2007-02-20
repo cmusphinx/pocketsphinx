@@ -17,6 +17,9 @@ case $host in
 	LIBS='-lc -lgcc -lwinsock -lcoredll'
 	CFLAGS="$CFLAGS -DNEWLIB -DSARM -DWIN32 -DGNUWINCE"
 	;;
+     *apple*)
+        LIBS="$LIBS -framework CoreAudio -framework AudioToolbox"
+        ;;
      *uclinux*)
 	# uClinux needs special "flat" binaries
 	LDFLAGS="$LDFLAGS -Wl,-elf2flt"

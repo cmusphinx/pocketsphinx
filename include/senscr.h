@@ -75,7 +75,7 @@ extern int32 *senone_active;		/* List of active senones */
 extern int32 n_senone_active;		/* No. of entries in above active list */
 
 extern int32 **past_senone_scores;  /* Senone scores for all frames */
-bitvec_t **past_senone_active_vec;  /* Previously active senones */
+extern bitvec_t **past_senone_active_vec;  /* Previously active senones */
 
 
 /*
