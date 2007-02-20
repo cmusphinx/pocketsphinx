@@ -10,7 +10,7 @@ echo "Run CMU Sphinx2 in Batch mode to decode an example utterance."
 echo " "
 
 $S2BATCH -adcin yes \
-    -cepext 16k \
+    -cepext .16k \
     -samprate 16000 \
     -agc none \
     -fwdflat no -bestpath no \
