@@ -656,6 +656,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
 						\
     s4 = chan->score[4] + nmpx_sseq2score(ssid, 4); \
     s3 = chan->score[3] + nmpx_sseq2score(ssid, 3); \
+    /* Transitions into non-emitting state 5 */ \
     t1 = NPA(tp,s4,4,5);			\
     t2 = NPA(tp,s3,3,5);			\
     if (t1 > t2) {				\
@@ -669,6 +670,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     bestScore = s5;				\
     						\
     s2 = chan->score[2] + nmpx_sseq2score(ssid, 2); \
+    /* All transitions into state 4 */          \
     t0 = NPA(tp,s4,4,4);			\
     t1 = NPA(tp,s3,3,4);			\
     t2 = NPA(tp,s2,2,4);			\
@@ -691,6 +693,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->score[4] = s4;			\
     						\
     s1 = chan->score[1] + nmpx_sseq2score(ssid, 1); \
+    /* All transitions into state 3 */          \
     t0 = NPA(tp,s3,3,3);			\
     t1 = NPA(tp,s2,2,3);			\
     t2 = NPA(tp,s1,1,3);			\
@@ -713,6 +716,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->score[3] = s3;			\
     						\
     s0 = chan->score[0] + nmpx_sseq2score(ssid, 0); \
+    /* All transitions into state 2 */          \
     t0 = NPA(tp,s2,2,2);			\
     t1 = NPA(tp,s1,1,2);			\
     t2 = NPA(tp,s0,0,2);			\
@@ -734,6 +738,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     if (s2 > bestScore) bestScore = s2;		\
     chan->score[2] = s2;			\
     						\
+    /* All transitions into state 1 */          \
     t0 = NPA(tp,s1,1,1);			\
     t1 = NPA(tp,s0,0,1);			\
     if (t0 > t1) {				\
@@ -745,6 +750,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     if (s1 > bestScore) bestScore = s1;		\
     chan->score[1] = s1;			\
     						\
+    /* All transitions into state 0 */          \
     s0 = NPA(tp,s0,0,0);			\
     if (s0 > bestScore) bestScore = s0;		\
     chan->score[0] = s0;			\
@@ -2532,6 +2538,8 @@ search_postprocess_bptable(lw_t lwf, char const *pass)
     /*
      * Print final Path
      */
+    /* Look for </s> - strangely enough this seems to happen quite
+     * frequently.  Maybe a bug? */
     for (bp = BPTableIdx[cf]; bp < BPIdx; bp++) {
         if (BPTable[bp].wid == FinishWordId)
             break;
@@ -2651,6 +2659,7 @@ seg_back_trace(int32 bpidx, char const *pass)
 
     altpron = cmd_ln_boolean("-reportpron");
 
+    /* Stop condition, no more backpointers. */
     if (bpidx != NO_BP) {
         seg_back_trace(BPTable[bpidx].bp, pass);
 
@@ -2734,6 +2743,7 @@ partial_seg_back_trace(int32 bpidx)
 
     altpron = cmd_ln_boolean("-reportpron");
 
+    /* Stop condition, no more backpointers */
     if (bpidx != NO_BP) {
         partial_seg_back_trace(BPTable[bpidx].bp);
 
@@ -3000,6 +3010,7 @@ search_partial_result(int32 * fr, char **res)
     bestscore = WORST_SCORE;
     f = CurrentFrame - 1;
 
+    /* Look for the last frame with word exits */
     for (; f >= 0; --f) {
         for (bp = BPTableIdx[f]; bp < BPIdx; bp++) {
             if (BPTable[bp].score > bestscore) {
