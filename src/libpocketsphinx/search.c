@@ -2158,7 +2158,7 @@ search_fwd(mfcc_t **feat)
 void
 search_start_fwd(void)
 {
-    int32 i, rcsize, lscr;
+    int32 i, j, rcsize, lscr, w;
     ROOT_CHAN_T *rhmm;
     dict_entry_t *de;
 
@@ -2192,6 +2192,17 @@ search_start_fwd(void)
 
     hyp_str[0] = '\0';
     hyp[0].wid = -1;
+
+    /* Reset the permanently allocated single-phone words, since they
+     * may have junk left over in them from FWDFLAT. */
+    for (i = 0; i < n_1ph_words; i++) {
+        w = single_phone_wid[i];
+        rhmm = (ROOT_CHAN_T *) word_chan[w];
+        rhmm->active = -1;
+        for (j = 0; j < HMM_LAST_STATE; j++)
+            rhmm->score[j] = WORST_SCORE;
+        rhmm->bestscore = WORST_SCORE;
+    }
 
     if (context_word[0] < 0) {
         /* Start search with <s>; word_chan[<s>] is permanently allocated */
@@ -2477,14 +2488,6 @@ search_finish_fwd(void)
         word_active[w] = 0;
         free_all_rc(w);
     }
-    for (i = 0; i < n_1ph_words; i++) {
-        w = single_phone_wid[i];
-        rhmm = (ROOT_CHAN_T *) word_chan[w];
-        rhmm->active = -1;
-        for (j = 0; j < HMM_LAST_STATE; j++)
-            rhmm->score[j] = WORST_SCORE;
-        rhmm->bestscore = WORST_SCORE;
-    }
 
     /* Obtain lattice density info for this utterance */
     bptbl2latdensity(BPIdx, lattice_density);
@@ -2661,6 +2664,8 @@ seg_back_trace(int32 bpidx, char const *pass)
 
     /* Stop condition, no more backpointers. */
     if (bpidx != NO_BP) {
+        /* This assertion catches loops in the backtrace. */
+        assert(BPTable[bpidx].bp < bpidx);
         seg_back_trace(BPTable[bpidx].bp, pass);
 
         l_scr = BPTable[bpidx].lscr;
