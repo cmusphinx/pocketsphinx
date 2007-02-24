@@ -592,16 +592,16 @@ uttproc_frame(void)
         search_fwdflat_frame(feat_buf[n_searchfr]);
     ++n_searchfr;
 
-    pr = cmd_ln_boolean("-phypdump");
-    if ((pr > 0) && ((n_searchfr % pr) == 1)) {
+    pr = cmd_ln_int32("-phypdump");
+    if ((pr > 0) && ((n_searchfr % pr) == 0)) {
         /* Report partial result string */
         uttproc_partial_result(&frm, &str);
         printf("PART[%d]: %s\n", frm, str);
         fflush(stdout);
     }
 
-    pr = cmd_ln_boolean("-phypsegdump");
-    if ((pr > 0) && ((n_searchfr % pr) == 1)) {
+    pr = cmd_ln_int32("-phypsegdump");
+    if ((pr > 0) && ((n_searchfr % pr) == 0)) {
         /* Report partial result segmentation */
         uttproc_partial_result_seg(&frm, &hyp);
         printf("PARTSEG[%d]:", frm);

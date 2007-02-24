@@ -135,11 +135,11 @@
       "no",									\
       "Print short back trace of recognition results" },			\
 { "-phypdump",									\
-      ARG_BOOLEAN,								\
+      ARG_INT32,								\
       "no",									\
       "Report partial results every so many frames" },				\
 { "-phypsegdump",								\
-      ARG_BOOLEAN,								\
+      ARG_INT32,								\
       "no",									\
       "Report detailed partial results every so many frames" },			\
 { "-hyp",									\

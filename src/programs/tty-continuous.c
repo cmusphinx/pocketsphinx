@@ -59,8 +59,6 @@
  */
 
 #include <stdio.h>
-#include <signal.h>
-#include <setjmp.h>
 #include <string.h>
 
 #include "fbs.h"
@@ -70,8 +68,14 @@
 #include "cont_ad.h"
 
 #if defined(WIN32) && !defined(GNUWINCE)
+#include <signal.h>
+#include <setjmp.h>
 #include <time.h>
+#elif defined(_WIN32_WCE)
+#include <windows.h>
 #else
+#include <signal.h>
+#include <setjmp.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #endif
@@ -84,7 +88,7 @@ static ad_rec_t *ad;
 static void
 sleep_msec(int32 ms)
 {
-#if defined(WIN32) && !defined(GNUWINCE)
+#if (defined(WIN32) && !defined(GNUWINCE)) || defined(_WIN32_WCE)
     Sleep(ms);
 #else
     /* ------------------- Unix ------------------ */
@@ -218,11 +222,34 @@ sighandler(int signo)
     longjmp(jbuf, 1);
 }
 
+#ifdef _WIN32_WCE
+
+int WINAPI
+WinMain(HINSTANCE hInstance,
+        HINSTANCE hPrevInstance,
+        LPTSTR lpCmdLine, int nCmdShow)
+{
+    static char *fake_argv[] = { "pocketsphinx_continuous.exe", NULL };
+
+    /* FIXME: This needs serious improvement. */
+    fbs_init(1, fake_argv);
+
+    if ((ad = ad_open_sps(/*cmd_ln_float32("-samprate")*/ 22050)) == NULL)
+        E_FATAL("ad_open_sps failed\n");
+
+	utterance_loop();
+
+    fbs_end();
+    ad_close(ad);
+    return 0;
+}
+#else
 int
 main(int argc, char *argv[])
 {
     /* Make sure we exit cleanly (needed for profiling among other things) */
-#ifndef GNUWINCE /* Signals seem to be broken in arm-wince-pe. */
+    /* Signals seem to be broken in arm-wince-pe. */
+#if !defined(GNUWINCE) && !defined(_WIN32_WCE)
     signal(SIGINT, &sighandler);
 #endif
 
@@ -242,3 +269,4 @@ main(int argc, char *argv[])
 
     return 0;
 }
+#endif /* !_WIN32_WCE */
