@@ -448,6 +448,10 @@
       ARG_STRING,                                                               \
       NULL,                                                                     \
       "Senone mixture weights input file" },                                    \
+{ "-subvq",                                                                     \
+      ARG_STRING,                                                               \
+      NULL,                                                                     \
+      "Subvector quantized means/variances file" },                             \
 { "-mixwfloor",                                                                 \
       ARG_FLOAT32,                                                              \
       "0.0000001",                                                              \

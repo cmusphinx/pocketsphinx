@@ -42,8 +42,7 @@
 #ifndef __SENSCR_H__
 #define __SENSCR_H__
 
-#include <fixpoint.h>
-
+#include <fe.h>
 #include "s2types.h"
 #include "msd.h"
 

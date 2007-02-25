@@ -34,6 +34,7 @@ libpocketsphinx_la_SOURCES = \
 	senscr.c				\
 	skipto.c				\
 	strcasecmp.c				\
+	subvq_mgau.c				\
 	tmat.c					\
 	time_align.c				\
 	uttproc.c				\

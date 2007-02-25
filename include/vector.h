@@ -49,29 +49,10 @@
 #ifndef __VECTOR_H__
 #define __VECTOR_H__
 
-
+#include <stdio.h>
 #include "s2types.h"
 
-
 typedef float32 *vector_t;
-
-
-/* Why do these belong here?? */
-typedef struct {
-    int32 r;		/* #rows, */
-    int32 c;		/* #cols in an array */
-} arraysize_t;
-
-typedef struct {
-    int32 x;		/* x-coordinate, */
-    int32 y;		/* y-coordinate of a point */
-} point_t;
-
-typedef struct {
-    float32 x;		/* x-coordinate, */
-    float32 y;		/* y-coordinate of a point */
-} fpoint_t;		/* Like point_t, but with float32 values */
-
 
 /*
  * The reason for some of the "trivial" routines below is that they could be OPTIMIZED for SPEED
@@ -101,7 +82,6 @@ void vector_print(FILE *fp, vector_t v, int32 dim);
 /* Return TRUE iff given vector is all 0.0 */
 int32 vector_is_zero (float32 *vec,	/* In: Vector to be checked */
 		      int32 len);	/* In: Length of above vector */
-
 
 #endif /* VECTOR_H */ 
 

@@ -138,6 +138,7 @@
 #include "lmclass.h"
 #include "lm_3g.h"
 #include "s2_semi_mgau.h"
+#include "subvq_mgau.h"
 #include "kb.h"
 #include "phone.h"
 #include "fbs.h"
@@ -160,6 +161,9 @@ bin_mdef_t *mdef;
 
 /* S2 fast SCGMM computation object */
 s2_semi_mgau_t *semi_mgau;
+
+/* SubVQ-based fast CDGMM computation object */
+subvq_mgau_t *subvq_mgau;
 
 /* Model file names */
 char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *kdtreefn, *sendumpfn;
@@ -542,29 +546,39 @@ kb_init(void)
 
     lm_init();
 
-    /* Read acoustic model files. */
-    if ((meanfn == NULL)
-        || (varfn == NULL)
-        || (tmatfn == NULL))
-        E_FATAL("No mean/var/tmat files specified\n");
-
     /* Read transition matrices. */
+    if (tmatfn == NULL)
+        E_FATAL("No tmat file specified\n");
     tmat = tmat_init(tmatfn, cmd_ln_float32("-tmatfloor"), TRUE);
 
     /* Read the acoustic models. */
-    E_INFO("Initializing SCGMM computation module\n");
-    semi_mgau = s2_semi_mgau_init(meanfn,
-                                  varfn,
-                                  cmd_ln_float32("-varfloor"),
-                                  mixwfn,
-                                  cmd_ln_float32("-mixwfloor"),
-                                  cmd_ln_int32("-topn"));
-    if (kdtreefn)
-        s2_semi_mgau_load_kdtree(semi_mgau,
-                                 kdtreefn,
-                                 cmd_ln_int32("-kdmaxdepth"),
-                                 cmd_ln_int32("-kdmaxbbi"));
-    semi_mgau->ds_ratio = cmd_ln_int32("-dsratio");
+    if (cmd_ln_str("-subvq")) {
+        subvq_mgau = subvq_mgau_init(cmd_ln_str("-subvq"),
+                                     cmd_ln_float32("-varfloor"),
+                                     mixwfn,
+                                     cmd_ln_float32("-mixwfloor"),
+                                     cmd_ln_int32("-topn"));
+    }
+    else {
+        if ((meanfn == NULL)
+            || (varfn == NULL)
+            || (tmatfn == NULL))
+            E_FATAL("No mean/var/tmat files specified\n");
+
+        E_INFO("Initializing SCGMM computation module\n");
+        semi_mgau = s2_semi_mgau_init(meanfn,
+                                      varfn,
+                                      cmd_ln_float32("-varfloor"),
+                                      mixwfn,
+                                      cmd_ln_float32("-mixwfloor"),
+                                      cmd_ln_int32("-topn"));
+        if (kdtreefn)
+            s2_semi_mgau_load_kdtree(semi_mgau,
+                                     kdtreefn,
+                                     cmd_ln_int32("-kdmaxdepth"),
+                                     cmd_ln_int32("-kdmaxbbi"));
+        semi_mgau->ds_ratio = cmd_ln_int32("-dsratio");
+    }
 
     /*
      * Create phone transition logprobs matrix

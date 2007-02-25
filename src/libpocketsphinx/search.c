@@ -236,6 +236,7 @@
 #include "kb.h"
 #include "log.h"
 #include "s2_semi_mgau.h"
+#include "subvq_mgau.h"
 #include "senscr.h"
 #include "fbs.h"
 #include "search.h"
@@ -4150,7 +4151,10 @@ search_fwdflat_frame(mfcc_t **feat)
             /* Compute this reduced shortlist */
             senone_scores = sc_scores[0];
             /* FIXME: This recomputes the codebook, which we'd rather not do. */
-            s2_semi_mgau_frame_eval(semi_mgau, feat, CurrentFrame, FALSE);
+            if (semi_mgau)
+                s2_semi_mgau_frame_eval(semi_mgau, feat, CurrentFrame, FALSE);
+            else
+                subvq_mgau_frame_eval(subvq_mgau, feat, CurrentFrame, FALSE);
 
             /* Intersect the senone scores */
             for (i = 0; i < n_senone_active; ++i) {

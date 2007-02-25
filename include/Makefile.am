@@ -30,6 +30,7 @@ pkginclude_HEADERS = \
 	search.h				\
 	senscr.h				\
 	strfuncs.h				\
+	subvq_mgau.h				\
 	time_align.h				\
 	tmat.h					\
 	vector.h				\
