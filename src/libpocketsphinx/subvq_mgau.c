@@ -618,21 +618,35 @@ subvq_mgau_frame_eval(subvq_mgau_t * vq,
 		      int32 frame,
 		      int32 compallsen)
 {
-    int32 s, n;
+    int32 s, n, best;
 
     /* Evaluate subvq model for given feature vector */
     subvq_gautbl_eval_logs3(vq, *featbuf);
 
     /* Evaluate senones */
+    best = INT_MIN;
     if (compallsen) {
 	for (n = 0; n < vq->n_mgau; ++n) {
 	    senone_scores[n] = subvq_mgau_eval(vq, n);
+	    if (senone_scores[n] > best)
+		best = senone_scores[n];
+	}
+	/* s2_semi_mgau.c normalizes its scores internally (in a
+	 * somewhat different way), so we have to do this here too. */
+	for (n = 0; n < vq->n_mgau; ++n) {
+	    senone_scores[n] -= best;
 	}
     }
     else {
 	for (s = 0; s < n_senone_active; ++s) {
 	    int32 n = senone_active[s];
 	    senone_scores[n] = subvq_mgau_eval(vq, n);
+	    if (senone_scores[n] > best)
+		best = senone_scores[n];
+	}
+	for (s = 0; s < n_senone_active; ++s) {
+	    int32 n = senone_active[s];
+	    senone_scores[n] -= best;
 	}
     }
 
