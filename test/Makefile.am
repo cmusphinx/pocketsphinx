@@ -50,4 +50,11 @@ EXTRA_DIST=compare_table.pl				\
 	data/wsj/wlist5o.nvp.dict			\
 	data/wsj/wlist5o.nvp.lm.DMP			\
 	data/wsj/test-wsj5k-fwdtree.match		\
-	data/wsj/test-wsj5k-fwdflat.match
+	data/wsj/test-wsj5k-fwdflat.match		\
+	data/an4/an4.lsn				\
+	data/an4/an406-fcaw-b.mfc			\
+	data/an4/an4.ctl				\
+	data/an4/cen5-fjlp-b.mfc			\
+	data/an4/an432-marh-b.mfc			\
+	data/an4/cen6-mdms2-b.mfc			\
+	data/an4/test-an4-subvq.match
