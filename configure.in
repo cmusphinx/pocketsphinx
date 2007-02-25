@@ -119,10 +119,12 @@ model/Makefile
 model/hmm/Makefile
 model/hmm/wsj0/Makefile
 model/hmm/tidigits/Makefile
+model/hmm/an4/Makefile
 model/lm/Makefile
 model/lm/turtle/Makefile
 model/lm/swb/Makefile
 model/lm/tidigits/Makefile
+model/lm/an4/Makefile
 scripts/Makefile
 scripts/pocketsphinx_test
 scripts/pocketsphinx_swb
