@@ -1,1 +1,1 @@
-SUBDIRS = wsj0 tidigits
+SUBDIRS = wsj0 tidigits an4
