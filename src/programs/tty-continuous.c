@@ -67,15 +67,13 @@
 #include "ad.h"
 #include "cont_ad.h"
 
+#if !defined(_WIN32_WCE)
+#include <signal.h>
+#include <setjmp.h>
+#endif
 #if defined(WIN32) && !defined(GNUWINCE)
-#include <signal.h>
-#include <setjmp.h>
 #include <time.h>
-#elif defined(_WIN32_WCE)
-#include <windows.h>
 #else
-#include <signal.h>
-#include <setjmp.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #endif
