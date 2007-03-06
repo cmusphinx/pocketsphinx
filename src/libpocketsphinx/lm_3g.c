@@ -1379,7 +1379,7 @@ lm3g_load(char const *file, char const *lmname,
     if (k != strlen(darpa_hdr)+1) {
         SWAP_INT32(&k);
         if (k != strlen(darpa_hdr)+1) {
-            E_ERROR("Wrong magic header size number %x: %s is not a dump file\n", k);
+            E_ERROR("Wrong magic header size number %x: %s is not a dump file\n", k, file);
             fclose(fp);
             return -1;
         }
