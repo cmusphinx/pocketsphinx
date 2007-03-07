@@ -201,6 +201,10 @@ SOURCE=..\..\..\src\libpocketsphinx\strcasecmp.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\libpocketsphinx\subvq_mgau.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\libpocketsphinx\time_align.c
 # End Source File
 # Begin Source File
