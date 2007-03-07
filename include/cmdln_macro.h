@@ -75,10 +75,6 @@
       ARG_BOOLEAN,									\
       "no",										\
       "Input is raw audio data" },							\
-{ "-adcendian",										\
-      ARG_STRING,									\
-      NATIVE_ENDIAN,									\
-      "Byte order for raw audio files (little/big)" },					\
 { "-adchdr",										\
       ARG_INT32,									\
       "0",										\
