@@ -318,6 +318,7 @@ DEP_CPP_ALLPH=\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\senscr.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	
@@ -646,6 +647,7 @@ DEP_CPP_CACHE=\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	
@@ -786,6 +788,7 @@ DEP_CPP_DICT_=\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\lm_3g.h"\
 	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
 	"..\..\..\include\msd.h"\
 	"..\..\..\include\phone.h"\
@@ -793,6 +796,7 @@ DEP_CPP_DICT_=\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	
@@ -943,6 +947,7 @@ DEP_CPP_FBS_M=\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\lm_3g.h"\
 	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
 	"..\..\..\include\msd.h"\
 	"..\..\..\include\posixwin32.h"\
@@ -951,6 +956,7 @@ DEP_CPP_FBS_M=\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\time_align.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
@@ -1102,12 +1108,14 @@ DEP_CPP_FSG_H=\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\lm_3g.h"\
 	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
 	"..\..\..\include\msd.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	"..\..\..\include\word_fsg.h"\
@@ -1362,6 +1370,7 @@ DEP_CPP_FSG_P=\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	"..\..\..\include\word_fsg.h"\
@@ -1537,6 +1546,7 @@ DEP_CPP_FSG_S=\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\senscr.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	"..\..\..\include\word_fsg.h"\
@@ -1689,6 +1699,7 @@ DEP_CPP_KB_MA=\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	
@@ -2036,6 +2047,7 @@ DEP_CPP_LM_C1e=\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	
@@ -2196,6 +2208,7 @@ DEP_CPP_LM_3G=\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	
@@ -2524,6 +2537,7 @@ DEP_CPP_PHONE=\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\lm_3g.h"\
 	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
 	"..\..\..\include\msd.h"\
 	"..\..\..\include\phone.h"\
@@ -2531,6 +2545,7 @@ DEP_CPP_PHONE=\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	
@@ -2741,6 +2756,7 @@ DEP_CPP_S2_SE=\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\senscr.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	
@@ -2896,6 +2912,7 @@ DEP_CPP_SEARC=\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\senscr.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	
@@ -3037,12 +3054,14 @@ DEP_CPP_SEARCH=\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\lm_3g.h"\
 	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
 	"..\..\..\include\msd.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	
@@ -3175,6 +3194,7 @@ DEP_CPP_SENSC=\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\lm_3g.h"\
 	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
 	"..\..\..\include\msd.h"\
 	"..\..\..\include\phone.h"\
@@ -3182,6 +3202,7 @@ DEP_CPP_SENSC=\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\senscr.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	
@@ -3249,6 +3270,117 @@ DEP_CPP_STRCA=\
 
 DEP_CPP_STRCA=\
 	"..\..\..\include\strfuncs.h"\
+	
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\libpocketsphinx\subvq_mgau.c
+
+!IF  "$(CFG)" == "pocketsphinx - Win32 (WCE emulator) Release"
+
+DEP_CPP_SUBVQ=\
+	"..\..\..\..\sphinxbase\include\bio.h"\
+	"..\..\..\..\sphinxbase\include\byteorder.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\pio.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
+	"..\..\..\include\subvq_mgau.h"\
+	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_SUBVQ=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE emulator) Debug"
+
+DEP_CPP_SUBVQ=\
+	"..\..\..\..\sphinxbase\include\bio.h"\
+	"..\..\..\..\sphinxbase\include\byteorder.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\pio.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
+	"..\..\..\include\subvq_mgau.h"\
+	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_SUBVQ=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARMV4) Release"
+
+DEP_CPP_SUBVQ=\
+	"..\..\..\..\sphinxbase\include\bio.h"\
+	"..\..\..\..\sphinxbase\include\byteorder.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\pio.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
+	"..\..\..\include\subvq_mgau.h"\
+	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_SUBVQ=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+	
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARMV4) Debug"
+
+DEP_CPP_SUBVQ=\
+	"..\..\..\..\sphinxbase\include\bio.h"\
+	"..\..\..\..\sphinxbase\include\byteorder.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\pio.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\msd.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
+	"..\..\..\include\subvq_mgau.h"\
+	"..\..\..\include\vector.h"\
+	
+NODEP_CPP_SUBVQ=\
+	"..\..\..\..\sphinxbase\include\dmalloc.h"\
 	
 
 !ENDIF 
@@ -3405,6 +3537,7 @@ DEP_CPP_TIME_=\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\senscr.h"\
 	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\time_align.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
@@ -3672,6 +3805,7 @@ DEP_CPP_UTTPR=\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\lm_3g.h"\
 	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
 	"..\..\..\include\msd.h"\
 	"..\..\..\include\posixwin32.h"\
@@ -3680,6 +3814,7 @@ DEP_CPP_UTTPR=\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\senscr.h"\
 	"..\..\..\include\strfuncs.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	"..\..\..\include\word_fsg.h"\
@@ -3911,6 +4046,7 @@ DEP_CPP_WORD_=\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
+	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	"..\..\..\include\word_fsg.h"\
