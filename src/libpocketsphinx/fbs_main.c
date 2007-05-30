@@ -337,6 +337,7 @@ fbs_end(void)
 {
     uttproc_end();
     kb_close();
+    cmd_ln_free();
     return 0;
 }
 
