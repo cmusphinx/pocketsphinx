@@ -54,6 +54,8 @@
 
 /* Initialize the acoustic and language models. */
 void kb_init(void);
+/* Free up (or try, at least) the acoustic and language models. */
+void kb_close(void);
 
 /* Look up a word in the dictionary. */
 int32 kb_get_word_id(char const *word);

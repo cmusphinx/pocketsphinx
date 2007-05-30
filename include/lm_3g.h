@@ -204,5 +204,6 @@ int32	lm3g_access_type (void);
 void	lm3g_cache_reset (void);
 void	lm3g_cache_stats_dump (FILE *file);
 void	lm_next_frame (void);
+void    lm_delete_all(void);
 
 #endif /* _LM_3G_H_ */

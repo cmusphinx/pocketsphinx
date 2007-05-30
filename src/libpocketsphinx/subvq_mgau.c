@@ -655,7 +655,7 @@ subvq_mgau_frame_eval(subvq_mgau_t * vq,
 
 /* RAH, free memory allocated by subvq_init() */
 void
-subvq_free(subvq_mgau_t * s)
+subvq_mgau_free(subvq_mgau_t * s)
 {
     int i;
 

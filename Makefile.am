@@ -14,7 +14,10 @@ EXTRA_DIST = autogen.sh							\
 	win32/msdev/pocketsphinx_ptt/pocketsphinx_ptt.dsp		\
 	win32/msdev/libpocketsphinx/libpocketsphinx.vcp			\
 	win32/msdev/pocketsphinx/pocketsphinx.vcp			\
-	win32/msdev/pocketsphinx_batch/pocketsphinx_batch.vcp
+	win32/msdev/pocketsphinx_batch/pocketsphinx_batch.vcp		\
+	python/setup.py							\
+	python/_pocketsphinxmodule.c					\
+	python/_pocketsphinx_test.py
 
 test:
 	$(LIBTOOL) --mode=execute src/programs/pocketsphinx_batch \

@@ -815,6 +815,13 @@ uttproc_end(void)
 
     timing_end();
 
+    fe_close(fe);
+    fe = NULL;
+
+    ckd_free(uttid);
+    uttid = NULL;
+
+    uttstate = UTTSTATE_UNDEF;
     return 0;
 }
 
@@ -1382,12 +1389,18 @@ uttproc_result_seg(int32 * fr, search_hyp_t ** hyp, int32 block)
     char *str;
     int32 res;
 
+    if (uttstate == UTTSTATE_ENDED) {
+        if ((res = uttproc_result(fr, &str, block)) != 0)
+            return res;             /* Not done yet; or ERROR */
+    }
+    else if (uttstate != UTTSTATE_IDLE) {
+        E_ERROR("uttproc_result_seg() called when utterance not finished yet");
+        return -1;
+    }
+
     /* Free any previous segmentation result */
     utt_seghyp_free(utt_seghyp);
     utt_seghyp = NULL;
-
-    if ((res = uttproc_result(fr, &str, block)) != 0)
-        return res;             /* Not done yet; or ERROR */
 
     build_utt_seghyp();
     *hyp = utt_seghyp;

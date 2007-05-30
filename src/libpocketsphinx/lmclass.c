@@ -284,6 +284,26 @@ lmclass_loadfile(lmclass_set_t lmclass_set, char *file)
 }
 
 void
+lmclass_set_delete(lmclass_set_t set)
+{
+    lmclass_t s, snext;
+
+    for (s = set->lmclass_list; s; s = snext) {
+        lmclass_word_t w, wnext;
+
+        snext = s->next;
+        ckd_free(s->name);
+        for (w = s->wordlist; w; w = wnext) {
+            wnext = w->next;
+            ckd_free(w->word);
+            ckd_free(w);
+        }
+        ckd_free(s);
+    }
+    ckd_free(set);
+}
+
+void
 lmclass_set_dictwid(lmclass_word_t w, int32 dictwid)
 {
     assert(w != NULL);

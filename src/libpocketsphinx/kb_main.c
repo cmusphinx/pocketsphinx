@@ -168,6 +168,9 @@ subvq_mgau_t *subvq_mgau;
 /* Model file names */
 char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *kdtreefn, *sendumpfn;
 
+/* Language model set */
+lmclass_set_t lmclass_set;
+
 /* FIXME: Should go in sphinxbase */
 char *
 string_join(const char *base, ...)
@@ -285,7 +288,6 @@ lm_init(void)
     if (lm_ctl_filename) {
         FILE *ctlfp;
         char lmfile[4096], lmname[4096], str[4096];
-        lmclass_set_t lmclass_set;
         lmclass_t *lmclass, cl;
         int32 n_lmclass, n_lmclass_used;
 
@@ -507,31 +509,31 @@ kb_init(void)
     /* Allow overrides from the command line */
     if (cmd_ln_str("-mdef")) {
         ckd_free(mdeffn);
-        mdeffn = cmd_ln_str("-mdef");
+        mdeffn = ckd_salloc(cmd_ln_str("-mdef"));
     }
     if (cmd_ln_str("-mean")) {
         ckd_free(meanfn);
-        meanfn = cmd_ln_str("-mean");
+        meanfn = ckd_salloc(cmd_ln_str("-mean"));
     }
     if (cmd_ln_str("-var")) {
         ckd_free(varfn);
-        varfn = cmd_ln_str("-var");
+        varfn = ckd_salloc(cmd_ln_str("-var"));
     }
     if (cmd_ln_str("-mixw")) {
         ckd_free(mixwfn);
-        mixwfn = cmd_ln_str("-mixw");
+        mixwfn = ckd_salloc(cmd_ln_str("-mixw"));
     }
     if (cmd_ln_str("-tmat")) {
         ckd_free(tmatfn);
-        tmatfn = cmd_ln_str("-tmat");
+        tmatfn = ckd_salloc(cmd_ln_str("-tmat"));
     }
     if (cmd_ln_str("-sendump")) {
         ckd_free(sendumpfn);
-        sendumpfn = cmd_ln_str("-sendump");
+        sendumpfn = ckd_salloc(cmd_ln_str("-sendump"));
     }
     if (cmd_ln_str("-kdtree")) {
         ckd_free(kdtreefn);
-        kdtreefn = cmd_ln_str("-kdtree");
+        kdtreefn = ckd_salloc(cmd_ln_str("-kdtree"));
     }
 
     /* Read model definition. */
@@ -584,6 +586,39 @@ kb_init(void)
      * Create phone transition logprobs matrix
      */
     phonetp_init(num_ci_phones);
+}
+
+void
+kb_close(void)
+{
+    ckd_free(mdeffn);
+    ckd_free(meanfn);
+    ckd_free(varfn);
+    ckd_free(mixwfn);
+    ckd_free(tmatfn);
+    mdeffn = meanfn = varfn = mixwfn = tmatfn = NULL;
+    ckd_free(sendumpfn);
+    sendumpfn = NULL;
+    ckd_free(kdtreefn);
+    kdtreefn = NULL;
+
+    bin_mdef_free(mdef);
+
+    dict_free(word_dict);
+    word_dict = NULL;
+
+    lm_delete_all();
+    if (lmclass_set)
+        
+    tmat_free(tmat);
+
+    if (subvq_mgau)
+        subvq_mgau_free(subvq_mgau);
+    if (semi_mgau)
+        s2_semi_mgau_free(semi_mgau);
+
+    if (phonetp)
+        ckd_free_2d((void **)phonetp);
 }
 
 char *

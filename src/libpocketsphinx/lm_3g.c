@@ -393,8 +393,6 @@ NewModel(int32 n_ug, int32 n_bg, int32 n_tg, int32 n_dict)
     model->tcount = n_tg;
     model->dict_size = n_dict;
 
-    model->HT = hash_table_new(n_ug, HASH_CASE_NO);
-
     return model;
 }
 
@@ -826,6 +824,8 @@ lmtext_load(char const *filename, char const *lmname, lm_t **out_model)
 
     /* Allocate space for LM, including initial OOVs and placeholders; initialize it */
     model = NewModel(n_unigram, n_bigram, n_trigram, dict_size);
+    /* We need a hash table for some subroutines here. */
+    model->HT = hash_table_new(n_unigram, HASH_CASE_NO);
 
     /* Create name for binary dump form of Darpa LM file */
 #ifdef WIN32
@@ -915,6 +915,10 @@ lmtext_load(char const *filename, char const *lmname, lm_t **out_model)
     }
     else
         fclose(fp);
+    /* Hash table no longer needed. */
+    hash_table_free(model->HT);
+    model->HT = NULL;
+
     *out_model = model;
     return 0;
 }
@@ -1101,7 +1105,6 @@ lm_read_clm(char const *filename,
 
     lm_add(lmname, model, lw, uw, wip);
 
-    hash_table_free(model->HT);
     if (!do_mmap)
         for (i = 0; i < model->ucount; i++)
             free(word_str[i]);
@@ -1208,20 +1211,12 @@ lm_add(char const *lmname, lm_t * model, double lw, double uw, double wip)
     E_INFO("LM(\"%s\") added\n", lmname);
 }
 
-/*
- * Delete named LM from list of LMs and reclaim all space.
- */
-int32
-lm_delete(char const *name)
+void
+lm_free(lm_t *model)
 {
-    int32 i, u;
-    lm_t *model;
+    int32 u;
     tginfo_t *tginfo, *next_tginfo;
 
-    if ((i = lmname_to_id(name)) < 0)
-        return (-1);
-
-    model = lmset[i].lm;
     free(model->unigrams);
     free(model->bigrams);
     free(model->prob2);
@@ -1231,7 +1226,8 @@ lm_delete(char const *name)
         free(model->bo_wt2);
         free(model->prob3);
     }
-    hash_table_free(model->HT);
+    if (model->HT) /* Unlikely */
+        hash_table_free(model->HT);
 
     for (u = 0; u < model->max_ucount; u++)
         for (tginfo = model->tginfo[u]; tginfo; tginfo = next_tginfo) {
@@ -1247,7 +1243,20 @@ lm_delete(char const *name)
     free(model->dictwid_map);
 
     free(model);
+}
 
+/*
+ * Delete named LM from list of LMs and reclaim all space.
+ */
+int32
+lm_delete(char const *name)
+{
+    int32 i;
+
+    if ((i = lmname_to_id(name)) < 0)
+        return (-1);
+
+    lm_free(lmset[i].lm);
     free(lmset[i].name);
 
     for (; i < n_lm - 1; i++)
@@ -1257,6 +1266,28 @@ lm_delete(char const *name)
     E_INFO("LM(\"%s\") deleted\n", name);
 
     return (0);
+}
+
+/*
+ * Delete all known LMs
+ */
+
+void
+lm_delete_all(void)
+{
+    int32 i;
+
+    for (i = 0; i < n_lm; ++i) {
+        if (lmset[i].lm) {
+            lm_free(lmset[i].lm);
+            lmset[i].lm = NULL;
+        }
+        if (lmset[i].name) {
+            free(lmset[i].name);
+            lmset[i].name = NULL;
+        }
+    }
+    n_lm = 0;
 }
 
 /*
@@ -1281,8 +1312,11 @@ lmname_to_id(char const *name)
 {
     int32 i;
 
-    for (i = 0; (i < n_lm) && (strcmp(lmset[i].name, name) != 0); i++);
-    return ((i < n_lm) ? i : -1);
+    for (i = 0; i < n_lm; ++i) {
+        if (lmset[i].name && strcmp(lmset[i].name, name) == 0)
+            return i;
+    }
+    return -1;
 }
 
 lm_t *

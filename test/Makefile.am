@@ -17,6 +17,7 @@ EXTRA_DIST=compare_table.pl				\
 	data/tidigits/man.ah.o789a.mfc			\
 	data/tidigits/man.ah.z4548a.mfc			\
 	data/tidigits/man.ah.zb.mfc			\
+	data/tidigits/dhd.2934z.raw			\
 	data/tidigits/woman.ak.1b.mfc			\
 	data/tidigits/woman.ak.276317oa.mfc		\
 	data/tidigits/woman.ak.334a.mfc			\

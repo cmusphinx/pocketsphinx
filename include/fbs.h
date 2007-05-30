@@ -189,6 +189,7 @@
 #define _FBS_H_
 
 #include "s2types.h"
+#include "cmd_ln.h"
 #include "fe.h"
 
 /* Win32/WinCE DLL gunk */
@@ -233,10 +234,20 @@ typedef struct search_hyp_s {
  * Called once at initialization with the list of arguments to initialize to initialize
  * the decoder.  If the -ctlfn argument is given, it will process the argument file in
  * batch mode and exit the application.
+ * 
+ * If argv is NULL, then it is assumed that the arguments (which are
+ * available by calling fbs_get_args()) were already parsed using the
+ * SphinxBased cmd_ln_*() interface, as in Sphinx3.
+ *
  * Return value: 0 if successful, -1 otherwise.
  */
 EXPORT int32 fbs_init (int32 argc, char **argv);	/* Arguments for initialization */
 
+/*
+ * Returns the argument definitions used in fbs_init().  This is a
+ * function to make life much easier for Win32 users.
+ */
+EXPORT arg_t *fbs_get_args ( void );
 
 /*
  * Called before quitting the application to tie up loose ends in the decoder.

@@ -219,7 +219,7 @@ static search_hyp_t *allphone_utterance(char *mfcfile, int32 sf, int32 ef,
 static void init_feat(void);
 
 /* Command-line arguments (actually defined in cmdln_macro.h) */
-static const arg_t args_def[] = {
+static const arg_t fbs_args_def[] = {
     input_cmdln_options(),
     waveform_to_cepstral_command_line_macro(),
     output_cmdln_options(),
@@ -241,15 +241,25 @@ static float TotalSpeechTime;
 /* FIXME FIXME FIXME fixed size buffer */
 static char utt_name[512];
 
+arg_t *
+fbs_get_args(void)
+{
+    /* FIXME: Stupid deconstifying cast shouldn't be here but cmd_ln.h
+     * needs to be fixed first. */
+    return (arg_t *)fbs_args_def;
+}
+
 int
 fbs_init(int32 argc, char **argv)
 {
     E_INFO("libpocketsphinx/fbs_main.c COMPILED ON: %s, AT: %s\n\n", __DATE__, __TIME__);
 
-    /* Parse command line arguments */
-    cmd_ln_appl_enter(argc, argv,
-                      "pocketsphinx.args",
-                      (arg_t *)args_def);
+    /* Parse command line arguments, unless already parsed. */
+    if (argv != NULL) {
+        cmd_ln_appl_enter(argc, argv,
+                          "pocketsphinx.args",
+                          (arg_t *)fbs_args_def);
+    }
 
     /* Compatibility with old forwardonly flag */
     if ((!cmd_ln_boolean("-fwdtree")) && (!cmd_ln_boolean("-fwdflat")))
@@ -326,6 +336,7 @@ int32
 fbs_end(void)
 {
     uttproc_end();
+    kb_close();
     return 0;
 }
 
