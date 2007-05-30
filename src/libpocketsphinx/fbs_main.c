@@ -214,6 +214,8 @@
 /* Static declarations for this file. */
 static search_hyp_t *run_sc_utterance(char *mfcfile, int32 sf, int32 ef,
                                       char *idspec);
+static search_hyp_t *allphone_utterance(char *mfcfile, int32 sf, int32 ef,
+                                        char *idspec);
 static void init_feat(void);
 
 /* Command-line arguments (actually defined in cmdln_macro.h) */
@@ -366,78 +368,6 @@ init_feat(void)
     uttproc_set_feat(fcb);
 }
 
-/* FIXME... use I/O stuff in sphinxbase */
-static int32 adc_endian;
-
-FILE *
-adcfile_open(char const *utt)
-{
-    const char *adc_ext, *data_directory;
-    FILE *uttfp;
-    char *inputfile;
-    int32 n, l, adc_hdr;
-
-    adc_ext = cmd_ln_str("-cepext");
-    adc_hdr = cmd_ln_int32("-adchdr");
-    adc_endian = strcmp(cmd_ln_str("-adcendian"), "big");
-    data_directory = cmd_ln_str("-cepdir");
-
-    /* Build input filename */
-    n = strlen(adc_ext);
-    l = strlen(utt);
-    if ((n <= l) && (0 == strcmp(utt + l - n, adc_ext)))
-        adc_ext = "";          /* Extension already exists */
-    inputfile = string_join(data_directory, "/", utt, adc_ext, NULL);
-
-    if ((uttfp = fopen(inputfile, "rb")) == NULL) {
-        E_FATAL("fopen(%s,rb) failed\n", inputfile);
-    }
-    if (adc_hdr > 0) {
-        if (fseek(uttfp, adc_hdr, SEEK_SET) < 0) {
-            E_ERROR("fseek(%s,%d) failed\n", inputfile, adc_hdr);
-            fclose(uttfp);
-            ckd_free(inputfile);
-            return NULL;
-        }
-    }
-#ifdef WORDS_BIGENDIAN
-    if (adc_endian == 1)    /* Little endian adc file */
-        E_INFO("Byte-reversing %s\n", inputfile);
-#else
-    if (adc_endian == 0)    /* Big endian adc file */
-        E_INFO("Byte-reversing %s\n", inputfile);
-#endif
-    ckd_free(inputfile);
-
-    return uttfp;
-}
-
-int32
-adc_file_read(FILE *uttfp, int16 * buf, int32 max)
-{
-    int32 i, n;
-
-    if (uttfp == NULL)
-        return -1;
-
-    if ((n = fread(buf, sizeof(int16), max, uttfp)) <= 0)
-        return -1;
-
-    /* Byte swap if necessary */
-#ifdef WORDS_BIGENDIAN
-    if (adc_endian == 1) {      /* Little endian adc file */
-        for (i = 0; i < n; i++)
-            SWAP_INT16(&buf[i]);
-    }
-#else
-    if (adc_endian == 0) {      /* Big endian adc file */
-        for (i = 0; i < n; i++)
-            SWAP_INT16(&buf[i]);
-    }
-#endif
-
-    return n;
-}
 
 char *
 build_uttid(char const *utt)
@@ -506,23 +436,24 @@ run_ctl_file(char const *ctl_file_name)
 
         E_INFO("\nUtterance: %s\n", idspec);
 
-        if (!cmd_ln_boolean("-allphone")) {
-            hyp = run_sc_utterance(mfcfile, sf, ef, idspec);
-            if (hyp && cmd_ln_boolean("-shortbacktrace")) {
-                /* print backtrace summary */
-                fprintf(stdout, "SEG:");
-                for (; hyp; hyp = hyp->next)
-                    fprintf(stdout, "[%d %d %s]", hyp->sf, hyp->ef,
-                            hyp->word);
-                fprintf(stdout, " (%s %d A=%d L=%d)\n\n",
-                        uttproc_get_uttid(), search_get_score(),
-                        search_get_score() - search_get_lscr(),
-                        search_get_lscr());
-                fflush(stdout);
-            }
+        if (cmd_ln_boolean("-allphone")) {
+            hyp = allphone_utterance(mfcfile, sf, ef, idspec);
         }
-        else
-            uttproc_allphone_file(mfcfile);
+        else {
+            hyp = run_sc_utterance(mfcfile, sf, ef, idspec);
+        }
+        if (hyp && cmd_ln_boolean("-shortbacktrace")) {
+            /* print backtrace summary */
+            fprintf(stdout, "SEG:");
+            for (; hyp; hyp = hyp->next)
+                fprintf(stdout, "[%d %d %s]", hyp->sf, hyp->ef,
+                        hyp->word);
+            fprintf(stdout, " (%s %d A=%d L=%d)\n\n",
+                    uttproc_get_uttid(), search_get_score(),
+                    search_get_score() - search_get_lscr(),
+                    search_get_lscr());
+            fflush(stdout);
+        }
 
         ctl_count--;
     }
@@ -611,7 +542,13 @@ run_time_align_ctl_file(char const *utt_ctl_file_name,
         }
 
         build_uttid(Utt);
-        if ((n_featfr = uttproc_file2feat(Utt, 0, -1, 1)) < 0)
+        if (cmd_ln_boolean("-adcin")) {
+            n_featfr = uttproc_decode_raw_file(Utt, utt_name, 0, -1, 1);
+        }
+        else {
+            n_featfr = uttproc_decode_cep_file(Utt, utt_name, 0, -1, 1);
+        }
+        if (n_featfr < 0)
             E_ERROR("Failed to load %s\n", Utt);
         else {
             time_align_utterance(Utt,
@@ -702,7 +639,13 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
         }
     }
 
-    ret = uttproc_file2feat(mfcfile, sf, ef, 0);
+    build_uttid(utt);
+    if (cmd_ln_boolean("-adcin")) {
+        ret = uttproc_decode_raw_file(utt, utt_name, sf, ef, 0);
+    }
+    else {
+        ret = uttproc_decode_cep_file(utt, utt_name, sf, ef, 0);
+    }
 
     if (ret < 0)
         return NULL;
@@ -747,6 +690,27 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
     }
 
     return hypseg;              /* Linked list of hypothesis words */
+}
+
+/*
+ * Allphone decode an utterance.
+ */
+static search_hyp_t *
+allphone_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
+{
+    extern search_hyp_t * allphone_utt(int32 nfr, mfcc_t ***feat_buf);
+    int32 nfr;
+    mfcc_t ***feat_buf;
+
+    if (cmd_ln_boolean("-adcin")) {
+        nfr = uttproc_decode_raw_file(mfcfile, utt_name, sf, ef, 1);
+    }
+    else {
+        nfr = uttproc_decode_cep_file(mfcfile, utt_name, sf, ef, 1);
+    }
+
+    uttproc_get_featbuf(&feat_buf);
+    return allphone_utt(nfr, feat_buf);
 }
 
 /*

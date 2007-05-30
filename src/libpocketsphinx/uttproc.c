@@ -272,6 +272,7 @@
 /* SphinxBase headers */
 #include <sphinx_config.h>
 #include <cmd_ln.h>
+#include <byteorder.h>
 
 /* Local headers */
 #include "s2types.h"
@@ -1755,72 +1756,150 @@ uttproc_parse_ctlfile_entry(char *line,
     return 0;
 }
 
-/* Return #frames converted to feature vectors; -1 if error */
-int32
-uttproc_file2feat(const char *utt, int32 sf, int32 ef, int32 nosearch)
+/* FIXME... use I/O stuff in sphinxbase */
+static int32 adc_endian;
+
+FILE *
+adcfile_open(char const *filename)
 {
+    const char *adc_ext, *data_directory;
     FILE *uttfp;
-    char *utt_name;
+    char *inputfile;
+    int32 n, l, adc_hdr;
 
-    utt_name = build_uttid(utt);
+    adc_ext = cmd_ln_str("-cepext");
+    adc_hdr = cmd_ln_int32("-adchdr");
+    adc_endian = strcmp(cmd_ln_str("-adcendian"), "big");
+    data_directory = cmd_ln_str("-cepdir");
 
-    if (cmd_ln_boolean("-adcin")) {
-        int16 *adbuf;
-        int32 k;
-
-        inputtype = INPUT_RAW;
-        if ((uttfp = adcfile_open(utt)) == NULL)
-            return -1;
-
-        if (uttproc_nosearch(nosearch) < 0) {
-            fclose(uttfp);
-            return -1;
-        }
-
-        if (uttproc_begin_utt(utt_name) < 0) {
-            fclose(uttfp);
-            return -1;
-        }
-
-        adbuf = ckd_calloc(4096, sizeof(int16));
-        while ((k = adc_file_read(uttfp, adbuf, 4096)) >= 0) {
-            if (uttproc_rawdata(adbuf, k, 1) < 0) {
-                fclose(uttfp);
-                ckd_free(adbuf);
-                return -1;
-            }
-        }
-        fclose(uttfp);
-        ckd_free(adbuf);
-
-        if (uttproc_end_utt() < 0)
-            return -1;
-
-        return n_featfr;
+    /* Build input filename */
+    n = strlen(adc_ext);
+    l = strlen(filename);
+    if ((n <= l) && (0 == strcmp(filename + l - n, adc_ext)))
+        adc_ext = "";          /* Extension already exists */
+    if (data_directory) {
+        inputfile = string_join(data_directory, "/", filename, adc_ext, NULL);
     }
     else {
-        if (uttproc_nosearch(nosearch) < 0)
-            return -1;
-
-        if (uttproc_begin_utt(utt_name) < 0)
-            return -1;
-
-        n_cepfr = 0;
-        n_featfr = feat_s2mfc2feat(fcb, utt,
-                                   cmd_ln_str("-cepdir"),
-                                   cmd_ln_str("-cepext"),
-                                   sf, ef, feat_buf, MAX_UTT_LEN);
-
-        if (nosearch == FALSE) {
-            while (n_searchfr < n_featfr)
-                uttproc_frame();
-        }
-
-        if (uttproc_end_utt() < 0)
-            return -1;
-
-        return n_featfr;
+        inputfile = string_join(filename, adc_ext, NULL);
     }
+
+    if ((uttfp = fopen(inputfile, "rb")) == NULL) {
+        E_FATAL("fopen(%s,rb) failed\n", inputfile);
+    }
+    if (adc_hdr > 0) {
+        if (fseek(uttfp, adc_hdr, SEEK_SET) < 0) {
+            E_ERROR("fseek(%s,%d) failed\n", inputfile, adc_hdr);
+            fclose(uttfp);
+            ckd_free(inputfile);
+            return NULL;
+        }
+    }
+#ifdef WORDS_BIGENDIAN
+    if (adc_endian == 1)    /* Little endian adc file */
+        E_INFO("Byte-reversing %s\n", inputfile);
+#else
+    if (adc_endian == 0)    /* Big endian adc file */
+        E_INFO("Byte-reversing %s\n", inputfile);
+#endif
+    ckd_free(inputfile);
+
+    return uttfp;
+}
+
+int32
+adc_file_read(FILE *uttfp, int16 * buf, int32 max)
+{
+    int32 i, n;
+
+    if (uttfp == NULL)
+        return -1;
+
+    if ((n = fread(buf, sizeof(int16), max, uttfp)) <= 0)
+        return -1;
+
+    /* Byte swap if necessary */
+#ifdef WORDS_BIGENDIAN
+    if (adc_endian == 1) {      /* Little endian adc file */
+        for (i = 0; i < n; i++)
+            SWAP_INT16(&buf[i]);
+    }
+#else
+    if (adc_endian == 0) {      /* Big endian adc file */
+        for (i = 0; i < n; i++)
+            SWAP_INT16(&buf[i]);
+    }
+#endif
+
+    return n;
+}
+
+int32
+uttproc_decode_raw_file(const char *filename, 
+                        const char *uttid,
+                        int32 sf, int32 ef, int32 nosearch)
+{
+    int16 *adbuf;
+    FILE *uttfp;
+    int32 k;
+
+    inputtype = INPUT_RAW;
+    if ((uttfp = adcfile_open(filename)) == NULL)
+        return -1;
+
+    if (uttproc_nosearch(nosearch) < 0) {
+        fclose(uttfp);
+        return -1;
+    }
+
+    if (uttproc_begin_utt(uttid) < 0) {
+        fclose(uttfp);
+        return -1;
+    }
+
+    adbuf = ckd_calloc(4096, sizeof(int16));
+    while ((k = adc_file_read(uttfp, adbuf, 4096)) >= 0) {
+        if (uttproc_rawdata(adbuf, k, 1) < 0) {
+            fclose(uttfp);
+            ckd_free(adbuf);
+            return -1;
+        }
+    }
+    fclose(uttfp);
+    ckd_free(adbuf);
+
+    if (uttproc_end_utt() < 0)
+        return -1;
+
+    return n_featfr;
+}
+
+int32
+uttproc_decode_cep_file(const char *filename,
+                        const char *uttid,
+                        int32 sf, int32 ef, int32 nosearch)
+{
+    if (uttproc_nosearch(nosearch) < 0)
+        return -1;
+
+    if (uttproc_begin_utt(uttid) < 0)
+        return -1;
+
+    n_cepfr = 0;
+    n_featfr = feat_s2mfc2feat(fcb, filename,
+                               cmd_ln_str("-cepdir"),
+                               cmd_ln_str("-cepext"),
+                               sf, ef, feat_buf, MAX_UTT_LEN);
+
+    if (nosearch == FALSE) {
+        while (n_searchfr < n_featfr)
+            uttproc_frame();
+    }
+
+    if (uttproc_end_utt() < 0)
+        return -1;
+
+    return n_featfr;
 }
 
 search_hyp_t *
@@ -1829,9 +1908,15 @@ uttproc_allphone_file(char const *utt)
     int32 nfr;
     search_hyp_t *hyplist, *h;
     extern search_hyp_t * allphone_utt(int32 nfr, mfcc_t ***feat_buf);
+    char *utt_name;
 
-    if ((nfr = uttproc_file2feat(utt, 0, -1, 1)) < 0)
-        return NULL;
+    utt_name = build_uttid(utt);
+    if (cmd_ln_boolean("-adcin")) {
+        nfr = uttproc_decode_raw_file(utt, utt_name, 0, -1, 1);
+    }
+    else {
+        nfr = uttproc_decode_cep_file(utt, utt_name, 0, -1, 1);
+    }
 
     hyplist = allphone_utt(nfr, feat_buf);
 

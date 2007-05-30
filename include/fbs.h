@@ -299,6 +299,23 @@ EXPORT int32 uttproc_cepdata (float32 **cep,	/* In: cep[i] = i-th frame of cepst
  */
 EXPORT int32 uttproc_end_utt ( void );
 
+/**
+ * Decode an entire utterance worth of raw data from a file.  If you
+ * have set the -cepdir and -cepext options, then the filename will be
+ * extended using them.
+ **/
+EXPORT int32 uttproc_decode_raw_file(const char *filename, 
+				     const char *uttid,
+				     int32 sf, int32 ef, int32 nosearch);
+
+/**
+ * Decode an entire utterance worth of cepstrum data from a file.  If
+ * you have set the -cepdir and -cepext options, then the filename
+ * will be extended using them.
+ **/
+EXPORT int32 uttproc_decode_cep_file(const char *filename,
+				     const char *uttid,
+				     int32 sf, int32 ef, int32 nosearch);
 
 /*
  * Obtain recognition result for utterance after uttproc_end_utt has been called.  In
