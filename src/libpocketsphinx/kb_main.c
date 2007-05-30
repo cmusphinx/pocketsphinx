@@ -606,6 +606,7 @@ kb_close(void)
 
     dict_free(word_dict);
     word_dict = NULL;
+    dict_cleanup();
 
     lm_delete_all();
     if (lmclass_set)

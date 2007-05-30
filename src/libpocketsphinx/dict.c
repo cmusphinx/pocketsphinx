@@ -158,14 +158,14 @@ static hash_table_t *mtpHT;     /* Missing triphone hash table */
 static glist_t mtpList;
 
 static hash_table_t *lcHT;      /* Left context hash table */
-static list_t lcList;
+static list_t *lcList;
 static int32 **lcFwdTable;
 static int32 **lcBwdTable;
 static int32 **lcBwdPermTable;
 static int32 *lcBwdSizeTable;
 
 static hash_table_t *rcHT;      /* Right context hash table */
-static list_t rcList;
+static list_t *rcList;
 static int32 **rcFwdTable;
 static int32 **rcFwdPermTable;
 static int32 **rcBwdTable;
@@ -252,8 +252,10 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
         if (rcHT)
             hash_table_free(rcHT);
         rcHT = hash_table_new(j, HASH_CASE_YES);
-        lcList.size_hint = j;
-        rcList.size_hint = j;
+        lcList = new_list();
+        rcList = new_list();
+        lcList->size_hint = j;
+        rcList->size_hint = j;
     }
 
     /* Load dictionaries */
@@ -400,12 +402,12 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
         dict_load(dict, n_filename, &word_id, FALSE /* use_context */);
 
     E_INFO("LEFT CONTEXT TABLES\n");
-    buildEntryTable(&lcList, &lcFwdTable);
-    buildExitTable(&lcList, &lcBwdTable, &lcBwdPermTable, &lcBwdSizeTable);
+    buildEntryTable(lcList, &lcFwdTable);
+    buildExitTable(lcList, &lcBwdTable, &lcBwdPermTable, &lcBwdSizeTable);
 
     E_INFO("RIGHT CONTEXT TABLES\n");
-    buildEntryTable(&rcList, &rcBwdTable);
-    buildExitTable(&rcList, &rcFwdTable, &rcFwdPermTable, &rcFwdSizeTable);
+    buildEntryTable(rcList, &rcBwdTable);
+    buildExitTable(rcList, &rcFwdTable, &rcFwdPermTable, &rcFwdSizeTable);
 
     mtpList = hash_table_tolist(mtpHT, &i);
     E_INFO("%5d unique triphones were mapped to ci phones\n", i);
@@ -426,6 +428,35 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
 }
 
 void
+dict_cleanup(void)
+{
+    int32 i;
+
+    for (i = 0; i < lcList->in_use; ++i) {
+        ckd_free(lcFwdTable[i]);
+        ckd_free(lcList->list[i]);
+    }
+    ckd_free(lcFwdTable);
+    ckd_free_2d((void **)lcBwdTable);
+    ckd_free_2d((void **)lcBwdPermTable);
+    ckd_free(lcBwdSizeTable);
+    list_free(lcList);
+    ckd_free(lcList);
+
+    for (i = 0; i < rcList->in_use; ++i) {
+        ckd_free(rcBwdTable[i]);
+        ckd_free(rcList->list[i]);
+    }
+    ckd_free(rcBwdTable);
+    ckd_free_2d((void **)rcFwdTable);
+    ckd_free_2d((void **)rcFwdPermTable);
+    ckd_free(rcFwdSizeTable);
+    list_free(rcList);
+    ckd_free(rcList);
+}
+
+
+void
 dict_free(dictT * dict)
 {
     int32 i;
@@ -442,6 +473,7 @@ dict_free(dictT * dict)
         free(entry);
     }
 
+    free(dict->dict_list);
     free(dict->ci_index);
     hash_table_free(dict->dict);
     free(dict);
@@ -961,13 +993,13 @@ addToContextTable(char *diphone, hash_table_t * table, list_t * list)
 static int32
 addToLeftContextTable(char *diphone)
 {
-    return addToContextTable(diphone, lcHT, &lcList);
+    return addToContextTable(diphone, lcHT, lcList);
 }
 
 static int32
 addToRightContextTable(char *diphone)
 {
-    return addToContextTable(diphone, rcHT, &rcList);
+    return addToContextTable(diphone, rcHT, rcList);
 }
 
 static int

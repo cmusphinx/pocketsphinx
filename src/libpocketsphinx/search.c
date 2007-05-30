@@ -337,6 +337,7 @@ static int32 *LeftContextBwdSize;
 static int32 **RightContextBwd;
 
 static int32 **sc_scores;       /* SC scores for several frames in advance */
+static int32 *sc_scores_memory; /* Actually memory block for sc_scores */
 
 static int32 BestScore;         /* Best among all phones */
 static int32 LastPhoneBestScore;        /* Best among last phones only */
@@ -449,6 +450,7 @@ static int32 *topsen_score;     /* Top senone score in each frame */
 static int32 *bestpscr;         /* Best senone score within each phone in frame */
 
 static void topsen_init(void);
+static void topsen_free(void);
 static void compute_phone_active(int32 topsenscr, int32 npa_th);
 
 int32
@@ -1923,8 +1925,8 @@ search_initialize(void)
     active_word_list[1] = active_word_list[0] + NumWords + 1;
 
     bestbp_rc = ckd_calloc(NumCiPhones,
-                                                 sizeof(struct
-                                                        bestbp_rc_s));
+                           sizeof(struct
+                                  bestbp_rc_s));
 #if SEARCH_TRACE_CHAN_DETAILED
     load_trace_wordlist("_TRACEWORDS_");
 #endif
@@ -1972,6 +1974,7 @@ search_initialize(void)
 
     sc_scores =
         (int32 **) ckd_calloc_2d(topsen_window, bin_mdef_n_sen(mdef), sizeof(int32));
+    sc_scores_memory = sc_scores[0];
     senone_scores = sc_scores[0];
 
     topsen_score = ckd_calloc(MAX_FRAMES, sizeof(int32));
@@ -2000,6 +2003,36 @@ search_initialize(void)
     search_set_skip_alt_frm(cmd_ln_boolean("-skipalt"));
     search_set_fwdflat_bw(cmd_ln_float64("-fwdflatbeam"),
                           cmd_ln_float64("-fwdflatwbeam"));
+}
+
+void
+search_free(void)
+{
+    ckd_free(word_chan);
+    ckd_free(WordLatIdx);
+    ckd_free(zeroPermTab);
+    ckd_free(word_active);
+    ckd_free(BPTable);
+    ckd_free(BScoreStack);
+    ckd_free(BPTableIdx - 1);
+    ckd_free(lattice_density);
+    ckd_free(bestbp_rc);
+    ckd_free(lastphn_cand);
+    ckd_free(senone_active);
+    ckd_free(senone_active_vec);
+    ckd_free(past_senone_scores);
+    ckd_free(past_senone_active_vec);
+    ckd_free(last_ltrans);
+    ckd_free(sc_scores_memory);
+    ckd_free(sc_scores);
+    ckd_free(topsen_score);
+    ckd_free(bestpscr);
+
+    free_search_tree();
+
+    search_fwdflat_free();
+
+    topsen_free();
 }
 
 
@@ -3305,6 +3338,7 @@ dump_traceword_chan(void)
 #endif
 
 static int32 *first_phone_rchan_map;    /* map 1st (left) diphone to root-chan index */
+static ROOT_CHAN_T *all_rhmm; /* All root HMMs */
 
 /*
  * Allocate that part of the search channel tree structure that is independent of the
@@ -3315,7 +3349,6 @@ init_search_tree(dictT * dict)
 {
     int32 w, mpx, max_ph0, i, s;
     dict_entry_t *de;
-    ROOT_CHAN_T *rhmm;
 
     homophone_set =
         ckd_calloc(NumMainDictWords, sizeof(WORD_ID));
@@ -3363,26 +3396,26 @@ init_search_tree(dictT * dict)
         ckd_calloc(n_root_chan_alloc, sizeof(int32));
 
     /* Permanently allocate channels for single-phone words (1/word) */
-    rhmm = ckd_calloc(n_1ph_words, sizeof(ROOT_CHAN_T));
+    all_rhmm = ckd_calloc(n_1ph_words, sizeof(ROOT_CHAN_T));
     i = 0;
     for (w = 0; w < NumWords; w++) {
         de = word_dict->dict_list[w];
         if (de->len != 1)
             continue;
 
-        rhmm[i].diphone = de->phone_ids[0];
-        rhmm[i].ciphone = de->ci_phone_ids[0];
-        rhmm[i].mpx = de->mpx;
-        rhmm[i].active = -1;
+        all_rhmm[i].diphone = de->phone_ids[0];
+        all_rhmm[i].ciphone = de->ci_phone_ids[0];
+        all_rhmm[i].mpx = de->mpx;
+        all_rhmm[i].active = -1;
         for (s = 0; s < NODE_CNT; s++) {
-            rhmm[i].score[s] = WORST_SCORE;
-            rhmm[i].sseqid[s] = -1;
+            all_rhmm[i].score[s] = WORST_SCORE;
+            all_rhmm[i].sseqid[s] = -1;
         }
-        rhmm[i].sseqid[0] = de->phone_ids[0];
-        rhmm[i].bestscore = WORST_SCORE;
-        rhmm[i].next = NULL;
+        all_rhmm[i].sseqid[0] = de->phone_ids[0];
+        all_rhmm[i].bestscore = WORST_SCORE;
+        all_rhmm[i].next = NULL;
 
-        word_chan[w] = (CHAN_T *) & (rhmm[i]);
+        word_chan[w] = (CHAN_T *) & (all_rhmm[i]);
         i++;
     }
 
@@ -3702,6 +3735,17 @@ delete_search_subtree(CHAN_T * hmm)
 
     /* Now free hmm */
     listelem_free(hmm, sizeof(CHAN_T));
+}
+
+void
+free_search_tree(void)
+{
+    delete_search_tree();
+    ckd_free(all_rhmm);
+    ckd_free(first_phone_rchan_map);
+    ckd_free(root_chan);
+    ckd_free(homophone_set);
+    ckd_free(single_phone_wid);
 }
 
 /*
@@ -4662,6 +4706,15 @@ search_fwdflat_init(void)
            min_ef_width, max_sf_win);
 }
 
+void
+search_fwdflat_free(void)
+{
+    ckd_free(fwdflat_wordlist);
+    ckd_free(expand_word_flag);
+    ckd_free(expand_word_list);
+
+}
+
 /* ------------------ CODE FOR TOP SENONES BASED SEARCH PRUNING ----------------- */
 
 #define DUMP_PHN_TOPSEN_SCR	0
@@ -4689,6 +4742,14 @@ topsen_init(void)
         for (p = 0; p < NumCiPhones; p++)
             npa[p] = 1;
     }
+}
+
+static void
+topsen_free(void)
+{
+    ckd_free(npa);
+    ckd_free_2d((void **)npa_frm);
+    ckd_free(filler_phone);
 }
 
 static void

@@ -336,6 +336,7 @@ int32
 fbs_end(void)
 {
     uttproc_end();
+    search_free();
     kb_close();
     cmd_ln_free();
     return 0;

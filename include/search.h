@@ -108,6 +108,7 @@ typedef struct latnode_s {
 
 /* Interface */
 void search_initialize (void);
+void search_free (void);
 void search_set_beam_width (double beam);
 void search_set_new_word_beam_width (double beam);
 void search_set_lastphone_alone_beam_width (double beam);
@@ -174,6 +175,7 @@ void init_search_tree (dictT *dict);
 void create_search_tree (dictT *dict, int32 use_lm);
 void delete_search_tree (void);
 void delete_search_subtree (CHAN_T *hmm);
+void free_search_tree(void);
 
 void root_chan_v_eval (ROOT_CHAN_T *chan);
 void chan_v_eval (CHAN_T *chan);
@@ -208,6 +210,7 @@ void bestpath_search ( void );
 
 void search_fwdflat_init ( void );
 void search_fwdflat_finish ( void );
+void search_fwdflat_free ( void );
 void build_fwdflat_chan ( void );
 void destroy_fwdflat_chan ( void );
 void search_set_fwdflat_bw (double bw, double nwbw);

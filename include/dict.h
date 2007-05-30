@@ -72,6 +72,8 @@ int32 dict_read (dictT *dict,
 		 int32 use_context);
 
 void dict_free (dictT *dict);
+/* Clean up global variables that dict_free doesn't (argh) */
+void dict_cleanup(void);
 
 #define DICT_SILENCE_WORDSTR	"SIL"
 

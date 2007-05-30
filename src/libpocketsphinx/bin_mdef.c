@@ -239,6 +239,8 @@ bin_mdef_free(bin_mdef_t * m)
     if (m->alloc_mode == BIN_MDEF_IN_MEMORY)
         ckd_free(m->ciname[0]);
 
+    ckd_free(m->cd2cisen);
+    ckd_free(m->sen2cimap);
     ckd_free(m->ciname);
     ckd_free(m->sseq);
     ckd_free(m);

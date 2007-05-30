@@ -1309,6 +1309,18 @@ s2_semi_mgau_init(const char *mean_path, const char *var_path,
 void
 s2_semi_mgau_free(s2_semi_mgau_t * s)
 {
-    /* FIXME: Need to free stuff. */
+    uint32 i;
+
+    for (i = 0; i < s->n_feat; ++i) {
+        ckd_free(s->means[i]);
+        ckd_free(s->vars[i]);
+    }
+    ckd_free(s->veclen);
+    ckd_free(s->means);
+    ckd_free(s->vars);
+    ckd_free_2d((void **)s->f);
+    ckd_free_2d((void **)s->lastf);
+    ckd_free_2d((void **)s->dets);
+    ckd_free(s->score_tmp);
     ckd_free(s);
 }

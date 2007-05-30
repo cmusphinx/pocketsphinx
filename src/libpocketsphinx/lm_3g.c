@@ -1105,9 +1105,8 @@ lm_read_clm(char const *filename,
 
     lm_add(lmname, model, lw, uw, wip);
 
-    if (!do_mmap)
-        for (i = 0; i < model->ucount; i++)
-            free(word_str[i]);
+    for (i = 0; i < model->ucount; i++)
+        free(word_str[i]);
     free(word_str);
 
     return 0;
