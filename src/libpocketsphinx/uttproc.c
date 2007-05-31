@@ -1111,8 +1111,14 @@ uttproc_end_utt(void)
     if (inputtype == INPUT_RAW) {
         fe_end_utt(fe, leftover_cep, &nfr);
         if (nfr && mfcfp) {
-            fe_mfcc_to_float(fe, &leftover_cep, &leftover_cep, nfr);
+#ifdef FIXED_POINT
+			float32 *leftover_cep_fl = ckd_calloc(feat_cepsize(fcb), sizeof(float32));
+			fe_mfcc_to_float(fe, &leftover_cep, &leftover_cep_fl, nfr);
+			fwrite(leftover_cep_fl, sizeof(float32), nfr * feat_cepsize(fcb), mfcfp);
+			free(leftover_cep_fl);
+#else
             fwrite(leftover_cep, sizeof(float32), nfr * feat_cepsize(fcb), mfcfp);
+#endif
         }
 
         if (livemode) {
@@ -1130,7 +1136,7 @@ uttproc_end_utt(void)
         else {
             if (nfr) {
                 memcpy(mfcbuf[i + n_cepfr], leftover_cep,
-                       nfr * feat_cepsize(fcb) * sizeof(float));
+                       nfr * feat_cepsize(fcb) * sizeof(mfcc_t));
                 n_cepfr += nfr;
             }
         }
