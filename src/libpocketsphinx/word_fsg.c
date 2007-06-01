@@ -124,6 +124,11 @@
  * 		Started.
  */
 
+#ifdef _WIN32_WCE
+/*MC in a debug build it's implicitly included by assert.h
+     but you need this in a release build */
+#include <windows.h>
+#endif /* _WIN32_WCE */
 
 #include <stdio.h>
 #include <string.h>
