@@ -5,6 +5,7 @@ SUBDIRS = src \
 	  test
 
 EXTRA_DIST = autogen.sh							\
+	pocketsphinx.pc.in						\
 	pocketsphinx.dsw						\
 	pocketsphinx.vcw						\
 	win32/msdev/libpocketsphinx/libpocketsphinx.dsp			\
@@ -18,6 +19,10 @@ EXTRA_DIST = autogen.sh							\
 	python/setup.py							\
 	python/_pocketsphinxmodule.c					\
 	python/_pocketsphinx_test.py
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = pocketsphinx.pc
+CLEANFILES = pocketsphinx.pc
 
 test:
 	$(LIBTOOL) --mode=execute src/programs/pocketsphinx_batch \
