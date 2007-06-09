@@ -294,7 +294,7 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
             E_FATAL("Failed to add DUMMY(SIL) entry to dictionary\n");
 
         _dict_list_add(dict, entry);
-        hash_table_enter(dict->dict, entry->word, (void *) word_id);
+        hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
         entry->wid = word_id;
         entry->fwid = word_id;
         word_id++;
@@ -324,7 +324,7 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
                     _new_dict_entry(cmd_ln_str("-lmendsym"), "SILe", FALSE);
             }
             _dict_list_add(dict, entry);
-            hash_table_enter(dict->dict, entry->word, (void *) word_id);
+            hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
             entry->wid = word_id;
             entry->fwid = word_id;
             word_id++;
@@ -352,7 +352,7 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
                 if (!entry)
                     E_FATAL("Failed to add %s to dictionary\n", startsym);
                 _dict_list_add(dict, entry);
-                hash_table_enter(dict->dict, entry->word, (void *) word_id);
+                hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
                 entry->wid = word_id;
                 entry->fwid = word_id;
                 word_id++;
@@ -379,7 +379,7 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
                     E_FATAL("Failed to add <s>(SILb) to dictionary\n");
             }
             _dict_list_add(dict, entry);
-            hash_table_enter(dict->dict, entry->word, (void *) word_id);
+            hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
             entry->wid = word_id;
             entry->fwid = word_id;
             word_id++;
@@ -391,7 +391,7 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
             if (!entry)
                 E_FATAL("Failed to add <sil>(SIL) to dictionary\n");
             _dict_list_add(dict, entry);
-            hash_table_enter(dict->dict, entry->word, (void *) word_id);
+            hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
             entry->wid = word_id;
             entry->fwid = word_id;
             word_id++;
@@ -510,7 +510,7 @@ dict_load(dictT * dict, char *filename, int32 * word_id, int32 use_context)
         }
 
         _dict_list_add(dict, entry);
-        hash_table_enter(dict->dict, entry->word, (void *) *word_id);
+        hash_table_enter(dict->dict, entry->word, (void *)(long)*word_id);
         entry->wid = *word_id;
         entry->fwid = *word_id;
         entry->lm_pprob = 0;
@@ -545,13 +545,13 @@ dict_load(dictT * dict, char *filename, int32 * word_id, int32 use_context)
                 }
                 DFPRINTF((stdout,
                           "Alternate transcription for [%s](wid = %d)\n",
-                          entry->word, (int32) wid));
-                entry->wid = (int32) wid;
-                entry->fwid = (int32) wid;
+                          entry->word, (long)wid));
+                entry->wid = (long)wid;
+                entry->fwid = (long)wid;
                 {
-                    while (dict->dict_list[(int32) wid]->alt >= 0)
-                        wid = (void *) dict->dict_list[(int32) wid]->alt;
-                    dict->dict_list[(int32) wid]->alt = *word_id;
+                    while (dict->dict_list[(long)wid]->alt >= 0)
+                        wid = (void *)(long)dict->dict_list[(long)wid]->alt;
+                    dict->dict_list[(long)wid]->alt = *word_id;
                 }
             }
         }
@@ -584,7 +584,7 @@ dictStrToWordId(dictT * dict, char const *dict_str, int verbose)
         return NO_WORD;
     }
 
-    return (int32)dict_id;
+    return (int32)(long)dict_id;
 }
 
 int32
@@ -826,7 +826,7 @@ replace_dict_entry(dictT * dict,
                 return 0;
             }
             *p = '(';
-            basewid = (int32) idx;
+            basewid = (long)idx;
         }
         else
             basewid = -1;
@@ -839,7 +839,7 @@ replace_dict_entry(dictT * dict,
         E_ERROR("Unknown left diphone '%s'\n", triphoneStr);
         return (0);
     }
-    triphone_ids[i] = (int32) idx;
+    triphone_ids[i] = (long) idx;
 
     for (i = 1; i < pronoun_len - 1; i++) {
         sprintf(triphoneStr, "%s(%s,%s)", phone[i], phone[i - 1],
@@ -855,7 +855,7 @@ replace_dict_entry(dictT * dict,
         E_ERROR("Unknown right diphone '%s'\n", triphoneStr);
         return (0);
     }
-    triphone_ids[i] = (int32) idx;
+    triphone_ids[i] = (long) idx;
 
     /*
      * Set up dictionary entry.  Free the existing attributes (where applicable) and
@@ -913,7 +913,7 @@ dict_add_word(dictT * dict, char const *word, char *pron)
     if (!replace_dict_entry(dict, entry, word, pron, TRUE, new_entry))
         return -1;
 
-    hash_table_enter(dict->dict, entry->word, (void *) wid);
+    hash_table_enter(dict->dict, entry->word, (void *)(long)wid);
 
     return (wid);
 }
@@ -983,11 +983,11 @@ addToContextTable(char *diphone, hash_table_t * table, list_t * list)
 
     if (-1 == hash_table_lookup(table, diphone, &idx)) {
         cp = ckd_salloc(diphone);
-        idx = (void *) table->inuse;
+        idx = (void *)(long)table->inuse;
         list_insert(list, cp);
         hash_table_enter(table, cp, idx);
     }
-    return ((int32) idx);
+    return ((int32)(long)idx);
 }
 
 static int32
