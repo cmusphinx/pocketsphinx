@@ -1998,6 +1998,11 @@ search_initialize(void)
     static void load_trace_wordlist();
 #endif
 
+    /* Verify that the number of states is correct */
+    if (bin_mdef_n_emit_state(mdef) != HMM_LAST_STATE)
+        E_FATAL("Number of emitting states in acoustic model must be %d, is %d\n",
+                HMM_LAST_STATE, bin_mdef_n_emit_state(mdef));
+
     NumWords = word_dict->dict_entry_count;
     StartWordId = kb_get_word_id(cmd_ln_str("-lmstartsym"));
     FinishWordId = kb_get_word_id(cmd_ln_str("-lmendsym"));
