@@ -111,7 +111,7 @@ list_lookup(list_t const *list, int32 idx)
     static char const *rname = "list_lookup";
 
     if ((list == 0) || (idx >= list->size) || (idx < 0))
-        return ((caddr_t) exception(rname, "idx", ERR_ARG));
+        return ((caddr_t)(long)exception(rname, "idx", ERR_ARG));
 
     return (list->list[idx]);
 }

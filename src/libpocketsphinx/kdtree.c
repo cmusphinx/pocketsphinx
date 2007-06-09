@@ -208,7 +208,7 @@ read_kd_trees(const char *infile, kd_tree_t *** out_trees,
         E_ERROR("Unsupported kd-tree file format %s %d\n", line, version);
         return -1;
     }
-    if (read_tree_int(fp, "n_trees", out_n_trees, FALSE) < 0)
+    if (read_tree_int(fp, "n_trees", (int32 *)out_n_trees, FALSE) < 0)
         return -1;
 
     *out_trees = ckd_calloc(*out_n_trees, sizeof(kd_tree_t **));
@@ -226,15 +226,15 @@ read_kd_trees(const char *infile, kd_tree_t *** out_trees,
 
         E_INFO("Reading tree for feature %d\n", i);
         (*out_trees)[i] = tree = ckd_calloc(1, sizeof(*tree));
-        if (read_tree_int(fp, "n_density", &n_density, FALSE) < 0)
+        if (read_tree_int(fp, "n_density", (int32 *)&n_density, FALSE) < 0)
             goto error_out;
         if (n_density > 256) {
             E_ERROR("Number of densities (%d) must be <= 256!\n", n_density);
             goto error_out;
         }
-        if (read_tree_int(fp, "n_comp", &tree->n_comp, FALSE) < 0)
+        if (read_tree_int(fp, "n_comp", (int32 *)&tree->n_comp, FALSE) < 0)
             goto error_out;
-        if (read_tree_int(fp, "n_level", &tree->n_level, FALSE) < 0)
+        if (read_tree_int(fp, "n_level", (int32 *)&tree->n_level, FALSE) < 0)
             goto error_out;
         if (tree->n_level > 16) {
             E_ERROR("Depth of tree (%d) must be < 16!\n", tree->n_level);

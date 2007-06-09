@@ -158,7 +158,7 @@ best_senscr_active(void)
 static int32
 senscr_compute(mfcc_t **feat, int32 frame_idx, int32 all)
 {
-    int32 best, i;
+    int32 best;
 
     if (all) {
         if (semi_mgau)

@@ -149,7 +149,8 @@ ciphone_add(mdef_t * m, char *ci, s3pid_t p)
     assert(p < m->n_ciphone);
 
     m->ciphone[p].name = (char *) ckd_salloc(ci);       /* freed in mdef_free */
-    if (hash_table_enter(m->ciphone_ht, m->ciphone[p].name, (void *)p) != (void *)p)
+    if (hash_table_enter(m->ciphone_ht, m->ciphone[p].name,
+                         (void *)(long)p) != (void *)(long)p)
         E_FATAL("hash_table_enter(%s) failed; duplicate CIphone?\n",
                 m->ciphone[p].name);
 }
@@ -226,7 +227,7 @@ mdef_ciphone_id(mdef_t * m, char *ci)
 
     if (hash_table_lookup(m->ciphone_ht, ci, &id) < 0)
         return (BAD_S3CIPID);
-    return ((s3cipid_t) id);
+    return ((s3cipid_t)(long)id);
 }
 
 
@@ -592,9 +593,9 @@ sseq_compress(mdef_t * m)
     /* Identify unique senone-sequence IDs.  BUG: tmat-id not being considered!! */
     for (p = 0; p < m->n_phone; p++) {
         /* Add senone sequence to hash table */
-	if ((j = (int32)
+	if ((j = (long)
              hash_table_enter_bkey(h, (char *) (m->sseq[p]), k,
-				   (void *)n_sseq)) == n_sseq)
+				   (void *)(long)n_sseq)) == n_sseq)
             n_sseq++;
 
         m->phone[p].ssid = j;
@@ -608,7 +609,7 @@ sseq_compress(mdef_t * m)
 
     for (gn = g; gn; gn = gnode_next(gn)) {
         he = (hash_entry_t *) gnode_ptr(gn);
-        j = (int32)hash_entry_val(he);
+        j = (long)hash_entry_val(he);
         memcpy(sseq[j], hash_entry_key(he), k);
     }
     glist_free(g);

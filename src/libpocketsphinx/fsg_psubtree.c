@@ -475,10 +475,10 @@ fsg_psubtree_dump(fsg_pnode_t * head, FILE * fp)
         for (i = 0; i <= head->ppos; i++)
             fprintf(fp, "  ");
 
-        fprintf(fp, "%08x.@", (int32) head);    /* Pointer used as node ID */
+        fprintf(fp, "%p.@", head);    /* Pointer used as node ID */
         fprintf(fp, " %5d.SS", head->hmm.sseqid);
         fprintf(fp, " %10d.LP", head->logs2prob);
-        fprintf(fp, " %08x.SIB", (int32) head->sibling);
+        fprintf(fp, " %p.SIB", head->sibling);
         fprintf(fp, " %s.%d", phone_from_id(head->ci_ext), head->ppos);
         if ((head->ppos == 0) || head->leaf) {
             fprintf(fp, " [");
@@ -493,7 +493,7 @@ fsg_psubtree_dump(fsg_pnode_t * head, FILE * fp)
                     tl->from_state, tl->to_state, tl->logs2prob);
         }
         else {
-            fprintf(fp, " %08x.NXT", (int32) head->next.succ);
+            fprintf(fp, " %p.NXT", head->next.succ);
         }
         fprintf(fp, "\n");
     }

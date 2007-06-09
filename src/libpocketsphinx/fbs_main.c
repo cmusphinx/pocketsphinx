@@ -819,7 +819,7 @@ time_align_utterance(char const *utt,
                         }
                     }
                     E_INFO("Seg output %s\n", seg_file_basename);
-                    awriteshort(seg_file_basename, seg, seg_cnt);
+                    awriteshort(seg_file_basename, (short *)seg, seg_cnt);
                 }
             }
         }

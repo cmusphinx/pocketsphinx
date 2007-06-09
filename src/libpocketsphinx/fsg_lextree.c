@@ -135,7 +135,7 @@ fsg_lextree_dump(fsg_lextree_t * lextree, FILE * fp)
     int32 s;
 
     for (s = 0; s < word_fsg_n_state(lextree->fsg); s++) {
-        fprintf(fp, "State %5d root %08x\n", s, (int32) lextree->root[s]);
+        fprintf(fp, "State %5d root %p\n", s, lextree->root[s]);
         fsg_psubtree_dump(lextree->alloc_head[s], fp);
     }
     fflush(fp);
