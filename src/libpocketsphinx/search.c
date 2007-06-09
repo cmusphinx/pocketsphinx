@@ -482,9 +482,12 @@ static int32 n_lastphn_cand;
     (c->sseqid[ss] == -1 ? -1 : bin_mdef_sseq2sen(mdef, c->sseqid[ss], st))
 #define mpx_sseq2score(c,ss,st) \
     (c->sseqid[ss] == -1 ? WORST_SCORE : senone_scores[mpx_sseq2sen(c,ss,st)])
+#define nmpx_sseq2score(ssid,st) \
+	(senone_scores[bin_mdef_sseq2sen(mdef, ssid, st)])
 /* Node probability plus transition probability */
 #define NPA(tp,score,from,to)	((score) + tp[from][to])
 
+#if HMM_5_STATE
 void
 root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
 {
@@ -651,8 +654,6 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->bestscore = bestScore;
 }
 
-#define nmpx_sseq2score(ssid,st) \
-	(senone_scores[bin_mdef_sseq2sen(mdef, ssid, st)])
 #define CHAN_V_EVAL(chan,ssid,tp) {		\
     int32 bestScore;				\
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0;	\
@@ -759,8 +760,124 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
     chan->score[0] = s0;			\
     						\
     chan->bestscore = bestScore;		\
-}						\
+}
+#else /* ! HMM_5_STATE */
+void
+root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
+{
+    int32 bestScore;
+    int32 s3, s2, s1, s0, t1, t0;
+    int32 **tp;
 
+    tp = tmat->tp[chan->ciphone];
+    /* Don't propagate WORST_SCORE */
+    if (chan->sseqid[2] == -1)
+        s2 = WORST_SCORE;
+    else
+        s2 = chan->score[2] + mpx_sseq2score(chan, 2, 2);
+    t0 = WORST_SCORE;
+    if (s2 != WORST_SCORE)
+        t0 = NPA(tp, s2, 2, 3);
+    s3 = t0;
+    chan->path[3] = chan->path[2];
+    chan->sseqid[3] = chan->sseqid[2];
+    if (s3 > bestScore)
+        bestScore = s3;
+    chan->score[3] = s3;
+
+    if (chan->sseqid[1] == -1)
+        s1 = WORST_SCORE;
+    else
+        s1 = chan->score[1] + mpx_sseq2score(chan, 1, 1);
+    s0 = chan->score[0] + mpx_sseq2score(chan, 0, 0);
+    /* Don't propagate WORST_SCORE */
+    t0 = t1 = WORST_SCORE;
+    if (s2 != WORST_SCORE)
+        t0 = NPA(tp, s2, 2, 2);
+    if (s1 != WORST_SCORE)
+        t1 = NPA(tp, s1, 1, 2);
+    if (t0 > t1) {
+        s2 = t0;
+    }
+    else {
+        s2 = t1;
+        chan->path[2] = chan->path[1];
+        chan->sseqid[2] = chan->sseqid[1];
+    }
+    if (s2 > bestScore)
+        bestScore = s2;
+    chan->score[2] = s2;
+
+    /* Don't propagate WORST_SCORE */
+    t0 = WORST_SCORE;
+    if (s1 != WORST_SCORE)
+        t0 = NPA(tp, s1, 1, 1);
+    t1 = NPA(tp, s0, 0, 1);
+    if (t0 > t1) {
+        s1 = t0;
+    }
+    else {
+        s1 = t1;
+        chan->path[1] = chan->path[0];
+        chan->sseqid[1] = chan->sseqid[0];
+    }
+    if (s1 > bestScore)
+        bestScore = s1;
+    chan->score[1] = s1;
+
+    s0 = NPA(tp, s0, 0, 0);
+    if (s0 > bestScore)
+        bestScore = s0;
+    chan->score[0] = s0;
+
+    chan->bestscore = bestScore;
+}
+
+#define CHAN_V_EVAL(chan,ssid,tp) {                     \
+    int32 bestScore;                                    \
+    int32 s3, s2, s1, s0, t1, t0;                       \
+                                                        \
+    s2 = chan->score[2] + nmpx_sseq2score(ssid, 2);     \
+    /* Transition into non-emitting state 3 */          \
+    s3 = NPA(tp,s2,2,3);                                \
+    chan->path[3]  = chan->path[2];                     \
+    chan->score[3] = s3;                                \
+    bestScore = s3;                                     \
+                                                        \
+    s1 = chan->score[1] + nmpx_sseq2score(ssid, 1);     \
+    /* Transitions into state 2 */                      \
+    t0 = NPA(tp,s2,2,2);                                \
+    t1 = NPA(tp,s1,1,2);                                \
+    if (t0 > t1) {                                      \
+        s2 = t0;                                        \
+    } else {                                            \
+        s2 = t1;                                        \
+	chan->path[2]  = chan->path[1];                 \
+    }                                                   \
+    if (s2 > bestScore) bestScore = s2;                 \
+    chan->score[2] = s2;                                \
+                                                        \
+    s0 = chan->score[0] + nmpx_sseq2score(ssid, 0);     \
+    /* All transitions into state 1 */                  \
+    t0 = NPA(tp,s1,1,1);                                \
+    t1 = NPA(tp,s0,0,1);                                \
+    if (t0 > t1) {                                      \
+	s1 = t0;                                        \
+    } else {                                            \
+	s1 = t1;                                        \
+	chan->path[1]  = chan->path[0];                 \
+    }                                                   \
+    if (s1 > bestScore) bestScore = s1;                 \
+    chan->score[1] = s1;                                \
+                                                        \
+    /* All transitions into state 0 */                  \
+    s0 = NPA(tp,s0,0,0);                                \
+    if (s0 > bestScore) bestScore = s0;                 \
+    chan->score[0] = s0;                                \
+                                                        \
+    chan->bestscore = bestScore;                        \
+}
+#endif /* ! HMM_5_STATE */
 
 #if __CHAN_DUMP__
 static void
@@ -868,7 +985,8 @@ void
 root_chan_v_eval(ROOT_CHAN_T * chan)
 {
     int32 **tp = tmat->tp[chan->ciphone];
-    CHAN_V_EVAL(chan, chan->sseqid[0], tp);
+    int32 ssid = chan->sseqid[0];
+    CHAN_V_EVAL(chan, ssid, tp);
 }
 
 
@@ -876,7 +994,8 @@ void
 chan_v_eval(CHAN_T * chan)
 {
     int32 **tp = tmat->tp[chan->ciphone];
-    CHAN_V_EVAL(chan, chan->sseqid, tp);
+    int32 ssid = chan->sseqid;
+    CHAN_V_EVAL(chan, ssid, tp);
 }
 
 int32

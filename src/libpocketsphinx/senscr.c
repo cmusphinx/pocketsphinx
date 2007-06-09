@@ -68,6 +68,7 @@
 #include "subvq_mgau.h"
 #include "phone.h"
 #include "search.h"
+#include "search_const.h"
 #include "senscr.h"
 
 /* Global variables shared by search and GMM computations. */
@@ -225,17 +226,21 @@ rhmm_sen_active(ROOT_CHAN_T * rhmm)
             BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[1],1));
         if (rhmm->sseqid[2] != -1)
             BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[2],2));
+#if HMM_5_STATE
         if (rhmm->sseqid[3] != -1)
             BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[3],3));
         if (rhmm->sseqid[4] != -1)
             BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[4],4));
+#endif
     }
     else {
         BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],0));
         BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],1));
         BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],2));
+#if HMM_5_STATE
         BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],3));
         BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],4));
+#endif
     }
 }
 
@@ -246,8 +251,10 @@ hmm_sen_active(CHAN_T * hmm)
     BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,0));
     BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,1));
     BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,2));
+#if HMM_5_STATE
     BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,3));
     BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,4));
+#endif
 }
 
 #ifdef BITVEC_SEN_ACTIVE
