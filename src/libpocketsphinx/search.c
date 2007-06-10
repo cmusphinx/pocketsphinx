@@ -780,16 +780,13 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
         t0 = NPA(tp, s2, 2, 3);
     s3 = t0;
     chan->path[3] = chan->path[2];
-    chan->sseqid[3] = chan->sseqid[2];
-    if (s3 > bestScore)
-        bestScore = s3;
     chan->score[3] = s3;
+    bestScore = s3;
 
     if (chan->sseqid[1] == -1)
         s1 = WORST_SCORE;
     else
         s1 = chan->score[1] + mpx_sseq2score(chan, 1, 1);
-    s0 = chan->score[0] + mpx_sseq2score(chan, 0, 0);
     /* Don't propagate WORST_SCORE */
     t0 = t1 = WORST_SCORE;
     if (s2 != WORST_SCORE)
@@ -808,6 +805,7 @@ root_chan_v_mpx_eval(ROOT_CHAN_T * chan)
         bestScore = s2;
     chan->score[2] = s2;
 
+    s0 = chan->score[0] + mpx_sseq2score(chan, 0, 0);
     /* Don't propagate WORST_SCORE */
     t0 = WORST_SCORE;
     if (s1 != WORST_SCORE)
