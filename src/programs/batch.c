@@ -55,10 +55,18 @@ WinMain(HINSTANCE hInstance,
         HINSTANCE hPrevInstance,
         LPTSTR lpCmdLine, int nCmdShow)
 {
-    static char *fake_argv[] = { "pocketsphinx_batch.exe", NULL };
+    static char *fake_argv[] = { "pocketsphinx_batch.exe", NULL, NULL };
+    size_t len;
 
-    /* FIXME: This needs serious improvement. */
-    fbs_init(1, fake_argv);
+    len = wcstombs(NULL, lpCmdLine, 0) + 1;
+    if (len > 1) {
+        fake_argv[1] = calloc(len,1);
+        wcstombs(fake_argv[1], lpCmdLine, len);
+        fbs_init(2, fake_argv);
+    }
+    else {
+        fbs_init(1, fake_argv);
+    }
 
     fbs_end();
     return 0;
