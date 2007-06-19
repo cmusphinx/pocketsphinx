@@ -188,6 +188,13 @@
 #ifndef _FBS_H_
 #define _FBS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 #include "s2types.h"
 #include "cmd_ln.h"
 #include "fe.h"
@@ -195,12 +202,12 @@
 /* Win32/WinCE DLL gunk */
 #if (defined(_WIN32) || defined(_WIN32_WCE)) && !defined(LIBPOCKETSPHINX) && !defined(CYGWIN)
 #ifdef POCKETSPHINX_EXPORTS
-#define EXPORT __declspec(dllexport)
+#define POCKETSPHINX_EXPORT __declspec(dllexport)
 #else
-#define EXPORT __declspec(dllimport)
+#define POCKETSPHINX_EXPORT __declspec(dllimport)
 #endif
 #else /* !_WIN32 */
-#define EXPORT
+#define POCKETSPHINX_EXPORT
 #endif
 
 /*
@@ -241,19 +248,19 @@ typedef struct search_hyp_s {
  *
  * Return value: 0 if successful, -1 otherwise.
  */
-EXPORT int32 fbs_init (int32 argc, char **argv);	/* Arguments for initialization */
+POCKETSPHINX_EXPORT int32 fbs_init (int32 argc, char **argv);	/* Arguments for initialization */
 
 /*
  * Returns the argument definitions used in fbs_init().  This is a
  * function to make life much easier for Win32 users.
  */
-EXPORT arg_t *fbs_get_args ( void );
+POCKETSPHINX_EXPORT arg_t *fbs_get_args ( void );
 
 /*
  * Called before quitting the application to tie up loose ends in the decoder.
  * Return value: 0 if successful, -1 otherwise.
  */
-EXPORT int32 fbs_end ( void );
+POCKETSPHINX_EXPORT int32 fbs_end ( void );
 
 
 /******************************* Decoding *******************************/
@@ -266,7 +273,7 @@ EXPORT int32 fbs_end ( void );
  * instead.
  * Return value: 0 if successful, else -1.
  */
-EXPORT int32 uttproc_begin_utt (char const *uttid);
+POCKETSPHINX_EXPORT int32 uttproc_begin_utt (char const *uttid);
 
 
 /*
@@ -286,7 +293,7 @@ EXPORT int32 uttproc_begin_utt (char const *uttid);
  * Return value: #frames internally queued up and remaining to be decoded; -1 if any
  * error occurs.
  */
-EXPORT int32 uttproc_rawdata (int16 *raw,	/* In: Block of int16 samples */
+POCKETSPHINX_EXPORT int32 uttproc_rawdata (int16 *raw,	/* In: Block of int16 samples */
 			      int32 nsample,	/* In: #Samples in above block; can be 0!! */
 			      int32 block);	/* In: if !0, process all data before returning */
 
@@ -297,7 +304,7 @@ EXPORT int32 uttproc_rawdata (int16 *raw,	/* In: Block of int16 samples */
  * Return value: #frames internally queued up and remaining to be decoded; -1 if any
  * error occurs.
  */
-EXPORT int32 uttproc_cepdata (float32 **cep,	/* In: cep[i] = i-th frame of cepstrum data */
+POCKETSPHINX_EXPORT int32 uttproc_cepdata (float32 **cep,	/* In: cep[i] = i-th frame of cepstrum data */
 			      int32 nfrm,	/* In: #frames of cep data; can be 0!! */
 			      int32 block);	/* In: if !0, process all data before returning */
 
@@ -308,14 +315,14 @@ EXPORT int32 uttproc_cepdata (float32 **cep,	/* In: cep[i] = i-th frame of cepst
  * result.
  * Return value: 0 if successful, else -1.
  */
-EXPORT int32 uttproc_end_utt ( void );
+POCKETSPHINX_EXPORT int32 uttproc_end_utt ( void );
 
 /**
  * Decode an entire utterance worth of raw data from a file.  If you
  * have set the -cepdir and -cepext options, then the filename will be
  * extended using them.
  **/
-EXPORT int32 uttproc_decode_raw_file(const char *filename, 
+POCKETSPHINX_EXPORT int32 uttproc_decode_raw_file(const char *filename, 
 				     const char *uttid,
 				     int32 sf, int32 ef, int32 nosearch);
 
@@ -324,7 +331,7 @@ EXPORT int32 uttproc_decode_raw_file(const char *filename,
  * you have set the -cepdir and -cepext options, then the filename
  * will be extended using them.
  **/
-EXPORT int32 uttproc_decode_cep_file(const char *filename,
+POCKETSPHINX_EXPORT int32 uttproc_decode_cep_file(const char *filename,
 				     const char *uttid,
 				     int32 sf, int32 ef, int32 nosearch);
 
@@ -338,7 +345,7 @@ EXPORT int32 uttproc_decode_cep_file(const char *filename,
  * final result is not yet available.  If 0, frm and hyp contain the final recognition
  * result.  If there is any error, the function returns -1.
  */
-EXPORT int32 uttproc_result (int32 *frm,	/* Out: *frm = #frames in current utterance */
+POCKETSPHINX_EXPORT int32 uttproc_result (int32 *frm,	/* Out: *frm = #frames in current utterance */
 			     char **hyp,	/* Out: *hyp = recognition string; READ-ONLY.
 						   Contents clobbered by the next uttproc_result
 						   or uttproc_partial_result call */
@@ -351,7 +358,7 @@ EXPORT int32 uttproc_result (int32 *frm,	/* Out: *frm = #frames in current utter
  * the next call to any of the result functions.
  * Use uttproc_result or uttproc_result_seg to obtain the final result, but not both!
  */
-EXPORT int32 uttproc_result_seg (int32 *frm,		/* Out: *frm = #frames in utterance */
+POCKETSPHINX_EXPORT int32 uttproc_result_seg (int32 *frm,		/* Out: *frm = #frames in utterance */
 				 search_hyp_t **hyp,	/* Out: *hyp = first element in NULL
 							   terminated linked list of word
 							   segmentations */
@@ -362,7 +369,7 @@ EXPORT int32 uttproc_result_seg (int32 *frm,		/* Out: *frm = #frames in utteranc
  * be called anytime after uttproc_begin_utt and before the final uttproc_result.
  * Return value: 0 if successful, else -1.
  */
-EXPORT int32 uttproc_partial_result (int32 *frm,  /* Out: *frm = #frames processed
+POCKETSPHINX_EXPORT int32 uttproc_partial_result (int32 *frm,  /* Out: *frm = #frames processed
 						     corresponding to the partial result */
 				     char **hyp); /* Out: *hyp = partial recognition string,
 						     READ-ONLY.  Contents clobbered by the next
@@ -374,7 +381,7 @@ EXPORT int32 uttproc_partial_result (int32 *frm,  /* Out: *frm = #frames process
  * the partial recognition string.  The list of word segmentations is READ-ONLY, and
  * clobbered by the next call to any of the result functions.
  */
-EXPORT int32 uttproc_partial_result_seg (int32 *frm,
+POCKETSPHINX_EXPORT int32 uttproc_partial_result_seg (int32 *frm,
 					 search_hyp_t **hyp);	/* Out: *hyp = first element in
 								   NULL terminated linked list
 								   of word segmentations */
@@ -385,7 +392,7 @@ EXPORT int32 uttproc_partial_result_seg (int32 *frm,
  * uttproc_end_utt.
  * Return value: 0 if successful, else -1.
  */
-EXPORT int32 uttproc_abort_utt ( void );
+POCKETSPHINX_EXPORT int32 uttproc_abort_utt ( void );
 
 
 /*
@@ -399,8 +406,8 @@ EXPORT int32 uttproc_abort_utt ( void );
  * This operation cannot be performed after uttproc_end_utt.
  * Return value: 0 if successful, else -1.
  */
-EXPORT int32 uttproc_stop_utt ( void );
-EXPORT int32 uttproc_restart_utt ( void );
+POCKETSPHINX_EXPORT int32 uttproc_stop_utt ( void );
+POCKETSPHINX_EXPORT int32 uttproc_restart_utt ( void );
 
 
 /*
@@ -414,14 +421,14 @@ EXPORT int32 uttproc_restart_utt ( void );
  *     On return, alt_out[i] = i-th hypothesis generated.
  * Return value: #alternative hypotheses returned; -1 if error.
  */
-EXPORT int32 search_get_alt (int32 n,			/* In: No. of alternatives to produce */
+POCKETSPHINX_EXPORT int32 search_get_alt (int32 n,			/* In: No. of alternatives to produce */
 			     int32 sf, int32 ef,	/* In: Start/End frame */
 			     int32 w1, int32 w2,	/* In: context words */
 			     search_hyp_t ***alt_out);	/* Out: array of alternatives */
 
 
 /* Should be called before search_get_alt */
-EXPORT void search_save_lattice ( void );
+POCKETSPHINX_EXPORT void search_save_lattice ( void );
 
 
 /*
@@ -431,11 +438,11 @@ EXPORT void search_save_lattice ( void );
  * segments; it may be NULL.  It is a READ-ONLY list.  It will be clobbered by the next
  * call to this function.
  */
-EXPORT search_hyp_t *uttproc_allphone_file (char const *file);	/* Without filename extension */
+POCKETSPHINX_EXPORT search_hyp_t *uttproc_allphone_file (char const *file);	/* Without filename extension */
 
 
 /* Force alignment API */
-EXPORT void time_align_utterance (char const *utt,
+POCKETSPHINX_EXPORT void time_align_utterance (char const *utt,
 				  FILE *out_sent_fp,
 				  char const *left_word,
 				  int32 begin_frame,
@@ -458,7 +465,7 @@ void run_time_align_ctl_file (char const *utt_ctl_file_name,
  * undefined at this point; use uttproc_set_lm(lmname) immediately afterwards.
  * Return value: 0 if successful, else -1.
  */
-EXPORT int32 lm_read (char const *lmfile,	/* In: LM file name */
+POCKETSPHINX_EXPORT int32 lm_read (char const *lmfile,	/* In: LM file name */
 		      char const *lmname,	/* In: LM name associated with this model */
 		      double lw,		/* In: Language weight; typically 6.5-9.5 */
 		      double uw,		/* In: Unigram weight; typically 0.5 */
@@ -470,7 +477,7 @@ EXPORT int32 lm_read (char const *lmfile,	/* In: LM file name */
  * point.  Use uttproc_set_lm(...) immediately afterwards.
  * Return value: 0 if successful, else -1.
  */
-EXPORT int32 lm_delete (char const *lmname);
+POCKETSPHINX_EXPORT int32 lm_delete (char const *lmname);
 
 
 /*
@@ -479,7 +486,7 @@ EXPORT int32 lm_delete (char const *lmname);
  * sets the decoder in n-gram decoding mode.
  * Return value: 0 if successful, else -1.
  */
-EXPORT int32 uttproc_set_lm (char const *lmname);
+POCKETSPHINX_EXPORT int32 uttproc_set_lm (char const *lmname);
 
 
 /*
@@ -487,14 +494,14 @@ EXPORT int32 uttproc_set_lm (char const *lmname);
  * a new unigram).
  * Return value: 0 if successful, else -1.
  */
-EXPORT int32 uttproc_lmupdate (char const *lmname);
+POCKETSPHINX_EXPORT int32 uttproc_lmupdate (char const *lmname);
 
 
 /*
  * Set the N-gram LM start symbol to the given value.
  * Explicitly reqeusted by some projects.  (Okay, but other stuff uses it anyway.)
  */
-EXPORT int32 uttproc_set_startword (char const *startword);
+POCKETSPHINX_EXPORT int32 uttproc_set_startword (char const *startword);
 
 
 /*
@@ -505,7 +512,7 @@ EXPORT int32 uttproc_set_startword (char const *startword);
  * wd2 can be NULL to clear any history information.
  * Return value: 0 if successful, else -1.
  */
-EXPORT int32 uttproc_set_context (char const *wd1, /* In: First word of history (possibly NULL) */
+POCKETSPHINX_EXPORT int32 uttproc_set_context (char const *wd1, /* In: First word of history (possibly NULL) */
 				  char const *wd2);/* In: Last (most recent) history (maybe NULL) */
 
 
@@ -550,7 +557,7 @@ typedef struct s2_fsg_s {
  * if any error.  This pointer is invalid after the FSG is deleted
  * (via uttproc_del_fsg()).
  */
-EXPORT char *uttproc_load_fsgfile (char *fsgfile);
+POCKETSPHINX_EXPORT char *uttproc_load_fsgfile (char *fsgfile);
 
 
 /*
@@ -563,7 +570,7 @@ EXPORT char *uttproc_load_fsgfile (char *fsgfile);
  * Return value: 1 if successfully loaded, 0 if any error.
  * (This function specifically requested by some applications.)
  */
-EXPORT int32 uttproc_load_fsg (s2_fsg_t *fsg,
+POCKETSPHINX_EXPORT int32 uttproc_load_fsg (s2_fsg_t *fsg,
 			       int32 use_altpron,	/* Whether to automatically
 							   insert all the alternative
 							   pronunciations for each
@@ -586,7 +593,7 @@ EXPORT int32 uttproc_load_fsg (s2_fsg_t *fsg,
  * mode.
  * Return value: 0 if successful, else -1.
  */
-EXPORT int32 uttproc_set_fsg (char *fsgname);
+POCKETSPHINX_EXPORT int32 uttproc_set_fsg (char *fsgname);
 
 
 /*
@@ -595,13 +602,13 @@ EXPORT int32 uttproc_set_fsg (char *fsgname);
  * performed in the middle of an utterance.
  * Return value: 0 if successful, else -1.
  */
-EXPORT int32 uttproc_del_fsg (char *fsgname);
+POCKETSPHINX_EXPORT int32 uttproc_del_fsg (char *fsgname);
 
 
 /*
  * Whether the current utterance was (is) decoded in FSG search mode.
  */
-EXPORT boolean uttproc_fsg_search_mode ( void );
+POCKETSPHINX_EXPORT boolean uttproc_fsg_search_mode ( void );
 
 
 /*
@@ -610,8 +617,8 @@ EXPORT boolean uttproc_fsg_search_mode ( void );
  * if the recognition hypothesis returned by the decoder terminated in the final
  * state or not.
  */
-EXPORT int32 uttproc_get_fsg_start_state ( void );
-EXPORT int32 uttproc_get_fsg_final_state ( void );
+POCKETSPHINX_EXPORT int32 uttproc_get_fsg_start_state ( void );
+POCKETSPHINX_EXPORT int32 uttproc_get_fsg_final_state ( void );
 
 
 /*
@@ -620,8 +627,8 @@ EXPORT int32 uttproc_get_fsg_final_state ( void );
  * in the midst of one.  Return the previous start (or final) state for this
  * FSG if successful.  Return -1 if any error.
  */
-EXPORT int32 uttproc_set_fsg_start_state (int32 state);
-EXPORT int32 uttproc_set_fsg_final_state (int32 state);
+POCKETSPHINX_EXPORT int32 uttproc_set_fsg_start_state (int32 state);
+POCKETSPHINX_EXPORT int32 uttproc_set_fsg_final_state (int32 state);
 
 
 /************************** Logging related **************************/
@@ -632,25 +639,29 @@ EXPORT int32 uttproc_set_fsg_final_state (int32 state);
  * the utterance id associated with the current utterance (see uttproc_begin_utt).
  * Return value: 0 if successful, else -1.
  */
-EXPORT int32 uttproc_set_rawlogdir (char const *dir);
-EXPORT int32 uttproc_set_mfclogdir (char const *dir);
+POCKETSPHINX_EXPORT int32 uttproc_set_rawlogdir (char const *dir);
+POCKETSPHINX_EXPORT int32 uttproc_set_mfclogdir (char const *dir);
 
 
 /* Logfile can be changed in between utterances.  Return value: 0 if ok, else -1 */
-EXPORT int32 uttproc_set_logfile (char const *file);
+POCKETSPHINX_EXPORT int32 uttproc_set_logfile (char const *file);
 
 
 /*
  * Obtain the uttid for the most recent utterance (in progress or just finished)
  * Return value: pointer to READ-ONLY string that is the utterance id.
  */
-EXPORT char const *uttproc_get_uttid ( void );
+POCKETSPHINX_EXPORT char const *uttproc_get_uttid ( void );
 
 
 /*
  * For automatically generated uttid's (see uttproc_begin_utt), also use the prefix
  * given below.  (So the uttid is formatted "%s%08d", prefix, sequence_no.)
  */
-EXPORT int32 uttproc_set_auto_uttid_prefix (char const *prefix);
+POCKETSPHINX_EXPORT int32 uttproc_set_auto_uttid_prefix (char const *prefix);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
