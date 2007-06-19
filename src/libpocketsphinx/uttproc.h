@@ -38,7 +38,6 @@
 #ifndef __UTTPROC_H__
 #define __UTTPROC_H__
 
-#include <time.h>
 #include <feat.h>
 #include <prim_type.h>
 
@@ -73,7 +72,13 @@ int32 adc_file_read(FILE *uttfp, int16 * buf, int32 max);
 /*------------------------------------------------------------------------*
  * Compute an elapsed time from two timeval structs
  */
+#if defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
+#include <windows.h>
+double win32_cputime(FILETIME * st, FILETIME * et);
+#else
+#include <time.h>
 double MakeSeconds(struct timeval const *s, struct timeval const *e);
+#endif
 
 
 #endif /* __UTTPROC_H__ */

@@ -128,12 +128,13 @@
 /*MC in a debug build it's implicitly included by assert.h
      but you need this in a release build */
 #include <windows.h>
+#else
+#include <time.h>
 #endif /* _WIN32_WCE */
 
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <time.h>
 #include <err.h>
 #include <ckd_alloc.h>
 #include <cmd_ln.h>
