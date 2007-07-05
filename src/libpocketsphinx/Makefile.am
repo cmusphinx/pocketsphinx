@@ -18,7 +18,6 @@ libpocketsphinx_la_SOURCES = \
 	fsg_search.c				\
 	kb_main.c				\
 	kdtree.c				\
-	lab.c					\
 	list.c					\
 	lm_3g.c					\
 	lm.c					\
@@ -36,7 +35,6 @@ libpocketsphinx_la_SOURCES = \
 	strcasecmp.c				\
 	subvq_mgau.c				\
 	tmat.c					\
-	time_align.c				\
 	uttproc.c				\
 	vector.c				\
 	word_fsg.c

@@ -441,20 +441,8 @@ POCKETSPHINX_EXPORT void search_save_lattice ( void );
 POCKETSPHINX_EXPORT search_hyp_t *uttproc_allphone_file (char const *file);	/* Without filename extension */
 
 
-/* Force alignment API */
-POCKETSPHINX_EXPORT void time_align_utterance (char const *utt,
-				  FILE *out_sent_fp,
-				  char const *left_word,
-				  int32 begin_frame,
-				  char *pe_words, /* FIXME: should be const */
-				  int32 end_frame,
-				  char const *right_word);
-
 /* Other batch mode processing API */
 void run_ctl_file (char const *ctl_file_name);
-void run_time_align_ctl_file (char const *utt_ctl_file_name,
-			      char const *pe_ctl_file_name,
-			      char const *out_sent_file_name);
 
 
 /************************* N-gram LM related *************************/

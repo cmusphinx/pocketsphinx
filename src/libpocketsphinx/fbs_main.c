@@ -207,7 +207,6 @@
 #include "uttproc.h"
 #include "allphone.h"
 #include "byteorder.h"
-#include "time_align.h"
 #include "search.h"
 #include "posixwin32.h"
 
@@ -229,15 +228,10 @@ static const arg_t fbs_args_def[] = {
     fsg_cmdln_options(),
     beam_cmdln_options(),
     search_cmdln_options(),
-    time_align_cmdln_options(),
     allphone_cmdln_options(),
     CMDLN_EMPTY_OPTION
 };
 
-/* Some static variables we still need here. */
-static float TotalElapsedTime;
-static float TotalCPUTime;
-static float TotalSpeechTime;
 /* FIXME FIXME FIXME fixed size buffer */
 static char utt_name[512];
 
@@ -318,13 +312,7 @@ fbs_init(int32 argc, char **argv)
      */
 
     if (cmd_ln_str("-ctl")) {
-        if (!cmd_ln_str("-tactl"))
-            run_ctl_file(cmd_ln_str("-ctl"));
-        else
-            run_time_align_ctl_file(cmd_ln_str("-ctl"),
-                                    cmd_ln_str("-tactl"),
-                                    cmd_ln_str("-outsent"));
-
+        run_ctl_file(cmd_ln_str("-ctl"));
         uttproc_end();
         exit(0);
     }
@@ -475,109 +463,6 @@ run_ctl_file(char const *ctl_file_name)
         fclose(ctl_fs);
 }
 
-void
-run_time_align_ctl_file(char const *utt_ctl_file_name,
-                        char const *pe_ctl_file_name,
-                        char const *out_sent_file_name)
-/*-------------------------------------------------------------------------*
- * Sequence through a control file containing a list of utterance
- * NB. This is a one shot routine.
- */
-{
-    FILE *utt_ctl_fs;
-    FILE *pe_ctl_fs;
-    FILE *out_sent_fs;
-    char Utt[1024];
-    char time_align_spec[1024];
-    int32 line_no = 0;
-    char left_word[256];
-    char right_word[256];
-    char pe_words[1024];
-    int32 begin_frame;
-    int32 end_frame;
-    int32 n_featfr;
-    int32 align_all = 0;
-    int32 ctl_offset, ctl_count, ctl_incr;
-
-    time_align_init();
-    time_align_set_beam_width(1e-9f); /* FIXME: !!!??? */
-    E_INFO("****** USING WIDE BEAM ****** (1e-9)\n");
-
-    utt_ctl_fs = myfopen(utt_ctl_file_name, "r");
-    pe_ctl_fs = myfopen(pe_ctl_file_name, "r");
-
-    if (out_sent_file_name) {
-        out_sent_fs = myfopen(out_sent_file_name, "w");
-    }
-    else
-        out_sent_fs = NULL;
-
-    ctl_offset = cmd_ln_int32("-ctloffset");
-    ctl_count = cmd_ln_int32("-ctlcount");
-    ctl_incr = cmd_ln_int32("-ctlincr");
-    while (fscanf(utt_ctl_fs, "%s\n", Utt) != EOF) {
-        fgets(time_align_spec, 1023, pe_ctl_fs);
-
-        if (ctl_offset) {
-            ctl_offset--;
-            continue;
-        }
-        if (ctl_count == 0)
-            continue;
-        if ((line_no++ % ctl_incr) != 0)
-            continue;
-
-        if (!strncmp
-            (time_align_spec, "*align_all*", strlen("*align_all*"))) {
-            E_INFO("Aligning whole utterances\n");
-            align_all = 1;
-            fgets(time_align_spec, 1023, pe_ctl_fs);
-        }
-
-        if (align_all) {
-            strcpy(left_word, "<s>");
-            strcpy(right_word, "</s>");
-            begin_frame = end_frame = NO_FRAME;
-            time_align_spec[strlen(time_align_spec) - 1] = '\0';
-            strcpy(pe_words, time_align_spec);
-
-            E_INFO("Utt %s\n", Utt);
-            fflush(stdout);
-        }
-        else {
-            sscanf(time_align_spec,
-                   "%s %d %d %s %[^\n]",
-                   left_word, &begin_frame, &end_frame, right_word,
-                   pe_words);
-            E_INFO("\nDoing  '%s %d) %s (%d %s' in utterance %s\n",
-                   left_word, begin_frame, pe_words, end_frame, right_word,
-                   Utt);
-        }
-
-        build_uttid(Utt);
-        if (cmd_ln_boolean("-adcin")) {
-            n_featfr = uttproc_decode_raw_file(Utt, utt_name, 0, -1, 1);
-        }
-        else {
-            n_featfr = uttproc_decode_cep_file(Utt, utt_name, 0, -1, 1);
-        }
-        if (n_featfr < 0)
-            E_ERROR("Failed to load %s\n", Utt);
-        else {
-            time_align_utterance(Utt,
-                                 out_sent_fs,
-                                 left_word, begin_frame,
-                                 pe_words, end_frame, right_word);
-        }
-
-        --ctl_count;
-    }
-
-    fclose(utt_ctl_fs);
-    fclose(pe_ctl_fs);
-}
-
-
 /*
  * Decode utterance.
  */
@@ -724,146 +609,4 @@ allphone_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
 
     uttproc_get_featbuf(&feat_buf);
     return allphone_utt(nfr, feat_buf);
-}
-
-/*
- * Run time align on a semi-continuous utterance.
- */
-void
-time_align_utterance(char const *utt,
-                     FILE * out_sent_fp,
-                     char const *left_word, int32 begin_frame,
-                     /* FIXME: Gets modified in time_align.c - watch out! */
-                     char *pe_words,
-                     int32 end_frame, char const *right_word)
-{
-    int32 n_frames;
-    mfcc_t ***feat;
-#if !(defined(_WIN32) || defined(GNUWINCE))
-    struct rusage start, stop;
-    struct timeval e_start, e_stop;
-#endif
-
-    if ((begin_frame != NO_FRAME) || (end_frame != NO_FRAME)) {
-        E_ERROR("Partial alignment not implemented\n");
-        return;
-    }
-
-    if ((n_frames = uttproc_get_featbuf(&feat)) < 0) {
-        E_ERROR("#input speech frames = %d\n", n_frames);
-        return;
-    }
-
-    time_align_set_input(feat, n_frames);
-
-#if !(defined(_WIN32) || defined(GNUWINCE))
-#ifndef _HPUX_SOURCE
-    getrusage(RUSAGE_SELF, &start);
-#endif                          /* _HPUX_SOURCE */
-    gettimeofday(&e_start, 0);
-#endif                          /* _WIN32 */
-
-    if (time_align_word_sequence(utt, left_word, pe_words, right_word) ==
-        0) {
-        char *data_directory = cmd_ln_str("-cepdir");
-        char *seg_data_directory = cmd_ln_str("-segdir");
-        char *seg_file_ext = cmd_ln_str("-segext");
-
-        if (seg_file_ext) {
-            unsigned short *seg;
-            int seg_cnt;
-            char seg_file_basename[MAXPATHLEN + 1];
-
-            switch (time_align_seg_output(&seg, &seg_cnt)) {
-            case NO_SEGMENTATION:
-                E_ERROR("NO SEGMENTATION for %s\n", utt);
-                break;
-
-            case NO_MEMORY:
-                E_ERROR("NO MEMORY for %s\n", utt);
-                break;
-
-            default:
-                {
-                    /* write the data in the same location as the cep file */
-                    if (data_directory && (utt[0] != '/')) {
-                        if (seg_data_directory) {
-                            sprintf(seg_file_basename, "%s/%s.%s",
-                                    seg_data_directory, utt, seg_file_ext);
-                        }
-                        else {
-                            sprintf(seg_file_basename, "%s/%s.%s",
-                                    data_directory, utt, seg_file_ext);
-                        }
-                    }
-                    else {
-                        if (seg_data_directory) {
-                            char *spkr_dir;
-                            char basename[MAXPATHLEN];
-                            char *sl;
-
-                            strcpy(basename, utt);
-
-                            sl = strrchr(basename, '/');
-                            *sl = '\0';
-                            sl = strrchr(basename, '/');
-                            spkr_dir = sl + 1;
-
-                            sprintf(seg_file_basename, "%s/%s/%s.%s",
-                                    seg_data_directory, spkr_dir, utt_name,
-                                    seg_file_ext);
-                        }
-                        else {
-                            sprintf(seg_file_basename, "%s.%s", utt,
-                                    seg_file_ext);
-                        }
-                    }
-                    E_INFO("Seg output %s\n", seg_file_basename);
-                    awriteshort(seg_file_basename, (short *)seg, seg_cnt);
-                }
-            }
-        }
-
-        if (out_sent_fp) {
-            char const *best_word_str = time_align_best_word_string();
-
-            if (best_word_str) {
-                fprintf(out_sent_fp, "%s (%s)\n", best_word_str, utt_name);
-            }
-            else {
-                fprintf(out_sent_fp, "NO BEST WORD SEQUENCE for %s\n",
-                        utt);
-            }
-        }
-    }
-    else {
-        E_ERROR("No alignment for %s\n", utt_name);
-    }
-
-#if !(defined(_WIN32) || defined(GNUWINCE))
-#ifndef _HPUX_SOURCE
-    getrusage(RUSAGE_SELF, &stop);
-#endif                          /* _HPUX_SOURCE */
-    gettimeofday(&e_stop, 0);
-
-    E_INFO(" %5.2f SoS", n_frames * 0.01);
-    E_INFO(", %6.2f sec elapsed", MakeSeconds(&e_start, &e_stop));
-    if (n_frames > 0)
-        E_INFO(", %5.2f xRT",
-               MakeSeconds(&e_start, &e_stop) / (n_frames * 0.01));
-
-#ifndef _HPUX_SOURCE
-    E_INFO(", %6.2f sec CPU",
-           MakeSeconds(&start.ru_utime, &stop.ru_utime));
-    if (n_frames > 0)
-        E_INFO(", %5.2f xRT",
-               MakeSeconds(&start.ru_utime,
-                           &stop.ru_utime) / (n_frames * 0.01));
-#endif                          /* _HPUX_SOURCE */
-    E_INFO("\n");
-
-    TotalCPUTime += MakeSeconds(&start.ru_utime, &stop.ru_utime);
-    TotalElapsedTime += MakeSeconds(&e_start, &e_stop);
-    TotalSpeechTime += n_frames * 0.01;
-#endif                          /* _WIN32 */
 }

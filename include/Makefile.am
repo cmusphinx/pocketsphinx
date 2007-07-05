@@ -31,7 +31,6 @@ pkginclude_HEADERS = \
 	senscr.h				\
 	strfuncs.h				\
 	subvq_mgau.h				\
-	time_align.h				\
 	tmat.h					\
 	vector.h				\
 	word_fsg.h

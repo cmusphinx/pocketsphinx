@@ -119,18 +119,9 @@ allphone_start_utt(void)
     for (p = 0; p < n_ciphone; p++)
         ci_chan[p].active = -1;
 
-#if 0                           /* note that SILb isn't in the current 4k models --kal */
-    p = phone_to_id("SILb", TRUE);
-    if (p < 0) {
-        p = phone_to_id("SIL", TRUE);
-        if (p < 0)
-            E_FATAL("SILb/SIL not found\n");
-    }
-#else
     p = phone_to_id("SIL", TRUE);
     if (p < 0)
-        E_FATAL("SILb/SIL not found\n");
-#endif
+        E_FATAL("SIL/SIL not found\n");
 
     ci_chan[p].score[0] = 0;
     for (s = 1; s < HMM_LAST_STATE; s++)

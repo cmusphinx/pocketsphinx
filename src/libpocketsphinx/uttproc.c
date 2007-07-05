@@ -1302,12 +1302,6 @@ uttproc_result(int32 * fr, char **hyp, int32 block)
 }
 
 void
-uttproc_align(char *sent)
-{
-    time_align_utterance("alignment", NULL, "<s>", -1, sent, -1, "</s>");
-}
-
-void
 utt_seghyp_free(search_hyp_t * h)
 {
     search_hyp_t *tmp;
