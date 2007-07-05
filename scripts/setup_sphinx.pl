@@ -65,7 +65,7 @@ $SPHINX_DECODER_DIR = $0;
 $SPHINX_DECODER_DIR =~ s/^(.*)[\/\\]scripts[\\\/].*$/$1/i;
 
 # Default location for sphinx_train.cfg
-$SPHINX_TRAIN_CFG = "./etc/sphinx_train.cfg";
+$SPHINX_TRAIN_CFG = '$DEC_CFG_BASE_DIR/etc/sphinx_train.cfg';
 
 # Set some defaults
 my $language_model;
@@ -88,7 +88,7 @@ my $result = GetOptions('help|h' => \$help,
 			'wbeam=f' => \$word_beam,
 			'align=s' => \$align);
 
-if (($result == 0) or (defined($help)) or (!defined($DBNAME)) or (!defined $language_model)) {
+if (($result == 0) or (defined($help)) or (!defined($DBNAME))) {
   pod2usage( -verbose => 1 );
   exit(-1);
 }
@@ -125,8 +125,7 @@ mkdir "logdir" unless -d logdir;
 my $INSTALL = "";
 if (open (SYSDESC, "< $SPHINX_DECODER_DIR/config.status")) {
   while (<SYSDESC>) {
-    next unless /\@prefix\@,[^\/]+([^,]+),/;
-    print "$1\n";
+    next unless m/\@prefix\@,([^,]+),/;
     $INSTALL = $1;
     last;
   }
@@ -141,6 +140,7 @@ if (open (SYSDESC, "< $SPHINX_DECODER_DIR/config.status")) {
 # any existing bin.platform
 
 my @dir_candidates = ();
+push @dir_candidates, "$SPHINX_DECODER_DIR/src/programs";
 push @dir_candidates, "$SPHINX_DECODER_DIR/bin/Release";
 push @dir_candidates, "$SPHINX_DECODER_DIR/bin/Debug";
 push @dir_candidates, "$SPHINX_DECODER_DIR/bin";
@@ -196,11 +196,15 @@ chmod 0755, @dirlist;
 
 # Finally, we generate the config file for this specific task
 print "Generating pocketsphinx specific scripts and config file\n";
-open (CFGIN, "$script_in_dir/pocketsphinx.cfg") or 
-  die "Can't open $script_in_dir/pocketsphinx.cfg\n";
+# Look for a template in the target directory
+unless(open (CFGIN, "<etc/pocketsphinx.template")) {
+    open (CFGIN, "<$script_in_dir/pocketsphinx.cfg") or
+	die "Can't open etc/pocketsphinx.template or $script_in_dir/pocketsphinx.cfg\n";
+}
 open (CFGOUT, ">etc/sphinx_decode.cfg") or die "Can't open etc/sphinx_decode.cfg\n";
 
 $align = 'builtin' unless (-e $align);
+$language_model = "$DBNAME.lm.DMP" unless defined($language_model);
 
 while (<CFGIN>) {
   chomp;

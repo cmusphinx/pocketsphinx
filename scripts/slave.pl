@@ -37,20 +37,12 @@
 # ====================================================================
 
 use File::Copy;
+use File::Basename;
+use File::Spec::Functions;
 
-if (lc($ARGV[0]) eq '-cfg') {
-    $cfg_file = $ARGV[1];
-} else {
-    $cfg_file = "etc/sphinx_decode.cfg";
-}
-
-if (! -s "$cfg_file") {
-    print ("unable to find default configuration file, use -cfg file.cfg or create etc/sphinx_decode.cfg for default\n");
-    exit -3;
-}
-
-require $cfg_file;
-
+use lib catdir(dirname($0), updir(), 'lib');
+use SphinxTrain::Config cfg => 'etc/sphinx_decode.cfg';
+use SphinxTrain::Util;
 
 #************************************************************************
 # this script launches the decoder scripts.
@@ -60,31 +52,37 @@ $| = 1; # Turn on autoflushing
 
 die "USAGE: $0" if ($#ARGV > 1);
 
-&DEC_Log ("MODULE: DECODE Decoding using models previously trained\n");
+Log ("MODULE: DECODE Decoding using models previously trained\n");
 
-for (my $i = 1; $i <= $DEC_CFG_NPART; $i++) {
-  system("perl $DEC_CFG_SCRIPT_DIR/decode/decode.pl $i $DEC_CFG_NPART");
+my @jobs;
+for (my $i = 1; $i <= $ST::DEC_CFG_NPART; $i++) {
+    push @jobs, LaunchScript('decode', ["psdecode.pl",  $i, $ST::DEC_CFG_NPART]);
+}
+foreach my $job (@jobs) {
+    WaitForScript($job);
 }
 
-&compute_acc();
+
+
+compute_acc();
 
 sub compute_acc {
-  $result_dir = "$DEC_CFG_BASE_DIR/result";
-  $match_file = "$result_dir/${DEC_CFG_EXPTNAME}.match";
+  $result_dir = "$ST::DEC_CFG_BASE_DIR/result";
+  $match_file = "$result_dir/${ST::DEC_CFG_EXPTNAME}.match";
 
-  &concat_hyp($match_file);
-  $tmp_hyp = &condition_text($match_file);
-  $tmp_ref = &condition_text($DEC_CFG_TRANSCRIPTFILE);
-  &align_hyp($tmp_ref, $tmp_hyp);
+  concat_hyp($match_file);
+  $tmp_hyp = condition_text($match_file);
+  $tmp_ref = condition_text($ST::DEC_CFG_TRANSCRIPTFILE);
+  align_hyp($tmp_ref, $tmp_hyp);
   unlink $tmp_ref, $tmp_hyp;
 }
 
 sub concat_hyp {
   my $match_file = shift;
   open (MATCH, ">$match_file") or die "Can't open file $match_file\n";
-  for (my $i = 1; $i <= $DEC_CFG_NPART; $i++) {
+  for (my $i = 1; $i <= $ST::DEC_CFG_NPART; $i++) {
 
-    $hypfile = "$result_dir/${DEC_CFG_EXPTNAME}-${i}-${DEC_CFG_NPART}.match";
+    $hypfile = "$result_dir/${ST::DEC_CFG_EXPTNAME}-${i}-${ST::DEC_CFG_NPART}.match";
 
     open (HYP, "< $hypfile") or ((warn "Can't open $hypfile\n" and next));
     while (<HYP>) {
@@ -103,7 +101,7 @@ sub concat_hyp {
 sub condition_text {
   my $fn = shift;
   my $tmpfn = $fn.$$;
-  my $fileid = $DEC_CFG_LISTOFFILES;
+  my $fileid = $ST::DEC_CFG_LISTOFFILES;
 
   open (IN, "< $fn") or die "Can't open $fn for reading\n";
   open (OUT, "> $tmpfn") or die "Can't open $tmpfn for writing\n";
@@ -123,8 +121,10 @@ sub condition_text {
 # Removing some unwanted strings
     $text =~ s/_/ /g;
     $text =~ s/\./ /g;
-    $text =~ s/\+\+UM\+\+/ /g;
-    $text =~ s/\+\+UH\+\+/ /g;
+    $text =~ s/\+\+[^\s\+]+\+\+/ /g;
+    $text =~ s/\+\+[^\s\+]+\+\+/ /g;
+    $text =~ s/<\/?s>/ /gi;
+    $text =~ s/<sil>/ /gi;
     $text =~ s/\(\d+\)\b/ /g;
     my $file = <LIST>;
     @path = split /[\\\/]/, $file;
@@ -145,7 +145,7 @@ sub condition_text {
 sub align_hyp {
   my $ref = shift;
   my $hyp = shift;
-  my $align = $DEC_CFG_ALIGN;
+  my $align = $ST::DEC_CFG_ALIGN;
   my $rline;
   my $hline;
   my $result;
@@ -155,7 +155,7 @@ sub align_hyp {
     my $error = 0;
     open (REF, "<$ref") or die "Can't open $ref\n";
     open (HYP, "<$hyp") or die "Can't open $hyp\n";
-    my $outfile = "$DEC_CFG_BASE_DIR/result/${DEC_CFG_EXPTNAME}.align";
+    my $outfile = "$ST::DEC_CFG_BASE_DIR/result/${ST::DEC_CFG_EXPTNAME}.align";
     open (OUT, "> $outfile") or die "Can't open $outfile for writing\n";
     while (my $refline = <REF>) {
       $count++;
@@ -184,55 +184,38 @@ sub align_hyp {
     } else {
       $pct = 0;
     }
-    &DEC_Log("SENTENCE ERROR: " . (sprintf "%.3f%", $pct) . 
+    Log("SENTENCE ERROR: " . (sprintf "%.3f%", $pct) . 
 	    (sprintf " (%d/%d)\n", $error, $count));
     print OUT "\n\nSENTENCE ERROR: " . (sprintf "%.3f%", $pct) . 
 	    (sprintf " (%d/%d)\n", $error, $count);
     close(OUT);
   } elsif ($align =~ m/sclite/i) {
-    my $outfile = "$DEC_CFG_BASE_DIR/result/${DEC_CFG_EXPTNAME}.align";
-    my ($word_total, $word_err, $sent_total, $sent_err);
+    my $outfile = "$ST::DEC_CFG_BASE_DIR/result/${ST::DEC_CFG_EXPTNAME}.align";
+    my ($wer, $ser, $word_total, $sent_total);
     open (OUT, "> $outfile") or die "Can't open $outfile for writing\n";
     if (open (PIPE, "\"$align\" " .
 	  "-i rm " .
-	  "-o rsum pralign dtl stdout " .
+	  "-o sum pralign dtl stdout " .
 	  "-f 0 " .
 	  "-r \"$ref\" " .
 	  "-h \"$hyp\" 2>&1 |")) {
       while (<PIPE>) {
 	print OUT "$_";
-	if (m/\|\s*Sum\s*\|/) {
-	  my @fields = split /\|/;
-	  ($sent_total, $word_total) = ($fields[2] =~ m/(\S+)/g);
-	  my @detail = split /\s+/, $fields[3];
-	  $word_err = $detail[$#detail - 1];
-	  $sent_err = $detail[$#detail];
+	if (m/\|\s*Sum\/Avg\s*\|\s*(\d+)\s*(\d+).*\s+(\d+\.\d+)\s+(\d+\.\d+)\s*\|/) {
+	    $sent_total = $1;
+	    $word_total = $2;
+	    $wer = $3;
+	    $ser = $4;
 	}
       }
     }
     close(OUT);
     close(PIPE);
-    my $ser;
-    if ($sent_total > 0) {
-      $ser = ($sent_err/$sent_total * 100);
-    } else {
-      $ser = 0;
-    }
-    my $wer;
-    if ($word_total > 0) {
-      $wer = ($word_err/$word_total * 100);
-    } else {
-      $wer = 0;
-    }
-    copy "$DEC_CFG_GIF_DIR/green-ball.gif", "$DEC_CFG_BASE_DIR/.align.state.gif";
-    &DEC_HTML_Print ("\t" . &DEC_ImgSrc("$DEC_CFG_BASE_DIR/.align.state.gif") . " ");   
-    &DEC_Log("SENTENCE ERROR: " . (sprintf "%.3f%", $ser) . 
-	    (sprintf " (%d/%d)", $sent_err, $sent_total) .
-	    "   WORD ERROR RATE: " . (sprintf "%.3f%", $wer) . 
-	    (sprintf " (%d/%d) ", $word_err, $word_total));
-    &DEC_HTML_Print (&DEC_FormatURL("$outfile", "Log File"));
-    &DEC_Log("\n");
+    Log(sprintf("SENTENCE ERROR: %.1f%% (%d/%d)   WORD ERROR RATE: %.1f%% (%d/%d)",
+		$ser, $sent_total * $ser / 100, $sent_total,
+		$wer, $word_total * $wer / 100, $word_total), 'result');
+    HTML_Print("<p class='result'>", FormatURL("$outfile", "Log File"), "</p>");
   } else {
-    &DEC_Log("Accuracy not computed, please visually compare the decoder output with the reference file");
+    Log("Accuracy not computed, please visually compare the decoder output with the reference file");
   }
 }
