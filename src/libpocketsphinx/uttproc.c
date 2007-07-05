@@ -1787,7 +1787,7 @@ adcfile_open(char const *filename)
 
     adc_ext = cmd_ln_str("-cepext");
     adc_hdr = cmd_ln_int32("-adchdr");
-    adc_endian = strcmp(cmd_ln_str("-adcendian"), "big");
+    adc_endian = strcmp(cmd_ln_str("-input_endian"), "big");
     data_directory = cmd_ln_str("-cepdir");
 
     /* Build input filename */
