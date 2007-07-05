@@ -1021,8 +1021,8 @@ fsg_search_utt_end(fsg_search_t * search)
     char file[4096];
 
     /* Write history table if needed */
-    if (cmd_ln_str("-dumplatdir")) {
-        sprintf(file, "%s/%s.hist", cmd_ln_str("-dumplatdir"),
+    if (cmd_ln_str("-outlatdir")) {
+        sprintf(file, "%s/%s.hist", cmd_ln_str("-outlatdir"),
                 uttproc_get_uttid());
         if ((latfp = fopen(file, "w")) == NULL)
             E_ERROR("fopen(%s,w) failed\n", file);

@@ -659,18 +659,6 @@ write_results(char const *hyp, int32 aborted)
         fprintf(matchsegfp, " %d\n", searchFrame());
         fflush(matchsegfp);
     }
-
-#if 0
-    {
-        char const *dumplatdir;
-        if ((dumplatdir = cmd_ln_str("-dumplatdir")) != NULL) {
-            char fplatfile[1024];
-
-            sprintf(fplatfile, "%s/%s.fplat", dumplatdir, uttid);
-            search_dump_lattice_ascii(fplatfile);
-        }
-    }
-#endif                          /* 0 */
 }
 
 static void

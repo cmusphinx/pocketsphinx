@@ -166,7 +166,7 @@
       ARG_INT32,								\
       "0",									\
       "Number of N-best hypotheses to write to -nbestdir" },			\
-{ "-dumplatdir",								\
+{ "-outlatdir",									\
       ARG_STRING,								\
       NULL,									\
       "Directory for dumping lattices" }
