@@ -88,7 +88,6 @@
 #include <stdio.h>
 
 #include "sphinx_types.h"
-#include "msd.h"
 
 /** \file tmat.h
  *  \brief Transition matrix data structure.

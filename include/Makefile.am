@@ -10,6 +10,7 @@ pkginclude_HEADERS = \
 	fsg_lextree.h				\
 	fsg_psubtree.h				\
 	fsg_search.h				\
+	hmm.h                                   \
 	kb.h					\
 	kdtree.h				\
 	list.h					\
@@ -19,7 +20,6 @@ pkginclude_HEADERS = \
 	log.h					\
 	magic.h					\
 	mdef.h					\
-	msd.h					\
 	phone.h					\
 	posixwin32.h				\
 	s2_semi_mgau.h				\

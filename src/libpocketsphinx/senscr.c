@@ -217,44 +217,51 @@ sen_active_clear(void)
     n_senone_active = 0;
 }
 
+#define MPX_BITVEC_SET(h,i)                                                     \
+            if ((h)->s.mpx_ssid[i] != -1)                                       \
+                BITVEC_SET(senone_active_vec,                                   \
+                           bin_mdef_sseq2sen(mdef, (h)->s.mpx_ssid[i], (i)));
+#define NONMPX_BITVEC_SET(h,i)                                          \
+                BITVEC_SET(senone_active_vec,                           \
+                           bin_mdef_sseq2sen(mdef, (h)->s.ssid, (i)));
+
 void
-rhmm_sen_active(ROOT_CHAN_T * rhmm)
+hmm_sen_active(hmm_t * hmm)
 {
-    if (rhmm->mpx) {
-        BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],0));
-        if (rhmm->sseqid[1] != -1)
-            BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[1],1));
-        if (rhmm->sseqid[2] != -1)
-            BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[2],2));
-#if HMM_5_STATE
-        if (rhmm->sseqid[3] != -1)
-            BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[3],3));
-        if (rhmm->sseqid[4] != -1)
-            BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[4],4));
-#endif
+    int i;
+
+    if (hmm->ctx->mpx) {
+        switch (hmm_n_emit_state(hmm)) {
+        case 5:
+            MPX_BITVEC_SET(hmm, 4);
+            MPX_BITVEC_SET(hmm, 3);
+        case 3:
+            MPX_BITVEC_SET(hmm, 2);
+            MPX_BITVEC_SET(hmm, 1);
+            MPX_BITVEC_SET(hmm, 0);
+            break;
+        default:
+            for (i = 0; i < hmm_n_emit_state(hmm); ++i) {
+                MPX_BITVEC_SET(hmm, i);
+            }
+        }
     }
     else {
-        BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],0));
-        BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],1));
-        BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],2));
-#if HMM_5_STATE
-        BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],3));
-        BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,rhmm->sseqid[0],4));
-#endif
+        switch (hmm_n_emit_state(hmm)) {
+        case 5:
+            NONMPX_BITVEC_SET(hmm, 4);
+            NONMPX_BITVEC_SET(hmm, 3);
+        case 3:
+            NONMPX_BITVEC_SET(hmm, 2);
+            NONMPX_BITVEC_SET(hmm, 1);
+            NONMPX_BITVEC_SET(hmm, 0);
+            break;
+        default:
+            for (i = 0; i < hmm_n_emit_state(hmm); ++i) {
+                NONMPX_BITVEC_SET(hmm, i);
+            }
+        }
     }
-}
-
-
-void
-hmm_sen_active(CHAN_T * hmm)
-{
-    BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,0));
-    BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,1));
-    BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,2));
-#if HMM_5_STATE
-    BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,3));
-    BITVEC_SET(senone_active_vec, bin_mdef_sseq2sen(mdef,hmm->sseqid,4));
-#endif
 }
 
 #ifdef BITVEC_SEN_ACTIVE

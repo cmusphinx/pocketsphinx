@@ -60,7 +60,6 @@
 #include "lm.h"
 #include "cache_lm.h"
 #include "search_const.h"
-#include "msd.h"
 #include "dict.h"
 #include "kb.h"
 #include "err.h"

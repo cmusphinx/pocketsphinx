@@ -58,6 +58,7 @@
 #include <cmd_ln.h>
 
 #include "search.h"
+#include "search_const.h"
 #include "phone.h"
 #include "fsg_search.h"
 #include "senscr.h"
@@ -280,14 +281,14 @@ fsg_search_sen_active(fsg_search_t * search)
 {
     gnode_t *gn;
     fsg_pnode_t *pnode;
-    CHAN_T *hmm;
+    hmm_t *hmm;
 
     sen_active_clear();
 
     for (gn = search->pnode_active; gn; gn = gnode_next(gn)) {
         pnode = (fsg_pnode_t *) gnode_ptr(gn);
         hmm = fsg_pnode_hmmptr(pnode);
-        assert(hmm->active == search->frame);
+        assert(hmm_frame(hmm) == search->frame);
 
         hmm_sen_active(hmm);
     }
@@ -307,11 +308,11 @@ fsg_search_hmm_eval(fsg_search_t * search)
 {
     gnode_t *gn;
     fsg_pnode_t *pnode;
-    CHAN_T *hmm;
+    hmm_t *hmm;
     int32 bestscore;
     int32 n, maxhmmpf;
 
-    bestscore = (int32) 0x80000000;
+    bestscore = WORST_SCORE;
 
     if (!search->pnode_active) {
         E_ERROR("Frame %d: No active HMM!!\n", search->frame);
@@ -319,26 +320,26 @@ fsg_search_hmm_eval(fsg_search_t * search)
     }
 
     for (n = 0, gn = search->pnode_active; gn; gn = gnode_next(gn), n++) {
+        int32 score;
+
         pnode = (fsg_pnode_t *) gnode_ptr(gn);
         hmm = fsg_pnode_hmmptr(pnode);
-        assert(hmm->active == search->frame);
+        assert(hmm_frame(hmm) == search->frame);
 
 #if __FSG_DBG__
         E_INFO("pnode(%08x) active @frm %5d\n", (int32) pnode,
                search->frame);
-#if __FSG_DBG_CHAN__
-        chan_dump(hmm, search->frame, stdout);
+        hmm_dump(hmm, stdout);
 #endif
-#endif
-        chan_v_eval(hmm);
+        score = hmm_vit_eval(hmm);
 #if __FSG_DBG_CHAN__
         E_INFO("pnode(%08x) after eval @frm %5d\n",
                (int32) pnode, search->frame);
-        chan_dump(hmm, search->frame, stdout);
+        hmm_dump(hmm, stdout);
 #endif
 
-        if (bestscore < hmm->bestscore)
-            bestscore = hmm->bestscore;
+        if (bestscore < score)
+            bestscore = score;
     }
 
 #if __FSG_DBG__
@@ -382,7 +383,7 @@ static void
 fsg_search_pnode_trans(fsg_search_t * search, fsg_pnode_t * pnode)
 {
     fsg_pnode_t *child;
-    CHAN_T *hmm;
+    hmm_t *hmm;
     int32 newscore, thresh, nf;
 
     assert(pnode);
@@ -395,20 +396,18 @@ fsg_search_pnode_trans(fsg_search_t * search, fsg_pnode_t * pnode)
 
     for (child = fsg_pnode_succ(pnode);
          child; child = fsg_pnode_sibling(child)) {
-        newscore = hmm->score[HMM_LAST_STATE] + child->logs2prob;
+        newscore = hmm_out_score(hmm) + child->logs2prob;
 
-        if ((newscore >= thresh) && (newscore > child->hmm.score[0])) {
+        if ((newscore >= thresh) && (newscore > hmm_in_score(&child->hmm))) {
             /* Incoming score > pruning threshold and > target's existing score */
-            if (child->hmm.active < nf) {
+            if (hmm_frame(&child->hmm) < nf) {
                 /* Child node not yet activated; do so */
                 search->pnode_active_next =
                     glist_add_ptr(search->pnode_active_next,
                                   (void *) child);
-                child->hmm.active = nf;
             }
 
-            child->hmm.score[0] = newscore;
-            child->hmm.path[0] = hmm->path[HMM_LAST_STATE];
+            hmm_enter(&child->hmm, newscore, hmm_out_history(hmm), nf);
         }
     }
 }
@@ -417,7 +416,7 @@ fsg_search_pnode_trans(fsg_search_t * search, fsg_pnode_t * pnode)
 static void
 fsg_search_pnode_exit(fsg_search_t * search, fsg_pnode_t * pnode)
 {
-    CHAN_T *hmm;
+    hmm_t *hmm;
     word_fsglink_t *fl;
     int32 wid, endwid;
     fsg_pnode_ctxt_t ctxt;
@@ -437,7 +436,7 @@ fsg_search_pnode_exit(fsg_search_t * search, fsg_pnode_t * pnode)
 #if __FSG_DBG__
     E_INFO("[%5d] Exit(%08x) %10d(score) %5d(pred)\n",
            search->frame, (int32) pnode,
-           hmm->score[HMM_LAST_STATE], hmm->path[HMM_LAST_STATE]);
+           hmm_out_score(hmm), hmm_out_history(hmm));
 #endif
 
     /*
@@ -453,8 +452,8 @@ fsg_search_pnode_exit(fsg_search_t * search, fsg_pnode_t * pnode)
         fsg_history_entry_add(search->history,
                               fl,
                               search->frame,
-                              hmm->score[HMM_LAST_STATE],
-                              hmm->path[HMM_LAST_STATE],
+                              hmm_out_score(hmm),
+                              hmm_out_history(hmm),
                               pnode->ci_ext, ctxt);
 
     }
@@ -463,8 +462,8 @@ fsg_search_pnode_exit(fsg_search_t * search, fsg_pnode_t * pnode)
         fsg_history_entry_add(search->history,
                               fl,
                               search->frame,
-                              hmm->score[HMM_LAST_STATE],
-                              hmm->path[HMM_LAST_STATE],
+                              hmm_out_score(hmm),
+                              hmm_out_history(hmm),
                               pnode->ci_ext, pnode->ctxt);
     }
 }
@@ -481,7 +480,7 @@ fsg_search_hmm_prune_prop(fsg_search_t * search)
 {
     gnode_t *gn;
     fsg_pnode_t *pnode;
-    CHAN_T *hmm;
+    hmm_t *hmm;
     int32 thresh, word_thresh, phone_thresh;
 
     assert(search->pnode_active_next == NULL);
@@ -494,26 +493,26 @@ fsg_search_hmm_prune_prop(fsg_search_t * search)
         pnode = (fsg_pnode_t *) gnode_ptr(gn);
         hmm = fsg_pnode_hmmptr(pnode);
 
-        if (hmm->bestscore >= thresh) {
+        if (hmm_bestscore(hmm) >= thresh) {
             /* Keep this HMM active in the next frame */
-            if (hmm->active == search->frame) {
-                hmm->active = search->frame + 1;
+            if (hmm_frame(hmm) == search->frame) {
+                hmm_frame(hmm) = search->frame + 1;
                 search->pnode_active_next =
                     glist_add_ptr(search->pnode_active_next,
                                   (void *) pnode);
             }
             else {
-                assert(hmm->active == search->frame + 1);
+                assert(hmm_frame(hmm) == search->frame + 1);
             }
 
             if (!fsg_pnode_leaf(pnode)) {
-                if (hmm->score[HMM_LAST_STATE] >= phone_thresh) {
+                if (hmm_out_score(hmm) >= phone_thresh) {
                     /* Transition out of this phone into its children */
                     fsg_search_pnode_trans(search, pnode);
                 }
             }
             else {
-                if (hmm->score[HMM_LAST_STATE] >= word_thresh) {
+                if (hmm_out_score(hmm) >= word_thresh) {
                     /* Transition out of leaf node into destination FSG state */
                     fsg_search_pnode_exit(search, pnode);
                 }
@@ -625,14 +624,12 @@ fsg_search_word_trans(fsg_search_t * search)
                 newscore = score + root->logs2prob;
 
                 if ((newscore >= thresh)
-                    && (newscore > root->hmm.score[0])) {
-                    if (root->hmm.active < nf) {
+                    && (newscore > hmm_in_score(&root->hmm))) {
+                    if (hmm_frame(&root->hmm) < nf) {
                         /* Newly activated node; add to active list */
                         search->pnode_active_next =
                             glist_add_ptr(search->pnode_active_next,
                                           (void *) root);
-                        root->hmm.active = nf;
-
 #if __FSG_DBG__
                         E_INFO
                             ("[%5d] WordTrans bpidx[%d] -> pnode[%08x] (activated)\n",
@@ -647,8 +644,7 @@ fsg_search_word_trans(fsg_search_t * search)
 #endif
                     }
 
-                    root->hmm.score[0] = newscore;
-                    root->hmm.path[0] = bpidx;
+                    hmm_enter(&root->hmm, newscore, bpidx, nf);
                 }
             }
         }
@@ -661,7 +657,7 @@ fsg_search_frame_fwd(fsg_search_t * search)
 {
     gnode_t *gn;
     fsg_pnode_t *pnode;
-    CHAN_T *hmm;
+    hmm_t *hmm;
 
     search->bpidx_start = fsg_history_n_entries(search->history);
 
@@ -699,12 +695,12 @@ fsg_search_frame_fwd(fsg_search_t * search)
         pnode = (fsg_pnode_t *) gnode_ptr(gn);
         hmm = fsg_pnode_hmmptr(pnode);
 
-        if (hmm->active == search->frame) {
+        if (hmm_frame(hmm) == search->frame) {
             /* This HMM NOT activated for the next frame; reset it */
             fsg_psubtree_pnode_deactivate(pnode);
         }
         else {
-            assert(hmm->active == (search->frame + 1));
+            assert(hmm_frame(hmm) == (search->frame + 1));
         }
     }
 
@@ -1014,7 +1010,6 @@ fsg_search_utt_end(fsg_search_t * search)
 {
     gnode_t *gn;
     fsg_pnode_t *pnode;
-    CHAN_T *hmm;
     int32 n_hist, nfr;
     char *result;
     FILE *latfp;
@@ -1056,14 +1051,10 @@ fsg_search_utt_end(fsg_search_t * search)
     /* Deactivate all nodes in the current and next-frame active lists */
     for (gn = search->pnode_active; gn; gn = gnode_next(gn)) {
         pnode = (fsg_pnode_t *) gnode_ptr(gn);
-        hmm = fsg_pnode_hmmptr(pnode);
-
         fsg_psubtree_pnode_deactivate(pnode);
     }
     for (gn = search->pnode_active_next; gn; gn = gnode_next(gn)) {
         pnode = (fsg_pnode_t *) gnode_ptr(gn);
-        hmm = fsg_pnode_hmmptr(pnode);
-
         fsg_psubtree_pnode_deactivate(pnode);
     }
 

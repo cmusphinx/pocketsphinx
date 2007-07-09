@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
  * reserved.
@@ -38,11 +39,55 @@
 #define _S2_SEARCH_H_	1
 
 
-#include <basic_types.h>
-#include <fbs.h>
-#include <dict.h>
-#include <msd.h>
+#include "basic_types.h"
+#include "fbs.h"
+#include "dict.h"
+#include "hmm.h"
 
+#define NODE_CNT	(HMM_LAST_STATE+1)	/* No. of nodes in Sphinx HMM */
+
+/*
+ * Lexical tree node data type.  Not the first HMM for words, which multiplex HMMs
+ * based on different left contexts.  This structure is used both in the dynamic
+ * HMM tree structure and in the per-word last-phone right context fanout.
+ */
+typedef struct chan_s
+{
+    hmm_t hmm;                  /* Basic HMM structure */
+
+    struct chan_s *next;	/* first descendant of this channel; or, in the
+				   case of the last phone of a word, the next
+				   alternative right context channel */
+    struct chan_s *alt;		/* sibling; i.e., next descendant of parent HMM */
+    int32    ciphone;		/* ciphone for this node */
+    union {
+	WORD_ID penult_phn_wid;	/* list of words whose last phone follows this one;
+				   this field indicates the first of the list; the
+				   rest must be built up in a separate array.  Used
+				   only within HMM tree.  -1 if none */
+	int32 rc_id;		/* right-context id for last phone of words */
+    } info;
+} chan_t;
+
+/*
+ * Lexical tree node data type for the first phone (root) of each dynamic HMM tree
+ * structure.  Each state may have a different parent static HMM.  Most fields are
+ * similar to those in chan_t.
+ */
+typedef struct root_chan_s
+{
+    hmm_t hmm;                  /* Basic HMM structure */
+
+    chan_t *next;		/* first descendant of this channel */
+    WORD_ID  penult_phn_wid;
+    WORD_ID  this_phn_wid;	/* list of words consisting of this single phone;
+				   actually the first of the list, like penult_phn_wid;
+				   -1 if none */
+    int32    diphone;		/* first diphone of this node; all words rooted at this
+				   node begin with this diphone */
+    int32    ciphone;		/* first ciphone of this node; all words rooted at this
+				   node begin with this ciphone */
+} root_chan_t;
 
 /*
  * Back pointer table (forward pass lattice; actually a tree)
@@ -174,11 +219,9 @@ void dump_traceword_chan (void);
 void init_search_tree (dictT *dict);
 void create_search_tree (dictT *dict, int32 use_lm);
 void delete_search_tree (void);
-void delete_search_subtree (CHAN_T *hmm);
+void delete_search_subtree (chan_t *hmm);
 void free_search_tree(void);
 
-void root_chan_v_eval (ROOT_CHAN_T *chan);
-void chan_v_eval (CHAN_T *chan);
 int32 eval_root_chan (void);
 int32 eval_nonroot_chan (void);
 int32 eval_word_chan (void);
@@ -240,7 +283,7 @@ int32 bptbl2latdensity (int32 bptbl_sz, int32 *density);
 int32 lattice_rescore ( lw_t lwf );
 
 /* Make the given channel inactive and set state scores to WORST_SCORE */
-void search_chan_deactivate(CHAN_T *);
+void search_chan_deactivate(chan_t *);
 
 /* Note the top senone score for the given frame */
 void search_set_topsen_score (int32 frm, int32 score);

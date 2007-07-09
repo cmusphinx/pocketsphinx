@@ -133,7 +133,6 @@
 #include "pio.h"
 #include "log.h"
 #include "dict.h"
-#include "msd.h"
 #include "lm.h"
 #include "lmclass.h"
 #include "lm_3g.h"

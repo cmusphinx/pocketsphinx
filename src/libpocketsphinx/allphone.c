@@ -79,7 +79,6 @@
 #include "log.h"
 #include "s2_semi_mgau.h"
 #include "senscr.h"
-#include "msd.h"
 #include "dict.h"
 #include "lmclass.h"
 #include "lm_3g.h"
@@ -88,7 +87,8 @@
 #include "search.h"
 #include "ckd_alloc.h"
 
-static CHAN_T *ci_chan;         /* hmm model instances for each CI phone */
+static hmm_context_t *ci_ctx;   /* HMM context for all phones */
+static chan_t *ci_chan;         /* hmm model instances for each CI phone */
 static int32 n_ciphone;
 static int32 *renorm_scr;
 
@@ -114,20 +114,18 @@ extern int32 n_senone_active;
 static void
 allphone_start_utt(void)
 {
-    int32 s, p;
+    int32 p;
 
     for (p = 0; p < n_ciphone; p++)
-        ci_chan[p].active = -1;
+        hmm_clear(&ci_chan[p].hmm);
 
     p = phone_to_id("SIL", TRUE);
     if (p < 0)
         E_FATAL("SIL/SIL not found\n");
 
-    ci_chan[p].score[0] = 0;
-    for (s = 1; s < HMM_LAST_STATE; s++)
-        ci_chan[p].score[s] = WORST_SCORE;
-    ci_chan[p].path[0] = -1;
-    ci_chan[p].active = 0;
+    /* Activate starting silence phone */
+    hmm_in_score(&ci_chan[p].hmm) = 0;
+    hmm_frame(&ci_chan[p].hmm) = 0;
 
     n_bp = 0;
 }
@@ -139,8 +137,9 @@ allphone_senone_active(void)
 
     n = 0;
     for (p = 0; p < n_ciphone; p++) {
-        for (s = 0; s < NODE_CNT-1; ++s) {
-            senone_active[n++] = bin_mdef_sseq2sen(mdef, ci_chan[p].sseqid, s);
+        for (s = 0; s < hmm_n_emit_state(&ci_chan[p].hmm); ++s) {
+            senone_active[n++] = bin_mdef_sseq2sen(mdef,
+                                                   hmm_ssid(&ci_chan[p].hmm, s), s);
         }
     }
     n_senone_active = n;
@@ -153,13 +152,14 @@ allphone_eval_ci_chan(int32 f)
 
     bestscr = WORST_SCORE;
     for (p = 0; p < n_ciphone; p++) {
-        if (ci_chan[p].active != f)
+        int32 score;
+
+        if (hmm_frame(&ci_chan[p].hmm) != f)
             continue;
 
-        chan_v_eval(ci_chan + p);
-
-        if (bestscr < ci_chan[p].bestscore)
-            bestscr = ci_chan[p].bestscore;
+        score = hmm_vit_eval(&ci_chan[p].hmm);
+        if (bestscr < score)
+            bestscr = score;
     }
 
     return (bestscr);
@@ -176,8 +176,8 @@ allphone_bp_entry(int32 f, int32 p)
 
     allphone_bp[n_bp].f = f;
     allphone_bp[n_bp].p = p;
-    allphone_bp[n_bp].scr = ci_chan[p].score[HMM_LAST_STATE];
-    allphone_bp[n_bp].bp = ci_chan[p].path[HMM_LAST_STATE];
+    allphone_bp[n_bp].scr = hmm_out_score(&ci_chan[p].hmm);
+    allphone_bp[n_bp].bp = hmm_out_history(&ci_chan[p].hmm);
     n_bp++;
 }
 
@@ -190,13 +190,13 @@ allphone_chan_prune(int32 f, int32 bestscr)
     exit_thresh = bestscr + allphone_exitbw;
 
     for (p = 0; p < n_ciphone; p++) {
-        if (ci_chan[p].active != f)
+        if (hmm_frame(&ci_chan[p].hmm) != f)
             continue;
 
-        if (ci_chan[p].bestscore > thresh) {
-            ci_chan[p].active = f + 1;
+        if (hmm_bestscore(&ci_chan[p].hmm) > thresh) {
+            hmm_frame(&ci_chan[p].hmm) = f + 1;
 
-            if (ci_chan[p].score[HMM_LAST_STATE] > exit_thresh)
+            if (hmm_out_score(&ci_chan[p].hmm) > exit_thresh)
                 allphone_bp_entry(f, p);
         }
     }
@@ -205,22 +205,18 @@ allphone_chan_prune(int32 f, int32 bestscr)
 static void
 allphone_chan_trans(int32 f, int32 bp)
 {
-    int32 p, scr, s, predp;
+    int32 p, scr, predp;
 
     predp = allphone_bp[bp].p;
 
     for (p = 0; p < n_ciphone; p++) {
         scr = allphone_bp[bp].scr + phonetp[predp][p];
 
-        if ((ci_chan[p].active < f) || (ci_chan[p].score[0] < scr)) {
-            ci_chan[p].score[0] = scr;
-
-            if (ci_chan[p].active < f)
-                for (s = 1; s < HMM_LAST_STATE; s++)
-                    ci_chan[p].score[s] = WORST_SCORE;
-
-            ci_chan[p].path[0] = bp;
-            ci_chan[p].active = f + 1;
+        if (hmm_frame(&ci_chan[p].hmm) < f
+            || hmm_in_score(&ci_chan[p].hmm) < scr) {
+            if (ci_chan[p].hmm.frame < f)
+                hmm_clear(&ci_chan[p].hmm);
+            hmm_enter(&ci_chan[p].hmm, scr, bp, f);
         }
     }
 }
@@ -228,13 +224,11 @@ allphone_chan_trans(int32 f, int32 bp)
 static void
 allphone_renorm(int32 f, int32 bestscr)
 {
-    int32 p, s;
+    int32 p;
 
     for (p = 0; p < n_ciphone; p++) {
-        if (ci_chan[p].active == f) {
-            for (s = 0; s < HMM_LAST_STATE; s++)
-                if (ci_chan[p].score[s] > WORST_SCORE)
-                    ci_chan[p].score[s] -= bestscr;
+        if (ci_chan[p].hmm.frame == f) {
+            hmm_normalize(&ci_chan[p].hmm, bestscr);
         }
     }
 
@@ -416,10 +410,14 @@ allphone_init()
 
     n_ciphone = phoneCiCount();
 
-    ci_chan = ckd_calloc(n_ciphone, sizeof(CHAN_T));
+    ci_chan = ckd_calloc(n_ciphone, sizeof(chan_t));
+    ci_ctx = hmm_context_init(bin_mdef_n_emit_state(mdef), FALSE,
+                              tmat->tp, senone_scores,
+                              mdef->sseq);
     for (i = 0; i < n_ciphone; i++) {
-        ci_chan[i].sseqid = bin_mdef_pid2ssid(mdef, i);
-        ci_chan[i].ciphone = i;
+        hmm_init(ci_ctx, &ci_chan[i].hmm,
+                 bin_mdef_pid2ssid(mdef, i),
+                 bin_mdef_pid2tmatid(mdef, i));
     }
 
     renorm_scr = ckd_calloc(MAX_FRAMES, sizeof(int32));

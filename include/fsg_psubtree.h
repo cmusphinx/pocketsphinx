@@ -87,12 +87,11 @@
 #define __S2_FSG_PSUBTREE_H__
 
 
-#include <stdio.h>
-#include <string.h>
-#include <s2types.h>
-#include <word_fsg.h>
-#include <msd.h>
-
+#include "stdio.h"
+#include "string.h"
+#include "s2types.h"
+#include "word_fsg.h"
+#include "hmm.h"
 
 /*
  * **HACK-ALERT**!!  Compile-time constant determining the size of the
@@ -174,7 +173,8 @@ typedef struct fsg_pnode_s {
   boolean leaf;		/* Whether this is a leaf node */
   
   /* HMM-state-level stuff here */
-  CHAN_T hmm;
+  hmm_context_t *ctx;
+  hmm_t hmm;
 } fsg_pnode_t;
 
 /* Access macros */

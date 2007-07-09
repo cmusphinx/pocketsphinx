@@ -100,7 +100,9 @@
 #include "dict.h"
 #include "phone.h"
 #include "log.h"
+#include "search_const.h"
 #include "search.h"
+#include "senscr.h"
 
 void
 fsg_pnode_add_all_ctxt(fsg_pnode_ctxt_t * ctxt)
@@ -142,6 +144,7 @@ fsg_pnode_ctxt_sub(fsg_pnode_ctxt_t * src, fsg_pnode_ctxt_t * sub)
  */
 static fsg_pnode_t *
 psubtree_add_trans(fsg_pnode_t * root,
+                   hmm_context_t *ctx,
                    word_fsglink_t * fsglink,
                    int8 * lclist, int8 * rclist, fsg_pnode_t ** alloc_head)
 {
@@ -221,7 +224,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                 for (gn = lc_pnodelist; gn; gn = gnode_next(gn)) {
                     pnode = (fsg_pnode_t *) gnode_ptr(gn);
 
-                    if (pnode->hmm.sseqid == ssid) {
+                    if (pnode->hmm.s.ssid == ssid) {
                         /* already allocated; share it for this context phone */
                         fsg_pnode_add_ctxt(pnode, lc);
                         break;
@@ -231,7 +234,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                 if (!gn) {      /* ssid not already allocated */
                     pnode =
                         (fsg_pnode_t *) ckd_calloc(1, sizeof(fsg_pnode_t));
-                    pnode->hmm.sseqid = ssid;
+                    pnode->ctx = ctx;
                     pnode->next.fsglink = fsglink;
                     pnode->logs2prob =
                         word_fsglink_logs2prob(fsglink) + wip + pip;
@@ -244,7 +247,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                     head = pnode;
                     root = pnode;
 
-                    search_chan_deactivate(&(pnode->hmm));
+                    hmm_init(ctx, &pnode->hmm, ssid, pnode->ci_ext);
 
                     lc_pnodelist =
                         glist_add_ptr(lc_pnodelist, (void *) pnode);
@@ -257,7 +260,7 @@ psubtree_add_trans(fsg_pnode_t * root,
             ssid = did;         /* dict_phone() already has the right CIphone ssid */
 
             pnode = (fsg_pnode_t *) ckd_calloc(1, sizeof(fsg_pnode_t));
-            pnode->hmm.sseqid = ssid;
+            pnode->ctx = ctx;
             pnode->next.fsglink = fsglink;
             pnode->logs2prob = word_fsglink_logs2prob(fsglink) + wip + pip;
             pnode->ci_ext = silcipid;   /* Presents SIL as context to neighbors */
@@ -269,7 +272,7 @@ psubtree_add_trans(fsg_pnode_t * root,
             head = pnode;
             root = pnode;
 
-            search_chan_deactivate(&(pnode->hmm));      /* Mark HMM inactive */
+            hmm_init(ctx, &pnode->hmm, ssid, pnode->ci_ext);
         }
     }
     else {                      /* Multi-phone word */
@@ -296,7 +299,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                             (fsg_pnode_t *) ckd_calloc(1,
                                                        sizeof
                                                        (fsg_pnode_t));
-                        pnode->hmm.sseqid = ssid;
+                        pnode->ctx = ctx;
                         pnode->logs2prob =
                             word_fsglink_logs2prob(fsglink) + wip + pip;
                         pnode->ci_ext = (int8) dict_ciphone(word_dict, wid, 0);
@@ -307,21 +310,22 @@ psubtree_add_trans(fsg_pnode_t * root,
                         head = pnode;
                         root = pnode;
 
-                        search_chan_deactivate(&(pnode->hmm));  /* Mark HMM inactive */
+                        hmm_init(ctx, &pnode->hmm, ssid, pnode->ci_ext);
 
                         lc_pnodelist =
                             glist_add_ptr(lc_pnodelist, (void *) pnode);
                         ssid_pnode_map[j] = pnode;
                     }
                     else {
-                        assert(pnode->hmm.sseqid == ssid);
+                        assert(pnode->hmm.s.ssid == ssid);
                     }
                     fsg_pnode_add_ctxt(pnode, lc);
                 }
             }
             else if (p != pronlen - 1) {        /* Word internal phone */
                 pnode = (fsg_pnode_t *) ckd_calloc(1, sizeof(fsg_pnode_t));
-                pnode->hmm.sseqid = ssid;
+                pnode->ctx = ctx;
+                pnode->hmm.s.ssid = ssid;
                 pnode->logs2prob = pip;
                 pnode->ci_ext = (int8) dict_ciphone(word_dict, wid, p);
                 pnode->ppos = p;
@@ -339,7 +343,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                 pnode->alloc_next = head;
                 head = pnode;
 
-                search_chan_deactivate(&(pnode->hmm));  /* Mark HMM inactive */
+                hmm_init(ctx, &pnode->hmm, ssid, pnode->ci_ext);
 
                 pred = pnode;
             }
@@ -359,7 +363,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                             (fsg_pnode_t *) ckd_calloc(1,
                                                        sizeof
                                                        (fsg_pnode_t));
-                        pnode->hmm.sseqid = ssid;
+                        pnode->ctx = ctx;
                         pnode->logs2prob = pip;
                         pnode->ci_ext = (int8) dict_ciphone(word_dict, wid, p);
                         pnode->ppos = p;
@@ -370,14 +374,14 @@ psubtree_add_trans(fsg_pnode_t * root,
                         pnode->alloc_next = head;
                         head = pnode;
 
-                        search_chan_deactivate(&(pnode->hmm));  /* Mark HMM inactive */
+                        hmm_init(ctx, &pnode->hmm, ssid, pnode->ci_ext);
 
                         rc_pnodelist =
                             glist_add_ptr(rc_pnodelist, (void *) pnode);
                         ssid_pnode_map[j] = pnode;
                     }
                     else {
-                        assert(pnode->hmm.sseqid == ssid);
+                        assert(pnode->hmm.s.ssid == ssid);
                     }
                     fsg_pnode_add_ctxt(pnode, rc);
                 }
@@ -418,6 +422,7 @@ fsg_psubtree_init(word_fsg_t * fsg, int32 from_state,
     gnode_t *gn;
     word_fsglink_t *fsglink;
     fsg_pnode_t *root;
+    hmm_context_t *ctx;
     int32 n_ci;
 
     root = NULL;
@@ -429,6 +434,9 @@ fsg_psubtree_init(word_fsg_t * fsg, int32 from_state,
             ("#phones > %d; increase FSG_PNODE_CTXT_BVSZ and recompile\n",
              FSG_PNODE_CTXT_BVSZ * 32);
     }
+    ctx = hmm_context_init(bin_mdef_n_emit_state(mdef), FALSE,
+                           tmat->tp, senone_scores,
+                           mdef->sseq);
 
     for (dst = 0; dst < word_fsg_n_state(fsg); dst++) {
         /* Add all links from from_state to dst */
@@ -439,7 +447,7 @@ fsg_psubtree_init(word_fsg_t * fsg, int32 from_state,
 
             assert(word_fsglink_wid(fsglink) >= 0);     /* Cannot be a null trans */
 
-            root = psubtree_add_trans(root, fsglink,
+            root = psubtree_add_trans(root, ctx, fsglink,
                                       word_fsg_lc(fsg, from_state),
                                       word_fsg_rc(fsg, dst), alloc_head);
         }
@@ -454,6 +462,7 @@ fsg_psubtree_free(fsg_pnode_t * head)
 {
     fsg_pnode_t *next;
 
+    hmm_context_free(head->ctx);
     while (head) {
         next = head->alloc_next;
 
@@ -476,7 +485,7 @@ fsg_psubtree_dump(fsg_pnode_t * head, FILE * fp)
             fprintf(fp, "  ");
 
         fprintf(fp, "%p.@", head);    /* Pointer used as node ID */
-        fprintf(fp, " %5d.SS", head->hmm.sseqid);
+        fprintf(fp, " %5d.SS", head->hmm.s.ssid);
         fprintf(fp, " %10d.LP", head->logs2prob);
         fprintf(fp, " %p.SIB", head->sibling);
         fprintf(fp, " %s.%d", phone_from_id(head->ci_ext), head->ppos);
@@ -502,36 +511,8 @@ fsg_psubtree_dump(fsg_pnode_t * head, FILE * fp)
 }
 
 
-#if 0
-boolean
-fsg_psubtree_pnode_enter(fsg_pnode_t * pnode,
-                         int32 score, int32 frame, int32 bpidx)
-{
-    boolean activate;
-
-    assert(pnode->hmm.active <= frame);
-
-    score += pnode->logs2prob;
-
-    activate = FALSE;
-
-    if (pnode->hmm.score[0] < score) {
-        if (pnode->hmm.active < frame) {
-            activate = TRUE;
-            pnode->hmm.active = frame;
-        }
-
-        pnode->hmm.score[0] = score;
-        pnode->hmm.path[0] = bpidx;
-    }
-
-    return activate;
-}
-#endif
-
-
 void
 fsg_psubtree_pnode_deactivate(fsg_pnode_t * pnode)
 {
-    search_chan_deactivate(&(pnode->hmm));
+    hmm_clear(&pnode->hmm);
 }

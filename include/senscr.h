@@ -43,8 +43,8 @@
 #define __SENSCR_H__
 
 #include <fe.h>
+#include "hmm.h"
 #include "s2types.h"
-#include "msd.h"
 
 /* Bit-vector operations for maintaining senone_active_vec */
 #define BITVEC_SEN_ACTIVE
@@ -107,8 +107,7 @@ void sen_active_clear(void);
  * Set senone active flags for the given HMM.  (The global extern array
  * senone_active_flag is updated for the senones in the given rhmm or hmm.)
  */
-void rhmm_sen_active(ROOT_CHAN_T *rhmm);
-void hmm_sen_active(CHAN_T *hmm);
+void hmm_sen_active(hmm_t *hmm);
 
 
 /*

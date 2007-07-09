@@ -54,7 +54,6 @@
 #include "ckd_alloc.h"
 #include "basic_types.h"
 #include "search_const.h"
-#include "msd.h"
 #include "log.h"
 #include "cache_lm.h"
 #include "linklist.h"

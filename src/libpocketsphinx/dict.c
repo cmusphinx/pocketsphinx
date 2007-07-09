@@ -128,7 +128,6 @@
 #include "search_const.h"
 #include "lmclass.h"
 #include "lm_3g.h"
-#include "msd.h"
 #include "kb.h"
 
 #ifdef DEBUG

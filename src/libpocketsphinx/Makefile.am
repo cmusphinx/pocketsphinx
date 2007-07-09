@@ -16,6 +16,7 @@ libpocketsphinx_la_SOURCES = \
 	fsg_lextree.c				\
 	fsg_psubtree.c				\
 	fsg_search.c				\
+	hmm.c                                   \
 	kb_main.c				\
 	kdtree.c				\
 	list.c					\

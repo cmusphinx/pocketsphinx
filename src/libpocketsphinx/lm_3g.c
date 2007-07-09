@@ -178,7 +178,6 @@
 #include "lm_3g.h"
 #include "log.h"
 #include "search_const.h"
-#include "msd.h"
 #include "dict.h"
 #include "kb.h"
 #include "fbs.h"
