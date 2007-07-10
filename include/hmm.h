@@ -179,7 +179,6 @@ typedef struct {
 typedef struct hmm_s {
     hmm_context_t *ctx; /**< Shared context data for this HMM. */
     hmm_state_t *state;	/**< Per-state data for emitting states */
-    hmm_state_t in;	/**< Non-emitting entry state */
     hmm_state_t out;	/**< Non-emitting exit state */
     union {
         int32 *mpx_ssid;    /**< Senone sequence IDs for each state (for multiplex HMMs). */
@@ -197,11 +196,11 @@ typedef struct hmm_s {
 #define hmm_context(h) (h)->ctx
 #define hmm_is_mpx(h) (h)->ctx->mpx
 
-#define hmm_in_score(h) (h)->in.score
+#define hmm_in_score(h) (h)->state[0].score
 #define hmm_score(h,st) (h)->state[st].score
 #define hmm_out_score(h) (h)->out.score
 
-#define hmm_in_history(h) (h)->in.history
+#define hmm_in_history(h) (h)->state[0].history
 #define hmm_history(h,st) (h)->state[st].history
 #define hmm_out_history(h) (h)->out.history
 
@@ -221,7 +220,7 @@ typedef struct hmm_s {
                           ? WORST_SCORE                                 \
                           : (h)->ctx->tp[hmm_tmatid(h,i)][i][j])
 #define hmm_n_emit_state(h) ((h)->ctx->n_emit_state)
-#define hmm_n_state(h) ((h)->ctx->n_emit_state + 2)
+#define hmm_n_state(h) ((h)->ctx->n_emit_state + 1)
 
 /**
  * Create an HMM context.
