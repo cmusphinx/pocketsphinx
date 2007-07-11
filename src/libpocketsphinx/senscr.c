@@ -230,7 +230,7 @@ hmm_sen_active(hmm_t * hmm)
 {
     int i;
 
-    if (hmm->ctx->mpx) {
+    if (hmm_is_mpx(hmm)) {
         switch (hmm_n_emit_state(hmm)) {
         case 5:
             MPX_BITVEC_SET(hmm, 4);

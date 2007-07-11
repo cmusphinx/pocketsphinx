@@ -99,7 +99,7 @@
 #define HMM_BLOCK_SIZE 1000
 
 hmm_context_t *
-hmm_context_init(int32 n_emit_state, int32 mpx,
+hmm_context_init(int32 n_emit_state,
 		 int32 ***tp,
 		 int32 *senscore,
 		 s3senid_t **sseq)
@@ -107,13 +107,9 @@ hmm_context_init(int32 n_emit_state, int32 mpx,
     hmm_context_t *ctx;
 
     assert(n_emit_state > 0);
-    assert(tp != NULL);
-    /* Multiplex HMMs all have their own senone sequences */
-    assert(mpx || (sseq != NULL));
 
     ctx = ckd_calloc(1, sizeof(*ctx));
     ctx->n_emit_state = n_emit_state;
-    ctx->mpx = mpx;
     ctx->tp = (const int32 ***)tp;
     ctx->senscore = senscore;
     ctx->sseq = (const s3senid_t **)sseq;
@@ -129,11 +125,13 @@ hmm_context_free(hmm_context_t *ctx)
 }
 
 void
-hmm_init(hmm_context_t *ctx, hmm_t *hmm, int32 ssid, s3tmatid_t tmatid)
+hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx,
+         int32 ssid, s3tmatid_t tmatid)
 {
     hmm->ctx = ctx;
     hmm->state = ckd_calloc(hmm_n_emit_state(hmm), sizeof(hmm_state_t));
-    if (ctx->mpx) {
+    if (mpx) {
+        hmm->mpx = 1;
         hmm->s.mpx_ssid = ckd_calloc(hmm_n_emit_state(hmm), sizeof(*hmm->s.mpx_ssid));
         memset(hmm->s.mpx_ssid, -1, sizeof(*hmm->s.mpx_ssid) * hmm_n_emit_state(hmm));
         hmm->s.mpx_ssid[0] = ssid;
@@ -142,6 +140,7 @@ hmm_init(hmm_context_t *ctx, hmm_t *hmm, int32 ssid, s3tmatid_t tmatid)
         hmm->t.mpx_tmatid[0] = tmatid;
     }
     else {
+        hmm->mpx = 0;
         hmm->s.ssid = ssid;
         hmm->t.tmatid = tmatid;
     }
@@ -152,7 +151,7 @@ void
 hmm_deinit(hmm_t *hmm)
 {
     ckd_free(hmm->state);
-    if (hmm->ctx->mpx) {
+    if (hmm_is_mpx(hmm)) {
         ckd_free(hmm->s.mpx_ssid);
         ckd_free(hmm->t.mpx_tmatid);
     }
@@ -164,7 +163,7 @@ hmm_dump(hmm_t * hmm,
 {
     int32 i;
 
-    if (hmm->ctx->mpx) {
+    if (hmm_is_mpx(hmm)) {
         fprintf(fp, "MPX    %11s    ", "");
         for (i = 0; i < hmm_n_emit_state(hmm); i++)
             fprintf(fp, " %11d", hmm_senid(hmm, i));
@@ -275,18 +274,11 @@ hmm_vit_eval_5st_lr(hmm_t * hmm)
     const s3senid_t *sseq = hmm->ctx->sseq[hmm_ssid(hmm, 0)];
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0, bestScore;
 
-    /* Calculate "from" scores.  Note that we emit before transition
-     * here, which is equivalent to but not the same as the usual
-     * Viterbi algorithm. */
-    s0 = hmm_score(hmm, 0) + nonmpx_senscr(0);
-    s1 = hmm_score(hmm, 1) + nonmpx_senscr(1);
-    s2 = hmm_score(hmm, 2) + nonmpx_senscr(2);
-    s3 = hmm_score(hmm, 3) + nonmpx_senscr(3);
-    s4 = hmm_score(hmm, 4) + nonmpx_senscr(4);
-
     /* It was the best of scores, it was the worst of scores. */
     bestScore = WORST_SCORE;
 
+    s4 = hmm_score(hmm, 4) + nonmpx_senscr(4);
+    s3 = hmm_score(hmm, 3) + nonmpx_senscr(3);
     /* Transitions into non-emitting state 5 */
     if (s3 > WORST_SCORE) {
         t1 = s4 + hmm_tprob_5st(4, 5);
@@ -302,6 +294,7 @@ hmm_vit_eval_5st_lr(hmm_t * hmm)
         bestScore = s5;
     }
 
+    s2 = hmm_score(hmm, 2) + nonmpx_senscr(2);
     /* All transitions into state 4 */
     if (s2 > WORST_SCORE) {
         t0 = s4 + hmm_tprob_5st(4, 4);
@@ -326,6 +319,7 @@ hmm_vit_eval_5st_lr(hmm_t * hmm)
         hmm_score(hmm, 4) = s4;
     }
 
+    s1 = hmm_score(hmm, 1) + nonmpx_senscr(1);
     /* All transitions into state 3 */
     if (s1 > WORST_SCORE) {
         t0 = s3 + hmm_tprob_5st(3, 3);
@@ -350,6 +344,7 @@ hmm_vit_eval_5st_lr(hmm_t * hmm)
         hmm_score(hmm, 3) = s3;
     }
 
+    s0 = hmm_score(hmm, 0) + nonmpx_senscr(0);
     /* All transitions into state 2 (state 0 is always active) */
     t0 = s2 + hmm_tprob_5st(2, 2);
     t1 = s1 + hmm_tprob_5st(1, 2);
@@ -812,7 +807,7 @@ hmm_vit_eval_anytopo(hmm_t * h)
         hmm_score(h, to) = scr;
         if (bestfrom >= 0) {
             hmm_history(h, to) = hmm_history(h, bestfrom);
-            if (ctx->mpx) {
+            if (hmm_is_mpx(h)) {
                 h->s.mpx_ssid[to] = h->s.mpx_ssid[bestfrom];
                 h->t.mpx_tmatid[to] = h->t.mpx_tmatid[bestfrom];
             }
@@ -829,7 +824,7 @@ hmm_vit_eval_anytopo(hmm_t * h)
 int32
 hmm_vit_eval(hmm_t * hmm)
 {
-    if (hmm->ctx->mpx) {
+    if (hmm_is_mpx(hmm)) {
         if (hmm_n_emit_state(hmm) == 5)
             return hmm_vit_eval_5st_lr_mpx(hmm);
         else if (hmm_n_emit_state(hmm) == 3)

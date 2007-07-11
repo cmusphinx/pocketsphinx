@@ -247,7 +247,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                     head = pnode;
                     root = pnode;
 
-                    hmm_init(ctx, &pnode->hmm, ssid, pnode->ci_ext);
+                    hmm_init(ctx, &pnode->hmm, FALSE, ssid, pnode->ci_ext);
 
                     lc_pnodelist =
                         glist_add_ptr(lc_pnodelist, (void *) pnode);
@@ -272,7 +272,7 @@ psubtree_add_trans(fsg_pnode_t * root,
             head = pnode;
             root = pnode;
 
-            hmm_init(ctx, &pnode->hmm, ssid, pnode->ci_ext);
+            hmm_init(ctx, &pnode->hmm, FALSE, ssid, pnode->ci_ext);
         }
     }
     else {                      /* Multi-phone word */
@@ -310,7 +310,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                         head = pnode;
                         root = pnode;
 
-                        hmm_init(ctx, &pnode->hmm, ssid, pnode->ci_ext);
+                        hmm_init(ctx, &pnode->hmm, FALSE, ssid, pnode->ci_ext);
 
                         lc_pnodelist =
                             glist_add_ptr(lc_pnodelist, (void *) pnode);
@@ -343,7 +343,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                 pnode->alloc_next = head;
                 head = pnode;
 
-                hmm_init(ctx, &pnode->hmm, ssid, pnode->ci_ext);
+                hmm_init(ctx, &pnode->hmm, FALSE, ssid, pnode->ci_ext);
 
                 pred = pnode;
             }
@@ -374,7 +374,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                         pnode->alloc_next = head;
                         head = pnode;
 
-                        hmm_init(ctx, &pnode->hmm, ssid, pnode->ci_ext);
+                        hmm_init(ctx, &pnode->hmm, FALSE, ssid, pnode->ci_ext);
 
                         rc_pnodelist =
                             glist_add_ptr(rc_pnodelist, (void *) pnode);
@@ -434,7 +434,7 @@ fsg_psubtree_init(word_fsg_t * fsg, int32 from_state,
             ("#phones > %d; increase FSG_PNODE_CTXT_BVSZ and recompile\n",
              FSG_PNODE_CTXT_BVSZ * 32);
     }
-    ctx = hmm_context_init(bin_mdef_n_emit_state(mdef), FALSE,
+    ctx = hmm_context_init(bin_mdef_n_emit_state(mdef),
                            tmat->tp, senone_scores,
                            mdef->sseq);
 

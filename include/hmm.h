@@ -156,7 +156,6 @@ typedef struct hmm_context_s {
     const int32 *senscore; /**< State emission scores senscore[senid] (logs3 values). */
     const s3senid_t **sseq;/**< Senone sequence mapping. */
     int32 *st_sen_scr;     /**< Temporary array of senone scores (for some topologies). */
-    int32 mpx;		   /**< Are senones multiplexed? */
     void *udata;           /**< Whatever you feel like, gosh. */
 } hmm_context_t;
 
@@ -190,11 +189,12 @@ typedef struct hmm_s {
     } t;
     int32 bestscore;	/**< Best [emitting] state score in current frame (for pruning). */
     s3frmid_t frame;	/**< Frame in which this HMM was last active; <0 if inactive */
+    int16 mpx;          /**< Is this HMM multiplex? (hoisted for speed) */
 } hmm_t;
 
 /** Access macros. */
 #define hmm_context(h) (h)->ctx
-#define hmm_is_mpx(h) (h)->ctx->mpx
+#define hmm_is_mpx(h) (h)->mpx
 
 #define hmm_in_score(h) (h)->state[0].score
 #define hmm_score(h,st) (h)->state[st].score
@@ -206,15 +206,15 @@ typedef struct hmm_s {
 
 #define hmm_bestscore(h) (h)->bestscore
 #define hmm_frame(h) (h)->frame
-#define hmm_ssid(h,st) ((h)->ctx->mpx                           \
+#define hmm_ssid(h,st) (hmm_is_mpx(h)                           \
                         ? (h)->s.mpx_ssid[st] : (h)->s.ssid)
 #define hmm_senid(h,st) (hmm_ssid(h,st) == -1                           \
                          ? -1 : (h)->ctx->sseq[hmm_ssid(h,st)][st])
 #define hmm_senscr(h,st) (hmm_ssid(h,st) == -1                          \
                           ? WORST_SCORE                                 \
                           : (h)->ctx->senscore[hmm_senid(h,st)])
-#define hmm_tmatid(h,i) ((h)->ctx->mpx          \
-                       ? (h)->t.mpx_tmatid[i]    \
+#define hmm_tmatid(h,i) (hmm_is_mpx(h)          \
+                       ? (h)->t.mpx_tmatid[i]   \
                        : (h)->t.tmatid)
 #define hmm_tprob(h,i,j) (hmm_tmatid(h,i) == -1                         \
                           ? WORST_SCORE                                 \
@@ -225,7 +225,7 @@ typedef struct hmm_s {
 /**
  * Create an HMM context.
  **/
-hmm_context_t *hmm_context_init(int32 n_emit_state, int32 mpx,
+hmm_context_t *hmm_context_init(int32 n_emit_state,
                                 int32 ***tp,
                                 int32 *senscore,
                                 s3senid_t **sseq);
@@ -247,7 +247,8 @@ void hmm_context_free(hmm_context_t *ctx);
 /**
  * Populate a previously-allocated HMM structure, allocating internal data.
  **/
-void hmm_init(hmm_context_t *ctx, hmm_t *hmm, int32 ssid, s3tmatid_t tmatid);
+void hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx,
+              int32 ssid, s3tmatid_t tmatid);
 
 /**
  * Free an HMM structure, releasing internal data (but not the HMM structure itself).

@@ -411,11 +411,11 @@ allphone_init()
     n_ciphone = phoneCiCount();
 
     ci_chan = ckd_calloc(n_ciphone, sizeof(chan_t));
-    ci_ctx = hmm_context_init(bin_mdef_n_emit_state(mdef), FALSE,
+    ci_ctx = hmm_context_init(bin_mdef_n_emit_state(mdef),
                               tmat->tp, senone_scores,
                               mdef->sseq);
     for (i = 0; i < n_ciphone; i++) {
-        hmm_init(ci_ctx, &ci_chan[i].hmm,
+        hmm_init(ci_ctx, &ci_chan[i].hmm, FALSE,
                  bin_mdef_pid2ssid(mdef, i),
                  bin_mdef_pid2tmatid(mdef, i));
     }

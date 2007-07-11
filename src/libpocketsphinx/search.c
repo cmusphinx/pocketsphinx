@@ -280,9 +280,8 @@ static int32 n_word_lastchan_eval;
 static int32 n_lastphn_cand_utt;
 static int32 n_phn_in_topsen;
 
-/* HMM context structures for mpx and nonmpx phones */
-static hmm_context_t *nonmpx_ctx;
-static hmm_context_t *mpx_ctx;
+/* HMM context structure */
+static hmm_context_t *hmmctx;
 
 /*
  * word_chan[w] = separate linked list of channels for each word w, normally used only
@@ -1233,7 +1232,7 @@ alloc_all_rc(int32 w)
 
         hmm->info.rc_id = 0;
         hmm->ciphone = de->ci_phone_ids[de->len - 1];
-        hmm_init(nonmpx_ctx, &hmm->hmm, *sseq_rc, hmm->ciphone);
+        hmm_init(hmmctx, &hmm->hmm, FALSE, *sseq_rc, hmm->ciphone);
     }
     for (i = 1, sseq_rc++; *sseq_rc >= 0; sseq_rc++, i++) {
         if ((hmm->next == NULL) || (hmm->next->hmm.s.ssid != *sseq_rc)) {
@@ -1244,7 +1243,7 @@ alloc_all_rc(int32 w)
 
             hmm->info.rc_id = i;
             hmm->ciphone = de->ci_phone_ids[de->len - 1];
-            hmm_init(nonmpx_ctx, &hmm->hmm, *sseq_rc, hmm->ciphone);
+            hmm_init(hmmctx, &hmm->hmm, FALSE, *sseq_rc, hmm->ciphone);
         }
         else
             hmm = hmm->next;
@@ -1467,12 +1466,9 @@ search_initialize(void)
     RightContextBwd = dict_right_context_bwd();
     NumMainDictWords = dict_get_num_main_words(word_dict);
 
-    nonmpx_ctx = hmm_context_init(bin_mdef_n_emit_state(mdef), FALSE,
-                                  tmat->tp, NULL,
-                                  mdef->sseq);
-    mpx_ctx = hmm_context_init(bin_mdef_n_emit_state(mdef), TRUE,
-                               tmat->tp, NULL,
-                               mdef->sseq);
+    hmmctx = hmm_context_init(bin_mdef_n_emit_state(mdef),
+                              tmat->tp, NULL,
+                              mdef->sseq);
 
     word_chan = ckd_calloc(NumWords, sizeof(chan_t *));
     WordLatIdx = ckd_calloc(NumWords, sizeof(int32));
@@ -1874,8 +1870,7 @@ evaluateChannels(void)
 {
     int32 bs;
 
-    hmm_context_set_senscore(nonmpx_ctx, senone_scores);
-    hmm_context_set_senscore(mpx_ctx, senone_scores);
+    hmm_context_set_senscore(hmmctx, senone_scores);
 
     BestScore = eval_root_chan();
     if ((bs = eval_nonroot_chan()) > BestScore)
@@ -2700,10 +2695,7 @@ init_search_tree(dictT * dict)
     root_chan =
         ckd_calloc(n_root_chan_alloc, sizeof(root_chan_t));
     for (i = 0; i < n_root_chan_alloc; i++) {
-        if (mpx)
-            hmm_init(mpx_ctx, &root_chan[i].hmm, -1, -1);
-        else
-            hmm_init(nonmpx_ctx, &root_chan[i].hmm, -1, -1);
+        hmm_init(hmmctx, &root_chan[i].hmm, mpx, -1, -1);
         root_chan[i].penult_phn_wid = -1;
         root_chan[i].next = NULL;
     }
@@ -2722,14 +2714,8 @@ init_search_tree(dictT * dict)
 
         all_rhmm[i].diphone = de->phone_ids[0];
         all_rhmm[i].ciphone = de->ci_phone_ids[0];
-        if (de->mpx) {
-            hmm_init(mpx_ctx, &all_rhmm[i].hmm,
-                     de->phone_ids[0], de->ci_phone_ids[0]);
-        }
-        else {
-            hmm_init(nonmpx_ctx, &all_rhmm[i].hmm,
-                     de->phone_ids[0], de->ci_phone_ids[0]);
-        }
+        hmm_init(hmmctx, &all_rhmm[i].hmm, de->mpx,
+                 de->phone_ids[0], de->ci_phone_ids[0]);
         all_rhmm[i].next = NULL;
 
         word_chan[w] = (chan_t *) &(all_rhmm[i]);
@@ -2757,7 +2743,7 @@ init_nonroot_chan(chan_t * hmm, int32 ph, int32 ci)
     hmm->alt = NULL;
     hmm->info.penult_phn_wid = -1;
     hmm->ciphone = ci;
-    hmm_init(nonmpx_ctx, &hmm->hmm, ph, ci);
+    hmm_init(hmmctx, &hmm->hmm, FALSE, ph, ci);
 }
 
 /*
@@ -3314,7 +3300,7 @@ build_fwdflat_chan(void)
         rhmm->diphone = de->phone_ids[0];
         rhmm->ciphone = de->ci_phone_ids[0];
         rhmm->next = NULL;
-        hmm_init(mpx_ctx, &rhmm->hmm, rhmm->diphone, rhmm->ciphone);
+        hmm_init(hmmctx, &rhmm->hmm, TRUE, rhmm->diphone, rhmm->ciphone);
 
         /* HMMs for word-internal phones */
         prevhmm = NULL;
@@ -3323,7 +3309,7 @@ build_fwdflat_chan(void)
             hmm->ciphone = de->ci_phone_ids[p];
             hmm->info.rc_id = p + 1 - de->len;
             hmm->next = NULL;
-            hmm_init(nonmpx_ctx, &hmm->hmm, de->phone_ids[p], hmm->ciphone);
+            hmm_init(hmmctx, &hmm->hmm, FALSE, de->phone_ids[p], hmm->ciphone);
 
             if (prevhmm)
                 prevhmm->next = hmm;
@@ -3602,8 +3588,7 @@ fwdflat_eval_chan(void)
 
     n_fwdflat_words += i;
 
-    hmm_context_set_senscore(nonmpx_ctx, senone_scores);
-    hmm_context_set_senscore(mpx_ctx, senone_scores);
+    hmm_context_set_senscore(hmmctx, senone_scores);
 
     /* Scan all active words. */
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
