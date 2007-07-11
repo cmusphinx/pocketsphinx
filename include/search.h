@@ -53,12 +53,15 @@
  */
 typedef struct chan_s
 {
-    hmm_t hmm;                  /* Basic HMM structure */
-
+    hmm_t hmm;                  /* Basic HMM structure.  This *must*
+                                 * be first in the structure because
+                                 * chan_t and root_chan_t are
+                                 * sometimes used interchangeably */
     struct chan_s *next;	/* first descendant of this channel; or, in the
 				   case of the last phone of a word, the next
 				   alternative right context channel */
     struct chan_s *alt;		/* sibling; i.e., next descendant of parent HMM */
+
     int32    ciphone;		/* ciphone for this node */
     union {
 	WORD_ID penult_phn_wid;	/* list of words whose last phone follows this one;
@@ -76,9 +79,12 @@ typedef struct chan_s
  */
 typedef struct root_chan_s
 {
-    hmm_t hmm;                  /* Basic HMM structure */
-
+    hmm_t hmm;                  /* Basic HMM structure.  This *must*
+                                 * be first in the structure because
+                                 * chan_t and root_chan_t are
+                                 * sometimes used interchangeably */
     chan_t *next;		/* first descendant of this channel */
+
     WORD_ID  penult_phn_wid;
     WORD_ID  this_phn_wid;	/* list of words consisting of this single phone;
 				   actually the first of the list, like penult_phn_wid;
