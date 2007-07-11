@@ -114,6 +114,8 @@ extern "C" {
 } /* Fool Emacs into not indenting things. */
 #endif
 
+/** Hardcoded limit on the number of states (temporary) */
+#define MAX_HMM_NSTATE 5
 
 /** \file hmm.h
  * \brief HMM data structure and operation
@@ -176,12 +178,12 @@ typedef struct {
  */
 
 typedef struct hmm_s {
-    hmm_context_t *ctx; /**< Shared context data for this HMM. */
-    hmm_state_t *state;	/**< Per-state data for emitting states */
-    hmm_state_t out;	/**< Non-emitting exit state */
+    hmm_context_t *ctx;                /**< Shared context data for this HMM. */
+    hmm_state_t state[MAX_HMM_NSTATE]; /**< Per-state data for emitting states */
+    hmm_state_t out;                   /**< Non-emitting exit state */
     union {
-        int32 *mpx_ssid;    /**< Senone sequence IDs for each state (for multiplex HMMs). */
-        int32 ssid;         /**< Senone sequence ID. */
+        int32 *mpx_ssid; /**< Senone sequence IDs for each state (for multiplex HMMs). */
+        int32 ssid;      /**< Senone sequence ID. */
     } s;
     union {
         s3tmatid_t *mpx_tmatid;  /**< Transition matrix ID for each state (for multiplex HMMs). */

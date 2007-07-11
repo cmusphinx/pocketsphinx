@@ -107,6 +107,7 @@ hmm_context_init(int32 n_emit_state,
     hmm_context_t *ctx;
 
     assert(n_emit_state > 0);
+    assert(n_emit_state <= MAX_HMM_NSTATE);
 
     ctx = ckd_calloc(1, sizeof(*ctx));
     ctx->n_emit_state = n_emit_state;
@@ -129,7 +130,6 @@ hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx,
          int32 ssid, s3tmatid_t tmatid)
 {
     hmm->ctx = ctx;
-    hmm->state = ckd_calloc(hmm_n_emit_state(hmm), sizeof(hmm_state_t));
     if (mpx) {
         hmm->mpx = 1;
         hmm->s.mpx_ssid = ckd_calloc(hmm_n_emit_state(hmm), sizeof(*hmm->s.mpx_ssid));
@@ -150,7 +150,6 @@ hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx,
 void
 hmm_deinit(hmm_t *hmm)
 {
-    ckd_free(hmm->state);
     if (hmm_is_mpx(hmm)) {
         ckd_free(hmm->s.mpx_ssid);
         ckd_free(hmm->t.mpx_tmatid);
