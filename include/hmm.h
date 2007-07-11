@@ -191,38 +191,42 @@ typedef struct hmm_s {
     } t;
     int32 bestscore;	/**< Best [emitting] state score in current frame (for pruning). */
     s3frmid_t frame;	/**< Frame in which this HMM was last active; <0 if inactive */
-    int16 mpx;          /**< Is this HMM multiplex? (hoisted for speed) */
+    uint8 mpx;          /**< Is this HMM multiplex? (hoisted for speed) */
+    uint8 n_emit_state; /**< Number of emitting states (hoisted for speed) */
 } hmm_t;
 
 /** Access macros. */
 #define hmm_context(h) (h)->ctx
 #define hmm_is_mpx(h) (h)->mpx
+#define hmm_state(h,st) (h)->state[st]
 
-#define hmm_in_score(h) (h)->state[0].score
-#define hmm_score(h,st) (h)->state[st].score
+#define hmm_in_score(h) hmm_state(h,0).score
+#define hmm_score(h,st) hmm_state(h,st).score
 #define hmm_out_score(h) (h)->out.score
 
-#define hmm_in_history(h) (h)->state[0].history
-#define hmm_history(h,st) (h)->state[st].history
+#define hmm_in_history(h) hmm_state(h,0).history
+#define hmm_history(h,st) hmm_state(h,st).history
 #define hmm_out_history(h) (h)->out.history
 
 #define hmm_bestscore(h) (h)->bestscore
 #define hmm_frame(h) (h)->frame
+#define hmm_mpx_ssid(h,st) (h)->s.mpx_ssid[st]
 #define hmm_ssid(h,st) (hmm_is_mpx(h)                           \
-                        ? (h)->s.mpx_ssid[st] : (h)->s.ssid)
+                        ? hmm_mpx_ssid(h,st) : (h)->s.ssid)
 #define hmm_senid(h,st) (hmm_ssid(h,st) == -1                           \
                          ? -1 : (h)->ctx->sseq[hmm_ssid(h,st)][st])
 #define hmm_senscr(h,st) (hmm_ssid(h,st) == -1                          \
                           ? WORST_SCORE                                 \
                           : (h)->ctx->senscore[hmm_senid(h,st)])
+#define hmm_mpx_tmatid(h,i) (h)->t.mpx_tmatid[i]
 #define hmm_tmatid(h,i) (hmm_is_mpx(h)          \
-                       ? (h)->t.mpx_tmatid[i]   \
+                         ? hmm_mpx_tmatid(h,i)  \
                        : (h)->t.tmatid)
 #define hmm_tprob(h,i,j) (hmm_tmatid(h,i) == -1                         \
                           ? WORST_SCORE                                 \
                           : (h)->ctx->tp[hmm_tmatid(h,i)][i][j])
-#define hmm_n_emit_state(h) ((h)->ctx->n_emit_state)
-#define hmm_n_state(h) ((h)->ctx->n_emit_state + 1)
+#define hmm_n_emit_state(h) ((h)->n_emit_state)
+#define hmm_n_state(h) ((h)->n_emit_state + 1)
 
 /**
  * Create an HMM context.
@@ -276,7 +280,15 @@ void hmm_normalize(hmm_t *h, int32 bestscr);
 /**
  * Enter an HMM with the given path score and history ID.
  **/
-void hmm_enter(hmm_t *h, int32 score, int32 histid, int32 frame);
+void hmm_enter(hmm_t *h, int32 score,
+               int32 histid, int32 frame);
+
+/**
+ * Enter a muliplex HMM with the given path score and history ID.
+ **/
+void hmm_enter_mpx(hmm_t *h, int32 score,
+                   int32 histid, int32 frame,
+                   int32 ssid, s3tmatid_t tmat);
 
 
 /**

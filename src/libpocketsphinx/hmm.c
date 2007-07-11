@@ -130,8 +130,9 @@ hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx,
          int32 ssid, s3tmatid_t tmatid)
 {
     hmm->ctx = ctx;
+    hmm->mpx = mpx;
+    hmm->n_emit_state = ctx->n_emit_state;
     if (mpx) {
-        hmm->mpx = 1;
         hmm->s.mpx_ssid = ckd_calloc(hmm_n_emit_state(hmm), sizeof(*hmm->s.mpx_ssid));
         memset(hmm->s.mpx_ssid, -1, sizeof(*hmm->s.mpx_ssid) * hmm_n_emit_state(hmm));
         hmm->s.mpx_ssid[0] = ssid;
@@ -140,7 +141,6 @@ hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx,
         hmm->t.mpx_tmatid[0] = tmatid;
     }
     else {
-        hmm->mpx = 0;
         hmm->s.ssid = ssid;
         hmm->t.tmatid = tmatid;
     }
@@ -249,6 +249,22 @@ hmm_enter(hmm_t *h, int32 score, int32 histid, int32 frame)
     hmm_in_score(h) = score;
     hmm_in_history(h) = histid;
     hmm_frame(h) = frame;
+}
+
+void
+hmm_enter_mpx(hmm_t *h, int32 score,
+              int32 histid, int32 frame,
+              int32 ssid, s3tmatid_t tmatid)
+{
+    hmm_enter(h, score, histid, frame);
+    if (hmm_is_mpx(h)) {
+        hmm_mpx_ssid(h, 0) = ssid;
+        hmm_mpx_tmatid(h, 0) = tmatid;
+    }
+    else {
+        h->s.ssid = ssid;
+        h->t.tmatid = tmatid;
+    }
 }
 
 void
