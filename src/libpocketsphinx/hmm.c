@@ -96,7 +96,6 @@
 #include "ckd_alloc.h"
 #include "search_const.h"
 
-#define HMM_BLOCK_SIZE 1000
 
 hmm_context_t *
 hmm_context_init(int32 n_emit_state,
@@ -159,16 +158,19 @@ hmm_dump(hmm_t * hmm,
     int32 i;
 
     if (hmm_is_mpx(hmm)) {
-        fprintf(fp, "MPX    %11s    ", "");
+        fprintf(fp, "MPX   ");
         for (i = 0; i < hmm_n_emit_state(hmm); i++)
             fprintf(fp, " %11d", hmm_senid(hmm, i));
-        fprintf(fp, "\n");
+        fprintf(fp, " ( ");
+        for (i = 0; i < hmm_n_emit_state(hmm); i++)
+            fprintf(fp, "%d ", hmm_ssid(hmm, i));
+        fprintf(fp, ")\n");
     }
     else {
-        fprintf(fp, "SSID   %11d    ", hmm_ssid(hmm, 0));
+        fprintf(fp, "SSID  ");
         for (i = 0; i < hmm_n_emit_state(hmm); i++)
             fprintf(fp, " %11d", hmm_senid(hmm, i));
-        fprintf(fp, "\n");
+        fprintf(fp, " (%d)\n", hmm_ssid(hmm, 0));
     }
 
     if (hmm->ctx->senscore) {
@@ -188,11 +190,6 @@ hmm_dump(hmm_t * hmm,
     for (i = 1; i < hmm_n_emit_state(hmm); i++)
         fprintf(fp, " %11d", hmm_history(hmm, i));
     fprintf(fp, " %11d", hmm_out_history(hmm));
-    fprintf(fp, "\n");
-
-    fprintf(fp, "TMATID");
-    for (i = 0; i < hmm_n_emit_state(hmm); i++)
-        fprintf(fp, " %11d", hmm_tmatid(hmm));
     fprintf(fp, "\n");
 
     if (hmm_in_score(hmm) > 0)
