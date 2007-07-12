@@ -109,6 +109,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
+#include <sys/types.h>
 
 /* SphinxBase headers */
 #include <sphinx_config.h>
