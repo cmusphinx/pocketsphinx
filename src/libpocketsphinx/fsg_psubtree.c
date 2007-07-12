@@ -325,7 +325,6 @@ psubtree_add_trans(fsg_pnode_t * root,
             else if (p != pronlen - 1) {        /* Word internal phone */
                 pnode = (fsg_pnode_t *) ckd_calloc(1, sizeof(fsg_pnode_t));
                 pnode->ctx = ctx;
-                pnode->hmm.s.ssid = ssid;
                 pnode->logs2prob = pip;
                 pnode->ci_ext = (int8) dict_ciphone(word_dict, wid, p);
                 pnode->ppos = p;
@@ -466,6 +465,7 @@ fsg_psubtree_free(fsg_pnode_t * head)
     while (head) {
         next = head->alloc_next;
 
+        hmm_deinit(&head->hmm);
         ckd_free((void *) head);
 
         head = next;
