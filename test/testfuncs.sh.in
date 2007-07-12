@@ -44,7 +44,7 @@ report_failures() {
 	echo "All sub-tests passed"
 	exit 0
     else
-	echo "Sub-tests failed:$failures" | sed -e 's/,/\n/g'
+	echo "Sub-tests failed:$failures" | sed -e 's/,/ /g'
 	exit 1
     fi
 }
