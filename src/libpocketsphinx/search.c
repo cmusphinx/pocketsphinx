@@ -1350,11 +1350,6 @@ word_transition(void)
                               bestbp_rc_ptr->path, nf);
                     if (hmm_is_mpx(&rhmm->hmm)) {
                         rhmm->hmm.s.mpx_ssid[0] = ssid;
-                        rhmm->hmm.t.mpx_tmatid[0] = rhmm->ciphone;
-                    }
-                    else {
-                        rhmm->hmm.s.ssid = ssid;
-                        rhmm->hmm.t.tmatid = rhmm->ciphone;
                     }
                 }
             }
@@ -1413,7 +1408,6 @@ word_transition(void)
                 if (hmm_is_mpx(&rhmm->hmm)) {
                     rhmm->hmm.s.mpx_ssid[0] =
                         LeftContextFwd[rhmm->diphone][pde->ci_phone_ids[pde->len - 1]];
-                    rhmm->hmm.t.mpx_tmatid[0] = rhmm->ciphone;
                 }
             }
         }
@@ -2797,14 +2791,11 @@ create_search_tree(dictT * dict, int32 use_lm)
         if (first_phone_rchan_map[de->phone_ids[0]] < 0) {
             first_phone_rchan_map[de->phone_ids[0]] = n_root_chan;
             rhmm = &(root_chan[n_root_chan]);
-            if (hmm_is_mpx(&rhmm->hmm)) {
+            if (hmm_is_mpx(&rhmm->hmm))
                 rhmm->hmm.s.mpx_ssid[0] = de->phone_ids[0];
-                rhmm->hmm.t.mpx_tmatid[0] = de->ci_phone_ids[0];
-            }
-            else {
+            else
                 rhmm->hmm.s.ssid = de->phone_ids[0];
-                rhmm->hmm.t.tmatid = de->ci_phone_ids[0];
-            }
+            rhmm->hmm.tmatid = de->ci_phone_ids[0];
             rhmm->diphone = de->phone_ids[0];
             rhmm->ciphone = de->ci_phone_ids[0];
 
@@ -3801,8 +3792,6 @@ fwdflat_word_transition(void)
                         rhmm->hmm.s.mpx_ssid[0] =
                             LeftContextFwd[rhmm->diphone]
                             [de->ci_phone_ids[de->len-1]];
-                        rhmm->hmm.t.mpx_tmatid[0] =
-                            rhmm->ciphone;
                     }
 
                     word_active[w] = 1;

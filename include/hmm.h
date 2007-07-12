@@ -185,11 +185,8 @@ typedef struct hmm_s {
         int32 *mpx_ssid; /**< Senone sequence IDs for each state (for multiplex HMMs). */
         int32 ssid;      /**< Senone sequence ID. */
     } s;
-    union {
-        s3tmatid_t *mpx_tmatid;  /**< Transition matrix ID for each state (for multiplex HMMs). */
-        s3tmatid_t tmatid;       /**< Transition matrix ID (see hmm_context_t). */
-    } t;
     int32 bestscore;	/**< Best [emitting] state score in current frame (for pruning). */
+    s3tmatid_t tmatid;  /**< Transition matrix ID (see hmm_context_t). */
     s3frmid_t frame;	/**< Frame in which this HMM was last active; <0 if inactive */
     uint8 mpx;          /**< Is this HMM multiplex? (hoisted for speed) */
     uint8 n_emit_state; /**< Number of emitting states (hoisted for speed) */
@@ -218,13 +215,8 @@ typedef struct hmm_s {
 #define hmm_senscr(h,st) (hmm_ssid(h,st) == -1                          \
                           ? WORST_SCORE                                 \
                           : (h)->ctx->senscore[hmm_senid(h,st)])
-#define hmm_mpx_tmatid(h,i) (h)->t.mpx_tmatid[i]
-#define hmm_tmatid(h,i) (hmm_is_mpx(h)          \
-                         ? hmm_mpx_tmatid(h,i)  \
-                       : (h)->t.tmatid)
-#define hmm_tprob(h,i,j) (hmm_tmatid(h,i) == -1                         \
-                          ? WORST_SCORE                                 \
-                          : (h)->ctx->tp[hmm_tmatid(h,i)][i][j])
+#define hmm_tmatid(h) (h)->tmatid
+#define hmm_tprob(h,i,j) (h)->ctx->tp[hmm_tmatid(h)][i][j]
 #define hmm_n_emit_state(h) ((h)->n_emit_state)
 #define hmm_n_state(h) ((h)->n_emit_state + 1)
 
@@ -282,14 +274,6 @@ void hmm_normalize(hmm_t *h, int32 bestscr);
  **/
 void hmm_enter(hmm_t *h, int32 score,
                int32 histid, int32 frame);
-
-/**
- * Enter a muliplex HMM with the given path score and history ID.
- **/
-void hmm_enter_mpx(hmm_t *h, int32 score,
-                   int32 histid, int32 frame,
-                   int32 ssid, s3tmatid_t tmat);
-
 
 /**
  * Viterbi evaluation of given HMM.  (NOTE that if this module were being used for tracking
