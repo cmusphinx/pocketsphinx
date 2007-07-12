@@ -148,9 +148,10 @@ extern "C" {
 /** \struct hmm_context_t
  * \brief Shared information between a set of HMMs.
  *
- * For compatibility with Sphinx-II, we assume that the initial or entry state can only
- * transition to state 0, and the transition matrix is n_emit_state x (n_emit_state+1),
- * where the extra destination dimension correponds to the final or exit state.
+ * We assume that the initial state is emitting and that the
+ * transition matrix is n_emit_state x (n_emit_state+1), where the
+ * extra destination dimension correponds to the non-emitting final or
+ * exit state.
  */
 typedef struct hmm_context_s {
     int32 n_emit_state;    /**< Number of emitting states in this set of HMMs. */
