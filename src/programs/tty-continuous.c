@@ -78,8 +78,6 @@
 #include <sys/time.h>
 #endif
 
-#define SAMPLE_RATE   16000
-
 static ad_rec_t *ad;
 
 /* Sleep for specified msec */
@@ -253,8 +251,8 @@ main(int argc, char *argv[])
 
     fbs_init(argc, argv);
 
-    if ((ad = ad_open_sps(SAMPLE_RATE)) == NULL)
-        E_FATAL("ad_open_sps failed\n");
+    if ((ad = ad_open_dev(cmd_ln_str("-adcdev"), (int)cmd_ln_float32("-samprate"))) == NULL)
+        E_FATAL("ad_open_dev failed\n");
 
     E_INFO("%s COMPILED ON: %s, AT: %s\n\n", argv[0], __DATE__, __TIME__);
 

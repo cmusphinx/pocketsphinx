@@ -79,6 +79,10 @@
       ARG_INT32,									\
       "0",										\
       "Size of audio file header in bytes (headers are ignored)" },			\
+{ "-adcdev",										\
+      ARG_STRING,									\
+      NULL,										\
+      "Device name for audio input (platform-specific)" },				\
 { "-cepdir",										\
       ARG_STRING,									\
       NULL,										\
