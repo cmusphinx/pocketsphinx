@@ -51,7 +51,15 @@ print "Building task $task\n";
 
 my ($langmodel, $langweight, $beam, $wbeam);
 
-my $align = "/afs/cs.cmu.edu/user/robust/archive/third_party_packages/NIST_scoring_tools/sctk/linux/bin/sclite";
+# Make sure that sclite is in your path if you want to use it. sclite
+# is available from NIST (http://www.nist.gov/speech/tools/index.htm).
+
+# At CMU, depending on the platform you're using, add
+# /afs/cs.cmu.edu/user/robust/archive/nist/sctk/linux/bin or
+# /afs/cs.cmu.edu/user/robust/archive/nist/sctk/sunos/bin to your
+# path. The platform is `uname -s | tr '[A-Z]' '[a-z]'`.
+
+my $align = "sclite";
 
 if (lc($task) eq "an4") {
   $langmodel = " an4.ug.lm";
