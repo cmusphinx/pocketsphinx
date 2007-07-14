@@ -1217,11 +1217,15 @@ lm_free(lm_t *model)
     tginfo_t *tginfo, *next_tginfo;
 
     free(model->unigrams);
-    free(model->bigrams);
     free(model->prob2);
+    if (!cmd_ln_boolean("-mmap")) {
+        free(model->bigrams);
+        if (model->tcount > 0) {
+            free(model->trigrams);
+            free(model->tseg_base);
+        }
+    }
     if (model->tcount > 0) {
-        free(model->trigrams);
-        free(model->tseg_base);
         free(model->bo_wt2);
         free(model->prob3);
     }
