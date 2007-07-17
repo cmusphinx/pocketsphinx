@@ -209,6 +209,7 @@ typedef struct hmm_s {
 #define hmm_bestscore(h) (h)->bestscore
 #define hmm_frame(h) (h)->frame
 #define hmm_mpx_ssid(h,st) (h)->s.mpx_ssid[st]
+#define hmm_nonmpx_ssid(h) (h)->s.ssid
 #define hmm_ssid(h,st) (hmm_is_mpx(h)                           \
                         ? hmm_mpx_ssid(h,st) : (h)->s.ssid)
 #define hmm_senid(h,st) (hmm_ssid(h,st) == -1                           \

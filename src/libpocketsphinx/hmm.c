@@ -91,11 +91,11 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "hmm.h"
 #include "ckd_alloc.h"
 #include "search_const.h"
-
 
 hmm_context_t *
 hmm_context_init(int32 n_emit_state,
@@ -572,11 +572,13 @@ hmm_vit_eval_3st_lr(hmm_t * hmm)
 
     /* It was the best of scores, it was the worst of scores. */
     bestScore = WORST_SCORE;
+    t2 = INT_MIN; /* Not used unless skipstate is true */
 
     /* Transitions into non-emitting state 3 */
     if (s1 > WORST_SCORE) {
         t1 = s2 + hmm_tprob_3st(2, 3);
-        t2 = s1 + hmm_tprob_3st(1, 3);
+        if (hmm_tprob_3st(1,3) > WORST_SCORE)
+            t2 = s1 + hmm_tprob_3st(1, 3);
         if (t1 > t2) {
             s3 = t1;
             hmm_out_history(hmm)  = hmm_history(hmm, 2);
@@ -591,7 +593,8 @@ hmm_vit_eval_3st_lr(hmm_t * hmm)
     /* All transitions into state 2 (state 0 is always active) */
     t0 = s2 + hmm_tprob_3st(2, 2);
     t1 = s1 + hmm_tprob_3st(1, 2);
-    t2 = s0 + hmm_tprob_3st(0, 2);
+    if (hmm_tprob_3st(0, 2) > WORST_SCORE)
+        t2 = s0 + hmm_tprob_3st(0, 2);
     if (t0 > t1) {
         if (t2 > t0) {
             s2 = t2;
@@ -642,6 +645,7 @@ hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
     int32 s3, s2, s1, s0, t2, t1, t0;
 
     /* Don't propagate WORST_SCORE */
+    t2 = INT_MIN; /* Not used unless skipstate is true */
     if (ssid[2] == -1)
         s2 = t1 = WORST_SCORE;
     else {
@@ -649,18 +653,18 @@ hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
         t1 = s2 + hmm_tprob_3st(2, 3);
     }
     if (ssid[1] == -1)
-        s1 = t2 = WORST_SCORE;
+        s1 = WORST_SCORE;
     else {
         s1 = hmm_score(hmm, 1) + mpx_senscr(1);
         t2 = s1 + hmm_tprob_3st(1, 3);
     }
     if (t1 > t2) {
         s3 = t1;
-        hmm_out_history(hmm) = hmm_history(hmm, 1);
+        hmm_out_history(hmm) = hmm_history(hmm, 2);
     }
     else {
         s3 = t2;
-        hmm_out_history(hmm) = hmm_history(hmm, 2);
+        hmm_out_history(hmm) = hmm_history(hmm, 1);
     }
     hmm_out_score(hmm) = s3;
     bestScore = s3;
@@ -674,7 +678,8 @@ hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
         t0 = s2 + hmm_tprob_3st(2, 2);
     if (s1 != WORST_SCORE)
         t1 = s1 + hmm_tprob_3st(1, 2);
-    t2 = s0 + hmm_tprob_3st(0, 2);
+    if (hmm_tprob_3st(0,2) > WORST_SCORE)
+        t2 = s0 + hmm_tprob_3st(0, 2);
     if (t0 > t1) {
         if (t2 > t0) {
             s2 = t2;
