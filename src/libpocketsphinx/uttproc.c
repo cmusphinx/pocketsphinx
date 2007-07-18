@@ -281,7 +281,6 @@
 #include "s2_semi_mgau.h"
 #include "senscr.h"
 #include "search_const.h"
-#include "msd.h"
 #include "strfuncs.h"
 #include "linklist.h"
 #include "list.h"
