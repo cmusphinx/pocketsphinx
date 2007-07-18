@@ -224,7 +224,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                 for (gn = lc_pnodelist; gn; gn = gnode_next(gn)) {
                     pnode = (fsg_pnode_t *) gnode_ptr(gn);
 
-                    if (pnode->hmm.s.ssid == ssid) {
+                    if (hmm_nonmpx_ssid(&pnode->hmm) == ssid) {
                         /* already allocated; share it for this context phone */
                         fsg_pnode_add_ctxt(pnode, lc);
                         break;
@@ -317,7 +317,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                         ssid_pnode_map[j] = pnode;
                     }
                     else {
-                        assert(pnode->hmm.s.ssid == ssid);
+                        assert(hmm_nonmpx_ssid(&pnode->hmm) == ssid);
                     }
                     fsg_pnode_add_ctxt(pnode, lc);
                 }
@@ -380,7 +380,7 @@ psubtree_add_trans(fsg_pnode_t * root,
                         ssid_pnode_map[j] = pnode;
                     }
                     else {
-                        assert(pnode->hmm.s.ssid == ssid);
+                        assert(hmm_nonmpx_ssid(&pnode->hmm) == ssid);
                     }
                     fsg_pnode_add_ctxt(pnode, rc);
                 }
@@ -485,7 +485,7 @@ fsg_psubtree_dump(fsg_pnode_t * head, FILE * fp)
             fprintf(fp, "  ");
 
         fprintf(fp, "%p.@", head);    /* Pointer used as node ID */
-        fprintf(fp, " %5d.SS", head->hmm.s.ssid);
+        fprintf(fp, " %5d.SS", hmm_nonmpx_ssid(&head->hmm));
         fprintf(fp, " %10d.LP", head->logs2prob);
         fprintf(fp, " %p.SIB", head->sibling);
         fprintf(fp, " %s.%d", phone_from_id(head->ci_ext), head->ppos);
