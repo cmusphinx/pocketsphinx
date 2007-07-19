@@ -1520,7 +1520,14 @@ lm3g_load(char const *file, char const *lmname,
         filesize = ftell(fp);
         fseek(fp, offset, SEEK_SET);
 
-        map_base = s2_mmap(file);
+        /* Check for improper word alignment. */
+        if (offset & 0x3) {
+            E_WARN("-mmap specified, but tseg_base is not word-aligned.  Will not memory-map.\n");
+            do_mmap = FALSE;
+        }
+        else {
+            map_base = s2_mmap(file);
+        }
     }
 
     /* read bigrams */
@@ -1613,12 +1620,11 @@ lm3g_load(char const *file, char const *lmname,
     }
 
     /* read tseg_base size and tseg_base */
-    /* FIXME: There could be alignment issues here. */
     if (do_mmap)
         offset = ftell(fp);
     if (model->tcount > 0) {
         if (do_mmap) {
-            k = *(int32 *) (map_base + offset);
+            memcpy(&k, map_base + offset, sizeof(k));
             offset += sizeof(int32);
             model->tseg_base = (int32 *) (map_base + offset);
             offset += k * sizeof(int32);
@@ -1640,7 +1646,7 @@ lm3g_load(char const *file, char const *lmname,
 
     /* read ascii word strings */
     if (do_mmap) {
-        k = *(int32 *) (map_base + offset);
+        memcpy(&k, map_base + offset, sizeof(k));
         offset += sizeof(int32);
         tmp_word_str = (char *) (map_base + offset);
         offset += k;
