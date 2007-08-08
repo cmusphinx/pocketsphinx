@@ -125,6 +125,7 @@
 #include <limits.h>
 
 #include "s2types.h"
+#include "strfuncs.h"
 #include "basic_types.h"
 #include "search_const.h"
 #include "list.h"
@@ -169,34 +170,6 @@ char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *kdtreefn, *sendumpfn;
 
 /* Language model set */
 lmclass_set_t lmclass_set;
-
-/* FIXME: Should go in sphinxbase */
-char *
-string_join(const char *base, ...)
-{
-    va_list args;
-    size_t len;
-    const char *c;
-    char *out;
-
-    va_start(args, base);
-    len = strlen(base);
-    while ((c = va_arg(args, const char *)) != NULL) {
-        len += strlen(c);
-    }
-    len++;
-    va_end(args);
-
-    out = ckd_calloc(len, 1);
-    va_start(args, base);
-    strcpy(out, base);
-    while ((c = va_arg(args, const char *)) != NULL) {
-        strcat(out, c);
-    }
-    va_end(args);
-
-    return out;
-}
 
 void
 kbAddGrammar(char const *fileName, char const *grammarName)

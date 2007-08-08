@@ -7,6 +7,7 @@ sourcedir=../"@top_srcdir@"
 tests=$sourcedir/test
 data=$sourcedir/test/data
 model=$sourcedir/model
+programs="$builddir/src/programs"
 
 # Automatically report failures on exit
 failures=""
@@ -15,7 +16,19 @@ trap "report_failures" 0
 run_program() {
     program="$1"
     shift
-    $builddir/libtool --mode=execute "$builddir/src/programs/$program" $@
+    $builddir/libtool --mode=execute "$programs/$program" $@
+}
+
+debug_program() {
+    program="$1"
+    shift
+    $builddir/libtool --mode=execute gdb --args "$programs/$program" $@
+}
+
+memcheck_program() {
+    program="$1"
+    shift
+    $builddir/libtool --mode=execute valgrind --leak-check=full "$programs/$program" $@
 }
 
 pass() {

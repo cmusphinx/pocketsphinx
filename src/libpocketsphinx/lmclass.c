@@ -55,7 +55,6 @@
 #include "s2types.h"
 #include "ckd_alloc.h"
 #include "pio.h"
-#include "str2words.h"
 #include "strfuncs.h"
 #include "err.h"
 #include "log.h"

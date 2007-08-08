@@ -25,15 +25,12 @@ libpocketsphinx_la_SOURCES = \
 	lmclass.c				\
 	log_add.c				\
 	mdef.c					\
-	nxtarg.c				\
 	phone.c					\
 	s2_mmap.c				\
 	s2_semi_mgau.c				\
 	search.c				\
 	searchlat.c				\
 	senscr.c				\
-	skipto.c				\
-	strcasecmp.c				\
 	subvq_mgau.c				\
 	tmat.c					\
 	uttproc.c				\

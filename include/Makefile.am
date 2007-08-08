@@ -29,7 +29,6 @@ pkginclude_HEADERS = \
 	search_const.h				\
 	search.h				\
 	senscr.h				\
-	strfuncs.h				\
 	subvq_mgau.h				\
 	tmat.h					\
 	vector.h				\

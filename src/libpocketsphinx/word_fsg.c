@@ -140,7 +140,7 @@
 #include <cmd_ln.h>
 
 #include "s2types.h"
-#include "str2words.h"
+#include "strfuncs.h"
 #include "kb.h"
 #include "phone.h"
 #include "dict.h"

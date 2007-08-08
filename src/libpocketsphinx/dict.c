@@ -308,19 +308,22 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
         void *val;
 
         if (hash_table_lookup(dict->dict, cmd_ln_str("-lmendsym"), &val) != 0) {
+            char pronstr[5];
             /*
              * Check if there is a special end silence phone.
              */
             if (NO_PHONE == phone_to_id("SILe", FALSE)) {
-                entry = _new_dict_entry(cmd_ln_str("-lmendsym"), "SIL", FALSE);
+                strcpy(pronstr, "SIL");
+                entry = _new_dict_entry(cmd_ln_str("-lmendsym"), pronstr, FALSE);
                 if (!entry)
                     E_FATAL("Failed to add </s>(SIL) to dictionary\n");
             }
             else {
                 E_INFO("Using special end silence for %s\n",
                        cmd_ln_str("-lmendsym"));
+                strcpy(pronstr, "SILe");
                 entry =
-                    _new_dict_entry(cmd_ln_str("-lmendsym"), "SILe", FALSE);
+                    _new_dict_entry(cmd_ln_str("-lmendsym"), pronstr, FALSE);
             }
             _dict_list_add(dict, entry);
             hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
@@ -360,20 +363,23 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
         }
         /* Add the standard start symbol (<s>) if not already in dict */
         if (hash_table_lookup(dict->dict, cmd_ln_str("-lmstartsym"), &val) != 0) {
+            char pronstr[5];
             /*
              * Check if there is a special begin silence phone.
              */
             if (NO_PHONE == phone_to_id("SILb", FALSE)) {
+                strcpy(pronstr, "SIL");
                 entry =
-                    _new_dict_entry(cmd_ln_str("-lmstartsym"), "SIL", FALSE);
+                    _new_dict_entry(cmd_ln_str("-lmstartsym"), pronstr, FALSE);
                 if (!entry)
                     E_FATAL("Failed to add <s>(SIL) to dictionary\n");
             }
             else {
                 E_INFO("Using special begin silence for %s\n",
                        cmd_ln_str("-lmstartsym"));
+                strcpy(pronstr, "SILb");
                 entry =
-                    _new_dict_entry(cmd_ln_str("-lmstartsym"), "SILb", FALSE);
+                    _new_dict_entry(cmd_ln_str("-lmstartsym"), pronstr, FALSE);
                 if (!entry)
                     E_FATAL("Failed to add <s>(SILb) to dictionary\n");
             }
@@ -386,7 +392,10 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
 
         /* Finally create a silence phone if it isn't there already. */
         if (hash_table_lookup(dict->dict, "SIL", &val) != 0) {
-            entry = _new_dict_entry("SIL", "SIL", FALSE);
+            char pronstr[4];
+
+            strcpy(pronstr, "SIL");
+            entry = _new_dict_entry("SIL", pronstr, FALSE);
             if (!entry)
                 E_FATAL("Failed to add <sil>(SIL) to dictionary\n");
             _dict_list_add(dict, entry);
@@ -617,14 +626,18 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
     position[0] = 'b';          /* First phone is at begginging */
 
     while (1) {
+        int n;
+        char delim;
+
 	if (pronoun_len >= MAX_PRONOUN_LEN) {
 	    E_ERROR("'%s': Too many phones for bogus hard-coded limit (%d), skipping\n",
 		    word_str, MAX_PRONOUN_LEN);
 	    return NULL;
 	}
-        phone[pronoun_len] = (char *) nxtarg(&pronoun_str, " \t");
-        if (*phone[pronoun_len] == 0)
+        n = nextword(pronoun_str, " \t", &phone[pronoun_len], &delim);
+        if (n < 0)
             break;
+        pronoun_str = phone[pronoun_len] + n + 1;
         /*
          * An '&' in the phone string indicates that this is a word break and
          * and that the previous phone is in the end of word position and the
@@ -642,6 +655,8 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
             return NULL;
         }
         pronoun_len++;
+        if (delim == '\0')
+            break;
     }
 
     position[pronoun_len - 1] = 'e';    /* Last phone is at the end */
@@ -790,22 +805,28 @@ replace_dict_entry(dictT * dict,
 
     /* For the moment, no phrase dictionary stuff... */
     while (1) {
+        int n;
+        char delim;
+
 	if (pronoun_len >= MAX_PRONOUN_LEN) {
 	    E_ERROR("'%s': Too many phones for bogus hard-coded limit (%d), skipping\n",
 		    word_str, MAX_PRONOUN_LEN);
 	    return 0;
 	}
-        phone[pronoun_len] = (char *) nxtarg(&pronoun_str, " \t");
-        if (*phone[pronoun_len] == 0)
+        n = nextword(pronoun_str, " \t", &phone[pronoun_len], &delim);
+        if (n < 0)
             break;
+        pronoun_str = phone[pronoun_len] + n + 1;
+
         ciPhoneId[pronoun_len] = phone_to_id(phone[pronoun_len], TRUE);
         if (ciPhoneId[pronoun_len] == NO_PHONE) {
             E_ERROR("'%s': Unknown phone '%s'\n", word_str,
                     phone[pronoun_len]);
             return 0;
         }
-
         pronoun_len++;
+        if (delim == '\0')
+            break;
     }
 
     /* For the moment, no single phone new word... */
