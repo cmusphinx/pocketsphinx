@@ -235,6 +235,7 @@ bin_mdef_free(bin_mdef_t * m)
     if (m->alloc_mode == BIN_MDEF_FROM_TEXT) {
         ckd_free(m->ciname[0]);
         ckd_free(m->sseq[0]);
+        ckd_free(m->phone);
         ckd_free(m->cd_tree);
     }
     if (m->alloc_mode == BIN_MDEF_IN_MEMORY)
