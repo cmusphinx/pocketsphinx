@@ -73,7 +73,6 @@
 #include "basic_types.h"
 #include "search_const.h"
 #include "linklist.h"
-#include "list.h"
 #include "hash_table.h"
 #include "phone.h"
 #include "log.h"

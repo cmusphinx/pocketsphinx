@@ -283,7 +283,6 @@
 #include "search_const.h"
 #include "strfuncs.h"
 #include "linklist.h"
-#include "list.h"
 #include "dict.h"
 #include "lmclass.h"
 #include "lm_3g.h"
@@ -806,6 +805,13 @@ uttproc_end(void)
 
     ckd_free(uttid);
     uttid = NULL;
+
+    if (feat_buf) {
+        feat_array_free(feat_buf);
+        ckd_free_2d((void **)mfcbuf);
+        feat_buf = NULL;
+        mfcbuf = NULL;
+    }
 
     uttstate = UTTSTATE_UNDEF;
     return 0;

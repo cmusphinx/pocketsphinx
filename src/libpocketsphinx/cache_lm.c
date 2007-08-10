@@ -57,7 +57,6 @@
 #include "log.h"
 #include "cache_lm.h"
 #include "linklist.h"
-#include "list.h"
 #include "hash_table.h"
 #include "dict.h"
 #include "lmclass.h"

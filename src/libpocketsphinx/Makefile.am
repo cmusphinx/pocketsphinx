@@ -19,7 +19,6 @@ libpocketsphinx_la_SOURCES = \
 	hmm.c                                   \
 	kb_main.c				\
 	kdtree.c				\
-	list.c					\
 	lm_3g.c					\
 	lm.c					\
 	lmclass.c				\

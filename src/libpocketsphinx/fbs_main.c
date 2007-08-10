@@ -313,8 +313,6 @@ fbs_init(int32 argc, char **argv)
 
     if (cmd_ln_str("-ctl")) {
         run_ctl_file(cmd_ln_str("-ctl"));
-        uttproc_end();
-        exit(0);
     }
 
     return 0;
@@ -326,6 +324,7 @@ fbs_end(void)
     uttproc_end();
     search_free();
     kb_close();
+    feat_free(fcb);
     cmd_ln_free();
     return 0;
 }

@@ -225,7 +225,6 @@
 #include "s2types.h"
 #include "basic_types.h"
 #include "linklist.h"
-#include "list.h"
 #include "search_const.h"
 #include "dict.h"
 #include "lm.h"
@@ -3023,7 +3022,16 @@ delete_search_subtree(chan_t * hmm)
 void
 free_search_tree(void)
 {
+    int i, w;
     delete_search_tree();
+    for (i = 0; i < n_root_chan_alloc; i++) {
+        hmm_deinit(&root_chan[i].hmm);
+    }
+    for (i = w = 0; w < NumWords; w++) {
+        if (word_dict->dict_list[w]->len != 1)
+            continue;
+        hmm_deinit(&all_rhmm[i++].hmm);
+    }
     ckd_free(all_rhmm);
     ckd_free(first_phone_rchan_map);
     ckd_free(root_chan);

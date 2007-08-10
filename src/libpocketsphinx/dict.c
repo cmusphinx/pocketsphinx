@@ -122,7 +122,7 @@
 #include "s2types.h"
 #include "strfuncs.h"
 #include "basic_types.h"
-#include "list.h"
+#include "glist.h"
 #include "phone.h"
 #include "dict.h"
 #include "search_const.h"
@@ -140,8 +140,8 @@
 
 extern int32 use_noise_words;
 
-static void buildEntryTable(list_t * list, int32 *** table_p);
-static void buildExitTable(list_t * list, int32 *** table_p,
+static void buildEntryTable(glist_t list, int32 *** table_p);
+static void buildExitTable(glist_t list, int32 *** table_p,
                            int32 *** permuTab_p, int32 ** sizeTab_p);
 static int32 addToLeftContextTable(char *diphone);
 static int32 addToRightContextTable(char *diphone);
@@ -157,14 +157,14 @@ static hash_table_t *mtpHT;     /* Missing triphone hash table */
 static glist_t mtpList;
 
 static hash_table_t *lcHT;      /* Left context hash table */
-static list_t *lcList;
+static glist_t lcList;
 static int32 **lcFwdTable;
 static int32 **lcBwdTable;
 static int32 **lcBwdPermTable;
 static int32 *lcBwdSizeTable;
 
 static hash_table_t *rcHT;      /* Right context hash table */
-static list_t *rcList;
+static glist_t rcList;
 static int32 **rcFwdTable;
 static int32 **rcFwdPermTable;
 static int32 **rcBwdTable;
@@ -251,10 +251,12 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
         if (rcHT)
             hash_table_free(rcHT);
         rcHT = hash_table_new(j, HASH_CASE_YES);
-        lcList = new_list();
-        rcList = new_list();
-        lcList->size_hint = j;
-        rcList->size_hint = j;
+        if (lcList)
+            glist_free(lcList);
+        lcList = NULL;
+        if (rcList)
+            glist_free(rcList);
+        rcList = NULL;
     }
 
     /* Load dictionaries */
@@ -410,10 +412,12 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
         dict_load(dict, n_filename, &word_id, FALSE /* use_context */);
 
     E_INFO("LEFT CONTEXT TABLES\n");
+    lcList = glist_reverse(lcList);
     buildEntryTable(lcList, &lcFwdTable);
     buildExitTable(lcList, &lcBwdTable, &lcBwdPermTable, &lcBwdSizeTable);
 
     E_INFO("RIGHT CONTEXT TABLES\n");
+    rcList = glist_reverse(rcList);
     buildEntryTable(rcList, &rcBwdTable);
     buildExitTable(rcList, &rcFwdTable, &rcFwdPermTable, &rcFwdSizeTable);
 
@@ -439,28 +443,32 @@ void
 dict_cleanup(void)
 {
     int32 i;
+    gnode_t *gn;
 
-    for (i = 0; i < lcList->in_use; ++i) {
+    for (i = 0, gn = lcList; gn; gn = gnode_next(gn), ++i) {
         ckd_free(lcFwdTable[i]);
-        ckd_free(lcList->list[i]);
+        ckd_free(gnode_ptr(gn));
     }
     ckd_free(lcFwdTable);
     ckd_free_2d((void **)lcBwdTable);
     ckd_free_2d((void **)lcBwdPermTable);
     ckd_free(lcBwdSizeTable);
-    list_free(lcList);
-    ckd_free(lcList);
+    if (lcHT)
+        hash_table_free(lcHT);
+    glist_free(lcList);
 
-    for (i = 0; i < rcList->in_use; ++i) {
+    for (i = 0, gn = rcList; gn; gn = gnode_next(gn), ++i) {
         ckd_free(rcBwdTable[i]);
-        ckd_free(rcList->list[i]);
+        ckd_free(gnode_ptr(gn));
     }
     ckd_free(rcBwdTable);
     ckd_free_2d((void **)rcFwdTable);
     ckd_free_2d((void **)rcFwdPermTable);
     ckd_free(rcFwdSizeTable);
-    list_free(rcList);
-    ckd_free(rcList);
+    if (rcHT)
+        hash_table_free(rcHT);
+    glist_free(rcList);
+    glist_free(mtpList);
 }
 
 
@@ -996,7 +1004,7 @@ dict_mtpList(void)
 }
 
 static int32
-addToContextTable(char *diphone, hash_table_t * table, list_t * list)
+addToContextTable(char *diphone, hash_table_t * table, glist_t *list)
 {
     void * idx;
     char *cp;
@@ -1004,7 +1012,7 @@ addToContextTable(char *diphone, hash_table_t * table, list_t * list)
     if (-1 == hash_table_lookup(table, diphone, &idx)) {
         cp = ckd_salloc(diphone);
         idx = (void *)(long)table->inuse;
-        list_insert(list, cp);
+        *list = glist_add_ptr(*list, cp);
         hash_table_enter(table, cp, idx);
     }
     return ((int32)(long)idx);
@@ -1013,13 +1021,13 @@ addToContextTable(char *diphone, hash_table_t * table, list_t * list)
 static int32
 addToLeftContextTable(char *diphone)
 {
-    return addToContextTable(diphone, lcHT, lcList);
+    return addToContextTable(diphone, lcHT, &lcList);
 }
 
 static int32
 addToRightContextTable(char *diphone)
 {
-    return addToContextTable(diphone, rcHT, rcList);
+    return addToContextTable(diphone, rcHT, &rcList);
 }
 
 static int
@@ -1037,7 +1045,7 @@ cmpPT(void const *a, void const *b)
 }
 
 static void
-buildEntryTable(list_t * list, int32 *** table_p)
+buildEntryTable(glist_t list, int32 *** table_p)
 {
     int32 ciCount = phoneCiCount();
     int32 i, j;
@@ -1046,20 +1054,22 @@ buildEntryTable(list_t * list, int32 *** table_p)
     int32 triphoneContext = 0;
     int32 noContext = 0;
     int32 **table;
+    gnode_t *gn;
+    int n;
 
-    *table_p = ckd_calloc(list->in_use, sizeof(int32 *));
+    *table_p = ckd_calloc(glist_count(list), sizeof(int32 *));
     table = *table_p;
-    E_INFO("Entry Context table contains\n\t%6d entries\n", list->in_use);
-    E_INFO("\t%6d possible cross word triphones.\n",
-           list->in_use * ciCount);
+    n = glist_count(list);
+    E_INFO("Entry Context table contains\n\t%6d entries\n", n);
+    E_INFO("\t%6d possible cross word triphones.\n", n * ciCount);
 
-    for (i = 0; i < list->in_use; i++) {
+    for (i = 0, gn = list; gn; gn = gnode_next(gn), ++i) {
         table[i] = ckd_calloc(ciCount, sizeof(int32));
         for (j = 0; j < ciCount; j++) {
             /*
              * Look for the triphone
              */
-            sprintf(triphoneStr, list->list[i], phone_from_id(j));
+            sprintf(triphoneStr, (char *)gnode_ptr(gn), phone_from_id(j));
             table[i][j] = phone_to_id(triphoneStr, FALSE);
             if (table[i][j] >= 0)
                 triphoneContext++;
@@ -1067,7 +1077,7 @@ buildEntryTable(list_t * list, int32 *** table_p)
              * If we can't find the desired right context use "SIL"
              */
             if (table[i][j] < 0) {
-                sprintf(triphoneStr, list->list[i], "SIL");
+                sprintf(triphoneStr, (char *)gnode_ptr(gn), "SIL");
                 table[i][j] = phone_to_id(triphoneStr, FALSE);
                 if (table[i][j] >= 0)
                     silContext++;
@@ -1078,7 +1088,7 @@ buildEntryTable(list_t * list, int32 *** table_p)
             if (table[i][j] < 0) {
                 char stmp[32];
                 char *p;
-                strcpy(stmp, list->list[i]);
+                strcpy(stmp, (char *)gnode_ptr(gn));
                 p = strchr(stmp, '(');
                 *p = '\0';
                 table[i][j] = phone_to_id(stmp, TRUE);
@@ -1092,7 +1102,7 @@ buildEntryTable(list_t * list, int32 *** table_p)
 }
 
 static void
-buildExitTable(list_t * list, int32 *** table_p, int32 *** permuTab_p,
+buildExitTable(glist_t list, int32 *** table_p, int32 *** permuTab_p,
                int32 ** sizeTab_p)
 {
     int32 ciCount = phoneCiCount();
@@ -1106,26 +1116,28 @@ buildExitTable(list_t * list, int32 *** table_p, int32 *** permuTab_p,
     int32 **permuTab;
     int32 *sizeTab;
     int32 ptab[128];
+    gnode_t *gn;
+    int32 n;
 
+    n = glist_count(list);
     *table_p =
-        (int32 **) ckd_calloc_2d(list->in_use, ciCount + 1, sizeof(int32 *));
+        (int32 **) ckd_calloc_2d(n, ciCount + 1, sizeof(int32 *));
     table = *table_p;
     *permuTab_p =
-        (int32 **) ckd_calloc_2d(list->in_use, ciCount + 1, sizeof(int32 *));
+        (int32 **) ckd_calloc_2d(n, ciCount + 1, sizeof(int32 *));
     permuTab = *permuTab_p;
-    *sizeTab_p = ckd_calloc(list->in_use, sizeof(int32 *));
+    *sizeTab_p = ckd_calloc(n, sizeof(int32 *));
     sizeTab = *sizeTab_p;
 
-    E_INFO("Exit Context table contains\n\t%6d entries\n", list->in_use);
-    E_INFO("\t%6d possible cross word triphones.\n",
-           list->in_use * ciCount);
+    E_INFO("Exit Context table contains\n\t%6d entries\n", n);
+    E_INFO("\t%6d possible cross word triphones.\n", n * ciCount);
 
-    for (i = 0; i < list->in_use; i++) {
+    for (i = 0, gn = list; gn; gn = gnode_next(gn), ++i) {
         for (j = 0; j < ciCount; j++) {
             /*
              * Look for the triphone
              */
-            sprintf(triphoneStr, list->list[i], phone_from_id(j));
+            sprintf(triphoneStr, (char *)gnode_ptr(gn), phone_from_id(j));
             table[i][j] = phone_to_id(triphoneStr, FALSE);
             if (table[i][j] >= 0)
                 triphoneContext++;
@@ -1133,7 +1145,7 @@ buildExitTable(list_t * list, int32 *** table_p, int32 *** permuTab_p,
              * If we can't find the desired context use "SIL"
              */
             if (table[i][j] < 0) {
-                sprintf(triphoneStr, list->list[i], "SIL");
+                sprintf(triphoneStr, (char *)gnode_ptr(gn), "SIL");
                 table[i][j] = phone_to_id(triphoneStr, FALSE);
                 if (table[i][j] >= 0)
                     silContext++;
@@ -1144,7 +1156,7 @@ buildExitTable(list_t * list, int32 *** table_p, int32 *** permuTab_p,
             if (table[i][j] < 0) {
                 char stmp[32];
                 char *p;
-                strcpy(stmp, list->list[i]);
+                strcpy(stmp, (char *)gnode_ptr(gn));
                 p = strchr(stmp, '(');
                 *p = '\0';
                 table[i][j] = phone_to_id(stmp, TRUE);
@@ -1156,7 +1168,7 @@ buildExitTable(list_t * list, int32 *** table_p, int32 *** permuTab_p,
     /*
      * Now compress the table to eliminate duplicate entries.
      */
-    for (i = 0; i < list->in_use; i++) {
+    for (i = 0; i < n; ++i) {
         /*
          * Set up the permutation table
          */
@@ -1185,7 +1197,7 @@ buildExitTable(list_t * list, int32 *** table_p, int32 *** permuTab_p,
            triphoneContext, silContext, noContext);
     E_INFO("\t%6d right context entries\n", entries);
     E_INFO("\t%6d ave entries per exit context\n",
-           ((list->in_use == 0) ? 0 : entries / list->in_use));
+           ((n == 0) ? 0 : entries / n));
 }
 
 int32 **

@@ -171,7 +171,6 @@
 #include "assert.h"
 #include "strfuncs.h"
 #include "linklist.h"
-#include "list.h"
 #include "hash_table.h"
 #include "err.h"
 #include "lmclass.h"
@@ -1296,6 +1295,8 @@ lm_delete_all(void)
         }
     }
     n_lm = 0;
+    ckd_free(lmset);
+    lmset = NULL;
 }
 
 /*

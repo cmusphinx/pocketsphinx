@@ -58,7 +58,6 @@
 #include "s2types.h"
 #include "ckd_alloc.h"
 #include "strfuncs.h"
-#include "list.h"
 #include "phone.h"
 #include "bin_mdef.h"
 #include "err.h"

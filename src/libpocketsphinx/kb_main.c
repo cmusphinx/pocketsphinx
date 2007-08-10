@@ -128,7 +128,6 @@
 #include "strfuncs.h"
 #include "basic_types.h"
 #include "search_const.h"
-#include "list.h"
 #include "err.h"
 #include "ckd_alloc.h"
 #include "pio.h"
@@ -581,8 +580,9 @@ kb_close(void)
     dict_cleanup();
 
     lm_delete_all();
-    if (lmclass_set)
-        
+    if (lmclass_set) {
+        lmclass_set_delete(lmclass_set);
+    }
     tmat_free(tmat);
 
     if (subvq_mgau)

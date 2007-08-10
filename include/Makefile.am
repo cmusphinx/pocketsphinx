@@ -13,7 +13,6 @@ pkginclude_HEADERS = \
 	hmm.h                                   \
 	kb.h					\
 	kdtree.h				\
-	list.h					\
 	lm_3g.h					\
 	lmclass.h				\
 	lm.h					\

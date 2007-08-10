@@ -776,7 +776,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     FILE *fp;
     char line[1000];
     int32 i, n;
-    int32 use_mmap, do_swap;
+    int32 do_swap;
     size_t filesize, offset;
     int n_clust = 256;          /* Number of clusters (if zero, we are just using
                                  * 8-bit quantized weights) */
@@ -784,7 +784,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     int c = bin_mdef_n_sen(mdef);
 
     s->CdWdPDFMod = c;
-    use_mmap = cmd_ln_boolean("-mmap");
+    s->use_mmap = cmd_ln_boolean("-mmap");
 
     if ((fp = fopen(file, "rb")) == NULL)
         return -1;
@@ -801,9 +801,9 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
         }
         do_swap = 1;
     }
-    if (do_swap && use_mmap) {
+    if (do_swap && s->use_mmap) {
         E_ERROR("Dump file is byte-swapped, cannot use memory-mapping\n");
-        use_mmap = 0;
+        s->use_mmap = 0;
     }
     if (fread(line, sizeof(char), n, fp) != n)
         E_FATAL("Cannot read title\n");
@@ -845,7 +845,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
 	fclose(fp);
 	return -1;
     }
-    if (use_mmap) {
+    if (s->use_mmap) {
             E_INFO("Using memory-mapped I/O for senones\n");
     }
     /* Verify alignment constraints for using mmap() */
@@ -854,7 +854,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
         E_ERROR
             ("Number of PDFs (%d) not padded to multiple of 4, will not use mmap()\n",
              c);
-        use_mmap = 0;
+        s->use_mmap = 0;
     }
     offset = ftell(fp);
     fseek(fp, 0, SEEK_END);
@@ -863,11 +863,11 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     if ((offset & 3) != 0) {
         E_ERROR
             ("PDFs are not aligned to 4-byte boundary in file, will not use mmap()\n");
-        use_mmap = 0;
+        s->use_mmap = 0;
     }
 
     /* Allocate memory for pdfs */
-    if (use_mmap) {
+    if (s->use_mmap) {
         s->OPDF_8B = ckd_calloc(s->n_feat + 1, sizeof(unsigned char**));
         for (i = 0; i < s->n_feat; i++) {
             /* Pointers into the mmap()ed 2d array */
@@ -1312,6 +1312,15 @@ s2_semi_mgau_free(s2_semi_mgau_t * s)
 {
     uint32 i;
 
+    if (s->use_mmap) {
+        for (i = 0; i < s->n_feat; ++i) {
+            ckd_free(s->OPDF_8B[i]);
+        }
+        ckd_free(s->OPDF_8B);
+    }
+    else {
+        ckd_free_3d((void ***)s->OPDF_8B);
+    }
     for (i = 0; i < s->n_feat; ++i) {
         ckd_free(s->means[i]);
         ckd_free(s->vars[i]);

@@ -78,6 +78,8 @@ struct s2_semi_mgau_s {
     int32 num_frames;
     int32 ds_ratio;
 
+    int32 use_mmap; /**< Are mixture weights mmap()ed? */
+
     /* Top-N scores and codewords from current, last frame. */
     vqFeature_t **f, **lastf;
     int32 *score_tmp;
