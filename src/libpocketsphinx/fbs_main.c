@@ -232,6 +232,13 @@ static const arg_t fbs_args_def[] = {
     CMDLN_EMPTY_OPTION
 };
 
+/* Feature and front-end parameters that may be in feat.params */
+static const arg_t feat_defn[] = {
+    waveform_to_cepstral_command_line_macro(),
+    input_cmdln_options(),
+    { NULL, 0, NULL, NULL }
+};
+
 /* FIXME FIXME FIXME fixed size buffer */
 static char utt_name[512];
 
@@ -259,6 +266,17 @@ fbs_init(int32 argc, char **argv)
     if ((!cmd_ln_boolean("-fwdtree")) && (!cmd_ln_boolean("-fwdflat")))
         E_FATAL
             ("At least one of -fwdtree and -fwdflat flags must be TRUE\n");
+
+    /* Look for a feat.params very early on, because it influences
+     * everything below. */
+    if (cmd_ln_str("-hmm")) {
+	char *str;
+        str = string_join(cmd_ln_str("-hmm"), "/feat.params", NULL);
+	if (cmd_ln_parse_file(feat_defn, str, FALSE) == 0) {
+	    E_INFO("Parsed model-specific feature parameters from %s\n", str);
+	}
+        ckd_free(str);
+    }
 
     /* Initialize feature computation.  We have to do this first
      * because the acoustic models (loaded in kb_init()) have to match
