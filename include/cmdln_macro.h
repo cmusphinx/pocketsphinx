@@ -242,7 +242,7 @@
       "Skip alternate frames in exiting phones" },                                              \
 { "-latsize",                                                                                   \
       ARG_INT32,                                                                                \
-      "-1",                                                                                  \
+      "50000",                                                                                  \
       "Lattice size" },                                                                         \
 { "-maxwpf",                                                                                    \
       ARG_INT32,                                                                                \
