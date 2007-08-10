@@ -207,9 +207,9 @@
 
 static double oov_ugprob = -5.0;        /* Actually, logprob */
 
-static char const *start_sym = "<s>";
-static char const *end_sym = "</s>";
-static char const *darpa_hdr = "Darpa Trigram LM";
+static char *start_sym;
+static char *end_sym;
+static const char darpa_hdr[] = "Darpa Trigram LM";
 
 /* FIXME: Why does lm3g2dmp.c have its own versions of these functions? */
 static int32 lmname_to_id(char const *name);
@@ -942,6 +942,11 @@ lm_read_clm(char const *filename,
     E_INFO("Reading LM file %s (name \"%s\")\n", filename, lmname);
 
     do_mmap = cmd_ln_boolean("-mmap");
+
+    if (start_sym == NULL)
+        start_sym = ckd_salloc("<s>");
+    if (end_sym == NULL)
+        end_sym = ckd_salloc("</s>");
 
     /* Make sure no LM with same lmname already exists; if so, delete it */
     if (lmname_to_id(lmname) >= 0)
@@ -1684,6 +1689,7 @@ lm3g_load(char const *file, char const *lmname,
     }
     E_INFO("%8d = ascii word strings read\n", i);
 
+    fclose(fp);
     *out_model = model;
     return 0;
 }
@@ -1808,6 +1814,8 @@ lmSetStartSym(char const *sym)
  * Description - reconfigure the start symbol
  */
 {
+    if (start_sym)
+        ckd_free(start_sym);
     start_sym = ckd_salloc(sym);
 }
 
@@ -1817,6 +1825,8 @@ lmSetEndSym(char const *sym)
  * Description - reconfigure the end symbol
  */
 {
+    if (end_sym)
+        ckd_free(end_sym);
     end_sym = ckd_salloc(sym);
 }
 
