@@ -109,7 +109,9 @@
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
+#ifndef _WIN32_WCE
 #include <sys/types.h>
+#endif
 
 /* SphinxBase headers */
 #include <sphinx_config.h>
