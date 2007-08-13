@@ -4,7 +4,8 @@ hmmdata = \
 	means \
 	variances \
 	transition_matrices \
-	sendump
+	sendump \
+	feat.params
 
 hmm_DATA = $(hmmdata)
 EXTRA_DIST = $(hmmdata)
