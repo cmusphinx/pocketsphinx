@@ -316,19 +316,15 @@ SOURCE=..\..\..\src\libpocketsphinx\fsg_search.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\libpocketsphinx\hmm.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\libpocketsphinx\kb_main.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\libpocketsphinx\kdtree.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\lab.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\list.c
 # End Source File
 # Begin Source File
 
@@ -349,10 +345,6 @@ SOURCE=..\..\..\src\libpocketsphinx\log_add.c
 # Begin Source File
 
 SOURCE=..\..\..\src\libpocketsphinx\mdef.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\nxtarg.c
 # End Source File
 # Begin Source File
 
@@ -380,19 +372,7 @@ SOURCE=..\..\..\src\libpocketsphinx\senscr.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\libpocketsphinx\skipto.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\strcasecmp.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\libpocketsphinx\subvq_mgau.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\time_align.c
 # End Source File
 # Begin Source File
 
