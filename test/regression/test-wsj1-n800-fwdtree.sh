@@ -11,7 +11,7 @@ run_program pocketsphinx_batch \
     -dict $data/wsj/wlist5o.nvp.dict \
     -ctl $data/wsj/test5k.n800.ctl \
     -cepdir $data/wsj \
-    -adcin yes -adchdr 44 -samprate 8000 \
+    -adcin yes -adchdr 44 -samprate 8000 -input_endian little \
     -cepext .wav \
     -hyp $bn.match \
     -fwdtree TRUE \
