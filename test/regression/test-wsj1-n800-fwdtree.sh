@@ -30,4 +30,4 @@ fi
 grep AVERAGE $bn.log
 $tests/word_align.pl -i $data/wsj/test5k.n800.lsn $bn.match \
     | grep 'TOTAL Percent'
-compare_table "match" $data/wsj/$bn.match $bn.match
+compare_table "match" $data/wsj/$bn.match $bn.match 100000
