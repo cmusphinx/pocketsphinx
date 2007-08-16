@@ -494,48 +494,6 @@
       "1.0001",                                                                 \
       "Base in which all log-likelihoods calculated (UNUSED)" }
 
-/** Options for force alignment mode. */
-#define time_align_cmdln_options()						\
-{ "-tactl",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Time align control (input sentence) file" },				\
-{ "-taword",									\
-      ARG_BOOLEAN,								\
-      "yes",									\
-      "Time align words" },							\
-{ "-taphone",									\
-      ARG_BOOLEAN,								\
-      "yes",									\
-      "Time align phones" },							\
-{ "-tastate",									\
-      ARG_BOOLEAN,								\
-      "no",									\
-      "Time align states" },							\
-{ "-outsent",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Output sentence file name" },						\
-{ "-segdir",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Directory for writing state segmentation files from time alignment" },	\
-{ "-segext",									\
-      ARG_STRING,								\
-      "v8_seg",									\
-      "Extension for state segmentation files" },				\
-{ "-phonelabdir",								\
-      ARG_STRING,								\
-      NULL,									\
-      "Directory for writing phoneme label files from time alignment" },	\
-{ "-phonelabext",								\
-      ARG_STRING,								\
-      "lab",									\
-      "Extension for phoneme label files" },					\
-{ "-phonelabtype",								\
-      ARG_STRING,								\
-      "xlabel",									\
-      "Type of phoneme label files to write" }
 
 /** Options for allphone mode. */
 #define allphone_cmdln_options()					\
