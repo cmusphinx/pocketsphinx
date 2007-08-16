@@ -54,10 +54,8 @@ EXTRA_DIST=compare_table.pl				\
 	data/wsj/445c0201.mfc				\
 	data/wsj/446c0201.mfc				\
 	data/wsj/447c0201.mfc				\
-	data/wsj/test-an4-subvq.match			\
 	data/wsj/wlist5o.nvp.dict			\
 	data/wsj/wlist5o.nvp.lm.DMP			\
-	data/wsj/test-tidigits-fsg.match		\
 	data/wsj/test-wsj1-fwdflat.match		\
 	data/wsj/test5k.n800.lsn			\
 	data/wsj/n800_440c0202.wav			\
@@ -68,7 +66,6 @@ EXTRA_DIST=compare_table.pl				\
 	data/wsj/n800_440c0208.wav			\
 	data/wsj/n800_440c0209.wav			\
 	data/wsj/test5k.n800.ctl			\
-	data/wsj/test-tidigits-simple.match		\
 	data/wsj/test-wsj1-fwdtree.match		\
 	data/wsj/test-wsj1-n800-fwdtree.match		\
 	data/wsj/n800_440c0201.wav			\
