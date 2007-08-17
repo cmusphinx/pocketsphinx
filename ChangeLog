@@ -1,3 +1,8 @@
+2007-08-16  David Huggins-Daines  <dhuggins@cs.cmu.edu>
+
+	* all: PocketSphinx 0.4
+	* all: Numerous changes, see http://lima.lti.cs.cmu.edu/mediawiki/index.php?PocketSphinx
+
 2007-01-26  David Huggins-Daines  <dhuggins@cs.cmu.edu>
 
 	* all: PocketSphinx 0.3
