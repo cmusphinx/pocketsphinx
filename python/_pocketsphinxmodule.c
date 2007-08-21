@@ -34,7 +34,7 @@ pocketsphinx_parse_argfile(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "s", &filename))
 		return NULL;
-	if (cmd_ln_parse_file(fbs_get_args(), (char *)filename) == -1) {
+	if (cmd_ln_parse_file(fbs_get_args(), (char *)filename, FALSE) == -1) {
 		/* Raise an IOError, the file did not exist (probably). */
 		PyErr_SetString(PyExc_IOError, "Argument file could not be read");
 		return NULL;
@@ -103,7 +103,7 @@ pocketsphinx_parse_argdict(PyObject *self, PyObject *args)
 	}
 
 	argc = argc * 2 + 1;
-	if (cmd_ln_parse(fbs_get_args(), argc, argv) == -1) {
+	if (cmd_ln_parse(fbs_get_args(), argc, argv, FALSE) == -1) {
 		/* This actually won't ever happen */
 		PyErr_SetString(PyExc_ValueError, "Arguments are invalid");
 		return NULL;
@@ -156,7 +156,7 @@ pocketsphinx_parse_argv(PyObject *self, PyObject *args)
 		Py_DECREF(str);
 	}
 
-	if (cmd_ln_parse(fbs_get_args(), argc, argv) == -1) {
+	if (cmd_ln_parse(fbs_get_args(), argc, argv, FALSE) == -1) {
 		/* This actually won't ever happen */
 		PyErr_SetString(PyExc_ValueError, "Arguments are invalid");
 		return NULL;
