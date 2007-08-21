@@ -343,6 +343,7 @@ fbs_end(void)
     search_free();
     kb_close();
     feat_free(fcb);
+    fcb = NULL;
     cmd_ln_free();
     return 0;
 }

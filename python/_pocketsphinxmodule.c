@@ -186,7 +186,6 @@ static PyObject *
 pocketsphinx_close(PyObject *self, PyObject *args)
 {
 	fbs_end();
-	cmd_ln_free();
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -448,4 +447,5 @@ PyMODINIT_FUNC
 init_pocketsphinx(void)
 {
 	(void) Py_InitModule("_pocketsphinx", pocketsphinxmethods);
+
 }

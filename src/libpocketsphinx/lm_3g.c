@@ -1294,7 +1294,7 @@ lm_delete_all(void)
             lmset[i].name = NULL;
         }
     }
-    n_lm = 0;
+    n_lm = n_lm_alloc = 0;
     ckd_free(lmset);
     lmset = NULL;
 }

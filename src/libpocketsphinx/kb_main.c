@@ -574,6 +574,7 @@ kb_close(void)
     kdtreefn = NULL;
 
     bin_mdef_free(mdef);
+    mdef = NULL;
 
     dict_free(word_dict);
     word_dict = NULL;

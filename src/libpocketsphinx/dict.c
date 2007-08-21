@@ -449,26 +449,28 @@ dict_cleanup(void)
         ckd_free(lcFwdTable[i]);
         ckd_free(gnode_ptr(gn));
     }
-    ckd_free(lcFwdTable);
-    ckd_free_2d((void **)lcBwdTable);
-    ckd_free_2d((void **)lcBwdPermTable);
-    ckd_free(lcBwdSizeTable);
+    ckd_free(lcFwdTable); lcFwdTable = NULL;
+    ckd_free_2d((void **)lcBwdTable); lcBwdTable = NULL;
+    ckd_free_2d((void **)lcBwdPermTable); lcBwdPermTable = NULL;
+    ckd_free(lcBwdSizeTable); lcBwdSizeTable = NULL;
     if (lcHT)
         hash_table_free(lcHT);
-    glist_free(lcList);
+    lcHT = NULL;
+    glist_free(lcList); lcList = NULL;
 
     for (i = 0, gn = rcList; gn; gn = gnode_next(gn), ++i) {
         ckd_free(rcBwdTable[i]);
         ckd_free(gnode_ptr(gn));
     }
-    ckd_free(rcBwdTable);
-    ckd_free_2d((void **)rcFwdTable);
-    ckd_free_2d((void **)rcFwdPermTable);
-    ckd_free(rcFwdSizeTable);
+    ckd_free(rcBwdTable); rcBwdTable = NULL;
+    ckd_free_2d((void **)rcFwdTable); rcFwdTable = NULL;
+    ckd_free_2d((void **)rcFwdPermTable); rcFwdPermTable = NULL;
+    ckd_free(rcFwdSizeTable); rcFwdSizeTable = NULL;
     if (rcHT)
         hash_table_free(rcHT);
-    glist_free(rcList);
-    glist_free(mtpList);
+    rcHT = NULL;
+    glist_free(rcList); rcList = NULL;
+    glist_free(mtpList); mtpList = NULL;
 }
 
 
