@@ -1,3 +1,9 @@
+pocketsphinx (0.4-2) unstable; urgency=low
+
+  * Change required debhelper version to 4, so maemo builds work
+
+ -- David Huggins-Daines <dhuggins@cs.cmu.edu>  Wed, 22 Aug 2007 18:59:23 -0400
+
 pocketsphinx (0.4-1) unstable; urgency=low
 
   * Initial Debian Package.

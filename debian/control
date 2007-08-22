@@ -1,7 +1,7 @@
 Source: pocketsphinx
 Priority: extra
 Maintainer: David Huggins-Daines <dhuggins@cs.cmu.edu>
-Build-Depends: debhelper (>= 5), autotools-dev, libsphinxbase0-dev
+Build-Depends: debhelper (>= 4), autotools-dev, libsphinxbase0-dev
 Standards-Version: 3.7.2
 Section: libs
 
