@@ -27,7 +27,7 @@ Description: Lightweight speech recognition - library
 
 Package: pocketsphinx-hmm-wsj1
 Section: sound
-Architecture: any
+Architecture: all
 Description: Lightweight speech recognition - WSJ1 acoustic model
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
@@ -38,7 +38,7 @@ Description: Lightweight speech recognition - WSJ1 acoustic model
 
 Package: pocketsphinx-hmm-tidigits
 Section: sound
-Architecture: any
+Architecture: all
 Description: Lightweight speech recognition - TIDIGITS models
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
@@ -50,7 +50,7 @@ Description: Lightweight speech recognition - TIDIGITS models
 
 Package: pocketsphinx-lm-swb5k
 Section: sound
-Architecture: any
+Architecture: all
 Description: Lightweight speech recognition - SWB5k language model
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
