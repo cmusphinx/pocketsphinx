@@ -15,4 +15,6 @@ $S2CONTINUOUS -live yes \
 	-fwdflat yes -bestpath yes \
 	-lm ${LMFILE} \
 	-dict ${DICT} \
-	-hmm ${HMM}
+	-hmm ${HMM} \
+	-samprate 8000 \
+	-nfft 256
