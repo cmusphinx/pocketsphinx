@@ -1,0 +1,6 @@
+pocketsphinx (0.4-1) unstable; urgency=low
+
+  * Initial Debian Package.
+
+ -- David Huggins-Daines <dhuggins@cs.cmu.edu>  Wed, 22 Aug 2007 17:19:55 -0400
+

@@ -1,0 +1,72 @@
+Source: pocketsphinx
+Priority: extra
+Maintainer: David Huggins-Daines <dhuggins@cs.cmu.edu>
+Build-Depends: debhelper (>= 5), autotools-dev, libsphinxbase0-dev
+Standards-Version: 3.7.2
+Section: libs
+
+Package: libpocketsphinx0-dev
+Section: libdevel
+Architecture: any
+Depends: libpocketsphinx0 (= ${Source-Version})
+Description: Lightweight speech recognition - development files
+ PocketSphinx is a lightweight, cross-platform, speaker-independent,
+ large-vocabulary continuous speech recognition engine.
+ .
+ This package contains the headers and static libraries for development.
+
+Package: libpocketsphinx0
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Lightweight speech recognition - library
+ PocketSphinx is a lightweight, cross-platform, speaker-independent,
+ large-vocabulary continuous speech recognition engine.
+ .
+ This package contains the PocketSphinx shared library.
+
+Package: pocketsphinx-hmm-wsj1
+Section: sound
+Architecture: any
+Description: Lightweight speech recognition - WSJ1 acoustic model
+ PocketSphinx is a lightweight, cross-platform, speaker-independent,
+ large-vocabulary continuous speech recognition engine.
+ .
+ This package contains the default acoustic model for PocketSphinx.
+ It was trained from 81 hours of speech from 284 speakers, recorded on
+ a close-talking microphone and downsampled to 8kHz.
+
+Package: pocketsphinx-hmm-tidigits
+Section: sound
+Architecture: any
+Description: Lightweight speech recognition - TIDIGITS models
+ PocketSphinx is a lightweight, cross-platform, speaker-independent,
+ large-vocabulary continuous speech recognition engine.
+ .
+ This package contains an acoustic model and accompanying "language
+ model" trained specifically for connected digit recognition.  It was
+ trained from the TIDIGITS corpus of spoken digits, recorded on a
+ close-talking microphone and downsampled to 8kHz.
+
+Package: pocketsphinx-lm-swb5k
+Section: sound
+Architecture: any
+Description: Lightweight speech recognition - SWB5k language model
+ PocketSphinx is a lightweight, cross-platform, speaker-independent,
+ large-vocabulary continuous speech recognition engine.
+ .
+ This package contains the default language model for PocketSphinx.
+ It was trained from a 5000-word subset of the Switchboard corpus of
+ conversational telephone transcripts.  This is a "toy" model and is
+ not suitable for real speech recognition tasks.
+
+Package: pocketsphinx-utils
+Section: sound
+Architecture: any
+Depends: libpocketsphinx0 (= ${Source-Version})
+Description: Lightweight speech recognition - command-line tools
+ PocketSphinx is a lightweight, cross-platform, speaker-independent,
+ large-vocabulary continuous speech recognition engine.
+ .
+ This package contains command-line utilities for the PocketSphinx
+ recognition engine.
