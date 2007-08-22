@@ -1,6 +1,6 @@
 #!/bin/sh
 S2CONTINUOUS=@prefix@/bin/pocketsphinx_continuous
-HMM=@prefix@/share/pocketsphinx/model/hmm/wsj0
+HMM=@prefix@/share/pocketsphinx/model/hmm/wsj1
 LM=@prefix@/share/pocketsphinx/model/lm/swb
 LMFILE=@prefix@/share/pocketsphinx/model/lm/swb/swb.lm.DMP
 DICT=@prefix@/share/pocketsphinx/model/lm/swb/swb.dic
