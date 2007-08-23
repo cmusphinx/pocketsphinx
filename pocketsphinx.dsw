@@ -36,7 +36,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name pocketsphinx
+    Project_Dep_Name libpocketsphinx
     End Project Dependency
 }}}
 
@@ -51,7 +51,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name pocketsphinx
+    Project_Dep_Name libpocketsphinx
     End Project Dependency
 }}}
 
@@ -66,7 +66,7 @@ Package=<5>
 Package=<4>
 {{{
     Begin Project Dependency
-    Project_Dep_Name pocketsphinx
+    Project_Dep_Name libpocketsphinx
     End Project Dependency
 }}}
 
