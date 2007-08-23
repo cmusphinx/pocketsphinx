@@ -1,3 +1,10 @@
+2007-08-23  David Huggins-Daines  <dhuggins@cs.cmu.edu>
+
+	* all: PocketSphinx 0.4.1 (Revision 7197)
+	* win32: Fix Windows static-library builds
+	* python: Fix Python build
+	* various: Fix memory errors when calling fbs_init() multiple times
+
 2007-08-16  David Huggins-Daines  <dhuggins@cs.cmu.edu>
 
 	* all: PocketSphinx 0.4
