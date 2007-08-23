@@ -251,8 +251,14 @@ main(int argc, char *argv[])
 
     fbs_init(argc, argv);
 
+	/* Due to DLL madness we can't call cmd_ln_*() from this program. */
+#if defined(_WIN32)
+    if ((ad = ad_open_sps(16000)) == NULL)
+        E_FATAL("ad_open_sps failed\n");
+#else
     if ((ad = ad_open_dev(cmd_ln_str("-adcdev"), (int)cmd_ln_float32("-samprate"))) == NULL)
         E_FATAL("ad_open_dev failed\n");
+#endif
 
     E_INFO("%s COMPILED ON: %s, AT: %s\n\n", argv[0], __DATE__, __TIME__);
 
