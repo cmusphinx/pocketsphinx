@@ -1,7 +1,7 @@
 This package was debianized by David Huggins-Daines <dhuggins@cs.cmu.edu> on
 Wed, 22 Aug 2007 17:19:55 -0400.
 
-It was downloaded from http://downloads.sourceforge.net/cmusphinx/pocketsphinx-0.4.tar.gz
+It was downloaded from http://downloads.sourceforge.net/cmusphinx/pocketsphinx-0.4.1.tar.gz
 
 Upstream Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
 
@@ -39,8 +39,3 @@ License:
 
 The Debian packaging is (C) 2007, David Huggins-Daines <dhuggins@cs.cmu.edu> and
 is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
-
-
-# Please also look if there are files or directories which have a
-# different copyright/license attached and list them here.
-

@@ -1,3 +1,9 @@
+pocketsphinx (0.4-0svn3) unstable; urgency=low
+
+  * Add manual pages.
+
+ -- David Huggins-Daines <dhuggins@cs.cmu.edu>  Mon, 27 Aug 2007 15:04:31 -0400
+
 pocketsphinx (0.4-2) unstable; urgency=low
 
   * Change required debhelper version to 4, so maemo builds work
