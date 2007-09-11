@@ -4,7 +4,7 @@ lib_LTLIBRARIES = libpocketsphinx.la
 
 libpocketsphinx_la_LDFLAGS = -version-info 0:0:0
 
-libpocketsphinx_la_SOURCES = \
+libpocketsphinx_la_SOURCES =			\
 	allphone.c				\
 	awriteshort.c				\
 	bin_mdef.c				\
@@ -16,7 +16,7 @@ libpocketsphinx_la_SOURCES = \
 	fsg_lextree.c				\
 	fsg_psubtree.c				\
 	fsg_search.c				\
-	hmm.c                                   \
+	hmm.c					\
 	kb_main.c				\
 	kdtree.c				\
 	lm_3g.c					\
@@ -24,6 +24,9 @@ libpocketsphinx_la_SOURCES = \
 	lmclass.c				\
 	log_add.c				\
 	mdef.c					\
+	ms_gauden.c				\
+	ms_mgau.c				\
+	ms_senone.c				\
 	phone.c					\
 	s2_mmap.c				\
 	s2_semi_mgau.c				\

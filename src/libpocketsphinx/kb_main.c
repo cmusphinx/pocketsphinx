@@ -118,33 +118,26 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <math.h>
 #include <string.h>
 #include <assert.h>
-#include <limits.h>
 
-#include "s2types.h"
+#include <err.h>
+#include <ckd_alloc.h>
+#include <cmd_ln.h>
+#include <pio.h>
+
 #include "strfuncs.h"
-#include "basic_types.h"
-#include "search_const.h"
-#include "err.h"
-#include "ckd_alloc.h"
-#include "pio.h"
-#include "log.h"
 #include "dict.h"
 #include "lm.h"
-#include "lmclass.h"
-#include "lm_3g.h"
 #include "s2_semi_mgau.h"
 #include "subvq_mgau.h"
+#include "ms_mgau.h"
 #include "kb.h"
 #include "phone.h"
 #include "fbs.h"
 #include "mdef.h"
 #include "tmat.h"
 #include "search.h"
-#include "cmd_ln.h"
 
 /* Dictionary. */
 dictT *word_dict;
@@ -163,6 +156,9 @@ s2_semi_mgau_t *semi_mgau;
 
 /* SubVQ-based fast CDGMM computation object */
 subvq_mgau_t *subvq_mgau;
+
+/* Slow CDGMM computation object */
+ms_mgau_model_t *ms_mgau;
 
 /* Model file names */
 char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *kdtreefn, *sendumpfn;
@@ -538,19 +534,29 @@ kb_init(void)
             || (tmatfn == NULL))
             E_FATAL("No mean/var/tmat files specified\n");
 
-        E_INFO("Initializing SCGMM computation module\n");
+        E_INFO("Attempting to use SCGMM computation module\n");
         semi_mgau = s2_semi_mgau_init(meanfn,
                                       varfn,
                                       cmd_ln_float32("-varfloor"),
                                       mixwfn,
                                       cmd_ln_float32("-mixwfloor"),
                                       cmd_ln_int32("-topn"));
-        if (kdtreefn)
-            s2_semi_mgau_load_kdtree(semi_mgau,
-                                     kdtreefn,
-                                     cmd_ln_int32("-kdmaxdepth"),
-                                     cmd_ln_int32("-kdmaxbbi"));
-        semi_mgau->ds_ratio = cmd_ln_int32("-dsratio");
+        if (semi_mgau) {
+            if (kdtreefn)
+                s2_semi_mgau_load_kdtree(semi_mgau,
+                                         kdtreefn,
+                                         cmd_ln_int32("-kdmaxdepth"),
+                                         cmd_ln_int32("-kdmaxbbi"));
+            semi_mgau->ds_ratio = cmd_ln_int32("-dsratio");
+        }
+        else {
+            E_INFO("Falling back to general multi-stream GMM computation\n");
+            ms_mgau = ms_mgau_init(meanfn, varfn,
+                                   cmd_ln_float32("-varfloor"),
+                                   mixwfn, 
+                                   cmd_ln_float32("-mixwfloor"),
+                                   cmd_ln_int32("-topn"));
+        }
     }
 
     /*

@@ -161,14 +161,18 @@ senscr_compute(mfcc_t **feat, int32 frame_idx, int32 all)
     int32 best;
 
     if (all) {
-        if (semi_mgau)
+        if (ms_mgau)
+            ms_cont_mgau_frame_eval(senone_scores, ms_mgau, feat);
+        else if (semi_mgau)
             s2_semi_mgau_frame_eval(semi_mgau, feat, frame_idx, TRUE);
         else
             subvq_mgau_frame_eval(subvq_mgau, feat, frame_idx, TRUE);
         best = best_senscr_all_s3();
     }
     else {
-        if (semi_mgau)
+        if (ms_mgau)
+            ms_cont_mgau_frame_eval(senone_scores, ms_mgau, feat);
+        else if (semi_mgau)
             s2_semi_mgau_frame_eval(semi_mgau, feat, frame_idx, FALSE);
         else
             subvq_mgau_frame_eval(subvq_mgau, feat, frame_idx, FALSE);

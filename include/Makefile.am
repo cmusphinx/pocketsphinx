@@ -1,4 +1,4 @@
-pkginclude_HEADERS = \
+pkginclude_HEADERS =				\
 	basic_types.h				\
 	bin_mdef.h				\
 	blkarray_list.h				\
@@ -10,7 +10,7 @@ pkginclude_HEADERS = \
 	fsg_lextree.h				\
 	fsg_psubtree.h				\
 	fsg_search.h				\
-	hmm.h                                   \
+	hmm.h					\
 	kb.h					\
 	kdtree.h				\
 	lm_3g.h					\
@@ -19,6 +19,9 @@ pkginclude_HEADERS = \
 	log.h					\
 	magic.h					\
 	mdef.h					\
+	ms_gauden.h				\
+	ms_mgau.h				\
+	ms_senone.h				\
 	phone.h					\
 	posixwin32.h				\
 	s2_semi_mgau.h				\

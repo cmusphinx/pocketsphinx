@@ -1146,8 +1146,11 @@ s3_read_mgau(s2_semi_mgau_t *s, const char *file_name, float32 ***out_cb)
     /* #Codebooks */
     if (bio_fread(&n_mgau, sizeof(int32), 1, fp, byteswap, &chksum) != 1)
         E_FATAL("fread(%s) (#codebooks) failed\n", file_name);
-    if (n_mgau != 1)
-        E_FATAL("%s: #codebooks (%d) != 1\n", file_name, n_mgau);
+    if (n_mgau != 1) {
+        E_ERROR("%s: #codebooks (%d) != 1\n", file_name, n_mgau);
+        fclose(fp);
+        return -1;
+    }
 
     /* #Features/codebook */
     if (bio_fread(&n_feat, sizeof(int32), 1, fp, byteswap, &chksum) != 1)
