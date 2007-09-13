@@ -348,6 +348,18 @@ SOURCE=..\..\..\src\libpocketsphinx\mdef.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\libpocketsphinx\ms_gauden.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\libpocketsphinx\ms_mgau.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\libpocketsphinx\ms_senone.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\libpocketsphinx\phone.c
 # End Source File
 # Begin Source File
