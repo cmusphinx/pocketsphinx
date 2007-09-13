@@ -229,7 +229,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 commctrl.lib coredll.lib /nologo /base:"0x00100000" /stack:0x10000,0x1000 /entry:"_DllMainCRTStartup" /dll /nodefaultlib:"$(CENoDefaultLib)" /subsystem:$(CESubsystem) /align:"4096" /MACHINE:ARM
-# ADD LINK32 coredll.lib sphinxbase.lib /nologo /base:"0x00100000" /stack:0x10000,0x1000 /entry:"_DllMainCRTStartup" /dll /nodefaultlib:"$(CENoDefaultLib)" /libpath:"../../../../sphinxbase/lib/ARMRek" /subsystem:$(CESubsystem) /align:"4096" /MACHINE:ARM
+# ADD LINK32 coredll.lib sphinxbase.lib /nologo /base:"0x00100000" /stack:0x10000,0x1000 /entry:"_DllMainCRTStartup" /dll /nodefaultlib:"$(CENoDefaultLib)" /libpath:"../../../../sphinxbase/lib/ARMRel" /subsystem:$(CESubsystem) /align:"4096" /MACHINE:ARM
 
 !ENDIF 
 
@@ -400,10 +400,13 @@ NODEP_CPP_ALLPH=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_ALLPH=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -423,6 +426,9 @@ DEP_CPP_ALLPH=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -436,27 +442,35 @@ DEP_CPP_ALLPH=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 DEP_CPP_ALLPH=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\linklist.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
 	"..\..\..\include\dict.h"\
 	"..\..\..\include\fbs.h"\
+	"..\..\..\include\hmm.h"\
 	"..\..\..\include\kb.h"\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\lm_3g.h"\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -465,10 +479,6 @@ DEP_CPP_ALLPH=\
 	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
-	
-NODEP_CPP_ALLPH=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
 	
 
 !ENDIF 
@@ -630,13 +640,11 @@ DEP_CPP_BIN_M=\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\bin_mdef.h"\
 	"..\..\..\include\mdef.h"\
 	"..\..\..\include\s2types.h"\
-	
-NODEP_CPP_BIN_M=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
 	
 
 !ENDIF 
@@ -726,12 +734,10 @@ DEP_CPP_BLKAR=\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\blkarray_list.h"\
 	"..\..\..\include\s2types.h"\
-	
-NODEP_CPP_BLKAR=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
 	
 
 !ENDIF 
@@ -881,9 +887,13 @@ NODEP_CPP_CACHE=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_CACHE=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -902,6 +912,9 @@ DEP_CPP_CACHE=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
@@ -913,15 +926,20 @@ DEP_CPP_CACHE=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 DEP_CPP_CACHE=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\linklist.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -933,16 +951,15 @@ DEP_CPP_CACHE=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
-	
-NODEP_CPP_CACHE=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
 	
 
 !ENDIF 
@@ -1097,10 +1114,13 @@ NODEP_CPP_DICT_=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_DICT_=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -1118,6 +1138,9 @@ DEP_CPP_DICT_=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -1130,16 +1153,20 @@ DEP_CPP_DICT_=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 DEP_CPP_DICT_=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\pio.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -1150,6 +1177,9 @@ DEP_CPP_DICT_=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -1157,11 +1187,6 @@ DEP_CPP_DICT_=\
 	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
-	
-NODEP_CPP_DICT_=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
-	"..\..\..\include\strfuncs.h"\
 	
 
 !ENDIF 
@@ -1356,10 +1381,14 @@ DEP_CPP_FBS_M=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\posixwin32.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2io.h"\
 	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
 	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
@@ -1370,20 +1399,45 @@ DEP_CPP_FBS_M=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 DEP_CPP_FBS_M=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
+	"..\..\..\..\sphinxbase\include\byteorder.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\pio.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\cmdln_macro.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
+	"..\..\..\include\posixwin32.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2io.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\subvq_mgau.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
 	"..\..\..\src\libpocketsphinx\allphone.h"\
 	"..\..\..\src\libpocketsphinx\uttproc.h"\
-	
-NODEP_CPP_FBS_M=\
-	"..\..\..\src\libpocketsphinx\byteorder.h"\
-	"..\..\..\src\libpocketsphinx\cmdln_macro.h"\
-	"..\..\..\src\libpocketsphinx\fbs.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\pio.h"\
-	"..\..\..\src\libpocketsphinx\posixwin32.h"\
-	"..\..\..\src\libpocketsphinx\s2io.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\strfuncs.h"\
-	"..\..\..\src\libpocketsphinx\time_align.h"\
 	
 
 !ENDIF 
@@ -1546,10 +1600,13 @@ NODEP_CPP_FSG_H=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_FSG_H=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -1570,41 +1627,9 @@ DEP_CPP_FSG_H=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
-	"..\..\..\include\phone.h"\
-	"..\..\..\include\s2_semi_mgau.h"\
-	"..\..\..\include\s2types.h"\
-	"..\..\..\include\subvq_mgau.h"\
-	"..\..\..\include\tmat.h"\
-	"..\..\..\include\vector.h"\
-	"..\..\..\include\word_fsg.h"\
-	
-
-!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
-
-DEP_CPP_FSG_H=\
-	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
-	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
-	"..\..\..\..\sphinxbase\include\err.h"\
-	"..\..\..\..\sphinxbase\include\fe.h"\
-	"..\..\..\..\sphinxbase\include\fixpoint.h"\
-	"..\..\..\..\sphinxbase\include\glist.h"\
-	"..\..\..\..\sphinxbase\include\hash_table.h"\
-	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
-	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
-	"..\..\..\include\basic_types.h"\
-	"..\..\..\include\bin_mdef.h"\
-	"..\..\..\include\blkarray_list.h"\
-	"..\..\..\include\dict.h"\
-	"..\..\..\include\fbs.h"\
-	"..\..\..\include\fsg_history.h"\
-	"..\..\..\include\fsg_psubtree.h"\
-	"..\..\..\include\kb.h"\
-	"..\..\..\include\kdtree.h"\
-	"..\..\..\include\lm_3g.h"\
-	"..\..\..\include\lmclass.h"\
-	"..\..\..\include\log.h"\
-	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -1614,9 +1639,48 @@ DEP_CPP_FSG_H=\
 	"..\..\..\include\vector.h"\
 	"..\..\..\include\word_fsg.h"\
 	
-NODEP_CPP_FSG_H=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
+
+DEP_CPP_FSG_H=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\blkarray_list.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\fsg_history.h"\
+	"..\..\..\include\fsg_psubtree.h"\
+	"..\..\..\include\hmm.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\subvq_mgau.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	"..\..\..\include\word_fsg.h"\
 	
 
 !ENDIF 
@@ -1749,19 +1813,17 @@ DEP_CPP_FSG_L=\
 	"..\..\..\..\sphinxbase\include\fe.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
-	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\fbs.h"\
 	"..\..\..\include\fsg_lextree.h"\
 	"..\..\..\include\fsg_psubtree.h"\
+	"..\..\..\include\hmm.h"\
 	"..\..\..\include\s2types.h"\
-	"..\..\..\include\search_const.h"\
 	"..\..\..\include\word_fsg.h"\
-	
-NODEP_CPP_FSG_L=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
 	
 
 !ENDIF 
@@ -1923,10 +1985,13 @@ NODEP_CPP_FSG_P=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_FSG_P=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -1945,6 +2010,9 @@ DEP_CPP_FSG_P=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -1959,39 +2027,43 @@ DEP_CPP_FSG_P=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 DEP_CPP_FSG_P=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
-	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
 	"..\..\..\include\dict.h"\
 	"..\..\..\include\fbs.h"\
 	"..\..\..\include\fsg_psubtree.h"\
+	"..\..\..\include\hmm.h"\
 	"..\..\..\include\kb.h"\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\lm_3g.h"\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
 	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	"..\..\..\include\word_fsg.h"\
-	
-NODEP_CPP_FSG_P=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
 	
 
 !ENDIF 
@@ -2173,10 +2245,13 @@ NODEP_CPP_FSG_S=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_FSG_S=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -2199,6 +2274,9 @@ DEP_CPP_FSG_S=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -2213,17 +2291,20 @@ DEP_CPP_FSG_S=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 DEP_CPP_FSG_S=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
-	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
 	"..\..\..\include\blkarray_list.h"\
 	"..\..\..\include\dict.h"\
@@ -2232,12 +2313,16 @@ DEP_CPP_FSG_S=\
 	"..\..\..\include\fsg_lextree.h"\
 	"..\..\..\include\fsg_psubtree.h"\
 	"..\..\..\include\fsg_search.h"\
+	"..\..\..\include\hmm.h"\
 	"..\..\..\include\kb.h"\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\lm_3g.h"\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -2247,10 +2332,6 @@ DEP_CPP_FSG_S=\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	"..\..\..\include\word_fsg.h"\
-	
-NODEP_CPP_FSG_S=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
 	
 
 !ENDIF 
@@ -2435,10 +2516,13 @@ NODEP_CPP_KB_MA=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_KB_MA=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -2447,7 +2531,6 @@ DEP_CPP_KB_MA=\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
 	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
-	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
 	"..\..\..\include\dict.h"\
 	"..\..\..\include\fbs.h"\
@@ -2457,6 +2540,9 @@ DEP_CPP_KB_MA=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -2469,18 +2555,21 @@ DEP_CPP_KB_MA=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 DEP_CPP_KB_MA=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\pio.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
-	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
 	"..\..\..\include\dict.h"\
 	"..\..\..\include\fbs.h"\
@@ -2490,6 +2579,9 @@ DEP_CPP_KB_MA=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -2497,10 +2589,6 @@ DEP_CPP_KB_MA=\
 	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
-	
-NODEP_CPP_KB_MA=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
 	
 
 !ENDIF 
@@ -2612,14 +2700,12 @@ DEP_CPP_KDTRE=\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\vector.h"\
-	
-NODEP_CPP_KDTRE=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
 	
 
 !ENDIF 
@@ -2757,8 +2843,13 @@ NODEP_CPP_LM_C1c=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_LM_C1c=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -2776,6 +2867,9 @@ DEP_CPP_LM_C1c=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
@@ -2787,13 +2881,19 @@ DEP_CPP_LM_C1c=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 DEP_CPP_LM_C1c=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -2805,15 +2905,15 @@ DEP_CPP_LM_C1c=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
-	
-NODEP_CPP_LM_C1c=\
-	"..\..\..\include\msd.h"\
 	
 
 !ENDIF 
@@ -2983,11 +3083,14 @@ NODEP_CPP_LM_3G=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_LM_3G=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\byteorder.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -3007,6 +3110,9 @@ DEP_CPP_LM_3G=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2io.h"\
 	"..\..\..\include\s2types.h"\
@@ -3019,11 +3125,14 @@ DEP_CPP_LM_3G=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 DEP_CPP_LM_3G=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\byteorder.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -3031,6 +3140,7 @@ DEP_CPP_LM_3G=\
 	"..\..\..\..\sphinxbase\include\pio.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -3042,6 +3152,9 @@ DEP_CPP_LM_3G=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2io.h"\
 	"..\..\..\include\s2types.h"\
@@ -3049,11 +3162,6 @@ DEP_CPP_LM_3G=\
 	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
-	
-NODEP_CPP_LM_3G=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
-	"..\..\..\include\strfuncs.h"\
 	
 
 !ENDIF 
@@ -3162,15 +3270,11 @@ DEP_CPP_LMCLA=\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\pio.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\s2types.h"\
-	
-NODEP_CPP_LMCLA=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\..\sphinxbase\include\str2words.h"\
-	"..\..\..\include\strfuncs.h"\
 	
 
 !ENDIF 
@@ -3281,11 +3385,126 @@ DEP_CPP_MDEF_=\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\include\mdef.h"\
 	
-NODEP_CPP_MDEF_=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\libpocketsphinx\ms_gauden.c
+DEP_CPP_MS_GA=\
+	"..\..\..\..\sphinxbase\include\bio.h"\
+	"..\..\..\..\sphinxbase\include\byteorder.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\vector.h"\
 	
+
+!IF  "$(CFG)" == "pocketsphinx - Win32 (WCE emulator) Release"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE emulator) Debug"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARMV4) Release"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARMV4) Debug"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\libpocketsphinx\ms_mgau.c
+DEP_CPP_MS_MG=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\hmm.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
+	"..\..\..\include\vector.h"\
+	
+
+!IF  "$(CFG)" == "pocketsphinx - Win32 (WCE emulator) Release"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE emulator) Debug"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARMV4) Release"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARMV4) Debug"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\libpocketsphinx\ms_senone.c
+DEP_CPP_MS_SE=\
+	"..\..\..\..\sphinxbase\include\bio.h"\
+	"..\..\..\..\sphinxbase\include\byteorder.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_senone.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\vector.h"\
+	
+
+!IF  "$(CFG)" == "pocketsphinx - Win32 (WCE emulator) Release"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE emulator) Debug"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARMV4) Release"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARMV4) Debug"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 !ENDIF 
 
@@ -3431,9 +3650,13 @@ NODEP_CPP_PHONE=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_PHONE=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -3449,35 +3672,9 @@ DEP_CPP_PHONE=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
-	"..\..\..\include\phone.h"\
-	"..\..\..\include\s2_semi_mgau.h"\
-	"..\..\..\include\s2types.h"\
-	"..\..\..\include\subvq_mgau.h"\
-	"..\..\..\include\tmat.h"\
-	"..\..\..\include\vector.h"\
-	
-
-!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
-
-DEP_CPP_PHONE=\
-	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
-	"..\..\..\..\sphinxbase\include\err.h"\
-	"..\..\..\..\sphinxbase\include\fe.h"\
-	"..\..\..\..\sphinxbase\include\fixpoint.h"\
-	"..\..\..\..\sphinxbase\include\glist.h"\
-	"..\..\..\..\sphinxbase\include\hash_table.h"\
-	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
-	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
-	"..\..\..\include\basic_types.h"\
-	"..\..\..\include\bin_mdef.h"\
-	"..\..\..\include\dict.h"\
-	"..\..\..\include\kb.h"\
-	"..\..\..\include\kdtree.h"\
-	"..\..\..\include\lm_3g.h"\
-	"..\..\..\include\lmclass.h"\
-	"..\..\..\include\log.h"\
-	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -3486,10 +3683,42 @@ DEP_CPP_PHONE=\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	
-NODEP_CPP_PHONE=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
-	"..\..\..\include\strfuncs.h"\
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
+
+DEP_CPP_PHONE=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\subvq_mgau.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
 	
 
 !ENDIF 
@@ -3561,6 +3790,7 @@ DEP_CPP_S2_MM=\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\s2io.h"\
 	"..\..\..\include\s2types.h"\
@@ -3729,12 +3959,15 @@ NODEP_CPP_S2_SE=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_S2_SE=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\bio.h"\
 	"..\..\..\..\sphinxbase\include\byteorder.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -3751,40 +3984,9 @@ DEP_CPP_S2_SE=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
-	"..\..\..\include\posixwin32.h"\
-	"..\..\..\include\s2_semi_mgau.h"\
-	"..\..\..\include\s2io.h"\
-	"..\..\..\include\s2types.h"\
-	"..\..\..\include\senscr.h"\
-	"..\..\..\include\subvq_mgau.h"\
-	"..\..\..\include\tmat.h"\
-	"..\..\..\include\vector.h"\
-	
-
-!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
-
-DEP_CPP_S2_SE=\
-	"..\..\..\..\sphinxbase\include\bio.h"\
-	"..\..\..\..\sphinxbase\include\byteorder.h"\
-	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
-	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
-	"..\..\..\..\sphinxbase\include\err.h"\
-	"..\..\..\..\sphinxbase\include\fe.h"\
-	"..\..\..\..\sphinxbase\include\fixpoint.h"\
-	"..\..\..\..\sphinxbase\include\glist.h"\
-	"..\..\..\..\sphinxbase\include\hash_table.h"\
-	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
-	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
-	"..\..\..\include\basic_types.h"\
-	"..\..\..\include\bin_mdef.h"\
-	"..\..\..\include\dict.h"\
-	"..\..\..\include\kb.h"\
-	"..\..\..\include\kdtree.h"\
-	"..\..\..\include\lm_3g.h"\
-	"..\..\..\include\lmclass.h"\
-	"..\..\..\include\log.h"\
-	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\posixwin32.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2io.h"\
@@ -3795,9 +3997,47 @@ DEP_CPP_S2_SE=\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
 	
-NODEP_CPP_S2_SE=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
+
+DEP_CPP_S2_SE=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
+	"..\..\..\..\sphinxbase\include\bio.h"\
+	"..\..\..\..\sphinxbase\include\byteorder.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\hmm.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
+	"..\..\..\include\posixwin32.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2io.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
+	"..\..\..\include\subvq_mgau.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
 	
 
 !ENDIF 
@@ -3959,10 +4199,13 @@ NODEP_CPP_SEARC=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_SEARC=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -3982,6 +4225,9 @@ DEP_CPP_SEARC=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -3995,27 +4241,35 @@ DEP_CPP_SEARC=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 DEP_CPP_SEARC=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\linklist.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
 	"..\..\..\include\dict.h"\
 	"..\..\..\include\fbs.h"\
+	"..\..\..\include\hmm.h"\
 	"..\..\..\include\kb.h"\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\lm_3g.h"\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -4024,10 +4278,6 @@ DEP_CPP_SEARC=\
 	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
-	
-NODEP_CPP_SEARC=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
 	
 
 !ENDIF 
@@ -4182,10 +4432,13 @@ NODEP_CPP_SEARCH=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_SEARCH=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -4204,6 +4457,9 @@ DEP_CPP_SEARCH=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
@@ -4215,16 +4471,20 @@ DEP_CPP_SEARCH=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 DEP_CPP_SEARCH=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\linklist.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
@@ -4236,17 +4496,15 @@ DEP_CPP_SEARCH=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\search_const.h"\
 	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
-	
-NODEP_CPP_SEARCH=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
-	"..\..\..\include\strfuncs.h"\
 	
 
 !ENDIF 
@@ -4393,9 +4651,13 @@ NODEP_CPP_SENSC=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_SENSC=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -4412,6 +4674,9 @@ DEP_CPP_SENSC=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -4425,24 +4690,32 @@ DEP_CPP_SENSC=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 DEP_CPP_SENSC=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
-	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\bin_mdef.h"\
 	"..\..\..\include\dict.h"\
+	"..\..\..\include\hmm.h"\
 	"..\..\..\include\kb.h"\
 	"..\..\..\include\kdtree.h"\
 	"..\..\..\include\lm_3g.h"\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -4451,10 +4724,6 @@ DEP_CPP_SENSC=\
 	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
-	
-NODEP_CPP_SENSC=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
 	
 
 !ENDIF 
@@ -4602,18 +4871,14 @@ DEP_CPP_SUBVQ=\
 	"..\..\..\..\sphinxbase\include\pio.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
-	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\hmm.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\s2types.h"\
-	"..\..\..\include\search_const.h"\
 	"..\..\..\include\senscr.h"\
 	"..\..\..\include\subvq_mgau.h"\
 	"..\..\..\include\vector.h"\
-	
-NODEP_CPP_SUBVQ=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
 	
 
 !ENDIF 
@@ -4743,17 +5008,12 @@ DEP_CPP_TMAT_=\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
-	"..\..\..\include\basic_types.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\s2types.h"\
-	"..\..\..\include\search_const.h"\
 	"..\..\..\include\tmat.h"\
 	"..\..\..\include\vector.h"\
-	
-NODEP_CPP_TMAT_=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\include\msd.h"\
 	
 
 !ENDIF 
@@ -4969,6 +5229,9 @@ DEP_CPP_UTTPR=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\posixwin32.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -4984,29 +5247,51 @@ DEP_CPP_UTTPR=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
 
 DEP_CPP_UTTPR=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
+	"..\..\..\..\sphinxbase\include\byteorder.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\linklist.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\basic_types.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\blkarray_list.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\fsg_history.h"\
+	"..\..\..\include\fsg_lextree.h"\
+	"..\..\..\include\fsg_psubtree.h"\
+	"..\..\..\include\fsg_search.h"\
+	"..\..\..\include\hmm.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
+	"..\..\..\include\posixwin32.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\senscr.h"\
+	"..\..\..\include\subvq_mgau.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	"..\..\..\include\word_fsg.h"\
 	"..\..\..\src\libpocketsphinx\uttproc.h"\
-	
-NODEP_CPP_UTTPR=\
-	"..\..\..\src\libpocketsphinx\basic_types.h"\
-	"..\..\..\src\libpocketsphinx\ckd_alloc.h"\
-	"..\..\..\src\libpocketsphinx\dict.h"\
-	"..\..\..\src\libpocketsphinx\err.h"\
-	"..\..\..\src\libpocketsphinx\fbs.h"\
-	"..\..\..\src\libpocketsphinx\fe.h"\
-	"..\..\..\src\libpocketsphinx\feat.h"\
-	"..\..\..\src\libpocketsphinx\fixpoint.h"\
-	"..\..\..\src\libpocketsphinx\fsg_search.h"\
-	"..\..\..\src\libpocketsphinx\kb.h"\
-	"..\..\..\src\libpocketsphinx\linklist.h"\
-	"..\..\..\src\libpocketsphinx\lm_3g.h"\
-	"..\..\..\src\libpocketsphinx\lmclass.h"\
-	"..\..\..\src\libpocketsphinx\msd.h"\
-	"..\..\..\src\libpocketsphinx\posixwin32.h"\
-	"..\..\..\src\libpocketsphinx\s2_semi_mgau.h"\
-	"..\..\..\src\libpocketsphinx\s2types.h"\
-	"..\..\..\src\libpocketsphinx\search_const.h"\
-	"..\..\..\src\libpocketsphinx\senscr.h"\
-	"..\..\..\src\libpocketsphinx\strfuncs.h"\
 	
 
 !ENDIF 
@@ -5108,12 +5393,10 @@ DEP_CPP_VECTO=\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\prim_type.h"\
 	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
 	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
 	"..\..\..\include\s2types.h"\
 	"..\..\..\include\vector.h"\
-	
-NODEP_CPP_VECTO=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
 	
 
 !ENDIF 
@@ -5275,10 +5558,13 @@ NODEP_CPP_WORD_=\
 !ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Debug"
 
 DEP_CPP_WORD_=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
 	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
 	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
 	"..\..\..\..\sphinxbase\include\err.h"\
 	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
 	"..\..\..\..\sphinxbase\include\fixpoint.h"\
 	"..\..\..\..\sphinxbase\include\glist.h"\
 	"..\..\..\..\sphinxbase\include\hash_table.h"\
@@ -5295,38 +5581,9 @@ DEP_CPP_WORD_=\
 	"..\..\..\include\lmclass.h"\
 	"..\..\..\include\log.h"\
 	"..\..\..\include\mdef.h"\
-	"..\..\..\include\phone.h"\
-	"..\..\..\include\s2_semi_mgau.h"\
-	"..\..\..\include\s2types.h"\
-	"..\..\..\include\subvq_mgau.h"\
-	"..\..\..\include\tmat.h"\
-	"..\..\..\include\vector.h"\
-	"..\..\..\include\word_fsg.h"\
-	
-
-!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
-
-DEP_CPP_WORD_=\
-	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
-	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
-	"..\..\..\..\sphinxbase\include\err.h"\
-	"..\..\..\..\sphinxbase\include\fe.h"\
-	"..\..\..\..\sphinxbase\include\fixpoint.h"\
-	"..\..\..\..\sphinxbase\include\glist.h"\
-	"..\..\..\..\sphinxbase\include\hash_table.h"\
-	"..\..\..\..\sphinxbase\include\prim_type.h"\
-	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
-	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
-	"..\..\..\include\basic_types.h"\
-	"..\..\..\include\bin_mdef.h"\
-	"..\..\..\include\dict.h"\
-	"..\..\..\include\fbs.h"\
-	"..\..\..\include\kb.h"\
-	"..\..\..\include\kdtree.h"\
-	"..\..\..\include\lm_3g.h"\
-	"..\..\..\include\lmclass.h"\
-	"..\..\..\include\log.h"\
-	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
 	"..\..\..\include\phone.h"\
 	"..\..\..\include\s2_semi_mgau.h"\
 	"..\..\..\include\s2types.h"\
@@ -5336,10 +5593,44 @@ DEP_CPP_WORD_=\
 	"..\..\..\include\vector.h"\
 	"..\..\..\include\word_fsg.h"\
 	
-NODEP_CPP_WORD_=\
-	"..\..\..\..\sphinxbase\include\dmalloc.h"\
-	"..\..\..\..\sphinxbase\include\str2words.h"\
-	"..\..\..\include\msd.h"\
+
+!ELSEIF  "$(CFG)" == "pocketsphinx - Win32 (WCE ARM) Release"
+
+DEP_CPP_WORD_=\
+	"..\..\..\..\sphinxbase\include\agc.h"\
+	"..\..\..\..\sphinxbase\include\ckd_alloc.h"\
+	"..\..\..\..\sphinxbase\include\cmd_ln.h"\
+	"..\..\..\..\sphinxbase\include\cmn.h"\
+	"..\..\..\..\sphinxbase\include\err.h"\
+	"..\..\..\..\sphinxbase\include\fe.h"\
+	"..\..\..\..\sphinxbase\include\feat.h"\
+	"..\..\..\..\sphinxbase\include\fixpoint.h"\
+	"..\..\..\..\sphinxbase\include\glist.h"\
+	"..\..\..\..\sphinxbase\include\hash_table.h"\
+	"..\..\..\..\sphinxbase\include\prim_type.h"\
+	"..\..\..\..\sphinxbase\include\sphinx_types.h"\
+	"..\..\..\..\sphinxbase\include\sphinxbase_export.h"\
+	"..\..\..\..\sphinxbase\include\wince\sphinx_config.h"\
+	"..\..\..\include\bin_mdef.h"\
+	"..\..\..\include\dict.h"\
+	"..\..\..\include\fbs.h"\
+	"..\..\..\include\kb.h"\
+	"..\..\..\include\kdtree.h"\
+	"..\..\..\include\lm_3g.h"\
+	"..\..\..\include\lmclass.h"\
+	"..\..\..\include\log.h"\
+	"..\..\..\include\mdef.h"\
+	"..\..\..\include\ms_gauden.h"\
+	"..\..\..\include\ms_mgau.h"\
+	"..\..\..\include\ms_senone.h"\
+	"..\..\..\include\phone.h"\
+	"..\..\..\include\s2_semi_mgau.h"\
+	"..\..\..\include\s2types.h"\
+	"..\..\..\include\search_const.h"\
+	"..\..\..\include\subvq_mgau.h"\
+	"..\..\..\include\tmat.h"\
+	"..\..\..\include\vector.h"\
+	"..\..\..\include\word_fsg.h"\
 	
 
 !ENDIF 

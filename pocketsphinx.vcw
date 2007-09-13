@@ -15,6 +15,18 @@ Package=<4>
 
 ###############################################################################
 
+Project: "pocketsphinx"=".\win32\msdev\pocketsphinx\pocketsphinx.vcp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "pocketsphinx_batch"=".\WIN32\MSDEV\pocketsphinx_batch\pocketsphinx_batch.vcp" - Package Owner=<4>
 
 Package=<5>
@@ -23,6 +35,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name libpocketsphinx
+    End Project Dependency
 }}}
 
 ###############################################################################
