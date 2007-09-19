@@ -1,3 +1,9 @@
+pocketsphinx (0.4-0svn4) unstable; urgency=low
+
+  * Add changes from Ubuntu packaging
+
+ -- David Huggins-Daines <dhuggins@cs.cmu.edu>  Wed, 19 Sep 2007 13:39:43 -0400
+
 pocketsphinx (0.4-0svn3) unstable; urgency=low
 
   * Add manual pages.
