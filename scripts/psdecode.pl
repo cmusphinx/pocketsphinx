@@ -75,7 +75,7 @@ $processname = "decode";
 
 $log_dir = "$ST::DEC_CFG_LOG_DIR/$processname";
 mkdir ($log_dir,0777) unless -d $log_dir;
-$result_dir = "$ST::DEC_CFG_BASE_DIR/result";
+$result_dir = "$ST::DEC_CFG_RESULT_DIR";
 mkdir ($result_dir,0777) unless -d $result_dir;
 
 $logfile = "$log_dir/${ST::DEC_CFG_EXPTNAME}-${part}-${npart}.log";
@@ -122,6 +122,6 @@ my $rv = RunTool('pocketsphinx_batch', $logfile, $ctlcount,
 		 @ST::DEC_CFG_EXTRA_ARGS);
 
 if ($rv) {
-  LogError("Failed to start bw");
+  LogError("Failed to start ${ST::DEC_CFG_BIN_DIR}/pocketsphinx_batch \n");
 }
 exit ($rv);

@@ -67,7 +67,7 @@ foreach my $job (@jobs) {
 compute_acc();
 
 sub compute_acc {
-  $result_dir = "$ST::DEC_CFG_BASE_DIR/result";
+  $result_dir = "$ST::DEC_CFG_RESULT_DIR";
   $match_file = "$result_dir/${ST::DEC_CFG_EXPTNAME}.match";
 
   concat_hyp($match_file);
@@ -155,7 +155,7 @@ sub align_hyp {
     my $error = 0;
     open (REF, "<$ref") or die "Can't open $ref\n";
     open (HYP, "<$hyp") or die "Can't open $hyp\n";
-    my $outfile = "$ST::DEC_CFG_BASE_DIR/result/${ST::DEC_CFG_EXPTNAME}.align";
+    my $outfile = "$ST::DEC_CFG_RESULT_DIR/${ST::DEC_CFG_EXPTNAME}.align";
     open (OUT, "> $outfile") or die "Can't open $outfile for writing\n";
     while (my $refline = <REF>) {
       $count++;
@@ -190,7 +190,7 @@ sub align_hyp {
 	    (sprintf " (%d/%d)\n", $error, $count);
     close(OUT);
   } elsif ($align =~ m/sclite/i) {
-    my $outfile = "$ST::DEC_CFG_BASE_DIR/result/${ST::DEC_CFG_EXPTNAME}.align";
+    my $outfile = "$ST::DEC_CFG_RESULT_DIR/${ST::DEC_CFG_EXPTNAME}.align";
     my ($wer, $ser, $word_total, $sent_total);
     open (OUT, "> $outfile") or die "Can't open $outfile for writing\n";
     if (open (PIPE, "\"$align\" " .
