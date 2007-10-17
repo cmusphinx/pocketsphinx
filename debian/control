@@ -8,7 +8,7 @@ Section: libs
 Package: libpocketsphinx-dev
 Section: libdevel
 Architecture: any
-Depends: libpocketsphinx0 (= ${binary:Version})
+Depends: libpocketsphinx0 (= ${Source-Version})
 Description: Lightweight speech recognition - development files
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
@@ -66,7 +66,7 @@ Description: Lightweight speech recognition - SWB5k language model
 Package: pocketsphinx-utils
 Section: sound
 Architecture: any
-Depends: libpocketsphinx0 (= ${binary:Version})
+Depends: libpocketsphinx0 (= ${Source-Version})
 Description: Lightweight speech recognition - command-line tools
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
