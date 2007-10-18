@@ -1073,7 +1073,7 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
                 if (qscr < -161900)
                     E_FATAL("**ERROR** Too low senone PDF value: %d\n",
                             qscr);
-                qscr = (511 - qscr) >> 10;
+                qscr = (-qscr + 511) >> 10; /* +511 is to round it up, like adding 0.5 */
                 if ((qscr > 255) || (qscr < 0))
                     E_FATAL("scr(%d,%d,%d) = %d\n", f, c, i, qscr);
                 s->OPDF_8B[f][c][i] = qscr;
