@@ -1,1 +1,1 @@
-SUBDIRS = turtle swb tidigits an4
+SUBDIRS = turtle swb tidigits
