@@ -138,10 +138,10 @@
 #define WORST_DIST	(int32)(0x80000000)
 
 /*
- * In terms of already shifted and negated quantities (i.e. dealing with
- * 8-bit quantized values):
+ * In terms of already shifted quantities (i.e. dealing with 8-bit
+ * quantized values):
  */
-#define LOG_ADD(p1,p2)	(logadd_tbl[(p1<<8)+(p2)])
+#define LOG_ADD(p1,p2) logmath_add(s->lmath_8b, p1, p2);
 
 /** Subtract GMM component b (assumed to be positive) and saturate */
 #define GMMSUB(a,b) \
@@ -476,23 +476,23 @@ get_scores4_8b(s2_semi_mgau_t * s)
             w0 = -99000;        /* Condition should never be TRUE */
 
         /* Quantize */
-        w3 = (511 - w3) >> 10;
-        w2 = (511 - w2) >> 10;
-        w1 = (511 - w1) >> 10;
-        w0 = (511 - w0) >> 10;
+        w3 = (w3 + 511) >> 10;
+        w2 = (w2 + 511) >> 10;
+        w1 = (w1 + 511) >> 10;
+        w0 = (w0 + 511) >> 10;
 
         for (k = 0; k < n_senone_active; k++) {
 	    n = senone_active[k];
 
-            tmp1 = pid_cw0[n] + w0;
-            tmp2 = pid_cw1[n] + w1;
+            tmp1 = -pid_cw0[n] + w0;
+            tmp2 = -pid_cw1[n] + w1;
             tmp1 = LOG_ADD(tmp1, tmp2);
-            tmp2 = pid_cw2[n] + w2;
+            tmp2 = -pid_cw2[n] + w2;
             tmp1 = LOG_ADD(tmp1, tmp2);
-            tmp2 = pid_cw3[n] + w3;
+            tmp2 = -pid_cw3[n] + w3;
             tmp1 = LOG_ADD(tmp1, tmp2);
 
-            senone_scores[n] -= tmp1 << 10;
+            senone_scores[n] += tmp1 << 10;
         }
     }
     return 0;
@@ -531,21 +531,21 @@ get_scores4_8b_all(s2_semi_mgau_t * s)
             w0 = -99000;        /* Condition should never be TRUE */
 
         /* Quantize */
-        w3 = (511 - w3) >> 10;
-        w2 = (511 - w2) >> 10;
-        w1 = (511 - w1) >> 10;
-        w0 = (511 - w0) >> 10;
+        w3 = (w3 + 511) >> 10;
+        w2 = (w2 + 511) >> 10;
+        w1 = (w1 + 511) >> 10;
+        w0 = (w0 + 511) >> 10;
 
         for (k = 0; k < s->CdWdPDFMod; k++) {
-            tmp1 = pid_cw0[k] + w0;
-            tmp2 = pid_cw1[k] + w1;
+            tmp1 = -pid_cw0[k] + w0;
+            tmp2 = -pid_cw1[k] + w1;
             tmp1 = LOG_ADD(tmp1, tmp2);
-            tmp2 = pid_cw2[k] + w2;
+            tmp2 = -pid_cw2[k] + w2;
             tmp1 = LOG_ADD(tmp1, tmp2);
-            tmp2 = pid_cw3[k] + w3;
+            tmp2 = -pid_cw3[k] + w3;
             tmp1 = LOG_ADD(tmp1, tmp2);
 
-            senone_scores[k] -= tmp1 << 10;
+            senone_scores[k] += tmp1 << 10;
         }
     }
     return 0;
@@ -600,34 +600,34 @@ get_scores2_8b(s2_semi_mgau_t * s)
         w03 = -99000;
 
     /* Quantize */
-    w10 = (511 - w10) >> 10;
-    w00 = (511 - w00) >> 10;
-    w11 = (511 - w11) >> 10;
-    w01 = (511 - w01) >> 10;
-    w12 = (511 - w12) >> 10;
-    w02 = (511 - w02) >> 10;
-    w13 = (511 - w13) >> 10;
-    w03 = (511 - w03) >> 10;
+    w10 = (w10 + 511) >> 10;
+    w00 = (w00 + 511) >> 10;
+    w11 = (w11 + 511) >> 10;
+    w01 = (w01 + 511) >> 10;
+    w12 = (w12 + 511) >> 10;
+    w02 = (w02 + 511) >> 10;
+    w13 = (w13 + 511) >> 10;
+    w03 = (w03 + 511) >> 10;
 
     for (k = 0; k < n_senone_active; k++) {
 	n = senone_active[k];
 
-        tmp1 = pid_cw00[n] + w00;
-        tmp2 = pid_cw10[n] + w10;
+        tmp1 = -pid_cw00[n] + w00;
+        tmp2 = -pid_cw10[n] + w10;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
-        tmp1 = pid_cw01[n] + w01;
-        tmp2 = pid_cw11[n] + w11;
+        senone_scores[n] += tmp1 << 10;
+        tmp1 = -pid_cw01[n] + w01;
+        tmp2 = -pid_cw11[n] + w11;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
-        tmp1 = pid_cw02[n] + w02;
-        tmp2 = pid_cw12[n] + w12;
+        senone_scores[n] += tmp1 << 10;
+        tmp1 = -pid_cw02[n] + w02;
+        tmp2 = -pid_cw12[n] + w12;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
-        tmp1 = pid_cw03[n] + w03;
-        tmp2 = pid_cw13[n] + w13;
+        senone_scores[n] += tmp1 << 10;
+        tmp1 = -pid_cw03[n] + w03;
+        tmp2 = -pid_cw13[n] + w13;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
+        senone_scores[n] += tmp1 << 10;
     }
     return 0;
 }
@@ -682,32 +682,32 @@ get_scores2_8b_all(s2_semi_mgau_t * s)
         w03 = -99000;
 
     /* Quantize */
-    w10 = (511 - w10) >> 10;
-    w00 = (511 - w00) >> 10;
-    w11 = (511 - w11) >> 10;
-    w01 = (511 - w01) >> 10;
-    w12 = (511 - w12) >> 10;
-    w02 = (511 - w02) >> 10;
-    w13 = (511 - w13) >> 10;
-    w03 = (511 - w03) >> 10;
+    w10 = (w10 + 511) >> 10;
+    w00 = (w00 + 511) >> 10;
+    w11 = (w11 + 511) >> 10;
+    w01 = (w01 + 511) >> 10;
+    w12 = (w12 + 511) >> 10;
+    w02 = (w02 + 511) >> 10;
+    w13 = (w13 + 511) >> 10;
+    w03 = (w03 + 511) >> 10;
 
     for (n = 0; n < s->CdWdPDFMod; n++) {
-        tmp1 = pid_cw00[n] + w00;
-        tmp2 = pid_cw10[n] + w10;
+        tmp1 = -pid_cw00[n] + w00;
+        tmp2 = -pid_cw10[n] + w10;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
-        tmp1 = pid_cw01[n] + w01;
-        tmp2 = pid_cw11[n] + w11;
+        senone_scores[n] += tmp1 << 10;
+        tmp1 = -pid_cw01[n] + w01;
+        tmp2 = -pid_cw11[n] + w11;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
-        tmp1 = pid_cw02[n] + w02;
-        tmp2 = pid_cw12[n] + w12;
+        senone_scores[n] += tmp1 << 10;
+        tmp1 = -pid_cw02[n] + w02;
+        tmp2 = -pid_cw12[n] + w12;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
-        tmp1 = pid_cw03[n] + w03;
-        tmp2 = pid_cw13[n] + w13;
+        senone_scores[n] += tmp1 << 10;
+        tmp1 = -pid_cw03[n] + w03;
+        tmp2 = -pid_cw13[n] + w13;
         tmp1 = LOG_ADD(tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
+        senone_scores[n] += tmp1 << 10;
     }
     return 0;
 }
@@ -726,8 +726,6 @@ get_scores1_8b(s2_semi_mgau_t * s)
 
     for (k = 0; k < n_senone_active; k++) {
         j = senone_active[k];
-
-        /* ** HACK!! ** <<10 hardwired!! */
         senone_scores[j] =
             -((pid_cw0[j] + pid_cw1[j] + pid_cw2[j] + pid_cw3[j]) << 10);
     }
@@ -750,7 +748,6 @@ get_scores1_8b_all(s2_semi_mgau_t * s)
     pid_cw3 = s->OPDF_8B[3][s->f[3][0].codeword];
 
     for (j = 0; j < s->CdWdPDFMod; j++) {
-        /* ** HACK!! ** <<10 hardwired!! */
 	*senscr++ =
             -((pid_cw0[j] + pid_cw1[j] + pid_cw2[j] + pid_cw3[j]) << 10);
     }
@@ -1309,6 +1306,14 @@ s2_semi_mgau_init(const char *mean_path, const char *var_path,
     /* Temporary array used in senone eval */
     s->score_tmp = ckd_calloc(s->n_feat, sizeof(int32));
 
+    /* Log-add table. */
+    s->lmath_8b = logmath_init((float64)cmd_ln_float32("-logbase"),
+                               0, 10);
+    if (s->lmath_8b == NULL) {
+        s2_semi_mgau_free(s);
+        return NULL;
+    }
+
     return s;
 }
 
@@ -1338,4 +1343,5 @@ s2_semi_mgau_free(s2_semi_mgau_t * s)
     ckd_free_2d((void **)s->dets);
     ckd_free(s->score_tmp);
     ckd_free(s);
+    logmath_free(s->lmath_8b);
 }

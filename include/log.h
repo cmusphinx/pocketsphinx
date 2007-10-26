@@ -61,12 +61,4 @@ logmath_t *lmath;
 #define LOG10TOLOG(x)	logmath_log10_to_log(lmath,x)
 #define MIN_LOG         logmath_get_zero(lmath)
 
-/*
- * In terms of already shifted and negated quantities (i.e. dealing with
- * 8-bit quantized values):
- */
-#define LOG_ADD(p1,p2)	(logadd_tbl[(p1<<8)+(p2)])
-
-extern const unsigned char logadd_tbl[];
-
 #endif /* _LOG_H_ */

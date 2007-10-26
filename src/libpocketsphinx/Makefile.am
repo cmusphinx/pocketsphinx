@@ -22,7 +22,6 @@ libpocketsphinx_la_SOURCES =			\
 	lm_3g.c					\
 	lm.c					\
 	lmclass.c				\
-	log_add.c				\
 	mdef.c					\
 	ms_gauden.c				\
 	ms_mgau.c				\
