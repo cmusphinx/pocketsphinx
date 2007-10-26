@@ -37,13 +37,6 @@ EXTRA_DIST=compare_table.pl				\
 	data/tidigits/tidigits.lsn			\
 	data/tidigits/test-tidigits-simple.match	\
 	data/tidigits/test-tidigits-fsg.match		\
-	data/an4/test-an4-subvq.match			\
-	data/an4/an432-marh-b.mfc			\
-	data/an4/an4.ctl				\
-	data/an4/cen5-fjlp-b.mfc			\
-	data/an4/an406-fcaw-b.mfc			\
-	data/an4/an4.lsn				\
-	data/an4/cen6-mdms2-b.mfc			\
 	data/wsj/test5k.s1.ctl				\
 	data/wsj/test5k.s1.lsn				\
 	data/wsj/440c0201.mfc				\

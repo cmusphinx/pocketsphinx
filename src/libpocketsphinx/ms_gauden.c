@@ -130,12 +130,6 @@
 #undef M_PI
 #define M_PI	3.1415926535897932385e0
 
-
-/* Density values, once converted to (int32)logs3 domain, can
-   underflow (or overflow?), causing headaches all around.  To avoid
-   underflow, use this floor value */
-#define MIN_DENSITY ((float64)WORST_SCORE * LOG_BASE)
-
 void
 gauden_dump(const gauden_t * g)
 {
@@ -581,6 +575,10 @@ gauden_dist(gauden_t * g,
             int32 n_top, vector_t * obs, gauden_dist_t ** out_dist)
 {
     int32 f, t;
+/* Density values, once converted to (int32)logs3 domain, can
+   underflow (or overflow?), causing headaches all around.  To avoid
+   underflow, use this floor value */
+    float64 min_density = logmath_log_to_ln(lmath, WORST_SCORE);
 
     assert((n_top > 0) && (n_top <= g->n_density));
 
@@ -607,15 +605,10 @@ gauden_dist(gauden_t * g,
             out_dist[f][t].id = dist[t].id;
 
             dist[t].dist = -dist[t].dist;       /* log(numerator) = -log(denom.) */
-            if (dist[t].dist < MIN_DENSITY) {
-#if 0
-                E_ERROR
-                    ("Density[%d][%d][%d] too small (%.3e); flooring it to %.3e\n",
-                     mgau, f, dist[t].id, dist[t].dist, MIN_DENSITY);
-#endif
-                dist[t].dist = MIN_DENSITY;
+            if (dist[t].dist < min_density) {
+                dist[t].dist = min_density;
             }
-            out_dist[f][t].dist = (int32) (dist[t].dist / LOG_BASE);
+            out_dist[f][t].dist = logmath_ln_to_log(lmath, dist[t].dist);
         }
     }
 

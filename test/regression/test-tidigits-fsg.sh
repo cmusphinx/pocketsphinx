@@ -25,4 +25,4 @@ fi
 # Check the decoding results
 grep AVERAGE $bn.log
 $tests/word_align.pl -i $data/tidigits/tidigits.lsn $bn.match | grep 'TOTAL Percent'
-compare_table "match" $data/tidigits/$bn.match $bn.match 10000
+compare_table "match" $data/tidigits/$bn.match $bn.match 100000

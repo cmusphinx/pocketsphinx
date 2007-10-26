@@ -1254,7 +1254,7 @@ s3_precomp(s2_semi_mgau_t *s, float32 vFloor)
                 if (fvar < vFloor)
                     fvar = vFloor;
                 d += LOG(1 / sqrt(fvar * 2.0 * PI));
-                *vp = (var_t) (1.0 / (2.0 * fvar * LOG_BASE));
+                *vp = (var_t) logmath_ln_to_log(lmath, 1.0 / (2.0 * fvar));
             }
             *dp++ = d;
         }

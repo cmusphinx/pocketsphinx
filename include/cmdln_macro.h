@@ -492,7 +492,11 @@
 { "-logbase",                                                                   \
       ARG_FLOAT32,                                                              \
       "1.0001",                                                                 \
-      "Base in which all log-likelihoods calculated (UNUSED)" }
+      "Base in which all log-likelihoods calculated" },			        \
+{ "-logadd",                                                                    \
+      ARG_STRING,                                                               \
+      NULL,                                                                     \
+      "Log-addition table file" }
 
 
 /** Options for allphone mode. */

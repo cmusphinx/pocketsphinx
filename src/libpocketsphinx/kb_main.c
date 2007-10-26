@@ -161,7 +161,7 @@ subvq_mgau_t *subvq_mgau;
 ms_mgau_model_t *ms_mgau;
 
 /* Model file names */
-char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *kdtreefn, *sendumpfn;
+char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *kdtreefn, *sendumpfn, *logaddfn;
 
 /* Language model set */
 lmclass_set_t lmclass_set;
@@ -472,6 +472,14 @@ kb_init(void)
         else {
             fclose(tmp);
         }
+        logaddfn = string_join(hmmdir, "/logadd", NULL);
+        if ((tmp = fopen(logaddfn, "rb")) == NULL) {
+            ckd_free(logaddfn);
+            logaddfn = NULL;
+        }
+        else {
+            fclose(tmp);
+        }
     }
     /* Allow overrides from the command line */
     if (cmd_ln_str("-mdef")) {
@@ -501,6 +509,21 @@ kb_init(void)
     if (cmd_ln_str("-kdtree")) {
         ckd_free(kdtreefn);
         kdtreefn = ckd_salloc(cmd_ln_str("-kdtree"));
+    }
+    if (cmd_ln_str("-logadd")) {
+        ckd_free(logaddfn);
+        logaddfn = ckd_salloc(cmd_ln_str("-logadd"));
+    }
+
+    /* Initialize log tables. */
+    if (logaddfn) {
+        lmath = logmath_read(logaddfn);
+        if (lmath == NULL) {
+            E_FATAL("Failed to read log-add table from %s\n", logaddfn);
+        }
+    }
+    else {
+        lmath = logmath_init((float64)cmd_ln_float32("-logbase"), 0, 0);
     }
 
     /* Read model definition. */

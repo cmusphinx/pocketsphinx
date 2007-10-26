@@ -193,7 +193,7 @@ cache_lm_score(cache_lm_t * lm, int32 w1, int32 w2, int32 * remwt)
 
     /* Combine unigram and bigram cache component scores */
     if ((ugscr > log0) || (bgscr > log0)) {
-        FAST_ADD(clmscr, ugscr, bgscr, fe_logadd_table, fe_logadd_table_size);
+        clmscr = ADD(ugscr, bgscr);
     }
     else
         clmscr = log0;

@@ -126,7 +126,7 @@ vector_maha_precomp(var_t * var, int32 len, float64 floor)
 	if (fvar < floor)
 	    fvar = floor;
         det -= LOG(fvar);
-        var[i] = (var_t) (1.0 / (fvar * 2.0 * LOG_BASE));
+        var[i] = (var_t) logmath_ln_to_log(lmath, 1.0 / (fvar * 2.0));
     }
     det -= LOG(2.0 * PI) * len;
 

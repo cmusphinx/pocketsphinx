@@ -1842,8 +1842,6 @@ lm_set_param(lm_t * model, double lw, double uw,
     int32 i;
     int32 tmp1, tmp2;
     int32 logUW, logOneMinusUW, logUniform;
-    const int16 *at = fe_logadd_table;
-    int32 ts = fe_logadd_table_size;
 
     model->lw = FLOAT2LW(lw);
     model->invlw = FLOAT2LW(1.0 / lw);
@@ -1872,7 +1870,7 @@ lm_set_param(lm_t * model, double lw, double uw,
         else {
             tmp1 = (LOG10TOLOG(UG_PROB_F(model, i))) + logUW;
             tmp2 = logUniform + logOneMinusUW;
-            FAST_ADD(tmp1, tmp1, tmp2, at, ts);
+            tmp1 = ADD(tmp1, tmp2);
             model->unigrams[i].prob1.l = (tmp1 * lw) + model->log_wip;
         }
     }

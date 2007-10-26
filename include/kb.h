@@ -45,6 +45,7 @@
 #ifndef _KB_EXPORTS_H_
 #define _KB_EXPORTS_H_
 
+#include "log.h"
 #include "lm_3g.h"
 #include "dict.h"
 #include "tmat.h"

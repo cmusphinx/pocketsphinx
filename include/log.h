@@ -49,35 +49,17 @@
 
 /* Pull in the definitions from sphinxbase and redefine them for convenience here */
 #include <fixpoint.h>
+#include <logmath.h>
 
-#define BASE		FE_BASE
-#define LOG_BASE	FE_LOG_BASE
-#define MIN_LOG		FE_MIN_LOG
-#define MIN_DOUBLE	1e-300
-#define LOG(x) FE_LOG(x)
-#define EXP(x)	(exp ((double) (x) * FE_LOG_BASE))
-#define ADD(x,y) FE_LOG_ADD(x,y)
-#define FAST_ADD(res, x, y, table, table_size)		\
-{							\
-	int32 _d = (x) - (y);				\
-	if (_d > 0) { /* x >= y */			\
-		if (_d >= (table_size))			\
-			res = (x);			\
-		else					\
-			res = (table)[_d] + (x);	\
-	} else { /* x < y */				\
-		if (-_d >= (table_size))		\
-			res = (y);			\
-		else					\
-			res = (table)[-_d] + (y);	\
-	}						\
-}
+/* Global log-domain addition table. */
+logmath_t *lmath;
 
-/*
- * Note that we always deal with quantities < 0.0, there for we round
- * using -0.5 instead of +0.5
- */ 
-#define LOG10TOLOG(x)	((int32)((x * (2.30258509 / LOG_BASE)) - 0.5))
+#define BASE		logmath_get_base(lmath)
+#define LOG(x) 		logmath_log(lmath,x)
+#define EXP(x)		logmath_exp(lmath,x)
+#define ADD(x,y)	logmath_add(lmath,x,y)
+#define LOG10TOLOG(x)	logmath_log10_to_log(lmath,x)
+#define MIN_LOG         logmath_get_zero(lmath)
 
 /*
  * In terms of already shifted and negated quantities (i.e. dealing with
