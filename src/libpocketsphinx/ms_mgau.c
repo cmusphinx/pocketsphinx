@@ -152,7 +152,7 @@ ms_mgau_free(ms_mgau_model_t * msg)
 int32
 ms_cont_mgau_frame_eval(int32 *senscr,
 			ms_mgau_model_t * msg,
-                        float32 ** feat)
+                        mfcc_t ** feat)
 {
     int32 gid;
     int32 i;
