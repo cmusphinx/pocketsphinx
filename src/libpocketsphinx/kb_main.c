@@ -523,7 +523,7 @@ kb_init(void)
         }
     }
     else {
-        lmath = logmath_init((float64)cmd_ln_float32("-logbase"), 0);
+        lmath = logmath_init((float64)cmd_ln_float32("-logbase"), 10);
     }
 
     /* Read model definition. */
