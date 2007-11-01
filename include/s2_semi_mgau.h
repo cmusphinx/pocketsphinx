@@ -48,14 +48,7 @@
 
 #include "kdtree.h"
 
-typedef struct {
-    union {
-        int32	score;
-        int32	dist;	/* distance to next closest vector */
-    } val;
-    int32 codeword;		/* codeword (vector index) */
-} vqFeature_t;
-typedef vqFeature_t *vqFrame_t;
+typedef struct vqFeature_s vqFeature_t;
 
 typedef struct s2_semi_mgau_s s2_semi_mgau_t;
 struct s2_semi_mgau_s {
