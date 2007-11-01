@@ -493,10 +493,6 @@
       ARG_FLOAT32,                                                              \
       "1.0001",                                                                 \
       "Base in which all log-likelihoods calculated" },			        \
-{ "-logshift",                                                                  \
-      ARG_INT32,                                                              \
-      "10",                                                                     \
-      "Compession factor for log-add table (# of LSB to drop)" },	        \
 { "-logadd",                                                                    \
       ARG_STRING,                                                               \
       NULL,                                                                     \

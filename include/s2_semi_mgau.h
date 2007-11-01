@@ -85,6 +85,9 @@ struct s2_semi_mgau_s {
     /* Top-N scores and codewords from current, last frame. */
     vqFeature_t **f, **lastf;
     int32 *score_tmp;
+
+    /* Log-add table for compressed values. */
+    logmath_t *lmath_8b;
 };
 
 s2_semi_mgau_t *s2_semi_mgau_init(const char *mean_path, const char *var_path,

@@ -523,7 +523,7 @@ kb_init(void)
         }
     }
     else {
-        lmath = logmath_init((float64)cmd_ln_float32("-logbase"), cmd_ln_int32("-logshift"));
+        lmath = logmath_init((float64)cmd_ln_float32("-logbase"), 0, FALSE);
     }
 
     /* Read model definition. */
