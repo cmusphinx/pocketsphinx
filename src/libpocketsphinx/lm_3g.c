@@ -165,6 +165,7 @@
 #include "s2types.h"
 #include "s2io.h"
 #include "ckd_alloc.h"
+#include "logmath.h"
 #include "cmd_ln.h"
 #include "pio.h"
 #include "basic_types.h"
@@ -175,7 +176,6 @@
 #include "err.h"
 #include "lmclass.h"
 #include "lm_3g.h"
-#include "log.h"
 #include "search_const.h"
 #include "dict.h"
 #include "kb.h"
@@ -1174,9 +1174,9 @@ lm_add_word(lm_t * model, int32 dictwid)
     /* Append new word to unigrams */
     model->unigrams[model->ucount].mapid = dictwid;
     model->unigrams[model->ucount].prob1.l =
-        LWMUL(LOG10TOLOG(oov_ugprob), model->lw) + model->log_wip;
+        LWMUL(logmath_log10_to_log(lmath, oov_ugprob), model->lw) + model->log_wip;
     model->unigrams[model->ucount].bo_wt1.l =
-        LWMUL(LOG10TOLOG(0.0), model->lw);
+        LWMUL(logmath_log10_to_log(lmath, 0.0), model->lw);
 
     /* Advance the sentinel unigram */
     model->unigrams[model->ucount + 1].bigrams =
@@ -1846,49 +1846,49 @@ lm_set_param(lm_t * model, double lw, double uw,
     model->lw = FLOAT2LW(lw);
     model->invlw = FLOAT2LW(1.0 / lw);
     model->uw = uw;
-    model->log_wip = LOG(wip);
+    model->log_wip = logmath_log(lmath, wip);
     E_INFO("%8.2f = Language Weight\n", LW2FLOAT(model->lw));
     E_INFO("%8.2f = Unigram Weight\n", model->uw);
     E_INFO("%8d = LOG (Insertion Penalty (%.2f))\n", model->log_wip, wip);
 
-    logUW = LOG(model->uw);
-    logOneMinusUW = LOG(1.0 - model->uw);
-    logUniform = LOG(1.0 / (model->ucount - 1));        /* -1 for ignoring <s> */
+    logUW = logmath_log(lmath, model->uw);
+    logOneMinusUW = logmath_log(lmath, 1.0 - model->uw);
+    logUniform = logmath_log(lmath, 1.0 / (model->ucount - 1));        /* -1 for ignoring <s> */
 
     if (word_pair)
         E_FATAL("word-pair LM not implemented\n");
 
     for (i = 0; i < model->ucount; i++) {
         model->unigrams[i].bo_wt1.l =
-            (LOG10TOLOG(UG_BO_WT_F(model, i)) * lw);
+            (logmath_log10_to_log(lmath, UG_BO_WT_F(model, i)) * lw);
 
         /* Interpolate LM unigram prob with uniform prob (except start_sym) */
         if (strcmp(word_str[i], start_sym) == 0) {
             model->unigrams[i].prob1.l =
-                (LOG10TOLOG(UG_PROB_F(model, i)) * lw) + model->log_wip;
+                (logmath_log10_to_log(lmath, UG_PROB_F(model, i)) * lw) + model->log_wip;
         }
         else {
-            tmp1 = (LOG10TOLOG(UG_PROB_F(model, i))) + logUW;
+            tmp1 = (logmath_log10_to_log(lmath, UG_PROB_F(model, i))) + logUW;
             tmp2 = logUniform + logOneMinusUW;
-            tmp1 = ADD(tmp1, tmp2);
+            tmp1 = logmath_add(lmath, tmp1, tmp2);
             model->unigrams[i].prob1.l = (tmp1 * lw) + model->log_wip;
         }
     }
 
     for (i = 0; i < model->n_prob2; i++) {
         model->prob2[i].l =
-            (LOG10TOLOG(model->prob2[i].f) * lw) + model->log_wip;
+            (logmath_log10_to_log(lmath, model->prob2[i].f) * lw) + model->log_wip;
     }
     if (model->tcount > 0) {
         for (i = 0; i < model->n_bo_wt2; i++) {
-            model->bo_wt2[i].l = (LOG10TOLOG(model->bo_wt2[i].f) * lw);
+            model->bo_wt2[i].l = (logmath_log10_to_log(lmath, model->bo_wt2[i].f) * lw);
         }
     }
 
     if (model->tcount > 0) {
         for (i = 0; i < model->n_prob3; i++) {
             model->prob3[i].l =
-                (LOG10TOLOG(model->prob3[i].f) * lw) + model->log_wip;
+                (logmath_log10_to_log(lmath, model->prob3[i].f) * lw) + model->log_wip;
         }
     }
 }

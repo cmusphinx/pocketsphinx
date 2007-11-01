@@ -853,11 +853,11 @@ lattice_rescore(lw_t lwf)
             bw2 = word_dict->dict_list[link->to->wid]->fwid;
 
             link->path_scr =
-                link->link_scr + LWMUL(lm_bg_score(bw1, bw2), lwf);
+                link->link_scr + LWMUL(lm3g_bg_score(bw1, bw2), lwf);
         }
         else
             link->path_scr = link->link_scr +
-                LWMUL(lm_bg_score(start_wid, link->to->wid), lwf);
+                LWMUL(lm3g_bg_score(start_wid, link->to->wid), lwf);
 
         link->best_prev = NULL;
 
@@ -890,11 +890,11 @@ lattice_rescore(lw_t lwf)
                 bw2 = word_dict->dict_list[link->to->wid]->fwid;
 
                 score = q_head->path_scr + link->link_scr +
-                    LWMUL(lm_tg_score(bw0, bw1, bw2), lwf);
+                    LWMUL(lm3g_tg_score(bw0, bw1, bw2), lwf);
             }
             else
                 score = q_head->path_scr + link->link_scr +
-                    LWMUL(lm_tg_score
+                    LWMUL(lm3g_tg_score
                           (q_head->from->wid, node->wid, link->to->wid),
                           lwf);
 
@@ -1096,7 +1096,7 @@ best_rem_score(latnode_t * from)
     for (link = from->links; link; link = link->next) {
         score = best_rem_score(link->to);
         score += link->link_scr;
-        score += LWMUL(lm_bg_score(from->wid, link->to->wid), lw_factor);
+        score += LWMUL(lm3g_bg_score(from->wid, link->to->wid), lw_factor);
         if (score > bestscore)
             bestscore = score;
     }
@@ -1174,13 +1174,13 @@ path_extend(latpath_t * path)
         newpath->parent = path;
         newpath->score = path->score + link->link_scr;
         if (path->parent)
-            newpath->score += LWMUL(lm_tg_score(path->parent->node->wid,
+            newpath->score += LWMUL(lm3g_tg_score(path->parent->node->wid,
                                                 path->node->wid,
                                                 newpath->node->wid),
                                     lw_factor);
         else
             newpath->score +=
-                LWMUL(lm_bg_score(path->node->wid, newpath->node->wid),
+                LWMUL(lm3g_bg_score(path->node->wid, newpath->node->wid),
                       lw_factor);
 
         /* Insert new partial path hypothesis into sorted path_list */
@@ -1300,7 +1300,7 @@ search_get_alt(int32 n,         /* In: No. of alternatives to look for */
             path->node = node;
             path->parent = NULL;
             scr =
-                (w1 < 0) ? lm_bg_score(w2, node->wid) : lm_tg_score(w1, w2,
+                (w1 < 0) ? lm3g_bg_score(w2, node->wid) : lm3g_tg_score(w1, w2,
                                                                     node->
                                                                     wid);
             path->score = scr;

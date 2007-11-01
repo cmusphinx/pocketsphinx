@@ -2,7 +2,6 @@ pkginclude_HEADERS =				\
 	basic_types.h				\
 	bin_mdef.h				\
 	blkarray_list.h				\
-	cache_lm.h				\
 	cmdln_macro.h				\
 	dict.h					\
 	fbs.h					\
@@ -17,7 +16,6 @@ pkginclude_HEADERS =				\
 	lmclass.h				\
 	lm.h					\
 	log.h					\
-	magic.h					\
 	mdef.h					\
 	ms_gauden.h				\
 	ms_mgau.h				\
