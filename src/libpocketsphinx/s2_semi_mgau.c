@@ -153,6 +153,48 @@ struct vqFeature_s {
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
+/* Allocate 0..159 for negated quantized mixture weights and 0..96 for
+ * negated normalized acoustic scores, so that the combination of the
+ * two can never exceed 255. */
+#define MAX_NEG_MIXW 159 /**< Maximum negated mixture weight value. */
+#define MAX_NEG_ASCR 96  /**< Maximum negated acoustic score value. */
+
+/**
+ * Quickly log-add two negated log probabilities.
+ *
+ * @param lmath The log-math object
+ * @param mlx A negative log probability (0 < mlx < 255)
+ * @param mly A negative log probability (0 < mly < 255)
+ * @return -log(exp(-mlx)+exp(-mly))
+ *
+ * We can do some extra-fast log addition since we know that
+ * mixw+ascr is always less than 256 and hence x-y is also always less
+ * than 256.  This relies on some cooperation from logmath_t which
+ * will never produce a logmath table smaller than 256 entries.
+ *
+ * Note that the parameters are *negated* log probabilities (and
+ * hence, are positive numbers), as is the return value.  This is the
+ * key to the "fastness" of this function.
+ */
+LOGMATH_INLINE int
+fast_logmath_add(logmath_t *lmath, int mlx, int mly)
+{
+    logadd_t *t = LOGMATH_TABLE(lmath);
+    int d, r;
+
+    /* d must be positive, obviously. */
+    if (mlx > mly) {
+        d = (mlx - mly);
+        r = mly;
+    }
+    else {
+        d = (mly - mlx);
+        r = mlx;
+    }
+
+    return r - (((uint8 *)t->table)[d]);
+}
+
 /*
  * Compute senone scores.
  */
@@ -363,22 +405,21 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
     for (i = 0; i < s->n_feat; ++i)
         mgau_dist(s, frame, i, featbuf[i]);
 
-    /* Quantize and normalize the top N scores. */
+    /* Compute quantized normalizing constant. */
     for (j = 0; j < s->n_feat; j++) {
         s->score_tmp[j] = s->f[j][0].score >> 10;
-    }
-    for (i = 1; i < s->topN; i++) {
-        for (j = 0; j < s->n_feat; j++) {
+        for (i = 1; i < s->topN; i++) {
             s->score_tmp[j] = logmath_add(s->lmath_8b,
                                           s->score_tmp[j],
                                           s->f[j][i].score >> 10);
         }
     }
+    /* Normalize the scores, negate them, and clamp their dynamic range. */
     for (i = 0; i < s->topN; i++) {
         for (j = 0; j < s->n_feat; j++) {
-            s->f[j][i].score = (s->f[j][i].score >> 10) - s->score_tmp[j];
-            if (s->f[j][i].score > 0)
-                s->f[j][i].score = logmath_get_zero(s->lmath_8b);
+            s->f[j][i].score = -((s->f[j][i].score >> 10) - s->score_tmp[j]);
+            if (s->f[j][i].score < 0 || s->f[j][i].score > MAX_NEG_ASCR)
+                s->f[j][i].score = MAX_NEG_ASCR;
         }
     }
 
@@ -437,12 +478,6 @@ get_scores_8b_all(s2_semi_mgau_t * s)
     return 0;
 }
 
-/*
- * Like get_scores4, but uses OPDF_8B with FAST8B:
- *     LogProb(feature f, codeword c, senone s) =
- *         OPDF_8B[f]->prob[c][s]
- * Also, uses true 8-bit probs, so addition in logspace is an easy lookup.
- */
 static int32
 get_scores4_8b(s2_semi_mgau_t * s)
 {
@@ -463,15 +498,15 @@ get_scores4_8b(s2_semi_mgau_t * s)
             int32 tmp1, tmp2;
 	    int32 n = senone_active[k];
 
-            tmp1 = -pid_cw0[n] + s->f[j][0].score;
-            tmp2 = -pid_cw1[n] + s->f[j][1].score;
-            tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
-            tmp2 = -pid_cw2[n] + s->f[j][2].score;
-            tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
-            tmp2 = -pid_cw3[n] + s->f[j][3].score;
-            tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
+            tmp1 = pid_cw0[n] + s->f[j][0].score;
+            tmp2 = pid_cw1[n] + s->f[j][1].score;
+            tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
+            tmp2 = pid_cw2[n] + s->f[j][2].score;
+            tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
+            tmp2 = pid_cw3[n] + s->f[j][3].score;
+            tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
 
-            senone_scores[n] += tmp1 << 10;
+            senone_scores[n] -= tmp1 << 10;
         }
     }
     return 0;
@@ -496,15 +531,15 @@ get_scores4_8b_all(s2_semi_mgau_t * s)
 
         for (k = 0; k < s->CdWdPDFMod; k++) {
             int32 tmp1, tmp2;
-            tmp1 = -pid_cw0[k] + s->f[j][0].score;
-            tmp2 = -pid_cw1[k] + s->f[j][1].score;
-            tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
-            tmp2 = -pid_cw2[k] + s->f[j][2].score;
-            tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
-            tmp2 = -pid_cw3[k] + s->f[j][3].score;
-            tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
+            tmp1 = pid_cw0[k] + s->f[j][0].score;
+            tmp2 = pid_cw1[k] + s->f[j][1].score;
+            tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
+            tmp2 = pid_cw2[k] + s->f[j][2].score;
+            tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
+            tmp2 = pid_cw3[k] + s->f[j][3].score;
+            tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
 
-            senone_scores[k] += tmp1 << 10;
+            senone_scores[k] -= tmp1 << 10;
         }
     }
     return 0;
@@ -532,22 +567,22 @@ get_scores2_8b(s2_semi_mgau_t * s)
         int32 tmp1, tmp2, n;
 	n = senone_active[k];
 
-        tmp1 = -pid_cw00[n] + s->f[0][0].score;
-        tmp2 = -pid_cw10[n] + s->f[0][1].score;
-        tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
+        tmp1 = pid_cw00[n] + s->f[0][0].score;
+        tmp2 = pid_cw10[n] + s->f[0][1].score;
+        tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
         senone_scores[n] += tmp1 << 10;
-        tmp1 = -pid_cw01[n] + s->f[1][0].score;
-        tmp2 = -pid_cw11[n] + s->f[1][1].score;
-        tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
+        tmp1 = pid_cw01[n] + s->f[1][0].score;
+        tmp2 = pid_cw11[n] + s->f[1][1].score;
+        tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
         senone_scores[n] += tmp1 << 10;
-        tmp1 = -pid_cw02[n] + s->f[2][0].score;
-        tmp2 = -pid_cw12[n] + s->f[2][1].score;
-        tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
+        tmp1 = pid_cw02[n] + s->f[2][0].score;
+        tmp2 = pid_cw12[n] + s->f[2][1].score;
+        tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
         senone_scores[n] += tmp1 << 10;
-        tmp1 = -pid_cw03[n] + s->f[3][0].score;
-        tmp2 = -pid_cw13[n] + s->f[3][1].score;
-        tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] += tmp1 << 10;
+        tmp1 = pid_cw03[n] + s->f[3][0].score;
+        tmp2 = pid_cw13[n] + s->f[3][1].score;
+        tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
+        senone_scores[n] -= tmp1 << 10;
     }
     return 0;
 }
@@ -574,22 +609,22 @@ get_scores2_8b_all(s2_semi_mgau_t * s)
     for (n = 0; n < s->CdWdPDFMod; n++) {
         int32 tmp1, tmp2;
 
-        tmp1 = -pid_cw00[n] + s->f[0][0].score;
-        tmp2 = -pid_cw10[n] + s->f[0][1].score;
-        tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
+        tmp1 = pid_cw00[n] + s->f[0][0].score;
+        tmp2 = pid_cw10[n] + s->f[0][1].score;
+        tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
         senone_scores[n] += tmp1 << 10;
-        tmp1 = -pid_cw01[n] + s->f[1][0].score;
-        tmp2 = -pid_cw11[n] + s->f[1][1].score;
-        tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
+        tmp1 = pid_cw01[n] + s->f[1][0].score;
+        tmp2 = pid_cw11[n] + s->f[1][1].score;
+        tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
         senone_scores[n] += tmp1 << 10;
-        tmp1 = -pid_cw02[n] + s->f[2][0].score;
-        tmp2 = -pid_cw12[n] + s->f[2][1].score;
-        tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
+        tmp1 = pid_cw02[n] + s->f[2][0].score;
+        tmp2 = pid_cw12[n] + s->f[2][1].score;
+        tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
         senone_scores[n] += tmp1 << 10;
-        tmp1 = -pid_cw03[n] + s->f[3][0].score;
-        tmp2 = -pid_cw13[n] + s->f[3][1].score;
-        tmp1 = logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] += tmp1 << 10;
+        tmp1 = pid_cw03[n] + s->f[3][0].score;
+        tmp2 = pid_cw13[n] + s->f[3][1].score;
+        tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
+        senone_scores[n] -= tmp1 << 10;
     }
     return 0;
 }
@@ -947,9 +982,9 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
             for (c = 0; c < n_comp; c++) {
                 int32 qscr;
 
-                qscr = logmath_log(s->lmath_8b, pdf[c]);
-                if ((qscr > 255) || (qscr < 0))
-                    E_FATAL("scr(%d,%d,%d) = %d\n", f, c, i, qscr);
+                qscr = -logmath_log(s->lmath_8b, pdf[c]);
+                if ((qscr > MAX_NEG_MIXW) || (qscr < 0))
+                    qscr = MAX_NEG_MIXW;
                 s->OPDF_8B[f][c][i] = qscr;
             }
         }
@@ -1186,6 +1221,13 @@ s2_semi_mgau_init(const char *mean_path, const char *var_path,
     /* Log-add table. */
     s->lmath_8b = logmath_init((float64)cmd_ln_float32("-logbase"), 10, TRUE);
     if (s->lmath_8b == NULL) {
+        s2_semi_mgau_free(s);
+        return NULL;
+    }
+    /* Ensure that it is only 8 bits wide so that fast_logmath_add() works. */
+    if (logmath_get_width(s->lmath_8b) != 1) {
+        E_ERROR("Log base %f is too small to represent add table in 8 bits\n",
+                cmd_ln_float32("-logbase"));
         s2_semi_mgau_free(s);
         return NULL;
     }
