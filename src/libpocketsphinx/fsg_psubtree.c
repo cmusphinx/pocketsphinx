@@ -178,8 +178,8 @@ psubtree_add_trans(fsg_pnode_t * root,
     int32 i, j;
 
     lw = cmd_ln_float32("-lw");
-    pip = (int32) (LOG(cmd_ln_float32("-pip")) * lw);
-    wip = (int32) (LOG(cmd_ln_float32("-wip")) * lw);
+    pip = (int32) (logmath_log(lmath, cmd_ln_float32("-pip")) * lw);
+    wip = (int32) (logmath_log(lmath, cmd_ln_float32("-wip")) * lw);
     silcipid = phone_to_id("SIL",  TRUE);
     n_ci = phoneCiCount();
 

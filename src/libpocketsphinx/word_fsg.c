@@ -364,8 +364,8 @@ word_fsg_add_filler(word_fsg_t * fsg, float32 silprob, float32 fillprob)
     silwid = kb_get_word_id("SIL");
     n_word = word_dict->dict_entry_count;
 
-    logsilp = (int32) (LOG(silprob) * fsg->lw);
-    logfillp = (int32) (LOG(fillprob) * fsg->lw);
+    logsilp = (int32) (logmath_log(lmath, silprob) * fsg->lw);
+    logfillp = (int32) (logmath_log(lmath, fillprob) * fsg->lw);
 
     /*
      * Add silence and filler word self-loop transitions to each state.
@@ -582,7 +582,7 @@ word_fsg_load(s2_fsg_t * fsg,
     for (trans = fsg->trans_list, n_trans = 0;
          trans; trans = trans->next, n_trans++) {
         /* Convert prob to logs2prob and apply language weight */
-        logp = (int32) (LOG(trans->prob) * lw);
+        logp = (int32) (logmath_log(lmath, trans->prob) * lw);
 
         /* Check if word is in dictionary */
         if (trans->word) {

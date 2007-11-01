@@ -225,7 +225,7 @@ lmclass_loadfile(lmclass_set_t lmclass_set, char *file)
                     if ((p <= 0.0) || (p >= 1.0))
                         E_FATAL("Line %d: Prob(%s) out of range (0,1)\n",
                                 lineno, word[1]);
-                    LOGp = LOG(p);
+                    LOGp = logmath_log(lmath, p);
                     SUMp += p;
                 }
                 else
@@ -259,7 +259,7 @@ lmclass_loadfile(lmclass_set_t lmclass_set, char *file)
                         SUMp);
 
             p = (1.0 - SUMp) / (float) n_implicit_prob;
-            LOGp = LOG(p);
+            LOGp = logmath_log(lmath, p);
 
             for (lmclass_word = lmclass->wordlist;
                  lmclass_word; lmclass_word = lmclass_word->next) {

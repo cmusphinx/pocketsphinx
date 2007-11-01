@@ -125,10 +125,10 @@ vector_maha_precomp(var_t * var, int32 len, float64 floor)
 	fvar = ((float32 *)var)[i];
 	if (fvar < floor)
 	    fvar = floor;
-        det -= LOG(fvar);
+        det -= logmath_log(lmath, fvar);
         var[i] = (var_t) logmath_ln_to_log(lmath, 1.0 / (fvar * 2.0));
     }
-    det -= LOG(2.0 * PI) * len;
+    det -= logmath_log(lmath, 2.0 * PI) * len;
 
     return det / 2;         /* sqrt */
 }
@@ -407,7 +407,7 @@ suvbq_mgau_read_mixw(subvq_mgau_t * s, char const *file_name, double mixw_floor)
 
             /* Convert to LOG */
             for (c = 0; c < n_comp; c++) {
-		s->mixw[i][c] = LOG(pdf[c]);
+		s->mixw[i][c] = logmath_log(lmath, pdf[c]);
             }
         }
     }

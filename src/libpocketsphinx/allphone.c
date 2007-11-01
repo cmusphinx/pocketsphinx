@@ -422,9 +422,9 @@ allphone_init()
     renorm_scr = ckd_calloc(MAX_FRAMES, sizeof(int32));
     allphone_bp = ckd_calloc(ALLPHONE_BP_MAX, sizeof(allphone_bp_t));
 
-    allphone_bw = LOG(bw);
-    allphone_exitbw = LOG(exitbw);
-    allphone_pip = LOG(pip);
+    allphone_bw = logmath_log(lmath, bw);
+    allphone_exitbw = logmath_log(lmath, exitbw);
+    allphone_pip = logmath_log(lmath, pip);
 
     E_INFO("bw= %d, wordbw= %d, pip= %d\n",
            allphone_bw, allphone_exitbw, allphone_pip);

@@ -673,7 +673,7 @@ gauden_dist_norm(gauden_t * g, int32 n_top, gauden_dist_t *** dist,
     for (f = 0; f < g->n_feat; f++) {
         sum = dist[gid][f][0].dist;
         for (t = 1; t < n_top; t++)
-            sum = ADD(sum, dist[gid][f][t].dist);
+	    sum = logmath_add(lmath, sum, dist[gid][f][t].dist);
 
         for (t = 0; t < n_top; t++)
             dist[gid][f][t].dist -= sum;

@@ -421,7 +421,7 @@ phonetp_init(int32 num_ci_phones)
         if (n == 0) {           /* No data here, use uniform probs */
             p = 1.0 / (float32) num_ci_phones;
             p *= pip;           /* Phone insertion penalty */
-            logp = (int32) (LOG(p) * ptplw);
+            logp = (int32) (logmath_log(lmath, p) * ptplw);
 
             for (j = 0; j < num_ci_phones; j++)
                 phonetp[i][j] = logp;
@@ -434,7 +434,7 @@ phonetp_init(int32 num_ci_phones)
                 p = ((1.0 - uptpwt) * p) + (uptpwt * uptp);     /* Smooth */
                 p *= pip;       /* Phone insertion penalty */
 
-                phonetp[i][j] = (int32) (LOG(p) * ptplw);
+                phonetp[i][j] = (int32) (logmath_log(lmath, p) * ptplw);
             }
         }
     }

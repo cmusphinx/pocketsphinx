@@ -119,8 +119,8 @@ fsg_search_init(word_fsg_t * fsg)
 
     /* LM related weights/penalties */
     lw = cmd_ln_float32("-lw");
-    pip = (int32) (LOG(cmd_ln_float32("-pip")) * lw);
-    wip = (int32) (LOG(cmd_ln_float32("-wip")) * lw);
+    pip = (int32) (logmath_log(lmath, cmd_ln_float32("-pip")) * lw);
+    wip = (int32) (logmath_log(lmath, cmd_ln_float32("-wip")) * lw);
 
     E_INFO("FSG(beam: %d, pbeam: %d, wbeam: %d; wip: %d, pip: %d)\n",
            search->beam_orig, search->pbeam_orig, search->wbeam_orig,

@@ -9,7 +9,6 @@ libpocketsphinx_la_SOURCES =			\
 	awriteshort.c				\
 	bin_mdef.c				\
 	blkarray_list.c				\
-	cache_lm.c				\
 	dict.c					\
 	fbs_main.c				\
 	fsg_history.c				\
@@ -20,7 +19,6 @@ libpocketsphinx_la_SOURCES =			\
 	kb_main.c				\
 	kdtree.c				\
 	lm_3g.c					\
-	lm.c					\
 	lmclass.c				\
 	mdef.c					\
 	ms_gauden.c				\
