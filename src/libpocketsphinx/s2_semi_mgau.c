@@ -531,7 +531,7 @@ get_scores4_8b_all(s2_semi_mgau_t * s)
     memset(senone_scores, 0, s->CdWdPDFMod * sizeof(*senone_scores));
     for (j = 0; j < s->n_feat; j++) {
         unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
-        int32 k;
+        int32 n;
 
         /* ptrs to senone prob ids */
         pid_cw0 = s->OPDF_8B[j][s->f[j][0].codeword];
@@ -539,17 +539,17 @@ get_scores4_8b_all(s2_semi_mgau_t * s)
         pid_cw2 = s->OPDF_8B[j][s->f[j][2].codeword];
         pid_cw3 = s->OPDF_8B[j][s->f[j][3].codeword];
 
-        for (k = 0; k < s->CdWdPDFMod; k++) {
+        for (n = 0; n < s->CdWdPDFMod; n++) {
             int32 tmp1, tmp2;
-            tmp1 = pid_cw0[k] + s->f[j][0].score;
-            tmp2 = pid_cw1[k] + s->f[j][1].score;
+            tmp1 = pid_cw0[n] + s->f[j][0].score;
+            tmp2 = pid_cw1[n] + s->f[j][1].score;
             tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-            tmp2 = pid_cw2[k] + s->f[j][2].score;
+            tmp2 = pid_cw2[n] + s->f[j][2].score;
             tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-            tmp2 = pid_cw3[k] + s->f[j][3].score;
+            tmp2 = pid_cw3[n] + s->f[j][3].score;
             tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
 
-            senone_scores[k] -= tmp1 << 10;
+            senone_scores[n] -= tmp1 << 10;
         }
     }
     return 0;
@@ -580,15 +580,15 @@ get_scores2_8b(s2_semi_mgau_t * s)
         tmp1 = pid_cw00[n] + s->f[0][0].score;
         tmp2 = pid_cw10[n] + s->f[0][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] += tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
         tmp1 = pid_cw01[n] + s->f[1][0].score;
         tmp2 = pid_cw11[n] + s->f[1][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] += tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
         tmp1 = pid_cw02[n] + s->f[2][0].score;
         tmp2 = pid_cw12[n] + s->f[2][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] += tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
         tmp1 = pid_cw03[n] + s->f[3][0].score;
         tmp2 = pid_cw13[n] + s->f[3][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
@@ -622,15 +622,15 @@ get_scores2_8b_all(s2_semi_mgau_t * s)
         tmp1 = pid_cw00[n] + s->f[0][0].score;
         tmp2 = pid_cw10[n] + s->f[0][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] += tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
         tmp1 = pid_cw01[n] + s->f[1][0].score;
         tmp2 = pid_cw11[n] + s->f[1][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] += tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
         tmp1 = pid_cw02[n] + s->f[2][0].score;
         tmp2 = pid_cw12[n] + s->f[2][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] += tmp1 << 10;
+        senone_scores[n] -= tmp1 << 10;
         tmp1 = pid_cw03[n] + s->f[3][0].score;
         tmp2 = pid_cw13[n] + s->f[3][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
