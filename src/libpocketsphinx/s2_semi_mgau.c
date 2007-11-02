@@ -159,6 +159,16 @@ struct vqFeature_s {
 #define MAX_NEG_MIXW 159 /**< Maximum negated mixture weight value. */
 #define MAX_NEG_ASCR 96  /**< Maximum negated acoustic score value. */
 
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ == 199901L)
+#define LOGMATH_INLINE inline
+#elif defined(__GNUC__)
+#define LOGMATH_INLINE static inline
+#elif defined(_MSC_VER)
+#define LOGMATH_INLINE __inline
+#else
+#define LOGMATH_INLINE static
+#endif
+
 /**
  * Quickly log-add two negated log probabilities.
  *
