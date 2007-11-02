@@ -702,7 +702,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     FILE *fp;
     char line[1000];
     int32 i, n;
-    int32 do_swap;
+    int32 do_swap, do_mmap;
     size_t filesize, offset;
     int n_clust = 256;          /* Number of clusters (if zero, we are just using
                                  * 8-bit quantized weights) */
@@ -710,7 +710,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     int c = bin_mdef_n_sen(mdef);
 
     s->CdWdPDFMod = c;
-    s->use_mmap = cmd_ln_boolean("-mmap");
+    do_mmap = cmd_ln_boolean("-mmap");
 
     if ((fp = fopen(file, "rb")) == NULL)
         return -1;
@@ -727,9 +727,9 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
         }
         do_swap = 1;
     }
-    if (do_swap && s->use_mmap) {
+    if (do_swap && do_mmap) {
         E_ERROR("Dump file is byte-swapped, cannot use memory-mapping\n");
-        s->use_mmap = 0;
+        do_mmap = 0;
     }
     if (fread(line, sizeof(char), n, fp) != n)
         E_FATAL("Cannot read title\n");
@@ -771,7 +771,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
 	fclose(fp);
 	return -1;
     }
-    if (s->use_mmap) {
+    if (do_mmap) {
             E_INFO("Using memory-mapped I/O for senones\n");
     }
     /* Verify alignment constraints for using mmap() */
@@ -780,7 +780,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
         E_ERROR
             ("Number of PDFs (%d) not padded to multiple of 4, will not use mmap()\n",
              c);
-        s->use_mmap = 0;
+        do_mmap = 0;
     }
     offset = ftell(fp);
     fseek(fp, 0, SEEK_END);
@@ -789,23 +789,23 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     if ((offset & 3) != 0) {
         E_ERROR
             ("PDFs are not aligned to 4-byte boundary in file, will not use mmap()\n");
-        s->use_mmap = 0;
+        do_mmap = 0;
     }
 
-    /* Allocate memory for pdfs */
-    if (s->use_mmap) {
-        s->OPDF_8B = ckd_calloc(s->n_feat + 1, sizeof(unsigned char**));
+    /* Allocate memory for pdfs (or memory map them) */
+    if (do_mmap)
+        s->sendump_mmap = mmio_file_read(file);
+    if (s->sendump_mmap) {
+        s->OPDF_8B = ckd_calloc(s->n_feat, sizeof(unsigned char**));
         for (i = 0; i < s->n_feat; i++) {
             /* Pointers into the mmap()ed 2d array */
 	    s->OPDF_8B[i] = 
                 (unsigned char **) ckd_calloc(r, sizeof(unsigned char *));
         }
 
-	/* Use the last index to hide a pointer to the entire file's memory */
-        s->OPDF_8B[s->n_feat] = s2_mmap(file);
         for (n = 0; n < s->n_feat; n++) {
             for (i = 0; i < r; i++) {
-                s->OPDF_8B[n][i] = (char *) ((caddr_t) s->OPDF_8B[s->n_feat] + offset);
+                s->OPDF_8B[n][i] = (uint8 *) mmio_file_ptr(s->sendump_mmap) + offset;
                 offset += c;
             }
         }
@@ -1250,11 +1250,12 @@ s2_semi_mgau_free(s2_semi_mgau_t * s)
 {
     uint32 i;
 
-    if (s->use_mmap) {
+    if (s->sendump_mmap) {
         for (i = 0; i < s->n_feat; ++i) {
             ckd_free(s->OPDF_8B[i]);
         }
-        ckd_free(s->OPDF_8B);
+        ckd_free(s->OPDF_8B); 
+       mmio_file_unmap(s->sendump_mmap);
     }
     else {
         ckd_free_3d((void ***)s->OPDF_8B);

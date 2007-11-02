@@ -39,10 +39,12 @@
 #define _LM_3G_H_
 
 #include "s2types.h"
-#include "fixpoint.h"
 #include "lmclass.h"
-#include "hash_table.h"
+
 #include <sphinx_config.h>
+#include <fixpoint.h>
+#include <hash_table.h>
+#include <mmio.h>
 
 /* Type used to represent the language model weight. */
 #ifdef FIXED_POINT
@@ -166,6 +168,8 @@ typedef struct lm_s {
 			   some cached subset of bigrams (*,lw2). */
     
     hash_table_t *HT;		/* hash table for word-string->word-id map */
+
+    mmio_file_t *dump_mmap; /* mmap() of dump file (or NULL if none) */
 } lm_t, *LM;
 
 

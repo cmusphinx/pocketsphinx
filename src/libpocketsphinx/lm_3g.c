@@ -936,11 +936,8 @@ lm_read_clm(char const *filename,
     int32 i, j, k, last_bg, last_tg;
     int32 dictid, classid, notindict, maperr;
     lmclass_word_t lmclass_word;
-    int do_mmap;
 
     E_INFO("Reading LM file %s (name \"%s\")\n", filename, lmname);
-
-    do_mmap = cmd_ln_boolean("-mmap");
 
     if (start_sym == NULL)
         start_sym = ckd_salloc("<s>");
@@ -1070,7 +1067,7 @@ lm_read_clm(char const *filename,
         E_INFO("prob(%s,%s) changed from %.4f to %.4f\n",
                word_str[i], word_str[BG_WID(model, j)],
                model->prob2[model->bigrams[j].prob2].f, model->prob2[0].f);
-        if (!do_mmap)
+        if (!model->dump_mmap)
             model->bigrams[j].prob2 = 0;
 
         if (model->tcount > 0) {
@@ -1087,7 +1084,7 @@ lm_read_clm(char const *filename,
                        word_str[TG_WID(model, k)],
                        model->prob3[model->trigrams[k].prob3].f,
                        model->prob3[0].f);
-                if (!do_mmap)
+                if (!model->dump_mmap)
                     model->trigrams[k].prob3 = 0;
             }
         }
@@ -1102,13 +1099,13 @@ lm_read_clm(char const *filename,
         E_INFO("prob(%s,%s) changed from %.4f to %.4f\n",
                word_str[i], word_str[BG_WID(model, j)],
                model->prob2[model->bigrams[j].prob2].f, model->prob2[0].f);
-        if (!do_mmap)
+        if (!model->dump_mmap)
             model->bigrams[j].prob2 = 0;
     }
 
     lm_add(lmname, model, lw, uw, wip);
 
-    if (!do_mmap)
+    if (!model->dump_mmap)
         for (i = 0; i < model->ucount; i++)
             free(word_str[i]);
     free(word_str);
@@ -1532,7 +1529,13 @@ lm3g_load(char const *file, char const *lmname,
             do_mmap = FALSE;
         }
         else {
-            map_base = s2_mmap(file);
+            model->dump_mmap = mmio_file_read(file);
+            if (model->dump_mmap == NULL) {
+                do_mmap = FALSE;
+            }
+            else {
+                map_base = mmio_file_ptr(model->dump_mmap);
+            }
         }
     }
 

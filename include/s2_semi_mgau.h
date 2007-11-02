@@ -45,6 +45,7 @@
 #include <sphinx_types.h>
 #include <fe.h>
 #include <logmath.h>
+#include <mmio.h>
 
 #include "kdtree.h"
 
@@ -57,6 +58,7 @@ struct s2_semi_mgau_s {
     var_t   **vars;	/* var vectors foreach feature */
 
     unsigned char ***OPDF_8B; /* mixture weights */
+    mmio_file_t *sendump_mmap;/* memory-mapped sendump (or NULL if not mmap) */
 
     int32 n_feat;	/* Number of feature streams */
     int32 *veclen;	/* Length of feature streams */
@@ -72,8 +74,6 @@ struct s2_semi_mgau_s {
 
     int32 num_frames;
     int32 ds_ratio;
-
-    int32 use_mmap; /**< Are mixture weights mmap()ed? */
 
     /* Top-N scores and codewords from current, last frame. */
     vqFeature_t **f, **lastf;

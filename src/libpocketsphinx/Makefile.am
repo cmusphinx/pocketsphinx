@@ -25,7 +25,6 @@ libpocketsphinx_la_SOURCES =			\
 	ms_mgau.c				\
 	ms_senone.c				\
 	phone.c					\
-	s2_mmap.c				\
 	s2_semi_mgau.c				\
 	search.c				\
 	searchlat.c				\
