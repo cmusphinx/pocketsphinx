@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="libpocketsphinx"
 	ProjectGUID="{C18844B6-86D9-49CF-B7B4-A165B0B64EE0}"
+	RootNamespace="libpocketsphinx"
 	>
 	<Platforms>
 		<Platform
@@ -42,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\include ..\..\..\src\libpocketsphinx\include,../../../include,../../../../sphinxbase/include,../../../../sphinxbase/include/win32"
-				PreprocessorDefinitions="_DEBUG;_WINDOWS;WIN32;HAVE_CONFIG_H;LIBPOCKETSPHINX"
+				PreprocessorDefinitions="_DEBUG;_WINDOWS;WIN32;HAVE_CONFIG_H;LIBPOCKETSPHINX;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -118,7 +119,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\src\libpocketsphinx\include,../../../include,../../../../sphinxbase/include,../../../../sphinxbase/include/win32"
-				PreprocessorDefinitions="NDEBUG;_WINDOWS;WIN32;HAVE_CONFIG_H;LIBPOCKETSPHINX"
+				PreprocessorDefinitions="NDEBUG;_WINDOWS;WIN32;HAVE_CONFIG_H;LIBPOCKETSPHINX;_CRT_SECURE_NO_WARNINGS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -239,28 +240,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\libpocketsphinx\blkarray_list.c"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\cache_lm.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -480,28 +459,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\src\libpocketsphinx\lm.c"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="..\..\..\src\libpocketsphinx\lm_3g.c"
 				>
 				<FileConfiguration
@@ -635,28 +592,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\libpocketsphinx\phone.c"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\s2_mmap.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
