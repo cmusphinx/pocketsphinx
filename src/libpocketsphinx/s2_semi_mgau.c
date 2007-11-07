@@ -1191,6 +1191,20 @@ s2_semi_mgau_init(const char *mean_path, const char *var_path,
 
     s = ckd_calloc(1, sizeof(*s));
 
+    /* Log-add table. */
+    s->lmath_8b = logmath_init((float64)cmd_ln_float32("-logbase"), 10, TRUE);
+    if (s->lmath_8b == NULL) {
+        s2_semi_mgau_free(s);
+        return NULL;
+    }
+    /* Ensure that it is only 8 bits wide so that fast_logmath_add() works. */
+    if (logmath_get_width(s->lmath_8b) != 1) {
+        E_ERROR("Log base %f is too small to represent add table in 8 bits\n",
+                cmd_ln_float32("-logbase"));
+        s2_semi_mgau_free(s);
+        return NULL;
+    }
+
     /* Read means and variances. */
     if (s3_read_mgau(s, mean_path, (float32 ***)&s->means) < 0) {
         /* FIXME: This actually is not enough to really free everything. */
@@ -1227,20 +1241,6 @@ s2_semi_mgau_init(const char *mean_path, const char *var_path,
 
     /* Temporary array used in senone eval */
     s->score_tmp = ckd_calloc(s->n_feat, sizeof(int32));
-
-    /* Log-add table. */
-    s->lmath_8b = logmath_init((float64)cmd_ln_float32("-logbase"), 10, TRUE);
-    if (s->lmath_8b == NULL) {
-        s2_semi_mgau_free(s);
-        return NULL;
-    }
-    /* Ensure that it is only 8 bits wide so that fast_logmath_add() works. */
-    if (logmath_get_width(s->lmath_8b) != 1) {
-        E_ERROR("Log base %f is too small to represent add table in 8 bits\n",
-                cmd_ln_float32("-logbase"));
-        s2_semi_mgau_free(s);
-        return NULL;
-    }
 
     return s;
 }
