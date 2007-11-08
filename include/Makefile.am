@@ -35,5 +35,3 @@ pkginclude_HEADERS =				\
 	word_fsg.h
 
 
-EXTRA_DIST = \
-	README
