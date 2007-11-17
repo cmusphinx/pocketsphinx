@@ -1445,7 +1445,7 @@ search_initialize(void)
     NumWords = word_dict->dict_entry_count;
     StartWordId = kb_get_word_id(cmd_ln_str("-lmstartsym"));
     FinishWordId = kb_get_word_id(cmd_ln_str("-lmendsym"));
-    SilenceWordId = kb_get_word_id("SIL");
+    SilenceWordId = kb_get_word_id("<sil>");
     SilencePhoneId = phone_to_id("SIL", TRUE);
     NumCiPhones = phoneCiCount();
 

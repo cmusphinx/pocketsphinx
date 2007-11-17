@@ -1016,7 +1016,7 @@ searchlat_init(void)
 {
     start_wid = kb_get_word_id(cmd_ln_str("-lmstartsym"));
     finish_wid = kb_get_word_id(cmd_ln_str("-lmendsym"));
-    sil_wid = kb_get_word_id("SIL");
+    sil_wid = kb_get_word_id("<sil>");
     rc_fwdperm = dict_right_context_fwd_perm();
     altpron = cmd_ln_boolean("-reportpron");
 

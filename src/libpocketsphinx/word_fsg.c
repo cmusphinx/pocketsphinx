@@ -361,7 +361,7 @@ word_fsg_add_filler(word_fsg_t * fsg, float32 silprob, float32 fillprob)
 
     assert(fsg);
 
-    silwid = kb_get_word_id("SIL");
+    silwid = kb_get_word_id("<sil>");
     n_word = word_dict->dict_entry_count;
 
     logsilp = (int32) (logmath_log(lmath, silprob) * fsg->lw);

@@ -392,12 +392,12 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
             word_id++;
         }
 
-        /* Finally create a silence phone if it isn't there already. */
-        if (hash_table_lookup(dict->dict, "SIL", &val) != 0) {
+        /* Finally create a silence word if it isn't there already. */
+        if (hash_table_lookup(dict->dict, "<sil>", &val) != 0) {
             char pronstr[4];
 
             strcpy(pronstr, "SIL");
-            entry = _new_dict_entry("SIL", pronstr, FALSE);
+            entry = _new_dict_entry("<sil>", pronstr, FALSE);
             if (!entry)
                 E_FATAL("Failed to add <sil>(SIL) to dictionary\n");
             _dict_list_add(dict, entry);
@@ -994,7 +994,7 @@ recordMissingTriphone(char *triphoneStr)
 
     if (-1 == hash_table_lookup(mtpHT, triphoneStr, &idx)) {
         cp = ckd_salloc(triphoneStr);
-        E_INFO("Missing triphone: %s\n", triphoneStr);
+        /* E_INFO("Missing triphone: %s\n", triphoneStr); */
         hash_table_enter(mtpHT, cp, cp);
     }
 }
