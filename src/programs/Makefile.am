@@ -4,25 +4,25 @@ bin_PROGRAMS = \
 	pocketsphinx_ptt \
 	pocketsphinx_mdef_convert
 
-noinst_PROGRAMS = \
-	cont_adseg \
-	cont_fileseg
-
-
-cont_adseg_SOURCES = cont_adseg.c
-
-cont_fileseg_SOURCES = cont_fileseg.c
-
 pocketsphinx_mdef_convert_SOURCES = mdef_convert.c
+pocketsphinx_mdef_convert_LDADD = \
+	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la \
+	-lsphinxbase
 
 pocketsphinx_batch_SOURCES = batch.c
+pocketsphinx_batch_LDADD = \
+	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la \
+	-lsphinxbase
 
 pocketsphinx_continuous_SOURCES =  tty-continuous.c
+pocketsphinx_continuous_LDADD = \
+	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la \
+	-lsphinxbase -lsphinxad
 
 pocketsphinx_ptt_SOURCES = tty-ptt.c
-
-LDADD = $(top_builddir)/src/libpocketsphinx/libpocketsphinx.la \
-	-lsphinxutil -lsphinxfe -lsphinxfeat -lsphinxad -lm
+pocketsphinx_ptt_LDADD = \
+	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la \
+	-lsphinxbase -lsphinxad
 
 INCLUDES = -I$(top_srcdir)/include \
        -I$(top_builddir)/include

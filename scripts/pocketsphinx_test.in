@@ -1,6 +1,6 @@
 #!/bin/sh
 S2BATCH=@prefix@/bin/pocketsphinx_continuous
-HMM=@prefix@/share/pocketsphinx/model/hmm/wsj0
+HMM=@prefix@/share/pocketsphinx/model/hmm/wsj1
 TASK=@prefix@/share/pocketsphinx/model/lm/turtle
 CTLFILE=@prefix@/share/pocketsphinx/model/lm/turtle/turtle.ctl
 

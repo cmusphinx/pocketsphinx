@@ -81,8 +81,8 @@ dnl
 : ${sphinxbasebuild=$sphinxbase}
 if test x$sphinxbase != x && test x$cross_compiling = xyes; then
    CPPFLAGS="-I$sphinxbase/include -I$sphinxbasebuild/include $CPPFLAGS"
-   LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxfe -L$sphinxbasebuild/src/libsphinxfeat \
-		     -L$sphinxbasebuild/src/libsphinxutil -L$sphinxbasebuild/src/libsphinxad"
+   LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxfe -L$sphinxbasebuild/src/libsphinxad \
+		     -L$sphinxbasebuild/src/libsphinxbase"
 fi
 if test x$sphinxbase != x && test x$cross_compiling != xyes; then
    AC_CHECK_FILE($sphinxbase/include/prim_type.h,CPPFLAGS="-I$sphinxbase/include $CPPFLAGS",
@@ -92,10 +92,10 @@ if test x$sphinxbase != x && test x$cross_compiling != xyes; then
 SphinxBase.  Run $0 --help for more information.]))
 fi
 if test x$sphinxbasebuild != x && test x$cross_compiling != xyes; then
-   AC_CHECK_FILE($sphinxbasebuild/src/libsphinxutil/libsphinxutil.la,
+   AC_CHECK_FILE($sphinxbasebuild/src/libsphinxbase/libsphinxbase.la,
 [CPPFLAGS="-I$sphinxbasebuild/include $CPPFLAGS"
-LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxfe -L$sphinxbasebuild/src/libsphinxfeat \
-		  -L$sphinxbasebuild/src/libsphinxutil -L$sphinxbasebuild/src/libsphinxad"],
+LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxfe -L$sphinxbasebuild/src/libsphinxad \
+		  -L$sphinxbasebuild/src/libsphinxbase"],
 		   AC_ERROR(
 [SphinxBase libraries were not found in $sphinxbasebuild.
 Use the --with-sphinxbase-build option to `configure' to specify
