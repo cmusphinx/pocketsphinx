@@ -6,8 +6,7 @@ module = Extension('_pocketsphinx',
                                    '/usr/local/include/sphinxbase/',
                                    '/usr/local/include/pocketsphinx',
                                    ],
-                   libraries = ['sphinxutil', 'sphinxfe', 'sphinxfeat',
-                                'sphinxad', 'pocketsphinx'],
+                   libraries = ['sphinxbase', 'pocketsphinx'],
                    sources = ['_pocketsphinxmodule.c'])
 
 setup(name = 'PocketSphinx',
