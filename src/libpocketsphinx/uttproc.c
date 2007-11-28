@@ -709,6 +709,9 @@ uttproc_init(void)
         return -1;
     }
 
+    /* Make sure linklist functions can operate. */
+    linklist_init();
+
     fe = fe_init_auto();
 
     if (!fe)

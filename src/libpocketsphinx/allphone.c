@@ -403,6 +403,8 @@ allphone_init()
     float32 pip;
     int32 i;
 
+    linklist_init();
+
     bw = cmd_ln_float64("-beam");
     exitbw = cmd_ln_float64("-wbeam");
     pip = cmd_ln_float32("-pip");

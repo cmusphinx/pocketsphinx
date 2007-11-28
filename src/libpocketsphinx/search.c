@@ -1442,6 +1442,8 @@ search_initialize(void)
 {
     int32 bptable_size = cmd_ln_int32("-latsize");
 
+    linklist_init();
+
     NumWords = word_dict->dict_entry_count;
     StartWordId = kb_get_word_id(cmd_ln_str("-lmstartsym"));
     FinishWordId = kb_get_word_id(cmd_ln_str("-lmendsym"));

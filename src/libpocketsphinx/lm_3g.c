@@ -939,6 +939,9 @@ lm_read_clm(char const *filename,
 
     E_INFO("Reading LM file %s (name \"%s\")\n", filename, lmname);
 
+    /* Make sure linklist functions can operate. */
+    linklist_init();
+
     if (start_sym == NULL)
         start_sym = ckd_salloc("<s>");
     if (end_sym == NULL)

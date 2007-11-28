@@ -1014,6 +1014,8 @@ search_get_lattice(void)
 void
 searchlat_init(void)
 {
+    linklist_init();
+
     start_wid = kb_get_word_id(cmd_ln_str("-lmstartsym"));
     finish_wid = kb_get_word_id(cmd_ln_str("-lmendsym"));
     sil_wid = kb_get_word_id("<sil>");
