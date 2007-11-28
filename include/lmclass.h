@@ -132,9 +132,9 @@ void lmclass_set_dictwid (lmclass_word_t w, int32 dictwid);
 
 
 /* Various access functions (macros) */
-#define lmclass_getname(class)		((class)->name)
-#define lmclass_firstword(class)	((class)->wordlist)
-#define lmclass_nextword(class,w)	((w)->next)
+#define lmclass_getname(klass)		((klass)->name)
+#define lmclass_firstword(klass)	((klass)->wordlist)
+#define lmclass_nextword(klass,w)	((w)->next)
 #define lmclass_getwid(w)		((w)->dictwid)
 #define lmclass_getword(w)		((w)->word)
 #define lmclass_getprob(w)		((w)->LOGprob)
