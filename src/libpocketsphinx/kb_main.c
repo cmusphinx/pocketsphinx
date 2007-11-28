@@ -130,7 +130,6 @@
 #include "dict.h"
 #include "lm.h"
 #include "s2_semi_mgau.h"
-#include "subvq_mgau.h"
 #include "ms_mgau.h"
 #include "kb.h"
 #include "phone.h"
@@ -153,9 +152,6 @@ bin_mdef_t *mdef;
 
 /* S2 fast SCGMM computation object */
 s2_semi_mgau_t *semi_mgau;
-
-/* SubVQ-based fast CDGMM computation object */
-subvq_mgau_t *subvq_mgau;
 
 /* Slow CDGMM computation object */
 ms_mgau_model_t *ms_mgau;
@@ -544,42 +540,33 @@ kb_init(void)
     tmat = tmat_init(tmatfn, cmd_ln_float32("-tmatfloor"), TRUE);
 
     /* Read the acoustic models. */
-    if (cmd_ln_str("-subvq")) {
-        subvq_mgau = subvq_mgau_init(cmd_ln_str("-subvq"),
-                                     cmd_ln_float32("-varfloor"),
-                                     mixwfn,
-                                     cmd_ln_float32("-mixwfloor"),
-                                     cmd_ln_int32("-topn"));
+    if ((meanfn == NULL)
+        || (varfn == NULL)
+        || (tmatfn == NULL))
+        E_FATAL("No mean/var/tmat files specified\n");
+
+    E_INFO("Attempting to use SCGMM computation module\n");
+    semi_mgau = s2_semi_mgau_init(meanfn,
+                                  varfn,
+                                  cmd_ln_float32("-varfloor"),
+                                  mixwfn,
+                                  cmd_ln_float32("-mixwfloor"),
+                                  cmd_ln_int32("-topn"));
+    if (semi_mgau) {
+        if (kdtreefn)
+            s2_semi_mgau_load_kdtree(semi_mgau,
+                                     kdtreefn,
+                                     cmd_ln_int32("-kdmaxdepth"),
+                                     cmd_ln_int32("-kdmaxbbi"));
+        semi_mgau->ds_ratio = cmd_ln_int32("-dsratio");
     }
     else {
-        if ((meanfn == NULL)
-            || (varfn == NULL)
-            || (tmatfn == NULL))
-            E_FATAL("No mean/var/tmat files specified\n");
-
-        E_INFO("Attempting to use SCGMM computation module\n");
-        semi_mgau = s2_semi_mgau_init(meanfn,
-                                      varfn,
-                                      cmd_ln_float32("-varfloor"),
-                                      mixwfn,
-                                      cmd_ln_float32("-mixwfloor"),
-                                      cmd_ln_int32("-topn"));
-        if (semi_mgau) {
-            if (kdtreefn)
-                s2_semi_mgau_load_kdtree(semi_mgau,
-                                         kdtreefn,
-                                         cmd_ln_int32("-kdmaxdepth"),
-                                         cmd_ln_int32("-kdmaxbbi"));
-            semi_mgau->ds_ratio = cmd_ln_int32("-dsratio");
-        }
-        else {
-            E_INFO("Falling back to general multi-stream GMM computation\n");
-            ms_mgau = ms_mgau_init(meanfn, varfn,
-                                   cmd_ln_float32("-varfloor"),
-                                   mixwfn, 
-                                   cmd_ln_float32("-mixwfloor"),
-                                   cmd_ln_int32("-topn"));
-        }
+        E_INFO("Falling back to general multi-stream GMM computation\n");
+        ms_mgau = ms_mgau_init(meanfn, varfn,
+                               cmd_ln_float32("-varfloor"),
+                               mixwfn, 
+                               cmd_ln_float32("-mixwfloor"),
+                               cmd_ln_int32("-topn"));
     }
 
     /*
@@ -615,10 +602,11 @@ kb_close(void)
     }
     tmat_free(tmat);
 
-    if (subvq_mgau)
-        subvq_mgau_free(subvq_mgau);
     if (semi_mgau)
         s2_semi_mgau_free(semi_mgau);
+
+    if (ms_mgau)
+        ms_mgau_free(ms_mgau);
 
     if (phonetp)
         ckd_free_2d((void **)phonetp);

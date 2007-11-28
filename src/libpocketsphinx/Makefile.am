@@ -2,7 +2,7 @@ ARCH   = `uname -m | sed s/i.86/i386/`_`uname -s | tr A-Z a-z`
 
 lib_LTLIBRARIES = libpocketsphinx.la
 
-libpocketsphinx_la_LDFLAGS = -version-info 0:0:0
+libpocketsphinx_la_LDFLAGS = -version-info 1:0:0
 
 libpocketsphinx_la_SOURCES =			\
 	allphone.c				\
@@ -29,13 +29,42 @@ libpocketsphinx_la_SOURCES =			\
 	search.c				\
 	searchlat.c				\
 	senscr.c				\
-	subvq_mgau.c				\
 	tmat.c					\
 	uttproc.c				\
 	vector.c				\
 	word_fsg.c
 
-noinst_HEADERS = uttproc.h allphone.h
+noinst_HEADERS = uttproc.h allphone.h \
+	basic_types.h				\
+	bin_mdef.h				\
+	blkarray_list.h				\
+	dict.h					\
+	fsg_history.h				\
+	fsg_lextree.h				\
+	fsg_psubtree.h				\
+	fsg_search.h				\
+	hmm.h					\
+	kb.h					\
+	kdtree.h				\
+	lm_3g.h					\
+	lmclass.h				\
+	lm.h					\
+	log.h					\
+	mdef.h					\
+	ms_gauden.h				\
+	ms_mgau.h				\
+	ms_senone.h				\
+	phone.h					\
+	posixwin32.h				\
+	s2_semi_mgau.h				\
+	s2io.h					\
+	s2params.h				\
+	search_const.h				\
+	search.h				\
+	senscr.h				\
+	tmat.h					\
+	vector.h				\
+	word_fsg.h
 
 INCLUDES = -I$(top_srcdir)/include \
            -I$(top_builddir)/include 

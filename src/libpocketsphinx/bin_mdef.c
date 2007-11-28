@@ -50,6 +50,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "mdef.h"
 #include "bin_mdef.h"
 #include "s2types.h"
 #include "ckd_alloc.h"

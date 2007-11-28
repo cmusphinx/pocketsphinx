@@ -38,6 +38,7 @@
 #ifndef _S2_SEARCH_H_
 #define _S2_SEARCH_H_	1
 
+#include <fe.h>
 
 #include "basic_types.h"
 #include "fbs.h"

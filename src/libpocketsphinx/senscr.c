@@ -65,7 +65,7 @@
 #include "ckd_alloc.h"
 #include "kb.h"
 #include "s2_semi_mgau.h"
-#include "subvq_mgau.h"
+#include "ms_mgau.h"
 #include "phone.h"
 #include "search.h"
 #include "search_const.h"
@@ -163,19 +163,15 @@ senscr_compute(mfcc_t **feat, int32 frame_idx, int32 all)
     if (all) {
         if (ms_mgau)
             ms_cont_mgau_frame_eval(senone_scores, ms_mgau, feat);
-        else if (semi_mgau)
-            s2_semi_mgau_frame_eval(semi_mgau, feat, frame_idx, TRUE);
         else
-            subvq_mgau_frame_eval(subvq_mgau, feat, frame_idx, TRUE);
+            s2_semi_mgau_frame_eval(semi_mgau, feat, frame_idx, TRUE);
         best = best_senscr_all_s3();
     }
     else {
         if (ms_mgau)
             ms_cont_mgau_frame_eval(senone_scores, ms_mgau, feat);
-        else if (semi_mgau)
-            s2_semi_mgau_frame_eval(semi_mgau, feat, frame_idx, FALSE);
         else
-            subvq_mgau_frame_eval(subvq_mgau, feat, frame_idx, FALSE);
+            s2_semi_mgau_frame_eval(semi_mgau, feat, frame_idx, FALSE);
         if (past_senone_active_vec) {
             int32 nwords;
 

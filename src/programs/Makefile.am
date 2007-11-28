@@ -25,4 +25,5 @@ pocketsphinx_ptt_LDADD = \
 	-lsphinxbase -lsphinxad
 
 INCLUDES = -I$(top_srcdir)/include \
-       -I$(top_builddir)/include
+	-I$(top_srcdir)/src/libpocketsphinx \
+	-I$(top_builddir)/include

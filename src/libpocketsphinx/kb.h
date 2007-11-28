@@ -52,7 +52,6 @@
 #include "bin_mdef.h"
 #include "s2_semi_mgau.h"
 #include "ms_mgau.h"
-#include "subvq_mgau.h"
 
 /* Initialize the acoustic and language models. */
 void kb_init(void);
@@ -77,7 +76,6 @@ extern tmat_t *tmat;
 /* Global model set. */
 extern s2_semi_mgau_t *semi_mgau;
 extern ms_mgau_model_t *ms_mgau;
-extern subvq_mgau_t *subvq_mgau;
 
 /* Global dictionary. */
 extern dictT *word_dict;
