@@ -1250,6 +1250,7 @@ s2_semi_mgau_free(s2_semi_mgau_t * s)
 {
     uint32 i;
 
+    logmath_free(s->lmath_8b);
     if (s->sendump_mmap) {
         for (i = 0; i < s->n_feat; ++i) {
             ckd_free(s->OPDF_8B[i]);
@@ -1272,5 +1273,4 @@ s2_semi_mgau_free(s2_semi_mgau_t * s)
     ckd_free_2d((void **)s->dets);
     ckd_free(s->score_tmp);
     ckd_free(s);
-    logmath_free(s->lmath_8b);
 }
