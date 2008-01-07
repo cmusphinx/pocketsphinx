@@ -131,6 +131,7 @@ sub s3_magic_norm{
 
     # Remove line endings
     chomp  $word;
+    $word =~ s/\r$//;
     # Normalize case
     $word = uc $word;   
     # Remove filler words and context cues
@@ -146,7 +147,6 @@ sub s3_magic_norm{
 
     # This compute the uttid and remove it from a line.
     $word =~ s/\(([^) ]+)[^)]*\)$// ;
-
     # Split apart compound words and acronyms
     $word =~ tr/_./  /;
 
