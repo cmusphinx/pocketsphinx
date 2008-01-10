@@ -69,7 +69,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libsphinxutil.lib libsphinxad.lib libsphinxfe.lib libsphinxfeat.lib winmm.lib"
+				AdditionalDependencies="sphinxbase.lib winmm.lib"
 				OutputFile=".\..\..\..\bin\Debug/pocketsphinx_continuous.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -162,7 +162,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libsphinxutil.lib libsphinxad.lib libsphinxfe.lib libsphinxfeat.lib winmm.lib"
+				AdditionalDependencies="sphinxbase.lib winmm.lib"
 				OutputFile=".\..\..\..\bin\Release/pocketsphinx_continuous.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
