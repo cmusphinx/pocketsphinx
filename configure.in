@@ -54,13 +54,29 @@ AC_ARG_WITH(sphinxbase-build,
 			[look for SphinxBase object files in DIRECTORY]),
 	sphinxbasebuild=$withval)
 
+
+dnl Check for pkgconfig to get default directories
+AC_CHECK_PROG(HAVE_PKGCONFIG, pkg-config, yes, no)
+
+if test "x$HAVE_PKGCONFIG" = "xno"; then
+   SphinxBase_CFLAGS = "-Iusr/include/sphinxbase -I/usr/local/include/sphinxbase"
+   SphinxBase_LIBS = "-lsphinxbase"
+else
+   PKG_CHECK_MODULES(SphinxBase, [sphinxbase],,[
+   AC_MSG_FAILURE(dnl
+[SphinxBase was not found on your system.
+Make sure that you have installed it and that the
+PKG_CONFIG_PATH environment variable is set correctly, if
+it was installed in a non-standard prefix.])])
+fi
+
+
 dnl
-dnl Check for installed SphinxBase
-dnl FIXME: How do we find the installed headers robustly?
+dnl Check for installed SphinxBase if none was passed to us
 dnl
-AC_CHECK_HEADER(sphinxbase/sphinx_config.h,
-CPPFLAGS="-I/usr/include/sphinxbase -I/usr/local/include/sphinxbase",[
 if test x$sphinxbase = x; then
+   AC_CHECK_HEADER(sphinxbase/sphinx_config.h,
+   CPPFLAGS="$SphinxBase_CFLAGS",[
    # Look for sphinxbase in the parent directory
    for sb in ../sphinxbase*; do
        AC_MSG_CHECKING([for sphinxbase in $sb])
@@ -71,8 +87,8 @@ if test x$sphinxbase = x; then
 	  AC_MSG_RESULT(no)
        fi
    done
+   ])
 fi
-])
 
 dnl
 dnl Now verify SphinxBase if defined
