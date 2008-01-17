@@ -1,4 +1,4 @@
-TESTS = $(wildcard $(srcdir)/test-*.sh)
+TESTS =
 
 TESTDATA =
 
