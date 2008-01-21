@@ -23,14 +23,6 @@ EXTRA_DIST = \
 
 if BUILD_DOXYGEN
 all-local: latex/refman.pdf html/index.html
-
-install-data-local:
-	$(INSTALL) -d $(docdir)
-	$(INSTALL) latex/refman.pdf $(docdir)
-	(tar cf - html) | (cd $(docdir) && tar xvf -)
-
-uninstall-local:
-	$(RM) -r $(docdir)
 endif
 
 headers = $(top_srcdir)/include/pocketsphinx.h \
