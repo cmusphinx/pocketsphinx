@@ -1,4 +1,5 @@
 SUBDIRS = src \
+	  doc \
 	  model \
 	  include \
 	  scripts \

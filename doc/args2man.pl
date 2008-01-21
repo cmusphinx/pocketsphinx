@@ -5,7 +5,7 @@ use Pod::Usage;
 my $program = shift;
 pod2usage(2) unless defined($program);
 
-open ARGTEXT, "$program -h 2>&1 |" or die "Failed to run $program: $!";
+open ARGTEXT, "$program 2>&1 |" or die "Failed to run $program: $!";
 my $inargs = 0;
 my @args;
 while (<ARGTEXT>) {

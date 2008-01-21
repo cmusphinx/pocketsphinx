@@ -121,6 +121,9 @@ AC_PATH_PROG(CSH,csh)
 AC_SUBST(PERL)
 AC_SUBST(CSH)
 
+AC_CHECK_PROG(HAVE_DOXYGEN, doxygen, yes, no)
+AM_CONDITIONAL(BUILD_DOXYGEN, test "x$HAVE_DOXYGEN" = "xyes")
+
 AM_PROG_LIBTOOL
 
 AC_OUTPUT([
@@ -130,6 +133,8 @@ include/Makefile
 src/Makefile
 src/libpocketsphinx/Makefile
 src/programs/Makefile
+doc/Makefile
+doc/doxyfile
 model/Makefile
 model/hmm/Makefile
 model/hmm/wsj1/Makefile

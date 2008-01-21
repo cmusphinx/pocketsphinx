@@ -1,0 +1,207 @@
+.TH POCKETSPHINX_CONTINUOUS 1 "2007-08-27"
+.SH NAME
+pocketsphinx_continuous \- Run speech recognition in continuous listening mode
+.SH SYNOPSIS
+.B pocketsphinx_continuous
+.RI \fB\-hmm\fR
+\fIhmmdir\fR
+\fB\-dict\fR
+\fIdictfile\fR
+[\fI options \fR]...
+.SH DESCRIPTION
+.PP
+This program opens the audio device and waits for speech.  When it
+detects an utterance, it performs speech recognition on it.
+.TP
+.B \-adcdev
+name for audio input (platform-specific)
+.TP
+.B \-adchdr
+Size of audio file header in bytes (headers are ignored)
+.TP
+.B \-adcin
+Input is raw audio data
+.TP
+.B \-agc
+Automatic gain control for c0 ('max', 'emax', 'noise', or 'none')
+.TP
+.B \-agcthresh
+Initial threshold for automatic gain control
+.TP
+.B \-allphone
+Do phoneme recognition
+.TP
+.B \-alpha
+Preemphasis parameter
+.TP
+.B \-backtrace
+Print back trace of recognition results
+.TP
+.B \-beam
+Beam width applied to every frame in Viterbi search (smaller values mean wider beam)
+.TP
+.B \-bestpath
+Run bestpath (Dijkstra) search over word lattice (3rd pass)
+.TP
+.B \-bestpathlw
+Language model probability weight for bestpath search
+.TP
+.B \-cachesen
+Cache senone scores from first pass search
+.TP
+.B \-cep2spec
+Input is cepstral files, output is log spectral files
+.TP
+.B \-cepdir
+files directory (prefixed to filespecs in control file)
+.TP
+.B \-cepext
+Input files extension (prefixed to filespecs in control file)
+.TP
+.B \-ceplen
+Number of components in the input feature vector
+.TP
+.B \-cmn
+Cepstral mean normalization scheme ('current', 'prior', or 'none')
+.TP
+.B \-cmninit
+Initial values (comma-separated) for cepstral mean when 'prior' is used
+.TP
+.B \-compallsen
+Compute all senone scores in every frame (can be faster when there are many senones)
+.TP
+.B \-ctl
+file listing utterances to be processed
+.TP
+.B \-ctlcount
+No. of utterances to be processed (after skipping \fB\-ctloffset\fR entries)
+.TP
+.B \-ctlincr
+Do every Nth line in the control file
+.TP
+.B \-ctloffset
+No. of utterances at the beginning of \fB\-ctl\fR file to be skipped
+.TP
+.B \-dict
+pronunciation dictionary (lexicon) input file
+.TP
+.B \-dither
+Add 1/2-bit noise
+.TP
+.B \-doublebw
+Use double bandwidth filters (same center freq)
+.TP
+.B \-dsratio
+Frame GMM computation downsampling ratio
+.TP
+.B \-fbtype
+FB Type of mel_scale or log_linear
+.TP
+.B \-fdict
+word pronunciation dictionary input file
+.TP
+.B \-feat
+Feature stream type, depends on the acoustic model
+.TP
+.B \-fillpen
+Filler word transition penalty
+.TP
+.B \-frate
+Frame rate
+.TP
+.B \-fsg
+state grammar
+.TP
+.B \-fsgbfs
+Force backtrace from FSG final state
+.TP
+.B \-fsgctlfn
+finite state grammar control file
+.TP
+.B \-fsgusealtpron
+Use alternative pronunciations for FSG
+.TP
+.B \-fsgusefiller
+(FSG Mode (Mode 2) only) Insert filler words at each state.
+.TP
+.B \-fwd3g
+Use trigrams in first pass search
+.TP
+.B \-fwdflat
+Run forward flat-lexicon search over word lattice (2nd pass)
+.TP
+.B \-fwdflatbeam
+Beam width applied to every frame in second-pass flat search
+.TP
+.B \-fwdflatefwid
+Minimum number of end frames for a word to be searched in fwdflat search
+.TP
+.B \-fwdflatlw
+Language model probability weight for flat lexicon (2nd pass) decoding
+.TP
+.B \-fwdflatsfwin
+Window of frames in lattice to search for successor words in fwdflat search 
+.TP
+.B \-fwdflatwbeam
+Beam width applied to word exits in second-pass flat search
+.TP
+.B \-fwdtree
+Run forward lexicon-tree search (1st pass)
+.TP
+.B \-hmm
+containing acoustic model files.
+.TP
+.B \-hyp
+output file name
+.TP
+.B \-hypseg
+output with segmentation file name
+.TP
+.B \-input_endian
+Endianness of input data, big or little, ignored if NIST or MS Wav
+.TP
+.B \-kdmaxbbi
+Maximum number of Gaussians per leaf node in kd-Trees
+.TP
+.B \-kdmaxdepth
+Maximum depth of kd-Trees to use
+.TP
+.B \-kdtree
+file for Gaussian selection
+.TP
+.B \-latsize
+Lattice size
+.TP
+.B \-lifter
+Length of sin-curve for liftering, or 0 for no liftering.
+.TP
+.B \-live
+Get input from audio hardware
+.TP
+.B \-lm
+trigram language model input file
+.TP
+.B \-lmctlfn
+a set of language model
+.PP
+The
+.B \-hmm
+and
+.B \-dict
+arguments are always required.  Either
+.B \-lm
+or
+.B \-fsg
+is required, depending on whether you are using a statistical language
+model or a finite-state grammar.
+.SH AUTHOR
+Written by numerous people at CMU from 1994 onwards.  This manual page
+by David Huggins-Daines <dhuggins@cs.cmu.edu>
+.SH COPYRIGHT
+Copyright \(co 1994-2007 Carnegie Mellon University.  See the file
+\fICOPYING\fR included with this package for more information.
+.br
+.SH "SEE ALSO"
+.BR pocketsphinx_batch (1),
+.BR sphinx_fe (1).
+.br
