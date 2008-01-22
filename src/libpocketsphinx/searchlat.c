@@ -451,7 +451,7 @@ build_lattice(int32 bptbl_sz)
 
         /* Skip if word not in LM */
         if ((!ISA_FILLER_WORD(wid))
-            && (!dictwd_in_lm(word_dict->dict_list[wid]->fwid)))
+            && (!dictwd_in_lm(word_dict->dict_list[wid]->wid)))
             continue;
 
         /* See if bptbl entry <wid,sf> already in lattice */
@@ -579,7 +579,7 @@ build_lattice(int32 bptbl_sz)
     /* Change node->wid to base wid if not reporting actual pronunciations. */
     for (node = latnode_list; node; node = node->next) {
         if (!altpron)
-            node->wid = word_dict->dict_list[node->wid]->fwid;
+            node->wid = word_dict->dict_list[node->wid]->wid;
     }
 
     /* Remove SIL and noise nodes from DAG; extend links through them */
@@ -638,7 +638,7 @@ bptbl2latdensity(int32 bptbl_sz, int32 * density)
 
         /* Skip if word not in LM */
         if ((!ISA_FILLER_WORD(wid))
-            && (!dictwd_in_lm(word_dict->dict_list[wid]->fwid)))
+            && (!dictwd_in_lm(word_dict->dict_list[wid]->wid)))
             continue;
 
         /* See if bptbl entry <wid,sf> already in lattice */
@@ -848,8 +848,8 @@ lattice_rescore(lw_t lwf)
         assert(!(ISA_FILLER_WORD(link->to->wid)));
 
         if (altpron) {
-            bw1 = word_dict->dict_list[start_wid]->fwid;
-            bw2 = word_dict->dict_list[link->to->wid]->fwid;
+            bw1 = word_dict->dict_list[start_wid]->wid;
+            bw2 = word_dict->dict_list[link->to->wid]->wid;
 
             link->path_scr =
                 link->link_scr + LWMUL(lm3g_bg_score(bw1, bw2), lwf);
@@ -884,9 +884,9 @@ lattice_rescore(lw_t lwf)
             assert(!(ISA_FILLER_WORD(link->to->wid)));
 
             if (altpron) {
-                bw0 = word_dict->dict_list[q_head->from->wid]->fwid;
-                bw1 = word_dict->dict_list[node->wid]->fwid;
-                bw2 = word_dict->dict_list[link->to->wid]->fwid;
+                bw0 = word_dict->dict_list[q_head->from->wid]->wid;
+                bw1 = word_dict->dict_list[node->wid]->wid;
+                bw2 = word_dict->dict_list[link->to->wid]->wid;
 
                 score = q_head->path_scr + link->link_scr +
                     LWMUL(lm3g_tg_score(bw0, bw1, bw2), lwf);

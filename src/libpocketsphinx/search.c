@@ -635,15 +635,15 @@ cache_bptable_paths(int32 bp)
         prev_bp = BPTable[prev_bp].bp;
         w = BPTable[prev_bp].wid;
     }
-    bpe->real_fwid = word_dict->dict_list[w]->fwid;
+    bpe->real_wid = word_dict->dict_list[w]->wid;
 
     if (cmd_ln_boolean("-fwd3g")) {
         prev_bp = BPTable[prev_bp].bp;
-        bpe->prev_real_fwid =
-            (prev_bp != NO_BP) ? BPTable[prev_bp].real_fwid : -1;
+        bpe->prev_real_wid =
+            (prev_bp != NO_BP) ? BPTable[prev_bp].real_wid : -1;
     }
     else
-        bpe->prev_real_fwid = -1;
+        bpe->prev_real_wid = -1;
 }
 
 void
@@ -973,7 +973,7 @@ last_phone_transition(void)
     int32 i, j, k, cf, nf, bp, bplast, w;
     lastphn_cand_t *candp;
     int32 *nawl;
-    int32 fwid2, thresh;
+    int32 thresh;
     int32 *rcpermtab, ciph0;
     int32 bestscore, dscr;
     dict_entry_t *de;
@@ -1059,12 +1059,10 @@ last_phone_transition(void)
                 candp = &(lastphn_cand[j]);
                 de = word_dict->dict_list[candp->wid];
                 ciph0 = de->ci_phone_ids[0];
-                fwid2 = de->fwid;
 
                 dscr = BScoreStack[bpe->s_idx + rcpermtab[ciph0]];
                 dscr +=
-                    lm3g_tg_score(bpe->prev_real_fwid, bpe->real_fwid,
-                                fwid2);
+                    lm3g_tg_score(bpe->prev_real_wid, bpe->real_wid, de->wid);
 
                 if (last_ltrans[candp->wid].dscr < dscr) {
                     last_ltrans[candp->wid].dscr = dscr;
@@ -1288,7 +1286,6 @@ word_transition(void)
     root_chan_t *rhmm;
     struct bestbp_rc_s *bestbp_rc_ptr;
     int32 last_ciph;
-    int32 /* fwid0, fwid1, */ fwid2;
     int32 pip;
     int32 ssid;
 
@@ -1376,11 +1373,10 @@ word_transition(void)
         for (i = 0; i < n_1ph_LMwords; i++) {
             w = single_phone_wid[i];
             de = word_dict->dict_list[w];
-            fwid2 = de->fwid;
 
             newscore = rcss[rcpermtab[de->ci_phone_ids[0]]];
             newscore +=
-                lm3g_tg_score(bpe->prev_real_fwid, bpe->real_fwid, fwid2);
+                lm3g_tg_score(bpe->prev_real_wid, bpe->real_wid, de->wid);
 
             if (last_ltrans[w].dscr < newscore) {
                 last_ltrans[w].dscr = newscore;
@@ -2116,8 +2112,8 @@ search_postprocess_bptable(lw_t lwf, char const *pass)
 
         bestscore = WORST_SCORE;
         for (bp = BPTableIdx[f]; bp < BPTableIdx[f + 1]; bp++) {
-            l_scr = lm3g_tg_score(BPTable[bp].prev_real_fwid,
-                                BPTable[bp].real_fwid, FinishWordId);
+            l_scr = lm3g_tg_score(BPTable[bp].prev_real_wid,
+                                BPTable[bp].real_wid, FinishWordId);
             l_scr = LWMUL(l_scr, lwf);
 
             if (BPTable[bp].score + l_scr > bestscore) {
@@ -2260,7 +2256,7 @@ seg_back_trace(int32 bpidx, char const *pass)
             if (seg >= HYP_SZ - 1)
                 E_FATAL("**ERROR** Increase HYP_SZ\n");
             hyp[seg].wid = altpron ? BPTable[bpidx].wid :
-                word_dict->dict_list[BPTable[bpidx].wid]->fwid;
+                word_dict->dict_list[BPTable[bpidx].wid]->wid;
             hyp[seg].sf = last_time + 1;
             hyp[seg].ef = BPTable[bpidx].frame;
             hyp[seg].ascr = a_scr;
@@ -2313,8 +2309,8 @@ partial_seg_back_trace(int32 bpidx)
             if (seg >= HYP_SZ - 1)
                 E_FATAL("**ERROR** Increase HYP_SZ\n");
             hyp[seg].wid = altpron ?
-                BPTable[bpidx].wid : word_dict->dict_list[BPTable[bpidx].
-                                                         wid]->fwid;
+                BPTable[bpidx].wid
+                : word_dict->dict_list[BPTable[bpidx].wid]->wid;
             hyp[seg].sf = last_time + 1;
             hyp[seg].ef = BPTable[bpidx].frame;
             seg++;
@@ -2779,7 +2775,7 @@ create_search_tree(dictT * dict, int32 use_lm)
         de = dict->dict_list[w];
 
         /* Ignore dictionary words not in LM */
-        if (use_lm && (!dictwd_in_lm(de->fwid)))
+        if (use_lm && (!dictwd_in_lm(de->wid)))
             continue;
 
         /* Handle single-phone words individually; not in channel tree */
@@ -2877,7 +2873,7 @@ create_search_tree(dictT * dict, int32 use_lm)
 
     for (w = FinishWordId; w < NumWords; w++) {
         de = dict->dict_list[w];
-        if (use_lm && (!(ISA_FILLER_WORD(w))) && (!dictwd_in_lm(de->fwid)))
+        if (use_lm && (!(ISA_FILLER_WORD(w))) && (!dictwd_in_lm(de->wid)))
             continue;
 
         single_phone_wid[n_1ph_words++] = w;
@@ -3093,8 +3089,7 @@ compute_seg_scores(lw_t lwf)
         }
         else {
             bpe->lscr =
-                lm3g_tg_score(p_bpe->prev_real_fwid, p_bpe->real_fwid,
-                            de->fwid);
+                lm3g_tg_score(p_bpe->prev_real_wid, p_bpe->real_wid, de->wid);
             bpe->lscr = LWMUL(bpe->lscr, lwf);
         }
         bpe->ascr = bpe->score - start_score - bpe->lscr;
@@ -3409,7 +3404,7 @@ search_fwdflat_start(void)
         j = 0;
 
         for (i = 0; i < StartWordId; i++) {
-            if (dictwd_in_lm(word_dict->dict_list[i]->fwid)) {
+            if (dictwd_in_lm(word_dict->dict_list[i]->wid)) {
                 expand_word_list[j] = i;
                 expand_word_flag[i] = 1;
                 j++;
@@ -3788,7 +3783,7 @@ fwdflat_word_transition(void)
             newscore = rcss[rcpermtab[newde->ci_phone_ids[0]]];
             newscore +=
                 LWMUL(lm3g_tg_score
-                      (bp->prev_real_fwid, bp->real_fwid, newde->fwid),
+                      (bp->prev_real_wid, bp->real_wid, newde->wid),
                       lwf);
             newscore += pip;
 
@@ -4076,7 +4071,7 @@ search_bptbl_wordlist(int32 wid, int32 frm)
 
     first = BPTableIdx[frm];
     for (b = BPIdx - 1; b >= first; --b) {
-        if (wid == word_dict->dict_list[BPTable[b].wid]->fwid)
+        if (wid == word_dict->dict_list[BPTable[b].wid]->wid)
             return b;
     }
     return -1;
@@ -4087,7 +4082,7 @@ search_bptbl_pred(int32 b)
 {
     for (b = BPTable[b].bp; ISA_FILLER_WORD(BPTable[b].wid);
          b = BPTable[b].bp);
-    return (word_dict->dict_list[BPTable[b].wid]->fwid);
+    return (word_dict->dict_list[BPTable[b].wid]->wid);
 }
 
 

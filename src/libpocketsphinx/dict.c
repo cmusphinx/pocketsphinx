@@ -297,7 +297,6 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
         _dict_list_add(dict, entry);
         hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
         entry->wid = word_id;
-        entry->fwid = word_id;
         word_id++;
     }
     last_dummy = word_id - 1;
@@ -330,7 +329,6 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
             _dict_list_add(dict, entry);
             hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
             entry->wid = word_id;
-            entry->fwid = word_id;
             word_id++;
         }
 
@@ -358,7 +356,6 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
                 _dict_list_add(dict, entry);
                 hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
                 entry->wid = word_id;
-                entry->fwid = word_id;
                 word_id++;
             }
             ckd_free(startsym_phone);
@@ -388,7 +385,6 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
             _dict_list_add(dict, entry);
             hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
             entry->wid = word_id;
-            entry->fwid = word_id;
             word_id++;
         }
 
@@ -403,7 +399,6 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
             _dict_list_add(dict, entry);
             hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
             entry->wid = word_id;
-            entry->fwid = word_id;
             word_id++;
         }
     }
@@ -530,8 +525,6 @@ dict_load(dictT * dict, char *filename, int32 * word_id, int32 use_context)
         _dict_list_add(dict, entry);
         hash_table_enter(dict->dict, entry->word, (void *)(long)*word_id);
         entry->wid = *word_id;
-        entry->fwid = *word_id;
-        entry->lm_pprob = 0;
         pronoun_str[0] = '\0';
         /*
          * Look for words of the form ".*(#)". These words are
@@ -552,9 +545,7 @@ dict_load(dictT * dict, char *filename, int32 * word_id, int32 use_context)
             if (p != NULL) {
                 void *wid;
 
-                if (p)
-                    *p = '\0';
-
+                *p = '\0';
                 if (hash_table_lookup(dict->dict, dict_str, &wid) != 0) {
                     E_FATAL
                         ("%s: Missing first pronunciation for [%s]\nThis means that e.g. [%s(2)] was found with no [%s]\nPlease correct the dictionary and re-run.\n",
@@ -565,7 +556,6 @@ dict_load(dictT * dict, char *filename, int32 * word_id, int32 use_context)
                           "Alternate transcription for [%s](wid = %d)\n",
                           entry->word, (long)wid));
                 entry->wid = (long)wid;
-                entry->fwid = (long)wid;
                 {
                     while (dict->dict_list[(long)wid]->alt >= 0)
                         wid = (void *)(long)dict->dict_list[(long)wid]->alt;
@@ -910,7 +900,7 @@ replace_dict_entry(dictT * dict,
         if (basewid >= 0) {
             entry->alt = dict->dict_list[(int32) basewid]->alt;
             dict->dict_list[(int32) basewid]->alt = entry->wid;
-            entry->wid = entry->fwid = (int32) basewid;
+            entry->wid = (int32) basewid;
         }
     }
 
@@ -1351,7 +1341,6 @@ dict_dump(dictT * dict, FILE * out)
             fprintf(out, " %d", de->phone_ids[i]);
         fprintf(out, " </pid>\n");
         fprintf(out, "  <wid>%d</wid>\n", de->wid);
-        fprintf(out, "  <fwid>%d</fwid>\n", de->fwid);
         fprintf(out, "  <alt>%d</alt>\n", de->alt);
         fprintf(out, " </word>\n\n");
         fflush(out);

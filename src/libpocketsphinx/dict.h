@@ -53,8 +53,6 @@ typedef struct dict_entry {
     int16		mpx;		/* Is this a multiplexed entry? */
     int32		wid;		/* Actual word id */
     int32		alt;		/* Alt word idx */
-    int32		fwid;		/* final word id in a phrase */
-    int32		lm_pprob;	/* Lang model phrase probability */
 }                   dict_entry_t;
 
 typedef struct _dict {

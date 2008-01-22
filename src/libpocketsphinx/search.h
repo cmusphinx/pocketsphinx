@@ -105,8 +105,8 @@ typedef struct bptbl_s {
     LAT_ID   bp;		/* Back Pointer */
     int32    score;		/* Score (best among all right contexts) */
     int32    s_idx;		/* Start of BScoreStack for various right contexts*/
-    WORD_ID  real_fwid;		/* fwid of this or latest predecessor real word */
-    WORD_ID  prev_real_fwid;	/* real word predecessor of real_fwid */
+    WORD_ID  real_wid;		/* wid of this or latest predecessor real word */
+    WORD_ID  prev_real_wid;	/* real word predecessor of real_wid */
     int32    r_diph;		/* rightmost diphone of this word */
     int32    ascr;
     int32    lscr;
