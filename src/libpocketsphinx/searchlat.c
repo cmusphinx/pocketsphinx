@@ -156,7 +156,6 @@ static struct lattice_queue_s {
 } latQueue[MAX_LAT_QUEUE];
 static int32 latQueueInit = 0;
 static int32 latQueueAddIndex = 0;
-static char altLMName[256];
 
 static int32 n_node, n_link;
 
@@ -1243,15 +1242,10 @@ search_get_alt(int32 n,         /* In: No. of alternatives to look for */
     int32 i, j, scr, n_alt;
     static search_hyp_t **alt = NULL;
     static int32 max_alt_hyp = 0;
-    char remLMName[128];
     extern char *get_current_lmname();
 
     if (n <= 0)
         return -1;
-
-    /* Save currently active LM and switch to the one associated with the lattice */
-    strcpy(remLMName, get_current_lmname());
-    uttproc_set_lm(altLMName);
 
     for (i = 0; i < max_alt_hyp; i++) {
         search_hyp_free(alt[i]);
@@ -1271,7 +1265,6 @@ search_get_alt(int32 n,         /* In: No. of alternatives to look for */
     if (lattice.latnode_list == NULL) {
         /* MessageBoxX("permanent lattice trouble in searchlat.c"); */
         E_ERROR("NULL lattice\n");
-        uttproc_set_lm(remLMName);
         return 0;
     }
 
@@ -1377,9 +1370,6 @@ search_get_alt(int32 n,         /* In: No. of alternatives to look for */
 
     *alt_out = alt;
 
-    /* Restore original LM name */
-    uttproc_set_lm(remLMName);
-
     return n_alt;
 }
 
@@ -1404,35 +1394,6 @@ search_delete_saved_lattice(void)
         lattice.start_node = NULL;
         lattice.final_node = NULL;
     }
-}
-
-char *
-searchGetAltLMName(void)
-{
-    return altLMName;
-}
-
-int32
-searchSetAltUttid(char *uttid)
-{
-    int32 i;
-
-    for (i = 0; i < MAX_LAT_QUEUE; i++) {
-        if (strcmp(latQueue[i].uttid, uttid) == 0) {
-            lattice.latnode_list = latQueue[i].lattice.latnode_list;
-            lattice.start_node = latQueue[i].lattice.start_node;
-            lattice.final_node = latQueue[i].lattice.final_node;
-
-            /* We also need to add code to set the language model for this uttid. */
-            strcpy(altLMName, latQueue[i].lmName);
-
-            /* return success because we found utt for this uttid. */
-            return 0;
-        }
-    }
-
-    /* return failure because we could not find alts for the desired utt. */
-    return 1;
 }
 
 void
