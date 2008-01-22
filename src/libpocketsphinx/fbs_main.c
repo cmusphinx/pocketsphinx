@@ -210,12 +210,15 @@
 #include "search.h"
 #include "posixwin32.h"
 
+int32 uttproc_set_startword(char const *str);
+
 /* Static declarations for this file. */
 static search_hyp_t *run_sc_utterance(char *mfcfile, int32 sf, int32 ef,
                                       char *idspec);
 static search_hyp_t *allphone_utterance(char *mfcfile, int32 sf, int32 ef,
                                         char *idspec);
 static void init_feat(void);
+static void run_ctl_file(char const *ctl_file_name);
 
 /* Command-line arguments (actually defined in cmdln_macro.h) */
 static const arg_t fbs_args_def[] = {
@@ -413,7 +416,7 @@ build_uttid(char const *utt)
     return utt_name;
 }
 
-void
+static void
 run_ctl_file(char const *ctl_file_name)
 /*-------------------------------------------------------------------------*
  * Sequence through a control file containing a list of utterance
