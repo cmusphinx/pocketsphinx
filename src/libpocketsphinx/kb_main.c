@@ -168,6 +168,10 @@ lm_init(void)
     const char **words;
     int32 i, n_words;
 
+    /* Do nothing if there is no language model. */
+    if (lm_ctl_filename == NULL && lm_file_name == NULL)
+        return;
+
     /* Read one or more language models. */
     if (lm_ctl_filename) {
         lmset = ngram_model_set_read(cmd_ln_get(),
