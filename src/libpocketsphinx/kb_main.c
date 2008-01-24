@@ -125,10 +125,11 @@
 #include <ckd_alloc.h>
 #include <cmd_ln.h>
 #include <pio.h>
+#include <ngram_model.h>
+#include <logmath.h>
 
 #include "strfuncs.h"
 #include "dict.h"
-#include "lm.h"
 #include "s2_semi_mgau.h"
 #include "ms_mgau.h"
 #include "kb.h"
@@ -144,9 +145,6 @@ dictT *word_dict;
 /* Transition matrices. */
 tmat_t *tmat;
 
-/* Phone transition LOG(probability) matrix */
-int32 **phonetp;
-
 /* S3 model definition */
 bin_mdef_t *mdef;
 
@@ -160,198 +158,64 @@ ms_mgau_model_t *ms_mgau;
 char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *kdtreefn, *sendumpfn, *logaddfn;
 
 /* Language model set */
-lmclass_set_t lmclass_set;
-
-void
-kbAddGrammar(char const *fileName, char const *grammarName)
-{
-    lmSetStartSym(cmd_ln_str("-lmstartsym"));
-    lmSetEndSym(cmd_ln_str("-lmendsym"));
-    lm_read(fileName, grammarName,
-            cmd_ln_float32("-lw"),
-            cmd_ln_float32("-uw"),
-            cmd_ln_float32("-wip"));
-}
-
-static void
-kb_init_lmclass_dictwid(lmclass_t cl)
-{
-    lmclass_word_t w;
-    int32 wid;
-
-    for (w = lmclass_firstword(cl); lmclass_isword(w);
-         w = lmclass_nextword(cl, w)) {
-        wid = kb_get_word_id(lmclass_getword(w));
-        lmclass_set_dictwid(w, wid);
-    }
-}
-
-
-static void
-phonetp_load_file(char *file, int32 ** tp)
-{
-    FILE *fp;
-    char line[16384], p1[4096], p2[4096];
-    int32 i, j, k, n;
-
-    E_INFO("Reading phone transition counts file '%s'\n", file);
-    fp = myfopen(file, "r");
-
-    while (fgets(line, sizeof(line), fp) != NULL) {
-        if (line[0] == '#')
-            continue;
-
-        k = sscanf(line, "%s %s %d", p1, p2, &n);
-        if ((k != 0) && (k != 3))
-            E_FATAL("Expecting 'srcphone dstphone count'; found:\n%s\n",
-                    line);
-
-        i = phone_to_id(p1, TRUE);
-        j = phone_to_id(p2, TRUE);
-        if ((i == NO_PHONE) || (j == NO_PHONE))
-            E_FATAL("Unknown src or dst phone: %s or %s\n", p1, p2);
-        if (n < 0)
-            E_FATAL("Phone transition count cannot be < 0:\n%s\n", line);
-
-        tp[i][j] = n;
-    }
-
-    fclose(fp);
-}
+ngram_model_t *lmset;
 
 static void
 lm_init(void)
 {
     char *lm_ctl_filename = cmd_ln_str("-lmctlfn");
     char *lm_file_name = cmd_ln_str("-lm");
-    char *lm_start_sym = cmd_ln_str("-lmstartsym");
-    char *lm_end_sym = cmd_ln_str("-lmendsym");
+    const char **words;
+    int32 i, n_words;
 
-    lmSetStartSym(lm_start_sym);
-    lmSetEndSym(lm_end_sym);
-
-    /*
-     * Read control file describing multiple LMs, if specified.
-     * File format (optional stuff is indicated by enclosing in []):
-     * 
-     *   [{ LMClassFileName LMClassFilename ... }]
-     *   TrigramLMFileName LMName [{ LMClassName LMClassName ... }]
-     *   TrigramLMFileName LMName [{ LMClassName LMClassName ... }]
-     *   ...
-     * (There should be whitespace around the { and } delimiters.)
-     * 
-     * This is an extension of the older format that had only TrigramLMFilenName
-     * and LMName pairs.  The new format allows a set of LMClass files to be read
-     * in and referred to by the trigram LMs.  (Incidentally, if one wants to use
-     * LM classes in a trigram LM, one MUST use the -lmctlfn flag.  It is not
-     * possible to read in a class-based trigram LM using the -lm flag.)
-     * 
-     * No "comments" allowed in this file.
-     */
+    /* Read one or more language models. */
     if (lm_ctl_filename) {
-        FILE *ctlfp;
-        char lmfile[4096], lmname[4096], str[4096];
-        lmclass_t *lmclass, cl;
-        int32 n_lmclass, n_lmclass_used;
-
-        lmclass_set = lmclass_newset();
-
-        E_INFO("Reading LM control file '%s'\n", lm_ctl_filename);
-
-        ctlfp = myfopen(lm_ctl_filename, "r");
-        if (fscanf(ctlfp, "%s", str) == 1) {
-            if (strcmp(str, "{") == 0) {
-                /* Load LMclass files */
-                while ((fscanf(ctlfp, "%s", str) == 1)
-                       && (strcmp(str, "}") != 0))
-                    lmclass_set = lmclass_loadfile(lmclass_set, str);
-
-                if (strcmp(str, "}") != 0)
-                    E_FATAL("Unexpected EOF(%s)\n", lm_ctl_filename);
-
-                if (fscanf(ctlfp, "%s", str) != 1)
-                    str[0] = '\0';
-            }
+        lmset = ngram_model_set_read(cmd_ln_get(),
+                                     lm_ctl_filename,
+                                     lmath);
+        if (lmset == NULL) {
+            E_FATAL("Failed to read language model control file: %s\n",
+                    lm_ctl_filename);
         }
-        else
-            str[0] = '\0';
+    }
+    else {
+        ngram_model_t *lm;
+        static const char *name = "default";
 
-        /* Fill in dictionary word id information for each LMclass word */
-        for (cl = lmclass_firstclass(lmclass_set);
-             lmclass_isclass(cl);
-             cl = lmclass_nextclass(lmclass_set, cl)) {
-            kb_init_lmclass_dictwid(cl);
+        lm = ngram_model_read(cmd_ln_get(), lm_file_name,
+                              NGRAM_AUTO, lmath);
+        if (lm == NULL) {
+            E_FATAL("Failed to read language model file: %s\n",
+                    lm_file_name);
         }
-
-        /* At this point if str[0] != '\0', we have an LM filename */
-        n_lmclass = lmclass_get_nclass(lmclass_set);
-        lmclass = ckd_calloc(n_lmclass, sizeof(lmclass_t));
-
-        /* Read in one LM at a time */
-        while (str[0] != '\0') {
-            strcpy(lmfile, str);
-            if (fscanf(ctlfp, "%s", lmname) != 1)
-                E_FATAL("LMname missing after LMFileName '%s'\n",
-                        lmfile);
-
-            n_lmclass_used = 0;
-
-            if (fscanf(ctlfp, "%s", str) == 1) {
-                if (strcmp(str, "{") == 0) {
-                    /* LM uses classes; read their names */
-                    while ((fscanf(ctlfp, "%s", str) == 1) &&
-                           (strcmp(str, "}") != 0)) {
-                        if (n_lmclass_used >= n_lmclass)
-                            E_FATAL
-                                ("Too many LM classes specified for '%s'\n",
-                                 lmfile);
-                        lmclass[n_lmclass_used] =
-                            lmclass_get_lmclass(lmclass_set, str);
-                        if (!
-                            (lmclass_isclass(lmclass[n_lmclass_used])))
-                            E_FATAL("LM class '%s' not found\n", str);
-                        n_lmclass_used++;
-                    }
-                    if (strcmp(str, "}") != 0)
-                        E_FATAL("Unexpected EOF(%s)\n",
-                                lm_ctl_filename);
-
-                    if (fscanf(ctlfp, "%s", str) != 1)
-                        str[0] = '\0';
-                }
-            }
-            else
-                str[0] = '\0';
-
-            if (n_lmclass_used > 0)
-                lm_read_clm(lmfile, lmname,
-                            cmd_ln_float32("-lw"),
-                            cmd_ln_float32("-uw"),
-                            cmd_ln_float32("-wip"),
-                            lmclass, n_lmclass_used);
-            else
-                lm_read(lmfile, lmname,
-                        cmd_ln_float32("-lw"),
-                        cmd_ln_float32("-uw"),
-                        cmd_ln_float32("-wip"));
+        lmset = ngram_model_set_init(cmd_ln_get(),
+                                     &lm, (char **)&name,
+                                     NULL, 1);
+        if (lmset == NULL) {
+            E_FATAL("Failed to initialize language model set\n");
         }
-        ckd_free(lmclass);
-
-        fclose(ctlfp);
     }
 
-    /* Read "base" LM file, if specified */
-    if (lm_file_name) {
-        lmSetStartSym(lm_start_sym);
-        lmSetEndSym(lm_end_sym);
-        lm_read(lm_file_name, "",
-                cmd_ln_float32("-lw"),
-                cmd_ln_float32("-uw"),
-                cmd_ln_float32("-wip"));
+    /* Set the language model parameters. */
+    ngram_model_apply_weights(lmset,
+                              cmd_ln_float32("-lw"),
+                              cmd_ln_float32("-wip"),
+                              cmd_ln_float32("-uw"));
 
-        /* Make initial OOV list known to this base LM */
-        lm_init_oov();
+    /* Select a language model if requested. */
+    if (cmd_ln_str("-lmname")) {
+        if (ngram_model_set_select(lmset, cmd_ln_str("-lmname")) == NULL)
+            E_FATAL("No such language model %s\n", cmd_ln_str("-lmname"));
     }
+
+    /* Now create the dictionary to LM word ID mapping. */
+    /* It's okay to include fillers since they won't be in the LM */
+    n_words = word_dict->dict_entry_count;
+    words = ckd_calloc(n_words, sizeof(*words));
+    for (i = 0; i < n_words; ++i)
+        words[i] = word_dict->dict_list[i]->word;
+    ngram_model_set_map_words(lmset, words, n_words);
+    ckd_free(words);
 }
 
 static void
@@ -381,59 +245,6 @@ dict_init(void)
         E_FATAL("Failed to read dictionaries\n");
     }
     ckd_free(fdictfn);
-}
-
-static void
-phonetp_init(int32 num_ci_phones)
-{
-    int i, j, n, logp;
-    float32 p, uptp;
-    float32 pip = cmd_ln_float32("-pip");
-    float32 ptplw = cmd_ln_float32("-ptplw");
-    float32 uptpwt = cmd_ln_float32("-uptpwt");
-
-    phonetp =
-        (int32 **) ckd_calloc_2d(num_ci_phones, num_ci_phones,
-                                 sizeof(int32));
-    if (cmd_ln_str("-phonetp")) {
-        /* Load phone transition counts file */
-        phonetp_load_file(cmd_ln_str("-phonetp"), phonetp);
-    }
-    else {
-        /* No transition probs file specified; use uniform probs */
-        for (i = 0; i < num_ci_phones; i++) {
-            for (j = 0; j < num_ci_phones; j++) {
-                phonetp[i][j] = 1;
-            }
-        }
-    }
-    /* Convert counts to probs; smooth; convert to LOG-probs; apply lw/pip */
-    for (i = 0; i < num_ci_phones; i++) {
-        n = 0;
-        for (j = 0; j < num_ci_phones; j++)
-            n += phonetp[i][j];
-        assert(n >= 0);
-
-        if (n == 0) {           /* No data here, use uniform probs */
-            p = 1.0 / (float32) num_ci_phones;
-            p *= pip;           /* Phone insertion penalty */
-            logp = (int32) (logmath_log(lmath, p) * ptplw);
-
-            for (j = 0; j < num_ci_phones; j++)
-                phonetp[i][j] = logp;
-        }
-        else {
-            uptp = 1.0 / (float32) num_ci_phones;       /* Uniform prob trans prob */
-
-            for (j = 0; j < num_ci_phones; j++) {
-                p = ((float32) phonetp[i][j] / (float32) n);
-                p = ((1.0 - uptpwt) * p) + (uptpwt * uptp);     /* Smooth */
-                p *= pip;       /* Phone insertion penalty */
-
-                phonetp[i][j] = (int32) (logmath_log(lmath, p) * ptplw);
-            }
-        }
-    }
 }
 
 void
@@ -531,7 +342,6 @@ kb_init(void)
     num_phones = bin_mdef_n_phone(mdef);
 
     dict_init();
-
     lm_init();
 
     /* Read transition matrices. */
@@ -568,11 +378,6 @@ kb_init(void)
                                cmd_ln_float32("-mixwfloor"),
                                cmd_ln_int32("-topn"));
     }
-
-    /*
-     * Create phone transition logprobs matrix
-     */
-    phonetp_init(num_ci_phones);
 }
 
 void
@@ -596,10 +401,7 @@ kb_close(void)
     word_dict = NULL;
     dict_cleanup();
 
-    lm_delete_all();
-    if (lmclass_set) {
-        lmclass_set_delete(lmclass_set);
-    }
+    ngram_model_free(lmset);
     tmat_free(tmat);
 
     if (semi_mgau)
@@ -607,9 +409,6 @@ kb_close(void)
 
     if (ms_mgau)
         ms_mgau_free(ms_mgau);
-
-    if (phonetp)
-        ckd_free_2d((void **)phonetp);
 }
 
 char *

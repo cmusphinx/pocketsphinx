@@ -96,8 +96,6 @@ int32 dict_next_alt (dictT *dict, int32 w);
 int32 dict_write_oovdict (dictT *dict, char const *file);
 int32 dictid_to_baseid (dictT *dict, int32 wid);
 int32 dict_get_num_main_words (dictT *dict);
-int32 dict_get_first_initial_oov(void);
-int32 dict_get_last_initial_oov(void);
 int32 dict_is_new_word (int32 wid);
 
 /* Return TRUE if the given wid is a filler word, FALSE otherwise */

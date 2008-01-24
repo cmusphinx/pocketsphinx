@@ -5,7 +5,6 @@ lib_LTLIBRARIES = libpocketsphinx.la
 libpocketsphinx_la_LDFLAGS = -version-info 1:0:0
 
 libpocketsphinx_la_SOURCES =			\
-	allphone.c				\
 	awriteshort.c				\
 	bin_mdef.c				\
 	blkarray_list.c				\
@@ -18,8 +17,6 @@ libpocketsphinx_la_SOURCES =			\
 	hmm.c					\
 	kb_main.c				\
 	kdtree.c				\
-	lm_3g.c					\
-	lmclass.c				\
 	mdef.c					\
 	ms_gauden.c				\
 	ms_mgau.c				\
@@ -34,7 +31,8 @@ libpocketsphinx_la_SOURCES =			\
 	vector.c				\
 	word_fsg.c
 
-noinst_HEADERS = uttproc.h allphone.h \
+noinst_HEADERS =				\
+	uttproc.h				\
 	basic_types.h				\
 	bin_mdef.h				\
 	blkarray_list.h				\
@@ -46,9 +44,6 @@ noinst_HEADERS = uttproc.h allphone.h \
 	hmm.h					\
 	kb.h					\
 	kdtree.h				\
-	lm_3g.h					\
-	lmclass.h				\
-	lm.h					\
 	log.h					\
 	mdef.h					\
 	ms_gauden.h				\

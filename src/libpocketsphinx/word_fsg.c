@@ -407,7 +407,7 @@ word_fsg_lc_rc(word_fsg_t * fsg)
     int32 endwid;
     int32 len;
 
-    endwid = kb_get_word_id(cmd_ln_str("-lmendsym"));
+    endwid = kb_get_word_id("</s>");
     silcipid = phone_to_id("SIL", TRUE);
     assert(silcipid >= 0);
     n_ci = phoneCiCount();

@@ -99,17 +99,16 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <ckd_alloc.h>
+#include <cmd_ln.h>
+#include <strfuncs.h>
+#include <ngram_model.h>
+#include <linklist.h>
+#include <err.h>
+
 #include "s2types.h"
-#include "ckd_alloc.h"
-#include "cmd_ln.h"
 #include "basic_types.h"
-#include "strfuncs.h"
-#include "linklist.h"
-#include "err.h"
 #include "dict.h"
-#include "lm.h"
-#include "lmclass.h"
-#include "lm_3g.h"
 #include "search_const.h"
 #include "kb.h"
 #include "fbs.h"
@@ -127,7 +126,6 @@ static int32 altpron = FALSE;
 
 extern BPTBL_T *search_get_bptable();
 extern int32 *search_get_bscorestack();
-extern lw_t search_get_lw();
 extern search_hyp_t *search_get_hyp();
 
 #if 0
@@ -451,7 +449,7 @@ build_lattice(int32 bptbl_sz)
 
         /* Skip if word not in LM */
         if ((!ISA_FILLER_WORD(wid))
-            && (!dictwd_in_lm(word_dict->dict_list[wid]->wid)))
+            && (!ngram_model_set_known_wid(lmset, word_dict->dict_list[wid]->wid)))
             continue;
 
         /* See if bptbl entry <wid,sf> already in lattice */
@@ -638,7 +636,7 @@ bptbl2latdensity(int32 bptbl_sz, int32 * density)
 
         /* Skip if word not in LM */
         if ((!ISA_FILLER_WORD(wid))
-            && (!dictwd_in_lm(word_dict->dict_list[wid]->wid)))
+            && (!ngram_model_set_known_wid(lmset, word_dict->dict_list[wid]->wid)))
             continue;
 
         /* See if bptbl entry <wid,sf> already in lattice */
@@ -780,7 +778,7 @@ lattice_seg_back_trace(latlink_t * link)
  * update links further down the path... (reword)
  */
 int32
-lattice_rescore(lw_t lwf)
+lattice_rescore(float32 lwf)
 {
     latnode_t *node;
     latlink_t *link;
@@ -788,13 +786,13 @@ lattice_rescore(lw_t lwf)
     int32 score, bw0, bw1, bw2;
     int32 fr;
     char *res;
-    char *orig_lmname = NULL;
+    const char *orig_lmname = NULL;
 
     sil_pen = search_get_sil_penalty();
     filler_pen = search_get_filler_penalty();
     lw_factor = lwf;
 
-    start_wid = search_get_current_startwid();
+    start_wid = ngram_wid(lmset, "<s>");
 
     if (latnode_list) {
         destroy_lattice(latnode_list);
@@ -802,9 +800,9 @@ lattice_rescore(lw_t lwf)
     }
 
     if (rescore_lmname) {
-        orig_lmname = get_current_lmname();
+        orig_lmname = ngram_model_set_current(lmset);
 
-        if (lm_set_current(rescore_lmname) < 0) {
+        if (ngram_model_set_select(lmset, rescore_lmname) < 0) {
             E_ERROR("lm_set_current(%s) failed\n", rescore_lmname);
             free(rescore_lmname);
             rescore_lmname = NULL;
@@ -822,7 +820,7 @@ lattice_rescore(lw_t lwf)
             rescore_lmname = NULL;
 
             if (orig_lmname)
-                lm_set_current(orig_lmname);
+                ngram_model_set_select(lmset, orig_lmname);
         }
 
         return -1;
@@ -845,6 +843,7 @@ lattice_rescore(lw_t lwf)
      */
     q_head = q_tail = NULL;
     for (link = start_node->links; link; link = link->next) {
+        int32 n_used;
         assert(!(ISA_FILLER_WORD(link->to->wid)));
 
         if (altpron) {
@@ -852,11 +851,11 @@ lattice_rescore(lw_t lwf)
             bw2 = word_dict->dict_list[link->to->wid]->wid;
 
             link->path_scr =
-                link->link_scr + LWMUL(lm3g_bg_score(bw1, bw2), lwf);
+                link->link_scr + ngram_bg_score(lmset, bw2, bw1, &n_used) * lwf;
         }
         else
             link->path_scr = link->link_scr +
-                LWMUL(lm3g_bg_score(start_wid, link->to->wid), lwf);
+                ngram_bg_score(lmset, link->to->wid, start_wid, &n_used) * lwf;
 
         link->best_prev = NULL;
 
@@ -881,6 +880,8 @@ lattice_rescore(lw_t lwf)
 #endif
 
         for (link = node->links; link; link = link->next) {
+            int32 n_used;
+
             assert(!(ISA_FILLER_WORD(link->to->wid)));
 
             if (altpron) {
@@ -889,13 +890,12 @@ lattice_rescore(lw_t lwf)
                 bw2 = word_dict->dict_list[link->to->wid]->wid;
 
                 score = q_head->path_scr + link->link_scr +
-                    LWMUL(lm3g_tg_score(bw0, bw1, bw2), lwf);
+                    ngram_tg_score(lmset, bw2, bw1, bw0, &n_used) * lwf;
             }
             else
                 score = q_head->path_scr + link->link_scr +
-                    LWMUL(lm3g_tg_score
-                          (q_head->from->wid, node->wid, link->to->wid),
-                          lwf);
+                    ngram_tg_score(lmset, link->to->wid,
+                                   node->wid, q_head->from->wid, &n_used) * lwf;
 
             if (score > link->path_scr) {
                 link->path_scr = score;
@@ -956,7 +956,7 @@ lattice_rescore(lw_t lwf)
         rescore_lmname = NULL;
 
         if (orig_lmname)
-            lm_set_current(orig_lmname);
+            ngram_model_set_select(lmset, orig_lmname);
     }
 
     return 0;
@@ -1015,8 +1015,8 @@ searchlat_init(void)
 {
     linklist_init();
 
-    start_wid = kb_get_word_id(cmd_ln_str("-lmstartsym"));
-    finish_wid = kb_get_word_id(cmd_ln_str("-lmendsym"));
+    start_wid = kb_get_word_id("<s>");
+    finish_wid = kb_get_word_id("</s>");
     sil_wid = kb_get_word_id("<sil>");
     rc_fwdperm = dict_right_context_fwd_perm();
     altpron = cmd_ln_boolean("-reportpron");
@@ -1095,9 +1095,11 @@ best_rem_score(latnode_t * from)
     /* Best score from "from" to end of utt not known; compute from successors */
     bestscore = WORST_SCORE;
     for (link = from->links; link; link = link->next) {
+        int32 n_used;
+
         score = best_rem_score(link->to);
         score += link->link_scr;
-        score += LWMUL(lm3g_bg_score(from->wid, link->to->wid), lw_factor);
+        score += ngram_bg_score(lmset, link->to->wid, from->wid, &n_used) * lw_factor;
         if (score > bestscore)
             bestscore = score;
     }
@@ -1165,6 +1167,8 @@ path_extend(latpath_t * path)
 
     /* Consider all successors of path->node */
     for (link = path->node->links; link; link = link->next) {
+        int32 n_used;
+
         /* Skip successor if no path from it reaches the final node */
         if (link->to->info.rem_score <= WORST_SCORE)
             continue;
@@ -1175,14 +1179,14 @@ path_extend(latpath_t * path)
         newpath->parent = path;
         newpath->score = path->score + link->link_scr;
         if (path->parent)
-            newpath->score += LWMUL(lm3g_tg_score(path->parent->node->wid,
-                                                path->node->wid,
-                                                newpath->node->wid),
-                                    lw_factor);
-        else
-            newpath->score +=
-                LWMUL(lm3g_bg_score(path->node->wid, newpath->node->wid),
-                      lw_factor);
+            newpath->score += lw_factor
+                * ngram_tg_score(lmset, newpath->node->wid,
+                                 path->node->wid,
+                                 path->parent->node->wid, &n_used);
+        else 
+            newpath->score += lw_factor
+                * ngram_bg_score(lmset, newpath->node->wid,
+                                 path->node->wid, &n_used);
 
         /* Insert new partial path hypothesis into sorted path_list */
         n_hyp_tried++;
@@ -1242,7 +1246,6 @@ search_get_alt(int32 n,         /* In: No. of alternatives to look for */
     int32 i, j, scr, n_alt;
     static search_hyp_t **alt = NULL;
     static int32 max_alt_hyp = 0;
-    extern char *get_current_lmname();
 
     if (n <= 0)
         return -1;
@@ -1289,15 +1292,16 @@ search_get_alt(int32 n,         /* In: No. of alternatives to look for */
     path_list = path_tail = NULL;
     for (node = lattice.latnode_list; node; node = node->next) {
         if (node->sf == sf) {
+            int32 n_used;
             best_rem_score(node);
 
             path = (latpath_t *) listelem_alloc(sizeof(latpath_t));
             path->node = node;
             path->parent = NULL;
             scr =
-                (w1 < 0) ? lm3g_bg_score(w2, node->wid) : lm3g_tg_score(w1, w2,
-                                                                    node->
-                                                                    wid);
+                (w1 < 0)
+                ? ngram_bg_score(lmset, node->wid, w2, &n_used)
+                : ngram_tg_score(lmset, node->wid, w2, w1, &n_used);
             path->score = scr;
 
             path_insert(path, scr + node->info.rem_score);

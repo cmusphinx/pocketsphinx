@@ -246,7 +246,6 @@ tmat_init(char *file_name, float64 tpfloor, int32 breport)
     /* Read transition matrices, normalize and floor them, and convert to log domain */
     tp_per_tmat = n_src * n_dst;
     for (i = 0; i < t->n_tmat; i++) {
-        int arc = 0;
         if (bio_fread(tp[0], sizeof(float32), tp_per_tmat, fp,
                       byteswap, &chksum) != tp_per_tmat) {
             E_FATAL("fread(%s) (arraydata) failed\n", file_name);
@@ -267,11 +266,6 @@ tmat_init(char *file_name, float64 tpfloor, int32 breport)
                 if (k >= j && k-j < 3 && tp[j][k] == 0.0f)
                     tp[j][k] = tpfloor;
                 t->tp[i][j][k] = logmath_log(lmath, tp[j][k]);
-#if 0
-                if (tp[j][k] > 0.0f)
-                    printf("%d,%d,%d (%d) = %f = %d\n",
-                           i, j, k, arc++, tp[j][k], t->tp[i][j][k]);
-#endif
             }
         }
     }

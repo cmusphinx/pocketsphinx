@@ -184,8 +184,6 @@ void search_set_skip_alt_frm (int32 flag);
 void search_set_hyp_total_score (int32 score);
 void search_set_hyp_total_lscr (int32 lscr);
 void search_set_context (int32 w1, int32 w2);
-void search_set_startword (char const *str);
-int32 search_get_current_startwid ( void );
 
 int32 search_result(int32 *fr, char **res);	/* Decoded result as a single string */
 int32 search_partial_result (int32 *fr, char **res);
@@ -210,9 +208,9 @@ double *search_get_phone_perplexity ( void );
 int32 search_get_sil_penalty (void);
 int32 search_get_filler_penalty ( void );
 BPTBL_T *search_get_bptable ( void );
-void search_postprocess_bptable (lw_t lwf, char const *pass);
+void search_postprocess_bptable (float32 lwf, char const *pass);
 int32 *search_get_bscorestack ( void );
-lw_t search_get_lw ( void );
+float32 search_get_lw ( void );
 
 void search_remove_context (search_hyp_t *hyp);
 void search_hyp_to_str ( void );
@@ -246,7 +244,7 @@ void search_set_current_lm (void); /* Need to call lm_set_current() first */
 /* Return sum of top senone scores for the given frame range (inclusive) */
 int32 seg_topsen_score (int32 sf, int32 ef);
 
-void compute_seg_scores (lw_t lwf);
+void compute_seg_scores (float32 lwf);
 void compute_sen_active (void);
 void evaluateChannels (void);
 void pruneChannels (void);
@@ -287,7 +285,7 @@ void search_filtered_endpts (void);
 /* Functions from searchlat.c */
 void searchlat_init ( void );
 int32 bptbl2latdensity (int32 bptbl_sz, int32 *density);
-int32 lattice_rescore ( lw_t lwf );
+int32 lattice_rescore ( float32 lwf );
 
 /* Make the given channel inactive and set state scores to WORST_SCORE */
 void search_chan_deactivate(chan_t *);

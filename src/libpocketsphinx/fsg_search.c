@@ -426,7 +426,7 @@ fsg_search_pnode_exit(fsg_search_t * search, fsg_pnode_t * pnode)
     fl = fsg_pnode_fsglink(pnode);
     assert(fl);
 
-    endwid = kb_get_word_id(cmd_ln_str("-lmendsym"));
+    endwid = kb_get_word_id("</s>");
 
     wid = word_fsglink_wid(fl);
     assert(wid >= 0);
@@ -834,8 +834,8 @@ fsg_search_hyp_filter(fsg_search_t * search)
     int32 altpron;
 
     filt_hyp = search_get_hyp();
-    startwid = kb_get_word_id(cmd_ln_str("-lmstartsym"));
-    finishwid = kb_get_word_id(cmd_ln_str("-lmendsym"));
+    startwid = kb_get_word_id("<s>");
+    finishwid = kb_get_word_id("</s>");
     altpron = cmd_ln_boolean("-reportpron");
 
     i = 0;

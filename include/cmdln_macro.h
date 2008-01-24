@@ -302,22 +302,6 @@
       ARG_STRING,									\
       NULL,										\
       "Specify a set of language model\n"},						\
-{ "-lmdumpdir",										\
-      ARG_STRING,									\
-      NULL,										\
-      "The directory for dumping the DMP file. "},					\
-{ "-lmstartsym",									\
-      ARG_STRING,									\
-      "<s>",										\
-      "Language model start symbol" },							\
-{ "-lmendsym",										\
-      ARG_STRING,									\
-      "</s>",										\
-      "Language model end symbol" },							\
-{ "-startsymfn",									\
-      ARG_STRING,									\
-      NULL,										\
-      "Start symbols file name"},							\
 { "-lmname",										\
       ARG_STRING,									\
       "default",									\
@@ -330,14 +314,6 @@
       ARG_STRING,									\
       NULL,										\
       "Filename extension for LM-name files"},						\
-{ "-startworddir",									\
-      ARG_STRING,									\
-      NULL,										\
-      "Directory for start-word file for each utt"},					\
-{ "-startwordext",									\
-      ARG_STRING,									\
-      NULL,										\
-      "Filename extension for start-word files"},					\
 { "-lw",										\
       ARG_FLOAT32,									\
       "6.5",										\
@@ -385,22 +361,10 @@
       ARG_STRING,						\
       NULL,							\
       "Noise word pronunciation dictionary input file" },	\
-    { "-oovdict",						\
-      ARG_STRING,						\
-      NULL,							\
-      "OOV dictionary input file" },				\
-    { "-perdict",						\
-      ARG_STRING,						\
-      NULL,							\
-      "Personal dictionary input file" },			\
     { "-maxnewoov",						\
       ARG_INT32,						\
       "0",							\
       "Maximum new OOVs that can be added at run time" },	\
-    { "-oovugprob",						\
-      ARG_FLOAT32,						\
-      "-4.5",							\
-      "OOV unigram log (base 10) probability" },		\
     { "-usewdphones",						\
       ARG_BOOLEAN,						\
       "no",							\
@@ -497,26 +461,6 @@
       ARG_STRING,                                                               \
       NULL,                                                                     \
       "Log-addition table file" }
-
-
-/** Options for allphone mode. */
-#define allphone_cmdln_options()					\
-{ "-allphone",								\
-      ARG_BOOLEAN,							\
-      "no",								\
-      "Do phoneme recognition" },					\
-{"-phonetp",								\
-     ARG_STRING,							\
-     NULL,								\
-     "Phone transition probabilities inputfile (default: flat probs)"},	\
-{"-ptplw",								\
-     ARG_FLOAT32,							\
-     "5.0",								\
-     "Weight (exponent) applied to phone transition probabilities"},	\
-{"-uptpwt",								\
-     ARG_FLOAT32,							\
-     "0.001",								\
-     "Uniform phone transition prob weight"}
 
 #define CMDLN_EMPTY_OPTION { NULL, 0, NULL, NULL }
 

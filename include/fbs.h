@@ -439,7 +439,7 @@ int32 lm_delete(char const *lmname);
  * @return 0 if successful, else -1.
  */
 POCKETSPHINX_EXPORT
-int32 uttproc_set_lm (char const *lmname);
+int32 uttproc_set_lm(char const *lmname);
 
 
 /**

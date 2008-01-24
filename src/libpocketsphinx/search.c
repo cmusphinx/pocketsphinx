@@ -220,6 +220,7 @@
 #include <ckd_alloc.h>
 #include <err.h>
 #include <cmd_ln.h>
+#include <ngram_model.h>
 
 /* Local includes. */
 #include "s2types.h"
@@ -227,9 +228,6 @@
 #include "linklist.h"
 #include "search_const.h"
 #include "dict.h"
-#include "lm.h"
-#include "lmclass.h"
-#include "lm_3g.h"
 #include "phone.h"
 #include "kb.h"
 #include "log.h"
@@ -321,8 +319,6 @@ static int32 NumMainDictWords;  /* #words in main dictionary, excluding fillers
                                    These come first in WordDict. */
 static int32 NumCiPhones;
 
-static lm_t *LangModel = NULL;
-
 static int32 StartWordId;
 static int32 FinishWordId;
 static int32 SilenceWordId;
@@ -356,11 +352,11 @@ static int32 FillerWordPenalty = 0;
 static int32 SilenceWordPenalty = 0;
 static int32 LogInsertionPenalty = 0;
 static int32 logPhoneInsertionPenalty = 0;
-static lw_t fwdtree_lw = FLOAT2LW(6.5);
-static lw_t fwdflat_lw = FLOAT2LW(8.5);
-static lw_t bestpath_lw = FLOAT2LW(9.5);
-static lw_t bestpath_fwdtree_lw_ratio = FLOAT2LW(9.5 / 6.5);
-static lw_t fwdflat_fwdtree_lw_ratio = FLOAT2LW(8.5 / 6.5);
+static float32 fwdtree_lw = 6.5;
+static float32 fwdflat_lw = 8.5;
+static float32 bestpath_lw = 9.5;
+static float32 bestpath_fwdtree_lw_ratio = 9.5 / 6.5;
+static float32 fwdflat_fwdtree_lw_ratio = 8.5 / 6.5;
 
 static int32 newword_penalty = 0;
 
@@ -1056,13 +1052,14 @@ last_phone_transition(void)
 
             /* For each candidate at the start frame find bp->cand transition-score */
             for (j = cand_sf[i].cand; j >= 0; j = candp->next) {
+                int32 n_used;
                 candp = &(lastphn_cand[j]);
                 de = word_dict->dict_list[candp->wid];
                 ciph0 = de->ci_phone_ids[0];
 
                 dscr = BScoreStack[bpe->s_idx + rcpermtab[ciph0]];
-                dscr +=
-                    lm3g_tg_score(bpe->prev_real_wid, bpe->real_wid, de->wid);
+                dscr += ngram_tg_score(lmset, de->wid, bpe->real_wid,
+                                       bpe->prev_real_wid, &n_used);
 
                 if (last_ltrans[candp->wid].dscr < dscr) {
                     last_ltrans[candp->wid].dscr = dscr;
@@ -1371,12 +1368,13 @@ word_transition(void)
         rcss = BScoreStack + bpe->s_idx;
 
         for (i = 0; i < n_1ph_LMwords; i++) {
+            int32 n_used;
             w = single_phone_wid[i];
             de = word_dict->dict_list[w];
 
             newscore = rcss[rcpermtab[de->ci_phone_ids[0]]];
-            newscore +=
-                lm3g_tg_score(bpe->prev_real_wid, bpe->real_wid, de->wid);
+            newscore += ngram_tg_score(lmset, de->wid, bpe->real_wid,
+                                       bpe->prev_real_wid, &n_used);
 
             if (last_ltrans[w].dscr < newscore) {
                 last_ltrans[w].dscr = newscore;
@@ -1441,8 +1439,8 @@ search_initialize(void)
     linklist_init();
 
     NumWords = word_dict->dict_entry_count;
-    StartWordId = kb_get_word_id(cmd_ln_str("-lmstartsym"));
-    FinishWordId = kb_get_word_id(cmd_ln_str("-lmendsym"));
+    StartWordId = kb_get_word_id("<s>");
+    FinishWordId = kb_get_word_id("</s>");
     SilenceWordId = kb_get_word_id("<sil>");
     SilencePhoneId = phone_to_id("SIL", TRUE);
     NumCiPhones = phoneCiCount();
@@ -1600,35 +1598,6 @@ search_free(void)
     topsen_free();
 }
 
-
-void
-search_set_startword(char const *str)
-{
-    char const *startWord;
-
-    /* For LISTEN project */
-    startWord = str;
-    if (*startWord) {
-        if ((StartWordId = kb_get_word_id(startWord)) < 0) {
-            startWord = cmd_ln_str("-lmstartsym");
-            StartWordId = kb_get_word_id(startWord);
-        }
-    }
-    else {
-        startWord = cmd_ln_str("-lmstartsym");
-        StartWordId = kb_get_word_id(startWord);
-    }
-    E_INFO("startword= %s (id= %d)\n", startWord, StartWordId);
-}
-
-
-int32
-search_get_current_startwid(void)
-{
-    return StartWordId;
-}
-
-
 /*
  * Set previous two LM context words for search; ie, the first word decoded by
  * search will use w1 and w2 as history for trigram scoring.  If w2 < 0, only
@@ -1778,8 +1747,6 @@ search_start_fwd(void)
     for (i = 0; i < NumWords; i++)
         WordLatIdx[i] = NO_BP;
 
-    lm3g_cache_reset();
-
     n_active_chan[0] = n_active_chan[1] = 0;
     n_active_word[0] = n_active_word[1] = 0;
 
@@ -1807,6 +1774,7 @@ search_start_fwd(void)
         hmm_enter(&rhmm->hmm, 0, NO_BP, 0);
     }
     else {
+        int32 n_used;
         /* Simulate insertion of context words into BPTable; first <s> */
         BPTableIdx[0] = 0;
         save_bwd_ptr(StartWordId, 0, NO_BP, 0);
@@ -1818,7 +1786,7 @@ search_start_fwd(void)
         de = word_dict->dict_list[context_word[0]];
         rcsize = (de->mpx && (de->len > 1)) ?
             RightContextFwdSize[de->phone_ids[de->len - 1]] : 1;
-        lscr = lm3g_bg_score(StartWordId, context_word[0]);
+        lscr = ngram_bg_score(lmset, context_word[0], StartWordId, &n_used);
         for (i = 0; i < rcsize; i++)
             save_bwd_ptr(context_word[0], lscr, 0, i);
         WordLatIdx[context_word[0]] = NO_BP;
@@ -1826,12 +1794,14 @@ search_start_fwd(void)
 
         /* Insert 2nd context word, if any */
         if (context_word[1] >= 0) {
+            int32 n_used;
             BPTableIdx[2] = 2;
             de = word_dict->dict_list[context_word[1]];
             rcsize = (de->mpx && (de->len > 1)) ?
                 RightContextFwdSize[de->phone_ids[de->len - 1]] : 1;
             lscr +=
-                lm3g_tg_score(StartWordId, context_word[0], context_word[1]);
+                ngram_tg_score(lmset, context_word[1], context_word[0],
+                               StartWordId, &n_used);
             for (i = 0; i < rcsize; i++)
                 save_bwd_ptr(context_word[1], lscr, 1, i);
             WordLatIdx[context_word[0]] = NO_BP;
@@ -1989,8 +1959,6 @@ search_one_ply_fwd(void)
         E_ERROR("MAX_FRAMES (%d) EXCEEDED; IGNORING REST OF UTTERANCE\n",
                 MAX_FRAMES);
     }
-
-    lm_next_frame();
 }
 
 void
@@ -2043,7 +2011,7 @@ search_finish_fwd(void)
 
     /* Obtain lattice density info for this utterance */
     bptbl2latdensity(BPIdx, lattice_density);
-    search_postprocess_bptable(FLOAT2LW(1.0), "FWDTREE");
+    search_postprocess_bptable(1.0, "FWDTREE");
 
 #if SEARCH_PROFILE
     if (LastFrame > 0) {
@@ -2063,14 +2031,12 @@ search_finish_fwd(void)
                n_word_lastchan_eval / (LastFrame + 1));
         E_INFO("%8d candidate words for entering last phone (%d/fr)\n",
                n_lastphn_cand_utt, n_lastphn_cand_utt / (LastFrame + 1));
-
-        lm3g_cache_stats_dump(stdout);
     }
 #endif
 }
 
 void
-search_postprocess_bptable(lw_t lwf, char const *pass)
+search_postprocess_bptable(float32 lwf, char const *pass)
 {
     /* register int32 idx; */
     int32 /* i, j, w, */ cf, nf, f;     /*, *awl; */
@@ -2112,9 +2078,12 @@ search_postprocess_bptable(lw_t lwf, char const *pass)
 
         bestscore = WORST_SCORE;
         for (bp = BPTableIdx[f]; bp < BPTableIdx[f + 1]; bp++) {
-            l_scr = lm3g_tg_score(BPTable[bp].prev_real_wid,
-                                BPTable[bp].real_wid, FinishWordId);
-            l_scr = LWMUL(l_scr, lwf);
+            int32 n_used;
+            l_scr = ngram_tg_score(lmset, FinishWordId,
+                                   BPTable[bp].real_wid,
+                                   BPTable[bp].prev_real_wid,
+                                   &n_used);
+            l_scr = l_scr * lwf;
 
             if (BPTable[bp].score + l_scr > bestscore) {
                 bestscore = BPTable[bp].score + l_scr;
@@ -2147,7 +2116,6 @@ bestpath_search(void)
 {
     if (!renormalized) {
         lattice_rescore(bestpath_fwdtree_lw_ratio);
-        lm3g_cache_stats_dump(stdout);
     }
     else {
         E_INFO("Renormalized in fwd pass; cannot rescore lattice\n");
@@ -2489,15 +2457,14 @@ search_set_filler_word_penalty(float pen, float pip)
 void
 search_set_lw(double p1lw, double p2lw, double p3lw)
 {
-    fwdtree_lw = FLOAT2LW(p1lw);
-    fwdflat_lw = FLOAT2LW(p2lw);
-    bestpath_lw = FLOAT2LW(p3lw);
-    bestpath_fwdtree_lw_ratio = FLOAT2LW(p3lw / p1lw);
-    fwdflat_fwdtree_lw_ratio = FLOAT2LW(p2lw / p1lw);
+    fwdtree_lw = p1lw;
+    fwdflat_lw = p2lw;
+    bestpath_lw = p3lw;
+    bestpath_fwdtree_lw_ratio = p3lw / p1lw;
+    fwdflat_fwdtree_lw_ratio = p2lw / p1lw;
 
     E_INFO("LW = fwdtree: %.1f, fwdflat: %.1f, bestpath: %.1f\n",
-           LW2FLOAT(fwdtree_lw), LW2FLOAT(fwdflat_lw),
-           LW2FLOAT(bestpath_lw));
+           fwdtree_lw, fwdflat_lw, bestpath_lw);
 }
 
 void
@@ -2775,8 +2742,12 @@ create_search_tree(dictT * dict, int32 use_lm)
         de = dict->dict_list[w];
 
         /* Ignore dictionary words not in LM */
-        if (use_lm && (!dictwd_in_lm(de->wid)))
+        /* NOTE: This leaves open the possibility for doing
+         * open-vocabulary decoding in the future... */
+        if (use_lm && !ngram_model_set_known_wid(lmset, de->wid)) {
+            printf("Skipping %s\n", de->word);
             continue;
+        }
 
         /* Handle single-phone words individually; not in channel tree */
         if (de->len == 1) {
@@ -2873,8 +2844,12 @@ create_search_tree(dictT * dict, int32 use_lm)
 
     for (w = FinishWordId; w < NumWords; w++) {
         de = dict->dict_list[w];
-        if (use_lm && (!(ISA_FILLER_WORD(w))) && (!dictwd_in_lm(de->wid)))
+        if (use_lm
+            && (!(ISA_FILLER_WORD(w)))
+            && (!ngram_model_set_known_wid(lmset, de->wid))) {
+            printf("Skipping %s\n", de->word);
             continue;
+        }
 
         single_phone_wid[n_1ph_words++] = w;
     }
@@ -3043,21 +3018,15 @@ free_search_tree(void)
 void
 search_set_current_lm(void)
 {
-    lm_t *lm;
-
-    lm = lm_get_current();
-
-    if (LangModel)
-        delete_search_tree();
+    delete_search_tree();
     create_search_tree(word_dict, 1);
-    LangModel = lm;
 }
 
 /*
  * Compute acoustic and LM scores for each BPTable entry (segment).
  */
 void
-compute_seg_scores(lw_t lwf)
+compute_seg_scores(float32 lwf)
 {
     int32 bp, start_score;
     BPTBL_T *bpe, *p_bpe;
@@ -3088,9 +3057,11 @@ compute_seg_scores(lw_t lwf)
             bpe->lscr = FillerWordPenalty;
         }
         else {
-            bpe->lscr =
-                lm3g_tg_score(p_bpe->prev_real_wid, p_bpe->real_wid, de->wid);
-            bpe->lscr = LWMUL(bpe->lscr, lwf);
+            int32 n_used;
+            bpe->lscr = ngram_tg_score(lmset, de->wid,
+                                       p_bpe->real_wid,
+                                       p_bpe->prev_real_wid, &n_used);
+            bpe->lscr = bpe->lscr * lwf;
         }
         bpe->ascr = bpe->score - start_score - bpe->lscr;
     }
@@ -3144,7 +3115,7 @@ search_get_bscorestack(void)
     return (BScoreStack);
 }
 
-lw_t
+float32
 search_get_lw(void)
 {
     return (fwdtree_lw);
@@ -3373,8 +3344,6 @@ search_fwdflat_start(void)
     for (i = 0; i < NumWords; i++)
         WordLatIdx[i] = NO_BP;
 
-    /* lm3g_cache_reset (); */
-
     /* Start search with <s>; word_chan[<s>] is permanently allocated */
     rhmm = (root_chan_t *) word_chan[StartWordId];
     hmm_enter(&rhmm->hmm, 0, NO_BP, 0);
@@ -3404,7 +3373,7 @@ search_fwdflat_start(void)
         j = 0;
 
         for (i = 0; i < StartWordId; i++) {
-            if (dictwd_in_lm(word_dict->dict_list[i]->wid)) {
+            if (ngram_model_set_known_wid(lmset, word_dict->dict_list[i]->wid)) {
                 expand_word_list[j] = i;
                 expand_word_flag[i] = 1;
                 j++;
@@ -3534,8 +3503,6 @@ search_fwdflat_frame(mfcc_t **feat)
         E_ERROR("MAX_FRAMES (%d) EXCEEDED; IGNORING REST OF UTTERANCE\n",
                 MAX_FRAMES);
     }
-
-    lm_next_frame();
 }
 
 void
@@ -3747,7 +3714,7 @@ fwdflat_word_transition(void)
     int32 *rcpermtab, *rcss;
     root_chan_t *rhmm;
     int32 *awl;
-    lw_t lwf;
+    float32 lwf;
 
     cf = CurrentFrame;
     nf = cf + 1;
@@ -3776,15 +3743,15 @@ fwdflat_word_transition(void)
 
         /* Transition to all successor words. */
         for (i = 0; expand_word_list[i] >= 0; i++) {
+            int32 n_used;
             w = expand_word_list[i];
             newde = word_dict->dict_list[w];
             /* Get the exit score we recorded in save_bwd_ptr(), or
              * something approximating it. */
             newscore = rcss[rcpermtab[newde->ci_phone_ids[0]]];
-            newscore +=
-                LWMUL(lm3g_tg_score
-                      (bp->prev_real_wid, bp->real_wid, newde->wid),
-                      lwf);
+            newscore += lwf
+                * ngram_tg_score(lmset, newde->wid, bp->real_wid,
+                                 bp->prev_real_wid, &n_used);
             newscore += pip;
 
             /* Enter the next word */
@@ -3874,8 +3841,6 @@ search_fwdflat_finish(void)
     E_INFO("%8d word transitions (%d/fr)\n",
            n_fwdflat_word_transition,
            n_fwdflat_word_transition / (LastFrame + 1));
-
-    lm3g_cache_stats_dump(stdout);
 #endif
 }
 

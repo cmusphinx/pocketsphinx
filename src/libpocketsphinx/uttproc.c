@@ -275,28 +275,25 @@
 #include <sphinx_config.h>
 #include <cmd_ln.h>
 #include <byteorder.h>
+#include <ckd_alloc.h>
+#include <err.h>
+#include <strfuncs.h>
+#include <linklist.h>
+#include <feat.h>
+#include <fe.h>
+#include <fixpoint.h>
 
 /* Local headers */
 #include "s2types.h"
-#include "ckd_alloc.h"
 #include "basic_types.h"
-#include "err.h"
 #include "s2_semi_mgau.h"
 #include "senscr.h"
 #include "search_const.h"
-#include "strfuncs.h"
-#include "linklist.h"
 #include "dict.h"
-#include "lmclass.h"
-#include "lm_3g.h"
 #include "kb.h"
-#include "feat.h"
-#include "fe.h"
-#include "fixpoint.h"
 #include "fbs.h"
 #include "search.h"
 #include "fsg_search.h"
-#include "ckd_alloc.h"
 #include "uttproc.h"
 #include "posixwin32.h"
 
@@ -654,7 +651,7 @@ write_results(char const *hyp, int32 aborted)
             fprintf(matchsegfp, " %d %d %d %s",
                     seghyp[i].sf,
                     seghyp[i].ascr,
-                    lm3g_raw_score(seghyp[i].lscr),
+                    ngram_score_to_prob(lmset, seghyp[i].lscr),
                     kb_get_word_str(seghyp[i].wid));
         }
         fprintf(matchsegfp, " %d\n", searchFrame());
@@ -1409,14 +1406,14 @@ uttproc_result_seg(int32 * fr, search_hyp_t ** hyp, int32 block)
 int32
 uttproc_lmupdate(char const *lmname)
 {
-    lm_t *lm, *cur_lm;
+    ngram_model_t *lm, *cur_lm;
 
     warn_notidle("uttproc_lmupdate");
 
-    if ((lm = lm_name2lm(lmname)) == NULL)
+    if ((lm = ngram_model_set_lookup(lmset, lmname)) == NULL)
         return -1;
 
-    cur_lm = lm_get_current();
+    cur_lm = ngram_model_set_lookup(lmset, NULL);
     if (lm == cur_lm)
         search_set_current_lm();
 
@@ -1432,7 +1429,7 @@ uttproc_set_context(char const *wd1, char const *wd2)
 
     if (wd1) {
         w1 = kb_get_word_id(wd1);
-        if ((w1 < 0) || (!dictwd_in_lm(w1))) {
+        if ((w1 < 0) || (!ngram_model_set_known_wid(lmset, w1))) {
             E_ERROR("Unknown word: %s\n", wd1);
             search_set_context(-1, -1);
 
@@ -1444,7 +1441,7 @@ uttproc_set_context(char const *wd1, char const *wd2)
 
     if (wd2) {
         w2 = kb_get_word_id(wd2);
-        if ((w2 < 0) || (!dictwd_in_lm(w2))) {
+        if ((w2 < 0) || (!ngram_model_set_known_wid(lmset, w2))) {
             E_ERROR("Unknown word: %s\n", wd2);
             search_set_context(-1, -1);
 
@@ -1473,19 +1470,15 @@ int32
 uttproc_set_lm(char const *lmname)
 {
     warn_notidle("uttproc_set_lm");
-
     if (lmname == NULL) {
         E_ERROR("uttproc_set_lm called with NULL argument\n");
         return -1;
     }
-
-    if (lm_set_current(lmname) < 0)
+    if (ngram_model_set_select(lmset, lmname) == NULL)
         return -1;
 
     fsg_search_mode = FALSE;
-
     search_set_current_lm();
-
     E_INFO("LM= \"%s\"\n", lmname);
 
     return 0;
@@ -1619,15 +1612,6 @@ int32
 uttproc_set_rescore_lm(char const *lmname)
 {
     searchlat_set_rescore_lm(lmname);
-    return 0;
-}
-
-int32
-uttproc_set_startword(char const *str)
-{
-    warn_notidle("uttproc_set_startword");
-
-    search_set_startword(str);
     return 0;
 }
 
@@ -1911,42 +1895,6 @@ uttproc_decode_cep_file(const char *filename,
         return -1;
 
     return n_featfr;
-}
-
-search_hyp_t *
-uttproc_allphone_file(char const *utt)
-{
-    int32 nfr;
-    search_hyp_t *hyplist, *h;
-    extern search_hyp_t * allphone_utt(int32 nfr, mfcc_t ***feat_buf);
-    char *utt_name;
-
-    utt_name = build_uttid(utt);
-    if (cmd_ln_boolean("-adcin")) {
-        nfr = uttproc_decode_raw_file(utt, utt_name, 0, -1, 1);
-    }
-    else {
-        nfr = uttproc_decode_cep_file(utt, utt_name, 0, -1, 1);
-    }
-
-    hyplist = allphone_utt(nfr, feat_buf);
-
-    /* Write match and matchseg files if needed */
-    if (matchfp) {
-        for (h = hyplist; h; h = h->next)
-            fprintf(matchfp, "%s ", h->word);
-        fprintf(matchfp, "(%s)\n", uttid);
-        fflush(matchfp);
-    }
-    if (matchsegfp) {
-        fprintf(matchsegfp, "%s ", uttid);
-        for (h = hyplist; h; h = h->next)
-            fprintf(matchsegfp, " %d %d %s", h->sf, h->ef, h->word);
-        fprintf(matchsegfp, "\n");
-        fflush(matchsegfp);
-    }
-
-    return hyplist;
 }
 
 static FILE *logfp;

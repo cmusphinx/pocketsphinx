@@ -45,8 +45,10 @@
 #ifndef _KB_EXPORTS_H_
 #define _KB_EXPORTS_H_
 
+#include <ngram_model.h>
+#include <logmath.h>
+
 #include "log.h"
-#include "lm_3g.h"
 #include "dict.h"
 #include "tmat.h"
 #include "bin_mdef.h"
@@ -67,8 +69,6 @@ char *kb_get_word_str(int32 wid);
  */
 int32 kb_dict_maxsize(void);
 
-char * kb_get_senprob_dump_file(void);
-
 /* Global model definition. */
 extern bin_mdef_t *mdef;
 extern tmat_t *tmat;
@@ -79,6 +79,9 @@ extern ms_mgau_model_t *ms_mgau;
 
 /* Global dictionary. */
 extern dictT *word_dict;
+
+/* Global language model set. */
+extern ngram_model_t *lmset;
 
 /* Global phone transition matrix (to be replaced by a LM) */
 extern int32 **phonetp;

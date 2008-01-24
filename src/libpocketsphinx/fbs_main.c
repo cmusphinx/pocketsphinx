@@ -205,7 +205,6 @@
 #include "s2io.h"
 #include "kb.h"
 #include "uttproc.h"
-#include "allphone.h"
 #include "byteorder.h"
 #include "search.h"
 #include "posixwin32.h"
@@ -215,8 +214,7 @@ int32 uttproc_set_startword(char const *str);
 /* Static declarations for this file. */
 static search_hyp_t *run_sc_utterance(char *mfcfile, int32 sf, int32 ef,
                                       char *idspec);
-static search_hyp_t *allphone_utterance(char *mfcfile, int32 sf, int32 ef,
-                                        char *idspec);
+static void run_ctl_file(char const *ctl_file_name);
 static void init_feat(void);
 static void run_ctl_file(char const *ctl_file_name);
 
@@ -231,7 +229,6 @@ static const arg_t fbs_args_def[] = {
     fsg_cmdln_options(),
     beam_cmdln_options(),
     search_cmdln_options(),
-    allphone_cmdln_options(),
     CMDLN_EMPTY_OPTION
 };
 
@@ -242,7 +239,6 @@ static const arg_t feat_defn[] = {
     { NULL, 0, NULL, NULL }
 };
 
-/* FIXME FIXME FIXME fixed size buffer */
 static char utt_name[512];
 
 arg_t *
@@ -286,50 +282,33 @@ fbs_init(int32 argc, char **argv)
      * the feature type and parameters. */
     init_feat();
 
-    /* Load the KB */
+    /* Load the language and acoustic models. */
     kb_init();
 
-    /* Initialize the search module */
+    /* FIXME FIXME FIXME: We shouldn't initialize the N-Gram search if
+     * we are not going to use it, likewise for the FSG search... */
+    /* Initialize the N-Gram search module */
     search_initialize();
 
     /* Initialize dynamic data structures needed for utterance processing */
+    /* FIXME FIXME FIXME: For no good reason, this also initializes FSG search. */
     uttproc_init();
 
+    /* FIXME: Now, because of this utter stupidity, we need to make
+     * sure that we build the search tree if we are in N-Gram mode. */
+    if (!uttproc_fsg_search_mode())
+        search_set_current_lm();
+
+    /* Some random stuff that doesn't have anywhere else to go. */
     if (cmd_ln_str("-rawlogdir"))
         uttproc_set_rawlogdir(cmd_ln_str("-rawlogdir"));
     if (cmd_ln_str("-mfclogdir"))
         uttproc_set_mfclogdir(cmd_ln_str("-mfclogdir"));
 
-    /* If multiple LMs present, make sure we get a default. */
-    if (cmd_ln_str("-fsg") == NULL) {
-        if (get_n_lm() == 1) {
-            if (uttproc_set_lm(get_current_lmname()) < 0)
-                E_FATAL("SetLM() failed\n");
-        }
-        else {
-            if (cmd_ln_str("-lmname")) {
-                if (uttproc_set_lm(cmd_ln_str("-lmname")) < 0)
-                    E_FATAL("SetLM(%s) failed\n", cmd_ln_str("-lmname"));
-            }
-            else if (uttproc_set_lm(get_current_lmname()) < 0)
-                E_FATAL("SetLM() failed\n");
-        }
-    }
-    else {
-        E_INFO("/* Need to select from among multiple FSGs */\n");
-    }
-
-    /* Set the current start word to <s> (if it exists) */
-    if (kb_get_word_id("<s>") >= 0)
-        uttproc_set_startword("<s>");
-
-    if (cmd_ln_boolean("-allphone"))
-        allphone_init();
-
-    E_INFO("libfbs/main COMPILED ON: %s, AT: %s\n\n", __DATE__, __TIME__);
+    E_INFO("fbs_main.c COMPILED ON: %s, AT: %s\n\n", __DATE__, __TIME__);
 
     /*
-     * Initialization complete; If there was a control file run batch
+     * Initialization complete; If there was a control file run batch mode.
      */
 
     if (cmd_ln_str("-ctl")) {
@@ -395,24 +374,17 @@ char *
 build_uttid(char const *utt)
 {
     char const *utt_id;
+    int32 i;
 
     /* Find uttid */
-#ifdef WIN32
-    {
-        int32 i;
-        for (i = strlen(utt) - 1;
-             (i >= 0) && (utt[i] != '\\') && (utt[i] != '/'); --i);
-        utt_id = utt + i;
-    }
-#else
-    utt_id = strrchr(utt, '/');
-#endif
-    if (utt_id)
-        utt_id++;
-    else
-        utt_id = utt;
-    strcpy(utt_name, utt_id);
+    for (i = strlen(utt) - 1;
+         (i >= 0) && (utt[i] != '\\') && (utt[i] != '/'); --i);
+    if (i == -1) i = 0;
+    utt_id = utt + i;
 
+    /* Copy at most sizeof(utt_name) bytes, then null-terminate. */
+    strncpy(utt_name, utt_id, sizeof(utt_name));
+    utt_name[sizeof(utt_name)/sizeof(utt_name[0])-1] = '\0';
     return utt_name;
 }
 
@@ -458,12 +430,7 @@ run_ctl_file(char const *ctl_file_name)
 
         E_INFO("\nUtterance: %s\n", idspec);
 
-        if (cmd_ln_boolean("-allphone")) {
-            hyp = allphone_utterance(mfcfile, sf, ef, idspec);
-        }
-        else {
-            hyp = run_sc_utterance(mfcfile, sf, ef, idspec);
-        }
+        hyp = run_sc_utterance(mfcfile, sf, ef, idspec);
         if (hyp && cmd_ln_boolean("-shortbacktrace")) {
             /* print backtrace summary */
             fprintf(stdout, "SEG:");
@@ -490,14 +457,11 @@ run_ctl_file(char const *ctl_file_name)
 static search_hyp_t *
 run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
 {
-    char startword_filename[1000];
-    FILE *sw_fp;
     int32 frmcount, ret;
     char *finalhyp;
     char utt[1024];
     search_hyp_t *hypseg;
     int32 nbest;
-    char *startWord_directory = cmd_ln_str("-startworddir");
     char *utt_lmname_dir = cmd_ln_str("-lmnamedir");
 
     strcpy(utt, idspec);
@@ -529,33 +493,6 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
         }
 
         uttproc_set_lm(lmname);
-    }
-
-    /* Select startword for utt (LISTEN project) */
-    if (startWord_directory) {
-        char *startWord_ext = cmd_ln_str("-startwordext");
-#ifdef WIN32
-        if (startWord_directory && (utt[0] != '\\') && (utt[0] != '/'))
-            sprintf(startword_filename, "%s/%s.%s",
-                    startWord_directory, utt, startWord_ext);
-        else
-            sprintf(startword_filename, "%s.%s", utt, startWord_ext);
-#else
-        if (startWord_directory && (utt[0] != '/'))
-            sprintf(startword_filename, "%s/%s.%s",
-                    startWord_directory, utt, startWord_ext);
-        else
-            sprintf(startword_filename, "%s.%s", utt, startWord_ext);
-#endif
-        if ((sw_fp = fopen(startword_filename, "r")) != NULL) {
-            char startWord[512]; /* FIXME */
-            fscanf(sw_fp, "%s", startWord);
-            fclose(sw_fp);
-
-            E_INFO("startWord: %s\n", startWord);
-
-            uttproc_set_startword(startWord);
-        }
     }
 
     build_uttid(utt);
@@ -609,25 +546,4 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
     }
 
     return hypseg;              /* Linked list of hypothesis words */
-}
-
-/*
- * Allphone decode an utterance.
- */
-static search_hyp_t *
-allphone_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
-{
-    extern search_hyp_t * allphone_utt(int32 nfr, mfcc_t ***feat_buf);
-    int32 nfr;
-    mfcc_t ***feat_buf;
-
-    if (cmd_ln_boolean("-adcin")) {
-        nfr = uttproc_decode_raw_file(mfcfile, utt_name, sf, ef, 1);
-    }
-    else {
-        nfr = uttproc_decode_cep_file(mfcfile, utt_name, sf, ef, 1);
-    }
-
-    uttproc_get_featbuf(&feat_buf);
-    return allphone_utt(nfr, feat_buf);
 }
