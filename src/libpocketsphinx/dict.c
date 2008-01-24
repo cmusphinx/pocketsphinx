@@ -203,6 +203,7 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
     int32 word_id = 0, i, j;
     dict_entry_t *entry;
     int32 max_new_oov;
+    void *val;
 
     /*
      * Find size of dictionary and set hash and list table size hints.
@@ -236,10 +237,9 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
         rcList = NULL;
     }
 
-    /* Load dictionaries */
-    dict_load(dict, filename, &word_id, use_context);
-
-    /* Placeholders (dummy pronunciations) for new words that can be added at runtime */
+    /* Placeholders (dummy pronunciations) for new words that can be
+     * added at runtime.  We can expand this region of the dictionary
+     * later if need be. */
     initial_dummy = first_dummy = word_id;
     if ((max_new_oov = cmd_ln_int32("-maxnewoov")) > 0)
         E_INFO("Allocating %d placeholders for new OOVs\n", max_new_oov);
@@ -256,85 +256,81 @@ dict_read(dictT * dict, char *filename, /* Main dict file */
             E_FATAL("Failed to add DUMMY(SIL) entry to dictionary\n");
 
         _dict_list_add(dict, entry);
-        hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
+        (void)hash_table_enter_int32(dict->dict, entry->word, word_id);
         entry->wid = word_id;
         word_id++;
     }
     last_dummy = word_id - 1;
 
-    /*
-     * Special case the start symbol and end symbol phrase markers.
-     * Special case the silence word 'SIL'.
-     */
-    {
-        void *val;
+    /* Load dictionaries */
+    dict_load(dict, filename, &word_id, use_context);
 
-        if (hash_table_lookup(dict->dict, "</s>", &val) != 0) {
-            char pronstr[5];
-            /*
-             * Check if there is a special end silence phone.
-             */
-            if (NO_PHONE == phone_to_id("SILe", FALSE)) {
-                strcpy(pronstr, "SIL");
-                entry = _new_dict_entry("</s>", pronstr, FALSE);
-                if (!entry)
-                    E_FATAL("Failed to add </s>(SIL) to dictionary\n");
-            }
-            else {
-                E_INFO("Using special end silence for </s>\n");
-                strcpy(pronstr, "SILe");
-                entry =
-                    _new_dict_entry("</s>", pronstr, FALSE);
-            }
-            _dict_list_add(dict, entry);
-            hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
-            entry->wid = word_id;
-            word_id++;
-        }
-
-        /* Mark the start of filler words */
-        dict->filler_start = word_id;
-
-        /* Add the standard start symbol (<s>) if not already in dict */
-        if (hash_table_lookup(dict->dict, "<s>", &val) != 0) {
-            char pronstr[5];
-            /*
-             * Check if there is a special begin silence phone.
-             */
-            if (NO_PHONE == phone_to_id("SILb", FALSE)) {
-                strcpy(pronstr, "SIL");
-                entry =
-                    _new_dict_entry("<s>", pronstr, FALSE);
-                if (!entry)
-                    E_FATAL("Failed to add <s>(SIL) to dictionary\n");
-            }
-            else {
-                E_INFO("Using special begin silence for <s>\n");
-                strcpy(pronstr, "SILb");
-                entry =
-                    _new_dict_entry("<s>", pronstr, FALSE);
-                if (!entry)
-                    E_FATAL("Failed to add <s>(SILb) to dictionary\n");
-            }
-            _dict_list_add(dict, entry);
-            hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
-            entry->wid = word_id;
-            word_id++;
-        }
-
-        /* Finally create a silence word if it isn't there already. */
-        if (hash_table_lookup(dict->dict, "<sil>", &val) != 0) {
-            char pronstr[4];
-
+    /* Make sure that <s>, </s>, and <sil> are always in the dictionary. */
+    if (hash_table_lookup(dict->dict, "</s>", &val) != 0) {
+        char pronstr[5];
+        /*
+         * Check if there is a special end silence phone.
+         */
+        if (NO_PHONE == phone_to_id("SILe", FALSE)) {
             strcpy(pronstr, "SIL");
-            entry = _new_dict_entry("<sil>", pronstr, FALSE);
+            entry = _new_dict_entry("</s>", pronstr, FALSE);
             if (!entry)
-                E_FATAL("Failed to add <sil>(SIL) to dictionary\n");
-            _dict_list_add(dict, entry);
-            hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
-            entry->wid = word_id;
-            word_id++;
+                E_FATAL("Failed to add </s>(SIL) to dictionary\n");
         }
+        else {
+            E_INFO("Using special end silence for </s>\n");
+            strcpy(pronstr, "SILe");
+            entry =
+                _new_dict_entry("</s>", pronstr, FALSE);
+        }
+        _dict_list_add(dict, entry);
+        hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
+        entry->wid = word_id;
+        word_id++;
+    }
+
+    /* Mark the start of filler words */
+    dict->filler_start = word_id;
+
+    /* Add the standard start symbol (<s>) if not already in dict */
+    if (hash_table_lookup(dict->dict, "<s>", &val) != 0) {
+        char pronstr[5];
+        /*
+         * Check if there is a special begin silence phone.
+         */
+        if (NO_PHONE == phone_to_id("SILb", FALSE)) {
+            strcpy(pronstr, "SIL");
+            entry =
+                _new_dict_entry("<s>", pronstr, FALSE);
+            if (!entry)
+                E_FATAL("Failed to add <s>(SIL) to dictionary\n");
+        }
+        else {
+            E_INFO("Using special begin silence for <s>\n");
+            strcpy(pronstr, "SILb");
+            entry =
+                _new_dict_entry("<s>", pronstr, FALSE);
+            if (!entry)
+                E_FATAL("Failed to add <s>(SILb) to dictionary\n");
+        }
+        _dict_list_add(dict, entry);
+        hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
+        entry->wid = word_id;
+        word_id++;
+    }
+
+    /* Finally create a silence word if it isn't there already. */
+    if (hash_table_lookup(dict->dict, "<sil>", &val) != 0) {
+        char pronstr[4];
+
+        strcpy(pronstr, "SIL");
+        entry = _new_dict_entry("<sil>", pronstr, FALSE);
+        if (!entry)
+            E_FATAL("Failed to add <sil>(SIL) to dictionary\n");
+        _dict_list_add(dict, entry);
+        hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
+        entry->wid = word_id;
+        word_id++;
     }
 
     if (n_filename)
@@ -855,6 +851,9 @@ dict_add_word(dictT * dict, char const *word, char *pron)
     /* Word already exists */
     new_entry = 0;
     if ((wid = kb_get_word_id(word)) < 0) {
+        /* FIXME: Do some pointer juggling to make this work? */
+        /* Or better yet, use a better way to determine what words are
+         * filler words... */
         if (first_dummy > last_dummy) {
             E_ERROR("Dictionary full; cannot add word\n");
             return -1;
@@ -867,7 +866,7 @@ dict_add_word(dictT * dict, char const *word, char *pron)
     if (!replace_dict_entry(dict, entry, word, pron, TRUE, new_entry))
         return -1;
 
-    hash_table_enter(dict->dict, entry->word, (void *)(long)wid);
+    (void)hash_table_enter_int32(dict->dict, entry->word, wid);
 
     return (wid);
 }

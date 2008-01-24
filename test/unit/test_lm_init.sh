@@ -19,3 +19,8 @@ else
 fi
 
 # Make sure that the language model initialization worked
+if grep -q 'ngrams 1=4985' $bn.log; then
+    pass "init"
+else
+    fail "init"
+fi

@@ -1,4 +1,16 @@
-TESTS = test_lm_init.sh test_lmctl_init.sh
+TESTS = test_lm_init.sh test_lmctl_init.sh test_lm_read
+
+check_PROGRAMS = test_lm_read
+
+INCLUDES = \
+	-I$(top_srcdir)/include \
+	-I$(top_builddir)/include \
+	-DMODELDIR=\"${top_srcdir}/model\" \
+	-DDATADIR=\"${top_srcdir}/test/data\"
+
+LDADD = \
+	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la \
+	-lsphinxbase
 
 TESTDATA =
 

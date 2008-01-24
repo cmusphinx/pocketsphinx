@@ -2745,7 +2745,7 @@ create_search_tree(dictT * dict, int32 use_lm)
         /* NOTE: This leaves open the possibility for doing
          * open-vocabulary decoding in the future... */
         if (use_lm && !ngram_model_set_known_wid(lmset, de->wid)) {
-            printf("Skipping %s\n", de->word);
+            /* E_INFO("Skipping word %s, not in LM\n", de->word); */
             continue;
         }
 
@@ -2847,7 +2847,7 @@ create_search_tree(dictT * dict, int32 use_lm)
         if (use_lm
             && (!(ISA_FILLER_WORD(w)))
             && (!ngram_model_set_known_wid(lmset, de->wid))) {
-            printf("Skipping %s\n", de->word);
+            /* E_INFO("Skipping word %s, not in LM\n", de->word); */
             continue;
         }
 

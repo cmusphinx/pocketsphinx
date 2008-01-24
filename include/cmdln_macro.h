@@ -363,7 +363,7 @@
       "Noise word pronunciation dictionary input file" },	\
     { "-maxnewoov",						\
       ARG_INT32,						\
-      "0",							\
+      "20",							\
       "Maximum new OOVs that can be added at run time" },	\
     { "-usewdphones",						\
       ARG_BOOLEAN,						\

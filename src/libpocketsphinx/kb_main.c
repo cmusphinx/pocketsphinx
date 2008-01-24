@@ -160,13 +160,26 @@ char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *kdtreefn, *sendumpfn,
 /* Language model set */
 ngram_model_t *lmset;
 
+void
+kb_update_widmap(void)
+{
+    const char **words;
+    int32 i, n_words;
+
+    /* It's okay to include fillers since they won't be in the LM */
+    n_words = word_dict->dict_entry_count;
+    words = ckd_calloc(n_words, sizeof(*words));
+    for (i = 0; i < n_words; ++i)
+        words[i] = word_dict->dict_list[i]->word;
+    ngram_model_set_map_words(lmset, words, n_words);
+    ckd_free(words);
+}
+
 static void
 lm_init(void)
 {
     char *lm_ctl_filename = cmd_ln_str("-lmctlfn");
     char *lm_file_name = cmd_ln_str("-lm");
-    const char **words;
-    int32 i, n_words;
 
     /* Do nothing if there is no language model. */
     if (lm_ctl_filename == NULL && lm_file_name == NULL)
@@ -213,13 +226,7 @@ lm_init(void)
     }
 
     /* Now create the dictionary to LM word ID mapping. */
-    /* It's okay to include fillers since they won't be in the LM */
-    n_words = word_dict->dict_entry_count;
-    words = ckd_calloc(n_words, sizeof(*words));
-    for (i = 0; i < n_words; ++i)
-        words[i] = word_dict->dict_list[i]->word;
-    ngram_model_set_map_words(lmset, words, n_words);
-    ckd_free(words);
+    kb_update_widmap();
 }
 
 static void
@@ -437,4 +444,35 @@ int32
 kb_dict_maxsize(void)
 {
     return (hash_table_size(word_dict->dict));
+}
+
+int32
+lm_read(char const *lmfile,
+        char const *lmname,
+        double lw, double uw, double wip)
+{
+    ngram_model_t *lm;
+
+    if ((lm = ngram_model_read(cmd_ln_get(),
+                               lmfile, NGRAM_AUTO, lmath)) == NULL)
+        return -1;
+    ngram_model_apply_weights(lm, lw, wip, uw);
+
+    /* Add this LM while preserving word ID mapping (hooray) */
+    if ((ngram_model_set_add(lmset, lm, lmname, 1.0, TRUE)) != lm) {
+        ngram_model_free(lm);
+        return -1;
+    }
+    return 0;
+}
+
+int32
+lm_delete(char const *lmname)
+{
+    ngram_model_t *lm;
+
+    if ((lm = ngram_model_set_remove(lmset, lmname, TRUE)) == NULL)
+        return -1;
+    ngram_model_free(lm);
+    return 0;
 }

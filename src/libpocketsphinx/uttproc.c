@@ -1477,13 +1477,45 @@ uttproc_set_lm(char const *lmname)
     if (ngram_model_set_select(lmset, lmname) == NULL)
         return -1;
 
+    E_INFO("LM= \"%s\"\n", lmname);
     fsg_search_mode = FALSE;
     search_set_current_lm();
-    E_INFO("LM= \"%s\"\n", lmname);
 
     return 0;
 }
 
+int32
+uttproc_add_word(char const *word,
+                 char const *phones)
+{
+    int32 wid, lmwid;
+    char *pron;
+
+    pron = ckd_salloc(phones);
+    /* Add the word to the dictionary. */
+    if ((wid = dict_add_word(word_dict, word, pron)) == -1) {
+        ckd_free(pron);
+        return -1;
+    }
+    ckd_free(pron);
+
+    /* FIXME: There is a way more efficient way to do this, since all
+     * we did was replace a placeholder string with the new word
+     * string - therefore what we ought to do is add it directly to
+     * the current LM, then update the mapping without reallocating
+     * everything. */
+    /* Add it to the LM set (meaning, the current LM).  In a perfect
+     * world, this would result in the same WID, but because of the
+     * weird way that word IDs are handled, it doesn't. */
+    if ((lmwid = ngram_model_add_word(lmset, word, 1.0)) == NGRAM_INVALID_WID)
+        return -1;
+    else if (lmwid != wid)
+        kb_update_widmap();
+
+    /* Rebuild the search tree.  FIXME: The search tree needs to become dynamic. */
+    search_set_current_lm();
+    return wid;
+}
 
 int32
 uttproc_load_fsg(s2_fsg_t * fsg,

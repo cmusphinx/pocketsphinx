@@ -196,9 +196,10 @@ int32 uttproc_end_utt(void);
  * @param sf Index of frame number to begin processing.  The frame
  *           size is determined by the <tt>-frate</tt> parameter, but
  *           it is usually 10ms (100 frames per second).
- * @param ef Index of frame number at which to stop processing.
+ * @param ef Index of frame number at which to stop processing, or -1
+ *           to process the entire utterance.
  * @param nosearch If nonzero, don't actually try to recognize anything.
- * @return 0 if successful, else -1.
+ * @return The number of frames processed if successful, else -1.
  **/
 POCKETSPHINX_EXPORT
 int32 uttproc_decode_raw_file(const char *filename, 
@@ -218,7 +219,7 @@ int32 uttproc_decode_raw_file(const char *filename,
  *           it is usually 10ms (100 frames per second).
  * @param ef Index of frame number at which to stop processing.
  * @param nosearch If nonzero, don't actually try to recognize anything.
- * @return 0 if successful, else -1.
+ * @return The number of frames processed if successful, else -1.
  **/
 POCKETSPHINX_EXPORT
 int32 uttproc_decode_cep_file(const char *filename,
@@ -386,8 +387,12 @@ void search_save_lattice(void);
  * This function reads in a new LM file from <code>lmfile</code>, and
  * associate it with name <code>lmname</code>.  If there is already an
  * LM with the same name, it is automatically deleted.  The current LM
- * is undefined at this point; call  uttproc_set_lm(lmname) immediately
- * afterwards.
+ * remains the same - to use the new language model, call
+ * uttproc_set_lm(lmname).
+ *
+ * @note If the new language model contains words that are not in the
+ * main dictionary, it will not be possible to recognize them until
+ * they are added.  Use uttproc_add_word() to define new words.
  *
  * @param lmfile Path to LM file to read.
  * @param lmname Name to associate with this language model.
@@ -470,6 +475,17 @@ POCKETSPHINX_EXPORT
 int32 uttproc_set_context(char const *wd1,
 			  char const *wd2);
 
+/**
+ * Add a word to the pronunciation dictionary.
+ *
+ * @param word Word string to add.
+ * @param phones Whitespace-separated list of phoneme strings
+ * describing pronunciation of <code>word</code>.
+ * @return Word ID (>= 0) for newly added word, or -1 for failure.
+ */
+POCKETSPHINX_EXPORT
+int32 uttproc_add_word(char const *word,
+                       char const *phones);
 
 /**
  * Transition in a user-defined finite state grammar.
