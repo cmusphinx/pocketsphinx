@@ -2897,7 +2897,7 @@ create_search_tree(dictT * dict, int32 use_lm)
 
 #if 0
     E_INFO("Main Dictionary:\n");
-    for (w = 0; w < n_wd; w++) {
+    for (w = 0; w < NumWords; w++) {
         de = dict->dict_list[w];
         printf("%s", de->word);
         for (i = 0; i < de->len; i++)
@@ -2930,7 +2930,7 @@ dump_search_tree_root(dictT * dict, root_chan_t * hmm)
     chan_t *t;
     dict_entry_t *de;
 
-    printf(" %d(%d):", hmm->diphone, hmm->mpx);
+    printf(" %d(%d):", hmm->diphone, hmm_is_mpx(&hmm->hmm));
 
     for (i = hmm->penult_phn_wid; i >= 0; i = homophone_set[i]) {
         de = dict->dict_list[i];
@@ -2959,7 +2959,7 @@ dump_search_tree(dictT * dict, chan_t * hmm, int32 level)
     printf(" %d(%d)", mid_stk[0] & 0x7fffffff, (mid_stk[0] < 0));
     for (i = 1; i < level; i++)
         printf(" %d", mid_stk[i]);
-    printf(" %d:\n", hmm->hmm.s.sseqid);
+    printf(" %d:\n", hmm_nonmpx_ssid(&hmm->hmm));
 
     for (i = hmm->info.penult_phn_wid; i >= 0; i = homophone_set[i]) {
         de = dict->dict_list[i];
@@ -2968,10 +2968,10 @@ dump_search_tree(dictT * dict, chan_t * hmm, int32 level)
 
     printf("    ");
     for (t = hmm->next; t; t = t->alt)
-        printf(" %d", t->hmm.s.sseqid);
+        printf(" %d", hmm_nonmpx_ssid(&t->hmm));
     printf("\n");
 
-    mid_stk[level] = hmm->hmm.s.sseqid;
+    mid_stk[level] = hmm_nonmpx_ssid(&hmm->hmm);
     for (t = hmm->next; t; t = t->alt)
         dump_search_tree(dict, t, level + 1);
 }
