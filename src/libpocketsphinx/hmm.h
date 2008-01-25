@@ -103,9 +103,11 @@
 #ifndef _S3_HMM_H_
 #define _S3_HMM_H_
 
+/* System headers. */
 #include <stdio.h>
 
-#include "sphinx_types.h"
+/* SphinxBase headers. */
+#include <sphinx_types.h>
 
 #ifdef __cplusplus
 extern "C" {

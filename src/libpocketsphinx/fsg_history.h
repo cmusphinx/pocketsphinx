@@ -74,12 +74,13 @@
 #define __S2_FSG_HISTORY_H__
 
 
-#include <s2types.h>
-#include <word_fsg.h>
-#include <blkarray_list.h>
-#include <fsg_psubtree.h>
-#include <fbs.h>
+/* SphinxBase headers. */
+#include <prim_type.h>
 
+/* Local headers. */
+#include "blkarray_list.h"
+#include "fsg_psubtree.h"
+#include "word_fsg.h"
 
 /*
  * The Viterbi history structure.  This is a tree, with the root at the

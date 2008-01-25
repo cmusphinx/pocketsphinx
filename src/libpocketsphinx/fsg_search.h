@@ -47,10 +47,13 @@
 #define __S2_FSG_SEARCH_H__
 
 
+/* SphinxBase headers. */
 #include <glist.h>
-#include <fsg_lextree.h>
-#include <fsg_history.h>
-#include <fbs.h>
+
+/* Local headers. */
+#include "fsg_lextree.h"
+#include "fsg_history.h"
+#include "fbs.h"
 
 
 typedef struct fsg_search_s {

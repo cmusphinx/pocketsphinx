@@ -282,9 +282,9 @@
 #include <feat.h>
 #include <fe.h>
 #include <fixpoint.h>
+#include <prim_type.h>
 
 /* Local headers */
-#include "s2types.h"
 #include "s2_semi_mgau.h"
 #include "senscr.h"
 #include "search_const.h"

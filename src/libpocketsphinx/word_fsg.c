@@ -124,6 +124,7 @@
  * 		Started.
  */
 
+/* System headers. */
 #ifdef _WIN32_WCE
 /*MC in a debug build it's implicitly included by assert.h
      but you need this in a release build */
@@ -131,16 +132,18 @@
 #else
 #include <time.h>
 #endif /* _WIN32_WCE */
-
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
+/* SphinxBase headers. */
 #include <err.h>
 #include <ckd_alloc.h>
 #include <cmd_ln.h>
+#include <prim_type.h>
+#include <strfuncs.h>
 
-#include "s2types.h"
-#include "strfuncs.h"
+/* Local headers. */
 #include "kb.h"
 #include "phone.h"
 #include "dict.h"

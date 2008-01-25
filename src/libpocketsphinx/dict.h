@@ -34,8 +34,9 @@
 #ifndef _DICT_H_
 #define _DICT_H_
 
-#include "hash_table.h"
-#include "glist.h"
+/* SphinxBase headers. */
+#include <hash_table.h>
+#include <glist.h>
 
 #define NO_WORD		-1
 

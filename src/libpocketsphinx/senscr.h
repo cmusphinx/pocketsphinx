@@ -42,9 +42,12 @@
 #ifndef __SENSCR_H__
 #define __SENSCR_H__
 
+/* SphinxBase headers. */
 #include <fe.h>
+#include <prim_type.h>
+
+/* Local headers. */
 #include "hmm.h"
-#include "s2types.h"
 
 /* Bit-vector operations for maintaining senone_active_vec */
 #define BITVEC_SEN_ACTIVE

@@ -94,19 +94,22 @@
 #define FALSE	0
 #endif
 
+/* System headers. */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 
+/* SphinxBase headers. */
 #include <ckd_alloc.h>
 #include <cmd_ln.h>
 #include <strfuncs.h>
 #include <ngram_model.h>
 #include <linklist.h>
 #include <err.h>
+#include <prim_type.h>
 
-#include "s2types.h"
+/* Local headesr. */
 #include "dict.h"
 #include "search_const.h"
 #include "kb.h"

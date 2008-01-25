@@ -96,9 +96,11 @@
 #ifndef _LIBFBS_MS_CONT_MGAU_H_
 #define _LIBFBS_MS_CONT_MGAU_H_
 
+/* SphinxBase headers. */
 #include <sphinx_types.h>
 #include <feat.h>
 
+/* Local headers. */
 #include "ms_gauden.h"
 #include "ms_senone.h"
 

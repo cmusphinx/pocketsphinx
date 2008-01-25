@@ -46,12 +46,16 @@
 #ifndef __S2_WORD_FSG_H__
 #define __S2_WORD_FSG_H__
 
-
+/* System headers. */
 #include <stdio.h>
 #include <string.h>
-#include <s2types.h>
+
+/* SphinxBase headers. */
+#include <prim_type.h>
 #include <glist.h>
-#include <fbs.h>
+
+/* Local headers. */
+#include "fbs.h"
 
 
 /*

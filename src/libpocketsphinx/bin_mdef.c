@@ -46,16 +46,21 @@
  * 	David Huggins-Daines <dhuggins@cs.cmu.edu>
  *********************************************************************/
 
+/* System headers. */
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
+/* SphinxBase headers. */
+#include <prim_type.h>
+#include <ckd_alloc.h>
+#include <byteorder.h>
+#include <sphinx_types.h>
+#include <err.h>
+
+/* Local headers. */
 #include "mdef.h"
 #include "bin_mdef.h"
-#include "s2types.h"
-#include "ckd_alloc.h"
-#include "byteorder.h"
-#include "err.h"
 
 bin_mdef_t *
 bin_mdef_read_text(const char *filename)

@@ -38,8 +38,10 @@
 #ifndef _S2_SEARCH_H_
 #define _S2_SEARCH_H_	1
 
+/* SphinxBase headers. */
 #include <fe.h>
 
+/* Local headers. */
 #include "fbs.h"
 #include "dict.h"
 #include "hmm.h"

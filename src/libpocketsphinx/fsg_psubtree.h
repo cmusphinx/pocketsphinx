@@ -86,10 +86,14 @@
 #ifndef __S2_FSG_PSUBTREE_H__
 #define __S2_FSG_PSUBTREE_H__
 
+/* System headers. */
+#include <stdio.h>
+#include <string.h>
 
-#include "stdio.h"
-#include "string.h"
-#include "s2types.h"
+/* SphinxBase headers. */
+#include <prim_type.h>
+
+/* Local headers. */
 #include "word_fsg.h"
 #include "hmm.h"
 

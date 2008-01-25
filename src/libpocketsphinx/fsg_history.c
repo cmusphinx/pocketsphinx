@@ -48,15 +48,19 @@
  * 		Started..
  */
 
+/* System headers. */
+#include <assert.h>
 
-#include <s2types.h>
+/* SphinxBase headers. */
+#include <prim_type.h>
 #include <err.h>
 #include <ckd_alloc.h>
-#include <assert.h>
-#include <fsg_history.h>
-#include <kb.h>
-#include <phone.h>
-#include <search.h>
+
+/* Local headers. */
+#include "fsg_history.h"
+#include "kb.h"
+#include "phone.h"
+#include "search.h"
 
 
 #define __FSG_DBG__	0

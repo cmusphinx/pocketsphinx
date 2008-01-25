@@ -86,15 +86,17 @@
  * 		Started.
  */
 
-
+/* System headers. */
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
+/* SphinxBase headers. */
 #include <ckd_alloc.h>
 #include <cmd_ln.h>
 #include <err.h>
 
+/* Local headers. */
 #include "fsg_psubtree.h"
 #include "kb.h"
 #include "dict.h"

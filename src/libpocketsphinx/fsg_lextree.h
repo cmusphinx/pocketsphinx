@@ -76,9 +76,9 @@
 #ifndef __S2_FSG_LEXTREE_H__
 #define __S2_FSG_LEXTREE_H__
 
-
-#include <word_fsg.h>
-#include <fsg_psubtree.h>
+/* Local headers. */
+#include "word_fsg.h"
+#include "fsg_psubtree.h"
 
 
 typedef struct fsg_lextree_s {

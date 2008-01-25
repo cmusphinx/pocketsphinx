@@ -67,6 +67,7 @@
  *
  */
 
+/* Local headers. */
 #include "ms_mgau.h"
 #include "senscr.h"
 

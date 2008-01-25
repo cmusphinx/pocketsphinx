@@ -45,9 +45,11 @@
 #ifndef _KB_EXPORTS_H_
 #define _KB_EXPORTS_H_
 
+/* SphinxBase headers. */
 #include <ngram_model.h>
 #include <logmath.h>
 
+/* Local headers. */
 #include "log.h"
 #include "dict.h"
 #include "tmat.h"

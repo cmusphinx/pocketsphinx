@@ -118,8 +118,11 @@
  *
  */
 
+/* SphinxBase headers. */
 #include <sphinx_types.h>
-#include <vector.h>
+
+/* Local headers. */
+#include "vector.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -66,7 +66,7 @@
 #define __S2_BLKARRAY_LIST_H__
 
 
-#include <s2types.h>
+#include <prim_type.h>
 
 
 /*

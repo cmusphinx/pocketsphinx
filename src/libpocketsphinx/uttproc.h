@@ -38,6 +38,7 @@
 #ifndef __UTTPROC_H__
 #define __UTTPROC_H__
 
+/* SphinxBase headers. */
 #include <feat.h>
 #include <prim_type.h>
 

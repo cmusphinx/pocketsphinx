@@ -68,7 +68,6 @@
 #endif
 
 #include "fbs.h"
-#include "s2types.h"
 #include "err.h"
 #include "ad.h"
 

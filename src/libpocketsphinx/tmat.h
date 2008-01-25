@@ -85,9 +85,11 @@
 #ifndef _S3_TMAT_H_
 #define _S3_TMAT_H_
 
+/* System headers. */
 #include <stdio.h>
 
-#include "sphinx_types.h"
+/* SphinxBase headers. */
+#include <sphinx_types.h>
 
 /** \file tmat.h
  *  \brief Transition matrix data structure.

@@ -92,15 +92,19 @@
  * 		Started based on original S3 implementation.
  */
 
+/* System headers. */
 #include <string.h>
 
+/* SphinxBase headers. */
+#include <logmath.h>
+#include <err.h>
+#include <ckd_alloc.h>
+
+/* Local headers. */
 #include "tmat.h"
 #include "kb.h"
 #include "bio.h"
 #include "vector.h"
-#include "logmath.h"
-#include "err.h"
-#include "ckd_alloc.h"
 
 #define TMAT_PARAM_VERSION		"1.0"
 

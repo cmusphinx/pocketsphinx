@@ -111,12 +111,15 @@
  * 		Created.
  */
 
+/* System headers. */
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
 
+/* SphinxBase headers. */
 #include <bio.h>
 
+/* Local headers. */
 #include "ms_senone.h"
 #include "log.h"
 

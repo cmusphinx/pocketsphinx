@@ -82,14 +82,18 @@
  *   CI phones must appear first in model definition file.
  */
 
-
+/* System headers. */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+
+/* SphinxBase headers. */
+#include <ckd_alloc.h>
+#include <err.h>
+
+/* Local headers. */
 #include "mdef.h"
-#include "ckd_alloc.h"
-#include "err.h"
 
 
 #define MODEL_DEF_VERSION	"0.3"

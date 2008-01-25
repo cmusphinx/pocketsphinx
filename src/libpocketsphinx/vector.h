@@ -49,8 +49,11 @@
 #ifndef __VECTOR_H__
 #define __VECTOR_H__
 
+/* System headers. */
 #include <stdio.h>
-#include "s2types.h"
+
+/* SphinxBase headers. */
+#include <prim_type.h>
 
 typedef float32 *vector_t;
 

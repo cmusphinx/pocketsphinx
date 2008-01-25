@@ -88,13 +88,17 @@
  * 		Started, based on an earlier version.
  */
 
+/* System headers. */
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 
+/* SphinxBase headers. */
+#include <ckd_alloc.h>
+
+/* Local headers. */
 #include "hmm.h"
-#include "ckd_alloc.h"
 #include "search_const.h"
 
 hmm_context_t *

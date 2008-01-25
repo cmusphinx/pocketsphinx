@@ -48,15 +48,17 @@
  * 		Started.
  */
 
-
+/* System headers. */
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
+/* SphinxBase headers. */
 #include <err.h>
 #include <ckd_alloc.h>
 #include <cmd_ln.h>
 
+/* Local headers. */
 #include "search.h"
 #include "search_const.h"
 #include "phone.h"

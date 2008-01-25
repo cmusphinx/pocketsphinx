@@ -65,16 +65,20 @@
  * 		Copied from Eric Thayer.
  */
 
-
+/* System headers. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <math.h>
-#include "sphinx_types.h"
-#include "err.h"
-#include "ckd_alloc.h"
-#include "bitvec.h"
+
+/* SphinxBase headers. */
+#include <sphinx_types.h>
+#include <err.h>
+#include <ckd_alloc.h>
+#include <bitvec.h>
+
+/* Local headers. */
 #include "vector.h"
 
 #if (WIN32)

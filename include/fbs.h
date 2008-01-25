@@ -48,10 +48,10 @@ extern "C" {
 /* SphinxBase headers. */
 #include <cmd_ln.h>
 #include <ngram_model.h>
+#include <prim_type.h>
 
 /* PocketSphinx headers. */
 #include <pocketsphinx_export.h>
-#include <s2types.h>
 
 /**
  * Recognition result (hypothesis) with word segmentation information.

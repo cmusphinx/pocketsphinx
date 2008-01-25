@@ -55,8 +55,9 @@ extern "C" {
 #endif
 #endif /* __cplusplus */
 
-#include "mdef.h"
-#include "sphinx_types.h"
+/* SphinxBase headers. */
+#include <mdef.h>
+#include <sphinx_types.h>
 
 #define BIN_MDEF_FORMAT_VERSION 1
 /* Little-endian machines will write "BMDF" to disk, big-endian ones "FDMB". */

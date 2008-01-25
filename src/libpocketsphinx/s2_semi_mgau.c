@@ -120,10 +120,10 @@
 #include <ckd_alloc.h>
 #include <bio.h>
 #include <err.h>
+#include <prim_type.h>
+#include <sphinx_types.h>
 
 /* Local headers */
-#include "s2types.h"
-#include "sphinx_types.h"
 #include "log.h"
 #include "s2_semi_mgau.h"
 #include "kdtree.h"
@@ -1172,7 +1172,7 @@ s3_precomp(s2_semi_mgau_t *s, float32 vFloor)
                 fvar = *(float32 *) vp;
                 if (fvar < vFloor)
                     fvar = vFloor;
-                d += logmath_log(lmath, 1 / sqrt(fvar * 2.0 * PI));
+                d += logmath_log(lmath, 1 / sqrt(fvar * 2.0 * M_PI));
                 *vp = (var_t) logmath_ln_to_log(lmath, 1.0 / (2.0 * fvar));
             }
             *dp++ = d;

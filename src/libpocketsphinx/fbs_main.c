@@ -195,9 +195,9 @@
 #include <feat.h>
 #include <ckd_alloc.h>
 #include <err.h>
+#include <prim_type.h>
 
 /* Local headers */
-#include "s2types.h"
 #include "strfuncs.h"
 #include "cmdln_macro.h"
 #include "fbs.h"

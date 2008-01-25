@@ -111,15 +111,18 @@
  * 		Very liberally borrowed/adapted from Eric's S3 trainer implementation.
  */
 
+/* System headers. */
 #include <assert.h>
 #include <string.h>
 #include <math.h>
 #include <float.h>
 
+/* SphinxBase headers. */
 #include <bio.h>
 #include <err.h>
 #include <ckd_alloc.h>
 
+/* Local headesr. */
 #include "ms_gauden.h"
 #include "search_const.h"
 #include "log.h"

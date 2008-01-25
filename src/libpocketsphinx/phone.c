@@ -51,17 +51,21 @@
  */
 
 
+/* System headers. */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include "s2types.h"
-#include "ckd_alloc.h"
-#include "strfuncs.h"
+/* SphinxBase headers. */
+#include <prim_type.h>
+#include <ckd_alloc.h>
+#include <strfuncs.h>
+#include <err.h>
+
+/* Local headers. */
 #include "phone.h"
 #include "mdef.h"
 #include "bin_mdef.h"
-#include "err.h"
 #include "kb.h"
 
 

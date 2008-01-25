@@ -51,9 +51,12 @@
 #define __MDEF_H__
 
 
+/* System headers. */
 #include <stdio.h>
-#include "sphinx_types.h"
-#include "hash_table.h"
+
+/* SphinxBase headers. */
+#include <sphinx_types.h>
+#include <hash_table.h>
 
 #ifdef __cplusplus
 extern "C" {

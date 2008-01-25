@@ -116,19 +116,22 @@
  * 
  */
 
+/* System headers. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
+/* SphinxBase headers. */
 #include <err.h>
 #include <ckd_alloc.h>
 #include <cmd_ln.h>
 #include <pio.h>
 #include <ngram_model.h>
 #include <logmath.h>
+#include <strfuncs.h>
 
-#include "strfuncs.h"
+/* Local headers. */
 #include "dict.h"
 #include "s2_semi_mgau.h"
 #include "ms_mgau.h"

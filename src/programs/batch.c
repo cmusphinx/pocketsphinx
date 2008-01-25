@@ -44,7 +44,6 @@
  */
 
 #include <stdio.h>
-#include "s2types.h"
 #include "fbs.h"
 
 #ifdef _WIN32_WCE

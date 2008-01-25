@@ -221,9 +221,9 @@
 #include <err.h>
 #include <cmd_ln.h>
 #include <ngram_model.h>
+#include <prim_type.h>
 
 /* Local includes. */
-#include "s2types.h"
 #include "linklist.h"
 #include "search_const.h"
 #include "dict.h"

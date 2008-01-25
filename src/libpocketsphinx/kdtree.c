@@ -48,14 +48,18 @@
  * 	David Huggins-Daines <dhuggins@cs.cmu.edu>
  *********************************************************************/
 
+/* System headers. */
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include <sphinx_config.h>
 
+/* SphinxBase headers. */
+#include <sphinx_config.h>
+#include <err.h>
+#include <ckd_alloc.h>
+
+/* Local headers. */
 #include "kdtree.h"
-#include "err.h"
-#include "ckd_alloc.h"
 #include "s2_semi_mgau.h"
 
 #define KDTREE_VERSION 1

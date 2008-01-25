@@ -46,10 +46,12 @@
 #ifndef __KDTREE_H__
 #define __KDTREE_H__
 
+/* SphinxBase headers. */
 #include <fixpoint.h>
 #include <fe.h>
+#include <prim_type.h>
 
-#include "s2types.h"
+/* Local headers.  */
 #include "vector.h"
 
 typedef struct kd_tree_node_s kd_tree_node_t;

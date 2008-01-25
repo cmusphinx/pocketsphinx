@@ -53,16 +53,19 @@
  * 		Started.
  */
 
-
+/* System headers. */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
 
-#include "sphinx_types.h"
-#include "err.h"
-#include "ckd_alloc.h"
+/* SphinxBase headers. */
+#include <sphinx_types.h>
+#include <err.h>
+#include <ckd_alloc.h>
+
+/* Local headers. */
 #include "kb.h"
 #include "s2_semi_mgau.h"
 #include "ms_mgau.h"

@@ -52,7 +52,6 @@ noinst_HEADERS =				\
 	posixwin32.h				\
 	s2_semi_mgau.h				\
 	s2io.h					\
-	s2params.h				\
 	search_const.h				\
 	search.h				\
 	senscr.h				\

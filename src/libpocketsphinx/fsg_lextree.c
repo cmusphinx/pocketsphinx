@@ -76,13 +76,17 @@
  * 		Started.
  */
 
-
+/* System headers. */
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
+/* SphinxBase headers. */
 #include <ckd_alloc.h>
 #include <err.h>
-#include <fsg_lextree.h>
+
+/* Local headers. */
+#include "fsg_lextree.h"
 
 
 #define __FSG_DBG__		0

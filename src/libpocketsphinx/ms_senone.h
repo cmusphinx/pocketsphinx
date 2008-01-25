@@ -110,11 +110,13 @@
 #define _LIBFBS_SENONE_H_
 
 
+/* SphinxBase headers. */
 #include <sphinx_types.h>
 #include <err.h>
 #include <ckd_alloc.h>
 #include <cmd_ln.h>
 
+/* Local headers. */
 #include "search_const.h"
 #include "ms_gauden.h"
 

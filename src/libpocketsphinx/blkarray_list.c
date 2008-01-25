@@ -41,12 +41,14 @@
  * 		Started.
  */
 
-
-#include <s2types.h>
+/* SphinxBase headers. */
+#include <prim_type.h>
 #include <err.h>
 #include <ckd_alloc.h>
 #include <assert.h>
-#include <blkarray_list.h>
+
+/* Local headers. */
+#include "blkarray_list.h"
 
 
 #define BLKARRAY_DEFAULT_MAXBLKS	16380

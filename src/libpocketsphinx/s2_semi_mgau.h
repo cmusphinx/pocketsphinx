@@ -42,12 +42,27 @@
 #ifndef __S2_SEMI_MGAU_H__
 #define __S2_SEMI_MGAU_H__
 
+/* SphinxBase headesr. */
 #include <sphinx_types.h>
 #include <fe.h>
 #include <logmath.h>
 #include <mmio.h>
 
+/* Local headers. */
 #include "kdtree.h"
+
+#ifdef FIXED_POINT
+/** Gaussian mean storage type. */
+typedef fixed32 mean_t;
+/** Gaussian precision storage type. */
+typedef int32 var_t;
+/** Language weight storage type. */
+typedef fixed32 lw_t;
+#else
+typedef float32 mean_t;
+typedef float32 var_t;
+typedef float64 lw_t;
+#endif
 
 typedef struct vqFeature_s vqFeature_t;
 

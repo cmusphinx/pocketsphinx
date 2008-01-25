@@ -39,10 +39,12 @@
 		conversions when necessary.
  */
 
+/* System headers. */
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "byteorder.h"
+/* SphinxBase headers. */
+#include <byteorder.h>
 
 int
 awriteshort(char const *file, short *data, int length)

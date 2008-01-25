@@ -108,20 +108,23 @@
  *	
  */
 
+/* System headers. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
+/* SphinxBase headers. */
+#include <prim_type.h>
 #include <cmd_ln.h>
 #include <ckd_alloc.h>
 #include <pio.h>
 #include <hash_table.h>
 #include <err.h>
+#include <strfuncs.h>
+#include <glist.h>
 
-#include "s2types.h"
-#include "strfuncs.h"
-#include "glist.h"
+/* Local headers. */
 #include "phone.h"
 #include "dict.h"
 #include "search_const.h"
