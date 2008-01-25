@@ -379,8 +379,7 @@ build_uttid(char const *utt)
     /* Find uttid */
     for (i = strlen(utt) - 1;
          (i >= 0) && (utt[i] != '\\') && (utt[i] != '/'); --i);
-    if (i == -1) i = 0;
-    utt_id = utt + i;
+    utt_id = utt + i + 1;
 
     /* Copy at most sizeof(utt_name) bytes, then null-terminate. */
     strncpy(utt_name, utt_id, sizeof(utt_name));
