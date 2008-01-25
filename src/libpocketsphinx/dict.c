@@ -121,7 +121,6 @@
 
 #include "s2types.h"
 #include "strfuncs.h"
-#include "basic_types.h"
 #include "glist.h"
 #include "phone.h"
 #include "dict.h"

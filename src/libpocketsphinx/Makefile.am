@@ -33,7 +33,6 @@ libpocketsphinx_la_SOURCES =			\
 
 noinst_HEADERS =				\
 	uttproc.h				\
-	basic_types.h				\
 	bin_mdef.h				\
 	blkarray_list.h				\
 	dict.h					\

@@ -96,7 +96,7 @@ int32 fbs_init(int32 argc, char **argv);
  * on Win32 and Symbian (and possibly other platforms).
  */
 POCKETSPHINX_EXPORT
-arg_t *fbs_get_args(void);
+arg_t const *fbs_get_args(void);
 
 /**
  * Finalize the speech recognition engine.

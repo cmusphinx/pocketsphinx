@@ -241,12 +241,10 @@ static const arg_t feat_defn[] = {
 
 static char utt_name[512];
 
-arg_t *
+arg_t const *
 fbs_get_args(void)
 {
-    /* FIXME: Stupid deconstifying cast shouldn't be here but cmd_ln.h
-     * needs to be fixed first. */
-    return (arg_t *)fbs_args_def;
+    return fbs_args_def;
 }
 
 int
@@ -258,13 +256,8 @@ fbs_init(int32 argc, char **argv)
     if (argv != NULL) {
         cmd_ln_appl_enter(argc, argv,
                           "pocketsphinx.args",
-                          (arg_t *)fbs_args_def);
+                          fbs_args_def);
     }
-
-    /* Compatibility with old forwardonly flag */
-    if ((!cmd_ln_boolean("-fwdtree")) && (!cmd_ln_boolean("-fwdflat")))
-        E_FATAL
-            ("At least one of -fwdtree and -fwdflat flags must be TRUE\n");
 
     /* Look for a feat.params very early on, because it influences
      * everything below. */
@@ -419,10 +412,6 @@ run_ctl_file(char const *ctl_file_name)
             0)
             continue;
 
-        if (strcmp(mfcfile, "--END-OF-DOCUMENT--") == 0) {
-            search_finish_document();
-            continue;
-        }
         if ((ctl_offset-- > 0) || (ctl_count <= 0)
             || ((line_no++ % ctl_incr) != 0))
             continue;

@@ -224,7 +224,6 @@
 
 /* Local includes. */
 #include "s2types.h"
-#include "basic_types.h"
 #include "linklist.h"
 #include "search_const.h"
 #include "dict.h"
@@ -300,7 +299,7 @@ static int32 *word_active;
  *
  * Specifically, homophone_set[w] = wid of next word in the same set as w.
  */
-static WORD_ID *homophone_set;
+static int32 *homophone_set;
 
 /*
  * In any frame, only some HMM tree nodes are active.  active_chan_list[f mod 2] =
@@ -310,7 +309,7 @@ static WORD_ID *homophone_set;
  */
 static chan_t **active_chan_list[2] = { NULL, NULL };
 static int32 n_active_chan[2];  /* #entries in active_chan_list */
-static WORD_ID *active_word_list[2];
+static int32 *active_word_list[2];
 static int32 n_active_word[2];  /* #entries in active_word_list */
 
 static int32 NumWords;          /* Total #words in dictionary */
@@ -398,7 +397,7 @@ static int32 TotalLangScore;
 
 static int32 hyp_alternates = FALSE;
 
-static WORD_ID *single_phone_wid;       /* list of single-phone word ids */
+static int32 *single_phone_wid;       /* list of single-phone word ids */
 static int32 n_1ph_words;       /* #single phone words in dict (total) */
 static int32 n_1ph_LMwords;     /* #single phone dict words also in LM;
                                    these come first in single_phone_wid */
@@ -643,7 +642,7 @@ cache_bptable_paths(int32 bp)
 }
 
 void
-save_bwd_ptr(WORD_ID w, int32 score, int32 path, int32 rc)
+save_bwd_ptr(int32 w, int32 score, int32 path, int32 rc)
 {
     int32 _bp_;
 
@@ -1495,7 +1494,7 @@ search_initialize(void)
     init_search_tree(word_dict);
 
     active_word_list[0] =
-        ckd_calloc(2 * (NumWords + 1), sizeof(WORD_ID));
+        ckd_calloc(2 * (NumWords + 1), sizeof(int32));
     active_word_list[1] = active_word_list[0] + NumWords + 1;
 
     bestbp_rc = ckd_calloc(NumCiPhones,
@@ -2504,32 +2503,6 @@ search_set_skip_alt_frm(int32 flag)
 }
 
 /*
- * SEARCH_FINISH_DOCUMENT: clean up at the end of a "document".
- */
-void
-search_finish_document(void)
-{
-}
-
-void
-searchBestN(void)
-{
-    E_FATAL("searchBestN() not implemented\n");
-}
-
-void
-search_hyp_write(void)
-{
-    E_FATAL("search_hyp_write() not implemented\n");
-}
-
-void
-parse_ref_str(void)
-{
-    E_FATAL("parse_ref_str() not implemented\n");
-}
-
-/*
  * Return the best path in the bptable until now.
  */
 int32
@@ -2638,7 +2611,7 @@ init_search_tree(dictT * dict)
     dict_entry_t *de;
 
     homophone_set =
-        ckd_calloc(NumMainDictWords, sizeof(WORD_ID));
+        ckd_calloc(NumMainDictWords, sizeof(int32));
 
     /* Find #single phone words, and #unique first diphones (#root channels) in dict. */
     max_ph0 = -1;
@@ -2694,7 +2667,7 @@ init_search_tree(dictT * dict)
         i++;
     }
 
-    single_phone_wid = ckd_calloc(n_1ph_words, sizeof(WORD_ID));
+    single_phone_wid = ckd_calloc(n_1ph_words, sizeof(int32));
 
     /*
      * Create search tree once, without using LM, to know the max #nonroot chans.

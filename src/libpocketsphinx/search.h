@@ -40,12 +40,9 @@
 
 #include <fe.h>
 
-#include "basic_types.h"
 #include "fbs.h"
 #include "dict.h"
 #include "hmm.h"
-
-#define NODE_CNT	(HMM_LAST_STATE+1)	/* No. of nodes in Sphinx HMM */
 
 /*
  * Lexical tree node data type.  Not the first HMM for words, which multiplex HMMs
@@ -65,7 +62,7 @@ typedef struct chan_s
 
     int32    ciphone;		/* ciphone for this node */
     union {
-	WORD_ID penult_phn_wid;	/* list of words whose last phone follows this one;
+	int32 penult_phn_wid;	/* list of words whose last phone follows this one;
 				   this field indicates the first of the list; the
 				   rest must be built up in a separate array.  Used
 				   only within HMM tree.  -1 if none */
@@ -86,8 +83,8 @@ typedef struct root_chan_s
                                  * sometimes used interchangeably */
     chan_t *next;		/* first descendant of this channel */
 
-    WORD_ID  penult_phn_wid;
-    WORD_ID  this_phn_wid;	/* list of words consisting of this single phone;
+    int32  penult_phn_wid;
+    int32  this_phn_wid;	/* list of words consisting of this single phone;
 				   actually the first of the list, like penult_phn_wid;
 				   -1 if none */
     int32    diphone;		/* first diphone of this node; all words rooted at this
@@ -100,17 +97,18 @@ typedef struct root_chan_s
  * Back pointer table (forward pass lattice; actually a tree)
  */
 typedef struct bptbl_s {
-    FRAME_ID frame;		/* start or end frame */
-    WORD_ID  wid;		/* Word index */
-    LAT_ID   bp;		/* Back Pointer */
+    int16    frame;		/* start or end frame */
+    uint8    valid;		/* For absolute pruning */
+    uint8    reserved;          /* Not used */
+    int32    wid;		/* Word index */
+    int32    bp;		/* Back Pointer */
     int32    score;		/* Score (best among all right contexts) */
     int32    s_idx;		/* Start of BScoreStack for various right contexts*/
-    WORD_ID  real_wid;		/* wid of this or latest predecessor real word */
-    WORD_ID  prev_real_wid;	/* real word predecessor of real_wid */
+    int32    real_wid;		/* wid of this or latest predecessor real word */
+    int32    prev_real_wid;	/* real word predecessor of real_wid */
     int32    r_diph;		/* rightmost diphone of this word */
     int32    ascr;
     int32    lscr;
-    int32    valid;		/* For absolute pruning */
 } BPTBL_T;
 
 #define NO_BP		-1
@@ -230,7 +228,7 @@ void free_search_tree(void);
 int32 eval_root_chan (void);
 int32 eval_nonroot_chan (void);
 int32 eval_word_chan (void);
-void save_bwd_ptr (WORD_ID w, int32 score, int32 path, int32 rc);
+void save_bwd_ptr (int32 w, int32 score, int32 path, int32 rc);
 void prune_root_chan (void);
 void prune_nonroot_chan (void);
 void last_phone_transition (void);
@@ -274,13 +272,6 @@ void get_expand_wordlist (int32 frm, int32 win);
 
 int32 search_bptbl_wordlist (int32 wid, int32 frm);
 int32 search_bptbl_pred (int32 b);
-
-/* Warning: the following block of functions are not actually implemented. */
-void search_finish_document (void);
-void searchBestN (void);
-void search_hyp_write (void);
-void parse_ref_str (void);
-void search_filtered_endpts (void);
 
 /* Functions from searchlat.c */
 void searchlat_init ( void );

@@ -285,7 +285,6 @@
 
 /* Local headers */
 #include "s2types.h"
-#include "basic_types.h"
 #include "s2_semi_mgau.h"
 #include "senscr.h"
 #include "search_const.h"

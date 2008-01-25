@@ -107,7 +107,6 @@
 #include <err.h>
 
 #include "s2types.h"
-#include "basic_types.h"
 #include "dict.h"
 #include "search_const.h"
 #include "kb.h"
