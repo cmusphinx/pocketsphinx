@@ -1265,6 +1265,9 @@ s2_semi_mgau_free(s2_semi_mgau_t * s)
         ckd_free(s->means[i]);
         ckd_free(s->vars[i]);
     }
+    for (i = 0; i < s->n_kdtrees; ++i)
+        free_kd_tree(s->kdtrees[i]);
+    ckd_free(s->kdtrees);
     ckd_free(s->veclen);
     ckd_free(s->means);
     ckd_free(s->vars);

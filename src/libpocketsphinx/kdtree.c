@@ -273,7 +273,7 @@ free_kd_tree(kd_tree_t * tree)
     /* Balanced binary trees, so we have 2^level-1 nodes. */
     n = (1 << tree->n_level) - 1;
     for (i = 0; i < n; ++i)
-        ckd_free(tree->nodes[n].bbi);
+        ckd_free(tree->nodes[i].bbi);
     ckd_free(tree->nodes);
     ckd_free(tree);
 }

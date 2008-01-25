@@ -420,6 +420,8 @@ kb_close(void)
 
     if (ms_mgau)
         ms_mgau_free(ms_mgau);
+
+    logmath_free(lmath);
 }
 
 char *

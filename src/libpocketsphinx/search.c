@@ -985,9 +985,12 @@ last_phone_transition(void)
     n_lastphn_cand_utt += n_lastphn_cand;
 #endif
 
+    /* For each candidate word (entering its last phone) */
     /* If best LM score and bp for candidate known use it, else sort cands by startfrm */
     for (i = 0, candp = lastphn_cand; i < n_lastphn_cand; i++, candp++) {
+        /* Backpointer entry for it. */
         bpe = &(BPTable[candp->bp]);
+        /* Right context phone table. */
         rcpermtab =
             (bpe->r_diph >=
              0) ? RightContextFwdPerm[bpe->r_diph] : zeroPermTab;
@@ -1001,14 +1004,20 @@ last_phone_transition(void)
          * If this candidate not occurred in an earlier frame, prepare for finding
          * best transition score into last phone; sort by start frame.
          */
+        /* i.e. if we don't have an entry in last_ltrans for this
+         * <word,sf>, then create one */
         if (last_ltrans[candp->wid].sf != bpe->frame + 1) {
+            /* Look for an entry in cand_sf matching the backpointer
+             * for this candidate. */
             for (j = 0; j < n_cand_sf; j++) {
                 if (cand_sf[j].bp_ef == bpe->frame)
                     break;
             }
+            /* Oh, we found one, so chain onto it. */
             if (j < n_cand_sf)
                 candp->next = cand_sf[j].cand;
             else {
+                /* Nope, let's make a new one, allocating cand_sf if necessary. */
                 if (n_cand_sf >= cand_sf_alloc) {
                     if (cand_sf_alloc == 0) {
                         cand_sf =
@@ -1025,10 +1034,12 @@ last_phone_transition(void)
                     }
                 }
 
+                /* Use the newly created cand_sf. */
                 j = n_cand_sf++;
-                candp->next = -1;
+                candp->next = -1; /* End of the chain. */
                 cand_sf[j].bp_ef = bpe->frame;
             }
+            /* Update it to point to this candidate. */
             cand_sf[j].cand = i;
 
             last_ltrans[candp->wid].dscr = WORST_SCORE;
@@ -1581,11 +1592,14 @@ search_free(void)
     ckd_free(lattice_density);
     ckd_free(bestbp_rc);
     ckd_free(lastphn_cand);
+    n_lastphn_cand = 0;
     ckd_free(senone_active);
     ckd_free(senone_active_vec);
     ckd_free(past_senone_scores);
     ckd_free(past_senone_active_vec);
     ckd_free(last_ltrans);
+    ckd_free(cand_sf);
+    cand_sf_alloc = 0;
     ckd_free(sc_scores_memory);
     ckd_free(sc_scores);
     ckd_free(topsen_score);

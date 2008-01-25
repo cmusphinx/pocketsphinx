@@ -47,6 +47,7 @@ main(int argc, char *argv[])
 	TEST_EQUAL(0, uttproc_result(&frm, &hyp, TRUE));
 	/* Bingo! */
 	TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN METERS "));
-		
+
+	TEST_EQUAL(0, fbs_end());
 	return 0;
 }

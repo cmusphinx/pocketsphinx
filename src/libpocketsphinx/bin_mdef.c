@@ -445,6 +445,7 @@ bin_mdef_read(const char *filename)
          m->n_ciphone, m->n_phone - m->n_ciphone, m->n_emit_state,
          m->n_ci_sen, m->n_sen, m->n_sseq);
     m->alloc_mode = BIN_MDEF_IN_MEMORY;
+    fclose(fh);
     return m;
 }
 
