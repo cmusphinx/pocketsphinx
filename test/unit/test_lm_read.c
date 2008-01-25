@@ -40,7 +40,7 @@ main(int argc, char *argv[])
 	 * dictionary that we originally loaded. */
 	TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN DEGREES "));
 	/* So let's add it to the dictionary. */
-	TEST_ASSERT(-1 != uttproc_add_word("METERS", "M IY T ER Z"));
+	TEST_ASSERT(-1 != uttproc_add_word("METERS", "M IY T ER Z", TRUE));
 	/* And try again. */
 	TEST_ASSERT(uttproc_decode_raw_file(DATADIR "/goforward.raw",
 					    "goforward", 0, -1, FALSE));

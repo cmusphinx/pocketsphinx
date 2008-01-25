@@ -478,3 +478,15 @@ lm_delete(char const *lmname)
     ngram_model_free(lm);
     return 0;
 }
+
+ngram_model_t *
+lm_get(char const *lmname)
+{
+    return ngram_model_set_lookup(lmset, lmname);
+}
+
+ngram_model_t *
+lm_get_lmset(char const *lmname)
+{
+    return lmset;
+}

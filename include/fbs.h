@@ -45,10 +45,13 @@ extern "C" {
 }
 #endif
 
-#include <pocketsphinx_export.h>
-
-#include <s2types.h>
+/* SphinxBase headers. */
 #include <cmd_ln.h>
+#include <ngram_model.h>
+
+/* PocketSphinx headers. */
+#include <pocketsphinx_export.h>
+#include <s2types.h>
 
 /**
  * Recognition result (hypothesis) with word segmentation information.
@@ -432,6 +435,26 @@ int32 lm_read(char const *lmfile,
 POCKETSPHINX_EXPORT
 int32 lm_delete(char const *lmname);
 
+/**
+ * Get the underlying language model object by name.
+ *
+ * See <ngram_model.h> in SphinxBase documentation for what can be
+ * done with this object.
+ */
+
+POCKETSPHINX_EXPORT
+ngram_model_t *lm_get(char const *lmname);
+
+/**
+ * Get the language model set object by name.
+ *
+ * See <ngram_model.h> in SphinxBase documentation for what can be
+ * done with this object.
+ */
+
+POCKETSPHINX_EXPORT
+ngram_model_t *lm_get_lmset(char const *lmname);
+
 
 /**
  * Set the currently active LM.
@@ -446,6 +469,11 @@ int32 lm_delete(char const *lmname);
 POCKETSPHINX_EXPORT
 int32 uttproc_set_lm(char const *lmname);
 
+/**
+ * Get the name of the currently active LM.
+ */
+POCKETSPHINX_EXPORT
+char const *uttproc_get_lm(void);
 
 /**
  * Indicate to the decoder that the named LM has been updated (e.g.,
@@ -476,16 +504,26 @@ int32 uttproc_set_context(char const *wd1,
 			  char const *wd2);
 
 /**
- * Add a word to the pronunciation dictionary.
+ * Add a word to the recognizer.
+ *
+ * This function adds a word to the pronunciation dictionary and the
+ * current language model.  If the word is already present in one or
+ * the other, it does whatever is necessary to ensure that the word
+ * can be recognized.
  *
  * @param word Word string to add.
  * @param phones Whitespace-separated list of phoneme strings
  * describing pronunciation of <code>word</code>.
+ * @param update If TRUE, update the search module to recognize the
+ * newly added word.  If adding multiple words, it is more efficient
+ * to pass FALSE here in all but the last word. This is equivalent to
+ * calling uttproc_lmupdate(uttproc_get_lm()).
  * @return Word ID (>= 0) for newly added word, or -1 for failure.
  */
 POCKETSPHINX_EXPORT
 int32 uttproc_add_word(char const *word,
-                       char const *phones);
+                       char const *phones,
+                       int update);
 
 /**
  * Transition in a user-defined finite state grammar.

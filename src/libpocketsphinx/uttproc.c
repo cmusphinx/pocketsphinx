@@ -1484,9 +1484,16 @@ uttproc_set_lm(char const *lmname)
     return 0;
 }
 
+char const *
+uttproc_get_lm(void)
+{
+    return ngram_model_set_current(lmset);
+}
+
 int32
 uttproc_add_word(char const *word,
-                 char const *phones)
+                 char const *phones,
+                 int update)
 {
     int32 wid, lmwid;
     char *pron;
@@ -1509,11 +1516,12 @@ uttproc_add_word(char const *word,
      * weird way that word IDs are handled, it doesn't. */
     if ((lmwid = ngram_model_add_word(lmset, word, 1.0)) == NGRAM_INVALID_WID)
         return -1;
-    else if (lmwid != wid)
-        kb_update_widmap();
 
-    /* Rebuild the search tree.  FIXME: The search tree needs to become dynamic. */
-    search_set_current_lm();
+    /* Rebuild the widmap and search tree if requested. */
+    if (update) {
+        kb_update_widmap();
+        search_set_current_lm();
+    }
     return wid;
 }
 
