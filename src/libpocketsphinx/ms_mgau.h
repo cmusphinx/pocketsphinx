@@ -149,7 +149,7 @@ void ms_mgau_free(ms_mgau_model_t *g /**< In: A set of models to free */
 
 int32 ms_cont_mgau_frame_eval (int32 *senscr,   /**< In/Out: Senone scores*/
 			       ms_mgau_model_t *msg, /**< In: A multi-stream mgau mode */
-			       float32** feat
+			       mfcc_t** feat
     );
 
 

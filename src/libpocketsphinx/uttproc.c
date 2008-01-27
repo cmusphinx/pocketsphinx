@@ -950,7 +950,7 @@ uttproc_rawdata(int16 * raw, int32 len, int32 block)
     /* FRAME_SHIFT is SAMPLING_RATE/FRAME_RATE, thus resulting in
      * number of sample per frame.
      */
-    k = (MAX_UTT_LEN - n_cepfr) * fe->FRAME_SHIFT;
+    k = (MAX_UTT_LEN - n_cepfr) * cmd_ln_float32("-samprate") / cmd_ln_int32("-frate");
     if (len > k) {
         len = k;
         utt_ofl = 1;
