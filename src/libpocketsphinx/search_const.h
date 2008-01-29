@@ -54,16 +54,5 @@
 	 * initialization.
 	 */
 
-#define HMM_5_STATE		1
-	/* Set to TRUE is the is a 5 state HMM, otherwise
-	 * this is a 3 state HMM
-	 */
-
-#if HMM_5_STATE
-#define HMM_LAST_STATE	5
-#else
-#define HMM_LAST_STATE	3
-#endif
-
 #endif /* _SEARCH_CONST_H_ */
 
