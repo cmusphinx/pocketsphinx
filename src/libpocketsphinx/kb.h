@@ -86,12 +86,9 @@ extern s2_semi_mgau_t *semi_mgau;
 extern ms_mgau_model_t *ms_mgau;
 
 /* Global dictionary. */
-extern dictT *word_dict;
+extern dict_t *word_dict;
 
 /* Global language model set. */
 extern ngram_model_t *lmset;
-
-/* Global phone transition matrix (to be replaced by a LM) */
-extern int32 **phonetp;
 
 #endif

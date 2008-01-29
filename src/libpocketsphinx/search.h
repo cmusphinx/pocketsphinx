@@ -221,8 +221,8 @@ void search_dump_lattice (char const *file);
 void search_dump_lattice_ascii (char const *file);
 void dump_traceword_chan (void);
 
-void init_search_tree (dictT *dict);
-void create_search_tree (dictT *dict, int32 use_lm);
+void init_search_tree (dict_t *dict);
+void create_search_tree (dict_t *dict, int32 use_lm);
 void delete_search_tree (void);
 void delete_search_subtree (chan_t *hmm);
 void free_search_tree(void);

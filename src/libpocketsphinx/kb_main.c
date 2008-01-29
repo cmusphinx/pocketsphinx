@@ -35,87 +35,6 @@
  *
  */
 
-/* KB.C - for compile_kb
- * 
- * 02-Dec-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Added acoustic score weight (applied only to S3 continuous
- * 		acoustic models).
- * 
- * 22-Nov-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Incorporated continuous acoustic model handling.
- * 
- * 06-Aug-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Added phonetp (phone transition probs matrix) for use in
- * 		allphone search.
- * 
- * 27-May-97  M K Ravishankar (rkm@cs.cmu.edu) at Carnegie-Mellon University
- * 		Included Bob Brennan's personaldic handling (similar to 
- *              oovdic).
- * 
- * 09-Dec-94	M K Ravishankar (rkm@cs) at Carnegie Mellon University
- * 		Cleaned up kb() interface; got rid of fwd-only, astar-mode
- * 		etc.
- * 
- * Revision 8.6  94/10/11  12:33:49  rkm
- * Minor changes.
- * 
- * Revision 8.5  94/07/29  11:52:10  rkm
- * Removed lmSetParameters() call; that is now part of lm_3g.c.
- * Added lm_init_oov() call to LM module.
- * Added ilm_init() call to ILM module.
- * 
- * Revision 8.4  94/05/19  14:19:12  rkm
- * Commented out computePhraseLMProbs().
- * 
- * Revision 8.3  94/04/14  14:38:01  rkm
- * Added OOV words sub-dictionary.
- * 
- * Revision 8.1  94/02/15  15:08:13  rkm
- * Derived from v7.  Includes multiple start symbols for the LISTEN
- * project.  Includes multiple LMs for grammar switching.
- * 
- * Revision 6.15  94/02/11  13:15:18  rkm
- * Initial revision (going into v7).
- * Added multiple start symbols for the LISTEN project.
- * 
- * Revision 6.14  94/01/31  16:35:17  rkm
- * Moved check for use of 8/16-bit senones on HPs to after pconf().
- * 
- * Revision 6.13  94/01/07  17:48:13  rkm
- * Added option to use trigrams in forward pass (simple implementation).
- * 
- * Revision 6.12  94/01/05  16:04:20  rkm
- * *** empty log message ***
- * 
- * Revision 6.11  94/01/05  16:02:17  rkm
- * Placed senone probs compression under conditional compilation.
- * 
- * Revision 6.10  93/12/05  17:25:46  rkm
- * Added -8bsen option and necessary datastructures.
- * 
- * Revision 6.9  93/12/04  16:24:11  rkm
- * Added check for use of -16bsen if compiled with _HPUX_SOURCE.
- * 
- * Revision 6.8  93/11/15  12:20:39  rkm
- * Added -ilmusesdarpalm flag.
- * 
- * Revision 6.7  93/11/03  12:42:35  rkm
- * Added -16bsen option to compress senone probs to 16 bits.
- * 
- * Revision 6.6  93/10/27  17:29:45  rkm
- * *** empty log message ***
- * 
- * Revision 6.5  93/10/15  14:59:13  rkm
- * Bug-fix in call to create_ilmwid_map.
- * 
- * Revision 6.4  93/10/13  16:48:16  rkm
- * Added ilm_init call to Roni's ILM and whatever else is needed.
- * Added option to process A* only (in which case phoneme-level
- * files are not loaded).  Added bigram_only argument to lm_read
- * call.
- * 
- */
-
 /* System headers. */
 #include <stdio.h>
 #include <stdlib.h>
@@ -143,7 +62,7 @@
 #include "search.h"
 
 /* Dictionary. */
-dictT *word_dict;
+dict_t *word_dict;
 
 /* Transition matrices. */
 tmat_t *tmat;

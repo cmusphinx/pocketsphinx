@@ -2605,7 +2605,7 @@ static root_chan_t *all_rhmm; /* All root HMMs */
  * LM in use.
  */
 void
-init_search_tree(dictT * dict)
+init_search_tree(dict_t * dict)
 {
     int32 w, mpx, max_ph0, i;
     dict_entry_t *de;
@@ -2703,7 +2703,7 @@ init_nonroot_chan(chan_t * hmm, int32 ph, int32 ci)
  * search tree to suit the currently active LM.
  */
 void
-create_search_tree(dictT * dict, int32 use_lm)
+create_search_tree(dict_t * dict, int32 use_lm)
 {
     dict_entry_t *de;
     chan_t *hmm;
@@ -2886,7 +2886,7 @@ create_search_tree(dictT * dict, int32 use_lm)
 #if 0
 int32 mid_stk[100];
 static
-dump_search_tree_root(dictT * dict, root_chan_t * hmm)
+dump_search_tree_root(dict_t * dict, root_chan_t * hmm)
 {
     int32 i;
     chan_t *t;
@@ -2912,7 +2912,7 @@ dump_search_tree_root(dictT * dict, root_chan_t * hmm)
 }
 
 static
-dump_search_tree(dictT * dict, chan_t * hmm, int32 level)
+dump_search_tree(dict_t * dict, chan_t * hmm, int32 level)
 {
     int32 i;
     chan_t *t;

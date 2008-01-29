@@ -149,8 +149,8 @@ static void recordMissingTriphone(char *triphoneStr);
 static dict_entry_t *_new_dict_entry(char *word_str,
                                      char *pronoun_str,
                                      int32 use_context);
-static void _dict_list_add(dictT * dict, dict_entry_t * entry);
-static void dict_load(dictT * dict, char *filename, int32 * word_id,
+static void _dict_list_add(dict_t * dict, dict_entry_t * entry);
+static void dict_load(dict_t * dict, char *filename, int32 * word_id,
                       int32 use_context);
 
 static hash_table_t *mtpHT;     /* Missing triphone hash table */
@@ -194,7 +194,7 @@ get_dict_size(char *file)
 }
 
 int32
-dict_read(dictT * dict, char *filename, /* Main dict file */
+dict_read(dict_t * dict, char *filename, /* Main dict file */
           char *n_filename,     /* Noise dict file */
           int32 use_context)
 /*------------------------------------------------------------*
@@ -402,7 +402,7 @@ dict_cleanup(void)
 
 
 void
-dict_free(dictT * dict)
+dict_free(dict_t * dict)
 {
     int32 i;
     int32 entry_count;
@@ -425,7 +425,7 @@ dict_free(dictT * dict)
 }
 
 static void
-dict_load(dictT * dict, char *filename, int32 * word_id, int32 use_context)
+dict_load(dict_t * dict, char *filename, int32 * word_id, int32 use_context)
 {
     static char const *rname = "dict_load";
     char dict_str[1024];
@@ -510,7 +510,7 @@ dict_load(dictT * dict, char *filename, int32 * word_id, int32 use_context)
 }
 
 int32
-dictStrToWordId(dictT * dict, char const *dict_str, int verbose)
+dictStrToWordId(dict_t * dict, char const *dict_str, int verbose)
 /*------------------------------------------------------------*
  * return the dict id for dict_str
  *------------------------------------------------------------*/
@@ -528,13 +528,13 @@ dictStrToWordId(dictT * dict, char const *dict_str, int verbose)
 }
 
 int32
-dict_to_id(dictT * dict, char const *dict_str)
+dict_to_id(dict_t * dict, char const *dict_str)
 {
     return ((int32) dictStrToWordId(dict, dict_str, FALSE));
 }
 
 char const *
-dictid_to_str(dictT * dict, int32 id)
+dictid_to_str(dict_t * dict, int32 id)
 {
     return (dict->dict_list[id]->word);
 }
@@ -717,7 +717,7 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
  * Return 1 if successful, 0 if not.
  */
 static int32
-replace_dict_entry(dictT * dict,
+replace_dict_entry(dict_t * dict,
                    dict_entry_t * entry,
                    char const *word_str,
                    char *pronoun_str,
@@ -845,7 +845,7 @@ replace_dict_entry(dictT * dict,
  * Return the word id of the entry updated if successful.  If any error, return -1.
  */
 int32
-dict_add_word(dictT * dict, char const *word, char *pron)
+dict_add_word(dict_t * dict, char const *word, char *pron)
 {
     dict_entry_t *entry;
     int32 wid, new_entry;
@@ -874,7 +874,7 @@ dict_add_word(dictT * dict, char const *word, char *pron)
 }
 
 static void
-_dict_list_add(dictT * dict, dict_entry_t * entry)
+_dict_list_add(dict_t * dict, dict_entry_t * entry)
 /*------------------------------------------------------------*/
 {
     if (!dict->dict_list)
@@ -892,7 +892,7 @@ _dict_list_add(dictT * dict, dict_entry_t * entry)
 }
 
 dict_entry_t *
-dict_get_entry(dictT * dict, int i)
+dict_get_entry(dict_t * dict, int i)
 {
     return ((i < dict->dict_entry_count) ?
             dict->dict_list[i] : (dict_entry_t *) 0);
@@ -900,15 +900,15 @@ dict_get_entry(dictT * dict, int i)
 
 /* FIXME: could be extern inline */
 int32
-dict_count(dictT * dict)
+dict_count(dict_t * dict)
 {
     return dict->dict_entry_count;
 }
 
-dictT *
+dict_t *
 dict_new(void)
 {
-    return ckd_calloc(sizeof(dictT), 1);
+    return ckd_calloc(sizeof(dict_t), 1);
 }
 
 static void
@@ -1176,13 +1176,13 @@ dict_left_context_bwd_size(void)
 }
 
 int32
-dict_get_num_main_words(dictT * dict)
+dict_get_num_main_words(dict_t * dict)
 {
     return ((int32) dictStrToWordId(dict, "</s>", FALSE));
 }
 
 int32
-dictid_to_baseid(dictT * dict, int32 wid)
+dictid_to_baseid(dict_t * dict, int32 wid)
 {
     return (dict->dict_list[wid]->wid);
 }
@@ -1197,21 +1197,21 @@ dict_is_new_word(int32 wid)
 }
 
 int32
-dict_pron(dictT * dict, int32 w, int32 ** pron)
+dict_pron(dict_t * dict, int32 w, int32 ** pron)
 {
     *pron = dict->dict_list[w]->ci_phone_ids;
     return (dict->dict_list[w]->len);
 }
 
 int32
-dict_next_alt(dictT * dict, int32 w)
+dict_next_alt(dict_t * dict, int32 w)
 {
     return (dict->dict_list[w]->alt);
 }
 
 /* Write OOV words added at run time to the given file and return #words written */
 int32
-dict_write_oovdict(dictT * dict, char const *file)
+dict_write_oovdict(dict_t * dict, char const *file)
 {
     int32 w, p;
     FILE *fp;
@@ -1242,7 +1242,7 @@ dict_write_oovdict(dictT * dict, char const *file)
 }
 
 int32
-dict_is_filler_word(dictT * dict, int32 wid)
+dict_is_filler_word(dict_t * dict, int32 wid)
 {
     return (wid >= dict->filler_start);
 }

@@ -63,22 +63,22 @@ typedef struct _dict {
     int32		ci_index_len;	 	/* number of indecies */
     int32		*ci_index;		/* Index to each group */
     int32		filler_start;		/* Start of filler words */
-} dictT;
+} dict_t;
 
-int32 dict_read (dictT *dict,
+int32 dict_read (dict_t *dict,
 		 char *filename,	/* Main dict file */
 		 char *n_filename,	/* Noise dict file */
 		 int32 use_context);
 
-void dict_free (dictT *dict);
+void dict_free (dict_t *dict);
 /* Clean up global variables that dict_free doesn't (argh) */
 void dict_cleanup(void);
 
 #define DICT_SILENCE_WORDSTR	"SIL"
 
-dict_entry_t *dict_get_entry (dictT *dict, int i);
-int32 dict_count(dictT *dict);
-dictT *dict_new(void);
+dict_entry_t *dict_get_entry (dict_t *dict, int i);
+int32 dict_count(dict_t *dict);
+dict_t *dict_new(void);
 glist_t dict_mtpList(void);
 int32 **dict_left_context_fwd(void);
 int32 **dict_right_context_fwd(void);
@@ -88,19 +88,19 @@ int32 **dict_right_context_fwd_perm (void);
 int32 *dict_right_context_fwd_size (void);
 int32 **dict_left_context_bwd_perm (void);
 int32 *dict_left_context_bwd_size (void);
-int32 dict_to_id(dictT *dict, char const *dict_str);
-char const *dictid_to_str(dictT *dict, int32 id);
-int32 dictStrToWordId (dictT *dict, char const *dict_str, int verbose);
-int32 dict_add_word (dictT *dict, char const *word, char *pron);
-int32 dict_pron (dictT *dict, int32 w, int32 **pron);
-int32 dict_next_alt (dictT *dict, int32 w);
-int32 dict_write_oovdict (dictT *dict, char const *file);
-int32 dictid_to_baseid (dictT *dict, int32 wid);
-int32 dict_get_num_main_words (dictT *dict);
+int32 dict_to_id(dict_t *dict, char const *dict_str);
+char const *dictid_to_str(dict_t *dict, int32 id);
+int32 dictStrToWordId (dict_t *dict, char const *dict_str, int verbose);
+int32 dict_add_word (dict_t *dict, char const *word, char *pron);
+int32 dict_pron (dict_t *dict, int32 w, int32 **pron);
+int32 dict_next_alt (dict_t *dict, int32 w);
+int32 dict_write_oovdict (dict_t *dict, char const *file);
+int32 dictid_to_baseid (dict_t *dict, int32 wid);
+int32 dict_get_num_main_words (dict_t *dict);
 int32 dict_is_new_word (int32 wid);
 
 /* Return TRUE if the given wid is a filler word, FALSE otherwise */
-int32 dict_is_filler_word (dictT *dict, int32 wid);
+int32 dict_is_filler_word (dict_t *dict, int32 wid);
 
 
 #define WordIdToStr(d,x)	((x == NO_WORD) ? "" : d->dict_list[x]->word)
