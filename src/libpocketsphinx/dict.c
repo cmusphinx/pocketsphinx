@@ -680,14 +680,14 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
         }
     }
 
-    entry = (dict_entry_t *) calloc((size_t) 1, sizeof(dict_entry_t));
+    entry = (dict_entry_t *) ckd_calloc((size_t) 1, sizeof(dict_entry_t));
     entry->word = ckd_salloc(word_str);
     entry->len = pronoun_len;
     entry->mpx = use_context;
     entry->alt = -1;
     if (pronoun_len != 0) {
         entry->ci_phone_ids =
-            (int32 *) calloc((size_t) pronoun_len, sizeof(int32));
+            (int32 *) ckd_calloc((size_t) pronoun_len, sizeof(int32));
         memcpy(entry->ci_phone_ids, ciPhoneId,
                pronoun_len * sizeof(int32));
         /*
@@ -697,7 +697,7 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
         if (use_context && (pronoun_len == 1))
             pronoun_len += 1;
         entry->phone_ids =
-            (int32 *) calloc((size_t) pronoun_len, sizeof(int32));
+            (int32 *) ckd_calloc((size_t) pronoun_len, sizeof(int32));
         memcpy(entry->phone_ids, triphone_ids,
                pronoun_len * sizeof(int32));
     }
