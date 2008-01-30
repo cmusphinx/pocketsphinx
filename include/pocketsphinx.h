@@ -83,29 +83,10 @@ arg_t const *pocketsphinx_args(void);
  */
 void pocketsphinx_free(pocketsphinx_t *ps);
 
-/* Some miscellaneous accessors... */
-
 /**
  * Get the configuration object for this decoder.
  */
 cmd_ln_t *pocketsphinx_get_config(pocketsphinx_t *ps);
-
-/**
- * Get the log-math computation object for this decoder.
- */
-logmath_t *pocketsphinx_get_logmath(pocketsphinx_t *ps);
-
-/**
- * Get the acoustic feature computation object for this decoder.
- */
-fe_t *pocketsphinx_get_fe(pocketsphinx_t *ps);
-
-/**
- * Get the dynamic feature computation object for this decoder.
- */
-feat_t *pocketsphinx_get_feat(pocketsphinx_t *ps);
-
-/* More accessors to come... */
 
 /**
  * Run a control file in batch mode.

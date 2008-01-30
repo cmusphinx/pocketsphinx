@@ -54,22 +54,90 @@
 #include "s2_semi_mgau.h"
 #include "ms_mgau.h"
 #include "tmat.h"
+#include "hmm.h"
 
 /**
  * Acoustic model structure.
+ *
+ * This object encapsulates all stages of acoustic processing, from
+ * raw audio input to acoustic score output.  The reason for grouping
+ * all of these modules together is that they all have to "agree" in
+ * their parameterizations, and the configuration of the acoustic and
+ * dynamic feature computation is completely dependent on the
+ * parameters used to build the original acoustic model (which should
+ * by now always be specified in a feat.params file).
+ *
+ * Because there is not a one-to-one correspondence from blocks of
+ * input audio or frames of input features to frames of acoustic
+ * scores (due to dynamic feature calculation), 
  */
 struct acmod_s {
+    /* Feature computation: */
+    fe_t *fe;                  /**< Acoustic feature computation. */
+    feat_t *fcb;               /**< Dynamic feature computation. */
+
+    /* Model parameters: */
     bin_mdef_t *mdef;          /**< Model definition. */
     tmat_t *tmat;              /**< Transition matrices. */
-    /* Means, variances, and mixture weights: */
     s2_semi_mgau_t *semi_mgau; /**< Fast semi-continuous models. */
     ms_mgau_model_t *ms_mgau;  /**< Slow generic models. */
 
+    /* Senone scoring: */
     int32 *senone_scores;        /**< GMM scores for current frame. */
     bitvec_t *senone_active_vec; /**< Active GMMs in current frame. */
     int32 *senone_active;        /**< Array of active GMMs. */
     int32 n_senone_active;       /**< Number of active GMMs. */
+
+    /* Feature computation: */
+    mfcc_t **mfc_buf;   /**< Temporary buffer of acoustic features. */
+    mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */    
+    char *mfclogdir;    /**< Log directory for MFCC files. */
+    char *rawlogdir;    /**< Log directory for raw audio files. */
+    FILE *rawfp;        /**< File for writing raw audio data. */
+    FILE *mfcfp;        /**< File for writing acoustic feature data. */
 };
 typedef struct acmod_s acmod_t;
+
+/**
+ * Initialize an acoustic model.
+ *
+ * @param config a command-line object containing parameters.  This
+ *               pointer is not retained by this object.
+ */
+acmod_t *acmod_init(cmd_ln_t *config);
+
+/**
+ * Finalize an acoustic model.
+ */
+void acmod_free(acmod_t *acmod);
+
+/**
+ * Compute acoustic scores for a frame of dynamic features.
+ *
+ * @param feat frame of feature data to evaluate
+ * @param frame_idx index of this frame in the utterance
+ * @param compute_all whether to evaulate all senones or only active ones
+ * @return best un-normalized senone score
+ */
+int acmod_compute(acmod_t *acmod, mfcc_t **feat,
+                  int frame_idx, int compute_all);
+
+/**
+ * Clear set of active senones.
+ */
+void acmod_clear_active(acmod_t *acmod);
+
+/**
+ * Activate senones associated with an HMM.
+ */
+void acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm);
+
+/**
+ * Return the array of active senones.
+ *
+ * @param out_n_active Output: number of elements in returned array.
+ * @return array of active senone IDs.
+ */
+int32 const *acmod_active_list(acmod_t *acmod, int32 *out_n_active);
 
 #endif /* __ACMOD_H__ */

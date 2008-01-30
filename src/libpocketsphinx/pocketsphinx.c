@@ -63,9 +63,20 @@ pocketsphinx_init(cmd_ln_t *config)
 {
 	pocketsphinx_t *ps;
 
+	/* First initialize the structure itself */
 	ps = ckd_calloc(1, sizeof(*ps));
 	ps->config = config;
+
+	/* Acoustic model (contains front-end and feature parameters) */
+
+	/* Acoustic and dynamic feature computation (must agree with acoustic model). */
+	
+
 	return ps;
+
+error_out:
+	pocketsphinx_free(ps);
+	return NULL;
 }
 
 arg_t const *
@@ -85,24 +96,6 @@ cmd_ln_t *
 pocketsphinx_get_config(pocketsphinx_t *ps)
 {
 	return ps->config;
-}
-
-logmath_t *
-pocketsphinx_get_logmath(pocketsphinx_t *ps)
-{
-	return ps->lmath;
-}
-
-fe_t *
-pocketsphinx_get_fe(pocketsphinx_t *ps)
-{
-	return ps->fe;
-}
-
-feat_t *
-pocketsphinx_get_feat(pocketsphinx_t *ps)
-{
-	return ps->fcb;
 }
 
 int

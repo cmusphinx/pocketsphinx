@@ -73,9 +73,6 @@ typedef enum {
 struct pocketsphinx_s {
     /* Model parameters and such. */
     cmd_ln_t *config;  /**< Configuration. */
-    logmath_t *lmath;  /**< Log math computation. */
-    fe_t *fe;          /**< Acoustic feature computation. */
-    feat_t *fcb;       /**< Dynamic feature computation. */
     acmod_t *acmod;    /**< Acoustic model. */
     dict_t *dict;      /**< Pronunciation dictionary. */
 
@@ -88,14 +85,10 @@ struct pocketsphinx_s {
     int32 uttno;        /**< Utterance counter. */
     char *uttid;        /**< Utterance ID for current utterance. */
     char *uttid_prefix; /**< Prefix for automatic utterance IDs. */
-    char *mfclogdir;    /**< Log directory for MFCC files. */
-    char *rawlogdir;    /**< Log directory for raw audio files. */
     char *hypstr;       /**< Hypothesis string for current utt. */
     search_hyp_t *hyp;  /**< Hypothesis segmentation for current utt. */
     FILE *matchfp;      /**< File for writing recognition results. */
     FILE *matchsegfp;   /**< File for writing segmentation results. */
-    FILE *rawfp;        /**< File for writing raw audio data. */
-    FILE *mfcfp;        /**< File for writing acoustic feature data. */
 
     mfcc_t **mfc_buf;   /**< Temporary buffer of acoustic features. */
     mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */    
