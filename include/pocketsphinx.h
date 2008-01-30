@@ -46,12 +46,114 @@ extern "C" {
 
 /* SphinxBase headers we need. */
 #include <cmd_ln.h>
-#include <ngram_model.h>
-#include <err.h>
+#include <logmath.h>
+#include <fe.h>
+#include <feat.h>
 
 /* PocketSphinx headers (not many of them!) */
 #include <pocketsphinx_export.h>
 #include <fbs.h>
+
+/**
+ * PocketSphinx speech recognizer object.
+ */
+typedef struct pocketsphinx_s pocketsphinx_t;
+
+/**
+ * Initialize the decoder from a configuration object.
+ *
+ * @note The decoder retains ownership of the pointer
+ * <code>config</code>, so you must not attempt to free it manually.
+ *
+ * @param config a command-line structure, as created by
+ * cmd_ln_parse_r() or cmd_ln_parse_file_r().
+ */
+pocketsphinx_t *pocketsphinx_init(cmd_ln_t *config);
+
+/**
+ * Returns the argument definitions used in pocketsphinx_init().
+ *
+ * This is here to avoid exporting global data, which is problematic
+ * on Win32 and Symbian (and possibly other platforms).
+ */
+arg_t const *pocketsphinx_args(void);
+
+/**
+ * Finalize the decoder.
+ */
+void pocketsphinx_free(pocketsphinx_t *ps);
+
+/* Some miscellaneous accessors... */
+
+/**
+ * Get the configuration object for this decoder.
+ */
+cmd_ln_t *pocketsphinx_get_config(pocketsphinx_t *ps);
+
+/**
+ * Get the log-math computation object for this decoder.
+ */
+logmath_t *pocketsphinx_get_logmath(pocketsphinx_t *ps);
+
+/**
+ * Get the acoustic feature computation object for this decoder.
+ */
+fe_t *pocketsphinx_get_fe(pocketsphinx_t *ps);
+
+/**
+ * Get the dynamic feature computation object for this decoder.
+ */
+feat_t *pocketsphinx_get_feat(pocketsphinx_t *ps);
+
+/* More accessors to come... */
+
+/**
+ * Run a control file in batch mode.
+ */
+int pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
+                              char const *ctlfile);
+
+/**
+ * Start utterance processing.
+ */
+int pocketsphinx_start_utt(pocketsphinx_t *ps);
+
+/**
+ * Decode raw audio data.
+ *
+ * @param no_search If non-zero, perform feature extraction but don't
+ * do any recognition yet.  This may be necessary if your processor
+ * has trouble doing recognition in real-time.
+ * @param full_utt If non-zero, this block of data is a full utterance
+ * worth of data.  This may allow the recognizer to produce more
+ * accurate results.
+ */
+int pocketsphinx_process_raw(pocketsphinx_t *ps,
+                             int16 const *data,
+                             int32 n_samples,
+                             int do_search,
+                             int full_utt);
+
+/**
+ * Decode acoustic feature data.
+ *
+ * @param no_search If non-zero, perform feature extraction but don't
+ * do any recognition yet.  This may be necessary if your processor
+ * has trouble doing recognition in real-time.
+ * @param full_utt If non-zero, this block of data is a full utterance
+ * worth of data.  This may allow the recognizer to produce more
+ * accurate results.
+ */
+int pocketsphinx_process_cep(pocketsphinx_t *ps,
+                             mfcc_t const **data,
+                             int32 n_frames,
+                             int no_search,
+                             int full_utt);
+
+/**
+ * End utterance processing.
+ */
+int pocketsphinx_end_utt(pocketsphinx_t *ps);
 
 /**
  * @mainpage PocketSphinx API Documentation

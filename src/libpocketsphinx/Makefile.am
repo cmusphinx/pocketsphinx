@@ -29,9 +29,13 @@ libpocketsphinx_la_SOURCES =			\
 	tmat.c					\
 	uttproc.c				\
 	vector.c				\
-	word_fsg.c
+	word_fsg.c				\
+	pocketsphinx.c
 
 noinst_HEADERS =				\
+	pocketsphinx_internal.h			\
+	acmod.h					\
+	ngram_search.h				\
 	uttproc.h				\
 	bin_mdef.h				\
 	blkarray_list.h				\

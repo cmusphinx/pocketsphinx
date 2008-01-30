@@ -50,6 +50,7 @@
 #include <feat.h>
 
 /* Local headers. */
+#include "pocketsphinx.h"
 #include "acmod.h"
 #include "dict.h"
 #include "ngram_search.h"
@@ -97,68 +98,7 @@ struct pocketsphinx_s {
     FILE *mfcfp;        /**< File for writing acoustic feature data. */
 
     mfcc_t **mfc_buf;   /**< Temporary buffer of acoustic features. */
-    mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */
-    
-}
-typedef struct pocketsphinx_s pocketsphinx_t;
-
-/**
- * Initialize the decoder from a configuration object.
- */
-pocketsphinx_t *pocketsphinx_init(cmd_ln_t *config);
-
-/**
- * Finalize the decoder.
- */
-void pocketsphinx_free(pocketsphinx_t *pocketsphinx);
-
-/**
- * Run a control file in batch mode.
- */
-int pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
-                              char const *ctlfile);
-
-/**
- * Start utterance processing.
- */
-int pocketsphinx_start_utt(pocketsphinx_t *ps);
-
-/**
- * Decode raw audio data.
- *
- * @param no_search If non-zero, perform feature extraction but don't
- * do any recognition yet.  This may be necessary if your processor
- * has trouble doing recognition in real-time.
- * @param full_utt If non-zero, this block of data is a full utterance
- * worth of data.  This may allow the recognizer to produce more
- * accurate results.
- */
-int pocketsphinx_process_raw(pocketsphinx_t *ps,
-                             int16 const *data,
-                             int32 n_samples,
-                             int do_search,
-                             int full_utt);
-
-/**
- * Decode acoustic feature data.
- *
- * @param no_search If non-zero, perform feature extraction but don't
- * do any recognition yet.  This may be necessary if your processor
- * has trouble doing recognition in real-time.
- * @param full_utt If non-zero, this block of data is a full utterance
- * worth of data.  This may allow the recognizer to produce more
- * accurate results.
- */
-int pocketsphinx_process_cep(pocketsphinx_t *ps,
-                             mfcc_t const **data,
-                             int32 n_frames,
-                             int no_search,
-                             int full_utt);
-
-/**
- * End utterance processing.
- */
-int pocketsphinx_end_utt(pocketsphinx_t *ps);
-                             
+    mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */    
+};
 
 #endif /* __POCKETSPHINX_INTERNAL_H__ */

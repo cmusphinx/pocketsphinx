@@ -35,41 +35,111 @@
  *
  */
 
-/**
- * @file acmod.h Acoustic model structures for PocketSphinx.
- */
-
-#ifndef __ACMOD_H__
-#define __ACMOD_H__
+/* System headers. */
+#include <stdio.h>
 
 /* SphinxBase headers. */
-#include <cmd_ln.h>
-#include <logmath.h>
-#include <fe.h>
-#include <feat.h>
-#include <bitvec.h>
+#include <err.h>
 
 /* Local headers. */
-#include "bin_mdef.h"
-#include "s2_semi_mgau.h"
-#include "ms_mgau.h"
-#include "tmat.h"
+#include "pocketsphinx_internal.h"
+#include "cmdln_macro.h"
 
-/**
- * Acoustic model structure.
- */
-struct acmod_s {
-    bin_mdef_t *mdef;          /**< Model definition. */
-    tmat_t *tmat;              /**< Transition matrices. */
-    /* Means, variances, and mixture weights: */
-    s2_semi_mgau_t *semi_mgau; /**< Fast semi-continuous models. */
-    ms_mgau_model_t *ms_mgau;  /**< Slow generic models. */
-
-    int32 *senone_scores;        /**< GMM scores for current frame. */
-    bitvec_t *senone_active_vec; /**< Active GMMs in current frame. */
-    int32 *senone_active;        /**< Array of active GMMs. */
-    int32 n_senone_active;       /**< Number of active GMMs. */
+static const arg_t ps_args_def[] = {
+    input_cmdln_options(),
+    waveform_to_cepstral_command_line_macro(),
+    output_cmdln_options(),
+    am_cmdln_options(),
+    lm_cmdln_options(),
+    dictionary_cmdln_options(),
+    fsg_cmdln_options(),
+    beam_cmdln_options(),
+    search_cmdln_options(),
+    CMDLN_EMPTY_OPTION
 };
-typedef struct acmod_s acmod_t;
 
-#endif /* __ACMOD_H__ */
+pocketsphinx_t *
+pocketsphinx_init(cmd_ln_t *config)
+{
+	pocketsphinx_t *ps;
+
+	ps = ckd_calloc(1, sizeof(*ps));
+	ps->config = config;
+	return ps;
+}
+
+arg_t const *
+pocketsphinx_args(void)
+{
+	return ps_args_def;
+}
+
+void
+pocketsphinx_free(pocketsphinx_t *ps)
+{
+	cmd_ln_free_r(ps->config);
+	ckd_free(ps);
+}
+
+cmd_ln_t *
+pocketsphinx_get_config(pocketsphinx_t *ps)
+{
+	return ps->config;
+}
+
+logmath_t *
+pocketsphinx_get_logmath(pocketsphinx_t *ps)
+{
+	return ps->lmath;
+}
+
+fe_t *
+pocketsphinx_get_fe(pocketsphinx_t *ps)
+{
+	return ps->fe;
+}
+
+feat_t *
+pocketsphinx_get_feat(pocketsphinx_t *ps)
+{
+	return ps->fcb;
+}
+
+int
+pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
+			  char const *ctlfile)
+{
+	return -1;
+}
+
+int
+pocketsphinx_start_utt(pocketsphinx_t *ps)
+{
+	return -1;
+}
+
+int
+pocketsphinx_process_raw(pocketsphinx_t *ps,
+			 int16 const *data,
+			 int32 n_samples,
+			 int do_search,
+			 int full_utt)
+{
+	return -1;
+}
+
+int
+pocketsphinx_process_cep(pocketsphinx_t *ps,
+			 mfcc_t const **data,
+			 int32 n_frames,
+			 int no_search,
+			 int full_utt)
+{
+	return -1;
+}
+
+int
+pocketsphinx_end_utt(pocketsphinx_t *ps)
+{
+	return -1;
+}

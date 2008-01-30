@@ -1,6 +1,6 @@
-TESTS = test_lm_init.sh test_lmctl_init.sh test_lm_read
+TESTS = test_lm_init.sh test_lmctl_init.sh test_lm_read test_ps_init
 
-check_PROGRAMS = test_lm_read
+check_PROGRAMS = test_lm_read test_ps_init
 
 INCLUDES = \
 	-I$(top_srcdir)/include \

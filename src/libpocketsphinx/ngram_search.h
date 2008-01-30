@@ -49,6 +49,7 @@
 
 /* Local headers. */
 #include "acmod.h"
+#include "hmm.h"
 
 /**
  * Lexical tree node data type.
