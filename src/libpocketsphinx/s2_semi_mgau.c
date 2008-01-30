@@ -444,32 +444,24 @@ SCVQComputeScores(s2_semi_mgau_t * s, int32 compallsen)
 	switch (s->topN) {
 	case 4:
 	    return get_scores4_8b_all(s);
-	    break;
 	case 2:
 	    return get_scores2_8b_all(s);
-	    break;
 	case 1:
 	    return get_scores1_8b_all(s);
-	    break;
 	default:
 	    return get_scores_8b_all(s);
-	    break;
 	}
     }
     else {
 	switch (s->topN) {
 	case 4:
 	    return get_scores4_8b(s);
-	    break;
 	case 2:
 	    return get_scores2_8b(s);
-	    break;
 	case 1:
 	    return get_scores1_8b(s);
-	    break;
 	default:
 	    return get_scores_8b(s);
-	    break;
 	}
     }
 }
