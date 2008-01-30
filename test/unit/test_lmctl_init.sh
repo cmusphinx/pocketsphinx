@@ -9,7 +9,7 @@ run_program pocketsphinx_batch \
     -hmm $model/hmm/wsj1 \
     -lmctlfn $data/test.lmctl \
     -lmname turtle \
-    -dict $data/wsj/wlist5o.nvp.dict \
+    -dict $model/lm/cmudict.0.6d \
     > $bn.log 2>&1
 
 # Test whether it actually completed

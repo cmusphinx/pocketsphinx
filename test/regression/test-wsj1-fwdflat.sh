@@ -8,7 +8,7 @@ echo "Test: $bn"
 run_program pocketsphinx_batch \
     -hmm $model/hmm/wsj1 \
     -lm $data/wsj/wlist5o.nvp.lm.DMP \
-    -dict $data/wsj/wlist5o.nvp.dict \
+    -dict $model/lm/cmudict.0.6d \
     -ctl $data/wsj/test5k.s1.ctl \
     -cepdir $data/wsj \
     -cepext .mfc \
