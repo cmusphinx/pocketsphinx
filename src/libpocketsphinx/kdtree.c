@@ -109,7 +109,7 @@ read_bbi_list(FILE * fp, kd_tree_node_t * node, int32 maxbbi)
         }
         bbi_list[0] = bbi;
         nbbi = 1;
-        while (fscanf(fp, "%d", &bbi)) {
+        while (fscanf(fp, "%d", &bbi) > 0) {
             if (feof(fp))
                 break;
             if (bbi >= 256) {
