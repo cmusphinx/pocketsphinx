@@ -40,6 +40,7 @@
 
 /* SphinxBase headers. */
 #include <err.h>
+#include <strfuncs.h>
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"
@@ -76,6 +77,31 @@ pocketsphinx_init(cmd_ln_t *config)
     /* Dictionary and triphone mappings. */
     if ((ps->dict = dict_new(config)) == NULL)
         goto error_out;
+    if (0) {
+        char *fdictfn = NULL;
+        /* Look for noise word dictionary in the HMM directory if not given */
+        if (cmd_ln_str_r(config, "-hmm")
+            && !cmd_ln_str_r(config, "-fdict")) {
+            FILE *tmp;
+            fdictfn = string_join(cmd_ln_str_r(config, "-hmm"),
+                                  "/noisedict", NULL);
+            if ((tmp = fopen(fdictfn, "r")) == NULL) {
+                ckd_free(fdictfn);
+                fdictfn = NULL;
+            }
+            else {
+                fclose(tmp);
+            }
+        }
+        if (dict_read(ps->dict,
+                      cmd_ln_str_r(config, "-dict"),
+                      fdictfn ? fdictfn : cmd_ln_str_r(config, "-fdict"),
+                      !cmd_ln_boolean_r(config, "-usewdphones")) < 0) {
+            ckd_free(fdictfn);
+            goto error_out;
+        }
+        ckd_free(fdictfn);
+    }
 
     return ps;
 error_out:
