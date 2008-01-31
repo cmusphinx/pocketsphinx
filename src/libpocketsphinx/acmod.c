@@ -35,61 +35,99 @@
  *
  */
 
+
 /**
- * @file pocketsphinx_internal.h Internal implementation of
- * PocketSphinx decoder.
+ * @file acmod.c Acoustic model structures for PocketSphinx.
  * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
  */
 
-#ifndef __POCKETSPHINX_INTERNAL_H__
-#define __POCKETSPHINX_INTERNAL_H__
+/* System headers. */
 
 /* SphinxBase headers. */
-#include <cmd_ln.h>
-#include <logmath.h>
-#include <fe.h>
-#include <feat.h>
 
 /* Local headers. */
-#include "pocketsphinx.h"
 #include "acmod.h"
-#include "dict.h"
-#include "ngram_search.h"
-#include "fsg_search.h"
 
-/**
- * Utterance processing state.
- */
-typedef enum {
-    UTTSTATE_UNDEF = -1,  /**< Undefined state */
-    UTTSTATE_IDLE = 0,    /**< Idle, can change models, etc. */
-    UTTSTATE_BEGUN = 1,   /**< Begun, can only do recognition. */
-    UTTSTATE_ENDED = 2,   /**< Ended, a result is now available. */
-    UTTSTATE_STOPPED = 3  /**< Stopped, can be resumed. */
-} uttstate_t;
+acmod_t *
+acmod_init(cmd_ln_t *config, fe_t *fe, feat_t *fcb)
+{
+    acmod_t *acmod;
 
-/**
- * Decoder object.
- */
-struct pocketsphinx_s {
-    /* Model parameters and such. */
-    cmd_ln_t *config;  /**< Configuration. */
-    acmod_t *acmod;    /**< Acoustic model. */
-    dict_t *dict;      /**< Pronunciation dictionary. */
+    acmod = ckd_calloc(1, sizeof(*acmod));
+    if (fe) {
+        /* Verify parameter match. */
+        acmod->fe = fe;
+    }
+    if (fcb) {
+        acmod->fcb = fcb;
+    }
+    return acmod;
+}
 
-    /* Search modules. */
-    ngram_search_t *ngs; /**< N-Gram search module. */
-    fsg_search_t *fsgs;  /**< Finite-State search module. */
+void
+acmod_free(acmod_t *acmod)
+{
+}
 
-    /* Utterance-processing related stuff. */
-    uttstate_t uttstate;/**< Current state of utterance processing. */
-    int32 uttno;        /**< Utterance counter. */
-    char *uttid;        /**< Utterance ID for current utterance. */
-    char *uttid_prefix; /**< Prefix for automatic utterance IDs. */
-    char *hypstr;       /**< Hypothesis string for current utt. */
-    search_hyp_t *hyp;  /**< Hypothesis segmentation for current utt. */
-    FILE *matchfp;      /**< File for writing recognition results. */
-    FILE *matchsegfp;   /**< File for writing segmentation results. */
-};
+int
+acmod_process_raw(acmod_t *acmod,
+		  int16 const **inout_raw,
+		  int *inout_n_samps,
+		  int full_utt)
+{
+    return 0;
+}
 
-#endif /* __POCKETSPHINX_INTERNAL_H__ */
+int
+acmod_process_cep(acmod_t *acmod,
+		  mfcc_t const ***inout_cep,
+		  int *inout_n_frames,
+		  int full_utt)
+{
+    return 0;
+}
+
+int
+acmod_process_feat(acmod_t *acmod,
+		   mfcc_t const ***feat)
+{
+    return 0;
+}
+
+int32 const *
+acmod_score(acmod_t *acmod,
+	    int *out_frame_idx,
+	    int *out_best_score,
+	    int *out_best_senid)
+{
+    int32 best_score = acmod->log_zero;
+    int32 best_idx = -1;
+
+    /* If senone scores haven't been generated for this frame,
+     * compute them. */
+
+    if (out_frame_idx) *out_frame_idx = acmod->output_frame;
+    if (out_best_score) *out_best_score = best_score;
+    if (out_best_senid) *out_best_senid = best_idx;
+    return acmod->senone_scores;
+}
+
+void
+acmod_clear_active(acmod_t *acmod)
+{
+}
+
+void
+acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm)
+{
+}
+
+int32 const *
+acmod_active_list(acmod_t *acmod, int32 *out_n_active)
+{
+    /* If active list has not been generated for this frame,
+     * generate it from the active bitvector. */
+
+    if (out_n_active) *out_n_active = acmod->n_senone_active;
+    return acmod->senone_active;
+}

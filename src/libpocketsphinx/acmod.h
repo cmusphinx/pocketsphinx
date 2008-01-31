@@ -37,10 +37,14 @@
 
 /**
  * @file acmod.h Acoustic model structures for PocketSphinx.
+ * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
  */
 
 #ifndef __ACMOD_H__
 #define __ACMOD_H__
+
+/* System headers. */
+#include <stdio.h>
 
 /* SphinxBase headers. */
 #include <cmd_ln.h>
@@ -89,10 +93,12 @@ struct acmod_s {
     bitvec_t *senone_active_vec; /**< Active GMMs in current frame. */
     int32 *senone_active;        /**< Array of active GMMs. */
     int32 n_senone_active;       /**< Number of active GMMs. */
+    int32 log_zero;              /**< Zero log-probability value. */
 
     /* Feature computation: */
+    int16 output_frame; /**< Index of last computed frame of dynamic features. */
     mfcc_t **mfc_buf;   /**< Temporary buffer of acoustic features. */
-    mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */    
+    mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */
     char *mfclogdir;    /**< Log directory for MFCC files. */
     char *rawlogdir;    /**< Log directory for raw audio files. */
     FILE *rawfp;        /**< File for writing raw audio data. */
@@ -105,8 +111,17 @@ typedef struct acmod_s acmod_t;
  *
  * @param config a command-line object containing parameters.  This
  *               pointer is not retained by this object.
+ * @param fe a previously-initialized acoustic feature module to use,
+ *           or NULL to create one automatically.  If this is supplied
+ *           and its parameters do not match those in the acoustic
+ *           model, this function will fail.  This pointer is not retained.
+ * @param fe a previously-initialized dynamic feature module to use,
+ *           or NULL to create one automatically.  If this is supplied
+ *           and its parameters do not match those in the acoustic
+ *           model, this function will fail.  This pointer is not retained.
+ * @return a newly initialized acmod_t, or NULL on failure.
  */
-acmod_t *acmod_init(cmd_ln_t *config);
+acmod_t *acmod_init(cmd_ln_t *config, fe_t *fe, feat_t *fcb);
 
 /**
  * Finalize an acoustic model.

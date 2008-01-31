@@ -5,6 +5,7 @@ lib_LTLIBRARIES = libpocketsphinx.la
 libpocketsphinx_la_LDFLAGS = -version-info 1:0:0
 
 libpocketsphinx_la_SOURCES =			\
+	acmod.c					\
 	awriteshort.c				\
 	bin_mdef.c				\
 	blkarray_list.c				\
