@@ -89,9 +89,6 @@ struct pocketsphinx_s {
     search_hyp_t *hyp;  /**< Hypothesis segmentation for current utt. */
     FILE *matchfp;      /**< File for writing recognition results. */
     FILE *matchsegfp;   /**< File for writing segmentation results. */
-
-    mfcc_t **mfc_buf;   /**< Temporary buffer of acoustic features. */
-    mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */    
 };
 
 #endif /* __POCKETSPHINX_INTERNAL_H__ */

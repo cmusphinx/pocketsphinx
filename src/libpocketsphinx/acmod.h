@@ -69,7 +69,9 @@
  *
  * Because there is not a one-to-one correspondence from blocks of
  * input audio or frames of input features to frames of acoustic
- * scores (due to dynamic feature calculation), 
+ * scores (due to dynamic feature calculation), results may not be
+ * immediately available after input, and the output results will not
+ * correspond to the last piece of data input.
  */
 struct acmod_s {
     /* Feature computation: */
@@ -112,15 +114,69 @@ acmod_t *acmod_init(cmd_ln_t *config);
 void acmod_free(acmod_t *acmod);
 
 /**
- * Compute acoustic scores for a frame of dynamic features.
+ * Feed raw audio data to the acoustic model for scoring.
  *
- * @param feat frame of feature data to evaluate
- * @param frame_idx index of this frame in the utterance
- * @param compute_all whether to evaulate all senones or only active ones
- * @return best un-normalized senone score
+ * @param inout_raw In: Pointer to buffer of raw samples
+ *                  Out: Pointer to next sample to be read
+ * @param inout_n_samps In: Number of samples available
+ *                      Out: Number of samples remaining
+ * @param full_utt If non-zero, this block represents a full
+ *                 utterance and should be processed as such.
+ * @return Number of frames of data processed
  */
-int acmod_compute(acmod_t *acmod, mfcc_t **feat,
-                  int frame_idx, int compute_all);
+int acmod_process_raw(acmod_t *acmod,
+                      int16 const **inout_raw,
+                      int *inout_n_samps,
+                      int full_utt);
+
+/**
+ * Feed acoustic feature data into the acoustic model for scoring.
+ *
+ * @param inout_cep In: Pointer to buffer of features
+ *                  Out: Pointer to next frame to be read
+ * @param inout_n_frames In: Number of frames available
+ *                      Out: Number of frames remaining
+ * @param full_utt If non-zero, this block represents a full
+ *                 utterance and should be processed as such.
+ * @return Number of frames of data processed
+ */
+int acmod_process_cep(acmod_t *acmod,
+                      mfcc_t const ***inout_cep,
+                      int *inout_n_frames,
+                      int full_utt);
+
+/**
+ * Feed dynamic feature data into the acoustic model for scoring.
+ *
+ * Unlike acmod_process_raw() and acmod_process_cep(), this function
+ * accepts a single frame at a time.  This is because there is no need
+ * to do buffering when using dynamic features as input.  However, if
+ * the dynamic feature buffer is full, this function will fail, so you
+ * should either always check the return value, or always pair a call
+ * to it with a call to acmod_score().
+ *
+ * @param feat Pointer to one frame of dynamic features.
+ * @return Number of frames processed (either 0 or 1).
+ */
+int acmod_process_feat(acmod_t *acmod,
+                       mfcc_t const ***feat);
+                       
+
+/**
+ * Score one frame of data.
+ *
+ * @param out_frame_idx  Output: frame index corresponding to this set
+ *                       of scores.
+ * @param out_best_score Output: best un-normalized acoustic score.
+ * @param out_best_senid Output: senone ID corresponding to best score.
+ * @return Array of senone scores for this frame, or NULL if no frame
+ *         is available for scoring.  The data pointed to persists only
+ *         until the next call to acmod_score().
+ */
+int32 const *acmod_score(acmod_t *acmod,
+                         int *out_frame_idx,
+                         int *out_best_score,
+                         int *out_best_senid);
 
 /**
  * Clear set of active senones.
