@@ -2,6 +2,8 @@ TESTS = test_lm_init.sh test_lmctl_init.sh test_lm_read test_ps_init
 
 check_PROGRAMS = test_lm_read test_ps_init
 
+noinst_HEADERS = test_macros.h
+
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
