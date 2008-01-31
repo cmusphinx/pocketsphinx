@@ -96,7 +96,7 @@
  * For now, allocate the entire lextree statically.
  */
 fsg_lextree_t *
-fsg_lextree_init(word_fsg_t * fsg)
+fsg_lextree_init(cmd_ln_t *config, word_fsg_t * fsg)
 {
     int32 s;
     fsg_lextree_t *lextree;
@@ -118,7 +118,7 @@ fsg_lextree_init(word_fsg_t * fsg)
     lextree->n_pnode = 0;
     for (s = 0; s < word_fsg_n_state(fsg); s++) {
         lextree->root[s] =
-            fsg_psubtree_init(fsg, s, &(lextree->alloc_head[s]));
+            fsg_psubtree_init(config, fsg, s, &(lextree->alloc_head[s]));
 
         for (pn = lextree->alloc_head[s]; pn; pn = pn->alloc_next)
             lextree->n_pnode++;

@@ -79,19 +79,19 @@
 
 
 fsg_search_t *
-fsg_search_init(word_fsg_t * fsg)
+fsg_search_init(cmd_ln_t *config, word_fsg_t * fsg)
 {
     fsg_search_t *search;
     float32 lw;
     int32 pip, wip;
 
     search = (fsg_search_t *) ckd_calloc(1, sizeof(fsg_search_t));
-
+    search->config = config;
     search->fsg = fsg;
 
     if (fsg) {
         search->fsglist = glist_add_ptr(NULL, (void *) fsg);
-        search->lextree = fsg_lextree_init(fsg);
+        search->lextree = fsg_lextree_init(config, fsg);
     }
     else {
         search->fsglist = NULL;
@@ -120,9 +120,9 @@ fsg_search_init(word_fsg_t * fsg)
     search->wbeam = search->wbeam_orig;
 
     /* LM related weights/penalties */
-    lw = cmd_ln_float32("-lw");
-    pip = (int32) (logmath_log(lmath, cmd_ln_float32("-pip")) * lw);
-    wip = (int32) (logmath_log(lmath, cmd_ln_float32("-wip")) * lw);
+    lw = cmd_ln_float32_r(config, "-lw");
+    pip = (int32) (logmath_log(lmath, cmd_ln_float32_r(config, "-pip")) * lw);
+    wip = (int32) (logmath_log(lmath, cmd_ln_float32_r(config, "-wip")) * lw);
 
     E_INFO("FSG(beam: %d, pbeam: %d, wbeam: %d; wip: %d, pip: %d)\n",
            search->beam_orig, search->pbeam_orig, search->wbeam_orig,
@@ -258,7 +258,7 @@ fsg_search_set_current_fsg(fsg_search_t * search, char *name)
         fsg_lextree_free(search->lextree);
 
     /* Allocate new lextree for the given FSG */
-    search->lextree = fsg_lextree_init(fsg);
+    search->lextree = fsg_lextree_init(search->config, fsg);
 
     /* Inform the history module of the new fsg */
     fsg_history_set_fsg(search->history, fsg);
@@ -348,7 +348,7 @@ fsg_search_hmm_eval(fsg_search_t * search)
     search->n_hmm_eval += n;
 
     /* Adjust beams if #active HMMs larger than absolute threshold */
-    maxhmmpf = cmd_ln_int32("-maxhmmpf");
+    maxhmmpf = cmd_ln_int32_r(search->config, "-maxhmmpf");
     if (maxhmmpf != -1 && n > maxhmmpf) {
         /*
          * Too many HMMs active; reduce the beam factor applied to the default
@@ -838,7 +838,7 @@ fsg_search_hyp_filter(fsg_search_t * search)
     filt_hyp = search_get_hyp();
     startwid = kb_get_word_id("<s>");
     finishwid = kb_get_word_id("</s>");
-    altpron = cmd_ln_boolean("-reportpron");
+    altpron = cmd_ln_boolean_r(search->config, "-reportpron");
 
     i = 0;
     for (hyp = search->hyp; hyp; hyp = hyp->next) {
@@ -1016,8 +1016,8 @@ fsg_search_utt_end(fsg_search_t * search)
     char file[4096];
 
     /* Write history table if needed */
-    if (cmd_ln_str("-outlatdir")) {
-        sprintf(file, "%s/%s.hist", cmd_ln_str("-outlatdir"),
+    if (cmd_ln_str_r(search->config, "-outlatdir")) {
+        sprintf(file, "%s/%s.hist", cmd_ln_str_r(search->config, "-outlatdir"),
                 uttproc_get_uttid());
         if ((latfp = fopen(file, "w")) == NULL)
             E_ERROR("fopen(%s,w) failed\n", file);
@@ -1032,9 +1032,9 @@ fsg_search_utt_end(fsg_search_t * search)
      * First check if the final state has been reached; otherwise just use
      * the best scoring state.
      */
-    fsg_search_history_backtrace(search, cmd_ln_boolean("-fsgbfs"));
+    fsg_search_history_backtrace(search, cmd_ln_boolean_r(search->config, "-fsgbfs"));
 
-    if (cmd_ln_boolean("-backtrace"))
+    if (cmd_ln_boolean_r(search->config, "-backtrace"))
         fsg_search_hyp_dump(search, stdout);
 
     search_result(&nfr, &result);

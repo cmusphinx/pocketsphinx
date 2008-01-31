@@ -44,9 +44,18 @@
 /* System headers. */
 
 /* SphinxBase headers. */
+#include <cmd_ln.h>
 
 /* Local headers. */
+#include "cmdln_macro.h"
 #include "acmod.h"
+
+/* Feature and front-end parameters that may be in feat.params */
+static const arg_t feat_defn[] = {
+    waveform_to_cepstral_command_line_macro(),
+    input_cmdln_options(),
+    CMDLN_EMPTY_OPTION
+};
 
 acmod_t *
 acmod_init(cmd_ln_t *config, fe_t *fe, feat_t *fcb)

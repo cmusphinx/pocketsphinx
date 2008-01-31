@@ -148,7 +148,9 @@ static fsg_pnode_t *
 psubtree_add_trans(fsg_pnode_t * root,
                    hmm_context_t *ctx,
                    word_fsglink_t * fsglink,
-                   int8 * lclist, int8 * rclist, fsg_pnode_t ** alloc_head)
+                   int8 * lclist, int8 * rclist,
+                   fsg_pnode_t ** alloc_head,
+                   float32 lw, int32 wip, int32 pip)
 {
     int32 **lcfwd;              /* Uncompressed left cross-word context map;
                                    lcfwd[left-diphone][p] = SSID for p.left-diphone */
@@ -164,10 +166,7 @@ psubtree_add_trans(fsg_pnode_t * root,
     int32 **rcfwdperm;
 
     int32 silcipid;             /* Silence CI phone ID */
-    int32 wip;                  /* Word Insertion Penalty */
-    int32 pip;                  /* Phone Insertion Penalty */
     int32 pronlen;              /* Pronunciation length */
-    float32 lw;                 /* Language weight */
     int32 wid;                  /* Word ID */
     int32 did;                  /* Diphone ID */
     int32 ssid;                 /* Senone Sequence ID */
@@ -179,9 +178,6 @@ psubtree_add_trans(fsg_pnode_t * root,
     fsg_pnode_t **ssid_pnode_map;       /* Temp array of ssid->pnode mapping */
     int32 i, j;
 
-    lw = cmd_ln_float32("-lw");
-    pip = (int32) (logmath_log(lmath, cmd_ln_float32("-pip")) * lw);
-    wip = (int32) (logmath_log(lmath, cmd_ln_float32("-wip")) * lw);
     silcipid = phone_to_id("SIL",  TRUE);
     n_ci = phoneCiCount();
 
@@ -416,7 +412,8 @@ psubtree_add_trans(fsg_pnode_t * root,
  * For now, this "tree" will be "flat"
  */
 fsg_pnode_t *
-fsg_psubtree_init(word_fsg_t * fsg, int32 from_state,
+fsg_psubtree_init(cmd_ln_t *config, 
+                  word_fsg_t * fsg, int32 from_state,
                   fsg_pnode_t ** alloc_head)
 {
     int32 dst;
@@ -425,6 +422,8 @@ fsg_psubtree_init(word_fsg_t * fsg, int32 from_state,
     fsg_pnode_t *root;
     hmm_context_t *ctx;
     int32 n_ci;
+    float32 lw;
+    int32 wip, pip;
 
     root = NULL;
     assert(*alloc_head == NULL);
@@ -439,6 +438,10 @@ fsg_psubtree_init(word_fsg_t * fsg, int32 from_state,
                            tmat->tp, senone_scores,
                            mdef->sseq);
 
+    lw = cmd_ln_float32_r(config, "-lw");
+    pip = (int32) (logmath_log(lmath, cmd_ln_float32_r(config, "-pip")) * lw);
+    wip = (int32) (logmath_log(lmath, cmd_ln_float32_r(config, "-wip")) * lw);
+
     for (dst = 0; dst < word_fsg_n_state(fsg); dst++) {
         /* Add all links from from_state to dst */
         for (gn = word_fsg_trans(fsg, from_state, dst); gn;
@@ -450,7 +453,8 @@ fsg_psubtree_init(word_fsg_t * fsg, int32 from_state,
 
             root = psubtree_add_trans(root, ctx, fsglink,
                                       word_fsg_lc(fsg, from_state),
-                                      word_fsg_rc(fsg, dst), alloc_head);
+                                      word_fsg_rc(fsg, dst), alloc_head,
+                                      lw, wip, pip);
         }
     }
 

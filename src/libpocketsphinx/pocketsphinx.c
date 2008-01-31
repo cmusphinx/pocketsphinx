@@ -44,6 +44,7 @@
 /* Local headers. */
 #include "pocketsphinx_internal.h"
 #include "cmdln_macro.h"
+#include "search.h"
 
 static const arg_t ps_args_def[] = {
     input_cmdln_options(),
@@ -61,54 +62,58 @@ static const arg_t ps_args_def[] = {
 pocketsphinx_t *
 pocketsphinx_init(cmd_ln_t *config)
 {
-	pocketsphinx_t *ps;
+    pocketsphinx_t *ps;
 
-	/* First initialize the structure itself */
-	ps = ckd_calloc(1, sizeof(*ps));
-	ps->config = config;
+    /* First initialize the structure itself */
+    ps = ckd_calloc(1, sizeof(*ps));
+    ps->config = config;
 
-	/* Acoustic model (contains front-end and feature parameters) */
+    /* Acoustic model (this is basically everything that
+     * uttproc.c, senscr.c, and others used to do) */
+    if ((ps->acmod = acmod_init(config, NULL, NULL)) == NULL)
+        goto error_out;
 
-	/* Acoustic and dynamic feature computation (must agree with acoustic model). */
-	
+    /* Dictionary and triphone mappings. */
+    if ((ps->dict = dict_new(config)) == NULL)
+        goto error_out;
 
-	return ps;
-
+    return ps;
 error_out:
-	pocketsphinx_free(ps);
-	return NULL;
+    pocketsphinx_free(ps);
+    return NULL;
 }
 
 arg_t const *
 pocketsphinx_args(void)
 {
-	return ps_args_def;
+    return ps_args_def;
 }
 
 void
 pocketsphinx_free(pocketsphinx_t *ps)
 {
-	cmd_ln_free_r(ps->config);
-	ckd_free(ps);
+    dict_free(ps->dict);
+    cmd_ln_free_r(ps->config);
+    ckd_free(ps);
 }
 
 cmd_ln_t *
 pocketsphinx_get_config(pocketsphinx_t *ps)
 {
-	return ps->config;
+    return ps->config;
 }
 
 int
 pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
 			  char const *ctlfile)
 {
-	return -1;
+    return -1;
 }
 
 int
 pocketsphinx_start_utt(pocketsphinx_t *ps)
 {
-	return -1;
+    return -1;
 }
 
 int
@@ -118,7 +123,7 @@ pocketsphinx_process_raw(pocketsphinx_t *ps,
 			 int do_search,
 			 int full_utt)
 {
-	return -1;
+    return -1;
 }
 
 int
@@ -128,11 +133,11 @@ pocketsphinx_process_cep(pocketsphinx_t *ps,
 			 int no_search,
 			 int full_utt)
 {
-	return -1;
+    return -1;
 }
 
 int
 pocketsphinx_end_utt(pocketsphinx_t *ps)
 {
-	return -1;
+    return -1;
 }

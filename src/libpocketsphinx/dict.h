@@ -37,6 +37,7 @@
 /* SphinxBase headers. */
 #include <hash_table.h>
 #include <glist.h>
+#include <cmd_ln.h>
 
 #define NO_WORD		-1
 
@@ -56,7 +57,8 @@ typedef struct dict_entry {
     int32		alt;		/* Alt word idx */
 }                   dict_entry_t;
 
-typedef struct _dict {
+typedef struct dict_s {
+    cmd_ln_t            *config;
     hash_table_t 	*dict;
     int32 		dict_entry_count;
     dict_entry_t	**dict_list;
@@ -65,11 +67,11 @@ typedef struct _dict {
     int32		filler_start;		/* Start of filler words */
 } dict_t;
 
+dict_t *dict_new(cmd_ln_t *config);
 int32 dict_read (dict_t *dict,
 		 char *filename,	/* Main dict file */
 		 char *n_filename,	/* Noise dict file */
 		 int32 use_context);
-
 void dict_free (dict_t *dict);
 /* Clean up global variables that dict_free doesn't (argh) */
 void dict_cleanup(void);
@@ -78,7 +80,6 @@ void dict_cleanup(void);
 
 dict_entry_t *dict_get_entry (dict_t *dict, int i);
 int32 dict_count(dict_t *dict);
-dict_t *dict_new(void);
 glist_t dict_mtpList(void);
 int32 **dict_left_context_fwd(void);
 int32 **dict_right_context_fwd(void);

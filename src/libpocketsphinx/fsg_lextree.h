@@ -76,6 +76,9 @@
 #ifndef __S2_FSG_LEXTREE_H__
 #define __S2_FSG_LEXTREE_H__
 
+/* SphinxBase headers. */
+#include <cmd_ln.h>
+
 /* Local headers. */
 #include "word_fsg.h"
 #include "fsg_psubtree.h"
@@ -100,7 +103,7 @@ typedef struct fsg_lextree_s {
 /*
  * Create, initialize, and return a new phonetic lextree for the given FSM.
  */
-fsg_lextree_t *fsg_lextree_init (word_fsg_t *);
+fsg_lextree_t *fsg_lextree_init (cmd_ln_t *, word_fsg_t *);
 
 
 void fsg_lextree_free (fsg_lextree_t *);

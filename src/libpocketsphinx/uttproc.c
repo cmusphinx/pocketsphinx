@@ -519,7 +519,7 @@ uttproc_init(void)
         FILE *ctlfp;
         char line[16384], word[16384];
 
-        fsg_search = fsg_search_init(NULL);
+        fsg_search = fsg_search_init(cmd_ln_get(), NULL);
 
         fsgfile = cmd_ln_str("-fsg");
 

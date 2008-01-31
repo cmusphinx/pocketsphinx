@@ -247,6 +247,9 @@
 #define SEARCH_TRACE_CHAN_DETAILED	0
 #define SEARCH_SELFTEST_DETAILED	0
 
+/* FIXME: For the time being, we keep this global configuration object. */
+static cmd_ln_t *config;
+
 /*
  * Search structure of HMM instances (channels; see chan_t and root_chan_t definitions):
  * The word triphone sequences (HMM instances) are transformed into tree structures,
@@ -632,7 +635,7 @@ cache_bptable_paths(int32 bp)
     }
     bpe->real_wid = word_dict->dict_list[w]->wid;
 
-    if (cmd_ln_boolean("-fwd3g")) {
+    if (cmd_ln_boolean_r(config, "-fwd3g")) {
         prev_bp = BPTable[prev_bp].bp;
         bpe->prev_real_wid =
             (prev_bp != NO_BP) ? BPTable[prev_bp].real_wid : -1;
@@ -1442,9 +1445,14 @@ word_transition(void)
 }
 
 void
-search_initialize(void)
+search_initialize(cmd_ln_t *cmdln)
 {
-    int32 bptable_size = cmd_ln_int32("-latsize");
+    int32 bptable_size;
+    
+    if (config)
+        cmd_ln_free_r(config);
+    config = cmdln;
+    bptable_size = cmd_ln_int32_r(config, "-latsize");
 
     linklist_init();
 
@@ -1513,9 +1521,9 @@ search_initialize(void)
 
     /* If we are doing two-pass search, cache the senone scores from
      * the first pass (trading off memory for speed). */
-    if (cmd_ln_boolean("-fwdtree")
-        && cmd_ln_boolean("-fwdflat")
-        && cmd_ln_boolean("-cachesen")) {
+    if (cmd_ln_boolean_r(config, "-fwdtree")
+        && cmd_ln_boolean_r(config, "-fwdflat")
+        && cmd_ln_boolean_r(config, "-cachesen")) {
         past_senone_scores = ckd_calloc(MAX_FRAMES, sizeof(int32 *));
         past_senone_active_vec = ckd_calloc(MAX_FRAMES, sizeof(bitvec_t *));
     }
@@ -1533,11 +1541,11 @@ search_initialize(void)
      * Frames window size for predicting phones based on topsen.
      * If 1, no prediction; use all phones.
      */
-    if ((topsen_window = cmd_ln_int32("-topsenfrm")) < 1)
+    if ((topsen_window = cmd_ln_int32_r(config, "-topsenfrm")) < 1)
         E_FATAL("topsen window = %d\n", topsen_window);
 
     E_INFO("topsen-window = %d, ", topsen_window);
-    topsen_thresh = cmd_ln_int32("-topsenthresh");
+    topsen_thresh = cmd_ln_int32_r(config, "-topsenthresh");
     if (topsen_window > 1)
         E_INFOCONT("threshold = %d\n", topsen_thresh);
     else
@@ -1559,23 +1567,23 @@ search_initialize(void)
      */
     bestpscr = ckd_calloc(NumCiPhones, sizeof(int32));
 
-    search_set_beam_width(cmd_ln_float64("-beam"));
-    search_set_new_word_beam_width(cmd_ln_float64("-wbeam"));
-    search_set_new_phone_beam_width(cmd_ln_float64("-pbeam"));
-    search_set_last_phone_beam_width(cmd_ln_float64("-lpbeam"));
-    search_set_lastphone_alone_beam_width(cmd_ln_float64("-lponlybeam"));
-    search_set_silence_word_penalty(cmd_ln_float32("-silpen"),
-                                    cmd_ln_float32("-pip"));
-    search_set_filler_word_penalty(cmd_ln_float32("-fillpen"),
-                                    cmd_ln_float32("-pip"));
-    search_set_newword_penalty(cmd_ln_float32("-nwpen"));
-    search_set_lw(cmd_ln_float32("-lw"),
-                  cmd_ln_float32("-fwdflatlw"),
-                  cmd_ln_float32("-bestpathlw"));
-    search_set_ip(cmd_ln_float32("-wip"));
-    search_set_skip_alt_frm(cmd_ln_boolean("-skipalt"));
-    search_set_fwdflat_bw(cmd_ln_float64("-fwdflatbeam"),
-                          cmd_ln_float64("-fwdflatwbeam"));
+    search_set_beam_width(cmd_ln_float64_r(config, "-beam"));
+    search_set_new_word_beam_width(cmd_ln_float64_r(config, "-wbeam"));
+    search_set_new_phone_beam_width(cmd_ln_float64_r(config, "-pbeam"));
+    search_set_last_phone_beam_width(cmd_ln_float64_r(config, "-lpbeam"));
+    search_set_lastphone_alone_beam_width(cmd_ln_float64_r(config, "-lponlybeam"));
+    search_set_silence_word_penalty(cmd_ln_float32_r(config, "-silpen"),
+                                    cmd_ln_float32_r(config, "-pip"));
+    search_set_filler_word_penalty(cmd_ln_float32_r(config, "-fillpen"),
+                                    cmd_ln_float32_r(config, "-pip"));
+    search_set_newword_penalty(cmd_ln_float32_r(config, "-nwpen"));
+    search_set_lw(cmd_ln_float32_r(config, "-lw"),
+                  cmd_ln_float32_r(config, "-fwdflatlw"),
+                  cmd_ln_float32_r(config, "-bestpathlw"));
+    search_set_ip(cmd_ln_float32_r(config, "-wip"));
+    search_set_skip_alt_frm(cmd_ln_boolean_r(config, "-skipalt"));
+    search_set_fwdflat_bw(cmd_ln_float64_r(config, "-fwdflatbeam"),
+                          cmd_ln_float64_r(config, "-fwdflatwbeam"));
 }
 
 void
@@ -1827,7 +1835,7 @@ search_start_fwd(void)
                   BPTable[BPIdx - 1].score, BPIdx - 1, CurrentFrame);
     }
 
-    compute_all_senones = cmd_ln_boolean("-compallsen")
+    compute_all_senones = cmd_ln_boolean_r(config, "-compallsen")
         || (topsen_window > 1);
 
     if (topsen_window > 1) {
@@ -1863,7 +1871,7 @@ pruneChannels(void)
 
     /* Set the dynamic beam based on maxhmmpf here. */
     DynamicLogBeamWidth = LogBeamWidth;
-    maxhmmpf = cmd_ln_int32("-maxhmmpf");
+    maxhmmpf = cmd_ln_int32_r(config, "-maxhmmpf");
     cf = CurrentFrame;
     if (maxhmmpf != -1 && n_root_chan_eval + n_nonroot_chan_eval > maxhmmpf) {
         /* Build a histogram to approximately prune them. */
@@ -1941,7 +1949,7 @@ search_one_ply_fwd(void)
     pruneChannels();
 
     /* Apply absolute pruning to word-exits, if specified */
-    n = cmd_ln_int32("-maxwpf");
+    n = cmd_ln_int32_r(config, "-maxwpf");
     if (n != -1 && n < NumWords)
         bptable_maxwpf(n);
 
@@ -2193,7 +2201,7 @@ seg_back_trace(int32 bpidx, char const *pass)
     int32 topsenscr_norm;
     int32 f, latden;
 
-    altpron = cmd_ln_boolean("-reportpron");
+    altpron = cmd_ln_boolean_r(config, "-reportpron");
 
     /* Stop condition, no more backpointers. */
     if (bpidx != NO_BP) {
@@ -2222,7 +2230,7 @@ seg_back_trace(int32 bpidx, char const *pass)
             latden /= seg_len;
         }
 
-        if (cmd_ln_boolean("-backtrace"))
+        if (cmd_ln_boolean_r(config, "-backtrace"))
             printf("\t%4d %4d %10d %11d %8d %8d %6d %s\n",
                    last_time + 1, BPTable[bpidx].frame,
                    a_scr_norm, a_scr, l_scr,
@@ -2252,7 +2260,7 @@ seg_back_trace(int32 bpidx, char const *pass)
         last_time = BPTable[bpidx].frame;
     }
     else {
-        if (cmd_ln_boolean("-backtrace")) {
+        if (cmd_ln_boolean_r(config, "-backtrace")) {
             printf("\t%4s %4s %10s %11s %8s %8s %6s %s (%s) (%s)\n",
                    "SFrm", "Efrm", "AScr/Frm", "AScr", "LScr", "BSDiff",
                    "LatDen", "Word", pass, uttproc_get_uttid());
@@ -2279,7 +2287,7 @@ partial_seg_back_trace(int32 bpidx)
     static int32 last_time;
     int32 altpron;
 
-    altpron = cmd_ln_boolean("-reportpron");
+    altpron = cmd_ln_boolean_r(config, "-reportpron");
 
     /* Stop condition, no more backpointers */
     if (bpidx != NO_BP) {
@@ -3131,7 +3139,7 @@ build_fwdflat_wordlist(void)
     latnode_t *node, *prevnode, *nextnode;
     dict_entry_t *de;
 
-    if (!cmd_ln_boolean("-fwdtree")) {
+    if (!cmd_ln_boolean_r(config, "-fwdtree")) {
         /* No tree-search run; include all words in expansion list */
         for (i = 0; i < StartWordId; i++)
             fwdflat_wordlist[i] = i;
@@ -3217,7 +3225,7 @@ destroy_frm_wordlist(void)
     latnode_t *node, *tnode;
     int32 f;
 
-    if (!cmd_ln_boolean("-fwdtree"))
+    if (!cmd_ln_boolean_r(config, "-fwdtree"))
         return;
 
     for (f = 0; f <= LastFrame; f++) {
@@ -3352,10 +3360,10 @@ search_fwdflat_start(void)
     n_fwdflat_word_transition = 0;
     n_senone_active_utt = 0;
 
-    compute_all_senones = cmd_ln_boolean("-compallsen");
+    compute_all_senones = cmd_ln_boolean_r(config, "-compallsen");
     senone_scores = sc_scores[0];
 
-    if (!cmd_ln_boolean("-fwdtree")) {
+    if (!cmd_ln_boolean_r(config, "-fwdtree")) {
         /* No tree-search run; include all words (upto </s>) in expansion list */
         j = 0;
 
@@ -3864,7 +3872,7 @@ get_expand_wordlist(int32 frm, int32 win)
     int32 f, sf, ef, nwd;
     latnode_t *node;
 
-    if (!cmd_ln_boolean("-fwdtree")) {
+    if (!cmd_ln_boolean_r(config, "-fwdtree")) {
         n_fwdflat_word_transition += StartWordId;
         return;
     }
@@ -3898,8 +3906,8 @@ search_fwdflat_init(void)
     expand_word_flag = ckd_calloc(NumWords, 1);
     expand_word_list = ckd_calloc(NumWords + 1, sizeof(int32));
 
-    min_ef_width = cmd_ln_int32("-fwdflatefwid");
-    max_sf_win = cmd_ln_int32("-fwdflatsfwin");
+    min_ef_width = cmd_ln_int32_r(config, "-fwdflatefwid");
+    max_sf_win = cmd_ln_int32_r(config, "-fwdflatsfwin");
     E_INFO("fwdflat: min_ef_width = %d, max_sf_win = %d\n",
            min_ef_width, max_sf_win);
 }

@@ -243,7 +243,7 @@ dict_read(dict_t * dict, char *filename, /* Main dict file */
      * added at runtime.  We can expand this region of the dictionary
      * later if need be. */
     initial_dummy = first_dummy = word_id;
-    if ((max_new_oov = cmd_ln_int32("-maxnewoov")) > 0)
+    if ((max_new_oov = cmd_ln_int32_r(dict->config, "-maxnewoov")) > 0)
         E_INFO("Allocating %d placeholders for new OOVs\n", max_new_oov);
     for (i = 0; i < max_new_oov; i++) {
         char tmpstr[100], pronstr[100];
@@ -412,16 +412,17 @@ dict_free(dict_t * dict)
 
     for (i = 0; i < entry_count; i++) {
         entry = dict_get_entry(dict, i);
-        free(entry->word);
-        free(entry->phone_ids);
-        free(entry->ci_phone_ids);
-        free(entry);
+        ckd_free(entry->word);
+        ckd_free(entry->phone_ids);
+        ckd_free(entry->ci_phone_ids);
+        ckd_free(entry);
     }
 
-    free(dict->dict_list);
-    free(dict->ci_index);
-    hash_table_free(dict->dict);
-    free(dict);
+    ckd_free(dict->dict_list);
+    ckd_free(dict->ci_index);
+    if (dict->dict)
+        hash_table_free(dict->dict);
+    ckd_free(dict);
 }
 
 static void
@@ -906,9 +907,12 @@ dict_count(dict_t * dict)
 }
 
 dict_t *
-dict_new(void)
+dict_new(cmd_ln_t *config)
 {
-    return ckd_calloc(sizeof(dict_t), 1);
+    dict_t *dict = ckd_calloc(1, sizeof(*dict));
+
+    dict->config = config;
+    return dict;
 }
 
 static void

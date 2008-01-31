@@ -157,7 +157,7 @@ dict_init(void)
     char *fdictfn = NULL;
 
     E_INFO("Reading dict file [%s]\n", cmd_ln_str("-dict"));
-    word_dict = dict_new();
+    word_dict = dict_new(cmd_ln_get());
     /* Look for noise word dictionary in the HMM directory if not given */
     if (cmd_ln_str("-hmm") && !cmd_ln_str("-fdict")) {
         FILE *tmp;

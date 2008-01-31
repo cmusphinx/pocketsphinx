@@ -40,6 +40,7 @@
 
 /* SphinxBase headers. */
 #include <fe.h>
+#include <cmd_ln.h>
 
 /* Local headers. */
 #include "fbs.h"
@@ -159,7 +160,7 @@ typedef struct latnode_s {
 } latnode_t;
 
 /* Interface */
-void search_initialize (void);
+void search_initialize(cmd_ln_t *config);
 void search_free (void);
 void search_set_beam_width (double beam);
 void search_set_new_word_beam_width (double beam);

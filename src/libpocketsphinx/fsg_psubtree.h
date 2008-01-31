@@ -92,6 +92,7 @@
 
 /* SphinxBase headers. */
 #include <prim_type.h>
+#include <cmd_ln.h>
 
 /* Local headers. */
 #include "word_fsg.h"
@@ -202,7 +203,8 @@ typedef struct fsg_pnode_s {
  * Also, return a linear linked list of all allocated fsg_pnode_t nodes in
  * *alloc_head (for memory management purposes).
  */
-fsg_pnode_t *fsg_psubtree_init (word_fsg_t *fsg,
+fsg_pnode_t *fsg_psubtree_init (cmd_ln_t *config,
+				word_fsg_t *fsg,
 				int32 from_state,
 				fsg_pnode_t **alloc_head);
 

@@ -98,7 +98,7 @@ static const arg_t fbs_args_def[] = {
 static const arg_t feat_defn[] = {
     waveform_to_cepstral_command_line_macro(),
     input_cmdln_options(),
-    { NULL, 0, NULL, NULL }
+    CMDLN_EMPTY_OPTION
 };
 
 static char utt_name[512];
@@ -143,7 +143,7 @@ fbs_init(int32 argc, char **argv)
     /* FIXME FIXME FIXME: We shouldn't initialize the N-Gram search if
      * we are not going to use it, likewise for the FSG search... */
     /* Initialize the N-Gram search module */
-    search_initialize();
+    search_initialize(cmd_ln_get());
 
     /* Initialize dynamic data structures needed for utterance processing */
     /* FIXME FIXME FIXME: For no good reason, this also initializes FSG search. */

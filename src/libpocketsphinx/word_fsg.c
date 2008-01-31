@@ -139,7 +139,6 @@
 /* SphinxBase headers. */
 #include <err.h>
 #include <ckd_alloc.h>
-#include <cmd_ln.h>
 #include <prim_type.h>
 #include <strfuncs.h>
 
