@@ -82,6 +82,10 @@ struct acmod_s {
     fe_t *fe;                  /**< Acoustic feature computation. */
     feat_t *fcb;               /**< Dynamic feature computation. */
 
+    uint8 retain_fe;           /**< Do we own the fe pointer. */
+    uint8 retain_fcb;          /**< Do we own the fcb poitner. */
+    int16 output_frame;        /**< Index of last computed frame of dynamic features. */
+
     /* Model parameters: */
     bin_mdef_t *mdef;          /**< Model definition. */
     tmat_t *tmat;              /**< Transition matrices. */
@@ -96,9 +100,12 @@ struct acmod_s {
     int32 log_zero;              /**< Zero log-probability value. */
 
     /* Feature computation: */
-    int16 output_frame; /**< Index of last computed frame of dynamic features. */
     mfcc_t **mfc_buf;   /**< Temporary buffer of acoustic features. */
     mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */
+    int16 n_mfc_alloc;  /**< Number of frames allocated in mfc_buf */
+    int16 n_mfc_frame;  /**< Number of frames active in mfc_buf */
+    int16 n_feat_alloc; /**< Number of frames allocated in feat_buf */
+    int16 n_feat_frame; /**< Number of frames active in feat_buf */
     char *mfclogdir;    /**< Log directory for MFCC files. */
     char *rawlogdir;    /**< Log directory for raw audio files. */
     FILE *rawfp;        /**< File for writing raw audio data. */

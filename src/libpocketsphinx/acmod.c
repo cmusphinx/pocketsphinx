@@ -44,6 +44,7 @@
 /* System headers. */
 
 /* SphinxBase headers. */
+#include <prim_type.h>
 #include <cmd_ln.h>
 
 /* Local headers. */
@@ -67,15 +68,43 @@ acmod_init(cmd_ln_t *config, fe_t *fe, feat_t *fcb)
         /* Verify parameter match. */
         acmod->fe = fe;
     }
+    else {
+        /* Initialize a new front end. */
+        acmod->retain_fe = TRUE;
+    }
+
     if (fcb) {
         acmod->fcb = fcb;
     }
+    else {
+        /* Initialize a new fcb. */
+        acmod->retain_fcb = TRUE;
+    }
+
+    /* The MFCC buffer needs to be at least as large as the dynamic
+     * feature window.  */
+    acmod->n_mfc_alloc = acmod->fcb->window_size * 2 + 1;
+    acmod->mfc_buf = (mfcc_t **)
+        ckd_calloc_2d(acmod->n_mfc_alloc, acmod->fcb->cepsize,
+                      sizeof(**acmod->mfc_buf));
+
+    /* Allocate a single frame of features for the time being. */
+    acmod->n_feat_alloc = 1;
+    acmod->feat_buf = feat_array_alloc(acmod->fcb, 1);
+
     return acmod;
 }
 
 void
 acmod_free(acmod_t *acmod)
 {
+    if (acmod->retain_fcb)
+        feat_free(acmod->fcb);
+    if (acmod->retain_fe)
+        fe_close(acmod->fe);
+    ckd_free_2d((void **)acmod->mfc_buf);
+    feat_array_free(acmod->feat_buf);
+    ckd_free(acmod);
 }
 
 int
@@ -84,7 +113,14 @@ acmod_process_raw(acmod_t *acmod,
 		  int *inout_n_samps,
 		  int full_utt)
 {
-    return 0;
+    /* If this is a full utterance, process it all at once. */
+    if (full_utt) {
+        /* Resize mfc_buf */
+        return 0;
+    }
+    else {
+        return 0;
+    }
 }
 
 int
