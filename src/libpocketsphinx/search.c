@@ -3127,6 +3127,7 @@ static int32 n_fwdflat_word_transition;
 
 static char *expand_word_flag = NULL;
 static int32 *expand_word_list = NULL;
+static int32 n_expand_words;
 
 static int32 min_ef_width = 4;
 static int32 max_sf_win = 25;
@@ -3141,10 +3142,12 @@ build_fwdflat_wordlist(void)
 
     if (!cmd_ln_boolean_r(config, "-fwdtree")) {
         /* No tree-search run; include all words in expansion list */
-        for (i = 0; i < StartWordId; i++)
-            fwdflat_wordlist[i] = i;
-        fwdflat_wordlist[i] = -1;
-
+        nwd = 0;
+        for (i = 0; i < StartWordId; i++) {
+            if (ngram_model_set_known_wid(lmset, word_dict->dict_list[i]->wid))
+                fwdflat_wordlist[nwd++] = i;
+        }
+        fwdflat_wordlist[nwd] = -1;
         return;
     }
 
@@ -3249,7 +3252,7 @@ build_fwdflat_chan(void)
         wid = fwdflat_wordlist[i];
         de = word_dict->dict_list[wid];
 
-        /* Omit single-phone words (??) */
+        /* Omit single-phone words as they are permanently allocated */
         if (de->len == 1)
             continue;
 
@@ -3325,7 +3328,7 @@ search_set_fwdflat_bw(double bw, double nwbw)
 void
 search_fwdflat_start(void)
 {
-    int32 i, j;
+    int32 i;
     root_chan_t *rhmm;
 
     build_fwdflat_wordlist();
@@ -3364,19 +3367,21 @@ search_fwdflat_start(void)
     senone_scores = sc_scores[0];
 
     if (!cmd_ln_boolean_r(config, "-fwdtree")) {
-        /* No tree-search run; include all words (upto </s>) in expansion list */
-        j = 0;
+        /* No tree-search run; include all words in language model
+         * (upto </s>) in expansion list */
+        n_expand_words = 0;
 
         for (i = 0; i < StartWordId; i++) {
-            if (ngram_model_set_known_wid(lmset, word_dict->dict_list[i]->wid)) {
-                expand_word_list[j] = i;
+            if (ngram_model_set_known_wid(lmset,
+                                          word_dict->dict_list[i]->wid)) {
+                expand_word_list[n_expand_words] = i;
                 expand_word_flag[i] = 1;
-                j++;
+                n_expand_words++;
             }
             else
                 expand_word_flag[i] = 0;
         }
-        expand_word_list[j] = -1;
+        expand_word_list[n_expand_words] = -1;
     }
 }
 
@@ -3869,11 +3874,11 @@ fwdflat_renormalize_scores(int32 norm)
 void
 get_expand_wordlist(int32 frm, int32 win)
 {
-    int32 f, sf, ef, nwd;
+    int32 f, sf, ef;
     latnode_t *node;
 
     if (!cmd_ln_boolean_r(config, "-fwdtree")) {
-        n_fwdflat_word_transition += StartWordId;
+        n_fwdflat_word_transition += n_expand_words;
         return;
     }
 
@@ -3885,18 +3890,18 @@ get_expand_wordlist(int32 frm, int32 win)
         ef = MAX_FRAMES;
 
     memset(expand_word_flag, 0, NumWords);
-    nwd = 0;
+    n_expand_words = 0;
 
     for (f = sf; f < ef; f++) {
         for (node = frm_wordlist[f]; node; node = node->next) {
             if (!expand_word_flag[node->wid]) {
-                expand_word_list[nwd++] = node->wid;
+                expand_word_list[n_expand_words++] = node->wid;
                 expand_word_flag[node->wid] = 1;
             }
         }
     }
-    expand_word_list[nwd] = -1;
-    n_fwdflat_word_transition += nwd;
+    expand_word_list[n_expand_words] = -1;
+    n_fwdflat_word_transition += n_expand_words;
 }
 
 void
