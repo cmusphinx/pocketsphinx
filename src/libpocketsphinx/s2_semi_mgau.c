@@ -689,7 +689,7 @@ s2_semi_mgau_load_kdtree(s2_semi_mgau_t * s, const char *kdtree_path,
 }
 
 static int32
-load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
+load_senone_dists_8bits(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
 {
     FILE *fp;
     char line[1000];
@@ -702,7 +702,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     int c = bin_mdef_n_sen(mdef);
 
     s->CdWdPDFMod = c;
-    do_mmap = cmd_ln_boolean("-mmap");
+    do_mmap = cmd_ln_boolean_r(s->config, "-mmap");
 
     if ((fp = fopen(file, "rb")) == NULL)
         return -1;
@@ -818,74 +818,6 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, char const *file)
     return 0;
 }
 
-static void
-dump_probs_8b(s2_semi_mgau_t *s,
-              char const *file, /* output file */
-              char const *dir)
-{                               /* **ORIGINAL** HMM directory */
-    FILE *fp;
-    int32 f, r, k, aligned_c;
-    static char const *title = "V6 Senone Probs, Smoothed, Normalized";
-    static char const *clust_hdr = "cluster_count 0";
-
-    E_INFO("Dumping quantized HMMs to dump file %s\n", file);
-
-    if ((fp = fopen(file, "wb")) == NULL) {
-        E_ERROR("fopen(%s,wb) failed\n", file);
-        return;
-    }
-
-#define fwrite_int32(f,v) fwrite(&v,sizeof(v),1,f)
-    /* Write title size and title (directory name) */
-    k = strlen(title) + 1;      /* including trailing null-char */
-    fwrite_int32(fp, k);
-    fwrite(title, sizeof(char), k, fp);
-
-    /* Write header size and header (directory name) */
-    k = strlen(dir) + 1;        /* including trailing null-char */
-    fwrite_int32(fp, k);
-    fwrite(dir, sizeof(char), k, fp);
-
-    /* Write cluster count = 0 to indicate this is pre-quantized */
-    k = strlen(clust_hdr) + 1;
-    fwrite_int32(fp, k);
-    fwrite(clust_hdr, sizeof(char), k, fp);
-
-    /* Pad it out for alignment purposes */
-    k = ftell(fp) & 3;
-    if (k > 0) {
-        k = 4 - k;
-        fwrite_int32(fp, k);
-        fwrite("!!!!", 1, k, fp);
-    }
-
-    /* Write 0, terminating header strings */
-    k = 0;
-    fwrite_int32(fp, k);
-
-    /* Align the number of pdfs to a 4-byte boundary. */
-    aligned_c = (s->CdWdPDFMod + 3) & ~3;
-    E_INFO("Rows: %d Columns: %d (from %d)\n",
-           s->n_density, aligned_c, s->CdWdPDFMod);
-
-    /* Write #rows, #cols; this also indicates whether pdfs already transposed */
-    fwrite_int32(fp, s->n_density);
-    fwrite_int32(fp, aligned_c);
-
-    /* Now write out the quantized senones. */
-    for (f = 0; f < s->n_feat; ++f) {
-        for (r = 0; r < s->n_density; r++) {
-            fwrite(s->OPDF_8B[f][r], sizeof(char), s->CdWdPDFMod, fp);
-            /* Pad them out for alignment purposes */
-            if (aligned_c > s->CdWdPDFMod) {
-                fwrite("\0\0\0\0", 1, aligned_c - s->CdWdPDFMod, fp);
-            }
-        }
-    }
-
-    fclose(fp);
-}
-
 static int32
 read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
 {
@@ -900,16 +832,7 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
     int32 n_feat;
     int32 n_comp;
     int32 n_err;
-    char *dumpfile;
 
-    dumpfile = kb_get_senprob_dump_file();
-    if (dumpfile) {
-        if (load_senone_dists_8bits(s, dumpfile) == 0)
-            return bin_mdef_n_sen(mdef);
-        else
-            E_INFO
-                ("No senone dump file found, will compress mixture weights on-line\n");
-    }
     E_INFO("Reading mixture weights file '%s'\n", file_name);
 
     if ((fp = fopen(file_name, "rb")) == NULL)
@@ -1005,10 +928,6 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
     fclose(fp);
 
     E_INFO("Read %d x %d x %d mixture weights\n", n_sen, n_feat, n_comp);
-
-    if ((dumpfile = kb_get_senprob_dump_file()) != NULL) {
-        dump_probs_8b(s, dumpfile, file_name);
-    }
     return n_sen;
 }
 
@@ -1134,7 +1053,7 @@ s3_read_mgau(s2_semi_mgau_t *s, const char *file_name, float32 ***out_cb)
 }
 
 static int32
-s3_precomp(s2_semi_mgau_t *s, float32 vFloor)
+s3_precomp(s2_semi_mgau_t *s, logmath_t *lmath, float32 vFloor)
 {
     int feat;
 
@@ -1174,17 +1093,17 @@ s3_precomp(s2_semi_mgau_t *s, float32 vFloor)
 }
 
 s2_semi_mgau_t *
-s2_semi_mgau_init(const char *mean_path, const char *var_path,
-                  float64 varfloor, const char *mixw_path,
-                  float64 mixwfloor, int32 topn)
+s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
 {
     s2_semi_mgau_t *s;
+    char *sendump_path;
     int i;
 
     s = ckd_calloc(1, sizeof(*s));
+    s->config = config;
 
     /* Log-add table. */
-    s->lmath_8b = logmath_init((float64)cmd_ln_float32("-logbase"), 10, TRUE);
+    s->lmath_8b = logmath_init(logmath_get_base(lmath), 10, TRUE);
     if (s->lmath_8b == NULL) {
         s2_semi_mgau_free(s);
         return NULL;
@@ -1192,40 +1111,44 @@ s2_semi_mgau_init(const char *mean_path, const char *var_path,
     /* Ensure that it is only 8 bits wide so that fast_logmath_add() works. */
     if (logmath_get_width(s->lmath_8b) != 1) {
         E_ERROR("Log base %f is too small to represent add table in 8 bits\n",
-                cmd_ln_float32("-logbase"));
+                logmath_get_base(s->lmath_8b));
         s2_semi_mgau_free(s);
         return NULL;
     }
 
     /* Read means and variances. */
-    if (s3_read_mgau(s, mean_path, (float32 ***)&s->means) < 0) {
-        /* FIXME: This actually is not enough to really free everything. */
-        ckd_free(s);
+    if (s3_read_mgau(s, cmd_ln_str_r(config, "-mean"),
+                     (float32 ***)&s->means) < 0) {
+        s2_semi_mgau_free(s);
         return NULL;
     }
-    if (s3_read_mgau(s, var_path, (float32 ***)&s->vars) < 0) {
-        /* FIXME: This actually is not enough to really free everything. */
-        ckd_free(s);
+    if (s3_read_mgau(s, cmd_ln_str_r(config, "-var"),
+                     (float32 ***)&s->vars) < 0) {
+        s2_semi_mgau_free(s);
         return NULL;
     }
     /* Precompute (and fixed-point-ize) means, variances, and determinants. */
     s->dets = (int32 **)ckd_calloc_2d(s->n_feat, s->n_density, sizeof(int32));
-    s3_precomp(s, varfloor);
+    s3_precomp(s, lmath, cmd_ln_float32_r(config, "-varfloor"));
 
     /* Read mixture weights */
-    read_dists_s3(s, mixw_path, mixwfloor);
-    s->topN = topn;
-    s->ds_ratio = 1;
+    if ((sendump_path = cmd_ln_str_r(config, "-sendump")))
+        load_senone_dists_8bits(s, mdef, sendump_path);
+    else
+        read_dists_s3(s, cmd_ln_str_r(config, "-mixw"),
+                      cmd_ln_float32_r(config, "-mixwfloor"));
+    s->topN = cmd_ln_int32_r(config, "-topn");
+    s->ds_ratio = cmd_ln_int32_r(config, "-dsratio");
 
     /* Top-N scores from current, previous frame */
-    s->f = (vqFeature_t **) ckd_calloc_2d(s->n_feat, topn,
+    s->f = (vqFeature_t **) ckd_calloc_2d(s->n_feat, s->topN,
                                           sizeof(vqFeature_t));
-    s->lastf = (vqFeature_t **) ckd_calloc_2d(s->n_feat, topn,
+    s->lastf = (vqFeature_t **) ckd_calloc_2d(s->n_feat, s->topN,
                                               sizeof(vqFeature_t));
     for (i = 0; i < s->n_feat; ++i) {
         int32 j;
 
-        for (j = 0; j < topn; ++j) {
+        for (j = 0; j < s->topN; ++j) {
             s->lastf[i][j].score = WORST_DIST;
             s->lastf[i][j].codeword = j;
         }

@@ -120,6 +120,7 @@
 
 /* SphinxBase headers. */
 #include <sphinx_types.h>
+#include <logmath.h>
 
 /* Local headers. */
 #include "vector.h"
@@ -140,6 +141,7 @@ typedef struct {
     vector_t ***var;	/**< like mean; diagonal covariance vector only */
     float32 ***det;	/**< log(determinant) for each variance vector;
 			   actually, log(sqrt(2*pi*det)) */
+    logmath_t *lmath;   /**< log math computation */
     int32 n_mgau;	/**< #codebooks */
     int32 n_feat;	/**< #feature streams in each codebook */
     int32 n_density;	/**< #gaussian densities in each codebook-feature stream */
@@ -168,7 +170,8 @@ gauden_t *
 gauden_init (char *meanfile,	/**< Input: File containing means of mixture gaussians */
 	     char *varfile,	/**< Input: File containing variances of mixture gaussians */
 	     float32 varfloor,	/**< Input: Floor value to be applied to variances */
-	     int32 precompute   /**< Input: Whether we should precompute */  
+	     int32 precompute,  /**< Input: Whether we should precompute */
+             logmath_t *lmath
     );
 
 /** Release memory allocated by gauden_init. */

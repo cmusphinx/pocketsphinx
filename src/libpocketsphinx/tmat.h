@@ -90,6 +90,7 @@
 
 /* SphinxBase headers. */
 #include <sphinx_types.h>
+#include <logmath.h>
 
 /** \file tmat.h
  *  \brief Transition matrix data structure.
@@ -118,6 +119,7 @@ typedef struct {
 /** Initialize transition matrix */
 
 tmat_t *tmat_init (char *tmatfile,	/**< In: input file */
+		   logmath_t *lmath,    /**< In: log math parameters */
 		   float64 tpfloor,	/**< In: floor value for each non-zero transition probability */
 		   int32 breport      /**< In: whether reporting the process of tmat_t  */
     );
@@ -130,23 +132,6 @@ void tmat_dump (tmat_t *tmat,  /**< In: transition matrix */
 		FILE *fp       /**< In: file pointer */
     );	
 
-
-/**
- * Checks that no transition matrix in the given object contains backward arcs.
- * @returns 0 if successful, -1 if check failed.
- */
-int32 tmat_chk_uppertri (tmat_t *tmat /**< In: transition matrix */
-    );
-
-
-/**
- * Checks that transition matrix arcs in the given object skip over
- * at most 1 state.  
- * @returns 0 if successful, -1 if check failed.  
- */
-
-int32 tmat_chk_1skip (tmat_t *tmat /**< In: transition matrix */
-    );
 
 /**
  * RAH, add code to remove memory allocated by tmat_init

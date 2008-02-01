@@ -69,9 +69,13 @@ pocketsphinx_init(cmd_ln_t *config)
     ps = ckd_calloc(1, sizeof(*ps));
     ps->config = config;
 
+    /* Logmath computation (used in acmod and search) */
+    ps->lmath = logmath_init
+        ((float64)cmd_ln_float32_r(config, "-logbase"), 0, FALSE);
+
     /* Acoustic model (this is basically everything that
      * uttproc.c, senscr.c, and others used to do) */
-    if ((ps->acmod = acmod_init(config, NULL, NULL)) == NULL)
+    if ((ps->acmod = acmod_init(config, ps->lmath, NULL, NULL)) == NULL)
         goto error_out;
 
     /* Dictionary and triphone mappings. */

@@ -212,7 +212,7 @@ senone_mgau_map_read(senone_t * s, char *file_name)
 
 
 static int32
-senone_mixw_read(senone_t * s, char *file_name)
+senone_mixw_read(senone_t * s, char *file_name, logmath_t *lmath)
 {
     char eofchk;
     FILE *fp;
@@ -360,12 +360,14 @@ senone_mixw_read(senone_t * s, char *file_name)
 
 
 senone_t *
-senone_init(gauden_t *g, char *mixwfile, char *sen2mgau_map_file, float32 mixwfloor)
+senone_init(gauden_t *g, char *mixwfile, char *sen2mgau_map_file,
+	    float32 mixwfloor, logmath_t *lmath)
 {
     senone_t *s;
     int32 n = 0, i;
 
     s = (senone_t *) ckd_calloc(1, sizeof(senone_t));
+    s->lmath = lmath;
     s->mixwfloor = mixwfloor;
 
     s->n_gauden = g->n_mgau;
@@ -383,7 +385,7 @@ senone_init(gauden_t *g, char *mixwfile, char *sen2mgau_map_file, float32 mixwfl
 	    sen2mgau_map_file = ".cont.";
     }
 
-    senone_mixw_read(s, mixwfile);
+    senone_mixw_read(s, mixwfile, lmath);
 
     if (strcmp(sen2mgau_map_file, ".semi.") == 0) {
         /* All-to-1 senones-codebook mapping */
@@ -471,7 +473,7 @@ senone_eval(senone_t * s, s3senid_t id, gauden_dist_t ** dist, int32 n_top)
                 fdist[t].dist - (s->pdf[f][fdist[t].id][id]);
 #endif
 
-            fscr = logmath_add(lmath, fscr, fwscr);
+            fscr = logmath_add(s->lmath, fscr, fwscr);
 
         }
 
@@ -528,7 +530,7 @@ senone_eval_all(senone_t * s, gauden_dist_t ** dist, int32 n_top,
 #else
             scr = cwdist - (pdf[i]);
 #endif
-            senscr[i] = logmath_add(lmath, senscr[i], scr);
+            senscr[i] = logmath_add(s->lmath, senscr[i], scr);
         }
     }
 
@@ -557,7 +559,7 @@ senone_eval_all(senone_t * s, gauden_dist_t ** dist, int32 n_top,
 #else
                 scr = cwdist - (pdf[i]);
 #endif
-                featscr[i] = logmath_add(lmath, featscr[i], scr);
+                featscr[i] = logmath_add(s->lmath, featscr[i], scr);
             }
         }
 

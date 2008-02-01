@@ -46,6 +46,7 @@
 /* SphinxBase headers. */
 #include <prim_type.h>
 #include <cmd_ln.h>
+#include <strfuncs.h>
 
 /* Local headers. */
 #include "cmdln_macro.h"
@@ -58,27 +59,153 @@ static const arg_t feat_defn[] = {
     CMDLN_EMPTY_OPTION
 };
 
+/* I'm not sure what the portable way to do this is. */
+static int
+file_exists(const char *path)
+{
+    FILE *tmp;
+
+    tmp = fopen(path, "rb");
+    fclose(tmp);
+    return (tmp != NULL);
+}
+
+static void
+acmod_add_file(acmod_t *acmod, const char *arg,
+               const char *hmmdir, const char *file)
+{
+    char *tmp = string_join(hmmdir, "/", file, NULL);
+
+    if (cmd_ln_str_r(acmod->config, arg) == NULL && file_exists(tmp)) {
+        cmd_ln_set_str_r(acmod->config, arg, tmp);
+        acmod->strings = glist_add_ptr(acmod->strings, tmp);
+    }
+}
+
+static int
+acmod_init_am(acmod_t *acmod)
+{
+    char *mdeffn, *hmmdir, *tmatfn;
+
+    /* Get acoustic model filenames and add them to the command-line */
+    if ((hmmdir = cmd_ln_str_r(acmod->config, "-hmm")) != NULL) {
+        acmod_add_file(acmod, "-mdef", hmmdir, "mdef");
+        acmod_add_file(acmod, "-mean", hmmdir, "means");
+        acmod_add_file(acmod, "-var", hmmdir, "variances");
+        acmod_add_file(acmod, "-tmat", hmmdir, "transition_matrices");
+        acmod_add_file(acmod, "-sendump", hmmdir, "sendump");
+        acmod_add_file(acmod, "-kdtree", hmmdir, "kdtrees");
+    }
+
+    /* Read model definition. */
+    if ((mdeffn = cmd_ln_str_r(acmod->config, "-mdef")) == NULL) {
+        E_ERROR("Must specify -mdeffn or -hmm\n");
+        return -1;
+    }
+
+    if ((acmod->mdef = bin_mdef_read(mdeffn)) == NULL) {
+        E_ERROR("Failed to read model definition from %s\n", mdeffn);
+        return -1;
+    }
+
+    /* Read transition matrices. */
+    if ((tmatfn = cmd_ln_str_r(acmod->config, "-tmat")) == NULL) {
+        E_ERROR("No tmat file specified\n");
+        return -1;
+    }
+    acmod->tmat = tmat_init(tmatfn, acmod->lmath,
+                            cmd_ln_float32_r(acmod->config, "-tmatfloor"),
+                            TRUE);
+
+    /* Read the acoustic models. */
+    if ((cmd_ln_str_r(acmod->config, "-mean") == NULL)
+        || (cmd_ln_str_r(acmod->config, "-var") == NULL)
+        || (cmd_ln_str_r(acmod->config, "-tmat") == NULL)) {
+        E_ERROR("No mean/var/tmat files specified\n");
+        return -1;
+    }
+
+    E_INFO("Attempting to use SCGMM computation module\n");
+    acmod->semi_mgau
+        = s2_semi_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
+    if (acmod->semi_mgau) {
+        char *kdtreefn = cmd_ln_str_r(acmod->config, "-kdtree");
+        if (kdtreefn)
+            s2_semi_mgau_load_kdtree(acmod->semi_mgau, kdtreefn,
+                                     cmd_ln_int32_r(acmod->config, "-kdmaxdepth"),
+                                     cmd_ln_int32_r(acmod->config, "-kdmaxbbi"));
+    }
+    else {
+        E_INFO("Falling back to general multi-stream GMM computation\n");
+        acmod->ms_mgau =
+            ms_mgau_init(acmod->config, acmod->lmath);
+    }
+
+    return 0;
+}
+
+static int
+acmod_init_feat(acmod_t *acmod)
+{
+    acmod->fcb = 
+        feat_init(cmd_ln_str_r(acmod->config, "-feat"),
+                  cmn_type_from_str(cmd_ln_str_r(acmod->config,"-cmn")),
+                  cmd_ln_boolean_r(acmod->config, "-varnorm"),
+                  agc_type_from_str(cmd_ln_str_r(acmod->config, "-agc")),
+                  1, cmd_ln_int32_r(acmod->config, "-ceplen"));
+    if (acmod->fcb == NULL)
+        return -1;
+
+    return 0;
+}
+
+int
+acmod_fe_mismatch(acmod_t *acmod, fe_t *fe)
+{
+    return FALSE;
+}
+
+int
+acmod_feat_mismatch(acmod_t *acmod, feat_t *fcb)
+{
+    return FALSE;
+}
+
 acmod_t *
-acmod_init(cmd_ln_t *config, fe_t *fe, feat_t *fcb)
+acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
 {
     acmod_t *acmod;
 
     acmod = ckd_calloc(1, sizeof(*acmod));
+    acmod->config = config;
+    acmod->lmath = lmath;
+
+    /* Load acoustic model parameters. */
+    if (acmod_init_am(acmod) < 0)
+        goto error_out;
+
     if (fe) {
-        /* Verify parameter match. */
+        if (acmod_fe_mismatch(acmod, fe))
+            goto error_out;
         acmod->fe = fe;
     }
     else {
         /* Initialize a new front end. */
         acmod->retain_fe = TRUE;
+        acmod->fe = fe_init_auto_r(config);
+        if (acmod->fe == NULL)
+            goto error_out;
     }
-
     if (fcb) {
+        if (acmod_feat_mismatch(acmod, fcb))
+            goto error_out;
         acmod->fcb = fcb;
     }
     else {
         /* Initialize a new fcb. */
         acmod->retain_fcb = TRUE;
+        if (acmod_init_feat(acmod) < 0)
+            goto error_out;
     }
 
     /* The MFCC buffer needs to be at least as large as the dynamic
@@ -93,11 +220,20 @@ acmod_init(cmd_ln_t *config, fe_t *fe, feat_t *fcb)
     acmod->feat_buf = feat_array_alloc(acmod->fcb, 1);
 
     return acmod;
+
+error_out:
+    acmod_free(acmod);
+    return NULL;
 }
 
 void
 acmod_free(acmod_t *acmod)
 {
+    gnode_t *gn;
+
+    for (gn = acmod->strings; gn; gn = gnode_next(gn))
+        ckd_free(gnode_ptr(gn));
+    glist_free(acmod->strings);
     if (acmod->retain_fcb)
         feat_free(acmod->fcb);
     if (acmod->retain_fe)

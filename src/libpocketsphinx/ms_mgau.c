@@ -72,10 +72,7 @@
 #include "senscr.h"
 
 ms_mgau_model_t *
-ms_mgau_init(char *meanfile,
-             char *varfile, float64 varfloor,
-             char *mixwfile, float64 mixwfloor,
-             int32 _topn)
+ms_mgau_init(cmd_ln_t *config, logmath_t *lmath)
 {
     /* Codebooks */
     int32 i;
@@ -90,9 +87,13 @@ ms_mgau_init(char *meanfile,
     msg->g = NULL;
     msg->s = NULL;
 
-    msg->g = gauden_init(meanfile, varfile, varfloor, TRUE);
-
-    msg->s = senone_init(msg->g, mixwfile, NULL, mixwfloor);
+    msg->g = gauden_init(cmd_ln_str_r(config, "-mean"),
+			 cmd_ln_str_r(config, "-var"),
+			 cmd_ln_float32_r(config, "-varfloor"),
+			 TRUE, lmath);
+    msg->s = senone_init(msg->g,
+			 cmd_ln_str_r(config, "-mixw"), NULL,
+			 cmd_ln_float32_r(config, "-mixwfloor"), lmath);
 
     g = ms_mgau_gauden(msg);
     s = ms_mgau_senone(msg);
@@ -120,7 +121,7 @@ ms_mgau_init(char *meanfile,
         msg->mgau2sen[s->mgau[i]] = m2s;
     }
 
-    msg->topn = _topn;
+    msg->topn = cmd_ln_int32_r(config, "-topn");
     E_INFO("The value of topn: %d\n", msg->topn);
     if (msg->topn == 0 || msg->topn > msg->g->n_density) {
         E_WARN

@@ -98,6 +98,8 @@
 
 /* SphinxBase headers. */
 #include <sphinx_types.h>
+#include <cmd_ln.h>
+#include <logmath.h>
 #include <feat.h>
 
 /* Local headers. */
@@ -135,13 +137,7 @@ typedef struct {
 #define ms_mgau_mgau2sen(msg) (msg->mgau2sen)
 #define ms_mgau_topn(msg) (msg->topn)
 
-ms_mgau_model_t* ms_mgau_init (char *meanfile,	/**< In: File containing means of mixture gaussians */
-			       char *varfile,	/**< In: File containing variances of mixture gaussians */
-			       float64 varfloor,	/**< In: Floor value applied to variances; e.g., 0.0001 */
-			       char *mixwfile,	/**< In: File containing mixture weights */
-			       float64 mixwfloor,	/**< In: Floor value for mixture weights; e.g., 0.0000001 */
-			       int32 topn        /**< In: Top-n gaussian will be computed */
-    );
+ms_mgau_model_t* ms_mgau_init(cmd_ln_t *config, logmath_t *lmath);
 
 /** Free memory allocated by ms_mgau_init */
 void ms_mgau_free(ms_mgau_model_t *g /**< In: A set of models to free */

@@ -77,7 +77,7 @@ s2_semi_mgau_t *semi_mgau;
 ms_mgau_model_t *ms_mgau;
 
 /* Model file names */
-char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *kdtreefn, *sendumpfn, *logaddfn;
+glist_t model_strings;
 
 /* Language model set */
 ngram_model_t *lmset;
@@ -161,7 +161,7 @@ dict_init(void)
     /* Look for noise word dictionary in the HMM directory if not given */
     if (cmd_ln_str("-hmm") && !cmd_ln_str("-fdict")) {
         FILE *tmp;
-        fdictfn = string_join(hmmdir, "/noisedict", NULL);
+        fdictfn = string_join(cmd_ln_str("-hmm"), "/noisedict", NULL);
         if ((tmp = fopen(fdictfn, "r")) == NULL) {
             ckd_free(fdictfn);
             fdictfn = NULL;
@@ -180,94 +180,52 @@ dict_init(void)
     ckd_free(fdictfn);
 }
 
+/* Two functions copied from acmod.c for now. */
+static int
+file_exists(const char *path)
+{
+    FILE *tmp;
+
+    tmp = fopen(path, "rb");
+    if (tmp)
+        fclose(tmp);
+    return (tmp != NULL);
+}
+static void
+kb_add_file(const char *arg, const char *hmmdir, const char *file)
+{
+    char *tmp = string_join(hmmdir, "/", file, NULL);
+
+    if (cmd_ln_str(arg) == NULL && file_exists(tmp)) {
+        cmd_ln_set_str(arg, tmp);
+        model_strings = glist_add_ptr(model_strings, tmp);
+    }
+    else {
+        ckd_free(tmp);
+    }
+}
+
 void
 kb_init(void)
 {
     int32 num_phones, num_ci_phones;
+    char *mdeffn, *hmmdir, *tmatfn;
 
-    /* Get acoustic model filenames */
+    /* Initialize log computation. */
+    lmath = logmath_init((float64)cmd_ln_float32("-logbase"), 0, FALSE);
+
+    /* Get acoustic model filenames and add them to the command-line */
     if ((hmmdir = cmd_ln_str("-hmm")) != NULL) {
-        FILE *tmp;
-
-        mdeffn = string_join(hmmdir, "/mdef", NULL);
-        meanfn = string_join(hmmdir, "/means", NULL);
-        varfn = string_join(hmmdir, "/variances", NULL);
-        mixwfn = string_join(hmmdir, "/mixture_weights", NULL);
-        tmatfn = string_join(hmmdir, "/transition_matrices", NULL);
-
-        /* These ones are optional, so make sure they exist. */
-        sendumpfn = string_join(hmmdir, "/sendump", NULL);
-        if ((tmp = fopen(sendumpfn, "rb")) == NULL) {
-            ckd_free(sendumpfn);
-            sendumpfn = NULL;
-        }
-        else {
-            fclose(tmp);
-        }
-        kdtreefn = string_join(hmmdir, "/kdtrees", NULL);
-        if ((tmp = fopen(kdtreefn, "rb")) == NULL) {
-            ckd_free(kdtreefn);
-            kdtreefn = NULL;
-        }
-        else {
-            fclose(tmp);
-        }
-        logaddfn = string_join(hmmdir, "/logadd", NULL);
-        if ((tmp = fopen(logaddfn, "rb")) == NULL) {
-            ckd_free(logaddfn);
-            logaddfn = NULL;
-        }
-        else {
-            fclose(tmp);
-        }
-    }
-    /* Allow overrides from the command line */
-    if (cmd_ln_str("-mdef")) {
-        ckd_free(mdeffn);
-        mdeffn = ckd_salloc(cmd_ln_str("-mdef"));
-    }
-    if (cmd_ln_str("-mean")) {
-        ckd_free(meanfn);
-        meanfn = ckd_salloc(cmd_ln_str("-mean"));
-    }
-    if (cmd_ln_str("-var")) {
-        ckd_free(varfn);
-        varfn = ckd_salloc(cmd_ln_str("-var"));
-    }
-    if (cmd_ln_str("-mixw")) {
-        ckd_free(mixwfn);
-        mixwfn = ckd_salloc(cmd_ln_str("-mixw"));
-    }
-    if (cmd_ln_str("-tmat")) {
-        ckd_free(tmatfn);
-        tmatfn = ckd_salloc(cmd_ln_str("-tmat"));
-    }
-    if (cmd_ln_str("-sendump")) {
-        ckd_free(sendumpfn);
-        sendumpfn = ckd_salloc(cmd_ln_str("-sendump"));
-    }
-    if (cmd_ln_str("-kdtree")) {
-        ckd_free(kdtreefn);
-        kdtreefn = ckd_salloc(cmd_ln_str("-kdtree"));
-    }
-    if (cmd_ln_str("-logadd")) {
-        ckd_free(logaddfn);
-        logaddfn = ckd_salloc(cmd_ln_str("-logadd"));
-    }
-
-    /* Initialize log tables. */
-    if (logaddfn) {
-        lmath = logmath_read(logaddfn);
-        if (lmath == NULL) {
-            E_FATAL("Failed to read log-add table from %s\n", logaddfn);
-        }
-    }
-    else {
-        lmath = logmath_init((float64)cmd_ln_float32("-logbase"), 0, FALSE);
+        kb_add_file("-mdef", hmmdir, "mdef");
+        kb_add_file("-mean", hmmdir, "means");
+        kb_add_file("-var", hmmdir, "variances");
+        kb_add_file("-tmat", hmmdir, "transition_matrices");
+        kb_add_file("-sendump", hmmdir, "sendump");
+        kb_add_file("-kdtree", hmmdir, "kdtrees");
     }
 
     /* Read model definition. */
-    if (mdeffn == NULL)
+    if ((mdeffn = cmd_ln_str("-mdef")) == NULL)
         E_FATAL("Must specify -mdeffn or -hmm\n");
     if ((mdef = bin_mdef_read(mdeffn)) == NULL)
         E_FATAL("Failed to read model definition from %s\n", mdeffn);
@@ -278,54 +236,40 @@ kb_init(void)
     lm_init();
 
     /* Read transition matrices. */
-    if (tmatfn == NULL)
+    if ((tmatfn = cmd_ln_str("-tmat")) == NULL)
         E_FATAL("No tmat file specified\n");
-    tmat = tmat_init(tmatfn, cmd_ln_float32("-tmatfloor"), TRUE);
+    tmat = tmat_init(tmatfn, lmath, cmd_ln_float32("-tmatfloor"), TRUE);
 
     /* Read the acoustic models. */
-    if ((meanfn == NULL)
-        || (varfn == NULL)
-        || (tmatfn == NULL))
+    if ((cmd_ln_str("-mean") == NULL)
+        || (cmd_ln_str("-var") == NULL)
+        || (cmd_ln_str("-tmat") == NULL))
         E_FATAL("No mean/var/tmat files specified\n");
 
     E_INFO("Attempting to use SCGMM computation module\n");
-    semi_mgau = s2_semi_mgau_init(meanfn,
-                                  varfn,
-                                  cmd_ln_float32("-varfloor"),
-                                  mixwfn,
-                                  cmd_ln_float32("-mixwfloor"),
-                                  cmd_ln_int32("-topn"));
+    semi_mgau = s2_semi_mgau_init(cmd_ln_get(), lmath, mdef);
     if (semi_mgau) {
+        char *kdtreefn = cmd_ln_str("-kdtree");
         if (kdtreefn)
             s2_semi_mgau_load_kdtree(semi_mgau,
                                      kdtreefn,
                                      cmd_ln_int32("-kdmaxdepth"),
                                      cmd_ln_int32("-kdmaxbbi"));
-        semi_mgau->ds_ratio = cmd_ln_int32("-dsratio");
     }
     else {
         E_INFO("Falling back to general multi-stream GMM computation\n");
-        ms_mgau = ms_mgau_init(meanfn, varfn,
-                               cmd_ln_float32("-varfloor"),
-                               mixwfn, 
-                               cmd_ln_float32("-mixwfloor"),
-                               cmd_ln_int32("-topn"));
+        ms_mgau = ms_mgau_init(cmd_ln_get(), lmath);
     }
 }
 
 void
 kb_close(void)
 {
-    ckd_free(mdeffn);
-    ckd_free(meanfn);
-    ckd_free(varfn);
-    ckd_free(mixwfn);
-    ckd_free(tmatfn);
-    mdeffn = meanfn = varfn = mixwfn = tmatfn = NULL;
-    ckd_free(sendumpfn);
-    sendumpfn = NULL;
-    ckd_free(kdtreefn);
-    kdtreefn = NULL;
+    gnode_t *gn;
+
+    for (gn = model_strings; gn; gn = gnode_next(gn))
+        ckd_free(gnode_ptr(gn));
+    glist_free(model_strings);
 
     bin_mdef_free(mdef);
     mdef = NULL;
@@ -344,12 +288,6 @@ kb_close(void)
         ms_mgau_free(ms_mgau);
 
     logmath_free(lmath);
-}
-
-char *
-kb_get_senprob_dump_file(void)
-{
-    return sendumpfn;
 }
 
 int32

@@ -109,6 +109,22 @@
 #define TMAT_PARAM_VERSION		"1.0"
 
 
+/**
+ * Checks that no transition matrix in the given object contains backward arcs.
+ * @returns 0 if successful, -1 if check failed.
+ */
+static int32 tmat_chk_uppertri(tmat_t *tmat, logmath_t *lmath);
+
+
+/**
+ * Checks that transition matrix arcs in the given object skip over
+ * at most 1 state.  
+ * @returns 0 if successful, -1 if check failed.  
+ */
+
+static int32 tmat_chk_1skip(tmat_t *tmat, logmath_t *lmath);
+
+
 void
 tmat_dump(tmat_t * tmat, FILE * fp)
 {
@@ -133,7 +149,7 @@ tmat_dump(tmat_t * tmat, FILE * fp)
  * i.e. no "backward" transitions allowed.
  */
 int32
-tmat_chk_uppertri(tmat_t * tmat)
+tmat_chk_uppertri(tmat_t * tmat, logmath_t *lmath)
 {
     int32 i, src, dst;
 
@@ -153,7 +169,7 @@ tmat_chk_uppertri(tmat_t * tmat)
 
 
 int32
-tmat_chk_1skip(tmat_t * tmat)
+tmat_chk_1skip(tmat_t * tmat, logmath_t *lmath)
 {
     int32 i, src, dst;
 
@@ -172,7 +188,7 @@ tmat_chk_1skip(tmat_t * tmat)
 
 
 tmat_t *
-tmat_init(char *file_name, float64 tpfloor, int32 breport)
+tmat_init(char *file_name, logmath_t *lmath, float64 tpfloor, int32 breport)
 {
     char tmp;
     int32 n_src, n_dst;
@@ -285,9 +301,9 @@ tmat_init(char *file_name, float64 tpfloor, int32 breport)
     fclose(fp);
 
 
-    if (tmat_chk_uppertri(t) < 0)
+    if (tmat_chk_uppertri(t, lmath) < 0)
         E_FATAL("Tmat not upper triangular\n");
-    if (tmat_chk_1skip(t) < 0)
+    if (tmat_chk_1skip(t, lmath) < 0)
         E_FATAL("Topology not Left-to-Right or Bakis\n");
 
     return t;

@@ -78,6 +78,11 @@
  * correspond to the last piece of data input.
  */
 struct acmod_s {
+    /* Global objects, not retained. */
+    cmd_ln_t *config;          /**< Configuration. */
+    logmath_t *lmath;          /**< Log-math computation. */
+    glist_t strings;           /**< Temporary acoustic model filenames. */
+
     /* Feature computation: */
     fe_t *fe;                  /**< Acoustic feature computation. */
     feat_t *fcb;               /**< Dynamic feature computation. */
@@ -118,6 +123,7 @@ typedef struct acmod_s acmod_t;
  *
  * @param config a command-line object containing parameters.  This
  *               pointer is not retained by this object.
+ * @param lmath global log-math parameters.
  * @param fe a previously-initialized acoustic feature module to use,
  *           or NULL to create one automatically.  If this is supplied
  *           and its parameters do not match those in the acoustic
@@ -128,7 +134,7 @@ typedef struct acmod_s acmod_t;
  *           model, this function will fail.  This pointer is not retained.
  * @return a newly initialized acmod_t, or NULL on failure.
  */
-acmod_t *acmod_init(cmd_ln_t *config, fe_t *fe, feat_t *fcb);
+acmod_t *acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb);
 
 /**
  * Finalize an acoustic model.

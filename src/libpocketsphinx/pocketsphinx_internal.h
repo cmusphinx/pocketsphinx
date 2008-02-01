@@ -76,6 +76,7 @@ struct pocketsphinx_s {
     cmd_ln_t *config;  /**< Configuration. */
     acmod_t *acmod;    /**< Acoustic model. */
     dict_t *dict;      /**< Pronunciation dictionary. */
+    logmath_t *lmath;  /**< Log math computation. */
 
     /* Search modules. */
     /* ngram_search_t *ngs; */ /**< N-Gram search module. */

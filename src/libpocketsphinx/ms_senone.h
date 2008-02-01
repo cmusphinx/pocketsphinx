@@ -115,6 +115,7 @@
 #include <err.h>
 #include <ckd_alloc.h>
 #include <cmd_ln.h>
+#include <logmath.h>
 
 /* Local headers. */
 #include "search_const.h"
@@ -152,6 +153,7 @@ typedef struct {
                                    evaluating the many codebooks will be more costly.
                                    if (n_gauden == 1): pdf[feat][codeword][sen].  Optimized
                                    for the shared-distribution semi-continuous case. */
+    logmath_t *lmath;           /**< log math computation */
     int32 n_sen;		/**< #senones in this set */
     int32 n_feat;		/**< #feature streams */ 
     int32 n_cw;			/**< #codewords per codebook,stream */
@@ -174,7 +176,8 @@ senone_t *senone_init (gauden_t *g,             /**< In: codebooks */
 		       char *mgau_mapfile,	/**< In: file specifying mapping from each
 						   senone to mixture gaussian codebook.
 						   If NULL all senones map to codebook 0 */
-		       float32 mixwfloor	/**< In: Floor value for senone weights */
+		       float32 mixwfloor,	/**< In: Floor value for senone weights */
+                       logmath_t *lmath         /**< In: log math computation */
     );
 
 /** Release memory allocated by senone_init. */

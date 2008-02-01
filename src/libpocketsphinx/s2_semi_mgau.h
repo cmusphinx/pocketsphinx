@@ -50,6 +50,7 @@
 
 /* Local headers. */
 #include "kdtree.h"
+#include "bin_mdef.h"
 
 #ifdef FIXED_POINT
 /** Gaussian mean storage type. */
@@ -68,6 +69,8 @@ typedef struct vqFeature_s vqFeature_t;
 
 typedef struct s2_semi_mgau_s s2_semi_mgau_t;
 struct s2_semi_mgau_s {
+    cmd_ln_t *config;   /* configuration parameters */
+
     int32   **dets;	/* det values foreach feature */
     mean_t  **means;	/* mean vectors foreach feature */
     var_t   **vars;	/* var vectors foreach feature */
@@ -98,9 +101,7 @@ struct s2_semi_mgau_s {
     logmath_t *lmath_8b;
 };
 
-s2_semi_mgau_t *s2_semi_mgau_init(const char *mean_path, const char *var_path,
-				  float64 varfloor, const char *mixw_path,
-				  float64 mixwfloor, int32 topn);
+s2_semi_mgau_t *s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef);
 
 void s2_semi_mgau_free(s2_semi_mgau_t *s);
 
