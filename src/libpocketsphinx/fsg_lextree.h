@@ -82,7 +82,7 @@
 /* Local headers. */
 #include "word_fsg.h"
 #include "fsg_psubtree.h"
-
+#include "fsg_search.h"
 
 typedef struct fsg_lextree_s {
   word_fsg_t *fsg;	/* The fsg for which this lextree is built */
@@ -99,11 +99,10 @@ typedef struct fsg_lextree_s {
 #define fsg_lextree_root(lt,s)	((lt)->root[s])
 #define fsg_lextree_n_pnode(lt)	((lt)->n_pnode)
 
-
 /*
  * Create, initialize, and return a new phonetic lextree for the given FSM.
  */
-fsg_lextree_t *fsg_lextree_init (cmd_ln_t *, word_fsg_t *);
+fsg_lextree_t *fsg_lextree_init(fsg_search_t *, word_fsg_t *);
 
 
 void fsg_lextree_free (fsg_lextree_t *);

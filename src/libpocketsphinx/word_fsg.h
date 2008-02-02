@@ -56,7 +56,7 @@
 
 /* Local headers. */
 #include "fbs.h"
-
+#include "dict.h"
 
 /*
  * A single transition in the FSG.
@@ -84,6 +84,8 @@ typedef struct word_fsglink_s {
  */
 typedef struct word_fsg_s {
   char *name;		/* A unique string identifier for this FSG */
+  dict_t *dict;         /* Pointer to dictionary for word ID mapping */
+  logmath_t *lmath;	/* Pointer to log math computation. */
   int32 n_state;	/* #states in FSG */
   int32 start_state;	/* Must be in the range [0..n_state-1] */
   int32 final_state;	/* Must be in the range [0..n_state-1] */
@@ -184,7 +186,7 @@ typedef struct word_fsg_s {
  * Return value: a new word_fsg_t structure if the file is successfully
  * read, NULL otherwise.
  */
-word_fsg_t *word_fsg_readfile (char *file,
+word_fsg_t *word_fsg_readfile (char *file, dict_t *word_dict, logmath_t *lmath,
 			       boolean use_altpron, boolean use_filler,
 			       float32 silprob, float32 fillprob,
 			       float32 lw);
@@ -193,7 +195,7 @@ word_fsg_t *word_fsg_readfile (char *file,
 /*
  * Like word_fsg_readfile(), but from an already open stream.
  */
-word_fsg_t *word_fsg_read (FILE *fp,
+word_fsg_t *word_fsg_read (FILE *fp, dict_t *word_dict, logmath_t *lmath,
 			   boolean use_altpron, boolean use_filler,
 			   float32 silprob, float32 fillprob,
 			   float32 lw);
@@ -202,7 +204,7 @@ word_fsg_t *word_fsg_read (FILE *fp,
 /*
  * Like word_fsg_read(), but from an in-memory structure.
  */
-word_fsg_t *word_fsg_load (s2_fsg_t *s2_fsg,
+word_fsg_t *word_fsg_load (s2_fsg_t *s2_fsg, dict_t *word_dict, logmath_t *lmath,
 			   boolean use_altpron, boolean use_filler,
 			   float32 silprob, float32 fillprob,
 			   float32 lw);

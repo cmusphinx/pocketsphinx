@@ -52,13 +52,13 @@
 #include <logmath.h>
 
 /* Global log-domain addition table. */
-logmath_t *lmath;
+logmath_t *g_lmath;
 
-#define BASE		logmath_get_base(lmath)
-#define LOG(x) 		logmath_log(lmath,x)
-#define EXP(x)		logmath_exp(lmath,x)
-#define ADD(x,y)	logmath_add(lmath,x,y)
-#define LOG10TOLOG(x)	logmath_log10_to_log(lmath,x)
-#define MIN_LOG         logmath_get_zero(lmath)
+#define BASE		logmath_get_base(g_lmath)
+#define LOG(x) 		logmath_log(g_lmath,x)
+#define EXP(x)		logmath_exp(g_lmath,x)
+#define ADD(x,y)	logmath_add(g_lmath,x,y)
+#define LOG10TOLOG(x)	logmath_log10_to_log(g_lmath,x)
+#define MIN_LOG         logmath_get_zero(g_lmath)
 
 #endif /* _LOG_H_ */

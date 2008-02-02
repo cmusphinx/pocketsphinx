@@ -78,7 +78,8 @@ fsg_history_init(word_fsg_t * fsg)
     if (fsg) {
         h->frame_entries =
             (glist_t **) ckd_calloc_2d(word_fsg_n_state(fsg),
-                                       bin_mdef_n_ciphone(g_mdef), sizeof(glist_t));
+                                       bin_mdef_n_ciphone(fsg->dict->mdef),
+                                       sizeof(glist_t));
     }
     else {
         h->frame_entries = NULL;
@@ -105,7 +106,8 @@ fsg_history_set_fsg(fsg_history_t * h, word_fsg_t * fsg)
     if (fsg) {
         h->frame_entries =
             (glist_t **) ckd_calloc_2d(word_fsg_n_state(fsg),
-                                       bin_mdef_n_ciphone(g_mdef), sizeof(glist_t));
+                                       bin_mdef_n_ciphone(fsg->dict->mdef),
+                                       sizeof(glist_t));
     }
 }
 
@@ -202,7 +204,7 @@ fsg_history_end_frame(fsg_history_t * h)
     fsg_hist_entry_t *entry;
 
     ns = word_fsg_n_state(h->fsg);
-    np = bin_mdef_n_ciphone(g_mdef);
+    np = bin_mdef_n_ciphone(h->fsg->dict->mdef);
 
     for (s = 0; s < ns; s++) {
         for (lc = 0; lc < np; lc++) {
@@ -350,7 +352,7 @@ fsg_history_utt_start(fsg_history_t * h)
     assert(h->frame_entries);
 
     ns = word_fsg_n_state(h->fsg);
-    np = bin_mdef_n_ciphone(g_mdef);
+    np = bin_mdef_n_ciphone(h->fsg->dict->mdef);
 
     for (s = 0; s < ns; s++) {
         for (lc = 0; lc < np; lc++) {

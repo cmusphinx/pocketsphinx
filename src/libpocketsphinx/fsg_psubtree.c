@@ -97,6 +97,7 @@
 #include <err.h>
 
 /* Local headers. */
+#include "fsg_search.h"
 #include "fsg_psubtree.h"
 #include "kb.h"
 #include "dict.h"
@@ -411,7 +412,7 @@ psubtree_add_trans(fsg_pnode_t * root,
  * For now, this "tree" will be "flat"
  */
 fsg_pnode_t *
-fsg_psubtree_init(cmd_ln_t *config, 
+fsg_psubtree_init(fsg_search_t *search,
                   word_fsg_t * fsg, int32 from_state,
                   fsg_pnode_t ** alloc_head)
 {
@@ -423,6 +424,8 @@ fsg_psubtree_init(cmd_ln_t *config,
     int32 n_ci;
     float32 lw;
     int32 wip, pip;
+    cmd_ln_t *config = search->config;
+    logmath_t *lmath = search->lmath;
 
     root = NULL;
     assert(*alloc_head == NULL);

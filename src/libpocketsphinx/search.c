@@ -2373,7 +2373,7 @@ search_get_lscr(void)
 void
 search_set_beam_width(double beam)
 {
-    DynamicLogBeamWidth = LogBeamWidth = logmath_log(lmath, beam);
+    DynamicLogBeamWidth = LogBeamWidth = logmath_log(g_lmath, beam);
     E_INFO("%8d = beam width\n", LogBeamWidth);
 }
 
@@ -2383,7 +2383,7 @@ search_set_beam_width(double beam)
 void
 search_set_new_word_beam_width(double beam)
 {
-    NewWordLogBeamWidth = logmath_log(lmath, beam);
+    NewWordLogBeamWidth = logmath_log(g_lmath, beam);
     E_INFO("%8d = new word beam width\n", NewWordLogBeamWidth);
 }
 
@@ -2393,7 +2393,7 @@ search_set_new_word_beam_width(double beam)
 void
 search_set_lastphone_alone_beam_width(double beam)
 {
-    LastPhoneAloneLogBeamWidth = logmath_log(lmath, beam);
+    LastPhoneAloneLogBeamWidth = logmath_log(g_lmath, beam);
     E_INFO("%8d = Last phone alone beam width\n",
            LastPhoneAloneLogBeamWidth);
 }
@@ -2404,7 +2404,7 @@ search_set_lastphone_alone_beam_width(double beam)
 void
 search_set_new_phone_beam_width(double beam)
 {
-    NewPhoneLogBeamWidth = logmath_log(lmath, beam);
+    NewPhoneLogBeamWidth = logmath_log(g_lmath, beam);
     E_INFO("%8d = new phone beam width\n", NewPhoneLogBeamWidth);
 }
 
@@ -2414,7 +2414,7 @@ search_set_new_phone_beam_width(double beam)
 void
 search_set_last_phone_beam_width(double beam)
 {
-    LastPhoneLogBeamWidth = logmath_log(lmath, beam);
+    LastPhoneLogBeamWidth = logmath_log(g_lmath, beam);
     E_INFO("%8d = last phone beam width\n", LastPhoneLogBeamWidth);
 }
 
@@ -2448,15 +2448,15 @@ searchCurrentFrame(void)
 void
 search_set_newword_penalty(double nw_pen)
 {
-    newword_penalty = logmath_log(lmath, nw_pen);
+    newword_penalty = logmath_log(g_lmath, nw_pen);
     E_INFO("%8d = newword penalty\n", newword_penalty);
 }
 
 void
 search_set_silence_word_penalty(float pen, float pip)
 {                               /* Phone insertion penalty */
-    logPhoneInsertionPenalty = logmath_log(lmath, pip);
-    SilenceWordPenalty = logmath_log(lmath, pen) + logmath_log(lmath, pip);
+    logPhoneInsertionPenalty = logmath_log(g_lmath, pip);
+    SilenceWordPenalty = logmath_log(g_lmath, pen) + logmath_log(g_lmath, pip);
     E_INFO("%8d = LOG (Silence Word Penalty) + LOG (Phone Penalty)\n",
            SilenceWordPenalty);
 }
@@ -2470,7 +2470,7 @@ search_get_logs2pip(void)
 void
 search_set_filler_word_penalty(float pen, float pip)
 {
-    FillerWordPenalty = logmath_log(lmath, pen) + logmath_log(lmath, pip);;
+    FillerWordPenalty = logmath_log(g_lmath, pen) + logmath_log(g_lmath, pip);;
     E_INFO("%8d = LOG (Filler Word Penalty) + LOG (Phone Penalty)\n",
            FillerWordPenalty);
 }
@@ -2491,7 +2491,7 @@ search_set_lw(double p1lw, double p2lw, double p3lw)
 void
 search_set_ip(float ip)
 {
-    LogInsertionPenalty = logmath_log(lmath, ip);
+    LogInsertionPenalty = logmath_log(g_lmath, ip);
 }
 
 void
@@ -3319,8 +3319,8 @@ destroy_fwdflat_chan(void)
 void
 search_set_fwdflat_bw(double bw, double nwbw)
 {
-    FwdflatLogBeamWidth = logmath_log(lmath, bw);
-    FwdflatLogWordBeamWidth = logmath_log(lmath, nwbw);
+    FwdflatLogBeamWidth = logmath_log(g_lmath, bw);
+    FwdflatLogWordBeamWidth = logmath_log(g_lmath, nwbw);
     E_INFO("Flat-pass bw = %.1e (%d), nwbw = %.1e (%d)\n",
            bw, FwdflatLogBeamWidth, nwbw, FwdflatLogWordBeamWidth);
 }

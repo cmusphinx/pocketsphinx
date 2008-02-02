@@ -53,21 +53,29 @@
 #include <cmd_ln.h>
 
 /* Local headers. */
-#include "fsg_lextree.h"
-#include "fsg_history.h"
 #include "fbs.h"
+#include "bin_mdef.h"
+#include "word_fsg.h"
+#include "dict.h"
 
+/* Forward declare some things. */
+struct fsg_lextree_s;
+struct fsg_history_s;
 
 typedef struct fsg_search_s {
     glist_t fsglist;		/* List of all FSGs loaded */
   
-    cmd_ln_t *config;           /* Configuration. */
+    cmd_ln_t *config;           /* Pointer to global configuration. */
+    logmath_t *lmath;		/* Pointer to global log-math. */
+    bin_mdef_t *mdef;           /* Pointer to global model definition. */
+    dict_t *dict;		/* Pointer to global word dictoinary. */
+
     word_fsg_t *fsg;		/* Currently active FSG; NULL if none.  One
 				   must be made active before starting FSG
 				   decoding */
-    fsg_lextree_t *lextree;	/* Lextree structure for the currently
+    struct fsg_lextree_s *lextree;	/* Lextree structure for the currently
 				   active FSG */
-    fsg_history_t *history;	/* For storing the Viterbi search history */
+    struct fsg_history_s *history;	/* For storing the Viterbi search history */
   
     glist_t pnode_active;		/* Those active in this frame */
     glist_t pnode_active_next;	/* Those activated for the next frame */
@@ -100,19 +108,19 @@ typedef struct fsg_search_s {
 
 
 /*
- * Create, initialize and return a search module for the given FSM.
- * If no FSG is given (i.e., the argument is NULL), a search structure is
- * still created.  If an FSG is provided, it is made the currently active
- * FSG.
+ * Create, initialize and return a search module.
  */
-fsg_search_t *fsg_search_init (cmd_ln_t *, word_fsg_t *);
+fsg_search_t *fsg_search_init(cmd_ln_t *config,
+                              logmath_t *lmath,
+                              bin_mdef_t *mdef,
+                              dict_t *dict);
 
 
 /*
  * Lookup the FSG associated with the given name and return it, or NULL if
  * no match found.
  */
-word_fsg_t *fsg_search_fsgname_to_fsg (fsg_search_t *, char *name);
+word_fsg_t *fsg_search_fsgname_to_fsg(fsg_search_t *fsgs, char *name);
 
 
 /*
@@ -122,7 +130,7 @@ word_fsg_t *fsg_search_fsgname_to_fsg (fsg_search_t *, char *name);
  * The name of the new FSG must not match any of the existing ones.  If so,
  * FALSE is returned.  If successfully added, TRUE is returned.
  */
-boolean fsg_search_add_fsg (fsg_search_t *, word_fsg_t *);
+boolean fsg_search_add_fsg(fsg_search_t *fsgs, word_fsg_t *wfsg);
 
 
 /*
@@ -130,11 +138,11 @@ boolean fsg_search_add_fsg (fsg_search_t *, word_fsg_t *);
  * and if it was the currently active FSG, also free the associated search
  * structures and leave the current FSG undefined.
  */
-boolean fsg_search_del_fsg (fsg_search_t *, word_fsg_t *);
+boolean fsg_search_del_fsg(fsg_search_t *fsgs, word_fsg_t *wfsg);
 
 
 /* Like fsg_search_del_fsg(), but identifies the FSG by its name */
-boolean fsg_search_del_fsg_byname (fsg_search_t *, char *name);
+boolean fsg_search_del_fsg_byname(fsg_search_t *fsgs, char *name);
 
 
 /*
@@ -142,20 +150,20 @@ boolean fsg_search_del_fsg_byname (fsg_search_t *, char *name);
  * when search is busy (ie, in the midst of an utterance.  That's an error
  * and FALSE is returned.  If successful, returns TRUE.
  */
-boolean fsg_search_set_current_fsg (fsg_search_t *, char *);
+boolean fsg_search_set_current_fsg(fsg_search_t *fsgs, char *name);
 
 
 /*
  * Deallocate search structure.
  */
-void fsg_search_free (fsg_search_t *);
+void fsg_search_free(fsg_search_t *fsgs);
 
 
 /*
  * Prepare the FSG search structure for beginning decoding of the next
  * utterance.
  */
-void fsg_search_utt_start (fsg_search_t *);
+void fsg_search_utt_start(fsg_search_t *fsgs);
 
 
 /*
@@ -163,13 +171,13 @@ void fsg_search_utt_start (fsg_search_t *);
  * results of search: fsg_search_t.{hyp,ascr,lscr,frame}.  (But some fields
  * of hyp are left unfilled for now: conf, latden, phone_perp.)
  */
-void fsg_search_utt_end (fsg_search_t *);
+void fsg_search_utt_end(fsg_search_t *fsgs);
 
 
 /*
  * Step one frame forward through the Viterbi search.
  */
-void fsg_search_frame_fwd (fsg_search_t *);
+void fsg_search_frame_fwd(fsg_search_t *fsgs);
 
 
 /*
@@ -180,15 +188,15 @@ void fsg_search_frame_fwd (fsg_search_t *);
  * starts from the best entry, regardless of the terminating state (usually
  * used for partial results).
  */
-void fsg_search_history_backtrace (fsg_search_t *search,
+void fsg_search_history_backtrace(fsg_search_t *search,
 				   boolean check_fsg_final_state);
 
 /*
  * Return the start (or final) state of the currently active FSG, if any.
  * Otherwise return -1.
  */
-int32 fsg_search_get_start_state (fsg_search_t *);
-int32 fsg_search_get_final_state (fsg_search_t *);
+int32 fsg_search_get_start_state(fsg_search_t *);
+int32 fsg_search_get_final_state(fsg_search_t *);
 
 
 /*
@@ -197,14 +205,14 @@ int32 fsg_search_get_final_state (fsg_search_t *);
  * in the midst of one.  Return the previous start (or final) state if
  * successful.  Return -1 if any error.
  */
-int32 fsg_search_set_start_state (fsg_search_t *, int32 state);
-int32 fsg_search_set_final_state (fsg_search_t *, int32 state);
+int32 fsg_search_set_start_state(fsg_search_t *, int32 state);
+int32 fsg_search_set_final_state(fsg_search_t *, int32 state);
 
 
 /*
  * Update the global senone_active list using the list of active pnodes.
  */
-void fsg_search_sen_active (fsg_search_t *);
+void fsg_search_sen_active(fsg_search_t *fsgs);
 
 
 #endif

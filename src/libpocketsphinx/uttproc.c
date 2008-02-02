@@ -519,7 +519,7 @@ uttproc_init(void)
         FILE *ctlfp;
         char line[16384], word[16384];
 
-        fsg_search = fsg_search_init(cmd_ln_get(), NULL);
+        fsg_search = fsg_search_init(cmd_ln_get(), g_lmath, g_mdef, g_word_dict);
 
         fsgfile = cmd_ln_str("-fsg");
 
@@ -1314,7 +1314,8 @@ uttproc_load_fsg(s2_fsg_t * fsg,
     word_fsg_t *word_fsg;
 
     word_fsg =
-        word_fsg_load(fsg, use_altpron, use_filler, silprob, fillprob, lw);
+        word_fsg_load(fsg, g_word_dict, g_lmath,
+                      use_altpron, use_filler, silprob, fillprob, lw);
 
     if (!word_fsg)
         return 0;
@@ -1335,7 +1336,7 @@ uttproc_load_fsgfile(char *fsgfile)
 {
     word_fsg_t *fsg;
 
-    fsg = word_fsg_readfile(fsgfile,
+    fsg = word_fsg_readfile(fsgfile, g_word_dict, g_lmath,
                             cmd_ln_boolean("-fsgusealtpron"),
                             cmd_ln_boolean("-fsgusefiller"),
                             cmd_ln_float32("-silpen"),

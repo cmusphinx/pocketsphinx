@@ -364,10 +364,10 @@ word_fsg_add_filler(word_fsg_t * fsg, float32 silprob, float32 fillprob)
     assert(fsg);
 
     silwid = kb_get_word_id("<sil>");
-    n_word = g_word_dict->dict_entry_count;
+    n_word = fsg->dict->dict_entry_count;
 
-    logsilp = (int32) (logmath_log(lmath, silprob) * fsg->lw);
-    logfillp = (int32) (logmath_log(lmath, fillprob) * fsg->lw);
+    logsilp = (int32) (logmath_log(fsg->lmath, silprob) * fsg->lw);
+    logfillp = (int32) (logmath_log(fsg->lmath, fillprob) * fsg->lw);
 
     /*
      * Add silence and filler word self-loop transitions to each state.
@@ -410,9 +410,9 @@ word_fsg_lc_rc(word_fsg_t * fsg)
     int32 len;
 
     endwid = kb_get_word_id("</s>");
-    silcipid = bin_mdef_ciphone_id(g_mdef, "SIL");
+    silcipid = bin_mdef_ciphone_id(fsg->dict->mdef, "SIL");
     assert(silcipid >= 0);
-    n_ci = bin_mdef_n_ciphone(g_mdef);
+    n_ci = bin_mdef_n_ciphone(fsg->dict->mdef);
     if (n_ci > 127) {
         E_FATAL
             ("#phones(%d) > 127; cannot use int8** for word_fsg_t.{lc,rc}\n",
@@ -441,16 +441,16 @@ word_fsg_lc_rc(word_fsg_t * fsg)
                  * marking of a filler phone; but only filler words are supposed to
                  * use such phones, so we use that fact.  HACK!!  FRAGILE!!)
                  */
-                if (dict_is_filler_word(g_word_dict, l->wid)
+                if (dict_is_filler_word(fsg->dict, l->wid)
                     || (l->wid == endwid)) {
                     /* Filler phone; use silence phone as context */
                     fsg->rc[s][silcipid] = 1;
                     fsg->lc[d][silcipid] = 1;
                 }
                 else {
-                    len = dict_pronlen(g_word_dict, l->wid);
-                    fsg->rc[s][dict_ciphone(g_word_dict, l->wid, 0)] = 1;
-                    fsg->lc[d][dict_ciphone(g_word_dict, l->wid, len - 1)] = 1;
+                    len = dict_pronlen(fsg->dict, l->wid);
+                    fsg->rc[s][dict_ciphone(fsg->dict, l->wid, 0)] = 1;
+                    fsg->lc[d][dict_ciphone(fsg->dict, l->wid, len - 1)] = 1;
                 }
             }
         }
@@ -516,7 +516,7 @@ word_fsg_lc_rc(word_fsg_t * fsg)
 
 
 word_fsg_t *
-word_fsg_load(s2_fsg_t * fsg,
+word_fsg_load(s2_fsg_t * fsg, dict_t *word_dict, logmath_t *lmath,
               boolean use_altpron, boolean use_filler,
               float32 silprob, float32 fillprob, float32 lw)
 {
@@ -556,6 +556,8 @@ word_fsg_load(s2_fsg_t * fsg,
 
     word_fsg = (word_fsg_t *) ckd_calloc(1, sizeof(word_fsg_t));
     word_fsg->name = ckd_salloc(fsg->name ? fsg->name : "");
+    word_fsg->dict = word_dict;
+    word_fsg->lmath = lmath;
     word_fsg->n_state = fsg->n_state;
     word_fsg->start_state = fsg->start_state;
     word_fsg->final_state = fsg->final_state;
@@ -584,7 +586,7 @@ word_fsg_load(s2_fsg_t * fsg,
     for (trans = fsg->trans_list, n_trans = 0;
          trans; trans = trans->next, n_trans++) {
         /* Convert prob to logs2prob and apply language weight */
-        logp = (int32) (logmath_log(lmath, trans->prob) * lw);
+        logp = (int32) (logmath_log(word_fsg->lmath, trans->prob) * lw);
 
         /* Check if word is in dictionary */
         if (trans->word) {
@@ -594,7 +596,7 @@ word_fsg_load(s2_fsg_t * fsg,
                 n_unk++;
             }
             else if (use_altpron) {
-                wid = dictid_to_baseid(g_word_dict, wid);
+                wid = dictid_to_baseid(word_fsg->dict, wid);
                 assert(wid >= 0);
             }
         }
@@ -617,8 +619,8 @@ word_fsg_load(s2_fsg_t * fsg,
 
             /* Add transitions for alternative pronunciations, if any */
             if (use_altpron) {
-                for (wid = dict_next_alt(g_word_dict, wid);
-                     wid >= 0; wid = dict_next_alt(g_word_dict, wid)) {
+                for (wid = dict_next_alt(word_fsg->dict, wid);
+                     wid >= 0; wid = dict_next_alt(word_fsg->dict, wid)) {
                     word_fsg_trans_add(word_fsg, i, j, logp, wid);
                     n_alt_trans++;
                     n_trans++;
@@ -685,7 +687,7 @@ s2_fsg_free(s2_fsg_t * fsg)
 
 
 word_fsg_t *
-word_fsg_read(FILE * fp,
+word_fsg_read(FILE * fp, dict_t *word_dict, logmath_t *lmath,
               boolean use_altpron, boolean use_filler,
               float32 silprob, float32 fillprob, float32 lw)
 {
@@ -810,7 +812,8 @@ word_fsg_read(FILE * fp,
     }
 
     cfsg =
-        word_fsg_load(fsg, use_altpron, use_filler, silprob, fillprob, lw);
+        word_fsg_load(fsg, word_dict, lmath, 
+                      use_altpron, use_filler, silprob, fillprob, lw);
 
     s2_fsg_free(fsg);
 
@@ -823,7 +826,7 @@ word_fsg_read(FILE * fp,
 
 
 word_fsg_t *
-word_fsg_readfile(char *file,
+word_fsg_readfile(char *file, dict_t *word_dict, logmath_t *lmath,
                   boolean use_altpron, boolean use_filler,
                   float32 silprob, float32 fillprob, float32 lw)
 {
@@ -839,7 +842,7 @@ word_fsg_readfile(char *file,
         return NULL;
     }
 
-    fsg = word_fsg_read(fp,
+    fsg = word_fsg_read(fp, word_dict, lmath,
                         use_altpron, use_filler, silprob, fillprob, lw);
 
     fclose(fp);
@@ -958,12 +961,14 @@ word_fsg_write(word_fsg_t * fsg, FILE * fp)
         for (i = 0; i < fsg->n_state; i++) {
             fprintf(fp, "%c LC[%d]:", WORD_FSG_COMMENT_CHAR, i);
             for (j = 0; fsg->lc[i][j] >= 0; j++)
-                fprintf(fp, " %s", bin_mdef_ciphone_str(g_mdef, fsg->lc[i][j]));
+                fprintf(fp, " %s",
+                        bin_mdef_ciphone_str(fsg->dict->mdef, fsg->lc[i][j]));
             fprintf(fp, "\n");
 
             fprintf(fp, "%c RC[%d]:", WORD_FSG_COMMENT_CHAR, i);
             for (j = 0; fsg->rc[i][j] >= 0; j++)
-                fprintf(fp, " %s", bin_mdef_ciphone_str(g_mdef, fsg->rc[i][j]));
+                fprintf(fp, " %s",
+                        bin_mdef_ciphone_str(fsg->dict->mdef, fsg->rc[i][j]));
             fprintf(fp, "\n");
         }
     }

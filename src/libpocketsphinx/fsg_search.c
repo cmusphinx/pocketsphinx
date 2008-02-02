@@ -63,6 +63,8 @@
 #include "search_const.h"
 #include "phone.h"
 #include "fsg_search.h"
+#include "fsg_history.h"
+#include "fsg_lextree.h"
 #include "senscr.h"
 #include "kb.h"
 #include "fbs.h"
@@ -79,7 +81,8 @@
 
 
 fsg_search_t *
-fsg_search_init(cmd_ln_t *config, word_fsg_t * fsg)
+fsg_search_init(cmd_ln_t *config, logmath_t *lmath,
+                bin_mdef_t *mdef, dict_t *dict)
 {
     fsg_search_t *search;
     float32 lw;
@@ -87,28 +90,14 @@ fsg_search_init(cmd_ln_t *config, word_fsg_t * fsg)
 
     search = (fsg_search_t *) ckd_calloc(1, sizeof(fsg_search_t));
     search->config = config;
-    search->fsg = fsg;
-
-    if (fsg) {
-        search->fsglist = glist_add_ptr(NULL, (void *) fsg);
-        search->lextree = fsg_lextree_init(config, fsg);
-    }
-    else {
-        search->fsglist = NULL;
-        search->lextree = NULL;
-    }
+    search->lmath = lmath;
+    search->mdef = mdef;
+    search->dict = dict;
 
     /* Intialize the search history object */
-    search->history = fsg_history_init(fsg);
-
-    /* Initialize the active lists */
-    search->pnode_active = NULL;
-    search->pnode_active_next = NULL;
+    search->history = fsg_history_init(NULL);
 
     search->frame = -1;
-
-    search->hyp = NULL;
-
     search->state = FSG_SEARCH_IDLE;
 
     /* Get search pruning parameters */
@@ -258,7 +247,7 @@ fsg_search_set_current_fsg(fsg_search_t * search, char *name)
         fsg_lextree_free(search->lextree);
 
     /* Allocate new lextree for the given FSG */
-    search->lextree = fsg_lextree_init(search->config, fsg);
+    search->lextree = fsg_lextree_init(search, fsg);
 
     /* Inform the history module of the new fsg */
     fsg_history_set_fsg(search->history, fsg);
@@ -443,8 +432,8 @@ fsg_search_pnode_exit(fsg_search_t * search, fsg_pnode_t * pnode)
      * Check if this is filler or single phone word; these do not model right
      * context (i.e., the exit score applies to all right contexts).
      */
-    if (dict_is_filler_word(g_word_dict, wid) ||
-        (wid == endwid) || (dict_pronlen(g_word_dict, wid) == 1)) {
+    if (dict_is_filler_word(search->dict, wid) ||
+        (wid == endwid) || (dict_pronlen(search->dict, wid) == 1)) {
         /* Create a dummy context structure that applies to all right contexts */
         fsg_pnode_add_all_ctxt(&ctxt);
 
@@ -746,7 +735,7 @@ fsg_search_utt_start(fsg_search_t * search)
     search->pbeam = search->pbeam_orig;
     search->wbeam = search->wbeam_orig;
 
-    silcipid = bin_mdef_ciphone_id(g_mdef, "SIL");
+    silcipid = bin_mdef_ciphone_id(search->mdef, "SIL");
 
     /* Initialize EVERYTHING to be inactive */
     assert(search->pnode_active == NULL);
@@ -851,7 +840,7 @@ fsg_search_hyp_filter(fsg_search_t * search)
 
         /* Replace specific word pronunciation ID with base ID */
         if (!altpron)
-            filt_hyp[i].wid = dictid_to_baseid(g_word_dict, filt_hyp[i].wid);
+            filt_hyp[i].wid = dictid_to_baseid(search->dict, filt_hyp[i].wid);
 
         i++;
         if ((i + 1) >= HYP_SZ)

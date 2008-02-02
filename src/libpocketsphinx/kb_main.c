@@ -111,7 +111,7 @@ lm_init(void)
     if (lm_ctl_filename) {
         g_lmset = ngram_model_set_read(cmd_ln_get(),
                                        lm_ctl_filename,
-                                       lmath);
+                                       g_lmath);
         if (g_lmset == NULL) {
             E_FATAL("Failed to read language model control file: %s\n",
                     lm_ctl_filename);
@@ -122,7 +122,7 @@ lm_init(void)
         static const char *name = "default";
 
         lm = ngram_model_read(cmd_ln_get(), lm_file_name,
-                              NGRAM_AUTO, lmath);
+                              NGRAM_AUTO, g_lmath);
         if (lm == NULL) {
             E_FATAL("Failed to read language model file: %s\n",
                     lm_file_name);
@@ -183,7 +183,7 @@ kb_init(void)
     char *mdeffn, *hmmdir, *tmatfn;
 
     /* Initialize log computation. */
-    lmath = logmath_init((float64)cmd_ln_float32("-logbase"), 0, FALSE);
+    g_lmath = logmath_init((float64)cmd_ln_float32("-logbase"), 0, FALSE);
 
     /* Get acoustic model filenames and add them to the command-line */
     if ((hmmdir = cmd_ln_str("-hmm")) != NULL) {
@@ -211,7 +211,7 @@ kb_init(void)
     /* Read transition matrices. */
     if ((tmatfn = cmd_ln_str("-tmat")) == NULL)
         E_FATAL("No tmat file specified\n");
-    g_tmat = tmat_init(tmatfn, lmath, cmd_ln_float32("-tmatfloor"), TRUE);
+    g_tmat = tmat_init(tmatfn, g_lmath, cmd_ln_float32("-tmatfloor"), TRUE);
 
     /* Read the acoustic models. */
     if ((cmd_ln_str("-mean") == NULL)
@@ -220,7 +220,7 @@ kb_init(void)
         E_FATAL("No mean/var/tmat files specified\n");
 
     E_INFO("Attempting to use SCGMM computation module\n");
-    g_semi_mgau = s2_semi_mgau_init(cmd_ln_get(), lmath, g_mdef);
+    g_semi_mgau = s2_semi_mgau_init(cmd_ln_get(), g_lmath, g_mdef);
     if (g_semi_mgau) {
         char *kdtreefn = cmd_ln_str("-kdtree");
         if (kdtreefn)
@@ -231,7 +231,7 @@ kb_init(void)
     }
     else {
         E_INFO("Falling back to general multi-stream GMM computation\n");
-        g_ms_mgau = ms_mgau_init(cmd_ln_get(), lmath);
+        g_ms_mgau = ms_mgau_init(cmd_ln_get(), g_lmath);
     }
 }
 
@@ -260,7 +260,7 @@ kb_close(void)
     if (g_ms_mgau)
         ms_mgau_free(g_ms_mgau);
 
-    logmath_free(lmath);
+    logmath_free(g_lmath);
 }
 
 int32
@@ -289,7 +289,7 @@ lm_read(char const *lmfile,
     ngram_model_t *lm;
 
     if ((lm = ngram_model_read(cmd_ln_get(),
-                               lmfile, NGRAM_AUTO, lmath)) == NULL)
+                               lmfile, NGRAM_AUTO, g_lmath)) == NULL)
         return -1;
     ngram_model_apply_weights(lm, lw, wip, uw);
 
