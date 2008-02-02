@@ -38,24 +38,14 @@
 #ifndef _PHONE_H_
 #define _PHONE_H_
 
-#define NO_PHONE	-1
+/**
+ * @file phone.h Legacy Sphinx2-style phone ID strings
+ */
 
-#define PT_CIPHONE	0		/* Context independent */
-#define PT_CDPHONE	-1		/* Context dependent */
-#define PT_WWPHONE	-2		/* With in Word */
-#define PT_DIPHONE	-3		/* DiPhone */
-#define PT_DIPHONE_S	-4		/* DiPhone Singleton */
-#define PT_CDDPHONE	-99		/* Context dependent duration */
-#define PT_WWCPHONE	1000		/* With in Word Component phone */
+#include "bin_mdef.h"
 
-int32 phone_to_id(char const *phone_str, int verbose);
-char const *phone_from_id(int32 phone_id);
-int32 phone_id_to_base_id(int32 phone_id);
-int32 phone_type(int32 phone_id);
-int32 phone_len(int32 phone_id);
-int32 phone_count(void);
-int32 phoneCiCount (void);
-int32 phoneWdCount (void);
-int32 phone_map (int32 pid);
+#define NO_PHONE	BAD_S3PID
+
+int32 phone_to_id(bin_mdef_t *mdef, char const *phone_str);
 
 #endif /* _PHONE_H_ */

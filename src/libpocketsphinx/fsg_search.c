@@ -443,8 +443,8 @@ fsg_search_pnode_exit(fsg_search_t * search, fsg_pnode_t * pnode)
      * Check if this is filler or single phone word; these do not model right
      * context (i.e., the exit score applies to all right contexts).
      */
-    if (dict_is_filler_word(word_dict, wid) ||
-        (wid == endwid) || (dict_pronlen(word_dict, wid) == 1)) {
+    if (dict_is_filler_word(g_word_dict, wid) ||
+        (wid == endwid) || (dict_pronlen(g_word_dict, wid) == 1)) {
         /* Create a dummy context structure that applies to all right contexts */
         fsg_pnode_add_all_ctxt(&ctxt);
 
@@ -746,7 +746,7 @@ fsg_search_utt_start(fsg_search_t * search)
     search->pbeam = search->pbeam_orig;
     search->wbeam = search->wbeam_orig;
 
-    silcipid = phone_to_id("SIL",  TRUE);
+    silcipid = bin_mdef_ciphone_id(g_mdef, "SIL");
 
     /* Initialize EVERYTHING to be inactive */
     assert(search->pnode_active == NULL);
@@ -851,7 +851,7 @@ fsg_search_hyp_filter(fsg_search_t * search)
 
         /* Replace specific word pronunciation ID with base ID */
         if (!altpron)
-            filt_hyp[i].wid = dictid_to_baseid(word_dict, filt_hyp[i].wid);
+            filt_hyp[i].wid = dictid_to_baseid(g_word_dict, filt_hyp[i].wid);
 
         i++;
         if ((i + 1) >= HYP_SZ)

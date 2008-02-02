@@ -78,17 +78,17 @@ char *kb_get_senprob_dump_file(void);
 int32 kb_dict_maxsize(void);
 
 /* Global model definition. */
-extern bin_mdef_t *mdef;
-extern tmat_t *tmat;
+extern bin_mdef_t *g_mdef;
+extern tmat_t *g_tmat;
 
 /* Global model set. */
-extern s2_semi_mgau_t *semi_mgau;
-extern ms_mgau_model_t *ms_mgau;
+extern s2_semi_mgau_t *g_semi_mgau;
+extern ms_mgau_model_t *g_ms_mgau;
 
 /* Global dictionary. */
-extern dict_t *word_dict;
+extern dict_t *g_word_dict;
 
 /* Global language model set. */
-extern ngram_model_t *lmset;
+extern ngram_model_t *g_lmset;
 
 #endif

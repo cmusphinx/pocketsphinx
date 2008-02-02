@@ -60,6 +60,46 @@ static const arg_t ps_args_def[] = {
     CMDLN_EMPTY_OPTION
 };
 
+/* I'm not sure what the portable way to do this is. */
+static int
+file_exists(const char *path)
+{
+    FILE *tmp;
+
+    tmp = fopen(path, "rb");
+    if (tmp) fclose(tmp);
+    return (tmp != NULL);
+}
+
+static void
+pocketsphinx_add_file(pocketsphinx_t *ps, const char *arg,
+                      const char *hmmdir, const char *file)
+{
+    char *tmp = string_join(hmmdir, "/", file, NULL);
+
+    if (cmd_ln_str_r(ps->config, arg) == NULL && file_exists(tmp)) {
+        cmd_ln_set_str_r(ps->config, arg, tmp);
+        ps->strings = glist_add_ptr(ps->strings, tmp);
+    }
+}
+
+static void
+pocketsphinx_init_defaults(pocketsphinx_t *ps)
+{
+    char *hmmdir;
+
+    /* Get acoustic model filenames and add them to the command-line */
+    if ((hmmdir = cmd_ln_str_r(ps->config, "-hmm")) != NULL) {
+        pocketsphinx_add_file(ps, "-mdef", hmmdir, "mdef");
+        pocketsphinx_add_file(ps, "-mean", hmmdir, "means");
+        pocketsphinx_add_file(ps, "-var", hmmdir, "variances");
+        pocketsphinx_add_file(ps, "-tmat", hmmdir, "transition_matrices");
+        pocketsphinx_add_file(ps, "-sendump", hmmdir, "sendump");
+        pocketsphinx_add_file(ps, "-kdtree", hmmdir, "kdtrees");
+        pocketsphinx_add_file(ps, "-fdict", hmmdir, "noisedict");
+    }
+}
+
 pocketsphinx_t *
 pocketsphinx_init(cmd_ln_t *config)
 {
@@ -68,6 +108,9 @@ pocketsphinx_init(cmd_ln_t *config)
     /* First initialize the structure itself */
     ps = ckd_calloc(1, sizeof(*ps));
     ps->config = config;
+
+    /* Fill in some default arguments. */
+    pocketsphinx_init_defaults(ps);
 
     /* Logmath computation (used in acmod and search) */
     ps->lmath = logmath_init
@@ -79,33 +122,8 @@ pocketsphinx_init(cmd_ln_t *config)
         goto error_out;
 
     /* Dictionary and triphone mappings. */
-    if ((ps->dict = dict_new(config)) == NULL)
+    if ((ps->dict = dict_init(config, ps->acmod->mdef)) == NULL)
         goto error_out;
-    if (0) {
-        char *fdictfn = NULL;
-        /* Look for noise word dictionary in the HMM directory if not given */
-        if (cmd_ln_str_r(config, "-hmm")
-            && !cmd_ln_str_r(config, "-fdict")) {
-            FILE *tmp;
-            fdictfn = string_join(cmd_ln_str_r(config, "-hmm"),
-                                  "/noisedict", NULL);
-            if ((tmp = fopen(fdictfn, "r")) == NULL) {
-                ckd_free(fdictfn);
-                fdictfn = NULL;
-            }
-            else {
-                fclose(tmp);
-            }
-        }
-        if (dict_read(ps->dict,
-                      cmd_ln_str_r(config, "-dict"),
-                      fdictfn ? fdictfn : cmd_ln_str_r(config, "-fdict"),
-                      !cmd_ln_boolean_r(config, "-usewdphones")) < 0) {
-            ckd_free(fdictfn);
-            goto error_out;
-        }
-        ckd_free(fdictfn);
-    }
 
     return ps;
 error_out:
@@ -122,6 +140,11 @@ pocketsphinx_args(void)
 void
 pocketsphinx_free(pocketsphinx_t *ps)
 {
+    gnode_t *gn;
+
+    for (gn = ps->strings; gn; gn = gnode_next(gn))
+        ckd_free(gnode_ptr(gn));
+    glist_free(ps->strings);
     dict_free(ps->dict);
     cmd_ln_free_r(ps->config);
     ckd_free(ps);

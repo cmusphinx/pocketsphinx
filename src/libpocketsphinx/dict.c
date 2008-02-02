@@ -125,10 +125,10 @@
 #include <glist.h>
 
 /* Local headers. */
-#include "phone.h"
 #include "dict.h"
 #include "search_const.h"
 #include "kb.h"
+#include "phone.h"
 
 #ifdef DEBUG
 #define DFPRINTF(x)		fprintf x
@@ -140,21 +140,21 @@
 
 extern int32 use_noise_words;
 
-static void buildEntryTable(glist_t list, int32 *** table_p);
+static void buildEntryTable(glist_t list, int32 *** table_p,
+                            bin_mdef_t *mdef);
 static void buildExitTable(glist_t list, int32 *** table_p,
-                           int32 *** permuTab_p, int32 ** sizeTab_p);
+                           int32 *** permuTab_p, int32 ** sizeTab_p,
+                           bin_mdef_t *mdef);
 static int32 addToLeftContextTable(char *diphone);
 static int32 addToRightContextTable(char *diphone);
-static void recordMissingTriphone(char *triphoneStr);
-static dict_entry_t *_new_dict_entry(char *word_str,
+static dict_entry_t *_new_dict_entry(bin_mdef_t *mdef,
+                                     char *word_str,
                                      char *pronoun_str,
                                      int32 use_context);
 static void _dict_list_add(dict_t * dict, dict_entry_t * entry);
-static void dict_load(dict_t * dict, char *filename, int32 * word_id,
+static void dict_load(dict_t * dict, bin_mdef_t *mdef,
+                      char *filename, int32 * word_id,
                       int32 use_context);
-
-static hash_table_t *mtpHT;     /* Missing triphone hash table */
-static glist_t mtpList;
 
 static hash_table_t *lcHT;      /* Left context hash table */
 static glist_t lcList;
@@ -193,19 +193,22 @@ get_dict_size(char *file)
     return n;
 }
 
-int32
-dict_read(dict_t * dict, char *filename, /* Main dict file */
-          char *n_filename,     /* Noise dict file */
-          int32 use_context)
-/*------------------------------------------------------------*
- * read in the dict file filename
- *------------------------------------------------------------*/
+dict_t *
+dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
 {
-    int32 retval = 0;
+    dict_t *dict = ckd_calloc(1, sizeof(*dict));
     int32 word_id = 0, i, j;
     dict_entry_t *entry;
     int32 max_new_oov;
     void *val;
+    char *filename, *n_filename;
+    int use_context;
+
+    dict->config = config;
+    dict->mdef = mdef;
+    filename = cmd_ln_str_r(config, "-dict");
+    n_filename = cmd_ln_str_r(config, "-fdict");
+    use_context = !cmd_ln_boolean_r(config, "-usewdphones");
 
     /*
      * Find size of dictionary and set hash and list table size hints.
@@ -221,9 +224,8 @@ dict_read(dict_t * dict, char *filename, /* Main dict file */
     dict->dict = hash_table_new(j, HASH_CASE_NO);
 
     /* Context table size hint: (#CI*#CI)/2 */
-    j = phoneCiCount();
+    j = bin_mdef_n_ciphone(mdef);
     j = ((j * j) >> 1) + 1;
-    mtpHT = hash_table_new(j, HASH_CASE_YES);
     if (use_context) {
         if (lcHT)
             hash_table_free(lcHT);
@@ -253,7 +255,7 @@ dict_read(dict_t * dict, char *filename, /* Main dict file */
 
         /* new_dict_entry clobbers pronstr! so need this strcpy in the loop */
         strcpy(pronstr, "SIL");
-        entry = _new_dict_entry(tmpstr, pronstr, TRUE);
+        entry = _new_dict_entry(mdef, tmpstr, pronstr, use_context);
         if (!entry)
             E_FATAL("Failed to add DUMMY(SIL) entry to dictionary\n");
 
@@ -265,7 +267,7 @@ dict_read(dict_t * dict, char *filename, /* Main dict file */
     last_dummy = word_id - 1;
 
     /* Load dictionaries */
-    dict_load(dict, filename, &word_id, use_context);
+    dict_load(dict, mdef, filename, &word_id, use_context);
 
     /* Make sure that <s>, </s>, and <sil> are always in the dictionary. */
     if (hash_table_lookup(dict->dict, "</s>", &val) != 0) {
@@ -273,9 +275,9 @@ dict_read(dict_t * dict, char *filename, /* Main dict file */
         /*
          * Check if there is a special end silence phone.
          */
-        if (NO_PHONE == phone_to_id("SILe", FALSE)) {
+        if (BAD_S3CIPID == bin_mdef_ciphone_id(mdef, "SILe")) {
             strcpy(pronstr, "SIL");
-            entry = _new_dict_entry("</s>", pronstr, FALSE);
+            entry = _new_dict_entry(mdef, "</s>", pronstr, FALSE);
             if (!entry)
                 E_FATAL("Failed to add </s>(SIL) to dictionary\n");
         }
@@ -283,7 +285,7 @@ dict_read(dict_t * dict, char *filename, /* Main dict file */
             E_INFO("Using special end silence for </s>\n");
             strcpy(pronstr, "SILe");
             entry =
-                _new_dict_entry("</s>", pronstr, FALSE);
+                _new_dict_entry(mdef, "</s>", pronstr, FALSE);
         }
         _dict_list_add(dict, entry);
         hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
@@ -291,6 +293,7 @@ dict_read(dict_t * dict, char *filename, /* Main dict file */
         word_id++;
     }
 
+    dict->config = config;
     /* Mark the start of filler words */
     dict->filler_start = word_id;
 
@@ -300,10 +303,10 @@ dict_read(dict_t * dict, char *filename, /* Main dict file */
         /*
          * Check if there is a special begin silence phone.
          */
-        if (NO_PHONE == phone_to_id("SILb", FALSE)) {
+        if (BAD_S3CIPID == bin_mdef_ciphone_id(mdef, "SILb")) {
             strcpy(pronstr, "SIL");
             entry =
-                _new_dict_entry("<s>", pronstr, FALSE);
+                _new_dict_entry(mdef, "<s>", pronstr, FALSE);
             if (!entry)
                 E_FATAL("Failed to add <s>(SIL) to dictionary\n");
         }
@@ -311,7 +314,7 @@ dict_read(dict_t * dict, char *filename, /* Main dict file */
             E_INFO("Using special begin silence for <s>\n");
             strcpy(pronstr, "SILb");
             entry =
-                _new_dict_entry("<s>", pronstr, FALSE);
+                _new_dict_entry(mdef, "<s>", pronstr, FALSE);
             if (!entry)
                 E_FATAL("Failed to add <s>(SILb) to dictionary\n");
         }
@@ -326,7 +329,7 @@ dict_read(dict_t * dict, char *filename, /* Main dict file */
         char pronstr[4];
 
         strcpy(pronstr, "SIL");
-        entry = _new_dict_entry("<sil>", pronstr, FALSE);
+        entry = _new_dict_entry(mdef, "<sil>", pronstr, FALSE);
         if (!entry)
             E_FATAL("Failed to add <sil>(SIL) to dictionary\n");
         _dict_list_add(dict, entry);
@@ -336,34 +339,21 @@ dict_read(dict_t * dict, char *filename, /* Main dict file */
     }
 
     if (n_filename)
-        dict_load(dict, n_filename, &word_id, FALSE /* use_context */);
+        dict_load(dict, mdef, n_filename, &word_id, FALSE /* use_context */);
 
     E_INFO("LEFT CONTEXT TABLES\n");
     lcList = glist_reverse(lcList);
-    buildEntryTable(lcList, &lcFwdTable);
-    buildExitTable(lcList, &lcBwdTable, &lcBwdPermTable, &lcBwdSizeTable);
+    buildEntryTable(lcList, &lcFwdTable, mdef);
+    buildExitTable(lcList, &lcBwdTable, &lcBwdPermTable,
+                   &lcBwdSizeTable, mdef);
 
     E_INFO("RIGHT CONTEXT TABLES\n");
     rcList = glist_reverse(rcList);
-    buildEntryTable(rcList, &rcBwdTable);
-    buildExitTable(rcList, &rcFwdTable, &rcFwdPermTable, &rcFwdSizeTable);
+    buildEntryTable(rcList, &rcBwdTable, mdef);
+    buildExitTable(rcList, &rcFwdTable, &rcFwdPermTable,
+                   &rcFwdSizeTable, mdef);
 
-    mtpList = hash_table_tolist(mtpHT, &i);
-    E_INFO("%5d unique triphones were mapped to ci phones\n", i);
-    /* Free all the strings in mtpHT.  FIXME: There should be a
-     * function for this in libutil. */
-    for (i = 0; i < mtpHT->size; ++i) {
-        hash_entry_t *e;
-
-        ckd_free(mtpHT->table[i].val);
-        for (e = mtpHT->table[i].next; e; e = e->next) {
-            ckd_free(e->val);
-        }
-    }
-    hash_table_free(mtpHT);
-    mtpHT = NULL;
-
-    return (retval);
+    return dict;
 }
 
 void
@@ -397,7 +387,6 @@ dict_cleanup(void)
         hash_table_free(rcHT);
     rcHT = NULL;
     glist_free(rcList); rcList = NULL;
-    glist_free(mtpList); mtpList = NULL;
 }
 
 
@@ -426,7 +415,8 @@ dict_free(dict_t * dict)
 }
 
 static void
-dict_load(dict_t * dict, char *filename, int32 * word_id, int32 use_context)
+dict_load(dict_t * dict, bin_mdef_t *mdef,
+          char *filename, int32 * word_id, int32 use_context)
 {
     static char const *rname = "dict_load";
     char dict_str[1024];
@@ -448,7 +438,7 @@ dict_load(dict_t * dict, char *filename, int32 * word_id, int32 use_context)
 
     pronoun_str[0] = '\0';
     while (EOF != fscanf(fs, "%s%[^\n]\n", dict_str, pronoun_str)) {
-        entry = _new_dict_entry(dict_str, pronoun_str, use_context);
+        entry = _new_dict_entry(mdef, dict_str, pronoun_str, use_context);
         if (!entry) {
             E_ERROR("Failed to add %s to dictionary\n", dict_str);
             err = 1;
@@ -541,7 +531,7 @@ dictid_to_str(dict_t * dict, int32 id)
 }
 
 static dict_entry_t *
-_new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
+_new_dict_entry(bin_mdef_t *mdef, char *word_str, char *pronoun_str, int32 use_context)
 {
     dict_entry_t *entry;
     char *phone[MAX_PRONOUN_LEN];
@@ -577,12 +567,12 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
          * next phone is the begining of word position
          */
         if (phone[pronoun_len][0] == '&') {
-            position[pronoun_len - 1] = 'e';
-            position[pronoun_len] = 'b';
+            position[pronoun_len - 1] = WORD_POSN_END;
+            position[pronoun_len] = WORD_POSN_BEGIN;
             continue;
         }
-        ciPhoneId[pronoun_len] = phone_to_id(phone[pronoun_len], TRUE);
-        if (ciPhoneId[pronoun_len] == NO_PHONE) {
+        ciPhoneId[pronoun_len] = bin_mdef_ciphone_id(mdef, phone[pronoun_len]);
+        if (ciPhoneId[pronoun_len] == BAD_S3CIPID) {
             E_ERROR("'%s': Unknown phone '%s'\n", word_str,
                     phone[pronoun_len]);
             return NULL;
@@ -592,20 +582,21 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
             break;
     }
 
-    position[pronoun_len - 1] = 'e';    /* Last phone is at the end */
+    position[pronoun_len - 1] = WORD_POSN_END;    /* Last phone is at the end */
 
     /*
      * If the position marker sequence 'ee' appears or 'se' appears
      * the sequence should be '*s'.
      */
 
-    if (position[0] == 'e')     /* Also handle single phone word case */
-        position[0] = 's';
+    if (position[0] == WORD_POSN_END)     /* Also handle single phone word case */
+        position[0] = WORD_POSN_SINGLE;
 
     for (i = 0; i < pronoun_len - 1; i++) {
-        if (((position[i] == 'e') || (position[i] == 's')) &&
-            (position[i + 1] == 'e'))
-            position[i + 1] = 's';
+        if (((position[i] == WORD_POSN_END)
+             || (position[i] == WORD_POSN_SINGLE)) &&
+            (position[i + 1] == WORD_POSN_END))
+            position[i + 1] = WORD_POSN_SINGLE;
     }
 
     if (pronoun_len >= 2) {
@@ -617,25 +608,25 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
             triphone_ids[i] = lcTabId;
         }
         else {
-            sprintf(triphoneStr, "%s(%s,%s)b", phone[i], "%s",
-                    phone[i + 1]);
-            triphone_ids[i] = phone_to_id(triphoneStr, FALSE);
-            if (triphone_ids[i] < 0) {
-                triphone_ids[i] = phone_to_id(phone[i], TRUE);
-                recordMissingTriphone(triphoneStr);
-            }
-            triphone_ids[i] = bin_mdef_pid2ssid(mdef, phone_map(triphone_ids[i]));
+            triphone_ids[i] = bin_mdef_phone_id(mdef,
+                                                bin_mdef_ciphone_id(mdef, phone[i]),
+                                                BAD_S3CIPID,
+                                                bin_mdef_ciphone_id(mdef, phone[i+1]),
+                                                WORD_POSN_BEGIN);
+            if (triphone_ids[i] < 0)
+                triphone_ids[i] = bin_mdef_ciphone_id(mdef, phone[i]);
+            triphone_ids[i] = bin_mdef_pid2ssid(mdef, triphone_ids[i]);
         }
 
         for (i = 1; i < pronoun_len - 1; i++) {
-            sprintf(triphoneStr, "%s(%s,%s)%c",
-                    phone[i], phone[i - 1], phone[i + 1], position[i]);
-            triphone_ids[i] = phone_to_id(triphoneStr, FALSE);
-            if (triphone_ids[i] < 0) {
-                triphone_ids[i] = phone_to_id(phone[i], TRUE);
-                recordMissingTriphone(triphoneStr);
-            }
-            triphone_ids[i] = bin_mdef_pid2ssid(mdef,triphone_ids[i]);
+            triphone_ids[i] = bin_mdef_phone_id(mdef,
+                                                bin_mdef_ciphone_id(mdef, phone[i]),
+                                                bin_mdef_ciphone_id(mdef, phone[i-1]),
+                                                bin_mdef_ciphone_id(mdef, phone[i+1]),
+                                                position[i]);
+            if (triphone_ids[i] < 0)
+                triphone_ids[i] = bin_mdef_ciphone_id(mdef, phone[i]);
+            triphone_ids[i] = bin_mdef_pid2ssid(mdef, triphone_ids[i]);
         }
 
         if (use_context) {
@@ -644,14 +635,14 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
             triphone_ids[i] = rcTabId;
         }
         else {
-            sprintf(triphoneStr, "%s(%s,%s)e", phone[i], phone[i - 1],
-                    "%s");
-            triphone_ids[i] = phone_to_id(triphoneStr, FALSE);
-            if (triphone_ids[i] < 0) {
-                triphone_ids[i] = phone_to_id(phone[i], TRUE);
-                recordMissingTriphone(triphoneStr);
-            }
-            triphone_ids[i] = bin_mdef_pid2ssid(mdef,phone_map(triphone_ids[i]));
+            triphone_ids[i] = bin_mdef_phone_id(mdef,
+                                                bin_mdef_ciphone_id(mdef, phone[i]),
+                                                bin_mdef_ciphone_id(mdef, phone[i-1]),
+                                                BAD_S3CIPID,
+                                                position[i]);
+            if (triphone_ids[i] < 0)
+                triphone_ids[i] = bin_mdef_ciphone_id(mdef, phone[i]);
+            triphone_ids[i] = bin_mdef_pid2ssid(mdef, triphone_ids[i]);
         }
     }
 
@@ -672,12 +663,8 @@ _new_dict_entry(char *word_str, char *pronoun_str, int32 use_context)
             triphone_ids[1] = rcTabId;
         }
         else {
-            sprintf(triphoneStr, "%s(%s,%s)s", phone[0], "%s", "%s");
-            triphone_ids[0] = phone_to_id(triphoneStr, FALSE);
-            if (triphone_ids[0] < 0) {
-                triphone_ids[0] = phone_to_id(phone[0], TRUE);
-            }
-            triphone_ids[i] = bin_mdef_pid2ssid(mdef,triphone_ids[i]);
+            triphone_ids[0] = bin_mdef_ciphone_id(mdef,phone[0]);
+            triphone_ids[0] = bin_mdef_pid2ssid(mdef,triphone_ids[0]);
         }
     }
 
@@ -722,7 +709,8 @@ replace_dict_entry(dict_t * dict,
                    dict_entry_t * entry,
                    char const *word_str,
                    char *pronoun_str,
-                   int32 use_context, int32 new_entry)
+                   int32 use_context,
+                   int32 new_entry)
 {
     char *phone[MAX_PRONOUN_LEN];
     int32 ciPhoneId[MAX_PRONOUN_LEN];
@@ -730,7 +718,7 @@ replace_dict_entry(dict_t * dict,
     int32 pronoun_len = 0;
     int32 i;
     char triphoneStr[80];
-    void * idx;
+    int32 idx;
     int32 basewid;
 
     /* For the moment assume left/right context words... */
@@ -751,8 +739,8 @@ replace_dict_entry(dict_t * dict,
             break;
         pronoun_str = phone[pronoun_len] + n + 1;
 
-        ciPhoneId[pronoun_len] = phone_to_id(phone[pronoun_len], TRUE);
-        if (ciPhoneId[pronoun_len] == NO_PHONE) {
+        ciPhoneId[pronoun_len] = bin_mdef_ciphone_id(dict->mdef, phone[pronoun_len]);
+        if (ciPhoneId[pronoun_len] == BAD_S3CIPID) {
             E_ERROR("'%s': Unknown phone '%s'\n", word_str,
                     phone[pronoun_len]);
             return 0;
@@ -773,7 +761,7 @@ replace_dict_entry(dict_t * dict,
         char *p = strrchr(word_str, '(');
         if (p && (word_str[strlen(word_str) - 1] == ')')) {
             *p = '\0';
-            if (hash_table_lookup(dict->dict, word_str, &idx)) {
+            if (hash_table_lookup_int32(dict->dict, word_str, &idx)) {
                 *p = '(';
                 E_ERROR("Base word missing for %s\n", word_str);
                 return 0;
@@ -788,27 +776,27 @@ replace_dict_entry(dict_t * dict,
     /* Parse pron; for the moment, the boundary diphones must be already known... */
     i = 0;
     sprintf(triphoneStr, "%s(%%s,%s)b", phone[i], phone[i + 1]);
-    if (hash_table_lookup(lcHT, triphoneStr, &idx) < 0) {
+    if (hash_table_lookup_int32(lcHT, triphoneStr, &idx) < 0) {
         E_ERROR("Unknown left diphone '%s'\n", triphoneStr);
         return (0);
     }
-    triphone_ids[i] = (long) idx;
+    triphone_ids[i] = idx;
 
     for (i = 1; i < pronoun_len - 1; i++) {
-        sprintf(triphoneStr, "%s(%s,%s)", phone[i], phone[i - 1],
-                phone[i + 1]);
-        triphone_ids[i] = phone_to_id(triphoneStr, FALSE);
-        if (triphone_ids[i] < 0)
-            triphone_ids[i] = phone_to_id(phone[i], TRUE);
-        triphone_ids[i] = bin_mdef_pid2ssid(mdef,triphone_ids[i]);
+        triphone_ids[i] = bin_mdef_phone_id(dict->mdef,
+                                            bin_mdef_ciphone_id(dict->mdef, phone[i]),
+                                            bin_mdef_ciphone_id(dict->mdef, phone[i-1]),
+                                            bin_mdef_ciphone_id(dict->mdef, phone[i+1]),
+                                            WORD_POSN_INTERNAL);
+        triphone_ids[i] = bin_mdef_pid2ssid(dict->mdef, triphone_ids[i]);
     }
 
     sprintf(triphoneStr, "%s(%s,%%s)e", phone[i], phone[i - 1]);
-    if (hash_table_lookup(rcHT, triphoneStr, &idx) < 0) {
+    if (hash_table_lookup_int32(rcHT, triphoneStr, &idx) < 0) {
         E_ERROR("Unknown right diphone '%s'\n", triphoneStr);
         return (0);
     }
-    triphone_ids[i] = (long) idx;
+    triphone_ids[i] = idx;
 
     /*
      * Set up dictionary entry.  Free the existing attributes (where applicable) and
@@ -906,47 +894,19 @@ dict_count(dict_t * dict)
     return dict->dict_entry_count;
 }
 
-dict_t *
-dict_new(cmd_ln_t *config)
-{
-    dict_t *dict = ckd_calloc(1, sizeof(*dict));
-
-    dict->config = config;
-    return dict;
-}
-
-static void
-recordMissingTriphone(char *triphoneStr)
-{
-    void * idx;
-    char *cp;
-
-    if (-1 == hash_table_lookup(mtpHT, triphoneStr, &idx)) {
-        cp = ckd_salloc(triphoneStr);
-        /* E_INFO("Missing triphone: %s\n", triphoneStr); */
-        hash_table_enter(mtpHT, cp, cp);
-    }
-}
-
-glist_t
-dict_mtpList(void)
-{
-    return mtpList;
-}
-
 static int32
 addToContextTable(char *diphone, hash_table_t * table, glist_t *list)
 {
-    void * idx;
+    int32 idx;
     char *cp;
 
-    if (-1 == hash_table_lookup(table, diphone, &idx)) {
+    if (-1 == hash_table_lookup_int32(table, diphone, &idx)) {
         cp = ckd_salloc(diphone);
-        idx = (void *)(long)table->inuse;
+        idx = table->inuse;
         *list = glist_add_ptr(*list, cp);
-        hash_table_enter(table, cp, idx);
+        (void)hash_table_enter_int32(table, cp, idx);
     }
-    return ((int32)(long)idx);
+    return idx;
 }
 
 static int32
@@ -976,11 +936,11 @@ cmpPT(void const *a, void const *b)
 }
 
 static void
-buildEntryTable(glist_t list, int32 *** table_p)
+buildEntryTable(glist_t list, int32 *** table_p, bin_mdef_t *mdef)
 {
-    int32 ciCount = phoneCiCount();
     int32 i, j;
     char triphoneStr[128];
+    int32 ciCount = bin_mdef_n_ciphone(mdef);
     int32 silContext = 0;
     int32 triphoneContext = 0;
     int32 noContext = 0;
@@ -1000,8 +960,9 @@ buildEntryTable(glist_t list, int32 *** table_p)
             /*
              * Look for the triphone
              */
-            sprintf(triphoneStr, (char *)gnode_ptr(gn), phone_from_id(j));
-            table[i][j] = phone_to_id(triphoneStr, FALSE);
+            sprintf(triphoneStr, (char *)gnode_ptr(gn),
+                    bin_mdef_ciphone_str(mdef, j));
+            table[i][j] = phone_to_id(mdef, triphoneStr);
             if (table[i][j] >= 0)
                 triphoneContext++;
             /*
@@ -1009,7 +970,7 @@ buildEntryTable(glist_t list, int32 *** table_p)
              */
             if (table[i][j] < 0) {
                 sprintf(triphoneStr, (char *)gnode_ptr(gn), "SIL");
-                table[i][j] = phone_to_id(triphoneStr, FALSE);
+                table[i][j] = phone_to_id(mdef, triphoneStr);
                 if (table[i][j] >= 0)
                     silContext++;
             }
@@ -1022,10 +983,10 @@ buildEntryTable(glist_t list, int32 *** table_p)
                 strcpy(stmp, (char *)gnode_ptr(gn));
                 p = strchr(stmp, '(');
                 *p = '\0';
-                table[i][j] = phone_to_id(stmp, TRUE);
+                table[i][j] = phone_to_id(mdef, stmp);
                 noContext++;
             }
-            table[i][j] = bin_mdef_pid2ssid(mdef,phone_map(table[i][j]));
+            table[i][j] = bin_mdef_pid2ssid(mdef, table[i][j]);
         }
     }
     E_INFO("\t%6d triphones\n\t%6d pseudo diphones\n\t%6d uniphones\n",
@@ -1034,11 +995,11 @@ buildEntryTable(glist_t list, int32 *** table_p)
 
 static void
 buildExitTable(glist_t list, int32 *** table_p, int32 *** permuTab_p,
-               int32 ** sizeTab_p)
+               int32 ** sizeTab_p, bin_mdef_t *mdef)
 {
-    int32 ciCount = phoneCiCount();
     int32 i, j, k;
     char triphoneStr[128];
+    int32 ciCount = bin_mdef_n_ciphone(mdef);
     int32 silContext = 0;
     int32 triphoneContext = 0;
     int32 noContext = 0;
@@ -1068,8 +1029,9 @@ buildExitTable(glist_t list, int32 *** table_p, int32 *** permuTab_p,
             /*
              * Look for the triphone
              */
-            sprintf(triphoneStr, (char *)gnode_ptr(gn), phone_from_id(j));
-            table[i][j] = phone_to_id(triphoneStr, FALSE);
+            sprintf(triphoneStr, (char *)gnode_ptr(gn),
+                    bin_mdef_ciphone_str(mdef, j));
+            table[i][j] = phone_to_id(mdef, triphoneStr);
             if (table[i][j] >= 0)
                 triphoneContext++;
             /*
@@ -1077,7 +1039,7 @@ buildExitTable(glist_t list, int32 *** table_p, int32 *** permuTab_p,
              */
             if (table[i][j] < 0) {
                 sprintf(triphoneStr, (char *)gnode_ptr(gn), "SIL");
-                table[i][j] = phone_to_id(triphoneStr, FALSE);
+                table[i][j] = phone_to_id(mdef, triphoneStr);
                 if (table[i][j] >= 0)
                     silContext++;
             }
@@ -1090,10 +1052,10 @@ buildExitTable(glist_t list, int32 *** table_p, int32 *** permuTab_p,
                 strcpy(stmp, (char *)gnode_ptr(gn));
                 p = strchr(stmp, '(');
                 *p = '\0';
-                table[i][j] = phone_to_id(stmp, TRUE);
+                table[i][j] = phone_to_id(mdef, stmp);
                 noContext++;
             }
-            table[i][j] = bin_mdef_pid2ssid(mdef,phone_map(table[i][j]));
+            table[i][j] = bin_mdef_pid2ssid(mdef, table[i][j]);
         }
     }
     /*
@@ -1211,38 +1173,6 @@ int32
 dict_next_alt(dict_t * dict, int32 w)
 {
     return (dict->dict_list[w]->alt);
-}
-
-/* Write OOV words added at run time to the given file and return #words written */
-int32
-dict_write_oovdict(dict_t * dict, char const *file)
-{
-    int32 w, p;
-    FILE *fp;
-
-    /* If no new words added at run time, no need to write a new file */
-    if (initial_dummy == first_dummy) {
-        E_ERROR("No new word added; no OOV file written\n");
-        return 0;
-    }
-
-    if ((fp = fopen(file, "w")) == NULL) {
-        E_ERROR("fopen(%s,w) failed\n", file);
-        return -1;
-    }
-
-    /* Write OOV words added at run time */
-    for (w = initial_dummy; w < first_dummy; w++) {
-        fprintf(fp, "%s\t", dict->dict_list[w]->word);
-        for (p = 0; p < dict->dict_list[w]->len; p++)
-            fprintf(fp, " %s",
-                    phone_from_id(dict->dict_list[w]->ci_phone_ids[p]));
-        fprintf(fp, "\n");
-    }
-
-    fclose(fp);
-
-    return (first_dummy - initial_dummy);
 }
 
 int32

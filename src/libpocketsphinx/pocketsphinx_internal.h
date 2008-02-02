@@ -74,6 +74,9 @@ typedef enum {
 struct pocketsphinx_s {
     /* Model parameters and such. */
     cmd_ln_t *config;  /**< Configuration. */
+    glist_t strings;   /**< Extra strings added to config. */
+
+    /* Basic units of computation. */
     acmod_t *acmod;    /**< Acoustic model. */
     dict_t *dict;      /**< Pronunciation dictionary. */
     logmath_t *lmath;  /**< Log math computation. */

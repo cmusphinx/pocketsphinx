@@ -116,13 +116,7 @@ parse_triphone(const char *instr, char *ciph, char *lc, char *rc, char *pc)
 }
 
 int32
-phone_map(int32 pid)
-{
-    return pid;
-}
-
-int32
-phone_to_id(char const *phone_str, int verbose)
+phone_to_id(bin_mdef_t *mdef, char const *phone_str)
 {
     char *ci, *lc, *rc, *pc;
     int32 cipid, lcpid, rcpid, pid;
@@ -176,46 +170,4 @@ phone_to_id(char const *phone_str, int verbose)
 
     free(ci);
     return pid;
-}
-
-char const *
-phone_from_id(int32 phone_id)
-{
-    static char buf[1024]; /* FIXME: static buffer */
-    bin_mdef_phone_str(mdef, phone_id, buf);
-    return buf;
-}
-
-int32
-phone_id_to_base_id(int32 phone_id)
-{
-    return bin_mdef_pid2ci(mdef, phone_id);
-}
-
-int32
-phone_type(int32 phone_id)
-{
-    if (bin_mdef_is_ciphone(mdef, phone_id))
-        return PT_CIPHONE;
-    else
-        return PT_CDPHONE;      /* No other kind of phone supported in S3. */
-}
-
-int32
-phone_len(int32 phone_id)
-{
-    /* This is always 1 for S3 model defs. */
-    return 1;
-}
-
-int32
-phoneCiCount(void)
-{
-    return bin_mdef_n_ciphone(mdef);
-}
-
-int32
-phone_count(void)
-{
-    return bin_mdef_n_phone(mdef);
 }

@@ -633,7 +633,7 @@ cache_bptable_paths(int32 bp)
         prev_bp = BPTable[prev_bp].bp;
         w = BPTable[prev_bp].wid;
     }
-    bpe->real_wid = word_dict->dict_list[w]->wid;
+    bpe->real_wid = g_word_dict->dict_list[w]->wid;
 
     if (cmd_ln_boolean_r(config, "-fwd3g")) {
         prev_bp = BPTable[prev_bp].bp;
@@ -675,7 +675,7 @@ save_bwd_ptr(int32 w, int32 score, int32 path, int32 rc)
             return;
         }
 
-        de = word_dict->dict_list[w];
+        de = g_word_dict->dict_list[w];
         WordLatIdx[w] = BPIdx;
         bpe = &(BPTable[BPIdx]);
         bpe->wid = w;
@@ -830,7 +830,7 @@ prune_root_chan(void)
                 if (newphone_score > lastphn_thresh) {
                     for (w = rhmm->penult_phn_wid; w >= 0;
                          w = homophone_set[w]) {
-                        de = word_dict->dict_list[w];
+                        de = g_word_dict->dict_list[w];
                         if (npa[de->ci_phone_ids[de->len - 1]]) {
                             candp = lastphn_cand + n_lastphn_cand;
                             n_lastphn_cand++;
@@ -919,7 +919,7 @@ prune_nonroot_chan(void)
                 if (newphone_score > lastphn_thresh) {
                     for (w = hmm->info.penult_phn_wid; w >= 0;
                          w = homophone_set[w]) {
-                        de = word_dict->dict_list[w];
+                        de = g_word_dict->dict_list[w];
                         if (npa[de->ci_phone_ids[de->len - 1]]) {
                             candp = lastphn_cand + n_lastphn_cand;
                             n_lastphn_cand++;
@@ -998,7 +998,7 @@ last_phone_transition(void)
              0) ? RightContextFwdPerm[bpe->r_diph] : zeroPermTab;
 
         /* Subtract starting score for candidate, leave it with only word score */
-        de = word_dict->dict_list[candp->wid];
+        de = g_word_dict->dict_list[candp->wid];
         ciph0 = de->ci_phone_ids[0];
         candp->score -= BScoreStack[bpe->s_idx + rcpermtab[ciph0]];
 
@@ -1067,11 +1067,11 @@ last_phone_transition(void)
             for (j = cand_sf[i].cand; j >= 0; j = candp->next) {
                 int32 n_used;
                 candp = &(lastphn_cand[j]);
-                de = word_dict->dict_list[candp->wid];
+                de = g_word_dict->dict_list[candp->wid];
                 ciph0 = de->ci_phone_ids[0];
 
                 dscr = BScoreStack[bpe->s_idx + rcpermtab[ciph0]];
-                dscr += ngram_tg_score(lmset, de->wid, bpe->real_wid,
+                dscr += ngram_tg_score(g_lmset, de->wid, bpe->real_wid,
                                        bpe->prev_real_wid, &n_used);
 
                 if (last_ltrans[candp->wid].dscr < dscr) {
@@ -1113,7 +1113,7 @@ last_phone_transition(void)
             }
             if (k > 0) {
                 assert(!word_active[w]);
-                assert(word_dict->dict_list[w]->len > 1);
+                assert(g_word_dict->dict_list[w]->len > 1);
                 *(nawl++) = w;
                 word_active[w] = 1;
             }
@@ -1184,7 +1184,7 @@ prune_word_chan(void)
             }
         }
         if ((k > 0) && (!word_active[w])) {
-            assert(word_dict->dict_list[w]->len > 1);
+            assert(g_word_dict->dict_list[w]->len > 1);
             *(nawl++) = w;
             word_active[w] = 1;
         }
@@ -1225,7 +1225,7 @@ alloc_all_rc(int32 w)
     int32 *sseq_rc;             /* list of sseqid for all possible right context for w */
     int32 i;
 
-    de = word_dict->dict_list[w];
+    de = g_word_dict->dict_list[w];
 
     assert(de->mpx);
 
@@ -1317,7 +1317,7 @@ word_transition(void)
             continue;
         k++;
 
-        de = word_dict->dict_list[bpe->wid];
+        de = g_word_dict->dict_list[bpe->wid];
         rcpermtab =
             (bpe->r_diph >=
              0) ? RightContextFwdPerm[bpe->r_diph] : zeroPermTab;
@@ -1383,10 +1383,10 @@ word_transition(void)
         for (i = 0; i < n_1ph_LMwords; i++) {
             int32 n_used;
             w = single_phone_wid[i];
-            de = word_dict->dict_list[w];
+            de = g_word_dict->dict_list[w];
 
             newscore = rcss[rcpermtab[de->ci_phone_ids[0]]];
-            newscore += ngram_tg_score(lmset, de->wid, bpe->real_wid,
+            newscore += ngram_tg_score(g_lmset, de->wid, bpe->real_wid,
                                        bpe->prev_real_wid, &n_used);
 
             if (last_ltrans[w].dscr < newscore) {
@@ -1405,7 +1405,7 @@ word_transition(void)
 
         if ((newscore = last_ltrans[w].dscr + pip) > thresh) {
             bpe = BPTable + last_ltrans[w].bp;
-            pde = word_dict->dict_list[bpe->wid];
+            pde = g_word_dict->dict_list[bpe->wid];
 
             if ((hmm_frame(&rhmm->hmm) < cf)
                 || (hmm_in_score(&rhmm->hmm) < newscore)) {
@@ -1456,12 +1456,12 @@ search_initialize(cmd_ln_t *cmdln)
 
     linklist_init();
 
-    NumWords = word_dict->dict_entry_count;
+    NumWords = g_word_dict->dict_entry_count;
     StartWordId = kb_get_word_id("<s>");
     FinishWordId = kb_get_word_id("</s>");
     SilenceWordId = kb_get_word_id("<sil>");
-    SilencePhoneId = phone_to_id("SIL", TRUE);
-    NumCiPhones = phoneCiCount();
+    SilencePhoneId = bin_mdef_ciphone_id(g_mdef, "SIL");
+    NumCiPhones = bin_mdef_n_ciphone(g_mdef);
 
     LeftContextFwd = dict_left_context_fwd();
     RightContextFwd = dict_right_context_fwd();
@@ -1471,15 +1471,15 @@ search_initialize(cmd_ln_t *cmdln)
     LeftContextBwdPerm = dict_left_context_bwd_perm();
     LeftContextBwdSize = dict_left_context_bwd_size();
     RightContextBwd = dict_right_context_bwd();
-    NumMainDictWords = dict_get_num_main_words(word_dict);
+    NumMainDictWords = dict_get_num_main_words(g_word_dict);
 
-    hmmctx = hmm_context_init(bin_mdef_n_emit_state(mdef),
-                              tmat->tp, NULL,
-                              mdef->sseq);
+    hmmctx = hmm_context_init(bin_mdef_n_emit_state(g_mdef),
+                              g_tmat->tp, NULL,
+                              g_mdef->sseq);
 
     word_chan = ckd_calloc(NumWords, sizeof(chan_t *));
     WordLatIdx = ckd_calloc(NumWords, sizeof(int32));
-    zeroPermTab = ckd_calloc(phoneCiCount(), sizeof(int32));
+    zeroPermTab = ckd_calloc(bin_mdef_n_ciphone(g_mdef), sizeof(int32));
     word_active = ckd_calloc(NumWords, sizeof(int32));
 
     if (NumWords / 1000 < 25)
@@ -1499,7 +1499,7 @@ search_initialize(cmd_ln_t *cmdln)
 
     lattice_density = ckd_calloc(MAX_FRAMES, sizeof(int32));
 
-    init_search_tree(word_dict);
+    init_search_tree(g_word_dict);
 
     active_word_list[0] =
         ckd_calloc(2 * (NumWords + 1), sizeof(int32));
@@ -1514,9 +1514,9 @@ search_initialize(cmd_ln_t *cmdln)
     lastphn_cand =
         ckd_calloc(NumWords, sizeof(lastphn_cand_t));
 
-    senone_active = ckd_calloc(bin_mdef_n_sen(mdef), sizeof(int32));
+    senone_active = ckd_calloc(bin_mdef_n_sen(g_mdef), sizeof(int32));
     senone_active_vec =
-        ckd_calloc((bin_mdef_n_sen(mdef) + BITVEC_WIDTH - 1)
+        ckd_calloc((bin_mdef_n_sen(g_mdef) + BITVEC_WIDTH - 1)
                                / BITVEC_WIDTH, sizeof(bitvec_t));
 
     /* If we are doing two-pass search, cache the senone scores from
@@ -1554,7 +1554,7 @@ search_initialize(cmd_ln_t *cmdln)
     topsen_init();
 
     sc_scores =
-        (int32 **) ckd_calloc_2d(topsen_window, bin_mdef_n_sen(mdef), sizeof(int32));
+        (int32 **) ckd_calloc_2d(topsen_window, bin_mdef_n_sen(g_mdef), sizeof(int32));
     sc_scores_memory = sc_scores[0];
     senone_scores = sc_scores[0];
 
@@ -1804,10 +1804,10 @@ search_start_fwd(void)
 
         /* Insert first context word */
         BPTableIdx[1] = 1;
-        de = word_dict->dict_list[context_word[0]];
+        de = g_word_dict->dict_list[context_word[0]];
         rcsize = (de->mpx && (de->len > 1)) ?
             RightContextFwdSize[de->phone_ids[de->len - 1]] : 1;
-        lscr = ngram_bg_score(lmset, context_word[0], StartWordId, &n_used);
+        lscr = ngram_bg_score(g_lmset, context_word[0], StartWordId, &n_used);
         for (i = 0; i < rcsize; i++)
             save_bwd_ptr(context_word[0], lscr, 0, i);
         WordLatIdx[context_word[0]] = NO_BP;
@@ -1817,11 +1817,11 @@ search_start_fwd(void)
         if (context_word[1] >= 0) {
             int32 n_used;
             BPTableIdx[2] = 2;
-            de = word_dict->dict_list[context_word[1]];
+            de = g_word_dict->dict_list[context_word[1]];
             rcsize = (de->mpx && (de->len > 1)) ?
                 RightContextFwdSize[de->phone_ids[de->len - 1]] : 1;
             lscr +=
-                ngram_tg_score(lmset, context_word[1], context_word[0],
+                ngram_tg_score(g_lmset, context_word[1], context_word[0],
                                StartWordId, &n_used);
             for (i = 0; i < rcsize; i++)
                 save_bwd_ptr(context_word[1], lscr, 1, i);
@@ -2022,7 +2022,7 @@ search_finish_fwd(void)
     awl = active_word_list[nf & 0x1];
     for (w = 0; w < NumWords; ++w) {
         /* Don't accidentally free single-channel words! */
-        if (word_dict->dict_list[w]->len == 1)
+        if (g_word_dict->dict_list[w]->len == 1)
             continue;
         word_active[w] = 0;
         if (word_chan[w] == NULL)
@@ -2100,7 +2100,7 @@ search_postprocess_bptable(float32 lwf, char const *pass)
         bestscore = WORST_SCORE;
         for (bp = BPTableIdx[f]; bp < BPTableIdx[f + 1]; bp++) {
             int32 n_used;
-            l_scr = ngram_tg_score(lmset, FinishWordId,
+            l_scr = ngram_tg_score(g_lmset, FinishWordId,
                                    BPTable[bp].real_wid,
                                    BPTable[bp].prev_real_wid,
                                    &n_used);
@@ -2155,7 +2155,7 @@ search_hyp_to_str(void)
     hyp_str[0] = '\0';
     k = 0;
     for (i = 0; hyp[i].wid >= 0; i++) {
-        wd = WordIdToStr(word_dict, hyp[i].wid);
+        wd = WordIdToStr(g_word_dict, hyp[i].wid);
         l = strlen(wd);
 
         if (k + l > 4090)
@@ -2237,7 +2237,7 @@ seg_back_trace(int32 bpidx, char const *pass)
                    /* BestScoreTable[BPTable[bpidx].frame] -  BPTable[bpidx].score */
                    topsenscr_norm,
                    latden,
-                   WordIdToStr(word_dict, BPTable[bpidx].wid));
+                   WordIdToStr(g_word_dict, BPTable[bpidx].wid));
         hyp_wid[n_hyp_wid++] = BPTable[bpidx].wid;
 
         /* Store hypothesis word sequence and segmentation */
@@ -2245,7 +2245,7 @@ seg_back_trace(int32 bpidx, char const *pass)
             if (seg >= HYP_SZ - 1)
                 E_FATAL("**ERROR** Increase HYP_SZ\n");
             hyp[seg].wid = altpron ? BPTable[bpidx].wid :
-                word_dict->dict_list[BPTable[bpidx].wid]->wid;
+                g_word_dict->dict_list[BPTable[bpidx].wid]->wid;
             hyp[seg].sf = last_time + 1;
             hyp[seg].ef = BPTable[bpidx].frame;
             hyp[seg].ascr = a_scr;
@@ -2299,7 +2299,7 @@ partial_seg_back_trace(int32 bpidx)
                 E_FATAL("**ERROR** Increase HYP_SZ\n");
             hyp[seg].wid = altpron ?
                 BPTable[bpidx].wid
-                : word_dict->dict_list[BPTable[bpidx].wid]->wid;
+                : g_word_dict->dict_list[BPTable[bpidx].wid]->wid;
             hyp[seg].sf = last_time + 1;
             hyp[seg].ef = BPTable[bpidx].frame;
             seg++;
@@ -2572,8 +2572,8 @@ search_get_hyp(void)
 char *
 search_get_wordlist(int *len, char sep_char)
 {
-    dict_entry_t **dents = word_dict->dict_list;
-    int32 dent_cnt = word_dict->dict_entry_count;
+    dict_entry_t **dents = g_word_dict->dict_list;
+    int32 dent_cnt = g_word_dict->dict_entry_count;
     int32 i, p;
     static char *fwrdl = NULL;
     static int32 flen = 0;
@@ -2661,7 +2661,7 @@ init_search_tree(dict_t * dict)
     all_rhmm = ckd_calloc(n_1ph_words, sizeof(root_chan_t));
     i = 0;
     for (w = 0; w < NumWords; w++) {
-        de = word_dict->dict_list[w];
+        de = g_word_dict->dict_list[w];
         if (de->len != 1)
             continue;
 
@@ -2739,7 +2739,7 @@ create_search_tree(dict_t * dict, int32 use_lm)
         /* Ignore dictionary words not in LM */
         /* NOTE: This leaves open the possibility for doing
          * open-vocabulary decoding in the future... */
-        if (use_lm && !ngram_model_set_known_wid(lmset, de->wid)) {
+        if (use_lm && !ngram_model_set_known_wid(g_lmset, de->wid)) {
             /* E_INFO("Skipping word %s, not in LM\n", de->word); */
             continue;
         }
@@ -2841,7 +2841,7 @@ create_search_tree(dict_t * dict, int32 use_lm)
         de = dict->dict_list[w];
         if (use_lm
             && (!(ISA_FILLER_WORD(w)))
-            && (!ngram_model_set_known_wid(lmset, de->wid))) {
+            && (!ngram_model_set_known_wid(g_lmset, de->wid))) {
             /* E_INFO("Skipping word %s, not in LM\n", de->word); */
             continue;
         }
@@ -2996,7 +2996,7 @@ free_search_tree(void)
         hmm_deinit(&root_chan[i].hmm);
     }
     for (i = w = 0; w < NumWords; w++) {
-        if (word_dict->dict_list[w]->len != 1)
+        if (g_word_dict->dict_list[w]->len != 1)
             continue;
         hmm_deinit(&all_rhmm[i++].hmm);
     }
@@ -3014,7 +3014,7 @@ void
 search_set_current_lm(void)
 {
     delete_search_tree();
-    create_search_tree(word_dict, 1);
+    create_search_tree(g_word_dict, 1);
 }
 
 /*
@@ -3038,7 +3038,7 @@ compute_seg_scores(float32 lwf)
             continue;
         }
 
-        de = word_dict->dict_list[bpe->wid];
+        de = g_word_dict->dict_list[bpe->wid];
         p_bpe = &(BPTable[bpe->bp]);
         rcpermtab = (p_bpe->r_diph >= 0) ?
             RightContextFwdPerm[p_bpe->r_diph] : zeroPermTab;
@@ -3053,7 +3053,7 @@ compute_seg_scores(float32 lwf)
         }
         else {
             int32 n_used;
-            bpe->lscr = ngram_tg_score(lmset, de->wid,
+            bpe->lscr = ngram_tg_score(g_lmset, de->wid,
                                        p_bpe->real_wid,
                                        p_bpe->prev_real_wid, &n_used);
             bpe->lscr = bpe->lscr * lwf;
@@ -3144,7 +3144,7 @@ build_fwdflat_wordlist(void)
         /* No tree-search run; include all words in expansion list */
         nwd = 0;
         for (i = 0; i < StartWordId; i++) {
-            if (ngram_model_set_known_wid(lmset, word_dict->dict_list[i]->wid))
+            if (ngram_model_set_known_wid(g_lmset, g_word_dict->dict_list[i]->wid))
                 fwdflat_wordlist[nwd++] = i;
         }
         fwdflat_wordlist[nwd] = -1;
@@ -3165,7 +3165,7 @@ build_fwdflat_wordlist(void)
             continue;
 
         /* Look for it in the wordlist. */
-        de = word_dict->dict_list[wid];
+        de = g_word_dict->dict_list[wid];
         for (node = frm_wordlist[sf]; node && (node->wid != wid);
              node = node->next);
 
@@ -3250,7 +3250,7 @@ build_fwdflat_chan(void)
     /* Build word HMMs for each word in the lattice. */
     for (i = 0; fwdflat_wordlist[i] >= 0; i++) {
         wid = fwdflat_wordlist[i];
-        de = word_dict->dict_list[wid];
+        de = g_word_dict->dict_list[wid];
 
         /* Omit single-phone words as they are permanently allocated */
         if (de->len == 1)
@@ -3304,7 +3304,7 @@ destroy_fwdflat_chan(void)
 
     for (i = 0; fwdflat_wordlist[i] >= 0; i++) {
         wid = fwdflat_wordlist[i];
-        de = word_dict->dict_list[wid];
+        de = g_word_dict->dict_list[wid];
 
         if (de->len == 1)
             continue;
@@ -3372,8 +3372,8 @@ search_fwdflat_start(void)
         n_expand_words = 0;
 
         for (i = 0; i < StartWordId; i++) {
-            if (ngram_model_set_known_wid(lmset,
-                                          word_dict->dict_list[i]->wid)) {
+            if (ngram_model_set_known_wid(g_lmset,
+                                          g_word_dict->dict_list[i]->wid)) {
                 expand_word_list[n_expand_words] = i;
                 expand_word_flag[i] = 1;
                 n_expand_words++;
@@ -3396,7 +3396,7 @@ search_fwdflat_frame(mfcc_t **feat)
 
     if (past_senone_scores) {
         if (compute_all_senones) {
-            n_senone_active = bin_mdef_n_sen(mdef);
+            n_senone_active = bin_mdef_n_sen(g_mdef);
             senone_scores = past_senone_scores[CurrentFrame];
         }
         else {
@@ -3409,7 +3409,7 @@ search_fwdflat_frame(mfcc_t **feat)
              * vector and not in the previous one. */
             /* NOTE: the active list has already been generated from
              * the current vector, so we can clobber it with impunity. */
-            nwords = (bin_mdef_n_sen(mdef) + BITVEC_WIDTH - 1) / BITVEC_WIDTH;
+            nwords = (bin_mdef_n_sen(g_mdef) + BITVEC_WIDTH - 1) / BITVEC_WIDTH;
             for (i = 0; i < nwords; ++i) {
                 senone_active_vec[i] = senone_active_vec[i] & 
                     ~past_senone_active_vec[CurrentFrame][i];
@@ -3417,7 +3417,7 @@ search_fwdflat_frame(mfcc_t **feat)
             /* HACK: Swap out the active list temporarily (abuse of static
              * variables) */
             if (tmp_senone_active == NULL)
-                tmp_senone_active = ckd_calloc(bin_mdef_n_sen(mdef), sizeof(int32));
+                tmp_senone_active = ckd_calloc(bin_mdef_n_sen(g_mdef), sizeof(int32));
             tmp_n_senone_active = n_senone_active;
             memcpy(tmp_senone_active, senone_active, n_senone_active * sizeof(int32));
             sen_active_flags2list();
@@ -3425,10 +3425,10 @@ search_fwdflat_frame(mfcc_t **feat)
             /* Compute this reduced shortlist */
             senone_scores = sc_scores[0];
             /* FIXME: This recomputes the codebook, which we'd rather not do. */
-            if (semi_mgau)
-                s2_semi_mgau_frame_eval(semi_mgau, feat, CurrentFrame, FALSE);
-            else if (ms_mgau)
-                ms_cont_mgau_frame_eval(senone_scores, ms_mgau, feat);
+            if (g_semi_mgau)
+                s2_semi_mgau_frame_eval(g_semi_mgau, feat, CurrentFrame, FALSE);
+            else if (g_ms_mgau)
+                ms_cont_mgau_frame_eval(senone_scores, g_ms_mgau, feat);
 
             /* Intersect the senone scores */
             for (i = 0; i < n_senone_active; ++i) {
@@ -3599,7 +3599,7 @@ fwdflat_prune_chan(void)
 
     /* Scan all active words. */
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
-        de = word_dict->dict_list[w];
+        de = g_word_dict->dict_list[w];
 
         rhmm = (root_chan_t *) word_chan[w];
         /* Propagate active root channels */
@@ -3735,7 +3735,7 @@ fwdflat_word_transition(void)
         if (bp->wid == FinishWordId)
             continue;
 
-        de = word_dict->dict_list[bp->wid];
+        de = g_word_dict->dict_list[bp->wid];
         rcpermtab =
             (bp->r_diph >=
              0) ? RightContextFwdPerm[bp->r_diph] : zeroPermTab;
@@ -3745,12 +3745,12 @@ fwdflat_word_transition(void)
         for (i = 0; expand_word_list[i] >= 0; i++) {
             int32 n_used;
             w = expand_word_list[i];
-            newde = word_dict->dict_list[w];
+            newde = g_word_dict->dict_list[w];
             /* Get the exit score we recorded in save_bwd_ptr(), or
              * something approximating it. */
             newscore = rcss[rcpermtab[newde->ci_phone_ids[0]]];
             newscore += lwf
-                * ngram_tg_score(lmset, newde->wid, bp->real_wid,
+                * ngram_tg_score(g_lmset, newde->wid, bp->real_wid,
                                  bp->prev_real_wid, &n_used);
             newscore += pip;
 
@@ -3944,7 +3944,7 @@ topsen_init(void)
     if (topsen_window > 1) {
         filler_phone = ckd_calloc(NumCiPhones, sizeof(int32));
         for (p = 0; p < NumCiPhones; p++) {
-            phn_name = phone_from_id(p);
+            phn_name = bin_mdef_ciphone_str(g_mdef, p);
             filler_phone[p] = (phn_name[0] == '+');
         }
     }
@@ -4036,7 +4036,7 @@ search_bptbl_wordlist(int32 wid, int32 frm)
 
     first = BPTableIdx[frm];
     for (b = BPIdx - 1; b >= first; --b) {
-        if (wid == word_dict->dict_list[BPTable[b].wid]->wid)
+        if (wid == g_word_dict->dict_list[BPTable[b].wid]->wid)
             return b;
     }
     return -1;
@@ -4047,7 +4047,7 @@ search_bptbl_pred(int32 b)
 {
     for (b = BPTable[b].bp; ISA_FILLER_WORD(BPTable[b].wid);
          b = BPTable[b].bp);
-    return (word_dict->dict_list[BPTable[b].wid]->wid);
+    return (g_word_dict->dict_list[BPTable[b].wid]->wid);
 }
 
 

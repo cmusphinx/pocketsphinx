@@ -59,43 +59,10 @@ static const arg_t feat_defn[] = {
     CMDLN_EMPTY_OPTION
 };
 
-/* I'm not sure what the portable way to do this is. */
-static int
-file_exists(const char *path)
-{
-    FILE *tmp;
-
-    tmp = fopen(path, "rb");
-    fclose(tmp);
-    return (tmp != NULL);
-}
-
-static void
-acmod_add_file(acmod_t *acmod, const char *arg,
-               const char *hmmdir, const char *file)
-{
-    char *tmp = string_join(hmmdir, "/", file, NULL);
-
-    if (cmd_ln_str_r(acmod->config, arg) == NULL && file_exists(tmp)) {
-        cmd_ln_set_str_r(acmod->config, arg, tmp);
-        acmod->strings = glist_add_ptr(acmod->strings, tmp);
-    }
-}
-
 static int
 acmod_init_am(acmod_t *acmod)
 {
-    char *mdeffn, *hmmdir, *tmatfn;
-
-    /* Get acoustic model filenames and add them to the command-line */
-    if ((hmmdir = cmd_ln_str_r(acmod->config, "-hmm")) != NULL) {
-        acmod_add_file(acmod, "-mdef", hmmdir, "mdef");
-        acmod_add_file(acmod, "-mean", hmmdir, "means");
-        acmod_add_file(acmod, "-var", hmmdir, "variances");
-        acmod_add_file(acmod, "-tmat", hmmdir, "transition_matrices");
-        acmod_add_file(acmod, "-sendump", hmmdir, "sendump");
-        acmod_add_file(acmod, "-kdtree", hmmdir, "kdtrees");
-    }
+    char *mdeffn, *tmatfn;
 
     /* Read model definition. */
     if ((mdeffn = cmd_ln_str_r(acmod->config, "-mdef")) == NULL) {
@@ -229,11 +196,6 @@ error_out:
 void
 acmod_free(acmod_t *acmod)
 {
-    gnode_t *gn;
-
-    for (gn = acmod->strings; gn; gn = gnode_next(gn))
-        ckd_free(gnode_ptr(gn));
-    glist_free(acmod->strings);
     if (acmod->retain_fcb)
         feat_free(acmod->fcb);
     if (acmod->retain_fe)

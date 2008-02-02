@@ -39,6 +39,9 @@
 #include <glist.h>
 #include <cmd_ln.h>
 
+/* Local headers. */
+#include "bin_mdef.h"
+
 #define NO_WORD		-1
 
 /* DICT_ENTRY
@@ -59,6 +62,7 @@ typedef struct dict_entry {
 
 typedef struct dict_s {
     cmd_ln_t            *config;
+    bin_mdef_t		*mdef;
     hash_table_t 	*dict;
     int32 		dict_entry_count;
     dict_entry_t	**dict_list;
@@ -67,11 +71,8 @@ typedef struct dict_s {
     int32		filler_start;		/* Start of filler words */
 } dict_t;
 
-dict_t *dict_new(cmd_ln_t *config);
-int32 dict_read (dict_t *dict,
-		 char *filename,	/* Main dict file */
-		 char *n_filename,	/* Noise dict file */
-		 int32 use_context);
+dict_t *dict_init(cmd_ln_t *config,
+		  bin_mdef_t *mdef);
 void dict_free (dict_t *dict);
 /* Clean up global variables that dict_free doesn't (argh) */
 void dict_cleanup(void);

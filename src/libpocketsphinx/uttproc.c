@@ -431,7 +431,7 @@ write_results(char const *hyp, int32 aborted)
             fprintf(matchsegfp, " %d %d %d %s",
                     seghyp[i].sf,
                     seghyp[i].ascr,
-                    ngram_score_to_prob(lmset, seghyp[i].lscr),
+                    ngram_score_to_prob(g_lmset, seghyp[i].lscr),
                     kb_get_word_str(seghyp[i].wid));
         }
         fprintf(matchsegfp, " %d\n", searchFrame());
@@ -1190,10 +1190,10 @@ uttproc_lmupdate(char const *lmname)
 
     warn_notidle("uttproc_lmupdate");
 
-    if ((lm = ngram_model_set_lookup(lmset, lmname)) == NULL)
+    if ((lm = ngram_model_set_lookup(g_lmset, lmname)) == NULL)
         return -1;
 
-    cur_lm = ngram_model_set_lookup(lmset, NULL);
+    cur_lm = ngram_model_set_lookup(g_lmset, NULL);
     if (lm == cur_lm)
         search_set_current_lm();
 
@@ -1209,7 +1209,7 @@ uttproc_set_context(char const *wd1, char const *wd2)
 
     if (wd1) {
         w1 = kb_get_word_id(wd1);
-        if ((w1 < 0) || (!ngram_model_set_known_wid(lmset, w1))) {
+        if ((w1 < 0) || (!ngram_model_set_known_wid(g_lmset, w1))) {
             E_ERROR("Unknown word: %s\n", wd1);
             search_set_context(-1, -1);
 
@@ -1221,7 +1221,7 @@ uttproc_set_context(char const *wd1, char const *wd2)
 
     if (wd2) {
         w2 = kb_get_word_id(wd2);
-        if ((w2 < 0) || (!ngram_model_set_known_wid(lmset, w2))) {
+        if ((w2 < 0) || (!ngram_model_set_known_wid(g_lmset, w2))) {
             E_ERROR("Unknown word: %s\n", wd2);
             search_set_context(-1, -1);
 
@@ -1254,7 +1254,7 @@ uttproc_set_lm(char const *lmname)
         E_ERROR("uttproc_set_lm called with NULL argument\n");
         return -1;
     }
-    if (ngram_model_set_select(lmset, lmname) == NULL)
+    if (ngram_model_set_select(g_lmset, lmname) == NULL)
         return -1;
 
     E_INFO("LM= \"%s\"\n", lmname);
@@ -1267,7 +1267,7 @@ uttproc_set_lm(char const *lmname)
 char const *
 uttproc_get_lm(void)
 {
-    return ngram_model_set_current(lmset);
+    return ngram_model_set_current(g_lmset);
 }
 
 int32
@@ -1280,7 +1280,7 @@ uttproc_add_word(char const *word,
 
     pron = ckd_salloc(phones);
     /* Add the word to the dictionary. */
-    if ((wid = dict_add_word(word_dict, word, pron)) == -1) {
+    if ((wid = dict_add_word(g_word_dict, word, pron)) == -1) {
         ckd_free(pron);
         return -1;
     }
@@ -1294,7 +1294,7 @@ uttproc_add_word(char const *word,
     /* Add it to the LM set (meaning, the current LM).  In a perfect
      * world, this would result in the same WID, but because of the
      * weird way that word IDs are handled, it doesn't. */
-    if ((lmwid = ngram_model_add_word(lmset, word, 1.0)) == NGRAM_INVALID_WID)
+    if ((lmwid = ngram_model_add_word(g_lmset, word, 1.0)) == NGRAM_INVALID_WID)
         return -1;
 
     /* Rebuild the widmap and search tree if requested. */

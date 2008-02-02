@@ -364,7 +364,7 @@ word_fsg_add_filler(word_fsg_t * fsg, float32 silprob, float32 fillprob)
     assert(fsg);
 
     silwid = kb_get_word_id("<sil>");
-    n_word = word_dict->dict_entry_count;
+    n_word = g_word_dict->dict_entry_count;
 
     logsilp = (int32) (logmath_log(lmath, silprob) * fsg->lw);
     logfillp = (int32) (logmath_log(lmath, fillprob) * fsg->lw);
@@ -410,9 +410,9 @@ word_fsg_lc_rc(word_fsg_t * fsg)
     int32 len;
 
     endwid = kb_get_word_id("</s>");
-    silcipid = phone_to_id("SIL", TRUE);
+    silcipid = bin_mdef_ciphone_id(g_mdef, "SIL");
     assert(silcipid >= 0);
-    n_ci = phoneCiCount();
+    n_ci = bin_mdef_n_ciphone(g_mdef);
     if (n_ci > 127) {
         E_FATAL
             ("#phones(%d) > 127; cannot use int8** for word_fsg_t.{lc,rc}\n",
@@ -441,16 +441,16 @@ word_fsg_lc_rc(word_fsg_t * fsg)
                  * marking of a filler phone; but only filler words are supposed to
                  * use such phones, so we use that fact.  HACK!!  FRAGILE!!)
                  */
-                if (dict_is_filler_word(word_dict, l->wid)
+                if (dict_is_filler_word(g_word_dict, l->wid)
                     || (l->wid == endwid)) {
                     /* Filler phone; use silence phone as context */
                     fsg->rc[s][silcipid] = 1;
                     fsg->lc[d][silcipid] = 1;
                 }
                 else {
-                    len = dict_pronlen(word_dict, l->wid);
-                    fsg->rc[s][dict_ciphone(word_dict, l->wid, 0)] = 1;
-                    fsg->lc[d][dict_ciphone(word_dict, l->wid, len - 1)] = 1;
+                    len = dict_pronlen(g_word_dict, l->wid);
+                    fsg->rc[s][dict_ciphone(g_word_dict, l->wid, 0)] = 1;
+                    fsg->lc[d][dict_ciphone(g_word_dict, l->wid, len - 1)] = 1;
                 }
             }
         }
@@ -594,7 +594,7 @@ word_fsg_load(s2_fsg_t * fsg,
                 n_unk++;
             }
             else if (use_altpron) {
-                wid = dictid_to_baseid(word_dict, wid);
+                wid = dictid_to_baseid(g_word_dict, wid);
                 assert(wid >= 0);
             }
         }
@@ -617,8 +617,8 @@ word_fsg_load(s2_fsg_t * fsg,
 
             /* Add transitions for alternative pronunciations, if any */
             if (use_altpron) {
-                for (wid = dict_next_alt(word_dict, wid);
-                     wid >= 0; wid = dict_next_alt(word_dict, wid)) {
+                for (wid = dict_next_alt(g_word_dict, wid);
+                     wid >= 0; wid = dict_next_alt(g_word_dict, wid)) {
                     word_fsg_trans_add(word_fsg, i, j, logp, wid);
                     n_alt_trans++;
                     n_trans++;
@@ -958,12 +958,12 @@ word_fsg_write(word_fsg_t * fsg, FILE * fp)
         for (i = 0; i < fsg->n_state; i++) {
             fprintf(fp, "%c LC[%d]:", WORD_FSG_COMMENT_CHAR, i);
             for (j = 0; fsg->lc[i][j] >= 0; j++)
-                fprintf(fp, " %s", phone_from_id(fsg->lc[i][j]));
+                fprintf(fp, " %s", bin_mdef_ciphone_str(g_mdef, fsg->lc[i][j]));
             fprintf(fp, "\n");
 
             fprintf(fp, "%c RC[%d]:", WORD_FSG_COMMENT_CHAR, i);
             for (j = 0; fsg->rc[i][j] >= 0; j++)
-                fprintf(fp, " %s", phone_from_id(fsg->rc[i][j]));
+                fprintf(fp, " %s", bin_mdef_ciphone_str(g_mdef, fsg->rc[i][j]));
             fprintf(fp, "\n");
         }
     }

@@ -112,14 +112,14 @@ best_senscr_all_s3(void)
 
     /* Note that this is actually a very large negative number */
     b = (int32) 0x80000000;
-    for (i = 0; i < bin_mdef_n_ciphone(mdef); ++i)
+    for (i = 0; i < bin_mdef_n_ciphone(g_mdef); ++i)
         bestpscr[i] = 0x80000000;
 
-    for (i = 0; i < mdef->n_sen; ++i, ++senscr) {
+    for (i = 0; i < g_mdef->n_sen; ++i, ++senscr) {
         /* NOTE: This assumes that each CD senone corresponds to at most
            one CI phone.  This is not always true, but we hope that taking
            the first one will work okay. */
-        ci = mdef->sen2cimap[i];
+        ci = g_mdef->sen2cimap[i];
         if (ci == BAD_S3CIPID)
             continue;
         if (bestpscr[ci] < *senscr) {
@@ -164,21 +164,21 @@ senscr_compute(mfcc_t **feat, int32 frame_idx, int32 all)
     int32 best;
 
     if (all) {
-        if (ms_mgau)
-            ms_cont_mgau_frame_eval(senone_scores, ms_mgau, feat);
+        if (g_ms_mgau)
+            ms_cont_mgau_frame_eval(senone_scores, g_ms_mgau, feat);
         else
-            s2_semi_mgau_frame_eval(semi_mgau, feat, frame_idx, TRUE);
+            s2_semi_mgau_frame_eval(g_semi_mgau, feat, frame_idx, TRUE);
         best = best_senscr_all_s3();
     }
     else {
-        if (ms_mgau)
-            ms_cont_mgau_frame_eval(senone_scores, ms_mgau, feat);
+        if (g_ms_mgau)
+            ms_cont_mgau_frame_eval(senone_scores, g_ms_mgau, feat);
         else
-            s2_semi_mgau_frame_eval(semi_mgau, feat, frame_idx, FALSE);
+            s2_semi_mgau_frame_eval(g_semi_mgau, feat, frame_idx, FALSE);
         if (past_senone_active_vec) {
             int32 nwords;
 
-            nwords = (bin_mdef_n_sen(mdef) + BITVEC_WIDTH - 1) / BITVEC_WIDTH;
+            nwords = (bin_mdef_n_sen(g_mdef) + BITVEC_WIDTH - 1) / BITVEC_WIDTH;
             if (past_senone_active_vec[frame_idx] == NULL) {
                 past_senone_active_vec[frame_idx] = ckd_calloc(nwords, sizeof(bitvec_t));
             }
@@ -190,10 +190,10 @@ senscr_compute(mfcc_t **feat, int32 frame_idx, int32 all)
 
     if (past_senone_scores) {
         if (past_senone_scores[frame_idx] == NULL)
-            past_senone_scores[frame_idx] = ckd_calloc(bin_mdef_n_sen(mdef),
+            past_senone_scores[frame_idx] = ckd_calloc(bin_mdef_n_sen(g_mdef),
                                                        sizeof(int32));
         memcpy(past_senone_scores[frame_idx], senone_scores,
-               bin_mdef_n_sen(mdef) * sizeof(int32));
+               bin_mdef_n_sen(g_mdef) * sizeof(int32));
     }
     return best;
 }
@@ -215,7 +215,7 @@ senscr_active(mfcc_t **feat, int32 frame_idx)
 void
 sen_active_clear(void)
 {
-    memset(senone_active_vec, 0, (bin_mdef_n_sen(mdef) + BITVEC_WIDTH - 1)
+    memset(senone_active_vec, 0, (bin_mdef_n_sen(g_mdef) + BITVEC_WIDTH - 1)
            / BITVEC_WIDTH * sizeof(bitvec_t));
     n_senone_active = 0;
 }
@@ -223,10 +223,10 @@ sen_active_clear(void)
 #define MPX_BITVEC_SET(h,i)                                                     \
             if ((h)->s.mpx_ssid[i] != -1)                                       \
                 BITVEC_SET(senone_active_vec,                                   \
-                           bin_mdef_sseq2sen(mdef, (h)->s.mpx_ssid[i], (i)));
+                           bin_mdef_sseq2sen(g_mdef, (h)->s.mpx_ssid[i], (i)));
 #define NONMPX_BITVEC_SET(h,i)                                          \
                 BITVEC_SET(senone_active_vec,                           \
-                           bin_mdef_sseq2sen(mdef, (h)->s.ssid, (i)));
+                           bin_mdef_sseq2sen(g_mdef, (h)->s.ssid, (i)));
 
 void
 hmm_sen_active(hmm_t * hmm)
@@ -274,7 +274,7 @@ sen_active_flags2list(void)
     int32 i, j, total_dists, total_bits;
     bitvec_t *flagptr, bits;
 
-    total_dists = bin_mdef_n_sen(mdef);
+    total_dists = bin_mdef_n_sen(g_mdef);
 
     j = 0;
     total_bits = total_dists & -BITVEC_WIDTH;
@@ -403,7 +403,7 @@ sen_active_flags2list(void)
     int32 i, j, total_dists, total_words, bits;
     uint8 *flagptr;
 
-    total_dists = bin_mdef_n_sen(mdef);
+    total_dists = bin_mdef_n_sen(g_mdef);
 
     j = 0;
     total_words = total_dists & ~3;
