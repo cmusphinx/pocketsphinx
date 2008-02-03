@@ -122,7 +122,7 @@ fsg_search_init(cmd_ln_t *config, logmath_t *lmath,
 
 
 word_fsg_t *
-fsg_search_fsgname_to_fsg(fsg_search_t * search, char *name)
+fsg_search_fsgname_to_fsg(fsg_search_t * search, const char *name)
 {
     gnode_t *gn;
     word_fsg_t *fsg;
@@ -226,7 +226,7 @@ fsg_search_del_fsg_byname(fsg_search_t * search, char *name)
 
 
 boolean
-fsg_search_set_current_fsg(fsg_search_t * search, char *name)
+fsg_search_set_current_fsg(fsg_search_t * search, const char *name)
 {
     word_fsg_t *fsg;
 

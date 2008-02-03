@@ -120,7 +120,7 @@ fsg_search_t *fsg_search_init(cmd_ln_t *config,
  * Lookup the FSG associated with the given name and return it, or NULL if
  * no match found.
  */
-word_fsg_t *fsg_search_fsgname_to_fsg(fsg_search_t *fsgs, char *name);
+word_fsg_t *fsg_search_fsgname_to_fsg(fsg_search_t *fsgs, const char *name);
 
 
 /*
@@ -150,7 +150,7 @@ boolean fsg_search_del_fsg_byname(fsg_search_t *fsgs, char *name);
  * when search is busy (ie, in the midst of an utterance.  That's an error
  * and FALSE is returned.  If successful, returns TRUE.
  */
-boolean fsg_search_set_current_fsg(fsg_search_t *fsgs, char *name);
+boolean fsg_search_set_current_fsg(fsg_search_t *fsgs, const char *name);
 
 
 /*

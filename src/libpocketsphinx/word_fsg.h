@@ -186,7 +186,8 @@ typedef struct word_fsg_s {
  * Return value: a new word_fsg_t structure if the file is successfully
  * read, NULL otherwise.
  */
-word_fsg_t *word_fsg_readfile (char *file, dict_t *word_dict, logmath_t *lmath,
+word_fsg_t *word_fsg_readfile (const char *file,
+			       dict_t *word_dict, logmath_t *lmath,
 			       boolean use_altpron, boolean use_filler,
 			       float32 silprob, float32 fillprob,
 			       float32 lw);

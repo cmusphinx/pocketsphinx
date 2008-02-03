@@ -54,7 +54,7 @@
 #include "pocketsphinx.h"
 #include "acmod.h"
 #include "dict.h"
-#include "search.h"
+#include "ngram_search.h"
 #include "fsg_search.h"
 
 /**
@@ -82,7 +82,7 @@ struct pocketsphinx_s {
     logmath_t *lmath;  /**< Log math computation. */
 
     /* Search modules. */
-    /* ngram_search_t *ngs; */ /**< N-Gram search module. */
+    ngram_search_t *ngs; /**< N-Gram search module. */
     fsg_search_t *fsgs;  /**< Finite-State search module. */
 
     /* Utterance-processing related stuff. */

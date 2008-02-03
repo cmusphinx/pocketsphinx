@@ -48,8 +48,8 @@
 #include <ngram_model.h>
 
 /* Local headers. */
-#include "acmod.h"
 #include "hmm.h"
+#include "dict.h"
 
 /**
  * Lexical tree node data type.
@@ -167,5 +167,16 @@ struct ngram_search_s {
 };
 typedef struct ngram_search_s ngram_search_t;
 
+/**
+ * Initialize the N-Gram search module.
+ */
+ngram_search_t *ngram_search_init(cmd_ln_t *config,
+                                  logmath_t *lmath,
+                                  dict_t *dict);
+
+/**
+ * Finalize the N-Gram search module.
+ */
+void ngram_search_free(ngram_search_t *ngs);
 
 #endif /* __NGRAM_SEARCH_H__ */

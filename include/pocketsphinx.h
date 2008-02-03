@@ -89,6 +89,19 @@ void pocketsphinx_free(pocketsphinx_t *ps);
 cmd_ln_t *pocketsphinx_get_config(pocketsphinx_t *ps);
 
 /**
+ * Load an FSG file.
+ */
+const char *pocketsphinx_load_fsgfile(pocketsphinx_t *ps,
+				      const char *fsgfile);
+
+/**
+ * Load a list of FSG files.
+ */
+const char *pocketsphinx_load_fsgctl(pocketsphinx_t *ps,
+				     const char *fsgctlfile,
+				     int set_default);
+
+/**
  * Run a control file in batch mode.
  */
 int pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
