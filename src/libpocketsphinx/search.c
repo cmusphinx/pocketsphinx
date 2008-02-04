@@ -290,7 +290,7 @@ static hmm_context_t *hmmctx;
 static chan_t **word_chan;
 
 /* word_active[w] = 1 if word w active in current frame, 0 otherwise */
-static int32 *word_active;
+static uint8 *word_active;
 
 /*
  * Each node in the HMM tree structure may point to a set of words whose last phone
