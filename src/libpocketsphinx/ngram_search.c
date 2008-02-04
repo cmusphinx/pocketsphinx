@@ -49,13 +49,16 @@
 
 ngram_search_t *
 ngram_search_init(cmd_ln_t *config,
-		  logmath_t *lmath,
+		  acmod_t *acmod,
 		  dict_t *dict)
 {
 	ngram_search_t *ngs;
 
 	ngs = ckd_calloc(1, sizeof(*ngs));
-
+	ngs->acmod = acmod;
+	ngs->dict = dict;
+	ngs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
+				       acmod->tmat->tp, NULL, acmod->mdef->sseq);
 	return ngs;
 }
 

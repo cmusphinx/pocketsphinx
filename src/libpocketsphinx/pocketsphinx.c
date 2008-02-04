@@ -150,7 +150,7 @@ pocketsphinx_init(cmd_ln_t *config)
     else if ((lmfile = cmd_ln_str_r(config, "-lm"))
              || (lmctl = cmd_ln_str_r(config, "-lmctlfn"))) {
         /* Initialize the N-Gram module. */
-        ps->ngs = ngram_search_init(config, ps->lmath, ps->dict);
+        ps->ngs = ngram_search_init(config, ps->acmod, ps->dict);
     }
     /* Otherwise, we will initialize the search whenever the user
      * decides to load an FSG or a language model. */

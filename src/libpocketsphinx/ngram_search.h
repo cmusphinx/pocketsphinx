@@ -50,6 +50,7 @@
 /* Local headers. */
 #include "hmm.h"
 #include "dict.h"
+#include "acmod.h"
 
 /**
  * Lexical tree node data type.
@@ -119,6 +120,48 @@ typedef struct bptbl_s {
     int32    lscr;
 } bptbl_t;
 
+/*
+ * Candidates words for entering their last phones.  Cleared and rebuilt in each
+ * frame.
+ * NOTE: candidates can only be multi-phone, real dictionary words.
+ */
+typedef struct lastphn_cand_s {
+    int32 wid;
+    int32 score;
+    int32 bp;
+    int32 next;                 /* next candidate starting at the same frame */
+} lastphn_cand_t;
+
+/*
+ * Since the same instance of a word (i.e., <word,start-frame>) reaches its last
+ * phone several times, we can compute its best BP and LM transition score info
+ * just the first time and cache it for future occurrences.  Structure for such
+ * a cache.
+ */
+typedef struct {
+    int32 sf;                   /* Start frame */
+    int32 dscr;                 /* Delta-score upon entering last phone */
+    int32 bp;                   /* Best BP */
+} last_ltrans_t;
+
+#define CAND_SF_ALLOCSIZE	32
+typedef struct {
+    int32 bp_ef;
+    int32 cand;
+} cand_sf_t;
+
+/*
+ * Structure for reorganizing the BP table entries in the current frame according
+ * to distinct right context ci-phones.  Each entry contains the best BP entry for
+ * a given right context.  Each successor word will pick up the correct entry based
+ * on its first ci-phone.
+ */
+typedef struct bestbp_rc_s {
+    int32 score;
+    int32 path;                 /* BP table index corresponding to this entry */
+    int32 lc;                   /* right most ci-phone of above BP entry word */
+} bestbp_rc_t;
+
 #define NO_BP		-1
 
 /**
@@ -160,10 +203,127 @@ typedef struct latnode_s {
 } latnode_t;
 
 /**
+ * Various statistics for profiling.
+ */
+typedef struct ngram_search_stats_s {
+    int32 n_phone_eval;
+    int32 n_root_chan_eval;
+    int32 n_nonroot_chan_eval;
+    int32 n_last_chan_eval;
+    int32 n_word_lastchan_eval;
+    int32 n_lastphn_cand_utt;
+    int32 n_phn_in_topsen;
+    int32 n_fwdflat_chan;
+    int32 n_fwdflat_words;
+    int32 n_fwdflat_word_transition;
+} ngram_search_stats_t;
+
+/**
  * N-Gram search module structure.
  */
 struct ngram_search_s {
-    ngram_model_t *lmset; /**< Set of language models. */
+    acmod_t *acmod;        /**< Acoustic model. */
+    dict_t *dict;          /**< Pronunciation dictionary. */
+    ngram_model_t *lmset;  /**< Set of language models. */
+    hmm_context_t *hmmctx; /**< HMM context. */
+
+    /**
+     * Search structure of HMM instances.
+     *
+     * The word triphone sequences (HMM instances) are transformed
+     * into tree structures, one tree per unique left triphone in the
+     * entire dictionary (actually diphone, since its left context
+     * varies dyamically during the search process).  The entire set
+     * of trees of channels is allocated once and for all during
+     * initialization (since dynamic management of active CHANs is
+     * time consuming), with one exception: the last phones of words,
+     * that need multiple right context modelling, are not maintained
+     * in this static structure since there are too many of them and
+     * few are active at any time.  Instead they are maintained as
+     * linked lists of CHANs, one list per word, and each CHAN in this
+     * set is allocated only on demand and freed if inactive.
+     */
+    root_chan_t *root_chan;  /**< Roots of search tree. */
+    int32 n_root_chan_alloc; /**< Number of root_chan allocated */
+    int32 n_root_chan;       /**< Number of valid root_chan */
+    int32 n_nonroot_chan;    /**< Number of valid non-root channels */
+    int32 max_nonroot_chan;  /**< Maximum possible number of non-root channels */
+    int32 *first_phone_rchan_map;    /* map 1st (left) diphone to root-chan index */
+    root_chan_t *all_rhmm;   /**< Root HMMs for single-phone words */
+
+    /**
+     * Channels associated with a given word (only used for right
+     * contexts and single-phone words in fwdtree search)
+     */
+    chan_t *word_chan;
+    uint8 *word_active;      /**< array of active flags for all words. */
+
+    /**
+     * Each node in the HMM tree structure may point to a set of words
+     * whose last phone would follow that node in the tree structure
+     * (but is not included in the tree structure for reasons
+     * explained above).  The channel node points to one word in this
+     * set of words.  The remaining words are linked through
+     * homophone_set[].
+     * 
+     * Single-phone words are not represented in the HMM tree; they
+     * are kept in word_chan.
+     *
+     * Specifically, homophone_set[w] = wid of next word in the same
+     * set as w.
+     */
+    int32 *homophone_set;
+
+
+    int32 *single_phone_wid;       /* list of single-phone word ids */
+    int32 n_1ph_words;       /* #single phone words in dict (total) */
+    int32 n_1ph_LMwords;     /* #single phone dict words also in LM;
+                                   these come first in single_phone_wid */
+    /*
+     * In any frame, only some HMM tree nodes are active.
+     * active_chan_list[f mod 2] = list of nonroot channels in the HMM
+     * tree active in frame f.
+     *
+     * Similarly, active_word_list[f mod 2] = list of word ids for
+     * which active channels exist in word_chan in frame f.
+     */
+    chan_t **active_chan_list[2];
+    int32 n_active_chan[2];  /**< #entries in active_chan_list */
+    int32 *active_word_list[2];
+    int32 n_active_word[2];  /**< #entries in active_word_list */
+
+    lastphn_cand_t *lastphn_cand;
+    int32 n_lastphn_cand;
+
+    last_ltrans_t *last_ltrans;      /* one per word */
+    int32 cand_sf_alloc;
+    cand_sf_t *cand_sf;
+    bestbp_rc_t *bestbp_rc;
+
+    bptbl_t *bp_table;       /* Forward pass lattice */
+    int32 bpidx;             /* First free BPTable entry */
+    int32 bp_table_size;
+    int32 *bscore_stack;     /* Score stack for all possible right contexts */
+    int32 bss_head;          /* First free BScoreStack entry */
+    int32 bscore_stack_size;
+    int32 *bp_table_idx;       /* First BPTable entry for each frame */
+    int32 *word_lat_idx;       /* BPTable index for any word in current frame;
+                                   cleared before each frame */
+    int32 bp_table_overflow_msg;       /* Whether BPtable overflow msg has been printed */
+    int32 *lattice_density;  /* #words/frame in lattice */
+    int32 *zeroPermTab;
+
+    latnode_t **frm_wordlist;
+    int32 *fwdflat_wordlist;
+
+    char *expand_word_flag;
+    int32 *expand_word_list;
+    int32 n_expand_words;
+
+    int32 min_ef_width;
+    int32 max_sf_win;
+
+    ngram_search_stats_t st; /**< Various statistics for profiling */
 };
 typedef struct ngram_search_s ngram_search_t;
 
@@ -171,7 +331,7 @@ typedef struct ngram_search_s ngram_search_t;
  * Initialize the N-Gram search module.
  */
 ngram_search_t *ngram_search_init(cmd_ln_t *config,
-                                  logmath_t *lmath,
+                                  acmod_t *acmod,
                                   dict_t *dict);
 
 /**
