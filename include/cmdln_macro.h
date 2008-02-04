@@ -384,6 +384,10 @@
       ARG_STRING,                                                               \
       NULL,                                                                     \
       "Directory containing acoustic model files."},                            \
+{ "-featparams",                                                                \
+      ARG_STRING,                                                               \
+      NULL,                                                                     \
+      "File containing feature extraction parameters."},                        \
 { "-mdef",                                                                      \
       ARG_STRING,                                                               \
       NULL,                                                                     \

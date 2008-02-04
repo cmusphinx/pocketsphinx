@@ -123,7 +123,13 @@ fbs_init(int32 argc, char **argv)
 
     /* Look for a feat.params very early on, because it influences
      * everything below. */
-    if (cmd_ln_str("-hmm")) {
+    if (cmd_ln_str("-featparams")) {
+	if (cmd_ln_parse_file(feat_defn, cmd_ln_str("-featparams"), FALSE) == 0) {
+	    E_INFO("Parsed model-specific feature parameters from %s\n",
+                   cmd_ln_str("-featparams"));
+	}
+    }
+    else if (cmd_ln_str("-hmm")) {
 	char *str;
         str = string_join(cmd_ln_str("-hmm"), "/feat.params", NULL);
 	if (cmd_ln_parse_file(feat_defn, str, FALSE) == 0) {

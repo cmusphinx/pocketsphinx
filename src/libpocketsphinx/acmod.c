@@ -47,6 +47,7 @@
 #include <prim_type.h>
 #include <cmd_ln.h>
 #include <strfuncs.h>
+#include <string.h>
 
 /* Local headers. */
 #include "cmdln_macro.h"
@@ -62,11 +63,18 @@ static const arg_t feat_defn[] = {
 static int
 acmod_init_am(acmod_t *acmod)
 {
-    char *mdeffn, *tmatfn;
+    char *mdeffn, *tmatfn, *featparams;
+
+    /* Look for feat.params in acoustic model dir. */
+    if ((featparams = cmd_ln_str_r(acmod->config, "-featparams"))) {
+        if (cmd_ln_parse_file_r(acmod->config, feat_defn, featparams, FALSE) != NULL) {
+	    E_INFO("Parsed model-specific feature parameters from %s\n", featparams);
+        }
+    }
 
     /* Read model definition. */
     if ((mdeffn = cmd_ln_str_r(acmod->config, "-mdef")) == NULL) {
-        E_ERROR("Must specify -mdeffn or -hmm\n");
+        E_ERROR("Must specify -mdef or -hmm\n");
         return -1;
     }
 
@@ -129,12 +137,24 @@ acmod_init_feat(acmod_t *acmod)
 int
 acmod_fe_mismatch(acmod_t *acmod, fe_t *fe)
 {
+    /* Output vector dimension needs to be the same. */
+    if (cmd_ln_int32_r(acmod->config, "-ceplen") != fe_get_output_size(fe))
+        return TRUE;
+    /* Feature parameters need to be the same. */
+    /* ... */
     return FALSE;
 }
 
 int
 acmod_feat_mismatch(acmod_t *acmod, feat_t *fcb)
 {
+    /* Feature type needs to be the same. */
+    if (0 != strcmp(cmd_ln_str_r(acmod->config, "-feat"), feat_name(fcb)))
+        return TRUE;
+    /* Input vector dimension needs to be the same. */
+    if (cmd_ln_int32_r(acmod->config, "-ceplen") != feat_cepsize(fcb))
+        return TRUE;
+    /* FIXME: Need to check LDA and stuff too. */
     return FALSE;
 }
 

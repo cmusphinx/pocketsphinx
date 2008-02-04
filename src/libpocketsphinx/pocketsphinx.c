@@ -98,6 +98,7 @@ pocketsphinx_init_defaults(pocketsphinx_t *ps)
         pocketsphinx_add_file(ps, "-sendump", hmmdir, "sendump");
         pocketsphinx_add_file(ps, "-kdtree", hmmdir, "kdtrees");
         pocketsphinx_add_file(ps, "-fdict", hmmdir, "noisedict");
+        pocketsphinx_add_file(ps, "-featparams", hmmdir, "feat.params");
     }
 }
 
