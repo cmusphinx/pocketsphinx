@@ -228,15 +228,48 @@ acmod_free(acmod_t *acmod)
 int
 acmod_process_raw(acmod_t *acmod,
 		  int16 const **inout_raw,
-		  int *inout_n_samps,
+		  size_t *inout_n_samps,
 		  int full_utt)
 {
     /* If this is a full utterance, process it all at once. */
     if (full_utt) {
-        /* Resize mfc_buf */
-        return 0;
+        int32 nfr, ntail;
+
+        /* Resize mfc_buf to fit. */
+        if (fe_process_frames(acmod->fe, NULL, inout_n_samps, NULL, &nfr) < 0)
+            return -1;
+        if (acmod->n_mfc_alloc < nfr + 1) {
+            ckd_free_2d(acmod->mfc_buf);
+            acmod->mfc_buf = ckd_calloc_2d(nfr + 1, fe_get_output_size(acmod->fe),
+                                           sizeof(**acmod->mfc_buf));
+            acmod->n_mfc_alloc = nfr + 1;
+        }
+        acmod->n_mfc_frame = 0;
+        fe_start_utt(acmod->fe);
+        if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
+                              acmod->mfc_buf, &nfr) < 0)
+            return -1;
+        fe_end_utt(acmod->fe, acmod->mfc_buf[nfr], &ntail);
+        nfr += ntail;
+        acmod->n_mfc_frame = nfr;
+
+        /* Resize feat_buf to fit. */
+        if (acmod->n_feat_alloc < nfr) {
+            feat_array_free(acmod->feat_buf);
+            acmod->feat_buf = feat_array_alloc(acmod->fcb, nfr);
+            acmod->n_feat_alloc = nfr;
+            acmod->n_feat_frame = 0;
+        }
+        /* Make dynamic features. */
+        nfr = feat_s2mfc2feat_block(acmod->fcb, acmod->mfc_buf, nfr,
+                                    TRUE, TRUE, acmod->feat_buf);
+        acmod->n_feat_frame = nfr;
+        /* Mark all MFCCs as consumed. */
+        acmod->n_mfc_frame = 0;
+        return nfr;
     }
     else {
+        /* Process as many as possible. */
         return 0;
     }
 }
@@ -285,7 +318,7 @@ acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm)
 {
 }
 
-int32 const *
+int const *
 acmod_active_list(acmod_t *acmod, int32 *out_n_active)
 {
     /* If active list has not been generated for this frame,

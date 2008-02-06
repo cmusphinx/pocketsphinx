@@ -61,6 +61,11 @@
 #include "hmm.h"
 
 /**
+ * Type used to represent acoustic model scores.
+ */
+typedef int32 ascr_t;
+
+/**
  * Acoustic model structure.
  *
  * This object encapsulates all stages of acoustic processing, from
@@ -98,11 +103,11 @@ struct acmod_s {
     ms_mgau_model_t *ms_mgau;  /**< Slow generic models. */
 
     /* Senone scoring: */
-    int32 *senone_scores;        /**< GMM scores for current frame. */
+    ascr_t *senone_scores;        /**< GMM scores for current frame. */
     bitvec_t *senone_active_vec; /**< Active GMMs in current frame. */
-    int32 *senone_active;        /**< Array of active GMMs. */
-    int32 n_senone_active;       /**< Number of active GMMs. */
-    int32 log_zero;              /**< Zero log-probability value. */
+    int *senone_active;        /**< Array of active GMMs. */
+    int n_senone_active;       /**< Number of active GMMs. */
+    int log_zero;              /**< Zero log-probability value. */
 
     /* Feature computation: */
     mfcc_t **mfc_buf;   /**< Temporary buffer of acoustic features. */
@@ -150,11 +155,12 @@ void acmod_free(acmod_t *acmod);
  *                      Out: Number of samples remaining
  * @param full_utt If non-zero, this block represents a full
  *                 utterance and should be processed as such.
- * @return Number of frames of data processed
+ * @return Number of frames of data processed.  Iff this is zero, it is
+ *         guaranteed that no data remains in <code>*inout_raw</code>.
  */
 int acmod_process_raw(acmod_t *acmod,
                       int16 const **inout_raw,
-                      int *inout_n_samps,
+                      size_t *inout_n_samps,
                       int full_utt);
 
 /**
@@ -166,7 +172,8 @@ int acmod_process_raw(acmod_t *acmod,
  *                      Out: Number of frames remaining
  * @param full_utt If non-zero, this block represents a full
  *                 utterance and should be processed as such.
- * @return Number of frames of data processed
+ * @return Number of frames of data processed.  Iff this is zero, it is
+ *         guaranteed that no data remains in <code>*inout_cep</code>.
  */
 int acmod_process_cep(acmod_t *acmod,
                       mfcc_t const ***inout_cep,
@@ -201,10 +208,10 @@ int acmod_process_feat(acmod_t *acmod,
  *         is available for scoring.  The data pointed to persists only
  *         until the next call to acmod_score().
  */
-int32 const *acmod_score(acmod_t *acmod,
-                         int *out_frame_idx,
-                         int *out_best_score,
-                         int *out_best_senid);
+ascr_t const *acmod_score(acmod_t *acmod,
+                          int *out_frame_idx,
+                          int *out_best_score,
+                          int *out_best_senid);
 
 /**
  * Clear set of active senones.
@@ -222,6 +229,6 @@ void acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm);
  * @param out_n_active Output: number of elements in returned array.
  * @return array of active senone IDs.
  */
-int32 const *acmod_active_list(acmod_t *acmod, int32 *out_n_active);
+int const *acmod_active_list(acmod_t *acmod, int *out_n_active);
 
 #endif /* __ACMOD_H__ */

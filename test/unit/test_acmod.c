@@ -12,6 +12,9 @@ main(int argc, char *argv[])
 	acmod_t *acmod;
 	logmath_t *lmath;
 	cmd_ln_t *config;
+	FILE *rawfh;
+	int16 *buf;
+	size_t nread, nsamps;
 
 	lmath = logmath_init(1.0001, 0, 0);
 	config = cmd_ln_init(NULL, pocketsphinx_args(), TRUE,
@@ -31,6 +34,23 @@ main(int argc, char *argv[])
 	TEST_ASSERT(config);
 	TEST_ASSERT(acmod = acmod_init(config, lmath, NULL, NULL));
 
+	nsamps = 2048;
+	buf = ckd_calloc(nsamps, sizeof(*buf));
+	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
+	while (!feof(rawfh)) {
+		int16 *bptr = buf;
+		nread = fread(buf, sizeof(*buf), nsamps, rawfh);
+		while (acmod_process_raw(acmod, &bptr, &nread, FALSE) > 0) {
+			ascr_t const *senscr;
+			int frame_idx, best_score, best_senid;
+			while ((senscr = acmod_score(acmod, &frame_idx,
+						     &best_score, &best_senid))) {
+				/* Here we would do searching. */
+			}
+		}
+	}
+	fclose(rawfh);
+	ckd_free(buf);
 	acmod_free(acmod);
 	return 0;
 }
