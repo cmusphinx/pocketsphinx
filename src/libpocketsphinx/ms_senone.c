@@ -367,7 +367,7 @@ senone_init(gauden_t *g, char *mixwfile, char *sen2mgau_map_file,
     int32 n = 0, i;
 
     s = (senone_t *) ckd_calloc(1, sizeof(senone_t));
-    s->lmath = lmath;
+    s->lmath = logmath_init(logmath_get_base(lmath), 0, TRUE);
     s->mixwfloor = mixwfloor;
 
     s->n_gauden = g->n_mgau;
@@ -424,6 +424,7 @@ senone_free(senone_t * s)
         ckd_free(s->mgau);
     if (s->featscr)
         ckd_free(s->featscr);
+    logmath_free(s->lmath);
     ckd_free(s);
 }
 
