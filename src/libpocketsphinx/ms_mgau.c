@@ -152,9 +152,12 @@ ms_mgau_free(ms_mgau_model_t * msg)
 }
 
 int32
-ms_cont_mgau_frame_eval(int32 *senscr,
-			ms_mgau_model_t * msg,
-                        mfcc_t ** feat)
+ms_cont_mgau_frame_eval(ms_mgau_model_t * msg,
+			int32 *senscr,
+			int32 *senone_active,
+			int32 n_senone_active,
+                        mfcc_t ** feat,
+			int32 frame, int32 compallsen)
 {
     int32 gid;
     int32 i;
@@ -169,7 +172,7 @@ ms_cont_mgau_frame_eval(int32 *senscr,
 
     /*
      * Evaluate gaussian density codebooks and senone scores for input codeword.
-     * Evaluate only active codebooks and senones.
+     * Evaluate only active codebooks and senones. (ignore compallsen...)
      */
 
     /* Flag all active mixture-gaussian codebooks */

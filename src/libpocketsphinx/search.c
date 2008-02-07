@@ -3426,9 +3426,13 @@ search_fwdflat_frame(mfcc_t **feat)
             senone_scores = sc_scores[0];
             /* FIXME: This recomputes the codebook, which we'd rather not do. */
             if (g_semi_mgau)
-                s2_semi_mgau_frame_eval(g_semi_mgau, feat, CurrentFrame, FALSE);
+                s2_semi_mgau_frame_eval(g_semi_mgau, senone_scores,
+                                        senone_active, n_senone_active,
+                                        feat, CurrentFrame, FALSE);
             else if (g_ms_mgau)
-                ms_cont_mgau_frame_eval(senone_scores, g_ms_mgau, feat);
+                ms_cont_mgau_frame_eval(g_ms_mgau, senone_scores,
+                                        senone_active, n_senone_active,
+                                        feat, CurrentFrame, FALSE);
 
             /* Intersect the senone scores */
             for (i = 0; i < n_senone_active; ++i) {

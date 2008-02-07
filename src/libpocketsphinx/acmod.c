@@ -101,19 +101,21 @@ acmod_init_am(acmod_t *acmod)
     }
 
     E_INFO("Attempting to use SCGMM computation module\n");
-    acmod->semi_mgau
+    acmod->mgau
         = s2_semi_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
-    if (acmod->semi_mgau) {
+    if (acmod->mgau) {
         char *kdtreefn = cmd_ln_str_r(acmod->config, "-kdtree");
         if (kdtreefn)
-            s2_semi_mgau_load_kdtree(acmod->semi_mgau, kdtreefn,
+            s2_semi_mgau_load_kdtree(acmod->mgau, kdtreefn,
                                      cmd_ln_int32_r(acmod->config, "-kdmaxdepth"),
                                      cmd_ln_int32_r(acmod->config, "-kdmaxbbi"));
+        acmod->frame_eval = (frame_eval_t)&s2_semi_mgau_frame_eval;
     }
     else {
         E_INFO("Falling back to general multi-stream GMM computation\n");
-        acmod->ms_mgau =
+        acmod->mgau =
             ms_mgau_init(acmod->config, acmod->lmath);
+        acmod->frame_eval = (frame_eval_t)&ms_cont_mgau_frame_eval;
     }
 
     return 0;
@@ -166,6 +168,7 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
     acmod = ckd_calloc(1, sizeof(*acmod));
     acmod->config = config;
     acmod->lmath = lmath;
+    acmod->state = ACMOD_IDLE;
 
     /* Load acoustic model parameters. */
     if (acmod_init_am(acmod) < 0)
@@ -202,10 +205,18 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
         ckd_calloc_2d(acmod->n_mfc_alloc, acmod->fcb->cepsize,
                       sizeof(**acmod->mfc_buf));
 
-    /* Allocate a single frame of features for the time being. */
-    acmod->n_feat_alloc = 1;
-    acmod->feat_buf = feat_array_alloc(acmod->fcb, 1);
+    /* Feature buffer has to be at least as large as MFCC buffer. */
+    acmod->n_feat_alloc = acmod->n_mfc_alloc;
+    acmod->feat_buf = feat_array_alloc(acmod->fcb, acmod->n_feat_alloc);
 
+    /* Senone computation stuff. */
+    acmod->senone_scores = ckd_calloc(bin_mdef_n_sen(acmod->mdef),
+                                                     sizeof(*acmod->senone_scores));
+    acmod->senone_active_vec = bitvec_alloc(bin_mdef_n_sen(acmod->mdef));
+    acmod->senone_active = ckd_calloc(bin_mdef_n_sen(acmod->mdef),
+                                                     sizeof(*acmod->senone_active));
+    acmod->log_zero = logmath_get_zero(acmod->lmath);
+    acmod->compallsen = cmd_ln_boolean_r(config, "-compallsen");
     return acmod;
 
 error_out:
@@ -223,6 +234,31 @@ acmod_free(acmod_t *acmod)
     ckd_free_2d((void **)acmod->mfc_buf);
     feat_array_free(acmod->feat_buf);
     ckd_free(acmod);
+}
+
+int
+acmod_start_utt(acmod_t *acmod)
+{
+    fe_start_utt(acmod->fe);
+    acmod->state = ACMOD_STARTED;
+    acmod->n_mfc_frame = 0;
+    acmod->n_feat_frame = 0;
+    acmod->output_frame = 0;
+    return 0;
+}
+
+int
+acmod_end_utt(acmod_t *acmod)
+{
+    int32 nfr;
+
+    acmod->state = ACMOD_ENDED;
+    if (acmod->n_mfc_frame < acmod->n_mfc_alloc) {
+        fe_end_utt(acmod->fe, acmod->mfc_buf[acmod->n_mfc_frame], &nfr);
+        printf("Generated %d frames of leftover cepstra\n", nfr);
+    }
+    acmod->n_mfc_frame += nfr;
+    return 0;
 }
 
 int
@@ -269,25 +305,122 @@ acmod_process_raw(acmod_t *acmod,
         return nfr;
     }
     else {
-        /* Process as many as possible. */
-        return 0;
+        int32 nfeat;
+
+        /* Append MFCCs to the end of any that are previously in there
+         * (in practice, there will probably be none) */
+        if (inout_n_samps && *inout_n_samps) {
+            size_t nsamp = *inout_n_samps;
+            int32 ncep;
+
+            ncep = acmod->n_mfc_alloc - acmod->n_mfc_frame;
+            printf("Available %d frames of cepstra, %d samples\n", ncep, nsamp);
+            if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
+                                  acmod->mfc_buf + acmod->n_mfc_frame, &ncep) < 0)
+                return -1;
+            printf("Generated %d frames of cepstra, consumed %d samples\n",
+                   ncep, nsamp - *inout_n_samps);
+            acmod->n_mfc_frame += ncep;
+        }
+
+        /* Number of input frames to generate features. */
+        nfeat = acmod->n_mfc_frame;
+        /* Don't overflow the output feature buffer. */
+        if (nfeat > acmod->n_feat_alloc - acmod->n_feat_frame)
+            nfeat = acmod->n_feat_alloc - acmod->n_feat_frame;
+        printf("Will generate %d frames of features\n", nfeat);
+        nfeat = feat_s2mfc2feat_block(acmod->fcb, acmod->mfc_buf, nfeat,
+                                      (acmod->state == ACMOD_STARTED),
+                                      (acmod->state == ACMOD_ENDED),
+                                      acmod->feat_buf + acmod->n_feat_frame);
+        printf("Generated %d frames of features\n", nfeat);
+        acmod->n_feat_frame += nfeat;
+        /* Free up space in the MFCC buffer. */
+        /* FIXME: we should use circular buffers here instead. */
+        /* At the end of the utterance we get more features out than
+         * we put in MFCCs. */
+        if (nfeat >=acmod->n_mfc_frame)
+            acmod->n_mfc_frame = 0;
+        else {
+            acmod->n_mfc_frame -= nfeat;
+            memmove(acmod->mfc_buf[0],
+                    acmod->mfc_buf[nfeat],
+                    (acmod->n_mfc_frame
+                     * fe_get_output_size(acmod->fe)
+                     * sizeof(**acmod->mfc_buf)));
+        }
+        printf("MFCC buffer now contains %d frames\n", acmod->n_mfc_frame);
+        acmod->state = ACMOD_PROCESSING;
+        return nfeat;
     }
 }
 
 int
 acmod_process_cep(acmod_t *acmod,
-		  mfcc_t const ***inout_cep,
+		  mfcc_t ***inout_cep,
 		  int *inout_n_frames,
 		  int full_utt)
 {
-    return 0;
+    /* If this is a full utterance, process it all at once. */
+    if (full_utt) {
+        int32 nfr;
+
+        /* Resize feat_buf to fit. */
+        if (acmod->n_feat_alloc < *inout_n_frames) {
+            feat_array_free(acmod->feat_buf);
+            acmod->feat_buf = feat_array_alloc(acmod->fcb, *inout_n_frames);
+            acmod->n_feat_alloc = *inout_n_frames;
+            acmod->n_feat_frame = 0;
+        }
+        /* Make dynamic features. */
+        nfr = feat_s2mfc2feat_block(acmod->fcb, *inout_cep, *inout_n_frames,
+                                    TRUE, TRUE, acmod->feat_buf);
+        acmod->n_feat_frame = nfr;
+        *inout_cep += *inout_n_frames;
+        *inout_n_frames = 0;
+        return nfr;
+    }
+    else {
+        int32 nfeat;
+
+        /* Number of input frames to generate features. */
+        nfeat = acmod->n_mfc_frame;
+        /* Don't overflow the output feature buffer. */
+        if (nfeat > acmod->n_feat_alloc - acmod->n_feat_frame)
+            nfeat = acmod->n_feat_alloc - acmod->n_feat_frame;
+        nfeat = feat_s2mfc2feat_block(acmod->fcb, *inout_cep,
+                                      nfeat,
+                                      (acmod->state == ACMOD_STARTED),
+                                      (acmod->state == ACMOD_ENDED),
+                                      acmod->feat_buf + acmod->n_feat_frame);
+        acmod->n_feat_frame += nfeat;
+        if (nfeat >= *inout_n_frames) {
+            *inout_cep += *inout_n_frames;
+            *inout_n_frames = 0;
+        }
+        else {
+            *inout_n_frames -= nfeat;
+            *inout_cep += nfeat;
+        }
+        acmod->state = ACMOD_PROCESSING;
+        return nfeat;
+    }
 }
 
 int
 acmod_process_feat(acmod_t *acmod,
-		   mfcc_t const ***feat)
+		   mfcc_t **feat)
 {
-    return 0;
+    if (acmod->n_feat_frame == acmod->n_feat_alloc)
+        return 0;
+    else {
+        /* Just copy it in. */
+        int i;
+        for (i = 0; i < feat_n_stream(acmod->fcb); ++i)
+            memcpy(acmod->feat_buf[acmod->n_feat_frame][i],
+                   feat[i], feat_stream_len(acmod->fcb, i) * sizeof(**feat));
+        return 1;
+    }
 }
 
 int32 const *
@@ -299,8 +432,24 @@ acmod_score(acmod_t *acmod,
     int32 best_score = acmod->log_zero;
     int32 best_idx = -1;
 
-    /* If senone scores haven't been generated for this frame,
-     * compute them. */
+    /* No frames available to score. */
+    if (acmod->n_feat_frame == 0)
+        return NULL;
+
+    /* Generate scores for the next available frame */
+    (*acmod->frame_eval)(acmod->mgau,
+                         acmod->senone_scores,
+                         acmod->senone_active,
+                         acmod->n_senone_active,
+                         acmod->feat_buf[0],
+                         acmod->output_frame, TRUE);
+    /* Shift back the rest of the feature buffer (FIXME: we should
+     * really use circular buffers here) */
+    --acmod->n_feat_frame;
+    memmove(acmod->feat_buf[0][0], acmod->feat_buf[1][0],
+            (acmod->n_feat_frame
+             * feat_dimension(acmod->fcb)
+             * sizeof(***acmod->feat_buf)));
 
     if (out_frame_idx) *out_frame_idx = acmod->output_frame;
     if (out_best_score) *out_best_score = best_score;
@@ -311,11 +460,180 @@ acmod_score(acmod_t *acmod,
 void
 acmod_clear_active(acmod_t *acmod)
 {
+    bitvec_clear_all(acmod->senone_active_vec, bin_mdef_n_sen(acmod->mdef));
+    acmod->n_senone_active = 0;
 }
+
+#define MPX_BITVEC_SET(a,h,i)                                           \
+    if ((h)->s.mpx_ssid[i] != -1)                                       \
+        bitvec_set((a)->senone_active_vec,                              \
+                   bin_mdef_sseq2sen((a)->mdef, (h)->s.mpx_ssid[i], (i)));
+#define NONMPX_BITVEC_SET(a,h,i)                                        \
+    bitvec_set((a)->senone_active_vec,                                  \
+               bin_mdef_sseq2sen((a)->mdef, (h)->s.ssid, (i)));
 
 void
 acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm)
 {
+    int i;
+
+    if (hmm_is_mpx(hmm)) {
+        switch (hmm_n_emit_state(hmm)) {
+        case 5:
+            MPX_BITVEC_SET(acmod, hmm, 4);
+            MPX_BITVEC_SET(acmod, hmm, 3);
+        case 3:
+            MPX_BITVEC_SET(acmod, hmm, 2);
+            MPX_BITVEC_SET(acmod, hmm, 1);
+            MPX_BITVEC_SET(acmod, hmm, 0);
+            break;
+        default:
+            for (i = 0; i < hmm_n_emit_state(hmm); ++i) {
+                MPX_BITVEC_SET(acmod, hmm, i);
+            }
+        }
+    }
+    else {
+        switch (hmm_n_emit_state(hmm)) {
+        case 5:
+            NONMPX_BITVEC_SET(acmod, hmm, 4);
+            NONMPX_BITVEC_SET(acmod, hmm, 3);
+        case 3:
+            NONMPX_BITVEC_SET(acmod, hmm, 2);
+            NONMPX_BITVEC_SET(acmod, hmm, 1);
+            NONMPX_BITVEC_SET(acmod, hmm, 0);
+            break;
+        default:
+            for (i = 0; i < hmm_n_emit_state(hmm); ++i) {
+                NONMPX_BITVEC_SET(acmod, hmm, i);
+            }
+        }
+    }
+}
+
+int32
+acmod_flags2list(acmod_t *acmod)
+{
+    int32 i, j, total_dists, total_bits;
+    bitvec_t flagptr;
+
+    total_dists = bin_mdef_n_sen(acmod->mdef);
+
+    j = 0;
+    total_bits = total_dists & -32;
+    for (i = 0, flagptr = acmod->senone_active_vec; i < total_bits; flagptr++) {
+        int32 bits = *flagptr;
+
+        if (bits == 0) {
+            i += 32;
+            continue;
+        }
+
+        if (bits & (1 << 0))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 1))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 2))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 3))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 4))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 5))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 6))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 7))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 8))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 9))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 10))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 11))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 12))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 13))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 14))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 15))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 16))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 17))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 18))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 19))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 20))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 21))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 22))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 23))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 24))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 25))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 26))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 27))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 28))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 29))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 30))
+            acmod->senone_active[j++] = i;
+        ++i;
+        if (bits & (1 << 31))
+            acmod->senone_active[j++] = i;
+        ++i;
+    }
+
+    for (; i < total_dists; ++i)
+        if (*flagptr & (1 << (i % 32)))
+            acmod->senone_active[j++] = i;
+
+    acmod->n_senone_active = j;
+
+    return j;
 }
 
 int const *

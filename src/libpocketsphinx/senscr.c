@@ -165,16 +165,24 @@ senscr_compute(mfcc_t **feat, int32 frame_idx, int32 all)
 
     if (all) {
         if (g_ms_mgau)
-            ms_cont_mgau_frame_eval(senone_scores, g_ms_mgau, feat);
+            ms_cont_mgau_frame_eval(g_ms_mgau, senone_scores,
+                                    senone_active, n_senone_active,
+                                    feat, frame_idx, TRUE);
         else
-            s2_semi_mgau_frame_eval(g_semi_mgau, feat, frame_idx, TRUE);
+            s2_semi_mgau_frame_eval(g_semi_mgau, senone_scores,
+                                    senone_active, n_senone_active,
+                                    feat, frame_idx, TRUE);
         best = best_senscr_all_s3();
     }
     else {
         if (g_ms_mgau)
-            ms_cont_mgau_frame_eval(senone_scores, g_ms_mgau, feat);
+            ms_cont_mgau_frame_eval(g_ms_mgau, senone_scores,
+                                    senone_active, n_senone_active,
+                                    feat, frame_idx, FALSE);
         else
-            s2_semi_mgau_frame_eval(g_semi_mgau, feat, frame_idx, FALSE);
+            s2_semi_mgau_frame_eval(g_semi_mgau, senone_scores,
+                                    senone_active, n_senone_active,
+                                    feat, frame_idx, FALSE);
         if (past_senone_active_vec) {
             int32 nwords;
 

@@ -206,22 +206,21 @@ fast_logmath_add(logmath_t *lmath, int mlx, int mly)
 }
 
 /*
- * Compute senone scores.
- */
-static int32 SCVQComputeScores(s2_semi_mgau_t * s, int32 compallsen);
-
-/*
  * Optimization for various topN cases, PDF-size(#bits) cases of
  * SCVQComputeScores() and SCVQComputeScores_all().
  */
-static int32 get_scores4_8b(s2_semi_mgau_t * s);
-static int32 get_scores2_8b(s2_semi_mgau_t * s);
-static int32 get_scores1_8b(s2_semi_mgau_t * s);
-static int32 get_scores_8b(s2_semi_mgau_t * s);
-static int32 get_scores4_8b_all(s2_semi_mgau_t * s);
-static int32 get_scores2_8b_all(s2_semi_mgau_t * s);
-static int32 get_scores1_8b_all(s2_semi_mgau_t * s);
-static int32 get_scores_8b_all(s2_semi_mgau_t * s);
+static int32 get_scores4_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+                            int32 *senone_active, int32 n_senone_active);
+static int32 get_scores2_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+                            int32 *senone_active, int32 n_senone_active);
+static int32 get_scores1_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+                            int32 *senone_active, int32 n_senone_active);
+static int32 get_scores_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+                           int32 *senone_active, int32 n_senone_active);
+static int32 get_scores4_8b_all(s2_semi_mgau_t * s, int32 *senone_scores);
+static int32 get_scores2_8b_all(s2_semi_mgau_t * s, int32 *senone_scores);
+static int32 get_scores1_8b_all(s2_semi_mgau_t * s, int32 *senone_scores);
+static int32 get_scores_8b_all(s2_semi_mgau_t * s, int32 *senone_scores);
 
 static void
 eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
@@ -407,6 +406,9 @@ mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
  */
 int32
 s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
+                        int32 *senone_scores,
+                        int32 *senone_active,
+                        int32 n_senone_active,
 			mfcc_t ** featbuf, int32 frame,
 			int32 compallsen)
 {
@@ -433,55 +435,50 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
         }
     }
 
-    return SCVQComputeScores(s, compallsen);
-}
-
-
-static int32
-SCVQComputeScores(s2_semi_mgau_t * s, int32 compallsen)
-{
     if (compallsen) {
 	switch (s->topN) {
 	case 4:
-	    return get_scores4_8b_all(s);
+	    return get_scores4_8b_all(s, senone_scores);
 	case 2:
-	    return get_scores2_8b_all(s);
+	    return get_scores2_8b_all(s, senone_scores);
 	case 1:
-	    return get_scores1_8b_all(s);
+	    return get_scores1_8b_all(s, senone_scores);
 	default:
-	    return get_scores_8b_all(s);
+	    return get_scores_8b_all(s, senone_scores);
 	}
     }
     else {
 	switch (s->topN) {
 	case 4:
-	    return get_scores4_8b(s);
+	    return get_scores4_8b(s, senone_scores, senone_active, n_senone_active);
 	case 2:
-	    return get_scores2_8b(s);
+	    return get_scores2_8b(s, senone_scores, senone_active, n_senone_active);
 	case 1:
-	    return get_scores1_8b(s);
+	    return get_scores1_8b(s, senone_scores, senone_active, n_senone_active);
 	default:
-	    return get_scores_8b(s);
+	    return get_scores_8b(s, senone_scores, senone_active, n_senone_active);
 	}
     }
 }
 
 static int32
-get_scores_8b(s2_semi_mgau_t * s)
+get_scores_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+              int32 *senone_active, int32 n_senone_active)
 {
     E_FATAL("get_scores_8b() not implemented\n");
     return 0;
 }
 
 static int32
-get_scores_8b_all(s2_semi_mgau_t * s)
+get_scores_8b_all(s2_semi_mgau_t * s, int32 *senone_scores)
 {
     E_FATAL("get_scores_8b_all() not implemented\n");
     return 0;
 }
 
 static int32
-get_scores4_8b(s2_semi_mgau_t * s)
+get_scores4_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+               int32 *senone_active, int32 n_senone_active)
 {
     int32 j;
 
@@ -515,7 +512,7 @@ get_scores4_8b(s2_semi_mgau_t * s)
 }
 
 static int32
-get_scores4_8b_all(s2_semi_mgau_t * s)
+get_scores4_8b_all(s2_semi_mgau_t * s, int32 *senone_scores)
 {
     int32 j;
 
@@ -548,7 +545,8 @@ get_scores4_8b_all(s2_semi_mgau_t * s)
 }
 
 static int32
-get_scores2_8b(s2_semi_mgau_t * s)
+get_scores2_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+               int32 *senone_active, int32 n_senone_active)
 {
     int32 k;
     unsigned char *pid_cw00, *pid_cw10, *pid_cw01, *pid_cw11,
@@ -590,7 +588,7 @@ get_scores2_8b(s2_semi_mgau_t * s)
 }
 
 static int32
-get_scores2_8b_all(s2_semi_mgau_t * s)
+get_scores2_8b_all(s2_semi_mgau_t * s, int32 *senone_scores)
 {
     unsigned char *pid_cw00, *pid_cw10, *pid_cw01, *pid_cw11,
         *pid_cw02, *pid_cw12, *pid_cw03, *pid_cw13;
@@ -632,7 +630,8 @@ get_scores2_8b_all(s2_semi_mgau_t * s)
 }
 
 static int32
-get_scores1_8b(s2_semi_mgau_t * s)
+get_scores1_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+               int32 *senone_active, int32 n_senone_active)
 {
     int32 j, k;
     unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
@@ -652,11 +651,10 @@ get_scores1_8b(s2_semi_mgau_t * s)
 }
 
 static int32
-get_scores1_8b_all(s2_semi_mgau_t * s)
+get_scores1_8b_all(s2_semi_mgau_t * s, int32 *senscr)
 {
     int32 j;
     unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
-    int *senscr = senone_scores;
 
     n_senone_active = s->CdWdPDFMod;
 

@@ -66,6 +66,27 @@
 typedef int32 ascr_t;
 
 /**
+ * States in utterance processing.
+ */
+typedef enum acmod_state_e {
+    ACMOD_IDLE,		/**< Not in an utterance. */
+    ACMOD_STARTED,      /**< Utterance started, no data yet. */
+    ACMOD_PROCESSING,   /**< Utterance in progress. */
+    ACMOD_ENDED         /**< Utterance ended, still buffering. */
+} acmod_state_t;
+
+/**
+ * Function which computes one frame of GMM scores.
+ */
+typedef int (*frame_eval_t)(void *eval_obj,
+                            int32 *senscr,
+                            int32 *senone_active,
+                            int32 n_senone_active,
+                            mfcc_t ** feat,
+                            int32 frame,
+                            int32 compallsen);
+
+/**
  * Acoustic model structure.
  *
  * This object encapsulates all stages of acoustic processing, from
@@ -99,15 +120,20 @@ struct acmod_s {
     /* Model parameters: */
     bin_mdef_t *mdef;          /**< Model definition. */
     tmat_t *tmat;              /**< Transition matrices. */
-    s2_semi_mgau_t *semi_mgau; /**< Fast semi-continuous models. */
-    ms_mgau_model_t *ms_mgau;  /**< Slow generic models. */
+    void *mgau;                /**< either s2_semi_mgau_t or
+                                  ms_mgau_t, will make this more
+                                  type-safe in the future. */
 
     /* Senone scoring: */
-    ascr_t *senone_scores;        /**< GMM scores for current frame. */
-    bitvec_t *senone_active_vec; /**< Active GMMs in current frame. */
+    frame_eval_t frame_eval;   /**< Function to compute GMM scores. */
+    ascr_t *senone_scores;      /**< GMM scores for current frame. */
+    bitvec_t senone_active_vec; /**< Active GMMs in current frame. */
     int *senone_active;        /**< Array of active GMMs. */
     int n_senone_active;       /**< Number of active GMMs. */
     int log_zero;              /**< Zero log-probability value. */
+    uint8 state;        /**< State of utterance processing. */
+    uint8 compallsen;   /**< Compute all senones? */
+    uint16 reserved;
 
     /* Feature computation: */
     mfcc_t **mfc_buf;   /**< Temporary buffer of acoustic features. */
@@ -147,6 +173,16 @@ acmod_t *acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb);
 void acmod_free(acmod_t *acmod);
 
 /**
+ * Mark the start of an utterance.
+ */
+int acmod_start_utt(acmod_t *acmod);
+
+/**
+ * Mark the end of an utterance.
+ */
+int acmod_end_utt(acmod_t *acmod);
+
+/**
  * Feed raw audio data to the acoustic model for scoring.
  *
  * @param inout_raw In: Pointer to buffer of raw samples
@@ -155,8 +191,7 @@ void acmod_free(acmod_t *acmod);
  *                      Out: Number of samples remaining
  * @param full_utt If non-zero, this block represents a full
  *                 utterance and should be processed as such.
- * @return Number of frames of data processed.  Iff this is zero, it is
- *         guaranteed that no data remains in <code>*inout_raw</code>.
+ * @return Number of frames of data processed.
  */
 int acmod_process_raw(acmod_t *acmod,
                       int16 const **inout_raw,
@@ -172,11 +207,10 @@ int acmod_process_raw(acmod_t *acmod,
  *                      Out: Number of frames remaining
  * @param full_utt If non-zero, this block represents a full
  *                 utterance and should be processed as such.
- * @return Number of frames of data processed.  Iff this is zero, it is
- *         guaranteed that no data remains in <code>*inout_cep</code>.
+ * @return Number of frames of data processed.
  */
 int acmod_process_cep(acmod_t *acmod,
-                      mfcc_t const ***inout_cep,
+                      mfcc_t ***inout_cep,
                       int *inout_n_frames,
                       int full_utt);
 
@@ -194,7 +228,7 @@ int acmod_process_cep(acmod_t *acmod,
  * @return Number of frames processed (either 0 or 1).
  */
 int acmod_process_feat(acmod_t *acmod,
-                       mfcc_t const ***feat);
+                       mfcc_t **feat);
                        
 
 /**

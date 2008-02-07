@@ -106,6 +106,9 @@ s2_semi_mgau_t *s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t
 void s2_semi_mgau_free(s2_semi_mgau_t *s);
 
 int32 s2_semi_mgau_frame_eval(s2_semi_mgau_t *s,
+                              int32 *senone_scores,
+                              int32 *senone_active,
+                              int32 n_senone_active,
 			      mfcc_t **featbuf,
 			      int32 frame,
                               int32 compallsen);

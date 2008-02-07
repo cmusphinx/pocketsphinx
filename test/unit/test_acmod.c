@@ -15,6 +15,7 @@ main(int argc, char *argv[])
 	FILE *rawfh;
 	int16 *buf;
 	size_t nread, nsamps;
+	int nfr;
 
 	lmath = logmath_init(1.0001, 0, 0);
 	config = cmd_ln_init(NULL, pocketsphinx_args(), TRUE,
@@ -37,16 +38,31 @@ main(int argc, char *argv[])
 	nsamps = 2048;
 	buf = ckd_calloc(nsamps, sizeof(*buf));
 	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
+	TEST_EQUAL(0, acmod_start_utt(acmod));
 	while (!feof(rawfh)) {
 		int16 *bptr = buf;
+
 		nread = fread(buf, sizeof(*buf), nsamps, rawfh);
-		while (acmod_process_raw(acmod, &bptr, &nread, FALSE) > 0) {
+		printf("Read %d samples\n", nread);
+		while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
 			ascr_t const *senscr;
 			int frame_idx, best_score, best_senid;
+			printf("Processed %d frames, %d samples remaining\n", nfr, nread);
 			while ((senscr = acmod_score(acmod, &frame_idx,
 						     &best_score, &best_senid))) {
 				/* Here we would do searching. */
 			}
+		}
+	}
+	TEST_EQUAL(0, acmod_end_utt(acmod));
+	nread = 0;
+	while ((nfr = acmod_process_raw(acmod, NULL, &nread, FALSE)) > 0) {
+		ascr_t const *senscr;
+		int frame_idx, best_score, best_senid;
+		printf("Processed %d frames, %d samples remaining\n", nfr, nread);
+		while ((senscr = acmod_score(acmod, &frame_idx,
+					     &best_score, &best_senid))) {
+			/* Here we would do searching. */
 		}
 	}
 	fclose(rawfh);
