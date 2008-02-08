@@ -16,7 +16,8 @@ EXTRA_DIST = autogen.sh								\
 	win32/msdev/pocketsphinx_ptt/pocketsphinx_ptt.vcproj			\
 	python/setup.py								\
 	python/_pocketsphinxmodule.c						\
-	python/_pocketsphinx_test.py
+	python/_pocketsphinx_test.py \
+	pkg.m4
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = pocketsphinx.pc
