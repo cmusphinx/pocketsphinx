@@ -50,75 +50,83 @@
 #endif
 
 /** Options defining speech data input */
-#define input_cmdln_options()								\
-{ "-live",										\
-      ARG_BOOLEAN,									\
-      "no",										\
-      "Get input from audio hardware" },						\
-{ "-ctl",										\
-      ARG_STRING,									\
-      NULL,										\
-      "Control file listing utterances to be processed" },				\
-{ "-ctloffset",										\
-      ARG_INT32,									\
-      "0",										\
-      "No. of utterances at the beginning of -ctl file to be skipped" },		\
-{ "-ctlcount",										\
-      ARG_INT32,									\
-      "1000000000",	/* A big number to approximate the default: "until EOF" */	\
-      "No. of utterances to be processed (after skipping -ctloffset entries)" },	\
-{ "-ctlincr",										\
-      ARG_INT32,									\
-      "1",										\
-      "Do every Nth line in the control file" },					\
-{ "-adcin",										\
-      ARG_BOOLEAN,									\
-      "no",										\
-      "Input is raw audio data" },							\
-{ "-adchdr",										\
-      ARG_INT32,									\
-      "0",										\
-      "Size of audio file header in bytes (headers are ignored)" },			\
-{ "-adcdev",										\
-      ARG_STRING,									\
-      NULL,										\
-      "Device name for audio input (platform-specific)" },				\
-{ "-cepdir",										\
-      ARG_STRING,									\
-      NULL,										\
-      "Input files directory (prefixed to filespecs in control file)" },		\
-{ "-cepext",										\
-      ARG_STRING,									\
-      ".mfc",										\
-      "Input files extension (prefixed to filespecs in control file)" },		\
-{ "-rawlogdir",										\
-      ARG_STRING,									\
-      NULL,										\
-      "Directory for dumping raw audio input files" },					\
-{ "-mfclogdir",										\
-      ARG_STRING,									\
-      NULL,										\
-      "Directory for dumping feature input files" },					\
-{ "-cmn",										\
-      ARG_STRING,									\
-      "current",									\
-      "Cepstral mean normalization scheme ('current', 'prior', or 'none')" },		\
-{ "-cmninit",										\
-      ARG_STRING,									\
-      "8.0",										\
-      "Initial values (comma-separated) for cepstral mean when 'prior' is used" },	\
-{ "-varnorm",										\
-      ARG_BOOLEAN,									\
-      "no",										\
-      "Variance normalize each utterance (only if CMN == current)" },			\
-{ "-agc",										\
-      ARG_STRING,									\
-      "none",										\
-      "Automatic gain control for c0 ('max', 'emax', 'noise', or 'none')" },		\
-{ "-agcthresh",										\
-      ARG_FLOAT32,									\
-      "2.0",										\
-      "Initial threshold for automatic gain control" }
+#define input_cmdln_options()                                           \
+{ "-live",                                                              \
+      ARG_BOOLEAN,                                                      \
+      "no",                                                             \
+      "Get input from audio hardware" },                                \
+{ "-ctl",                                                               \
+      ARG_STRING,                                                       \
+      NULL,                                                             \
+      "Control file listing utterances to be processed" },              \
+{ "-ctloffset",                                                         \
+      ARG_INT32,                                                        \
+      "0",                                                              \
+      "No. of utterances at the beginning of -ctl file to be skipped" }, \
+{ "-ctlcount",                                                          \
+      ARG_INT32,                                                        \
+      "1000000000",	/* A big number to approximate the default: "until EOF" */ \
+      "No. of utterances to be processed (after skipping -ctloffset entries)" }, \
+{ "-ctlincr",                                                           \
+      ARG_INT32,                                                        \
+      "1",                                                              \
+      "Do every Nth line in the control file" },                        \
+{ "-adcin",                                                             \
+      ARG_BOOLEAN,                                                      \
+      "no",                                                             \
+      "Input is raw audio data" },                                      \
+{ "-adchdr",                                                            \
+      ARG_INT32,                                                        \
+      "0",                                                              \
+      "Size of audio file header in bytes (headers are ignored)" },     \
+{ "-adcdev",                                                            \
+      ARG_STRING,                                                       \
+      NULL,                                                             \
+      "Device name for audio input (platform-specific)" },              \
+{ "-cepdir",                                                            \
+      ARG_STRING,                                                       \
+      NULL,                                                             \
+      "Input files directory (prefixed to filespecs in control file)" }, \
+{ "-cepext",                                                            \
+      ARG_STRING,                                                       \
+      ".mfc",                                                           \
+      "Input files extension (prefixed to filespecs in control file)" }, \
+{ "-rawlogdir",                                                         \
+      ARG_STRING,                                                       \
+      NULL,                                                             \
+      "Directory for dumping raw audio input files" },                  \
+{ "-mfclogdir",                                                         \
+      ARG_STRING,                                                       \
+      NULL,                                                             \
+      "Directory for dumping feature input files" },                    \
+{ "-cmn",                                                               \
+      ARG_STRING,                                                       \
+      "current",                                                        \
+      "Cepstral mean normalization scheme ('current', 'prior', or 'none')" }, \
+{ "-cmninit",                                                           \
+      ARG_STRING,                                                       \
+      "8.0",                                                            \
+      "Initial values (comma-separated) for cepstral mean when 'prior' is used" }, \
+{ "-varnorm",                                                           \
+      ARG_BOOLEAN,                                                      \
+      "no",                                                             \
+      "Variance normalize each utterance (only if CMN == current)" },   \
+{ "-agc",                                                               \
+      ARG_STRING,                                                       \
+      "none",                                                           \
+      "Automatic gain control for c0 ('max', 'emax', 'noise', or 'none')" }, \
+{ "-agcthresh",                                                         \
+      ARG_FLOAT32,                                                      \
+      "2.0",                                                            \
+      "Initial threshold for automatic gain control" },                 \
+{ "-lda",                                                               \
+      ARG_STRING,                                                       \
+      NULL,                                                             \
+      "File containing transformation matrix to be applied to features (single-stream features only)" }, \
+{ "-ldadim",                                                            \
+      ARG_INT32,                                                        \
+      "0",                                                              \
+      "Dimensionality of output of feature transformation (0 to use entire matrix)" }
 
 /** Options defining recognition data output and logging */
 #define output_cmdln_options()							\
@@ -416,10 +424,6 @@
       ARG_STRING,                                                               \
       NULL,                                                                     \
       "Senone mixture weights input file" },                                    \
-{ "-subvq",                                                                     \
-      ARG_STRING,                                                               \
-      NULL,                                                                     \
-      "Subvector quantized means/variances file" },                             \
 { "-mixwfloor",                                                                 \
       ARG_FLOAT32,                                                              \
       "0.0000001",                                                              \

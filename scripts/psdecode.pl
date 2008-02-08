@@ -81,11 +81,6 @@ mkdir ($result_dir,0777) unless -d $result_dir;
 $logfile = "$log_dir/${ST::DEC_CFG_EXPTNAME}-${part}-${npart}.log";
 $matchfile = "$result_dir/${ST::DEC_CFG_EXPTNAME}-${part}-${npart}.match";
 
-$statepdeffn = $ST::DEC_CFG_HMM_TYPE; # indicates the type of HMMs
-if ($statepdeffn ne ".semi.") {
-  die "PocketSphinx requires hmm type '.semi'\n";
-}
-
 $hmm_dir = "$ST::DEC_CFG_BASE_DIR/model_parameters/$modelname";
 
 $nlines = 0;
