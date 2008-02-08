@@ -22,7 +22,7 @@ EXTRA_DIST = \
 # 		< $< > $@
 
 if BUILD_DOXYGEN
-all-local: latex/refman.pdf html/index.html
+all-local: html/index.html
 endif
 
 headers = $(top_srcdir)/include/pocketsphinx.h \
