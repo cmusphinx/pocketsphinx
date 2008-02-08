@@ -255,7 +255,6 @@ acmod_end_utt(acmod_t *acmod)
     acmod->state = ACMOD_ENDED;
     if (acmod->n_mfc_frame < acmod->n_mfc_alloc) {
         fe_end_utt(acmod->fe, acmod->mfc_buf[acmod->n_mfc_frame], &nfr);
-        /* printf("Generated %d frames of leftover cepstra\n", nfr); */
     }
     acmod->n_mfc_frame += nfr;
     return 0;
@@ -297,61 +296,48 @@ acmod_process_raw(acmod_t *acmod,
             acmod->n_feat_frame = 0;
         }
         /* Make dynamic features. */
-        nfr = feat_s2mfc2feat_block(acmod->fcb, acmod->mfc_buf, nfr,
-                                    TRUE, TRUE, acmod->feat_buf);
-        acmod->n_feat_frame = nfr;
+        acmod->n_feat_frame =
+            feat_s2mfc2feat_live(acmod->fcb, acmod->mfc_buf, &nfr,
+                                 TRUE, TRUE, acmod->feat_buf);
         /* Mark all MFCCs as consumed. */
         acmod->n_mfc_frame = 0;
         return nfr;
     }
     else {
-        int32 nfeat;
+        int32 nfeat, ncep;
 
         /* Append MFCCs to the end of any that are previously in there
          * (in practice, there will probably be none) */
         if (inout_n_samps && *inout_n_samps) {
-            size_t nsamp = *inout_n_samps;
-            int32 ncep;
-
             ncep = acmod->n_mfc_alloc - acmod->n_mfc_frame;
-            /*printf("Available %d frames of cepstra, %d samples\n", ncep, nsamp);*/
             if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                                   acmod->mfc_buf + acmod->n_mfc_frame, &ncep) < 0)
                 return -1;
-            /*printf("Generated %d frames of cepstra, consumed %d samples\n",
-              ncep, nsamp - *inout_n_samps);*/
             acmod->n_mfc_frame += ncep;
         }
 
         /* Number of input frames to generate features. */
-        nfeat = acmod->n_mfc_frame;
+        ncep = acmod->n_mfc_frame;
         /* Don't overflow the output feature buffer. */
-        if (nfeat > acmod->n_feat_alloc - acmod->n_feat_frame)
-            nfeat = acmod->n_feat_alloc - acmod->n_feat_frame;
-        /*printf("Will generate %d frames of features\n", nfeat);*/
-        nfeat = feat_s2mfc2feat_block(acmod->fcb, acmod->mfc_buf, nfeat,
-                                      (acmod->state == ACMOD_STARTED),
-                                      (acmod->state == ACMOD_ENDED),
-                                      acmod->feat_buf + acmod->n_feat_frame);
-        /*printf("Generated %d frames of features\n", nfeat);*/
+        if (ncep > acmod->n_feat_alloc - acmod->n_feat_frame)
+            ncep = acmod->n_feat_alloc - acmod->n_feat_frame;
+        nfeat = feat_s2mfc2feat_live(acmod->fcb, acmod->mfc_buf, &ncep,
+                                     (acmod->state == ACMOD_STARTED),
+                                     (acmod->state == ACMOD_ENDED),
+                                     acmod->feat_buf + acmod->n_feat_frame);
         acmod->n_feat_frame += nfeat;
         /* Free up space in the MFCC buffer. */
         /* FIXME: we should use circular buffers here instead. */
         /* At the end of the utterance we get more features out than
          * we put in MFCCs. */
-        if (nfeat >=acmod->n_mfc_frame)
-            acmod->n_mfc_frame = 0;
-        else {
-            acmod->n_mfc_frame -= nfeat;
-            memmove(acmod->mfc_buf[0],
-                    acmod->mfc_buf[nfeat],
-                    (acmod->n_mfc_frame
-                     * fe_get_output_size(acmod->fe)
-                     * sizeof(**acmod->mfc_buf)));
-        }
-        /*printf("MFCC buffer now contains %d frames\n", acmod->n_mfc_frame);*/
+        acmod->n_mfc_frame -= ncep;
+        memmove(acmod->mfc_buf[0],
+                acmod->mfc_buf[ncep],
+                (acmod->n_mfc_frame
+                 * fe_get_output_size(acmod->fe)
+                 * sizeof(**acmod->mfc_buf)));
         acmod->state = ACMOD_PROCESSING;
-        return nfeat;
+        return ncep;
     }
 }
 
@@ -373,37 +359,31 @@ acmod_process_cep(acmod_t *acmod,
             acmod->n_feat_frame = 0;
         }
         /* Make dynamic features. */
-        nfr = feat_s2mfc2feat_block(acmod->fcb, *inout_cep, *inout_n_frames,
-                                    TRUE, TRUE, acmod->feat_buf);
+        nfr = feat_s2mfc2feat_live(acmod->fcb, *inout_cep, inout_n_frames,
+                                   TRUE, TRUE, acmod->feat_buf);
         acmod->n_feat_frame = nfr;
         *inout_cep += *inout_n_frames;
         *inout_n_frames = 0;
         return nfr;
     }
     else {
-        int32 nfeat;
+        int32 nfeat, ncep;
 
         /* Number of input frames to generate features. */
-        nfeat = acmod->n_mfc_frame;
+        ncep = acmod->n_mfc_frame;
         /* Don't overflow the output feature buffer. */
-        if (nfeat > acmod->n_feat_alloc - acmod->n_feat_frame)
-            nfeat = acmod->n_feat_alloc - acmod->n_feat_frame;
-        nfeat = feat_s2mfc2feat_block(acmod->fcb, *inout_cep,
-                                      nfeat,
-                                      (acmod->state == ACMOD_STARTED),
-                                      (acmod->state == ACMOD_ENDED),
-                                      acmod->feat_buf + acmod->n_feat_frame);
+        if (ncep > acmod->n_feat_alloc - acmod->n_feat_frame)
+            ncep = acmod->n_feat_alloc - acmod->n_feat_frame;
+        nfeat = feat_s2mfc2feat_live(acmod->fcb, *inout_cep,
+                                     &ncep,
+                                     (acmod->state == ACMOD_STARTED),
+                                     (acmod->state == ACMOD_ENDED),
+                                     acmod->feat_buf + acmod->n_feat_frame);
         acmod->n_feat_frame += nfeat;
-        if (nfeat >= *inout_n_frames) {
-            *inout_cep += *inout_n_frames;
-            *inout_n_frames = 0;
-        }
-        else {
-            *inout_n_frames -= nfeat;
-            *inout_cep += nfeat;
-        }
+        *inout_n_frames -= ncep;
+        *inout_cep += ncep;
         acmod->state = ACMOD_PROCESSING;
-        return nfeat;
+        return ncep;
     }
 }
 

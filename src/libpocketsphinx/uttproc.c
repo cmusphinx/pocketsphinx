@@ -762,17 +762,13 @@ uttproc_rawdata(int16 * raw, int32 len, int32 block)
     fe_free_2d(temp_mfc);
 
     if (livemode) {
-        nfr = feat_s2mfc2feat_block(fcb, mfcbuf + n_cepfr, nfr,
-                                    uttstart, FALSE,
-                                    feat_buf + n_featfr);
-        /* Be (bug?) compatible with Sphinx2, and discard the first
-         * frames, since their dynamic coefficients are somewhat
-         * bogus. */
-        if (n_cepfr < feat_window_size(fcb))
-            nfr = discard_start_frames(fcb, feat_buf, n_cepfr, nfr);
+        int32 nfeat;
+        nfeat = feat_s2mfc2feat_live(fcb, mfcbuf + n_cepfr, &nfr,
+                                      uttstart, FALSE,
+                                      feat_buf + n_featfr);
         uttstart = FALSE;
         n_cepfr += nfr;
-        n_featfr += nfr;
+        n_featfr += nfeat;
 
         if (n_searchfr < n_featfr)
             uttproc_frame();
@@ -828,17 +824,13 @@ uttproc_cepdata(float32 ** cep, int32 nfr, int32 block)
     }
 
     if (livemode) {
-        nfr = feat_s2mfc2feat_block(fcb, mfcbuf + n_cepfr, nfr,
-                                    uttstart, FALSE,
-                                    feat_buf + n_featfr);
-        /* Be (bug?) compatible with Sphinx2, and discard the first
-         * frames, since their dynamic coefficients are somewhat
-         * bogus. */
-        if (n_cepfr < feat_window_size(fcb))
-            nfr = discard_start_frames(fcb, feat_buf, n_cepfr, nfr);
+        int32 nfeat;
+        nfeat = feat_s2mfc2feat_live(fcb, mfcbuf + n_cepfr, &nfr,
+                                     uttstart, FALSE,
+                                     feat_buf + n_featfr);
         uttstart = FALSE;
         n_cepfr += nfr;
-        n_featfr += nfr;
+        n_featfr += nfeat;
 
         if (n_searchfr < n_featfr)
             uttproc_frame();
@@ -897,13 +889,11 @@ uttproc_end_utt(void)
         }
 
         if (livemode) {
-            nfr = feat_s2mfc2feat_block(fcb, &leftover_cep, nfr,
-                                        uttstart, TRUE,
-                                        feat_buf + n_featfr);
-            /* Be (bug?) compatible with Sphinx2, and discard the last
-             * frames since their dynamic coefficients are somewhat
-             * bogus. */
-            n_featfr += nfr - feat_window_size(fcb);
+            int32 nfeat;
+            nfeat = feat_s2mfc2feat_live(fcb, &leftover_cep, &nfr,
+                                         uttstart, TRUE,
+                                         feat_buf + n_featfr);
+            n_featfr += nfeat;
             if (n_featfr < 0)
                 n_featfr = 0;
             uttstart = FALSE;
@@ -921,14 +911,8 @@ uttproc_end_utt(void)
     if (!livemode) {
         /* If we had file input, n_cepfr will be zero. */
         if (n_cepfr) {
-            nfr = feat_s2mfc2feat_block(fcb, mfcbuf, n_cepfr,
-                                        TRUE, TRUE, feat_buf);
-            /* Be (bug?) compatible with Sphinx2, and discard the
-             * first and last frames */
-            nfr -= feat_window_size(fcb) * 2;
-            if (nfr < 0)
-                nfr = 0;
-            n_searchfr += feat_window_size(fcb);
+            nfr = feat_s2mfc2feat_live(fcb, mfcbuf, &n_cepfr,
+                                       TRUE, TRUE, feat_buf);
             n_featfr += nfr;
         }
     }
