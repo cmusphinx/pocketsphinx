@@ -132,57 +132,31 @@ best_senscr_all_s3(void)
     return b;
 }
 
-
-/*
- * Like best_senscr_all, but computed only from the active senones in
- * the current frame.  The bestpscr array is not updated since all senone
- * scores are not available.
- * 
- * Return value: the best senone score this frame.
- */
-static int32
-best_senscr_active(void)
-{
-    int32 b, i, s;
-    int32 *senscr = senone_scores;
-
-    b = (int32) 0x80000000;
-
-    for (i = 0; i < n_senone_active; i++) {
-        s = senone_active[i];
-
-        if (b < senscr[s])
-            b = senscr[s];
-    }
-
-    return b;
-}
-
 static int32
 senscr_compute(mfcc_t **feat, int32 frame_idx, int32 all)
 {
-    int32 best;
+    int32 best, bestidx;
 
     if (all) {
         if (g_ms_mgau)
             ms_cont_mgau_frame_eval(g_ms_mgau, senone_scores,
                                     senone_active, n_senone_active,
-                                    feat, frame_idx, TRUE);
+                                    feat, frame_idx, TRUE, &bestidx);
         else
             s2_semi_mgau_frame_eval(g_semi_mgau, senone_scores,
                                     senone_active, n_senone_active,
-                                    feat, frame_idx, TRUE);
+                                    feat, frame_idx, TRUE, &bestidx);
         best = best_senscr_all_s3();
     }
     else {
         if (g_ms_mgau)
-            ms_cont_mgau_frame_eval(g_ms_mgau, senone_scores,
-                                    senone_active, n_senone_active,
-                                    feat, frame_idx, FALSE);
+            best = ms_cont_mgau_frame_eval(g_ms_mgau, senone_scores,
+                                           senone_active, n_senone_active,
+                                           feat, frame_idx, FALSE, &bestidx);
         else
-            s2_semi_mgau_frame_eval(g_semi_mgau, senone_scores,
-                                    senone_active, n_senone_active,
-                                    feat, frame_idx, FALSE);
+            best = s2_semi_mgau_frame_eval(g_semi_mgau, senone_scores,
+                                           senone_active, n_senone_active,
+                                           feat, frame_idx, FALSE, &bestidx);
         if (past_senone_active_vec) {
             int32 nwords;
 
@@ -193,7 +167,6 @@ senscr_compute(mfcc_t **feat, int32 frame_idx, int32 all)
             memcpy(past_senone_active_vec[frame_idx], senone_active_vec,
                    nwords * sizeof(bitvec_t));
         }
-        best = best_senscr_active();
     }
 
     if (past_senone_scores) {

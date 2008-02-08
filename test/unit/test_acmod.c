@@ -16,6 +16,8 @@ main(int argc, char *argv[])
 	int16 *buf;
 	size_t nread, nsamps;
 	int nfr;
+	int frame_counter;
+	mfcc_t prior[13];
 
 	lmath = logmath_init(1.0001, 0, 0);
 	config = cmd_ln_init(NULL, pocketsphinx_args(), TRUE,
@@ -25,6 +27,7 @@ main(int argc, char *argv[])
 			     "-var", MODELDIR "/hmm/wsj1/variances",
 			     "-tmat", MODELDIR "/hmm/wsj1/transition_matrices",
 			     "-sendump", MODELDIR "/hmm/wsj1/sendump",
+			     "-compallsen", "true",
 			     "-tmatfloor", "0.0001",
 			     "-mixwfloor", "0.001",
 			     "-varfloor", "0.0001",
@@ -34,8 +37,12 @@ main(int argc, char *argv[])
 			     "-samprate", "16000", NULL);
 	TEST_ASSERT(config);
 	TEST_ASSERT(acmod = acmod_init(config, lmath, NULL, NULL));
+	memset(prior, 0, sizeof(prior));
+	prior[0] = FLOAT2MFCC(37);
+	cmn_prior_set(acmod->fcb->cmn_struct, prior);
 
 	nsamps = 2048;
+	frame_counter = 0;
 	buf = ckd_calloc(nsamps, sizeof(*buf));
 	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
 	TEST_EQUAL(0, acmod_start_utt(acmod));
@@ -50,7 +57,10 @@ main(int argc, char *argv[])
 			printf("Processed %d frames, %d samples remaining\n", nfr, nread);
 			while ((senscr = acmod_score(acmod, &frame_idx,
 						     &best_score, &best_senid))) {
-				/* Here we would do searching. */
+				printf("Frame %d best senone %d score %d\n",
+				       frame_idx, best_senid, best_score);
+				TEST_EQUAL(frame_counter, frame_idx);
+				++frame_counter;
 			}
 		}
 	}
@@ -62,7 +72,10 @@ main(int argc, char *argv[])
 		printf("Processed %d frames, %d samples remaining\n", nfr, nread);
 		while ((senscr = acmod_score(acmod, &frame_idx,
 					     &best_score, &best_senid))) {
-			/* Here we would do searching. */
+			printf("Frame %d best senone %d score %d\n",
+			       frame_idx, best_senid, best_score);
+			TEST_EQUAL(frame_counter, frame_idx);
+			++frame_counter;
 		}
 	}
 	fclose(rawfh);

@@ -84,7 +84,8 @@ typedef int (*frame_eval_t)(void *eval_obj,
                             int32 n_senone_active,
                             mfcc_t ** feat,
                             int32 frame,
-                            int32 compallsen);
+                            int32 compallsen,
+                            int32 *out_bestidx);
 
 /**
  * Acoustic model structure.
@@ -115,7 +116,7 @@ struct acmod_s {
 
     uint8 retain_fe;           /**< Do we own the fe pointer. */
     uint8 retain_fcb;          /**< Do we own the fcb poitner. */
-    int16 output_frame;        /**< Index of last computed frame of dynamic features. */
+    int16 output_frame;        /**< Index of next frame of dynamic features. */
 
     /* Model parameters: */
     bin_mdef_t *mdef;          /**< Model definition. */

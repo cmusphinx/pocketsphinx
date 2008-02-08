@@ -255,7 +255,7 @@ acmod_end_utt(acmod_t *acmod)
     acmod->state = ACMOD_ENDED;
     if (acmod->n_mfc_frame < acmod->n_mfc_alloc) {
         fe_end_utt(acmod->fe, acmod->mfc_buf[acmod->n_mfc_frame], &nfr);
-        printf("Generated %d frames of leftover cepstra\n", nfr);
+        /* printf("Generated %d frames of leftover cepstra\n", nfr); */
     }
     acmod->n_mfc_frame += nfr;
     return 0;
@@ -314,12 +314,12 @@ acmod_process_raw(acmod_t *acmod,
             int32 ncep;
 
             ncep = acmod->n_mfc_alloc - acmod->n_mfc_frame;
-            printf("Available %d frames of cepstra, %d samples\n", ncep, nsamp);
+            /*printf("Available %d frames of cepstra, %d samples\n", ncep, nsamp);*/
             if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                                   acmod->mfc_buf + acmod->n_mfc_frame, &ncep) < 0)
                 return -1;
-            printf("Generated %d frames of cepstra, consumed %d samples\n",
-                   ncep, nsamp - *inout_n_samps);
+            /*printf("Generated %d frames of cepstra, consumed %d samples\n",
+              ncep, nsamp - *inout_n_samps);*/
             acmod->n_mfc_frame += ncep;
         }
 
@@ -328,12 +328,12 @@ acmod_process_raw(acmod_t *acmod,
         /* Don't overflow the output feature buffer. */
         if (nfeat > acmod->n_feat_alloc - acmod->n_feat_frame)
             nfeat = acmod->n_feat_alloc - acmod->n_feat_frame;
-        printf("Will generate %d frames of features\n", nfeat);
+        /*printf("Will generate %d frames of features\n", nfeat);*/
         nfeat = feat_s2mfc2feat_block(acmod->fcb, acmod->mfc_buf, nfeat,
                                       (acmod->state == ACMOD_STARTED),
                                       (acmod->state == ACMOD_ENDED),
                                       acmod->feat_buf + acmod->n_feat_frame);
-        printf("Generated %d frames of features\n", nfeat);
+        /*printf("Generated %d frames of features\n", nfeat);*/
         acmod->n_feat_frame += nfeat;
         /* Free up space in the MFCC buffer. */
         /* FIXME: we should use circular buffers here instead. */
@@ -349,7 +349,7 @@ acmod_process_raw(acmod_t *acmod,
                      * fe_get_output_size(acmod->fe)
                      * sizeof(**acmod->mfc_buf)));
         }
-        printf("MFCC buffer now contains %d frames\n", acmod->n_mfc_frame);
+        /*printf("MFCC buffer now contains %d frames\n", acmod->n_mfc_frame);*/
         acmod->state = ACMOD_PROCESSING;
         return nfeat;
     }
@@ -429,20 +429,19 @@ acmod_score(acmod_t *acmod,
 	    int *out_best_score,
 	    int *out_best_senid)
 {
-    int32 best_score = acmod->log_zero;
-    int32 best_idx = -1;
-
     /* No frames available to score. */
     if (acmod->n_feat_frame == 0)
         return NULL;
 
     /* Generate scores for the next available frame */
-    (*acmod->frame_eval)(acmod->mgau,
-                         acmod->senone_scores,
-                         acmod->senone_active,
-                         acmod->n_senone_active,
-                         acmod->feat_buf[0],
-                         acmod->output_frame, TRUE);
+    *out_best_score = 
+        (*acmod->frame_eval)(acmod->mgau,
+                             acmod->senone_scores,
+                             acmod->senone_active,
+                             acmod->n_senone_active,
+                             acmod->feat_buf[0],
+                             acmod->output_frame, TRUE,
+                             out_best_senid);
     /* Shift back the rest of the feature buffer (FIXME: we should
      * really use circular buffers here) */
     --acmod->n_feat_frame;
@@ -451,9 +450,9 @@ acmod_score(acmod_t *acmod,
              * feat_dimension(acmod->fcb)
              * sizeof(***acmod->feat_buf)));
 
-    if (out_frame_idx) *out_frame_idx = acmod->output_frame;
-    if (out_best_score) *out_best_score = best_score;
-    if (out_best_senid) *out_best_senid = best_idx;
+    *out_frame_idx = acmod->output_frame;
+    ++acmod->output_frame;
+
     return acmod->senone_scores;
 }
 
