@@ -34,6 +34,7 @@ main(int argc, char *argv[])
 	size_t nread, nsamps;
 	int nfr;
 	int frame_counter;
+	int bestsen1[128];
 
 	lmath = logmath_init(1.0001, 0, 0);
 	config = cmd_ln_init(NULL, pocketsphinx_args(), TRUE,
@@ -62,17 +63,19 @@ main(int argc, char *argv[])
 	TEST_EQUAL(0, acmod_start_utt(acmod));
 	while (!feof(rawfh)) {
 		nread = fread(buf, sizeof(*buf), nsamps, rawfh);
-		printf("Read %d samples\n", nread);
+		/* printf("Read %d samples\n", nread); */
 		bptr = buf;
 		while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
 			ascr_t const *senscr;
 			int frame_idx, best_score, best_senid;
-			printf("Processed %d frames, %d samples remaining\n", nfr, nread);
+			/* printf("Processed %d frames, %d samples remaining\n", nfr, nread); */
 			while ((senscr = acmod_score(acmod, &frame_idx,
 						     &best_score, &best_senid))) {
-				printf("Frame %d best senone %d score %d\n",
-				       frame_idx, best_senid, best_score);
+				/* printf("Frame %d best senone %d score %d\n",
+				   frame_idx, best_senid, best_score); */
 				TEST_EQUAL(frame_counter, frame_idx);
+				if (frame_counter < 128)
+					bestsen1[frame_counter] = best_senid;
 				++frame_counter;
 			}
 		}
@@ -82,11 +85,13 @@ main(int argc, char *argv[])
 	while ((nfr = acmod_process_raw(acmod, NULL, &nread, FALSE)) > 0) {
 		ascr_t const *senscr;
 		int frame_idx, best_score, best_senid;
-		printf("Processed %d frames, %d samples remaining\n", nfr, nread);
+		/* printf("Processed %d frames, %d samples remaining\n", nfr, nread); */
 		while ((senscr = acmod_score(acmod, &frame_idx,
 					     &best_score, &best_senid))) {
-			printf("Frame %d best senone %d score %d\n",
-			       frame_idx, best_senid, best_score);
+			/* printf("Frame %d best senone %d score %d\n",
+			   frame_idx, best_senid, best_score); */
+			if (frame_counter < 128)
+				bestsen1[frame_counter] = best_senid;
 			TEST_EQUAL(frame_counter, frame_idx);
 			++frame_counter;
 		}
@@ -108,8 +113,10 @@ main(int argc, char *argv[])
 		frame_counter = 0;
 		while ((senscr = acmod_score(acmod, &frame_idx,
 					     &best_score, &best_senid))) {
-			printf("Frame %d best senone %d score %d\n",
-			       frame_idx, best_senid, best_score);
+			/* printf("Frame %d best senone %d score %d\n",
+			   frame_idx, best_senid, best_score); */
+			if (frame_counter < 128)
+				TEST_EQUAL(best_senid, bestsen1[frame_counter]);
 			TEST_EQUAL(frame_counter, frame_idx);
 			++frame_counter;
 		}
