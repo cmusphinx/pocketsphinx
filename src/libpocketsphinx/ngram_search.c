@@ -59,6 +59,35 @@ ngram_search_init(cmd_ln_t *config,
 	ngs->dict = dict;
 	ngs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
 				       acmod->tmat->tp, NULL, acmod->mdef->sseq);
+
+        /* Allocate a billion different tables for stuff. */
+        ngs->word_chan = ckd_calloc(dict->dict_entry_count,
+                                    sizeof(*ngs->word_chan));
+        ngs->word_lat_idx = ckd_calloc(dict->dict_entry_count,
+                                       sizeof(*ngs->word_lat_idx));
+        ngs->zeroPermTab = ckd_calloc(bin_mdef_n_ciphone(acmod->mdef),
+                                      sizeof(*ngs->zeroPermTab));
+        ngs->word_active = ckd_calloc(dict->dict_entry_count,
+                                      sizeof(*ngs->word_active));
+
+        /* FIXME: All these structures need to be made dynamic with
+         * garbage collection. */
+        ngs->bp_table_size = cmd_ln_int32_r(config, "-latsize");
+        ngs->bp_table = ckd_calloc(ngs->bp_table_size,
+                                   sizeof(*ngs->bp_table));
+        ngs->bscore_stack_size = ngs->bp_table_size * 20;
+        ngs->bscore_stack = ckd_calloc(ngs->bscore_stack_size,
+                                       sizeof(*ngs->bscore_stack));
+        /* FIXME: Totally arbitrary since there is no MAX_FRAMES. */
+        ngs->bp_table_idx = ckd_calloc(2000, sizeof(*ngs->bp_table_idx));
+        ++ngs->bp_table_idx; /* Make bptableidx[-1] valid */
+
+        /* Now build the search tree (hooray) */
+
+        /* Allocate active word list arrays */
+
+        /* Allocate bestbp_rc, lastphn_cand, last_ltrans */
+
 	return ngs;
 }
 

@@ -76,10 +76,6 @@ extern bitvec_t *senone_active_vec;	/* Active/inactive bitvec for each senone */
 extern int32 *senone_active;		/* List of active senones */
 extern int32 n_senone_active;		/* No. of entries in above active list */
 
-extern int32 **past_senone_scores;  /* Senone scores for all frames */
-extern bitvec_t **past_senone_active_vec;  /* Previously active senones */
-
-
 /*
  * Compute senone scores for the given feature data.
  * The feature data is in s2_4x format (4 streams, etc, etc)

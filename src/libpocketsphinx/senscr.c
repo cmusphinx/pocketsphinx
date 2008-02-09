@@ -80,58 +80,6 @@ int32 *senone_active;
 int32 n_senone_active;
 bitvec_t *senone_active_vec;
 
-/* Record senone scores for all frames for multi-pass search. */
-int32 **past_senone_scores;
-
-/* This works somewhat differently when we are not computing all
- * senones.  We can't count on the same senones being computed at each
- * successive pass, but we can make the broad assumption that the
- * earlier passes compute a rough superset of the later passes.
- * Therefore we can take a quick intersection of the active lists to
- * get a shortlist of the senones that actually need to be
- * computed. */
-bitvec_t **past_senone_active_vec;
-
-/*
- * Compute the best senone score from the given array of senone scores.
- * (All senones, not just active ones, should have been already computed
- * elsewhere.)
- * Also, compute the best senone score (CI or CD) per CIphone, and update
- * the corresponding bestpscr array (maintained in the search module).
- * 
- * Return value: the best senone score this frame.
- */
-static int32
-best_senscr_all_s3(void)
-{
-    int32 b, i, ci;
-    int32 *bestpscr;
-    int32 *senscr = senone_scores;
-
-    bestpscr = search_get_bestpscr();
-
-    /* Note that this is actually a very large negative number */
-    b = (int32) 0x80000000;
-    for (i = 0; i < bin_mdef_n_ciphone(g_mdef); ++i)
-        bestpscr[i] = 0x80000000;
-
-    for (i = 0; i < g_mdef->n_sen; ++i, ++senscr) {
-        /* NOTE: This assumes that each CD senone corresponds to at most
-           one CI phone.  This is not always true, but we hope that taking
-           the first one will work okay. */
-        ci = g_mdef->sen2cimap[i];
-        if (ci == BAD_S3CIPID)
-            continue;
-        if (bestpscr[ci] < *senscr) {
-            bestpscr[ci] = *senscr;
-            if (b < bestpscr[ci])
-                b = bestpscr[ci];
-        }
-    }
-
-    return b;
-}
-
 static int32
 senscr_compute(mfcc_t **feat, int32 frame_idx, int32 all)
 {
@@ -139,14 +87,13 @@ senscr_compute(mfcc_t **feat, int32 frame_idx, int32 all)
 
     if (all) {
         if (g_ms_mgau)
-            ms_cont_mgau_frame_eval(g_ms_mgau, senone_scores,
-                                    senone_active, n_senone_active,
-                                    feat, frame_idx, TRUE, &bestidx);
+            best = ms_cont_mgau_frame_eval(g_ms_mgau, senone_scores,
+                                           senone_active, n_senone_active,
+                                           feat, frame_idx, TRUE, &bestidx);
         else
-            s2_semi_mgau_frame_eval(g_semi_mgau, senone_scores,
-                                    senone_active, n_senone_active,
-                                    feat, frame_idx, TRUE, &bestidx);
-        best = best_senscr_all_s3();
+            best = s2_semi_mgau_frame_eval(g_semi_mgau, senone_scores,
+                                           senone_active, n_senone_active,
+                                           feat, frame_idx, TRUE, &bestidx);
     }
     else {
         if (g_ms_mgau)
@@ -157,25 +104,8 @@ senscr_compute(mfcc_t **feat, int32 frame_idx, int32 all)
             best = s2_semi_mgau_frame_eval(g_semi_mgau, senone_scores,
                                            senone_active, n_senone_active,
                                            feat, frame_idx, FALSE, &bestidx);
-        if (past_senone_active_vec) {
-            int32 nwords;
-
-            nwords = (bin_mdef_n_sen(g_mdef) + BITVEC_WIDTH - 1) / BITVEC_WIDTH;
-            if (past_senone_active_vec[frame_idx] == NULL) {
-                past_senone_active_vec[frame_idx] = ckd_calloc(nwords, sizeof(bitvec_t));
-            }
-            memcpy(past_senone_active_vec[frame_idx], senone_active_vec,
-                   nwords * sizeof(bitvec_t));
-        }
     }
 
-    if (past_senone_scores) {
-        if (past_senone_scores[frame_idx] == NULL)
-            past_senone_scores[frame_idx] = ckd_calloc(bin_mdef_n_sen(g_mdef),
-                                                       sizeof(int32));
-        memcpy(past_senone_scores[frame_idx], senone_scores,
-               bin_mdef_n_sen(g_mdef) * sizeof(int32));
-    }
     return best;
 }
 

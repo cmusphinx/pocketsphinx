@@ -310,8 +310,7 @@ struct ngram_search_s {
     int32 *word_lat_idx;       /* BPTable index for any word in current frame;
                                    cleared before each frame */
     int32 bp_table_overflow_msg;       /* Whether BPtable overflow msg has been printed */
-    int32 *lattice_density;  /* #words/frame in lattice */
-    int32 *zeroPermTab;
+    int32 *zeroPermTab; /* ??? */
 
     latnode_t **frm_wordlist;
     int32 *fwdflat_wordlist;

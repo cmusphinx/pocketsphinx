@@ -220,14 +220,6 @@
       ARG_BOOLEAN,                                                                              \
       "no",                                                                                     \
       "Compute all senone scores in every frame (can be faster when there are many senones)" }, \
-{ "-topsenfrm",                                                                                 \
-      ARG_INT32,                                                                                \
-      "1",                                                                                      \
-      "Number of frames' top senones to use in phoneme lookahead (needs -compallsen yes)" },    \
-{ "-topsenthresh",                                                                              \
-      ARG_INT32,                                                                                \
-      "-60000",                                                                                 \
-      "Threshold for top senones to use in phoneme lookahead" },                                \
 { "-fwdtree",                                                                                   \
       ARG_BOOLEAN,                                                                              \
       "yes",                                                                                    \
@@ -272,10 +264,6 @@
       ARG_INT32,                                                                                \
       "25",                                                                    	                \
       "Window of frames in lattice to search for successor words in fwdflat search " },         \
-{ "-cachesen",                                                                                   \
-      ARG_BOOLEAN,                                                                              \
-      "no",                                                                                     \
-      "Cache senone scores from first pass search" },                                           \
 { "-fsgbfs",                                                                                    \
       ARG_BOOLEAN,                                                                              \
       "yes",                                                                                    \

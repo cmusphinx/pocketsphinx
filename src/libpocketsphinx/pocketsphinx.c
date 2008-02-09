@@ -192,6 +192,10 @@ pocketsphinx_load_fsgfile(pocketsphinx_t *ps, const char *fsgfile)
 {
     word_fsg_t *fsg;
 
+    if (ps->fsgs == NULL)
+        ps->fsgs = fsg_search_init(ps->config, ps->lmath,
+                                   ps->acmod->mdef, ps->dict);
+
     fsg = word_fsg_readfile(fsgfile, ps->dict, ps->lmath,
                             cmd_ln_boolean_r(ps->config, "-fsgusealtpron"),
                             cmd_ln_boolean_r(ps->config, "-fsgusefiller"),
@@ -218,6 +222,10 @@ pocketsphinx_load_fsgctl(pocketsphinx_t *ps, const char *fsgctlfile, int set_def
     FILE *ctlfp;
     char *fsgfile;
     size_t len;
+
+    if (ps->fsgs == NULL)
+        ps->fsgs = fsg_search_init(ps->config, ps->lmath,
+                                   ps->acmod->mdef, ps->dict);
 
     if ((ctlfp = fopen(fsgctlfile, "r")) == NULL) {
         E_ERROR_SYSTEM("Failed to open FSG control file %s");
@@ -287,7 +295,9 @@ pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
 int
 pocketsphinx_start_utt(pocketsphinx_t *ps)
 {
-    return -1;
+    acmod_start_utt(ps->acmod);
+
+    return 0;
 }
 
 int
@@ -313,5 +323,7 @@ pocketsphinx_process_cep(pocketsphinx_t *ps,
 int
 pocketsphinx_end_utt(pocketsphinx_t *ps)
 {
-    return -1;
+    acmod_end_utt(ps->acmod);
+
+    return 0;
 }

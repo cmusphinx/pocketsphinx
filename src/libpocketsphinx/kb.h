@@ -69,9 +69,6 @@ char *kb_get_word_str(int32 wid);
 /* Update the dictionary to LM word ID mapping. */
 void kb_update_widmap(void);
 
-/* FIXME: silly function to get the sendump file. */
-char *kb_get_senprob_dump_file(void);
-
 /*
  * Return the maximum size of the dictionary.
  */

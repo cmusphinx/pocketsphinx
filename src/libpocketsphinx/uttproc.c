@@ -670,25 +670,6 @@ uttproc_begin_utt(char const *id)
     return 0;
 }
 
-static int32
-discard_start_frames(feat_t *fcb, mfcc_t ***feat_buf, int32 n_cepfr, int32 nfr)
-{
-    int32 i, j, discard; /* How many to throw away */
-
-    discard = feat_window_size(fcb) - n_cepfr;
-    if (discard > nfr)
-        discard = nfr;
-    /* Move some memory around. */
-    for (i = 0; i < nfr - discard; ++i) {
-        for (j = 0; j < feat_n_stream(fcb); ++j) {
-            memcpy(feat_buf[i][j], feat_buf[i + discard][j],
-                   feat_stream_len(fcb, j) * sizeof(mfcc_t));
-        }
-    }
-    nfr -= discard;
-    return nfr;
-}
-
 int32
 uttproc_rawdata(int16 * raw, int32 len, int32 block)
 {
