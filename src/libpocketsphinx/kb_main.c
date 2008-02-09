@@ -192,6 +192,7 @@ kb_init(void)
         kb_add_file("-var", hmmdir, "variances");
         kb_add_file("-tmat", hmmdir, "transition_matrices");
         kb_add_file("-sendump", hmmdir, "sendump");
+        kb_add_file("-mixw", hmmdir, "mixture_weights");
         kb_add_file("-kdtree", hmmdir, "kdtrees");
         kb_add_file("-fdict", hmmdir, "noisedict");
     }
