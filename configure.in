@@ -55,12 +55,41 @@ AC_ARG_WITH(sphinxbase-build,
 	sphinxbasebuild=$withval)
 
 
-dnl Check for pkgconfig to get default directories
-AC_CHECK_PROG(HAVE_PKGCONFIG, pkg-config, yes, no)
+dnl
+dnl Check for SphinxBase in parent directories
+dnl
+if test x$sphinxbase = x; then
+   dn=`dirname $0`
+   case "$dn" in
+	.)
+	sbdir="`pwd`/.."
+	;;
+	[\\/]* | ?:[\\/]*)
+	sbdir="$dn/.."
+	;;
+	*)
+	sbdir="`pwd`/$dn/.."
+	;;
+   esac
+   # Look for sphinxbase in the parent directory
+   for sb in "$sbdir/sphinxbase" \
+	  "$sbdir/sphinxbase"*; do
+       AC_MSG_CHECKING([for sphinxbase in $sb])
+       if test -f "$sb/include/prim_type.h"; then
+          sphinxbase="$sb"
+	  AC_MSG_RESULT(yes)
+	  break
+       else
+	  AC_MSG_RESULT(no)
+       fi
+   done
+fi
 
 dnl
-dnl Check for installed SphinxBase if none was passed to us
+dnl Check for system SphinxBase if none was passed to us
 dnl
+dnl Check for pkgconfig to get default directories
+AC_CHECK_PROG(HAVE_PKGCONFIG, pkg-config, yes, no)
 if test x$sphinxbase = x; then
    if test "x$HAVE_PKGCONFIG" = "xno"; then
       SphinxBase_CFLAGS = "-Iusr/include/sphinxbase -I/usr/local/include/sphinxbase"
@@ -68,24 +97,15 @@ if test x$sphinxbase = x; then
    else
       PKG_CHECK_MODULES(SphinxBase, [sphinxbase],,[
       AC_MSG_FAILURE(dnl
-   [SphinxBase was not found on your system.
-   Make sure that you have installed it and that the
-   PKG_CONFIG_PATH environment variable is set correctly, if
-   it was installed in a non-standard prefix.])])
+[SphinxBase was not found on your system.
+Make sure that you have installed it and that the
+PKG_CONFIG_PATH environment variable is set correctly, if
+it was installed in a non-standard prefix.])])
    fi
    AC_CHECK_HEADER(sphinxbase/sphinx_config.h,
    CPPFLAGS="$SphinxBase_CFLAGS",[
-   # Look for sphinxbase in the parent directory
-   for sb in ../sphinxbase*; do
-       AC_MSG_CHECKING([for sphinxbase in $sb])
-       if test -f "$sb/include/prim_type.h"; then
-          sphinxbase="`pwd`/$sb"
-	  AC_MSG_RESULT(yes)
-       else
-	  AC_MSG_RESULT(no)
-       fi
-   done
-   ])
+   AC_MSG_FAILURE(dnl
+[SphinxBase was not found on your system.])])
 fi
 
 dnl
