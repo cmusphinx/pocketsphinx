@@ -133,6 +133,32 @@ acmod_init_feat(acmod_t *acmod)
     if (acmod->fcb == NULL)
         return -1;
 
+    if (cmd_ln_exists_r(acmod->config, "-agcthresh")
+        && 0 != strcmp(cmd_ln_str_r(acmod->config, "-agc"), "none")) {
+        agc_set_threshold(acmod->fcb->agc_struct,
+                          cmd_ln_float32_r(acmod->config, "-agcthresh"));
+    }
+
+    if (cmd_ln_exists_r(acmod->config, "-cmninit")
+        && 0 == strcmp(cmd_ln_str_r(acmod->config, "-cmn"), "prior")) {
+        char *c, *cc, *vallist;
+        int32 nvals;
+
+        vallist = ckd_salloc(cmd_ln_str_r(acmod->config, "-cmninit"));
+        c = vallist;
+        nvals = 0;
+        while (nvals < acmod->fcb->cmn_struct->veclen
+               && (cc = strchr(c, ',')) != NULL) {
+            *cc = '\0';
+            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof(c));
+            c = cc + 1;
+            ++nvals;
+        }
+        if (nvals < acmod->fcb->cmn_struct->veclen && *c != '\0') {
+            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof(c));
+        }
+        ckd_free(vallist);
+    }
     return 0;
 }
 
