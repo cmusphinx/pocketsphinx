@@ -82,11 +82,19 @@ ngram_search_init(cmd_ln_t *config,
         ngs->bp_table_idx = ckd_calloc(2000, sizeof(*ngs->bp_table_idx));
         ++ngs->bp_table_idx; /* Make bptableidx[-1] valid */
 
-        /* Now build the search tree (hooray) */
-
-        /* Allocate active word list arrays */
+        /* Allocate active word list array */
+        ngs->active_word_list = ckd_calloc_2d(dict->dict_entry_count, 2,
+                                              sizeof(**ngs->active_word_list));
 
         /* Allocate bestbp_rc, lastphn_cand, last_ltrans */
+        ngs->bestbp_rc = ckd_calloc(bin_mdef_n_ciphone(acmod->mdef),
+                                    sizeof(*ngs->bestbp_rc));
+        ngs->lastphn_cand = ckd_calloc(dict->dict_entry_count,
+                                       sizeof(*ngs->lastphn_cand));
+        ngs->last_ltrans = ckd_calloc(dict->dict_entry_count,
+                                      sizeof(*ngs->last_ltrans));
+
+        /* Initialize fwdtree, fwdflat, bestpath modules if necessary. */
 
 	return ngs;
 }
@@ -94,5 +102,17 @@ ngram_search_init(cmd_ln_t *config,
 void
 ngram_search_free(ngram_search_t *ngs)
 {
-	ckd_free(ngs);
+    hmm_context_free(ngs->hmmctx);
+    ckd_free(ngs->word_chan);
+    ckd_free(ngs->word_lat_idx);
+    ckd_free(ngs->zeroPermTab);
+    ckd_free(ngs->word_active);
+    ckd_free(ngs->bp_table);
+    ckd_free(ngs->bscore_stack);
+    ckd_free(ngs->bp_table_idx + 1);
+    ckd_free_2d(ngs->active_word_list);
+    ckd_free(ngs->bestbp_rc);
+    ckd_free(ngs->lastphn_cand);
+    ckd_free(ngs->last_ltrans);
+    ckd_free(ngs);
 }

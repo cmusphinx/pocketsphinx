@@ -287,9 +287,9 @@ struct ngram_search_s {
      * Similarly, active_word_list[f mod 2] = list of word ids for
      * which active channels exist in word_chan in frame f.
      */
-    chan_t **active_chan_list[2];
+    chan_t ***active_chan_list;
     int32 n_active_chan[2];  /**< #entries in active_chan_list */
-    int32 *active_word_list[2];
+    int32 **active_word_list;
     int32 n_active_word[2];  /**< #entries in active_word_list */
 
     lastphn_cand_t *lastphn_cand;
@@ -337,5 +337,49 @@ ngram_search_t *ngram_search_init(cmd_ln_t *config,
  * Finalize the N-Gram search module.
  */
 void ngram_search_free(ngram_search_t *ngs);
+
+/**
+ * Start forward tree-lexicon search.
+ */
+void ngram_fwdtree_start(ngram_search_t *ngs);
+
+/**
+ * Perform one frame of forward tree-lexicon search.
+ */
+void ngram_fwdtree_search(ngram_search_t *ngs);
+
+/**
+ * Finish forward tree-lexicon search.
+ */
+void ngram_fwdtree_finish(ngram_search_t *ngs);
+
+/**
+ * Start forward flat-lexicon search.
+ */
+void ngram_fwdflat_start(ngram_search_t *ngs);
+
+/**
+ * Perform one frame of forward flat-lexicon search.
+ */
+void ngram_fwdflat_frame(ngram_search_t *ngs);
+
+/**
+ * Finish forward flat-lexicon search.
+ */
+void ngram_fwdflat_finish(ngram_search_t *ngs);
+
+/**
+ * Perform bestpath search.
+ *
+ * @return 0 for success, <0 for failure.
+ */
+int ngram_bestpath_search(ngram_search_t *ngs);
+
+/**
+ * Perform A* search.
+ *
+ * @return 0 for success, <0 for failure.
+ */
+int ngram_astar_search(ngram_search_t *ngs);
 
 #endif /* __NGRAM_SEARCH_H__ */
