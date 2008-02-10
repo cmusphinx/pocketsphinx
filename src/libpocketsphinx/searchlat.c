@@ -130,6 +130,12 @@ extern BPTBL_T *search_get_bptable();
 extern int32 *search_get_bscorestack();
 extern search_hyp_t *search_get_hyp();
 
+/* Structure to hold a lattice (semi-)permanently (for dictation/correction...) */
+static struct permanent_lattice_s {
+    latnode_t *latnode_list;
+    latnode_t *start_node, *final_node;
+} lattice;
+
 #if 0
 extern char *query_utt_id(void);
 #endif
@@ -139,24 +145,6 @@ static latnode_t *latnode_list = NULL;
 /* All paths start and end between these two lattice nodes */
 static latnode_t *start_node, *final_node;
 int32 final_node_ascr;          /* Acoustic score for the final </s> node */
-
-/* Structure to hold a lattice (semi-)permanently (for dictation/correction...) */
-static struct permanent_lattice_s {
-    latnode_t *latnode_list;
-    latnode_t *start_node, *final_node;
-} lattice;
-
-/* Structure added by Bob Brennan for maintaining several lattices at a time */
-#define	MAX_LAT_QUEUE		20
-static struct lattice_queue_s {
-    struct permanent_lattice_s lattice;
-    char lmName[256];
-    char uttid[256];
-    int32 addIndex;
-} latQueue[MAX_LAT_QUEUE];
-static int32 latQueueInit = 0;
-static int32 latQueueAddIndex = 0;
-
 static int32 n_node, n_link;
 
 #define ISA_FILLER_WORD(x)	((x)>=sil_wid)
@@ -1400,53 +1388,4 @@ search_delete_saved_lattice(void)
         lattice.start_node = NULL;
         lattice.final_node = NULL;
     }
-}
-
-void
-searchSaveLatQueue(char *uttid, char *lmName)
-{
-    int32 i, found, addIndex, minIndex = 0;     /* FIXME: good default? */
-
-    if (!latQueueInit) {
-        for (i = 0; i < MAX_LAT_QUEUE; i++) {
-            /* latQueue[i].lattice = NULL; *//* Why is this commented out? */
-            latQueue[i].uttid[0] = '\0';
-            latQueue[i].lmName[0] = '\0';
-            latQueue[i].addIndex = -1;
-        }
-        latQueueInit = 1;
-    }
-
-    /* Find the next empty queue slot or the oldest uttid if all slots are full */
-    for (addIndex = 100000, found = -1, i = 0; i < MAX_LAT_QUEUE; i++) {
-        if (latQueue[i].addIndex == -1) {
-            found = i;
-            break;
-        }
-        else {
-            if (latQueue[i].addIndex < addIndex) {
-                addIndex = latQueue[i].addIndex;
-                minIndex = i;
-            }
-        }
-    }
-
-    /* No empty slots, so free a slot so we can reuse it. */
-    if (found == -1) {
-        destroy_lattice(latQueue[minIndex].lattice.latnode_list);
-        latQueue[minIndex].lattice.latnode_list = NULL;
-        latQueue[minIndex].lattice.start_node = NULL;
-        latQueue[minIndex].lattice.final_node = NULL;
-        found = minIndex;
-    }
-
-    /* Finally place a copy of the relevant data in the queue */
-    latQueue[found].lattice.latnode_list = latnode_list;
-    latQueue[found].lattice.start_node = start_node;
-    latQueue[found].lattice.final_node = final_node;
-    strcpy(latQueue[found].lmName, lmName);
-    strcpy(latQueue[found].uttid, uttid);
-    latQueue[found].addIndex = latQueueAddIndex++;
-
-    latnode_list = NULL;
 }
