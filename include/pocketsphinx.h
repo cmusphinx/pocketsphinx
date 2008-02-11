@@ -125,7 +125,7 @@ int pocketsphinx_start_utt(pocketsphinx_t *ps);
 int pocketsphinx_process_raw(pocketsphinx_t *ps,
                              int16 const *data,
                              int32 n_samples,
-                             int do_search,
+                             int no_search,
                              int full_utt);
 
 /**
