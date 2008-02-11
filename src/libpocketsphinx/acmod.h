@@ -114,16 +114,13 @@ struct acmod_s {
     fe_t *fe;                  /**< Acoustic feature computation. */
     feat_t *fcb;               /**< Dynamic feature computation. */
 
-    uint8 retain_fe;           /**< Do we own the fe pointer. */
-    uint8 retain_fcb;          /**< Do we own the fcb poitner. */
-    int16 output_frame;        /**< Index of next frame of dynamic features. */
-
     /* Model parameters: */
     bin_mdef_t *mdef;          /**< Model definition. */
     tmat_t *tmat;              /**< Transition matrices. */
     void *mgau;                /**< either s2_semi_mgau_t or
                                   ms_mgau_t, will make this more
                                   type-safe in the future. */
+    void (*mgau_free)(void *); /**< Function to dealloate mgau. */
 
     /* Senone scoring: */
     frame_eval_t frame_eval;   /**< Function to compute GMM scores. */
@@ -132,22 +129,29 @@ struct acmod_s {
     int *senone_active;        /**< Array of active GMMs. */
     int n_senone_active;       /**< Number of active GMMs. */
     int log_zero;              /**< Zero log-probability value. */
-    uint8 state;        /**< State of utterance processing. */
-    uint8 compallsen;   /**< Compute all senones? */
-    uint8 grow_feat;    /**< Whether to grow feat_buf. */
-    uint8 reserved;
 
-    /* Feature computation: */
+    /* Utterance processing: */
     mfcc_t **mfc_buf;   /**< Temporary buffer of acoustic features. */
     mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */
-    int16 n_mfc_alloc;  /**< Number of frames allocated in mfc_buf */
-    int16 n_mfc_frame;  /**< Number of frames active in mfc_buf */
-    int16 n_feat_alloc; /**< Number of frames allocated in feat_buf */
-    int16 n_feat_frame; /**< Number of frames active in feat_buf */
     char *mfclogdir;    /**< Log directory for MFCC files. */
     char *rawlogdir;    /**< Log directory for raw audio files. */
     FILE *rawfp;        /**< File for writing raw audio data. */
     FILE *mfcfp;        /**< File for writing acoustic feature data. */
+
+    /* A whole bunch of flags and counters: */
+    uint8 retain_fe;    /**< Do we own the fe pointer. */
+    uint8 retain_fcb;   /**< Do we own the fcb poitner. */
+    uint8 state;        /**< State of utterance processing. */
+    uint8 compallsen;   /**< Compute all senones? */
+    uint8 grow_feat;    /**< Whether to grow feat_buf. */
+    uint8 reserved;
+    int16 output_frame; /**< Index of next frame of dynamic features. */
+    int16 n_mfc_alloc;  /**< Number of frames allocated in mfc_buf */
+    int16 n_mfc_frame;  /**< Number of frames active in mfc_buf */
+    int16 mfc_outidx;   /**< Start of active frames in mfc_buf */
+    int16 n_feat_alloc; /**< Number of frames allocated in feat_buf */
+    int16 n_feat_frame; /**< Number of frames active in feat_buf */
+    int16 feat_outidx;  /**< Start of active frames in feat_buf */
 };
 typedef struct acmod_s acmod_t;
 

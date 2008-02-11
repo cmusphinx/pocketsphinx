@@ -42,6 +42,7 @@
  */
 
 /* System headers. */
+#include <assert.h>
 
 /* SphinxBase headers. */
 #include <prim_type.h>
@@ -110,12 +111,14 @@ acmod_init_am(acmod_t *acmod)
                                      cmd_ln_int32_r(acmod->config, "-kdmaxdepth"),
                                      cmd_ln_int32_r(acmod->config, "-kdmaxbbi"));
         acmod->frame_eval = (frame_eval_t)&s2_semi_mgau_frame_eval;
+        acmod->mgau_free = (void *)&s2_semi_mgau_free;
     }
     else {
         E_INFO("Falling back to general multi-stream GMM computation\n");
         acmod->mgau =
             ms_mgau_init(acmod->config, acmod->lmath);
         acmod->frame_eval = (frame_eval_t)&ms_cont_mgau_frame_eval;
+        acmod->mgau_free = (void *)&ms_mgau_free;
     }
 
     return 0;
@@ -257,8 +260,19 @@ acmod_free(acmod_t *acmod)
         feat_free(acmod->fcb);
     if (acmod->retain_fe)
         fe_close(acmod->fe);
+
     ckd_free_2d((void **)acmod->mfc_buf);
     feat_array_free(acmod->feat_buf);
+
+    ckd_free(acmod->senone_scores);
+    ckd_free(acmod->senone_active_vec);
+    ckd_free(acmod->senone_active);
+
+    bin_mdef_free(acmod->mdef);
+    tmat_free(acmod->tmat);
+
+    (*acmod->mgau_free)(acmod->mgau);
+    
     ckd_free(acmod);
 }
 
@@ -300,6 +314,8 @@ acmod_start_utt(acmod_t *acmod)
     acmod->state = ACMOD_STARTED;
     acmod->n_mfc_frame = 0;
     acmod->n_feat_frame = 0;
+    acmod->mfc_outidx = 0;
+    acmod->feat_outidx = 0;
     acmod->output_frame = 0;
     return 0;
 }
@@ -330,6 +346,7 @@ acmod_process_full_cep(acmod_t *acmod,
         acmod->feat_buf = feat_array_alloc(acmod->fcb, *inout_n_frames);
         acmod->n_feat_alloc = *inout_n_frames;
         acmod->n_feat_frame = 0;
+        acmod->feat_outidx = 0;
     }
     /* Make dynamic features. */
     nfr = feat_s2mfc2feat_live(acmod->fcb, *inout_cep, inout_n_frames,
@@ -358,6 +375,7 @@ acmod_process_full_raw(acmod_t *acmod,
         acmod->n_mfc_alloc = nfr + 1;
     }
     acmod->n_mfc_frame = 0;
+    acmod->mfc_outidx = 0;
     fe_start_utt(acmod->fe);
     if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                           acmod->mfc_buf, &nfr) < 0)
@@ -386,9 +404,27 @@ acmod_process_raw(acmod_t *acmod,
     /* Append MFCCs to the end of any that are previously in there
      * (in practice, there will probably be none) */
     if (inout_n_samps && *inout_n_samps) {
+        int inptr;
+
+        /* Total number of frames available. */
         ncep = acmod->n_mfc_alloc - acmod->n_mfc_frame;
+        /* Where to start writing them (circular buffer) */
+        inptr = (acmod->mfc_outidx + acmod->n_mfc_frame) % acmod->n_mfc_alloc;
+
+        /* Write them in two parts if there is wraparound. */
+        if (inptr + ncep > acmod->n_mfc_alloc) {
+            int32 ncep1 = acmod->n_mfc_alloc - inptr;
+            if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
+                                  acmod->mfc_buf + inptr, &ncep1) < 0)
+                return -1;
+            acmod->n_mfc_frame += ncep1;
+            /* It's possible that not all available frames were filled. */
+            ncep -= ncep1;
+            inptr += ncep1;
+            inptr %= acmod->n_mfc_alloc;
+        }
         if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
-                              acmod->mfc_buf + acmod->n_mfc_frame, &ncep) < 0)
+                              acmod->mfc_buf + inptr, &ncep) < 0)
             return -1;
         acmod->n_mfc_frame += ncep;
     }
@@ -403,22 +439,36 @@ acmod_process_raw(acmod_t *acmod,
         else
             ncep = acmod->n_feat_alloc - acmod->n_feat_frame;
     }
-    nfeat = feat_s2mfc2feat_live(acmod->fcb, acmod->mfc_buf, &ncep,
+
+    /* Again do this in two parts because of the circular mfc_buf. */
+    if (acmod->mfc_outidx + ncep > acmod->n_mfc_alloc) {
+        int32 ncep1 = acmod->n_mfc_alloc - acmod->mfc_outidx;
+        nfeat = feat_s2mfc2feat_live(acmod->fcb, acmod->mfc_buf + acmod->mfc_outidx,
+                                     &ncep1,
+                                     (acmod->state == ACMOD_STARTED),
+                                     FALSE, /* This can't actually be the end. */
+                                     acmod->feat_buf + acmod->n_feat_frame);
+        acmod->n_feat_frame += nfeat;
+        /* It's possible that not all available frames were filled. */
+        ncep -= ncep1;
+        acmod->n_mfc_frame -= ncep1;
+        acmod->mfc_outidx += ncep1;
+        acmod->mfc_outidx %= acmod->n_mfc_alloc;
+        if (acmod->state == ACMOD_STARTED)
+            acmod->state = ACMOD_PROCESSING;
+    }
+    nfeat = feat_s2mfc2feat_live(acmod->fcb, acmod->mfc_buf + acmod->mfc_outidx,
+                                 &ncep,
                                  (acmod->state == ACMOD_STARTED),
                                  (acmod->state == ACMOD_ENDED),
                                  acmod->feat_buf + acmod->n_feat_frame);
     acmod->n_feat_frame += nfeat;
-    /* Free up space in the MFCC buffer. */
-    /* FIXME: we should use circular buffers here instead. */
-    /* At the end of the utterance we get more features out than
-     * we put in MFCCs. */
     acmod->n_mfc_frame -= ncep;
-    memmove(acmod->mfc_buf[0],
-            acmod->mfc_buf[ncep],
-            (acmod->n_mfc_frame
-             * fe_get_output_size(acmod->fe)
-             * sizeof(**acmod->mfc_buf)));
-    acmod->state = ACMOD_PROCESSING;
+    acmod->mfc_outidx += ncep;
+    acmod->mfc_outidx %= acmod->n_mfc_alloc;
+
+    if (acmod->state == ACMOD_STARTED)
+        acmod->state = ACMOD_PROCESSING;
     return ncep;
 }
 

@@ -34,7 +34,7 @@ main(int argc, char *argv[])
 	size_t nread, nsamps;
 	int nfr;
 	int frame_counter;
-	int bestsen1[128];
+	int bestsen1[270];
 
 	lmath = logmath_init(1.0001, 0, 0);
 	config = cmd_ln_init(NULL, pocketsphinx_args(), TRUE,
@@ -45,6 +45,7 @@ main(int argc, char *argv[])
 			     "-tmat", MODELDIR "/hmm/wsj1/transition_matrices",
 			     "-sendump", MODELDIR "/hmm/wsj1/sendump",
 			     "-compallsen", "true",
+			     "-cmn", "prior",
 			     "-tmatfloor", "0.0001",
 			     "-mixwfloor", "0.001",
 			     "-varfloor", "0.0001",
@@ -68,13 +69,13 @@ main(int argc, char *argv[])
 		while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
 			ascr_t const *senscr;
 			int frame_idx, best_score, best_senid;
-			/* printf("Processed %d frames, %d samples remaining\n", nfr, nread); */
+		/* printf("Processed %d frames, %d samples remaining\n", nfr, nread); */
 			while ((senscr = acmod_score(acmod, &frame_idx,
 						     &best_score, &best_senid))) {
 				/* printf("Frame %d best senone %d score %d\n",
 				   frame_idx, best_senid, best_score); */
 				TEST_EQUAL(frame_counter, frame_idx);
-				if (frame_counter < 128)
+				if (frame_counter < 270)
 					bestsen1[frame_counter] = best_senid;
 				++frame_counter;
 			}
@@ -90,7 +91,7 @@ main(int argc, char *argv[])
 					     &best_score, &best_senid))) {
 			/* printf("Frame %d best senone %d score %d\n",
 			   frame_idx, best_senid, best_score); */
-			if (frame_counter < 128)
+			if (frame_counter < 270)
 				bestsen1[frame_counter] = best_senid;
 			TEST_EQUAL(frame_counter, frame_idx);
 			++frame_counter;
@@ -98,6 +99,7 @@ main(int argc, char *argv[])
 	}
 
 	/* Now try to process the whole thing at once. */
+	cmn_prior_set(acmod->fcb->cmn_struct, prior);
 	nsamps = ftell(rawfh) / sizeof(*buf);
 	clearerr(rawfh);
 	fseek(rawfh, 0, SEEK_SET);
@@ -115,7 +117,7 @@ main(int argc, char *argv[])
 					     &best_score, &best_senid))) {
 			/* printf("Frame %d best senone %d score %d\n",
 			   frame_idx, best_senid, best_score); */
-			if (frame_counter < 128)
+			if (frame_counter < 270)
 				TEST_EQUAL(best_senid, bestsen1[frame_counter]);
 			TEST_EQUAL(frame_counter, frame_idx);
 			++frame_counter;
@@ -125,5 +127,7 @@ main(int argc, char *argv[])
 	fclose(rawfh);
 	ckd_free(buf);
 	acmod_free(acmod);
+	logmath_free(lmath);
+	cmd_ln_free_r(config);
 	return 0;
 }
