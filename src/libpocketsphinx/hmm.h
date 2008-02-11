@@ -129,6 +129,7 @@ extern "C" {
  * is a non-emitting exit state; the x's indicate allowed transitions
  * between source and destination states):
  * 
+ * <pre>
  *               0   1   2   3   4   E (destination-states)
  *           0   x   x   x
  *           1       x   x   x
@@ -136,19 +137,26 @@ extern "C" {
  *           3               x   x   x
  *           4                   x   x
  *    (source-states)
+ * </pre>
+ *
  * 5-state topologies that contain a subset of the above transitions should work as well.
  * 
  * 3-state left-to-right HMMs (similar notation as the 5-state topology above):
  * 
+ * <pre>
  *               0   1   2   E (destination-states)
  *           0   x   x   x
  *           1       x   x   x
  *           2           x   x 
  *    (source-states)
- * 3-state topologies that contain a subset of the above transitions should work as well.  */
+ * </pre>
+ *
+ * 3-state topologies that contain a subset of the above transitions should work as well. 
+ */
 
-/** \struct hmm_context_t
- * \brief Shared information between a set of HMMs.
+/**
+ * @struct hmm_context_t
+ * @brief Shared information between a set of HMMs.
  *
  * We assume that the initial state is emitting and that the
  * transition matrix is n_emit_state x (n_emit_state+1), where the
@@ -164,16 +172,18 @@ typedef struct hmm_context_s {
     void *udata;           /**< Whatever you feel like, gosh. */
 } hmm_context_t;
 
-/**  \struct hmm_state_t
- * \brief A single state in the HMM 
+/**
+ * @struct hmm_state_t
+ * @brief A single state in the HMM 
  */
 typedef struct {
     int32 score;	/**< State score (path log-likelihood) */
     int32 history;	/**< History index */
 } hmm_state_t;
 
-/** \struct hmm_t
- * \brief An individual HMM among the HMM search space.
+/**
+ * @struct hmm_t
+ * @brief An individual HMM among the HMM search space.
  *
  * An individual HMM among the HMM search space.  An HMM with N
  * emitting states consists of N+2 internal states including the
@@ -240,7 +250,7 @@ hmm_context_t *hmm_context_init(int32 n_emit_state,
 /**
  * Free an HMM context.
  *
- * \note The transition matrices, senone scores, and senone sequence
+ * @note The transition matrices, senone scores, and senone sequence
  * mapping are all assumed to be allocated externally, and will NOT be
  * freed by this function.
  **/
@@ -258,8 +268,9 @@ void hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx,
 void hmm_deinit(hmm_t *hmm);
 
 /**
- * Reset the states of the HMM to the invalid condition; i.e., scores
- * to WORST_SCORE and hist to undefined.
+ * Reset the states of the HMM to the invalid condition.
+
+ * i.e., scores to WORST_SCORE and hist to undefined.
  */
 void hmm_clear(hmm_t *h);
 
@@ -280,12 +291,16 @@ void hmm_enter(hmm_t *h, int32 score,
                int32 histid, int32 frame);
 
 /**
- * Viterbi evaluation of given HMM.  (NOTE that if this module were being used for tracking
- * state segmentations, the dummy, non-emitting exit state would have to be updated separately.
- * In the Viterbi DP diagram, transitions to the exit state occur from the current time; they
- * are vertical transitions.  Hence they should be made only after the history has been logged
- * for the emitting states.  But we're not bothered with state segmentations, for now.  So, we
- * update the exit state as well.)
+ * Viterbi evaluation of given HMM.
+ *
+ * @note If this module were being used for tracking state
+ * segmentations, the dummy, non-emitting exit state would have to be
+ * updated separately.  In the Viterbi DP diagram, transitions to the
+ * exit state occur from the current time; they are vertical
+ * transitions.  Hence they should be made only after the history has
+ * been logged for the emitting states.  But we're not bothered with
+ * state segmentations, for now.  So, we update the exit state as
+ * well.
 */
 int32 hmm_vit_eval(hmm_t *hmm);
   
