@@ -109,9 +109,40 @@ fbs_get_args(void)
     return fbs_args_def;
 }
 
+/* Two functions copied from acmod.c for now. */
+static int
+file_exists(const char *path)
+{
+    FILE *tmp;
+
+    tmp = fopen(path, "rb");
+    if (tmp)
+        fclose(tmp);
+    return (tmp != NULL);
+}
+
+/* Model file names */
+static glist_t model_strings;
+
+static void
+fbs_add_file(const char *arg, const char *hmmdir, const char *file)
+{
+    char *tmp = string_join(hmmdir, "/", file, NULL);
+
+    if (cmd_ln_str(arg) == NULL && file_exists(tmp)) {
+        cmd_ln_set_str(arg, tmp);
+        model_strings = glist_add_ptr(model_strings, tmp);
+    }
+    else {
+        ckd_free(tmp);
+    }
+}
+
 int
 fbs_init(int32 argc, char **argv)
 {
+    char *hmmdir;
+
     E_INFO("libpocketsphinx/fbs_main.c COMPILED ON: %s, AT: %s\n\n", __DATE__, __TIME__);
 
     /* Parse command line arguments, unless already parsed. */
@@ -121,6 +152,20 @@ fbs_init(int32 argc, char **argv)
                           fbs_args_def);
     }
 
+    /* Populate default arguments from acoustic model directory. */
+    if ((hmmdir = cmd_ln_str("-hmm")) != NULL) {
+        fbs_add_file("-mdef", hmmdir, "mdef");
+        fbs_add_file("-mean", hmmdir, "means");
+        fbs_add_file("-var", hmmdir, "variances");
+        fbs_add_file("-tmat", hmmdir, "transition_matrices");
+        fbs_add_file("-sendump", hmmdir, "sendump");
+        fbs_add_file("-mixw", hmmdir, "mixture_weights");
+        fbs_add_file("-kdtree", hmmdir, "kdtrees");
+        fbs_add_file("-fdict", hmmdir, "noisedict");
+        fbs_add_file("-featparams", hmmdir, "feat.params");
+        fbs_add_file("-lda", hmmdir, "feature_transform");
+    }
+
     /* Look for a feat.params very early on, because it influences
      * everything below. */
     if (cmd_ln_str("-featparams")) {
@@ -128,14 +173,6 @@ fbs_init(int32 argc, char **argv)
 	    E_INFO("Parsed model-specific feature parameters from %s\n",
                    cmd_ln_str("-featparams"));
 	}
-    }
-    else if (cmd_ln_str("-hmm")) {
-	char *str;
-        str = string_join(cmd_ln_str("-hmm"), "/feat.params", NULL);
-	if (cmd_ln_parse_file(feat_defn, str, FALSE) == 0) {
-	    E_INFO("Parsed model-specific feature parameters from %s\n", str);
-	}
-        ckd_free(str);
     }
 
     /* Initialize feature computation.  We have to do this first
@@ -182,6 +219,12 @@ fbs_init(int32 argc, char **argv)
 int32
 fbs_end(void)
 {
+    gnode_t *gn;
+
+    for (gn = model_strings; gn; gn = gnode_next(gn))
+        ckd_free(gnode_ptr(gn));
+    glist_free(model_strings);
+
     uttproc_end();
     search_free();
     kb_close();
@@ -225,6 +268,13 @@ init_feat(void)
             fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof(c));
         }
         ckd_free(vallist);
+    }
+
+    if (cmd_ln_str("-lda")) {
+        if (feat_read_lda(fcb, cmd_ln_str("-lda"), cmd_ln_int32("-ldadim")) < 0) {
+            E_FATAL("Failed to read feature transform from %s\n",
+                    cmd_ln_str("-lda"));
+        }
     }
 
     uttproc_set_feat(fcb);

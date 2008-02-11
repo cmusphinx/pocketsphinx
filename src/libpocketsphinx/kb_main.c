@@ -76,9 +76,6 @@ s2_semi_mgau_t *g_semi_mgau;
 /* Slow CDGMM computation object */
 ms_mgau_model_t *g_ms_mgau;
 
-/* Model file names */
-glist_t model_strings;
-
 /* Language model set */
 ngram_model_t *g_lmset;
 
@@ -151,51 +148,15 @@ lm_init(void)
     kb_update_widmap();
 }
 
-/* Two functions copied from acmod.c for now. */
-static int
-file_exists(const char *path)
-{
-    FILE *tmp;
-
-    tmp = fopen(path, "rb");
-    if (tmp)
-        fclose(tmp);
-    return (tmp != NULL);
-}
-static void
-kb_add_file(const char *arg, const char *hmmdir, const char *file)
-{
-    char *tmp = string_join(hmmdir, "/", file, NULL);
-
-    if (cmd_ln_str(arg) == NULL && file_exists(tmp)) {
-        cmd_ln_set_str(arg, tmp);
-        model_strings = glist_add_ptr(model_strings, tmp);
-    }
-    else {
-        ckd_free(tmp);
-    }
-}
 
 void
 kb_init(void)
 {
     int32 num_phones, num_ci_phones;
-    char *mdeffn, *hmmdir, *tmatfn;
+    char *mdeffn, *tmatfn;
 
     /* Initialize log computation. */
     g_lmath = logmath_init((float64)cmd_ln_float32("-logbase"), 0, FALSE);
-
-    /* Get acoustic model filenames and add them to the command-line */
-    if ((hmmdir = cmd_ln_str("-hmm")) != NULL) {
-        kb_add_file("-mdef", hmmdir, "mdef");
-        kb_add_file("-mean", hmmdir, "means");
-        kb_add_file("-var", hmmdir, "variances");
-        kb_add_file("-tmat", hmmdir, "transition_matrices");
-        kb_add_file("-sendump", hmmdir, "sendump");
-        kb_add_file("-mixw", hmmdir, "mixture_weights");
-        kb_add_file("-kdtree", hmmdir, "kdtrees");
-        kb_add_file("-fdict", hmmdir, "noisedict");
-    }
 
     /* Read model definition. */
     if ((mdeffn = cmd_ln_str("-mdef")) == NULL)
@@ -239,12 +200,6 @@ kb_init(void)
 void
 kb_close(void)
 {
-    gnode_t *gn;
-
-    for (gn = model_strings; gn; gn = gnode_next(gn))
-        ckd_free(gnode_ptr(gn));
-    glist_free(model_strings);
-
     bin_mdef_free(g_mdef);
     g_mdef = NULL;
 
