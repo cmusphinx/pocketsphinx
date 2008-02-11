@@ -212,7 +212,6 @@ typedef struct ngram_search_stats_s {
     int32 n_last_chan_eval;
     int32 n_word_lastchan_eval;
     int32 n_lastphn_cand_utt;
-    int32 n_phn_in_topsen;
     int32 n_fwdflat_chan;
     int32 n_fwdflat_words;
     int32 n_fwdflat_word_transition;
@@ -222,6 +221,7 @@ typedef struct ngram_search_stats_s {
  * N-Gram search module structure.
  */
 struct ngram_search_s {
+    cmd_ln_t *config;      /**< Configuration. */
     acmod_t *acmod;        /**< Acoustic model. */
     dict_t *dict;          /**< Pronunciation dictionary. */
     ngram_model_t *lmset;  /**< Set of language models. */
@@ -255,7 +255,7 @@ struct ngram_search_s {
      * Channels associated with a given word (only used for right
      * contexts and single-phone words in fwdtree search)
      */
-    chan_t *word_chan;
+    chan_t **word_chan;
     uint8 *word_active;      /**< array of active flags for all words. */
 
     /**
@@ -322,6 +322,9 @@ struct ngram_search_s {
     int32 min_ef_width;
     int32 max_sf_win;
 
+    int32 best_score;
+    int32 renormalized;
+
     ngram_search_stats_t st; /**< Various statistics for profiling */
 };
 typedef struct ngram_search_s ngram_search_t;
@@ -337,49 +340,5 @@ ngram_search_t *ngram_search_init(cmd_ln_t *config,
  * Finalize the N-Gram search module.
  */
 void ngram_search_free(ngram_search_t *ngs);
-
-/**
- * Start forward tree-lexicon search.
- */
-void ngram_fwdtree_start(ngram_search_t *ngs);
-
-/**
- * Perform one frame of forward tree-lexicon search.
- */
-void ngram_fwdtree_search(ngram_search_t *ngs);
-
-/**
- * Finish forward tree-lexicon search.
- */
-void ngram_fwdtree_finish(ngram_search_t *ngs);
-
-/**
- * Start forward flat-lexicon search.
- */
-void ngram_fwdflat_start(ngram_search_t *ngs);
-
-/**
- * Perform one frame of forward flat-lexicon search.
- */
-void ngram_fwdflat_frame(ngram_search_t *ngs);
-
-/**
- * Finish forward flat-lexicon search.
- */
-void ngram_fwdflat_finish(ngram_search_t *ngs);
-
-/**
- * Perform bestpath search.
- *
- * @return 0 for success, <0 for failure.
- */
-int ngram_bestpath_search(ngram_search_t *ngs);
-
-/**
- * Perform A* search.
- *
- * @return 0 for success, <0 for failure.
- */
-int ngram_astar_search(ngram_search_t *ngs);
 
 #endif /* __NGRAM_SEARCH_H__ */

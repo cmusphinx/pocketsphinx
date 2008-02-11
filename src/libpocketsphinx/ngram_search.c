@@ -43,9 +43,13 @@
 
 /* SphinxBase headers. */
 #include <ckd_alloc.h>
+#include <linklist.h>
 
 /* Local headers. */
 #include "ngram_search.h"
+#include "ngram_search_fwdtree.h"
+#include "ngram_search_fwdflat.h"
+#include "ngram_search_dag.h"
 
 ngram_search_t *
 ngram_search_init(cmd_ln_t *config,
@@ -53,8 +57,10 @@ ngram_search_init(cmd_ln_t *config,
 		  dict_t *dict)
 {
 	ngram_search_t *ngs;
+        const char *path;
 
 	ngs = ckd_calloc(1, sizeof(*ngs));
+        ngs->config = config;
 	ngs->acmod = acmod;
 	ngs->dict = dict;
 	ngs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
@@ -94,15 +100,58 @@ ngram_search_init(cmd_ln_t *config,
         ngs->last_ltrans = ckd_calloc(dict->dict_entry_count,
                                       sizeof(*ngs->last_ltrans));
 
-        /* Initialize fwdtree, fwdflat, bestpath modules if necessary. */
+        /* Load language model(s) */
+        if ((path = cmd_ln_str_r(config, "-lmctlfn"))) {
+            ngs->lmset = ngram_model_set_read(config, path, acmod->lmath);
+            if (ngs->lmset == NULL) {
+                E_ERROR("Failed to read language model control file: %s\n",
+                        path);
+                goto error_out;
+            }
+            /* Set the default language model if needed. */
+            if ((path = cmd_ln_str_r(config, "-lmname"))) {
+                ngram_model_set_select(ngs->lmset, path);
+            }
+        }
+        else if ((path = cmd_ln_str_r(config, "-lm"))) {
+            static const char *name = "default";
+            ngram_model_t *lm;
 
+            lm = ngram_model_read(config, path, NGRAM_AUTO, acmod->lmath);
+            if (lm == NULL) {
+                E_ERROR("Failed to read language model file: %s\n", path);
+                goto error_out;
+            }
+            ngs->lmset = ngram_model_set_init(config,
+                                              &lm, (char **)&name,
+                                              NULL, 1);
+            if (ngs->lmset == NULL) {
+                E_ERROR("Failed to initialize language model set\n");
+                goto error_out;
+            }
+        }
+
+        /* Initialize fwdtree, fwdflat, bestpath modules if necessary. */
+        if (cmd_ln_boolean_r(config, "-fwdtree"))
+            ngram_fwdtree_init(ngs);
+        if (cmd_ln_boolean_r(config, "-fwdflat"))
+            ngram_fwdflat_init(ngs);
 	return ngs;
+
+error_out:
+        ngram_search_free(ngs);
+        return NULL;
 }
 
 void
 ngram_search_free(ngram_search_t *ngs)
 {
+    ngram_fwdtree_deinit(ngs);
+    ngram_fwdflat_deinit(ngs);
+
     hmm_context_free(ngs->hmmctx);
+    ngram_model_free(ngs->lmset);
+
     ckd_free(ngs->word_chan);
     ckd_free(ngs->word_lat_idx);
     ckd_free(ngs->zeroPermTab);

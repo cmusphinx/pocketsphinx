@@ -16,6 +16,9 @@ main(int argc, char *argv[])
 				"-lm", MODELDIR "/lm/swb/swb.lm.DMP",
 				"-dict", MODELDIR "/lm/swb/swb.dic",
 				"-cepext", "",
+				"-fwdtree", "yes",
+				"-fwdflat", "yes",
+				"-bestpath", "yes",
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = pocketsphinx_init(config));
 

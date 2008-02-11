@@ -95,6 +95,7 @@ pocketsphinx_init_defaults(pocketsphinx_t *ps)
         pocketsphinx_add_file(ps, "-mean", hmmdir, "means");
         pocketsphinx_add_file(ps, "-var", hmmdir, "variances");
         pocketsphinx_add_file(ps, "-tmat", hmmdir, "transition_matrices");
+        pocketsphinx_add_file(ps, "-mixw", hmmdir, "mixture_weights");
         pocketsphinx_add_file(ps, "-sendump", hmmdir, "sendump");
         pocketsphinx_add_file(ps, "-kdtree", hmmdir, "kdtrees");
         pocketsphinx_add_file(ps, "-fdict", hmmdir, "noisedict");

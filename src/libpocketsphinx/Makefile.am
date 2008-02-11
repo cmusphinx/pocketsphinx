@@ -23,6 +23,9 @@ libpocketsphinx_la_SOURCES =			\
 	ms_mgau.c				\
 	ms_senone.c				\
 	ngram_search.c				\
+	ngram_search_fwdtree.c			\
+	ngram_search_fwdflat.c			\
+	ngram_search_dag.c			\
 	phone.c					\
 	s2_semi_mgau.c				\
 	search.c				\
@@ -54,6 +57,10 @@ noinst_HEADERS =				\
 	ms_gauden.h				\
 	ms_mgau.h				\
 	ms_senone.h				\
+	ngram_search.h				\
+	ngram_search_fwdtree.h			\
+	ngram_search_fwdflat.h			\
+	ngram_search_dag.h			\
 	phone.h					\
 	posixwin32.h				\
 	s2_semi_mgau.h				\
