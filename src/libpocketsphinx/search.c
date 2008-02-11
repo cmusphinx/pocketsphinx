@@ -1293,8 +1293,6 @@ search_initialize(cmd_ln_t *cmdln)
 
     lattice_density = ckd_calloc(MAX_FRAMES, sizeof(int32));
 
-    init_search_tree(g_word_dict);
-
     active_word_list[0] =
         ckd_calloc(2 * (NumWords + 1), sizeof(int32));
     active_word_list[1] = active_word_list[0] + NumWords + 1;
@@ -1316,6 +1314,7 @@ search_initialize(cmd_ln_t *cmdln)
     last_ltrans =
         ckd_calloc(NumWords, sizeof(last_ltrans_t));
 
+    init_search_tree(g_word_dict);
     search_fwdflat_init();
     searchlat_init();
 
@@ -2383,14 +2382,6 @@ init_search_tree(dict_t * dict)
     }
 
     single_phone_wid = ckd_calloc(n_1ph_words, sizeof(int32));
-
-    /*
-     * Create search tree once, without using LM, to know the max #nonroot chans.
-     * search_initialize() needs this to allocate active-channel lists.
-     */
-    create_search_tree(dict, 0);        /* arg2=0 => tree for entire dictionary;
-                                           not just words in the LMs. */
-    delete_search_tree();
 }
 
 /*
