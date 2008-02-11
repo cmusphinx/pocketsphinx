@@ -134,7 +134,8 @@ struct acmod_s {
     int log_zero;              /**< Zero log-probability value. */
     uint8 state;        /**< State of utterance processing. */
     uint8 compallsen;   /**< Compute all senones? */
-    uint16 reserved;
+    uint8 grow_feat;    /**< Whether to grow feat_buf. */
+    uint8 reserved;
 
     /* Feature computation: */
     mfcc_t **mfc_buf;   /**< Temporary buffer of acoustic features. */
@@ -182,6 +183,16 @@ int acmod_start_utt(acmod_t *acmod);
  * Mark the end of an utterance.
  */
 int acmod_end_utt(acmod_t *acmod);
+
+/**
+ * Set memory allocation policy for utterance processing.
+ *
+ * @param grow_feat If non-zero, the internal dynamic feature buffer
+ * will expand as necessary to encompass any amount of data fed to the
+ * model.
+ * @return previous allocation policy.
+ */
+int acmod_set_grow(acmod_t *acmod, int grow_feat);
 
 /**
  * Feed raw audio data to the acoustic model for scoring.

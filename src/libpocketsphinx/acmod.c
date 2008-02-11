@@ -262,6 +262,37 @@ acmod_free(acmod_t *acmod)
     ckd_free(acmod);
 }
 
+void
+acmod_grow_feat_buf(acmod_t *acmod, int nfr)
+{
+    mfcc_t ***new_feat_buf;
+
+    acmod->n_feat_alloc = nfr;
+    new_feat_buf = feat_array_alloc(acmod->fcb, nfr);
+    if (acmod->n_feat_frame) {
+        memcpy(new_feat_buf[0][0], acmod->feat_buf[0][0],
+               (acmod->n_feat_frame
+                * feat_dimension(acmod->fcb)
+                * sizeof(***acmod->feat_buf)));
+    }
+    feat_array_free(acmod->feat_buf);
+    acmod->feat_buf = new_feat_buf;
+    acmod->n_feat_alloc = nfr;
+}
+
+int
+acmod_set_grow(acmod_t *acmod, int grow_feat)
+{
+    int tmp = acmod->grow_feat;
+    acmod->grow_feat = grow_feat;
+
+    /* Expand feat_buf to a reasonable size to start with. */
+    if (grow_feat && acmod->n_feat_alloc < 128)
+        acmod_grow_feat_buf(acmod, 128);
+
+    return tmp;
+}
+
 int
 acmod_start_utt(acmod_t *acmod)
 {
@@ -286,85 +317,109 @@ acmod_end_utt(acmod_t *acmod)
     return 0;
 }
 
+static int
+acmod_process_full_cep(acmod_t *acmod,
+                       mfcc_t ***inout_cep,
+                       int *inout_n_frames)
+{
+    int32 nfr;
+
+    /* Resize feat_buf to fit. */
+    if (acmod->n_feat_alloc < *inout_n_frames) {
+        feat_array_free(acmod->feat_buf);
+        acmod->feat_buf = feat_array_alloc(acmod->fcb, *inout_n_frames);
+        acmod->n_feat_alloc = *inout_n_frames;
+        acmod->n_feat_frame = 0;
+    }
+    /* Make dynamic features. */
+    nfr = feat_s2mfc2feat_live(acmod->fcb, *inout_cep, inout_n_frames,
+                               TRUE, TRUE, acmod->feat_buf);
+    acmod->n_feat_frame = nfr;
+    *inout_cep += *inout_n_frames;
+    *inout_n_frames = 0;
+    return nfr;
+}
+
+static int
+acmod_process_full_raw(acmod_t *acmod,
+                       int16 const **inout_raw,
+                       size_t *inout_n_samps)
+{
+    int32 nfr, ntail;
+    mfcc_t **cepptr;
+
+    /* Resize mfc_buf to fit. */
+    if (fe_process_frames(acmod->fe, NULL, inout_n_samps, NULL, &nfr) < 0)
+        return -1;
+    if (acmod->n_mfc_alloc < nfr + 1) {
+        ckd_free_2d(acmod->mfc_buf);
+        acmod->mfc_buf = ckd_calloc_2d(nfr + 1, fe_get_output_size(acmod->fe),
+                                       sizeof(**acmod->mfc_buf));
+        acmod->n_mfc_alloc = nfr + 1;
+    }
+    acmod->n_mfc_frame = 0;
+    fe_start_utt(acmod->fe);
+    if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
+                          acmod->mfc_buf, &nfr) < 0)
+        return -1;
+    fe_end_utt(acmod->fe, acmod->mfc_buf[nfr], &ntail);
+    nfr += ntail;
+
+    cepptr = acmod->mfc_buf;
+    nfr = acmod_process_full_cep(acmod, &cepptr, &nfr);
+    acmod->n_mfc_frame = 0;
+    return nfr;
+}
+
 int
 acmod_process_raw(acmod_t *acmod,
 		  int16 const **inout_raw,
 		  size_t *inout_n_samps,
 		  int full_utt)
 {
+    int32 nfeat, ncep;
+
     /* If this is a full utterance, process it all at once. */
-    if (full_utt) {
-        int32 nfr, ntail;
+    if (full_utt)
+        return acmod_process_full_raw(acmod, inout_raw, inout_n_samps);
 
-        /* Resize mfc_buf to fit. */
-        if (fe_process_frames(acmod->fe, NULL, inout_n_samps, NULL, &nfr) < 0)
-            return -1;
-        if (acmod->n_mfc_alloc < nfr + 1) {
-            ckd_free_2d(acmod->mfc_buf);
-            acmod->mfc_buf = ckd_calloc_2d(nfr + 1, fe_get_output_size(acmod->fe),
-                                           sizeof(**acmod->mfc_buf));
-            acmod->n_mfc_alloc = nfr + 1;
-        }
-        acmod->n_mfc_frame = 0;
-        fe_start_utt(acmod->fe);
+    /* Append MFCCs to the end of any that are previously in there
+     * (in practice, there will probably be none) */
+    if (inout_n_samps && *inout_n_samps) {
+        ncep = acmod->n_mfc_alloc - acmod->n_mfc_frame;
         if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
-                              acmod->mfc_buf, &nfr) < 0)
+                              acmod->mfc_buf + acmod->n_mfc_frame, &ncep) < 0)
             return -1;
-        fe_end_utt(acmod->fe, acmod->mfc_buf[nfr], &ntail);
-        nfr += ntail;
-        acmod->n_mfc_frame = nfr;
-
-        /* Resize feat_buf to fit. */
-        if (acmod->n_feat_alloc < nfr) {
-            feat_array_free(acmod->feat_buf);
-            acmod->feat_buf = feat_array_alloc(acmod->fcb, nfr);
-            acmod->n_feat_alloc = nfr;
-            acmod->n_feat_frame = 0;
-        }
-        /* Make dynamic features. */
-        acmod->n_feat_frame =
-            feat_s2mfc2feat_live(acmod->fcb, acmod->mfc_buf, &nfr,
-                                 TRUE, TRUE, acmod->feat_buf);
-        /* Mark all MFCCs as consumed. */
-        acmod->n_mfc_frame = 0;
-        return nfr;
+        acmod->n_mfc_frame += ncep;
     }
-    else {
-        int32 nfeat, ncep;
 
-        /* Append MFCCs to the end of any that are previously in there
-         * (in practice, there will probably be none) */
-        if (inout_n_samps && *inout_n_samps) {
-            ncep = acmod->n_mfc_alloc - acmod->n_mfc_frame;
-            if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
-                                  acmod->mfc_buf + acmod->n_mfc_frame, &ncep) < 0)
-                return -1;
-            acmod->n_mfc_frame += ncep;
-        }
-
-        /* Number of input frames to generate features. */
-        ncep = acmod->n_mfc_frame;
-        /* Don't overflow the output feature buffer. */
-        if (ncep > acmod->n_feat_alloc - acmod->n_feat_frame)
+    /* Number of input frames to generate features. */
+    ncep = acmod->n_mfc_frame;
+    /* Don't overflow the output feature buffer. */
+    if (ncep > acmod->n_feat_alloc - acmod->n_feat_frame) {
+        /* Grow it as needed */
+        if (acmod->grow_feat)
+            acmod_grow_feat_buf(acmod, acmod->n_feat_alloc * 2);
+        else
             ncep = acmod->n_feat_alloc - acmod->n_feat_frame;
-        nfeat = feat_s2mfc2feat_live(acmod->fcb, acmod->mfc_buf, &ncep,
-                                     (acmod->state == ACMOD_STARTED),
-                                     (acmod->state == ACMOD_ENDED),
-                                     acmod->feat_buf + acmod->n_feat_frame);
-        acmod->n_feat_frame += nfeat;
-        /* Free up space in the MFCC buffer. */
-        /* FIXME: we should use circular buffers here instead. */
-        /* At the end of the utterance we get more features out than
-         * we put in MFCCs. */
-        acmod->n_mfc_frame -= ncep;
-        memmove(acmod->mfc_buf[0],
-                acmod->mfc_buf[ncep],
-                (acmod->n_mfc_frame
-                 * fe_get_output_size(acmod->fe)
-                 * sizeof(**acmod->mfc_buf)));
-        acmod->state = ACMOD_PROCESSING;
-        return ncep;
     }
+    nfeat = feat_s2mfc2feat_live(acmod->fcb, acmod->mfc_buf, &ncep,
+                                 (acmod->state == ACMOD_STARTED),
+                                 (acmod->state == ACMOD_ENDED),
+                                 acmod->feat_buf + acmod->n_feat_frame);
+    acmod->n_feat_frame += nfeat;
+    /* Free up space in the MFCC buffer. */
+    /* FIXME: we should use circular buffers here instead. */
+    /* At the end of the utterance we get more features out than
+     * we put in MFCCs. */
+    acmod->n_mfc_frame -= ncep;
+    memmove(acmod->mfc_buf[0],
+            acmod->mfc_buf[ncep],
+            (acmod->n_mfc_frame
+             * fe_get_output_size(acmod->fe)
+             * sizeof(**acmod->mfc_buf)));
+    acmod->state = ACMOD_PROCESSING;
+    return ncep;
 }
 
 int
@@ -373,60 +428,51 @@ acmod_process_cep(acmod_t *acmod,
 		  int *inout_n_frames,
 		  int full_utt)
 {
+    int32 nfeat, ncep;
+
     /* If this is a full utterance, process it all at once. */
-    if (full_utt) {
-        int32 nfr;
+    if (full_utt)
+        return acmod_process_full_cep(acmod, inout_cep, inout_n_frames);
 
-        /* Resize feat_buf to fit. */
-        if (acmod->n_feat_alloc < *inout_n_frames) {
-            feat_array_free(acmod->feat_buf);
-            acmod->feat_buf = feat_array_alloc(acmod->fcb, *inout_n_frames);
-            acmod->n_feat_alloc = *inout_n_frames;
-            acmod->n_feat_frame = 0;
-        }
-        /* Make dynamic features. */
-        nfr = feat_s2mfc2feat_live(acmod->fcb, *inout_cep, inout_n_frames,
-                                   TRUE, TRUE, acmod->feat_buf);
-        acmod->n_feat_frame = nfr;
-        *inout_cep += *inout_n_frames;
-        *inout_n_frames = 0;
-        return nfr;
-    }
-    else {
-        int32 nfeat, ncep;
-
-        /* Number of input frames to generate features. */
-        ncep = acmod->n_mfc_frame;
-        /* Don't overflow the output feature buffer. */
-        if (ncep > acmod->n_feat_alloc - acmod->n_feat_frame)
+    /* Number of input frames to generate features. */
+    ncep = acmod->n_mfc_frame;
+    /* Don't overflow the output feature buffer. */
+    if (ncep > acmod->n_feat_alloc - acmod->n_feat_frame) {
+        /* Grow it as needed */
+        if (acmod->grow_feat)
+            acmod_grow_feat_buf(acmod, acmod->n_feat_alloc * 2);
+        else
             ncep = acmod->n_feat_alloc - acmod->n_feat_frame;
-        nfeat = feat_s2mfc2feat_live(acmod->fcb, *inout_cep,
-                                     &ncep,
-                                     (acmod->state == ACMOD_STARTED),
-                                     (acmod->state == ACMOD_ENDED),
-                                     acmod->feat_buf + acmod->n_feat_frame);
-        acmod->n_feat_frame += nfeat;
-        *inout_n_frames -= ncep;
-        *inout_cep += ncep;
-        acmod->state = ACMOD_PROCESSING;
-        return ncep;
     }
+    nfeat = feat_s2mfc2feat_live(acmod->fcb, *inout_cep,
+                                 &ncep,
+                                 (acmod->state == ACMOD_STARTED),
+                                 (acmod->state == ACMOD_ENDED),
+                                 acmod->feat_buf + acmod->n_feat_frame);
+    acmod->n_feat_frame += nfeat;
+    *inout_n_frames -= ncep;
+    *inout_cep += ncep;
+    acmod->state = ACMOD_PROCESSING;
+    return ncep;
 }
 
 int
 acmod_process_feat(acmod_t *acmod,
 		   mfcc_t **feat)
 {
-    if (acmod->n_feat_frame == acmod->n_feat_alloc)
-        return 0;
-    else {
-        /* Just copy it in. */
-        int i;
-        for (i = 0; i < feat_n_stream(acmod->fcb); ++i)
-            memcpy(acmod->feat_buf[acmod->n_feat_frame][i],
-                   feat[i], feat_stream_len(acmod->fcb, i) * sizeof(**feat));
-        return 1;
+    if (acmod->n_feat_frame == acmod->n_feat_alloc) {
+        if (acmod->grow_feat)
+            acmod_grow_feat_buf(acmod, acmod->n_feat_alloc * 2);
+        else
+            return 0;
     }
+
+    /* Just copy it in. */
+    int i;
+    for (i = 0; i < feat_n_stream(acmod->fcb); ++i)
+        memcpy(acmod->feat_buf[acmod->n_feat_frame][i],
+               feat[i], feat_stream_len(acmod->fcb, i) * sizeof(**feat));
+    return 1;
 }
 
 int32 const *
