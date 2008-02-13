@@ -881,7 +881,8 @@ cmp(void const *a, void const *b)
     return (*(int32 const *) a - *(int32 const *) b);
 }
 
-int32 *linkTable;
+/* FIXME: Not re-entrant. */
+static int32 *linkTable;
 
 static int
 cmpPT(void const *a, void const *b)
