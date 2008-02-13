@@ -66,6 +66,24 @@ ngram_search_init(cmd_ln_t *config,
 	ngs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
 				       acmod->tmat->tp, NULL, acmod->mdef->sseq);
 
+        /* Calculate log beam widths. */
+        ngs->beam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam"));
+        ngs->wbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-wbeam"));
+        ngs->pbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pbeam"));
+        ngs->lpbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-lpbeam"));
+        ngs->lponlybeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-lponlybeam"));
+        ngs->fwdflatbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatbeam"));
+        ngs->fwdflatwbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatwbeam"));
+        ngs->wip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-wip"));
+        ngs->nwpen = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-nwpen"));
+        ngs->pip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-pip"));
+        ngs->maxwpf = cmd_ln_int32_r(config, "-maxwpf");
+        ngs->maxhmmpf = cmd_ln_int32_r(config, "-maxhmmpf");
+
+        /* This is useful for something. */
+        ngs->finish_wid = dict_to_id(ngs->dict, "</s>");
+        ngs->silence_wid = dict_to_id(ngs->dict, "<sil>");
+
         /* Allocate a billion different tables for stuff. */
         ngs->word_chan = ckd_calloc(dict->dict_entry_count,
                                     sizeof(*ngs->word_chan));
@@ -84,8 +102,9 @@ ngram_search_init(cmd_ln_t *config,
         ngs->bscore_stack_size = ngs->bp_table_size * 20;
         ngs->bscore_stack = ckd_calloc(ngs->bscore_stack_size,
                                        sizeof(*ngs->bscore_stack));
-        /* FIXME: Totally arbitrary since there is no MAX_FRAMES. */
-        ngs->bp_table_idx = ckd_calloc(2000, sizeof(*ngs->bp_table_idx));
+        ngs->n_frame_alloc = 256;
+        ngs->bp_table_idx = ckd_calloc(ngs->n_frame_alloc + 1,
+                                       sizeof(*ngs->bp_table_idx));
         ++ngs->bp_table_idx; /* Make bptableidx[-1] valid */
 
         /* Allocate active word list array */

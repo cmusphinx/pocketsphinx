@@ -512,10 +512,16 @@ acmod_process_feat(acmod_t *acmod,
     return 1;
 }
 
+int
+acmod_frame_idx(acmod_t *acmod)
+{
+    return acmod->output_frame;
+}
+
 int32 const *
 acmod_score(acmod_t *acmod,
 	    int *out_frame_idx,
-	    int *out_best_score,
+	    ascr_t *out_best_score,
 	    int *out_best_senid)
 {
     /* No frames available to score. */

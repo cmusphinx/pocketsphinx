@@ -62,6 +62,8 @@
 
 /**
  * Type used to represent acoustic model scores.
+ *
+ * FIXME: Needs to go in a header where it can be found by the GMM and HMM code.
  */
 typedef int32 ascr_t;
 
@@ -245,7 +247,11 @@ int acmod_process_cep(acmod_t *acmod,
  */
 int acmod_process_feat(acmod_t *acmod,
                        mfcc_t **feat);
-                       
+
+/**
+ * Get the current frame index.
+ */                       
+int acmod_frame_idx(acmod_t *acmod);
 
 /**
  * Score one frame of data.
@@ -260,7 +266,7 @@ int acmod_process_feat(acmod_t *acmod,
  */
 ascr_t const *acmod_score(acmod_t *acmod,
                           int *out_frame_idx,
-                          int *out_best_score,
+                          ascr_t *out_best_score,
                           int *out_best_senid);
 
 /**

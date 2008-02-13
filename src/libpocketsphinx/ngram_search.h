@@ -258,6 +258,9 @@ struct ngram_search_s {
     chan_t **word_chan;
     uint8 *word_active;      /**< array of active flags for all words. */
 
+    int32 finish_wid;
+    int32 silence_wid;
+
     /**
      * Each node in the HMM tree structure may point to a set of words
      * whose last phone would follow that node in the tree structure
@@ -273,8 +276,6 @@ struct ngram_search_s {
      * set as w.
      */
     int32 *homophone_set;
-
-
     int32 *single_phone_wid;       /* list of single-phone word ids */
     int32 n_1ph_words;       /* #single phone words in dict (total) */
     int32 n_1ph_LMwords;     /* #single phone dict words also in LM;
@@ -306,12 +307,13 @@ struct ngram_search_s {
     int32 *bscore_stack;     /* Score stack for all possible right contexts */
     int32 bss_head;          /* First free BScoreStack entry */
     int32 bscore_stack_size;
-    int32 *bp_table_idx;       /* First BPTable entry for each frame */
-    int32 *word_lat_idx;       /* BPTable index for any word in current frame;
-                                   cleared before each frame */
-    int32 bp_table_overflow_msg;       /* Whether BPtable overflow msg has been printed */
-    int32 *zeroPermTab; /* ??? */
 
+    int32 n_frame_alloc;
+    int32 *bp_table_idx; /* First BPTable entry for each frame */
+    int32 *word_lat_idx; /* BPTable index for any word in current frame;
+                            cleared before each frame */
+
+    int32 *zeroPermTab; /* Right context table, full of zeros (!!) */
     latnode_t **frm_wordlist;
     int32 *fwdflat_wordlist;
 
@@ -322,10 +324,29 @@ struct ngram_search_s {
     int32 min_ef_width;
     int32 max_sf_win;
 
-    int32 best_score;
+    ascr_t best_score; /* Best Viterbi path score. */
+    ascr_t last_phone_best_score; /* Best Viterbi path score for last phone. */
     int32 renormalized;
-
+ 
     ngram_search_stats_t st; /**< Various statistics for profiling */
+
+    /* Beams */
+    int32 beam;
+    int32 dynamic_beam;
+    int32 pbeam;
+    int32 wbeam;
+    int32 lpbeam;
+    int32 lponlybeam;
+    int32 fwdflatbeam;
+    int32 fwdflatwbeam;
+    int32 fillpen;
+    int32 silpen;
+    int32 wip;
+    int32 nwpen;
+    int32 pip;
+
+    int32 maxwpf;
+    int32 maxhmmpf;
 };
 typedef struct ngram_search_s ngram_search_t;
 
