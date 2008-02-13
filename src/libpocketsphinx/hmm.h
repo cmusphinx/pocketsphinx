@@ -164,12 +164,12 @@ extern "C" {
  * exit state.
  */
 typedef struct hmm_context_s {
-    int32 n_emit_state;    /**< Number of emitting states in this set of HMMs. */
-    const int32 ***tp;	   /**< State transition scores tp[id][from][to] (logs3 values). */
-    const int32 *senscore; /**< State emission scores senscore[senid] (logs3 values). */
-    const s3senid_t **sseq;/**< Senone sequence mapping. */
-    int32 *st_sen_scr;     /**< Temporary array of senone scores (for some topologies). */
-    void *udata;           /**< Whatever you feel like, gosh. */
+    int32 n_emit_state;     /**< Number of emitting states in this set of HMMs. */
+    int32 ** const *tp;	    /**< State transition scores tp[id][from][to] (logs3 values). */
+    int32 const *senscore;  /**< State emission scores senscore[senid] (logs3 values). */
+    s3senid_t * const *sseq;/**< Senone sequence mapping. */
+    int32 *st_sen_scr;      /**< Temporary array of senone scores (for some topologies). */
+    void *udata;            /**< Whatever you feel like, gosh. */
 } hmm_context_t;
 
 /**
@@ -238,9 +238,9 @@ typedef struct hmm_s {
  * Create an HMM context.
  **/
 hmm_context_t *hmm_context_init(int32 n_emit_state,
-                                int32 ***tp,
-                                int32 *senscore,
-                                s3senid_t **sseq);
+                                int32 ** const *tp,
+                                int32 const *senscore,
+                                s3senid_t * const *sseq);
 
 /**
  * Change the senone score array for a context.

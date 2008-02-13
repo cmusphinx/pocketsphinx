@@ -103,9 +103,9 @@
 
 hmm_context_t *
 hmm_context_init(int32 n_emit_state,
-		 int32 ***tp,
-		 int32 *senscore,
-		 s3senid_t **sseq)
+		 int32 ** const *tp,
+		 int32 const *senscore,
+		 s3senid_t * const *sseq)
 {
     hmm_context_t *ctx;
 
@@ -114,9 +114,9 @@ hmm_context_init(int32 n_emit_state,
 
     ctx = ckd_calloc(1, sizeof(*ctx));
     ctx->n_emit_state = n_emit_state;
-    ctx->tp = (const int32 ***)tp;
+    ctx->tp = tp;
     ctx->senscore = senscore;
-    ctx->sseq = (const s3senid_t **)sseq;
+    ctx->sseq = sseq;
     ctx->st_sen_scr = ckd_calloc(n_emit_state, sizeof(*ctx->st_sen_scr));
 
     return ctx;
@@ -268,9 +268,9 @@ hmm_normalize(hmm_t *h, int32 bestscr)
 static int32
 hmm_vit_eval_5st_lr(hmm_t * hmm)
 {
-    const int32 *senscore = hmm->ctx->senscore;
-    const int32 *tp = hmm->ctx->tp[hmm->tmatid][0];
-    const s3senid_t *sseq = hmm->ctx->sseq[hmm_ssid(hmm, 0)];
+    int32 const *senscore = hmm->ctx->senscore;
+    int32 const *tp = hmm->ctx->tp[hmm->tmatid][0];
+    s3senid_t const *sseq = hmm->ctx->sseq[hmm_ssid(hmm, 0)];
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0, bestScore;
 
     /* It was the best of scores, it was the worst of scores. */
@@ -402,7 +402,7 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
 {
     const int32 *tp = hmm->ctx->tp[hmm->tmatid][0];
     const int32 *senscore = hmm->ctx->senscore;
-    const s3senid_t **sseq = hmm->ctx->sseq;
+    s3senid_t * const *sseq = hmm->ctx->sseq;
     int32 *ssid = hmm->s.mpx_ssid;
     int32 bestScore;
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0;
@@ -654,9 +654,9 @@ hmm_vit_eval_3st_lr(hmm_t * hmm)
 static int32
 hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
 {
-    const int32 *tp = hmm->ctx->tp[hmm->tmatid][0];
-    const int32 *senscore = hmm->ctx->senscore;
-    const s3senid_t **sseq = hmm->ctx->sseq;
+    int32 const *tp = hmm->ctx->tp[hmm->tmatid][0];
+    int32 const *senscore = hmm->ctx->senscore;
+    s3senid_t * const *sseq = hmm->ctx->sseq;
     int32 *ssid = hmm->s.mpx_ssid;
     int32 bestScore;
     int32 s3, s2, s1, s0, t2, t1, t0;
