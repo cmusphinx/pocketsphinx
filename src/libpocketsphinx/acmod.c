@@ -395,7 +395,8 @@ acmod_process_raw(acmod_t *acmod,
 		  size_t *inout_n_samps,
 		  int full_utt)
 {
-    int32 nfeat, ncep;
+    mfcc_t **mfcptr;
+    int32 ncep;
 
     /* If this is a full utterance, process it all at once. */
     if (full_utt)
@@ -429,46 +430,31 @@ acmod_process_raw(acmod_t *acmod,
         acmod->n_mfc_frame += ncep;
     }
 
-    /* Number of input frames to generate features. */
+    /* Hand things off to acmod_process_cep. */
     ncep = acmod->n_mfc_frame;
-    /* Don't overflow the output feature buffer. */
-    if (ncep > acmod->n_feat_alloc - acmod->n_feat_frame) {
-        /* Grow it as needed */
-        if (acmod->grow_feat)
-            acmod_grow_feat_buf(acmod, acmod->n_feat_alloc * 2);
-        else
-            ncep = acmod->n_feat_alloc - acmod->n_feat_frame;
-    }
-
-    /* Again do this in two parts because of the circular mfc_buf. */
+    /* Also do this in two parts because of the circular mfc_buf. */
     if (acmod->mfc_outidx + ncep > acmod->n_mfc_alloc) {
         int32 ncep1 = acmod->n_mfc_alloc - acmod->mfc_outidx;
-        nfeat = feat_s2mfc2feat_live(acmod->fcb, acmod->mfc_buf + acmod->mfc_outidx,
-                                     &ncep1,
-                                     (acmod->state == ACMOD_STARTED),
-                                     FALSE, /* This can't actually be the end. */
-                                     acmod->feat_buf + acmod->n_feat_frame);
-        acmod->n_feat_frame += nfeat;
+        int saved_state = acmod->state;
+
+        /* Make sure we don't end the utterance here. */
+        if (acmod->state == ACMOD_ENDED)
+            acmod->state = ACMOD_PROCESSING;
+        mfcptr = acmod->mfc_buf + acmod->mfc_outidx;
+        ncep1 = acmod_process_cep(acmod, &mfcptr, &ncep1, FALSE);
         /* It's possible that not all available frames were filled. */
         ncep -= ncep1;
         acmod->n_mfc_frame -= ncep1;
         acmod->mfc_outidx += ncep1;
         acmod->mfc_outidx %= acmod->n_mfc_alloc;
-        if (acmod->state == ACMOD_STARTED)
-            acmod->state = ACMOD_PROCESSING;
+        /* Restore original state (could this really be the end) */
+        acmod->state = saved_state;
     }
-    nfeat = feat_s2mfc2feat_live(acmod->fcb, acmod->mfc_buf + acmod->mfc_outidx,
-                                 &ncep,
-                                 (acmod->state == ACMOD_STARTED),
-                                 (acmod->state == ACMOD_ENDED),
-                                 acmod->feat_buf + acmod->n_feat_frame);
-    acmod->n_feat_frame += nfeat;
+    mfcptr = acmod->mfc_buf + acmod->mfc_outidx;
+    ncep = acmod_process_cep(acmod, &mfcptr, &ncep, FALSE);
     acmod->n_mfc_frame -= ncep;
     acmod->mfc_outidx += ncep;
     acmod->mfc_outidx %= acmod->n_mfc_alloc;
-
-    if (acmod->state == ACMOD_STARTED)
-        acmod->state = ACMOD_PROCESSING;
     return ncep;
 }
 
