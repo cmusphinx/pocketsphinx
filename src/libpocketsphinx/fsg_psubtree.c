@@ -181,12 +181,12 @@ psubtree_add_trans(fsg_pnode_t * root,
 
     silcipid = bin_mdef_ciphone_id(g_mdef, "SIL");
     n_ci = bin_mdef_n_ciphone(g_mdef);
-    lcfwd = dict_left_context_fwd();
-    lcbwd = dict_left_context_bwd();
-    lcbwdperm = dict_left_context_bwd_perm();
-    rcbwd = dict_right_context_bwd();
-    rcfwd = dict_right_context_fwd();
-    rcfwdperm = dict_right_context_fwd_perm();
+    lcfwd = g_word_dict->lcFwdTable;
+    lcbwd = g_word_dict->lcBwdTable;
+    lcbwdperm = g_word_dict->lcBwdPermTable;
+    rcbwd = g_word_dict->rcBwdTable;
+    rcfwd = g_word_dict->rcFwdTable;
+    rcfwdperm = g_word_dict->rcFwdPermTable;
 
     wid = word_fsglink_wid(fsglink);
     assert(wid >= 0);           /* Cannot be a null transition */

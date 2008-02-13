@@ -162,15 +162,6 @@ static int32 FinishWordId;
 static int32 SilenceWordId;
 static int32 SilencePhoneId;
 
-static int32 **LeftContextFwd;
-static int32 **RightContextFwd;
-static int32 **RightContextFwdPerm;
-static int32 *RightContextFwdSize;
-static int32 **LeftContextBwd;
-static int32 **LeftContextBwdPerm;
-static int32 *LeftContextBwdSize;
-static int32 **RightContextBwd;
-
 static int32 BestScore;         /* Best among all phones */
 static int32 LastPhoneBestScore;        /* Best among last phones only */
 static int32 LogBeamWidth;
@@ -494,7 +485,7 @@ save_bwd_ptr(int32 w, int32 score, int32 path, int32 rc)
 
         if ((de->len != 1) && (de->mpx)) {
             bpe->r_diph = de->phone_ids[de->len - 1];
-            rcsize = RightContextFwdSize[bpe->r_diph];
+            rcsize = g_word_dict->rcFwdSizeTable[bpe->r_diph];
         }
         else {
             bpe->r_diph = -1;
@@ -794,7 +785,7 @@ last_phone_transition(void)
         /* Right context phone table. */
         rcpermtab =
             (bpe->r_diph >=
-             0) ? RightContextFwdPerm[bpe->r_diph] : zeroPermTab;
+             0) ? g_word_dict->rcFwdPermTable[bpe->r_diph] : zeroPermTab;
 
         /* Subtract starting score for candidate, leave it with only word score */
         de = g_word_dict->dict_list[candp->wid];
@@ -860,7 +851,7 @@ last_phone_transition(void)
 
             /* For each bp entry in the i-th end frame... */
             rcpermtab = (bpe->r_diph >= 0) ?
-                RightContextFwdPerm[bpe->r_diph] : zeroPermTab;
+                g_word_dict->rcFwdPermTable[bpe->r_diph] : zeroPermTab;
 
             /* For each candidate at the start frame find bp->cand transition-score */
             for (j = cand_sf[i].cand; j >= 0; j = candp->next) {
@@ -1028,7 +1019,7 @@ alloc_all_rc(int32 w)
 
     assert(de->mpx);
 
-    sseq_rc = RightContextFwd[de->phone_ids[de->len - 1]];
+    sseq_rc = g_word_dict->rcFwdTable[de->phone_ids[de->len - 1]];
 
     hmm = word_chan[w];
     if ((hmm == NULL) || (hmm->hmm.s.ssid != *sseq_rc)) {
@@ -1119,7 +1110,7 @@ word_transition(void)
         de = g_word_dict->dict_list[bpe->wid];
         rcpermtab =
             (bpe->r_diph >=
-             0) ? RightContextFwdPerm[bpe->r_diph] : zeroPermTab;
+             0) ? g_word_dict->rcFwdPermTable[bpe->r_diph] : zeroPermTab;
         last_ciph = de->ci_phone_ids[de->len - 1];
 
         rcss = &(BScoreStack[bpe->s_idx]);
@@ -1149,7 +1140,7 @@ word_transition(void)
             if ((hmm_frame(&rhmm->hmm) < cf)
                 || (hmm_in_score(&rhmm->hmm) < newscore)) {
                 ssid =
-                    LeftContextFwd[rhmm->diphone][bestbp_rc_ptr->lc];
+                    g_word_dict->lcFwdTable[rhmm->diphone][bestbp_rc_ptr->lc];
                 hmm_enter(&rhmm->hmm, newscore,
                           bestbp_rc_ptr->path, nf);
                 if (hmm_is_mpx(&rhmm->hmm)) {
@@ -1174,7 +1165,7 @@ word_transition(void)
 
         rcpermtab =
             (bpe->r_diph >=
-             0) ? RightContextFwdPerm[bpe->r_diph] : zeroPermTab;
+             0) ? g_word_dict->rcFwdPermTable[bpe->r_diph] : zeroPermTab;
         rcss = BScoreStack + bpe->s_idx;
 
         for (i = 0; i < n_1ph_LMwords; i++) {
@@ -1207,7 +1198,7 @@ word_transition(void)
                           newscore, last_ltrans[w].bp, nf);
                 if (hmm_is_mpx(&rhmm->hmm)) {
                     rhmm->hmm.s.mpx_ssid[0] =
-                        LeftContextFwd[rhmm->diphone][pde->ci_phone_ids[pde->len - 1]];
+                        g_word_dict->lcFwdTable[rhmm->diphone][pde->ci_phone_ids[pde->len - 1]];
                 }
             }
         }
@@ -1256,15 +1247,6 @@ search_initialize(cmd_ln_t *cmdln)
     SilenceWordId = kb_get_word_id("<sil>");
     SilencePhoneId = bin_mdef_ciphone_id(g_mdef, "SIL");
     NumCiPhones = bin_mdef_n_ciphone(g_mdef);
-
-    LeftContextFwd = dict_left_context_fwd();
-    RightContextFwd = dict_right_context_fwd();
-    RightContextFwdPerm = dict_right_context_fwd_perm();
-    RightContextFwdSize = dict_right_context_fwd_size();
-    LeftContextBwd = dict_left_context_bwd();
-    LeftContextBwdPerm = dict_left_context_bwd_perm();
-    LeftContextBwdSize = dict_left_context_bwd_size();
-    RightContextBwd = dict_right_context_bwd();
     NumMainDictWords = dict_get_num_main_words(g_word_dict);
 
     hmmctx = hmm_context_init(bin_mdef_n_emit_state(g_mdef),
@@ -1532,7 +1514,7 @@ search_start_fwd(void)
         BPTableIdx[1] = 1;
         de = g_word_dict->dict_list[context_word[0]];
         rcsize = (de->mpx && (de->len > 1)) ?
-            RightContextFwdSize[de->phone_ids[de->len - 1]] : 1;
+            g_word_dict->rcFwdSizeTable[de->phone_ids[de->len - 1]] : 1;
         lscr = ngram_bg_score(g_lmset, context_word[0], StartWordId, &n_used);
         for (i = 0; i < rcsize; i++)
             save_bwd_ptr(context_word[0], lscr, 0, i);
@@ -1545,7 +1527,7 @@ search_start_fwd(void)
             BPTableIdx[2] = 2;
             de = g_word_dict->dict_list[context_word[1]];
             rcsize = (de->mpx && (de->len > 1)) ?
-                RightContextFwdSize[de->phone_ids[de->len - 1]] : 1;
+                g_word_dict->rcFwdSizeTable[de->phone_ids[de->len - 1]] : 1;
             lscr +=
                 ngram_tg_score(g_lmset, context_word[1], context_word[0],
                                StartWordId, &n_used);
@@ -2739,7 +2721,7 @@ compute_seg_scores(float32 lwf)
         de = g_word_dict->dict_list[bpe->wid];
         p_bpe = &(BPTable[bpe->bp]);
         rcpermtab = (p_bpe->r_diph >= 0) ?
-            RightContextFwdPerm[p_bpe->r_diph] : zeroPermTab;
+            g_word_dict->rcFwdPermTable[p_bpe->r_diph] : zeroPermTab;
         start_score =
             BScoreStack[p_bpe->s_idx + rcpermtab[de->ci_phone_ids[0]]];
 
@@ -3372,7 +3354,7 @@ fwdflat_word_transition(void)
         de = g_word_dict->dict_list[bp->wid];
         rcpermtab =
             (bp->r_diph >=
-             0) ? RightContextFwdPerm[bp->r_diph] : zeroPermTab;
+             0) ? g_word_dict->rcFwdPermTable[bp->r_diph] : zeroPermTab;
         rcss = BScoreStack + bp->s_idx;
 
         /* Transition to all successor words. */
@@ -3396,7 +3378,7 @@ fwdflat_word_transition(void)
                     hmm_enter(&rhmm->hmm, newscore, b, nf);
                     if (hmm_is_mpx(&rhmm->hmm)) {
                         rhmm->hmm.s.mpx_ssid[0] =
-                            LeftContextFwd[rhmm->diphone]
+                            g_word_dict->lcFwdTable[rhmm->diphone]
                             [de->ci_phone_ids[de->len-1]];
                     }
 

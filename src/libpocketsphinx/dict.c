@@ -1047,54 +1047,6 @@ buildExitTable(glist_t list, int32 *** table_p, int32 *** permuTab_p,
            ((n == 0) ? 0 : entries / n));
 }
 
-int32 **
-dict_right_context_fwd(void)
-{
-    return g_word_dict->rcFwdTable;
-}
-
-int32 **
-dict_right_context_fwd_perm(void)
-{
-    return g_word_dict->rcFwdPermTable;
-}
-
-int32 *
-dict_right_context_fwd_size(void)
-{
-    return g_word_dict->rcFwdSizeTable;
-}
-
-int32 **
-dict_left_context_fwd(void)
-{
-    return g_word_dict->lcFwdTable;
-}
-
-int32 **
-dict_right_context_bwd(void)
-{
-    return g_word_dict->rcBwdTable;
-}
-
-int32 **
-dict_left_context_bwd(void)
-{
-    return g_word_dict->lcBwdTable;
-}
-
-int32 **
-dict_left_context_bwd_perm(void)
-{
-    return g_word_dict->lcBwdPermTable;
-}
-
-int32 *
-dict_left_context_bwd_size(void)
-{
-    return g_word_dict->lcBwdSizeTable;
-}
-
 int32
 dict_get_num_main_words(dict_t * dict)
 {

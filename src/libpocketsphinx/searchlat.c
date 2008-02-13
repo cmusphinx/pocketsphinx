@@ -1008,7 +1008,7 @@ searchlat_init(void)
     start_wid = kb_get_word_id("<s>");
     finish_wid = kb_get_word_id("</s>");
     sil_wid = kb_get_word_id("<sil>");
-    rc_fwdperm = dict_right_context_fwd_perm();
+    rc_fwdperm = g_word_dict->rcFwdPermTable;
     altpron = cmd_ln_boolean("-reportpron");
 
     bptbl = search_get_bptable();
