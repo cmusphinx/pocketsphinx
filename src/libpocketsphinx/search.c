@@ -186,9 +186,6 @@ static float32 fwdflat_fwdtree_lw_ratio = 8.5 / 6.5;
 
 static int32 newword_penalty = 0;
 
-/* BestScoreTable[CurrentFrame] === BestScore */
-static int32 BestScoreTable[MAX_FRAMES];
-
 static int32 compute_all_senones = TRUE;
 
 static int32 ChannelsPerFrameTarget = 0;        /* #channels to eval / frame */
@@ -1559,7 +1556,6 @@ evaluateChannels(void)
     if ((bs = eval_word_chan()) > BestScore)
         BestScore = bs;
     LastPhoneBestScore = bs;
-    BestScoreTable[CurrentFrame] = BestScore;
 }
 
 void
@@ -1922,7 +1918,6 @@ seg_back_trace(int32 bpidx, char const *pass)
             printf("\t%4d %4d %10d %11d %8d %8d %6d %s\n",
                    last_time + 1, BPTable[bpidx].frame,
                    a_scr_norm, a_scr, l_scr,
-                   /* BestScoreTable[BPTable[bpidx].frame] -  BPTable[bpidx].score */
                    topsenscr_norm,
                    latden,
                    WordIdToStr(g_word_dict, BPTable[bpidx].wid));
@@ -3191,7 +3186,7 @@ fwdflat_eval_chan(void)
         }
     }
 
-    BestScoreTable[cf] = BestScore = bestscore;
+    BestScore = bestscore;
 }
 
 void
