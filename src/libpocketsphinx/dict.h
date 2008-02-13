@@ -69,19 +69,33 @@ typedef struct dict_s {
     int32		ci_index_len;	 	/* number of indecies */
     int32		*ci_index;		/* Index to each group */
     int32		filler_start;		/* Start of filler words */
+
+    hash_table_t *lcHT;      /* Left context hash table */
+    glist_t lcList;
+    int32 **lcFwdTable;
+    int32 **lcBwdTable;
+    int32 **lcBwdPermTable;
+    int32 *lcBwdSizeTable;
+
+    hash_table_t *rcHT;      /* Right context hash table */
+    glist_t rcList;
+    int32 **rcFwdTable;
+    int32 **rcFwdPermTable;
+    int32 **rcBwdTable;
+    int32 *rcFwdSizeTable;
+
+    int32 initial_dummy;     /* 1st placeholder for dynamic OOVs after initialization */
+    int32 first_dummy;       /* 1st dummy available for dynamic OOVs at any time */
+    int32 last_dummy;        /* last dummy available for dynamic OOVs */
 } dict_t;
 
 dict_t *dict_init(cmd_ln_t *config,
 		  bin_mdef_t *mdef);
 void dict_free (dict_t *dict);
-/* Clean up global variables that dict_free doesn't (argh) */
-void dict_cleanup(void);
 
-#define DICT_SILENCE_WORDSTR	"SIL"
+#define DICT_SILENCE_WORDSTR	"<sil>"
 
 dict_entry_t *dict_get_entry (dict_t *dict, int i);
-int32 dict_count(dict_t *dict);
-glist_t dict_mtpList(void);
 int32 **dict_left_context_fwd(void);
 int32 **dict_right_context_fwd(void);
 int32 **dict_left_context_bwd(void);
@@ -99,7 +113,6 @@ int32 dict_next_alt (dict_t *dict, int32 w);
 int32 dict_write_oovdict (dict_t *dict, char const *file);
 int32 dictid_to_baseid (dict_t *dict, int32 wid);
 int32 dict_get_num_main_words (dict_t *dict);
-int32 dict_is_new_word (int32 wid);
 
 /* Return TRUE if the given wid is a filler word, FALSE otherwise */
 int32 dict_is_filler_word (dict_t *dict, int32 wid);

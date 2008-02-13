@@ -138,16 +138,14 @@
 
 #define QUIT(x)		{fprintf x; exit(-1);}
 
-extern int32 use_noise_words;
-
 static void buildEntryTable(glist_t list, int32 *** table_p,
                             bin_mdef_t *mdef);
 static void buildExitTable(glist_t list, int32 *** table_p,
                            int32 *** permuTab_p, int32 ** sizeTab_p,
                            bin_mdef_t *mdef);
-static int32 addToLeftContextTable(char *diphone);
-static int32 addToRightContextTable(char *diphone);
-static dict_entry_t *_new_dict_entry(bin_mdef_t *mdef,
+static int32 addToLeftContextTable(dict_t *dict, char *diphone);
+static int32 addToRightContextTable(dict_t *dict, char *diphone);
+static dict_entry_t *_new_dict_entry(dict_t *dict,
                                      char *word_str,
                                      char *pronoun_str,
                                      int32 use_context);
@@ -155,25 +153,6 @@ static void _dict_list_add(dict_t * dict, dict_entry_t * entry);
 static void dict_load(dict_t * dict, bin_mdef_t *mdef,
                       char *filename, int32 * word_id,
                       int32 use_context);
-
-static hash_table_t *lcHT;      /* Left context hash table */
-static glist_t lcList;
-static int32 **lcFwdTable;
-static int32 **lcBwdTable;
-static int32 **lcBwdPermTable;
-static int32 *lcBwdSizeTable;
-
-static hash_table_t *rcHT;      /* Right context hash table */
-static glist_t rcList;
-static int32 **rcFwdTable;
-static int32 **rcFwdPermTable;
-static int32 **rcBwdTable;
-static int32 *rcFwdSizeTable;
-
-/* Placeholders for dynamically added new words, OOVs */
-static int32 initial_dummy;     /* 1st placeholder for dynamic OOVs after initialization */
-static int32 first_dummy;       /* 1st dummy available for dynamic OOVs at any time */
-static int32 last_dummy;        /* last dummy available for dynamic OOVs */
 
 #define MAX_PRONOUN_LEN 	150
 
@@ -227,24 +206,14 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
     j = bin_mdef_n_ciphone(mdef);
     j = ((j * j) >> 1) + 1;
     if (use_context) {
-        if (lcHT)
-            hash_table_free(lcHT);
-        lcHT = hash_table_new(j, HASH_CASE_YES);
-        if (rcHT)
-            hash_table_free(rcHT);
-        rcHT = hash_table_new(j, HASH_CASE_YES);
-        if (lcList)
-            glist_free(lcList);
-        lcList = NULL;
-        if (rcList)
-            glist_free(rcList);
-        rcList = NULL;
+        dict->lcHT = hash_table_new(j, HASH_CASE_YES);
+        dict->rcHT = hash_table_new(j, HASH_CASE_YES);
     }
 
     /* Placeholders (dummy pronunciations) for new words that can be
      * added at runtime.  We can expand this region of the dictionary
      * later if need be. */
-    initial_dummy = first_dummy = word_id;
+    dict->initial_dummy = dict->first_dummy = word_id;
     if ((max_new_oov = cmd_ln_int32_r(dict->config, "-maxnewoov")) > 0)
         E_INFO("Allocating %d placeholders for new OOVs\n", max_new_oov);
     for (i = 0; i < max_new_oov; i++) {
@@ -255,7 +224,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
 
         /* new_dict_entry clobbers pronstr! so need this strcpy in the loop */
         strcpy(pronstr, "SIL");
-        entry = _new_dict_entry(mdef, tmpstr, pronstr, use_context);
+        entry = _new_dict_entry(dict, tmpstr, pronstr, use_context);
         if (!entry)
             E_FATAL("Failed to add DUMMY(SIL) entry to dictionary\n");
 
@@ -264,7 +233,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
         entry->wid = word_id;
         word_id++;
     }
-    last_dummy = word_id - 1;
+    dict->last_dummy = word_id - 1;
 
     /* Load dictionaries */
     dict_load(dict, mdef, filename, &word_id, use_context);
@@ -277,7 +246,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
          */
         if (BAD_S3CIPID == bin_mdef_ciphone_id(mdef, "SILe")) {
             strcpy(pronstr, "SIL");
-            entry = _new_dict_entry(mdef, "</s>", pronstr, FALSE);
+            entry = _new_dict_entry(dict, "</s>", pronstr, FALSE);
             if (!entry)
                 E_FATAL("Failed to add </s>(SIL) to dictionary\n");
         }
@@ -285,7 +254,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
             E_INFO("Using special end silence for </s>\n");
             strcpy(pronstr, "SILe");
             entry =
-                _new_dict_entry(mdef, "</s>", pronstr, FALSE);
+                _new_dict_entry(dict, "</s>", pronstr, FALSE);
         }
         _dict_list_add(dict, entry);
         hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
@@ -306,7 +275,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
         if (BAD_S3CIPID == bin_mdef_ciphone_id(mdef, "SILb")) {
             strcpy(pronstr, "SIL");
             entry =
-                _new_dict_entry(mdef, "<s>", pronstr, FALSE);
+                _new_dict_entry(dict, "<s>", pronstr, FALSE);
             if (!entry)
                 E_FATAL("Failed to add <s>(SIL) to dictionary\n");
         }
@@ -314,7 +283,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
             E_INFO("Using special begin silence for <s>\n");
             strcpy(pronstr, "SILb");
             entry =
-                _new_dict_entry(mdef, "<s>", pronstr, FALSE);
+                _new_dict_entry(dict, "<s>", pronstr, FALSE);
             if (!entry)
                 E_FATAL("Failed to add <s>(SILb) to dictionary\n");
         }
@@ -329,7 +298,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
         char pronstr[4];
 
         strcpy(pronstr, "SIL");
-        entry = _new_dict_entry(mdef, "<sil>", pronstr, FALSE);
+        entry = _new_dict_entry(dict, "<sil>", pronstr, FALSE);
         if (!entry)
             E_FATAL("Failed to add <sil>(SIL) to dictionary\n");
         _dict_list_add(dict, entry);
@@ -342,53 +311,19 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
         dict_load(dict, mdef, n_filename, &word_id, FALSE /* use_context */);
 
     E_INFO("LEFT CONTEXT TABLES\n");
-    lcList = glist_reverse(lcList);
-    buildEntryTable(lcList, &lcFwdTable, mdef);
-    buildExitTable(lcList, &lcBwdTable, &lcBwdPermTable,
-                   &lcBwdSizeTable, mdef);
+    dict->lcList = glist_reverse(dict->lcList);
+    buildEntryTable(dict->lcList, &dict->lcFwdTable, mdef);
+    buildExitTable(dict->lcList, &dict->lcBwdTable, &dict->lcBwdPermTable,
+                   &dict->lcBwdSizeTable, mdef);
 
     E_INFO("RIGHT CONTEXT TABLES\n");
-    rcList = glist_reverse(rcList);
-    buildEntryTable(rcList, &rcBwdTable, mdef);
-    buildExitTable(rcList, &rcFwdTable, &rcFwdPermTable,
-                   &rcFwdSizeTable, mdef);
+    dict->rcList = glist_reverse(dict->rcList);
+    buildEntryTable(dict->rcList, &dict->rcBwdTable, mdef);
+    buildExitTable(dict->rcList, &dict->rcFwdTable, &dict->rcFwdPermTable,
+                   &dict->rcFwdSizeTable, mdef);
 
     return dict;
 }
-
-void
-dict_cleanup(void)
-{
-    int32 i;
-    gnode_t *gn;
-
-    for (i = 0, gn = lcList; gn; gn = gnode_next(gn), ++i) {
-        ckd_free(lcFwdTable[i]);
-        ckd_free(gnode_ptr(gn));
-    }
-    ckd_free(lcFwdTable); lcFwdTable = NULL;
-    ckd_free_2d((void **)lcBwdTable); lcBwdTable = NULL;
-    ckd_free_2d((void **)lcBwdPermTable); lcBwdPermTable = NULL;
-    ckd_free(lcBwdSizeTable); lcBwdSizeTable = NULL;
-    if (lcHT)
-        hash_table_free(lcHT);
-    lcHT = NULL;
-    glist_free(lcList); lcList = NULL;
-
-    for (i = 0, gn = rcList; gn; gn = gnode_next(gn), ++i) {
-        ckd_free(rcBwdTable[i]);
-        ckd_free(gnode_ptr(gn));
-    }
-    ckd_free(rcBwdTable); rcBwdTable = NULL;
-    ckd_free_2d((void **)rcFwdTable); rcFwdTable = NULL;
-    ckd_free_2d((void **)rcFwdPermTable); rcFwdPermTable = NULL;
-    ckd_free(rcFwdSizeTable); rcFwdSizeTable = NULL;
-    if (rcHT)
-        hash_table_free(rcHT);
-    rcHT = NULL;
-    glist_free(rcList); rcList = NULL;
-}
-
 
 void
 dict_free(dict_t * dict)
@@ -396,6 +331,31 @@ dict_free(dict_t * dict)
     int32 i;
     int32 entry_count;
     dict_entry_t *entry;
+    gnode_t *gn;
+
+    for (i = 0, gn = dict->lcList; gn; gn = gnode_next(gn), ++i) {
+        ckd_free(dict->lcFwdTable[i]);
+        ckd_free(gnode_ptr(gn));
+    }
+    ckd_free(dict->lcFwdTable);
+    ckd_free_2d(dict->lcBwdTable);
+    ckd_free_2d(dict->lcBwdPermTable);
+    ckd_free(dict->lcBwdSizeTable);
+    if (dict->lcHT)
+        hash_table_free(dict->lcHT);
+    glist_free(dict->lcList);
+
+    for (i = 0, gn = dict->rcList; gn; gn = gnode_next(gn), ++i) {
+        ckd_free(dict->rcBwdTable[i]);
+        ckd_free(gnode_ptr(gn));
+    }
+    ckd_free(dict->rcBwdTable);
+    ckd_free_2d(dict->rcFwdTable);
+    ckd_free_2d(dict->rcFwdPermTable);
+    ckd_free(dict->rcFwdSizeTable);
+    if (dict->rcHT)
+        hash_table_free(dict->rcHT);
+    glist_free(dict->rcList);
 
     entry_count = dict->dict_entry_count;
 
@@ -438,7 +398,7 @@ dict_load(dict_t * dict, bin_mdef_t *mdef,
 
     pronoun_str[0] = '\0';
     while (EOF != fscanf(fs, "%s%[^\n]\n", dict_str, pronoun_str)) {
-        entry = _new_dict_entry(mdef, dict_str, pronoun_str, use_context);
+        entry = _new_dict_entry(dict, dict_str, pronoun_str, use_context);
         if (!entry) {
             E_ERROR("Failed to add %s to dictionary\n", dict_str);
             err = 1;
@@ -531,7 +491,7 @@ dictid_to_str(dict_t * dict, int32 id)
 }
 
 static dict_entry_t *
-_new_dict_entry(bin_mdef_t *mdef, char *word_str, char *pronoun_str, int32 use_context)
+_new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_context)
 {
     dict_entry_t *entry;
     char *phone[MAX_PRONOUN_LEN];
@@ -543,6 +503,7 @@ _new_dict_entry(bin_mdef_t *mdef, char *word_str, char *pronoun_str, int32 use_c
     int32 rcTabId;
     char triphoneStr[80];
     char position[256];         /* phone position */
+    bin_mdef_t *mdef = dict->mdef;
 
     memset(position, 0, sizeof(position));      /* zero out the position matrix */
 
@@ -604,7 +565,7 @@ _new_dict_entry(bin_mdef_t *mdef, char *word_str, char *pronoun_str, int32 use_c
 
         if (use_context) {
             sprintf(triphoneStr, "%s(%%s,%s)b", phone[i], phone[i + 1]);
-            lcTabId = addToLeftContextTable(triphoneStr);
+            lcTabId = addToLeftContextTable(dict, triphoneStr);
             triphone_ids[i] = lcTabId;
         }
         else {
@@ -631,7 +592,7 @@ _new_dict_entry(bin_mdef_t *mdef, char *word_str, char *pronoun_str, int32 use_c
 
         if (use_context) {
             sprintf(triphoneStr, "%s(%s,%%s)e", phone[i], phone[i - 1]);
-            rcTabId = addToRightContextTable(triphoneStr);
+            rcTabId = addToRightContextTable(dict, triphoneStr);
             triphone_ids[i] = rcTabId;
         }
         else {
@@ -653,13 +614,13 @@ _new_dict_entry(bin_mdef_t *mdef, char *word_str, char *pronoun_str, int32 use_c
     if (pronoun_len == 1) {
         if (use_context) {
             sprintf(triphoneStr, "%s(%%s,SIL)s", phone[0]);
-            lcTabId = addToLeftContextTable(triphoneStr);
+            lcTabId = addToLeftContextTable(dict, triphoneStr);
             triphone_ids[0] = lcTabId;
             /*
              * Put the right context table in the 2 entry
              */
             sprintf(triphoneStr, "%s(SIL,%%s)s", phone[0]);
-            rcTabId = addToRightContextTable(triphoneStr);
+            rcTabId = addToRightContextTable(dict, triphoneStr);
             triphone_ids[1] = rcTabId;
         }
         else {
@@ -776,7 +737,7 @@ replace_dict_entry(dict_t * dict,
     /* Parse pron; for the moment, the boundary diphones must be already known... */
     i = 0;
     sprintf(triphoneStr, "%s(%%s,%s)b", phone[i], phone[i + 1]);
-    if (hash_table_lookup_int32(lcHT, triphoneStr, &idx) < 0) {
+    if (hash_table_lookup_int32(dict->lcHT, triphoneStr, &idx) < 0) {
         E_ERROR("Unknown left diphone '%s'\n", triphoneStr);
         return (0);
     }
@@ -792,7 +753,7 @@ replace_dict_entry(dict_t * dict,
     }
 
     sprintf(triphoneStr, "%s(%s,%%s)e", phone[i], phone[i - 1]);
-    if (hash_table_lookup_int32(rcHT, triphoneStr, &idx) < 0) {
+    if (hash_table_lookup_int32(dict->rcHT, triphoneStr, &idx) < 0) {
         E_ERROR("Unknown right diphone '%s'\n", triphoneStr);
         return (0);
     }
@@ -845,11 +806,11 @@ dict_add_word(dict_t * dict, char const *word, char *pron)
         /* FIXME: Do some pointer juggling to make this work? */
         /* Or better yet, use a better way to determine what words are
          * filler words... */
-        if (first_dummy > last_dummy) {
+        if (dict->first_dummy > dict->last_dummy) {
             E_ERROR("Dictionary full; cannot add word\n");
             return -1;
         }
-        wid = first_dummy++;
+        wid = dict->first_dummy++;
         new_entry = 1;
     }
 
@@ -887,13 +848,6 @@ dict_get_entry(dict_t * dict, int i)
             dict->dict_list[i] : (dict_entry_t *) 0);
 }
 
-/* FIXME: could be extern inline */
-int32
-dict_count(dict_t * dict)
-{
-    return dict->dict_entry_count;
-}
-
 static int32
 addToContextTable(char *diphone, hash_table_t * table, glist_t *list)
 {
@@ -910,15 +864,15 @@ addToContextTable(char *diphone, hash_table_t * table, glist_t *list)
 }
 
 static int32
-addToLeftContextTable(char *diphone)
+addToLeftContextTable(dict_t *dict, char *diphone)
 {
-    return addToContextTable(diphone, lcHT, &lcList);
+    return addToContextTable(diphone, dict->lcHT, &dict->lcList);
 }
 
 static int32
-addToRightContextTable(char *diphone)
+addToRightContextTable(dict_t *dict, char *diphone)
 {
-    return addToContextTable(diphone, rcHT, &rcList);
+    return addToContextTable(diphone, dict->rcHT, &dict->rcList);
 }
 
 static int
@@ -1096,49 +1050,49 @@ buildExitTable(glist_t list, int32 *** table_p, int32 *** permuTab_p,
 int32 **
 dict_right_context_fwd(void)
 {
-    return rcFwdTable;
+    return g_word_dict->rcFwdTable;
 }
 
 int32 **
 dict_right_context_fwd_perm(void)
 {
-    return rcFwdPermTable;
+    return g_word_dict->rcFwdPermTable;
 }
 
 int32 *
 dict_right_context_fwd_size(void)
 {
-    return rcFwdSizeTable;
+    return g_word_dict->rcFwdSizeTable;
 }
 
 int32 **
 dict_left_context_fwd(void)
 {
-    return lcFwdTable;
+    return g_word_dict->lcFwdTable;
 }
 
 int32 **
 dict_right_context_bwd(void)
 {
-    return rcBwdTable;
+    return g_word_dict->rcBwdTable;
 }
 
 int32 **
 dict_left_context_bwd(void)
 {
-    return lcBwdTable;
+    return g_word_dict->lcBwdTable;
 }
 
 int32 **
 dict_left_context_bwd_perm(void)
 {
-    return lcBwdPermTable;
+    return g_word_dict->lcBwdPermTable;
 }
 
 int32 *
 dict_left_context_bwd_size(void)
 {
-    return lcBwdSizeTable;
+    return g_word_dict->lcBwdSizeTable;
 }
 
 int32
@@ -1151,15 +1105,6 @@ int32
 dictid_to_baseid(dict_t * dict, int32 wid)
 {
     return (dict->dict_list[wid]->wid);
-}
-
-/*
- * Return TRUE iff wid is new word dynamically added at run time.
- */
-int32
-dict_is_new_word(int32 wid)
-{
-    return ((wid >= initial_dummy) && (wid <= last_dummy));
 }
 
 int32

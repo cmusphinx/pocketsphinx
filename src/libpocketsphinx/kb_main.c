@@ -205,7 +205,6 @@ kb_close(void)
 
     dict_free(g_word_dict);
     g_word_dict = NULL;
-    dict_cleanup();
 
     ngram_model_free(g_lmset);
     tmat_free(g_tmat);

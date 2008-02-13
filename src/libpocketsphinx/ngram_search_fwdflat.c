@@ -68,4 +68,7 @@ ngram_fwdflat_init(ngram_search_t *ngs)
 void
 ngram_fwdflat_deinit(ngram_search_t *ngs)
 {
+    ckd_free(ngs->fwdflat_wordlist);
+    ckd_free(ngs->expand_word_flag);
+    ckd_free(ngs->expand_word_list);
 }

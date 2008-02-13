@@ -82,6 +82,9 @@ pocketsphinx_add_file(pocketsphinx_t *ps, const char *arg,
         cmd_ln_set_str_r(ps->config, arg, tmp);
         ps->strings = glist_add_ptr(ps->strings, tmp);
     }
+    else {
+        ckd_free(tmp);
+    }
 }
 
 static void
@@ -174,11 +177,17 @@ pocketsphinx_free(pocketsphinx_t *ps)
 {
     gnode_t *gn;
 
+    if (ps->ngs)
+        ngram_search_free(ps->ngs);
+    if (ps->fsgs)
+        fsg_search_free(ps->fsgs);
+    dict_free(ps->dict);
+    acmod_free(ps->acmod);
+    logmath_free(ps->lmath);
+    cmd_ln_free_r(ps->config);
     for (gn = ps->strings; gn; gn = gnode_next(gn))
         ckd_free(gnode_ptr(gn));
     glist_free(ps->strings);
-    dict_free(ps->dict);
-    cmd_ln_free_r(ps->config);
     ckd_free(ps);
 }
 
@@ -308,6 +317,10 @@ pocketsphinx_process_raw(pocketsphinx_t *ps,
 			 int no_search,
 			 int full_utt)
 {
+    /* Feed samples to acmod. */
+
+    /* If do_search, then, well, do search. */
+
     return -1;
 }
 
@@ -318,6 +331,10 @@ pocketsphinx_process_cep(pocketsphinx_t *ps,
 			 int no_search,
 			 int full_utt)
 {
+    /* Feed samples to acmod. */
+
+    /* If do_search, then, well, do search. */
+
     return -1;
 }
 
@@ -325,6 +342,8 @@ int
 pocketsphinx_end_utt(pocketsphinx_t *ps)
 {
     acmod_end_utt(ps->acmod);
+
+    /* Finish searching whatever's left. */
 
     return 0;
 }

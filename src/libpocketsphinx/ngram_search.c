@@ -158,7 +158,7 @@ ngram_search_free(ngram_search_t *ngs)
     ckd_free(ngs->word_active);
     ckd_free(ngs->bp_table);
     ckd_free(ngs->bscore_stack);
-    ckd_free(ngs->bp_table_idx + 1);
+    ckd_free(ngs->bp_table_idx - 1);
     ckd_free_2d(ngs->active_word_list);
     ckd_free(ngs->bestbp_rc);
     ckd_free(ngs->lastphn_cand);

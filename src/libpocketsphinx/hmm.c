@@ -125,6 +125,7 @@ hmm_context_init(int32 n_emit_state,
 void
 hmm_context_free(hmm_context_t *ctx)
 {
+    ckd_free(ctx->st_sen_scr);
     ckd_free(ctx);
 }
 
