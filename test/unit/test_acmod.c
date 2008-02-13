@@ -31,6 +31,7 @@ main(int argc, char *argv[])
 	FILE *rawfh;
 	int16 *buf;
 	int16 const *bptr;
+	mfcc_t **cepbuf, **cptr;
 	size_t nread, nsamps;
 	int nfr;
 	int frame_counter;
@@ -62,18 +63,17 @@ main(int argc, char *argv[])
 	buf = ckd_calloc(nsamps, sizeof(*buf));
 	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
 	TEST_EQUAL(0, acmod_start_utt(acmod));
+	printf("Incremental(2048):\n");
 	while (!feof(rawfh)) {
 		nread = fread(buf, sizeof(*buf), nsamps, rawfh);
-		/* printf("Read %d samples\n", nread); */
 		bptr = buf;
 		while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
 			ascr_t const *senscr;
 			int frame_idx, best_score, best_senid;
-		/* printf("Processed %d frames, %d samples remaining\n", nfr, nread); */
 			while ((senscr = acmod_score(acmod, &frame_idx,
 						     &best_score, &best_senid))) {
-				/* printf("Frame %d best senone %d score %d\n",
-				   frame_idx, best_senid, best_score); */
+				printf("Frame %d best senone %d score %d\n",
+				       frame_idx, best_senid, best_score);
 				TEST_EQUAL(frame_counter, frame_idx);
 				if (frame_counter < 270)
 					bestsen1[frame_counter] = best_senid;
@@ -83,14 +83,14 @@ main(int argc, char *argv[])
 	}
 	TEST_EQUAL(0, acmod_end_utt(acmod));
 	nread = 0;
-	while ((nfr = acmod_process_raw(acmod, NULL, &nread, FALSE)) > 0) {
+	acmod_process_raw(acmod, NULL, &nread, FALSE);
+	{
 		ascr_t const *senscr;
 		int frame_idx, best_score, best_senid;
-		/* printf("Processed %d frames, %d samples remaining\n", nfr, nread); */
 		while ((senscr = acmod_score(acmod, &frame_idx,
 					     &best_score, &best_senid))) {
-			/* printf("Frame %d best senone %d score %d\n",
-			   frame_idx, best_senid, best_score); */
+			printf("Frame %d best senone %d score %d\n",
+			       frame_idx, best_senid, best_score);
 			if (frame_counter < 270)
 				bestsen1[frame_counter] = best_senid;
 			TEST_EQUAL(frame_counter, frame_idx);
@@ -99,6 +99,7 @@ main(int argc, char *argv[])
 	}
 
 	/* Now try to process the whole thing at once. */
+	printf("\nWhole utterance:\n");
 	cmn_prior_set(acmod->fcb->cmn_struct, prior);
 	nsamps = ftell(rawfh) / sizeof(*buf);
 	clearerr(rawfh);
@@ -115,15 +116,95 @@ main(int argc, char *argv[])
 		frame_counter = 0;
 		while ((senscr = acmod_score(acmod, &frame_idx,
 					     &best_score, &best_senid))) {
-			/* printf("Frame %d best senone %d score %d\n",
-			   frame_idx, best_senid, best_score); */
+			printf("Frame %d best senone %d score %d\n",
+			   frame_idx, best_senid, best_score);
 			if (frame_counter < 270)
 				TEST_EQUAL(best_senid, bestsen1[frame_counter]);
 			TEST_EQUAL(frame_counter, frame_idx);
 			++frame_counter;
 		}
 	}
+
+	/* Now process MFCCs and make sure we get the same results. */
+	cepbuf = ckd_calloc_2d(frame_counter,
+			       fe_get_output_size(acmod->fe),
+			       sizeof(**cepbuf));
+	fe_start_utt(acmod->fe);
+	nsamps = ftell(rawfh) / sizeof(*buf);
+	bptr = buf;
+	nfr = frame_counter;
+	fe_process_frames(acmod->fe, &bptr, &nsamps, cepbuf, &nfr);
+	fe_end_utt(acmod->fe, cepbuf[frame_counter-1], &nfr);
+
+	printf("\nIncremental(MFCC):\n");
+	cmn_prior_set(acmod->fcb->cmn_struct, prior);
+	TEST_EQUAL(0, acmod_start_utt(acmod));
+	cptr = cepbuf;
+	nfr = frame_counter;
+	frame_counter = 0;
+	while ((acmod_process_cep(acmod, &cptr, &nfr, FALSE)) > 0) {
+		ascr_t const *senscr;
+		int frame_idx, best_score, best_senid;
+		while ((senscr = acmod_score(acmod, &frame_idx,
+					     &best_score, &best_senid))) {
+			printf("Frame %d best senone %d score %d\n",
+			       frame_idx, best_senid, best_score);
+			TEST_EQUAL(frame_counter, frame_idx);
+			if (frame_counter < 270)
+				TEST_EQUAL(best_senid, bestsen1[frame_counter]);
+			++frame_counter;
+		}
+	}
+	TEST_EQUAL(0, acmod_end_utt(acmod));
+	nfr = 0;
+	acmod_process_cep(acmod, &cptr, &nfr, FALSE);
+	{
+		ascr_t const *senscr;
+		int frame_idx, best_score, best_senid;
+		while ((senscr = acmod_score(acmod, &frame_idx,
+					     &best_score, &best_senid))) {
+			printf("Frame %d best senone %d score %d\n",
+			       frame_idx, best_senid, best_score);
+			TEST_EQUAL(frame_counter, frame_idx);
+			if (frame_counter < 270)
+				TEST_EQUAL(best_senid, bestsen1[frame_counter]);
+			++frame_counter;
+		}
+	}
+
+	/* Note that we have to process the whole thing again because
+	 * !#@$@ s2mfc2feat modifies its argument (not for long) */
+	fe_start_utt(acmod->fe);
+	nsamps = ftell(rawfh) / sizeof(*buf);
+	bptr = buf;
+	nfr = frame_counter;
+	fe_process_frames(acmod->fe, &bptr, &nsamps, cepbuf, &nfr);
+	fe_end_utt(acmod->fe, cepbuf[frame_counter-1], &nfr);
+
+	printf("\nWhole utterance (MFCC):\n");
+	cmn_prior_set(acmod->fcb->cmn_struct, prior);
+	TEST_EQUAL(0, acmod_start_utt(acmod));
+	cptr = cepbuf;
+	nfr = frame_counter;
+	acmod_process_cep(acmod, &cptr, &nfr, TRUE);
+	TEST_EQUAL(0, acmod_end_utt(acmod));
+	{
+		ascr_t const *senscr;
+		int frame_idx, best_score, best_senid;
+		frame_counter = 0;
+		while ((senscr = acmod_score(acmod, &frame_idx,
+					     &best_score, &best_senid))) {
+			printf("Frame %d best senone %d score %d\n",
+			       frame_idx, best_senid, best_score);
+			if (frame_counter < 270)
+				TEST_EQUAL(best_senid, bestsen1[frame_counter]);
+			TEST_EQUAL(frame_counter, frame_idx);
+			++frame_counter;
+		}
+	}
+
 	/* Clean up, go home. */
+	ckd_free_2d(cepbuf);
 	fclose(rawfh);
 	ckd_free(buf);
 	acmod_free(acmod);

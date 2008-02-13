@@ -485,7 +485,7 @@ acmod_process_cep(acmod_t *acmod,
         return acmod_process_full_cep(acmod, inout_cep, inout_n_frames);
 
     /* Number of input frames to generate features. */
-    ncep = acmod->n_mfc_frame;
+    ncep = *inout_n_frames;
     /* Don't overflow the output feature buffer. */
     if (ncep > acmod->n_feat_alloc - acmod->n_feat_frame) {
         /* Grow it as needed */
@@ -502,7 +502,8 @@ acmod_process_cep(acmod_t *acmod,
     acmod->n_feat_frame += nfeat;
     *inout_n_frames -= ncep;
     *inout_cep += ncep;
-    acmod->state = ACMOD_PROCESSING;
+    if (acmod->state == ACMOD_STARTED)
+        acmod->state = ACMOD_PROCESSING;
     return ncep;
 }
 
