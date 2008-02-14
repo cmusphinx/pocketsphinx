@@ -138,6 +138,7 @@
 
 /* SphinxBase headers. */
 #include <err.h>
+#include <pio.h>
 #include <ckd_alloc.h>
 #include <prim_type.h>
 #include <strfuncs.h>
@@ -152,8 +153,6 @@
 
 #define __FSG_DBG__		0
 
-
-#define WORD_FSG_MAX_WORDPTR	4096
 
 #define WORD_FSG_BEGIN_DECL		"FSG_BEGIN"
 #define WORD_FST_BEGIN_DECL		"FST_BEGIN"
@@ -172,27 +171,34 @@
 
 static int32
 nextline_str2words(FILE * fp, int32 * lineno,
-                   char **wordptr, int32 max_ptr)
+                   char **lineptr, char ***wordptr)
 {
-    char line[16384];
-    int32 n;
-
     for (;;) {
-        if (fgets(line, sizeof(line), fp) == NULL)
+        size_t len;
+        int32 n;
+
+        ckd_free(*lineptr);
+        if ((*lineptr = fread_line(fp, &len)) == NULL)
             return -1;
 
         (*lineno)++;
 
-        if (line[0] != WORD_FSG_COMMENT_CHAR) { /* Skip comment lines */
-            if ((n = str2words(line, wordptr, max_ptr)) < 0)
-                E_FATAL("Line[%d] too long\n", *lineno);
+        if ((*lineptr)[0] == WORD_FSG_COMMENT_CHAR)
+            continue; /* Skip comment lines */
+        
+        n = str2words(*lineptr, NULL, 0);
+        if (n == 0)
+            continue; /* Skip blank lines */
 
-            if (n > 0)          /* Skip blank lines */
-                break;
-        }
+        /* Abuse of realloc(), but this doesn't have to be fast. */
+        if (*wordptr == NULL)
+            *wordptr = ckd_calloc(n, sizeof(**wordptr));
+        else
+            *wordptr = ckd_realloc(*wordptr, n * sizeof(**wordptr));
+        return str2words(*lineptr, *wordptr, n);
     }
 
-    return n;
+    return -1;
 }
 
 
@@ -694,18 +700,23 @@ word_fsg_read(FILE * fp, dict_t *word_dict, logmath_t *lmath,
     s2_fsg_t *fsg;              /* "External" FSG structure */
     s2_fsg_trans_t *trans;
     word_fsg_t *cfsg;           /* "Compiled" FSG structure */
-    char *wordptr[WORD_FSG_MAX_WORDPTR];        /* ptrs to words in an input line */
+    char **wordptr;
+    char *lineptr;
     int32 lineno;
     int32 n, i, j;
     float32 p;
 
     lineno = 0;
+    wordptr = NULL;
+    lineptr = NULL;
 
     /* Scan upto FSG_BEGIN header */
     for (;;) {
-        n = nextline_str2words(fp, &lineno, wordptr, WORD_FSG_MAX_WORDPTR);
+        n = nextline_str2words(fp, &lineno, &lineptr, &wordptr);
         if (n < 0) {
             E_ERROR("%s declaration missing\n", WORD_FSG_BEGIN_DECL);
+            ckd_free(lineptr);
+            ckd_free(wordptr);
             return NULL;
         }
 
@@ -714,6 +725,8 @@ word_fsg_read(FILE * fp, dict_t *word_dict, logmath_t *lmath,
             if (n > 2) {
                 E_ERROR("Line[%d]: malformed FSG_BEGIN delcaration\n",
                         lineno);
+                ckd_free(lineptr);
+                ckd_free(wordptr);
                 return NULL;
             }
             break;
@@ -726,7 +739,7 @@ word_fsg_read(FILE * fp, dict_t *word_dict, logmath_t *lmath,
     fsg->trans_list = NULL;
 
     /* Read #states */
-    n = nextline_str2words(fp, &lineno, wordptr, WORD_FSG_MAX_WORDPTR);
+    n = nextline_str2words(fp, &lineno, &lineptr, &wordptr);
     if ((n != 2)
         || ((strcmp(wordptr[0], WORD_FSG_N_DECL) != 0)
             && (strcmp(wordptr[0], WORD_FSG_NUM_STATES_DECL) != 0))
@@ -739,7 +752,7 @@ word_fsg_read(FILE * fp, dict_t *word_dict, logmath_t *lmath,
     }
 
     /* Read start state */
-    n = nextline_str2words(fp, &lineno, wordptr, WORD_FSG_MAX_WORDPTR);
+    n = nextline_str2words(fp, &lineno, &lineptr, &wordptr);
     if ((n != 2)
         || ((strcmp(wordptr[0], WORD_FSG_S_DECL) != 0)
             && (strcmp(wordptr[0], WORD_FSG_START_STATE_DECL) != 0))
@@ -753,7 +766,7 @@ word_fsg_read(FILE * fp, dict_t *word_dict, logmath_t *lmath,
     }
 
     /* Read final state */
-    n = nextline_str2words(fp, &lineno, wordptr, WORD_FSG_MAX_WORDPTR);
+    n = nextline_str2words(fp, &lineno, &lineptr, &wordptr);
     if ((n != 2)
         || ((strcmp(wordptr[0], WORD_FSG_F_DECL) != 0)
             && (strcmp(wordptr[0], WORD_FSG_FINAL_STATE_DECL) != 0))
@@ -768,7 +781,7 @@ word_fsg_read(FILE * fp, dict_t *word_dict, logmath_t *lmath,
 
     /* Read transitions */
     for (;;) {
-        n = nextline_str2words(fp, &lineno, wordptr, WORD_FSG_MAX_WORDPTR);
+        n = nextline_str2words(fp, &lineno, &lineptr, &wordptr);
         if (n <= 0) {
             E_ERROR("Line[%d]: transition or FSG_END statement expected\n",
                     lineno);
@@ -811,6 +824,9 @@ word_fsg_read(FILE * fp, dict_t *word_dict, logmath_t *lmath,
         fsg->trans_list = trans;
     }
 
+    ckd_free(lineptr);
+    ckd_free(wordptr);
+
     cfsg =
         word_fsg_load(fsg, word_dict, lmath, 
                       use_altpron, use_filler, silprob, fillprob, lw);
@@ -820,6 +836,8 @@ word_fsg_read(FILE * fp, dict_t *word_dict, logmath_t *lmath,
     return cfsg;
 
   parse_error:
+    ckd_free(lineptr);
+    ckd_free(wordptr);
     s2_fsg_free(fsg);
     return NULL;
 }
