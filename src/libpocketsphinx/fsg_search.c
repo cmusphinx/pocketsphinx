@@ -79,6 +79,8 @@
 #define __FSG_DBG__		0
 #define __FSG_DBG_CHAN__	0
 
+static void fsg_search_hyp_free(fsg_search_t * search);
+
 
 fsg_search_t *
 fsg_search_init(cmd_ln_t *config, logmath_t *lmath,
@@ -264,11 +266,14 @@ fsg_search_free(fsg_search_t * search)
     gnode_t *gn;
     word_fsg_t *fsg;
 
+    fsg_search_hyp_free(search);
+    fsg_lextree_free(search->lextree);
+    fsg_history_set_fsg(search->history, NULL);
     for (gn = search->fsglist; gn; gn = gnode_next(gn)) {
         fsg = (word_fsg_t *) gnode_ptr(gn);
-        fsg_search_del_fsg(search, fsg);
+        word_fsg_free(fsg);
     }
-
+    glist_free(search->fsglist);
     fsg_history_free(search->history);
     ckd_free(search);
 }
