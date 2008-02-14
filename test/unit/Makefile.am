@@ -1,10 +1,11 @@
-check_PROGRAMS = test_lm_read test_ps_init test_acmod
+check_PROGRAMS = test_lm_read test_ps_init test_acmod test_fwdtree test_fwdtree_fbs
 TESTS = \
 	test_lm_init.sh \
 	test_lmctl_init.sh \
 	test_lm_read \
 	test_ps_init \
-	test_acmod
+	test_acmod \
+	test_fwdtree
 
 noinst_HEADERS = test_macros.h
 

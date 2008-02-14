@@ -56,6 +56,13 @@
 static void save_bwd_ptr(ngram_search_t *ngs, int frame_idx, int32 w,
                          int32 score, int32 path, int32 rc);
 
+/* Turn this on to dump channels for debugging */
+#define __CHAN_DUMP__		0
+#if __CHAN_DUMP__
+#define chan_v_eval(chan) hmm_dump_vit_eval(&(chan)->hmm, stderr)
+#else
+#define chan_v_eval(chan) hmm_vit_eval(&(chan)->hmm)
+#endif
 
 /*
  * Allocate that part of the search channel tree structure that is independent of the
@@ -283,7 +290,8 @@ create_search_tree(ngram_search_t *ngs)
     for (w = dict_to_id(ngs->dict, "</s>"); w < n_words; ++w) {
         de = ngs->dict->dict_list[w];
         /* Skip any non-fillers that aren't in the LM. */
-        if ((!dict_is_filler_word(ngs->dict, w))
+        /* FIXME: Not the best way to tell if it's a filler. */
+        if ((!w >= ngs->silence_wid)
             && (!ngram_model_set_known_wid(ngs->lmset, de->wid)))
             continue;
         ngs->single_phone_wid[ngs->n_1ph_words++] = w;
@@ -523,7 +531,7 @@ eval_root_chan(ngram_search_t *ngs, int frame_idx)
     bestscore = WORST_SCORE;
     for (i = ngs->n_root_chan, rhmm = ngs->root_chan; i > 0; --i, rhmm++) {
         if (hmm_frame(&rhmm->hmm) == frame_idx) {
-            int32 score = hmm_vit_eval(&rhmm->hmm);
+            int32 score = chan_v_eval(rhmm);
             if (bestscore < score)
                 bestscore = score;
             ++ngs->st.n_root_chan_eval;
@@ -544,7 +552,7 @@ eval_nonroot_chan(ngram_search_t *ngs, int frame_idx)
     ngs->st.n_nonroot_chan_eval += i;
 
     for (hmm = *(acl++); i > 0; --i, hmm = *(acl++)) {
-        int32 score = hmm_vit_eval(&hmm->hmm);
+        int32 score = chan_v_eval(hmm);
         assert(hmm_frame(&hmm->hmm) == frame_idx);
         if (bestscore < score)
             bestscore = score;
@@ -574,7 +582,8 @@ eval_word_chan(ngram_search_t *ngs, int frame_idx)
             int32 score;
 
             assert(hmm_frame(&hmm->hmm) == frame_idx);
-            score = hmm_vit_eval(&hmm->hmm);
+            score = chan_v_eval(hmm);
+            /*printf("eval word chan %d score %d\n", w, score); */
 
             if (bestscore < score)
                 bestscore = score;
@@ -593,7 +602,8 @@ eval_word_chan(ngram_search_t *ngs, int frame_idx)
         if (hmm_frame(&rhmm->hmm) < frame_idx)
             continue;
 
-        score = hmm_vit_eval(&rhmm->hmm);
+        score = chan_v_eval(rhmm);
+        /* printf("eval 1ph word chan %d score %d\n", w, score); */
         if (bestscore < score && w != ngs->finish_wid)
             bestscore = score;
 
@@ -650,7 +660,6 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
         ngs->best_score + (ngs->dynamic_beam >
                            ngs->lpbeam ? ngs->dynamic_beam :
                            ngs->lpbeam);
-
     nacl = ngs->active_chan_list[nf & 0x1];
 
     for (i = 0, rhmm = ngs->root_chan; i < ngs->n_root_chan; i++, rhmm++) {
@@ -1154,7 +1163,8 @@ cache_bptable_paths(ngram_search_t *ngs, int32 bp)
     bpe = &(ngs->bp_table[bp]);
     prev_bp = bp;
     w = bpe->wid;
-    while (dict_is_filler_word(ngs->dict, w)) {
+    /* FIXME: This isn't the ideal way to tell if it's a filler. */
+    while (w >= ngs->silence_wid) {
         prev_bp = ngs->bp_table[prev_bp].bp;
         w = ngs->bp_table[prev_bp].wid;
     }
@@ -1254,7 +1264,8 @@ bptable_maxwpf(ngram_search_t *ngs, int frame_idx)
     n = 0;
     for (bp = ngs->bp_table_idx[frame_idx]; bp < ngs->bpidx; bp++) {
         bpe = &(ngs->bp_table[bp]);
-        if (dict_is_filler_word(ngs->dict, bpe->wid)) {
+        /* FIXME: Not the ideal way to tell if this is a filler word. */
+        if (bpe->wid >= ngs->silence_wid) {
             if (bpe->score > bestscr) {
                 bestscr = bpe->score;
                 bestbpe = bpe;
@@ -1471,7 +1482,7 @@ ngram_fwdtree_search(ngram_search_t *ngs)
 {
     ascr_t const *senscr;
     int frame_idx, best_senid;
-    ascr_t best_score;
+    ascr_t best_senscr;
 
     /* Determine if we actually have a frame to process. */
     if (ngs->acmod->n_feat_frame == 0)
@@ -1483,7 +1494,7 @@ ngram_fwdtree_search(ngram_search_t *ngs)
 
     /* Compute GMM scores for the current frame. */
     senscr = acmod_score(ngs->acmod, &frame_idx,
-                         &best_score, &best_senid);
+                         &best_senscr, &best_senid);
 
     /* Mark backpointer table for current frame. */
     if (frame_idx >= ngs->n_frame_alloc) {
@@ -1496,10 +1507,10 @@ ngram_fwdtree_search(ngram_search_t *ngs)
     ngs->bp_table_idx[frame_idx] = ngs->bpidx;
 
     /* Renormalize if necessary (FIXME: Make sure to test this) */
-    if (best_score + (2 * ngs->beam) < WORST_SCORE) {
+    if (ngs->best_score + (2 * ngs->beam) < WORST_SCORE) {
         E_INFO("Renormalizing Scores at frame %d, best score %d\n",
-               frame_idx, best_score);
-        renormalize_scores(ngs, frame_idx, best_score);
+               frame_idx, ngs->best_score);
+        renormalize_scores(ngs, frame_idx, ngs->best_score);
     }
 
     /* Evaluate HMMs */

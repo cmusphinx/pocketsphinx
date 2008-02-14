@@ -61,6 +61,9 @@ static const arg_t feat_defn[] = {
     CMDLN_EMPTY_OPTION
 };
 
+static int32 acmod_flags2list(acmod_t *acmod);
+
+
 static int
 acmod_init_am(acmod_t *acmod)
 {
@@ -528,6 +531,9 @@ acmod_score(acmod_t *acmod,
     if (acmod->n_feat_frame == 0)
         return NULL;
 
+    /* Build active senone list. */
+    acmod_flags2list(acmod);
+
     /* Generate scores for the next available frame */
     *out_best_score = 
         (*acmod->frame_eval)(acmod->mgau,
@@ -535,7 +541,8 @@ acmod_score(acmod_t *acmod,
                              acmod->senone_active,
                              acmod->n_senone_active,
                              acmod->feat_buf[0],
-                             acmod->output_frame, TRUE,
+                             acmod->output_frame,
+                             acmod->compallsen,
                              out_best_senid);
     /* Shift back the rest of the feature buffer (FIXME: we should
      * really use circular buffers here) */
@@ -605,7 +612,7 @@ acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm)
     }
 }
 
-int32
+static int32
 acmod_flags2list(acmod_t *acmod)
 {
     int32 i, j, total_dists, total_bits;
@@ -733,9 +740,7 @@ acmod_flags2list(acmod_t *acmod)
 int const *
 acmod_active_list(acmod_t *acmod, int32 *out_n_active)
 {
-    /* If active list has not been generated for this frame,
-     * generate it from the active bitvector. */
-
+    acmod_flags2list(acmod);
     if (out_n_active) *out_n_active = acmod->n_senone_active;
     return acmod->senone_active;
 }

@@ -89,11 +89,19 @@ ngram_search_init(cmd_ln_t *config,
         ngs->lponlybeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-lponlybeam"));
         ngs->fwdflatbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatbeam"));
         ngs->fwdflatwbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatwbeam"));
+
+        /* Absolute pruning parameters. */
+        ngs->maxwpf = cmd_ln_int32_r(config, "-maxwpf");
+        ngs->maxhmmpf = cmd_ln_int32_r(config, "-maxhmmpf");
+
+        /* Various penalties which may or may not be useful. */
         ngs->wip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-wip"));
         ngs->nwpen = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-nwpen"));
         ngs->pip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-pip"));
-        ngs->maxwpf = cmd_ln_int32_r(config, "-maxwpf");
-        ngs->maxhmmpf = cmd_ln_int32_r(config, "-maxhmmpf");
+        ngs->silpen = ngs->pip
+            + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-silpen"));
+        ngs->fillpen = ngs->pip
+            + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-fillpen"));
 
         /* This is useful for something. */
         ngs->finish_wid = dict_to_id(ngs->dict, "</s>");
@@ -123,7 +131,7 @@ ngram_search_init(cmd_ln_t *config,
         ++ngs->bp_table_idx; /* Make bptableidx[-1] valid */
 
         /* Allocate active word list array */
-        ngs->active_word_list = ckd_calloc_2d(dict->dict_entry_count, 2,
+        ngs->active_word_list = ckd_calloc_2d(2, dict->dict_entry_count,
                                               sizeof(**ngs->active_word_list));
 
         /* Allocate bestbp_rc, lastphn_cand, last_ltrans */
