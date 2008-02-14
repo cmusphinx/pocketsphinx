@@ -1325,6 +1325,7 @@ search_initialize(cmd_ln_t *cmdln)
 void
 search_free(void)
 {
+    delete_search_tree();
     ckd_free(word_chan);
     ckd_free(WordLatIdx);
     ckd_free(zeroPermTab);
@@ -1344,6 +1345,8 @@ search_free(void)
     ckd_free(senone_scores);
     ckd_free(topsen_score);
     free_search_tree();
+    hmm_context_free(hmmctx);
+    ckd_free(active_word_list[0]);
     search_fwdflat_free();
 }
 

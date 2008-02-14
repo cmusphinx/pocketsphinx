@@ -110,6 +110,11 @@ blkarray_list_t *_blkarray_list_init (int32 maxblks, int32 blksize);
  */
 blkarray_list_t *blkarray_list_init ( void );
 
+/**
+ * Completely finalize a blkarray_list.
+ */
+void blkarray_list_free(blkarray_list_t *bl);
+
 
 /*
  * Append the given new entry (data) to the end of the list.

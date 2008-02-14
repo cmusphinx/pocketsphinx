@@ -261,7 +261,16 @@ fsg_search_set_current_fsg(fsg_search_t * search, const char *name)
 void
 fsg_search_free(fsg_search_t * search)
 {
-    E_FATAL("NOT IMPLEMENTED\n");
+    gnode_t *gn;
+    word_fsg_t *fsg;
+
+    for (gn = search->fsglist; gn; gn = gnode_next(gn)) {
+        fsg = (word_fsg_t *) gnode_ptr(gn);
+        fsg_search_del_fsg(search, fsg);
+    }
+
+    fsg_history_free(search->history);
+    ckd_free(search);
 }
 
 

@@ -596,6 +596,8 @@ uttproc_end(void)
         mfcbuf = NULL;
     }
 
+    fsg_search_free(fsg_search);
+
     uttstate = UTTSTATE_UNDEF;
     return 0;
 }

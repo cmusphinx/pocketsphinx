@@ -88,6 +88,30 @@ fsg_history_init(word_fsg_t * fsg)
     return h;
 }
 
+void
+fsg_history_free(fsg_history_t *h)
+{
+    int32 s, lc, ns, np;
+    gnode_t *gn;
+
+    if (h->fsg) {
+        ns = word_fsg_n_state(h->fsg);
+        np = bin_mdef_n_ciphone(h->fsg->dict->mdef);
+
+        for (s = 0; s < ns; s++) {
+            for (lc = 0; lc < np; lc++) {
+                for (gn = h->frame_entries[s][lc]; gn; gn = gnode_next(gn)) {
+                    ckd_free(gnode_ptr(gn));
+                }
+                glist_free(h->frame_entries[s][lc]);
+            }
+        }
+    }
+    ckd_free_2d(h->frame_entries);
+    blkarray_list_free(h->entries);
+    ckd_free(h);
+}
+
 
 void
 fsg_history_set_fsg(fsg_history_t * h, word_fsg_t * fsg)

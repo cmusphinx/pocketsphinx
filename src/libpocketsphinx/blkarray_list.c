@@ -84,6 +84,14 @@ blkarray_list_init(void)
                                BLKARRAY_DEFAULT_BLKSIZE);
 }
 
+void
+blkarray_list_free(blkarray_list_t *bl)
+{
+    blkarray_list_reset(bl);
+    ckd_free(bl->ptr);
+    ckd_free(bl);
+}
+
 
 int32
 blkarray_list_append(blkarray_list_t * bl, void *data)
