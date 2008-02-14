@@ -46,6 +46,8 @@ main(int argc, char *argv[])
 		}
 	}
 	ngram_fwdtree_finish(ngs);
+	printf("%s\n",
+	       ngram_search_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
 
 	TEST_EQUAL(0, acmod_end_utt(acmod));
 	pocketsphinx_free(ps);

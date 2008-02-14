@@ -227,6 +227,7 @@ struct ngram_search_s {
     dict_t *dict;          /**< Pronunciation dictionary. */
     ngram_model_t *lmset;  /**< Set of language models. */
     hmm_context_t *hmmctx; /**< HMM context. */
+    char *hyp_str;         /**< Current hypothesis string. */
 
     /**
      * Search structure of HMM instances.
@@ -259,6 +260,9 @@ struct ngram_search_s {
     chan_t **word_chan;
     uint8 *word_active;      /**< array of active flags for all words. */
 
+    /*
+     * Some words have special meanings so we track them here.
+     */
     int32 finish_wid;
     int32 silence_wid;
 
@@ -277,26 +281,37 @@ struct ngram_search_s {
      * set as w.
      */
     int32 *homophone_set;
-    int32 *single_phone_wid;       /* list of single-phone word ids */
-    int32 n_1ph_words;       /* #single phone words in dict (total) */
-    int32 n_1ph_LMwords;     /* #single phone dict words also in LM;
-                                   these come first in single_phone_wid */
-    /*
+    int32 *single_phone_wid; /**< list of single-phone word ids */
+    int32 n_1ph_words;       /**< #single phone words in dict (total) */
+    int32 n_1ph_LMwords;     /**< #single phone dict words also in LM;
+                                these come first in single_phone_wid */
+    /**
+     * Array of active channels for current and next frame.
+     *
      * In any frame, only some HMM tree nodes are active.
      * active_chan_list[f mod 2] = list of nonroot channels in the HMM
      * tree active in frame f.
-     *
-     * Similarly, active_word_list[f mod 2] = list of word ids for
-     * which active channels exist in word_chan in frame f.
      */
     chan_t ***active_chan_list;
     int32 n_active_chan[2];  /**< #entries in active_chan_list */
+    /**
+     * Array of active multi-phone words for current and next frame.
+     *
+     * Similarly to active_chan_list, active_word_list[f mod 2] = list
+     * of word ids for which active channels exist in word_chan in
+     * frame f.
+     *
+     * Statically allocated single-phone words are always active and
+     * should not appear in this list.
+     */
     int32 **active_word_list;
     int32 n_active_word[2];  /**< #entries in active_word_list */
 
+    /*
+     * FIXME: Document all of these bits.
+     */
     lastphn_cand_t *lastphn_cand;
     int32 n_lastphn_cand;
-
     last_ltrans_t *last_ltrans;      /* one per word */
     int32 cand_sf_alloc;
     cand_sf_t *cand_sf;
@@ -314,24 +329,27 @@ struct ngram_search_s {
     int32 *word_lat_idx; /* BPTable index for any word in current frame;
                             cleared before each frame */
 
-    int32 *zeroPermTab; /* Right context table, full of zeros (!!) */
+    int32 *zeroPermTab; /**< Null right context table, just an array of
+                           n_ciphone zeros (!!) */
+
+    /*
+     * Flat lexicon (2nd pass) search stuff.
+     */
     latnode_t **frm_wordlist;
     int32 *fwdflat_wordlist;
-
     char *expand_word_flag;
     int32 *expand_word_list;
     int32 n_expand_words;
-
     int32 min_ef_width;
     int32 max_sf_win;
 
-    ascr_t best_score; /* Best Viterbi path score. */
-    ascr_t last_phone_best_score; /* Best Viterbi path score for last phone. */
+    ascr_t best_score; /**< Best Viterbi path score. */
+    ascr_t last_phone_best_score; /**< Best Viterbi path score for last phone. */
     int32 renormalized;
  
-    ngram_search_stats_t st; /**< Various statistics for profiling */
+    ngram_search_stats_t st; /**< Various statistics for profiling. */
 
-    /* Beams */
+    /* A collection of beam widths. */
     int32 beam;
     int32 dynamic_beam;
     int32 pbeam;
@@ -345,7 +363,6 @@ struct ngram_search_s {
     int32 wip;
     int32 nwpen;
     int32 pip;
-
     int32 maxwpf;
     int32 maxhmmpf;
 };
@@ -369,5 +386,19 @@ void ngram_search_free(ngram_search_t *ngs);
  * @return the current backpointer index.
  */
 int ngram_search_mark_bptable(ngram_search_t *ngs, int frame_idx);
+
+/**
+ * Find the best word exit for the current frame in the backpointer table.
+ *
+ * @return the backpointer index of the best word exit.
+ */
+int ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, ascr_t *out_best_score);
+
+/**
+ * Backtrace from a given backpointer index to obtain a word hypothesis.
+ *
+ * @return a <strong>read-only</strong> string with the best hypothesis.
+ */
+char const *ngram_search_hyp(ngram_search_t *ngs, int bpidx);
 
 #endif /* __NGRAM_SEARCH_H__ */

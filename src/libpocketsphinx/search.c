@@ -1710,8 +1710,8 @@ search_finish_fwd(void)
     /* word channels */
     i = n_active_word[nf & 0x1];
     awl = active_word_list[nf & 0x1];
-    for (w = 0; w < NumWords; ++w) {
-        /* Don't accidentally free single-channel words! */
+    for (w = *(awl++); i > 0; --i, w = *(awl++)) {
+        /* Don't accidentally free single-phone words! */
         if (g_word_dict->dict_list[w]->len == 1)
             continue;
         word_active[w] = 0;

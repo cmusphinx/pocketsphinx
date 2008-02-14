@@ -50,6 +50,19 @@
 /* Local headers. */
 #include "ngram_search_fwdtree.h"
 
+/*
+ * NOTE: this module assumes that the dictionary is organized as follows:
+ *     Main, real dictionary words
+ *     </s>
+ *     <s>... (possibly more than one of these)
+ *     <sil>
+ *     noise-words...
+ * In particular, note that </s> comes before <s> since </s> occurs in the LM, but
+ * not <s> (well, there's no transition to <s> in the LM).
+ *
+ * This should probably be fixed at some point.
+ */
+
 /**
  * Enter a word in the backpointer table.
  */
@@ -423,7 +436,9 @@ ngram_fwdtree_start(ngram_search_t *ngs)
     for (i = 0; i < n_words; i++)
         ngs->last_ltrans[i].sf = -1;
 
-    /* FIXME: Clear the hypothesis here. */
+    /* Clear the hypothesis string. */
+    ckd_free(ngs->hyp_str);
+    ngs->hyp_str = NULL;
 
     /* Reset the permanently allocated single-phone words, since they
      * may have junk left over in them from FWDFLAT. */
@@ -1529,12 +1544,13 @@ ngram_fwdtree_search(ngram_search_t *ngs)
 void
 ngram_fwdtree_finish(ngram_search_t *ngs)
 {
-    int32 i, w, cf, lf, *awl;
+    int32 i, w, cf, *awl;
     root_chan_t *rhmm;
     chan_t *hmm, **acl;
 
+    /* This is the number of frames processed. */
     cf = acmod_frame_idx(ngs->acmod);
-    /* Mark backpointer table for current frame. */
+    /* Add a mark in the backpointer table for one past the final frame. */
     ngram_search_mark_bptable(ngs, cf);
 
     /* Deactivate channels lined up for the next frame */
@@ -1553,8 +1569,8 @@ ngram_fwdtree_finish(ngram_search_t *ngs)
     /* word channels */
     i = ngs->n_active_word[cf & 0x1];
     awl = ngs->active_word_list[cf & 0x1];
-    for (w = 0; w < ngs->dict->dict_entry_count; ++w) {
-        /* Don't accidentally free single-channel words! */
+    for (w = *(awl++); i > 0; --i, w = *(awl++)) {
+        /* Don't accidentally free single-phone words! */
         if (ngs->dict->dict_list[w]->len == 1)
             continue;
         ngs->word_active[w] = 0;
@@ -1563,8 +1579,16 @@ ngram_fwdtree_finish(ngram_search_t *ngs)
         free_all_rc(ngs, w);
     }
 
+    /*
+     * The previous search code did a postprocessing of the
+     * backpointer table here, but we will postpone this until it is
+     * absolutely necessary, i.e. when generating a word graph.
+     * Likewise we don't actually have to decide what the exit word is
+     * until somebody requests a backtrace.
+     */
+
+    /* Print out some statistics. */
     if (cf > 0) {
-        E_INFO("%d frames searched\n", cf);
         E_INFO("%8d words recognized (%d/fr)\n",
                ngs->bpidx, (ngs->bpidx + (cf >> 1)) / (cf + 1));
         E_INFO("%8d senones evaluated (%d/fr)\n", ngs->st.n_senone_active_utt,

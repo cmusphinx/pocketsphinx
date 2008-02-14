@@ -40,6 +40,7 @@
  */
 
 /* System headers. */
+#include <string.h>
 
 /* SphinxBase headers. */
 #include <ckd_alloc.h>
@@ -122,6 +123,7 @@ ngram_search_init(cmd_ln_t *config,
         ngs->bp_table_size = cmd_ln_int32_r(config, "-latsize");
         ngs->bp_table = ckd_calloc(ngs->bp_table_size,
                                    sizeof(*ngs->bp_table));
+        /* FIXME: This thing is frickin' huge. */
         ngs->bscore_stack_size = ngs->bp_table_size * 20;
         ngs->bscore_stack = ckd_calloc(ngs->bscore_stack_size,
                                        sizeof(*ngs->bscore_stack));
@@ -228,3 +230,83 @@ ngram_search_mark_bptable(ngram_search_t *ngs, int frame_idx)
     ngs->bp_table_idx[frame_idx] = ngs->bpidx;
     return ngs->bpidx;
 }
+
+int
+ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, ascr_t *out_best_score)
+{
+    /* End of backpointers for this frame. */
+    int end_bpidx;
+    int best_exit, bp;
+    ascr_t best_score;
+
+    if (frame_idx == -1)
+        frame_idx = acmod_frame_idx(ngs->acmod);
+    end_bpidx = ngs->bp_table_idx[frame_idx];
+
+    /* FIXME: WORST_SCORE has to go away and be replaced with a log-zero number. */
+    best_score = WORST_SCORE;
+    best_exit = NO_BP;
+
+    /* Scan back to find a frame with some backpointers in it. */
+    while (frame_idx >= 0 && ngs->bp_table_idx[frame_idx] == end_bpidx)
+        --frame_idx;
+    if (frame_idx < 0) {
+        E_ERROR("ngram_search_find_exit() called with empty backpointer table\n");
+        return NO_BP;
+    }
+
+    /* Now find the best scoring entry. */
+    for (bp = ngs->bp_table_idx[frame_idx]; bp < end_bpidx; ++bp) {
+        if (ngs->bp_table[bp].score > best_score) {
+            best_score = ngs->bp_table[bp].score;
+            best_exit = bp;
+        }
+    }
+
+    if (out_best_score) *out_best_score = best_score;
+    return best_exit;
+}
+
+char const *
+ngram_search_hyp(ngram_search_t *ngs, int bpidx)
+{
+    char *c;
+    size_t len;
+    int bp;
+
+    if (bpidx == NO_BP)
+        return NULL;
+
+    bp = bpidx;
+    len = 0;
+    while (bp != NO_BP) {
+        bptbl_t *be = &ngs->bp_table[bp];
+        bp = be->bp;
+        if (dict_is_filler_word(ngs->dict, be->wid))
+            continue;
+        len += strlen(ngs->dict->dict_list[be->wid]->word) + 1;
+    }
+
+    ckd_free(ngs->hyp_str);
+    ngs->hyp_str = ckd_calloc(1, len + 1);
+    bp = bpidx;
+    c = ngs->hyp_str;
+    while (bp != NO_BP) {
+        bptbl_t *be = &ngs->bp_table[bp];
+        size_t len;
+        bp = be->bp;
+        if (dict_is_filler_word(ngs->dict, be->wid))
+            continue;
+        len = strlen(ngs->dict->dict_list[be->wid]->word);
+        strcpy(c, ngs->dict->dict_list[be->wid]->word);
+        c += len;
+        if (bp == NO_BP)
+            *c = '\0';
+        else
+            *c = ' ';
+        ++c;
+    }
+
+    return ngs->hyp_str;
+}
+
