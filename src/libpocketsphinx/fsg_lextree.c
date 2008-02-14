@@ -152,8 +152,12 @@ fsg_lextree_free(fsg_lextree_t * lextree)
 {
     int32 s;
 
-    for (s = 0; s < word_fsg_n_state(lextree->fsg); s++)
-        fsg_psubtree_free(lextree->alloc_head[s]);
+    if (lextree == NULL)
+        return;
+
+    if (lextree->fsg)
+        for (s = 0; s < word_fsg_n_state(lextree->fsg); s++)
+            fsg_psubtree_free(lextree->alloc_head[s]);
 
     ckd_free((void *) lextree->root);
     ckd_free((void *) lextree->alloc_head);
