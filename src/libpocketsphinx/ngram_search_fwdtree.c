@@ -48,7 +48,7 @@
 #include <linklist.h>
 
 /* Local headers. */
-#include "ngram_search.h"
+#include "ngram_search_fwdtree.h"
 
 /**
  * Enter a word in the backpointer table.
@@ -1134,10 +1134,6 @@ prune_channels(ngram_search_t *ngs, int frame_idx)
                 break;
         }
         ngs->dynamic_beam = -(i * bw);
-#if 0
-        E_INFO("LogBeamWidth %d DynamicLogBeamWidth %d\n",
-               ngs->beam, ngs->dynamic_beam);
-#endif
     }
 
     prune_root_chan(ngs, frame_idx);
@@ -1232,7 +1228,7 @@ save_bwd_ptr(ngram_search_t *ngs, int frame_idx,
         cache_bptable_paths(ngs, ngs->bpidx);
 
         ngs->bpidx++;
-        ngs->bscore_stack += rcsize;
+        ngs->bss_head += rcsize;
     }
 }
 

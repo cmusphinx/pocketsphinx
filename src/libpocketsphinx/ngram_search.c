@@ -51,6 +51,21 @@
 #include "ngram_search_fwdflat.h"
 #include "ngram_search_dag.h"
 
+static void
+ngram_search_update_widmap(ngram_search_t *ngs)
+{
+    const char **words;
+    int32 i, n_words;
+
+    /* It's okay to include fillers since they won't be in the LM */
+    n_words = ngs->dict->dict_entry_count;
+    words = ckd_calloc(n_words, sizeof(*words));
+    for (i = 0; i < n_words; ++i)
+        words[i] = ngs->dict->dict_list[i]->word;
+    ngram_model_set_map_words(ngs->lmset, words, n_words);
+    ckd_free(words);
+}
+
 ngram_search_t *
 ngram_search_init(cmd_ln_t *config,
 		  acmod_t *acmod,
@@ -149,6 +164,13 @@ ngram_search_init(cmd_ln_t *config,
                 goto error_out;
             }
         }
+
+        /* Set language model parameters and create word mappings. */
+        ngram_model_apply_weights(ngs->lmset,
+                                  cmd_ln_float32_r(config, "-lw"),
+                                  cmd_ln_float32_r(config, "-wip"),
+                                  cmd_ln_float32_r(config, "-uw"));
+        ngram_search_update_widmap(ngs);
 
         /* Initialize fwdtree, fwdflat, bestpath modules if necessary. */
         if (cmd_ln_boolean_r(config, "-fwdtree"))
