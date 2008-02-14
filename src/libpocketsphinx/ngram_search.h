@@ -215,6 +215,7 @@ typedef struct ngram_search_stats_s {
     int32 n_fwdflat_chan;
     int32 n_fwdflat_words;
     int32 n_fwdflat_word_transition;
+    int32 n_senone_active_utt;
 } ngram_search_stats_t;
 
 /**
@@ -361,5 +362,12 @@ ngram_search_t *ngram_search_init(cmd_ln_t *config,
  * Finalize the N-Gram search module.
  */
 void ngram_search_free(ngram_search_t *ngs);
+
+/**
+ * Record the current frame's index in the backpointer table.
+ *
+ * @return the current backpointer index.
+ */
+int ngram_search_mark_bptable(ngram_search_t *ngs, int frame_idx);
 
 #endif /* __NGRAM_SEARCH_H__ */

@@ -1495,16 +1495,10 @@ ngram_fwdtree_search(ngram_search_t *ngs)
     /* Compute GMM scores for the current frame. */
     senscr = acmod_score(ngs->acmod, &frame_idx,
                          &best_senscr, &best_senid);
+    ngs->st.n_senone_active_utt += ngs->acmod->n_senone_active;
 
     /* Mark backpointer table for current frame. */
-    if (frame_idx >= ngs->n_frame_alloc) {
-        ngs->n_frame_alloc *= 2;
-        ngs->bp_table_idx = ckd_realloc(ngs->bp_table_idx - 1,
-                                        (ngs->n_frame_alloc + 1)
-                                        * sizeof(*ngs->bp_table_idx));
-        ++ngs->bp_table_idx; /* Make bptableidx[-1] valid */
-    }
-    ngs->bp_table_idx[frame_idx] = ngs->bpidx;
+    ngram_search_mark_bptable(ngs, frame_idx);
 
     /* Renormalize if necessary (FIXME: Make sure to test this) */
     if (ngs->best_score + (2 * ngs->beam) < WORST_SCORE) {
@@ -1535,4 +1529,54 @@ ngram_fwdtree_search(ngram_search_t *ngs)
 void
 ngram_fwdtree_finish(ngram_search_t *ngs)
 {
+    int32 i, w, cf, lf, *awl;
+    root_chan_t *rhmm;
+    chan_t *hmm, **acl;
+
+    cf = acmod_frame_idx(ngs->acmod);
+    /* Mark backpointer table for current frame. */
+    ngram_search_mark_bptable(ngs, cf);
+
+    /* Deactivate channels lined up for the next frame */
+    /* First, root channels of HMM tree */
+    for (i = ngs->n_root_chan, rhmm = ngs->root_chan; i > 0; --i, rhmm++) {
+        hmm_clear(&rhmm->hmm);
+    }
+
+    /* nonroot channels of HMM tree */
+    i = ngs->n_active_chan[cf & 0x1];
+    acl = ngs->active_chan_list[cf & 0x1];
+    for (hmm = *(acl++); i > 0; --i, hmm = *(acl++)) {
+        hmm_clear(&hmm->hmm);
+    }
+
+    /* word channels */
+    i = ngs->n_active_word[cf & 0x1];
+    awl = ngs->active_word_list[cf & 0x1];
+    for (w = 0; w < ngs->dict->dict_entry_count; ++w) {
+        /* Don't accidentally free single-channel words! */
+        if (ngs->dict->dict_list[w]->len == 1)
+            continue;
+        ngs->word_active[w] = 0;
+        if (ngs->word_chan[w] == NULL)
+            continue;
+        free_all_rc(ngs, w);
+    }
+
+    if (cf > 0) {
+        E_INFO("%d frames searched\n", cf);
+        E_INFO("%8d words recognized (%d/fr)\n",
+               ngs->bpidx, (ngs->bpidx + (cf >> 1)) / (cf + 1));
+        E_INFO("%8d senones evaluated (%d/fr)\n", ngs->st.n_senone_active_utt,
+               (ngs->st.n_senone_active_utt + (cf >> 1)) / (cf + 1));
+        E_INFO("%8d channels searched (%d/fr), %d 1st, %d last\n",
+               ngs->st.n_root_chan_eval + ngs->st.n_nonroot_chan_eval,
+               (ngs->st.n_root_chan_eval + ngs->st.n_nonroot_chan_eval) / (cf + 1),
+               ngs->st.n_root_chan_eval, ngs->st.n_last_chan_eval);
+        E_INFO("%8d words for which last channels evaluated (%d/fr)\n",
+               ngs->st.n_word_lastchan_eval,
+               ngs->st.n_word_lastchan_eval / (cf + 1));
+        E_INFO("%8d candidate words for entering last phone (%d/fr)\n",
+               ngs->st.n_lastphn_cand_utt, ngs->st.n_lastphn_cand_utt / (cf + 1));
+    }
 }

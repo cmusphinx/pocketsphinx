@@ -214,3 +214,17 @@ ngram_search_free(ngram_search_t *ngs)
     ckd_free(ngs->last_ltrans);
     ckd_free(ngs);
 }
+
+int
+ngram_search_mark_bptable(ngram_search_t *ngs, int frame_idx)
+{
+    if (frame_idx >= ngs->n_frame_alloc) {
+        ngs->n_frame_alloc *= 2;
+        ngs->bp_table_idx = ckd_realloc(ngs->bp_table_idx - 1,
+                                        (ngs->n_frame_alloc + 1)
+                                        * sizeof(*ngs->bp_table_idx));
+        ++ngs->bp_table_idx; /* Make bptableidx[-1] valid */
+    }
+    ngs->bp_table_idx[frame_idx] = ngs->bpidx;
+    return ngs->bpidx;
+}
