@@ -370,6 +370,14 @@ reinit_search_tree(ngram_search_t *ngs)
 void
 ngram_fwdtree_init(ngram_search_t *ngs)
 {
+    /* Allocate bestbp_rc, lastphn_cand, last_ltrans */
+    ngs->bestbp_rc = ckd_calloc(bin_mdef_n_ciphone(ngs->acmod->mdef),
+                                sizeof(*ngs->bestbp_rc));
+    ngs->lastphn_cand = ckd_calloc(ngs->dict->dict_entry_count,
+                                   sizeof(*ngs->lastphn_cand));
+    ngs->last_ltrans = ckd_calloc(ngs->dict->dict_entry_count,
+                                  sizeof(*ngs->last_ltrans));
+
     init_search_tree(ngs);
     create_search_tree(ngs);
 }
@@ -403,6 +411,10 @@ ngram_fwdtree_deinit(ngram_search_t *ngs)
     ckd_free(ngs->single_phone_wid);
     ngs->max_nonroot_chan = 0;
     ckd_free_2d(ngs->active_chan_list);
+    ckd_free(ngs->cand_sf);
+    ckd_free(ngs->bestbp_rc);
+    ckd_free(ngs->lastphn_cand);
+    ckd_free(ngs->last_ltrans);
 }
 
 void

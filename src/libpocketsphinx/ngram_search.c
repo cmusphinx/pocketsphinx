@@ -136,14 +136,6 @@ ngram_search_init(cmd_ln_t *config,
         ngs->active_word_list = ckd_calloc_2d(2, dict->dict_entry_count,
                                               sizeof(**ngs->active_word_list));
 
-        /* Allocate bestbp_rc, lastphn_cand, last_ltrans */
-        ngs->bestbp_rc = ckd_calloc(bin_mdef_n_ciphone(acmod->mdef),
-                                    sizeof(*ngs->bestbp_rc));
-        ngs->lastphn_cand = ckd_calloc(dict->dict_entry_count,
-                                       sizeof(*ngs->lastphn_cand));
-        ngs->last_ltrans = ckd_calloc(dict->dict_entry_count,
-                                      sizeof(*ngs->last_ltrans));
-
         /* Load language model(s) */
         if ((path = cmd_ln_str_r(config, "-lmctlfn"))) {
             ngs->lmset = ngram_model_set_read(config, path, acmod->lmath);
@@ -211,9 +203,7 @@ ngram_search_free(ngram_search_t *ngs)
     ckd_free(ngs->bscore_stack);
     ckd_free(ngs->bp_table_idx - 1);
     ckd_free_2d(ngs->active_word_list);
-    ckd_free(ngs->bestbp_rc);
-    ckd_free(ngs->lastphn_cand);
-    ckd_free(ngs->last_ltrans);
+    ckd_free(ngs->hyp_str);
     ckd_free(ngs);
 }
 
@@ -288,23 +278,24 @@ ngram_search_hyp(ngram_search_t *ngs, int bpidx)
     }
 
     ckd_free(ngs->hyp_str);
-    ngs->hyp_str = ckd_calloc(1, len + 1);
+    ngs->hyp_str = ckd_calloc(1, len);
     bp = bpidx;
-    c = ngs->hyp_str;
+    c = ngs->hyp_str + len - 1;
     while (bp != NO_BP) {
         bptbl_t *be = &ngs->bp_table[bp];
         size_t len;
+
         bp = be->bp;
         if (dict_is_filler_word(ngs->dict, be->wid))
             continue;
+
         len = strlen(ngs->dict->dict_list[be->wid]->word);
-        strcpy(c, ngs->dict->dict_list[be->wid]->word);
-        c += len;
-        if (bp == NO_BP)
-            *c = '\0';
-        else
+        c -= len;
+        memcpy(c, ngs->dict->dict_list[be->wid]->word, len);
+        if (c > ngs->hyp_str) {
+            --c;
             *c = ' ';
-        ++c;
+        }
     }
 
     return ngs->hyp_str;
