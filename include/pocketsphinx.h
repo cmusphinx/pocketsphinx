@@ -49,6 +49,7 @@ extern "C" {
 #include <logmath.h>
 #include <fe.h>
 #include <feat.h>
+#include <ngram_model.h>
 
 /* PocketSphinx headers (not many of them!) */
 #include <pocketsphinx_export.h>
@@ -89,7 +90,21 @@ void pocketsphinx_free(pocketsphinx_t *ps);
 cmd_ln_t *pocketsphinx_get_config(pocketsphinx_t *ps);
 
 /**
- * Load an FSG file.
+ * Load a finite-state grammar (FSG or JSGF format).
+ *
+ * The type of file will be auto-detected based on the file contents.
+ *
+ * FSG files contain a single grammar which is identified by a name
+ * field in the header of the file.  To select a grammar, call
+ * pocketsphinx_set_fsg() with this name.
+ *
+ * JSGF files can import an arbitrary number of rules which all live
+ * inside a global namespace.  Each 'public' rule is actually a
+ * grammar unto itself.  To select a rule, call pocketsphinx_set_fsg()
+ * with the fully-qualified rule name.
+ *
+ * @return For FSG files, name of the grammar.  For JSGF files, the
+ * name of the first public rule in the file specified.
  */
 const char *pocketsphinx_load_fsgfile(pocketsphinx_t *ps,
 				      const char *fsgfile);

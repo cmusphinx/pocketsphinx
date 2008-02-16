@@ -167,11 +167,7 @@ ngram_search_init(cmd_ln_t *config,
             }
         }
 
-        /* Set language model parameters and create word mappings. */
-        ngram_model_apply_weights(ngs->lmset,
-                                  cmd_ln_float32_r(config, "-lw"),
-                                  cmd_ln_float32_r(config, "-wip"),
-                                  cmd_ln_float32_r(config, "-uw"));
+        /* Create word mappings. */
         ngram_search_update_widmap(ngs);
 
         /* Initialize fwdtree, fwdflat, bestpath modules if necessary. */
