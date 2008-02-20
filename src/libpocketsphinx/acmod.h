@@ -127,7 +127,7 @@ struct acmod_s {
     /* Senone scoring: */
     frame_eval_t frame_eval;   /**< Function to compute GMM scores. */
     ascr_t *senone_scores;      /**< GMM scores for current frame. */
-    bitvec_t senone_active_vec; /**< Active GMMs in current frame. */
+    bitvec_t *senone_active_vec; /**< Active GMMs in current frame. */
     int *senone_active;        /**< Array of active GMMs. */
     int n_senone_active;       /**< Number of active GMMs. */
     int log_zero;              /**< Zero log-probability value. */

@@ -615,126 +615,27 @@ acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm)
 static int32
 acmod_flags2list(acmod_t *acmod)
 {
-    int32 i, j, total_dists, total_bits;
-    bitvec_t flagptr;
+    int32 w, n, b, total_dists, total_words, extra_bits;
+    bitvec_t *flagptr;
 
     total_dists = bin_mdef_n_sen(acmod->mdef);
-
-    j = 0;
-    total_bits = total_dists & -32;
-    for (i = 0, flagptr = acmod->senone_active_vec; i < total_bits; flagptr++) {
-        int32 bits = *flagptr;
-
-        if (bits == 0) {
-            i += 32;
+    total_words = total_dists / BITVEC_BITS;
+    extra_bits = total_dists % BITVEC_BITS;
+    w = n = 0;
+    for (flagptr = acmod->senone_active_vec; w < total_words; ++w, ++flagptr) {
+        if (*flagptr == 0)
             continue;
-        }
-
-        if (bits & (1 << 0))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 1))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 2))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 3))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 4))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 5))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 6))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 7))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 8))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 9))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 10))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 11))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 12))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 13))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 14))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 15))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 16))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 17))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 18))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 19))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 20))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 21))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 22))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 23))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 24))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 25))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 26))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 27))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 28))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 29))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 30))
-            acmod->senone_active[j++] = i;
-        ++i;
-        if (bits & (1 << 31))
-            acmod->senone_active[j++] = i;
-        ++i;
+        for (b = 0; b < BITVEC_BITS; ++b)
+            if (*flagptr & (1UL << b))
+                acmod->senone_active[n++] = w * BITVEC_BITS + b;
     }
 
-    for (; i < total_dists; ++i)
-        if (*flagptr & (1 << (i % 32)))
-            acmod->senone_active[j++] = i;
+    for (b = 0; b < extra_bits; ++b)
+        if (*flagptr & (1UL << b))
+            acmod->senone_active[n++] = w * BITVEC_BITS + b;
 
-    acmod->n_senone_active = j;
-
-    return j;
+    acmod->n_senone_active = n;
+    return n;
 }
 
 int const *
