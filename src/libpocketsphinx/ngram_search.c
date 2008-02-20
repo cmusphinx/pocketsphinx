@@ -44,7 +44,7 @@
 
 /* SphinxBase headers. */
 #include <ckd_alloc.h>
-#include <linklist.h>
+#include <listelem_alloc.h>
 
 /* Local headers. */
 #include "ngram_search.h"
@@ -81,6 +81,7 @@ ngram_search_init(cmd_ln_t *config,
 	ngs->dict = dict;
 	ngs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
 				       acmod->tmat->tp, NULL, acmod->mdef->sseq);
+        ngs->chan_alloc = listelem_alloc_init(sizeof(chan_t));
 
         /* Calculate log beam widths. */
         ngs->beam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam"));
@@ -189,6 +190,7 @@ ngram_search_free(ngram_search_t *ngs)
     ngram_fwdflat_deinit(ngs);
 
     hmm_context_free(ngs->hmmctx);
+    listelem_alloc_free(ngs->chan_alloc);
     ngram_model_free(ngs->lmset);
 
     ckd_free(ngs->word_chan);

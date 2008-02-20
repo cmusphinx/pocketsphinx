@@ -51,5 +51,7 @@ main(int argc, char *argv[])
 	search_finish_fwd();
 	TEST_EQUAL(0, acmod_end_utt(acmod));
 	fbs_end();
+	acmod_free(acmod);
+	fclose(rawfh);
 	return 0;
 }

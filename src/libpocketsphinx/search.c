@@ -55,13 +55,13 @@
 
 /* SphinxBase includes. */
 #include <ckd_alloc.h>
+#include <listelem_alloc.h>
 #include <err.h>
 #include <cmd_ln.h>
 #include <ngram_model.h>
 #include <prim_type.h>
 
 /* Local includes. */
-#include "linklist.h"
 #include "search_const.h"
 #include "dict.h"
 #include "phone.h"
@@ -117,6 +117,13 @@ static int32 n_lastphn_cand_utt;
 
 /* HMM context structure */
 static hmm_context_t *hmmctx;
+
+/* Allocator for chan_t */
+static listelem_alloc_t *chan_alloc;
+/* Allocator for root_chan_t */
+static listelem_alloc_t *root_chan_alloc;
+/* Allocator for latnode_t (shared with searchlat.c) */
+listelem_alloc_t *latnode_alloc;
 
 /*
  * word_chan[w] = separate linked list of channels for each word w, normally used only
@@ -966,7 +973,7 @@ prune_word_chan(void)
             }
             else {
                 hmm_deinit(&hmm->hmm);
-                listelem_free(hmm, sizeof(chan_t));
+                listelem_free(chan_alloc, hmm);
                 *phmmp = thmm;
             }
         }
@@ -1020,7 +1027,7 @@ alloc_all_rc(int32 w)
 
     hmm = word_chan[w];
     if ((hmm == NULL) || (hmm->hmm.s.ssid != *sseq_rc)) {
-        hmm = (chan_t *) listelem_alloc(sizeof(chan_t));
+        hmm = listelem_malloc(chan_alloc);
         hmm->next = word_chan[w];
         word_chan[w] = hmm;
 
@@ -1030,7 +1037,7 @@ alloc_all_rc(int32 w)
     }
     for (i = 1, sseq_rc++; *sseq_rc >= 0; sseq_rc++, i++) {
         if ((hmm->next == NULL) || (hmm->next->hmm.s.ssid != *sseq_rc)) {
-            thmm = (chan_t *) listelem_alloc(sizeof(chan_t));
+            thmm = listelem_malloc(chan_alloc);
             thmm->next = hmm->next;
             hmm->next = thmm;
             hmm = thmm;
@@ -1052,7 +1059,7 @@ free_all_rc(int32 w)
     for (hmm = word_chan[w]; hmm; hmm = thmm) {
         thmm = hmm->next;
         hmm_deinit(&hmm->hmm);
-        listelem_free(hmm, sizeof(chan_t));
+        listelem_free(chan_alloc, hmm);
     }
     word_chan[w] = NULL;
 }
@@ -1236,7 +1243,9 @@ search_initialize(cmd_ln_t *cmdln)
     config = cmdln;
     bptable_size = cmd_ln_int32_r(config, "-latsize");
 
-    linklist_init();
+    chan_alloc = listelem_alloc_init(sizeof(chan_t));
+    root_chan_alloc = listelem_alloc_init(sizeof(root_chan_t));
+    latnode_alloc = listelem_alloc_init(sizeof(latnode_t));
 
     NumWords = g_word_dict->dict_entry_count;
     StartWordId = kb_get_word_id("<s>");
@@ -1347,7 +1356,14 @@ search_free(void)
     free_search_tree();
     hmm_context_free(hmmctx);
     ckd_free(active_word_list[0]);
+    active_word_list[0] = active_word_list[1] = NULL;
+    ckd_free(active_chan_list[0]);
+    active_chan_list[0] = active_chan_list[1] = NULL;
     search_fwdflat_free();
+    searchlat_free();
+    listelem_alloc_free(chan_alloc);
+    listelem_alloc_free(root_chan_alloc);
+    listelem_alloc_free(latnode_alloc);
 }
 
 /*
@@ -2460,8 +2476,7 @@ create_search_tree(dict_t * dict, int32 use_lm)
             ph = de->phone_ids[1];
             hmm = rhmm->next;
             if (hmm == NULL) {
-                rhmm->next = hmm =
-                    (chan_t *) listelem_alloc(sizeof(chan_t));
+                rhmm->next = hmm = listelem_malloc(chan_alloc);
                 init_nonroot_chan(hmm, ph, de->ci_phone_ids[1]);
                 n_nonroot_chan++;
             }
@@ -2471,8 +2486,7 @@ create_search_tree(dict_t * dict, int32 use_lm)
                 for (; hmm && (hmm->hmm.s.ssid != ph); hmm = hmm->alt)
                     prev_hmm = hmm;
                 if (!hmm) {     /* thanks, rkm! */
-                    prev_hmm->alt = hmm =
-                        (chan_t *) listelem_alloc(sizeof(chan_t));
+                    prev_hmm->alt = hmm = listelem_malloc(chan_alloc);
                     init_nonroot_chan(hmm, ph, de->ci_phone_ids[1]);
                     n_nonroot_chan++;
                 }
@@ -2482,7 +2496,7 @@ create_search_tree(dict_t * dict, int32 use_lm)
             for (p = 2; p < de->len - 1; p++) {
                 ph = de->phone_ids[p];
                 if (!hmm->next) {
-                    hmm->next = (chan_t *) listelem_alloc(sizeof(chan_t));
+                    hmm->next = listelem_malloc(chan_alloc);
                     hmm = hmm->next;
                     init_nonroot_chan(hmm, ph, de->ci_phone_ids[p]);
                     n_nonroot_chan++;
@@ -2494,8 +2508,7 @@ create_search_tree(dict_t * dict, int32 use_lm)
                          hmm = hmm->alt)
                         prev_hmm = hmm;
                     if (!hmm) { /* thanks, rkm! */
-                        prev_hmm->alt = hmm =
-                            (chan_t *) listelem_alloc(sizeof(chan_t));
+                        prev_hmm->alt = hmm = listelem_malloc(chan_alloc);
                         init_nonroot_chan(hmm, ph, de->ci_phone_ids[p]);
                         n_nonroot_chan++;
                     }
@@ -2662,7 +2675,7 @@ delete_search_subtree(chan_t * hmm)
 
     /* Now free hmm */
     hmm_deinit(&hmm->hmm);
-    listelem_free(hmm, sizeof(chan_t));
+    listelem_free(chan_alloc, hmm);
 }
 
 void
@@ -2852,7 +2865,7 @@ build_fwdflat_wordlist(void)
             node->lef = ef;
         else {
             /* New node; link to head of list */
-            node = (latnode_t *) listelem_alloc(sizeof(latnode_t));
+            node = listelem_malloc(latnode_alloc);
             node->wid = wid;
             node->fef = node->lef = ef;
 
@@ -2873,7 +2886,7 @@ build_fwdflat_wordlist(void)
                     frm_wordlist[f] = nextnode;
                 else
                     prevnode->next = nextnode;
-                listelem_free(node, sizeof(latnode_t));
+                listelem_free(latnode_alloc, node);
             }
             else
                 prevnode = node;
@@ -2912,7 +2925,7 @@ destroy_frm_wordlist(void)
     for (f = 0; f <= LastFrame; f++) {
         for (node = frm_wordlist[f]; node; node = tnode) {
             tnode = node->next;
-            listelem_free(node, sizeof(latnode_t));
+            listelem_free(latnode_alloc, node);
         }
     }
 }
@@ -2939,7 +2952,7 @@ build_fwdflat_chan(void)
 
         /* Multiplex root HMM for first phone (one root per word, flat
          * lexicon) */
-        rhmm = (root_chan_t *) listelem_alloc(sizeof(root_chan_t));
+        rhmm = listelem_malloc(root_chan_alloc);
         rhmm->diphone = de->phone_ids[0];
         rhmm->ciphone = de->ci_phone_ids[0];
         rhmm->next = NULL;
@@ -2948,7 +2961,7 @@ build_fwdflat_chan(void)
         /* HMMs for word-internal phones */
         prevhmm = NULL;
         for (p = 1; p < de->len - 1; p++) {
-            hmm = (chan_t *) listelem_alloc(sizeof(chan_t));
+            hmm = listelem_malloc(chan_alloc);
             hmm->ciphone = de->ci_phone_ids[p];
             hmm->info.rc_id = p + 1 - de->len;
             hmm->next = NULL;

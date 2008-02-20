@@ -45,7 +45,7 @@
 
 /* SphinxBase headers. */
 #include <ckd_alloc.h>
-#include <linklist.h>
+#include <listelem_alloc.h>
 
 /* Local headers. */
 #include "ngram_search_fwdtree.h"
@@ -247,7 +247,7 @@ create_search_tree(ngram_search_t *ngs)
             ph = de->phone_ids[1];
             hmm = rhmm->next;
             if (hmm == NULL) {
-                rhmm->next = hmm = (chan_t *) listelem_alloc(sizeof(*hmm));
+                rhmm->next = hmm = listelem_malloc(ngs->chan_alloc);
                 init_nonroot_chan(ngs, hmm, ph, de->ci_phone_ids[1]);
                 ngs->n_nonroot_chan++;
             }
@@ -257,7 +257,7 @@ create_search_tree(ngram_search_t *ngs)
                 for (; hmm && (hmm->hmm.s.ssid != ph); hmm = hmm->alt)
                     prev_hmm = hmm;
                 if (!hmm) {     /* thanks, rkm! */
-                    prev_hmm->alt = hmm = listelem_alloc(sizeof(*hmm));
+                    prev_hmm->alt = hmm = listelem_malloc(ngs->chan_alloc);
                     init_nonroot_chan(ngs, hmm, ph, de->ci_phone_ids[1]);
                     ngs->n_nonroot_chan++;
                 }
@@ -267,7 +267,7 @@ create_search_tree(ngram_search_t *ngs)
             for (p = 2; p < de->len - 1; p++) {
                 ph = de->phone_ids[p];
                 if (!hmm->next) {
-                    hmm->next = listelem_alloc(sizeof(*hmm->next));
+                    hmm->next = listelem_malloc(ngs->chan_alloc);
                     hmm = hmm->next;
                     init_nonroot_chan(ngs, hmm, ph, de->ci_phone_ids[p]);
                     ngs->n_nonroot_chan++;
@@ -279,7 +279,7 @@ create_search_tree(ngram_search_t *ngs)
                          hmm = hmm->alt)
                         prev_hmm = hmm;
                     if (!hmm) { /* thanks, rkm! */
-                        prev_hmm->alt = hmm = listelem_alloc(sizeof(*hmm));
+                        prev_hmm->alt = hmm = listelem_malloc(ngs->chan_alloc);
                         init_nonroot_chan(ngs, hmm, ph, de->ci_phone_ids[p]);
                         ngs->n_nonroot_chan++;
                     }
@@ -327,19 +327,19 @@ create_search_tree(ngram_search_t *ngs)
 }
 
 static void
-reinit_search_subtree(chan_t * hmm)
+reinit_search_subtree(ngram_search_t *ngs, chan_t * hmm)
 {
     chan_t *child, *sibling;
 
     /* First free all children under hmm */
     for (child = hmm->next; child; child = sibling) {
         sibling = child->alt;
-        reinit_search_subtree(child);
+        reinit_search_subtree(ngs, child);
     }
 
     /* Now free hmm */
     hmm_deinit(&hmm->hmm);
-    listelem_free(hmm, sizeof(*hmm));
+    listelem_free(ngs->chan_alloc, hmm);
 }
 
 /*
@@ -357,7 +357,7 @@ reinit_search_tree(ngram_search_t *ngs)
 
         while (hmm) {
             sibling = hmm->alt;
-            reinit_search_subtree(hmm);
+            reinit_search_subtree(ngs, hmm);
             hmm = sibling;
         }
 
@@ -837,7 +837,7 @@ alloc_all_rc(ngram_search_t *ngs, int32 w)
 
     hmm = ngs->word_chan[w];
     if ((hmm == NULL) || (hmm->hmm.s.ssid != *sseq_rc)) {
-        hmm = (chan_t *) listelem_alloc(sizeof(chan_t));
+        hmm = listelem_malloc(ngs->chan_alloc);
         hmm->next = ngs->word_chan[w];
         ngs->word_chan[w] = hmm;
 
@@ -847,7 +847,7 @@ alloc_all_rc(ngram_search_t *ngs, int32 w)
     }
     for (i = 1, sseq_rc++; *sseq_rc >= 0; sseq_rc++, i++) {
         if ((hmm->next == NULL) || (hmm->next->hmm.s.ssid != *sseq_rc)) {
-            thmm = (chan_t *) listelem_alloc(sizeof(chan_t));
+            thmm = listelem_malloc(ngs->chan_alloc);
             thmm->next = hmm->next;
             hmm->next = thmm;
             hmm = thmm;
@@ -869,7 +869,7 @@ free_all_rc(ngram_search_t *ngs, int32 w)
     for (hmm = ngs->word_chan[w]; hmm; hmm = thmm) {
         thmm = hmm->next;
         hmm_deinit(&hmm->hmm);
-        listelem_free(hmm, sizeof(chan_t));
+        listelem_free(ngs->chan_alloc, hmm);
     }
     ngs->word_chan[w] = NULL;
 }
@@ -1090,7 +1090,7 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
             }
             else {
                 hmm_deinit(&hmm->hmm);
-                listelem_free(hmm, sizeof(chan_t));
+                listelem_free(ngs->chan_alloc, hmm);
                 *phmmp = thmm;
             }
         }

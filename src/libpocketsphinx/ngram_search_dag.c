@@ -43,7 +43,7 @@
 
 /* SphinxBase headers. */
 #include <ckd_alloc.h>
-#include <linklist.h>
+#include <listelem_alloc.h>
 
 /* Local headers. */
 #include "ngram_search.h"

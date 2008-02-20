@@ -51,6 +51,7 @@ main(int argc, char *argv[])
 
 	TEST_EQUAL(0, acmod_end_utt(acmod));
 	pocketsphinx_free(ps);
+	fclose(rawfh);
 
 	return 0;
 }

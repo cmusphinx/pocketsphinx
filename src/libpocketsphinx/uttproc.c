@@ -59,7 +59,7 @@
 #include <ckd_alloc.h>
 #include <err.h>
 #include <strfuncs.h>
-#include <linklist.h>
+#include <listelem_alloc.h>
 #include <feat.h>
 #include <fe.h>
 #include <fixpoint.h>
@@ -132,6 +132,7 @@ static char *uttid_prefix = NULL;
 static int32 uttno;             /* A running sequence number assigned to every utterance.  Used as
                                    an id for an utterance if uttid is undefined. */
 
+listelem_alloc_t *search_hyp_alloc; /**< Allocator for utt_seghyp. */
 static search_hyp_t *utt_seghyp = NULL;
 
 static float TotalCPUTime, TotalElapsedTime, TotalSpeechTime;
@@ -486,8 +487,8 @@ uttproc_init(void)
         return -1;
     }
 
-    /* Make sure linklist functions can operate. */
-    linklist_init();
+    /* Create list element allocator for search hypotheses. */
+    search_hyp_alloc = listelem_alloc_init(sizeof(search_hyp_t));
 
     fe = fe_init_auto();
 
@@ -597,6 +598,8 @@ uttproc_end(void)
     }
 
     fsg_search_free(fsg_search);
+
+    listelem_alloc_free(search_hyp_alloc);
 
     uttstate = UTTSTATE_UNDEF;
     return 0;
@@ -1063,7 +1066,7 @@ utt_seghyp_free(search_hyp_t * h)
 
     while (h) {
         tmp = h->next;
-        listelem_free(h, sizeof(search_hyp_t));
+        listelem_free(search_hyp_alloc, h);
         h = tmp;
     }
 }
@@ -1080,7 +1083,7 @@ build_utt_seghyp(void)
     /* Fill in missing details and build segmentation linked list */
     last = NULL;
     for (i = 0; seghyp[i].wid >= 0; i++) {
-        newhyp = (search_hyp_t *) listelem_alloc(sizeof(search_hyp_t));
+        newhyp = (search_hyp_t *) listelem_malloc(search_hyp_alloc);
         newhyp->wid = seghyp[i].wid;
         newhyp->word = kb_get_word_str(newhyp->wid);
         newhyp->sf = seghyp[i].sf;

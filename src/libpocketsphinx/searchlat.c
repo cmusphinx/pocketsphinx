@@ -102,10 +102,10 @@
 
 /* SphinxBase headers. */
 #include <ckd_alloc.h>
+#include <listelem_alloc.h>
 #include <cmd_ln.h>
 #include <strfuncs.h>
 #include <ngram_model.h>
-#include <linklist.h>
 #include <err.h>
 #include <prim_type.h>
 
@@ -136,9 +136,9 @@ static struct permanent_lattice_s {
     latnode_t *start_node, *final_node;
 } lattice;
 
-#if 0
-extern char *query_utt_id(void);
-#endif
+/* Allocators we need. */
+static listelem_alloc_t *latlink_alloc, *rev_latlink_alloc, *latpath_alloc;
+extern listelem_alloc_t *latnode_alloc, *search_hyp_alloc;
 
 static latnode_t *latnode_list = NULL;
 
@@ -177,7 +177,7 @@ link_latnodes(latnode_t * from, latnode_t * to, int32 score, int32 ef)
 
     if (!link) {
         /* No link between the two nodes; create a new one */
-        link = (latlink_t *) listelem_alloc(sizeof(latlink_t));
+        link = listelem_malloc(latlink_alloc);
 
         link->from = from;
         link->to = to;
@@ -210,8 +210,7 @@ bypass_filler_nodes(void)
         for (link = node->links; link; link = link->next) {
             to = link->to;
             if (ISA_FILLER_WORD(to->wid)) {
-                revlink = (rev_latlink_t *)
-                    listelem_alloc(sizeof(rev_latlink_t));
+                revlink = listelem_malloc(rev_latlink_alloc);
                 revlink->link = link;
                 revlink->next = to->revlinks;
                 to->revlinks = revlink;
@@ -255,12 +254,12 @@ bypass_filler_nodes(void)
             for (revlink = node->revlinks; revlink; revlink = t_revlink) {
                 t_revlink = revlink->next;
                 revlink->link->to = NULL;
-                listelem_free(revlink, sizeof(rev_latlink_t));
+                listelem_free(rev_latlink_alloc, revlink);
             }
 
             for (link = node->links; link; link = t_link) {
                 t_link = link->next;
-                listelem_free(link, sizeof(latlink_t));
+                listelem_free(latlink_alloc, link);
             }
 
             if (prev_node)
@@ -268,7 +267,7 @@ bypass_filler_nodes(void)
             else
                 latnode_list = t_node;
 
-            listelem_free(node, sizeof(latnode_t));
+            listelem_free(latnode_alloc, node);
         }
         else
             prev_node = node;
@@ -284,7 +283,7 @@ bypass_filler_nodes(void)
                     prev_link->next = t_link;
                 else
                     node->links = t_link;
-                listelem_free(link, sizeof(latlink_t));
+                listelem_free(latlink_alloc, link);
             }
             else
                 prev_link = link;
@@ -322,9 +321,9 @@ delete_unreachable(void)
                 latnode_list = node->next;
             for (link = node->links; link; link = t_link) {
                 t_link = link->next;
-                listelem_free(link, sizeof(latlink_t));
+                listelem_free(latlink_alloc, link);
             }
-            listelem_free(node, sizeof(latnode_t));
+            listelem_free(latnode_alloc, node);
         }
         else
             prev_node = node;
@@ -453,7 +452,7 @@ build_lattice(int32 bptbl_sz)
             node->lef = i;
         else {
             /* New node; link to head of list */
-            node = (latnode_t *) listelem_alloc(sizeof(latnode_t));
+            node = listelem_malloc(latnode_alloc);
             node->wid = wid;
             node->sf = sf;
             node->fef = node->lef = i;
@@ -598,9 +597,9 @@ destroy_lattice(latnode_t * node_list)
         tnode = node->next;
         for (link = node->links; link; link = tlink) {
             tlink = link->next;
-            listelem_free(link, sizeof(latlink_t));
+            listelem_free(latlink_alloc, link);
         }
-        listelem_free(node, sizeof(latnode_t));
+        listelem_free(latnode_alloc, node);
     }
 }
 
@@ -640,7 +639,7 @@ bptbl2latdensity(int32 bptbl_sz, int32 * density)
             node->lef = ef;
         else {
             /* New node; link to head of list */
-            node = (latnode_t *) listelem_alloc(sizeof(latnode_t));
+            node = listelem_malloc(latnode_alloc);
             node->wid = wid;
             node->sf = sf;
             node->fef = node->lef = ef;
@@ -675,7 +674,7 @@ bptbl2latdensity(int32 bptbl_sz, int32 * density)
                     node->lef = node2->lef;
 
                 pred->next = node2next;
-                listelem_free(node2, sizeof(latnode_t));
+                listelem_free(latnode_alloc, node2);
             }
             else
                 pred = node2;
@@ -695,7 +694,7 @@ bptbl2latdensity(int32 bptbl_sz, int32 * density)
     while (latnodes) {
         node = latnodes;
         latnodes = latnodes->next;
-        listelem_free(node, sizeof(latnode_t));
+        listelem_free(latnode_alloc, node);
     }
 
     return 0;
@@ -1000,25 +999,6 @@ search_get_lattice(void)
     return (lattice.latnode_list);
 }
 
-void
-searchlat_init(void)
-{
-    linklist_init();
-
-    start_wid = kb_get_word_id("<s>");
-    finish_wid = kb_get_word_id("</s>");
-    sil_wid = kb_get_word_id("<sil>");
-    rc_fwdperm = g_word_dict->rcFwdPermTable;
-    altpron = cmd_ln_boolean("-reportpron");
-
-    bptbl = search_get_bptable();
-    BScoreStack = search_get_bscorestack();
-
-    hyp = search_get_hyp();
-
-    lattice.latnode_list = NULL;
-    lattice.final_node = NULL;
-}
 
 /* -----------Code for n-best hypotheses, uses the same lattice structure------------- */
 
@@ -1055,7 +1035,7 @@ latpath_seg_back_trace(latpath_t * path)
 
     head = NULL;
     for (; path; path = path->parent) {
-        h = (search_hyp_t *) listelem_alloc(sizeof(search_hyp_t));
+        h = listelem_malloc(search_hyp_alloc);
         h->wid = path->node->wid;
         h->word = kb_get_word_str(h->wid);
         h->sf = path->node->sf;
@@ -1136,12 +1116,12 @@ path_insert(latpath_t * newpath, int32 total_score)
         path_tail = prev;
         prev->next = NULL;
         n_path = MAX_PATHS;
-        listelem_free(newpath, sizeof(latpath_t));
+        listelem_free(latpath_alloc, newpath);
 
         n_hyp_reject++;
         for (; p; p = newpath) {
             newpath = p->next;
-            listelem_free(p, sizeof(latpath_t));
+            listelem_free(latpath_alloc, p);
             n_hyp_reject++;
         }
     }
@@ -1164,7 +1144,7 @@ path_extend(latpath_t * path)
             continue;
 
         /* Create path extension and compute exact score for this extension */
-        newpath = (latpath_t *) listelem_alloc(sizeof(latpath_t));
+        newpath = listelem_malloc(latpath_alloc);
         newpath->node = link->to;
         newpath->parent = path;
         newpath->score = path->score + link->link_scr;
@@ -1187,7 +1167,7 @@ path_extend(latpath_t * path)
             tail_score =
                 path_tail->score + path_tail->node->info.rem_score;
             if (total_score < tail_score) {
-                listelem_free(newpath, sizeof(latpath_t));
+                listelem_free(latpath_alloc, newpath);
                 n_hyp_reject++;
                 continue;
             }
@@ -1204,7 +1184,7 @@ search_hyp_free(search_hyp_t * h)
 
     while (h) {
         tmp = h->next;
-        listelem_free(h, sizeof(search_hyp_t));
+        listelem_free(search_hyp_alloc, h);
         h = tmp;
     }
 }
@@ -1285,7 +1265,7 @@ search_get_alt(int32 n,         /* In: No. of alternatives to look for */
             int32 n_used;
             best_rem_score(node);
 
-            path = (latpath_t *) listelem_alloc(sizeof(latpath_t));
+            path = listelem_malloc(latpath_alloc);
             path->node = node;
             path->parent = NULL;
             scr =
@@ -1354,12 +1334,12 @@ search_get_alt(int32 n,         /* In: No. of alternatives to look for */
     while (path_list) {
         top = path_list;
         path_list = path_list->next;
-        listelem_free(top, sizeof(latpath_t));
+        listelem_free(latpath_alloc, top);
     }
     while (paths_done) {
         top = paths_done;
         paths_done = paths_done->next;
-        listelem_free(top, sizeof(latpath_t));
+        listelem_free(latpath_alloc, top);
     }
 
     *alt_out = alt;
@@ -1388,4 +1368,34 @@ search_delete_saved_lattice(void)
         lattice.start_node = NULL;
         lattice.final_node = NULL;
     }
+}
+
+void
+searchlat_init(void)
+{
+    latlink_alloc = listelem_alloc_init(sizeof(latlink_t));
+    rev_latlink_alloc = listelem_alloc_init(sizeof(rev_latlink_t));
+    latpath_alloc = listelem_alloc_init(sizeof(latpath_t));
+
+    start_wid = kb_get_word_id("<s>");
+    finish_wid = kb_get_word_id("</s>");
+    sil_wid = kb_get_word_id("<sil>");
+    rc_fwdperm = g_word_dict->rcFwdPermTable;
+    altpron = cmd_ln_boolean("-reportpron");
+
+    bptbl = search_get_bptable();
+    BScoreStack = search_get_bscorestack();
+
+    hyp = search_get_hyp();
+
+    lattice.latnode_list = NULL;
+    lattice.final_node = NULL;
+}
+
+void
+searchlat_free(void)
+{
+    listelem_alloc_free(latlink_alloc);
+    listelem_alloc_free(rev_latlink_alloc);
+    listelem_alloc_free(latpath_alloc);
 }

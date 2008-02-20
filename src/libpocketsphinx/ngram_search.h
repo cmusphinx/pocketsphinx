@@ -46,6 +46,7 @@
 #include <cmd_ln.h>
 #include <logmath.h>
 #include <ngram_model.h>
+#include <listelem_alloc.h>
 
 /* Local headers. */
 #include "hmm.h"
@@ -228,6 +229,9 @@ struct ngram_search_s {
     ngram_model_t *lmset;  /**< Set of language models. */
     hmm_context_t *hmmctx; /**< HMM context. */
     char *hyp_str;         /**< Current hypothesis string. */
+
+    /* Allocators */
+    listelem_alloc_t *chan_alloc; /**< For chan_t */
 
     /**
      * Search structure of HMM instances.

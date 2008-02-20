@@ -277,6 +277,7 @@ int32 search_bptbl_pred (int32 b);
 
 /* Functions from searchlat.c */
 void searchlat_init ( void );
+void searchlat_free ( void );
 int32 bptbl2latdensity (int32 bptbl_sz, int32 *density);
 int32 lattice_rescore ( float32 lwf );
 
