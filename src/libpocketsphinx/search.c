@@ -1238,8 +1238,6 @@ search_initialize(cmd_ln_t *cmdln)
 {
     int32 bptable_size;
     
-    if (config)
-        cmd_ln_free_r(config);
     config = cmdln;
     bptable_size = cmd_ln_int32_r(config, "-latsize");
 
