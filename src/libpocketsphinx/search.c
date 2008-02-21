@@ -1357,6 +1357,7 @@ search_free(void)
     active_word_list[0] = active_word_list[1] = NULL;
     ckd_free(active_chan_list[0]);
     active_chan_list[0] = active_chan_list[1] = NULL;
+    max_nonroot_chan = 0; /* Signal that active_chan_list is empty */
     search_fwdflat_free();
     searchlat_free();
     listelem_alloc_free(chan_alloc);

@@ -1398,4 +1398,8 @@ searchlat_free(void)
     listelem_alloc_free(latlink_alloc);
     listelem_alloc_free(rev_latlink_alloc);
     listelem_alloc_free(latpath_alloc);
+    lattice.latnode_list = NULL;
+    lattice.start_node = NULL;
+    lattice.final_node = NULL;
+    latnode_list = NULL;
 }

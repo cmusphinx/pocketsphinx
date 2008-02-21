@@ -224,6 +224,7 @@ fbs_end(void)
     for (gn = model_strings; gn; gn = gnode_next(gn))
         ckd_free(gnode_ptr(gn));
     glist_free(model_strings);
+    model_strings = NULL;
 
     uttproc_end();
     search_free();

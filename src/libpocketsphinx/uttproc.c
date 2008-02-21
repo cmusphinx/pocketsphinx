@@ -152,6 +152,8 @@ static struct timeval e_start, e_stop;
 /* searchlat.c */
 void searchlat_set_rescore_lm(char const *lmname);
 
+void utt_seghyp_free(search_hyp_t * h);
+
 static fsg_search_t *fsg_search;
 
 
@@ -598,6 +600,9 @@ uttproc_end(void)
     }
 
     fsg_search_free(fsg_search);
+
+    utt_seghyp_free(utt_seghyp);
+    utt_seghyp = NULL;
 
     listelem_alloc_free(search_hyp_alloc);
 
