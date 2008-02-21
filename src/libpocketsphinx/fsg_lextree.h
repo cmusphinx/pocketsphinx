@@ -108,7 +108,7 @@ fsg_lextree_t *fsg_lextree_init(fsg_search_t *, word_fsg_t *);
 void fsg_lextree_free (fsg_lextree_t *);
 
 
-void fsg_lextree_dump (fsg_lextree_t *, FILE *);
+void fsg_lextree_dump (fsg_search_t *, fsg_lextree_t *, FILE *);
 
 
 void fsg_lextree_utt_start (fsg_lextree_t *);

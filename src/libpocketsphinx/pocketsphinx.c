@@ -138,7 +138,8 @@ pocketsphinx_init(cmd_ln_t *config)
         || (fsgctl = cmd_ln_str_r(config, "-fsgctlfn"))) {
         /* Initialize the FSG module. */
         ps->fsgs = fsg_search_init(config, ps->lmath,
-                                   ps->acmod->mdef, ps->dict);
+                                   ps->acmod->mdef, ps->dict,
+                                   ps->acmod->tmat);
         if (ps->fsgs == NULL)
             goto error_out;
 
@@ -204,7 +205,8 @@ pocketsphinx_load_fsgfile(pocketsphinx_t *ps, const char *fsgfile)
 
     if (ps->fsgs == NULL)
         ps->fsgs = fsg_search_init(ps->config, ps->lmath,
-                                   ps->acmod->mdef, ps->dict);
+                                   ps->acmod->mdef, ps->dict,
+                                   ps->acmod->tmat);
 
     fsg = word_fsg_readfile(fsgfile, ps->dict, ps->lmath,
                             cmd_ln_boolean_r(ps->config, "-fsgusealtpron"),
@@ -235,7 +237,8 @@ pocketsphinx_load_fsgctl(pocketsphinx_t *ps, const char *fsgctlfile, int set_def
 
     if (ps->fsgs == NULL)
         ps->fsgs = fsg_search_init(ps->config, ps->lmath,
-                                   ps->acmod->mdef, ps->dict);
+                                   ps->acmod->mdef, ps->dict,
+                                   ps->acmod->tmat);
 
     if ((ctlfp = fopen(fsgctlfile, "r")) == NULL) {
         E_ERROR_SYSTEM("Failed to open FSG control file %s");
@@ -317,9 +320,8 @@ pocketsphinx_process_raw(pocketsphinx_t *ps,
 			 int no_search,
 			 int full_utt)
 {
-    /* Feed samples to acmod. */
-
-    /* If do_search, then, well, do search. */
+    if (no_search)
+        acmod_set_grow(ps->acmod, TRUE);
 
     return -1;
 }
@@ -331,9 +333,8 @@ pocketsphinx_process_cep(pocketsphinx_t *ps,
 			 int no_search,
 			 int full_utt)
 {
-    /* Feed samples to acmod. */
-
-    /* If do_search, then, well, do search. */
+    if (no_search)
+        acmod_set_grow(ps->acmod, TRUE);
 
     return -1;
 }

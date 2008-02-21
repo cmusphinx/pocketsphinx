@@ -57,6 +57,7 @@
 #include "bin_mdef.h"
 #include "word_fsg.h"
 #include "dict.h"
+#include "tmat.h"
 
 /* Forward declare some things. */
 struct fsg_lextree_s;
@@ -68,6 +69,7 @@ typedef struct fsg_search_s {
     cmd_ln_t *config;           /* Pointer to global configuration. */
     logmath_t *lmath;		/* Pointer to global log-math. */
     bin_mdef_t *mdef;           /* Pointer to global model definition. */
+    tmat_t *tmat;               /* Pointer to global transition matrix. */
     dict_t *dict;		/* Pointer to global word dictoinary. */
 
     word_fsg_t *fsg;		/* Currently active FSG; NULL if none.  One
@@ -87,6 +89,7 @@ typedef struct fsg_search_s {
                                            beams to determine actual effective beams.
                                            For implementing absolute pruning. */
     int32 beam, pbeam, wbeam;	/* Effective beams after applying beam_factor */
+    int32 lw, pip, wip;         /* Language weights */
   
     int32 frame;			/* Current frame */
 
@@ -113,7 +116,8 @@ typedef struct fsg_search_s {
 fsg_search_t *fsg_search_init(cmd_ln_t *config,
                               logmath_t *lmath,
                               bin_mdef_t *mdef,
-                              dict_t *dict);
+                              dict_t *dict,
+                              tmat_t *tmat);
 
 
 /*

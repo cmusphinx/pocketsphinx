@@ -221,7 +221,7 @@ void fsg_psubtree_free (fsg_pnode_t *alloc_head);
  * Dump the list of nodes in the given lextree to the given file.  alloc_head:
  * head of linear list of allocated nodes updated by fsg_psubtree_init().
  */
-void fsg_psubtree_dump (fsg_pnode_t *alloc_head, FILE *fp);
+void fsg_psubtree_dump (fsg_search_t *search, fsg_pnode_t *alloc_head, FILE *fp);
 
 
 /*

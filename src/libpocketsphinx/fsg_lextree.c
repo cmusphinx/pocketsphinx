@@ -127,7 +127,7 @@ fsg_lextree_init(fsg_search_t *search, word_fsg_t * fsg)
     E_INFO("%d HMM nodes in lextree\n", lextree->n_pnode);
 
 #if __FSG_DBG__
-    fsg_lextree_dump(lextree, stdout);
+    fsg_lextree_dump(search, lextree, stdout);
 #endif
 
     return lextree;
@@ -135,13 +135,13 @@ fsg_lextree_init(fsg_search_t *search, word_fsg_t * fsg)
 
 
 void
-fsg_lextree_dump(fsg_lextree_t * lextree, FILE * fp)
+fsg_lextree_dump(fsg_search_t *search, fsg_lextree_t * lextree, FILE * fp)
 {
     int32 s;
 
     for (s = 0; s < word_fsg_n_state(lextree->fsg); s++) {
         fprintf(fp, "State %5d root %p\n", s, lextree->root[s]);
-        fsg_psubtree_dump(lextree->alloc_head[s], fp);
+        fsg_psubtree_dump(search, lextree->alloc_head[s], fp);
     }
     fflush(fp);
 }

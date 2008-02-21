@@ -84,17 +84,16 @@ static void fsg_search_hyp_free(fsg_search_t * search);
 
 fsg_search_t *
 fsg_search_init(cmd_ln_t *config, logmath_t *lmath,
-                bin_mdef_t *mdef, dict_t *dict)
+                bin_mdef_t *mdef, dict_t *dict, tmat_t *tmat)
 {
     fsg_search_t *search;
-    float32 lw;
-    int32 pip, wip;
 
     search = (fsg_search_t *) ckd_calloc(1, sizeof(fsg_search_t));
     search->config = config;
     search->lmath = lmath;
     search->mdef = mdef;
     search->dict = dict;
+    search->tmat = tmat;
 
     /* Intialize the search history object */
     search->history = fsg_history_init(NULL);
@@ -103,21 +102,24 @@ fsg_search_init(cmd_ln_t *config, logmath_t *lmath,
     search->state = FSG_SEARCH_IDLE;
 
     /* Get search pruning parameters */
-    search_get_logbeams(&(search->beam_orig),
-                        &(search->pbeam_orig), &(search->wbeam_orig));
     search->beam_factor = 1.0f;
-    search->beam = search->beam_orig;
-    search->pbeam = search->pbeam_orig;
-    search->wbeam = search->wbeam_orig;
+    search->beam = search->beam_orig
+        = (int32) logmath_log(lmath, cmd_ln_float64_r(config, "-beam"));
+    search->pbeam = search->pbeam_orig
+        = (int32) logmath_log(lmath, cmd_ln_float64_r(config, "-pbeam"));
+    search->wbeam = search->wbeam_orig
+        = (int32) logmath_log(lmath, cmd_ln_float64_r(config, "-wbeam"));
 
     /* LM related weights/penalties */
-    lw = cmd_ln_float32_r(config, "-lw");
-    pip = (int32) (logmath_log(lmath, cmd_ln_float32_r(config, "-pip")) * lw);
-    wip = (int32) (logmath_log(lmath, cmd_ln_float32_r(config, "-wip")) * lw);
+    search->lw = cmd_ln_float32_r(config, "-lw");
+    search->pip = (int32) (logmath_log(lmath, cmd_ln_float32_r(config, "-pip"))
+                           * search->lw);
+    search->wip = (int32) (logmath_log(lmath, cmd_ln_float32_r(config, "-wip"))
+                           * search->lw);
 
     E_INFO("FSG(beam: %d, pbeam: %d, wbeam: %d; wip: %d, pip: %d)\n",
            search->beam_orig, search->pbeam_orig, search->wbeam_orig,
-           wip, pip);
+           search->wip, search->pip);
 
     return search;
 }
