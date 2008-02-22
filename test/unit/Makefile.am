@@ -1,15 +1,32 @@
-check_PROGRAMS = test_lm_read test_ps_init test_acmod test_fwdtree test_fwdtree_fbs
+gst_programs =
+gst_tests =
+if BUILD_GST
+gst_programs += test_gst
+gst_tests += test_gst
+endif
+
+check_PROGRAMS = \
+	test_lm_read \
+	test_ps_init \
+	test_acmod \
+	test_fwdtree \
+	test_fwdtree_fbs \
+	$(gst_programs)
+
 TESTS = \
 	test_lm_init.sh \
 	test_lmctl_init.sh \
 	test_lm_read \
 	test_ps_init \
 	test_acmod \
-	test_fwdtree
+	test_fwdtree \
+	$(gst_tests)
 
 noinst_HEADERS = test_macros.h
 
-INCLUDES = \
+test_gst_LDADD = $(GST_LIBS)
+
+INCLUDES = $(GST_CFLAGS) \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/src/libpocketsphinx \
 	-I$(top_builddir)/include \
