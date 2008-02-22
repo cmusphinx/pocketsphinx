@@ -1,3 +1,3 @@
 SUBDIRS = libpocketsphinx \
-	programs
-
+	programs \
+	gst-plugin

@@ -1,45 +1,7 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
-
-Please note that the GStreamer plugin is under a different license (LGPL):
-/* Based on gstsphinxsink.c from gnome-voice-control:
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
+/* Based on gstsphinxsink.h:
  *
  * Copyright (C) 2007  Nickolay V. Shmyrev  <nshmyrev@yandex.ru>
- *
- * gstsphinxsink.c:
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -56,7 +18,6 @@ Please note that the GStreamer plugin is under a different license (LGPL):
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-/* Based on GStreamer plug-in template code, license follows: */
 /*
  * GStreamer
  * Copyright 2005 Thomas Vander Stichele <thomas@apestaart.org>
@@ -100,3 +61,76 @@ Please note that the GStreamer plugin is under a different license (LGPL):
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
+
+#ifndef __GST_POCKETSPHINX_H__
+#define __GST_POCKETSPHINX_H__
+
+#include <gst/gst.h>
+#include <gst/base/gstbasesink.h>
+#include <gst/base/gstadapter.h>
+
+#include <sphinx_config.h>
+#include <fe.h>
+#include <fbs.h>
+#include <cont_ad.h>
+
+G_BEGIN_DECLS
+
+/* #defines don't like whitespacey bits */
+#define GST_TYPE_POCKETSPHINX                   \
+    (gst_pocketsphinx_get_type())
+#define GST_POCKETSPHINX(obj)                                           \
+    (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_POCKETSPHINX,GstPocketSphinx))
+#define GST_POCKETSPHINX_CLASS(klass)                                   \
+    (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_POCKETSPHINX,GstPocketSphinxClass))
+#define GST_IS_POCKETSPHINX(obj)                                \
+    (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_POCKETSPHINX))
+#define GST_IS_POCKETSPHINX_CLASS(klass)                        \
+    (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_POCKETSPHINX))
+
+typedef struct _GstPocketSphinx      GstPocketSphinx;
+typedef struct _GstPocketSphinxClass GstPocketSphinxClass;
+
+typedef struct _GstSphinxSinkAd {
+    GstPocketSphinx *self;
+    int32 dummy;
+    int32 sps;
+    int32 bps;
+    int32 calibrated;
+    int32 initialized;
+    int32 calibrate_started;
+    int32 listening;
+} GstSphinxSinkAd;
+
+struct _GstPocketSphinx
+{
+    GstBaseSink basesink;
+    cont_ad_t *cont;
+    GstSphinxSinkAd ad;
+    gint32 last_ts;
+  
+    GstAdapter *adapter;  
+
+    /* Hash table to store copies of property strings */
+    GHashTable *arghash;
+};
+
+struct _GstPocketSphinxClass 
+{
+    GstBaseSinkClass parent_class;
+
+    /* signals */
+    void (*initialization)  (GstElement *element);
+    void (*after_initialization)  (GstElement *element);
+    void (*calibration)     (GstElement *element);
+    void (*ready)           (GstElement *element);
+    void (*listening)       (GstElement *element);
+    void (*partial_result)  (GstElement *element, const gchar *hyp_str);
+    void (*result)          (GstElement *element, const gchar *hyp_str);
+};
+
+GType gst_pocketsphinx_get_type (void);
+
+G_END_DECLS
+
+#endif /* __GST_POCKETSPHINX_H__ */

@@ -3,6 +3,7 @@ dnl try not to hurt yourself ;)
 
 AC_INIT(pocketsphinx, 0.5)
 AM_INIT_AUTOMAKE([no-define dist-bzip2 dist-zip])
+AC_SUBST(ACLOCAL_AMFLAGS, "-I m4")
 
 CFLAGS=${CFLAGS:--g -O2 -Wall}
 
@@ -28,13 +29,9 @@ case $host in
      ;;
 esac     
 
-AC_ISC_POSIX
 AC_PROG_CC
-AM_PROG_CC_STDC
-AM_PROG_AS
-AC_HEADER_STDC
+AM_PROG_LIBTOOL
 AC_WORDS_BIGENDIAN
-AC_TYPE_SIGNAL
 AC_CHECK_TYPES(long long)
 AC_CHECK_SIZEOF(long long)
 
@@ -86,10 +83,46 @@ if test x$sphinxbase = x; then
 fi
 
 dnl
+dnl Check for pkgconfig
+dnl
+AC_CHECK_PROG(HAVE_PKGCONFIG, pkg-config, yes, no)
+
+dnl
+dnl Check for Doxygen, and build dox if present
+dnl
+AC_CHECK_PROG(HAVE_DOXYGEN, doxygen, yes, no)
+AM_CONDITIONAL(BUILD_DOXYGEN, test "x$HAVE_DOXYGEN" = "xyes")
+
+dnl
+dnl Now check for GStreamer, and build the plugin if it's available
+dnl
+GST_MAJORMINOR=0.10
+PKG_CHECK_MODULES(GStreamer, [gstreamer-$GST_MAJORMINOR >= 0.10.0
+		       gstreamer-base-$GST_MAJORMINOR >= 0.10.0
+		       gstreamer-plugins-base-$GST_MAJORMINOR >= 0.10.0],
+                  HAVE_GST=yes, HAVE_GST=no)
+AM_CONDITIONAL(BUILD_GST, test "x$HAVE_GST" = "xyes")
+GST_CFLAGS="$GStreamer_CFLAGS $GStreamer_ERROR"
+GST_LIBS="$GStreamer_LIBS"
+AC_SUBST(GST_MAJORMINOR)
+AC_SUBST(GST_CFLAGS)
+AC_SUBST(GST_LIBS)
+
+dnl set the plugindir where plugins should be installed
+if test "x${prefix}" = "x$HOME"; then
+  plugindir="$HOME/.gstreamer-$GST_MAJORMINOR/plugins"
+else
+  plugindir="\$(libdir)/gstreamer-$GST_MAJORMINOR"
+fi
+AC_SUBST(plugindir)
+
+dnl set proper LDFLAGS for plugins
+GST_PLUGIN_LDFLAGS='-module -avoid-version -export-symbols-regex [_]*\(gst_\|Gst\|GST_\).*'
+AC_SUBST(GST_PLUGIN_LDFLAGS)
+
+dnl
 dnl Check for system SphinxBase if none was passed to us
 dnl
-dnl Check for pkgconfig to get default directories
-AC_CHECK_PROG(HAVE_PKGCONFIG, pkg-config, yes, no)
 if test x$sphinxbase = x; then
    if test "x$HAVE_PKGCONFIG" = "xno"; then
       SphinxBase_CFLAGS = "-Iusr/include/sphinxbase -I/usr/local/include/sphinxbase"
@@ -141,11 +174,6 @@ AC_PATH_PROG(CSH,csh)
 AC_SUBST(PERL)
 AC_SUBST(CSH)
 
-AC_CHECK_PROG(HAVE_DOXYGEN, doxygen, yes, no)
-AM_CONDITIONAL(BUILD_DOXYGEN, test "x$HAVE_DOXYGEN" = "xyes")
-
-AM_PROG_LIBTOOL
-
 AC_OUTPUT([
 pocketsphinx.pc
 Makefile
@@ -153,6 +181,7 @@ include/Makefile
 src/Makefile
 src/libpocketsphinx/Makefile
 src/programs/Makefile
+src/gst-plugin/Makefile
 doc/Makefile
 doc/doxyfile
 model/Makefile
