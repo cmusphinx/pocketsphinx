@@ -44,7 +44,9 @@
 #if !defined(_WIN32_WCE)
 #include <time.h>
 #endif
-#if !defined(_WIN32)
+#if defined(__ADSPBLACKFIN__)
+#define MAXPATHLEN 256
+#elif !defined(_WIN32)
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/types.h>
@@ -144,6 +146,8 @@ static HANDLE pid;
 static FILETIME t_create, t_exit, kst, ket, ust, uet;
 static double lowscale, highscale;
 extern double win32_cputime();
+#elif defined(__ADSPBLACKFIN__)
+static long e_start, e_stop;
 #else /* Not Windows */
 static struct rusage start, stop;
 static struct timeval e_start, e_stop;
@@ -178,6 +182,8 @@ win32_cputime(FILETIME * st, FILETIME * et)
     return (dt);
 }
 
+#elif defined(__ADSPBLACKFIN__)
+// nada
 #else
 
 double
@@ -214,7 +220,9 @@ timing_init(void)
 static void
 timing_start(void)
 {
-#if !(defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN))
+#if defined(__ADSPBLACKFIN__)
+    e_start = clock() / __PROCESSOR_SPEED__;
+#elif !(defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN))
 # if !(defined(_HPUX_SOURCE) || defined(GNUWINCE))
     getrusage(RUSAGE_SELF, &start);
 # endif
@@ -241,7 +249,10 @@ timing_stop(int32 nfr)
     E_INFO(" %5.2f SoS", searchFrame() * 0.01);
     TotalSpeechTime += searchFrame() * 0.01f;
 
-#if defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
+#if defined(__ADSPBLACKFIN__)
+    e_stop = clock() / __PROCESSOR_SPEED__;
+    TotalElapsedTime += (e_stop - e_start);
+#elif defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
     /* ---------------- _WIN32 ---------------- */
 # ifdef _WIN32_WCE
     e_stop = (float) GetTickCount() / 1000;
@@ -520,7 +531,7 @@ uttproc_init(void)
         char *fsgname;
         char *fsgctlfile;
         FILE *ctlfp;
-        char line[16384], word[16384];
+        __BIGSTACKVARIABLE__ char line[16384], word[16384];
 
         fsg_search = fsg_search_init(cmd_ln_get(), g_lmath, g_mdef, g_word_dict, g_tmat);
 
@@ -613,7 +624,7 @@ uttproc_end(void)
 int32
 uttproc_begin_utt(char const *id)
 {
-    char filename[1024];
+    __BIGSTACKVARIABLE__ char filename[1024];
     int32 i;
 
     for (i = 0; i < 5; i++)
@@ -1717,7 +1728,7 @@ uttproc_set_logfile(char const *file)
          * applications: the files are opened, but nothing is written
          * to it.
          */
-#if defined(_WIN32) || defined(GNUWINCE)
+#if defined(_WIN32) || defined(GNUWINCE) || defined(__ADSPBLACKFIN__)
 #ifndef _WIN32_WCE /* FIXME: Possible? */
         *stdout = *logfp;
         *stderr = *logfp;

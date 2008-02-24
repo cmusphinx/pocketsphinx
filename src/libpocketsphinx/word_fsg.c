@@ -197,8 +197,6 @@ nextline_str2words(FILE * fp, int32 * lineno,
             *wordptr = ckd_realloc(*wordptr, n * sizeof(**wordptr));
         return str2words(*lineptr, *wordptr, n);
     }
-
-    return -1;
 }
 
 

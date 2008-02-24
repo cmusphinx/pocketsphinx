@@ -36,12 +36,12 @@
 /*
  * gauden.c -- gaussian density module.
  *
- * **********************************************
+ ***********************************************
  * CMU ARPA Speech Project
  *
  * Copyright (c) 1996 Carnegie Mellon University.
  * ALL RIGHTS RESERVED.
- * **********************************************
+ ***********************************************
  *
  * HISTORY
  * $Log$
@@ -177,7 +177,7 @@ gauden_dump_ind(const gauden_t * g, int senidx)
 
 
 static int32
-gauden_param_read(vector_t **** out_param,      /* Alloc space iff *out_param == NULL */
+gauden_param_read(mfcc_t***** out_param,      /* Alloc space iff *out_param == NULL */
                   int32 * out_n_mgau,
                   int32 * out_n_feat,
                   int32 * out_n_density,
@@ -191,8 +191,8 @@ gauden_param_read(vector_t **** out_param,      /* Alloc space iff *out_param ==
     int32 n_density;
     int32 *veclen;
     int32 byteswap, chksum_present;
-    vector_t ***out;
-    float32 *buf;
+    mfcc_t****out;
+    mfcc_t *buf;
     char **argname, **argval;
     uint32 chksum;
 
@@ -254,15 +254,15 @@ gauden_param_read(vector_t **** out_param,      /* Alloc space iff *out_param ==
         E_FATAL("fread(%s) (total #floats) failed\n", file_name);
     if (n != n_mgau * n_density * blk) {
         E_FATAL
-            ("%s: #float32s(%d) doesn't match dimensions: %d x %d x %d\n",
+            ("%s: #mfcc_ts(%d) doesn't match dimensions: %d x %d x %d\n",
              file_name, n, n_mgau, n_density, blk);
     }
 
     /* Allocate memory for mixture gaussian densities if not already allocated */
     if (!(*out_param)) {
-        out = (vector_t ***) ckd_calloc_3d(n_mgau, n_feat, n_density,
-                                           sizeof(vector_t));
-        buf = (float32 *) ckd_calloc(n, sizeof(float));
+        out = (mfcc_t****) ckd_calloc_3d(n_mgau, n_feat, n_density,
+                                           sizeof(mfcc_t*));
+        buf = (mfcc_t *) ckd_calloc(n, sizeof(float));
         for (i = 0, l = 0; i < n_mgau; i++) {
             for (j = 0; j < n_feat; j++) {
                 for (k = 0; k < n_density; k++) {
@@ -279,7 +279,7 @@ gauden_param_read(vector_t **** out_param,      /* Alloc space iff *out_param ==
     }
 
     /* Read mixture gaussian densities data */
-    if (bio_fread(buf, sizeof(float32), n, fp, byteswap, &chksum) != n)
+    if (bio_fread(buf, sizeof(mfcc_t), n, fp, byteswap, &chksum) != n)
         E_FATAL("fread(%s) (densitydata) failed\n", file_name);
 
     if (chksum_present)
@@ -302,7 +302,7 @@ gauden_param_read(vector_t **** out_param,      /* Alloc space iff *out_param ==
 }
 
 static void
-gauden_param_free(vector_t *** p)
+gauden_param_free(mfcc_t**** p)
 {
     ckd_free(p[0][0][0]);
     ckd_free_3d((void ***) p);
@@ -316,17 +316,17 @@ gauden_param_free(vector_t *** p)
  * NOTE; The density computation is performed in log domain.
  */
 static int32
-gauden_dist_precompute(gauden_t * g, float32 varfloor)
+gauden_dist_precompute(gauden_t * g, mfcc_t varfloor)
 {
     int32 i, m, f, d, flen;
-    float32 *varp, *detp;
+    mfcc_t *varp, *detp;
     int32 n;
 
     n = 0;
     /* Allocate space for determinants */
     g->det =
-        (float32 ***) ckd_calloc_3d(g->n_mgau, g->n_feat, g->n_density,
-                                    sizeof(float32));
+        (mfcc_t ***) ckd_calloc_3d(g->n_mgau, g->n_feat, g->n_density,
+                                    sizeof(mfcc_t));
 
     /** FIX ME!, There is no removal of Gaussian in ms_mgau. This is
 	not yet synchronized with cont_mgau's behavior. */
@@ -337,7 +337,7 @@ gauden_dist_precompute(gauden_t * g, float32 varfloor)
 
             /* Determinants for all variance vectors in g->[m][f] */
             for (d = 0, detp = g->det[m][f]; d < g->n_density; d++, detp++) {
-                *detp = (float32) 0.0;
+                *detp = (mfcc_t) 0.0;// TODO: MFCCize me!
 
                 for (i = 0, varp = g->var[m][f][d]; i < flen; i++, varp++) {
                     if (*varp < varfloor) {
@@ -350,17 +350,17 @@ gauden_dist_precompute(gauden_t * g, float32 varfloor)
                         n++;
                     }
 
-                    *detp += (float32) (log(*varp));
+                    *detp += (mfcc_t) (log(*varp)); // TODO: MFCCize me!
 
                     /* Precompute this part of the exponential */
-                    *varp = (float32) (1.0 / (*varp * 2.0));
+                    *varp = (mfcc_t) (1.0 / (*varp * 2.0));// TODO: MFCCize me!
                 }
 
                 /* 2pi */
-                *detp += (float32) (flen * log(2.0 * M_PI));
+                *detp += (mfcc_t) (flen * log(2.0 * M_PI));// TODO: MFCCize me!
 
                 /* Sqrt */
-                *detp *= (float32) 0.5;
+                *detp *= (mfcc_t) 0.5;// TODO: MFCCize me!
             }
         }
     }
@@ -373,7 +373,7 @@ gauden_dist_precompute(gauden_t * g, float32 varfloor)
 
 
 gauden_t *
-gauden_init(char *meanfile, char *varfile, float32 varfloor,
+gauden_init(char *meanfile, char *varfile, mfcc_t varfloor,
             int32 precompute, logmath_t *lmath)
 {
     int32 i, m, f, d, *flen;
@@ -453,7 +453,7 @@ gauden_mean_reload(gauden_t * g, char *meanfile)
 
 typedef struct {
     int32 id;
-    float64 dist;               /* Can probably use float32 */
+    float64 dist;               /* Can probably use mfcc_t */
 } dist_t;
 
 static dist_t *dist;
@@ -462,13 +462,13 @@ static int32 n_dist = 0;
 
 /* See compute_dist below */
 static int32
-compute_dist_all(dist_t * out_dist, vector_t obs, int32 featlen,
-                 vector_t * mean, vector_t * var, float32 * det,
+compute_dist_all(dist_t * out_dist, mfcc_t* obs, int32 featlen,
+                 mfcc_t** mean, mfcc_t** var, mfcc_t * det,
                  int32 n_density)
 {
     int32 i, d;
-    vector_t m1, m2, v1, v2;
-    float64 dval1, dval2, diff1, diff2;
+    mfcc_t *m1,*m2, *v1, *v2;
+    float64 dval1, dval2, diff1, diff2;// TODO: MFCCize me!
 
     for (d = 0; d < n_density - 1; d += 2) {
         m1 = mean[d];
@@ -480,9 +480,9 @@ compute_dist_all(dist_t * out_dist, vector_t obs, int32 featlen,
 
         for (i = 0; i < featlen; i++) {
             diff1 = obs[i] - m1[i];
-            dval1 += diff1 * diff1 * v1[i];
+            dval1 += diff1 * diff1 * v1[i];// TODO: MFCCize me!
             diff2 = obs[i] - m2[i];
-            dval2 += diff2 * diff2 * v2[i];
+            dval2 += diff2 * diff2 * v2[i];// TODO: MFCCize me!
         }
 
         out_dist[d].dist = dval1;
@@ -498,7 +498,7 @@ compute_dist_all(dist_t * out_dist, vector_t obs, int32 featlen,
 
         for (i = 0; i < featlen; i++) {
             diff1 = obs[i] - m1[i];
-            dval1 += diff1 * diff1 * v1[i];
+            dval1 += diff1 * diff1 * v1[i];// TODO: MFCCize me!
         }
 
         out_dist[d].dist = dval1;
@@ -517,14 +517,14 @@ compute_dist_all(dist_t * out_dist, vector_t obs, int32 featlen,
  */
 static int32
 compute_dist(dist_t * out_dist, int32 n_top,
-             vector_t obs, int32 featlen,
-             vector_t * mean, vector_t * var, float32 * det,
+             mfcc_t* obs, int32 featlen,
+             mfcc_t** mean, mfcc_t** var, mfcc_t * det,
              int32 n_density)
 {
     int32 i, j, d;
     dist_t *worst;
-    vector_t m, v;
-    float64 dval, diff;
+    mfcc_t *m, *v;
+    float64 dval, diff;// TODO: MFCCize me!
 
     /* Special case optimization when n_density <= n_top */
     if (n_top >= n_density)
@@ -548,7 +548,7 @@ compute_dist(dist_t * out_dist, int32 n_top,
 
         for (i = 0; (i < featlen) && (dval <= worst->dist); i++) {
             diff = obs[i] - m[i];
-            dval += diff * diff * v[i];
+            dval += diff * diff * v[i];// TODO: MFCCize me!
         }
 
         if ((i < featlen) || (dval >= worst->dist))     /* Codeword d worse than worst */
@@ -576,7 +576,7 @@ compute_dist(dist_t * out_dist, int32 n_top,
 int32
 gauden_dist(gauden_t * g,
             s3mgauid_t mgau,
-            int32 n_top, vector_t * obs, gauden_dist_t ** out_dist)
+            int32 n_top, mfcc_t** obs, gauden_dist_t ** out_dist)
 {
     int32 f, t;
 /* Density values, once converted to (int32)logs3 domain, can

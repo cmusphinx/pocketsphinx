@@ -160,7 +160,7 @@ static int32
 get_dict_size(char *file)
 {
     FILE *fp;
-    char line[1024];
+    __BIGSTACKVARIABLE__ char line[1024];
     int32 n;
 
     fp = myfopen(file, "r");
@@ -379,8 +379,8 @@ dict_load(dict_t * dict, bin_mdef_t *mdef,
           char *filename, int32 * word_id, int32 use_context)
 {
     static char const *rname = "dict_load";
-    char dict_str[1024];
-    char pronoun_str[1024];
+    __BIGSTACKVARIABLE__ char dict_str[1024];
+    __BIGSTACKVARIABLE__ char pronoun_str[1024];
     dict_entry_t *entry;
     FILE *fs;
     int32 start_wid = *word_id;
@@ -494,15 +494,15 @@ static dict_entry_t *
 _new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_context)
 {
     dict_entry_t *entry;
-    char *phone[MAX_PRONOUN_LEN];
-    int32 ciPhoneId[MAX_PRONOUN_LEN];
-    int32 triphone_ids[MAX_PRONOUN_LEN];
+    __BIGSTACKVARIABLE__ char *phone[MAX_PRONOUN_LEN];
+    __BIGSTACKVARIABLE__ int32 ciPhoneId[MAX_PRONOUN_LEN];
+    __BIGSTACKVARIABLE__ int32 triphone_ids[MAX_PRONOUN_LEN];
     int32 pronoun_len = 0;
     int32 i;
     int32 lcTabId;
     int32 rcTabId;
-    char triphoneStr[80];
-    char position[256];         /* phone position */
+    __BIGSTACKVARIABLE__ char triphoneStr[80];
+    __BIGSTACKVARIABLE__ char position[256];         /* phone position */
     bin_mdef_t *mdef = dict->mdef;
 
     memset(position, 0, sizeof(position));      /* zero out the position matrix */

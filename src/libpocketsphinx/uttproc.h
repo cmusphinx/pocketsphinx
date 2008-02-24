@@ -76,7 +76,9 @@ int32 adc_file_read(FILE *uttfp, int16 * buf, int32 max);
 #if defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
 #include <windows.h>
 double win32_cputime(FILETIME * st, FILETIME * et);
-#else
+#elif defined(__ADSPBLACKFIN__)
+// nada
+#else 
 #include <time.h>
 double MakeSeconds(struct timeval const *s, struct timeval const *e);
 #endif

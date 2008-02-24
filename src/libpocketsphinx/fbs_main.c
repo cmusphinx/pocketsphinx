@@ -41,7 +41,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
-#if !defined(_WIN32) || defined(__CYGWIN__)
+#if (!defined(_WIN32) || defined(__CYGWIN__)) && !defined(__ADSPBLACKFIN__)
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/types.h>
@@ -307,7 +307,7 @@ run_ctl_file(char const *ctl_file_name)
  */
 {
     FILE *ctl_fs;
-    char line[4096], mfcfile[4096], idspec[4096];
+    __BIGSTACKVARIABLE__ char line[4096], mfcfile[4096], idspec[4096];
     int32 line_no = 0;
     int32 sf, ef;
     search_hyp_t *hyp;
@@ -366,7 +366,7 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
 {
     int32 frmcount, ret;
     char *finalhyp;
-    char utt[1024];
+    __BIGSTACKVARIABLE__ char utt[1024];
     search_hyp_t *hypseg;
     int32 nbest;
     char *utt_lmname_dir = cmd_ln_str("-lmnamedir");
@@ -424,7 +424,7 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
         /* Should the Nbest generation be in uttproc.c (uttproc_result)?? */
         if (nbest > 0) {
             FILE *nbestfp;
-            char nbestfile[4096];
+            __BIGSTACKVARIABLE__ char nbestfile[4096];
             search_hyp_t *h, **alt;
             int32 i, n_alt, startwid;
             char *nbest_dir = cmd_ln_str("-nbestdir");

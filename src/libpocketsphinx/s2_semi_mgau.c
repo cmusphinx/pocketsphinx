@@ -109,8 +109,13 @@
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
-#ifndef _WIN32_WCE
+#if defined(__ADSPBLACKFIN__)
+#elif !defined(_WIN32_WCE)
 #include <sys/types.h>
+#endif
+
+#ifndef M_PI 
+#define M_PI 3.14159265358979323846 
 #endif
 
 /* SphinxBase headers */
@@ -238,7 +243,7 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
 
     topn = s->f[feat];
     ceplen = s->veclen[feat];
-
+    
     for (i = 0; i < s->topN; i++) {
         mean_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
         vqFeature_t vtmp;

@@ -120,6 +120,7 @@
 
 /* SphinxBase headers. */
 #include <sphinx_types.h>
+#include <feat.h>
 #include <logmath.h>
 
 /* Local headers. */
@@ -137,9 +138,9 @@ extern "C" {
  * \brief Multivariate gaussian mixture density parameters
  */
 typedef struct {
-    vector_t ***mean;	/**< mean[codebook][feature][codeword] vector */
-    vector_t ***var;	/**< like mean; diagonal covariance vector only */
-    float32 ***det;	/**< log(determinant) for each variance vector;
+    mfcc_t ****mean;	/**< mean[codebook][feature][codeword] vector */
+    mfcc_t ****var;	/**< like mean; diagonal covariance vector only */
+    mfcc_t ***det;	/**< log(determinant) for each variance vector;
 			   actually, log(sqrt(2*pi*det)) */
     logmath_t *lmath;   /**< log math computation */
     int32 n_mgau;	/**< #codebooks */
@@ -169,7 +170,7 @@ typedef struct {
 gauden_t *
 gauden_init (char *meanfile,	/**< Input: File containing means of mixture gaussians */
 	     char *varfile,	/**< Input: File containing variances of mixture gaussians */
-	     float32 varfloor,	/**< Input: Floor value to be applied to variances */
+	     mfcc_t varfloor,	/**< Input: Floor value to be applied to variances */
 	     int32 precompute,  /**< Input: Whether we should precompute */
              logmath_t *lmath
     );
@@ -197,7 +198,7 @@ gauden_dist (gauden_t *g,	/**< In: handle to entire ensemble of codebooks */
 	     s3mgauid_t mgau,	/**< In: codebook for which density values to be evaluated
 				   (g->{mean,var}[mgau]) */
 	     int32 n_top,	/**< In: #top densities to be evaluated */
-	     vector_t *obs,	/**< In: Observation vector; obs[f] = for feature f */
+	     mfcc_t **obs,	/**< In: Observation vector; obs[f] = for feature f */
 	     gauden_dist_t **out_dist
 	     /**< Out: n_top best codewords and density values,
 		in worsening order, for each feature stream.

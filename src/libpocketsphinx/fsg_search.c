@@ -1018,7 +1018,7 @@ fsg_search_utt_end(fsg_search_t * search)
     int32 n_hist, nfr;
     char *result;
     FILE *latfp;
-    char file[4096];
+    __BIGSTACKVARIABLE__ char file[4096];
 
     /* Write history table if needed */
     if (cmd_ln_str_r(search->config, "-outlatdir")) {

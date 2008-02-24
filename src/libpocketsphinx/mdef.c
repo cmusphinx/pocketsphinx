@@ -103,7 +103,7 @@ mdef_dump(FILE * fp, mdef_t * m)
 {
     int32 i, j;
     int32 ssid;
-    char buf[1024];
+    __BIGSTACKVARIABLE__ char buf[1024];
 
     fprintf(fp, "%d ciphone\n", m->n_ciphone);
     fprintf(fp, "%d phone\n", m->n_phone);
@@ -206,7 +206,7 @@ triphone_add(mdef_t * m,
             m->wpos_ci_lclist[wpos][(int) ci] = lcptr;  /* This is what needs to be freed */
         }
         if ((rcptr = find_ph_rc(lcptr->rclist, rc)) != NULL) {
-            char buf[4096];
+            __BIGSTACKVARIABLE__ char buf[4096];
 
             mdef_phone_str(m, rcptr->pid, buf);
             E_FATAL("Duplicate triphone: %s\n", buf);
@@ -411,7 +411,7 @@ static void
 parse_tmat_senmap(mdef_t * m, char *line, int32 off, s3pid_t p)
 {
     int32 wlen, n, s;
-    char word[1024], *lp;
+    __BIGSTACKVARIABLE__ char word[1024], *lp;
 
     lp = line + off;
 
@@ -459,7 +459,7 @@ static void
 parse_base_line(mdef_t * m, char *line, s3pid_t p)
 {
     int32 wlen, n;
-    char word[1024], *lp;
+    __BIGSTACKVARIABLE__ char word[1024], *lp;
     s3cipid_t ci;
 
     lp = line;
@@ -508,7 +508,7 @@ static void
 parse_tri_line(mdef_t * m, char *line, s3pid_t p)
 {
     int32 wlen;
-    char word[1024], *lp;
+    __BIGSTACKVARIABLE__ char word[1024], *lp;
     s3cipid_t ci, lc, rc;
     word_posn_t wpos = WORD_POSN_BEGIN;
 
@@ -646,7 +646,7 @@ mdef_init(char *mdeffile, int32 breport)
 {
     FILE *fp;
     int32 n_ci, n_tri, n_map, n;
-    char tag[1024], buf[1024];
+    __BIGSTACKVARIABLE__ char tag[1024], buf[1024];
     s3senid_t **senmap;
     s3pid_t p;
     int32 s, ci, cd;
