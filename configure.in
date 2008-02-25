@@ -148,7 +148,7 @@ dnl
 : ${sphinxbasebuild=$sphinxbase}
 if test x$sphinxbase != x && test x$cross_compiling = xyes; then
    CPPFLAGS="-I$sphinxbase/include -I$sphinxbasebuild/include $CPPFLAGS"
-   LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxfe -L$sphinxbasebuild/src/libsphinxad \
+   LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxad \
 		     -L$sphinxbasebuild/src/libsphinxbase"
 fi
 if test x$sphinxbase != x && test x$cross_compiling != xyes; then
@@ -161,7 +161,7 @@ fi
 if test x$sphinxbasebuild != x && test x$cross_compiling != xyes; then
    AC_CHECK_FILE($sphinxbasebuild/src/libsphinxbase/libsphinxbase.la,
 [CPPFLAGS="-I$sphinxbasebuild/include $CPPFLAGS"
-LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxfe -L$sphinxbasebuild/src/libsphinxad \
+LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxad \
 		  -L$sphinxbasebuild/src/libsphinxbase"],
 		   AC_ERROR(
 [SphinxBase libraries were not found in $sphinxbasebuild.
