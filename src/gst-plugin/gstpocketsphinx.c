@@ -35,9 +35,11 @@
  *
  * Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
  */
-/* Based on gstsphinxsink.c:
+/* Originally based on gstsphinxsink.c from gnome-voice-control:
  *
  * Copyright (C) 2007  Nickolay V. Shmyrev  <nshmyrev@yandex.ru>
+ *
+ * gstsphinxsink.c:
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -60,18 +62,15 @@
 #endif
 
 #include <string.h>
-
 #include <gst/gst.h>
-#include <gst/gstmarshal.h>
-
 #include <sphinx_config.h>
 
 #include "gstpocketsphinx.h"
+#include "gstvader.h"
 
-GST_DEBUG_CATEGORY_STATIC(gst_pocketsphinx_debug);
-#define GST_CAT_DEFAULT gst_pocketsphinx_debug
+GST_DEBUG_CATEGORY_STATIC(pocketsphinx_debug);
+#define GST_CAT_DEFAULT pocketsphinx_debug
 
-/* Filter signals and args */
 enum
 {
     SIGNAL_PARTIAL_RESULT,
@@ -111,46 +110,45 @@ static GstStaticPadTemplate sink_factory =
                             GST_STATIC_CAPS("audio/x-raw-int, "
                                             "width = (int) 16, "
                                             "depth = (int) 16, "
+                                            "signed = (boolean) true, "
                                             "endianness = (int) BYTE_ORDER, "
                                             "channels = (int) 1, "
                                             "rate = (int) 8000")
+        );
+
+static GstStaticPadTemplate src_factory =
+    GST_STATIC_PAD_TEMPLATE("src",
+                            GST_PAD_SRC,
+                            GST_PAD_ALWAYS,
+                            GST_STATIC_CAPS("text/plain")
         );
 	
 static void gst_pocketsphinx_set_property(GObject * object, guint prop_id,
                                           const GValue * value, GParamSpec * pspec);
 static void gst_pocketsphinx_get_property(GObject * object, guint prop_id,
                                           GValue * value, GParamSpec * pspec);
-static GstFlowReturn gst_pocketsphinx_render(GstBaseSink * sink, GstBuffer * buffer);
-static gboolean gst_pocketsphinx_start(GstBaseSink * asink);
-static gboolean gst_pocketsphinx_stop(GstBaseSink * asink);
-static void gst_pocketsphinx_do_init(GType type);
+static GstFlowReturn gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer);
+static gboolean gst_pocketsphinx_event(GstPad *pad, GstEvent *event);
 
 static guint gst_pocketsphinx_signals[LAST_SIGNAL];
 
-GST_BOILERPLATE_FULL(GstPocketSphinx, gst_pocketsphinx, GstBaseSink,
-                     GST_TYPE_BASE_SINK, gst_pocketsphinx_do_init);
-
-static void
-gst_pocketsphinx_do_init(GType type)
-{
-    GST_DEBUG_CATEGORY_INIT(gst_pocketsphinx_debug, "pocketsphinx",
-                            0, "PocketSphinx plugin");
-}
-
+GST_BOILERPLATE (GstPocketSphinx, gst_pocketsphinx, GstElement, GST_TYPE_ELEMENT);
 
 static void
 gst_pocketsphinx_base_init(gpointer gclass)
 {
-    static GstElementDetails element_details = {
+    static const GstElementDetails element_details = {
         "PocketSphinx",
-        "Sink/Audio",
-        "Perform speech recognition on a stream",
+        "Filter/Audio",
+        "Convert speech to text",
         "David Huggins-Daines <dhuggins@cs.cmu.edu>"
     };
     GstElementClass *element_class = GST_ELEMENT_CLASS(gclass);
 
     gst_element_class_add_pad_template(element_class,
                                        gst_static_pad_template_get(&sink_factory));
+    gst_element_class_add_pad_template(element_class,
+                                       gst_static_pad_template_get(&src_factory));
     gst_element_class_set_details(element_class, &element_details);
 }
 
@@ -163,10 +161,10 @@ string_disposal(gpointer key, gpointer value, gpointer user_data)
 static void
 gst_pocketsphinx_finalize(GObject * gobject)
 {
-    GstPocketSphinx *sphinxsink = GST_POCKETSPHINX(gobject);
+    GstPocketSphinx *ps = GST_POCKETSPHINX(gobject);
 
-    g_hash_table_foreach(sphinxsink->arghash, string_disposal, NULL);
-    g_hash_table_destroy(sphinxsink->arghash);
+    g_hash_table_foreach(ps->arghash, string_disposal, NULL);
+    g_hash_table_destroy(ps->arghash);
 
     GST_CALL_PARENT(G_OBJECT_CLASS, finalize,(gobject));
 }
@@ -174,18 +172,13 @@ gst_pocketsphinx_finalize(GObject * gobject)
 static void
 gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
 {
-    GstBaseSinkClass *basesink_class;
     GObjectClass *gobject_class;
 
     gobject_class =(GObjectClass *) klass;
-    basesink_class =(GstBaseSinkClass *) klass;
 
     gobject_class->set_property = gst_pocketsphinx_set_property;
     gobject_class->get_property = gst_pocketsphinx_get_property;
     gobject_class->finalize = GST_DEBUG_FUNCPTR(gst_pocketsphinx_finalize);
-    basesink_class->render = GST_DEBUG_FUNCPTR(gst_pocketsphinx_render);
-    basesink_class->start = GST_DEBUG_FUNCPTR (gst_pocketsphinx_start);
-    basesink_class->stop = GST_DEBUG_FUNCPTR (gst_pocketsphinx_stop);
 
     /* TODO: We will bridge cmd_ln.h properties to GObject
      * properties here somehow eventually. */
@@ -253,10 +246,13 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                      G_TYPE_NONE,
                      1, G_TYPE_STRING
             );
+
+    GST_DEBUG_CATEGORY_INIT(pocketsphinx_debug, "pocketsphinx", 0,
+                            "Automatic Speech Recognition");
 }
 
 static void
-gst_pocketsphinx_set_string(GstPocketSphinx *sink,
+gst_pocketsphinx_set_string(GstPocketSphinx *ps,
                             const gchar *key, const GValue *value)
 {
     gchar *oldstr, *newstr;
@@ -265,14 +261,14 @@ gst_pocketsphinx_set_string(GstPocketSphinx *sink,
         newstr = g_strdup(g_value_get_string(value));
     else
         newstr = NULL;
-    if ((oldstr = g_hash_table_lookup(sink->arghash, key)))
+    if ((oldstr = g_hash_table_lookup(ps->arghash, key)))
         g_free(oldstr);
     cmd_ln_set_str(key, newstr);
-    g_hash_table_insert(sink->arghash, (gpointer)key, newstr);
+    g_hash_table_foreach(ps->arghash, (gpointer)key, newstr);
 }
 
 static void
-gst_pocketsphinx_set_boolean(GstPocketSphinx *sink,
+gst_pocketsphinx_set_boolean(GstPocketSphinx *ps,
                              const gchar *key, const GValue *value)
 {
     cmd_ln_set_boolean(key, g_value_get_boolean(value));
@@ -282,21 +278,21 @@ static void
 gst_pocketsphinx_set_property(GObject * object, guint prop_id,
                               const GValue * value, GParamSpec * pspec)
 {
-    GstPocketSphinx *sink = GST_POCKETSPHINX(object);
+    GstPocketSphinx *ps = GST_POCKETSPHINX(object);
 
     switch (prop_id) {
     case PROP_HMM_DIR:
     {
         /* Reinitialize the decoder with the new language model. */
-        gst_pocketsphinx_set_string(sink, "-hmm", value);
+        gst_pocketsphinx_set_string(ps, "-hmm", value);
         fbs_end();
         fbs_init(0, NULL);
         break;
     }
     case PROP_LM_FILE:
         /* FSG and LM are mutually exclusive. */
-        gst_pocketsphinx_set_string(sink, "-fsg", NULL);
-        gst_pocketsphinx_set_string(sink, "-lm", value);
+        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "-lm", value);
         /* Switch to this new LM. */
         lm_read(g_value_get_string(value),
                 g_value_get_string(value),
@@ -306,12 +302,12 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         uttproc_set_lm(g_value_get_string(value));
         break;
     case PROP_DICT_FILE:
-        gst_pocketsphinx_set_string(sink, "-dict", value);
+        gst_pocketsphinx_set_string(ps, "-dict", value);
         break;
     case PROP_FSG_FILE:
         /* FSG and LM are mutually exclusive */
-        gst_pocketsphinx_set_string(sink, "-lm", NULL);
-        gst_pocketsphinx_set_string(sink, "-fsg", value);
+        gst_pocketsphinx_set_string(ps, "-lm", NULL);
+        gst_pocketsphinx_set_string(ps, "-fsg", value);
         /* Switch to this new FSG. */
         {
             char *fsgname;
@@ -336,10 +332,10 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         break;
     }
     case PROP_FWDFLAT:
-        gst_pocketsphinx_set_boolean(sink, "-fwdflat", value);
+        gst_pocketsphinx_set_boolean(ps, "-fwdflat", value);
         break;
     case PROP_BESTPATH:
-        gst_pocketsphinx_set_boolean(sink, "-bestpath", value);
+        gst_pocketsphinx_set_boolean(ps, "-bestpath", value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -377,63 +373,94 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
 }
 
 static void
-gst_pocketsphinx_init(GstPocketSphinx * rec,
+gst_pocketsphinx_init(GstPocketSphinx * ps,
                       GstPocketSphinxClass * gclass)
 {
+    ps->sinkpad =
+        gst_pad_new_from_static_template(&sink_factory, "sink");
+    ps->srcpad =
+        gst_pad_new_from_static_template(&src_factory, "src");
+
     /* Create the hash table to store argument strings. */
-    rec->arghash = g_hash_table_new(g_str_hash, g_str_equal);
+    ps->arghash = g_hash_table_new(g_str_hash, g_str_equal);
 
     /* Parse default command-line options. */
     cmd_ln_parse(fbs_get_args(), default_argc, default_argv, FALSE);
 
     /* Initialize the decoder from parsed command line. */
     fbs_init(0, NULL);
-}
 
-static gboolean
-gst_pocketsphinx_start(GstBaseSink * asink)
-{
-    GstPocketSphinx *sphinxsink = GST_POCKETSPHINX(asink);
+    /* Set up pads. */
+    gst_element_add_pad(GST_ELEMENT(ps), ps->sinkpad);
+    gst_pad_set_chain_function(ps->sinkpad, gst_pocketsphinx_chain);
+    gst_pad_set_event_function(ps->sinkpad, gst_pocketsphinx_event);
+    gst_pad_use_fixed_caps(ps->sinkpad);
 
-    sphinxsink->listening = TRUE;
-    uttproc_begin_utt(NULL);
-  
-    return TRUE;
-}
-
-static gboolean
-gst_pocketsphinx_stop(GstBaseSink * asink)
-{
-    GstPocketSphinx *sphinxsink = GST_POCKETSPHINX(asink);
-    int32 fr;
-    char *hyp;
-  
-    sphinxsink->listening = FALSE;
-    uttproc_end_utt();
-    uttproc_result(&fr, &hyp, 1);
-    g_signal_emit(G_OBJECT(asink),
-                  gst_pocketsphinx_signals[SIGNAL_RESULT],
-                  0, hyp);
-  
-    return TRUE;
+    gst_element_add_pad(GST_ELEMENT(ps), ps->srcpad);
+    gst_pad_use_fixed_caps(ps->srcpad);
 }
 
 static GstFlowReturn
-gst_pocketsphinx_render(GstBaseSink * asink, GstBuffer * buffer)
+gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer)
 {
-    GstPad *pad;
+    GstPocketSphinx *ps;
 
-    pad = GST_BASE_SINK_PAD(asink);
-    uttproc_rawdata((short *)buffer->data, buffer->size / sizeof(short), TRUE);
+    ps = GST_POCKETSPHINX(GST_OBJECT_PARENT(pad));
 
+    if (ps->listening) {
+        uttproc_rawdata((short *)GST_BUFFER_DATA(buffer),
+                        GST_BUFFER_SIZE(buffer) / sizeof(short), TRUE);
+    }
     return GST_FLOW_OK;
+}
+
+static gboolean
+gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
+{
+    GstPocketSphinx *ps;
+
+    ps = GST_POCKETSPHINX(GST_OBJECT_PARENT(pad));
+
+    /* Pick out VAD events. */
+    switch (event->type) {
+    case GST_EVENT_VADER_START:
+        ps->listening = TRUE;
+        uttproc_begin_utt(NULL);
+        /* Forward this event. */
+        return gst_pad_event_default(pad, event);
+    case GST_EVENT_VADER_STOP: {
+        GstBuffer *buffer;
+        int32 frm;
+        char *hyp;
+
+        ps->listening = FALSE;
+        uttproc_end_utt();
+        uttproc_result(&frm, &hyp, TRUE);
+        /* Forward this result in a buffer. */
+        buffer = gst_buffer_new_and_alloc(strlen(hyp) + 1);
+        strcpy((char *)GST_BUFFER_DATA(buffer), hyp);
+        GST_BUFFER_TIMESTAMP(buffer) = GST_EVENT_TIMESTAMP(event);
+        gst_buffer_set_caps(buffer, GST_PAD_CAPS(ps->srcpad));
+
+        /* Forward this event. */
+        return gst_pad_event_default(pad, event);
+    }
+    default:
+        /* Don't bother with other events. */
+        return gst_pad_event_default(pad, event);
+    }
 }
 
 static gboolean
 plugin_init(GstPlugin * plugin)
 {
-    return gst_element_register(plugin, "pocketsphinx",
-                                GST_RANK_NONE, GST_TYPE_POCKETSPHINX);
+    if (!gst_element_register(plugin, "pocketsphinx",
+                              GST_RANK_NONE, GST_TYPE_POCKETSPHINX))
+        return FALSE;
+    if (!gst_element_register(plugin, "vader",
+                              GST_RANK_NONE, GST_TYPE_VADER))
+        return FALSE;
+    return TRUE;
 }
 
 #define VERSION PACKAGE_VERSION
