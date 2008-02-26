@@ -407,10 +407,14 @@ gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer)
 
     ps = GST_POCKETSPHINX(GST_OBJECT_PARENT(pad));
 
-    if (ps->listening) {
-        uttproc_rawdata((short *)GST_BUFFER_DATA(buffer),
-                        GST_BUFFER_SIZE(buffer) / sizeof(short), TRUE);
+    /* Start an utterance for the first buffer we get (i.e. we assume
+     * that the VADER is "leaky") */
+    if (!ps->listening) {
+        ps->listening = TRUE;
+        uttproc_begin_utt(NULL);
     }
+    uttproc_rawdata((short *)GST_BUFFER_DATA(buffer),
+                    GST_BUFFER_SIZE(buffer) / sizeof(short), TRUE);
     return GST_FLOW_OK;
 }
 
@@ -428,6 +432,7 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
         uttproc_begin_utt(NULL);
         /* Forward this event. */
         return gst_pad_event_default(pad, event);
+    case GST_EVENT_EOS:
     case GST_EVENT_VADER_STOP: {
         GstBuffer *buffer;
         int32 frm;
@@ -441,6 +446,7 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
         strcpy((char *)GST_BUFFER_DATA(buffer), hyp);
         GST_BUFFER_TIMESTAMP(buffer) = GST_EVENT_TIMESTAMP(event);
         gst_buffer_set_caps(buffer, GST_PAD_CAPS(ps->srcpad));
+        gst_pad_push(ps->srcpad, buffer);
 
         /* Forward this event. */
         return gst_pad_event_default(pad, event);
