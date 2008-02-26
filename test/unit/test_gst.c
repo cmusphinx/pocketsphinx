@@ -33,7 +33,7 @@ main(int argc, char *argv[])
 {
 	GMainLoop *loop;
 	GstElement *pipeline;
-	GstElement *src, *resamp, *sink;
+	GstElement *src, *resamp, *filter, *sink;
 	GstCaps *caps;
 	GstBus *bus;
 
@@ -49,11 +49,13 @@ main(int argc, char *argv[])
 		return 1;
 	}
 	resamp = gst_element_factory_make("audioresample", "resampler");
-	sink = gst_element_factory_make("pocketsphinx", "asr-sink");
+	filter = gst_element_factory_make("pocketsphinx", "asr");
+	sink = gst_element_factory_make("fakesink", "sink");
 	gst_bin_add_many(GST_BIN(pipeline),
-			 src, resamp, sink, NULL);
+			 src, resamp, filter, sink, NULL);
 	gst_element_link_filtered(src, resamp, caps);
-	gst_element_link(resamp, sink);
+	gst_element_link(resamp, filter);
+	gst_element_link(filter, sink);
 
 	bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
 	gst_bus_add_watch(bus, bus_call, loop);
