@@ -56,7 +56,7 @@ main(int argc, char *argv[])
 			}
 		}
 		search_finish_fwd();
-		TEST_EQUAL(0, acmod_end_utt(acmod));
+		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
 	search_result(&nfr, &hyp);

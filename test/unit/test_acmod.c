@@ -81,7 +81,7 @@ main(int argc, char *argv[])
 			}
 		}
 	}
-	TEST_EQUAL(0, acmod_end_utt(acmod));
+	TEST_EQUAL(1, acmod_end_utt(acmod));
 	nread = 0;
 	acmod_process_raw(acmod, NULL, &nread, FALSE);
 	{

@@ -55,7 +55,7 @@ main(int argc, char *argv[])
 		printf("%s\n",
 		       ngram_search_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
 
-		TEST_EQUAL(0, acmod_end_utt(acmod));
+		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
 	TEST_EQUAL(0, strcmp("GO FOR WORDS TEN YEARS",

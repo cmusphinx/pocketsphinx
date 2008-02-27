@@ -62,7 +62,7 @@ static const arg_t feat_defn[] = {
 };
 
 static int32 acmod_flags2list(acmod_t *acmod);
-
+static int32 acmod_process_mfcbuf(acmod_t *acmod);
 
 static int
 acmod_init_am(acmod_t *acmod)
@@ -330,9 +330,16 @@ acmod_end_utt(acmod_t *acmod)
 
     acmod->state = ACMOD_ENDED;
     if (acmod->n_mfc_frame < acmod->n_mfc_alloc) {
-        fe_end_utt(acmod->fe, acmod->mfc_buf[acmod->n_mfc_frame], &nfr);
+        int inptr;
+        /* Where to start writing them (circular buffer) */
+        inptr = (acmod->mfc_outidx + acmod->n_mfc_frame) % acmod->n_mfc_alloc;
+        /* nfr is always either zero or one. */
+        fe_end_utt(acmod->fe, acmod->mfc_buf[inptr], &nfr);
+        acmod->n_mfc_frame += nfr;
+        /* Process whatever's left. */
+        if (nfr)
+            return acmod_process_mfcbuf(acmod);
     }
-    acmod->n_mfc_frame += nfr;
     return 0;
 }
 
@@ -392,13 +399,48 @@ acmod_process_full_raw(acmod_t *acmod,
     return nfr;
 }
 
+/**
+ * Process MFCCs that are in the internal buffer into features.
+ */
+static int32
+acmod_process_mfcbuf(acmod_t *acmod)
+{
+    mfcc_t **mfcptr;
+    int32 ncep;
+
+    ncep = acmod->n_mfc_frame;
+    /* Also do this in two parts because of the circular mfc_buf. */
+    if (acmod->mfc_outidx + ncep > acmod->n_mfc_alloc) {
+        int32 ncep1 = acmod->n_mfc_alloc - acmod->mfc_outidx;
+        int saved_state = acmod->state;
+
+        /* Make sure we don't end the utterance here. */
+        if (acmod->state == ACMOD_ENDED)
+            acmod->state = ACMOD_PROCESSING;
+        mfcptr = acmod->mfc_buf + acmod->mfc_outidx;
+        ncep1 = acmod_process_cep(acmod, &mfcptr, &ncep1, FALSE);
+        /* It's possible that not all available frames were filled. */
+        ncep -= ncep1;
+        acmod->n_mfc_frame -= ncep1;
+        acmod->mfc_outidx += ncep1;
+        acmod->mfc_outidx %= acmod->n_mfc_alloc;
+        /* Restore original state (could this really be the end) */
+        acmod->state = saved_state;
+    }
+    mfcptr = acmod->mfc_buf + acmod->mfc_outidx;
+    ncep = acmod_process_cep(acmod, &mfcptr, &ncep, FALSE);
+    acmod->n_mfc_frame -= ncep;
+    acmod->mfc_outidx += ncep;
+    acmod->mfc_outidx %= acmod->n_mfc_alloc;
+    return ncep;
+}
+
 int
 acmod_process_raw(acmod_t *acmod,
 		  int16 const **inout_raw,
 		  size_t *inout_n_samps,
 		  int full_utt)
 {
-    mfcc_t **mfcptr;
     int32 ncep;
 
     /* If this is a full utterance, process it all at once. */
@@ -434,31 +476,7 @@ acmod_process_raw(acmod_t *acmod,
     }
 
     /* Hand things off to acmod_process_cep. */
-    ncep = acmod->n_mfc_frame;
-    /* Also do this in two parts because of the circular mfc_buf. */
-    if (acmod->mfc_outidx + ncep > acmod->n_mfc_alloc) {
-        int32 ncep1 = acmod->n_mfc_alloc - acmod->mfc_outidx;
-        int saved_state = acmod->state;
-
-        /* Make sure we don't end the utterance here. */
-        if (acmod->state == ACMOD_ENDED)
-            acmod->state = ACMOD_PROCESSING;
-        mfcptr = acmod->mfc_buf + acmod->mfc_outidx;
-        ncep1 = acmod_process_cep(acmod, &mfcptr, &ncep1, FALSE);
-        /* It's possible that not all available frames were filled. */
-        ncep -= ncep1;
-        acmod->n_mfc_frame -= ncep1;
-        acmod->mfc_outidx += ncep1;
-        acmod->mfc_outidx %= acmod->n_mfc_alloc;
-        /* Restore original state (could this really be the end) */
-        acmod->state = saved_state;
-    }
-    mfcptr = acmod->mfc_buf + acmod->mfc_outidx;
-    ncep = acmod_process_cep(acmod, &mfcptr, &ncep, FALSE);
-    acmod->n_mfc_frame -= ncep;
-    acmod->mfc_outidx += ncep;
-    acmod->mfc_outidx %= acmod->n_mfc_alloc;
-    return ncep;
+    return acmod_process_mfcbuf(acmod);
 }
 
 int
