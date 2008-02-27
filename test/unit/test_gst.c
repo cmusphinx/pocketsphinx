@@ -37,6 +37,8 @@ main(int argc, char *argv[])
 	GstCaps *caps;
 	GstBus *bus;
 
+	setenv("GST_PLUGIN_PATH", "../../src/gst-plugin/.libs", 1);
+
 	gst_init(&argc, &argv);
 	loop = g_main_loop_new(NULL, FALSE);
 
@@ -50,6 +52,9 @@ main(int argc, char *argv[])
 	}
 	resamp = gst_element_factory_make("audioresample", "resampler");
 	filter = gst_element_factory_make("pocketsphinx", "asr");
+	g_object_set(G_OBJECT(filter), "hmm", MODELDIR "/hmm/wsj1", NULL);
+	g_object_set(G_OBJECT(filter), "lm", MODELDIR "/lm/turtle/turtle.lm.DMP", NULL);
+	g_object_set(G_OBJECT(filter), "dict", MODELDIR "/lm/turtle/turtle.dic", NULL);
 	sink = gst_element_factory_make("fakesink", "sink");
 	gst_bin_add_many(GST_BIN(pipeline),
 			 src, resamp, filter, sink, NULL);

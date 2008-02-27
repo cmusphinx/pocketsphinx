@@ -66,6 +66,7 @@ struct _GstPocketSphinx
     GstPad *sinkpad, *srcpad;
 
     GHashTable *arghash;
+    gboolean inited;
     gboolean listening;
 };
 

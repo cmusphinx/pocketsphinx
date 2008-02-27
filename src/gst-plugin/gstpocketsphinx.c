@@ -283,23 +283,27 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     switch (prop_id) {
     case PROP_HMM_DIR:
     {
-        /* Reinitialize the decoder with the new language model. */
         gst_pocketsphinx_set_string(ps, "-hmm", value);
-        fbs_end();
-        fbs_init(0, NULL);
+        if (ps->inited) {
+            /* Reinitialize the decoder with the new language model. */
+            fbs_end();
+            fbs_init(0, NULL);
+        }
         break;
     }
     case PROP_LM_FILE:
         /* FSG and LM are mutually exclusive. */
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
         gst_pocketsphinx_set_string(ps, "-lm", value);
-        /* Switch to this new LM. */
-        lm_read(g_value_get_string(value),
-                g_value_get_string(value),
-                cmd_ln_float32("-lw"),
-                cmd_ln_float32("-uw"),
-                cmd_ln_float32("-wip"));
-        uttproc_set_lm(g_value_get_string(value));
+        if (ps->inited) {
+            /* Switch to this new LM. */
+            lm_read(g_value_get_string(value),
+                    g_value_get_string(value),
+                    cmd_ln_float32("-lw"),
+                    cmd_ln_float32("-uw"),
+                    cmd_ln_float32("-wip"));
+            uttproc_set_lm(g_value_get_string(value));
+        }
         break;
     case PROP_DICT_FILE:
         gst_pocketsphinx_set_string(ps, "-dict", value);
@@ -308,8 +312,8 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         /* FSG and LM are mutually exclusive */
         gst_pocketsphinx_set_string(ps, "-lm", NULL);
         gst_pocketsphinx_set_string(ps, "-fsg", value);
-        /* Switch to this new FSG. */
-        {
+        if (ps->inited) {
+            /* Switch to this new FSG. */
             char *fsgname;
             fsgname = uttproc_load_fsgfile((char *)
                                            g_value_get_string(value));
@@ -387,9 +391,6 @@ gst_pocketsphinx_init(GstPocketSphinx * ps,
     /* Parse default command-line options. */
     cmd_ln_parse(fbs_get_args(), default_argc, default_argv, FALSE);
 
-    /* Initialize the decoder from parsed command line. */
-    fbs_init(0, NULL);
-
     /* Set up pads. */
     gst_element_add_pad(GST_ELEMENT(ps), ps->sinkpad);
     gst_pad_set_chain_function(ps->sinkpad, gst_pocketsphinx_chain);
@@ -427,6 +428,11 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
 
     /* Pick out VAD events. */
     switch (event->type) {
+    case GST_EVENT_NEWSEGMENT:
+        /* Initialize the decoder once the audio starts. (HACK) */
+        fbs_init(0, NULL);
+        ps->inited = TRUE;
+        return gst_pad_event_default(pad, event);
     case GST_EVENT_VADER_START:
         ps->listening = TRUE;
         uttproc_begin_utt(NULL);
