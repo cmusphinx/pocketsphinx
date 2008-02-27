@@ -232,6 +232,8 @@ struct ngram_search_s {
 
     /* Allocators */
     listelem_alloc_t *chan_alloc; /**< For chan_t */
+    listelem_alloc_t *root_chan_alloc; /**< For root_chan_t */
+    listelem_alloc_t *latnode_alloc; /**< For latnode_t */
 
     /**
      * Search structure of HMM instances.
@@ -262,11 +264,12 @@ struct ngram_search_s {
      * contexts and single-phone words in fwdtree search)
      */
     chan_t **word_chan;
-    uint8 *word_active;      /**< array of active flags for all words. */
+    bitvec_t *word_active;      /**< array of active flags for all words. */
 
     /*
      * Some words have special meanings so we track them here.
      */
+    int32 start_wid;
     int32 finish_wid;
     int32 silence_wid;
 
@@ -341,7 +344,7 @@ struct ngram_search_s {
      */
     latnode_t **frm_wordlist;
     int32 *fwdflat_wordlist;
-    char *expand_word_flag;
+    bitvec_t *expand_word_flag;
     int32 *expand_word_list;
     int32 n_expand_words;
     int32 min_ef_width;
@@ -390,6 +393,16 @@ void ngram_search_free(ngram_search_t *ngs);
  * @return the current backpointer index.
  */
 int ngram_search_mark_bptable(ngram_search_t *ngs, int frame_idx);
+
+/**
+ * Allocate last phone channels for all possible right contexts for word w.
+ */
+void ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w);
+
+/**
+ * Allocate last phone channels for all possible right contexts for word w.
+ */
+void ngram_search_free_all_rc(ngram_search_t *ngs, int32 w);
 
 /**
  * Find the best word exit for the current frame in the backpointer table.

@@ -601,8 +601,8 @@ eval_word_chan(ngram_search_t *ngs, int frame_idx)
 
     i = ngs->n_active_word[frame_idx & 0x1];
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
-        assert(ngs->word_active[w] != 0);
-        ngs->word_active[w] = 0;
+        assert(bitvec_is_set(ngs->word_active, w));
+        bitvec_clear(ngs->word_active, w);
         assert(ngs->word_chan[w] != NULL);
 
         for (hmm = ngs->word_chan[w]; hmm; hmm = hmm->next) {
@@ -817,64 +817,6 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
 }
 
 /*
- * Allocate last phone channels for all possible right contexts for word w.  (Some
- * may already exist.)
- * (NOTE: Assume that w uses context!!)
- */
-static void
-alloc_all_rc(ngram_search_t *ngs, int32 w)
-{
-    dict_entry_t *de;
-    chan_t *hmm, *thmm;
-    int32 *sseq_rc;             /* list of sseqid for all possible right context for w */
-    int32 i;
-
-    de = ngs->dict->dict_list[w];
-
-    assert(de->mpx);
-
-    sseq_rc = ngs->dict->rcFwdTable[de->phone_ids[de->len - 1]];
-
-    hmm = ngs->word_chan[w];
-    if ((hmm == NULL) || (hmm->hmm.s.ssid != *sseq_rc)) {
-        hmm = listelem_malloc(ngs->chan_alloc);
-        hmm->next = ngs->word_chan[w];
-        ngs->word_chan[w] = hmm;
-
-        hmm->info.rc_id = 0;
-        hmm->ciphone = de->ci_phone_ids[de->len - 1];
-        hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, *sseq_rc, hmm->ciphone);
-    }
-    for (i = 1, sseq_rc++; *sseq_rc >= 0; sseq_rc++, i++) {
-        if ((hmm->next == NULL) || (hmm->next->hmm.s.ssid != *sseq_rc)) {
-            thmm = listelem_malloc(ngs->chan_alloc);
-            thmm->next = hmm->next;
-            hmm->next = thmm;
-            hmm = thmm;
-
-            hmm->info.rc_id = i;
-            hmm->ciphone = de->ci_phone_ids[de->len - 1];
-            hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, *sseq_rc, hmm->ciphone);
-        }
-        else
-            hmm = hmm->next;
-    }
-}
-
-static void
-free_all_rc(ngram_search_t *ngs, int32 w)
-{
-    chan_t *hmm, *thmm;
-
-    for (hmm = ngs->word_chan[w]; hmm; hmm = thmm) {
-        thmm = hmm->next;
-        hmm_deinit(&hmm->hmm);
-        listelem_free(ngs->chan_alloc, hmm);
-    }
-    ngs->word_chan[w] = NULL;
-}
-
-/*
  * Execute the transition into the last phone for all candidates words emerging from
  * the HMM tree.  Attach LM scores to such transitions.
  * (Executed after pruning root and non-root, but before pruning word-chan.)
@@ -1010,7 +952,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
         if (candp->score > thresh) {
             w = candp->wid;
 
-            alloc_all_rc(ngs, w);
+            ngram_search_alloc_all_rc(ngs, w);
 
             k = 0;
             for (hmm = ngs->word_chan[w]; hmm; hmm = hmm->next) {
@@ -1023,10 +965,10 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
                 }
             }
             if (k > 0) {
-                assert(!ngs->word_active[w]);
+                assert(bitvec_is_clear(ngs->word_active, w));
                 assert(ngs->dict->dict_list[w]->len > 1);
                 *(nawl++) = w;
-                ngs->word_active[w] = 1;
+                bitvec_set(ngs->word_active, w);
             }
         }
     }
@@ -1094,10 +1036,10 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
                 *phmmp = thmm;
             }
         }
-        if ((k > 0) && (!ngs->word_active[w])) {
+        if ((k > 0) && (bitvec_is_clear(ngs->word_active, w))) {
             assert(ngs->dict->dict_list[w]->len > 1);
             *(nawl++) = w;
-            ngs->word_active[w] = 1;
+            bitvec_set(ngs->word_active, w);
         }
     }
     ngs->n_active_word[nf & 0x1] = nawl - ngs->active_word_list[nf & 0x1];
@@ -1585,10 +1527,10 @@ ngram_fwdtree_finish(ngram_search_t *ngs)
         /* Don't accidentally free single-phone words! */
         if (ngs->dict->dict_list[w]->len == 1)
             continue;
-        ngs->word_active[w] = 0;
+        bitvec_clear(ngs->word_active, w);
         if (ngs->word_chan[w] == NULL)
             continue;
-        free_all_rc(ngs, w);
+        ngram_search_free_all_rc(ngs, w);
     }
 
     /*

@@ -41,6 +41,7 @@
 
 /* System headers. */
 #include <string.h>
+#include <assert.h>
 
 /* SphinxBase headers. */
 #include <ckd_alloc.h>
@@ -82,6 +83,8 @@ ngram_search_init(cmd_ln_t *config,
 	ngs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
 				       acmod->tmat->tp, NULL, acmod->mdef->sseq);
         ngs->chan_alloc = listelem_alloc_init(sizeof(chan_t));
+        ngs->root_chan_alloc = listelem_alloc_init(sizeof(root_chan_t));
+        ngs->latnode_alloc = listelem_alloc_init(sizeof(latnode_t));
 
         /* Calculate log beam widths. */
         ngs->beam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam"));
@@ -106,6 +109,7 @@ ngram_search_init(cmd_ln_t *config,
             + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-fillpen"));
 
         /* This is useful for something. */
+        ngs->start_wid = dict_to_id(ngs->dict, "<s>");
         ngs->finish_wid = dict_to_id(ngs->dict, "</s>");
         ngs->silence_wid = dict_to_id(ngs->dict, "<sil>");
 
@@ -116,8 +120,7 @@ ngram_search_init(cmd_ln_t *config,
                                        sizeof(*ngs->word_lat_idx));
         ngs->zeroPermTab = ckd_calloc(bin_mdef_n_ciphone(acmod->mdef),
                                       sizeof(*ngs->zeroPermTab));
-        ngs->word_active = ckd_calloc(dict->dict_entry_count,
-                                      sizeof(*ngs->word_active));
+        ngs->word_active = bitvec_alloc(dict->dict_entry_count);
 
         /* FIXME: All these structures need to be made dynamic with
          * garbage collection. */
@@ -191,12 +194,14 @@ ngram_search_free(ngram_search_t *ngs)
 
     hmm_context_free(ngs->hmmctx);
     listelem_alloc_free(ngs->chan_alloc);
+    listelem_alloc_free(ngs->root_chan_alloc);
+    listelem_alloc_free(ngs->latnode_alloc);
     ngram_model_free(ngs->lmset);
 
     ckd_free(ngs->word_chan);
     ckd_free(ngs->word_lat_idx);
     ckd_free(ngs->zeroPermTab);
-    ckd_free(ngs->word_active);
+    bitvec_free(ngs->word_active);
     ckd_free(ngs->bp_table);
     ckd_free(ngs->bscore_stack);
     ckd_free(ngs->bp_table_idx - 1);
@@ -299,3 +304,55 @@ ngram_search_hyp(ngram_search_t *ngs, int bpidx)
     return ngs->hyp_str;
 }
 
+void
+ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
+{
+    dict_entry_t *de;
+    chan_t *hmm, *thmm;
+    int32 *sseq_rc;             /* list of sseqid for all possible right context for w */
+    int32 i;
+
+    de = ngs->dict->dict_list[w];
+
+    assert(de->mpx);
+
+    sseq_rc = ngs->dict->rcFwdTable[de->phone_ids[de->len - 1]];
+
+    hmm = ngs->word_chan[w];
+    if ((hmm == NULL) || (hmm->hmm.s.ssid != *sseq_rc)) {
+        hmm = listelem_malloc(ngs->chan_alloc);
+        hmm->next = ngs->word_chan[w];
+        ngs->word_chan[w] = hmm;
+
+        hmm->info.rc_id = 0;
+        hmm->ciphone = de->ci_phone_ids[de->len - 1];
+        hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, *sseq_rc, hmm->ciphone);
+    }
+    for (i = 1, sseq_rc++; *sseq_rc >= 0; sseq_rc++, i++) {
+        if ((hmm->next == NULL) || (hmm->next->hmm.s.ssid != *sseq_rc)) {
+            thmm = listelem_malloc(ngs->chan_alloc);
+            thmm->next = hmm->next;
+            hmm->next = thmm;
+            hmm = thmm;
+
+            hmm->info.rc_id = i;
+            hmm->ciphone = de->ci_phone_ids[de->len - 1];
+            hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, *sseq_rc, hmm->ciphone);
+        }
+        else
+            hmm = hmm->next;
+    }
+}
+
+void
+ngram_search_free_all_rc(ngram_search_t *ngs, int32 w)
+{
+    chan_t *hmm, *thmm;
+
+    for (hmm = ngs->word_chan[w]; hmm; hmm = thmm) {
+        thmm = hmm->next;
+        hmm_deinit(&hmm->hmm);
+        listelem_free(ngs->chan_alloc, hmm);
+    }
+    ngs->word_chan[w] = NULL;
+}
