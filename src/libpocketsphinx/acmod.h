@@ -191,6 +191,20 @@ int acmod_start_utt(acmod_t *acmod);
 int acmod_end_utt(acmod_t *acmod);
 
 /**
+ * Rewind the current utterance, allowing it to be rescored.
+ *
+ * After calling this function, the internal frame index is reset, and
+ * acmod_score() will return scores starting at the first frame of the
+ * current utterance.  Currently, acmod_set_grow() must have been
+ * called to enable growing the feature buffer in order for this to
+ * work.  In the future, senone scores may be cached instead.
+ *
+ * @return 0 for success, <0 for failure (if the utterance can't be
+ *         rewound due to no feature or score data available)
+ */
+int acmod_rewind(acmod_t *acmod);
+
+/**
  * Set memory allocation policy for utterance processing.
  *
  * @param grow_feat If non-zero, the internal dynamic feature buffer

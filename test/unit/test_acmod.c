@@ -203,6 +203,23 @@ main(int argc, char *argv[])
 		}
 	}
 
+	printf("Rewound (MFCC):\n");
+	TEST_EQUAL(0, acmod_rewind(acmod));
+	{
+		ascr_t const *senscr;
+		int frame_idx, best_score, best_senid;
+		frame_counter = 0;
+		while ((senscr = acmod_score(acmod, &frame_idx,
+					     &best_score, &best_senid))) {
+			printf("Frame %d best senone %d score %d\n",
+			       frame_idx, best_senid, best_score);
+			if (frame_counter < 270)
+				TEST_EQUAL(best_senid, bestsen1[frame_counter]);
+			TEST_EQUAL(frame_counter, frame_idx);
+			++frame_counter;
+		}
+	}
+
 	/* Clean up, go home. */
 	ckd_free_2d(cepbuf);
 	fclose(rawfh);

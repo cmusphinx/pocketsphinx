@@ -485,39 +485,83 @@ acmod_process_cep(acmod_t *acmod,
 		  int *inout_n_frames,
 		  int full_utt)
 {
-    int32 nfeat, ncep;
+    int32 nfeat, ncep, inptr;
+    int orig_n_frames;
 
     /* If this is a full utterance, process it all at once. */
     if (full_utt)
         return acmod_process_full_cep(acmod, inout_cep, inout_n_frames);
 
-    /* Number of input frames to generate features. */
-    ncep = *inout_n_frames;
-    /* Don't overflow the output feature buffer. */
-    if (ncep > acmod->n_feat_alloc - acmod->n_feat_frame) {
-        /* Grow it as needed */
-        if (acmod->grow_feat)
-            acmod_grow_feat_buf(acmod, acmod->n_feat_alloc * 2);
+    /* Maximum number of frames we're going to generate. */
+    orig_n_frames = ncep = nfeat = *inout_n_frames;
+
+    /* FIXME: This behaviour isn't guaranteed... */
+    if (acmod->state == ACMOD_ENDED)
+        nfeat += feat_window_size(acmod->fcb);
+    else if (acmod->state == ACMOD_STARTED)
+        nfeat -= feat_window_size(acmod->fcb);
+
+    if (nfeat > acmod->n_feat_alloc - acmod->n_feat_frame) {
+        /* Grow it as needed - we have to grow it at the end of an
+         * utterance because we can't return a short read there. */
+        if (acmod->grow_feat || acmod->state == ACMOD_ENDED)
+            acmod_grow_feat_buf(acmod, acmod->n_feat_frame + nfeat);
         else
-            ncep = acmod->n_feat_alloc - acmod->n_feat_frame;
+            ncep -= (nfeat - (acmod->n_feat_alloc - acmod->n_feat_frame));
     }
+
+    /* Where to start writing in the feature buffer. */
+    inptr = (acmod->feat_outidx + acmod->n_feat_frame) % acmod->n_feat_alloc;
+
+    /* Write them in two parts if there is wraparound. */
+    if (inptr + nfeat > acmod->n_feat_alloc) {
+        int32 ncep1 = acmod->n_feat_alloc - inptr;
+        int saved_state = acmod->state;
+
+        /* Make sure we don't end the utterance here. */
+        if (acmod->state == ACMOD_ENDED)
+            acmod->state = ACMOD_PROCESSING;
+        nfeat = feat_s2mfc2feat_live(acmod->fcb, *inout_cep,
+                                     &ncep1,
+                                     (acmod->state == ACMOD_STARTED),
+                                     (acmod->state == ACMOD_ENDED),
+                                     acmod->feat_buf + inptr);
+        if (nfeat < 0)
+            return -1;
+        /* Move the output feature pointer forward. */
+        acmod->n_feat_frame += nfeat;
+        inptr += nfeat;
+        inptr %= acmod->n_feat_alloc;
+        /* Move the input feature pointers forward. */
+        *inout_n_frames -= ncep1;
+        *inout_cep += ncep1;
+        ncep -= ncep1;
+        /* Restore original state (could this really be the end) */
+        acmod->state = saved_state;
+    }
+
     nfeat = feat_s2mfc2feat_live(acmod->fcb, *inout_cep,
                                  &ncep,
                                  (acmod->state == ACMOD_STARTED),
                                  (acmod->state == ACMOD_ENDED),
-                                 acmod->feat_buf + acmod->n_feat_frame);
+                                 acmod->feat_buf + inptr);
+    if (nfeat < 0)
+        return -1;
     acmod->n_feat_frame += nfeat;
+    /* Move the input feature pointers forward. */
     *inout_n_frames -= ncep;
     *inout_cep += ncep;
     if (acmod->state == ACMOD_STARTED)
         acmod->state = ACMOD_PROCESSING;
-    return ncep;
+    return orig_n_frames - *inout_n_frames;
 }
 
 int
 acmod_process_feat(acmod_t *acmod,
 		   mfcc_t **feat)
 {
+    int i, inptr;
+
     if (acmod->n_feat_frame == acmod->n_feat_alloc) {
         if (acmod->grow_feat)
             acmod_grow_feat_buf(acmod, acmod->n_feat_alloc * 2);
@@ -525,11 +569,12 @@ acmod_process_feat(acmod_t *acmod,
             return 0;
     }
 
-    /* Just copy it in. */
-    int i;
+    inptr = (acmod->feat_outidx + acmod->n_feat_frame) % acmod->n_feat_alloc;
     for (i = 0; i < feat_n_stream(acmod->fcb); ++i)
-        memcpy(acmod->feat_buf[acmod->n_feat_frame][i],
+        memcpy(acmod->feat_buf[inptr][i],
                feat[i], feat_stream_len(acmod->fcb, i) * sizeof(**feat));
+    ++acmod->n_feat_frame;
+
     return 1;
 }
 
@@ -537,6 +582,23 @@ int
 acmod_frame_idx(acmod_t *acmod)
 {
     return acmod->output_frame;
+}
+
+int
+acmod_rewind(acmod_t *acmod)
+{
+    /* If the feature buffer is circular, this is not possible. */
+    if (acmod->output_frame > acmod->n_feat_alloc)
+        return -1;
+
+    /* Frames consumed + frames available */
+    acmod->n_feat_frame = acmod->feat_outidx + acmod->n_feat_frame;
+
+    /* Reset output pointers. */
+    acmod->feat_outidx = 0;
+    acmod->output_frame = 0;
+
+    return 0;
 }
 
 int32 const *
@@ -552,23 +614,26 @@ acmod_score(acmod_t *acmod,
     /* Build active senone list. */
     acmod_flags2list(acmod);
 
+    /* Wrap around output pointer.  It is very important that we do
+     * this *before* scoring instead of after, in order for
+     * acmod_rewind() to work - i.e. the output pointer always needs
+     * to reflect the number of frames processed when the buffer is
+     * not circular. */
+    if (acmod->feat_outidx == acmod->n_feat_alloc)
+        acmod->feat_outidx = 0;
     /* Generate scores for the next available frame */
     *out_best_score = 
         (*acmod->frame_eval)(acmod->mgau,
                              acmod->senone_scores,
                              acmod->senone_active,
                              acmod->n_senone_active,
-                             acmod->feat_buf[0],
+                             acmod->feat_buf[acmod->feat_outidx],
                              acmod->output_frame,
                              acmod->compallsen,
                              out_best_senid);
-    /* Shift back the rest of the feature buffer (FIXME: we should
-     * really use circular buffers here) */
+    /* Advance the output pointers. */
+    ++acmod->feat_outidx;
     --acmod->n_feat_frame;
-    memmove(acmod->feat_buf[0][0], acmod->feat_buf[1][0],
-            (acmod->n_feat_frame
-             * feat_dimension(acmod->fcb)
-             * sizeof(***acmod->feat_buf)));
 
     *out_frame_idx = acmod->output_frame;
     ++acmod->output_frame;
