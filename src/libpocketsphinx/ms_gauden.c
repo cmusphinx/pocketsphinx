@@ -136,14 +136,6 @@
 
 #define WORST_DIST	(int32)(0x80000000)
 
-/** Subtract GMM component b (assumed to be positive) and saturate */
-#ifdef FIXED_POINT
-#define GMMSUB(a,b) \
-	(((a)-(b) > a) ? (INT_MIN) : ((a)-(b)))
-#else
-#define GMMSUB(a,b) ((a)-(b))
-#endif
-
 void
 gauden_dump(const gauden_t * g)
 {
@@ -430,59 +422,36 @@ compute_dist_all(gauden_dist_t * out_dist, mfcc_t* obs, int32 featlen,
                  int32 n_density)
 {
     int32 i, d;
-    mfcc_t *m1, *m2;
-    var_t *v1, *v2;
 
-    for (d = 0; d < n_density - 1; d += 2) {
-        mfcc_t diff1, diff2;
-        var_t dval1, dval2;
+    for (d = 0; d < n_density; ++d) {
+        mean_t *m;
+        var_t *v;
+        var_t dval;
 
-        m1 = mean[d];
-        v1 = var[d];
-        dval1 = det[d];
-        m2 = mean[d + 1];
-        v2 = var[d + 1];
-        dval2 = det[d + 1];
+        m = mean[d];
+        v = var[d];
+        dval = det[d];
 
         for (i = 0; i < featlen; i++) {
-            var_t comp1, comp2;
-
-            diff1 = obs[i] - m1[i];
-            diff2 = obs[i] - m2[i];
-
-            comp1 = MFCCMUL(diff1, diff1);
-            comp2 = MFCCMUL(diff2, diff2);
-            comp1 = MFCCMUL(comp1, v1[i]);
-            comp2 = MFCCMUL(comp2, v2[i]);
-
-            dval1 = GMMSUB(dval1, comp1);
-            dval2 = GMMSUB(dval1, comp2);
+            mean_t diff;
+#ifdef FIXED_POINT
+            /* Have to check for underflows here. */
+            var_t pdval = dval;
+            diff = obs[i] - m[i];
+            dval -= MFCCMUL(MFCCMUL(diff, diff), v[i]);
+            if (dval > pdval) {
+                dval = WORST_SCORE;
+                break;
+            }
+#else
+            diff = obs[i] - m[i];
+            /* The compiler really likes this to be a single
+             * expression, for whatever reason. */
+            dval -= diff * diff * v[i];
+#endif
         }
 
-        out_dist[d].dist = dval1;
-        out_dist[d].id = d;
-        out_dist[d + 1].dist = dval2;
-        out_dist[d + 1].id = d + 1;
-    }
-
-    if (d < n_density) {
-        var_t dval1;
-
-        m1 = mean[d];
-        v1 = var[d];
-        dval1 = det[d];
-
-        for (i = 0; i < featlen; i++) {
-            mfcc_t diff1;
-            var_t comp1;
-
-            diff1 = obs[i] - m1[i];
-            comp1 = MFCCMUL(diff1, diff1);
-            comp1 = MFCCMUL(comp1, v1[i]);
-            dval1 = GMMSUB(dval1, comp1);
-        }
-
-        out_dist[d].dist = dval1;
+        out_dist[d].dist = dval;
         out_dist[d].id = d;
     }
 
@@ -497,13 +466,11 @@ compute_dist_all(gauden_dist_t * out_dist, mfcc_t* obs, int32 featlen,
 static int32
 compute_dist(gauden_dist_t * out_dist, int32 n_top,
              mfcc_t * obs, int32 featlen,
-             mfcc_t ** mean, var_t ** var, var_t * det,
+             mean_t ** mean, var_t ** var, var_t * det,
              int32 n_density)
 {
     int32 i, j, d;
     gauden_dist_t *worst;
-    mfcc_t *m;
-    var_t *v;
 
     /* Special case optimization when n_density <= n_top */
     if (n_top >= n_density)
@@ -515,7 +482,8 @@ compute_dist(gauden_dist_t * out_dist, int32 n_top,
     worst = &(out_dist[n_top - 1]);
 
     for (d = 0; d < n_density; d++) {
-        mfcc_t diff;
+        mean_t *m;
+        var_t *v;
         var_t dval;
 
         m = mean[d];
@@ -523,11 +491,22 @@ compute_dist(gauden_dist_t * out_dist, int32 n_top,
         dval = det[d];
 
         for (i = 0; (i < featlen) && (dval >= worst->dist); i++) {
-            var_t compl;
+            mean_t diff;
+#ifdef FIXED_POINT
+            /* Have to check for underflows here. */
+            var_t pdval = dval;
             diff = obs[i] - m[i];
-            compl = MFCCMUL(diff, diff);
-            compl = MFCCMUL(compl, v[i]);
-            dval = GMMSUB(dval, compl);
+            dval -= MFCCMUL(MFCCMUL(diff, diff), v[i]);
+            if (dval > pdval) {
+                dval = WORST_SCORE;
+                break;
+            }
+#else
+            diff = obs[i] - m[i];
+            /* The compiler really likes this to be a single
+             * expression, for whatever reason. */
+            dval -= diff * diff * v[i];
+#endif
         }
 
         if ((i < featlen) || (dval < worst->dist))     /* Codeword d worse than worst */
