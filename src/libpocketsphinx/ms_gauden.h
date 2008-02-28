@@ -103,21 +103,12 @@ typedef struct {
 gauden_t *
 gauden_init (char *meanfile,	/**< Input: File containing means of mixture gaussians */
 	     char *varfile,	/**< Input: File containing variances of mixture gaussians */
-	     mfcc_t varfloor,	/**< Input: Floor value to be applied to variances */
+	     float32 varfloor,	/**< Input: Floor value to be applied to variances */
              logmath_t *lmath
     );
 
 /** Release memory allocated by gauden_init. */
 void gauden_free(gauden_t *g); /**< In: The gauden_t to free */
-
-/**
- * Reload mixture Gaussian means from the given file.  The means must have already
- * been loaded at least once (using gauden_init).
- * @return 0 if successful, -1 otherwise.
- */
-int32 gauden_mean_reload (gauden_t *g,		/**< In/Out: g->mean to be reloaded */
-			  char *meanfile	/**< In: File to reload means from */
-    );
 
 /**
  * Compute gaussian density values for the given input observation vector wrt the
@@ -137,26 +128,6 @@ gauden_dist (gauden_t *g,	/**< In: handle to entire ensemble of codebooks */
 		out_dist[f][i] = i-th best density for feature f.
 		Caller must allocate memory for this output */
     );
-
-
-/**
- * Normalize density values (previously computed by gauden_dist).
- * Two cases:  If (g->n_mgau == 1), normalize such that the sum of the n_top codeword
- * scores for each feature in dist sums to 1 (in prob domain).
- * Otherwise, normalize by dividing the density value (subtracting, in logprob domain) for
- * each codeword by the best one.
- * @return scaling applied to every senone score as a result of the normalization.
- */
-int32
-gauden_dist_norm (gauden_t *g,		/**< In: handle to all collection of codebooks */
-		  int32 n_top,		/**< In: #density values computed per feature */
-		  gauden_dist_t ***dist,/**< In/Out: n_top density indices and values for
-					   each feature.  On return, density values are
-					   normalized. */
-		  uint8 *active	/**< In: active[gid] is non-0 iff codebook gid is
-				   active.  If NULL, all codebooks active */
-    );
-
 
 /**
    Dump the definitionn of Gaussian distribution. 

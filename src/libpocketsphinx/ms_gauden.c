@@ -200,8 +200,8 @@ gauden_param_read(float32 ***** out_param,      /* Alloc space iff *out_param ==
     int32 n_density;
     int32 *veclen;
     int32 byteswap, chksum_present;
-    mfcc_t****out;
-    mfcc_t *buf;
+    float32 ****out;
+    float32 *buf;
     char **argname, **argval;
     uint32 chksum;
 
@@ -323,7 +323,7 @@ gauden_param_free(mfcc_t **** p)
  * NOTE; The density computation is performed in log domain.
  */
 static int32
-gauden_dist_precompute(gauden_t * g, logmath_t *lmath, mfcc_t varfloor)
+gauden_dist_precompute(gauden_t * g, logmath_t *lmath, float32 varfloor)
 {
     int32 i, m, f, d, flen;
     mean_t *meanp;
@@ -348,7 +348,7 @@ gauden_dist_precompute(gauden_t * g, logmath_t *lmath, mfcc_t varfloor)
 
 #ifdef FIXED_POINT
                     float32 *fmp = (float32 *)meanp;
-                    *mp = FLOAT2FIX(*fmp);
+                    *meanp = FLOAT2MFCC(*fmp);
 #endif
                     if (*fvarp < varfloor) {
                         *fvarp = varfloor;
@@ -370,7 +370,7 @@ gauden_dist_precompute(gauden_t * g, logmath_t *lmath, mfcc_t varfloor)
 
 
 gauden_t *
-gauden_init(char *meanfile, char *varfile, mfcc_t varfloor, logmath_t *lmath)
+gauden_init(char *meanfile, char *varfile, float32 varfloor, logmath_t *lmath)
 {
     int32 i, m, f, d, *flen;
     float32 ****fgau;
@@ -423,27 +423,6 @@ gauden_free(gauden_t * g)
     ckd_free(g);
 }
 
-int32
-gauden_mean_reload(gauden_t * g, char *meanfile)
-{
-    int32 i, m, f, d, *flen;
-
-    assert(g->mean != NULL);
-
-    gauden_param_read(&(g->mean), &m, &f, &d, &flen, meanfile);
-
-    /* Verify original and new mean parameter dimensions */
-    if ((m != g->n_mgau) || (f != g->n_feat) || (d != g->n_density))
-        E_FATAL
-            ("Mixture-gaussians dimensions for original and new means differ\n");
-    for (i = 0; i < g->n_feat; i++)
-        if (g->featlen[i] != flen[i])
-            E_FATAL("Feature lengths for original and new means differ\n");
-    ckd_free(flen);
-
-    return 0;
-}
-
 /* See compute_dist below */
 static int32
 compute_dist_all(gauden_dist_t * out_dist, mfcc_t* obs, int32 featlen,
@@ -471,8 +450,10 @@ compute_dist_all(gauden_dist_t * out_dist, mfcc_t* obs, int32 featlen,
             diff1 = obs[i] - m1[i];
             diff2 = obs[i] - m2[i];
 
-            comp1 = MFCCMUL(diff1, diff1) * v1[i];
-            comp2 = MFCCMUL(diff2, diff2) * v2[i];
+            comp1 = MFCCMUL(diff1, diff1);
+            comp2 = MFCCMUL(diff2, diff2);
+            comp1 = MFCCMUL(comp1, v1[i]);
+            comp2 = MFCCMUL(comp2, v2[i]);
 
             dval1 = GMMSUB(dval1, comp1);
             dval2 = GMMSUB(dval1, comp2);
@@ -496,7 +477,8 @@ compute_dist_all(gauden_dist_t * out_dist, mfcc_t* obs, int32 featlen,
             var_t comp1;
 
             diff1 = obs[i] - m1[i];
-            comp1 = MFCCMUL(diff1, diff1) * v1[i];
+            comp1 = MFCCMUL(diff1, diff1);
+            comp1 = MFCCMUL(comp1, v1[i]);
             dval1 = GMMSUB(dval1, comp1);
         }
 
@@ -543,7 +525,8 @@ compute_dist(gauden_dist_t * out_dist, int32 n_top,
         for (i = 0; (i < featlen) && (dval >= worst->dist); i++) {
             var_t compl;
             diff = obs[i] - m[i];
-            compl = MFCCMUL(diff, diff) * v[i];
+            compl = MFCCMUL(diff, diff);
+            compl = MFCCMUL(compl, v[i]);
             dval = GMMSUB(dval, compl);
         }
 

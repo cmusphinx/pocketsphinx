@@ -108,6 +108,7 @@
 
 /* SphinxBase headers. */
 #include <sphinx_types.h>
+#include <fixpoint.h>
 
 #ifdef __cplusplus
 extern "C" {
