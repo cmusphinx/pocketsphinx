@@ -61,13 +61,6 @@
 #include "hmm.h"
 
 /**
- * Type used to represent acoustic model scores.
- *
- * FIXME: Needs to go in a header where it can be found by the GMM and HMM code.
- */
-typedef int32 ascr_t;
-
-/**
  * States in utterance processing.
  */
 typedef enum acmod_state_e {
@@ -81,7 +74,7 @@ typedef enum acmod_state_e {
  * Function which computes one frame of GMM scores.
  */
 typedef int (*frame_eval_t)(void *eval_obj,
-                            int32 *senscr,
+                            int16 *senscr,
                             int32 *senone_active,
                             int32 n_senone_active,
                             mfcc_t ** feat,
@@ -126,7 +119,7 @@ struct acmod_s {
 
     /* Senone scoring: */
     frame_eval_t frame_eval;   /**< Function to compute GMM scores. */
-    ascr_t *senone_scores;      /**< GMM scores for current frame. */
+    int16 *senone_scores;      /**< GMM scores for current frame. */
     bitvec_t *senone_active_vec; /**< Active GMMs in current frame. */
     int *senone_active;        /**< Array of active GMMs. */
     int n_senone_active;       /**< Number of active GMMs. */
@@ -278,10 +271,10 @@ int acmod_frame_idx(acmod_t *acmod);
  *         is available for scoring.  The data pointed to persists only
  *         until the next call to acmod_score().
  */
-ascr_t const *acmod_score(acmod_t *acmod,
-                          int *out_frame_idx,
-                          ascr_t *out_best_score,
-                          int *out_best_senid);
+int16 const *acmod_score(acmod_t *acmod,
+                         int *out_frame_idx,
+                         int16 *out_best_score,
+                         int32 *out_best_senid);
 
 /**
  * Clear set of active senones.

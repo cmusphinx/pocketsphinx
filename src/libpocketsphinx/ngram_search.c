@@ -225,12 +225,12 @@ ngram_search_mark_bptable(ngram_search_t *ngs, int frame_idx)
 }
 
 int
-ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, ascr_t *out_best_score)
+ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score)
 {
     /* End of backpointers for this frame. */
     int end_bpidx;
     int best_exit, bp;
-    ascr_t best_score;
+    int32 best_score;
 
     if (frame_idx == -1)
         frame_idx = acmod_frame_idx(ngs->acmod);

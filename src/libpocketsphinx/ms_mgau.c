@@ -90,7 +90,7 @@ ms_mgau_init(cmd_ln_t *config, logmath_t *lmath)
     msg->g = gauden_init(cmd_ln_str_r(config, "-mean"),
 			 cmd_ln_str_r(config, "-var"),
 			 cmd_ln_float32_r(config, "-varfloor"),
-			 TRUE, lmath);
+			 lmath);
     msg->s = senone_init(msg->g,
 			 cmd_ln_str_r(config, "-mixw"), NULL,
 			 cmd_ln_float32_r(config, "-mixwfloor"), lmath);
@@ -153,7 +153,7 @@ ms_mgau_free(ms_mgau_model_t * msg)
 
 int32
 ms_cont_mgau_frame_eval(ms_mgau_model_t * msg,
-			int32 *senscr,
+			int16 *senscr,
 			int32 *senone_active,
 			int32 n_senone_active,
                         mfcc_t ** feat,
@@ -188,21 +188,20 @@ ms_cont_mgau_frame_eval(ms_mgau_model_t * msg,
 
     /* Compute topn gaussian density values (for active codebooks) */
     for (gid = 0; gid < g->n_mgau; gid++) {
-        if (msg->mgau_active[gid])
+	if (msg->mgau_active[gid])
             gauden_dist(g, gid, topn, feat, msg->dist[gid]);
     }
 
-    best = (int32) 0x80000000;
+    best = (int32) 0x7fffffff;
     *bestidx = -1;
     for (i = 0; i < n_senone_active; i++) {
 	int32 s = senone_active[i];
 	senscr[s] = senone_eval(sen, s, msg->dist[sen->mgau[s]], topn);
-	if (best < senscr[s]) {
+	if (best > senscr[s]) {
 	    best = senscr[s];
 	    *bestidx = s;
 	}
     }
-
 
     /* Normalize senone scores */
     for (i = 0; i < n_senone_active; i++) {

@@ -34,73 +34,6 @@
  * ====================================================================
  *
  */
-/*
- *
- * HISTORY
- * 
- * $Log$
- * Revision 1.2  2006/04/06  14:03:02  dhdfu
- * Prevent confusion among future generations by calling this s2_semi_mgau instead of sc_vq
- * 
- * Revision 1.1  2006/04/05 20:14:26  dhdfu
- * Add cut-down support for Sphinx-2 fast GMM computation (from
- * PocketSphinx).  This does *not* support Sphinx2 format models, but
- * rather semi-continuous Sphinx3 models.  I'll try to write a model
- * converter at some point soon.
- *
- * Unfortunately the smallest models I have for testing don't do so well
- * on the AN4 test sentence (should use AN4 models, maybe...) so it comes
- * with a "don't panic" warning.
- *
- * Revision 1.4  2006/04/04 15:31:31  dhuggins
- * Remove redundant acoustic score scaling in senone computation.
- *
- * Revision 1.3  2006/04/04 15:24:29  dhuggins
- * Get the meaning of LOG_BASE right (oops!).  Seems to work fine now, at
- * least at logbase=1.0001.
- *
- * Revision 1.2  2006/04/04 14:54:40  dhuggins
- * Add support for s2_semi_mgau - it doesn't crash, but it doesn't work either :)
- *
- * Revision 1.1  2006/04/04 04:25:17  dhuggins
- * Add a cut-down version of sphinx2 fast GMM computation (SCVQ) from
- * PocketSphinx.  Not enabled or tested yet.  Doesn't support Sphinx2
- * models (write an external conversion tool instead, please).  Hopefully
- * this will put an end to me complaining about Sphinx3 being too slow :-)
- *
- * Revision 1.12  2004/12/10 16:48:56  rkm
- * Added continuous density acoustic model handling
- *
- * 
- * 22-Nov-2004  M K Ravishankar (rkm@cs) at Carnegie-Mellon University
- * 		Moved best senone score and best senone within phone
- * 		computation out of here and into senscr module, for
- * 		integrating continuous  models into sphinx2.
- * 
- * 19-Nov-97  M K Ravishankar (rkm@cs) at Carnegie-Mellon University
- * 	Added ability to read power variance file if it exists.
- * 
- * 19-Jun-95  M K Ravishankar (rkm@cs) at Carnegie-Mellon University
- * 	Added scvq_set_psen() and scvq_set_bestpscr().  Modified SCVQScores_all to
- * 	also compute best senone score/phone.
- * 
- * 19-May-95  M K Ravishankar (rkm@cs) at Carnegie-Mellon University
- * 	Added check for bad VQ scores in SCVQScores and SCVQScores_all.
- * 
- * 01-Jul-94  M K Ravishankar (rkm@cs) at Carnegie-Mellon University
- * 	In SCVQScores, returned result from SCVQComputeScores_opt().
- * 
- * 01-Nov-93  M K Ravishankar (rkm@cs) at Carnegie-Mellon University
- * 	Added compressed, 16-bit senone probs option.
- * 
- *  6-Apr-92  Fil Alleva (faa) at Carnegie-Mellon University
- *	- added SCVQAgcSet() and agcType.
- *
- * 08-Oct-91  Eric Thayer (eht) at Carnegie-Mellon University
- *	Created from system by Xuedong Huang
- * 22-Oct-91  Eric Thayer (eht) at Carnegie-Mellon University
- *	Installed some efficiency improvements to acoustic scoring
- */
 
 /* System headers */
 #include <stdio.h>
@@ -148,21 +81,21 @@ struct vqFeature_s {
 };
 
 /** Subtract GMM component b (assumed to be positive) and saturate */
+#ifdef FIXED_POINT
 #define GMMSUB(a,b) \
 	(((a)-(b) > a) ? (INT_MIN) : ((a)-(b)))
 /** Add GMM component b (assumed to be positive) and saturate */
 #define GMMADD(a,b) \
 	(((a)+(b) < a) ? (INT_MAX) : ((a)+(b)))
+#else
+#define GMMSUB(a,b) ((a)-(b))
+#define GMMADD(a,b) ((a)+(b))
+#endif
 
 #ifndef MIN
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
-/* Allocate 0..159 for negated quantized mixture weights and 0..96 for
- * negated normalized acoustic scores, so that the combination of the
- * two can never exceed 255. */
-#define MAX_NEG_MIXW 159 /**< Maximum negated mixture weight value. */
-#define MAX_NEG_ASCR 96  /**< Maximum negated acoustic score value. */
 
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ == 199901L)
 #define LOGMATH_INLINE inline
@@ -173,6 +106,12 @@ struct vqFeature_s {
 #else
 #define LOGMATH_INLINE static
 #endif
+
+/* Allocate 0..159 for negated quantized mixture weights and 0..96 for
+ * negated normalized acoustic scores, so that the combination of the
+ * two (for a single mixture) can never exceed 255. */
+#define MAX_NEG_MIXW 159 /**< Maximum negated mixture weight value. */
+#define MAX_NEG_ASCR 96  /**< Maximum negated acoustic score value. */
 
 /**
  * Quickly log-add two negated log probabilities.
@@ -214,25 +153,25 @@ fast_logmath_add(logmath_t *lmath, int mlx, int mly)
  * Optimization for various topN cases, PDF-size(#bits) cases of
  * SCVQComputeScores() and SCVQComputeScores_all().
  */
-static int32 get_scores4_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+static int32 get_scores4_8b(s2_semi_mgau_t * s, int16 *senone_scores,
                             int32 *senone_active, int32 n_senone_active,
                             int32 *out_bestidx);
-static int32 get_scores2_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+static int32 get_scores2_8b(s2_semi_mgau_t * s, int16 *senone_scores,
                             int32 *senone_active, int32 n_senone_active,
                             int32 *out_bestidx);
-static int32 get_scores1_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+static int32 get_scores1_8b(s2_semi_mgau_t * s, int16 *senone_scores,
                             int32 *senone_active, int32 n_senone_active,
                             int32 *out_bestidx);
-static int32 get_scores_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+static int32 get_scores_8b(s2_semi_mgau_t * s, int16 *senone_scores,
                            int32 *senone_active, int32 n_senone_active,
                            int32 *out_bestidx);
-static int32 get_scores4_8b_all(s2_semi_mgau_t * s, int32 *senone_scores,
+static int32 get_scores4_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
                                 int32 *out_bestidx);
-static int32 get_scores2_8b_all(s2_semi_mgau_t * s, int32 *senone_scores,
+static int32 get_scores2_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
                                 int32 *out_bestidx);
-static int32 get_scores1_8b_all(s2_semi_mgau_t * s, int32 *senone_scores,
+static int32 get_scores1_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
                                 int32 *out_bestidx);
-static int32 get_scores_8b_all(s2_semi_mgau_t * s, int32 *senone_scores,
+static int32 get_scores_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
                                int32 *out_bestidx);
 
 static void
@@ -263,11 +202,11 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
             d = GMMSUB(d, compl);
             ++var;
         }
-        topn[i].score = (int32) d;
+        topn[i].score = (int32)d;
         if (i == 0)
             continue;
         vtmp = topn[i];
-        for (j = i - 1; j >= 0 && (int32) d > topn[j].score; j--) {
+        for (j = i - 1; j >= 0 && (int32)d > topn[j].score; j--) {
             topn[j + 1] = topn[j];
         }
         topn[j + 1] = vtmp;
@@ -306,7 +245,7 @@ eval_cb_kdtree(s2_semi_mgau_t *s, int32 feat, mfcc_t *z,
         }
         if (j < ceplen)
             continue;
-        if (d < worst->score)
+        if ((int32)d < worst->score)
             continue;
         for (k = 0; k < s->topN; k++) {
             /* already there, so don't need to insert */
@@ -316,11 +255,11 @@ eval_cb_kdtree(s2_semi_mgau_t *s, int32 feat, mfcc_t *z,
         if (k < s->topN)
             continue;       /* already there.  Don't insert */
         /* remaining code inserts codeword and dist in correct spot */
-        for (cur = worst - 1; cur >= best && d >= cur->score; --cur)
+        for (cur = worst - 1; cur >= best && (int32)d >= cur->score; --cur)
             memcpy(cur + 1, cur, sizeof(vqFeature_t));
         ++cur;
         cur->codeword = cw;
-        cur->score = (int32) d;
+        cur->score = (int32)d;
     }
 }
 
@@ -329,8 +268,7 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
 {
     vqFeature_t *worst, *best, *topn;
     mean_t *mean;
-    var_t *var;
-    int32 *det, *detP, *detE;
+    var_t *var, *det, *detP, *detE;
     int32 i, ceplen;
 
     best = topn = s->f[feat];
@@ -364,7 +302,7 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
             var += (ceplen - j);
             continue;
         }
-        if (d < worst->score)
+        if ((int32)d < worst->score)
             continue;
         for (i = 0; i < s->topN; i++) {
             /* already there, so don't need to insert */
@@ -374,11 +312,11 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
         if (i < s->topN)
             continue;       /* already there.  Don't insert */
         /* remaining code inserts codeword and dist in correct spot */
-        for (cur = worst - 1; cur >= best && d >= cur->score; --cur)
+        for (cur = worst - 1; cur >= best && (int32)d >= cur->score; --cur)
             memcpy(cur + 1, cur, sizeof(vqFeature_t));
         ++cur;
         cur->codeword = cw;
-        cur->score = (int32) d;
+        cur->score = (int32)d;
     }
 }
 
@@ -419,7 +357,7 @@ mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
  */
 int32
 s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
-                        int32 *senone_scores,
+                        int16 *senone_scores,
                         int32 *senone_active,
                         int32 n_senone_active,
 			mfcc_t ** featbuf, int32 frame,
@@ -433,17 +371,17 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
 
     /* Compute quantized normalizing constant. */
     for (j = 0; j < s->n_feat; j++) {
-        s->score_tmp[j] = s->f[j][0].score >> 10;
+        s->score_tmp[j] = s->f[j][0].score >> SENSCR_SHIFT;
         for (i = 1; i < s->topN; i++) {
             s->score_tmp[j] = logmath_add(s->lmath_8b,
                                           s->score_tmp[j],
-                                          s->f[j][i].score >> 10);
+                                          s->f[j][i].score >> SENSCR_SHIFT);
         }
     }
     /* Normalize the scores, negate them, and clamp their dynamic range. */
     for (i = 0; i < s->topN; i++) {
         for (j = 0; j < s->n_feat; j++) {
-            s->f[j][i].score = -((s->f[j][i].score >> 10) - s->score_tmp[j]);
+            s->f[j][i].score = -((s->f[j][i].score >> SENSCR_SHIFT) - s->score_tmp[j]);
             if (s->f[j][i].score < 0 || s->f[j][i].score > MAX_NEG_ASCR)
                 s->f[j][i].score = MAX_NEG_ASCR;
         }
@@ -484,7 +422,7 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
 }
 
 static int32
-get_scores_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+get_scores_8b(s2_semi_mgau_t * s, int16 *senone_scores,
               int32 *senone_active, int32 n_senone_active,
               int32 *out_bestidx)
 {
@@ -493,7 +431,7 @@ get_scores_8b(s2_semi_mgau_t * s, int32 *senone_scores,
 }
 
 static int32
-get_scores_8b_all(s2_semi_mgau_t * s, int32 *senone_scores,
+get_scores_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
                   int32 *out_bestidx)
 {
     E_FATAL("get_scores_8b_all() not implemented\n");
@@ -501,12 +439,12 @@ get_scores_8b_all(s2_semi_mgau_t * s, int32 *senone_scores,
 }
 
 static int32
-get_scores4_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+get_scores4_8b(s2_semi_mgau_t * s, int16 *senone_scores,
                int32 *senone_active, int32 n_senone_active,
                int32 *out_bestidx)
 {
     int32 j;
-    int32 best = (int32)0x80000000;
+    int32 best = (int32)0x7fffffff;
 
     memset(senone_scores, 0, s->CdWdPDFMod * sizeof(*senone_scores));
     for (j = 0; j < s->n_feat; j++) {
@@ -531,8 +469,8 @@ get_scores4_8b(s2_semi_mgau_t * s, int32 *senone_scores,
             tmp2 = pid_cw3[n] + s->f[j][3].score;
             tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
 
-            senone_scores[n] -= tmp1 << 10;
-            if (j == s->n_feat - 1 && senone_scores[n] > best) {
+            senone_scores[n] += tmp1;
+            if (j == s->n_feat - 1 && senone_scores[n] < best) {
                 best = senone_scores[n];
                 *out_bestidx = n;
             }
@@ -542,11 +480,11 @@ get_scores4_8b(s2_semi_mgau_t * s, int32 *senone_scores,
 }
 
 static int32
-get_scores4_8b_all(s2_semi_mgau_t * s, int32 *senone_scores,
+get_scores4_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
                    int32 *out_bestidx)
 {
     int32 j;
-    int32 best = (int32)0x80000000;
+    int32 best = (int32)0x7fffffff;
 
     n_senone_active = s->CdWdPDFMod;
     memset(senone_scores, 0, s->CdWdPDFMod * sizeof(*senone_scores));
@@ -570,8 +508,8 @@ get_scores4_8b_all(s2_semi_mgau_t * s, int32 *senone_scores,
             tmp2 = pid_cw3[n] + s->f[j][3].score;
             tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
 
-            senone_scores[n] -= tmp1 << 10;
-            if (j == s->n_feat - 1 && senone_scores[n] > best) {
+            senone_scores[n] += tmp1;
+            if (j == s->n_feat - 1 && senone_scores[n] < best) {
                 best = senone_scores[n];
                 *out_bestidx = n;
             }
@@ -581,12 +519,12 @@ get_scores4_8b_all(s2_semi_mgau_t * s, int32 *senone_scores,
 }
 
 static int32
-get_scores2_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+get_scores2_8b(s2_semi_mgau_t * s, int16 *senone_scores,
                int32 *senone_active, int32 n_senone_active,
                int32 *out_bestidx)
 {
     int32 k;
-    int32 best = (int32)0x80000000;
+    int32 best = (int32)0x7fffffff;
     unsigned char *pid_cw00, *pid_cw10, *pid_cw01, *pid_cw11,
         *pid_cw02, *pid_cw12, *pid_cw03, *pid_cw13;
 
@@ -608,20 +546,20 @@ get_scores2_8b(s2_semi_mgau_t * s, int32 *senone_scores,
         tmp1 = pid_cw00[n] + s->f[0][0].score;
         tmp2 = pid_cw10[n] + s->f[0][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
+        senone_scores[n] += tmp1;
         tmp1 = pid_cw01[n] + s->f[1][0].score;
         tmp2 = pid_cw11[n] + s->f[1][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
+        senone_scores[n] += tmp1;
         tmp1 = pid_cw02[n] + s->f[2][0].score;
         tmp2 = pid_cw12[n] + s->f[2][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
+        senone_scores[n] += tmp1;
         tmp1 = pid_cw03[n] + s->f[3][0].score;
         tmp2 = pid_cw13[n] + s->f[3][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
-        if (senone_scores[n] > best) {
+        senone_scores[n] += tmp1;
+        if (senone_scores[n] < best) {
             best = senone_scores[n];
             *out_bestidx = n;
         }
@@ -630,12 +568,12 @@ get_scores2_8b(s2_semi_mgau_t * s, int32 *senone_scores,
 }
 
 static int32
-get_scores2_8b_all(s2_semi_mgau_t * s, int32 *senone_scores,
+get_scores2_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
                    int32 *out_bestidx)
 {
     unsigned char *pid_cw00, *pid_cw10, *pid_cw01, *pid_cw11,
         *pid_cw02, *pid_cw12, *pid_cw03, *pid_cw13;
-    int32 best = (int32)0x80000000;
+    int32 best = (int32)0x7fffffff;
     int32 n;
 
     n_senone_active = s->CdWdPDFMod;
@@ -656,20 +594,20 @@ get_scores2_8b_all(s2_semi_mgau_t * s, int32 *senone_scores,
         tmp1 = pid_cw00[n] + s->f[0][0].score;
         tmp2 = pid_cw10[n] + s->f[0][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
+        senone_scores[n] += tmp1;
         tmp1 = pid_cw01[n] + s->f[1][0].score;
         tmp2 = pid_cw11[n] + s->f[1][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
+        senone_scores[n] += tmp1;
         tmp1 = pid_cw02[n] + s->f[2][0].score;
         tmp2 = pid_cw12[n] + s->f[2][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
+        senone_scores[n] += tmp1;
         tmp1 = pid_cw03[n] + s->f[3][0].score;
         tmp2 = pid_cw13[n] + s->f[3][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-        senone_scores[n] -= tmp1 << 10;
-        if (senone_scores[n] > best) {
+        senone_scores[n] += tmp1;
+        if (senone_scores[n] < best) {
             best = senone_scores[n];
             *out_bestidx = n;
         }
@@ -678,12 +616,12 @@ get_scores2_8b_all(s2_semi_mgau_t * s, int32 *senone_scores,
 }
 
 static int32
-get_scores1_8b(s2_semi_mgau_t * s, int32 *senone_scores,
+get_scores1_8b(s2_semi_mgau_t * s, int16 *senone_scores,
                int32 *senone_active, int32 n_senone_active,
                int32 *out_bestidx)
 {
     int32 j, k;
-    int32 best = (int32)0x80000000;
+    int32 best = (int32)0x7fffffff;
     unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
 
     /* Ptrs to senone prob values for the top codeword of all codebooks */
@@ -695,8 +633,8 @@ get_scores1_8b(s2_semi_mgau_t * s, int32 *senone_scores,
     for (k = 0; k < n_senone_active; k++) {
         j = senone_active[k];
         senone_scores[j] =
-            -((pid_cw0[j] + pid_cw1[j] + pid_cw2[j] + pid_cw3[j]) << 10);
-        if (senone_scores[j] > best) {
+            (pid_cw0[j] + pid_cw1[j] + pid_cw2[j] + pid_cw3[j]);
+        if (senone_scores[j] < best) {
             best = senone_scores[j];
             *out_bestidx = j;
         }
@@ -705,11 +643,11 @@ get_scores1_8b(s2_semi_mgau_t * s, int32 *senone_scores,
 }
 
 static int32
-get_scores1_8b_all(s2_semi_mgau_t * s, int32 *senscr,
+get_scores1_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
                    int32 *out_bestidx)
 {
     int32 j;
-    int32 best = (int32)0x80000000;
+    int32 best = (int32)0x7fffffff;
     unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
 
     n_senone_active = s->CdWdPDFMod;
@@ -721,10 +659,10 @@ get_scores1_8b_all(s2_semi_mgau_t * s, int32 *senscr,
     pid_cw3 = s->OPDF_8B[3][s->f[3][0].codeword];
 
     for (j = 0; j < s->CdWdPDFMod; j++) {
-        senscr[j] =
-            -((pid_cw0[j] + pid_cw1[j] + pid_cw2[j] + pid_cw3[j]) << 10);
-        if (senscr[j] > best) {
-            best = senscr[j];
+        senone_scores[j] =
+            (pid_cw0[j] + pid_cw1[j] + pid_cw2[j] + pid_cw3[j]);
+        if (senone_scores[j] < best) {
+            best = senone_scores[j];
             *out_bestidx = j;
         }
     }
@@ -1118,8 +1056,8 @@ s3_precomp(s2_semi_mgau_t *s, logmath_t *lmath, float32 vFloor)
     for (feat = 0; feat < s->n_feat; ++feat) {
         float32 *fmp;
         mean_t *mp;
-        var_t *vp;
-        int32 *dp, vecLen, i;
+        var_t *vp, *dp;
+        int32 vecLen, i;
 
         vecLen = s->veclen[feat];
         fmp = (float32 *) s->means[feat];
@@ -1128,7 +1066,8 @@ s3_precomp(s2_semi_mgau_t *s, logmath_t *lmath, float32 vFloor)
         dp = s->dets[feat];
 
         for (i = 0; i < s->n_density; ++i) {
-            int32 d, j;
+            var_t d;
+            int32 j;
 
             d = 0;
             for (j = 0; j < vecLen; ++j, ++vp, ++mp, ++fmp) {
@@ -1141,8 +1080,8 @@ s3_precomp(s2_semi_mgau_t *s, logmath_t *lmath, float32 vFloor)
                 fvar = *(float32 *) vp;
                 if (fvar < vFloor)
                     fvar = vFloor;
-                d += logmath_log(lmath, 1 / sqrt(fvar * 2.0 * M_PI));
-                *vp = (var_t) logmath_ln_to_log(lmath, 1.0 / (2.0 * fvar));
+                d += (var_t)logmath_log(lmath, 1 / sqrt(fvar * 2.0 * M_PI));
+                *vp = (var_t)logmath_ln_to_log(lmath, 1.0 / (2.0 * fvar));
             }
             *dp++ = d;
         }
@@ -1155,13 +1094,14 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
 {
     s2_semi_mgau_t *s;
     char *sendump_path;
+    float32 **fgau;
     int i;
 
     s = ckd_calloc(1, sizeof(*s));
     s->config = config;
 
     /* Log-add table. */
-    s->lmath_8b = logmath_init(logmath_get_base(lmath), 10, TRUE);
+    s->lmath_8b = logmath_init(logmath_get_base(lmath), SENSCR_SHIFT, TRUE);
     if (s->lmath_8b == NULL) {
         s2_semi_mgau_free(s);
         return NULL;
@@ -1175,18 +1115,19 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     }
 
     /* Read means and variances. */
-    if (s3_read_mgau(s, cmd_ln_str_r(config, "-mean"),
-                     (float32 ***)&s->means) < 0) {
+    if (s3_read_mgau(s, cmd_ln_str_r(config, "-mean"), &fgau) < 0) {
         s2_semi_mgau_free(s);
         return NULL;
     }
-    if (s3_read_mgau(s, cmd_ln_str_r(config, "-var"),
-                     (float32 ***)&s->vars) < 0) {
+    s->means = (mean_t **)fgau;
+    if (s3_read_mgau(s, cmd_ln_str_r(config, "-var"), &fgau) < 0) {
         s2_semi_mgau_free(s);
         return NULL;
     }
+    s->vars = (var_t **)fgau;
+
     /* Precompute (and fixed-point-ize) means, variances, and determinants. */
-    s->dets = (int32 **)ckd_calloc_2d(s->n_feat, s->n_density, sizeof(int32));
+    s->dets = (var_t **)ckd_calloc_2d(s->n_feat, s->n_density, sizeof(**s->dets));
     s3_precomp(s, lmath, cmd_ln_float32_r(config, "-varfloor"));
 
     /* Read mixture weights */
@@ -1205,7 +1146,6 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
                                               sizeof(vqFeature_t));
     for (i = 0; i < s->n_feat; ++i) {
         int32 j;
-
         for (j = 0; j < s->topN; ++j) {
             s->lastf[i][j].score = WORST_DIST;
             s->lastf[i][j].codeword = j;

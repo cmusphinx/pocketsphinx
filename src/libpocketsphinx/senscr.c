@@ -75,7 +75,7 @@
 #include "senscr.h"
 
 /* Global variables shared by search and GMM computations. */
-int32 *senone_scores;
+int16 *senone_scores;
 int32 *senone_active;
 int32 n_senone_active;
 bitvec_t *senone_active_vec;

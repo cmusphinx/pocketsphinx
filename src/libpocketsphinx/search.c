@@ -252,7 +252,7 @@ static dump_search_tree_root();
 static dump_search_tree();
 #endif
 
-static int32 *topsen_score;     /* Top senone score in each frame */
+static int16 *topsen_score;     /* Top senone score in each frame */
 
 int32
 context_frames(void)
@@ -1307,8 +1307,8 @@ search_initialize(cmd_ln_t *cmdln)
     context_word[0] = -1;
     context_word[1] = -1;
 
-    senone_scores = ckd_calloc(bin_mdef_n_sen(g_mdef), sizeof(int32));
-    topsen_score = ckd_calloc(MAX_FRAMES, sizeof(int32));
+    senone_scores = ckd_calloc(bin_mdef_n_sen(g_mdef), sizeof(*senone_scores));
+    topsen_score = ckd_calloc(MAX_FRAMES, sizeof(*topsen_score));
 
     search_set_beam_width(cmd_ln_float64_r(config, "-beam"));
     search_set_new_word_beam_width(cmd_ln_float64_r(config, "-wbeam"));

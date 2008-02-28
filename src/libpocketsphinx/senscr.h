@@ -66,7 +66,7 @@ typedef uint8 bitvec_t;
 #endif
 
 /* Array of senone scores for current frame */
-extern int32 *senone_scores;
+extern int16 *senone_scores;
 /*
  * Array (list) of active senones in the current frame, and the active list
  * size.  Array allocated and maintained by the search module.

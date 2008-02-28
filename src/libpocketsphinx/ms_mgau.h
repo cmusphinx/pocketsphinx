@@ -128,7 +128,7 @@ typedef struct {
 
     /**< Intermediate used in computation */
     gauden_dist_t ***dist;  
-    int8 *mgau_active;
+    uint8 *mgau_active;
 
 } ms_mgau_model_t;  
 
@@ -144,7 +144,7 @@ void ms_mgau_free(ms_mgau_model_t *g /**< In: A set of models to free */
     );
 
 int32 ms_cont_mgau_frame_eval(ms_mgau_model_t * msg,
-                              int32 *senscr,
+                              int16 *senscr,
                               int32 *senone_active,
                               int32 n_senone_active,
                               mfcc_t ** feat,

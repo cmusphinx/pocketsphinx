@@ -119,6 +119,18 @@ extern "C" {
 /** Hardcoded limit on the number of states (temporary) */
 #define MAX_HMM_NSTATE 5
 
+/** Shift count for senone scores. */
+#define SENSCR_SHIFT 10
+
+#ifdef FIXED_POINT
+/** Gaussian mean storage type. */
+typedef fixed32 mean_t;
+typedef int32 var_t;
+#else
+typedef float32 mean_t;
+typedef float32 var_t;
+#endif
+
 /** \file hmm.h
  * \brief HMM data structure and operation
  *
@@ -166,7 +178,8 @@ extern "C" {
 typedef struct hmm_context_s {
     int32 n_emit_state;     /**< Number of emitting states in this set of HMMs. */
     int32 ** const *tp;	    /**< State transition scores tp[id][from][to] (logs3 values). */
-    int32 const *senscore;  /**< State emission scores senscore[senid] (logs3 values). */
+    int16 const *senscore;  /**< State emission scores senscore[senid]
+                               (negated scaled logs3 values). */
     s3senid_t * const *sseq;/**< Senone sequence mapping. */
     int32 *st_sen_scr;      /**< Temporary array of senone scores (for some topologies). */
     void *udata;            /**< Whatever you feel like, gosh. */
@@ -228,7 +241,7 @@ typedef struct hmm_s {
                          ? -1 : (h)->ctx->sseq[hmm_ssid(h,st)][st])
 #define hmm_senscr(h,st) (hmm_ssid(h,st) == -1                          \
                           ? WORST_SCORE                                 \
-                          : (h)->ctx->senscore[hmm_senid(h,st)])
+                          : -(h)->ctx->senscore[hmm_senid(h,st)] << SENSCR_SHIFT)
 #define hmm_tmatid(h) (h)->tmatid
 #define hmm_tprob(h,i,j) (h)->ctx->tp[hmm_tmatid(h)][i][j]
 #define hmm_n_emit_state(h) ((h)->n_emit_state)
@@ -239,7 +252,7 @@ typedef struct hmm_s {
  **/
 hmm_context_t *hmm_context_init(int32 n_emit_state,
                                 int32 ** const *tp,
-                                int32 const *senscore,
+                                int16 const *senscore,
                                 s3senid_t * const *sseq);
 
 /**

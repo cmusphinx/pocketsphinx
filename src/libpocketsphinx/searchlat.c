@@ -150,7 +150,7 @@ static int32 n_node, n_link;
 #define ISA_FILLER_WORD(x)	((x)>=sil_wid)
 #define ISA_REAL_WORD(x)	((x)<finish_wid)
 
-static lw_t lw_factor;          /* Lang-weight factor (lw(2nd pass)/lw(1st pass)) */
+static float32 lw_factor;          /* Lang-weight factor (lw(2nd pass)/lw(1st pass)) */
 static char *rescore_lmname = NULL;
 
 void

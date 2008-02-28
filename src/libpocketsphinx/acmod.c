@@ -601,11 +601,11 @@ acmod_rewind(acmod_t *acmod)
     return 0;
 }
 
-int32 const *
+int16 const *
 acmod_score(acmod_t *acmod,
 	    int *out_frame_idx,
-	    ascr_t *out_best_score,
-	    int *out_best_senid)
+	    int16 *out_best_score,
+	    int32 *out_best_senid)
 {
     /* No frames available to score. */
     if (acmod->n_feat_frame == 0)

@@ -510,7 +510,7 @@ compute_sen_active(ngram_search_t *ngs, int frame_idx)
 }
 
 static void
-renormalize_scores(ngram_search_t *ngs, int frame_idx, ascr_t norm)
+renormalize_scores(ngram_search_t *ngs, int frame_idx, int32 norm)
 {
     root_chan_t *rhmm;
     chan_t *hmm, **acl;
@@ -645,8 +645,8 @@ eval_word_chan(ngram_search_t *ngs, int frame_idx)
     return bestscore;
 }
 
-static ascr_t
-evaluate_channels(ngram_search_t *ngs, ascr_t const *senone_scores, int frame_idx)
+static int32
+evaluate_channels(ngram_search_t *ngs, int16 const *senone_scores, int frame_idx)
 {
     int32 bs;
 
@@ -1449,9 +1449,9 @@ deactivate_channels(ngram_search_t *ngs, int frame_idx)
 int
 ngram_fwdtree_search(ngram_search_t *ngs)
 {
-    ascr_t const *senscr;
+    int16 const *senscr;
     int frame_idx, best_senid;
-    ascr_t best_senscr;
+    int16 best_senscr;
 
     /* Determine if we actually have a frame to process. */
     if (ngs->acmod->n_feat_frame == 0)

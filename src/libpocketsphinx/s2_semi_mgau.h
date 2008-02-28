@@ -49,21 +49,9 @@
 #include <mmio.h>
 
 /* Local headers. */
+#include "hmm.h"
 #include "kdtree.h"
 #include "bin_mdef.h"
-
-#ifdef FIXED_POINT
-/** Gaussian mean storage type. */
-typedef fixed32 mean_t;
-/** Gaussian precision storage type. */
-typedef int32 var_t;
-/** Language weight storage type. */
-typedef fixed32 lw_t;
-#else
-typedef float32 mean_t;
-typedef float32 var_t;
-typedef float64 lw_t;
-#endif
 
 typedef struct vqFeature_s vqFeature_t;
 
@@ -71,9 +59,9 @@ typedef struct s2_semi_mgau_s s2_semi_mgau_t;
 struct s2_semi_mgau_s {
     cmd_ln_t *config;   /* configuration parameters */
 
-    int32   **dets;	/* det values foreach feature */
     mean_t  **means;	/* mean vectors foreach feature */
-    var_t   **vars;	/* var vectors foreach feature */
+    var_t   **vars;	/* inverse var vectors foreach feature */
+    var_t   **dets;	/* det values foreach feature */
 
     unsigned char ***OPDF_8B; /* mixture weights */
     mmio_file_t *sendump_mmap;/* memory-mapped sendump (or NULL if not mmap) */
@@ -106,7 +94,7 @@ s2_semi_mgau_t *s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t
 void s2_semi_mgau_free(s2_semi_mgau_t *s);
 
 int32 s2_semi_mgau_frame_eval(s2_semi_mgau_t *s,
-                              int32 *senone_scores,
+                              int16 *senone_scores,
                               int32 *senone_active,
                               int32 n_senone_active,
 			      mfcc_t **featbuf,

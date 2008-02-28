@@ -34,74 +34,6 @@
  * ====================================================================
  *
  */
-/*
- * gauden.h -- gaussian density module.
- *
- * **********************************************
- * CMU ARPA Speech Project
- *
- * Copyright (c) 1996 Carnegie Mellon University.
- * ALL RIGHTS RESERVED.
- * **********************************************
- *
- * HISTORY
- * $Log$
- * Revision 1.1  2006/04/05  20:27:30  dhdfu
- * A Great Reorganzation of header files and executables
- * 
- * Revision 1.8  2006/02/22 17:09:55  arthchan2003
- * Merged from SPHINX3_5_2_RCI_IRII_BRANCH: 1, Followed Dave's change, keep active to be uint8 instead int8 in gauden_dist_norm.\n 2, Introdued gauden_dump and gauden_dump_ind.  This allows debugging of ms_gauden routine. \n 3, Introduced gauden_free, this fixed some minor memory leaks. \n 4, gauden_init accept an argument precompute to specify whether the distance is pre-computed or not.\n 5, Added license. \n 6, Fixed dox-doc.
- *
- *
- *
- * Revision 1.6.4.6  2006/01/16 19:45:59  arthchan2003
- * Change the gaussian density dumping routine to a function.
- *
- * Revision 1.6.4.5  2005/10/09 19:51:05  arthchan2003
- * Followed Dave's changed in the trunk.
- *
- * Revision 1.7  2005/10/05 00:31:14  dhdfu
- * Make int8 be explicitly signed (signedness of 'char' is
- * architecture-dependent).  Then make a bunch of things use uint8 where
- * signedness is unimportant, because on the architecture where 'char' is
- * unsigned, it is that way for a reason (signed chars are slower).
- *
- * Revision 1.6.4.4  2005/09/25 18:54:20  arthchan2003
- * Added a flag to turn on and off precomputation.
- *
- * Revision 1.6.4.3  2005/08/03 18:53:44  dhdfu
- * Add memory deallocation functions.  Also move all the initialization
- * of ms_mgau_model_t into ms_mgau_init (duh!), which entails removing it
- * from decode_anytopo and friends.
- *
- * Revision 1.6.4.2  2005/07/20 19:39:01  arthchan2003
- * Added licences in ms_* series of code.
- *
- * Revision 1.6.4.1  2005/07/05 05:47:59  arthchan2003
- * Fixed dox-doc. struct level of documentation are included.
- *
- * Revision 1.6  2005/06/21 18:55:09  arthchan2003
- * 1, Add comments to describe this modules, 2, Fixed doxygen documentation. 3, Added $ keyword.
- *
- * Revision 1.4  2005/06/13 04:02:55  archan
- * Fixed most doxygen-style documentation under libs3decoder.
- *
- * Revision 1.3  2005/03/30 01:22:47  archan
- * Fixed mistakes in last updates. Add
- *
- * 
- * 26-Sep-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added gauden_mean_reload() for application of MLLR.
- * 
- * 20-Jan-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added active argument to gauden_dist_norm and gauden_dist_norm_global,
- * 		and made the latter a static function.
- * 
- * 06-Nov-95	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Initial version created.
- * 		Very liberally borrowed/adapted from Eric's S3 trainer implementation.
- */
-
 
 #ifndef _LIBFBS_GAUDEN_H_
 #define _LIBFBS_GAUDEN_H_
@@ -125,6 +57,7 @@
 
 /* Local headers. */
 #include "vector.h"
+#include "hmm.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -134,13 +67,24 @@ extern "C" {
 #endif
 
 /**
+ * \struct gauden_dist_t
+ * \brief Structure to store distance (density) values for a given input observation wrt density values in some given codebook.
+ */
+typedef struct {
+    int32 id;		/**< Index of codeword (gaussian density) */
+    var_t dist;		/**< Density value for input observation wrt above codeword;
+                           NOTE: result in logs3 domain, but var_t used for speed */
+
+} gauden_dist_t;
+
+/**
  * \struct gauden_t
  * \brief Multivariate gaussian mixture density parameters
  */
 typedef struct {
-    mfcc_t ****mean;	/**< mean[codebook][feature][codeword] vector */
-    mfcc_t ****var;	/**< like mean; diagonal covariance vector only */
-    mfcc_t ***det;	/**< log(determinant) for each variance vector;
+    mean_t ****mean;	/**< mean[codebook][feature][codeword] vector */
+    var_t ****var;	/**< like mean; diagonal covariance vector only */
+    var_t ***det;	/**< log(determinant) for each variance vector;
 			   actually, log(sqrt(2*pi*det)) */
     logmath_t *lmath;   /**< log math computation */
     int32 n_mgau;	/**< #codebooks */
@@ -148,17 +92,6 @@ typedef struct {
     int32 n_density;	/**< #gaussian densities in each codebook-feature stream */
     int32 *featlen;	/**< feature length for each feature */
 } gauden_t;
-
-/**
- * \struct gauden_dist_t
- * \brief Structure to store distance (density) values for a given input observation wrt density values in some given codebook.
- */
-typedef struct {
-    int32 id;		/**< Index of codeword (gaussian density) */
-    int32 dist;		/**< Density value for input observation wrt above codeword;
-                           NOTE: result in logs3 domain; hence int32 */
-
-} gauden_dist_t;
 
 
 /**
@@ -171,7 +104,6 @@ gauden_t *
 gauden_init (char *meanfile,	/**< Input: File containing means of mixture gaussians */
 	     char *varfile,	/**< Input: File containing variances of mixture gaussians */
 	     mfcc_t varfloor,	/**< Input: Floor value to be applied to variances */
-	     int32 precompute,  /**< Input: Whether we should precompute */
              logmath_t *lmath
     );
 

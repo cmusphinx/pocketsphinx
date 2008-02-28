@@ -350,8 +350,8 @@ struct ngram_search_s {
     int32 min_ef_width;
     int32 max_sf_win;
 
-    ascr_t best_score; /**< Best Viterbi path score. */
-    ascr_t last_phone_best_score; /**< Best Viterbi path score for last phone. */
+    int32 best_score; /**< Best Viterbi path score. */
+    int32 last_phone_best_score; /**< Best Viterbi path score for last phone. */
     int32 renormalized;
  
     ngram_search_stats_t st; /**< Various statistics for profiling. */
@@ -409,7 +409,7 @@ void ngram_search_free_all_rc(ngram_search_t *ngs, int32 w);
  *
  * @return the backpointer index of the best word exit.
  */
-int ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, ascr_t *out_best_score);
+int ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score);
 
 /**
  * Backtrace from a given backpointer index to obtain a word hypothesis.

@@ -136,7 +136,7 @@ extern "C" {
 } /* Fool Emacs into not indenting things. */
 #endif
 
-typedef uint32 senprob_t;	/**< Senone logs3-probs, truncated to 8 bits */
+typedef uint8 senprob_t;	/**< Senone logs3-probs, truncated to 8 bits */
 
 /**
  * \struct senone_t
@@ -154,12 +154,11 @@ typedef struct {
                                    if (n_gauden == 1): pdf[feat][codeword][sen].  Optimized
                                    for the shared-distribution semi-continuous case. */
     logmath_t *lmath;           /**< log math computation */
-    int32 n_sen;		/**< #senones in this set */
-    int32 n_feat;		/**< #feature streams */ 
-    int32 n_cw;			/**< #codewords per codebook,stream */
-    int32 n_gauden;		/**< #gaussian density codebooks referred to by senones */
+    uint32 n_sen;		/**< #senones in this set */
+    uint32 n_feat;		/**< #feature streams */ 
+    uint32 n_cw;		/**< #codewords per codebook,stream */
+    uint32 n_gauden;		/**< #gaussian density codebooks referred to by senones */
     float32 mixwfloor;		/**< floor applied to each PDF entry */
-    int32 shift;		/**< LSB bits truncated from original logs3 value */
     s3mgauid_t *mgau;		/**< senone-id -> mgau-id mapping for senones in this set */
     int32* featscr;              /**< The feature score for every senone, will be initialized inside senone_eval_all */
 } senone_t;
@@ -202,7 +201,7 @@ int32 senone_eval (senone_t *s, s3senid_t id,	/**< In: senone for which score de
 void senone_eval_all (senone_t *s,		/**< In: Senone structure */
 		      gauden_dist_t **dist,	/**< In: as in senone_eval above */
 		      int32 n_top,		/**< In: as in senone_eval above */
-		      int32 *senscr		/**< Out: Upon return, senscr[i] will contain
+		      int16 *senscr		/**< Out: Upon return, senscr[i] will contain
 						   score for senone i */
     );
 
