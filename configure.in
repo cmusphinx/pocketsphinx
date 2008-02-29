@@ -34,6 +34,7 @@ AM_PROG_LIBTOOL
 AC_WORDS_BIGENDIAN
 AC_CHECK_TYPES(long long)
 AC_CHECK_SIZEOF(long long)
+AC_CHECK_FUNCS(dup2)
 
 dnl
 dnl Get SphinxBase source from command line if given
@@ -101,7 +102,8 @@ PKG_CHECK_MODULES(GStreamer, [gstreamer-$GST_MAJORMINOR >= 0.10.0
 		       gstreamer-base-$GST_MAJORMINOR >= 0.10.0
 		       gstreamer-plugins-base-$GST_MAJORMINOR >= 0.10.0],
                   HAVE_GST=yes, HAVE_GST=no)
-AM_CONDITIONAL(BUILD_GST, test "x$HAVE_GST" = "xyes")
+dnl Don't build GStreamer when cross-compiling
+AM_CONDITIONAL(BUILD_GST, test x$cross_compiling != xyes && test "x$HAVE_GST" = "xyes")
 GST_CFLAGS="$GStreamer_CFLAGS $GStreamer_ERROR"
 GST_LIBS="$GStreamer_LIBS"
 AC_SUBST(GST_MAJORMINOR)

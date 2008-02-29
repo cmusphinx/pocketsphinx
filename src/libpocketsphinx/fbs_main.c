@@ -41,15 +41,12 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
-#if (!defined(_WIN32) || defined(__CYGWIN__)) && !defined(__ADSPBLACKFIN__)
+#ifdef HAVE_UNISTD_H /* I know this, this is Unix.. */
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/types.h>
 #include <sys/param.h>
-#endif
-
-#if defined(GNUWINCE)
-#include <unistd.h>
 #endif
 
 /* SphinxBase headers */
@@ -151,6 +148,12 @@ fbs_init(int32 argc, char **argv)
                           "pocketsphinx.args",
                           fbs_args_def);
     }
+
+    /* Disable memory mapping on Blackfin (FIXME: should be uClinux in general). */
+#ifdef __ADSPBLACKFIN__
+    E_INFO("Will not use mmap() on uClinux/Blackfin.");
+    cmd_ln_set_boolean("-mmap", FALSE);
+#endif
 
     /* Populate default arguments from acoustic model directory. */
     if ((hmmdir = cmd_ln_str("-hmm")) != NULL) {

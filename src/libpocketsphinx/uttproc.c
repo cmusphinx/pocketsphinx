@@ -44,7 +44,7 @@
 #if !defined(_WIN32_WCE)
 #include <time.h>
 #endif
-#if defined(__ADSPBLACKFIN__)
+#if defined(__ADSPBLACKFIN__) && !defined(__linux__)
 #define MAXPATHLEN 256
 #elif !defined(_WIN32)
 #include <sys/time.h>
@@ -146,7 +146,7 @@ static HANDLE pid;
 static FILETIME t_create, t_exit, kst, ket, ust, uet;
 static double lowscale, highscale;
 extern double win32_cputime();
-#elif defined(__ADSPBLACKFIN__)
+#elif defined(__ADSPBLACKFIN__) && !defined(__linux__)
 static long e_start, e_stop;
 #else /* Not Windows */
 static struct rusage start, stop;
@@ -182,7 +182,7 @@ win32_cputime(FILETIME * st, FILETIME * et)
     return (dt);
 }
 
-#elif defined(__ADSPBLACKFIN__)
+#elif defined(__ADSPBLACKFIN__) && !defined(__linux__)
 // nada
 #else
 
@@ -220,7 +220,7 @@ timing_init(void)
 static void
 timing_start(void)
 {
-#if defined(__ADSPBLACKFIN__)
+#if defined(__ADSPBLACKFIN__) && !defined(__linux__)
     e_start = clock() / __PROCESSOR_SPEED__;
 #elif !(defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN))
 # if !(defined(_HPUX_SOURCE) || defined(GNUWINCE))
@@ -249,7 +249,7 @@ timing_stop(int32 nfr)
     E_INFO(" %5.2f SoS", searchFrame() * 0.01);
     TotalSpeechTime += searchFrame() * 0.01f;
 
-#if defined(__ADSPBLACKFIN__)
+#if defined(__ADSPBLACKFIN__) && !defined(__linux__)
     e_stop = clock() / __PROCESSOR_SPEED__;
     TotalElapsedTime += (e_stop - e_start);
 #elif defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
@@ -1728,12 +1728,14 @@ uttproc_set_logfile(char const *file)
          * applications: the files are opened, but nothing is written
          * to it.
          */
-#if defined(_WIN32) || defined(GNUWINCE) || defined(__ADSPBLACKFIN__)
+        /* FIXME: This is idiotic, assigning things to *stdout can't
+         * be expected to work right, ever... */
+#if defined(_WIN32)
 #ifndef _WIN32_WCE /* FIXME: Possible? */
         *stdout = *logfp;
         *stderr = *logfp;
 #endif
-#else
+#elif defined(HAVE_DUP2)
         dup2(fileno(logfp), 1);
         dup2(fileno(logfp), 2);
 #endif

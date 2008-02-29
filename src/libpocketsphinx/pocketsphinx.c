@@ -92,6 +92,11 @@ pocketsphinx_init_defaults(pocketsphinx_t *ps)
 {
     char *hmmdir;
 
+    /* Disable memory mapping on Blackfin (FIXME: should be uClinux in general). */
+#ifdef __ADSPBLACKFIN__
+    E_INFO("Will not use mmap() on uClinux/Blackfin.");
+    cmd_ln_set_boolean_r(ps->config, "-mmap", FALSE);
+#endif
     /* Get acoustic model filenames and add them to the command-line */
     if ((hmmdir = cmd_ln_str_r(ps->config, "-hmm")) != NULL) {
         pocketsphinx_add_file(ps, "-mdef", hmmdir, "mdef");
