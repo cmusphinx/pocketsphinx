@@ -1,5 +1,7 @@
 #include <gst/gst.h>
 
+#include "test_macros.h"
+
 static gboolean
 bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 {
@@ -32,6 +34,7 @@ int
 main(int argc, char *argv[])
 {
 	GMainLoop *loop;
+	GError *err;
 	GstElement *pipeline;
 	GstElement *src, *resamp, *filter, *sink;
 	GstCaps *caps;
@@ -40,6 +43,11 @@ main(int argc, char *argv[])
 	setenv("GST_PLUGIN_PATH", "../../src/gst-plugin/.libs", 1);
 
 	gst_init(&argc, &argv);
+	gst_plugin_load_file("../../src/gst-plugin/.libs/libgstpocketsphinx.so", &err);
+	if (err) {
+		g_print("Failed to load plugin: %s\n", err->message);
+		return 1;
+	}
 	loop = g_main_loop_new(NULL, FALSE);
 
 	pipeline = gst_pipeline_new("test_gst");
