@@ -405,12 +405,11 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
         uttproc_set_lm(lmname);
     }
 
-    build_uttid(utt);
     if (cmd_ln_boolean("-adcin")) {
-        ret = uttproc_decode_raw_file(utt, utt_name, sf, ef, 0);
+        ret = uttproc_decode_raw_file(mfcfile, utt_name, sf, ef, 0);
     }
     else {
-        ret = uttproc_decode_cep_file(utt, utt_name, sf, ef, 0);
+        ret = uttproc_decode_cep_file(mfcfile, utt_name, sf, ef, 0);
     }
 
     if (ret < 0)
