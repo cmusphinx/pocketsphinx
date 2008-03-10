@@ -52,7 +52,7 @@ main(int argc, char *argv[])
 			     "-varfloor", "0.0001",
 			     "-mmap", "no",
 			     "-topn", "4",
-			     "-dsratio", "1",
+			     "-ds", "1",
 			     "-samprate", "16000", NULL);
 	TEST_ASSERT(config);
 	TEST_ASSERT(acmod = acmod_init(config, lmath, NULL, NULL));
