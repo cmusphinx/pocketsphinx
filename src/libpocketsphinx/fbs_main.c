@@ -95,6 +95,7 @@ static const arg_t fbs_args_def[] = {
 static const arg_t feat_defn[] = {
     waveform_to_cepstral_command_line_macro(),
     input_cmdln_options(),
+    am_cmdln_options(),
     CMDLN_EMPTY_OPTION
 };
 
