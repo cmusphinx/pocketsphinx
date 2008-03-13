@@ -12,4 +12,5 @@ EXTRA_DIST =  \
 	setup_sphinx.pl \
 	setup_tutorial.pl \
 	slave.pl \
-	cluster_mixw.py
+	cluster_mixw.py \
+	prune_mixw.py
