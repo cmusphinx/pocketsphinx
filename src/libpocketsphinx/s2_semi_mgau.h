@@ -64,14 +64,14 @@ struct s2_semi_mgau_s {
     var_t   **dets;	/* det values foreach feature */
 
     uint16 **mixw_map; /* mixture weight cluster mapping (NULL if none) */
+    uint16 *n_dist;    /* number of distributions for each feature (NULL if not clustered) */
     uint8 ***mixw;     /* mixture weight distributions */
     mmio_file_t *sendump_mmap;/* memory map for mixw (or NULL if not mmap) */
 
     int32 n_feat;	/* Number of feature streams */
     int32 *veclen;	/* Length of feature streams */
     int32 n_density;	/* Number of mixtures per codebook */
-    int32 n_senone;	/* Number of senones (= n_mixw if not clustered) */
-    int32 n_mixw;	/* Number of mixture distributions */
+    int32 n_mixw;	/* Number of mixture weight distributions */
     int32 topn;		/* Number of top densities to compute (<S2_MAX_TOPN) */
 
     kd_tree_t **kdtrees;
