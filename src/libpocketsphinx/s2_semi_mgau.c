@@ -685,7 +685,7 @@ s2_semi_mgau_load_kdtree(s2_semi_mgau_t * s, const char *kdtree_path,
 }
 
 static int32
-load_senone_dists_8bits(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
+read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
 {
     FILE *fp;
     char line[1000];
@@ -1129,7 +1129,7 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
 
     /* Read mixture weights */
     if ((sendump_path = cmd_ln_str_r(config, "-sendump")))
-        load_senone_dists_8bits(s, mdef, sendump_path);
+        read_sendump(s, mdef, sendump_path);
     else
         read_dists_s3(s, cmd_ln_str_r(config, "-mixw"),
                       cmd_ln_float32_r(config, "-mixwfloor"));
