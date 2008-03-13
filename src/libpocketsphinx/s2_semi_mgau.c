@@ -150,7 +150,7 @@ fast_logmath_add(logmath_t *lmath, int mlx, int mly)
 }
 
 /*
- * Optimization for various topN cases, PDF-size(#bits) cases of
+ * Optimization for various topn cases, PDF-size(#bits) cases of
  * SCVQComputeScores() and SCVQComputeScores_all().
  */
 static int32 get_scores4_8b(s2_semi_mgau_t * s, int16 *senone_scores,
@@ -183,7 +183,7 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
     topn = s->f[feat];
     ceplen = s->veclen[feat];
     
-    for (i = 0; i < s->topN; i++) {
+    for (i = 0; i < s->topn; i++) {
         mean_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
         vqFeature_t vtmp;
         var_t *var, d;
@@ -221,7 +221,7 @@ eval_cb_kdtree(s2_semi_mgau_t *s, int32 feat, mfcc_t *z,
     int32 i, ceplen;
 
     best = topn = s->f[feat];
-    worst = topn + (s->topN - 1);
+    worst = topn + (s->topn - 1);
     ceplen = s->veclen[feat];
 
     for (i = 0; i < maxbbi; ++i) {
@@ -247,12 +247,12 @@ eval_cb_kdtree(s2_semi_mgau_t *s, int32 feat, mfcc_t *z,
             continue;
         if ((int32)d < worst->score)
             continue;
-        for (k = 0; k < s->topN; k++) {
+        for (k = 0; k < s->topn; k++) {
             /* already there, so don't need to insert */
             if (topn[k].codeword == cw)
                 break;
         }
-        if (k < s->topN)
+        if (k < s->topn)
             continue;       /* already there.  Don't insert */
         /* remaining code inserts codeword and dist in correct spot */
         for (cur = worst - 1; cur >= best && (int32)d >= cur->score; --cur)
@@ -272,7 +272,7 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
     int32 i, ceplen;
 
     best = topn = s->f[feat];
-    worst = topn + (s->topN - 1);
+    worst = topn + (s->topn - 1);
     mean = s->means[feat];
     var = s->vars[feat];
     det = s->dets[feat];
@@ -304,12 +304,12 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
         }
         if ((int32)d < worst->score)
             continue;
-        for (i = 0; i < s->topN; i++) {
+        for (i = 0; i < s->topn; i++) {
             /* already there, so don't need to insert */
             if (topn[i].codeword == cw)
                 break;
         }
-        if (i < s->topN)
+        if (i < s->topn)
             continue;       /* already there.  Don't insert */
         /* remaining code inserts codeword and dist in correct spot */
         for (cur = worst - 1; cur >= best && (int32)d >= cur->score; --cur)
@@ -325,7 +325,7 @@ mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
 {
     /* Initialize topn codewords to topn codewords from previous
      * frame, and calculate their densities. */
-    memcpy(s->f[feat], s->lastf[feat], sizeof(vqFeature_t) * s->topN);
+    memcpy(s->f[feat], s->lastf[feat], sizeof(vqFeature_t) * s->topn);
     eval_topn(s, feat, z);
 
     /* If this frame is skipped, do nothing else. */
@@ -349,7 +349,7 @@ mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
     }
 
     /* Make a copy of current topn. */
-    memcpy(s->lastf[feat], s->f[feat], sizeof(vqFeature_t) * s->topN);
+    memcpy(s->lastf[feat], s->f[feat], sizeof(vqFeature_t) * s->topn);
 }
 
 /*
@@ -372,14 +372,14 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
     /* Compute quantized normalizing constant. */
     for (j = 0; j < s->n_feat; j++) {
         s->score_tmp[j] = s->f[j][0].score >> SENSCR_SHIFT;
-        for (i = 1; i < s->topN; i++) {
+        for (i = 1; i < s->topn; i++) {
             s->score_tmp[j] = logmath_add(s->lmath_8b,
                                           s->score_tmp[j],
                                           s->f[j][i].score >> SENSCR_SHIFT);
         }
     }
     /* Normalize the scores, negate them, and clamp their dynamic range. */
-    for (i = 0; i < s->topN; i++) {
+    for (i = 0; i < s->topn; i++) {
         for (j = 0; j < s->n_feat; j++) {
             s->f[j][i].score = -((s->f[j][i].score >> SENSCR_SHIFT) - s->score_tmp[j]);
             if (s->f[j][i].score < 0 || s->f[j][i].score > MAX_NEG_ASCR)
@@ -388,7 +388,7 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
     }
 
     if (compallsen) {
-	switch (s->topN) {
+	switch (s->topn) {
 	case 4:
 	    return get_scores4_8b_all(s, senone_scores, out_bestidx);
 	case 2:
@@ -400,7 +400,7 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
 	}
     }
     else {
-	switch (s->topN) {
+	switch (s->topn) {
 	case 4:
 	    return get_scores4_8b(s, senone_scores,
                                   senone_active, n_senone_active,
@@ -446,16 +446,16 @@ get_scores4_8b(s2_semi_mgau_t * s, int16 *senone_scores,
     int32 j;
     int32 best = (int32)0x7fffffff;
 
-    memset(senone_scores, 0, s->CdWdPDFMod * sizeof(*senone_scores));
+    memset(senone_scores, 0, s->n_mixw * sizeof(*senone_scores));
     for (j = 0; j < s->n_feat; j++) {
-        unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
+        uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
         int32 k;
 
         /* ptrs to senone prob ids */
-        pid_cw0 = s->OPDF_8B[j][s->f[j][0].codeword];
-        pid_cw1 = s->OPDF_8B[j][s->f[j][1].codeword];
-        pid_cw2 = s->OPDF_8B[j][s->f[j][2].codeword];
-        pid_cw3 = s->OPDF_8B[j][s->f[j][3].codeword];
+        pid_cw0 = s->mixw[j][s->f[j][0].codeword];
+        pid_cw1 = s->mixw[j][s->f[j][1].codeword];
+        pid_cw2 = s->mixw[j][s->f[j][2].codeword];
+        pid_cw3 = s->mixw[j][s->f[j][3].codeword];
 
         for (k = 0; k < n_senone_active; k++) {
             int32 tmp1, tmp2;
@@ -486,19 +486,19 @@ get_scores4_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
     int32 j;
     int32 best = (int32)0x7fffffff;
 
-    n_senone_active = s->CdWdPDFMod;
-    memset(senone_scores, 0, s->CdWdPDFMod * sizeof(*senone_scores));
+    n_senone_active = s->n_mixw;
+    memset(senone_scores, 0, s->n_mixw * sizeof(*senone_scores));
     for (j = 0; j < s->n_feat; j++) {
-        unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
+        uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
         int32 n;
 
         /* ptrs to senone prob ids */
-        pid_cw0 = s->OPDF_8B[j][s->f[j][0].codeword];
-        pid_cw1 = s->OPDF_8B[j][s->f[j][1].codeword];
-        pid_cw2 = s->OPDF_8B[j][s->f[j][2].codeword];
-        pid_cw3 = s->OPDF_8B[j][s->f[j][3].codeword];
+        pid_cw0 = s->mixw[j][s->f[j][0].codeword];
+        pid_cw1 = s->mixw[j][s->f[j][1].codeword];
+        pid_cw2 = s->mixw[j][s->f[j][2].codeword];
+        pid_cw3 = s->mixw[j][s->f[j][3].codeword];
 
-        for (n = 0; n < s->CdWdPDFMod; n++) {
+        for (n = 0; n < s->n_mixw; n++) {
             int32 tmp1, tmp2;
             tmp1 = pid_cw0[n] + s->f[j][0].score;
             tmp2 = pid_cw1[n] + s->f[j][1].score;
@@ -525,19 +525,19 @@ get_scores2_8b(s2_semi_mgau_t * s, int16 *senone_scores,
 {
     int32 k;
     int32 best = (int32)0x7fffffff;
-    unsigned char *pid_cw00, *pid_cw10, *pid_cw01, *pid_cw11,
+    uint8 *pid_cw00, *pid_cw10, *pid_cw01, *pid_cw11,
         *pid_cw02, *pid_cw12, *pid_cw03, *pid_cw13;
 
-    memset(senone_scores, 0, s->CdWdPDFMod * sizeof(*senone_scores));
+    memset(senone_scores, 0, s->n_mixw * sizeof(*senone_scores));
     /* ptrs to senone prob ids */
-    pid_cw00 = s->OPDF_8B[0][s->f[0][0].codeword];
-    pid_cw10 = s->OPDF_8B[0][s->f[0][1].codeword];
-    pid_cw01 = s->OPDF_8B[1][s->f[1][0].codeword];
-    pid_cw11 = s->OPDF_8B[1][s->f[1][1].codeword];
-    pid_cw02 = s->OPDF_8B[2][s->f[2][0].codeword];
-    pid_cw12 = s->OPDF_8B[2][s->f[2][1].codeword];
-    pid_cw03 = s->OPDF_8B[3][s->f[3][0].codeword];
-    pid_cw13 = s->OPDF_8B[3][s->f[3][1].codeword];
+    pid_cw00 = s->mixw[0][s->f[0][0].codeword];
+    pid_cw10 = s->mixw[0][s->f[0][1].codeword];
+    pid_cw01 = s->mixw[1][s->f[1][0].codeword];
+    pid_cw11 = s->mixw[1][s->f[1][1].codeword];
+    pid_cw02 = s->mixw[2][s->f[2][0].codeword];
+    pid_cw12 = s->mixw[2][s->f[2][1].codeword];
+    pid_cw03 = s->mixw[3][s->f[3][0].codeword];
+    pid_cw13 = s->mixw[3][s->f[3][1].codeword];
 
     for (k = 0; k < n_senone_active; k++) {
         int32 tmp1, tmp2, n;
@@ -571,24 +571,24 @@ static int32
 get_scores2_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
                    int32 *out_bestidx)
 {
-    unsigned char *pid_cw00, *pid_cw10, *pid_cw01, *pid_cw11,
+    uint8 *pid_cw00, *pid_cw10, *pid_cw01, *pid_cw11,
         *pid_cw02, *pid_cw12, *pid_cw03, *pid_cw13;
     int32 best = (int32)0x7fffffff;
     int32 n;
 
-    n_senone_active = s->CdWdPDFMod;
-    memset(senone_scores, 0, s->CdWdPDFMod * sizeof(*senone_scores));
+    n_senone_active = s->n_mixw;
+    memset(senone_scores, 0, s->n_mixw * sizeof(*senone_scores));
     /* ptrs to senone prob ids */
-    pid_cw00 = s->OPDF_8B[0][s->f[0][0].codeword];
-    pid_cw10 = s->OPDF_8B[0][s->f[0][1].codeword];
-    pid_cw01 = s->OPDF_8B[1][s->f[1][0].codeword];
-    pid_cw11 = s->OPDF_8B[1][s->f[1][1].codeword];
-    pid_cw02 = s->OPDF_8B[2][s->f[2][0].codeword];
-    pid_cw12 = s->OPDF_8B[2][s->f[2][1].codeword];
-    pid_cw03 = s->OPDF_8B[3][s->f[3][0].codeword];
-    pid_cw13 = s->OPDF_8B[3][s->f[3][1].codeword];
+    pid_cw00 = s->mixw[0][s->f[0][0].codeword];
+    pid_cw10 = s->mixw[0][s->f[0][1].codeword];
+    pid_cw01 = s->mixw[1][s->f[1][0].codeword];
+    pid_cw11 = s->mixw[1][s->f[1][1].codeword];
+    pid_cw02 = s->mixw[2][s->f[2][0].codeword];
+    pid_cw12 = s->mixw[2][s->f[2][1].codeword];
+    pid_cw03 = s->mixw[3][s->f[3][0].codeword];
+    pid_cw13 = s->mixw[3][s->f[3][1].codeword];
 
-    for (n = 0; n < s->CdWdPDFMod; n++) {
+    for (n = 0; n < s->n_mixw; n++) {
         int32 tmp1, tmp2;
 
         tmp1 = pid_cw00[n] + s->f[0][0].score;
@@ -622,13 +622,13 @@ get_scores1_8b(s2_semi_mgau_t * s, int16 *senone_scores,
 {
     int32 j, k;
     int32 best = (int32)0x7fffffff;
-    unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
+    uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
 
     /* Ptrs to senone prob values for the top codeword of all codebooks */
-    pid_cw0 = s->OPDF_8B[0][s->f[0][0].codeword];
-    pid_cw1 = s->OPDF_8B[1][s->f[1][0].codeword];
-    pid_cw2 = s->OPDF_8B[2][s->f[2][0].codeword];
-    pid_cw3 = s->OPDF_8B[3][s->f[3][0].codeword];
+    pid_cw0 = s->mixw[0][s->f[0][0].codeword];
+    pid_cw1 = s->mixw[1][s->f[1][0].codeword];
+    pid_cw2 = s->mixw[2][s->f[2][0].codeword];
+    pid_cw3 = s->mixw[3][s->f[3][0].codeword];
 
     for (k = 0; k < n_senone_active; k++) {
         j = senone_active[k];
@@ -648,17 +648,17 @@ get_scores1_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
 {
     int32 j;
     int32 best = (int32)0x7fffffff;
-    unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
+    uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
 
-    n_senone_active = s->CdWdPDFMod;
+    n_senone_active = s->n_mixw;
 
     /* Ptrs to senone prob values for the top codeword of all codebooks */
-    pid_cw0 = s->OPDF_8B[0][s->f[0][0].codeword];
-    pid_cw1 = s->OPDF_8B[1][s->f[1][0].codeword];
-    pid_cw2 = s->OPDF_8B[2][s->f[2][0].codeword];
-    pid_cw3 = s->OPDF_8B[3][s->f[3][0].codeword];
+    pid_cw0 = s->mixw[0][s->f[0][0].codeword];
+    pid_cw1 = s->mixw[1][s->f[1][0].codeword];
+    pid_cw2 = s->mixw[2][s->f[2][0].codeword];
+    pid_cw3 = s->mixw[3][s->f[3][0].codeword];
 
-    for (j = 0; j < s->CdWdPDFMod; j++) {
+    for (j = 0; j < s->n_mixw; j++) {
         senone_scores[j] =
             (pid_cw0[j] + pid_cw1[j] + pid_cw2[j] + pid_cw3[j]);
         if (senone_scores[j] < best) {
@@ -697,7 +697,7 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
     int r = s->n_density;
     int c = bin_mdef_n_sen(mdef);
 
-    s->CdWdPDFMod = c;
+    s->n_mixw = c;
     do_mmap = cmd_ln_boolean_r(s->config, "-mmap");
 
     if ((fp = fopen(file, "rb")) == NULL)
@@ -784,27 +784,25 @@ load_senone_dists_8bits(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
     if (do_mmap)
         s->sendump_mmap = mmio_file_read(file);
     if (s->sendump_mmap) {
-        s->OPDF_8B = ckd_calloc(s->n_feat, sizeof(unsigned char**));
+        s->mixw = ckd_calloc(s->n_feat, sizeof(*s->mixw));
         for (i = 0; i < s->n_feat; i++) {
             /* Pointers into the mmap()ed 2d array */
-	    s->OPDF_8B[i] = 
-                (unsigned char **) ckd_calloc(r, sizeof(unsigned char *));
+	    s->mixw[i] = ckd_calloc(r, sizeof(**s->mixw));
         }
 
         for (n = 0; n < s->n_feat; n++) {
             for (i = 0; i < r; i++) {
-                s->OPDF_8B[n][i] = (uint8 *) mmio_file_ptr(s->sendump_mmap) + offset;
+                s->mixw[n][i] = ((uint8 *) mmio_file_ptr(s->sendump_mmap)) + offset;
                 offset += c;
             }
         }
     }
     else {
-        s->OPDF_8B = (unsigned char ***)
-            ckd_calloc_3d(s->n_feat, r, c, sizeof(unsigned char));
+        s->mixw = ckd_calloc_3d(s->n_feat, r, c, sizeof(***s->mixw));
         /* Read pdf values and ids */
         for (n = 0; n < s->n_feat; n++) {
             for (i = 0; i < r; i++) {
-                if (fread(s->OPDF_8B[n][i], sizeof(unsigned char), c, fp) != (size_t) c)
+                if (fread(s->mixw[n][i], sizeof(***s->mixw), c, fp) != (size_t) c)
                     E_FATAL("fread failed\n");
             }
         }
@@ -872,14 +870,13 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
              file_name, i, n_sen, n_feat, n_comp);
     }
 
-    /* CdWdPDFMod = number of mixture weights per codeword, which is
+    /* n_mixw = number of mixture weights per codeword, which is
      * fixed at the number of senones since we have only one codebook.
-     * FIXME: This is a bogus legacy value and will be gone soon. */
-    s->CdWdPDFMod = n_sen;
+     */
+    s->n_mixw = n_sen;
 
     /* Quantized mixture weight arrays. */
-    s->OPDF_8B = (unsigned char ***)
-        ckd_calloc_3d(s->n_feat, s->n_density, n_sen, sizeof(unsigned char));
+    s->mixw = ckd_calloc_3d(s->n_feat, s->n_density, n_sen, sizeof(***s->mixw));
 
     /* Temporary structure to read in floats before conversion to (int32) logs3 */
     pdf = (float32 *) ckd_calloc(n_comp, sizeof(float32));
@@ -906,7 +903,7 @@ read_dists_s3(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
                 qscr = -logmath_log(s->lmath_8b, pdf[c]);
                 if ((qscr > MAX_NEG_MIXW) || (qscr < 0))
                     qscr = MAX_NEG_MIXW;
-                s->OPDF_8B[f][c][i] = qscr;
+                s->mixw[f][c][i] = qscr;
             }
         }
     }
@@ -1136,17 +1133,17 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     else
         read_dists_s3(s, cmd_ln_str_r(config, "-mixw"),
                       cmd_ln_float32_r(config, "-mixwfloor"));
-    s->topN = cmd_ln_int32_r(config, "-topn");
+    s->topn = cmd_ln_int32_r(config, "-topn");
     s->ds_ratio = cmd_ln_int32_r(config, "-dsratio");
 
     /* Top-N scores from current, previous frame */
-    s->f = (vqFeature_t **) ckd_calloc_2d(s->n_feat, s->topN,
+    s->f = (vqFeature_t **) ckd_calloc_2d(s->n_feat, s->topn,
                                           sizeof(vqFeature_t));
-    s->lastf = (vqFeature_t **) ckd_calloc_2d(s->n_feat, s->topN,
+    s->lastf = (vqFeature_t **) ckd_calloc_2d(s->n_feat, s->topn,
                                               sizeof(vqFeature_t));
     for (i = 0; i < s->n_feat; ++i) {
         int32 j;
-        for (j = 0; j < s->topN; ++j) {
+        for (j = 0; j < s->topn; ++j) {
             s->lastf[i][j].score = WORST_DIST;
             s->lastf[i][j].codeword = j;
         }
@@ -1166,13 +1163,13 @@ s2_semi_mgau_free(s2_semi_mgau_t * s)
     logmath_free(s->lmath_8b);
     if (s->sendump_mmap) {
         for (i = 0; i < s->n_feat; ++i) {
-            ckd_free(s->OPDF_8B[i]);
+            ckd_free(s->mixw[i]);
         }
-        ckd_free(s->OPDF_8B); 
+        ckd_free(s->mixw); 
        mmio_file_unmap(s->sendump_mmap);
     }
     else {
-        ckd_free_3d((void ***)s->OPDF_8B);
+        ckd_free_3d((void ***)s->mixw);
     }
     for (i = 0; i < s->n_feat; ++i) {
         ckd_free(s->means[i]);
