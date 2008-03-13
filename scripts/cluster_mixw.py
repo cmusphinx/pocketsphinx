@@ -43,6 +43,7 @@ __author__ = "David Huggins-Daines <dhuggins@cs.cmu.edu>"
 
 import numpy
 import sys
+import prune_mixw as pm
 from sphinx import s3mixw
 
 def kl_divergence(p, q):
@@ -161,7 +162,8 @@ def make_bitmap(leafnodes, nbits=None):
     end = (max(leafnodes) + 1 + 31) / 32
     return start, end-start, bits[start:end]
 
-def quantize_mixw(mixw, logbase=1.0001):
+def quantize_mixw(mixw, logbase=1.0001, floor=1e-8):
+    mixw = mixw.clip(floor, 1.0)
     logmixw = -(numpy.log(mixw) / numpy.log(logbase) / (1<<10))
     return logmixw.clip(0,160).astype('uint8')
 
@@ -485,7 +487,7 @@ def prune_mixw(mixw, trees, nclust):
             for senone in cluster:
                 mixw[senone,feat,:] = centroid
 
-def write_pruned(outfile, mixw, trees, nclust):
+def write_pruned(outfile, mixw, trees, nclust, target=0, minn=0):
     if not isinstance(outfile, file):
         outfile = open(outfile, 'wb')
     # Write header
@@ -510,6 +512,12 @@ def write_pruned(outfile, mixw, trees, nclust):
             senmap[feat].put(senones, cid)
         # Create an array from the centroids and append it to qmixw
         qmixw.append(numpy.array([x[1] for x in leafnodes]))
+        # Prune it if requested
+        if target != 0:
+            if minn != 0:
+                pm.prune_mixw_entropy_min(qmixw[feat][numpy.newaxis], target, minn)
+            else:
+                pm.prune_mixw_entropy(qmixw[feat][numpy.newaxis], target)
     # Now write the senone map
     senmap.tofile(outfile)
     # Write the number of clusters for each feature
