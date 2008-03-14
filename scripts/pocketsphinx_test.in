@@ -1,8 +1,9 @@
 #!/bin/sh
-S2BATCH=@prefix@/bin/pocketsphinx_continuous
+S2BATCH=@prefix@/bin/pocketsphinx_batch
 HMM=@prefix@/share/pocketsphinx/model/hmm/wsj1
 TASK=@prefix@/share/pocketsphinx/model/lm/turtle
 CTLFILE=@prefix@/share/pocketsphinx/model/lm/turtle/turtle.ctl
+DATADIR=@prefix@/share/pocketsphinx/model/lm/turtle
 
 echo " "
 echo "sphinx2-test"
@@ -10,6 +11,8 @@ echo "Run CMU Sphinx2 in Batch mode to decode an example utterance."
 echo " "
 
 $S2BATCH -adcin yes \
+    -ctl ${CTLFILE} \
+    -cepdir ${DATADIR} \
     -cepext .16k \
     -samprate 16000 \
     -agc none \
