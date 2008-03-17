@@ -40,9 +40,8 @@ main(int argc, char *argv[])
 	GstCaps *caps;
 	GstBus *bus;
 
-	setenv("GST_PLUGIN_PATH", "../../src/gst-plugin/.libs", 1);
-
 	gst_init(&argc, &argv);
+	err = NULL;
 	gst_plugin_load_file("../../src/gst-plugin/.libs/libgstpocketsphinx.so", &err);
 	if (err) {
 		g_print("Failed to load plugin: %s\n", err->message);
