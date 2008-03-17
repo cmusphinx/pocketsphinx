@@ -8,6 +8,7 @@ endif
 check_PROGRAMS = \
 	test_lm_read \
 	test_ps_init \
+	test_ps_fwdtree \
 	test_acmod \
 	test_fwdtree \
 	test_fwdtree_fbs \
@@ -18,8 +19,10 @@ TESTS = \
 	test_lmctl_init.sh \
 	test_lm_read \
 	test_ps_init \
+	test_ps_fwdtree \
 	test_acmod \
 	test_fwdtree \
+	test_fwdtree_fbs \
 	$(gst_tests)
 
 noinst_HEADERS = test_macros.h

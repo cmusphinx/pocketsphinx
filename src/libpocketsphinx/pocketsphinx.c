@@ -47,6 +47,9 @@
 /* Local headers. */
 #include "pocketsphinx_internal.h"
 #include "cmdln_macro.h"
+#include "ngram_search_fwdtree.h"
+#include "ngram_search_fwdflat.h"
+#include "ngram_search_dag.h"
 
 static const arg_t ps_args_def[] = {
     input_cmdln_options(),
@@ -133,6 +136,10 @@ pocketsphinx_init(cmd_ln_t *config)
      * uttproc.c, senscr.c, and others used to do) */
     if ((ps->acmod = acmod_init(config, ps->lmath, NULL, NULL)) == NULL)
         goto error_out;
+
+    /* Make the acmod's feature buffer growable if -fwdflat is set. */
+    if (cmd_ln_boolean_r(config, "-fwdflat"))
+        acmod_set_grow(ps->acmod, TRUE);
 
     /* Dictionary and triphone mappings (depends on acmod). */
     if ((ps->dict = dict_init(config, ps->acmod->mdef)) == NULL)
@@ -313,35 +320,87 @@ pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
 int
 pocketsphinx_start_utt(pocketsphinx_t *ps)
 {
-    acmod_start_utt(ps->acmod);
-
-    return 0;
+    if (ps->ngs)
+        ngram_fwdtree_start(ps->ngs);
+    else if (ps->fsgs)
+        /* FIXME: Do whatever needs to be done. */;
+    return acmod_start_utt(ps->acmod);
 }
 
 int
 pocketsphinx_process_raw(pocketsphinx_t *ps,
 			 int16 const *data,
-			 int32 n_samples,
+			 size_t n_samples,
 			 int no_search,
 			 int full_utt)
 {
+    int n_searchfr = 0;
+
     if (no_search)
         acmod_set_grow(ps->acmod, TRUE);
 
-    return -1;
+    while (n_samples) {
+        int nfr;
+
+        /* Process some data into features. */
+        if ((nfr = acmod_process_raw(ps->acmod, &data,
+                                    &n_samples, full_utt)) < 0)
+            return nfr;
+
+        /* Score and search as much data as possible */
+        if (!no_search) {
+            if (ps->ngs) {
+                while ((nfr = ngram_fwdtree_search(ps->ngs)) > 0) {
+                    n_searchfr += nfr;
+                }
+                if (nfr < 0)
+                    return nfr;
+            }
+            else if (ps->fsgs) {
+                /* FIXME: Do whatever needs to be done */
+            }
+        }
+    }
+
+    return n_searchfr;
 }
 
 int
 pocketsphinx_process_cep(pocketsphinx_t *ps,
-			 mfcc_t const **data,
+			 mfcc_t **data,
 			 int32 n_frames,
 			 int no_search,
 			 int full_utt)
 {
+    int n_searchfr = 0;
+
     if (no_search)
         acmod_set_grow(ps->acmod, TRUE);
 
-    return -1;
+    while (n_frames) {
+        int nfr;
+
+        /* Process some data into features. */
+        if ((nfr = acmod_process_cep(ps->acmod, &data,
+                                     &n_frames, full_utt)) < 0)
+            return nfr;
+
+        /* Score and search as much data as possible */
+        if (!no_search) {
+            if (ps->ngs) {
+                while ((nfr = ngram_fwdtree_search(ps->ngs)) > 0) {
+                    n_searchfr += nfr;
+                }
+                if (nfr < 0)
+                    return nfr;
+            }
+            else if (ps->fsgs) {
+                /* FIXME: Do whatever needs to be done */
+            }
+        }
+    }
+
+    return n_searchfr;
 }
 
 int
@@ -349,7 +408,9 @@ pocketsphinx_end_utt(pocketsphinx_t *ps)
 {
     acmod_end_utt(ps->acmod);
 
-    /* Finish searching whatever's left. */
-
+    if (ps->ngs)
+        ngram_fwdtree_finish(ps->ngs);
+    else if (ps->fsgs)
+        /* FIXME: Do whatever needs to be done. */;
     return 0;
 }

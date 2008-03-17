@@ -136,10 +136,11 @@ int pocketsphinx_start_utt(pocketsphinx_t *ps);
  * @param full_utt If non-zero, this block of data is a full utterance
  * worth of data.  This may allow the recognizer to produce more
  * accurate results.
+ * @return Number of frames of data searched, or <0 for error.
  */
 int pocketsphinx_process_raw(pocketsphinx_t *ps,
                              int16 const *data,
-                             int32 n_samples,
+                             size_t n_samples,
                              int no_search,
                              int full_utt);
 
@@ -152,9 +153,10 @@ int pocketsphinx_process_raw(pocketsphinx_t *ps,
  * @param full_utt If non-zero, this block of data is a full utterance
  * worth of data.  This may allow the recognizer to produce more
  * accurate results.
+ * @return Number of frames of data searched, or <0 for error.
  */
 int pocketsphinx_process_cep(pocketsphinx_t *ps,
-                             mfcc_t const **data,
+                             mfcc_t **data,
                              int32 n_frames,
                              int no_search,
                              int full_utt);
