@@ -33,7 +33,8 @@ main(int argc, char *argv[])
 	int16 const *bptr;
 	size_t nread;
 	size_t nsamps;
-	int32 nfr, i;
+	int32 nfr, i, score;
+	char const *hyp;
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, pocketsphinx_args(), TRUE,
@@ -59,6 +60,9 @@ main(int argc, char *argv[])
 		pocketsphinx_process_raw(ps, buf, nread, FALSE, FALSE);
 	}
 	TEST_EQUAL(0, pocketsphinx_end_utt(ps));
+	hyp = pocketsphinx_get_hyp(ps, &score);
+	printf("FWDTREE: %s (%d)\n", hyp, score);
+	TEST_EQUAL(0, strcmp(hyp, "GO FOR WORDS TEN YEARS"));
 
 	/* Now read the whole file and produce an MFCC buffer. */
 	clearerr(rawfh);
@@ -82,6 +86,9 @@ main(int argc, char *argv[])
 		pocketsphinx_process_cep(ps, cepbuf + i, 1, FALSE, FALSE);
 	}
 	TEST_EQUAL(0, pocketsphinx_end_utt(ps));
+	hyp = pocketsphinx_get_hyp(ps, &score);
+	printf("FWDTREE: %s (%d)\n", hyp, score);
+	TEST_EQUAL(0, strcmp(hyp, "GO FOR WORDS TEN YEARS"));
 
 	fclose(rawfh);
 	pocketsphinx_free(ps);

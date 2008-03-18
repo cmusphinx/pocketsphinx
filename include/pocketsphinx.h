@@ -167,6 +167,17 @@ int pocketsphinx_process_cep(pocketsphinx_t *ps,
 int pocketsphinx_end_utt(pocketsphinx_t *ps);
 
 /**
+ * Get hypothesis string and path score.
+ *
+ * @param out_best_score Output: path score corresponding to returned string.
+ * @return String containing best hypothesis at this point in
+ *         decoding.  NULL if no hypothesis is available.
+ */
+
+char const *pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score);
+
+
+/**
  * @mainpage PocketSphinx API Documentation
  * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
  * @author Mosur Ravishankar <rkm@cs.cmu.edu>

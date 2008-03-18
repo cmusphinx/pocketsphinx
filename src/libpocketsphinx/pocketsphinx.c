@@ -408,9 +408,54 @@ pocketsphinx_end_utt(pocketsphinx_t *ps)
 {
     acmod_end_utt(ps->acmod);
 
-    if (ps->ngs)
+    if (ps->ngs) {
         ngram_fwdtree_finish(ps->ngs);
-    else if (ps->fsgs)
-        /* FIXME: Do whatever needs to be done. */;
-    return 0;
+        if (cmd_ln_boolean_r(ps->config, "-fwdflat")) {
+            /* FIXME: Do fwdflat search. */
+        }
+        if (cmd_ln_int32_r(ps->config, "-nbest")) {
+            /* FIXME: Do A* search. */
+        }
+        else if (cmd_ln_boolean_r(ps->config, "-bestpath")) {
+            /* FIXME: Do bestpath search. */
+        }
+        return 0;
+    }
+    else if (ps->fsgs) {
+        /* FIXME: Do whatever needs to be done. */
+        return 0;
+    }
+    else {
+        return -1;
+    }
 }
+
+char const *
+pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score)
+{
+    if (ps->ngs) {
+        if (cmd_ln_int32_r(ps->config, "-nbest")) {
+            /* FIXME: Return 1-best hypothesis. */
+        }
+        else if (cmd_ln_boolean_r(ps->config, "-bestpath")) {
+            /* FIXME: Backtrace lattice. */
+        }
+        else {
+            int32 bpidx;
+
+            /* fwdtree and fwdflat use same backpointer table. */
+            bpidx = ngram_search_find_exit(ps->ngs, -1, out_best_score);
+            if (bpidx == NO_BP)
+                return NULL;
+            return ngram_search_hyp(ps->ngs, bpidx);
+        }
+    }
+    else if (ps->fsgs) {
+        /* FIXME: Do whatever needs to be done. */
+    }
+    else {
+        return NULL;
+    }
+}
+
+/* FIXME: Add segmentation interface here too. */
