@@ -10,6 +10,7 @@ static char *my_argv[] = {
 	"-lm", MODELDIR "/lm/swb/swb.lm.DMP",
 	"-dict", MODELDIR "/lm/swb/swb.dic",
 	"-cepext", "",
+	"-input_endian", "little",
 	"-samprate", "16000"
 };
 static const int my_argc = sizeof(my_argv) / sizeof(my_argv[0]);

@@ -18,6 +18,7 @@ main(int argc, char *argv[])
 		"-fwdtree", "yes",
 		"-fwdflat", "no",
 		"-bestpath", "no",
+		"-input_endian", "little",
 		"-samprate", "16000"
 	};
 	static const int cmdln_count = sizeof(cmdln)/sizeof(cmdln[0]);

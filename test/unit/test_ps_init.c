@@ -19,6 +19,7 @@ main(int argc, char *argv[])
 				"-fwdtree", "yes",
 				"-fwdflat", "yes",
 				"-bestpath", "yes",
+				"-input_endian", "little",
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = pocketsphinx_init(config));
 

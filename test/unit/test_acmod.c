@@ -53,6 +53,7 @@ main(int argc, char *argv[])
 			     "-mmap", "no",
 			     "-topn", "4",
 			     "-dsratio", "1",
+			     "-input_endian", "little",
 			     "-samprate", "16000", NULL);
 	TEST_ASSERT(config);
 	TEST_ASSERT(acmod = acmod_init(config, lmath, NULL, NULL));
