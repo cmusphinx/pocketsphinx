@@ -173,9 +173,27 @@ int pocketsphinx_end_utt(pocketsphinx_t *ps);
  * @return String containing best hypothesis at this point in
  *         decoding.  NULL if no hypothesis is available.
  */
-
 char const *pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score);
 
+/**
+ * Get performance information for the current utterance.
+ *
+ * @param out_nspeech Output: Number of seconds of speech.
+ * @param out_ncpu    Output: Number of seconds of CPU time used.
+ * @param out_nwall   Output: Number of seconds of wall time used.
+ */
+void pocketsphinx_get_utt_time(pocketsphinx_t *ps, double *out_nspeech,
+			       double *out_ncpu, double *out_nwall);
+
+/**
+ * Get overall performance information.
+ *
+ * @param out_nspeech Output: Number of seconds of speech.
+ * @param out_ncpu    Output: Number of seconds of CPU time used.
+ * @param out_nwall   Output: Number of seconds of wall time used.
+ */
+void pocketsphinx_get_all_time(pocketsphinx_t *ps, double *out_nspeech,
+			       double *out_ncpu, double *out_nwall);
 
 /**
  * @mainpage PocketSphinx API Documentation

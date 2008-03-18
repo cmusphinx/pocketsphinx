@@ -173,6 +173,10 @@ pocketsphinx_init(cmd_ln_t *config)
     /* Otherwise, we will initialize the search whenever the user
      * decides to load an FSG or a language model. */
 
+    /* Initialize performance timer. */
+    ps->perf.name = "decode";
+    ptmr_init(&ps->perf);
+
     return ps;
 error_out:
     pocketsphinx_free(ps);
@@ -320,6 +324,9 @@ pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
 int
 pocketsphinx_start_utt(pocketsphinx_t *ps)
 {
+    ptmr_reset(&ps->perf);
+    ptmr_start(&ps->perf);
+
     if (ps->ngs)
         ngram_fwdtree_start(ps->ngs);
     else if (ps->fsgs)
@@ -362,6 +369,7 @@ pocketsphinx_process_raw(pocketsphinx_t *ps,
         }
     }
 
+    ps->n_frame += n_searchfr;
     return n_searchfr;
 }
 
@@ -400,15 +408,26 @@ pocketsphinx_process_cep(pocketsphinx_t *ps,
         }
     }
 
+    ps->n_frame += n_searchfr;
     return n_searchfr;
 }
 
 int
 pocketsphinx_end_utt(pocketsphinx_t *ps)
 {
+    int n_searchfr = 0;
+
     acmod_end_utt(ps->acmod);
 
     if (ps->ngs) {
+        int nfr;
+
+        while ((nfr = ngram_fwdtree_search(ps->ngs)) > 0) {
+            n_searchfr += nfr;
+        }
+        if (nfr < 0)
+            return nfr;
+
         ngram_fwdtree_finish(ps->ngs);
         if (cmd_ln_boolean_r(ps->config, "-fwdflat")) {
             /* FIXME: Do fwdflat search. */
@@ -419,13 +438,22 @@ pocketsphinx_end_utt(pocketsphinx_t *ps)
         else if (cmd_ln_boolean_r(ps->config, "-bestpath")) {
             /* FIXME: Do bestpath search. */
         }
+
+        ps->n_frame += n_searchfr;
+        ptmr_stop(&ps->perf);
         return 0;
     }
     else if (ps->fsgs) {
         /* FIXME: Do whatever needs to be done. */
+
+        ps->n_frame += n_searchfr;
+        ptmr_stop(&ps->perf);
         return 0;
     }
     else {
+
+        ps->n_frame += n_searchfr;
+        ptmr_stop(&ps->perf);
         return -1;
     }
 }
@@ -434,6 +462,9 @@ char const *
 pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score)
 {
     if (ps->ngs) {
+        char const *hyp = NULL;
+
+        ptmr_start(&ps->perf);
         if (cmd_ln_int32_r(ps->config, "-nbest")) {
             /* FIXME: Return 1-best hypothesis. */
         }
@@ -445,17 +476,41 @@ pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score)
 
             /* fwdtree and fwdflat use same backpointer table. */
             bpidx = ngram_search_find_exit(ps->ngs, -1, out_best_score);
-            if (bpidx == NO_BP)
-                return NULL;
-            return ngram_search_hyp(ps->ngs, bpidx);
+            if (bpidx != NO_BP)
+                hyp = ngram_search_hyp(ps->ngs, bpidx);
         }
+        ptmr_stop(&ps->perf);
+        return hyp;
     }
     else if (ps->fsgs) {
         /* FIXME: Do whatever needs to be done. */
+        return NULL;
     }
     else {
         return NULL;
     }
 }
 
-/* FIXME: Add segmentation interface here too. */
+void
+pocketsphinx_get_utt_time(pocketsphinx_t *ps, double *out_nspeech,
+                          double *out_ncpu, double *out_nwall)
+{
+    int32 frate;
+
+    frate = cmd_ln_int32_r(ps->config, "-frate");
+    *out_nspeech = (double)ps->acmod->output_frame / frate;
+    *out_ncpu = ps->perf.t_cpu;
+    *out_nwall = ps->perf.t_elapsed;
+}
+
+void
+pocketsphinx_get_all_time(pocketsphinx_t *ps, double *out_nspeech,
+                          double *out_ncpu, double *out_nwall)
+{
+    int32 frate;
+
+    frate = cmd_ln_int32_r(ps->config, "-frate");
+    *out_nspeech = (double)ps->n_frame / frate;
+    *out_ncpu = ps->perf.t_tot_cpu;
+    *out_nwall = ps->perf.t_tot_elapsed;
+}

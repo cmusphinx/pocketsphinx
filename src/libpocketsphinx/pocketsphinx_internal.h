@@ -49,6 +49,7 @@
 #include <logmath.h>
 #include <fe.h>
 #include <feat.h>
+#include <profile.h>
 
 /* Local headers. */
 #include "pocketsphinx.h"
@@ -94,6 +95,8 @@ struct pocketsphinx_s {
     search_hyp_t *hyp;  /**< Hypothesis segmentation for current utt. */
     FILE *matchfp;      /**< File for writing recognition results. */
     FILE *matchsegfp;   /**< File for writing segmentation results. */
+    ptmr_t perf;    /**< Performance counter for all of decoding. */
+    uint32 n_frame;     /**< Total number of frames processed. */
 };
 
 #endif /* __POCKETSPHINX_INTERNAL_H__ */

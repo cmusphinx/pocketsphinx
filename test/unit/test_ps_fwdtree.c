@@ -35,6 +35,7 @@ main(int argc, char *argv[])
 	size_t nsamps;
 	int32 nfr, i, score;
 	char const *hyp;
+	double n_speech, n_cpu, n_wall;
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, pocketsphinx_args(), TRUE,
@@ -63,6 +64,11 @@ main(int argc, char *argv[])
 	hyp = pocketsphinx_get_hyp(ps, &score);
 	printf("FWDTREE: %s (%d)\n", hyp, score);
 	TEST_EQUAL(0, strcmp(hyp, "GO FOR WORDS TEN YEARS"));
+	pocketsphinx_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
+	printf("%.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
+	       n_speech, n_cpu, n_wall);
+	printf("%.2f xRT (CPU), %.2f xRT (elapsed)\n",
+	       n_cpu / n_speech, n_wall / n_speech);
 
 	/* Now read the whole file and produce an MFCC buffer. */
 	clearerr(rawfh);
@@ -89,6 +95,16 @@ main(int argc, char *argv[])
 	hyp = pocketsphinx_get_hyp(ps, &score);
 	printf("FWDTREE: %s (%d)\n", hyp, score);
 	TEST_EQUAL(0, strcmp(hyp, "GO FOR WORDS TEN YEARS"));
+	pocketsphinx_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
+	printf("%.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
+	       n_speech, n_cpu, n_wall);
+	printf("%.2f xRT (CPU), %.2f xRT (elapsed)\n",
+	       n_cpu / n_speech, n_wall / n_speech);
+	pocketsphinx_get_all_time(ps, &n_speech, &n_cpu, &n_wall);
+	printf("TOTAL: %.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
+	       n_speech, n_cpu, n_wall);
+	printf("TOTAL: %.2f xRT (CPU), %.2f xRT (elapsed)\n",
+	       n_cpu / n_speech, n_wall / n_speech);
 
 	fclose(rawfh);
 	pocketsphinx_free(ps);
