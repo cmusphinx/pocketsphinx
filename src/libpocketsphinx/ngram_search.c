@@ -223,6 +223,11 @@ ngram_search_mark_bptable(ngram_search_t *ngs, int frame_idx)
         ngs->bp_table_idx = ckd_realloc(ngs->bp_table_idx - 1,
                                         (ngs->n_frame_alloc + 1)
                                         * sizeof(*ngs->bp_table_idx));
+        if (ngs->frm_wordlist) {
+            ngs->frm_wordlist = ckd_realloc(ngs->frm_wordlist,
+                                            ngs->n_frame_alloc
+                                            * sizeof(*ngs->frm_wordlist));
+        }
         ++ngs->bp_table_idx; /* Make bptableidx[-1] valid */
     }
     ngs->bp_table_idx[frame_idx] = ngs->bpidx;

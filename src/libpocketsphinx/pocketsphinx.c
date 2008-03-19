@@ -137,8 +137,9 @@ pocketsphinx_init(cmd_ln_t *config)
     if ((ps->acmod = acmod_init(config, ps->lmath, NULL, NULL)) == NULL)
         goto error_out;
 
-    /* Make the acmod's feature buffer growable if -fwdflat is set. */
-    if (cmd_ln_boolean_r(config, "-fwdflat"))
+    /* Make the acmod's feature buffer growable if we are doing two-pass search. */
+    if (cmd_ln_boolean_r(config, "-fwdflat")
+        && cmd_ln_boolean_r(config, "-fwdtree"))
         acmod_set_grow(ps->acmod, TRUE);
 
     /* Dictionary and triphone mappings (depends on acmod). */

@@ -286,9 +286,9 @@ acmod_grow_feat_buf(acmod_t *acmod, int nfr)
 
     acmod->n_feat_alloc = nfr;
     new_feat_buf = feat_array_alloc(acmod->fcb, nfr);
-    if (acmod->n_feat_frame) {
+    if (acmod->n_feat_frame || acmod->grow_feat) {
         memcpy(new_feat_buf[0][0], acmod->feat_buf[0][0],
-               (acmod->n_feat_frame
+               (acmod->n_feat_alloc
                 * feat_dimension(acmod->fcb)
                 * sizeof(***acmod->feat_buf)));
     }
@@ -501,17 +501,26 @@ acmod_process_cep(acmod_t *acmod,
     else if (acmod->state == ACMOD_STARTED)
         nfeat -= feat_window_size(acmod->fcb);
 
+    /* Clamp number of features to fit available space. */
     if (nfeat > acmod->n_feat_alloc - acmod->n_feat_frame) {
         /* Grow it as needed - we have to grow it at the end of an
          * utterance because we can't return a short read there. */
         if (acmod->grow_feat || acmod->state == ACMOD_ENDED)
-            acmod_grow_feat_buf(acmod, acmod->n_feat_frame + nfeat);
+            acmod_grow_feat_buf(acmod, acmod->n_feat_alloc + nfeat);
         else
             ncep -= (nfeat - (acmod->n_feat_alloc - acmod->n_feat_frame));
     }
 
     /* Where to start writing in the feature buffer. */
-    inptr = (acmod->feat_outidx + acmod->n_feat_frame) % acmod->n_feat_alloc;
+    if (acmod->grow_feat) {
+        /* Grow to avoid wraparound if grow_feat == TRUE. */
+        inptr = acmod->feat_outidx + acmod->n_feat_frame;
+        while (inptr + nfeat > acmod->n_feat_alloc)
+            acmod_grow_feat_buf(acmod, acmod->n_feat_alloc * 2);
+    }
+    else {
+        inptr = (acmod->feat_outidx + acmod->n_feat_frame) % acmod->n_feat_alloc;
+    }
 
     /* Write them in two parts if there is wraparound. */
     if (inptr + nfeat > acmod->n_feat_alloc) {

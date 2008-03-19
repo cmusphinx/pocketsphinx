@@ -10,9 +10,11 @@ check_PROGRAMS = \
 	test_ps_init \
 	test_ps_fwdtree \
 	test_acmod \
+	test_acmod_grow \
 	test_fwdtree \
 	test_fwdtree_fbs \
 	test_fwdflat \
+	test_fwdtree_fwdflat \
 	$(gst_programs)
 
 TESTS = \
@@ -22,9 +24,11 @@ TESTS = \
 	test_ps_init \
 	test_ps_fwdtree \
 	test_acmod \
+	test_acmod_grow \
 	test_fwdtree \
 	test_fwdtree_fbs \
 	test_fwdflat \
+	test_fwdtree_fwdflat \
 	$(gst_tests)
 
 noinst_HEADERS = test_macros.h

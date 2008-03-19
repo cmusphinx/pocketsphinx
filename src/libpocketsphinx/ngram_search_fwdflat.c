@@ -642,7 +642,6 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
     awl = ngs->active_word_list[cf & 0x1];
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
         rhmm = (root_chan_t *) ngs->word_chan[w];
-
         if (hmm_frame(&rhmm->hmm) == cf) {
             hmm_clear_scores(&rhmm->hmm);
         }
