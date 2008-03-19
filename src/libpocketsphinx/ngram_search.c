@@ -121,6 +121,8 @@ ngram_search_init(cmd_ln_t *config,
         ngs->zeroPermTab = ckd_calloc(bin_mdef_n_ciphone(acmod->mdef),
                                       sizeof(*ngs->zeroPermTab));
         ngs->word_active = bitvec_alloc(dict->dict_entry_count);
+        ngs->last_ltrans = ckd_calloc(ngs->dict->dict_entry_count,
+                                      sizeof(*ngs->last_ltrans));
 
         /* FIXME: All these structures need to be made dynamic with
          * garbage collection. */
@@ -189,8 +191,10 @@ error_out:
 void
 ngram_search_free(ngram_search_t *ngs)
 {
-    ngram_fwdtree_deinit(ngs);
-    ngram_fwdflat_deinit(ngs);
+    if (cmd_ln_boolean_r(ngs->config, "-fwdtree"))
+        ngram_fwdtree_deinit(ngs);
+    if (cmd_ln_boolean_r(ngs->config, "-fwdflat"))
+        ngram_fwdflat_deinit(ngs);
 
     hmm_context_free(ngs->hmmctx);
     listelem_alloc_free(ngs->chan_alloc);
@@ -207,6 +211,7 @@ ngram_search_free(ngram_search_t *ngs)
     ckd_free(ngs->bp_table_idx - 1);
     ckd_free_2d(ngs->active_word_list);
     ckd_free(ngs->hyp_str);
+    ckd_free(ngs->last_ltrans);
     ckd_free(ngs);
 }
 
@@ -222,6 +227,97 @@ ngram_search_mark_bptable(ngram_search_t *ngs, int frame_idx)
     }
     ngs->bp_table_idx[frame_idx] = ngs->bpidx;
     return ngs->bpidx;
+}
+
+/**
+ * Find trigram predecessors for a backpointer table entry.
+ */
+static void
+cache_bptable_paths(ngram_search_t *ngs, int32 bp)
+{
+    int32 w, prev_bp;
+    bptbl_t *bpe;
+
+    bpe = &(ngs->bp_table[bp]);
+    prev_bp = bp;
+    w = bpe->wid;
+    /* FIXME: This isn't the ideal way to tell if it's a filler. */
+    while (w >= ngs->silence_wid) {
+        prev_bp = ngs->bp_table[prev_bp].bp;
+        w = ngs->bp_table[prev_bp].wid;
+    }
+    bpe->real_wid = ngs->dict->dict_list[w]->wid;
+
+    prev_bp = ngs->bp_table[prev_bp].bp;
+    bpe->prev_real_wid =
+        (prev_bp != NO_BP) ? ngs->bp_table[prev_bp].real_wid : -1;
+}
+
+void
+ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
+                     int32 w, int32 score, int32 path, int32 rc)
+{
+    int32 _bp_;
+
+    _bp_ = ngs->word_lat_idx[w];
+    if (_bp_ != NO_BP) {
+        if (ngs->bp_table[_bp_].score < score) {
+            if (ngs->bp_table[_bp_].bp != path) {
+                ngs->bp_table[_bp_].bp = path;
+                cache_bptable_paths(ngs, _bp_);
+            }
+            ngs->bp_table[_bp_].score = score;
+        }
+        ngs->bscore_stack[ngs->bp_table[_bp_].s_idx + rc] = score;
+    }
+    else {
+        int32 i, rcsize, *bss;
+        dict_entry_t *de;
+        bptbl_t *bpe;
+
+        /* Expand the backpointer tables if necessary. */
+        if (ngs->bpidx >= ngs->bp_table_size) {
+            ngs->bp_table_size *= 2;
+            ngs->bp_table = ckd_realloc(ngs->bp_table,
+                                        ngs->bp_table_size
+                                        * sizeof(*ngs->bp_table));
+            E_INFO("Resized backpointer table to %d entries\n", ngs->bp_table_size);
+        }
+        if (ngs->bss_head >= ngs->bscore_stack_size
+            - bin_mdef_n_ciphone(ngs->acmod->mdef)) {
+            ngs->bscore_stack_size *= 2;
+            ngs->bscore_stack = ckd_realloc(ngs->bscore_stack,
+                                            ngs->bscore_stack_size
+                                            * sizeof(*ngs->bscore_stack));
+            E_INFO("Resized score stack to %d entries\n", ngs->bscore_stack_size);
+        }
+
+        de = ngs->dict->dict_list[w];
+        ngs->word_lat_idx[w] = ngs->bpidx;
+        bpe = &(ngs->bp_table[ngs->bpidx]);
+        bpe->wid = w;
+        bpe->frame = frame_idx;
+        bpe->bp = path;
+        bpe->score = score;
+        bpe->s_idx = ngs->bss_head;
+        bpe->valid = TRUE;
+
+        if ((de->len != 1) && (de->mpx)) {
+            bpe->r_diph = de->phone_ids[de->len - 1];
+            rcsize = ngs->dict->rcFwdSizeTable[bpe->r_diph];
+        }
+        else {
+            bpe->r_diph = -1;
+            rcsize = 1;
+        }
+        for (i = rcsize, bss = ngs->bscore_stack + ngs->bss_head; i > 0; --i, bss++)
+            *bss = WORST_SCORE;
+        ngs->bscore_stack[ngs->bss_head + rc] = score;
+        cache_bptable_paths(ngs, ngs->bpidx);
+
+        ngs->bpidx++;
+        ngs->bss_head += rcsize;
+    }
 }
 
 int

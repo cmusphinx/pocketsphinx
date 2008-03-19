@@ -12,6 +12,7 @@ check_PROGRAMS = \
 	test_acmod \
 	test_fwdtree \
 	test_fwdtree_fbs \
+	test_fwdflat \
 	$(gst_programs)
 
 TESTS = \
@@ -23,6 +24,7 @@ TESTS = \
 	test_acmod \
 	test_fwdtree \
 	test_fwdtree_fbs \
+	test_fwdflat \
 	$(gst_tests)
 
 noinst_HEADERS = test_macros.h

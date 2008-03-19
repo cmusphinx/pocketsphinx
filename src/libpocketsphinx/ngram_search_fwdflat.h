@@ -65,7 +65,7 @@ void ngram_fwdflat_start(ngram_search_t *ngs);
 /**
  * Search one frame forward in an utterance.
  */
-void ngram_fwdflat_search(ngram_search_t *ngs);
+int ngram_fwdflat_search(ngram_search_t *ngs);
 
 /**
  * Finish fwdflat decoding for an utterance.

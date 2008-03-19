@@ -430,7 +430,15 @@ pocketsphinx_end_utt(pocketsphinx_t *ps)
 
         ngram_fwdtree_finish(ps->ngs);
         if (cmd_ln_boolean_r(ps->config, "-fwdflat")) {
-            /* FIXME: Do fwdflat search. */
+            /* Rewind the acoustic model. */
+            acmod_rewind(ps->acmod);
+            /* Now redo search. */
+            ngram_fwdflat_start(ps->ngs);
+            while ((nfr = ngram_fwdflat_search(ps->ngs)) > 0) {
+                /* Do nothing! */
+            }
+            ngram_fwdflat_finish(ps->ngs);
+            /* And now, we should have a result... */
         }
         if (cmd_ln_int32_r(ps->config, "-nbest")) {
             /* FIXME: Do A* search. */

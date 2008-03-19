@@ -63,12 +63,6 @@
  * This should probably be fixed at some point.
  */
 
-/**
- * Enter a word in the backpointer table.
- */
-static void save_bwd_ptr(ngram_search_t *ngs, int frame_idx, int32 w,
-                         int32 score, int32 path, int32 rc);
-
 /* Turn this on to dump channels for debugging */
 #define __CHAN_DUMP__		0
 #if __CHAN_DUMP__
@@ -375,9 +369,6 @@ ngram_fwdtree_init(ngram_search_t *ngs)
                                 sizeof(*ngs->bestbp_rc));
     ngs->lastphn_cand = ckd_calloc(ngs->dict->dict_entry_count,
                                    sizeof(*ngs->lastphn_cand));
-    ngs->last_ltrans = ckd_calloc(ngs->dict->dict_entry_count,
-                                  sizeof(*ngs->last_ltrans));
-
     init_search_tree(ngs);
     create_search_tree(ngs);
 }
@@ -414,7 +405,6 @@ ngram_fwdtree_deinit(ngram_search_t *ngs)
     ckd_free(ngs->cand_sf);
     ckd_free(ngs->bestbp_rc);
     ckd_free(ngs->lastphn_cand);
-    ckd_free(ngs->last_ltrans);
 }
 
 void
@@ -447,6 +437,7 @@ ngram_fwdtree_start(ngram_search_t *ngs)
     /* Reset other stuff. */
     for (i = 0; i < n_words; i++)
         ngs->last_ltrans[i].sf = -1;
+    ngs->n_frame = 0;
 
     /* Clear the hypothesis string. */
     ckd_free(ngs->hyp_str);
@@ -1021,7 +1012,7 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
                 /* Could if ((! skip_alt_frm) || (frame_idx & 0x1)) the following */
                 if (hmm_out_score(&hmm->hmm) > newword_thresh) {
                     /* can exit channel and recognize word */
-                    save_bwd_ptr(ngs, frame_idx, w,
+                    ngram_search_save_bp(ngs, frame_idx, w,
                                  hmm_out_score(&hmm->hmm),
                                  hmm_out_history(&hmm->hmm),
                                  hmm->info.rc_id);
@@ -1058,7 +1049,7 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
 
             /* Could if ((! skip_alt_frm) || (frame_idx & 0x1)) the following */
             if (hmm_out_score(&rhmm->hmm) > newword_thresh) {
-                save_bwd_ptr(ngs, frame_idx, w,
+                ngram_search_save_bp(ngs, frame_idx, w,
                              hmm_out_score(&rhmm->hmm),
                              hmm_out_history(&rhmm->hmm), 0);
             }
@@ -1119,98 +1110,6 @@ prune_channels(ngram_search_t *ngs, int frame_idx)
     last_phone_transition(ngs, frame_idx);
     prune_word_chan(ngs, frame_idx);
 }
-
-/**
- * Find trigram predecessors for a backpointer table entry.
- */
-static void
-cache_bptable_paths(ngram_search_t *ngs, int32 bp)
-{
-    int32 w, prev_bp;
-    bptbl_t *bpe;
-
-    bpe = &(ngs->bp_table[bp]);
-    prev_bp = bp;
-    w = bpe->wid;
-    /* FIXME: This isn't the ideal way to tell if it's a filler. */
-    while (w >= ngs->silence_wid) {
-        prev_bp = ngs->bp_table[prev_bp].bp;
-        w = ngs->bp_table[prev_bp].wid;
-    }
-    bpe->real_wid = ngs->dict->dict_list[w]->wid;
-
-    prev_bp = ngs->bp_table[prev_bp].bp;
-    bpe->prev_real_wid =
-        (prev_bp != NO_BP) ? ngs->bp_table[prev_bp].real_wid : -1;
-}
-
-static void
-save_bwd_ptr(ngram_search_t *ngs, int frame_idx,
-             int32 w, int32 score, int32 path, int32 rc)
-{
-    int32 _bp_;
-
-    _bp_ = ngs->word_lat_idx[w];
-    if (_bp_ != NO_BP) {
-        if (ngs->bp_table[_bp_].score < score) {
-            if (ngs->bp_table[_bp_].bp != path) {
-                ngs->bp_table[_bp_].bp = path;
-                cache_bptable_paths(ngs, _bp_);
-            }
-            ngs->bp_table[_bp_].score = score;
-        }
-        ngs->bscore_stack[ngs->bp_table[_bp_].s_idx + rc] = score;
-    }
-    else {
-        int32 i, rcsize, *bss;
-        dict_entry_t *de;
-        bptbl_t *bpe;
-
-        /* Expand the backpointer tables if necessary. */
-        if (ngs->bpidx >= ngs->bp_table_size) {
-            ngs->bp_table_size *= 2;
-            ngs->bp_table = ckd_realloc(ngs->bp_table,
-                                        ngs->bp_table_size
-                                        * sizeof(*ngs->bp_table));
-            E_INFO("Resized backpointer table to %d entries\n", ngs->bp_table_size);
-        }
-        if (ngs->bss_head >= ngs->bscore_stack_size
-            - bin_mdef_n_ciphone(ngs->acmod->mdef)) {
-            ngs->bscore_stack_size *= 2;
-            ngs->bscore_stack = ckd_realloc(ngs->bscore_stack,
-                                            ngs->bscore_stack_size
-                                            * sizeof(*ngs->bscore_stack));
-            E_INFO("Resized score stack to %d entries\n", ngs->bscore_stack_size);
-        }
-
-        de = ngs->dict->dict_list[w];
-        ngs->word_lat_idx[w] = ngs->bpidx;
-        bpe = &(ngs->bp_table[ngs->bpidx]);
-        bpe->wid = w;
-        bpe->frame = frame_idx;
-        bpe->bp = path;
-        bpe->score = score;
-        bpe->s_idx = ngs->bss_head;
-        bpe->valid = TRUE;
-
-        if ((de->len != 1) && (de->mpx)) {
-            bpe->r_diph = de->phone_ids[de->len - 1];
-            rcsize = ngs->dict->rcFwdSizeTable[bpe->r_diph];
-        }
-        else {
-            bpe->r_diph = -1;
-            rcsize = 1;
-        }
-        for (i = rcsize, bss = ngs->bscore_stack + ngs->bss_head; i > 0; --i, bss++)
-            *bss = WORST_SCORE;
-        ngs->bscore_stack[ngs->bss_head + rc] = score;
-        cache_bptable_paths(ngs, ngs->bpidx);
-
-        ngs->bpidx++;
-        ngs->bss_head += rcsize;
-    }
-}
-
 
 /*
  * Limit the number of word exits in each frame to maxwpf.  And also limit the number of filler
@@ -1478,19 +1377,16 @@ ngram_fwdtree_search(ngram_search_t *ngs)
 
     /* Evaluate HMMs */
     evaluate_channels(ngs, senscr, frame_idx);
-
     /* Prune HMMs and do phone transitions. */
     prune_channels(ngs, frame_idx);
-
     /* Do absolute pruning on word exits. */
     bptable_maxwpf(ngs, frame_idx);
-
     /* Do word transitions. */
     word_transition(ngs, frame_idx);
-
     /* Deactivate pruned HMMs. */
     deactivate_channels(ngs, frame_idx);
 
+    ++ngs->n_frame;
     /* Return the number of frames processed. */
     return 1;
 }

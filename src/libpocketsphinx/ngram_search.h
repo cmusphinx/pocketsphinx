@@ -331,7 +331,8 @@ struct ngram_search_s {
     int32 bss_head;          /* First free BScoreStack entry */
     int32 bscore_stack_size;
 
-    int32 n_frame_alloc;
+    int32 n_frame_alloc; /**< Number of frames allocated in bp_table_idx and friends. */
+    int32 n_frame;       /**< Number of frames actually present. */
     int32 *bp_table_idx; /* First BPTable entry for each frame */
     int32 *word_lat_idx; /* BPTable index for any word in current frame;
                             cleared before each frame */
@@ -342,13 +343,14 @@ struct ngram_search_s {
     /*
      * Flat lexicon (2nd pass) search stuff.
      */
-    latnode_t **frm_wordlist;
-    int32 *fwdflat_wordlist;
+    latnode_t **frm_wordlist;   /**< List of active words in each frame. */
+    int32 *fwdflat_wordlist;    /**< List of active word IDs for utterance. */
     bitvec_t *expand_word_flag;
     int32 *expand_word_list;
     int32 n_expand_words;
     int32 min_ef_width;
     int32 max_sf_win;
+    float32 fwdflat_fwdtree_lw_ratio;
 
     int32 best_score; /**< Best Viterbi path score. */
     int32 last_phone_best_score; /**< Best Viterbi path score for last phone. */
@@ -393,6 +395,12 @@ void ngram_search_free(ngram_search_t *ngs);
  * @return the current backpointer index.
  */
 int ngram_search_mark_bptable(ngram_search_t *ngs, int frame_idx);
+
+/**
+ * Enter a word in the backpointer table.
+ */
+void ngram_search_save_bp(ngram_search_t *ngs, int frame_idx, int32 w,
+                          int32 score, int32 path, int32 rc);
 
 /**
  * Allocate last phone channels for all possible right contexts for word w.
