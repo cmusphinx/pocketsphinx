@@ -108,6 +108,14 @@ ngram_search_init(cmd_ln_t *config,
         ngs->fillpen = ngs->pip
             + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-fillpen"));
 
+        /* Language weight ratios for fwdflat and bestpath search. */
+        ngs->fwdflat_fwdtree_lw_ratio =
+            cmd_ln_float32_r(config, "-fwdflatlw")
+            / cmd_ln_float32_r(config, "-lw");
+        ngs->bestpath_fwdtree_lw_ratio =
+            cmd_ln_float32_r(config, "-bestpathlw")
+            / cmd_ln_float32_r(config, "-lw");
+
         /* This is useful for something. */
         ngs->start_wid = dict_to_id(ngs->dict, "<s>");
         ngs->finish_wid = dict_to_id(ngs->dict, "</s>");
@@ -456,4 +464,50 @@ ngram_search_free_all_rc(ngram_search_t *ngs, int32 w)
         listelem_free(ngs->chan_alloc, hmm);
     }
     ngs->word_chan[w] = NULL;
+}
+
+/*
+ * Compute acoustic and LM scores for each BPTable entry (segment).
+ */
+void
+ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf)
+{
+    int32 bp, start_score;
+    bptbl_t *bpe, *p_bpe;
+    int32 *rcpermtab;
+    dict_entry_t *de;
+
+    for (bp = 0; bp < ngs->bpidx; bp++) {
+        bpe = ngs->bp_table + bp;
+
+        /* Start of utterance. */
+        if (bpe->bp == NO_BP) {
+            bpe->ascr = bpe->score;
+            bpe->lscr = 0;
+            continue;
+        }
+
+        /* Otherwise, calculate lscr and ascr. */
+        de = ngs->dict->dict_list[bpe->wid];
+        p_bpe = ngs->bp_table + bpe->bp;
+        rcpermtab = (p_bpe->r_diph >= 0) ?
+            ngs->dict->rcFwdPermTable[p_bpe->r_diph] : ngs->zeroPermTab;
+        start_score =
+            ngs->bscore_stack[p_bpe->s_idx + rcpermtab[de->ci_phone_ids[0]]];
+
+        if (bpe->wid == ngs->silence_wid) {
+            bpe->lscr = ngs->silpen;
+        }
+        else if (ISA_FILLER_WORD(ngs, bpe->wid)) {
+            bpe->lscr = ngs->fillpen;
+        }
+        else {
+            int32 n_used;
+            bpe->lscr = ngram_tg_score(ngs->lmset, de->wid,
+                                       p_bpe->real_wid,
+                                       p_bpe->prev_real_wid, &n_used);
+            bpe->lscr = bpe->lscr * lwf;
+        }
+        bpe->ascr = bpe->score - start_score - bpe->lscr;
+    }
 }

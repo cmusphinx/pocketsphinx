@@ -355,7 +355,12 @@ struct ngram_search_s {
     int32 best_score; /**< Best Viterbi path score. */
     int32 last_phone_best_score; /**< Best Viterbi path score for last phone. */
     int32 renormalized;
- 
+
+    /*
+     * DAG (3rd pass) search stuff.
+     */
+    float32 bestpath_fwdtree_lw_ratio;
+
     ngram_search_stats_t st; /**< Various statistics for profiling. */
 
     /* A collection of beam widths. */
@@ -376,6 +381,11 @@ struct ngram_search_s {
     int32 maxhmmpf;
 };
 typedef struct ngram_search_s ngram_search_t;
+
+/* FIXME: This code makes some irritating assumptions about the
+ * ordering of the dictionary. */
+#define ISA_FILLER_WORD(ngs,x)	((x) >= ngs->silence_wid)
+#define ISA_REAL_WORD(ngs,x)	((x) < ngs->finish_wid)
 
 /**
  * Initialize the N-Gram search module.
@@ -425,5 +435,11 @@ int ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_s
  * @return a <strong>read-only</strong> string with the best hypothesis.
  */
 char const *ngram_search_hyp(ngram_search_t *ngs, int bpidx);
+
+/**
+ * Compute language and acoustic scores for backpointer table entries.
+ */
+void ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf);
+
 
 #endif /* __NGRAM_SEARCH_H__ */

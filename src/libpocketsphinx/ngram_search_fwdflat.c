@@ -68,10 +68,6 @@ ngram_fwdflat_init(ngram_search_t *ngs)
     ngs->expand_word_flag = bitvec_alloc(n_words);
     ngs->expand_word_list = ckd_calloc(n_words + 1, sizeof(*ngs->expand_word_list));
     ngs->frm_wordlist = ckd_calloc(ngs->n_frame_alloc, sizeof(*ngs->frm_wordlist));
-
-    ngs->fwdflat_fwdtree_lw_ratio =
-        cmd_ln_float32_r(ngs->config, "-fwdflatlw")
-        / cmd_ln_float32_r(ngs->config, "-lw");
     ngs->min_ef_width = cmd_ln_int32_r(ngs->config, "-fwdflatefwid");
     ngs->max_sf_win = cmd_ln_int32_r(ngs->config, "-fwdflatsfwin");
     E_INFO("fwdflat: min_ef_width = %d, max_sf_win = %d\n",
@@ -164,7 +160,7 @@ build_fwdflat_wordlist(ngram_search_t *ngs)
          * transition can be made in the LM.
          */
         /* Ignore silence and <s> */
-        if ((wid >= ngs->silence_wid) || (wid == ngs->start_wid))
+        if (ISA_FILLER_WORD(ngs, wid) || (wid == ngs->start_wid))
             continue;
 
         /* Look for it in the wordlist. */

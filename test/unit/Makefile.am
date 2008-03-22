@@ -15,6 +15,7 @@ check_PROGRAMS = \
 	test_fwdtree_fbs \
 	test_fwdflat \
 	test_fwdtree_fwdflat \
+	test_fwdtree_bestpath \
 	$(gst_programs)
 
 TESTS = \
@@ -29,6 +30,7 @@ TESTS = \
 	test_fwdtree_fbs \
 	test_fwdflat \
 	test_fwdtree_fwdflat \
+	test_fwdtree_bestpath \
 	$(gst_tests)
 
 noinst_HEADERS = test_macros.h

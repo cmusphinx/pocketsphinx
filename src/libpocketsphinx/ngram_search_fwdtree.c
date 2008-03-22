@@ -297,8 +297,7 @@ create_search_tree(ngram_search_t *ngs)
     for (w = dict_to_id(ngs->dict, "</s>"); w < n_words; ++w) {
         de = ngs->dict->dict_list[w];
         /* Skip any non-fillers that aren't in the LM. */
-        /* FIXME: Not the best way to tell if it's a filler. */
-        if ((!w >= ngs->silence_wid)
+        if ((!ISA_FILLER_WORD(ngs, w))
             && (!ngram_model_set_known_wid(ngs->lmset, de->wid)))
             continue;
         ngs->single_phone_wid[ngs->n_1ph_words++] = w;
@@ -1133,7 +1132,7 @@ bptable_maxwpf(ngram_search_t *ngs, int frame_idx)
     for (bp = ngs->bp_table_idx[frame_idx]; bp < ngs->bpidx; bp++) {
         bpe = &(ngs->bp_table[bp]);
         /* FIXME: Not the ideal way to tell if this is a filler word. */
-        if (bpe->wid >= ngs->silence_wid) {
+        if (ISA_FILLER_WORD(ngs, bpe->wid)) {
             if (bpe->score > bestscr) {
                 bestscr = bpe->score;
                 bestbpe = bpe;
