@@ -338,13 +338,6 @@ create_dag_nodes(ngram_search_t *ngs, ngram_dag_t *dag)
             dag->nodes = node;
         }
     }
-
-    /*
-     * At this point, dag->nodes is ordered such that nodes earlier in the list
-     * can follow (in time) those later in the list, but not vice versa.  Now
-     * create precedence links and simultanesously mark all nodes that can reach
-     * the final </s> node.  (All nodes are reached from <s>.0; no problem there.)
-     */
 }
 
 static latnode_t *
@@ -447,8 +440,11 @@ ngram_dag_build(ngram_search_t *ngs)
     dag->final_node_ascr = ngs->bp_table[dag->end->lef].ascr;
 
     /*
-     * Create precedence links between all possible pairs of nodes.  However,
-     * ignore nodes from which dag->end is not reachable.
+     * At this point, dag->nodes is ordered such that nodes earlier in
+     * the list can follow (in time) those later in the list, but not
+     * vice versa.  Now create precedence links and simultanesously
+     * mark all nodes that can reach dag->end.  (All nodes are reached
+     * from dag->start; no problem there.)
      */
     dag->end->reachable = TRUE;
     for (to = dag->end; to; to = to->next) {
@@ -533,7 +529,6 @@ ngram_dag_free(ngram_dag_t *dag)
     listelem_alloc_free(dag->latnode_alloc);
     listelem_alloc_free(dag->latlink_alloc);
     listelem_alloc_free(dag->rev_latlink_alloc);
-    listelem_alloc_free(dag->latpath_alloc);
     ckd_free(dag->hyp_str);
     ckd_free(dag);
 }
@@ -546,56 +541,50 @@ ngram_dag_hyp(ngram_dag_t *dag, latlink_t *link)
     char *c;
 
     /* Backtrace once to get hypothesis length. */
-    l = link;
     len = 0;
-    if (ISA_REAL_WORD(dag->ngs, l->to->wid))
-        len += strlen(dag->ngs->dict->dict_list[l->to->wid]->word) + 1;
-    while (l) {
-        if (!ISA_REAL_WORD(dag->ngs, l->from->wid)) {
-            l = l->best_prev;
-            continue;
-        }
-        len += strlen(dag->ngs->dict->dict_list[l->from->wid]->word) + 1;
-        l = l->best_prev;
+    if (ISA_REAL_WORD(dag->ngs, link->to->wid))
+        len += strlen(dag->ngs->dict->dict_list[link->to->wid]->word) + 1;
+    for (l = link; l; l = l->best_prev) {
+        if (ISA_REAL_WORD(dag->ngs, l->from->wid))
+            len += strlen(dag->ngs->dict->dict_list[l->from->wid]->word) + 1;
     }
 
     /* Backtrace again to construct hypothesis string. */
     ckd_free(dag->hyp_str);
     dag->hyp_str = ckd_calloc(1, len);
-    l = link;
     c = dag->hyp_str + len - 1;
-    if (ISA_REAL_WORD(dag->ngs, l->to->wid)) {
-        len = strlen(dag->ngs->dict->dict_list[l->to->wid]->word);
+    if (ISA_REAL_WORD(dag->ngs, link->to->wid)) {
+        len = strlen(dag->ngs->dict->dict_list[link->to->wid]->word);
         c -= len;
-        memcpy(c, dag->ngs->dict->dict_list[l->to->wid]->word, len);
+        memcpy(c, dag->ngs->dict->dict_list[link->to->wid]->word, len);
         if (c > dag->hyp_str) {
             --c;
             *c = ' ';
         }
     }
-    while (l) {
-        if (!ISA_REAL_WORD(dag->ngs, l->from->wid)) {
-            l = l->best_prev;
-            continue;
+    for (l = link; l; l = l->best_prev) {
+        if (ISA_REAL_WORD(dag->ngs, l->from->wid)) {
+            len = strlen(dag->ngs->dict->dict_list[l->from->wid]->word);
+            c -= len;
+            memcpy(c, dag->ngs->dict->dict_list[l->from->wid]->word, len);
+            if (c > dag->hyp_str) {
+                --c;
+                *c = ' ';
+            }
         }
-        len = strlen(dag->ngs->dict->dict_list[l->from->wid]->word);
-        c -= len;
-        memcpy(c, dag->ngs->dict->dict_list[l->from->wid]->word, len);
-        if (c > dag->hyp_str) {
-            --c;
-            *c = ' ';
-        }
-        l = l->best_prev;
     }
 
     return dag->hyp_str;
 }
 
 /*
- * Lattice rescoring:  Goal: Form DAG of nodes based on unique <wid,start-fram> values,
- * and find the best path through the DAG from <<s>,0> to <</s>,last_frame>.
- * Strategy: Find the best score from <<s>,0> to end point of any link and use it to
- * update links further down the path... (reword)
+ * Find the best score from dag->start to end point of any link and
+ * use it to update links further down the path.  This is basically
+ * just single-source shortest path search:
+ *
+ * http://en.wikipedia.org/wiki/Dijkstra's_algorithm
+ *
+ * The implementation is a bit different though.  Needs documented.
  */
 latlink_t *
 ngram_dag_bestpath(ngram_dag_t *dag)
@@ -678,8 +667,8 @@ ngram_dag_bestpath(ngram_dag_t *dag)
     }
 
     /*
-     * Rescored all paths to </s>.last_frame; now traceback optimal path.  First,
-     * find the best link entering </s>.last_frame.
+     * Rescored all paths to dag->end; Find the best link entering
+     * dag->end.  We will trace this back to get a hypothesis.
      */
     score = (int32) 0x80000000;
     best = NULL;
@@ -693,43 +682,26 @@ ngram_dag_bestpath(ngram_dag_t *dag)
     return best;
 }
 
-#if 0
 /* Parameters to prune n-best alternatives search */
 #define MAX_PATHS	500     /* Max allowed active paths at any time */
 #define MAX_HYP_TRIES	10000
 
-/* Back trace from path to root */
-static search_hyp_t *
-latpath_seg_back_trace(latpath_t * path)
-{
-    search_hyp_t *head, *h;
-
-    head = NULL;
-    for (; path; path = path->parent) {
-        h = listelem_malloc(search_hyp_alloc);
-        h->wid = path->node->wid;
-        h->word = kb_get_word_str(h->wid);
-        h->sf = path->node->sf;
-        h->ef = path->node->fef;    /* Approximately */
-
-        h->next = head;
-        head = h;
-    }
-
-    return head;
-}
-
 /*
- * For each node in any path between from and end of utt, find the best score
- * from "from".sf to end of utt.  (NOTE: Uses bigram probs; this is an estimate
- * of the best score from "from".
+ * For each node in any path between from and end of utt, find the
+ * best score from "from".sf to end of utt.  (NOTE: Uses bigram probs;
+ * this is an estimate of the best score from "from".)  (NOTE #2: yes,
+ * this is the "heuristic score" used in A* search)
  */
 static int32
-best_rem_score(latnode_t * from)
+best_rem_score(ngram_nbest_t *nbest, latnode_t * from)
 {
+    ngram_dag_t *dag;
     latlink_t *link;
     int32 bestscore, score;
+    float32 lw_factor;
 
+    dag = nbest->dag;
+    lw_factor = dag->ngs->bestpath_fwdtree_lw_ratio;
     if (from->info.rem_score <= 0)
         return (from->info.rem_score);
 
@@ -738,30 +710,33 @@ best_rem_score(latnode_t * from)
     for (link = from->links; link; link = link->next) {
         int32 n_used;
 
-        score = best_rem_score(link->to);
+        score = best_rem_score(nbest, link->to);
         score += link->link_scr;
-        score += ngram_bg_score(g_lmset, link->to->wid, from->wid, &n_used) * lw_factor;
+        score += ngram_bg_score(dag->ngs->lmset, link->to->wid,
+                                from->wid, &n_used) * lw_factor;
         if (score > bestscore)
             bestscore = score;
     }
     from->info.rem_score = bestscore;
 
-    return (bestscore);
+    return bestscore;
 }
 
 /*
  * Insert newpath in sorted (by path score) list of paths.  But if newpath is
- * too far down the list, drop it.
+ * too far down the list, drop it (FIXME: necessary?)
  * total_score = path score (newpath) + rem_score to end of utt.
  */
 static void
-path_insert(latpath_t * newpath, int32 total_score)
+path_insert(ngram_nbest_t *nbest, latpath_t *newpath, int32 total_score)
 {
+    ngram_dag_t *dag;
     latpath_t *prev, *p;
     int32 i;
 
+    dag = nbest->dag;
     prev = NULL;
-    for (i = 0, p = path_list; (i < MAX_PATHS) && p; p = p->next, i++) {
+    for (i = 0, p = nbest->path_list; (i < MAX_PATHS) && p; p = p->next, i++) {
         if ((p->score + p->node->info.rem_score) < total_score)
             break;
         prev = p;
@@ -772,39 +747,44 @@ path_insert(latpath_t * newpath, int32 total_score)
         /* Insert new partial hyp */
         newpath->next = p;
         if (!prev)
-            path_list = newpath;
+            nbest->path_list = newpath;
         else
             prev->next = newpath;
         if (!p)
-            path_tail = newpath;
+            nbest->path_tail = newpath;
 
-        n_path++;
-        n_hyp_insert++;
-        insert_depth += i;
+        nbest->n_path++;
+        nbest->n_hyp_insert++;
+        nbest->insert_depth += i;
     }
     else {
         /* newpath score too low; reject it and also prune paths beyond MAX_PATHS */
-        path_tail = prev;
+        nbest->path_tail = prev;
         prev->next = NULL;
-        n_path = MAX_PATHS;
-        listelem_free(latpath_alloc, newpath);
+        nbest->n_path = MAX_PATHS;
+        listelem_free(nbest->latpath_alloc, newpath);
 
-        n_hyp_reject++;
+        nbest->n_hyp_reject++;
         for (; p; p = newpath) {
             newpath = p->next;
-            listelem_free(latpath_alloc, p);
-            n_hyp_reject++;
+            listelem_free(nbest->latpath_alloc, p);
+            nbest->n_hyp_reject++;
         }
     }
 }
 
 /* Find all possible extensions to given partial path */
 static void
-path_extend(latpath_t * path)
+path_extend(ngram_nbest_t *nbest, latpath_t * path)
 {
     latlink_t *link;
     latpath_t *newpath;
     int32 total_score, tail_score;
+    float32 lw_factor;
+    ngram_dag_t *dag;
+
+    dag = nbest->dag;
+    lw_factor = dag->ngs->bestpath_fwdtree_lw_ratio;
 
     /* Consider all successors of path->node */
     for (link = path->node->links; link; link = link->next) {
@@ -815,106 +795,62 @@ path_extend(latpath_t * path)
             continue;
 
         /* Create path extension and compute exact score for this extension */
-        newpath = listelem_malloc(latpath_alloc);
+        newpath = listelem_malloc(nbest->latpath_alloc);
         newpath->node = link->to;
         newpath->parent = path;
         newpath->score = path->score + link->link_scr;
         if (path->parent)
             newpath->score += lw_factor
-                * ngram_tg_score(g_lmset, newpath->node->wid,
+                * ngram_tg_score(dag->ngs->lmset, newpath->node->wid,
                                  path->node->wid,
                                  path->parent->node->wid, &n_used);
         else 
             newpath->score += lw_factor
-                * ngram_bg_score(g_lmset, newpath->node->wid,
+                * ngram_bg_score(dag->ngs->lmset, newpath->node->wid,
                                  path->node->wid, &n_used);
 
         /* Insert new partial path hypothesis into sorted path_list */
-        n_hyp_tried++;
+        nbest->n_hyp_tried++;
         total_score = newpath->score + newpath->node->info.rem_score;
 
         /* First see if hyp would be worse than the worst */
-        if (n_path >= MAX_PATHS) {
+        if (nbest->n_path >= MAX_PATHS) {
             tail_score =
-                path_tail->score + path_tail->node->info.rem_score;
+                nbest->path_tail->score
+                + nbest->path_tail->node->info.rem_score;
             if (total_score < tail_score) {
-                listelem_free(latpath_alloc, newpath);
-                n_hyp_reject++;
+                listelem_free(nbest->latpath_alloc, newpath);
+                nbest->n_hyp_reject++;
                 continue;
             }
         }
 
-        path_insert(newpath, total_score);
+        path_insert(nbest, newpath, total_score);
     }
 }
 
-void
-search_hyp_free(search_hyp_t * h)
+ngram_nbest_t *
+ngram_nbest_start(ngram_dag_t *dag,
+                  int sf, int ef,
+                  int w1, int w2)
 {
-    search_hyp_t *tmp;
-
-    while (h) {
-        tmp = h->next;
-        listelem_free(search_hyp_alloc, h);
-        h = tmp;
-    }
-}
-
-static int32
-hyp_diff(search_hyp_t * hyp1, search_hyp_t * hyp2)
-{
-    search_hyp_t *h1, *h2;
-
-    for (h1 = hyp1, h2 = hyp2;
-         h1 && h2 && (h1->wid == h2->wid); h1 = h1->next, h2 = h2->next);
-    return (h1 || h2) ? 1 : 0;
-}
-
-/*
- * Get n best alternatives in lattice for the given frame range [sf..ef].
- * w1 and w2 provide left context; w1 may be -1.
- * NOTE: Clobbers any previously returned hypotheses!!
- * Return values: no. of alternative hypotheses returned in alt; -1 if error.
- */
-int32
-search_get_alt(int32 n,         /* In: No. of alternatives to look for */
-               int32 sf, int32 ef,      /* In: Start/End frame */
-               int32 w1, int32 w2,      /* In: context words */
-               search_hyp_t *** alt_out)
-{                               /* Out: array of alternatives */
+    ngram_nbest_t *nbest;
     latnode_t *node;
-    latpath_t *path, *top;
-    int32 i, j, scr, n_alt;
-    static search_hyp_t **alt = NULL;
-    static int32 max_alt_hyp = 0;
 
-    if (n <= 0)
-        return -1;
+    nbest = ckd_calloc(1, sizeof(*nbest));
+    nbest->dag = dag;
+    nbest->sf = sf;
+    if (ef < 0)
+        nbest->ef = dag->n_frames - ef;
+    else
+        nbest->ef = ef;
+    nbest->w1 = w1;
+    nbest->w2 = w2;
+    nbest->latpath_alloc = listelem_alloc_init(sizeof(latpath_t));
 
-    for (i = 0; i < max_alt_hyp; i++) {
-        search_hyp_free(alt[i]);
-        alt[i] = NULL;
-    }
-
-    if (n > max_alt_hyp) {
-        if (alt)
-            free(alt);
-        max_alt_hyp = (n + 255) & 0xffffff00;
-        alt = ckd_calloc(max_alt_hyp, sizeof(search_hyp_t *));
-    }
-
-    *alt_out = NULL;
-
-    /* If no permanent lattice available to be searched, return */
-    if (lattice.latnode_list == NULL) {
-        /* MessageBoxX("permanent lattice trouble in searchlat.c"); */
-        E_ERROR("NULL lattice\n");
-        return 0;
-    }
-
-    /* Initialize rem_score to default values */
-    for (node = lattice.latnode_list; node; node = node->next) {
-        if (node == lattice.final_node)
+    /* Initialize rem_score (A* heuristic) to default values */
+    for (node = dag->nodes; node; node = node->next) {
+        if (node == dag->end)
             node->info.rem_score = 0;
         else if (!node->links)
             node->info.rem_score = WORST_SCORE;
@@ -923,98 +859,116 @@ search_get_alt(int32 n,         /* In: No. of alternatives to look for */
     }
 
     /* Create initial partial hypotheses list consisting of nodes starting at sf */
-    n_path = 0;
-    n_hyp_reject = 0;
-    n_hyp_tried = 0;
-    n_hyp_insert = 0;
-    insert_depth = 0;
-    paths_done = NULL;
-
-    path_list = path_tail = NULL;
-    for (node = lattice.latnode_list; node; node = node->next) {
+    nbest->path_list = nbest->path_tail = NULL;
+    for (node = dag->nodes; node; node = node->next) {
         if (node->sf == sf) {
-            int32 n_used;
-            best_rem_score(node);
+            latpath_t *path;
+            int32 n_used, scr;
 
-            path = listelem_malloc(latpath_alloc);
+            best_rem_score(nbest, node);
+            path = listelem_malloc(nbest->latpath_alloc);
             path->node = node;
             path->parent = NULL;
             scr =
                 (w1 < 0)
-                ? ngram_bg_score(g_lmset, node->wid, w2, &n_used)
-                : ngram_tg_score(g_lmset, node->wid, w2, w1, &n_used);
+                ? ngram_bg_score(dag->ngs->lmset, node->wid, w2, &n_used)
+                : ngram_tg_score(dag->ngs->lmset, node->wid, w2, w1, &n_used);
             path->score = scr;
-
-            path_insert(path, scr + node->info.rem_score);
+            path_insert(nbest, path, scr + node->info.rem_score);
         }
     }
 
-    /* Find n hypotheses */
-    for (n_alt = 0;
-         path_list && (n_alt < n) && (n_hyp_tried < MAX_HYP_TRIES);) {
-        /* Pop the top (best) partial hypothesis */
-        top = path_list;
-        path_list = path_list->next;
-        if (top == path_tail)
-            path_tail = NULL;
-        n_path--;
+    return nbest;
+}
 
-        if ((top->node->sf >= ef) || ((top->node == lattice.final_node) &&
-                                      (ef > lattice.final_node->sf))) {
-            /* Complete hypothesis; generate output, but omit last (bracketing) node */
-            alt[n_alt] = latpath_seg_back_trace(top->parent);
-            /* alt[n_alt] = latpath_seg_back_trace (top); */
+latpath_t *
+ngram_nbest_next(ngram_nbest_t *nbest)
+{
+    latpath_t *top;
+    ngram_dag_t *dag;
 
-            /* Accept hyp only if non-empty */
-            if (alt[n_alt]) {
-                /* Check if hypothesis already output */
-                for (j = 0; (j < n_alt) && (hyp_diff(alt[j], alt[n_alt]));
-                     j++);
-                if (j >= n_alt) /* New, distinct alternative hypothesis */
-                    n_alt++;
-                else {
-                    search_hyp_free(alt[n_alt]);
-                    alt[n_alt] = NULL;
-                }
-            }
-#if 0
-            /* Print path here for debugging */
-#endif
+    dag = nbest->dag;
+
+    /* Pop the top (best) partial hypothesis */
+    while ((top = nbest->path_list) != NULL) {
+        nbest->path_list = nbest->path_list->next;
+        if (top == nbest->path_tail)
+            nbest->path_tail = NULL;
+        nbest->n_path--;
+
+        /* Complete hypothesis? */
+        if ((top->node->sf >= nbest->ef)
+            || ((top->node == dag->end) &&
+                (nbest->ef > dag->end->sf))) {
+            /* FIXME: Verify that it is non-empty. */
+            return top;
         }
         else {
-            if (top->node->fef < ef)
-                path_extend(top);
+            if (top->node->fef < nbest->ef)
+                path_extend(nbest, top);
         }
 
         /*
          * Add top to paths already processed; cannot be freed because other paths
          * point to it.
          */
-        top->next = paths_done;
-        paths_done = top;
+        top->next = nbest->paths_done;
+        nbest->paths_done = top;
     }
 
-#if defined(SEARCH_PROFILE)
-    E_INFO
-        ("#HYP = %d, #INSERT = %d, #REJECT = %d, Avg insert depth = %.2f\n",
-         n_hyp_tried, n_hyp_insert, n_hyp_reject,
-         insert_depth / ((double) n_hyp_insert + 1.0));
-#endif
-
-    /* Clean up */
-    while (path_list) {
-        top = path_list;
-        path_list = path_list->next;
-        listelem_free(latpath_alloc, top);
-    }
-    while (paths_done) {
-        top = paths_done;
-        paths_done = paths_done->next;
-        listelem_free(latpath_alloc, top);
-    }
-
-    *alt_out = alt;
-
-    return n_alt;
+    /* Did not find any more paths to extend. */
+    return NULL;
 }
-#endif
+
+char const *
+ngram_nbest_hyp(ngram_nbest_t *nbest, latpath_t *path)
+{
+    ngram_search_t *ngs;
+    latpath_t *p;
+    size_t len;
+    char *c;
+    char *hyp;
+
+    ngs = nbest->dag->ngs;
+
+    /* Backtrace once to get hypothesis length. */
+    len = 0;
+    for (p = path; p; p = p->parent) {
+        if (ISA_REAL_WORD(ngs, p->node->wid))
+            len += strlen(ngs->dict->dict_list[p->node->wid]->word) + 1;
+    }
+
+    /* Backtrace again to construct hypothesis string. */
+    hyp = ckd_calloc(1, len);
+    c = hyp + len - 1;
+    for (p = path; p; p = p->parent) {
+        if (ISA_REAL_WORD(ngs, p->node->wid)) {
+            len = strlen(ngs->dict->dict_list[p->node->wid]->word);
+            c -= len;
+            memcpy(c, ngs->dict->dict_list[p->node->wid]->word, len);
+            if (c > hyp) {
+                --c;
+                *c = ' ';
+            }
+        }
+    }
+
+    nbest->hyps = glist_add_ptr(nbest->hyps, hyp);
+    return hyp;
+}
+
+void
+ngram_nbest_finish(ngram_nbest_t *nbest)
+{
+    gnode_t *gn;
+
+    /* Free all hyps. */
+    for (gn = nbest->hyps; gn; gn = gnode_next(gn)) {
+        ckd_free(gnode_ptr(gn));
+    }
+    glist_free(nbest->hyps);
+    /* Free all paths. */
+    listelem_alloc_free(nbest->latpath_alloc);
+    /* Free the Henge. */
+    ckd_free(nbest);
+}

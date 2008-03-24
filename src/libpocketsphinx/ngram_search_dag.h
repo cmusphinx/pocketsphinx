@@ -64,7 +64,6 @@ typedef struct ngram_dag_s {
     listelem_alloc_t *latnode_alloc;     /**< Node allocator for this DAG. */
     listelem_alloc_t *latlink_alloc;     /**< Link allocator for this DAG. */
     listelem_alloc_t *rev_latlink_alloc; /**< Reverse link allocator for this DAG. */
-    listelem_alloc_t *latpath_alloc;     /**< Path allocator for this DAG. */
 } ngram_dag_t;
 
 /**
@@ -79,6 +78,30 @@ typedef struct latpath_s {
     struct latpath_s *next;     /**< Pointer to next path in list of paths. */
     int32 score;                /**< Exact score from start node up to node->sf. */
 } latpath_t;
+
+/**
+ * N-best search structure.
+ */
+typedef struct ngram_nbest_s {
+    ngram_dag_t *dag;
+    int16 sf;
+    int16 ef;
+    int32 w1;
+    int32 w2;
+
+    int32 n_hyp_tried;
+    int32 n_hyp_insert;
+    int32 n_hyp_reject;
+    int32 insert_depth;
+    int32 n_path;
+
+    latpath_t *path_list;
+    latpath_t *path_tail;
+    latpath_t *paths_done;
+
+    glist_t hyps;	             /**< List of hypothesis strings. */
+    listelem_alloc_t *latpath_alloc; /**< Path allocator for N-best search. */
+} ngram_nbest_t;
 
 /**
  * Construct a word graph from the current hypothesis.
@@ -110,16 +133,32 @@ char const *ngram_dag_hyp(ngram_dag_t *dag, latlink_t *link);
 /**
  * Begin N-best search on a word graph.
  *
+ * @param sf Starting frame for N-best search.
+ * @param ef Ending frame for N-best search, or -1 for last frame.
+ * @param w1 First context word, or -1 for none.
+ * @param w2 Second context word, or -1 for none.
  * @return 0 for success, <0 on error.
  */
-int ngram_dag_start_nbest(ngram_dag_t *dag);
+ngram_nbest_t *ngram_nbest_start(ngram_dag_t *dag,
+                                 int sf, int ef,
+                                 int w1, int w2);
+
 
 /**
  * Find next best hypothesis of N-best on a word graph.
  *
  * @return a complete path, or NULL if no more hypotheses exist.
  */
+latpath_t *ngram_nbest_next(ngram_nbest_t *nbest);
 
-latpath_t *ngram_dag_next_best(ngram_dag_t *dag);
+/**
+ * Get hypothesis string from N-best search.
+ */
+char const *ngram_nbest_hyp(ngram_nbest_t *nbest, latpath_t *path);
+
+/**
+ * Finish N-best search, releasing resources associated with it.
+ */
+void ngram_nbest_finish(ngram_nbest_t *nbest);
 
 #endif /* __NGRAM_SEARCH_DAG_H__ */
