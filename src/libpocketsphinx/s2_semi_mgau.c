@@ -431,16 +431,59 @@ get_scores_8b(s2_semi_mgau_t * s, int16 *senone_scores,
               int32 *senone_active, int32 n_senone_active,
               int32 *out_bestidx)
 {
-    E_FATAL("get_scores_8b() not implemented\n");
-    return 0;
+    int32 i, j, k;
+    int32 best = (int32)0x7fffffff;
+
+    memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
+    for (i = 0; i < s->n_feat; ++i) {
+        for (j = 0; j < n_senone_active; j++) {
+            int sen = senone_active[j];
+            uint8 *pid_cw;
+            int32 tmp;
+            pid_cw = s->mixw[i][s->f[i][0].codeword];
+            tmp = pid_cw[sen] + s->f[i][0].score;
+            for (k = 1; k < s->topn; ++k) {
+                pid_cw = s->mixw[i][s->f[i][k].codeword];
+                tmp = fast_logmath_add(s->lmath_8b, tmp,
+                                       pid_cw[sen] + s->f[i][k].score);
+            }
+            senone_scores[sen] += tmp;
+            if (i == s->n_feat - 1 && senone_scores[sen] < best) {
+                best = senone_scores[sen];
+                *out_bestidx = sen;
+            }
+        }
+    }
+    return best;
 }
 
 static int32
 get_scores_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
                   int32 *out_bestidx)
 {
-    E_FATAL("get_scores_8b_all() not implemented\n");
-    return 0;
+    int32 i, j, k;
+    int32 best = (int32)0x7fffffff;
+
+    memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
+    for (i = 0; i < s->n_feat; ++i) {
+        for (j = 0; j < s->n_sen; j++) {
+            uint8 *pid_cw;
+            int32 tmp;
+            pid_cw = s->mixw[i][s->f[i][0].codeword];
+            tmp = pid_cw[j] + s->f[i][0].score;
+            for (k = 1; k < s->topn; ++k) {
+                pid_cw = s->mixw[i][s->f[i][k].codeword];
+                tmp = fast_logmath_add(s->lmath_8b, tmp,
+                                       pid_cw[j] + s->f[i][k].score);
+            }
+            senone_scores[j] += tmp;
+            if (i == s->n_feat - 1 && senone_scores[j] < best) {
+                best = senone_scores[j];
+                *out_bestidx = j;
+            }
+        }
+    }
+    return best;
 }
 
 static int32
