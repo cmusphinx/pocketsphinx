@@ -531,14 +531,13 @@ static int32
 get_scores4_8b_map(s2_semi_mgau_t * s, int16 *senone_scores,
                    int32 *out_bestidx)
 {
-    int32 j;
     int32 best = (int32)0x7fffffff;
+    int j, n, bestidx = 0;
 
     n_senone_active = s->n_sen;
-    memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
+    memset(s->mixw_score, 0, s->n_mixw * sizeof(*s->mixw_score));
     for (j = 0; j < s->n_feat; j++) {
         uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
-        uint16 *mixw_map;
         int32 n;
 
         /* ptrs to senone prob ids */
@@ -548,9 +547,8 @@ get_scores4_8b_map(s2_semi_mgau_t * s, int16 *senone_scores,
         pid_cw3 = s->mixw[j][s->f[j][3].codeword];
 
         /* mapping of senones to mixture weights. */
-        mixw_map = s->mixw_map[j];
-        for (n = 0; n < s->n_mixw[j]; n++) {
-            int32 tmp1, tmp2, k, n_sen;
+        for (n = 0; n < s->n_mixw; n++) {
+            int32 tmp1, tmp2;
 
             tmp1 = pid_cw0[n] + s->f[j][0].score;
             tmp2 = pid_cw1[n] + s->f[j][1].score;
@@ -559,20 +557,16 @@ get_scores4_8b_map(s2_semi_mgau_t * s, int16 *senone_scores,
             tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
             tmp2 = pid_cw3[n] + s->f[j][3].score;
             tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-
-            /* Get the size of this cluster. */
-            n_sen = *mixw_map++;
-            /* Add senone score to all senones in it. */
-            for (k = 0; k < n_sen; ++k) {
-                int32 sen = *mixw_map++;
-                senone_scores[sen] += tmp1;
-                if (j == s->n_feat - 1 && senone_scores[sen] < best) {
-                    best = senone_scores[sen];
-                    *out_bestidx = sen;
-                }
+            s->mixw_score[n] += tmp1;
+            if (j == s->n_feat - 1 && s->mixw_score[n] > best) {
+                bestidx = n;
+                best = s->mixw_score[n];
             }
         }
     }
+    for (n = 0; n < s->n_sen; n++)
+        senone_scores[n] = s->mixw_score[s->mixw_map[n]];
+    *out_bestidx = s->mixw_map[bestidx];
     return best;
 }
 
@@ -786,7 +780,7 @@ read_clustered_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
 {
     FILE *fh;
     char **name, **val;
-    int i, n_feat, n_sen, n_density;
+    int i, n_feat, n_sen, n_mixw, n_density;
     int32 swap;
     uint32 chksum;
     double logbase;
@@ -810,12 +804,19 @@ read_clustered_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
     for (i = 0; name[i]; ++i) {
         if (0 == strcmp(name[i], "n_sen"))
             n_sen = atoi(val[i]);
+        else if (0 == strcmp(name[i], "n_mixw"))
+            n_mixw = atoi(val[i]);
         else if (0 == strcmp(name[i], "n_feat"))
             n_feat = atoi(val[i]);
         else if (0 == strcmp(name[i], "n_density"))
             n_density = atoi(val[i]);
         else if (0 == strcmp(name[i], "logbase"))
             logbase = atof(val[i]);
+        else if (0 == strcmp(name[i], "version")
+                 && 0 != strcmp(val[i], "0.4")) {
+            /* FIXME! Shouldn't be E_FATAL */
+            E_FATAL("Unsupported file version %s\n", val[i]);
+        }
         ckd_free(name[i]);
         ckd_free(val[i]);
     }
@@ -842,32 +843,20 @@ read_clustered_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
     }
     /* So set it. */
     s->n_sen = n_sen;
+    s->n_mixw = n_mixw;
 
     /* Allocate things. */
-    /* Number of actual distributions is going to vary per feature. */
-    s->mixw = ckd_calloc(n_feat, sizeof(*s->mixw));
-    /* Mappings map distributions to senones, so they vary in size too. */
-    s->mixw_map = ckd_calloc(n_feat, sizeof(*s->mixw_map));
-    /* Counts of actual distributions. */
-    s->n_mixw = ckd_calloc(n_feat, sizeof(*s->n_mixw));
-
-    /* Read the number of distributions per feature. */
-    bio_fread(s->n_mixw, sizeof(*s->n_mixw), n_feat, fh, swap, &chksum);
+    s->mixw = ckd_calloc_3d(n_feat, n_density, n_mixw, sizeof(***s->mixw));
+    /* Cluster IDs and scores for each senone. */
+    s->mixw_map = ckd_calloc(n_sen, sizeof(*s->mixw_map));
+    s->mixw_score = ckd_calloc(n_sen, sizeof(*s->mixw_score));
     /* Read the senone to mixw mappings. */
-    for (i = 0; i < n_feat; ++i) {
-        /* One word for each cluster count, n_sen leaves. */
-        s->mixw_map[i] = ckd_calloc(n_sen + s->n_mixw[i], sizeof(**s->mixw_map));
-        bio_fread(s->mixw_map[i], sizeof(**s->mixw_map),
-                  n_sen + s->n_mixw[i], fh, swap, &chksum);
-    }
+    bio_fread(s->mixw_map, sizeof(*s->mixw_map), n_sen, fh, swap, &chksum);
 
     /* Now read the actual mixture weight distributions. */
-    for (i = 0; i < n_feat; ++i) {
-        E_INFO("Feature %d n_mixw %d\n", i, s->n_mixw[i]);
-        s->mixw[i] = ckd_calloc_2d(n_density, s->n_mixw[i], sizeof(***s->mixw));
-        bio_fread(s->mixw[i][0], sizeof(***s->mixw), n_density * s->n_mixw[i], fh, swap, &chksum);
-    }
-
+    for (i = 0; i < n_feat; ++i)
+        bio_fread(s->mixw[i][0], sizeof(***s->mixw), n_density * n_mixw,
+                  fh, swap, &chksum);
     fclose(fh);
     return 0;
 }
@@ -1365,16 +1354,12 @@ s2_semi_mgau_free(s2_semi_mgau_t * s)
        mmio_file_unmap(s->sendump_mmap);
     }
     else if (s->mixw_map) {
-        for (i = 0; i < s->n_feat; ++i) {
-            ckd_free(s->mixw[i]);
-            ckd_free(s->mixw_map[i]);
-        }
-        ckd_free(s->mixw);
+        ckd_free_3d(s->mixw);
         ckd_free(s->mixw_map);
-        ckd_free(s->n_mixw);
+        ckd_free(s->mixw_score);
     }
     else {
-        ckd_free_3d((void ***)s->mixw);
+        ckd_free_3d(s->mixw);
     }
     for (i = 0; i < s->n_feat; ++i) {
         ckd_free(s->means[i]);

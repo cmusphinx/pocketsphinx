@@ -339,40 +339,6 @@ def writetree_merged(outfile, tree, mixw):
     subtree.tofile(outfile)
     bitpos.tofile(outfile)
 
-def cluster_merged(mixw, dfunc=js_divergence):
-    # Start with each distribution in its own cluster
-    # Each of these is a 4x256 array (or whatever)
-    centroids = [mixw[i,:] for i in range(0,mixw.shape[0])]
-    trees = range(0, len(centroids))
-    # Keep merging until we only have one cluster
-    while len(centroids) > 1:
-        i = 0
-        while i < len(centroids):
-            p = centroids[i]
-            # Evaluate distances for all features
-            dist = numpy.empty((len(centroids), len(p)))
-            for j in range(0, len(p)):
-                qs = numpy.array([x[j] for x in centroids])
-                dist[:,j] = dfunc(p[j], (p[j] + qs) * 0.5)
-            dist = dist.mean(1)
-            # Find the lowest mean distance
-            nbest = dist.argsort()
-            for k, best in enumerate(nbest):
-                if dist[best] > 0:
-                    break
-            q = centroids[best]
-            # Merge these two
-            newcentroid = (p + q) * 0.5
-            print "Merging", i, best, dist[best], len(centroids)
-            newtree = ((trees[i], p), (trees[best], q))
-            centroids[i] = newcentroid
-            trees[i] = newtree
-            # Remove the other one
-            del centroids[best]
-            del trees[best]
-            i = i + 1
-    return trees[0], centroids[0]
-
 def readtree_merged(infile):
     if not isinstance(infile, file):
         infile = open(infile, 'rb')
@@ -420,31 +386,32 @@ def readtree_merged(infile):
             n[0] = (nodes[i + left], nodes[i + right])
     return nodes[0]
 
-def cluster_nary(mixw, dfunc=js_divergence):
+def cluster_merged(mixw, dfunc=js_divergence):
     # Start with each distribution in its own cluster
-    centroids = list(mixw)
+    # Each of these is a 4x256 array (or whatever)
+    centroids = [mixw[i,:] for i in range(0,mixw.shape[0])]
     trees = range(0, len(centroids))
     # Keep merging until we only have one cluster
     while len(centroids) > 1:
         i = 0
         while i < len(centroids):
             p = centroids[i]
-            # Find the lowest cost merge (interpolation)
-            merged = (p + numpy.array(centroids)) * 0.5
-            kl = dfunc(p, merged)
-            nbest = kl.argsort()
+            # Evaluate distances for all features
+            dist = numpy.empty((len(centroids), len(p)))
+            for j in range(0, len(p)):
+                qs = numpy.array([x[j] for x in centroids])
+                dist[:,j] = dfunc(p[j], (p[j] + qs) * 0.5)
+            dist = dist.mean(1)
+            # Find the lowest mean distance
+            nbest = dist.argsort()
             for k, best in enumerate(nbest):
-                if kl[best] > 0:
+                if dist[best] > 0:
                     break
             q = centroids[best]
-            print "Merging", i, best, kl[best], len(centroids)
             # Merge these two
             newcentroid = (p + q) * 0.5
-            # Concatenate ints to existing clusters
-            if isinstance(trees[i], int) and isinstance(trees[best], tuple):
-                newtree = ((trees[i],) + trees[best], newcentroid)
-            else:
-                newtree = ((trees[i], p), (trees[best], q))
+            print "Merging", i, best, dist[best], len(centroids)
+            newtree = ((trees[i], p), (trees[best], q))
             centroids[i] = newcentroid
             trees[i] = newtree
             # Remove the other one
@@ -453,50 +420,24 @@ def cluster_nary(mixw, dfunc=js_divergence):
             i = i + 1
     return trees[0], centroids[0]
 
-def cluster_balanced(mixw, dfunc=js_divergence):
-    # Start with each distribution in its own cluster
-    centroids = mixw
-    trees = range(0, len(centroids))
-    while len(centroids) > 1:
-        newcentroids = []
-        newtrees = []
-        j = 0
-        done = numpy.zeros(len(centroids), 'b')
-        # Find lowest cost merge among not yet seen clusters
-        for i in range(0, len(centroids)):
-            if done[i]:
-                continue
-            done[i] = 1
-            merged = (centroids[i] + centroids) * 0.5
-            kl = dfunc(centroids[i], centroids)
-            nbest = kl.argsort()
-            for k, best in enumerate(nbest):
-                if done[best] == 0:
-                    done[best] = 1
-                    break
-            print "Merging", i, best, kl[best]
-            newclust = (centroids[i] + centroids[best]) * 0.5
-            newtree = ((trees[i], centroids[i]), (trees[best], centroids[best]))
-            newcentroids.append(newclust)
-            newtrees.append(newtree)
-            j = j + 1
-        centroids = numpy.array(newcentroids)
-        trees = newtrees
-    return trees[0], centroids[0]
-
-def prune_mixw(mixw, trees, nclust):
-    for feat, tree in enumerate(trees):
-        leafnodes = prunetree(tree, nclust)
-        for cluster, centroid in leafnodes:
-            for senone in cluster:
-                mixw[senone,feat,:] = centroid
-
-def write_pruned(outfile, mixw, trees, nclust, target=0, minn=0):
+def write_pruned_merged(outfile, tree, nclust):
     if not isinstance(outfile, file):
         outfile = open(outfile, 'wb')
+    # Construct cluster centroids
+    leafnodes = prunetree(tree, nclust)
+    n_sen = max([max(x[0]) for x in leafnodes]) + 1
+    n_feat, n_density = leafnodes[0][1].shape
+    qmixw = []
+    for feat in range(0, n_feat):
+        # Create an array from the centroids and append it to qmixw
+        qmixw.append(numpy.array([x[1][feat] for x in leafnodes]))
+    # Construct senone to cluster mapping
+    senmap = numpy.zeros(n_sen, 'uint16')
+    for i, cluster in enumerate(leafnodes):
+        senmap.put(cluster[0], i)
     # Write header
-    outfile.write("s3\nversion 0.2\nn_sen %d\nn_feat %d\nn_density %d\nlogbase 1.0001\n"
-                  % mixw.shape)
+    outfile.write("s3\nversion 0.4\nn_sen %d\nn_feat %d\nn_mixw %d\nn_density %d\nlogbase 1.0001\n"
+                  % (n_sen, n_feat, len(leafnodes), n_density))
     pos = outfile.tell() + len("endhdr\n")
     # Align to 4 byte boundary with spaces
     align = 4 - (pos & 3)
@@ -504,52 +445,20 @@ def write_pruned(outfile, mixw, trees, nclust, target=0, minn=0):
     outfile.write("endhdr\n")
     byteorder = numpy.array((0x11223344,), 'int32')
     byteorder.tofile(outfile)
-    # Construct clusters and senone to cluster mapping
-    n_mixw, n_feat, n_density = mixw.shape
-    senmap = []
-    qmixw = []
-    for feat, tree in enumerate(trees):
-        leafnodes = prunetree(tree, nclust)
-        # Add each leafnode's senone set to the mapping
-        senmap.append([x[0] for x in leafnodes])
-        # Create an array from the centroids and append it to qmixw
-        qmixw.append(numpy.array([x[1] for x in leafnodes]))
-        # Prune it if requested
-        if target != 0:
-            if minn != 0:
-                pm.prune_mixw_entropy_min(qmixw[feat][numpy.newaxis], target, minn)
-            else:
-                pm.prune_mixw_entropy(qmixw[feat][numpy.newaxis], target)
-    # Write the number of clusters for each feature
-    nclust = numpy.array([len(x) for x in qmixw], 'uint16')
-    nclust.tofile(outfile)
-    # Now write the senone map
-    for feat in senmap:
-        for senones in feat:
-            spam = [len(senones)] + senones
-            smap = numpy.array(spam, 'uint16')
-            smap.tofile(outfile)
-    # And, finally, the clusters themselves
+    # Write the senone map
+    senmap.tofile(outfile)
+    # Write the clusters themselves
     for feat, centroids in enumerate(qmixw):
-        print "feature %d nclust %d" % (feat, len(centroids))
         # Quantize and transpose
         cmixw = quantize_mixw(centroids, 1.0001).T
         cmixw.tofile(outfile)
-
-def prune_mixw_merged(mixw, tree, nclust):
-    leafnodes = prunetree(tree, nclust)
-    for cluster, centroids in leafnodes:
-        for senone in cluster:
-            mixw[senone] = centroids
 
 def norm_floor_mixw(mixw, floor=1e-7):
     return (mixw.T / mixw.T.sum(0)).T.clip(floor, 1.0)
 
 if __name__ == '__main__':
     nclust, mixw, outfile = sys.argv[1:]
-    mixw = s3mixw.open(mixw).getall()
-    # Cluster mixw for each feature stream
-    trees = []
-    for f in range(0, mixw.shape[1]):
-        trees.append(cluster(mixw[:,f,:]))
-    write_pruned(outfile, mixw, trees, nclust)
+    mixw = norm_floor_mixw(s3mixw.open(mixw).getall())
+    # Build merged mixture weight tree
+    tree = cluster_merged(mixw)
+    write_pruned_merged(outfile, tree, nclust)
