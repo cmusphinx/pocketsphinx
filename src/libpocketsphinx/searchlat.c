@@ -556,17 +556,17 @@ build_lattice(int32 bptbl_sz)
         node->lef = bptbl[node->lef].frame;
     }
 
+    /* Change node->wid to base wid if not reporting actual pronunciations. */
+    for (node = latnode_list; node; node = node->next) {
+        if (!altpron)
+            node->wid = g_word_dict->dict_list[node->wid]->wid;
+    }
+
     if ((dumplatdir = cmd_ln_str("-outlatdir")) != NULL) {
         char latfile[1024];
 
         sprintf(latfile, "%s/%s.lat", dumplatdir, uttproc_get_uttid());
         dump_lattice(latfile);
-    }
-
-    /* Change node->wid to base wid if not reporting actual pronunciations. */
-    for (node = latnode_list; node; node = node->next) {
-        if (!altpron)
-            node->wid = g_word_dict->dict_list[node->wid]->wid;
     }
 
     /* Remove SIL and noise nodes from DAG; extend links through them */

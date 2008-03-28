@@ -87,7 +87,8 @@ enum
     PROP_FSG_FILE,
     PROP_S2_FSG,
     PROP_FWDFLAT,
-    PROP_BESTPATH
+    PROP_BESTPATH,
+    PROP_LATDIR
 };
 
 /* Default command line. (will go away soon and be constructed using properties) */
@@ -227,6 +228,13 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                               FALSE,
                               G_PARAM_READWRITE));
 
+    g_object_class_install_property
+        (gobject_class, PROP_LATDIR,
+         g_param_spec_string("latdir", "Lattice Directory",
+                             "Output Directory for Lattices",
+                             NULL,
+                             G_PARAM_READWRITE));
+
     gst_pocketsphinx_signals[SIGNAL_PARTIAL_RESULT] = 
         g_signal_new("partial_result",
                      G_TYPE_FROM_CLASS(klass),
@@ -345,6 +353,9 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     case PROP_BESTPATH:
         gst_pocketsphinx_set_boolean(ps, "-bestpath", value);
         break;
+    case PROP_LATDIR:
+        gst_pocketsphinx_set_string(ps, "-outlatdir", value);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         return;
@@ -373,6 +384,9 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
         break;
     case PROP_BESTPATH:
         g_value_set_boolean(value, cmd_ln_boolean("-bestpath"));
+        break;
+    case PROP_LATDIR:
+        g_value_set_string(value, cmd_ln_str("-outlatdir"));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
