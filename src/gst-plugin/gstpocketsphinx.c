@@ -97,6 +97,7 @@ static char *default_argv[] = {
     "-lm", POCKETSPHINX_PREFIX "/share/pocketsphinx/model/lm/swb/swb.lm.DMP",
     "-dict", POCKETSPHINX_PREFIX "/share/pocketsphinx/model/lm/swb/swb.dic",
     "-samprate", "8000",
+    "-cmn", "prior",
     "-nfft", "256",
     "-fwdflat", "no",
     "-bestpath", "no"
@@ -166,6 +167,7 @@ gst_pocketsphinx_finalize(GObject * gobject)
     g_hash_table_foreach(ps->arghash, string_disposal, NULL);
     g_hash_table_destroy(ps->arghash);
 
+    g_free(ps->last_result);
     GST_CALL_PARENT(G_OBJECT_CLASS, finalize,(gobject));
 }
 
@@ -263,6 +265,7 @@ gst_pocketsphinx_set_string(GstPocketSphinx *ps,
         newstr = NULL;
     if ((oldstr = g_hash_table_lookup(ps->arghash, key)))
         g_free(oldstr);
+    g_print("set_string(%s, %s)\n", key, newstr);
     cmd_ln_set_str(key, newstr);
     g_hash_table_foreach(ps->arghash, (gpointer)key, newstr);
 }
@@ -306,6 +309,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         }
         break;
     case PROP_DICT_FILE:
+        /* FIXME: We actually need to reload the acoustic model here... */
         gst_pocketsphinx_set_string(ps, "-dict", value);
         break;
     case PROP_FSG_FILE:
@@ -399,6 +403,10 @@ gst_pocketsphinx_init(GstPocketSphinx * ps,
 
     gst_element_add_pad(GST_ELEMENT(ps), ps->srcpad);
     gst_pad_use_fixed_caps(ps->srcpad);
+
+    /* Initialize time. */
+    ps->last_result_time = 0;
+    ps->last_result = NULL;
 }
 
 static GstFlowReturn
@@ -416,6 +424,26 @@ gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer)
     }
     uttproc_rawdata((short *)GST_BUFFER_DATA(buffer),
                     GST_BUFFER_SIZE(buffer) / sizeof(short), TRUE);
+
+    /* Get a partial result every now and then, see if it is different. */
+    if (ps->last_result_time == 0
+        /* Check every 100 milliseconds. */
+        || (GST_BUFFER_TIMESTAMP(buffer) - ps->last_result_time) > 100*10*1000) {
+        int32 frm;
+        char *hyp;
+
+        uttproc_partial_result(&frm, &hyp);
+        ps->last_result_time = GST_BUFFER_TIMESTAMP(buffer);
+        if (hyp && strlen(hyp) > 0) {
+            if (ps->last_result == NULL || 0 != strcmp(ps->last_result, hyp)) {
+                g_free(ps->last_result);
+                ps->last_result = g_strdup(hyp);
+                /* Emit a signal for applications. */
+                g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_PARTIAL_RESULT],
+                              0, hyp);
+            }
+        }
+    }
     return GST_FLOW_OK;
 }
 
@@ -447,6 +475,8 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
         ps->listening = FALSE;
         uttproc_end_utt();
         uttproc_result(&frm, &hyp, TRUE);
+        /* Emit a signal for applications. */
+        g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_RESULT], 0, hyp);
         /* Forward this result in a buffer. */
         buffer = gst_buffer_new_and_alloc(strlen(hyp) + 1);
         strcpy((char *)GST_BUFFER_DATA(buffer), hyp);

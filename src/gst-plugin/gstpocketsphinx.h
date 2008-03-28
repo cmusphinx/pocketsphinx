@@ -68,6 +68,9 @@ struct _GstPocketSphinx
     GHashTable *arghash;
     gboolean inited;
     gboolean listening;
+
+    GstClockTime last_result_time; /**< Timestamp of last partial result. */
+    char *last_result;             /**< String of last partial result. */
 };
 
 struct _GstPocketSphinxClass 
