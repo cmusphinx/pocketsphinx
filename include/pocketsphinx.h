@@ -61,6 +61,16 @@ extern "C" {
 typedef struct pocketsphinx_s pocketsphinx_t;
 
 /**
+ * PocketSphinx N-best hypothesis iterator object.
+ */
+typedef struct ps_nbest_s ps_nbest_t;
+
+/**
+ * PocketSphinx segmentation iterator object.
+ */
+typedef struct ps_seg_s ps_seg_t;
+
+/**
  * Initialize the decoder from a configuration object.
  *
  * @note The decoder retains ownership of the pointer
@@ -91,6 +101,9 @@ cmd_ln_t *pocketsphinx_get_config(pocketsphinx_t *ps);
 
 /**
  * Load a finite-state grammar (FSG or JSGF format).
+ *
+ * FIXME: Actually this functionality will be in SphinxBase, the only
+ * thing necessary is that we have an FSG switching capability here.
  *
  * The type of file will be auto-detected based on the file contents.
  *
@@ -157,7 +170,7 @@ int pocketsphinx_process_raw(pocketsphinx_t *ps,
  */
 int pocketsphinx_process_cep(pocketsphinx_t *ps,
                              mfcc_t **data,
-                             int32 n_frames,
+                             int n_frames,
                              int no_search,
                              int full_utt);
 
@@ -174,6 +187,61 @@ int pocketsphinx_end_utt(pocketsphinx_t *ps);
  *         decoding.  NULL if no hypothesis is available.
  */
 char const *pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score);
+
+/**
+ * Get an iterator over the word segmentation for the best hypothesis.
+ *
+ * @param out_best_score Output: path score corresponding to hypothesis.
+ * @return Iterator over the best hypothesis at this point in
+ *         decoding.  NULL if no hypothesis is available.
+ */
+ps_seg_t *pocketsphinx_seg_iter(pocketsphinx_t *ps, int32 *out_best_score);
+
+/**
+ * Get the next segment in a word segmentation.
+ *
+ * @return Updated iterator with the next segment.  NULL at end of
+ *         utterance (the iterator will be freed in this case).
+ */
+ps_seg_t *pocketsphinx_seg_next(ps_seg_t *seg);
+
+/**
+ * Finish iterating over a word segmentation early, freeing resources.
+ */
+void pocketsphinx_seg_free(ps_seg_t *seg);
+
+/**
+ * Get an iterator over the best hypotheses, optionally within a
+ * selected region of the utterance.
+ *
+ * @param sf Start frame for N-best search (0 for whole utterance) 
+ * @param ef End frame for N-best search (-1 for whole utterance) 
+ * @param ctx1 First word of trigram context (NULL for whole utterance)
+ * @param ctx2 First word of trigram context (NULL for whole utterance)
+ */
+ps_nbest_t *pocketsphinx_nbest(pocketsphinx_t *ps, int sf, int ef,
+			       char const *ctx1, char const *ctx2);
+
+/**
+ * Get the next best hypothesis string in an N-best list.
+ *
+ * @return String containing next best hypothesis.  NULL if no more
+ * hypotheses are available (iterator will be freed in this case).
+ */
+char const *pocketsphinx_nbest_next(ps_nbest_t *nbest);
+
+/**
+ * Get the next best word segmentation in an N-best list.
+ *
+ * @return Iterator over the next best hypothesis.  NULL if no more
+ * hypotheses are available (iterator will be freed in this case).
+ */
+ps_seg_t *pocketsphinx_nbest_next_seg(ps_nbest_t *nbest);
+
+/**
+ * Finish N-best search early, releasing resources.
+ */
+void pocketsphinx_nbest_free(ps_nbest_t *nbest);
 
 /**
  * Get performance information for the current utterance.
