@@ -197,7 +197,7 @@ class LiveDemo(object):
         self.window.add(vbox)
 
         # Create ASR pipeline
-        self.pipeline = gst.parse_launch('gconfaudiosrc ! vader name=vad ! audioresample '
+        self.pipeline = gst.parse_launch('gconfaudiosrc ! audioresample ! vader name=vad '
                                          + '! audioconvert ! pocketsphinx name=asr ! fakesink')
         asr = self.pipeline.get_by_name('asr')
         asr.set_property('maxhmmpf', 500)
