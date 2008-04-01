@@ -67,6 +67,7 @@
 
 #include "gstpocketsphinx.h"
 #include "gstvader.h"
+#include "psmarshal.h"
 
 GST_DEBUG_CATEGORY_STATIC(pocketsphinx_debug);
 #define GST_CAT_DEFAULT pocketsphinx_debug
@@ -265,9 +266,9 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                      G_SIGNAL_RUN_LAST,
                      G_STRUCT_OFFSET(GstPocketSphinxClass, partial_result),
                      NULL, NULL,
-                     gst_marshal_VOID__STRING,
+                     ps_marshal_VOID__STRING_STRING,
                      G_TYPE_NONE,
-                     1, G_TYPE_STRING
+                     2, G_TYPE_STRING, G_TYPE_STRING
             );
 
     gst_pocketsphinx_signals[SIGNAL_RESULT] = 
@@ -276,9 +277,9 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                      G_SIGNAL_RUN_LAST,
                      G_STRUCT_OFFSET(GstPocketSphinxClass, result),
                      NULL, NULL,
-                     gst_marshal_VOID__STRING,
+                     ps_marshal_VOID__STRING_STRING,
                      G_TYPE_NONE,
-                     1, G_TYPE_STRING
+                     2, G_TYPE_STRING, G_TYPE_STRING
             );
 
     GST_DEBUG_CATEGORY_INIT(pocketsphinx_debug, "pocketsphinx", 0,
@@ -503,7 +504,7 @@ gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer)
                 ps->last_result = g_strdup(hyp);
                 /* Emit a signal for applications. */
                 g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_PARTIAL_RESULT],
-                              0, hyp);
+                              0, hyp, uttproc_get_uttid());
             }
         }
     }
@@ -543,7 +544,8 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
         }
         if (hyp) {
             /* Emit a signal for applications. */
-            g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_RESULT], 0, hyp);
+            g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_RESULT],
+                          0, hyp, uttproc_get_uttid());
             /* Forward this result in a buffer. */
             buffer = gst_buffer_new_and_alloc(strlen(hyp) + 1);
             strcpy((char *)GST_BUFFER_DATA(buffer), hyp);

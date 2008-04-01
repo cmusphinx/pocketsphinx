@@ -13,6 +13,7 @@ __author__ = "David Huggins-Daines <dhuggins@cs.cmu.edu>"
 # System imports
 import sys
 
+# GTK+ and GStreamer
 import pygtk
 pygtk.require('2.0')
 import gobject
@@ -25,7 +26,7 @@ gobject.threads_init()
 import gst
 
 class SpeechResult(gtk.DrawingArea):
-    def __init__(self, fontsize=24):
+    def __init__(self, fontsize=24, voffset=100):
         gtk.DrawingArea.__init__(self)
         self.connect("expose_event", self.expose)
         self.layout = pango.Layout(self.get_pango_context())
@@ -36,24 +37,23 @@ class SpeechResult(gtk.DrawingArea):
         self.layout.set_font_description(self.desc)
         self.layout.set_text("This is a test")
         ink, log = self.layout.get_pixel_extents()
-        self.set_size_request(log[2], log[3])
+        self.set_size_request(log[2], voffset * 2 + log[3])
+        self.voffset = voffset
         self.layout.set_text("")
 
     def set_hyp(self, hyp):
         # Invalidate the previous hypothesis' extents
         rect = self.get_allocation()
         ink, log = self.layout.get_pixel_extents()
-        self.queue_draw_area(ink[0] + rect.x, ink[1] + rect.y,
+        self.queue_draw_area(ink[0] + rect.x, self.voffset + ink[1] + rect.y,
                              ink[2], ink[3])
         self.layout.set_text(hyp)
-        # Try to expand this widget's size if needed
-        if log[2] > rect.width or log[3] > rect.height:
-            width = max(log[2], rect.width)
-            height = max(log[3], rect.height)
-            self.set_size_request(width, height)
+        # Stretch or shrink this widget horizontally to fit hypothesis
+        if log[2] != rect.width:
+            self.set_size_request(log[2], rect.height)
         # Invalidate the new hypothesis' extents
         ink, log = self.layout.get_pixel_extents()
-        self.queue_draw_area(ink[0] + rect.x, ink[1] + rect.y,
+        self.queue_draw_area(ink[0] + rect.x, self.voffset + ink[1] + rect.y,
                              ink[2], ink[3])
 
     def expose(self, widget, event):
@@ -69,7 +69,7 @@ class SpeechResult(gtk.DrawingArea):
         context.fill()
         # Display updated hypothesis in black
         context.set_source_rgb(0,0,0)
-        context.move_to(rect.x, rect.y)
+        context.move_to(rect.x, self.voffset + rect.y)
         context.show_layout(self.layout)
         return True
 
@@ -185,7 +185,8 @@ class LiveDemo(object):
         # Add a result area and dragport
         self.result = SpeechResult()
         scroll = KineticDragPort()
-        scroll.set_size_request(600, 200)
+        w, h = self.result.get_size_request()
+        scroll.set_size_request(600, h)
         scroll.add(self.result)
 
         # And a push to talk button
@@ -200,9 +201,6 @@ class LiveDemo(object):
         self.pipeline = gst.parse_launch('gconfaudiosrc ! audioresample ! vader name=vad '
                                          + '! audioconvert ! pocketsphinx name=asr ! fakesink')
         asr = self.pipeline.get_by_name('asr')
-        asr.set_property('maxhmmpf', 500)
-        asr.set_property('maxwpf', 5)
-        asr.set_property('dsratio', 2)
 
         # Connect some signal handlers to ASR signals (will use the bus to forward them)
         asr.connect('partial_result', self.asr_partial_result)
@@ -257,20 +255,22 @@ class LiveDemo(object):
         # Ignore the timestamp for now because gst-python is buggy
         vader.post_message(gst.message_new_application(vader, struct))
 
-    def asr_partial_result(self, asr, text):
+    def asr_partial_result(self, asr, text, uttid):
         """
         Forward partial result signals on the bus to the main thread.
         """
         struct = gst.Structure('partial_result')
         struct.set_value('hyp', text)
+        struct.set_value('uttid', uttid)
         asr.post_message(gst.message_new_application(asr, struct))
 
-    def asr_result(self, asr, text):
+    def asr_result(self, asr, text, uttid):
         """
         Forward result signals on the bus to the main thread.
         """
         struct = gst.Structure('result')
         struct.set_value('hyp', text)
+        struct.set_value('uttid', uttid)
         asr.post_message(gst.message_new_application(asr, struct))
 
 d = LiveDemo()
