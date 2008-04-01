@@ -75,9 +75,6 @@ struct _GstVader
     gint threshold_level;         /**< Silence threshold level (Q15, adaptive). */
     guint64 threshold_length;     /**< Minimum silence for cutting, in nanoseconds. */
     guint64 pre_length;           /**< Pre-buffer to add on silence->speech transition. */
-
-    gint max_sample;              /**< maximum sample value of data */
-    gint width;                   /**< bit width of data */
 };
 
 struct _GstVaderClass
