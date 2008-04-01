@@ -36,7 +36,7 @@ main(int argc, char *argv[])
 	GMainLoop *loop;
 	GError *err;
 	GstElement *pipeline;
-	GstElement *src, *resamp, *filter, *sink;
+	GstElement *src, *resamp, *filter, *vader, *sink;
 	GstCaps *caps;
 	GstBus *bus;
 
@@ -58,15 +58,17 @@ main(int argc, char *argv[])
 		return 1;
 	}
 	resamp = gst_element_factory_make("audioresample", "resampler");
+	vader = gst_element_factory_make("vader", "vad");
 	filter = gst_element_factory_make("pocketsphinx", "asr");
 	g_object_set(G_OBJECT(filter), "hmm", MODELDIR "/hmm/wsj1", NULL);
 	g_object_set(G_OBJECT(filter), "lm", MODELDIR "/lm/turtle/turtle.lm.DMP", NULL);
 	g_object_set(G_OBJECT(filter), "dict", MODELDIR "/lm/turtle/turtle.dic", NULL);
 	sink = gst_element_factory_make("fakesink", "sink");
 	gst_bin_add_many(GST_BIN(pipeline),
-			 src, resamp, filter, sink, NULL);
+			 src, resamp, vader, filter, sink, NULL);
 	gst_element_link_filtered(src, resamp, caps);
-	gst_element_link(resamp, filter);
+	gst_element_link(resamp, vader);
+	gst_element_link(vader, filter);
 	gst_element_link(filter, sink);
 
 	bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));

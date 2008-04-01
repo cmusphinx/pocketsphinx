@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* GStreamer
  * Copyright (C) <1999> Erik Walthinsen <omega@cse.ogi.edu>
  *
@@ -29,57 +30,59 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+#if 0
+}
+#endif
 
-
-#define GST_TYPE_VADER \
-  (gst_vader_get_type())
-#define GST_VADER(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_VADER,GstVader))
-#define GST_VADER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_VADER,GstVaderClass))
-#define GST_IS_VADER(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_VADER))
-#define GST_IS_VADER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_VADER))
+#define GST_TYPE_VADER				\
+    (gst_vader_get_type())
+#define GST_VADER(obj)                                          \
+    (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_VADER,GstVader))
+#define GST_VADER_CLASS(klass)						\
+    (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_VADER,GstVaderClass))
+#define GST_IS_VADER(obj)                               \
+    (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_VADER))
+#define GST_IS_VADER_CLASS(klass)                       \
+    (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_VADER))
 
 /* Custom events inserted in the stream at start and stop of cuts. */
-#define GST_EVENT_VADER_START \
-	GST_EVENT_MAKE_TYPE(146, GST_EVENT_TYPE_DOWNSTREAM | GST_EVENT_TYPE_SERIALIZED)
-#define GST_EVENT_VADER_STOP \
-	GST_EVENT_MAKE_TYPE(147, GST_EVENT_TYPE_DOWNSTREAM | GST_EVENT_TYPE_SERIALIZED)
+#define GST_EVENT_VADER_START						\
+    GST_EVENT_MAKE_TYPE(146, GST_EVENT_TYPE_DOWNSTREAM | GST_EVENT_TYPE_SERIALIZED)
+#define GST_EVENT_VADER_STOP						\
+    GST_EVENT_MAKE_TYPE(147, GST_EVENT_TYPE_DOWNSTREAM | GST_EVENT_TYPE_SERIALIZED)
 
 typedef struct _GstVader GstVader;
 typedef struct _GstVaderClass GstVaderClass;
 
+#define VADER_WINDOW 5
+
 struct _GstVader
 {
-  GstElement element;
+    GstElement element;
 
-  GstPad *sinkpad, *srcpad;
+    GstPad *sinkpad, *srcpad;
 
-  double threshold_level;       /* level below which to cut */
-  double threshold_length;      /* how long signal has to remain
-                                 * below this level before cutting */
+    gboolean window[VADER_WINDOW];/**< Voting window of speech/silence decisions. */
+    gboolean silent;		  /**< Current state of the filter. */
+    gboolean silent_prev;	  /**< Previous state of the filter. */
+    GList *pre_buffer;            /**< list of GstBuffers in pre-record buffer */
+    guint64 silent_run_length;    /**< How much silence have we endured so far? */
+    guint64 pre_run_length;       /**< How much pre-silence have we endured so far? */
 
-  double silent_run_length;     /* how long has it been below threshold ? */
-  gboolean silent;
-  gboolean silent_prev;
+    gint threshold_level;         /**< Silence threshold level (Q15, adaptive). */
+    guint64 threshold_length;     /**< Minimum silence for cutting, in nanoseconds. */
+    guint64 pre_length;           /**< Pre-buffer to add on silence->speech transition. */
 
-  double pre_length;            /* how long can the pre-record buffer be ? */
-  double pre_run_length;        /* how long is it currently ? */
-  GList *pre_buffer;            /* list of GstBuffers in pre-record buffer */
-  gboolean leaky;               /* do we leak an overflowing prebuffer ? */
-
-  gboolean have_caps;           /* did we get the needed caps yet ? */
-  gint width;                   /* bit width of data */
-  long max_sample;              /* maximum sample value */
+    gboolean have_caps;           /**< did we get the needed caps yet ? */
+    gint max_sample;              /**< maximum sample value of data */
+    gint width;                   /**< bit width of data */
 };
 
 struct _GstVaderClass
 {
-  GstElementClass parent_class;
-  void (*cut_start) (GstVader* filter);
-  void (*cut_stop) (GstVader* filter);
+    GstElementClass parent_class;
+    void (*cut_start) (GstVader* filter);
+    void (*cut_stop) (GstVader* filter);
 };
 
 GType gst_vader_get_type (void);
