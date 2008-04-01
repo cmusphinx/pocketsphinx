@@ -88,7 +88,10 @@ enum
     PROP_S2_FSG,
     PROP_FWDFLAT,
     PROP_BESTPATH,
-    PROP_LATDIR
+    PROP_MAXHMMPF,
+    PROP_MAXWPF,
+    PROP_DSRATIO,
+    PROP_LATDIR,
 };
 
 /* Default command line. (will go away soon and be constructed using properties) */
@@ -101,7 +104,9 @@ static char *default_argv[] = {
     "-cmn", "prior",
     "-nfft", "256",
     "-fwdflat", "no",
-    "-bestpath", "no"
+    "-bestpath", "no",
+    "-maxhmmpf", "1000",
+    "-maxwpf", "10"
 };
 static const int default_argc = sizeof(default_argv)/sizeof(default_argv[0]);
 
@@ -235,6 +240,25 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                              NULL,
                              G_PARAM_READWRITE));
 
+    g_object_class_install_property
+        (gobject_class, PROP_MAXHMMPF,
+         g_param_spec_int("maxhmmpf", "Maximum HMMs per frame",
+                          "Maximum number of HMMs searched per frame",
+                          1, 100000, 1000,
+                          G_PARAM_READWRITE));
+    g_object_class_install_property
+        (gobject_class, PROP_MAXWPF,
+         g_param_spec_int("maxwpf", "Maximum words per frame",
+                          "Maximum number of words searched per frame",
+                          1, 100000, 10,
+                          G_PARAM_READWRITE));
+    g_object_class_install_property
+        (gobject_class, PROP_DSRATIO,
+         g_param_spec_int("dsratio", "Frame downsampling ratio",
+                          "Evaluate acoustic model every N frames",
+                          1, 10, 1,
+                          G_PARAM_READWRITE));
+
     gst_pocketsphinx_signals[SIGNAL_PARTIAL_RESULT] = 
         g_signal_new("partial_result",
                      G_TYPE_FROM_CLASS(klass),
@@ -276,6 +300,13 @@ gst_pocketsphinx_set_string(GstPocketSphinx *ps,
     g_print("set_string(%s, %s)\n", key, newstr);
     cmd_ln_set_str(key, newstr);
     g_hash_table_foreach(ps->arghash, (gpointer)key, newstr);
+}
+
+static void
+gst_pocketsphinx_set_int(GstPocketSphinx *ps,
+                             const gchar *key, const GValue *value)
+{
+    cmd_ln_set_int32(key, g_value_get_int(value));
 }
 
 static void
@@ -356,6 +387,15 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     case PROP_LATDIR:
         gst_pocketsphinx_set_string(ps, "-outlatdir", value);
         break;
+    case PROP_MAXHMMPF:
+        gst_pocketsphinx_set_int(ps, "-maxhmmpf", value);
+        break;
+    case PROP_MAXWPF:
+        gst_pocketsphinx_set_int(ps, "-maxwpf", value);
+        break;
+    case PROP_DSRATIO:
+        gst_pocketsphinx_set_int(ps, "-dsratio", value);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         return;
@@ -387,6 +427,15 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
         break;
     case PROP_LATDIR:
         g_value_set_string(value, cmd_ln_str("-outlatdir"));
+        break;
+    case PROP_MAXHMMPF:
+        g_value_set_int(value, cmd_ln_int32("-maxhmmpf"));
+        break;
+    case PROP_MAXWPF:
+        g_value_set_int(value, cmd_ln_int32("-maxwpf"));
+        break;
+    case PROP_DSRATIO:
+        g_value_set_int(value, cmd_ln_int32("-dsratio"));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -489,14 +538,16 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
         ps->listening = FALSE;
         uttproc_end_utt();
         uttproc_result(&frm, &hyp, TRUE);
-        /* Emit a signal for applications. */
-        g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_RESULT], 0, hyp);
-        /* Forward this result in a buffer. */
-        buffer = gst_buffer_new_and_alloc(strlen(hyp) + 1);
-        strcpy((char *)GST_BUFFER_DATA(buffer), hyp);
-        GST_BUFFER_TIMESTAMP(buffer) = GST_EVENT_TIMESTAMP(event);
-        gst_buffer_set_caps(buffer, GST_PAD_CAPS(ps->srcpad));
-        gst_pad_push(ps->srcpad, buffer);
+        if (hyp) {
+            /* Emit a signal for applications. */
+            g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_RESULT], 0, hyp);
+            /* Forward this result in a buffer. */
+            buffer = gst_buffer_new_and_alloc(strlen(hyp) + 1);
+            strcpy((char *)GST_BUFFER_DATA(buffer), hyp);
+            GST_BUFFER_TIMESTAMP(buffer) = GST_EVENT_TIMESTAMP(event);
+            gst_buffer_set_caps(buffer, GST_PAD_CAPS(ps->srcpad));
+            gst_pad_push(ps->srcpad, buffer);
+        }
 
         /* Forward this event. */
         return gst_pad_event_default(pad, event);
