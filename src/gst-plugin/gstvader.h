@@ -80,8 +80,8 @@ struct _GstVader
 struct _GstVaderClass
 {
     GstElementClass parent_class;
-    void (*cut_start) (GstVader* filter);
-    void (*cut_stop) (GstVader* filter);
+    void (*vader_start) (GstVader* filter);
+    void (*vader_stop) (GstVader* filter);
 };
 
 GType gst_vader_get_type (void);

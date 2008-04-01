@@ -70,6 +70,15 @@ static GstStaticPadTemplate vader_sink_factory =
 
 enum
 {
+    SIGNAL_VADER_START,
+    SIGNAL_VADER_STOP,
+    LAST_SIGNAL
+};
+
+static guint gst_vader_signals[LAST_SIGNAL];
+
+enum
+{
     PROP_0,
     PROP_THRESHOLD,
     PROP_RUN_LENGTH,
@@ -119,11 +128,33 @@ gst_vader_class_init(GstVaderClass * klass)
          g_param_spec_uint64("run-length", "Run length",
                              "Length of drop below threshold before cut_stop (in nanoseconds)",
                              0, G_MAXUINT64, (guint64)(0.5 * GST_SECOND), G_PARAM_READWRITE));
-  g_object_class_install_property
-      (G_OBJECT_CLASS(klass), PROP_PRE_LENGTH,
-       g_param_spec_uint64("pre-length", "Pre-recording buffer length",
-                           "Length of pre-recording buffer (in nanoseconds)",
-                           0, G_MAXUINT64, (guint64)(0.5 * GST_SECOND), G_PARAM_READWRITE));
+    g_object_class_install_property
+        (G_OBJECT_CLASS(klass), PROP_PRE_LENGTH,
+         g_param_spec_uint64("pre-length", "Pre-recording buffer length",
+                             "Length of pre-recording buffer (in nanoseconds)",
+                             0, G_MAXUINT64, (guint64)(0.5 * GST_SECOND), G_PARAM_READWRITE));
+
+    gst_vader_signals[SIGNAL_VADER_START] = 
+        g_signal_new("vader_start",
+                     G_TYPE_FROM_CLASS(klass),
+                     G_SIGNAL_RUN_LAST,
+                     G_STRUCT_OFFSET(GstVaderClass, vader_start),
+                     NULL, NULL,
+                     gst_marshal_VOID__INT64,
+                     G_TYPE_NONE,
+                     1, G_TYPE_UINT64
+            );
+
+    gst_vader_signals[SIGNAL_VADER_STOP] = 
+        g_signal_new("vader_stop",
+                     G_TYPE_FROM_CLASS(klass),
+                     G_SIGNAL_RUN_LAST,
+                     G_STRUCT_OFFSET(GstVaderClass, vader_stop),
+                     NULL, NULL,
+                     gst_marshal_VOID__INT64,
+                     G_TYPE_NONE,
+                     1, G_TYPE_UINT64
+            );
 
     GST_DEBUG_CATEGORY_INIT(vader_debug, "vader", 0, "Voice Activity Detection");
 }
@@ -331,16 +362,26 @@ gst_vader_chain(GstPad * pad, GstBuffer * buf)
             gst_element_post_message(GST_ELEMENT(filter), m);
             /* Insert a custom event in the stream to mark the end of a cut. */
             gst_pad_push_event(filter->srcpad, e);
+            /* FIXME: That event's timestamp is wrong... as is this one. */
+            g_signal_emit(filter, gst_vader_signals[SIGNAL_VADER_STOP],
+                          0, GST_BUFFER_TIMESTAMP(buf));
         } else {
             /* Silence to sound transition. */
+            GstClockTime ts = GST_BUFFER_TIMESTAMP(buf);
             gint count = 0;
-            GstMessage *m =
-                gst_vader_message_new(filter, TRUE, GST_BUFFER_TIMESTAMP(buf));
-            GstEvent *e =
-                gst_vader_event_new(filter, GST_EVENT_VADER_START, GST_BUFFER_TIMESTAMP(buf));
+            GstMessage *m;
+            GstEvent *e;
 
             GST_DEBUG_OBJECT(filter, "signaling CUT_START");
-            /* FIXME: Actually emit a signal :) */
+            /* Use the first pre_buffer's timestamp for the signal if possible. */
+            if (filter->pre_buffer) {
+                prebuf = (g_list_first(filter->pre_buffer))->data;
+                ts = GST_BUFFER_TIMESTAMP(prebuf);
+            }
+            g_signal_emit(filter, gst_vader_signals[SIGNAL_VADER_START],
+                          0, ts);
+            m = gst_vader_message_new(filter, TRUE, ts);
+            e = gst_vader_event_new(filter, GST_EVENT_VADER_START, ts);
             gst_element_post_message(GST_ELEMENT(filter), m);
             /* Insert a custom event in the stream to mark the beginning of a cut. */
             gst_pad_push_event(filter->srcpad, e);
