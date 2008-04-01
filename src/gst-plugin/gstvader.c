@@ -220,7 +220,7 @@ compute_normed_power(gint16 *in_data, guint num_samples)
  *
  * Therefore the factor 2^{0.5y_{remainder}) - 1 can be stored in a
  * table.  Since 0 <= y_{remainder} < 2, this table has size 2^N -
- * 2^{N-1} for some value of N (7 is a pretty good one...)
+ * 2^{N-2} for some value of N (7 is a pretty good one...)
  */
 #define REMTAB_SIZE 96
 static const guint16 remtab[REMTAB_SIZE] = {
@@ -274,14 +274,6 @@ gst_vader_chain(GstPad * pad, GstBuffer * buf)
     filter = GST_VADER(GST_OBJECT_PARENT(pad));
     g_return_val_if_fail(filter != NULL, GST_FLOW_ERROR);
     g_return_val_if_fail(GST_IS_VADER(filter), GST_FLOW_ERROR);
-
-    /* FIXME: Not sure I understand why this is needed. */
-    if (!filter->have_caps) {
-        GstCaps *caps = gst_pad_get_caps(pad);
-
-        filter->have_caps = TRUE;
-        gst_caps_unref(caps);
-    }
 
     in_data = (gint16 *) GST_BUFFER_DATA(buf);
     num_samples = GST_BUFFER_SIZE(buf) / 2;

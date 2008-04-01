@@ -54,6 +54,9 @@ extern "C" {
 typedef struct _GstVader GstVader;
 typedef struct _GstVaderClass GstVaderClass;
 
+/* Maximum frame size over which VAD is calculated. */
+#define VADER_FRAME 512
+/* Number of frames over which to vote on speech/non-speech decision. */
 #define VADER_WINDOW 5
 
 struct _GstVader
@@ -73,7 +76,6 @@ struct _GstVader
     guint64 threshold_length;     /**< Minimum silence for cutting, in nanoseconds. */
     guint64 pre_length;           /**< Pre-buffer to add on silence->speech transition. */
 
-    gboolean have_caps;           /**< did we get the needed caps yet ? */
     gint max_sample;              /**< maximum sample value of data */
     gint width;                   /**< bit width of data */
 };

@@ -206,6 +206,21 @@ ps_seg_t *pocketsphinx_seg_iter(pocketsphinx_t *ps, int32 *out_best_score);
 ps_seg_t *pocketsphinx_seg_next(ps_seg_t *seg);
 
 /**
+ * Get word string from a segmentation iterator.
+ */
+char const *pocketsphinx_seg_word(ps_seg_t *seg);
+
+/**
+ * Get start and end frames from a segmentation iterator.
+ */
+void pocketsphinx_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef);
+
+/**
+ * Get posterior probability from a segmentation iterator
+ */
+void pocketsphinx_seg_prob(ps_seg_t *seg, float32 *out_pprob);
+
+/**
  * Finish iterating over a word segmentation early, freeing resources.
  */
 void pocketsphinx_seg_free(ps_seg_t *seg);
