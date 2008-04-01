@@ -535,9 +535,12 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
         int32 frm;
         char *hyp;
 
-        ps->listening = FALSE;
-        uttproc_end_utt();
-        uttproc_result(&frm, &hyp, TRUE);
+        hyp = NULL;
+        if (ps->listening) {
+            ps->listening = FALSE;
+            uttproc_end_utt();
+            uttproc_result(&frm, &hyp, TRUE);
+        }
         if (hyp) {
             /* Emit a signal for applications. */
             g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_RESULT], 0, hyp);

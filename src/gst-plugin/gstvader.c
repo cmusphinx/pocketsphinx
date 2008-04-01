@@ -148,8 +148,6 @@ gst_vader_init(GstVader * filter, GstVaderClass * g_class)
     filter->pre_length = (guint64)(0.5 * GST_SECOND);
     filter->pre_run_length = 0;
 
-    filter->have_caps = FALSE;
-
     gst_element_add_pad(GST_ELEMENT(filter), filter->sinkpad);
     gst_pad_set_chain_function(filter->sinkpad, gst_vader_chain);
     gst_pad_use_fixed_caps(filter->sinkpad);
@@ -278,40 +276,46 @@ gst_vader_chain(GstPad * pad, GstBuffer * buf)
     in_data = (gint16 *) GST_BUFFER_DATA(buf);
     num_samples = GST_BUFFER_SIZE(buf) / 2;
 
-    /* Divide buffer into reasonably sized parts. */
-    power = compute_normed_power(in_data, num_samples);
-
     filter->silent_prev = filter->silent;
-    /* Shift back window values. */
-    memmove(filter->window, filter->window + 1,
-            (VADER_WINDOW - 1) * sizeof(*filter->window));
 
-    /* Decide if this buffer is silence or not. */
-    rms = fixpoint_sqrt_q15(power);
-    if (rms > filter->threshold_level)
-        filter->window[VADER_WINDOW-1] = TRUE;
-    else
-        filter->window[VADER_WINDOW-1] = FALSE;
+    /* Divide buffer into reasonably sized parts. */
+    for (i = 0; i < num_samples; i += VADER_FRAME) {
+        gint frame_len, j;
 
-    /* Vote on whether we have entered a region of non-silence. */
-    vote = 0;
-    for (i = 0; i < VADER_WINDOW; ++i)
-        vote += filter->window[i];
-    GST_DEBUG_OBJECT(filter,
-                     "num_samples %d rms power %d vote %d\n", num_samples, rms, vote);
+        frame_len = MIN(num_samples - i, VADER_FRAME);
+        power = compute_normed_power(in_data + i, frame_len);
 
-    if (vote > VADER_WINDOW / 2) {
-        filter->silent_run_length = 0;
-        filter->silent = FALSE;
+        /* Shift back window values. */
+        memmove(filter->window, filter->window + 1,
+                (VADER_WINDOW - 1) * sizeof(*filter->window));
+
+        /* Decide if this buffer is silence or not. */
+        rms = fixpoint_sqrt_q15(power);
+        if (rms > filter->threshold_level)
+            filter->window[VADER_WINDOW-1] = TRUE;
+        else
+            filter->window[VADER_WINDOW-1] = FALSE;
+
+        /* Vote on whether we have entered a region of non-silence. */
+        vote = 0;
+        for (j = 0; j < VADER_WINDOW; ++j)
+            vote += filter->window[j];
+        GST_DEBUG_OBJECT(filter,
+                         "frame_len %d rms power %d vote %d\n", frame_len, rms, vote);
+
+        if (vote > VADER_WINDOW / 2) {
+            filter->silent_run_length = 0;
+            filter->silent = FALSE;
+        }
+        else {
+            filter->silent_run_length
+                += gst_audio_duration_from_pad_buffer(filter->sinkpad, buf);
+        }
+
+        if (filter->silent_run_length > filter->threshold_length)
+            /* it has been silent long enough, flag it */
+            filter->silent = TRUE;
     }
-    else {
-        filter->silent_run_length
-            += gst_audio_duration_from_pad_buffer(filter->sinkpad, buf);
-    }
-
-    if (filter->silent_run_length > filter->threshold_length)
-        /* it has been silent long enough, flag it */
-        filter->silent = TRUE;
 
     /* has the silent status changed ? if so, send right signal
      * and, if from silent -> not silent, flush pre_record buffer
