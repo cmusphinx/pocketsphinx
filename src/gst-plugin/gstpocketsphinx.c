@@ -550,6 +550,7 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
             buffer = gst_buffer_new_and_alloc(strlen(hyp) + 2);
             strcpy((char *)GST_BUFFER_DATA(buffer), hyp);
             GST_BUFFER_DATA(buffer)[strlen(hyp)] = '\n';
+            GST_BUFFER_DATA(buffer)[strlen(hyp)+1] = '\0';
             GST_BUFFER_TIMESTAMP(buffer) = GST_EVENT_TIMESTAMP(event);
             gst_buffer_set_caps(buffer, GST_PAD_CAPS(ps->srcpad));
             gst_pad_push(ps->srcpad, buffer);

@@ -60,6 +60,7 @@ static GstStaticPadTemplate vader_sink_factory =
                             GST_PAD_SINK,
                             GST_PAD_ALWAYS,
                             GST_STATIC_CAPS("audio/x-raw-int, "
+                                            /* FIXME: Actually we want this to be negotiable... */
                                             "rate = (int) 8000, "
                                             "channels = (int) 1, "
                                             "endianness = (int) BYTE_ORDER, "
