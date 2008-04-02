@@ -81,6 +81,7 @@ enum
 {
     PROP_0,
     PROP_THRESHOLD,
+    PROP_AUTO_THRESHOLD,
     PROP_RUN_LENGTH,
     PROP_PRE_LENGTH
 };
@@ -123,6 +124,11 @@ gst_vader_class_init(GstVaderClass * klass)
          g_param_spec_double("threshold", "Threshold",
                              "Volume threshold for speech/silence decision",
                              -1.0, 1.0, 256.0/32768.0, G_PARAM_READWRITE));
+    g_object_class_install_property
+        (G_OBJECT_CLASS(klass), PROP_AUTO_THRESHOLD,
+         g_param_spec_boolean("auto-threshold", "Automatic Threshold",
+                             "Set speech/silence threshold automatically",
+                             FALSE, G_PARAM_READWRITE));
     g_object_class_install_property
         (G_OBJECT_CLASS(klass), PROP_RUN_LENGTH,
          g_param_spec_uint64("run-length", "Run length",
@@ -169,6 +175,10 @@ gst_vader_init(GstVader * filter, GstVaderClass * g_class)
 
     filter->threshold_level = 256;
     filter->threshold_length = (guint64)(0.5 * GST_SECOND);
+    filter->auto_threshold = FALSE;
+    filter->silence_mean = 0;
+    filter->silence_stddev = 0;
+    filter->silence_frames = 0;
 
     memset(filter->window, 0, VADER_WINDOW * sizeof(*filter->window));
     filter->silent = TRUE;
@@ -286,6 +296,25 @@ fixpoint_sqrt_q15(guint x)
     return z + ((z * remtab[idx]) >> 15);
 }
 
+/**
+ * Very approximate fixed-point square root (for big numbers only!)
+ *
+ * Really simple, sqrt(x) = 2^{\frac{\log_2 x}{2}}.  So approximate
+ * \log_2 x, then divide it by two, and exponentiate :)
+ */
+static guint
+fixpoint_bogus_sqrt(guint x)
+{
+    int log2;
+
+    /* Compute nearest log2. */
+    for (log2 = 31; log2 > 0; --log2)
+        if (x & (1<<log2))
+            break;
+    /* Return "square root" */
+    return 1<<(log2/2+1);
+}
+
 static GstFlowReturn
 gst_vader_chain(GstPad * pad, GstBuffer * buf)
 {
@@ -309,19 +338,46 @@ gst_vader_chain(GstPad * pad, GstBuffer * buf)
 
     filter->silent_prev = filter->silent;
 
+    /* If we are in auto-threshold mode, check to see if we have
+     * enough data to estimate a threshold.  (FIXME: we should be
+     * estimating at the sample level rather than the frame level,
+     * probably) */
+    if (filter->threshold_level == -1) {
+        if (filter->silence_frames > 5) {
+            filter->silence_mean /= filter->silence_frames;
+            filter->silence_stddev /= filter->silence_frames;
+            filter->silence_stddev -= filter->silence_mean * filter->silence_mean;
+            filter->silence_stddev = fixpoint_bogus_sqrt(filter->silence_stddev);
+            /* Set threshold three standard deviations from the mean. */
+            filter->threshold_level = filter->silence_mean + 3 * filter->silence_stddev;
+            GST_DEBUG_OBJECT(filter, "silence_mean %d stddev %d auto_threshold %d\n",
+                             filter->silence_mean, filter->silence_stddev,
+                             filter->threshold_level);
+        }
+    }
+
     /* Divide buffer into reasonably sized parts. */
     for (i = 0; i < num_samples; i += VADER_FRAME) {
         gint frame_len, j;
 
         frame_len = MIN(num_samples - i, VADER_FRAME);
         power = compute_normed_power(in_data + i, frame_len);
+        rms = fixpoint_sqrt_q15(power);
 
+        /* If we are in auto-threshold mode, don't do any voting etc. */
+        if (filter->threshold_level == -1) {
+            filter->silence_mean += rms;
+            filter->silence_stddev += rms * rms;
+            filter->silence_frames += 1;
+            GST_DEBUG_OBJECT(filter, "silence_mean_acc %d silence_stddev_acc %d frames %d\n",
+                             filter->silence_mean, filter->silence_stddev, filter->silence_frames);
+            continue;
+        }
         /* Shift back window values. */
         memmove(filter->window, filter->window + 1,
                 (VADER_WINDOW - 1) * sizeof(*filter->window));
 
         /* Decide if this buffer is silence or not. */
-        rms = fixpoint_sqrt_q15(power);
         if (rms > filter->threshold_level)
             filter->window[VADER_WINDOW-1] = TRUE;
         else
@@ -331,8 +387,9 @@ gst_vader_chain(GstPad * pad, GstBuffer * buf)
         vote = 0;
         for (j = 0; j < VADER_WINDOW; ++j)
             vote += filter->window[j];
-        GST_DEBUG_OBJECT(filter,
-                         "frame_len %d rms power %d vote %d\n", frame_len, rms, vote);
+
+        GST_DEBUG_OBJECT(filter, "frame_len %d rms power %d threshold %d vote %d\n",
+                         frame_len, rms, filter->threshold_level, vote);
 
         if (vote > VADER_WINDOW / 2) {
             filter->silent_run_length = 0;
@@ -414,7 +471,6 @@ gst_vader_chain(GstPad * pad, GstBuffer * buf)
             gst_buffer_unref(prebuf);
         }
     } else {
-        GST_DEBUG_OBJECT(filter, "pushing buffer of %d samples\n", num_samples);
         gst_pad_push(filter->srcpad, buf);
     }
 
@@ -433,6 +489,19 @@ gst_vader_set_property(GObject * object, guint prop_id,
     switch (prop_id) {
     case PROP_THRESHOLD:
         filter->threshold_level = (gint)(g_value_get_double(value) * 32768.0);
+        break;
+    case PROP_AUTO_THRESHOLD:
+        filter->auto_threshold = g_value_get_boolean(value);
+        if (filter->auto_threshold) {
+            /* We have to be in silence mode to calibrate. */
+            filter->silent = TRUE;
+            /* Reset counters and such. */
+            filter->threshold_level = -1;
+            memset(filter->window, 0, sizeof(*filter->window) * VADER_WINDOW);
+            filter->silence_mean = 0;
+            filter->silence_stddev = 0;
+            filter->silence_frames = 0;
+        }
         break;
     case PROP_RUN_LENGTH:
         filter->threshold_length = g_value_get_uint64(value);
@@ -465,6 +534,8 @@ gst_vader_get_property(GObject * object, guint prop_id,
     case PROP_THRESHOLD:
         g_value_set_double(value, (gdouble)filter->threshold_level / 32768.0);
         break;
+    case PROP_AUTO_THRESHOLD:
+        g_value_set_boolean(value, filter->auto_threshold);
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
