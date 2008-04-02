@@ -547,8 +547,9 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
             g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_RESULT],
                           0, hyp, uttproc_get_uttid());
             /* Forward this result in a buffer. */
-            buffer = gst_buffer_new_and_alloc(strlen(hyp) + 1);
+            buffer = gst_buffer_new_and_alloc(strlen(hyp) + 2);
             strcpy((char *)GST_BUFFER_DATA(buffer), hyp);
+            GST_BUFFER_DATA(buffer)[strlen(hyp)] = '\n';
             GST_BUFFER_TIMESTAMP(buffer) = GST_EVENT_TIMESTAMP(event);
             gst_buffer_set_caps(buffer, GST_PAD_CAPS(ps->srcpad));
             gst_pad_push(ps->srcpad, buffer);

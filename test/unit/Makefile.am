@@ -50,7 +50,7 @@ LDADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la \
 	-lsphinxbase
 
-CLEANFILES = *.log
+CLEANFILES = *.log *.out
 
 EXTRA_DIST = \
 	test_lm_init.sh \

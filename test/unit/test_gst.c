@@ -1,4 +1,5 @@
 #include <gst/gst.h>
+#include <string.h>
 
 #include "test_macros.h"
 
@@ -39,6 +40,8 @@ main(int argc, char *argv[])
 	GstElement *src, *resamp, *filter, *vader, *sink;
 	GstCaps *caps;
 	GstBus *bus;
+	FILE *fh;
+	char line[256];
 
 	gst_init(&argc, &argv);
 	err = NULL;
@@ -59,11 +62,13 @@ main(int argc, char *argv[])
 	}
 	resamp = gst_element_factory_make("audioresample", "resampler");
 	vader = gst_element_factory_make("vader", "vad");
+	g_object_set(G_OBJECT(vader), "auto_threshold", TRUE, NULL);
 	filter = gst_element_factory_make("pocketsphinx", "asr");
 	g_object_set(G_OBJECT(filter), "hmm", MODELDIR "/hmm/wsj1", NULL);
 	g_object_set(G_OBJECT(filter), "lm", MODELDIR "/lm/turtle/turtle.lm.DMP", NULL);
 	g_object_set(G_OBJECT(filter), "dict", MODELDIR "/lm/turtle/turtle.dic", NULL);
-	sink = gst_element_factory_make("fakesink", "sink");
+	sink = gst_element_factory_make("filesink", "sink");
+	g_object_set(G_OBJECT(sink), "location", "test_gst.out", NULL);
 	gst_bin_add_many(GST_BIN(pipeline),
 			 src, resamp, vader, filter, sink, NULL);
 	gst_element_link_filtered(src, resamp, caps);
@@ -79,6 +84,10 @@ main(int argc, char *argv[])
 
 	gst_element_set_state(pipeline, GST_STATE_NULL);
 	gst_object_unref(GST_OBJECT(pipeline));
+
+	TEST_ASSERT(fh = fopen("test_gst.out", "r"));
+	TEST_ASSERT(fgets(line, sizeof(line), fh));
+	TEST_EQUAL(0, strcmp(line, "GO FORWARD TEN METERS \n"));
 
 	return 0;
 }
