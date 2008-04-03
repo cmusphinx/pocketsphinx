@@ -26,7 +26,6 @@
 #include <gst/gst.h>
 #include <gst/gstevent.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -64,6 +63,8 @@ struct _GstVader
     GstElement element;
 
     GstPad *sinkpad, *srcpad;
+
+    GStaticRecMutex mtx;          /**< Lock used in setting parameters. */
 
     gboolean window[VADER_WINDOW];/**< Voting window of speech/silence decisions. */
     gboolean silent;		  /**< Current state of the filter. */

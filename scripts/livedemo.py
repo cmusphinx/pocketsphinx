@@ -42,7 +42,7 @@ class DemoApp(object):
 
     def init_gst(self):
         """Initialize the speech components"""
-        self.pipeline = gst.parse_launch('gconfaudiosrc ! audioconvert ! audioresample '
+        self.pipeline = gst.parse_launch('alsasrc device=hw:1,0 ! audioconvert ! audioresample '
                                          + '! vader name=vad auto-threshold=true '
                                          + '! pocketsphinx name=asr ! fakesink')
         asr = self.pipeline.get_by_name('asr')
@@ -78,7 +78,6 @@ class DemoApp(object):
             self.final_result(msg.structure['hyp'], msg.structure['uttid'])
             self.pipeline.set_state(gst.STATE_PAUSED)
             self.button.set_active(False)
-            self.button.set_label("Speak")
 
     def partial_result(self, hyp, uttid):
         """Delete any previous selection, insert text and select it."""
@@ -103,12 +102,13 @@ class DemoApp(object):
     def button_clicked(self, button):
         """Handle button presses."""
         if button.get_active():
-            button.set_label("Pause")
+            button.set_label("Stop")
             self.pipeline.set_state(gst.STATE_PLAYING)
         else:
-            button.set_label("Resume")
-            self.pipeline.set_state(gst.STATE_PAUSED)
-
+            button.set_label("Speak")
+            # Set the VADER to silent.  This will 
+            vader = self.pipeline.get_by_name('vad')
+            vader.set_property('silent', True)
 
 app = DemoApp()
 gtk.main()

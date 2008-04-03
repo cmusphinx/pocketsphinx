@@ -84,7 +84,8 @@ enum
     PROP_THRESHOLD,
     PROP_AUTO_THRESHOLD,
     PROP_RUN_LENGTH,
-    PROP_PRE_LENGTH
+    PROP_PRE_LENGTH,
+    PROP_SILENT
 };
 
 GST_BOILERPLATE(GstVader, gst_vader, GstElement, GST_TYPE_ELEMENT);
@@ -140,6 +141,11 @@ gst_vader_class_init(GstVaderClass * klass)
          g_param_spec_uint64("pre-length", "Pre-recording buffer length",
                              "Length of pre-recording buffer (in nanoseconds)",
                              0, G_MAXUINT64, (guint64)(0.5 * GST_SECOND), G_PARAM_READWRITE));
+    g_object_class_install_property
+        (G_OBJECT_CLASS(klass), PROP_SILENT,
+         g_param_spec_boolean("silent", "Silent",
+                             "Whether the VADER is currently in a silence region",
+                              TRUE, G_PARAM_READWRITE));
 
     gst_vader_signals[SIGNAL_VADER_START] = 
         g_signal_new("vader_start",
@@ -173,6 +179,9 @@ gst_vader_init(GstVader * filter, GstVaderClass * g_class)
         gst_pad_new_from_static_template(&vader_sink_factory, "sink");
     filter->srcpad =
         gst_pad_new_from_static_template(&vader_src_factory, "src");
+
+    /* FIXME: Need to free this on finalization of the vader. */
+    g_static_rec_mutex_init(&filter->mtx);
 
     filter->threshold_level = 256;
     filter->threshold_length = (guint64)(0.5 * GST_SECOND);
@@ -316,13 +325,81 @@ fixpoint_bogus_sqrt(guint x)
     return 1<<(log2/2+1);
 }
 
+static void
+gst_vader_transition(GstVader *filter, GstClockTime ts)
+{
+    /* NOTE: This function MUST be called with filter->mtx held! */
+    /* has the silent status changed ? if so, send right signal
+     * and, if from silent -> not silent, flush pre_record buffer
+     */
+    if (filter->silent) {
+        /* Sound to silence transition. */
+        GstMessage *m =
+            gst_vader_message_new(filter, FALSE, ts);
+        GstEvent *e =
+            gst_vader_event_new(filter, GST_EVENT_VADER_STOP, ts);
+        GST_DEBUG_OBJECT(filter, "signaling CUT_STOP");
+        gst_element_post_message(GST_ELEMENT(filter), m);
+        /* Insert a custom event in the stream to mark the end of a cut. */
+        /* This will block if the pipeline is paused so we have to unlock. */
+        g_static_rec_mutex_unlock(&filter->mtx);
+        gst_pad_push_event(filter->srcpad, e);
+        g_static_rec_mutex_lock(&filter->mtx);
+        /* FIXME: That event's timestamp is wrong... as is this one. */
+        g_signal_emit(filter, gst_vader_signals[SIGNAL_VADER_STOP], 0, ts);
+    } else {
+        /* Silence to sound transition. */
+        gint count = 0;
+        GstMessage *m;
+        GstEvent *e;
+
+        GST_DEBUG_OBJECT(filter, "signaling CUT_START");
+        /* Use the first pre_buffer's timestamp for the signal if possible. */
+        if (filter->pre_buffer) {
+            GstBuffer *prebuf;
+
+            prebuf = (g_list_first(filter->pre_buffer))->data;
+            ts = GST_BUFFER_TIMESTAMP(prebuf);
+        }
+
+        g_signal_emit(filter, gst_vader_signals[SIGNAL_VADER_START],
+                      0, ts);
+        m = gst_vader_message_new(filter, TRUE, ts);
+        e = gst_vader_event_new(filter, GST_EVENT_VADER_START, ts);
+        gst_element_post_message(GST_ELEMENT(filter), m);
+
+        /* Insert a custom event in the stream to mark the beginning of a cut. */
+        /* This will block if the pipeline is paused so we have to unlock. */
+        g_static_rec_mutex_unlock(&filter->mtx);
+        gst_pad_push_event(filter->srcpad, e);
+        g_static_rec_mutex_lock(&filter->mtx);
+
+        /* first of all, flush current buffer */
+        GST_DEBUG_OBJECT(filter, "flushing buffer of length %" GST_TIME_FORMAT,
+                         GST_TIME_ARGS(filter->pre_run_length));
+        while (filter->pre_buffer) {
+            GstBuffer *prebuf;
+
+            prebuf = (g_list_first(filter->pre_buffer))->data;
+            filter->pre_buffer = g_list_remove(filter->pre_buffer, prebuf);
+            /* This will block if the pipeline is paused so we have to unlock. */
+            g_static_rec_mutex_unlock(&filter->mtx);
+            gst_pad_push(filter->srcpad, prebuf);
+            g_static_rec_mutex_lock(&filter->mtx);
+            ++count;
+        }
+        GST_DEBUG_OBJECT(filter, "flushed %d buffers", count);
+        filter->pre_run_length = 0;
+    }
+}
+
+
 static GstFlowReturn
 gst_vader_chain(GstPad * pad, GstBuffer * buf)
 {
     GstVader *filter;
     gint16 *in_data;
     guint num_samples;
-    GstBuffer *prebuf;            /* pointer to a prebuffer element */
     gint i, vote;
     guint power, rms;
 
@@ -337,8 +414,9 @@ gst_vader_chain(GstPad * pad, GstBuffer * buf)
     in_data = (gint16 *) GST_BUFFER_DATA(buf);
     num_samples = GST_BUFFER_SIZE(buf) / 2;
 
+    /* Enter a critical section. */
+    g_static_rec_mutex_lock(&filter->mtx);
     filter->silent_prev = filter->silent;
-
     /* If we are in auto-threshold mode, check to see if we have
      * enough data to estimate a threshold.  (FIXME: we should be
      * estimating at the sample level rather than the frame level,
@@ -406,64 +484,24 @@ gst_vader_chain(GstPad * pad, GstBuffer * buf)
             filter->silent = TRUE;
     }
 
-    /* has the silent status changed ? if so, send right signal
-     * and, if from silent -> not silent, flush pre_record buffer
-     */
+    /* Handle transitions between silence and non-silence. */
     if (filter->silent != filter->silent_prev) {
-        if (filter->silent) {
-            /* Sound to silence transition. */
-            GstMessage *m =
-                gst_vader_message_new(filter, FALSE, GST_BUFFER_TIMESTAMP(buf));
-            GstEvent *e =
-                gst_vader_event_new(filter, GST_EVENT_VADER_STOP, GST_BUFFER_TIMESTAMP(buf));
-            GST_DEBUG_OBJECT(filter, "signaling CUT_STOP");
-            gst_element_post_message(GST_ELEMENT(filter), m);
-            /* Insert a custom event in the stream to mark the end of a cut. */
-            gst_pad_push_event(filter->srcpad, e);
-            /* FIXME: That event's timestamp is wrong... as is this one. */
-            g_signal_emit(filter, gst_vader_signals[SIGNAL_VADER_STOP],
-                          0, GST_BUFFER_TIMESTAMP(buf));
-        } else {
-            /* Silence to sound transition. */
-            GstClockTime ts = GST_BUFFER_TIMESTAMP(buf);
-            gint count = 0;
-            GstMessage *m;
-            GstEvent *e;
-
-            GST_DEBUG_OBJECT(filter, "signaling CUT_START");
-            /* Use the first pre_buffer's timestamp for the signal if possible. */
-            if (filter->pre_buffer) {
-                prebuf = (g_list_first(filter->pre_buffer))->data;
-                ts = GST_BUFFER_TIMESTAMP(prebuf);
-            }
-            g_signal_emit(filter, gst_vader_signals[SIGNAL_VADER_START],
-                          0, ts);
-            m = gst_vader_message_new(filter, TRUE, ts);
-            e = gst_vader_event_new(filter, GST_EVENT_VADER_START, ts);
-            gst_element_post_message(GST_ELEMENT(filter), m);
-            /* Insert a custom event in the stream to mark the beginning of a cut. */
-            gst_pad_push_event(filter->srcpad, e);
-
-            /* first of all, flush current buffer */
-            GST_DEBUG_OBJECT(filter, "flushing buffer of length %" GST_TIME_FORMAT,
-                             GST_TIME_ARGS(filter->pre_run_length));
-            while (filter->pre_buffer) {
-                prebuf = (g_list_first(filter->pre_buffer))->data;
-                filter->pre_buffer = g_list_remove(filter->pre_buffer, prebuf);
-                gst_pad_push(filter->srcpad, prebuf);
-                ++count;
-            }
-            GST_DEBUG_OBJECT(filter, "flushed %d buffers", count);
-            filter->pre_run_length = 0;
-        }
+        gst_vader_transition(filter, GST_BUFFER_TIMESTAMP(buf));
     }
+    /* Handling of silence detection is done. */
+    g_static_rec_mutex_unlock(&filter->mtx);
+
     /* now check if we have to send the new buffer to the internal buffer cache
      * or to the srcpad */
     if (filter->silent) {
+        /* Claim the lock while manipulating the queue. */
+        g_static_rec_mutex_lock(&filter->mtx);
         filter->pre_buffer = g_list_append(filter->pre_buffer, buf);
         filter->pre_run_length +=
             gst_audio_duration_from_pad_buffer(filter->sinkpad, buf);
         while (filter->pre_run_length > filter->pre_length) {
+            GstBuffer *prebuf;
+
             prebuf = (g_list_first(filter->pre_buffer))->data;
             g_assert(GST_IS_BUFFER(prebuf));
             filter->pre_buffer = g_list_remove(filter->pre_buffer, prebuf);
@@ -471,6 +509,7 @@ gst_vader_chain(GstPad * pad, GstBuffer * buf)
                 gst_audio_duration_from_pad_buffer(filter->sinkpad, prebuf);
             gst_buffer_unref(prebuf);
         }
+        g_static_rec_mutex_unlock(&filter->mtx);
     } else {
         gst_pad_push(filter->srcpad, buf);
     }
@@ -492,10 +531,18 @@ gst_vader_set_property(GObject * object, guint prop_id,
         filter->threshold_level = (gint)(g_value_get_double(value) * 32768.0);
         break;
     case PROP_AUTO_THRESHOLD:
+        /* We are going to muck around with things... */
+        g_static_rec_mutex_lock(&filter->mtx);
         filter->auto_threshold = g_value_get_boolean(value);
+        /* Setting this to TRUE re-initializes auto calibration. */
         if (filter->auto_threshold) {
             /* We have to be in silence mode to calibrate. */
+            filter->silent_prev = filter->silent;
             filter->silent = TRUE;
+            /* Do "artifical" sil-speech or speech-sil transitions. */
+            if (filter->silent != filter->silent_prev) {
+                gst_vader_transition(filter, gst_clock_get_time(GST_ELEMENT_CLOCK(filter)));
+            }
             /* Reset counters and such. */
             filter->threshold_level = -1;
             memset(filter->window, 0, sizeof(*filter->window) * VADER_WINDOW);
@@ -503,6 +550,20 @@ gst_vader_set_property(GObject * object, guint prop_id,
             filter->silence_stddev = 0;
             filter->silence_frames = 0;
         }
+        g_static_rec_mutex_unlock(&filter->mtx);
+        break;
+    case PROP_SILENT:
+        /* We are going to muck around with things... */
+        g_static_rec_mutex_lock(&filter->mtx);
+        filter->silent_prev = filter->silent;
+        filter->silent = g_value_get_boolean(value);
+        /* Do "artifical" sil-speech or speech-sil transitions. */
+        if (filter->silent != filter->silent_prev) {
+            gst_vader_transition(filter, gst_clock_get_time(GST_ELEMENT_CLOCK(filter)));
+            /* Also flush the voting window so we don't go right back into speech. */
+            memset(filter->window, 0, sizeof(*filter->window) * VADER_WINDOW);
+        }
+        g_static_rec_mutex_unlock(&filter->mtx);
         break;
     case PROP_RUN_LENGTH:
         filter->threshold_length = g_value_get_uint64(value);
@@ -537,6 +598,9 @@ gst_vader_get_property(GObject * object, guint prop_id,
         break;
     case PROP_AUTO_THRESHOLD:
         g_value_set_boolean(value, filter->auto_threshold);
+        break;
+    case PROP_SILENT:
+        g_value_set_boolean(value, filter->silent);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
