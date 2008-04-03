@@ -52,7 +52,7 @@
 #include <logmath.h>
 
 /* Global log-domain addition table. */
-logmath_t *g_lmath;
+extern logmath_t *g_lmath;
 
 #define BASE		logmath_get_base(g_lmath)
 #define LOG(x) 		logmath_log(g_lmath,x)

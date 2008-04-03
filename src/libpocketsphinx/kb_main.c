@@ -79,6 +79,9 @@ ms_mgau_model_t *g_ms_mgau;
 /* Language model set */
 ngram_model_t *g_lmset;
 
+/* Log-math computation object */
+logmath_t *g_lmath;
+
 void
 kb_update_widmap(void)
 {
