@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2007 Carnegie Mellon University.
+# Copyright (c) 2008 Carnegie Mellon University.
 #
 # You may modify and redistribute this file under the same terms as
 # the CMU Sphinx system.  See
@@ -106,7 +106,6 @@ class DemoApp(object):
             self.pipeline.set_state(gst.STATE_PLAYING)
         else:
             button.set_label("Speak")
-            # Set the VADER to silent.  This will 
             vader = self.pipeline.get_by_name('vad')
             vader.set_property('silent', True)
 
