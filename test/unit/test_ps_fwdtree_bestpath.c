@@ -19,8 +19,8 @@ main(int argc, char *argv[])
 				"-cepext", "",
 				"-fwdtree", "yes",
 				"-fwdflat", "no",
-				"-bestpath", "no",
+				"-bestpath", "yes",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
-	return pocketsphinx_test(config, "FWDTREE", "GO FOR WORDS TEN YEARS");
+	return pocketsphinx_test(config, "BESTPATH", "GO FOR WORDS TEN YEARS");
 }

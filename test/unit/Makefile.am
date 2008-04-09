@@ -9,6 +9,11 @@ check_PROGRAMS = \
 	test_lm_read \
 	test_ps_init \
 	test_ps_fwdtree \
+	test_ps_fwdtree_fwdflat \
+	test_ps_fwdflat \
+	test_ps_fwdflat_bestpath \
+	test_ps_fwdtree_bestpath \
+	test_ps_simple \
 	test_acmod \
 	test_acmod_grow \
 	test_fwdtree \
@@ -25,6 +30,11 @@ TESTS = \
 	test_lm_read \
 	test_ps_init \
 	test_ps_fwdtree \
+	test_ps_fwdtree_fwdflat \
+	test_ps_fwdflat \
+	test_ps_fwdflat_bestpath \
+	test_ps_fwdtree_bestpath \
+	test_ps_simple \
 	test_acmod \
 	test_acmod_grow \
 	test_fwdtree \

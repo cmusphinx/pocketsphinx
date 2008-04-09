@@ -55,7 +55,6 @@
 #include "pocketsphinx.h"
 #include "acmod.h"
 #include "dict.h"
-#include "ngram_search.h"
 #include "fsg_search.h"
 
 /**
@@ -68,6 +67,79 @@ typedef enum {
     UTTSTATE_ENDED = 2,   /**< Ended, a result is now available. */
     UTTSTATE_STOPPED = 3  /**< Stopped, can be resumed. */
 } uttstate_t;
+
+typedef struct ps_search_s ps_search_t;
+
+/**
+ * V-table for search algorithm.
+ */
+typedef struct ps_searchfuncs_s {
+    char const *name;
+
+    int (*start)(ps_search_t *search);
+    int (*step)(ps_search_t *search);
+    int (*finish)(ps_search_t *search);
+    void (*free)(ps_search_t *search);
+
+    char const *(*hyp)(ps_search_t *search, int32 *out_score);
+    ps_seg_t *(*seg_iter)(ps_search_t *search, int32 *out_score);
+    ps_seg_t *(*seg_next)(ps_seg_t *seg);
+    void (*seg_free)(ps_seg_t *seg);
+} ps_searchfuncs_t;
+
+/**
+ * Base structure for search module.
+ */
+struct ps_search_s {
+    ps_searchfuncs_t *vt;  /**< V-table of search methods. */
+    cmd_ln_t *config;      /**< Configuration. */
+    acmod_t *acmod;        /**< Acoustic model. */
+    dict_t *dict;          /**< Pronunciation dictionary. */
+    char *hyp_str;         /**< Current hypothesis string. */
+};
+
+#define search_base(s) ((ps_search_t *)s)
+#define search_config(s) search_base(s)->config
+#define search_acmod(s) search_base(s)->acmod
+#define search_dict(s) search_base(s)->dict
+
+#define search_name(s) search_base(s)->vt->name
+#define search_start(s) (*(search_base(s)->vt->start))(s)
+#define search_step(s) (*(search_base(s)->vt->step))(s)
+#define search_finish(s) (*(search_base(s)->vt->finish))(s)
+#define search_free(s) (*(search_base(s)->vt->free))(s)
+#define search_hyp(s,sc) (*(search_base(s)->vt->hyp))(s,sc)
+#define search_seg_iter(s,sc) (*(search_base(s)->vt->seg_iter))(s,sc)
+
+/* For convenience... */
+#define search_n_words(s) dict_n_words(search_dict(s))
+
+
+/**
+ * Initialize base structure.
+ */
+void ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
+                    cmd_ln_t *config, acmod_t *acmod, dict_t *dict);
+
+/**
+ * De-initialize base structure.
+ */
+void ps_search_deinit(ps_search_t *search);
+
+/**
+ * Base structure for hypothesis segmentation iterator.
+ */
+struct ps_seg_s {
+    ps_search_t *search;   /**< Search object which this came from */
+    char const *word;      /**< Word string (pointer into dictionary hash) */
+    int sf;                /**< Start frame. */
+    int ef;                /**< End frame. */
+    float32 prob;          /**< Posterior probability. */
+};
+
+#define search_seg_next(seg) (*(seg->search->vt->seg_next))(seg)
+#define search_seg_free(s) (*(seg->search->vt->seg_free))(seg)
+
 
 /**
  * Decoder object.
@@ -83,8 +155,8 @@ struct pocketsphinx_s {
     logmath_t *lmath;  /**< Log math computation. */
 
     /* Search modules. */
-    ngram_search_t *ngs; /**< N-Gram search module. */
-    fsg_search_t *fsgs;  /**< Finite-State search module. */
+    glist_t searches;   /**< List of search modules. */
+    ps_search_t *search; /**< Currently active search module. */
 
     /* Utterance-processing related stuff. */
     uttstate_t uttstate;/**< Current state of utterance processing. */

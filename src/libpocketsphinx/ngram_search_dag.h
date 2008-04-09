@@ -50,7 +50,7 @@
 /**
  * Word graph structure used in bestpath/nbest search.
  */
-typedef struct ngram_dag_s {
+struct ngram_dag_s {
     ngram_search_t *ngs; /**< Search object which produced this DAG. */
 
     latnode_t *nodes;  /**< List of all nodes. */
@@ -64,7 +64,7 @@ typedef struct ngram_dag_s {
     listelem_alloc_t *latnode_alloc;     /**< Node allocator for this DAG. */
     listelem_alloc_t *latlink_alloc;     /**< Link allocator for this DAG. */
     listelem_alloc_t *rev_latlink_alloc; /**< Reverse link allocator for this DAG. */
-} ngram_dag_t;
+};
 
 /**
  * Partial path structure used in N-best (A*) search.

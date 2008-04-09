@@ -30,7 +30,7 @@ main(int argc, char *argv[])
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = pocketsphinx_init(config));
 
-	ngs = ps->ngs;
+	ngs = (ngram_search_t *)ps->search;
 	acmod = ps->acmod;
         acmod_set_grow(ps->acmod, TRUE);
 
@@ -56,7 +56,7 @@ main(int argc, char *argv[])
 		}
 		ngram_fwdtree_finish(ngs);
 		printf("FWDTREE: %s\n",
-		       ngram_search_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
+		       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
 
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
@@ -67,10 +67,10 @@ main(int argc, char *argv[])
 		}
 		ngram_fwdflat_finish(ngs);
 		printf("FWDFLAT: %s\n",
-		       ngram_search_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
+		       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
 	}
 	TEST_EQUAL(0, strcmp("GO FOR WORDS TEN YEARS",
-			     ngram_search_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
+			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
 	c = clock() - c;
 	printf("5 * fwdtree + fwdflat search in %.2f sec\n",
 	       (double)c / CLOCKS_PER_SEC);

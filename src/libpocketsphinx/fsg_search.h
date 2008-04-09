@@ -64,45 +64,45 @@ struct fsg_lextree_s;
 struct fsg_history_s;
 
 typedef struct fsg_search_s {
-    glist_t fsglist;		/* List of all FSGs loaded */
+    glist_t fsglist;		/**< List of all FSGs loaded */
   
-    cmd_ln_t *config;           /* Pointer to global configuration. */
-    logmath_t *lmath;		/* Pointer to global log-math. */
-    bin_mdef_t *mdef;           /* Pointer to global model definition. */
-    tmat_t *tmat;               /* Pointer to global transition matrix. */
-    dict_t *dict;		/* Pointer to global word dictoinary. */
+    cmd_ln_t *config;           /**< Pointer to global configuration. */
+    logmath_t *lmath;		/**< Pointer to global log-math. */
+    bin_mdef_t *mdef;           /**< Pointer to global model definition. */
+    tmat_t *tmat;               /**< Pointer to global transition matrix. */
+    dict_t *dict;		/**< Pointer to global word dictoinary. */
 
-    word_fsg_t *fsg;		/* Currently active FSG; NULL if none.  One
+    word_fsg_t *fsg;		/**< Currently active FSG; NULL if none.  One
 				   must be made active before starting FSG
 				   decoding */
-    struct fsg_lextree_s *lextree;	/* Lextree structure for the currently
+    struct fsg_lextree_s *lextree;/**< Lextree structure for the currently
 				   active FSG */
-    struct fsg_history_s *history;	/* For storing the Viterbi search history */
+    struct fsg_history_s *history;/**< For storing the Viterbi search history */
   
-    glist_t pnode_active;		/* Those active in this frame */
-    glist_t pnode_active_next;	/* Those activated for the next frame */
+    glist_t pnode_active;	/**< Those active in this frame */
+    glist_t pnode_active_next;	/**< Those activated for the next frame */
   
-    int32 beam_orig;		/* Global pruning threshold */
-    int32 pbeam_orig;		/* Pruning threshold for phone transition */
-    int32 wbeam_orig;		/* Pruning threshold for word exit */
-    float32 beam_factor;		/* Dynamic/adaptive factor (<=1) applied to above
+    int32 beam_orig;		/**< Global pruning threshold */
+    int32 pbeam_orig;		/**< Pruning threshold for phone transition */
+    int32 wbeam_orig;		/**< Pruning threshold for word exit */
+    float32 beam_factor;		/**< Dynamic/adaptive factor (<=1) applied to above
                                            beams to determine actual effective beams.
                                            For implementing absolute pruning. */
-    int32 beam, pbeam, wbeam;	/* Effective beams after applying beam_factor */
-    int32 lw, pip, wip;         /* Language weights */
+    int32 beam, pbeam, wbeam;	/**< Effective beams after applying beam_factor */
+    int32 lw, pip, wip;         /**< Language weights */
   
-    int32 frame;			/* Current frame */
+    int32 frame;			/**< Current frame */
 
-    int32 bestscore;		/* For beam pruning */
-    int32 bpidx_start;		/* First history entry index this frame */
+    int32 bestscore;		/**< For beam pruning */
+    int32 bpidx_start;		/**< First history entry index this frame */
   
-    search_hyp_t *hyp;		/* Search hypothesis */
-    int32 ascr, lscr;		/* Total acoustic and lm score for utt */
+    search_hyp_t *hyp;		/**< Search hypothesis */
+    int32 ascr, lscr;		/**< Total acoustic and lm score for utt */
   
-    int32 n_hmm_eval;		/* Total HMMs evaluated this utt */
-    int32 n_sen_eval;		/* Total senones evaluated this utt */
+    int32 n_hmm_eval;		/**< Total HMMs evaluated this utt */
+    int32 n_sen_eval;		/**< Total senones evaluated this utt */
   
-    int32 state;			/* Whether IDLE or BUSY */
+    int32 state;		/**< Whether IDLE or BUSY */
 } fsg_search_t;
 
 

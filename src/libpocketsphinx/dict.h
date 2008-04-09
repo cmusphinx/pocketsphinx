@@ -118,15 +118,18 @@ int32 dict_get_num_main_words (dict_t *dict);
 int32 dict_is_filler_word (dict_t *dict, int32 wid);
 
 
-#define WordIdToStr(d,x)	((x == NO_WORD) ? "" : d->dict_list[x]->word)
+#define dict_word_str(d,x)	((x == NO_WORD) ? "" : d->dict_list[x]->word)
 
-#define WordIdToBaseStr(d,x)	((x == NO_WORD) ? "" :	\
+#define dict_base_str(d,x)	((x == NO_WORD) ? "" :	\
 				   d->dict_list[d->dict_list[x]->wid]->word)
+#define dict_base_wid(d,x)	((x == NO_WORD) ? NO_WORD :	\
+				   d->dict_list[x]->wid)
 
 #define dict_pronlen(dict,wid)	((dict)->dict_list[wid]->len)
 #define dict_ciphone(d,w,p)	((d)->dict_list[w]->ci_phone_ids[p])
 #define dict_phone(d,w,p)	((d)->dict_list[w]->phone_ids[p])
 #define dict_mpx(d,w)		((d)->dict_list[w]->mpx)
 
+#define dict_n_words(d)		((d)->dict_entry_count)
 
 #endif

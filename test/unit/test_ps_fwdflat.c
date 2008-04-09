@@ -17,10 +17,10 @@ main(int argc, char *argv[])
 				"-lm", MODELDIR "/lm/swb/swb.lm.DMP",
 				"-dict", MODELDIR "/lm/swb/swb.dic",
 				"-cepext", "",
-				"-fwdtree", "yes",
-				"-fwdflat", "no",
+				"-fwdtree", "no",
+				"-fwdflat", "yes",
 				"-bestpath", "no",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
-	return pocketsphinx_test(config, "FWDTREE", "GO FOR WORDS TEN YEARS");
+	return pocketsphinx_test(config, "FWDFLAT", "GO FORWARD TEN YEARS");
 }

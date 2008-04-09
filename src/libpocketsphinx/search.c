@@ -1857,7 +1857,7 @@ search_hyp_to_str(void)
     hyp_str[0] = '\0';
     k = 0;
     for (i = 0; hyp[i].wid >= 0; i++) {
-        wd = WordIdToStr(g_word_dict, hyp[i].wid);
+        wd = dict_word_str(g_word_dict, hyp[i].wid);
         l = strlen(wd);
 
         if (k + l > 4090)
@@ -1938,7 +1938,7 @@ seg_back_trace(int32 bpidx, char const *pass)
                    a_scr_norm, a_scr, l_scr,
                    topsenscr_norm,
                    latden,
-                   WordIdToStr(g_word_dict, BPTable[bpidx].wid));
+                   dict_word_str(g_word_dict, BPTable[bpidx].wid));
         hyp_wid[n_hyp_wid++] = BPTable[bpidx].wid;
 
         /* Store hypothesis word sequence and segmentation */

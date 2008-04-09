@@ -49,9 +49,8 @@
 #include <listelem_alloc.h>
 
 /* Local headers. */
+#include "pocketsphinx_internal.h"
 #include "hmm.h"
-#include "dict.h"
-#include "acmod.h"
 
 /**
  * Lexical tree node data type.
@@ -220,15 +219,23 @@ typedef struct ngram_search_stats_s {
 } ngram_search_stats_t;
 
 /**
+ * Forward declaration of DAG structure.
+ */
+typedef struct ngram_dag_s ngram_dag_t;
+
+/**
  * N-Gram search module structure.
  */
 struct ngram_search_s {
-    cmd_ln_t *config;      /**< Configuration. */
-    acmod_t *acmod;        /**< Acoustic model. */
-    dict_t *dict;          /**< Pronunciation dictionary. */
+    ps_search_t base;
     ngram_model_t *lmset;  /**< Set of language models. */
     hmm_context_t *hmmctx; /**< HMM context. */
-    char *hyp_str;         /**< Current hypothesis string. */
+
+    /* Flags to quickly indicate which passes are enabled. */
+    uint8 fwdtree;
+    uint8 fwdflat;
+    uint8 bestpath;
+    uint8 reserved;
 
     /* Allocators */
     listelem_alloc_t *chan_alloc; /**< For chan_t */
@@ -359,6 +366,7 @@ struct ngram_search_s {
     /*
      * DAG (3rd pass) search stuff.
      */
+    ngram_dag_t *dag; /**< Word graph of current utterance. */
     float32 bestpath_fwdtree_lw_ratio;
 
     ngram_search_stats_t st; /**< Various statistics for profiling. */
@@ -390,14 +398,14 @@ typedef struct ngram_search_s ngram_search_t;
 /**
  * Initialize the N-Gram search module.
  */
-ngram_search_t *ngram_search_init(cmd_ln_t *config,
-                                  acmod_t *acmod,
-                                  dict_t *dict);
+ps_search_t *ngram_search_init(cmd_ln_t *config,
+                               acmod_t *acmod,
+                               dict_t *dict);
 
 /**
  * Finalize the N-Gram search module.
  */
-void ngram_search_free(ngram_search_t *ngs);
+void ngram_search_free(ps_search_t *ngs);
 
 /**
  * Record the current frame's index in the backpointer table.
@@ -434,7 +442,7 @@ int ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_s
  *
  * @return a <strong>read-only</strong> string with the best hypothesis.
  */
-char const *ngram_search_hyp(ngram_search_t *ngs, int bpidx);
+char const *ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx);
 
 /**
  * Compute language and acoustic scores for backpointer table entries.

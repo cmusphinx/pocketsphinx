@@ -53,6 +53,27 @@
 #include "ngram_search_fwdflat.h"
 #include "ngram_search_dag.h"
 
+static int ngram_search_start(ps_search_t *search);
+static int ngram_search_step(ps_search_t *search);
+static int ngram_search_finish(ps_search_t *search);
+static char const *ngram_search_hyp(ps_search_t *search, int32 *out_score);
+static ps_seg_t *ngram_search_seg_iter(ps_search_t *search, int32 *out_score);
+static ps_seg_t *ngram_search_seg_next(ps_seg_t *seg);
+static void ngram_search_seg_free(ps_seg_t *seg);
+
+static ps_searchfuncs_t ngram_funcs = {
+    /* name: */   "ngram",
+    /* start: */  ngram_search_start,
+    /* step: */   ngram_search_step,
+    /* finish: */ ngram_search_finish,
+    /* free: */   ngram_search_free,
+
+    /* hyp: */      ngram_search_hyp,
+    /* seg_iter: */ ngram_search_seg_iter,
+    /* seg_next: */ ngram_search_seg_next,
+    /* seg_free: */ ngram_search_seg_free,
+};
+
 static void
 ngram_search_update_widmap(ngram_search_t *ngs)
 {
@@ -60,15 +81,15 @@ ngram_search_update_widmap(ngram_search_t *ngs)
     int32 i, n_words;
 
     /* It's okay to include fillers since they won't be in the LM */
-    n_words = ngs->dict->dict_entry_count;
+    n_words = search_n_words(ngs);
     words = ckd_calloc(n_words, sizeof(*words));
     for (i = 0; i < n_words; ++i)
-        words[i] = ngs->dict->dict_list[i]->word;
+        words[i] = dict_word_str(search_dict(ngs), i);
     ngram_model_set_map_words(ngs->lmset, words, n_words);
     ckd_free(words);
 }
 
-ngram_search_t *
+ps_search_t *
 ngram_search_init(cmd_ln_t *config,
 		  acmod_t *acmod,
 		  dict_t *dict)
@@ -77,9 +98,7 @@ ngram_search_init(cmd_ln_t *config,
         const char *path;
 
 	ngs = ckd_calloc(1, sizeof(*ngs));
-        ngs->config = config;
-	ngs->acmod = acmod;
-	ngs->dict = dict;
+        ps_search_init(&ngs->base, &ngram_funcs, config, acmod, dict);
 	ngs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
 				       acmod->tmat->tp, NULL, acmod->mdef->sseq);
         ngs->chan_alloc = listelem_alloc_init(sizeof(chan_t));
@@ -117,9 +136,9 @@ ngram_search_init(cmd_ln_t *config,
             / cmd_ln_float32_r(config, "-lw");
 
         /* This is useful for something. */
-        ngs->start_wid = dict_to_id(ngs->dict, "<s>");
-        ngs->finish_wid = dict_to_id(ngs->dict, "</s>");
-        ngs->silence_wid = dict_to_id(ngs->dict, "<sil>");
+        ngs->start_wid = dict_to_id(dict, "<s>");
+        ngs->finish_wid = dict_to_id(dict, "</s>");
+        ngs->silence_wid = dict_to_id(dict, "<sil>");
 
         /* Allocate a billion different tables for stuff. */
         ngs->word_chan = ckd_calloc(dict->dict_entry_count,
@@ -129,7 +148,7 @@ ngram_search_init(cmd_ln_t *config,
         ngs->zeroPermTab = ckd_calloc(bin_mdef_n_ciphone(acmod->mdef),
                                       sizeof(*ngs->zeroPermTab));
         ngs->word_active = bitvec_alloc(dict->dict_entry_count);
-        ngs->last_ltrans = ckd_calloc(ngs->dict->dict_entry_count,
+        ngs->last_ltrans = ckd_calloc(dict->dict_entry_count,
                                       sizeof(*ngs->last_ltrans));
 
         /* FIXME: All these structures need to be made dynamic with
@@ -185,24 +204,35 @@ ngram_search_init(cmd_ln_t *config,
         ngram_search_update_widmap(ngs);
 
         /* Initialize fwdtree, fwdflat, bestpath modules if necessary. */
-        if (cmd_ln_boolean_r(config, "-fwdtree"))
+        if (cmd_ln_boolean_r(config, "-fwdtree")) {
             ngram_fwdtree_init(ngs);
-        if (cmd_ln_boolean_r(config, "-fwdflat"))
+            ngs->fwdtree = TRUE;
+        }
+        if (cmd_ln_boolean_r(config, "-fwdflat")) {
             ngram_fwdflat_init(ngs);
-	return ngs;
+            ngs->fwdflat = TRUE;
+        }
+        if (cmd_ln_boolean_r(config, "-bestpath")) {
+            ngs->bestpath = TRUE;
+        }
+	return (ps_search_t *)ngs;
 
 error_out:
-        ngram_search_free(ngs);
+        ngram_search_free((ps_search_t *)ngs);
         return NULL;
 }
 
 void
-ngram_search_free(ngram_search_t *ngs)
+ngram_search_free(ps_search_t *search)
 {
-    if (cmd_ln_boolean_r(ngs->config, "-fwdtree"))
+    ngram_search_t *ngs = (ngram_search_t *)search;
+
+    ps_search_deinit(search);
+    if (ngs->fwdtree)
         ngram_fwdtree_deinit(ngs);
-    if (cmd_ln_boolean_r(ngs->config, "-fwdflat"))
+    if (ngs->fwdflat)
         ngram_fwdflat_deinit(ngs);
+    ngram_dag_free(ngs->dag);
 
     hmm_context_free(ngs->hmmctx);
     listelem_alloc_free(ngs->chan_alloc);
@@ -218,7 +248,6 @@ ngram_search_free(ngram_search_t *ngs)
     ckd_free(ngs->bscore_stack);
     ckd_free(ngs->bp_table_idx - 1);
     ckd_free_2d(ngs->active_word_list);
-    ckd_free(ngs->hyp_str);
     ckd_free(ngs->last_ltrans);
     ckd_free(ngs);
 }
@@ -259,7 +288,7 @@ cache_bptable_paths(ngram_search_t *ngs, int32 bp)
         prev_bp = ngs->bp_table[prev_bp].bp;
         w = ngs->bp_table[prev_bp].wid;
     }
-    bpe->real_wid = ngs->dict->dict_list[w]->wid;
+    bpe->real_wid = dict_base_wid(search_dict(ngs), w);
 
     prev_bp = ngs->bp_table[prev_bp].bp;
     bpe->prev_real_wid =
@@ -297,7 +326,7 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
             E_INFO("Resized backpointer table to %d entries\n", ngs->bp_table_size);
         }
         if (ngs->bss_head >= ngs->bscore_stack_size
-            - bin_mdef_n_ciphone(ngs->acmod->mdef)) {
+            - bin_mdef_n_ciphone(search_acmod(ngs)->mdef)) {
             ngs->bscore_stack_size *= 2;
             ngs->bscore_stack = ckd_realloc(ngs->bscore_stack,
                                             ngs->bscore_stack_size
@@ -305,7 +334,7 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
             E_INFO("Resized score stack to %d entries\n", ngs->bscore_stack_size);
         }
 
-        de = ngs->dict->dict_list[w];
+        de = search_dict(ngs)->dict_list[w];
         ngs->word_lat_idx[w] = ngs->bpidx;
         bpe = &(ngs->bp_table[ngs->bpidx]);
         bpe->wid = w;
@@ -317,7 +346,7 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
 
         if ((de->len != 1) && (de->mpx)) {
             bpe->r_diph = de->phone_ids[de->len - 1];
-            rcsize = ngs->dict->rcFwdSizeTable[bpe->r_diph];
+            rcsize = search_dict(ngs)->rcFwdSizeTable[bpe->r_diph];
         }
         else {
             bpe->r_diph = -1;
@@ -342,7 +371,7 @@ ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score
     int32 best_score;
 
     if (frame_idx == -1)
-        frame_idx = acmod_frame_idx(ngs->acmod);
+        frame_idx = acmod_frame_idx(search_acmod(ngs));
     end_bpidx = ngs->bp_table_idx[frame_idx];
 
     /* FIXME: WORST_SCORE has to go away and be replaced with a log-zero number. */
@@ -370,8 +399,9 @@ ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score
 }
 
 char const *
-ngram_search_hyp(ngram_search_t *ngs, int bpidx)
+ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx)
 {
+    ps_search_t *base = search_base(ngs);
     char *c;
     size_t len;
     int bp;
@@ -384,33 +414,33 @@ ngram_search_hyp(ngram_search_t *ngs, int bpidx)
     while (bp != NO_BP) {
         bptbl_t *be = &ngs->bp_table[bp];
         bp = be->bp;
-        if (dict_is_filler_word(ngs->dict, be->wid))
+        if (dict_is_filler_word(search_dict(ngs), be->wid))
             continue;
-        len += strlen(ngs->dict->dict_list[be->wid]->word) + 1;
+        len += strlen(search_dict(ngs)->dict_list[be->wid]->word) + 1;
     }
 
-    ckd_free(ngs->hyp_str);
-    ngs->hyp_str = ckd_calloc(1, len);
+    ckd_free(base->hyp_str);
+    base->hyp_str = ckd_calloc(1, len);
     bp = bpidx;
-    c = ngs->hyp_str + len - 1;
+    c = base->hyp_str + len - 1;
     while (bp != NO_BP) {
         bptbl_t *be = &ngs->bp_table[bp];
         size_t len;
 
         bp = be->bp;
-        if (dict_is_filler_word(ngs->dict, be->wid))
+        if (dict_is_filler_word(search_dict(ngs), be->wid))
             continue;
 
-        len = strlen(ngs->dict->dict_list[be->wid]->word);
+        len = strlen(search_dict(ngs)->dict_list[be->wid]->word);
         c -= len;
-        memcpy(c, ngs->dict->dict_list[be->wid]->word, len);
-        if (c > ngs->hyp_str) {
+        memcpy(c, search_dict(ngs)->dict_list[be->wid]->word, len);
+        if (c > base->hyp_str) {
             --c;
             *c = ' ';
         }
     }
 
-    return ngs->hyp_str;
+    return base->hyp_str;
 }
 
 void
@@ -421,11 +451,11 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
     int32 *sseq_rc;             /* list of sseqid for all possible right context for w */
     int32 i;
 
-    de = ngs->dict->dict_list[w];
+    de = search_dict(ngs)->dict_list[w];
 
     assert(de->mpx);
 
-    sseq_rc = ngs->dict->rcFwdTable[de->phone_ids[de->len - 1]];
+    sseq_rc = search_dict(ngs)->rcFwdTable[de->phone_ids[de->len - 1]];
 
     hmm = ngs->word_chan[w];
     if ((hmm == NULL) || (hmm->hmm.s.ssid != *sseq_rc)) {
@@ -488,10 +518,10 @@ ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf)
         }
 
         /* Otherwise, calculate lscr and ascr. */
-        de = ngs->dict->dict_list[bpe->wid];
+        de = search_dict(ngs)->dict_list[bpe->wid];
         p_bpe = ngs->bp_table + bpe->bp;
         rcpermtab = (p_bpe->r_diph >= 0) ?
-            ngs->dict->rcFwdPermTable[p_bpe->r_diph] : ngs->zeroPermTab;
+            search_dict(ngs)->rcFwdPermTable[p_bpe->r_diph] : ngs->zeroPermTab;
         start_score =
             ngs->bscore_stack[p_bpe->s_idx + rcpermtab[de->ci_phone_ids[0]]];
 
@@ -510,4 +540,113 @@ ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf)
         }
         bpe->ascr = bpe->score - start_score - bpe->lscr;
     }
+}
+
+static int
+ngram_search_start(ps_search_t *search)
+{
+    ngram_search_t *ngs = (ngram_search_t *)search;
+
+    if (ngs->fwdtree)
+        ngram_fwdtree_start(ngs);
+    else if (ngs->fwdflat)
+        ngram_fwdflat_start(ngs);
+    else
+        return -1;
+    return 0;
+}
+
+static int
+ngram_search_step(ps_search_t *search)
+{
+    ngram_search_t *ngs = (ngram_search_t *)search;
+
+    if (ngs->fwdtree)
+        return ngram_fwdtree_search(ngs);
+    else if (ngs->fwdflat)
+        return ngram_fwdflat_search(ngs);
+    else
+        return -1;
+}
+
+static int
+ngram_search_finish(ps_search_t *search)
+{
+    ngram_search_t *ngs = (ngram_search_t *)search;
+
+    if (ngs->fwdtree) {
+        ngram_fwdtree_finish(ngs);
+
+        /* Now do fwdflat search in its entirety, if requested. */
+        if (ngs->fwdflat) {
+            int nfr;
+
+            /* Rewind the acoustic model. */
+            acmod_rewind(search_acmod(ngs));
+            /* Now redo search. */
+            ngram_fwdflat_start(ngs);
+            while ((nfr = ngram_fwdflat_search(ngs)) > 0) {
+                /* Do nothing! */
+            }
+            if (nfr < 0)
+                return nfr;
+            ngram_fwdflat_finish(ngs);
+            /* And now, we should have a result... */
+        }
+    }
+    else if (ngs->fwdflat) {
+        ngram_fwdflat_finish(ngs);
+    }
+
+    /* Build a DAG if necessary. */
+    if (ngs->bestpath) {
+        ngram_dag_free(ngs->dag);
+        ngs->dag = ngram_dag_build(ngs);
+    }
+
+    return 0;
+}
+
+static char const *
+ngram_search_hyp(ps_search_t *search, int32 *out_score)
+{
+    ngram_search_t *ngs = (ngram_search_t *)search;
+
+    /* Use the DAG if it exists (means that the utt is done, for now
+     * at least...) */
+    if (ngs->bestpath && ngs->dag) {
+        return ngram_dag_hyp(ngs->dag, ngram_dag_bestpath(ngs->dag));
+    }
+    else {
+        int32 bpidx;
+
+        /* fwdtree and fwdflat use same backpointer table. */
+        bpidx = ngram_search_find_exit(ngs, -1, out_score);
+        if (bpidx != NO_BP)
+            return ngram_search_bp_hyp(ngs, bpidx);
+    }
+
+    return NULL;
+}
+
+static ps_seg_t *
+ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
+{
+    ngram_search_t *ngs = (ngram_search_t *)search;
+
+    /* First, figure out if we are done with the utterance yet. */
+    /* If so, we should either use the bestpath or the bptbl. */
+
+    return NULL;
+}
+
+static ps_seg_t *
+ngram_search_seg_next(ps_seg_t *seg)
+{
+    return NULL;
+}
+
+static void
+ngram_search_seg_free(ps_seg_t *seg)
+{
 }

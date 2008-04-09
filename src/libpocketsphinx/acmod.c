@@ -336,7 +336,7 @@ acmod_end_utt(acmod_t *acmod)
         /* nfr is always either zero or one. */
         fe_end_utt(acmod->fe, acmod->mfc_buf[inptr], &nfr);
         acmod->n_mfc_frame += nfr;
-        /* Process whatever's left. */
+        /* Process whatever's left, and any leadout. */
         if (nfr)
             return acmod_process_mfcbuf(acmod);
     }

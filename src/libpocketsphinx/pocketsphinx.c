@@ -47,6 +47,8 @@
 /* Local headers. */
 #include "pocketsphinx_internal.h"
 #include "cmdln_macro.h"
+#include "fsg_search.h"
+#include "ngram_search.h"
 #include "ngram_search_fwdtree.h"
 #include "ngram_search_fwdflat.h"
 #include "ngram_search_dag.h"
@@ -149,27 +151,17 @@ pocketsphinx_init(cmd_ln_t *config)
     /* Determine whether we are starting out in FSG or N-Gram search mode. */
     if ((fsgfile = cmd_ln_str_r(config, "-fsg"))
         || (fsgctl = cmd_ln_str_r(config, "-fsgctlfn"))) {
-        /* Initialize the FSG module. */
-        ps->fsgs = fsg_search_init(config, ps->lmath,
-                                   ps->acmod->mdef, ps->dict,
-                                   ps->acmod->tmat);
-        if (ps->fsgs == NULL)
-            goto error_out;
+        ps_search_t *fsgs;
 
-        /* Load one or more FSGs. */
-        if (fsgfile) {
-            if (pocketsphinx_load_fsgfile(ps, fsgfile) == NULL)
-                goto error_out;
-        }
-        if (fsgctl) {
-            if (pocketsphinx_load_fsgctl(ps, fsgctl, (fsgfile != NULL)) == NULL)
-                goto error_out;
-        }
+        /* Initialize it, add it to the list. */
     }
     else if ((lmfile = cmd_ln_str_r(config, "-lm"))
              || (lmctl = cmd_ln_str_r(config, "-lmctlfn"))) {
-        /* Initialize the N-Gram module. */
-        ps->ngs = ngram_search_init(config, ps->acmod, ps->dict);
+        ps_search_t *ngs;
+
+        ngs = ngram_search_init(config, ps->acmod, ps->dict);
+        ps->searches = glist_add_ptr(ps->searches, ngs);
+        ps->search = ngs;
     }
     /* Otherwise, we will initialize the search whenever the user
      * decides to load an FSG or a language model. */
@@ -195,10 +187,9 @@ pocketsphinx_free(pocketsphinx_t *ps)
 {
     gnode_t *gn;
 
-    if (ps->ngs)
-        ngram_search_free(ps->ngs);
-    if (ps->fsgs)
-        fsg_search_free(ps->fsgs);
+    for (gn = ps->searches; gn; gn = gnode_next(gn))
+        search_free(gnode_ptr(gn));
+    glist_free(ps->searches);
     dict_free(ps->dict);
     acmod_free(ps->acmod);
     logmath_free(ps->lmath);
@@ -218,101 +209,13 @@ pocketsphinx_get_config(pocketsphinx_t *ps)
 const char *
 pocketsphinx_load_fsgfile(pocketsphinx_t *ps, const char *fsgfile)
 {
-    word_fsg_t *fsg;
-
-    if (ps->fsgs == NULL)
-        ps->fsgs = fsg_search_init(ps->config, ps->lmath,
-                                   ps->acmod->mdef, ps->dict,
-                                   ps->acmod->tmat);
-
-    fsg = word_fsg_readfile(fsgfile, ps->dict, ps->lmath,
-                            cmd_ln_boolean_r(ps->config, "-fsgusealtpron"),
-                            cmd_ln_boolean_r(ps->config, "-fsgusefiller"),
-                            cmd_ln_float32_r(ps->config, "-silpen"),
-                            cmd_ln_float32_r(ps->config, "-fillpen"),
-                            cmd_ln_float32_r(ps->config, "-lw"));
-    if (!fsg)
-        return NULL;
-
-    if (!fsg_search_add_fsg(ps->fsgs, fsg)) {
-        E_ERROR("Failed to add FSG '%s' to system\n", word_fsg_name(fsg));
-        word_fsg_free(fsg);
-        return NULL;
-    }
-
-    return fsg->name;
+    return NULL;
 }
 
 const char *
 pocketsphinx_load_fsgctl(pocketsphinx_t *ps, const char *fsgctlfile, int set_default)
 {
-    const char *fsgname, *deffsg, *c;
-    char *basedir;
-    FILE *ctlfp;
-    char *fsgfile;
-    size_t len;
-
-    if (ps->fsgs == NULL)
-        ps->fsgs = fsg_search_init(ps->config, ps->lmath,
-                                   ps->acmod->mdef, ps->dict,
-                                   ps->acmod->tmat);
-
-    if ((ctlfp = fopen(fsgctlfile, "r")) == NULL) {
-        E_ERROR_SYSTEM("Failed to open FSG control file %s");
-        return NULL;
-    }
-
-    /* Try to find the base directory to append to relative paths in
-     * the fsgctl file. */
-    if ((c = strrchr(fsgctlfile, '/')) || (c = strrchr(fsgctlfile, '\\'))) {
-        /* Include the trailing slash. */
-        basedir = ckd_calloc(c - fsgctlfile + 2, 1);
-        memcpy(basedir, fsgctlfile, c - fsgctlfile + 1);
-    }
-    else
-        basedir = NULL;
-
-    E_INFO("Reading FSG control file '%s'\n", fsgctlfile);
-    if (basedir)
-        E_INFO("Will prepend '%s' to unqualified paths\n", basedir);
-
-    deffsg = NULL;
-    while ((fsgfile = fread_line(ctlfp, &len))) {
-        string_trim(fsgfile, STRING_BOTH);
-        if (fsgfile[0] == '#') {/* Comments. */
-            ckd_free(fsgfile);
-            fsgfile = NULL;
-            continue;
-        }
-
-        /* Prepend the base dir if necessary. */
-        if (basedir && !path_is_absolute(fsgfile)) {
-            char *tmp = string_join(basedir, fsgfile, NULL);
-            ckd_free(fsgfile);
-            fsgfile = tmp;
-        }
-
-        fsgname = pocketsphinx_load_fsgfile(ps, fsgfile);
-        if (!fsgname) {
-            E_ERROR("Error loading FSG file '%s'\n", fsgfile);
-            deffsg = NULL;
-            goto error_out;
-        }
-        if (set_default && deffsg == NULL) {
-            if (!fsg_search_set_current_fsg(ps->fsgs, fsgname)) {
-                E_ERROR("Could not set default fsg '%s'\n", fsgname);
-                goto error_out;
-            }
-            deffsg = fsgname;
-        }
-        ckd_free(fsgfile);
-        fsgfile = NULL;
-    }
-
-error_out:
-    ckd_free(fsgfile);
-    ckd_free(basedir);
-    return deffsg;
+    return NULL;
 }
 
 int
@@ -325,14 +228,15 @@ pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
 int
 pocketsphinx_start_utt(pocketsphinx_t *ps)
 {
+    int rv;
+
     ptmr_reset(&ps->perf);
     ptmr_start(&ps->perf);
 
-    if (ps->ngs)
-        ngram_fwdtree_start(ps->ngs);
-    else if (ps->fsgs)
-        /* FIXME: Do whatever needs to be done. */;
-    return acmod_start_utt(ps->acmod);
+    if ((rv = acmod_start_utt(ps->acmod)) < 0)
+        return rv;
+
+    return search_start(ps->search);
 }
 
 int
@@ -357,16 +261,11 @@ pocketsphinx_process_raw(pocketsphinx_t *ps,
 
         /* Score and search as much data as possible */
         if (!no_search) {
-            if (ps->ngs) {
-                while ((nfr = ngram_fwdtree_search(ps->ngs)) > 0) {
-                    n_searchfr += nfr;
-                }
-                if (nfr < 0)
-                    return nfr;
+            while ((nfr = search_step(ps->search)) > 0) {
+                n_searchfr += nfr;
             }
-            else if (ps->fsgs) {
-                /* FIXME: Do whatever needs to be done */
-            }
+            if (nfr < 0)
+                return nfr;
         }
     }
 
@@ -396,16 +295,11 @@ pocketsphinx_process_cep(pocketsphinx_t *ps,
 
         /* Score and search as much data as possible */
         if (!no_search) {
-            if (ps->ngs) {
-                while ((nfr = ngram_fwdtree_search(ps->ngs)) > 0) {
-                    n_searchfr += nfr;
-                }
-                if (nfr < 0)
-                    return nfr;
+            while ((nfr = search_step(ps->search)) > 0) {
+                n_searchfr += nfr;
             }
-            else if (ps->fsgs) {
-                /* FIXME: Do whatever needs to be done */
-            }
+            if (nfr < 0)
+                return nfr;
         }
     }
 
@@ -416,88 +310,71 @@ pocketsphinx_process_cep(pocketsphinx_t *ps,
 int
 pocketsphinx_end_utt(pocketsphinx_t *ps)
 {
-    int n_searchfr = 0;
+    int rv;
 
     acmod_end_utt(ps->acmod);
-
-    if (ps->ngs) {
-        int nfr;
-
-        while ((nfr = ngram_fwdtree_search(ps->ngs)) > 0) {
-            n_searchfr += nfr;
-        }
-        if (nfr < 0)
-            return nfr;
-
-        ngram_fwdtree_finish(ps->ngs);
-        if (cmd_ln_boolean_r(ps->config, "-fwdflat")) {
-            /* Rewind the acoustic model. */
-            acmod_rewind(ps->acmod);
-            /* Now redo search. */
-            ngram_fwdflat_start(ps->ngs);
-            while ((nfr = ngram_fwdflat_search(ps->ngs)) > 0) {
-                /* Do nothing! */
-            }
-            ngram_fwdflat_finish(ps->ngs);
-            /* And now, we should have a result... */
-        }
-        if (cmd_ln_int32_r(ps->config, "-nbest")) {
-            /* FIXME: Do A* search. */
-        }
-        else if (cmd_ln_boolean_r(ps->config, "-bestpath")) {
-            /* FIXME: Do bestpath search. */
-        }
-
-        ps->n_frame += n_searchfr;
-        ptmr_stop(&ps->perf);
-        return 0;
+    while ((rv = search_step(ps->search)) > 0) {
     }
-    else if (ps->fsgs) {
-        /* FIXME: Do whatever needs to be done. */
-
-        ps->n_frame += n_searchfr;
+    if (rv < 0) {
         ptmr_stop(&ps->perf);
-        return 0;
+        return rv;
     }
-    else {
-
-        ps->n_frame += n_searchfr;
-        ptmr_stop(&ps->perf);
-        return -1;
-    }
+    rv = search_finish(ps->search);
+    ptmr_stop(&ps->perf);
+    return rv;
 }
 
 char const *
 pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score)
 {
-    if (ps->ngs) {
-        char const *hyp = NULL;
+    char const *hyp;
 
-        ptmr_start(&ps->perf);
-        if (cmd_ln_int32_r(ps->config, "-nbest")) {
-            /* FIXME: Return 1-best hypothesis. */
-        }
-        else if (cmd_ln_boolean_r(ps->config, "-bestpath")) {
-            /* FIXME: Backtrace lattice. */
-        }
-        else {
-            int32 bpidx;
+    ptmr_start(&ps->perf);
+    hyp = search_hyp(ps->search, out_best_score);
+    ptmr_stop(&ps->perf);
+    return hyp;
+}
 
-            /* fwdtree and fwdflat use same backpointer table. */
-            bpidx = ngram_search_find_exit(ps->ngs, -1, out_best_score);
-            if (bpidx != NO_BP)
-                hyp = ngram_search_hyp(ps->ngs, bpidx);
-        }
-        ptmr_stop(&ps->perf);
-        return hyp;
-    }
-    else if (ps->fsgs) {
-        /* FIXME: Do whatever needs to be done. */
-        return NULL;
-    }
-    else {
-        return NULL;
-    }
+ps_seg_t *
+pocketsphinx_seg_iter(pocketsphinx_t *ps, int32 *out_best_score)
+{
+    ps_seg_t *itor;
+
+    ptmr_start(&ps->perf);
+    itor = search_seg_iter(ps->search, out_best_score);
+    ptmr_stop(&ps->perf);
+    return itor;
+}
+
+ps_seg_t *
+pocketsphinx_seg_next(ps_seg_t *seg)
+{
+    return search_seg_next(seg);
+}
+
+char const *
+pocketsphinx_seg_word(ps_seg_t *seg)
+{
+    return seg->word;
+}
+
+void
+pocketsphinx_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef)
+{
+    *out_sf = seg->sf;
+    *out_ef = seg->ef;
+}
+
+void
+pocketsphinx_seg_prob(ps_seg_t *seg, float32 *out_pprob)
+{
+    *out_pprob = seg->prob;
+}
+
+void
+pocketsphinx_seg_free(ps_seg_t *seg)
+{
+    search_seg_free(seg);
 }
 
 void
@@ -522,4 +399,22 @@ pocketsphinx_get_all_time(pocketsphinx_t *ps, double *out_nspeech,
     *out_nspeech = (double)ps->n_frame / frate;
     *out_ncpu = ps->perf.t_tot_cpu;
     *out_nwall = ps->perf.t_tot_elapsed;
+}
+
+void
+ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
+               cmd_ln_t *config, acmod_t *acmod, dict_t *dict)
+{
+    search->vt = vt;
+    search->config = config;
+    search->acmod = acmod;
+    search->dict = dict;
+}
+
+void
+ps_search_deinit(ps_search_t *search)
+{
+    /* FIXME: We will have refcounting on acmod, config, etc, at which
+     * point we will free them here too. */
+    ckd_free(search->hyp_str);
 }
