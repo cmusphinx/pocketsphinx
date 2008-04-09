@@ -54,10 +54,9 @@
 
 /* Local headers. */
 #include "fbs.h"
-#include "bin_mdef.h"
+#include "pocketsphinx_internal.h"
+#include "hmm.h"
 #include "word_fsg.h"
-#include "dict.h"
-#include "tmat.h"
 
 /* Forward declare some things. */
 struct fsg_lextree_s;

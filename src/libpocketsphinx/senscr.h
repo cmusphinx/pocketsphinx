@@ -48,22 +48,7 @@
 
 /* Local headers. */
 #include "hmm.h"
-
-/* Bit-vector operations for maintaining senone_active_vec */
-#define BITVEC_SEN_ACTIVE
-#ifdef BITVEC_SEN_ACTIVE
-#define BITVEC_WIDTH 32
-#define BITVEC_SET(v, e) (v)[(e)/BITVEC_WIDTH] |= (1<<((e)%BITVEC_WIDTH))
-#define BITVEC_CLEAR(v, e) (v)[(e)/BITVEC_WIDTH] &= ~(1<<((e)%BITVEC_WIDTH))
-#define BITVEC_ISSET(v, e) ((v)[(e)/BITVEC_WIDTH] & (1<<((e)%BITVEC_WIDTH)))
-typedef uint32 bitvec_t;
-#else
-#define BITVEC_WIDTH 1
-#define BITVEC_SET(v, e) (v)[e] = 1
-#define BITVEC_CLEAR(v, e) (v)[e] = 0
-#define BITVEC_ISSET(v, e) (v)[e]
-typedef uint8 bitvec_t;
-#endif
+#include "bitvec.h"
 
 /* Array of senone scores for current frame */
 extern int16 *senone_scores;

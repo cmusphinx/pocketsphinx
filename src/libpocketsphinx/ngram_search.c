@@ -81,10 +81,10 @@ ngram_search_update_widmap(ngram_search_t *ngs)
     int32 i, n_words;
 
     /* It's okay to include fillers since they won't be in the LM */
-    n_words = search_n_words(ngs);
+    n_words = ps_search_n_words(ngs);
     words = ckd_calloc(n_words, sizeof(*words));
     for (i = 0; i < n_words; ++i)
-        words[i] = dict_word_str(search_dict(ngs), i);
+        words[i] = dict_word_str(ps_search_dict(ngs), i);
     ngram_model_set_map_words(ngs->lmset, words, n_words);
     ckd_free(words);
 }
@@ -288,7 +288,7 @@ cache_bptable_paths(ngram_search_t *ngs, int32 bp)
         prev_bp = ngs->bp_table[prev_bp].bp;
         w = ngs->bp_table[prev_bp].wid;
     }
-    bpe->real_wid = dict_base_wid(search_dict(ngs), w);
+    bpe->real_wid = dict_base_wid(ps_search_dict(ngs), w);
 
     prev_bp = ngs->bp_table[prev_bp].bp;
     bpe->prev_real_wid =
@@ -326,7 +326,7 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
             E_INFO("Resized backpointer table to %d entries\n", ngs->bp_table_size);
         }
         if (ngs->bss_head >= ngs->bscore_stack_size
-            - bin_mdef_n_ciphone(search_acmod(ngs)->mdef)) {
+            - bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef)) {
             ngs->bscore_stack_size *= 2;
             ngs->bscore_stack = ckd_realloc(ngs->bscore_stack,
                                             ngs->bscore_stack_size
@@ -334,7 +334,7 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
             E_INFO("Resized score stack to %d entries\n", ngs->bscore_stack_size);
         }
 
-        de = search_dict(ngs)->dict_list[w];
+        de = ps_search_dict(ngs)->dict_list[w];
         ngs->word_lat_idx[w] = ngs->bpidx;
         bpe = &(ngs->bp_table[ngs->bpidx]);
         bpe->wid = w;
@@ -346,7 +346,7 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
 
         if ((de->len != 1) && (de->mpx)) {
             bpe->r_diph = de->phone_ids[de->len - 1];
-            rcsize = search_dict(ngs)->rcFwdSizeTable[bpe->r_diph];
+            rcsize = ps_search_dict(ngs)->rcFwdSizeTable[bpe->r_diph];
         }
         else {
             bpe->r_diph = -1;
@@ -371,7 +371,7 @@ ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score
     int32 best_score;
 
     if (frame_idx == -1)
-        frame_idx = acmod_frame_idx(search_acmod(ngs));
+        frame_idx = acmod_frame_idx(ps_search_acmod(ngs));
     end_bpidx = ngs->bp_table_idx[frame_idx];
 
     /* FIXME: WORST_SCORE has to go away and be replaced with a log-zero number. */
@@ -401,7 +401,7 @@ ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score
 char const *
 ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx)
 {
-    ps_search_t *base = search_base(ngs);
+    ps_search_t *base = ps_search_base(ngs);
     char *c;
     size_t len;
     int bp;
@@ -414,9 +414,9 @@ ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx)
     while (bp != NO_BP) {
         bptbl_t *be = &ngs->bp_table[bp];
         bp = be->bp;
-        if (dict_is_filler_word(search_dict(ngs), be->wid))
+        if (dict_is_filler_word(ps_search_dict(ngs), be->wid))
             continue;
-        len += strlen(search_dict(ngs)->dict_list[be->wid]->word) + 1;
+        len += strlen(ps_search_dict(ngs)->dict_list[be->wid]->word) + 1;
     }
 
     ckd_free(base->hyp_str);
@@ -428,12 +428,12 @@ ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx)
         size_t len;
 
         bp = be->bp;
-        if (dict_is_filler_word(search_dict(ngs), be->wid))
+        if (dict_is_filler_word(ps_search_dict(ngs), be->wid))
             continue;
 
-        len = strlen(search_dict(ngs)->dict_list[be->wid]->word);
+        len = strlen(ps_search_dict(ngs)->dict_list[be->wid]->word);
         c -= len;
-        memcpy(c, search_dict(ngs)->dict_list[be->wid]->word, len);
+        memcpy(c, ps_search_dict(ngs)->dict_list[be->wid]->word, len);
         if (c > base->hyp_str) {
             --c;
             *c = ' ';
@@ -451,11 +451,11 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
     int32 *sseq_rc;             /* list of sseqid for all possible right context for w */
     int32 i;
 
-    de = search_dict(ngs)->dict_list[w];
+    de = ps_search_dict(ngs)->dict_list[w];
 
     assert(de->mpx);
 
-    sseq_rc = search_dict(ngs)->rcFwdTable[de->phone_ids[de->len - 1]];
+    sseq_rc = ps_search_dict(ngs)->rcFwdTable[de->phone_ids[de->len - 1]];
 
     hmm = ngs->word_chan[w];
     if ((hmm == NULL) || (hmm->hmm.s.ssid != *sseq_rc)) {
@@ -518,10 +518,10 @@ ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf)
         }
 
         /* Otherwise, calculate lscr and ascr. */
-        de = search_dict(ngs)->dict_list[bpe->wid];
+        de = ps_search_dict(ngs)->dict_list[bpe->wid];
         p_bpe = ngs->bp_table + bpe->bp;
         rcpermtab = (p_bpe->r_diph >= 0) ?
-            search_dict(ngs)->rcFwdPermTable[p_bpe->r_diph] : ngs->zeroPermTab;
+            ps_search_dict(ngs)->rcFwdPermTable[p_bpe->r_diph] : ngs->zeroPermTab;
         start_score =
             ngs->bscore_stack[p_bpe->s_idx + rcpermtab[de->ci_phone_ids[0]]];
 
@@ -582,7 +582,7 @@ ngram_search_finish(ps_search_t *search)
             int nfr;
 
             /* Rewind the acoustic model. */
-            acmod_rewind(search_acmod(ngs));
+            acmod_rewind(ps_search_acmod(ngs));
             /* Now redo search. */
             ngram_fwdflat_start(ngs);
             while ((nfr = ngram_fwdflat_search(ngs)) > 0) {

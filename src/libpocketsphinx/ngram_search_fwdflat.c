@@ -63,13 +63,13 @@ ngram_fwdflat_init(ngram_search_t *ngs)
 {
     int n_words, i;
 
-    n_words = search_n_words(ngs);
+    n_words = ps_search_n_words(ngs);
     ngs->fwdflat_wordlist = ckd_calloc(n_words + 1, sizeof(*ngs->fwdflat_wordlist));
     ngs->expand_word_flag = bitvec_alloc(n_words);
     ngs->expand_word_list = ckd_calloc(n_words + 1, sizeof(*ngs->expand_word_list));
     ngs->frm_wordlist = ckd_calloc(ngs->n_frame_alloc, sizeof(*ngs->frm_wordlist));
-    ngs->min_ef_width = cmd_ln_int32_r(search_config(ngs), "-fwdflatefwid");
-    ngs->max_sf_win = cmd_ln_int32_r(search_config(ngs), "-fwdflatsfwin");
+    ngs->min_ef_width = cmd_ln_int32_r(ps_search_config(ngs), "-fwdflatefwid");
+    ngs->max_sf_win = cmd_ln_int32_r(ps_search_config(ngs), "-fwdflatsfwin");
     E_INFO("fwdflat: min_ef_width = %d, max_sf_win = %d\n",
            ngs->min_ef_width, ngs->max_sf_win);
 
@@ -78,10 +78,10 @@ ngram_fwdflat_init(ngram_search_t *ngs)
         int w;
 
         ngs->n_expand_words = 0;
-        bitvec_clear_all(ngs->expand_word_flag, search_n_words(ngs));
+        bitvec_clear_all(ngs->expand_word_flag, ps_search_n_words(ngs));
         for (i = 0; i < ngs->start_wid; i++) {
             if (ngram_model_set_known_wid(ngs->lmset,
-                                          search_dict(ngs)->dict_list[i]->wid)) {
+                                          ps_search_dict(ngs)->dict_list[i]->wid)) {
                 ngs->fwdflat_wordlist[ngs->n_expand_words] = i;
                 ngs->expand_word_list[ngs->n_expand_words] = i;
                 bitvec_set(ngs->expand_word_flag, i);
@@ -95,14 +95,14 @@ ngram_fwdflat_init(ngram_search_t *ngs)
          * been allocated for us by fwdtree initialization. */
         ngs->n_1ph_words = 0;
         for (w = 0; w < n_words; w++) {
-            dict_entry_t *de = search_dict(ngs)->dict_list[w];
+            dict_entry_t *de = ps_search_dict(ngs)->dict_list[w];
             if (de->len == 1)
                 ++ngs->n_1ph_words;
         }
         ngs->all_rhmm = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->all_rhmm));
         i = 0;
         for (w = 0; w < n_words; w++) {
-            dict_entry_t *de = search_dict(ngs)->dict_list[w];
+            dict_entry_t *de = ps_search_dict(ngs)->dict_list[w];
             if (de->len != 1)
                 continue;
 
@@ -164,7 +164,7 @@ build_fwdflat_wordlist(ngram_search_t *ngs)
             continue;
 
         /* Look for it in the wordlist. */
-        de = search_dict(ngs)->dict_list[wid];
+        de = ps_search_dict(ngs)->dict_list[wid];
         for (node = ngs->frm_wordlist[sf]; node && (node->wid != wid);
              node = node->next);
 
@@ -204,7 +204,7 @@ build_fwdflat_wordlist(ngram_search_t *ngs)
 
     /* Form overall wordlist for 2nd pass */
     nwd = 0;
-    bitvec_clear_all(ngs->word_active, search_n_words(ngs));
+    bitvec_clear_all(ngs->word_active, ps_search_n_words(ngs));
     for (f = 0; f < ngs->n_frame; f++) {
         for (node = ngs->frm_wordlist[f]; node; node = node->next) {
             if (!bitvec_is_set(ngs->word_active, node->wid)) {
@@ -230,7 +230,7 @@ build_fwdflat_chan(ngram_search_t *ngs)
     /* Build word HMMs for each word in the lattice. */
     for (i = 0; ngs->fwdflat_wordlist[i] >= 0; i++) {
         wid = ngs->fwdflat_wordlist[i];
-        de = search_dict(ngs)->dict_list[wid];
+        de = ps_search_dict(ngs)->dict_list[wid];
 
         /* Omit single-phone words as they are permanently allocated */
         if (de->len == 1)
@@ -288,7 +288,7 @@ ngram_fwdflat_start(ngram_search_t *ngs)
     ngs->bpidx = 0;
     ngs->bss_head = 0;
 
-    for (i = 0; i < search_n_words(ngs); i++)
+    for (i = 0; i < ps_search_n_words(ngs); i++)
         ngs->word_lat_idx[i] = NO_BP;
 
     /* Start search with <s>; word_chan[<s>] is permanently allocated */
@@ -300,7 +300,7 @@ ngram_fwdflat_start(ngram_search_t *ngs)
     ngs->best_score = 0;
     ngs->renormalized = FALSE;
 
-    for (i = 0; i < search_n_words(ngs); i++)
+    for (i = 0; i < ps_search_n_words(ngs); i++)
         ngs->last_ltrans[i].sf = -1;
 
     if (!ngs->fwdtree)
@@ -320,7 +320,7 @@ compute_fwdflat_sen_active(ngram_search_t *ngs, int frame_idx)
     root_chan_t *rhmm;
     chan_t *hmm;
 
-    acmod_clear_active(search_acmod(ngs));
+    acmod_clear_active(ps_search_acmod(ngs));
 
     i = ngs->n_active_word[frame_idx & 0x1];
     awl = ngs->active_word_list[frame_idx & 0x1];
@@ -328,12 +328,12 @@ compute_fwdflat_sen_active(ngram_search_t *ngs, int frame_idx)
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
         rhmm = (root_chan_t *)ngs->word_chan[w];
         if (hmm_frame(&rhmm->hmm) == frame_idx) {
-            acmod_activate_hmm(search_acmod(ngs), &rhmm->hmm);
+            acmod_activate_hmm(ps_search_acmod(ngs), &rhmm->hmm);
         }
 
         for (hmm = rhmm->next; hmm; hmm = hmm->next) {
             if (hmm_frame(&hmm->hmm) == frame_idx) {
-                acmod_activate_hmm(search_acmod(ngs), &hmm->hmm);
+                acmod_activate_hmm(ps_search_acmod(ngs), &hmm->hmm);
             }
         }
     }
@@ -389,7 +389,7 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
     nf = cf + 1;
     i = ngs->n_active_word[cf & 0x1];
     awl = ngs->active_word_list[cf & 0x1];
-    bitvec_clear_all(ngs->word_active, search_n_words(ngs));
+    bitvec_clear_all(ngs->word_active, ps_search_n_words(ngs));
 
     thresh = ngs->best_score + ngs->fwdflatbeam;
     wordthresh = ngs->best_score + ngs->fwdflatwbeam;
@@ -397,7 +397,7 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
 
     /* Scan all active words. */
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
-        de = search_dict(ngs)->dict_list[w];
+        de = ps_search_dict(ngs)->dict_list[w];
 
         rhmm = (root_chan_t *) ngs->word_chan[w];
         /* Propagate active root channels */
@@ -520,7 +520,7 @@ get_expand_wordlist(ngram_search_t *ngs, int32 frm, int32 win)
     if (ef > ngs->n_frame)
         ef = ngs->n_frame;
 
-    bitvec_clear_all(ngs->expand_word_flag, search_n_words(ngs));
+    bitvec_clear_all(ngs->expand_word_flag, ps_search_n_words(ngs));
     ngs->n_expand_words = 0;
 
     for (f = sf; f < ef; f++) {
@@ -566,17 +566,17 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
         if (bp->wid == ngs->finish_wid)
             continue;
 
-        de = search_dict(ngs)->dict_list[bp->wid];
+        de = ps_search_dict(ngs)->dict_list[bp->wid];
         rcpermtab =
             (bp->r_diph >=
-             0) ? search_dict(ngs)->rcFwdPermTable[bp->r_diph] : ngs->zeroPermTab;
+             0) ? ps_search_dict(ngs)->rcFwdPermTable[bp->r_diph] : ngs->zeroPermTab;
         rcss = ngs->bscore_stack + bp->s_idx;
 
         /* Transition to all successor words. */
         for (i = 0; ngs->expand_word_list[i] >= 0; i++) {
             int32 n_used;
             w = ngs->expand_word_list[i];
-            newde = search_dict(ngs)->dict_list[w];
+            newde = ps_search_dict(ngs)->dict_list[w];
             /* Get the exit score we recorded in save_bwd_ptr(), or
              * something approximating it. */
             newscore = rcss[rcpermtab[newde->ci_phone_ids[0]]];
@@ -594,7 +594,7 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
                     hmm_enter(&rhmm->hmm, newscore, b, nf);
                     if (hmm_is_mpx(&rhmm->hmm)) {
                         rhmm->hmm.s.mpx_ssid[0] =
-                            search_dict(ngs)->lcFwdTable[rhmm->diphone]
+                            ps_search_dict(ngs)->lcFwdTable[rhmm->diphone]
                             [de->ci_phone_ids[de->len-1]];
                     }
 
@@ -604,8 +604,8 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
         }
 
         /* Get the best exit into silence. */
-        if (best_silrc_score < rcss[rcpermtab[search_acmod(ngs)->mdef->sil]]) {
-            best_silrc_score = rcss[rcpermtab[search_acmod(ngs)->mdef->sil]];
+        if (best_silrc_score < rcss[rcpermtab[ps_search_acmod(ngs)->mdef->sil]]) {
+            best_silrc_score = rcss[rcpermtab[ps_search_acmod(ngs)->mdef->sil]];
             best_silrc_bp = b;
         }
     }
@@ -625,7 +625,7 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
     /* Transition to noise words */
     newscore = best_silrc_score + ngs->fillpen + pip;
     if ((newscore > thresh) && (newscore > WORST_SCORE)) {
-        for (w = ngs->silence_wid + 1; w < search_n_words(ngs); w++) {
+        for (w = ngs->silence_wid + 1; w < ps_search_n_words(ngs); w++) {
             rhmm = (root_chan_t *) ngs->word_chan[w];
             if ((hmm_frame(&rhmm->hmm) < cf)
                 || (hmm_in_score(&rhmm->hmm) < newscore)) {
@@ -684,17 +684,17 @@ ngram_fwdflat_search(ngram_search_t *ngs)
     int32 *nawl;
 
     /* Determine if we actually have a frame to process. */
-    if (search_acmod(ngs)->n_feat_frame == 0)
+    if (ps_search_acmod(ngs)->n_feat_frame == 0)
         return 0;
 
     /* Activate our HMMs for the current frame if need be. */
-    if (!search_acmod(ngs)->compallsen)
-        compute_fwdflat_sen_active(ngs, acmod_frame_idx(search_acmod(ngs)));
+    if (!ps_search_acmod(ngs)->compallsen)
+        compute_fwdflat_sen_active(ngs, acmod_frame_idx(ps_search_acmod(ngs)));
 
     /* Compute GMM scores for the current frame. */
-    senscr = acmod_score(search_acmod(ngs), &frame_idx,
+    senscr = acmod_score(ps_search_acmod(ngs), &frame_idx,
                          &best_senscr, &best_senid);
-    ngs->st.n_senone_active_utt += search_acmod(ngs)->n_senone_active;
+    ngs->st.n_senone_active_utt += ps_search_acmod(ngs)->n_senone_active;
 
     /* Mark backpointer table for current frame. */
     ngram_search_mark_bptable(ngs, frame_idx);
@@ -725,7 +725,7 @@ ngram_fwdflat_search(ngram_search_t *ngs)
             j++;
         }
     }
-    for (i = ngs->start_wid; i < search_n_words(ngs); i++) {
+    for (i = ngs->start_wid; i < ps_search_n_words(ngs); i++) {
         if (bitvec_is_set(ngs->word_active, i)) {
             *(nawl++) = i;
             j++;
@@ -770,7 +770,7 @@ destroy_fwdflat_chan(ngram_search_t *ngs)
 
     for (i = 0; ngs->fwdflat_wordlist[i] >= 0; i++) {
         wid = ngs->fwdflat_wordlist[i];
-        de = search_dict(ngs)->dict_list[wid];
+        de = ps_search_dict(ngs)->dict_list[wid];
 
         if (de->len == 1)
             continue;
@@ -789,10 +789,10 @@ ngram_fwdflat_finish(ngram_search_t *ngs)
 
     destroy_fwdflat_chan(ngs);
     destroy_fwdflat_wordlist(ngs);
-    bitvec_clear_all(ngs->word_active, search_n_words(ngs));
+    bitvec_clear_all(ngs->word_active, ps_search_n_words(ngs));
 
     /* This is the number of frames processed. */
-    cf = acmod_frame_idx(search_acmod(ngs));
+    cf = acmod_frame_idx(ps_search_acmod(ngs));
     /* Add a mark in the backpointer table for one past the final frame. */
     ngram_search_mark_bptable(ngs, cf);
 

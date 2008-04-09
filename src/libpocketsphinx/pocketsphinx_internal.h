@@ -98,21 +98,21 @@ struct ps_search_s {
     char *hyp_str;         /**< Current hypothesis string. */
 };
 
-#define search_base(s) ((ps_search_t *)s)
-#define search_config(s) search_base(s)->config
-#define search_acmod(s) search_base(s)->acmod
-#define search_dict(s) search_base(s)->dict
+#define ps_search_base(s) ((ps_search_t *)s)
+#define ps_search_config(s) ps_search_base(s)->config
+#define ps_search_acmod(s) ps_search_base(s)->acmod
+#define ps_search_dict(s) ps_search_base(s)->dict
 
-#define search_name(s) search_base(s)->vt->name
-#define search_start(s) (*(search_base(s)->vt->start))(s)
-#define search_step(s) (*(search_base(s)->vt->step))(s)
-#define search_finish(s) (*(search_base(s)->vt->finish))(s)
-#define search_free(s) (*(search_base(s)->vt->free))(s)
-#define search_hyp(s,sc) (*(search_base(s)->vt->hyp))(s,sc)
-#define search_seg_iter(s,sc) (*(search_base(s)->vt->seg_iter))(s,sc)
+#define ps_search_name(s) ps_search_base(s)->vt->name
+#define ps_search_start(s) (*(ps_search_base(s)->vt->start))(s)
+#define ps_search_step(s) (*(ps_search_base(s)->vt->step))(s)
+#define ps_search_finish(s) (*(ps_search_base(s)->vt->finish))(s)
+#define ps_search_free(s) (*(ps_search_base(s)->vt->free))(s)
+#define ps_search_hyp(s,sc) (*(ps_search_base(s)->vt->hyp))(s,sc)
+#define ps_search_seg_iter(s,sc) (*(ps_search_base(s)->vt->seg_iter))(s,sc)
 
 /* For convenience... */
-#define search_n_words(s) dict_n_words(search_dict(s))
+#define ps_search_n_words(s) dict_n_words(ps_search_dict(s))
 
 
 /**
@@ -137,8 +137,8 @@ struct ps_seg_s {
     float32 prob;          /**< Posterior probability. */
 };
 
-#define search_seg_next(seg) (*(seg->search->vt->seg_next))(seg)
-#define search_seg_free(s) (*(seg->search->vt->seg_free))(seg)
+#define ps_search_seg_next(seg) (*(seg->search->vt->seg_next))(seg)
+#define ps_search_seg_free(s) (*(seg->search->vt->seg_free))(seg)
 
 
 /**

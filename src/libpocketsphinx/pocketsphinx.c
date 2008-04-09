@@ -188,7 +188,7 @@ pocketsphinx_free(pocketsphinx_t *ps)
     gnode_t *gn;
 
     for (gn = ps->searches; gn; gn = gnode_next(gn))
-        search_free(gnode_ptr(gn));
+        ps_search_free(gnode_ptr(gn));
     glist_free(ps->searches);
     dict_free(ps->dict);
     acmod_free(ps->acmod);
@@ -236,7 +236,7 @@ pocketsphinx_start_utt(pocketsphinx_t *ps)
     if ((rv = acmod_start_utt(ps->acmod)) < 0)
         return rv;
 
-    return search_start(ps->search);
+    return ps_search_start(ps->search);
 }
 
 int
@@ -261,7 +261,7 @@ pocketsphinx_process_raw(pocketsphinx_t *ps,
 
         /* Score and search as much data as possible */
         if (!no_search) {
-            while ((nfr = search_step(ps->search)) > 0) {
+            while ((nfr = ps_search_step(ps->search)) > 0) {
                 n_searchfr += nfr;
             }
             if (nfr < 0)
@@ -295,7 +295,7 @@ pocketsphinx_process_cep(pocketsphinx_t *ps,
 
         /* Score and search as much data as possible */
         if (!no_search) {
-            while ((nfr = search_step(ps->search)) > 0) {
+            while ((nfr = ps_search_step(ps->search)) > 0) {
                 n_searchfr += nfr;
             }
             if (nfr < 0)
@@ -313,13 +313,13 @@ pocketsphinx_end_utt(pocketsphinx_t *ps)
     int rv;
 
     acmod_end_utt(ps->acmod);
-    while ((rv = search_step(ps->search)) > 0) {
+    while ((rv = ps_search_step(ps->search)) > 0) {
     }
     if (rv < 0) {
         ptmr_stop(&ps->perf);
         return rv;
     }
-    rv = search_finish(ps->search);
+    rv = ps_search_finish(ps->search);
     ptmr_stop(&ps->perf);
     return rv;
 }
@@ -330,7 +330,7 @@ pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score)
     char const *hyp;
 
     ptmr_start(&ps->perf);
-    hyp = search_hyp(ps->search, out_best_score);
+    hyp = ps_search_hyp(ps->search, out_best_score);
     ptmr_stop(&ps->perf);
     return hyp;
 }
@@ -341,7 +341,7 @@ pocketsphinx_seg_iter(pocketsphinx_t *ps, int32 *out_best_score)
     ps_seg_t *itor;
 
     ptmr_start(&ps->perf);
-    itor = search_seg_iter(ps->search, out_best_score);
+    itor = ps_search_seg_iter(ps->search, out_best_score);
     ptmr_stop(&ps->perf);
     return itor;
 }
@@ -349,7 +349,7 @@ pocketsphinx_seg_iter(pocketsphinx_t *ps, int32 *out_best_score)
 ps_seg_t *
 pocketsphinx_seg_next(ps_seg_t *seg)
 {
-    return search_seg_next(seg);
+    return ps_search_seg_next(seg);
 }
 
 char const *
@@ -374,7 +374,7 @@ pocketsphinx_seg_prob(ps_seg_t *seg, float32 *out_pprob)
 void
 pocketsphinx_seg_free(ps_seg_t *seg)
 {
-    search_seg_free(seg);
+    ps_search_seg_free(seg);
 }
 
 void

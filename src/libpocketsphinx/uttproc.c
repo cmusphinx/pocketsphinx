@@ -81,13 +81,6 @@
 
 #define MAX_UTT_LEN     6000    /* #frames */
 
-typedef enum {
-    UTTSTATE_UNDEF = -1,
-    UTTSTATE_IDLE = 0,
-    UTTSTATE_BEGUN = 1,
-    UTTSTATE_ENDED = 2,
-    UTTSTATE_STOPPED = 3
-} uttstate_t;
 static uttstate_t uttstate = UTTSTATE_UNDEF;
 /* Used to flag beginning of utterance in livemode. */
 static int32 uttstart;

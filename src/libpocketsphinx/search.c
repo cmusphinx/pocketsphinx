@@ -1293,9 +1293,7 @@ search_initialize(cmd_ln_t *cmdln)
         ckd_calloc(NumWords, sizeof(lastphn_cand_t));
 
     senone_active = ckd_calloc(bin_mdef_n_sen(g_mdef), sizeof(int32));
-    senone_active_vec =
-        ckd_calloc((bin_mdef_n_sen(g_mdef) + BITVEC_WIDTH - 1)
-                               / BITVEC_WIDTH, sizeof(bitvec_t));
+    senone_active_vec = bitvec_alloc(bin_mdef_n_sen(g_mdef));
 
     last_ltrans =
         ckd_calloc(NumWords, sizeof(last_ltrans_t));

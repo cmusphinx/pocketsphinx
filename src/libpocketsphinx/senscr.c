@@ -126,17 +126,16 @@ senscr_active(mfcc_t **feat, int32 frame_idx)
 void
 sen_active_clear(void)
 {
-    memset(senone_active_vec, 0, (bin_mdef_n_sen(g_mdef) + BITVEC_WIDTH - 1)
-           / BITVEC_WIDTH * sizeof(bitvec_t));
+    bitvec_clear_all(senone_active_vec, bin_mdef_n_sen(g_mdef));
     n_senone_active = 0;
 }
 
 #define MPX_BITVEC_SET(h,i)                                                     \
             if ((h)->s.mpx_ssid[i] != -1)                                       \
-                BITVEC_SET(senone_active_vec,                                   \
+                bitvec_set(senone_active_vec,                                   \
                            bin_mdef_sseq2sen(g_mdef, (h)->s.mpx_ssid[i], (i)));
 #define NONMPX_BITVEC_SET(h,i)                                          \
-                BITVEC_SET(senone_active_vec,                           \
+                bitvec_set(senone_active_vec,                           \
                            bin_mdef_sseq2sen(g_mdef, (h)->s.ssid, (i)));
 
 void
@@ -178,7 +177,6 @@ hmm_sen_active(hmm_t * hmm)
     }
 }
 
-#ifdef BITVEC_SEN_ACTIVE
 int32
 sen_active_flags2list(void)
 {
@@ -188,12 +186,12 @@ sen_active_flags2list(void)
     total_dists = bin_mdef_n_sen(g_mdef);
 
     j = 0;
-    total_bits = total_dists & -BITVEC_WIDTH;
+    total_bits = total_dists & -BITVEC_BITS;
     for (i = 0, flagptr = senone_active_vec; i < total_bits; flagptr++) {
         bits = *flagptr;
 
         if (bits == 0) {
-            i += BITVEC_WIDTH;
+            i += BITVEC_BITS;
             continue;
         }
 
@@ -221,7 +219,7 @@ sen_active_flags2list(void)
         if (bits & (1 << 7))
             senone_active[j++] = i;
         ++i;
-#if BITVEC_WIDTH > 8
+#if BITVEC_BITS > 8
         if (bits & (1 << 8))
             senone_active[j++] = i;
         ++i;
@@ -246,7 +244,7 @@ sen_active_flags2list(void)
         if (bits & (1 << 15))
             senone_active[j++] = i;
         ++i;
-#if BITVEC_WIDTH == 32
+#if BITVEC_BITS == 32
         if (bits & (1 << 16))
             senone_active[j++] = i;
         ++i;
@@ -295,56 +293,15 @@ sen_active_flags2list(void)
         if (bits & (1 << 31))
             senone_active[j++] = i;
         ++i;
-#endif                          /* BITVEC_WIDTH == 32 */
-#endif                          /* BITVEC_WIDTH > 8 */
+#endif                          /* BITVEC_BITS == 32 */
+#endif                          /* BITVEC_BITS > 8 */
     }
 
     for (; i < total_dists; ++i)
-        if (*flagptr & (1 << (i % BITVEC_WIDTH)))
+        if (*flagptr & (1 << (i % BITVEC_BITS)))
             senone_active[j++] = i;
 
     n_senone_active = j;
 
     return j;
 }
-#else
-int32
-sen_active_flags2list(void)
-{
-    int32 i, j, total_dists, total_words, bits;
-    uint8 *flagptr;
-
-    total_dists = bin_mdef_n_sen(g_mdef);
-
-    j = 0;
-    total_words = total_dists & ~3;
-    for (i = 0, flagptr = senone_active_vec; i < total_words;) {
-        bits = *(int32 *) flagptr;
-        if (bits == 0) {
-            flagptr += 4;
-            i += 4;
-            continue;
-        }
-        if (*flagptr++)
-            senone_active[j++] = i;
-        ++i;
-        if (*flagptr++)
-            senone_active[j++] = i;
-        ++i;
-        if (*flagptr++)
-            senone_active[j++] = i;
-        ++i;
-        if (*flagptr++)
-            senone_active[j++] = i;
-        ++i;
-    }
-
-    for (; i < total_dists; ++i, ++flagptr)
-        if (*flagptr)
-            senone_active[j++] = i;
-
-    n_senone_active = j;
-
-    return j;
-}
-#endif

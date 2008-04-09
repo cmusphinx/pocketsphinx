@@ -81,16 +81,16 @@ init_search_tree(ngram_search_t *ngs)
     int32 w, mpx, max_ph0, i, n_words, n_main_words;
     dict_entry_t *de;
 
-    n_words = search_n_words(ngs);
-    n_main_words = dict_get_num_main_words(search_dict(ngs));
+    n_words = ps_search_n_words(ngs);
+    n_main_words = dict_get_num_main_words(ps_search_dict(ngs));
     ngs->homophone_set = ckd_calloc(n_main_words, sizeof(*ngs->homophone_set));
 
     /* Find #single phone words, and #unique first diphones (#root channels) in dict. */
     max_ph0 = -1;
     ngs->n_1ph_words = 0;
-    mpx = search_dict(ngs)->dict_list[0]->mpx;
+    mpx = ps_search_dict(ngs)->dict_list[0]->mpx;
     for (w = 0; w < n_main_words; w++) {
-        de = search_dict(ngs)->dict_list[w];
+        de = ps_search_dict(ngs)->dict_list[w];
 
         /* Paranoia Central; this check can probably be removed (RKM) */
         if (de->mpx != mpx)
@@ -126,7 +126,7 @@ init_search_tree(ngram_search_t *ngs)
     ngs->all_rhmm = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->all_rhmm));
     i = 0;
     for (w = 0; w < n_words; w++) {
-        de = search_dict(ngs)->dict_list[w];
+        de = ps_search_dict(ngs)->dict_list[w];
         if (de->len != 1)
             continue;
 
@@ -178,8 +178,8 @@ create_search_tree(ngram_search_t *ngs)
     int32 w, i, j, p, ph;
     int32 n_words, n_main_words;
 
-    n_words = search_n_words(ngs);
-    n_main_words = dict_get_num_main_words(search_dict(ngs));
+    n_words = ps_search_n_words(ngs);
+    n_main_words = dict_get_num_main_words(ps_search_dict(ngs));
 
     E_INFO("Creating search tree\n");
 
@@ -197,7 +197,7 @@ create_search_tree(ngram_search_t *ngs)
     ngs->n_nonroot_chan = 0;
 
     for (w = 0; w < n_main_words; w++) {
-        de = search_dict(ngs)->dict_list[w];
+        de = ps_search_dict(ngs)->dict_list[w];
 
         /* Ignore dictionary words not in LM */
         if (!ngram_model_set_known_wid(ngs->lmset, de->wid))
@@ -294,8 +294,8 @@ create_search_tree(ngram_search_t *ngs)
     ngs->n_1ph_LMwords++;            /* including </s> */
 
     /* FIXME: I'm not really sure why n_1ph_words got reset above. */
-    for (w = dict_to_id(search_dict(ngs), "</s>"); w < n_words; ++w) {
-        de = search_dict(ngs)->dict_list[w];
+    for (w = dict_to_id(ps_search_dict(ngs), "</s>"); w < n_words; ++w) {
+        de = ps_search_dict(ngs)->dict_list[w];
         /* Skip any non-fillers that aren't in the LM. */
         if ((!ISA_FILLER_WORD(ngs, w))
             && (!ngram_model_set_known_wid(ngs->lmset, de->wid)))
@@ -364,9 +364,9 @@ void
 ngram_fwdtree_init(ngram_search_t *ngs)
 {
     /* Allocate bestbp_rc, lastphn_cand, last_ltrans */
-    ngs->bestbp_rc = ckd_calloc(bin_mdef_n_ciphone(search_acmod(ngs)->mdef),
+    ngs->bestbp_rc = ckd_calloc(bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef),
                                 sizeof(*ngs->bestbp_rc));
-    ngs->lastphn_cand = ckd_calloc(search_n_words(ngs),
+    ngs->lastphn_cand = ckd_calloc(ps_search_n_words(ngs),
                                    sizeof(*ngs->lastphn_cand));
     init_search_tree(ngs);
     create_search_tree(ngs);
@@ -377,7 +377,7 @@ ngram_fwdtree_deinit(ngram_search_t *ngs)
 {
     int i, w, n_words;
 
-    n_words = search_n_words(ngs);
+    n_words = ps_search_n_words(ngs);
     /* Reset non-root channels. */
     reinit_search_tree(ngs);
 
@@ -387,7 +387,7 @@ ngram_fwdtree_deinit(ngram_search_t *ngs)
     }
     if (ngs->all_rhmm) {
         for (i = w = 0; w < n_words; ++w) {
-            if (search_dict(ngs)->dict_list[w]->len != 1)
+            if (ps_search_dict(ngs)->dict_list[w]->len != 1)
                 continue;
             hmm_deinit(&ngs->all_rhmm[i].hmm);
             ++i;
@@ -413,7 +413,7 @@ ngram_fwdtree_start(ngram_search_t *ngs)
     int32 i, w, n_words;
     root_chan_t *rhmm;
 
-    n_words = search_n_words(ngs);
+    n_words = ps_search_n_words(ngs);
 
     /* Reset utterance statistics. */
     memset(&ngs->st, 0, sizeof(ngs->st));
@@ -452,7 +452,7 @@ ngram_fwdtree_start(ngram_search_t *ngs)
     }
 
     /* Start search with <s>; word_chan[<s>] is permanently allocated */
-    rhmm = (root_chan_t *) ngs->word_chan[dict_to_id(search_dict(ngs), "<s>")];
+    rhmm = (root_chan_t *) ngs->word_chan[dict_to_id(ps_search_dict(ngs), "<s>")];
     hmm_clear(&rhmm->hmm);
     hmm_enter(&rhmm->hmm, 0, NO_BP, 0);
 }
@@ -468,19 +468,19 @@ compute_sen_active(ngram_search_t *ngs, int frame_idx)
     chan_t *hmm, **acl;
     int32 i, w, *awl;
 
-    acmod_clear_active(search_acmod(ngs));
+    acmod_clear_active(ps_search_acmod(ngs));
 
     /* Flag active senones for root channels */
     for (i = ngs->n_root_chan, rhmm = ngs->root_chan; i > 0; --i, rhmm++) {
         if (hmm_frame(&rhmm->hmm) == frame_idx)
-            acmod_activate_hmm(search_acmod(ngs), &rhmm->hmm);
+            acmod_activate_hmm(ps_search_acmod(ngs), &rhmm->hmm);
     }
 
     /* Flag active senones for nonroot channels in HMM tree */
     i = ngs->n_active_chan[frame_idx & 0x1];
     acl = ngs->active_chan_list[frame_idx & 0x1];
     for (hmm = *(acl++); i > 0; --i, hmm = *(acl++)) {
-        acmod_activate_hmm(search_acmod(ngs), &hmm->hmm);
+        acmod_activate_hmm(ps_search_acmod(ngs), &hmm->hmm);
     }
 
     /* Flag active senones for individual word channels */
@@ -488,7 +488,7 @@ compute_sen_active(ngram_search_t *ngs, int frame_idx)
     awl = ngs->active_word_list[frame_idx & 0x1];
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
         for (hmm = ngs->word_chan[w]; hmm; hmm = hmm->next) {
-            acmod_activate_hmm(search_acmod(ngs), &hmm->hmm);
+            acmod_activate_hmm(ps_search_acmod(ngs), &hmm->hmm);
         }
     }
     for (i = 0; i < ngs->n_1ph_words; i++) {
@@ -496,7 +496,7 @@ compute_sen_active(ngram_search_t *ngs, int frame_idx)
         rhmm = (root_chan_t *) ngs->word_chan[w];
 
         if (hmm_frame(&rhmm->hmm) == frame_idx)
-            acmod_activate_hmm(search_acmod(ngs), &rhmm->hmm);
+            acmod_activate_hmm(ps_search_acmod(ngs), &rhmm->hmm);
     }
 }
 
@@ -710,7 +710,7 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
                 if (newphone_score > lastphn_thresh) {
                     for (w = rhmm->penult_phn_wid; w >= 0;
                          w = ngs->homophone_set[w]) {
-                        de = search_dict(ngs)->dict_list[w];
+                        de = ps_search_dict(ngs)->dict_list[w];
                         candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
                         ngs->n_lastphn_cand++;
                         candp->wid = w;
@@ -789,7 +789,7 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
                 if (newphone_score > lastphn_thresh) {
                     for (w = hmm->info.penult_phn_wid; w >= 0;
                          w = ngs->homophone_set[w]) {
-                        de = search_dict(ngs)->dict_list[w];
+                        de = ps_search_dict(ngs)->dict_list[w];
                         candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
                         ngs->n_lastphn_cand++;
                         candp->wid = w;
@@ -838,10 +838,10 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
         /* Right context phone table. */
         rcpermtab =
             (bpe->r_diph >=
-             0) ? search_dict(ngs)->rcFwdPermTable[bpe->r_diph] : ngs->zeroPermTab;
+             0) ? ps_search_dict(ngs)->rcFwdPermTable[bpe->r_diph] : ngs->zeroPermTab;
 
         /* Subtract starting score for candidate, leave it with only word score */
-        de = search_dict(ngs)->dict_list[candp->wid];
+        de = ps_search_dict(ngs)->dict_list[candp->wid];
         ciph0 = de->ci_phone_ids[0];
         candp->score -= ngs->bscore_stack[bpe->s_idx + rcpermtab[ciph0]];
 
@@ -905,13 +905,13 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
 
             /* For each bp entry in the i-th end frame... */
             rcpermtab = (bpe->r_diph >= 0) ?
-                search_dict(ngs)->rcFwdPermTable[bpe->r_diph] : ngs->zeroPermTab;
+                ps_search_dict(ngs)->rcFwdPermTable[bpe->r_diph] : ngs->zeroPermTab;
 
             /* For each candidate at the start frame find bp->cand transition-score */
             for (j = ngs->cand_sf[i].cand; j >= 0; j = candp->next) {
                 int32 n_used;
                 candp = &(ngs->lastphn_cand[j]);
-                de = search_dict(ngs)->dict_list[candp->wid];
+                de = ps_search_dict(ngs)->dict_list[candp->wid];
                 ciph0 = de->ci_phone_ids[0];
 
                 dscr = ngs->bscore_stack[bpe->s_idx + rcpermtab[ciph0]];
@@ -957,7 +957,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
             }
             if (k > 0) {
                 assert(bitvec_is_clear(ngs->word_active, w));
-                assert(search_dict(ngs)->dict_list[w]->len > 1);
+                assert(ps_search_dict(ngs)->dict_list[w]->len > 1);
                 *(nawl++) = w;
                 bitvec_set(ngs->word_active, w);
             }
@@ -1028,7 +1028,7 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
             }
         }
         if ((k > 0) && (bitvec_is_clear(ngs->word_active, w))) {
-            assert(search_dict(ngs)->dict_list[w]->len > 1);
+            assert(ps_search_dict(ngs)->dict_list[w]->len > 1);
             *(nawl++) = w;
             bitvec_set(ngs->word_active, w);
         }
@@ -1123,7 +1123,7 @@ bptable_maxwpf(ngram_search_t *ngs, int frame_idx)
     bptbl_t *bpe, *bestbpe, *worstbpe;
 
     /* Don't prune if no pruing. */
-    if (ngs->maxwpf == -1 || ngs->maxwpf == search_n_words(ngs))
+    if (ngs->maxwpf == -1 || ngs->maxwpf == ps_search_n_words(ngs))
         return;
 
     /* Allow only one filler word exit (the best) per frame */
@@ -1189,7 +1189,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
      * other than </s> finished here.
      * But, first, find the best starting score for each possible right context phone.
      */
-    for (i = bin_mdef_n_ciphone(search_acmod(ngs)->mdef) - 1; i >= 0; --i)
+    for (i = bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef) - 1; i >= 0; --i)
         ngs->bestbp_rc[i].score = WORST_SCORE;
     k = 0;
     for (bp = ngs->bp_table_idx[frame_idx]; bp < ngs->bpidx; bp++) {
@@ -1200,14 +1200,14 @@ word_transition(ngram_search_t *ngs, int frame_idx)
             continue;
         k++;
 
-        de = search_dict(ngs)->dict_list[bpe->wid];
+        de = ps_search_dict(ngs)->dict_list[bpe->wid];
         rcpermtab =
             (bpe->r_diph >=
-             0) ? search_dict(ngs)->rcFwdPermTable[bpe->r_diph] : ngs->zeroPermTab;
+             0) ? ps_search_dict(ngs)->rcFwdPermTable[bpe->r_diph] : ngs->zeroPermTab;
         last_ciph = de->ci_phone_ids[de->len - 1];
 
         rcss = &(ngs->bscore_stack[bpe->s_idx]);
-        for (rc = bin_mdef_n_ciphone(search_acmod(ngs)->mdef) - 1; rc >= 0; --rc) {
+        for (rc = bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef) - 1; rc >= 0; --rc) {
             if (rcss[rcpermtab[rc]] > ngs->bestbp_rc[rc].score) {
                 ngs->bestbp_rc[rc].score = rcss[rcpermtab[rc]];
                 ngs->bestbp_rc[rc].path = bp;
@@ -1232,7 +1232,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
             if ((hmm_frame(&rhmm->hmm) < frame_idx)
                 || (hmm_in_score(&rhmm->hmm) < newscore)) {
                 ssid =
-                    search_dict(ngs)->lcFwdTable[rhmm->diphone][bestbp_rc_ptr->lc];
+                    ps_search_dict(ngs)->lcFwdTable[rhmm->diphone][bestbp_rc_ptr->lc];
                 hmm_enter(&rhmm->hmm, newscore,
                           bestbp_rc_ptr->path, nf);
                 if (hmm_is_mpx(&rhmm->hmm)) {
@@ -1257,13 +1257,13 @@ word_transition(ngram_search_t *ngs, int frame_idx)
 
         rcpermtab =
             (bpe->r_diph >=
-             0) ? search_dict(ngs)->rcFwdPermTable[bpe->r_diph] : ngs->zeroPermTab;
+             0) ? ps_search_dict(ngs)->rcFwdPermTable[bpe->r_diph] : ngs->zeroPermTab;
         rcss = ngs->bscore_stack + bpe->s_idx;
 
         for (i = 0; i < ngs->n_1ph_LMwords; i++) {
             int32 n_used;
             w = ngs->single_phone_wid[i];
-            de = search_dict(ngs)->dict_list[w];
+            de = ps_search_dict(ngs)->dict_list[w];
 
             newscore = rcss[rcpermtab[de->ci_phone_ids[0]]];
             newscore += ngram_tg_score(ngs->lmset, de->wid, bpe->real_wid,
@@ -1282,7 +1282,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
         rhmm = (root_chan_t *) ngs->word_chan[w];
         if ((newscore = ngs->last_ltrans[w].dscr + ngs->pip) > thresh) {
             bpe = ngs->bp_table + ngs->last_ltrans[w].bp;
-            pde = search_dict(ngs)->dict_list[bpe->wid];
+            pde = ps_search_dict(ngs)->dict_list[bpe->wid];
 
             if ((hmm_frame(&rhmm->hmm) < frame_idx)
                 || (hmm_in_score(&rhmm->hmm) < newscore)) {
@@ -1290,14 +1290,14 @@ word_transition(ngram_search_t *ngs, int frame_idx)
                           newscore, ngs->last_ltrans[w].bp, nf);
                 if (hmm_is_mpx(&rhmm->hmm)) {
                     rhmm->hmm.s.mpx_ssid[0] =
-                        search_dict(ngs)->lcFwdTable[rhmm->diphone][pde->ci_phone_ids[pde->len - 1]];
+                        ps_search_dict(ngs)->lcFwdTable[rhmm->diphone][pde->ci_phone_ids[pde->len - 1]];
                 }
             }
         }
     }
 
     /* Remaining words: <sil>, noise words.  No mpx for these! */
-    bestbp_rc_ptr = &(ngs->bestbp_rc[search_acmod(ngs)->mdef->sil]);
+    bestbp_rc_ptr = &(ngs->bestbp_rc[ps_search_acmod(ngs)->mdef->sil]);
     newscore = bestbp_rc_ptr->score + ngs->silpen + ngs->pip;
     if (newscore > thresh) {
         w = ngs->silence_wid;
@@ -1312,7 +1312,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     if (newscore > thresh) {
         /* FIXME FIXME: This depends on having the noise words
          * immediately following silence in the dictionary... */
-        for (w = ngs->silence_wid + 1; w < search_n_words(ngs); w++) {
+        for (w = ngs->silence_wid + 1; w < ps_search_n_words(ngs); w++) {
             rhmm = (root_chan_t *) ngs->word_chan[w];
             if ((hmm_frame(&rhmm->hmm) < frame_idx)
                 || (hmm_in_score(&rhmm->hmm) < newscore)) {
@@ -1353,17 +1353,17 @@ ngram_fwdtree_search(ngram_search_t *ngs)
     int16 best_senscr;
 
     /* Determine if we actually have a frame to process. */
-    if (search_acmod(ngs)->n_feat_frame == 0)
+    if (ps_search_acmod(ngs)->n_feat_frame == 0)
         return 0;
 
     /* Activate our HMMs for the current frame if need be. */
-    if (!search_acmod(ngs)->compallsen)
-        compute_sen_active(ngs, acmod_frame_idx(search_acmod(ngs)));
+    if (!ps_search_acmod(ngs)->compallsen)
+        compute_sen_active(ngs, acmod_frame_idx(ps_search_acmod(ngs)));
 
     /* Compute GMM scores for the current frame. */
-    senscr = acmod_score(search_acmod(ngs), &frame_idx,
+    senscr = acmod_score(ps_search_acmod(ngs), &frame_idx,
                          &best_senscr, &best_senid);
-    ngs->st.n_senone_active_utt += search_acmod(ngs)->n_senone_active;
+    ngs->st.n_senone_active_utt += ps_search_acmod(ngs)->n_senone_active;
 
     /* Mark backpointer table for current frame. */
     ngram_search_mark_bptable(ngs, frame_idx);
@@ -1399,7 +1399,7 @@ ngram_fwdtree_finish(ngram_search_t *ngs)
     chan_t *hmm, **acl;
 
     /* This is the number of frames processed. */
-    cf = acmod_frame_idx(search_acmod(ngs));
+    cf = acmod_frame_idx(ps_search_acmod(ngs));
     /* Add a mark in the backpointer table for one past the final frame. */
     ngram_search_mark_bptable(ngs, cf);
 
@@ -1421,7 +1421,7 @@ ngram_fwdtree_finish(ngram_search_t *ngs)
     awl = ngs->active_word_list[cf & 0x1];
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
         /* Don't accidentally free single-phone words! */
-        if (search_dict(ngs)->dict_list[w]->len == 1)
+        if (ps_search_dict(ngs)->dict_list[w]->len == 1)
             continue;
         bitvec_clear(ngs->word_active, w);
         if (ngs->word_chan[w] == NULL)
