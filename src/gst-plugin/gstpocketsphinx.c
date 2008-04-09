@@ -298,7 +298,6 @@ gst_pocketsphinx_set_string(GstPocketSphinx *ps,
         newstr = NULL;
     if ((oldstr = g_hash_table_lookup(ps->arghash, key)))
         g_free(oldstr);
-    g_print("set_string(%s, %s)\n", key, newstr);
     cmd_ln_set_str(key, newstr);
     g_hash_table_foreach(ps->arghash, (gpointer)key, newstr);
 }
