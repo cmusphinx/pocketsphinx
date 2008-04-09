@@ -15,6 +15,7 @@ libpocketsphinx_la_SOURCES =			\
 	fsg_lextree.c				\
 	fsg_psubtree.c				\
 	fsg_search.c				\
+	fsg_search2.c				\
 	hmm.c					\
 	kb_main.c				\
 	kdtree.c				\
@@ -49,6 +50,7 @@ noinst_HEADERS =				\
 	fsg_lextree.h				\
 	fsg_psubtree.h				\
 	fsg_search.h				\
+	fsg_search2.h				\
 	hmm.h					\
 	kb.h					\
 	kdtree.h				\
