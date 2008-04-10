@@ -724,7 +724,7 @@ fsg_search2_step(ps_search_t *search)
     fsgs->pnode_active_next = NULL;
 
     /* End of this frame; ready for the next */
-    (fsgs->frame)++;
+    ++fsgs->frame;
 
     return 1;
 }
@@ -777,7 +777,7 @@ fsg_search2_start(ps_search_t *search)
     fsgs->pnode_active = fsgs->pnode_active_next;
     fsgs->pnode_active_next = NULL;
 
-    (fsgs->frame)++;
+    ++fsgs->frame;
 
     fsgs->n_hmm_eval = 0;
     fsgs->n_sen_eval = 0;
@@ -794,7 +794,7 @@ fsg_search2_finish(ps_search_t *search)
     fsg_search2_t *fsgs = (fsg_search2_t *)search;
     gnode_t *gn;
     fsg_pnode_t *pnode;
-    int32 n_hist = 0;
+    int32 n_hist;
 
     /* Deactivate all nodes in the current and next-frame active lists */
     for (gn = fsgs->pnode_active; gn; gn = gnode_next(gn)) {
@@ -811,9 +811,10 @@ fsg_search2_finish(ps_search_t *search)
     glist_free(fsgs->pnode_active_next);
     fsgs->pnode_active_next = NULL;
 
+    n_hist = fsg_history_n_entries(fsgs->history);
     E_INFO
-        ("Utt %s: %d frames, %d HMMs (%d/fr), %d senones (%d/fr), %d history entries (%d/fr)\n\n",
-         uttproc_get_uttid(), fsgs->frame, fsgs->n_hmm_eval,
+        ("%d frames, %d HMMs (%d/fr), %d senones (%d/fr), %d history entries (%d/fr)\n\n",
+         fsgs->frame, fsgs->n_hmm_eval,
          (fsgs->frame > 0) ? fsgs->n_hmm_eval / fsgs->frame : 0,
          fsgs->n_sen_eval,
          (fsgs->frame > 0) ? fsgs->n_sen_eval / fsgs->frame : 0,
