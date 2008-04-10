@@ -367,7 +367,7 @@ word_fsg_add_filler(word_fsg_t * fsg, float32 silprob, float32 fillprob)
 
     assert(fsg);
 
-    silwid = kb_get_word_id("<sil>");
+    silwid = dict_to_id(fsg->dict, "<sil>");
     n_word = fsg->dict->dict_entry_count;
 
     logsilp = (int32) (logmath_log(fsg->lmath, silprob) * fsg->lw);
@@ -413,7 +413,7 @@ word_fsg_lc_rc(word_fsg_t * fsg)
     int32 endwid;
     int32 len;
 
-    endwid = kb_get_word_id("</s>");
+    endwid = dict_to_id(fsg->dict, "</s>");
     silcipid = bin_mdef_ciphone_id(fsg->dict->mdef, "SIL");
     assert(silcipid >= 0);
     n_ci = bin_mdef_n_ciphone(fsg->dict->mdef);
@@ -594,7 +594,7 @@ word_fsg_load(s2_fsg_t * fsg, dict_t *word_dict, logmath_t *lmath,
 
         /* Check if word is in dictionary */
         if (trans->word) {
-            wid = kb_get_word_id(trans->word);
+            wid = dict_to_id(word_dict, trans->word);
             if (wid < 0) {
                 E_ERROR("Unknown word '%s'; ignored\n", trans->word);
                 n_unk++;
@@ -956,7 +956,7 @@ word_fsg_write(word_fsg_t * fsg, FILE * fp)
                 fprintf(fp, "%s %d %d %.3e %s\n", WORD_FSG_TRANSITION_DECL,
                         tl->from_state, tl->to_state,
                         EXP(tl->logs2prob / fsg->lw),
-                        (tl->wid < 0) ? "" : kb_get_word_str(tl->wid));
+                        (tl->wid < 0) ? "" : dict_word_str(fsg->dict, tl->wid));
             }
 
             /* Print null transitions */
