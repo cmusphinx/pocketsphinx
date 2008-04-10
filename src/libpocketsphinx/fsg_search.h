@@ -71,6 +71,8 @@ typedef struct fsg_search_s {
     tmat_t *tmat;               /**< Pointer to global transition matrix. */
     dict_t *dict;		/**< Pointer to global word dictoinary. */
 
+    hmm_context_t *hmmctx;	/**< HMM context. */
+
     word_fsg_t *fsg;		/**< Currently active FSG; NULL if none.  One
 				   must be made active before starting FSG
 				   decoding */

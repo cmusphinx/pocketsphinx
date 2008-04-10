@@ -64,9 +64,6 @@
 #include "fsg_history.h"
 #include "fsg_lextree.h"
 
-#define FSG_SEARCH2_IDLE		0
-#define FSG_SEARCH2_BUSY		1
-
 /* Turn this on for detailed debugging dump */
 #define __FSG_DBG__		0
 #define __FSG_DBG_CHAN__	0
@@ -94,14 +91,18 @@ fsg_search2_init(cmd_ln_t *config,
                  dict_t *dict)
 {
     fsg_search2_t *fsgs;
+    char const *path;
 
     fsgs = ckd_calloc(1, sizeof(*fsgs));
     ps_search_init(&fsgs->base, &fsg_funcs, config, acmod, dict);
 
+    /* Initialize HMM context. */
+    fsgs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
+                                    acmod->tmat->tp, NULL, acmod->mdef->sseq);
+
     /* Intialize the search history object */
     fsgs->history = fsg_history_init(NULL);
     fsgs->frame = -1;
-    fsgs->state = FSG_SEARCH2_IDLE;
 
     /* Initialize FSG table. */
     fsgs->fsgs = hash_table_new(5, FALSE);
@@ -127,7 +128,32 @@ fsg_search2_init(cmd_ln_t *config,
            fsgs->beam_orig, fsgs->pbeam_orig, fsgs->wbeam_orig,
            fsgs->wip, fsgs->pip);
 
+    /* Load an FSG if one was specified in config */
+    if ((path = cmd_ln_str_r(config, "-fsg"))) {
+        word_fsg_t *fsg;
+
+        if ((fsg = word_fsg_readfile(path, dict, acmod->lmath,
+                                     cmd_ln_boolean_r(config, "-fsgusealtpron"),
+                                     cmd_ln_boolean_r(config, "-fsgusefiller"),
+                                     cmd_ln_float32_r(config, "-silpen"),
+                                     cmd_ln_float32_r(config, "-fillpen"),
+                                     cmd_ln_float32_r(config, "-lw"))) == NULL)
+            goto error_out;
+        if (fsg_search2_add(fsgs, word_fsg_name(fsg), fsg) != fsg) {
+            word_fsg_free(fsg);
+            goto error_out;
+        }
+        if (fsg_search2_select(fsgs, word_fsg_name(fsg)) == NULL) {
+            word_fsg_free(fsg);
+            goto error_out;
+        }
+    }
+
     return ps_search_base(fsgs);
+
+error_out:
+    fsg_search2_free(ps_search_base(fsgs));
+    return NULL;
 }
 
 void
@@ -137,6 +163,7 @@ fsg_search2_free(ps_search_t *search)
     hash_iter_t *itor;
 
     ps_search_deinit(search);
+    hmm_context_free(fsgs->hmmctx);
     fsg_lextree_free(fsgs->lextree);
     fsg_history_set_fsg(fsgs->history, NULL);
     for (itor = hash_table_iter(fsgs->fsgs);
@@ -164,12 +191,6 @@ fsg_search2_get_fsg(fsg_search2_t *fsgs, const char *name)
 word_fsg_t *
 fsg_search2_add(fsg_search2_t *fsgs, char const *name, word_fsg_t *fsg)
 {
-    /* Check to make sure search is in a quiescent state */
-    if (fsgs->state != FSG_SEARCH2_IDLE) {
-        E_ERROR("Attempt to switch FSG inside an utterance\n");
-        return NULL;
-    }
-
     if (name == NULL)
         name = word_fsg_name(fsg);
     return (word_fsg_t *)hash_table_enter(fsgs->fsgs, name, fsg);
@@ -181,12 +202,6 @@ fsg_search2_remove_byname(fsg_search2_t *fsgs, char const *key)
 {
     word_fsg_t *oldfsg;
     void *val;
-
-    /* Check to make sure search is in a quiescent state */
-    if (fsgs->state != FSG_SEARCH2_IDLE) {
-        E_ERROR("Attempt to switch FSG inside an utterance\n");
-        return NULL;
-    }
 
     /* Look for the matching FSG. */
     if (hash_table_lookup(fsgs->fsgs, key, &val) < 0) {
@@ -240,12 +255,6 @@ fsg_search2_select(fsg_search2_t *fsgs, const char *name)
 {
     word_fsg_t *fsg;
 
-    /* Check to make sure search is in a quiescent state */
-    if (fsgs->state != FSG_SEARCH2_IDLE) {
-        E_ERROR("Attempt to switch FSG inside an utterance\n");
-        return NULL;
-    }
-
     fsg = fsg_search2_get_fsg(fsgs, name);
     if (fsg == NULL) {
         E_ERROR("FSG '%s' not known; cannot make it current\n", name);
@@ -257,7 +266,9 @@ fsg_search2_select(fsg_search2_t *fsgs, const char *name)
         fsg_lextree_free(fsgs->lextree);
 
     /* Allocate new lextree for the given FSG */
-    fsgs->lextree = fsg_lextree_init(fsgs, fsg);
+    fsgs->lextree = fsg_lextree_init(fsg, ps_search_dict(fsgs),
+                                     ps_search_acmod(fsgs)->mdef,
+                                     fsgs->hmmctx, fsgs->wip, fsgs->pip);
 
     /* Inform the history module of the new fsg */
     fsg_history_set_fsg(fsgs->history, fsg);
@@ -657,6 +668,7 @@ fsg_search2_step(ps_search_t *search)
     /* Compute GMM scores for the current frame. */
     senscr = acmod_score(acmod, &frame_idx, &best_senscr, &best_senid);
     fsgs->n_sen_eval += acmod->n_senone_active;
+    hmm_context_set_senscore(fsgs->hmmctx, senscr);
 
     /* Mark backpointer table for current frame. */
     fsgs->bpidx_start = fsg_history_n_entries(fsgs->history);
@@ -743,7 +755,6 @@ fsg_search2_start(ps_search_t *search)
     assert(fsgs->pnode_active_next == NULL);
 
     fsg_history_reset(fsgs->history);
-    fsg_lextree_utt_start(fsgs->lextree);
     fsg_history_utt_start(fsgs->history);
 
     /* Dummy context structure that allows all right contexts to use this entry */
@@ -771,8 +782,6 @@ fsg_search2_start(ps_search_t *search)
     fsgs->n_hmm_eval = 0;
     fsgs->n_sen_eval = 0;
 
-    fsgs->state = FSG_SEARCH2_BUSY;
-
     return 0;
 }
 
@@ -785,10 +794,7 @@ fsg_search2_finish(ps_search_t *search)
     fsg_search2_t *fsgs = (fsg_search2_t *)search;
     gnode_t *gn;
     fsg_pnode_t *pnode;
-    int32 n_hist;
-
-    /* Wrap up search, but don't clear history yet. */
-    fsg_lextree_utt_end(fsgs->lextree);
+    int32 n_hist = 0;
 
     /* Deactivate all nodes in the current and next-frame active lists */
     for (gn = fsgs->pnode_active; gn; gn = gnode_next(gn)) {
@@ -805,7 +811,6 @@ fsg_search2_finish(ps_search_t *search)
     glist_free(fsgs->pnode_active_next);
     fsgs->pnode_active_next = NULL;
 
-    fsgs->state = FSG_SEARCH2_IDLE;
     E_INFO
         ("Utt %s: %d frames, %d HMMs (%d/fr), %d senones (%d/fr), %d history entries (%d/fr)\n\n",
          uttproc_get_uttid(), fsgs->frame, fsgs->n_hmm_eval,

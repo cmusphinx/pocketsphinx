@@ -47,7 +47,7 @@
 /* Local headers. */
 #include "pocketsphinx_internal.h"
 #include "cmdln_macro.h"
-#include "fsg_search.h"
+#include "fsg_search2.h"
 #include "ngram_search.h"
 #include "ngram_search_fwdtree.h"
 #include "ngram_search_fwdflat.h"
@@ -153,7 +153,9 @@ pocketsphinx_init(cmd_ln_t *config)
         || (fsgctl = cmd_ln_str_r(config, "-fsgctlfn"))) {
         ps_search_t *fsgs;
 
-        /* Initialize it, add it to the list. */
+        fsgs = fsg_search2_init(config, ps->acmod, ps->dict);
+        ps->searches = glist_add_ptr(ps->searches, fsgs);
+        ps->search = fsgs;
     }
     else if ((lmfile = cmd_ln_str_r(config, "-lm"))
              || (lmctl = cmd_ln_str_r(config, "-lmctlfn"))) {

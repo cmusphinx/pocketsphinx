@@ -65,6 +65,8 @@ struct fsg_history_s;
 typedef struct fsg_search2_s {
     ps_search_t base;
 
+    hmm_context_t *hmmctx; /**< HMM context. */
+
     hash_table_t *fsgs;		/**< Table of all FSGs loaded */
     word_fsg_t *fsg;		/**< Currently active FSG; NULL if none.  One
 				   must be made active before starting FSG
@@ -95,8 +97,6 @@ typedef struct fsg_search2_s {
   
     int32 n_hmm_eval;		/**< Total HMMs evaluated this utt */
     int32 n_sen_eval;		/**< Total senones evaluated this utt */
-  
-    int32 state;		/**< Whether IDLE or BUSY */
 } fsg_search2_t;
 
 

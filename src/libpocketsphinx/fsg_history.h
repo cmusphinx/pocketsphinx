@@ -79,7 +79,7 @@
 
 /* Local headers. */
 #include "blkarray_list.h"
-#include "fsg_psubtree.h"
+#include "fsg_lextree.h"
 #include "word_fsg.h"
 
 /*

@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
  * reserved.
@@ -81,38 +82,162 @@
 
 /* Local headers. */
 #include "word_fsg.h"
-#include "fsg_psubtree.h"
 #include "fsg_search.h"
 
+/*
+ * **HACK-ALERT**!!  Compile-time constant determining the size of the
+ * bitvector fsg_pnode_t.fsg_pnode_ctxt_t.bv.  (See below.)
+ * But it makes memory allocation simpler and more efficient.
+ */
+#define FSG_PNODE_CTXT_BVSZ	2
+
+typedef struct {
+    uint32 bv[FSG_PNODE_CTXT_BVSZ];
+} fsg_pnode_ctxt_t;
+
+
+/*
+ * All transitions (words) out of any given FSG state represented are by a
+ * phonetic prefix lextree (except for epsilon or null transitions; they
+ * are not part of the lextree).  Lextree leaf nodes represent individual
+ * FSG transitions, so no sharing is allowed at the leaf nodes.  The FSG
+ * transition probs are distributed along the lextree: the prob at a node
+ * is the max of the probs of all leaf nodes (and, hence, FSG transitions)
+ * reachable from that node.
+ * 
+ * To conserve memory, the underlying HMMs with state-level information are
+ * allocated only as needed.  Root and leaf nodes must also account for all
+ * the possible phonetic contexts, with an independent HMM for each distinct
+ * context.
+ */
+typedef struct fsg_pnode_s {
+    /*
+     * If this is not a leaf node, the first successor (child) node.  Otherwise
+     * the parent FSG transition for which this is the leaf node (for figuring
+     * the FSG destination state, and word emitted by the transition).  A node
+     * may have several children.  The succ ptr gives just the first; the rest
+     * are linked via the sibling ptr below.
+     */
+    union {
+        struct fsg_pnode_s *succ;
+        word_fsglink_t *fsglink;
+    } next;
+  
+    /*
+     * For simplicity of memory management (i.e., freeing the pnodes), all
+     * pnodes allocated for all transitions out of a state are maintained in a
+     * linear linked list through the alloc_next pointer.
+     */
+    struct fsg_pnode_s *alloc_next;
+  
+    /*
+     * The next node that is also a child of the parent of this node; NULL if
+     * none.
+     */
+    struct fsg_pnode_s *sibling;
+
+    /*
+     * The transition (log) probability to be incurred upon transitioning to
+     * this node.  (Transition probabilities are really associated with the
+     * transitions.  But a lextree node has exactly one incoming transition.
+     * Hence, the prob can be associated with the node.)
+     * This is a logs2(prob) value, and includes the language weight.
+     */
+    int32 logs2prob;
+  
+    /*
+     * The root and leaf positions associated with any transition have to deal
+     * with multiple phonetic contexts.  However, different contexts may result
+     * in the same SSID (senone-seq ID), and can share a single pnode with that
+     * SSID.  But the pnode should track the set of context CI phones that share
+     * it.  Hence the fsg_pnode_ctxt_t bit-vector set-representation.  (For
+     * simplicity of implementation, its size is a compile-time constant for
+     * now.)  Single phone words would need a 2-D array of context, but that's
+     * too expensive.  For now, they simply use SIL as right context, so only
+     * the left context is properly modelled.
+     * (For word-internal phones, this field is unused, of course.)
+     */
+    fsg_pnode_ctxt_t ctxt;
+  
+    uint8 ci_ext;		/* This node's CIphone as viewed externally (context) */
+    uint8 ppos;		/* Phoneme position in pronunciation */
+    boolean leaf;		/* Whether this is a leaf node */
+  
+    /* HMM-state-level stuff here */
+    hmm_context_t *ctx;
+    hmm_t hmm;
+} fsg_pnode_t;
+
+/* Access macros */
+#define fsg_pnode_leaf(p)	((p)->leaf)
+#define fsg_pnode_logs2prob(p)	((p)->logs2prob)
+#define fsg_pnode_succ(p)	((p)->next.succ)
+#define fsg_pnode_fsglink(p)	((p)->next.fsglink)
+#define fsg_pnode_sibling(p)	((p)->sibling)
+#define fsg_pnode_hmmptr(p)	(&((p)->hmm))
+#define fsg_pnode_ci_ext(p)	((p)->ci_ext)
+#define fsg_pnode_ppos(p)	((p)->ppos)
+#define fsg_pnode_leaf(p)	((p)->leaf)
+#define fsg_pnode_ctxt(p)	((p)->ctxt)
+
+#define fsg_pnode_add_ctxt(p,c)	((p)->ctxt.bv[(c)>>5] |= (1 << ((c)&0x001f)))
+
+/**
+ * Collection of lextrees for an FSG.
+ */
 typedef struct fsg_lextree_s {
-  word_fsg_t *fsg;	/* The fsg for which this lextree is built */
-  fsg_pnode_t **root;	/* root[s] = lextree representing all transitions
+    word_fsg_t *fsg;	/* The fsg for which this lextree is built */
+    fsg_pnode_t **root;	/* root[s] = lextree representing all transitions
 			   out of state s.  Note that the "tree" for each
 			   state is actually a collection of trees, linked
 			   via fsg_pnode_t.sibling (root[s]->sibling) */
-  fsg_pnode_t **alloc_head;	/* alloc_head[s] = head of linear list of all
+    fsg_pnode_t **alloc_head;	/* alloc_head[s] = head of linear list of all
 				   pnodes allocated for state s */
-  int32 n_pnode;	/* #HMM nodes in search structure */
+    int32 n_pnode;	/* #HMM nodes in search structure */
+    int32 wip;
+    int32 pip;
+    bin_mdef_t *mdef;
+    dict_t *dict;
+    hmm_context_t *ctx;
 } fsg_lextree_t;
 
 /* Access macros */
 #define fsg_lextree_root(lt,s)	((lt)->root[s])
 #define fsg_lextree_n_pnode(lt)	((lt)->n_pnode)
 
-/*
- * Create, initialize, and return a new phonetic lextree for the given FSM.
+/**
+ * Create, initialize, and return a new phonetic lextree for the given FSG.
  */
-fsg_lextree_t *fsg_lextree_init(fsg_search_t *, word_fsg_t *);
+fsg_lextree_t *fsg_lextree_init(word_fsg_t *fsg, dict_t *dict,
+				bin_mdef_t *mdef, hmm_context_t *ctx,
+				int32 wip, int32 pip);
 
+/**
+ * Free lextrees for an FSG.
+ */
+void fsg_lextree_free(fsg_lextree_t *fsg);
 
-void fsg_lextree_free (fsg_lextree_t *);
+/**
+ * Print an FSG lextree to a file for debugging.
+ */
+void fsg_lextree_dump(fsg_lextree_t *fsg, FILE *fh);
 
+/**
+ * Mark the given pnode as inactive (for search).
+ */
+void fsg_psubtree_pnode_deactivate(fsg_pnode_t *pnode);
 
-void fsg_lextree_dump (fsg_search_t *, fsg_lextree_t *, FILE *);
+/**
+ * Subtract bitvector sub from bitvector src (src updated with the result).
+ * @return 0 if result is all 0, non-zero otherwise.
+ */
+uint32 fsg_pnode_ctxt_sub(fsg_pnode_ctxt_t * src, fsg_pnode_ctxt_t * sub);
 
+/**
+ *  Set all flags on in the given context bitvector.
+ */
+void fsg_pnode_add_all_ctxt(fsg_pnode_ctxt_t *ctxt);
 
-void fsg_lextree_utt_start (fsg_lextree_t *);
-void fsg_lextree_utt_end (fsg_lextree_t *);
 
 
 #endif

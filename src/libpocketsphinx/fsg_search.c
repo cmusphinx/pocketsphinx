@@ -95,6 +95,9 @@ fsg_search_init(cmd_ln_t *config, logmath_t *lmath,
     search->dict = dict;
     search->tmat = tmat;
 
+    search->hmmctx = hmm_context_init(bin_mdef_n_emit_state(mdef),
+                                      tmat->tp, senone_scores, mdef->sseq);
+
     /* Intialize the search history object */
     search->history = fsg_history_init(NULL);
 
@@ -251,7 +254,9 @@ fsg_search_set_current_fsg(fsg_search_t * search, const char *name)
         fsg_lextree_free(search->lextree);
 
     /* Allocate new lextree for the given FSG */
-    search->lextree = fsg_lextree_init(search, fsg);
+    search->lextree = fsg_lextree_init(fsg, search->dict,
+                                       search->mdef, search->hmmctx,
+                                       search->wip, search->pip);
 
     /* Inform the history module of the new fsg */
     fsg_history_set_fsg(search->history, fsg);
@@ -757,7 +762,6 @@ fsg_search_utt_start(fsg_search_t * search)
     assert(search->pnode_active == NULL);
     assert(search->pnode_active_next == NULL);
 
-    fsg_lextree_utt_start(search->lextree);
     fsg_history_utt_start(search->history);
 
     /* Dummy context structure that allows all right contexts to use this entry */
@@ -1050,8 +1054,6 @@ fsg_search_utt_end(fsg_search_t * search)
 
     n_hist = fsg_history_n_entries(search->history);
     fsg_history_reset(search->history);
-
-    fsg_lextree_utt_end(search->lextree);
 
     /* Deactivate all nodes in the current and next-frame active lists */
     for (gn = search->pnode_active; gn; gn = gnode_next(gn)) {
