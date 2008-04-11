@@ -923,7 +923,7 @@ fsg_search2_hyp(ps_search_t *search, int32 *out_score)
 
         bp = fsg_hist_entry_pred(hist_entry);
         wid = word_fsglink_wid(fl);
-        if (dict_is_filler_word(search->dict, wid))
+        if (wid < 0 || dict_is_filler_word(search->dict, wid))
             continue;
         len += strlen(dict_word_str(search->dict, wid)) + 1;
     }
@@ -939,7 +939,7 @@ fsg_search2_hyp(ps_search_t *search, int32 *out_score)
 
         bp = fsg_hist_entry_pred(hist_entry);
         wid = word_fsglink_wid(fl);
-        if (dict_is_filler_word(search->dict, wid))
+        if (wid < 0 || dict_is_filler_word(search->dict, wid))
             continue;
 
         len = strlen(dict_word_str(search->dict, wid));
