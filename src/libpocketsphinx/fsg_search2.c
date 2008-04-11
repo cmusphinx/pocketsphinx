@@ -756,6 +756,7 @@ fsg_search2_start(ps_search_t *search)
 
     fsg_history_reset(fsgs->history);
     fsg_history_utt_start(fsgs->history);
+    fsgs->final = FALSE;
 
     /* Dummy context structure that allows all right contexts to use this entry */
     fsg_pnode_add_all_ctxt(&ctxt);
@@ -811,6 +812,8 @@ fsg_search2_finish(ps_search_t *search)
     glist_free(fsgs->pnode_active_next);
     fsgs->pnode_active_next = NULL;
 
+    fsgs->final = TRUE;
+
     n_hist = fsg_history_n_entries(fsgs->history);
     E_INFO
         ("%d frames, %d HMMs (%d/fr), %d senones (%d/fr), %d history entries (%d/fr)\n\n",
@@ -833,10 +836,122 @@ fsg_search2_finish(ps_search_t *search)
     return 0;
 }
 
+static int
+fsg_search2_find_exit(fsg_search2_t *fsgs, int frame_idx, int final, int32 *out_score)
+{
+    fsg_hist_entry_t *hist_entry;
+    word_fsg_t *fsg;
+    int bpidx, frm, last_frm, besthist;
+    int32 bestscore;
+
+    if (frame_idx == -1)
+        frame_idx = fsgs->frame - 1;
+    last_frm = frm = frame_idx;
+
+    /* Scan backwards to find a word exit in frame_idx. */
+    bpidx = fsg_history_n_entries(fsgs->history) - 1;
+    while (bpidx > 0) {
+        hist_entry = fsg_history_entry_get(fsgs->history, bpidx);
+        if (fsg_hist_entry_frame(hist_entry) <= frame_idx) {
+            frm = last_frm = fsg_hist_entry_frame(hist_entry);
+            break;
+        }
+    }
+
+    /* No hypothesis (yet). */
+    if (bpidx <= 0) 
+        return bpidx;
+
+    /* Now find best word exit in this frame. */
+    bestscore = INT_MIN;
+    besthist = -1;
+    fsg = fsgs->fsg;
+    while (frm == last_frm) {
+        word_fsglink_t *fl;
+        int32 score;
+
+        fl = fsg_hist_entry_fsglink(hist_entry);
+        score = fsg_hist_entry_score(hist_entry);
+
+        if (score > bestscore) {
+            /* Only enforce the final state constraint if this is a final hypothesis. */
+            if ((!final)
+                || word_fsglink_to_state(fl) == word_fsg_final_state(fsg)) {
+                bestscore = score;
+                besthist = bpidx;
+            }
+        }
+
+        --bpidx;
+        if (bpidx < 0)
+            break;
+        hist_entry = fsg_history_entry_get(fsgs->history, bpidx);
+        frm = fsg_hist_entry_frame(hist_entry);
+    }
+
+    /* Final state not reached. */
+    if (besthist == -1) {
+        E_ERROR("Final state not reached in frame %d\n", frame_idx);
+        return -1;
+    }
+
+    /* This here's the one we want. */
+    *out_score = bestscore;
+    return besthist;
+}
+
 char const *
 fsg_search2_hyp(ps_search_t *search, int32 *out_score)
 {
-    return NULL;
+    fsg_search2_t *fsgs = (fsg_search2_t *)search;
+    char *c;
+    size_t len;
+    int bp, bpidx;
+
+    /* Get last backpointer table index. */
+    bpidx = fsg_search2_find_exit(fsgs, fsgs->frame, fsgs->final, out_score);
+    /* No hypothesis (yet). */
+    if (bpidx <= 0)
+        return NULL;
+
+    bp = bpidx;
+    len = 0;
+    while (bp > 0) {
+        fsg_hist_entry_t *hist_entry = fsg_history_entry_get(fsgs->history, bp);
+        word_fsglink_t *fl = fsg_hist_entry_fsglink(hist_entry);
+        int32 wid;
+
+        bp = fsg_hist_entry_pred(hist_entry);
+        wid = word_fsglink_wid(fl);
+        if (dict_is_filler_word(search->dict, wid))
+            continue;
+        len += strlen(dict_word_str(search->dict, wid)) + 1;
+    }
+
+    ckd_free(search->hyp_str);
+    search->hyp_str = ckd_calloc(1, len);
+    bp = bpidx;
+    c = search->hyp_str + len - 1;
+    while (bp > 0) {
+        fsg_hist_entry_t *hist_entry = fsg_history_entry_get(fsgs->history, bp);
+        word_fsglink_t *fl = fsg_hist_entry_fsglink(hist_entry);
+        int32 wid;
+
+        bp = fsg_hist_entry_pred(hist_entry);
+        wid = word_fsglink_wid(fl);
+        if (dict_is_filler_word(search->dict, wid))
+            continue;
+
+        len = strlen(dict_word_str(search->dict, wid));
+        c -= len;
+        memcpy(c, dict_word_str(search->dict, wid), len);
+        if (c > search->hyp_str) {
+            --c;
+            *c = ' ';
+        }
+    }
+
+    return search->hyp_str;
 }
 
 static ps_seg_t *

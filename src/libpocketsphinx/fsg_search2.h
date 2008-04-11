@@ -88,7 +88,8 @@ typedef struct fsg_search2_s {
     int32 lw, pip, wip;         /**< Language weights */
     int32 finish_wid;		/**< Finish word ID. */
   
-    int32 frame;		/**< Current frame */
+    int16 frame;		/**< Current frame. */
+    int16 final;		/**< Decoding is finished for this utterance. */
 
     int32 bestscore;		/**< For beam pruning */
     int32 bpidx_start;		/**< First history entry index this frame */

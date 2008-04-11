@@ -36,6 +36,8 @@ main(int argc, char *argv[])
 		int16 buf[2048];
 		size_t nread;
 		int16 const *bptr;
+		char const *hyp;
+		int32 score;
 		int nfr;
 
 		TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
@@ -50,6 +52,8 @@ main(int argc, char *argv[])
 			}
 		}
 		fsg_search2_finish(ps_search_base(fsgs));
+		hyp = fsg_search2_hyp(ps_search_base(fsgs), &score);
+		printf("FSG: %s (%d)\n", hyp, score);
 
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
