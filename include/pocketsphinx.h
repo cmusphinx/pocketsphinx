@@ -79,6 +79,7 @@ typedef struct ps_seg_s ps_seg_t;
  * @param config a command-line structure, as created by
  * cmd_ln_parse_r() or cmd_ln_parse_file_r().
  */
+POCKETSPHINX_EXPORT
 pocketsphinx_t *pocketsphinx_init(cmd_ln_t *config);
 
 /**
@@ -87,27 +88,32 @@ pocketsphinx_t *pocketsphinx_init(cmd_ln_t *config);
  * This is here to avoid exporting global data, which is problematic
  * on Win32 and Symbian (and possibly other platforms).
  */
+POCKETSPHINX_EXPORT
 arg_t const *pocketsphinx_args(void);
 
 /**
  * Finalize the decoder.
  */
+POCKETSPHINX_EXPORT
 void pocketsphinx_free(pocketsphinx_t *ps);
 
 /**
  * Get the configuration object for this decoder.
  */
+POCKETSPHINX_EXPORT
 cmd_ln_t *pocketsphinx_get_config(pocketsphinx_t *ps);
 
 /**
  * Run a control file in batch mode.
  */
+POCKETSPHINX_EXPORT
 int pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
                               char const *ctlfile);
 
 /**
  * Start utterance processing.
  */
+POCKETSPHINX_EXPORT
 int pocketsphinx_start_utt(pocketsphinx_t *ps);
 
 /**
@@ -121,6 +127,7 @@ int pocketsphinx_start_utt(pocketsphinx_t *ps);
  * accurate results.
  * @return Number of frames of data searched, or <0 for error.
  */
+POCKETSPHINX_EXPORT
 int pocketsphinx_process_raw(pocketsphinx_t *ps,
                              int16 const *data,
                              size_t n_samples,
@@ -138,6 +145,7 @@ int pocketsphinx_process_raw(pocketsphinx_t *ps,
  * accurate results.
  * @return Number of frames of data searched, or <0 for error.
  */
+POCKETSPHINX_EXPORT
 int pocketsphinx_process_cep(pocketsphinx_t *ps,
                              mfcc_t **data,
                              int n_frames,
@@ -147,6 +155,7 @@ int pocketsphinx_process_cep(pocketsphinx_t *ps,
 /**
  * End utterance processing.
  */
+POCKETSPHINX_EXPORT
 int pocketsphinx_end_utt(pocketsphinx_t *ps);
 
 /**
@@ -156,6 +165,7 @@ int pocketsphinx_end_utt(pocketsphinx_t *ps);
  * @return String containing best hypothesis at this point in
  *         decoding.  NULL if no hypothesis is available.
  */
+POCKETSPHINX_EXPORT
 char const *pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score);
 
 /**
@@ -165,6 +175,7 @@ char const *pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score);
  * @return Iterator over the best hypothesis at this point in
  *         decoding.  NULL if no hypothesis is available.
  */
+POCKETSPHINX_EXPORT
 ps_seg_t *pocketsphinx_seg_iter(pocketsphinx_t *ps, int32 *out_best_score);
 
 /**
@@ -173,26 +184,31 @@ ps_seg_t *pocketsphinx_seg_iter(pocketsphinx_t *ps, int32 *out_best_score);
  * @return Updated iterator with the next segment.  NULL at end of
  *         utterance (the iterator will be freed in this case).
  */
+POCKETSPHINX_EXPORT
 ps_seg_t *pocketsphinx_seg_next(ps_seg_t *seg);
 
 /**
  * Get word string from a segmentation iterator.
  */
+POCKETSPHINX_EXPORT
 char const *pocketsphinx_seg_word(ps_seg_t *seg);
 
 /**
  * Get start and end frames from a segmentation iterator.
  */
+POCKETSPHINX_EXPORT
 void pocketsphinx_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef);
 
 /**
  * Get log posterior probability from a segmentation iterator
  */
+POCKETSPHINX_EXPORT
 void pocketsphinx_seg_prob(ps_seg_t *seg, int32 *out_pprob);
 
 /**
  * Finish iterating over a word segmentation early, freeing resources.
  */
+POCKETSPHINX_EXPORT
 void pocketsphinx_seg_free(ps_seg_t *seg);
 
 /**
@@ -204,6 +220,7 @@ void pocketsphinx_seg_free(ps_seg_t *seg);
  * @param ctx1 First word of trigram context (NULL for whole utterance)
  * @param ctx2 First word of trigram context (NULL for whole utterance)
  */
+POCKETSPHINX_EXPORT
 ps_nbest_t *pocketsphinx_nbest(pocketsphinx_t *ps, int sf, int ef,
 			       char const *ctx1, char const *ctx2);
 
@@ -213,6 +230,7 @@ ps_nbest_t *pocketsphinx_nbest(pocketsphinx_t *ps, int sf, int ef,
  * @return String containing next best hypothesis.  NULL if no more
  * hypotheses are available (iterator will be freed in this case).
  */
+POCKETSPHINX_EXPORT
 char const *pocketsphinx_nbest_next(ps_nbest_t *nbest);
 
 /**
@@ -221,11 +239,13 @@ char const *pocketsphinx_nbest_next(ps_nbest_t *nbest);
  * @return Iterator over the next best hypothesis.  NULL if no more
  * hypotheses are available (iterator will be freed in this case).
  */
+POCKETSPHINX_EXPORT
 ps_seg_t *pocketsphinx_nbest_next_seg(ps_nbest_t *nbest);
 
 /**
  * Finish N-best search early, releasing resources.
  */
+POCKETSPHINX_EXPORT
 void pocketsphinx_nbest_free(ps_nbest_t *nbest);
 
 /**
@@ -235,6 +255,7 @@ void pocketsphinx_nbest_free(ps_nbest_t *nbest);
  * @param out_ncpu    Output: Number of seconds of CPU time used.
  * @param out_nwall   Output: Number of seconds of wall time used.
  */
+POCKETSPHINX_EXPORT
 void pocketsphinx_get_utt_time(pocketsphinx_t *ps, double *out_nspeech,
 			       double *out_ncpu, double *out_nwall);
 
@@ -245,6 +266,7 @@ void pocketsphinx_get_utt_time(pocketsphinx_t *ps, double *out_nspeech,
  * @param out_ncpu    Output: Number of seconds of CPU time used.
  * @param out_nwall   Output: Number of seconds of wall time used.
  */
+POCKETSPHINX_EXPORT
 void pocketsphinx_get_all_time(pocketsphinx_t *ps, double *out_nspeech,
 			       double *out_ncpu, double *out_nwall);
 
