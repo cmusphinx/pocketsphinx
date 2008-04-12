@@ -83,8 +83,6 @@ typedef struct ps_searchfuncs_s {
 
     char const *(*hyp)(ps_search_t *search, int32 *out_score);
     ps_seg_t *(*seg_iter)(ps_search_t *search, int32 *out_score);
-    ps_seg_t *(*seg_next)(ps_seg_t *seg);
-    void (*seg_free)(ps_seg_t *seg);
 } ps_searchfuncs_t;
 
 /**
@@ -126,19 +124,25 @@ void ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
  */
 void ps_search_deinit(ps_search_t *search);
 
+typedef struct ps_segfuncs_s {
+    ps_seg_t *(*seg_next)(ps_seg_t *seg);
+    void (*seg_free)(ps_seg_t *seg);
+} ps_segfuncs_t;
+
 /**
  * Base structure for hypothesis segmentation iterator.
  */
 struct ps_seg_s {
-    ps_search_t *search;   /**< Search object which this came from */
+    ps_segfuncs_t *vt;     /**< V-table of seg methods */
+    ps_search_t *search;   /**< Search object from whence this came */
     char const *word;      /**< Word string (pointer into dictionary hash) */
     int sf;                /**< Start frame. */
     int ef;                /**< End frame. */
-    float32 prob;          /**< Posterior probability. */
+    int32 prob;            /**< Log posterior probability. */
 };
 
-#define ps_search_seg_next(seg) (*(seg->search->vt->seg_next))(seg)
-#define ps_search_seg_free(s) (*(seg->search->vt->seg_free))(seg)
+#define ps_search_seg_next(seg) (*(seg->vt->seg_next))(seg)
+#define ps_search_seg_free(s) (*(seg->vt->seg_free))(seg)
 
 
 /**

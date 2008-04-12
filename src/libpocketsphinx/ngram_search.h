@@ -120,6 +120,16 @@ typedef struct bptbl_s {
     int32    lscr;
 } bptbl_t;
 
+/**
+ * Segmentation "iterator" for backpointer table results.
+ */
+typedef struct bptbl_seg_s {
+    ps_seg_t base;  /**< Base structure. */
+    int32 *bpidx;   /**< Sequence of backpointer IDs. */
+    int16 n_bpidx;  /**< Number of backpointer IDs. */
+    int16 cur;      /**< Current position in bpidx. */
+} bptbl_seg_t;
+
 /*
  * Candidates words for entering their last phones.  Cleared and rebuilt in each
  * frame.

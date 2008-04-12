@@ -69,8 +69,6 @@
 #define __FSG_DBG_CHAN__	0
 
 static ps_seg_t *fsg_search2_seg_iter(ps_search_t *search, int32 *out_score);
-static ps_seg_t *fsg_search2_seg_next(ps_seg_t *seg);
-static void fsg_search2_seg_free(ps_seg_t *seg);
 
 static ps_searchfuncs_t fsg_funcs = {
     /* name: */   "fsg",
@@ -78,11 +76,8 @@ static ps_searchfuncs_t fsg_funcs = {
     /* step: */   fsg_search2_step,
     /* finish: */ fsg_search2_finish,
     /* free: */   fsg_search2_free,
-
     /* hyp: */      fsg_search2_hyp,
     /* seg_iter: */ fsg_search2_seg_iter,
-    /* seg_next: */ fsg_search2_seg_next,
-    /* seg_free: */ fsg_search2_seg_free,
 };
 
 ps_search_t *
@@ -165,6 +160,7 @@ fsg_search2_free(ps_search_t *search)
     ps_search_deinit(search);
     hmm_context_free(fsgs->hmmctx);
     fsg_lextree_free(fsgs->lextree);
+    fsg_history_reset(fsgs->history);
     fsg_history_set_fsg(fsgs->history, NULL);
     for (itor = hash_table_iter(fsgs->fsgs);
          itor; itor = hash_table_iter_next(itor)) {
@@ -959,15 +955,3 @@ fsg_search2_seg_iter(ps_search_t *search, int32 *out_score)
 {
     return NULL;
 }
-
-static ps_seg_t *
-fsg_search2_seg_next(ps_seg_t *seg)
-{
-    return NULL;
-}
-
-static void
-fsg_search2_seg_free(ps_seg_t *seg)
-{
-}
-

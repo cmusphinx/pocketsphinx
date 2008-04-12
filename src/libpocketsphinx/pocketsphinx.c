@@ -368,7 +368,7 @@ pocketsphinx_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef)
 }
 
 void
-pocketsphinx_seg_prob(ps_seg_t *seg, float32 *out_pprob)
+pocketsphinx_seg_prob(ps_seg_t *seg, int32 *out_pprob)
 {
     *out_pprob = seg->prob;
 }

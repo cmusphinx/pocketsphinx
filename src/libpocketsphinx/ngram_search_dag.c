@@ -581,6 +581,89 @@ ngram_dag_hyp(ngram_dag_t *dag, latlink_t *link)
     return dag->hyp_str;
 }
 
+static void
+ngram_search_link2itor(ps_seg_t *seg, latlink_t *link, int to)
+{
+    latnode_t *node;
+
+    if (to) {
+        node = link->to;
+        seg->ef = node->lef;
+    }
+    else {
+        node = link->from;
+        seg->ef = link->ef;
+    }
+
+    seg->word = dict_word_str(ps_search_dict(seg->search), node->wid);
+    seg->sf = node->sf;
+    seg->prob = 0; /* FIXME: implement forward-backward */
+}
+
+static void
+ngram_dag_seg_free(ps_seg_t *seg)
+{
+    dag_seg_t *itor = (dag_seg_t *)seg;
+    
+    ckd_free(itor->links);
+    ckd_free(itor);
+}
+
+static ps_seg_t *
+ngram_dag_seg_next(ps_seg_t *seg)
+{
+    dag_seg_t *itor = (dag_seg_t *)seg;
+
+    ++itor->cur;
+    if (itor->cur == itor->n_links + 1) {
+        ngram_dag_seg_free(seg);
+        return NULL;
+    }
+    else if (itor->cur == itor->n_links) {
+        /* Re-use the last link but with the "to" node. */
+        ngram_search_link2itor(seg, itor->links[itor->cur - 1], TRUE);
+    }
+    else {
+        ngram_search_link2itor(seg, itor->links[itor->cur], FALSE);
+    }
+
+    return seg;
+}
+
+static ps_segfuncs_t ngram_dag_segfuncs = {
+    /* seg_next */ ngram_dag_seg_next,
+    /* seg_free */ ngram_dag_seg_free
+};
+
+ps_seg_t *
+ngram_dag_iter(ngram_dag_t *dag, latlink_t *link)
+{
+    dag_seg_t *itor;
+    latlink_t *l;
+    int cur;
+
+    /* Calling this an "iterator" is a bit of a misnomer since we have
+     * to get the entire backtrace in order to produce it.
+     */
+    itor = ckd_calloc(1, sizeof(*itor));
+    itor->base.vt = &ngram_dag_segfuncs;
+    itor->base.search = ps_search_base(dag->ngs);
+    itor->n_links = 0;
+
+    for (l = link; l; l = l->best_prev) {
+        ++itor->n_links;
+    }
+    itor->links = ckd_calloc(itor->n_links, sizeof(*itor->links));
+    cur = itor->n_links - 1;
+    for (l = link; l; l = l->best_prev) {
+        itor->links[cur] = l;
+        --cur;
+    }
+
+    ngram_search_link2itor((ps_seg_t *)itor, itor->links[0], FALSE);
+    return (ps_seg_t *)itor;
+}
+
 /*
  * Find the best score from dag->start to end point of any link and
  * use it to update links further down the path.  This is basically

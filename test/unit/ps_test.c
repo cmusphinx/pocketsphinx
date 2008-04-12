@@ -35,6 +35,7 @@ pocketsphinx_test(cmd_ln_t *config, char const *sname, char const *expected)
 	int32 nfr, i, score;
 	char const *hyp;
 	double n_speech, n_cpu, n_wall;
+	ps_seg_t *seg;
 
 	TEST_ASSERT(ps = pocketsphinx_init(config));
 	/* HACK!  Need a way to do this in the API. */
@@ -83,6 +84,16 @@ pocketsphinx_test(cmd_ln_t *config, char const *sname, char const *expected)
 	hyp = pocketsphinx_get_hyp(ps, &score);
 	printf("%s: %s (%d)\n", sname, hyp, score);
 	TEST_EQUAL(0, strcmp(hyp, expected));
+	for (seg = pocketsphinx_seg_iter(ps, &score); seg;
+	     seg = pocketsphinx_seg_next(seg)) {
+		char const *word;
+		int sf, ef;
+
+		word = pocketsphinx_seg_word(seg);
+		pocketsphinx_seg_frames(seg, &sf, &ef);
+		printf("%s %d %d\n", word, sf, ef);
+	}
+
 	pocketsphinx_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
 	printf("%.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
 	       n_speech, n_cpu, n_wall);

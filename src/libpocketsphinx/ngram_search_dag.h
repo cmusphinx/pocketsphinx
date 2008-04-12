@@ -67,6 +67,16 @@ struct ngram_dag_s {
 };
 
 /**
+ * Segmentation "iterator" for backpointer table results.
+ */
+typedef struct dag_seg_s {
+    ps_seg_t base;       /**< Base structure. */
+    latlink_t **links;   /**< Sequence of lattice links. */
+    int16 n_links;  /**< Number of lattice links. */
+    int16 cur;      /**< Current position in bpidx. */
+} dag_seg_t;
+
+/**
  * Partial path structure used in N-best (A*) search.
  *
  * Each partial path (latpath_t) is constructed by extending another
@@ -129,6 +139,11 @@ latlink_t *ngram_dag_bestpath(ngram_dag_t *dag);
  * Get hypothesis string after bestpath search.
  */
 char const *ngram_dag_hyp(ngram_dag_t *dag, latlink_t *link);
+
+/**
+ * Get hypothesis segmentation iterator after bestpath search.
+ */
+ps_seg_t *ngram_dag_iter(ngram_dag_t *dag, latlink_t *link);
 
 /**
  * Begin N-best search on a word graph.

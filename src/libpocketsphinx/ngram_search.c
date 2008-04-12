@@ -58,8 +58,6 @@ static int ngram_search_step(ps_search_t *search);
 static int ngram_search_finish(ps_search_t *search);
 static char const *ngram_search_hyp(ps_search_t *search, int32 *out_score);
 static ps_seg_t *ngram_search_seg_iter(ps_search_t *search, int32 *out_score);
-static ps_seg_t *ngram_search_seg_next(ps_seg_t *seg);
-static void ngram_search_seg_free(ps_seg_t *seg);
 
 static ps_searchfuncs_t ngram_funcs = {
     /* name: */   "ngram",
@@ -67,11 +65,8 @@ static ps_searchfuncs_t ngram_funcs = {
     /* step: */   ngram_search_step,
     /* finish: */ ngram_search_finish,
     /* free: */   ngram_search_free,
-
     /* hyp: */      ngram_search_hyp,
     /* seg_iter: */ ngram_search_seg_iter,
-    /* seg_next: */ ngram_search_seg_next,
-    /* seg_free: */ ngram_search_seg_free,
 };
 
 static void
@@ -416,7 +411,7 @@ ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx)
         bp = be->bp;
         if (dict_is_filler_word(ps_search_dict(ngs), be->wid))
             continue;
-        len += strlen(ps_search_dict(ngs)->dict_list[be->wid]->word) + 1;
+        len += strlen(dict_word_str(ps_search_dict(ngs), be->wid)) + 1;
     }
 
     ckd_free(base->hyp_str);
@@ -431,9 +426,9 @@ ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx)
         if (dict_is_filler_word(ps_search_dict(ngs), be->wid))
             continue;
 
-        len = strlen(ps_search_dict(ngs)->dict_list[be->wid]->word);
+        len = strlen(dict_word_str(ps_search_dict(ngs), be->wid));
         c -= len;
-        memcpy(c, ps_search_dict(ngs)->dict_list[be->wid]->word, len);
+        memcpy(c, dict_word_str(ps_search_dict(ngs), be->wid), len);
         if (c > base->hyp_str) {
             --c;
             *c = ' ';
@@ -629,24 +624,104 @@ ngram_search_hyp(ps_search_t *search, int32 *out_score)
     return NULL;
 }
 
+static void
+ngram_search_bp2itor(ps_seg_t *seg, int bp)
+{
+    ngram_search_t *ngs = (ngram_search_t *)seg->search;
+    bptbl_t *be, *pbe;
+
+    be = &ngs->bp_table[bp];
+    pbe = be->bp == -1 ? NULL : &ngs->bp_table[be->bp];
+    seg->word = dict_word_str(ps_search_dict(ngs), be->wid);
+    seg->ef = be->frame;
+    seg->sf = pbe ? pbe->frame + 1 : 0;
+    seg->prob = 0; /* Bogus value... */
+}
+
+static void
+ngram_bp_seg_free(ps_seg_t *seg)
+{
+    bptbl_seg_t *itor = (bptbl_seg_t *)seg;
+    
+    ckd_free(itor->bpidx);
+    ckd_free(itor);
+}
+
+static ps_seg_t *
+ngram_bp_seg_next(ps_seg_t *seg)
+{
+    bptbl_seg_t *itor = (bptbl_seg_t *)seg;
+
+    if (++itor->cur == itor->n_bpidx) {
+        ngram_bp_seg_free(seg);
+        return NULL;
+    }
+
+    ngram_search_bp2itor(seg, itor->bpidx[itor->cur]);
+    return seg;
+}
+
+static ps_segfuncs_t ngram_bp_segfuncs = {
+    /* seg_next */ ngram_bp_seg_next,
+    /* seg_free */ ngram_bp_seg_free
+};
+
+static ps_seg_t *
+ngram_search_bp_iter(ngram_search_t *ngs, int bpidx)
+{
+    bptbl_seg_t *itor;
+    int bp, cur;
+
+    /* Calling this an "iterator" is a bit of a misnomer since we have
+     * to get the entire backtrace in order to produce it.  On the
+     * other hand, all we actually need is the bptbl IDs, and we can
+     * allocate a fixed-size array of them. */
+    itor = ckd_calloc(1, sizeof(*itor));
+    itor->base.vt = &ngram_bp_segfuncs;
+    itor->base.search = ps_search_base(ngs);
+    itor->n_bpidx = 0;
+    bp = bpidx;
+    while (bp != NO_BP) {
+        bptbl_t *be = &ngs->bp_table[bp];
+        bp = be->bp;
+        ++itor->n_bpidx;
+    }
+    itor->bpidx = ckd_calloc(itor->n_bpidx, sizeof(*itor->bpidx));
+    cur = itor->n_bpidx - 1;
+    bp = bpidx;
+    while (bp != NO_BP) {
+        bptbl_t *be = &ngs->bp_table[bp];
+        itor->bpidx[cur] = bp;
+        bp = be->bp;
+        --cur;
+    }
+
+    /* Fill in relevant fields for first element. */
+    ngram_search_bp2itor((ps_seg_t *)itor, itor->bpidx[0]);
+
+    return (ps_seg_t *)itor;
+}
+
 static ps_seg_t *
 ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
 {
     ngram_search_t *ngs = (ngram_search_t *)search;
 
-    /* First, figure out if we are done with the utterance yet. */
-    /* If so, we should either use the bestpath or the bptbl. */
+    /* Use the DAG if it exists (means that the utt is done, for now
+     * at least...) */
+    if (ngs->bestpath && ngs->dag) {
+        latlink_t *last;
+
+        last = ngram_dag_bestpath(ngs->dag);
+        return ngram_dag_iter(ngs->dag, last);
+    }
+    else {
+        int32 bpidx;
+
+        /* fwdtree and fwdflat use same backpointer table. */
+        bpidx = ngram_search_find_exit(ngs, -1, out_score);
+        return ngram_search_bp_iter(ngs, bpidx);
+    }
 
     return NULL;
-}
-
-static ps_seg_t *
-ngram_search_seg_next(ps_seg_t *seg)
-{
-    return NULL;
-}
-
-static void
-ngram_search_seg_free(ps_seg_t *seg)
-{
 }

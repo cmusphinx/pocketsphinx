@@ -100,36 +100,6 @@ void pocketsphinx_free(pocketsphinx_t *ps);
 cmd_ln_t *pocketsphinx_get_config(pocketsphinx_t *ps);
 
 /**
- * Load a finite-state grammar (FSG or JSGF format).
- *
- * FIXME: Actually this functionality will be in SphinxBase, the only
- * thing necessary is that we have an FSG switching capability here.
- *
- * The type of file will be auto-detected based on the file contents.
- *
- * FSG files contain a single grammar which is identified by a name
- * field in the header of the file.  To select a grammar, call
- * pocketsphinx_set_fsg() with this name.
- *
- * JSGF files can import an arbitrary number of rules which all live
- * inside a global namespace.  Each 'public' rule is actually a
- * grammar unto itself.  To select a rule, call pocketsphinx_set_fsg()
- * with the fully-qualified rule name.
- *
- * @return For FSG files, name of the grammar.  For JSGF files, the
- * name of the first public rule in the file specified.
- */
-const char *pocketsphinx_load_fsgfile(pocketsphinx_t *ps,
-				      const char *fsgfile);
-
-/**
- * Load a list of FSG files.
- */
-const char *pocketsphinx_load_fsgctl(pocketsphinx_t *ps,
-				     const char *fsgctlfile,
-				     int set_default);
-
-/**
  * Run a control file in batch mode.
  */
 int pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
@@ -216,9 +186,9 @@ char const *pocketsphinx_seg_word(ps_seg_t *seg);
 void pocketsphinx_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef);
 
 /**
- * Get posterior probability from a segmentation iterator
+ * Get log posterior probability from a segmentation iterator
  */
-void pocketsphinx_seg_prob(ps_seg_t *seg, float32 *out_pprob);
+void pocketsphinx_seg_prob(ps_seg_t *seg, int32 *out_pprob);
 
 /**
  * Finish iterating over a word segmentation early, freeing resources.
