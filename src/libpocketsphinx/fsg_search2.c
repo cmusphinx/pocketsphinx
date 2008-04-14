@@ -126,7 +126,7 @@ fsg_search2_init(cmd_ln_t *config,
     if ((path = cmd_ln_str_r(config, "-fsg"))) {
         fsg_model_t *fsg;
 
-        if ((fsg = fsg_model_readfile(path, acmod->lmath)) == NULL)
+        if ((fsg = fsg_model_readfile(path, acmod->lmath, fsgs->lw)) == NULL)
             goto error_out;
         if (fsg_search2_add(fsgs, fsg_model_name(fsg), fsg) != fsg) {
             fsg_model_free(fsg);
