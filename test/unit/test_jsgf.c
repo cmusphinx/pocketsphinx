@@ -20,6 +20,7 @@ main(int argc, char *argv[])
 	jsgf_t *jsgf;
 	jsgf_rule_t *rule;
 	fsg_model_t *fsg;
+	int32 score;
 	clock_t c;
 	int i;
 
@@ -51,7 +52,6 @@ main(int argc, char *argv[])
 		size_t nread;
 		int16 const *bptr;
 		char const *hyp;
-		int32 score;
 		int nfr;
 
 		TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
@@ -72,6 +72,8 @@ main(int argc, char *argv[])
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
+	TEST_EQUAL(0, strcmp("GO FORWARD TEN METERS",
+			     fsg_search2_hyp(ps_search_base(fsgs), &score)));
 	c = clock() - c;
 	printf("5 * fsg search in %.2f sec\n", (double)c / CLOCKS_PER_SEC);
 	pocketsphinx_free(ps);
