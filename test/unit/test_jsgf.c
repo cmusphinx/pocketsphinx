@@ -35,12 +35,13 @@ main(int argc, char *argv[])
 
 	jsgf = jsgf_parse_file(DATADIR "/goforward.gram", NULL);
 	TEST_ASSERT(jsgf);
-	rule = jsgf_get_rule(jsgf, "<goforward.move>");
+	rule = jsgf_get_rule(jsgf, "<goforward.move2>");
 	TEST_ASSERT(rule);
 	fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, 7.5);
 	TEST_ASSERT(fsg);
-	TEST_ASSERT(fsg_search2_add(fsgs, "<goforward.move>", fsg));
-	TEST_ASSERT(fsg_search2_select(fsgs, "<goforward.move>"));
+	fsg_model_write(fsg, stdout);
+	TEST_ASSERT(fsg_search2_add(fsgs, "<goforward.move2>", fsg));
+	TEST_ASSERT(fsg_search2_select(fsgs, "<goforward.move2>"));
 
 	setbuf(stdout, NULL);
 	c = clock();
