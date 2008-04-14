@@ -376,7 +376,7 @@ dict_free(dict_t * dict)
 
 static void
 dict_load(dict_t * dict, bin_mdef_t *mdef,
-          char *filename, int32 * word_id, int32 use_context)
+          char *filename, int32 *word_id, int32 use_context)
 {
     static char const *rname = "dict_load";
     __BIGSTACKVARIABLE__ char dict_str[1024];
@@ -398,6 +398,12 @@ dict_load(dict_t * dict, bin_mdef_t *mdef,
 
     pronoun_str[0] = '\0';
     while (EOF != fscanf(fs, "%s%[^\n]\n", dict_str, pronoun_str)) {
+        int32 wid;
+        /* Check for duplicate before we do anything. */
+        if (hash_table_lookup_int32(dict->dict, dict_str, &wid) == 0) {
+            E_WARN("Skipping duplicate definition of %s\n", dict_str);
+            continue;
+        }
         entry = _new_dict_entry(dict, dict_str, pronoun_str, use_context);
         if (!entry) {
             E_ERROR("Failed to add %s to dictionary\n", dict_str);
@@ -405,8 +411,12 @@ dict_load(dict_t * dict, bin_mdef_t *mdef,
             continue;
         }
 
+        if (hash_table_enter_int32(dict->dict, entry->word, *word_id) != *word_id) {
+            E_ERROR("Failed to add %s to dictionary hash!\n", entry->word);
+            err = 1;
+            continue;
+        }
         _dict_list_add(dict, entry);
-        hash_table_enter(dict->dict, entry->word, (void *)(long)*word_id);
         entry->wid = *word_id;
         pronoun_str[0] = '\0';
         /*

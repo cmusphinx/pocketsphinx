@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
  * reserved.
@@ -76,11 +77,12 @@
 
 /* SphinxBase headers. */
 #include <prim_type.h>
+#include <fsg_model.h>
 
 /* Local headers. */
 #include "blkarray_list.h"
 #include "fsg_lextree.h"
-#include "word_fsg.h"
+#include "dict.h"
 
 /*
  * The Viterbi history structure.  This is a tree, with the root at the
@@ -91,15 +93,15 @@
  * A single Viterbi history entry
  */
 typedef struct fsg_hist_entry_s {
-  word_fsglink_t *fsglink;	/* Link taken result in this entry */
-  int32 frame;			/* Ending frame for this entry */
-  int32 score;			/* Total path score at the end of this
-				   transition */
-  int32 pred; 			/* Predecessor entry; -1 if none */
-  int32 lc;			/* Left context provided by this entry to
+    fsg_link_t *fsglink;		/* Link taken result in this entry */
+    int32 frame;			/* Ending frame for this entry */
+    int32 score;			/* Total path score at the end of this
+                                           transition */
+    int32 pred; 			/* Predecessor entry; -1 if none */
+    int32 lc;			/* Left context provided by this entry to
 				   succeeding words */
-  fsg_pnode_ctxt_t rc;		/* Possible right contexts to which this entry
-				   applies */
+    fsg_pnode_ctxt_t rc;		/* Possible right contexts to which this entry
+                                           applies */
 } fsg_hist_entry_t;
 
 /* Access macros */
@@ -139,10 +141,11 @@ typedef struct fsg_hist_entry_s {
  * non-null transitions, and the null transitions, separately.
  */
 typedef struct fsg_history_s {
-  word_fsg_t *fsg;		/* The FSG for which this object applies */
-  blkarray_list_t *entries;	/* A list of history table entries; the root
+    fsg_model_t *fsg;		/* The FSG for which this object applies */
+    blkarray_list_t *entries;	/* A list of history table entries; the root
 				   entry is the first element of the list */
-  glist_t **frame_entries;
+    glist_t **frame_entries;
+    int n_ciphone;
 } fsg_history_t;
 
 
@@ -150,13 +153,11 @@ typedef struct fsg_history_s {
  * One-time intialization: Allocate and return an initially empty history
  * module.
  */
-fsg_history_t *fsg_history_init (word_fsg_t *fsg);
+fsg_history_t *fsg_history_init(fsg_model_t *fsg, dict_t *dict);
 
+void fsg_history_utt_start(fsg_history_t *h);
 
-void fsg_history_utt_start (fsg_history_t *);
-
-
-void fsg_history_utt_end (fsg_history_t *);
+void fsg_history_utt_end(fsg_history_t *h);
 
 
 /*
@@ -167,8 +168,8 @@ void fsg_history_utt_end (fsg_history_t *);
  * with a higher score.  The surviving entries must be transferred to
  * the main history table, via fsg_history_end_frame().
  */
-void fsg_history_entry_add (fsg_history_t *,
-			    word_fsglink_t *,	/* FSG transition */
+void fsg_history_entry_add (fsg_history_t *h,
+			    fsg_link_t *l,	/* FSG transition */
 			    int32 frame,
 			    int32 score,
 			    int32 pred,
@@ -182,59 +183,30 @@ void fsg_history_entry_add (fsg_history_t *,
  * lists cleared.  This feature is used to handle the entries due to non-null
  * transitions and null transitions separately.
  */
-void fsg_history_end_frame (fsg_history_t *);
+void fsg_history_end_frame (fsg_history_t *h);
 
 
 /* Clear the hitory table */
-void fsg_history_reset (fsg_history_t *);
+void fsg_history_reset (fsg_history_t *h);
 
 
 /* Return the number of valid entries in the given history table */
 int32 fsg_history_n_entries (fsg_history_t *h);
 
-
-/*
- * Viterbi backtrace.
- */
-glist_t fsg_history_backtrace (fsg_history_t *);
-
-
-/*
- * Dump the Viterbi history data to the given file (mainly for debugging).
- */
-void fsg_history_dump (fsg_history_t *vh, char const *uttid, FILE *fp);
-
-
 /*
  * Return a ptr to the history entry for the given ID; NULL if there is no
  * such entry.
  */
-fsg_hist_entry_t *fsg_history_entry_get(fsg_history_t *, int32 id);
+fsg_hist_entry_t *fsg_history_entry_get(fsg_history_t *h, int32 id);
 
 
 /*
  * Switch the FSG associated with the given history module.  Should be done
  * when the history list is empty.  If not empty, the list is cleared.
  */
-void fsg_history_set_fsg (fsg_history_t *, word_fsg_t *);
-
+void fsg_history_set_fsg (fsg_history_t *h, fsg_model_t *fsg, dict_t *dict);
 
 /* Free the given Viterbi search history object */
 void fsg_history_free (fsg_history_t *h);
-
-
-/*
- * Extract and fill out a search_hyp_t structure from the given history entry
- * (index).  Caller must allocate hyp.
- * Note: Must not be called with index <= 0.
- * Note: (hyp->wid < 0) iff the entry corresponds to a null transition.
- * Note: hyp->{conf,latden,phone_perp} have dummy values filled in.
- * Note: hyp->next is unaffected.
- * Return value: -1 if index <= 0 (error; hyp is not filled in);
- * the return value is +ve if it is a valid, real (non-dummy) entry.
- */
-int32 fsg_history_entry_hyp_extract (fsg_history_t *h, int32 index,
-				     search_hyp_t *hyp);
-
 				     
 #endif

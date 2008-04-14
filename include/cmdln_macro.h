@@ -338,14 +338,14 @@
       ARG_FLOAT32,									\
       "1.0",										\
       "Unigram weight" }, 								\
-{ "-silpen",										\
+{ "-silprob",										\
       ARG_FLOAT32,									\
       "0.005",										\
-      "Silence word transition penalty" },						\
-{ "-fillpen",										\
+      "Silence word transition probability" },						\
+{ "-fillprob",										\
       ARG_FLOAT32,									\
       "1e-8",										\
-      "Filler word transition penalty" }
+      "Filler word transition probability" }
 
 /** Command-line options for dictionaries. */
 #define dictionary_cmdln_options()				\

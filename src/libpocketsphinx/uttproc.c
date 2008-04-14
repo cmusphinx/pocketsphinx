@@ -75,11 +75,21 @@
 #include "kb.h"
 #include "fbs.h"
 #include "search.h"
-#include "fsg_search.h"
 #include "uttproc.h"
 #include "posixwin32.h"
 
 #define MAX_UTT_LEN     6000    /* #frames */
+
+/**
+ * Utterance processing state.
+ */
+typedef enum {
+    UTTSTATE_UNDEF = -1,  /**< Undefined state */
+    UTTSTATE_IDLE = 0,    /**< Idle, can change models, etc. */
+    UTTSTATE_BEGUN = 1,   /**< Begun, can only do recognition. */
+    UTTSTATE_ENDED = 2,   /**< Ended, a result is now available. */
+    UTTSTATE_STOPPED = 3  /**< Stopped, can be resumed. */
+} uttstate_t;
 
 static uttstate_t uttstate = UTTSTATE_UNDEF;
 /* Used to flag beginning of utterance in livemode. */
@@ -150,8 +160,6 @@ static struct timeval e_start, e_stop;
 void searchlat_set_rescore_lm(char const *lmname);
 
 void utt_seghyp_free(search_hyp_t * h);
-
-static fsg_search_t *fsg_search;
 
 
 #if defined(_WIN32) && !defined(GNUWINCE) && !defined(CYGWIN)
@@ -340,26 +348,6 @@ uttproc_get_featbuf(mfcc_t ****feat)
     return n_featfr;
 }
 
-static void
-uttproc_fsg_search_fwd(void)
-{
-    int32 best;
-
-    if (cmd_ln_boolean("-compallsen")) {
-        best = senscr_all(feat_buf[n_searchfr], n_searchfr);
-    }
-    else {
-        fsg_search_sen_active(fsg_search);
-        best = senscr_active(feat_buf[n_searchfr], n_searchfr);
-    }
-
-    /* Note the best senone score for this frame */
-    search_set_topsen_score(fsg_search_frame(fsg_search), best);
-
-    fsg_search_frame_fwd(fsg_search);
-}
-
-
 /* Convert all given mfc vectors to feature vectors, and search one frame */
 static int32
 uttproc_frame(void)
@@ -369,9 +357,7 @@ uttproc_frame(void)
     search_hyp_t *hyp;
 
     /* Search one frame */
-    if (fsg_search_mode)
-        uttproc_fsg_search_fwd();
-    else if (cmd_ln_boolean("-fwdtree"))
+    if (cmd_ln_boolean("-fwdtree"))
         search_fwd(feat_buf[n_searchfr]);
     else
         search_fwdflat_frame(feat_buf[n_searchfr]);
@@ -450,23 +436,19 @@ static void
 uttproc_windup(int32 * fr, char **hyp)
 {
     /* Wind up first pass and run next pass, if necessary */
-    if (fsg_search_mode)
-        fsg_search_utt_end(fsg_search);
-    else {
-        if (cmd_ln_boolean("-fwdtree")) {
-            search_finish_fwd();
+    if (cmd_ln_boolean("-fwdtree")) {
+        search_finish_fwd();
 
-            if (cmd_ln_boolean("-fwdflat") && (searchFrame() > 0))
-                fwdflat_search(n_featfr);
-        }
-        else
-            search_fwdflat_finish();
-
-        /* Run bestpath pass if specified */
-        /* FIXME: If we are doing N-best we also need to do this. */
-        if ((searchFrame() > 0) && cmd_ln_boolean("-bestpath"))
-            bestpath_search();
+        if (cmd_ln_boolean("-fwdflat") && (searchFrame() > 0))
+            fwdflat_search(n_featfr);
     }
+    else
+        search_fwdflat_finish();
+
+    /* Run bestpath pass if specified */
+    /* FIXME: If we are doing N-best we also need to do this. */
+    if ((searchFrame() > 0) && cmd_ln_boolean("-bestpath"))
+        bestpath_search();
 
     search_result(fr, hyp);
 
@@ -518,57 +500,6 @@ uttproc_init(void)
     utt_ofl = 0;
     uttno = 0;
 
-    /* Initialize the FSG search module */
-    {
-        char *fsgfile;
-        char *fsgname;
-        char *fsgctlfile;
-        FILE *ctlfp;
-        __BIGSTACKVARIABLE__ char line[16384], word[16384];
-
-        fsg_search = fsg_search_init(cmd_ln_get(), g_lmath, g_mdef, g_word_dict, g_tmat);
-
-        fsgfile = cmd_ln_str("-fsg");
-
-        fsg_search_mode = (fsgfile != NULL);
-
-        if (fsg_search_mode) {
-            fsgname = uttproc_load_fsgfile(fsgfile);
-            if (!fsgname)
-                E_FATAL("Error loading FSG file '%s'\n", fsgfile);
-
-            /* Make this FSG the currently active one */
-            if (uttproc_set_fsg(fsgname) < 0)
-                E_FATAL("Error setting current FSG to '%s'\n", fsgname);
-
-            E_INFO
-                ("FSG Mode; lextree, flat, bestpath searches disabled\n");
-        }
-
-        fsgctlfile = cmd_ln_str("-fsgctlfn");
-        if (fsgctlfile) {
-            if ((ctlfp = fopen(fsgctlfile, "r")) == NULL) {
-                /* Should this be E_ERROR?? */
-                E_FATAL("fopen(%s,r) failed\n", fsgctlfile);
-            }
-
-            while (fgets(line, sizeof(line), ctlfp) != NULL) {
-                if ((line[0] == '#')    /* Commented out */
-                    ||(sscanf(line, "%s", word) != 1))  /* Blank line */
-                    continue;
-
-                fsgfile = word;
-                fsgname = uttproc_load_fsgfile(fsgfile);
-                if (!fsgname) {
-                    /* Should this be E_ERROR?? */
-                    E_FATAL("Error loading FSG file '%s'\n", fsgfile);
-                }
-            }
-
-            fclose(ctlfp);
-        }
-    }
-
     return 0;
 }
 
@@ -602,8 +533,6 @@ uttproc_end(void)
         feat_buf = NULL;
         mfcbuf = NULL;
     }
-
-    fsg_search_free(fsg_search);
 
     utt_seghyp_free(utt_seghyp);
     utt_seghyp = NULL;
@@ -670,9 +599,7 @@ uttproc_begin_utt(char const *id)
     timing_start();
 
     if (!nosearch) {
-        if (fsg_search_mode)
-            fsg_search_utt_start(fsg_search);
-        else if (cmd_ln_boolean("-fwdtree"))
+        if (cmd_ln_boolean("-fwdtree"))
             search_start_fwd();
         else
             search_fwdflat_start();
@@ -954,18 +881,14 @@ uttproc_abort_utt(void)
     uttstate = UTTSTATE_IDLE;
 
     if (!nosearch) {
-        if (fsg_search_mode)
-            fsg_search_utt_end(fsg_search);
-        else {
-            if (cmd_ln_boolean("-fwdtree"))
-                search_finish_fwd();
-            else
-                search_fwdflat_finish();
+        if (cmd_ln_boolean("-fwdtree"))
+            search_finish_fwd();
+        else
+            search_fwdflat_finish();
 
-            search_result(&fr, &hyp);
+        search_result(&fr, &hyp);
 
-            write_results(hyp, 1);
-        }
+        write_results(hyp, 1);
         timing_stop(fr);
     }
 
@@ -983,14 +906,10 @@ uttproc_stop_utt(void)
     uttstate = UTTSTATE_STOPPED;
 
     if (!nosearch) {
-        if (fsg_search_mode)
-            fsg_search_utt_end(fsg_search);
-        else {
-            if (cmd_ln_boolean("-fwdtree"))
-                search_finish_fwd();
-            else
-                search_fwdflat_finish();
-        }
+        if (cmd_ln_boolean("-fwdtree"))
+            search_finish_fwd();
+        else
+            search_fwdflat_finish();
     }
 
     return 0;
@@ -1007,9 +926,7 @@ uttproc_restart_utt(void)
     uttstate = UTTSTATE_BEGUN;
 
     if (!nosearch) {
-        if (fsg_search_mode)
-            fsg_search_utt_start(fsg_search);
-        else if (cmd_ln_boolean("-fwdtree"))
+        if (cmd_ln_boolean("-fwdtree"))
             search_start_fwd();
         else
             search_fwdflat_start();
@@ -1031,12 +948,7 @@ uttproc_partial_result(int32 * fr, char **hyp)
         return -1;
     }
 
-    if (fsg_search_mode) {
-        fsg_search_history_backtrace(fsg_search, FALSE);
-        search_result(fr, hyp);
-    }
-    else
-        search_partial_result(fr, hyp);
+    search_partial_result(fr, hyp);
 
     return 0;
 }
@@ -1124,12 +1036,7 @@ uttproc_partial_result_seg(int32 * fr, search_hyp_t ** hyp)
         return -1;
     }
 
-    if (fsg_search_mode) {
-        fsg_search_history_backtrace(fsg_search, FALSE);
-        search_result(fr, &str);
-    }
-    else
-        search_partial_result(fr, &str);        /* Internally makes partial result */
+    search_partial_result(fr, &str);        /* Internally makes partial result */
 
     build_utt_seghyp();
     *hyp = utt_seghyp;
@@ -1283,123 +1190,6 @@ uttproc_add_word(char const *word,
     }
     return wid;
 }
-
-int32
-uttproc_load_fsg(s2_fsg_t * fsg,
-                 int32 use_altpron,
-                 int32 use_filler,
-                 float32 silprob, float32 fillprob, float32 lw)
-{
-    word_fsg_t *word_fsg;
-
-    word_fsg =
-        word_fsg_load(fsg, g_word_dict, g_lmath,
-                      use_altpron, use_filler, silprob, fillprob, lw);
-
-    if (!word_fsg)
-        return 0;
-
-    if (!fsg_search_add_fsg(fsg_search, word_fsg)) {
-        E_ERROR("Failed to add FSG '%s' to system\n",
-                word_fsg_name(word_fsg));
-        word_fsg_free(word_fsg);
-        return 0;
-    }
-
-    return 1;
-}
-
-
-char *
-uttproc_load_fsgfile(char *fsgfile)
-{
-    word_fsg_t *fsg;
-
-    fsg = word_fsg_readfile(fsgfile, g_word_dict, g_lmath,
-                            cmd_ln_boolean("-fsgusealtpron"),
-                            cmd_ln_boolean("-fsgusefiller"),
-                            cmd_ln_float32("-silpen"),
-                            cmd_ln_float32("-fillpen"),
-                            cmd_ln_float32("-lw"));
-    if (!fsg)
-        return NULL;
-
-    if (!fsg_search_add_fsg(fsg_search, fsg)) {
-        E_ERROR("Failed to add FSG '%s' to system\n", word_fsg_name(fsg));
-        word_fsg_free(fsg);
-        return NULL;
-    }
-
-    return fsg->name;
-}
-
-
-int32
-uttproc_del_fsg(char *fsgname)
-{
-    warn_notidle("uttproc_del_fsg");
-
-    if (fsgname == NULL) {
-        E_ERROR("uttproc_del_fsg called with NULL argument\n");
-        return -1;
-    }
-
-    if (!fsg_search_del_fsg_byname(fsg_search, fsgname))
-        return -1;
-
-    return 0;
-}
-
-
-int32
-uttproc_set_fsg(char *fsgname)
-{
-    warn_notidle("uttproc_set_fsg");
-
-    if (fsgname == NULL) {
-        E_ERROR("uttproc_set_fsg called with NULL argument\n");
-        return -1;
-    }
-
-    if (!fsg_search_set_current_fsg(fsg_search, fsgname))
-        return -1;
-
-    fsg_search_mode = TRUE;
-
-    E_INFO("FSG= \"%s\"\n", fsgname);
-
-    return 0;
-}
-
-
-
-int32
-uttproc_get_fsg_start_state(void)
-{
-    return fsg_search_get_start_state(fsg_search);
-}
-
-
-int32
-uttproc_get_fsg_final_state(void)
-{
-    return fsg_search_get_final_state(fsg_search);
-}
-
-
-int32
-uttproc_set_fsg_start_state(int32 state)
-{
-    return fsg_search_set_start_state(fsg_search, state);
-}
-
-
-int32
-uttproc_set_fsg_final_state(int32 state)
-{
-    return fsg_search_set_final_state(fsg_search, state);
-}
-
 
 boolean
 uttproc_fsg_search_mode(void)

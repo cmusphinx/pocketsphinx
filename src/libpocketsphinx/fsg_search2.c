@@ -96,7 +96,7 @@ fsg_search2_init(cmd_ln_t *config,
                                     acmod->tmat->tp, NULL, acmod->mdef->sseq);
 
     /* Intialize the search history object */
-    fsgs->history = fsg_history_init(NULL);
+    fsgs->history = fsg_history_init(NULL, dict);
     fsgs->frame = -1;
 
     /* Initialize FSG table. */
@@ -117,7 +117,6 @@ fsg_search2_init(cmd_ln_t *config,
                            * fsgs->lw);
     fsgs->wip = (int32) (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-wip"))
                            * fsgs->lw);
-    fsgs->finish_wid = dict_to_id(dict, "</s>");
 
     E_INFO("FSG(beam: %d, pbeam: %d, wbeam: %d; wip: %d, pip: %d)\n",
            fsgs->beam_orig, fsgs->pbeam_orig, fsgs->wbeam_orig,
@@ -125,21 +124,16 @@ fsg_search2_init(cmd_ln_t *config,
 
     /* Load an FSG if one was specified in config */
     if ((path = cmd_ln_str_r(config, "-fsg"))) {
-        word_fsg_t *fsg;
+        fsg_model_t *fsg;
 
-        if ((fsg = word_fsg_readfile(path, dict, acmod->lmath,
-                                     cmd_ln_boolean_r(config, "-fsgusealtpron"),
-                                     cmd_ln_boolean_r(config, "-fsgusefiller"),
-                                     cmd_ln_float32_r(config, "-silpen"),
-                                     cmd_ln_float32_r(config, "-fillpen"),
-                                     cmd_ln_float32_r(config, "-lw"))) == NULL)
+        if ((fsg = fsg_model_readfile(path, acmod->lmath)) == NULL)
             goto error_out;
-        if (fsg_search2_add(fsgs, word_fsg_name(fsg), fsg) != fsg) {
-            word_fsg_free(fsg);
+        if (fsg_search2_add(fsgs, fsg_model_name(fsg), fsg) != fsg) {
+            fsg_model_free(fsg);
             goto error_out;
         }
-        if (fsg_search2_select(fsgs, word_fsg_name(fsg)) == NULL) {
-            word_fsg_free(fsg);
+        if (fsg_search2_select(fsgs, fsg_model_name(fsg)) == NULL) {
+            fsg_model_free(fsg);
             goto error_out;
         }
     }
@@ -161,11 +155,11 @@ fsg_search2_free(ps_search_t *search)
     hmm_context_free(fsgs->hmmctx);
     fsg_lextree_free(fsgs->lextree);
     fsg_history_reset(fsgs->history);
-    fsg_history_set_fsg(fsgs->history, NULL);
+    fsg_history_set_fsg(fsgs->history, NULL, NULL);
     for (itor = hash_table_iter(fsgs->fsgs);
          itor; itor = hash_table_iter_next(itor)) {
-        word_fsg_t *fsg = (word_fsg_t *) hash_entry_val(itor->ent);
-        word_fsg_free(fsg);
+        fsg_model_t *fsg = (fsg_model_t *) hash_entry_val(itor->ent);
+        fsg_model_free(fsg);
     }
     hash_table_free(fsgs->fsgs);
     fsg_history_free(fsgs->history);
@@ -173,30 +167,95 @@ fsg_search2_free(ps_search_t *search)
 }
 
 
-word_fsg_t *
+fsg_model_t *
 fsg_search2_get_fsg(fsg_search2_t *fsgs, const char *name)
 {
     void *val;
 
     if (hash_table_lookup(fsgs->fsgs, name, &val) < 0)
         return NULL;
-    return (word_fsg_t *)val;
+    return (fsg_model_t *)val;
 }
 
+int
+fsg_search2_add_silences(fsg_search2_t *fsgs, fsg_model_t *fsg)
+{
+    dict_t *dict;
+    int32 wid;
+    int n_sil;
 
-word_fsg_t *
-fsg_search2_add(fsg_search2_t *fsgs, char const *name, word_fsg_t *fsg)
+    dict = ps_search_dict(fsgs);
+    /* Add <s> and </s> to the first and last states. */
+    fsg_model_add_silence(fsg, "<s>", fsg_model_start_state(fsg),
+                          cmd_ln_float32_r(ps_search_config(fsgs), "-silprob"));
+    fsg_model_add_silence(fsg, "</s>", fsg_model_final_state(fsg),
+                          cmd_ln_float32_r(ps_search_config(fsgs), "-silprob"));
+    /* Add any other fillers to all states. */
+    fsg_model_add_silence(fsg, "<sil>", -1,
+                          cmd_ln_float32_r(ps_search_config(fsgs), "-silprob"));
+    n_sil = 0;
+    for (wid = dict_to_id(dict, "<sil>") + 1; wid < dict_n_words(dict); ++wid) {
+        char const *word = dict_word_str(dict, wid);
+        /* FIXME: Shouldn't happen?  Also we need a better way to mark fillers. */
+        if (0 == strcmp(word, "<s>") || 0 == strcmp(word, "</s>")) {
+            E_ERROR("WTF, %s=%d > <sil>=%d\n", word, wid, dict_to_id(dict, "<sil>"));
+            continue;
+        }
+        fsg_model_add_silence(fsg, word, -1,
+                              cmd_ln_float32_r(ps_search_config(fsgs), "-fillprob"));
+        ++n_sil;
+    }
+
+    return n_sil;
+}
+
+int
+fsg_search2_add_altpron(fsg_search2_t *fsgs, fsg_model_t *fsg)
+{
+    dict_t *dict;
+    int n_alt;
+    int i;
+
+    dict = ps_search_dict(fsgs);
+    /* Scan FSG's vocabulary for words that have alternate pronunciations. */
+    n_alt = 0;
+    for (i = 0; i < fsg_model_n_word(fsg); ++i) {
+        char const *word;
+        int32 wid;
+
+        word = fsg_model_word_str(fsg, i);
+        wid = dict_to_id(dict, word);
+        while ((wid = dict_next_alt(dict, wid)) != NO_WORD) {
+            fsg_model_add_alt(fsg, word, dict_word_str(dict, wid));
+            ++n_alt;
+        }
+    }
+
+    return n_alt;
+}
+
+fsg_model_t *
+fsg_search2_add(fsg_search2_t *fsgs, char const *name, fsg_model_t *fsg)
 {
     if (name == NULL)
-        name = word_fsg_name(fsg);
-    return (word_fsg_t *)hash_table_enter(fsgs->fsgs, name, fsg);
+        name = fsg_model_name(fsg);
+
+    /* Add silence transitions and alternate words. */
+    if (cmd_ln_boolean_r(ps_search_config(fsgs), "-fsgusefiller")
+        && !fsg_model_has_sil(fsg))
+        fsg_search2_add_silences(fsgs, fsg);
+    if (cmd_ln_boolean_r(ps_search_config(fsgs), "-fsgusealtpron")
+        && !fsg_model_has_alt(fsg))
+        fsg_search2_add_altpron(fsgs, fsg);
+
+    return (fsg_model_t *)hash_table_enter(fsgs->fsgs, name, fsg);
 }
 
 
-word_fsg_t *
+fsg_model_t *
 fsg_search2_remove_byname(fsg_search2_t *fsgs, char const *key)
 {
-    word_fsg_t *oldfsg;
+    fsg_model_t *oldfsg;
     void *val;
 
     /* Look for the matching FSG. */
@@ -212,15 +271,15 @@ fsg_search2_remove_byname(fsg_search2_t *fsgs, char const *key)
     if (fsgs->fsg == oldfsg) {
         fsg_lextree_free(fsgs->lextree);
         fsgs->lextree = NULL;
-        fsg_history_set_fsg(fsgs->history, NULL);
+        fsg_history_set_fsg(fsgs->history, NULL, NULL);
         fsgs->fsg = NULL;
     }
     return oldfsg;
 }
 
 
-word_fsg_t *
-fsg_search2_remove(fsg_search2_t *fsgs, word_fsg_t *fsg)
+fsg_model_t *
+fsg_search2_remove(fsg_search2_t *fsgs, fsg_model_t *fsg)
 {
     char const *key;
     hash_iter_t *itor;
@@ -228,9 +287,9 @@ fsg_search2_remove(fsg_search2_t *fsgs, word_fsg_t *fsg)
     key = NULL;
     for (itor = hash_table_iter(fsgs->fsgs);
          itor; itor = hash_table_iter_next(itor)) {
-        word_fsg_t *oldfsg;
+        fsg_model_t *oldfsg;
 
-        oldfsg = (word_fsg_t *) hash_entry_val(itor->ent);
+        oldfsg = (fsg_model_t *) hash_entry_val(itor->ent);
         if (oldfsg == fsg) {
             key = hash_entry_key(itor->ent);
             hash_table_iter_free(itor);
@@ -238,7 +297,7 @@ fsg_search2_remove(fsg_search2_t *fsgs, word_fsg_t *fsg)
         }
     }
     if (key == NULL) {
-        E_WARN("FSG '%s' to be deleted not found\n", word_fsg_name(fsg));
+        E_WARN("FSG '%s' to be deleted not found\n", fsg_model_name(fsg));
         return NULL;
     }
     else
@@ -246,10 +305,10 @@ fsg_search2_remove(fsg_search2_t *fsgs, word_fsg_t *fsg)
 }
 
 
-word_fsg_t *
+fsg_model_t *
 fsg_search2_select(fsg_search2_t *fsgs, const char *name)
 {
-    word_fsg_t *fsg;
+    fsg_model_t *fsg;
 
     fsg = fsg_search2_get_fsg(fsgs, name);
     if (fsg == NULL) {
@@ -267,7 +326,7 @@ fsg_search2_select(fsg_search2_t *fsgs, const char *name)
                                      fsgs->hmmctx, fsgs->wip, fsgs->pip);
 
     /* Inform the history module of the new fsg */
-    fsg_history_set_fsg(fsgs->history, fsg);
+    fsg_history_set_fsg(fsgs->history, fsg, ps_search_dict(fsgs));
     fsgs->fsg = fsg;
 
     return fsg;
@@ -409,7 +468,7 @@ static void
 fsg_search2_pnode_exit(fsg_search2_t *fsgs, fsg_pnode_t * pnode)
 {
     hmm_t *hmm;
-    word_fsglink_t *fl;
+    fsg_link_t *fl;
     int32 wid;
     fsg_pnode_ctxt_t ctxt;
 
@@ -420,7 +479,7 @@ fsg_search2_pnode_exit(fsg_search2_t *fsgs, fsg_pnode_t * pnode)
     fl = fsg_pnode_fsglink(pnode);
     assert(fl);
 
-    wid = word_fsglink_wid(fl);
+    wid = fsg_link_wid(fl);
     assert(wid >= 0);
 
 #if __FSG_DBG__
@@ -433,8 +492,11 @@ fsg_search2_pnode_exit(fsg_search2_t *fsgs, fsg_pnode_t * pnode)
      * Check if this is filler or single phone word; these do not model right
      * context (i.e., the exit score applies to all right contexts).
      */
-    if (dict_is_filler_word(ps_search_dict(fsgs), wid) ||
-        (wid == fsgs->finish_wid) || (dict_pronlen(ps_search_dict(fsgs), wid) == 1)) {
+    if (fsg_model_is_filler(fsgs->fsg, wid)
+        /* FIXME: This might be slow due to repeated calls to dict_to_id(). */
+        || (dict_pronlen(ps_search_dict(fsgs),
+                         dict_to_id(ps_search_dict(fsgs),
+                                    fsg_model_word_str(fsgs->fsg, wid))) == 1)) {
         /* Create a dummy context structure that applies to all right contexts */
         fsg_pnode_add_all_ctxt(&ctxt);
 
@@ -520,9 +582,9 @@ fsg_search2_null_prop(fsg_search2_t *fsgs)
 {
     int32 bpidx, n_entries, thresh, newscore;
     fsg_hist_entry_t *hist_entry;
-    word_fsglink_t *l;
+    fsg_link_t *l;
     int32 s, d;
-    word_fsg_t *fsg;
+    fsg_model_t *fsg;
 
     fsg = fsgs->fsg;
     thresh = fsgs->bestscore + fsgs->wbeam; /* Which beam really?? */
@@ -535,20 +597,20 @@ fsg_search2_null_prop(fsg_search2_t *fsgs)
         l = fsg_hist_entry_fsglink(hist_entry);
 
         /* Destination FSG state for history entry */
-        s = l ? word_fsglink_to_state(l) : word_fsg_start_state(fsg);
+        s = l ? fsg_link_to_state(l) : fsg_model_start_state(fsg);
 
         /*
          * Check null transitions from d to all other states.  (Only need to
          * propagate one step, since FSG contains transitive closure of null
          * transitions.)
          */
-        for (d = 0; d < word_fsg_n_state(fsg); d++) {
-            l = word_fsg_null_trans(fsg, s, d);
+        for (d = 0; d < fsg_model_n_state(fsg); d++) {
+            l = fsg_model_null_trans(fsg, s, d);
 
             if (l) {            /* Propagate history entry through this null transition */
                 newscore =
                     fsg_hist_entry_score(hist_entry) +
-                    word_fsglink_logs2prob(l);
+                    fsg_link_logs2prob(l);
 
                 if (newscore >= thresh) {
                     fsg_history_entry_add(fsgs->history, l,
@@ -573,7 +635,7 @@ fsg_search2_word_trans(fsg_search2_t *fsgs)
 {
     int32 bpidx, n_entries;
     fsg_hist_entry_t *hist_entry;
-    word_fsglink_t *l;
+    fsg_link_t *l;
     int32 score, newscore, thresh, nf, d;
     fsg_pnode_t *root;
     int32 lc, rc;
@@ -592,7 +654,7 @@ fsg_search2_word_trans(fsg_search2_t *fsgs)
         l = fsg_hist_entry_fsglink(hist_entry);
 
         /* Destination state for hist_entry */
-        d = l ? word_fsglink_to_state(l) : word_fsg_start_state(fsgs->
+        d = l ? fsg_link_to_state(l) : fsg_model_start_state(fsgs->
                                                                 fsg);
 
         lc = fsg_hist_entry_lc(hist_entry);
@@ -836,7 +898,7 @@ static int
 fsg_search2_find_exit(fsg_search2_t *fsgs, int frame_idx, int final, int32 *out_score)
 {
     fsg_hist_entry_t *hist_entry;
-    word_fsg_t *fsg;
+    fsg_model_t *fsg;
     int bpidx, frm, last_frm, besthist;
     int32 bestscore;
 
@@ -863,7 +925,7 @@ fsg_search2_find_exit(fsg_search2_t *fsgs, int frame_idx, int final, int32 *out_
     besthist = -1;
     fsg = fsgs->fsg;
     while (frm == last_frm) {
-        word_fsglink_t *fl;
+        fsg_link_t *fl;
         int32 score;
 
         fl = fsg_hist_entry_fsglink(hist_entry);
@@ -872,7 +934,7 @@ fsg_search2_find_exit(fsg_search2_t *fsgs, int frame_idx, int final, int32 *out_
         if (score > bestscore) {
             /* Only enforce the final state constraint if this is a final hypothesis. */
             if ((!final)
-                || word_fsglink_to_state(fl) == word_fsg_final_state(fsg)) {
+                || fsg_link_to_state(fl) == fsg_model_final_state(fsg)) {
                 bestscore = score;
                 besthist = bpidx;
             }
@@ -914,14 +976,14 @@ fsg_search2_hyp(ps_search_t *search, int32 *out_score)
     len = 0;
     while (bp > 0) {
         fsg_hist_entry_t *hist_entry = fsg_history_entry_get(fsgs->history, bp);
-        word_fsglink_t *fl = fsg_hist_entry_fsglink(hist_entry);
+        fsg_link_t *fl = fsg_hist_entry_fsglink(hist_entry);
         int32 wid;
 
         bp = fsg_hist_entry_pred(hist_entry);
-        wid = word_fsglink_wid(fl);
-        if (wid < 0 || dict_is_filler_word(search->dict, wid))
+        wid = fsg_link_wid(fl);
+        if (wid < 0 || fsg_model_is_filler(fsgs->fsg, wid))
             continue;
-        len += strlen(dict_word_str(search->dict, wid)) + 1;
+        len += strlen(fsg_model_word_str(fsgs->fsg, wid)) + 1;
     }
 
     ckd_free(search->hyp_str);
@@ -930,17 +992,16 @@ fsg_search2_hyp(ps_search_t *search, int32 *out_score)
     c = search->hyp_str + len - 1;
     while (bp > 0) {
         fsg_hist_entry_t *hist_entry = fsg_history_entry_get(fsgs->history, bp);
-        word_fsglink_t *fl = fsg_hist_entry_fsglink(hist_entry);
+        fsg_link_t *fl = fsg_hist_entry_fsglink(hist_entry);
         int32 wid;
 
         bp = fsg_hist_entry_pred(hist_entry);
-        wid = word_fsglink_wid(fl);
-        if (wid < 0 || dict_is_filler_word(search->dict, wid))
+        wid = fsg_link_wid(fl);
+        if (wid < 0 || fsg_model_is_filler(fsgs->fsg, wid))
             continue;
-
-        len = strlen(dict_word_str(search->dict, wid));
+        len = strlen(fsg_model_word_str(fsgs->fsg, wid));
         c -= len;
-        memcpy(c, dict_word_str(search->dict, wid), len);
+        memcpy(c, fsg_model_word_str(fsgs->fsg, wid), len);
         if (c > search->hyp_str) {
             --c;
             *c = ' ';

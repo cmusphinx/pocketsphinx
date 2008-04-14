@@ -13,7 +13,6 @@ libpocketsphinx_la_SOURCES =			\
 	fbs_main.c				\
 	fsg_history.c				\
 	fsg_lextree.c				\
-	fsg_search.c				\
 	fsg_search2.c				\
 	hmm.c					\
 	kb_main.c				\
@@ -34,7 +33,6 @@ libpocketsphinx_la_SOURCES =			\
 	tmat.c					\
 	uttproc.c				\
 	vector.c				\
-	word_fsg.c				\
 	pocketsphinx.c
 
 noinst_HEADERS =				\
@@ -47,7 +45,6 @@ noinst_HEADERS =				\
 	dict.h					\
 	fsg_history.h				\
 	fsg_lextree.h				\
-	fsg_search.h				\
 	fsg_search2.h				\
 	hmm.h					\
 	kb.h					\
@@ -69,8 +66,7 @@ noinst_HEADERS =				\
 	search.h				\
 	senscr.h				\
 	tmat.h					\
-	vector.h				\
-	word_fsg.h
+	vector.h
 
 INCLUDES = -I$(top_srcdir)/include \
            -I$(top_builddir)/include 

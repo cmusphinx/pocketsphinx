@@ -118,9 +118,9 @@ ngram_search_init(cmd_ln_t *config,
         ngs->nwpen = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-nwpen"));
         ngs->pip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-pip"));
         ngs->silpen = ngs->pip
-            + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-silpen"));
+            + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-silprob"));
         ngs->fillpen = ngs->pip
-            + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-fillpen"));
+            + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-fillprob"));
 
         /* Language weight ratios for fwdflat and bestpath search. */
         ngs->fwdflat_fwdtree_lw_ratio =

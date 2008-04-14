@@ -187,19 +187,15 @@ fbs_init(int32 argc, char **argv)
     /* Load the language and acoustic models. */
     kb_init();
 
-    /* FIXME FIXME FIXME: We shouldn't initialize the N-Gram search if
-     * we are not going to use it, likewise for the FSG search... */
     /* Initialize the N-Gram search module */
     search_initialize(cmd_ln_get());
 
     /* Initialize dynamic data structures needed for utterance processing */
-    /* FIXME FIXME FIXME: For no good reason, this also initializes FSG search. */
     uttproc_init();
 
     /* FIXME: Now, because of this utter stupidity, we need to make
      * sure that we build the search tree if we are in N-Gram mode. */
-    if (!uttproc_fsg_search_mode())
-        search_set_current_lm();
+    search_set_current_lm();
 
     /* Some random stuff that doesn't have anywhere else to go. */
     if (cmd_ln_str("-rawlogdir"))
@@ -423,36 +419,33 @@ run_sc_utterance(char *mfcfile, int32 sf, int32 ef, char *idspec)
     }
     search_result(&frmcount, &finalhyp);
 
-    if (!uttproc_fsg_search_mode()) {
-        /* Should the Nbest generation be in uttproc.c (uttproc_result)?? */
-        if (nbest > 0) {
-            FILE *nbestfp;
-            __BIGSTACKVARIABLE__ char nbestfile[4096];
-            search_hyp_t *h, **alt;
-            int32 i, n_alt, startwid;
-            char *nbest_dir = cmd_ln_str("-nbestdir");
-            char *nbest_ext = cmd_ln_str("-nbestext");
+    /* Should the Nbest generation be in uttproc.c (uttproc_result)?? */
+    if (nbest > 0) {
+        FILE *nbestfp;
+        __BIGSTACKVARIABLE__ char nbestfile[4096];
+        search_hyp_t *h, **alt;
+        int32 i, n_alt, startwid;
+        char *nbest_dir = cmd_ln_str("-nbestdir");
+        char *nbest_ext = cmd_ln_str("-nbestext");
 
-            startwid = kb_get_word_id("<s>");
-            search_save_lattice();
-            n_alt =
-                search_get_alt(nbest, 0, searchFrame(), -1, startwid,
-                               &alt);
+        startwid = kb_get_word_id("<s>");
+        search_save_lattice();
+        n_alt =
+            search_get_alt(nbest, 0, searchFrame(), -1, startwid,
+                           &alt);
 
-            sprintf(nbestfile, "%s/%s.%s", nbest_dir, utt_name, nbest_ext);
-            if ((nbestfp = fopen(nbestfile, "w")) == NULL) {
-                E_WARN("fopen(%s,w) failed; using stdout\n", nbestfile);
-                nbestfp = stdout;
-            }
-            for (i = 0; i < n_alt; i++) {
-                for (h = alt[i]; h; h = h->next)
-                    fprintf(nbestfp, "%s ", h->word);
-                fprintf(nbestfp, "\n");
-            }
-            if (nbestfp != stdout)
-                fclose(nbestfp);
+        sprintf(nbestfile, "%s/%s.%s", nbest_dir, utt_name, nbest_ext);
+        if ((nbestfp = fopen(nbestfile, "w")) == NULL) {
+            E_WARN("fopen(%s,w) failed; using stdout\n", nbestfile);
+            nbestfp = stdout;
         }
-
+        for (i = 0; i < n_alt; i++) {
+            for (h = alt[i]; h; h = h->next)
+                fprintf(nbestfp, "%s ", h->word);
+            fprintf(nbestfp, "\n");
+        }
+        if (nbestfp != stdout)
+            fclose(nbestfp);
     }
 
     return hypseg;              /* Linked list of hypothesis words */

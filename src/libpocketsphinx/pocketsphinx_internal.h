@@ -55,7 +55,6 @@
 #include "pocketsphinx.h"
 #include "acmod.h"
 #include "dict.h"
-#include "fsg_search.h"
 
 /**
  * Utterance processing state.

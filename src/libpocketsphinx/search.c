@@ -1313,9 +1313,9 @@ search_initialize(cmd_ln_t *cmdln)
     search_set_new_phone_beam_width(cmd_ln_float64_r(config, "-pbeam"));
     search_set_last_phone_beam_width(cmd_ln_float64_r(config, "-lpbeam"));
     search_set_lastphone_alone_beam_width(cmd_ln_float64_r(config, "-lponlybeam"));
-    search_set_silence_word_penalty(cmd_ln_float32_r(config, "-silpen"),
+    search_set_silence_word_penalty(cmd_ln_float32_r(config, "-silprob"),
                                     cmd_ln_float32_r(config, "-pip"));
-    search_set_filler_word_penalty(cmd_ln_float32_r(config, "-fillpen"),
+    search_set_filler_word_penalty(cmd_ln_float32_r(config, "-fillprob"),
                                     cmd_ln_float32_r(config, "-pip"));
     search_set_newword_penalty(cmd_ln_float32_r(config, "-nwpen"));
     search_set_lw(cmd_ln_float32_r(config, "-lw"),

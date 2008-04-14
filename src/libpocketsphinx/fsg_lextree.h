@@ -79,10 +79,11 @@
 
 /* SphinxBase headers. */
 #include <cmd_ln.h>
+#include <fsg_model.h>
 
 /* Local headers. */
-#include "word_fsg.h"
-#include "fsg_search.h"
+#include "hmm.h"
+#include "dict.h"
 
 /*
  * **HACK-ALERT**!!  Compile-time constant determining the size of the
@@ -120,7 +121,7 @@ typedef struct fsg_pnode_s {
      */
     union {
         struct fsg_pnode_s *succ;
-        word_fsglink_t *fsglink;
+        fsg_link_t *fsglink;
     } next;
   
     /*
@@ -186,7 +187,7 @@ typedef struct fsg_pnode_s {
  * Collection of lextrees for an FSG.
  */
 typedef struct fsg_lextree_s {
-    word_fsg_t *fsg;	/**< The fsg for which this lextree is built. */
+    fsg_model_t *fsg;	/**< The fsg for which this lextree is built. */
     hmm_context_t *ctx; /**< HMM context structure. */
     dict_t *dict;       /**< Pronunciation dictionary for this FSG. */
     bin_mdef_t *mdef;   /**< Model definition (triphone mappings). */
@@ -229,7 +230,7 @@ typedef struct fsg_lextree_s {
 /**
  * Create, initialize, and return a new phonetic lextree for the given FSG.
  */
-fsg_lextree_t *fsg_lextree_init(word_fsg_t *fsg, dict_t *dict,
+fsg_lextree_t *fsg_lextree_init(fsg_model_t *fsg, dict_t *dict,
 				bin_mdef_t *mdef, hmm_context_t *ctx,
 				int32 wip, int32 pip);
 

@@ -51,12 +51,12 @@
 /* SphinxBase headers. */
 #include <glist.h>
 #include <cmd_ln.h>
+#include <fsg_model.h>
 
 /* Local headers. */
 #include "fbs.h"
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
-#include "word_fsg.h"
 
 /* Forward declare some things. */
 struct fsg_lextree_s;
@@ -68,7 +68,7 @@ typedef struct fsg_search2_s {
     hmm_context_t *hmmctx; /**< HMM context. */
 
     hash_table_t *fsgs;		/**< Table of all FSGs loaded */
-    word_fsg_t *fsg;		/**< Currently active FSG; NULL if none.  One
+    fsg_model_t *fsg;		/**< Currently active FSG; NULL if none.  One
 				   must be made active before starting FSG
 				   decoding */
     struct fsg_lextree_s *lextree;/**< Lextree structure for the currently
@@ -86,7 +86,6 @@ typedef struct fsg_search2_s {
                                      For implementing absolute pruning. */
     int32 beam, pbeam, wbeam;	/**< Effective beams after applying beam_factor */
     int32 lw, pip, wip;         /**< Language weights */
-    int32 finish_wid;		/**< Finish word ID. */
   
     int16 frame;		/**< Current frame. */
     int16 final;		/**< Decoding is finished for this utterance. */
@@ -123,7 +122,7 @@ void fsg_search2_free(ps_search_t *search);
  *
  * @return The FSG associated with name, or NULL if no match found.
  */
-word_fsg_t *fsg_search2_get_fsg(fsg_search2_t *fsgs, char const *name);
+fsg_model_t *fsg_search2_get_fsg(fsg_search2_t *fsgs, char const *name);
 
 /**
  * Add the given FSG to the collection of FSGs known to this search object.
@@ -137,24 +136,24 @@ word_fsg_t *fsg_search2_get_fsg(fsg_search2_t *fsgs, char const *name);
  * failure.  If this pointer is not equal to wfsg, then there was a
  * name conflict, and wfsg was not added.
  */
-word_fsg_t *fsg_search2_add(fsg_search2_t *fsgs, char const *name, word_fsg_t *wfsg);
+fsg_model_t *fsg_search2_add(fsg_search2_t *fsgs, char const *name, fsg_model_t *wfsg);
 
 /**
  * Delete the given FSG from the known collection.
  */
-word_fsg_t *fsg_search2_remove(fsg_search2_t *fsgs, word_fsg_t *wfsg);
+fsg_model_t *fsg_search2_remove(fsg_search2_t *fsgs, fsg_model_t *wfsg);
 
 /**
  * Like fsg_search2_del_fsg(), but identifies the FSG by its name.
  */
-word_fsg_t *fsg_search2_remove_byname(fsg_search2_t *fsgs, char const *name);
+fsg_model_t *fsg_search2_remove_byname(fsg_search2_t *fsgs, char const *name);
 
 /**
  * Switch to a new FSG (identified by its string name).
  *
  * @return Pointer to new FSG, or NULL on failure.
  */
-word_fsg_t *fsg_search2_select(fsg_search2_t *fsgs, const char *name);
+fsg_model_t *fsg_search2_select(fsg_search2_t *fsgs, const char *name);
 
 
 /**

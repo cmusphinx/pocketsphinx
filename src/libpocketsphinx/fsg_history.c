@@ -58,16 +58,13 @@
 
 /* Local headers. */
 #include "fsg_history.h"
-#include "kb.h"
-#include "phone.h"
-#include "search.h"
 
 
 #define __FSG_DBG__	0
 
 
 fsg_history_t *
-fsg_history_init(word_fsg_t * fsg)
+fsg_history_init(fsg_model_t * fsg, dict_t *dict)
 {
     fsg_history_t *h;
 
@@ -76,10 +73,12 @@ fsg_history_init(word_fsg_t * fsg)
     h->entries = blkarray_list_init();
 
     if (fsg) {
+        if (dict)
+            h->n_ciphone = bin_mdef_n_ciphone(dict->mdef);
         h->frame_entries =
-            (glist_t **) ckd_calloc_2d(word_fsg_n_state(fsg),
-                                       bin_mdef_n_ciphone(fsg->dict->mdef),
-                                       sizeof(glist_t));
+            (glist_t **) ckd_calloc_2d(fsg_model_n_state(fsg),
+                                       bin_mdef_n_ciphone(dict->mdef),
+                                       sizeof(**h->frame_entries));
     }
     else {
         h->frame_entries = NULL;
@@ -95,8 +94,8 @@ fsg_history_free(fsg_history_t *h)
     gnode_t *gn;
 
     if (h->fsg) {
-        ns = word_fsg_n_state(h->fsg);
-        np = bin_mdef_n_ciphone(h->fsg->dict->mdef);
+        ns = fsg_model_n_state(h->fsg);
+        np = h->n_ciphone;
 
         for (s = 0; s < ns; s++) {
             for (lc = 0; lc < np; lc++) {
@@ -114,7 +113,7 @@ fsg_history_free(fsg_history_t *h)
 
 
 void
-fsg_history_set_fsg(fsg_history_t * h, word_fsg_t * fsg)
+fsg_history_set_fsg(fsg_history_t *h, fsg_model_t *fsg, dict_t *dict)
 {
     if (blkarray_list_n_valid(h->entries) != 0) {
         E_WARN("Switching FSG while history not empty; history cleared\n");
@@ -124,13 +123,14 @@ fsg_history_set_fsg(fsg_history_t * h, word_fsg_t * fsg)
     if (h->frame_entries)
         ckd_free_2d((void **) h->frame_entries);
     h->frame_entries = NULL;
-
     h->fsg = fsg;
 
     if (fsg) {
+        if (dict)
+            h->n_ciphone = bin_mdef_n_ciphone(dict->mdef);
         h->frame_entries =
-            (glist_t **) ckd_calloc_2d(word_fsg_n_state(fsg),
-                                       bin_mdef_n_ciphone(fsg->dict->mdef),
+            (glist_t **) ckd_calloc_2d(fsg_model_n_state(fsg),
+                                       bin_mdef_n_ciphone(dict->mdef),
                                        sizeof(glist_t));
     }
 }
@@ -138,7 +138,7 @@ fsg_history_set_fsg(fsg_history_t * h, word_fsg_t * fsg)
 
 void
 fsg_history_entry_add(fsg_history_t * h,
-                      word_fsglink_t * link,
+                      fsg_link_t * link,
                       int32 frame, int32 score, int32 pred,
                       int32 lc, fsg_pnode_ctxt_t rc)
 {
@@ -161,7 +161,7 @@ fsg_history_entry_add(fsg_history_t * h,
         return;
     }
 
-    s = word_fsglink_to_state(link);
+    s = fsg_link_to_state(link);
 
     /* Locate where this entry should be inserted in frame_entries[s][lc] */
     prev_gn = NULL;
@@ -227,8 +227,8 @@ fsg_history_end_frame(fsg_history_t * h)
     gnode_t *gn;
     fsg_hist_entry_t *entry;
 
-    ns = word_fsg_n_state(h->fsg);
-    np = bin_mdef_n_ciphone(h->fsg->dict->mdef);
+    ns = fsg_model_n_state(h->fsg);
+    np = h->n_ciphone;
 
     for (s = 0; s < ns; s++) {
         for (lc = 0; lc < np; lc++) {
@@ -275,98 +275,6 @@ fsg_history_n_entries(fsg_history_t * h)
     return (blkarray_list_n_valid(h->entries));
 }
 
-
-int32
-fsg_history_entry_hyp_extract(fsg_history_t * h, int32 id,
-                              search_hyp_t * hyp)
-{
-    fsg_hist_entry_t *entry, *pred_entry;
-    word_fsglink_t *fl;
-
-    if (id <= 0)
-        return -1;
-
-    entry = fsg_history_entry_get(h, id);
-    fl = entry->fsglink;
-
-    hyp->wid = word_fsglink_wid(fl);
-    hyp->word = (hyp->wid >= 0) ? kb_get_word_str(hyp->wid) : "";
-    hyp->ef = entry->frame;
-    hyp->lscr = word_fsglink_logs2prob(fl);
-    hyp->fsg_state = word_fsglink_to_state(fl);
-    hyp->conf = 0.0;            /* Not known */
-    hyp->latden = 0;            /* Not known */
-
-    /* hyp->sf and hyp->ascr depends on the predecessor entry */
-    if (hyp->wid < 0) {         /* NULL transition */
-        hyp->sf = hyp->ef;
-        hyp->ascr = 0;
-    }
-    else {                      /* Non-NULL transition */
-        if (entry->pred < 0) {  /* Predecessor is dummy root entry */
-            hyp->sf = 0;
-            hyp->ascr = entry->score - hyp->lscr;
-        }
-        else {
-            pred_entry = fsg_history_entry_get(h, entry->pred);
-            hyp->sf = pred_entry->frame + 1;
-            hyp->ascr = entry->score - pred_entry->score - hyp->lscr;
-        }
-    }
-
-    assert(hyp->sf <= hyp->ef);
-
-    return 1;
-}
-
-
-void
-fsg_history_dump(fsg_history_t * h, char const *uttid, FILE * fp)
-{
-    int32 i, r, nf;
-    fsg_hist_entry_t *entry;
-    word_fsglink_t *fl;
-    search_hyp_t hyp;
-
-    fprintf(fp, "# Hist-Begin %s\n", uttid ? uttid : "");
-    fprintf(fp, "# Dummy root entry ID = 0\n");
-
-    fprintf(fp, "# %5s %5s %5s %7s %11s %10s %11s %8s %8s %6s %4s %8s\n",
-            "Index", "SFrm", "EFrm", "Pred", "PathScr", "Lscr", "Ascr",
-            "Ascr/Frm", "A-BS/Frm", "FsgSt", "LC", "RC-set");
-
-    for (i = 1; i < fsg_history_n_entries(h); i++) {
-        entry = fsg_history_entry_get(h, i);
-
-        if (fsg_history_entry_hyp_extract(h, i, &hyp) > 0) {
-            nf = hyp.ef - hyp.sf + 1;
-            fl = entry->fsglink;
-
-            fprintf(fp, "%7d %5d %5d %7d %11d %10d %11d %8d %8d %6d %4d ",
-                    i,
-                    hyp.sf, hyp.ef,
-                    entry->pred,
-                    entry->score,
-                    hyp.lscr, hyp.ascr,
-                    (hyp.wid >= 0) ? hyp.ascr / nf : 0,
-                    (hyp.wid >=
-                     0) ? (seg_topsen_score(hyp.sf,
-                                            hyp.ef) - hyp.ascr) / nf : 0,
-                    word_fsglink_to_state(fl), entry->lc);
-
-            for (r = FSG_PNODE_CTXT_BVSZ - 1; r > 0; r--)
-                fprintf(fp, "%08x.", entry->rc.bv[r]);
-            fprintf(fp, "%08x", entry->rc.bv[0]);
-
-            fprintf(fp, "  %s\n", hyp.word);
-        }
-    }
-
-    fprintf(fp, "# Hist-End %s\n", uttid ? uttid : "");
-    fflush(fp);
-}
-
-
 void
 fsg_history_utt_start(fsg_history_t * h)
 {
@@ -375,8 +283,8 @@ fsg_history_utt_start(fsg_history_t * h)
     assert(blkarray_list_n_valid(h->entries) == 0);
     assert(h->frame_entries);
 
-    ns = word_fsg_n_state(h->fsg);
-    np = bin_mdef_n_ciphone(h->fsg->dict->mdef);
+    ns = fsg_model_n_state(h->fsg);
+    np = h->n_ciphone;
 
     for (s = 0; s < ns; s++) {
         for (lc = 0; lc < np; lc++) {
@@ -384,7 +292,6 @@ fsg_history_utt_start(fsg_history_t * h)
         }
     }
 }
-
 
 void
 fsg_history_utt_end(fsg_history_t * h)

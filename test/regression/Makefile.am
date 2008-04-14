@@ -1,8 +1,6 @@
 TESTS = test-wsj1-simple.sh \
 	test-wsj1-fwdtree.sh \
 	test-wsj1-n800-fwdtree.sh \
-	test-tidigits-fsg.sh \
-	test-tidigits-simple.sh \
 	test-wsj1-fwdflat.sh
 
 TESTDATA =

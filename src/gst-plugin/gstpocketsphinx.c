@@ -352,32 +352,9 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_string(ps, "-dict", value);
         break;
     case PROP_FSG_FILE:
-        /* FSG and LM are mutually exclusive */
-        gst_pocketsphinx_set_string(ps, "-lm", NULL);
-        gst_pocketsphinx_set_string(ps, "-fsg", value);
-        if (ps->inited) {
-            /* Switch to this new FSG. */
-            char *fsgname;
-            fsgname = uttproc_load_fsgfile((char *)
-                                           g_value_get_string(value));
-            if (fsgname)
-                uttproc_set_fsg(fsgname);
-        }
         break;
     case PROP_S2_FSG:
-    {
-        s2_fsg_t *fsg = g_value_get_pointer(value);
-
-        uttproc_del_fsg(fsg->name);
-        uttproc_load_fsg(g_value_get_pointer(value),
-                         cmd_ln_boolean("-fsgusealtpron"),
-                         cmd_ln_boolean("-fsgusefiller"),
-                         cmd_ln_float32("-silpen"),
-                         cmd_ln_float32("-fillpen"),
-                         cmd_ln_float32("-lw"));
-        uttproc_set_fsg(fsg->name);
         break;
-    }
     case PROP_FWDFLAT:
         gst_pocketsphinx_set_boolean(ps, "-fwdflat", value);
         break;
