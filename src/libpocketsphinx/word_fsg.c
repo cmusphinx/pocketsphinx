@@ -396,129 +396,6 @@ word_fsg_add_filler(word_fsg_t * fsg, float32 silprob, float32 fillprob)
     return n_trans;
 }
 
-
-/*
- * Compute the left and right context CIphone sets for each state.
- * (Needed for building the phone HMM net using cross-word triphones.  Invoke
- * after computing null transitions closure.)
- */
-static void
-word_fsg_lc_rc(word_fsg_t * fsg)
-{
-    int32 s, d, i, j;
-    int32 n_ci;
-    gnode_t *gn;
-    word_fsglink_t *l;
-    int32 silcipid;
-    int32 endwid;
-    int32 len;
-
-    endwid = dict_to_id(fsg->dict, "</s>");
-    silcipid = bin_mdef_ciphone_id(fsg->dict->mdef, "SIL");
-    assert(silcipid >= 0);
-    n_ci = bin_mdef_n_ciphone(fsg->dict->mdef);
-    if (n_ci > 127) {
-        E_FATAL
-            ("#phones(%d) > 127; cannot use int8** for word_fsg_t.{lc,rc}\n",
-             n_ci);
-    }
-
-    /*
-     * fsg->lc[s] = set of left context CIphones for state s.  Similarly, rc[s]
-     * for right context CIphones.
-     */
-    fsg->lc =
-        (int8 **) ckd_calloc_2d(fsg->n_state, n_ci + 1, sizeof(int8));
-    fsg->rc =
-        (int8 **) ckd_calloc_2d(fsg->n_state, n_ci + 1, sizeof(int8));
-
-    for (s = 0; s < fsg->n_state; s++) {
-        for (d = 0; d < fsg->n_state; d++) {
-            for (gn = fsg->trans[s][d]; gn; gn = gnode_next(gn)) {
-                l = (word_fsglink_t *) gnode_ptr(gn);
-                assert(l->wid >= 0);
-
-                /*
-                 * Add the first CIphone of l->wid to the rclist of state s, and
-                 * the last CIphone to lclist of state d.
-                 * (Filler phones are a pain to deal with.  There is no direct
-                 * marking of a filler phone; but only filler words are supposed to
-                 * use such phones, so we use that fact.  HACK!!  FRAGILE!!)
-                 */
-                if (dict_is_filler_word(fsg->dict, l->wid)
-                    || (l->wid == endwid)) {
-                    /* Filler phone; use silence phone as context */
-                    fsg->rc[s][silcipid] = 1;
-                    fsg->lc[d][silcipid] = 1;
-                }
-                else {
-                    len = dict_pronlen(fsg->dict, l->wid);
-                    fsg->rc[s][dict_ciphone(fsg->dict, l->wid, 0)] = 1;
-                    fsg->lc[d][dict_ciphone(fsg->dict, l->wid, len - 1)] = 1;
-                }
-            }
-        }
-
-        /*
-         * Add SIL phone to the lclist and rclist of each state.  Strictly
-         * speaking, only needed at start and final states, respectively, but
-         * all states considered since the user may change the start and final
-         * states.  In any case, most applications would have a silence self
-         * loop at each state, hence these would be needed anyway.
-         */
-        fsg->lc[s][silcipid] = 1;
-        fsg->rc[s][silcipid] = 1;
-    }
-
-    /*
-     * Propagate lc and rc lists past null transitions.  (Since FSG contains
-     * null transitions closure, no need to worry about a chain of successive
-     * null transitions.  Right??)
-     */
-    for (s = 0; s < fsg->n_state; s++) {
-        for (d = 0; d < fsg->n_state; d++) {
-            l = fsg->null_trans[s][d];
-            if (l) {
-                /*
-                 * lclist(d) |= lclist(s), because all the words ending up at s, can
-                 * now also end at d, becoming the left context for words leaving d.
-                 */
-                for (i = 0; i < n_ci; i++)
-                    fsg->lc[d][i] |= fsg->lc[s][i];
-                /*
-                 * Similarly, rclist(s) |= rclist(d), because all the words leaving d
-                 * can equivalently leave s, becoming the right context for words
-                 * ending up at s.
-                 */
-                for (i = 0; i < n_ci; i++)
-                    fsg->rc[s][i] |= fsg->rc[d][i];
-            }
-        }
-    }
-
-    /* Convert the bit-vector representation into a list */
-    for (s = 0; s < fsg->n_state; s++) {
-        j = 0;
-        for (i = 0; i < n_ci; i++) {
-            if (fsg->lc[s][i]) {
-                fsg->lc[s][j] = i;
-                j++;
-            }
-        }
-        fsg->lc[s][j] = -1;     /* Terminate the list */
-
-        j = 0;
-        for (i = 0; i < n_ci; i++) {
-            if (fsg->rc[s][i]) {
-                fsg->rc[s][j] = i;
-                j++;
-            }
-        }
-        fsg->rc[s][j] = -1;     /* Terminate the list */
-    }
-}
-
-
 word_fsg_t *
 word_fsg_load(s2_fsg_t * fsg, dict_t *word_dict, logmath_t *lmath,
               boolean use_altpron, boolean use_filler,
@@ -568,8 +445,6 @@ word_fsg_load(s2_fsg_t * fsg, dict_t *word_dict, logmath_t *lmath,
     word_fsg->use_altpron = use_altpron;
     word_fsg->use_filler = use_filler;
     word_fsg->lw = lw;
-    word_fsg->lc = NULL;
-    word_fsg->rc = NULL;
 
     /* Allocate non-epsilon transition matrix array */
     word_fsg->trans = (glist_t **) ckd_calloc_2d(word_fsg->n_state,
@@ -655,14 +530,6 @@ word_fsg_load(s2_fsg_t * fsg, dict_t *word_dict, logmath_t *lmath,
 
 #if __FSG_DBG__
     E_INFO("FSG after NULL closure:\n");
-    word_fsg_write(word_fsg, stdout);
-#endif
-
-    /* Compute left and right context CIphone lists for each state */
-    word_fsg_lc_rc(word_fsg);
-
-#if __FSG_DBG__
-    E_INFO("FSG after lc/rc:\n");
     word_fsg_write(word_fsg, stdout);
 #endif
 
@@ -894,11 +761,6 @@ word_fsg_free(word_fsg_t * fsg)
     ckd_free_2d((void **) fsg->null_trans);
     ckd_free((void *) fsg->name);
 
-    if (fsg->lc)
-        ckd_free_2d((void **) fsg->lc);
-    if (fsg->rc)
-        ckd_free_2d((void **) fsg->rc);
-
     ckd_free((void *) fsg);
 }
 
@@ -970,23 +832,6 @@ word_fsg_write(word_fsg_t * fsg, FILE * fp)
                         tl->from_state, tl->to_state,
                         EXP(tl->logs2prob / fsg->lw));
             }
-        }
-    }
-
-    /* Print lc/rc vectors */
-    if (fsg->lc && fsg->rc) {
-        for (i = 0; i < fsg->n_state; i++) {
-            fprintf(fp, "%c LC[%d]:", WORD_FSG_COMMENT_CHAR, i);
-            for (j = 0; fsg->lc[i][j] >= 0; j++)
-                fprintf(fp, " %s",
-                        bin_mdef_ciphone_str(fsg->dict->mdef, fsg->lc[i][j]));
-            fprintf(fp, "\n");
-
-            fprintf(fp, "%c RC[%d]:", WORD_FSG_COMMENT_CHAR, i);
-            for (j = 0; fsg->rc[i][j] >= 0; j++)
-                fprintf(fp, " %s",
-                        bin_mdef_ciphone_str(fsg->dict->mdef, fsg->rc[i][j]));
-            fprintf(fp, "\n");
         }
     }
 

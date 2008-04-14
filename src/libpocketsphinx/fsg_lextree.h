@@ -159,9 +159,9 @@ typedef struct fsg_pnode_s {
      */
     fsg_pnode_ctxt_t ctxt;
   
-    uint8 ci_ext;		/* This node's CIphone as viewed externally (context) */
-    uint8 ppos;		/* Phoneme position in pronunciation */
-    boolean leaf;		/* Whether this is a leaf node */
+    uint16 ci_ext;	/* This node's CIphone as viewed externally (context) */
+    uint16 ppos;	/* Phoneme position in pronunciation */
+    boolean leaf;	/* Whether this is a leaf node */
   
     /* HMM-state-level stuff here */
     hmm_context_t *ctx;
@@ -186,7 +186,31 @@ typedef struct fsg_pnode_s {
  * Collection of lextrees for an FSG.
  */
 typedef struct fsg_lextree_s {
-    word_fsg_t *fsg;	/* The fsg for which this lextree is built */
+    word_fsg_t *fsg;	/**< The fsg for which this lextree is built. */
+    hmm_context_t *ctx; /**< HMM context structure. */
+    dict_t *dict;       /**< Pronunciation dictionary for this FSG. */
+    bin_mdef_t *mdef;   /**< Model definition (triphone mappings). */
+
+    /*
+     * Left and right CIphone sets for each state.
+     * Left context CIphones for a state S: If word W transitions into S, W's
+     * final CIphone is in S's {lc}.  Words transitioning out of S must consider
+     * these left context CIphones.
+     * Similarly, right contexts for state S: If word W transitions out of S,
+     * W's first CIphone is in S's {rc}.  Words transitioning into S must consider
+     * these right contexts.
+     * 
+     * NOTE: Words may transition into and out of S INDIRECTLY, with intermediate
+     *   null transitions.
+     * NOTE: Single-phone words are difficult; only SILENCE right context is
+     *   modelled for them.
+     * NOTE: Non-silence filler phones aren't included in these sets.  Filler
+     *   words don't use context, and present the SILENCE phone as context to
+     *   adjacent words.
+     */
+    int16 **lc;         /**< Left context triphone mappings for FSG. */
+    int16 **rc;         /**< Right context triphone mappings for FSG. */
+
     fsg_pnode_t **root;	/* root[s] = lextree representing all transitions
 			   out of state s.  Note that the "tree" for each
 			   state is actually a collection of trees, linked
@@ -196,9 +220,6 @@ typedef struct fsg_lextree_s {
     int32 n_pnode;	/* #HMM nodes in search structure */
     int32 wip;
     int32 pip;
-    bin_mdef_t *mdef;
-    dict_t *dict;
-    hmm_context_t *ctx;
 } fsg_lextree_t;
 
 /* Access macros */

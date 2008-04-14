@@ -102,25 +102,6 @@ typedef struct word_fsg_s {
 				   from state i to j, if any; NULL if none.
 				   (At most one null transition between two
 				   given states.) */
-
-  /*
-   * Left and right CIphone sets for each state.
-   * Left context CIphones for a state S: If word W transitions into S, W's
-   * final CIphone is in S's {lc}.  Words transitioning out of S must consider
-   * these left context CIphones.
-   * Similarly, right contexts for state S: If word W transitions out of S,
-   * W's first CIphone is in S's {rc}.  Words transitioning into S must consider
-   * these right contexts.
-   * 
-   * NOTE: Words may transition into and out of S INDIRECTLY, with intermediate
-   *   null transitions.
-   * NOTE: Single-phone words are difficult; only SILENCE right context is
-   *   modelled for them.
-   * NOTE: Non-silence filler phones aren't included in these sets.  Filler
-   *   words don't use context, and present the SILENCE phone as context to
-   *   adjacent words.
-   */
-  int8 **rc, **lc;
 } word_fsg_t;
 
 /* Access macros */
@@ -133,8 +114,6 @@ typedef struct word_fsg_s {
 #define word_fsg_use_filler(f)		((f)->use_filler)
 #define word_fsg_trans(f,i,j)		((f)->trans[i][j])
 #define word_fsg_null_trans(f,i,j)	((f)->null_trans[i][j])
-#define word_fsg_lc(f,s)		((f)->lc[s])
-#define word_fsg_rc(f,s)		((f)->rc[s])
 
 
 /*
