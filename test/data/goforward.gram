@@ -1,0 +1,15 @@
+#JSGF V1.0;
+
+/**
+ * JSGF Grammar for Turtle example
+ */
+
+grammar goforward;
+
+public <move> = GO FORWARD TEN METERS;
+
+public <move2> = GO <direction> <distance> [METER | METERS];
+
+<direction> = FORWARD | BACKWARD;
+
+<distance> = ONE | TWO | THREE | FOUR | FIVE | SIX | SEVEN | EIGHT | NINE | TEN;
