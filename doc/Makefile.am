@@ -25,8 +25,7 @@ if BUILD_DOXYGEN
 all-local: html/index.html
 endif
 
-headers = $(top_srcdir)/include/pocketsphinx.h \
-	 $(top_srcdir)/include/fbs.h
+headers = $(top_srcdir)/include/pocketsphinx.h
 
 latex/refman.pdf: doxyfile $(headers)
 	doxygen

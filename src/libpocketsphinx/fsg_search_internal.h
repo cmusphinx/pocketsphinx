@@ -47,7 +47,6 @@
 #include <fsg_model.h>
 
 /* Local headers. */
-#include "fbs.h"
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
 
