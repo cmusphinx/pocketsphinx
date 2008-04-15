@@ -33,7 +33,7 @@
  */
 
 /*
- * fsg_search2.c -- Search structures for FSM decoding.
+ * fsg_search.c -- Search structures for FSM decoding.
  * 
  * **********************************************
  * CMU ARPA Speech Project
@@ -60,7 +60,7 @@
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"
-#include "fsg_search2.h"
+#include "fsg_search_internal.h"
 #include "fsg_history.h"
 #include "fsg_lextree.h"
 
@@ -68,24 +68,24 @@
 #define __FSG_DBG__		0
 #define __FSG_DBG_CHAN__	0
 
-static ps_seg_t *fsg_search2_seg_iter(ps_search_t *search, int32 *out_score);
+static ps_seg_t *fsg_search_seg_iter(ps_search_t *search, int32 *out_score);
 
 static ps_searchfuncs_t fsg_funcs = {
     /* name: */   "fsg",
-    /* start: */  fsg_search2_start,
-    /* step: */   fsg_search2_step,
-    /* finish: */ fsg_search2_finish,
-    /* free: */   fsg_search2_free,
-    /* hyp: */      fsg_search2_hyp,
-    /* seg_iter: */ fsg_search2_seg_iter,
+    /* start: */  fsg_search_start,
+    /* step: */   fsg_search_step,
+    /* finish: */ fsg_search_finish,
+    /* free: */   fsg_search_free,
+    /* hyp: */      fsg_search_hyp,
+    /* seg_iter: */ fsg_search_seg_iter,
 };
 
 ps_search_t *
-fsg_search2_init(cmd_ln_t *config,
+fsg_search_init(cmd_ln_t *config,
                  acmod_t *acmod,
                  dict_t *dict)
 {
-    fsg_search2_t *fsgs;
+    fsg_search_t *fsgs;
     char const *path;
 
     fsgs = ckd_calloc(1, sizeof(*fsgs));
@@ -128,11 +128,11 @@ fsg_search2_init(cmd_ln_t *config,
 
         if ((fsg = fsg_model_readfile(path, acmod->lmath, fsgs->lw)) == NULL)
             goto error_out;
-        if (fsg_search2_add(fsgs, fsg_model_name(fsg), fsg) != fsg) {
+        if (fsg_set_add(fsgs, fsg_model_name(fsg), fsg) != fsg) {
             fsg_model_free(fsg);
             goto error_out;
         }
-        if (fsg_search2_select(fsgs, fsg_model_name(fsg)) == NULL) {
+        if (fsg_set_select(fsgs, fsg_model_name(fsg)) == NULL) {
             fsg_model_free(fsg);
             goto error_out;
         }
@@ -141,14 +141,14 @@ fsg_search2_init(cmd_ln_t *config,
     return ps_search_base(fsgs);
 
 error_out:
-    fsg_search2_free(ps_search_base(fsgs));
+    fsg_search_free(ps_search_base(fsgs));
     return NULL;
 }
 
 void
-fsg_search2_free(ps_search_t *search)
+fsg_search_free(ps_search_t *search)
 {
-    fsg_search2_t *fsgs = (fsg_search2_t *)search;
+    fsg_search_t *fsgs = (fsg_search_t *)search;
     hash_iter_t *itor;
 
     ps_search_deinit(search);
@@ -168,7 +168,7 @@ fsg_search2_free(ps_search_t *search)
 
 
 fsg_model_t *
-fsg_search2_get_fsg(fsg_search2_t *fsgs, const char *name)
+fsg_set_get_fsg(fsg_search_t *fsgs, const char *name)
 {
     void *val;
 
@@ -177,8 +177,8 @@ fsg_search2_get_fsg(fsg_search2_t *fsgs, const char *name)
     return (fsg_model_t *)val;
 }
 
-int
-fsg_search2_add_silences(fsg_search2_t *fsgs, fsg_model_t *fsg)
+static int
+fsg_search_add_silences(fsg_search_t *fsgs, fsg_model_t *fsg)
 {
     dict_t *dict;
     int32 wid;
@@ -209,8 +209,8 @@ fsg_search2_add_silences(fsg_search2_t *fsgs, fsg_model_t *fsg)
     return n_sil;
 }
 
-int
-fsg_search2_add_altpron(fsg_search2_t *fsgs, fsg_model_t *fsg)
+static int
+fsg_search_add_altpron(fsg_search_t *fsgs, fsg_model_t *fsg)
 {
     dict_t *dict;
     int n_alt;
@@ -235,7 +235,7 @@ fsg_search2_add_altpron(fsg_search2_t *fsgs, fsg_model_t *fsg)
 }
 
 fsg_model_t *
-fsg_search2_add(fsg_search2_t *fsgs, char const *name, fsg_model_t *fsg)
+fsg_set_add(fsg_search_t *fsgs, char const *name, fsg_model_t *fsg)
 {
     if (name == NULL)
         name = fsg_model_name(fsg);
@@ -243,17 +243,17 @@ fsg_search2_add(fsg_search2_t *fsgs, char const *name, fsg_model_t *fsg)
     /* Add silence transitions and alternate words. */
     if (cmd_ln_boolean_r(ps_search_config(fsgs), "-fsgusefiller")
         && !fsg_model_has_sil(fsg))
-        fsg_search2_add_silences(fsgs, fsg);
+        fsg_search_add_silences(fsgs, fsg);
     if (cmd_ln_boolean_r(ps_search_config(fsgs), "-fsgusealtpron")
         && !fsg_model_has_alt(fsg))
-        fsg_search2_add_altpron(fsgs, fsg);
+        fsg_search_add_altpron(fsgs, fsg);
 
     return (fsg_model_t *)hash_table_enter(fsgs->fsgs, name, fsg);
 }
 
 
 fsg_model_t *
-fsg_search2_remove_byname(fsg_search2_t *fsgs, char const *key)
+fsg_set_remove_byname(fsg_search_t *fsgs, char const *key)
 {
     fsg_model_t *oldfsg;
     void *val;
@@ -279,7 +279,7 @@ fsg_search2_remove_byname(fsg_search2_t *fsgs, char const *key)
 
 
 fsg_model_t *
-fsg_search2_remove(fsg_search2_t *fsgs, fsg_model_t *fsg)
+fsg_set_remove(fsg_search_t *fsgs, fsg_model_t *fsg)
 {
     char const *key;
     hash_iter_t *itor;
@@ -301,16 +301,16 @@ fsg_search2_remove(fsg_search2_t *fsgs, fsg_model_t *fsg)
         return NULL;
     }
     else
-        return fsg_search2_remove_byname(fsgs, key);
+        return fsg_set_remove_byname(fsgs, key);
 }
 
 
 fsg_model_t *
-fsg_search2_select(fsg_search2_t *fsgs, const char *name)
+fsg_set_select(fsg_search_t *fsgs, const char *name)
 {
     fsg_model_t *fsg;
 
-    fsg = fsg_search2_get_fsg(fsgs, name);
+    fsg = fsg_set_get_fsg(fsgs, name);
     if (fsg == NULL) {
         E_ERROR("FSG '%s' not known; cannot make it current\n", name);
         return NULL;
@@ -332,8 +332,32 @@ fsg_search2_select(fsg_search2_t *fsgs, const char *name)
     return fsg;
 }
 
+fsg_set_iter_t *
+fsg_set_iter(fsg_set_t *fsgs)
+{
+    return hash_table_iter(fsgs->fsgs);
+}
+
+fsg_set_iter_t *
+fsg_set_iter_next(fsg_set_iter_t *itor)
+{
+    return hash_table_iter_next(itor);
+}
+
+fsg_model_t *
+fsg_set_iter_fsg(fsg_set_iter_t *itor)
+{
+    return ((fsg_model_t *)itor->ent->val);
+}
+
+void
+fsg_set_iter_free(fsg_set_iter_t *itor)
+{
+    hash_table_iter_free(itor);
+}
+
 static void
-fsg_search2_sen_active(fsg_search2_t *fsgs)
+fsg_search_sen_active(fsg_search_t *fsgs)
 {
     gnode_t *gn;
     fsg_pnode_t *pnode;
@@ -355,7 +379,7 @@ fsg_search2_sen_active(fsg_search2_t *fsgs)
  * (Executed once per frame.)
  */
 static void
-fsg_search2_hmm_eval(fsg_search2_t *fsgs)
+fsg_search_hmm_eval(fsg_search_t *fsgs)
 {
     gnode_t *gn;
     fsg_pnode_t *pnode;
@@ -431,7 +455,7 @@ fsg_search2_hmm_eval(fsg_search2_t *fsgs)
 
 
 static void
-fsg_search2_pnode_trans(fsg_search2_t *fsgs, fsg_pnode_t * pnode)
+fsg_search_pnode_trans(fsg_search_t *fsgs, fsg_pnode_t * pnode)
 {
     fsg_pnode_t *child;
     hmm_t *hmm;
@@ -465,7 +489,7 @@ fsg_search2_pnode_trans(fsg_search2_t *fsgs, fsg_pnode_t * pnode)
 
 
 static void
-fsg_search2_pnode_exit(fsg_search2_t *fsgs, fsg_pnode_t * pnode)
+fsg_search_pnode_exit(fsg_search_t *fsgs, fsg_pnode_t * pnode)
 {
     hmm_t *hmm;
     fsg_link_t *fl;
@@ -528,7 +552,7 @@ fsg_search2_pnode_exit(fsg_search2_t *fsgs, fsg_pnode_t * pnode)
  * (Executed once per frame.)
  */
 static void
-fsg_search2_hmm_prune_prop(fsg_search2_t *fsgs)
+fsg_search_hmm_prune_prop(fsg_search_t *fsgs)
 {
     gnode_t *gn;
     fsg_pnode_t *pnode;
@@ -560,13 +584,13 @@ fsg_search2_hmm_prune_prop(fsg_search2_t *fsgs)
             if (!fsg_pnode_leaf(pnode)) {
                 if (hmm_out_score(hmm) >= phone_thresh) {
                     /* Transition out of this phone into its children */
-                    fsg_search2_pnode_trans(fsgs, pnode);
+                    fsg_search_pnode_trans(fsgs, pnode);
                 }
             }
             else {
                 if (hmm_out_score(hmm) >= word_thresh) {
                     /* Transition out of leaf node into destination FSG state */
-                    fsg_search2_pnode_exit(fsgs, pnode);
+                    fsg_search_pnode_exit(fsgs, pnode);
                 }
             }
         }
@@ -578,7 +602,7 @@ fsg_search2_hmm_prune_prop(fsg_search2_t *fsgs)
  * Propagate newly created history entries through null transitions.
  */
 static void
-fsg_search2_null_prop(fsg_search2_t *fsgs)
+fsg_search_null_prop(fsg_search_t *fsgs)
 {
     int32 bpidx, n_entries, thresh, newscore;
     fsg_hist_entry_t *hist_entry;
@@ -631,7 +655,7 @@ fsg_search2_null_prop(fsg_search2_t *fsgs)
  * frame to lextree roots attached to the target FSG state for that entry.
  */
 static void
-fsg_search2_word_trans(fsg_search2_t *fsgs)
+fsg_search_word_trans(fsg_search_t *fsgs)
 {
     int32 bpidx, n_entries;
     fsg_hist_entry_t *hist_entry;
@@ -705,9 +729,9 @@ fsg_search2_word_trans(fsg_search2_t *fsgs)
 
 
 int
-fsg_search2_step(ps_search_t *search)
+fsg_search_step(ps_search_t *search)
 {
-    fsg_search2_t *fsgs = (fsg_search2_t *)search;
+    fsg_search_t *fsgs = (fsg_search_t *)search;
     int16 const *senscr;
     int frame_idx, best_senid;
     int16 best_senscr;
@@ -722,7 +746,7 @@ fsg_search2_step(ps_search_t *search)
 
     /* Activate our HMMs for the current frame if need be. */
     if (!acmod->compallsen)
-        fsg_search2_sen_active(fsgs);
+        fsg_search_sen_active(fsgs);
     /* Compute GMM scores for the current frame. */
     senscr = acmod_score(acmod, &frame_idx, &best_senscr, &best_senid);
     fsgs->n_sen_eval += acmod->n_senone_active;
@@ -732,28 +756,28 @@ fsg_search2_step(ps_search_t *search)
     fsgs->bpidx_start = fsg_history_n_entries(fsgs->history);
 
     /* Evaluate all active pnodes (HMMs) */
-    fsg_search2_hmm_eval(fsgs);
+    fsg_search_hmm_eval(fsgs);
 
     /*
      * Prune and propagate the HMMs evaluated; create history entries for
      * word exits.  The words exits are tentative, and may be pruned; make
      * the survivors permanent via fsg_history_end_frame().
      */
-    fsg_search2_hmm_prune_prop(fsgs);
+    fsg_search_hmm_prune_prop(fsgs);
     fsg_history_end_frame(fsgs->history);
 
     /*
      * Propagate new history entries through any null transitions, creating
      * new history entries, and then make the survivors permanent.
      */
-    fsg_search2_null_prop(fsgs);
+    fsg_search_null_prop(fsgs);
     fsg_history_end_frame(fsgs->history);
 
     /*
      * Perform cross-word transitions; propagate each history entry across its
      * terminating state to the root nodes of the lextree attached to the state.
      */
-    fsg_search2_word_trans(fsgs);
+    fsg_search_word_trans(fsgs);
 
     /*
      * We've now come full circle, HMM and FSG states have been updated for
@@ -794,9 +818,9 @@ fsg_search2_step(ps_search_t *search)
  * (Executed at the start of each utterance.)
  */
 int
-fsg_search2_start(ps_search_t *search)
+fsg_search_start(ps_search_t *search)
 {
-    fsg_search2_t *fsgs = (fsg_search2_t *)search;
+    fsg_search_t *fsgs = (fsg_search_t *)search;
     int32 silcipid;
     fsg_pnode_ctxt_t ctxt;
 
@@ -827,10 +851,10 @@ fsg_search2_start(ps_search_t *search)
     fsgs->bpidx_start = 0;
 
     /* Propagate dummy history entry through NULL transitions from start state */
-    fsg_search2_null_prop(fsgs);
+    fsg_search_null_prop(fsgs);
 
     /* Perform word transitions from this dummy history entry */
-    fsg_search2_word_trans(fsgs);
+    fsg_search_word_trans(fsgs);
 
     /* Make the next-frame active list the current one */
     fsgs->pnode_active = fsgs->pnode_active_next;
@@ -848,9 +872,9 @@ fsg_search2_start(ps_search_t *search)
  * Cleanup at the end of each utterance.
  */
 int
-fsg_search2_finish(ps_search_t *search)
+fsg_search_finish(ps_search_t *search)
 {
-    fsg_search2_t *fsgs = (fsg_search2_t *)search;
+    fsg_search_t *fsgs = (fsg_search_t *)search;
     gnode_t *gn;
     fsg_pnode_t *pnode;
     int32 n_hist;
@@ -895,7 +919,7 @@ fsg_search2_finish(ps_search_t *search)
 }
 
 static int
-fsg_search2_find_exit(fsg_search2_t *fsgs, int frame_idx, int final, int32 *out_score)
+fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_score)
 {
     fsg_hist_entry_t *hist_entry;
     fsg_model_t *fsg;
@@ -959,15 +983,15 @@ fsg_search2_find_exit(fsg_search2_t *fsgs, int frame_idx, int final, int32 *out_
 }
 
 char const *
-fsg_search2_hyp(ps_search_t *search, int32 *out_score)
+fsg_search_hyp(ps_search_t *search, int32 *out_score)
 {
-    fsg_search2_t *fsgs = (fsg_search2_t *)search;
+    fsg_search_t *fsgs = (fsg_search_t *)search;
     char *c;
     size_t len;
     int bp, bpidx;
 
     /* Get last backpointer table index. */
-    bpidx = fsg_search2_find_exit(fsgs, fsgs->frame, fsgs->final, out_score);
+    bpidx = fsg_search_find_exit(fsgs, fsgs->frame, fsgs->final, out_score);
     /* No hypothesis (yet). */
     if (bpidx <= 0)
         return NULL;
@@ -1012,7 +1036,7 @@ fsg_search2_hyp(ps_search_t *search, int32 *out_score)
 }
 
 static ps_seg_t *
-fsg_search2_seg_iter(ps_search_t *search, int32 *out_score)
+fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
 {
     return NULL;
 }

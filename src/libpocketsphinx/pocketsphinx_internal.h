@@ -167,7 +167,6 @@ struct pocketsphinx_s {
     char *uttid;        /**< Utterance ID for current utterance. */
     char *uttid_prefix; /**< Prefix for automatic utterance IDs. */
     char *hypstr;       /**< Hypothesis string for current utt. */
-    search_hyp_t *hyp;  /**< Hypothesis segmentation for current utt. */
     FILE *matchfp;      /**< File for writing recognition results. */
     FILE *matchsegfp;   /**< File for writing segmentation results. */
     ptmr_t perf;    /**< Performance counter for all of decoding. */

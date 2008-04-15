@@ -51,7 +51,7 @@ main(int argc, char *argv[])
 			     "-varfloor", "0.0001",
 			     "-mmap", "no",
 			     "-topn", "4",
-			     "-dsratio", "1",
+			     "-ds", "1",
 			     "-input_endian", "little",
 			     "-samprate", "16000", NULL);
 	TEST_ASSERT(config);

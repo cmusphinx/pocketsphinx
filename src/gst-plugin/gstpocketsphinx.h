@@ -41,7 +41,7 @@
 
 #include <gst/gst.h>
 #include <sphinx_config.h>
-#include <fbs.h>
+#include <pocketsphinx.h>
 
 G_BEGIN_DECLS
 
@@ -64,6 +64,9 @@ struct _GstPocketSphinx
     GstElement element;
 
     GstPad *sinkpad, *srcpad;
+
+    pocketsphinx_t *ps;
+    cmd_ln_t *config;
 
     GHashTable *arghash;
     gboolean inited;

@@ -7,7 +7,7 @@
 #include <fsg_model.h>
 
 #include "pocketsphinx_internal.h"
-#include "fsg_search2.h"
+#include "fsg_search_internal.h"
 #include "test_macros.h"
 
 int
@@ -16,7 +16,7 @@ main(int argc, char *argv[])
 	pocketsphinx_t *ps;
 	cmd_ln_t *config;
 	acmod_t *acmod;
-	fsg_search2_t *fsgs;
+	fsg_search_t *fsgs;
 	jsgf_t *jsgf;
 	jsgf_rule_t *rule;
 	fsg_model_t *fsg;
@@ -31,7 +31,7 @@ main(int argc, char *argv[])
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = pocketsphinx_init(config));
-        fsgs = (fsg_search2_t *)fsg_search2_init(config, ps->acmod, ps->dict);
+        fsgs = (fsg_search_t *)fsg_search_init(config, ps->acmod, ps->dict);
 	acmod = ps->acmod;
 
 	jsgf = jsgf_parse_file(DATADIR "/goforward.gram", NULL);
@@ -41,8 +41,8 @@ main(int argc, char *argv[])
 	fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, 7.5);
 	TEST_ASSERT(fsg);
 	fsg_model_write(fsg, stdout);
-	TEST_ASSERT(fsg_search2_add(fsgs, "<goforward.move2>", fsg));
-	TEST_ASSERT(fsg_search2_select(fsgs, "<goforward.move2>"));
+	TEST_ASSERT(fsg_set_add(fsgs, "<goforward.move2>", fsg));
+	TEST_ASSERT(fsg_set_select(fsgs, "<goforward.move2>"));
 
 	setbuf(stdout, NULL);
 	c = clock();
@@ -56,24 +56,24 @@ main(int argc, char *argv[])
 
 		TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
 		TEST_EQUAL(0, acmod_start_utt(acmod));
-		fsg_search2_start(ps_search_base(fsgs));
+		fsg_search_start(ps_search_base(fsgs));
 		while (!feof(rawfh)) {
 			nread = fread(buf, sizeof(*buf), 2048, rawfh);
 			bptr = buf;
 			while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
-				while (fsg_search2_step(ps_search_base(fsgs))) {
+				while (fsg_search_step(ps_search_base(fsgs))) {
 				}
 			}
 		}
-		fsg_search2_finish(ps_search_base(fsgs));
-		hyp = fsg_search2_hyp(ps_search_base(fsgs), &score);
+		fsg_search_finish(ps_search_base(fsgs));
+		hyp = fsg_search_hyp(ps_search_base(fsgs), &score);
 		printf("FSG: %s (%d)\n", hyp, score);
 
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
 	TEST_EQUAL(0, strcmp("GO FORWARD TEN METERS",
-			     fsg_search2_hyp(ps_search_base(fsgs), &score)));
+			     fsg_search_hyp(ps_search_base(fsgs), &score)));
 	c = clock() - c;
 	printf("5 * fsg search in %.2f sec\n", (double)c / CLOCKS_PER_SEC);
 	pocketsphinx_free(ps);

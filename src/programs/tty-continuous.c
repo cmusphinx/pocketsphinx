@@ -61,7 +61,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "fbs.h"
+#include "pocketsphinx.h"
 #include "err.h"
 #include "ad.h"
 #include "cont_ad.h"
@@ -78,6 +78,7 @@
 #endif
 
 static ad_rec_t *ad;
+static pocketsphinx_t *ps;
 
 /* Sleep for specified msec */
 static void
@@ -108,8 +109,8 @@ static void
 utterance_loop()
 {
     int16 adbuf[4096];
-    int32 k, fr, ts, rem;
-    char *hyp;
+    int32 k, ts, rem, score;
+    char const *hyp;
     cont_ad_t *cont;
     char word[256];
 
@@ -138,9 +139,9 @@ utterance_loop()
          * Non-zero amount of data received; start recognition of new utterance.
          * NULL argument to uttproc_begin_utt => automatic generation of utterance-id.
          */
-        if (uttproc_begin_utt(NULL) < 0)
-            E_FATAL("uttproc_begin_utt() failed\n");
-        uttproc_rawdata(adbuf, k, 0);
+        if (pocketsphinx_start_utt(ps) < 0)
+            E_FATAL("pocketsphinx_start_utt() failed\n");
+        pocketsphinx_process_raw(ps, adbuf, k, FALSE, FALSE);
         printf("Listening...\n");
         fflush(stdout);
 
@@ -166,10 +167,9 @@ utterance_loop()
             }
 
             /*
-             * Decode whatever data was read above.  NOTE: Non-blocking mode!!
-             * rem = #frames remaining to be decoded upon return from the function.
+             * Decode whatever data was read above.
              */
-            rem = uttproc_rawdata(adbuf, k, 0);
+            rem = pocketsphinx_process_raw(ps, adbuf, k, FALSE, FALSE);
 
             /* If no work to be done, sleep a bit */
             if ((rem == 0) && (k == 0))
@@ -186,15 +186,10 @@ utterance_loop()
 
         printf("Stopped listening, please wait...\n");
         fflush(stdout);
-#if 0
-        /* Power histogram dump (FYI) */
-        cont_ad_powhist_dump(stdout, cont);
-#endif
         /* Finish decoding, obtain and print result */
-        uttproc_end_utt();
-        if (uttproc_result(&fr, &hyp, 1) < 0)
-            E_FATAL("uttproc_result failed\n");
-        printf("%d: %s\n", fr, hyp);
+        pocketsphinx_end_utt(ps);
+        hyp = pocketsphinx_get_hyp(ps, &score);
+        printf("%s\n", hyp);
         fflush(stdout);
 
         /* Exit if the first word spoken was GOODBYE */
@@ -217,40 +212,26 @@ sighandler(int signo)
     longjmp(jbuf, 1);
 }
 
-#ifdef _WIN32_WCE
-
-int WINAPI
-WinMain(HINSTANCE hInstance,
-        HINSTANCE hPrevInstance,
-        LPTSTR lpCmdLine, int nCmdShow)
-{
-    static char *fake_argv[] = { "pocketsphinx_continuous.exe", NULL };
-
-    /* FIXME: This needs serious improvement. */
-    fbs_init(1, fake_argv);
-
-    if ((ad = ad_open_sps(/*cmd_ln_float32("-samprate")*/ 22050)) == NULL)
-        E_FATAL("ad_open_sps failed\n");
-
-	utterance_loop();
-
-    fbs_end();
-    ad_close(ad);
-    return 0;
-}
-#else
 int
 main(int argc, char *argv[])
 {
+    cmd_ln_t *config;
+
     /* Make sure we exit cleanly (needed for profiling among other things) */
     /* Signals seem to be broken in arm-wince-pe. */
 #if !defined(GNUWINCE) && !defined(_WIN32_WCE)
     signal(SIGINT, &sighandler);
 #endif
 
-    fbs_init(argc, argv);
+    config = cmd_ln_parse_r(NULL, pocketsphinx_args(), argc, argv, TRUE);
+    if (config == NULL)
+        return 1;
+    ps = pocketsphinx_init(config);
+    if (ps == NULL)
+        return 1;
 
-    if ((ad = ad_open_dev(cmd_ln_str("-adcdev"), (int)cmd_ln_float32("-samprate"))) == NULL)
+    if ((ad = ad_open_dev(cmd_ln_str_r(config, "-adcdev"),
+                          (int)cmd_ln_float32_r(config, "-samprate"))) == NULL)
         E_FATAL("ad_open_dev failed\n");
 
     E_INFO("%s COMPILED ON: %s, AT: %s\n\n", argv[0], __DATE__, __TIME__);
@@ -259,9 +240,8 @@ main(int argc, char *argv[])
         utterance_loop();
     }
 
-    fbs_end();
+    pocketsphinx_free(ps);
     ad_close(ad);
 
     return 0;
 }
-#endif /* !_WIN32_WCE */

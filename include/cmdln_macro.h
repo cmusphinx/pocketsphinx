@@ -51,10 +51,6 @@
 
 /** Options defining speech data input */
 #define input_cmdln_options()                                           \
-{ "-live",                                                              \
-      ARG_BOOLEAN,                                                      \
-      "no",                                                             \
-      "Get input from audio hardware" },                                \
 { "-ctl",                                                               \
       ARG_STRING,                                                       \
       NULL,                                                             \
@@ -65,7 +61,7 @@
       "No. of utterances at the beginning of -ctl file to be skipped" }, \
 { "-ctlcount",                                                          \
       ARG_INT32,                                                        \
-      "1000000000",	/* A big number to approximate the default: "until EOF" */ \
+      "-1",                                                             \
       "No. of utterances to be processed (after skipping -ctloffset entries)" }, \
 { "-ctlincr",                                                           \
       ARG_INT32,                                                        \
@@ -90,15 +86,15 @@
 { "-cepext",                                                            \
       ARG_STRING,                                                       \
       ".mfc",                                                           \
-      "Input files extension (prefixed to filespecs in control file)" }, \
+      "Input files extension (suffixed to filespecs in control file)" }, \
 { "-rawlogdir",                                                         \
       ARG_STRING,                                                       \
       NULL,                                                             \
-      "Directory for dumping raw audio input files" },                  \
+      "Directory for dumping raw audio" },	                        \
 { "-mfclogdir",                                                         \
       ARG_STRING,                                                       \
       NULL,                                                             \
-      "Directory for dumping feature input files" },                    \
+      "Directory for dumping features" },	                        \
 { "-cmn",                                                               \
       ARG_STRING,                                                       \
       "current",                                                        \
@@ -138,18 +134,6 @@
       ARG_BOOLEAN,								\
       "yes",									\
       "Print back trace of recognition results" },				\
-{ "-shortbacktrace",								\
-      ARG_BOOLEAN,								\
-      "no",									\
-      "Print short back trace of recognition results" },			\
-{ "-phypdump",									\
-      ARG_INT32,								\
-      "0",									\
-      "Report partial results every so many frames" },				\
-{ "-phypsegdump",								\
-      ARG_INT32,								\
-      "0",									\
-      "Report detailed partial results every so many frames" },			\
 { "-hyp",									\
       ARG_STRING,								\
       NULL,									\
@@ -232,14 +216,6 @@
       ARG_BOOLEAN,                                                                              \
       "yes",                                                                                    \
       "Run bestpath (Dijkstra) search over word lattice (3rd pass)" },                          \
-{ "-fwd3g",                                                                                     \
-      ARG_BOOLEAN,                                                                              \
-      "yes",                                                                                    \
-      "Use trigrams in first pass search" },                                                    \
-{ "-skipalt",                                                                                   \
-      ARG_BOOLEAN,                                                                              \
-      "no",                                                                                     \
-      "Skip alternate frames in exiting phones" },                                              \
 { "-latsize",                                                                                   \
       ARG_INT32,                                                                                \
       "50000",                                                                                  \
@@ -263,30 +239,30 @@
 { "-fwdflatsfwin",                                                                              \
       ARG_INT32,                                                                                \
       "25",                                                                    	                \
-      "Window of frames in lattice to search for successor words in fwdflat search " },         \
-{ "-fsgbfs",                                                                                    \
-      ARG_BOOLEAN,                                                                              \
-      "yes",                                                                                    \
-      "Force backtrace from FSG final state"}
+      "Window of frames in lattice to search for successor words in fwdflat search " }
 
 /** Command-line options for finite state grammars. */
-#define fsg_cmdln_options()						\
-{ "-fsg",								\
-      ARG_STRING,							\
-      NULL,								\
-      "Finite state grammar"},						\
-{ "-fsgusealtpron",							\
-      ARG_BOOLEAN,							\
-      "yes",								\
-      "Use alternative pronunciations for FSG"},			\
-{ "-fsgusefiller",							\
-      ARG_BOOLEAN,							\
-      "yes",								\
-      "(FSG Mode (Mode 2) only) Insert filler words at each state."}, 	\
-{ "-fsgctlfn", 								\
-      ARG_STRING, 							\
-      NULL, 								\
-      "A finite state grammar control file" }
+#define fsg_cmdln_options()                                     \
+    { "-fsg",                                                   \
+            ARG_STRING,                                         \
+            NULL,                                               \
+            "Sphinx format finite state grammar file"},         \
+{ "-jsgf",                                                      \
+        ARG_STRING,                                             \
+        NULL,                                                   \
+        "JSGF grammar file" },                                  \
+{ "-toprule",                                                   \
+        ARG_STRING,                                             \
+        NULL,                                                   \
+        "Start rule for JSGF (first public rule is default)" }, \
+{ "-fsgusealtpron",                                             \
+        ARG_BOOLEAN,                                            \
+        "yes",                                                  \
+        "Add alternate pronunciations to FSG"},                 \
+{ "-fsgusefiller",                                              \
+        ARG_BOOLEAN,                                            \
+        "yes",                                                  \
+        "Insert filler words at each state."}
 
 /** Command-line options for statistical language models. */
 #define lm_cmdln_options()								\
@@ -302,14 +278,6 @@
       ARG_STRING,									\
       "default",									\
       "Which language model in -lmctlfn to use by default"},				\
-{ "-lmnamedir",										\
-      ARG_STRING,									\
-      NULL,										\
-      "Directory for LM-name file for each utt"},					\
-{ "-lmnameext",										\
-      ARG_STRING,									\
-      NULL,										\
-      "Filename extension for LM-name files"},						\
 { "-lw",										\
       ARG_FLOAT32,									\
       "6.5",										\
@@ -411,7 +379,7 @@
 { "-mixw",                                                                      \
       ARG_STRING,                                                               \
       NULL,                                                                     \
-      "Senone mixture weights input file" },                                    \
+      "Senone mixture weights input file (uncompressed)" },                     \
 { "-mixwfloor",                                                                 \
       ARG_FLOAT32,                                                              \
       "0.0000001",                                                              \
@@ -428,7 +396,7 @@
       ARG_BOOLEAN,                                                              \
       "yes",                                                                    \
       "Use memory-mapped I/O (if possible) for model files" },                  \
-{ "-dsratio",                                                                   \
+{ "-ds",                                                                        \
       ARG_INT32,                                                                \
       "1",                                                                      \
       "Frame GMM computation downsampling ratio" },                             \
@@ -448,19 +416,10 @@
       ARG_INT32,                                                                \
       "-1",                                                                     \
       "Maximum number of Gaussians per leaf node in kd-Trees" },                \
-{ "-vqeval",                                                                    \
-      ARG_INT32,                                                                \
-      "3",                                                                      \
-      "Number of subvectors to use for SubVQ-based"                             \
-      " frame evaluation (3 for all) (UNUSED)"},                                \
 { "-logbase",                                                                   \
       ARG_FLOAT32,                                                              \
       "1.0001",                                                                 \
-      "Base in which all log-likelihoods calculated" },			        \
-{ "-logadd",                                                                    \
-      ARG_STRING,                                                               \
-      NULL,                                                                     \
-      "Log-addition table file" }
+      "Base in which all log-likelihoods calculated" }
 
 #define CMDLN_EMPTY_OPTION { NULL, 0, NULL, NULL }
 

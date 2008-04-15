@@ -34,50 +34,24 @@
  * ====================================================================
  *
  */
-/*
- * batch.c -- dummy (stub) user interface module for batch mode operation.
- * 
- * HISTORY
- * 
- * 17-Jun-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Copied from an earlier version
- */
 
 #include <stdio.h>
-#include "fbs.h"
+#include "pocketsphinx.h"
 
-#ifdef _WIN32_WCE
-#include <windows.h>
-
-int WINAPI
-WinMain(HINSTANCE hInstance,
-        HINSTANCE hPrevInstance,
-        LPTSTR lpCmdLine, int nCmdShow)
-{
-    static char *fake_argv[] = { "pocketsphinx_batch.exe", NULL, NULL };
-    size_t len;
-
-    len = wcstombs(NULL, lpCmdLine, 0) + 1;
-    if (len > 1) {
-        fake_argv[1] = calloc(len,1);
-        wcstombs(fake_argv[1], lpCmdLine, len);
-        fbs_init(2, fake_argv);
-    }
-    else {
-        fbs_init(1, fake_argv);
-    }
-
-    fbs_end();
-    return 0;
-}
-#else
 int
 main(int32 argc, char *argv[])
 {
-    fbs_init(argc, argv);
-    /* That is it; fbs_init takes care of batch-mode processing */
+    pocketsphinx_t *ps;
+    cmd_ln_t *config;
+    int rv;
 
-    fbs_end();
-    return 0;
+    config = cmd_ln_parse_r(NULL, pocketsphinx_args(), argc, argv, TRUE);
+    if (config == NULL)
+        return 1;
+    ps = pocketsphinx_init(config);
+    if (ps == NULL)
+        return 1;
+    rv = pocketsphinx_run_ctl_file(ps, cmd_ln_str_r(config, "-ctl"), NULL);
+    pocketsphinx_free(ps);
+    return rv;
 }
-#endif

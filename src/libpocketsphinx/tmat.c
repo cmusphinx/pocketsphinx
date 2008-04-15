@@ -102,7 +102,6 @@
 
 /* Local headers. */
 #include "tmat.h"
-#include "kb.h"
 #include "bio.h"
 #include "vector.h"
 

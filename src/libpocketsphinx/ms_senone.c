@@ -44,8 +44,6 @@
 
 /* Local headers. */
 #include "ms_senone.h"
-#include "senscr.h"
-#include "log.h"
 
 
 #define MIXW_PARAM_VERSION	"1.0"

@@ -86,7 +86,7 @@ enum
     PROP_LM_FILE,
     PROP_DICT_FILE,
     PROP_FSG_FILE,
-    PROP_S2_FSG,
+    PROP_FSG_MODEL,
     PROP_FWDFLAT,
     PROP_BESTPATH,
     PROP_MAXHMMPF,
@@ -173,8 +173,8 @@ gst_pocketsphinx_finalize(GObject * gobject)
 
     g_hash_table_foreach(ps->arghash, string_disposal, NULL);
     g_hash_table_destroy(ps->arghash);
-
     g_free(ps->last_result);
+    pocketsphinx_free(ps->ps);
     GST_CALL_PARENT(G_OBJECT_CLASS, finalize,(gobject));
 }
 
@@ -210,9 +210,9 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                              NULL,
                              G_PARAM_READWRITE));
     g_object_class_install_property
-        (gobject_class, PROP_S2_FSG,
-         g_param_spec_pointer("s2_fsg", "FSG Pointer",
-                              "Finite state grammar pointer (s2_fsg_t *)",
+        (gobject_class, PROP_FSG_MODEL,
+         g_param_spec_pointer("fsg_model", "FSG Model",
+                              "Finite state grammar object (fsg_model_t *)",
                               G_PARAM_WRITABLE));
     g_object_class_install_property
         (gobject_class, PROP_DICT_FILE,
@@ -298,22 +298,22 @@ gst_pocketsphinx_set_string(GstPocketSphinx *ps,
         newstr = NULL;
     if ((oldstr = g_hash_table_lookup(ps->arghash, key)))
         g_free(oldstr);
-    cmd_ln_set_str(key, newstr);
+    cmd_ln_set_str_r(ps->config, key, newstr);
     g_hash_table_foreach(ps->arghash, (gpointer)key, newstr);
 }
 
 static void
 gst_pocketsphinx_set_int(GstPocketSphinx *ps,
-                             const gchar *key, const GValue *value)
+                         const gchar *key, const GValue *value)
 {
-    cmd_ln_set_int32(key, g_value_get_int(value));
+    cmd_ln_set_int32_r(ps->config, key, g_value_get_int(value));
 }
 
 static void
 gst_pocketsphinx_set_boolean(GstPocketSphinx *ps,
                              const gchar *key, const GValue *value)
 {
-    cmd_ln_set_boolean(key, g_value_get_boolean(value));
+    cmd_ln_set_boolean_r(ps->config, key, g_value_get_boolean(value));
 }
 
 static void
@@ -324,36 +324,65 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
 
     switch (prop_id) {
     case PROP_HMM_DIR:
-    {
         gst_pocketsphinx_set_string(ps, "-hmm", value);
         if (ps->inited) {
-            /* Reinitialize the decoder with the new language model. */
-            fbs_end();
-            fbs_init(0, NULL);
+            /* Reinitialize the decoder with the new acoustic model. */
+            pocketsphinx_reinit(ps->ps, NULL);
         }
         break;
-    }
     case PROP_LM_FILE:
         /* FSG and LM are mutually exclusive. */
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
         gst_pocketsphinx_set_string(ps, "-lm", value);
         if (ps->inited) {
+            ngram_model_t *lm, *lmset;
+
             /* Switch to this new LM. */
-            lm_read(g_value_get_string(value),
-                    g_value_get_string(value),
-                    cmd_ln_float32("-lw"),
-                    cmd_ln_float32("-uw"),
-                    cmd_ln_float32("-wip"));
-            uttproc_set_lm(g_value_get_string(value));
+            lm = ngram_model_read(ps->config,
+                                  g_value_get_string(value),
+                                  NGRAM_AUTO,
+                                  pocketsphinx_get_logmath(ps->ps));
+            lmset = pocketsphinx_get_lmset(ps->ps);
+            ngram_model_set_add(lmset, lm, g_value_get_string(value),
+                                1.0, TRUE);
+            pocketsphinx_update_lmset(ps->ps);
         }
         break;
     case PROP_DICT_FILE:
-        /* FIXME: We actually need to reload the acoustic model here... */
         gst_pocketsphinx_set_string(ps, "-dict", value);
+        if (ps->inited) {
+            /* Reinitialize the decoder with the new dictionary. */
+            pocketsphinx_reinit(ps->ps, NULL);
+        }
         break;
+    case PROP_FSG_MODEL:
+    {
+        fsg_set_t *fsgs = pocketsphinx_get_fsgset(ps->ps);
+        fsg_model_t *fsg = g_value_get_pointer(value);
+
+        fsg_set_remove_byname(fsgs, fsg_model_name(fsg));
+        fsg_set_add(fsgs, fsg_model_name(fsg), fsg);
+        fsg_set_select(fsgs, fsg_model_name(fsg));
+        break;
+    }
     case PROP_FSG_FILE:
-        break;
-    case PROP_S2_FSG:
+        /* FSG and LM are mutually exclusive */
+        gst_pocketsphinx_set_string(ps, "-lm", NULL);
+        gst_pocketsphinx_set_string(ps, "-fsg", value);
+
+        if (ps->inited) {
+            /* Switch to this new FSG. */
+            fsg_set_t *fsgs = pocketsphinx_get_fsgset(ps->ps);
+            fsg_model_t *fsg;
+
+            fsg = fsg_model_readfile(g_value_get_string(value),
+                                     pocketsphinx_get_logmath(ps->ps),
+                                     cmd_ln_float32_r(ps->config, "-lw"));
+            if (fsg) {
+                fsg_set_add(fsgs, fsg_model_name(fsg), fsg);
+                fsg_set_select(fsgs, fsg_model_name(fsg));
+            }
+        }
         break;
     case PROP_FWDFLAT:
         gst_pocketsphinx_set_boolean(ps, "-fwdflat", value);
@@ -371,7 +400,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_int(ps, "-maxwpf", value);
         break;
     case PROP_DSRATIO:
-        gst_pocketsphinx_set_int(ps, "-dsratio", value);
+        gst_pocketsphinx_set_int(ps, "-ds", value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -412,7 +441,7 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
         g_value_set_int(value, cmd_ln_int32("-maxwpf"));
         break;
     case PROP_DSRATIO:
-        g_value_set_int(value, cmd_ln_int32("-dsratio"));
+        g_value_set_int(value, cmd_ln_int32("-ds"));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -433,7 +462,7 @@ gst_pocketsphinx_init(GstPocketSphinx * ps,
     ps->arghash = g_hash_table_new(g_str_hash, g_str_equal);
 
     /* Parse default command-line options. */
-    cmd_ln_parse(fbs_get_args(), default_argc, default_argv, FALSE);
+    ps->config = cmd_ln_parse_r(NULL, pocketsphinx_args(), default_argc, default_argv, FALSE);
 
     /* Set up pads. */
     gst_element_add_pad(GST_ELEMENT(ps), ps->sinkpad);
@@ -460,19 +489,21 @@ gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer)
      * that the VADER is "leaky") */
     if (!ps->listening) {
         ps->listening = TRUE;
-        uttproc_begin_utt(NULL);
+        pocketsphinx_start_utt(ps->ps);
     }
-    uttproc_rawdata((short *)GST_BUFFER_DATA(buffer),
-                    GST_BUFFER_SIZE(buffer) / sizeof(short), TRUE);
+    pocketsphinx_process_raw(ps->ps,
+                             (short *)GST_BUFFER_DATA(buffer),
+                             GST_BUFFER_SIZE(buffer) / sizeof(short),
+                             FALSE, FALSE);
 
     /* Get a partial result every now and then, see if it is different. */
     if (ps->last_result_time == 0
         /* Check every 100 milliseconds. */
         || (GST_BUFFER_TIMESTAMP(buffer) - ps->last_result_time) > 100*10*1000) {
-        int32 frm;
-        char *hyp;
+        int32 score;
+        char const *hyp;
 
-        uttproc_partial_result(&frm, &hyp);
+        hyp = pocketsphinx_get_hyp(ps->ps, &score);
         ps->last_result_time = GST_BUFFER_TIMESTAMP(buffer);
         if (hyp && strlen(hyp) > 0) {
             if (ps->last_result == NULL || 0 != strcmp(ps->last_result, hyp)) {
@@ -480,7 +511,7 @@ gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer)
                 ps->last_result = g_strdup(hyp);
                 /* Emit a signal for applications. */
                 g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_PARTIAL_RESULT],
-                              0, hyp, uttproc_get_uttid());
+                              0, hyp, pocketsphinx_get_uttid(ps->ps));
             }
         }
     }
@@ -498,25 +529,25 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
     switch (event->type) {
     case GST_EVENT_NEWSEGMENT:
         /* Initialize the decoder once the audio starts. (HACK) */
-        fbs_init(0, NULL);
+        ps->ps = pocketsphinx_init(ps->config);
         ps->inited = TRUE;
         return gst_pad_event_default(pad, event);
     case GST_EVENT_VADER_START:
         ps->listening = TRUE;
-        uttproc_begin_utt(NULL);
+        pocketsphinx_start_utt(ps->ps);
         /* Forward this event. */
         return gst_pad_event_default(pad, event);
     case GST_EVENT_EOS:
     case GST_EVENT_VADER_STOP: {
         GstBuffer *buffer;
-        int32 frm;
-        char *hyp;
+        int32 score;
+        char const *hyp;
 
         hyp = NULL;
         if (ps->listening) {
             ps->listening = FALSE;
-            uttproc_end_utt();
-            uttproc_result(&frm, &hyp, TRUE);
+            pocketsphinx_end_utt(ps->ps);
+            hyp = pocketsphinx_get_hyp(ps->ps, &score);
         }
         if (hyp) {
             /* Emit a signal for applications. */

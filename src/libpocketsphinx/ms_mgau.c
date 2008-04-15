@@ -69,7 +69,6 @@
 
 /* Local headers. */
 #include "ms_mgau.h"
-#include "senscr.h"
 
 ms_mgau_model_t *
 ms_mgau_init(cmd_ln_t *config, logmath_t *lmath)

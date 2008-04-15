@@ -66,7 +66,6 @@
 #include "phone.h"
 #include "mdef.h"
 #include "bin_mdef.h"
-#include "kb.h"
 
 
 static int32

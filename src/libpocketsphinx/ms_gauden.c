@@ -126,7 +126,6 @@
 /* Local headesr. */
 #include "ms_gauden.h"
 #include "search_const.h"
-#include "log.h"
 
 #define GAUDEN_PARAM_VERSION	"1.0"
 

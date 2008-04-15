@@ -4,7 +4,7 @@
 #include <time.h>
 
 #include "pocketsphinx_internal.h"
-#include "fsg_search2.h"
+#include "fsg_search_internal.h"
 #include "test_macros.h"
 
 int
@@ -13,7 +13,7 @@ main(int argc, char *argv[])
 	pocketsphinx_t *ps;
 	cmd_ln_t *config;
 	acmod_t *acmod;
-	fsg_search2_t *fsgs;
+	fsg_search_t *fsgs;
 	int32 score;
 	clock_t c;
 	int i;
@@ -27,7 +27,7 @@ main(int argc, char *argv[])
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = pocketsphinx_init(config));
 
-	fsgs = (fsg_search2_t *)ps->search;
+	fsgs = (fsg_search_t *)ps->search;
 	acmod = ps->acmod;
 
 	setbuf(stdout, NULL);
@@ -42,24 +42,24 @@ main(int argc, char *argv[])
 
 		TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
 		TEST_EQUAL(0, acmod_start_utt(acmod));
-		fsg_search2_start(ps_search_base(fsgs));
+		fsg_search_start(ps_search_base(fsgs));
 		while (!feof(rawfh)) {
 			nread = fread(buf, sizeof(*buf), 2048, rawfh);
 			bptr = buf;
 			while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
-				while (fsg_search2_step(ps_search_base(fsgs))) {
+				while (fsg_search_step(ps_search_base(fsgs))) {
 				}
 			}
 		}
-		fsg_search2_finish(ps_search_base(fsgs));
-		hyp = fsg_search2_hyp(ps_search_base(fsgs), &score);
+		fsg_search_finish(ps_search_base(fsgs));
+		hyp = fsg_search_hyp(ps_search_base(fsgs), &score);
 		printf("FSG: %s (%d)\n", hyp, score);
 
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
 	TEST_EQUAL(0, strcmp("GO FORWARD TEN METERS",
-			     fsg_search2_hyp(ps_search_base(fsgs), &score)));
+			     fsg_search_hyp(ps_search_base(fsgs), &score)));
 	c = clock() - c;
 	printf("5 * fsg search in %.2f sec\n", (double)c / CLOCKS_PER_SEC);
 	pocketsphinx_free(ps);

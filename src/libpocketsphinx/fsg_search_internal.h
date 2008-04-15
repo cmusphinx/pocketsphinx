@@ -33,19 +33,12 @@
  */
 
 /*
- * fsg_search2.h -- Search structures for FSM decoding.
- * 
- * **********************************************
- * CMU ARPA Speech Project
- *
- * Copyright (c) 2004 Carnegie Mellon University.
- * ALL RIGHTS RESERVED.
- * **********************************************
+ * fsg_search_internal.h -- Search structures for FSG decoding.
  */
 
 
-#ifndef __S2_FSG_SEARCH2_H__
-#define __S2_FSG_SEARCH2_H__
+#ifndef __S2_FSG_SEARCH_H__
+#define __S2_FSG_SEARCH_H__
 
 
 /* SphinxBase headers. */
@@ -62,7 +55,10 @@
 struct fsg_lextree_s;
 struct fsg_history_s;
 
-typedef struct fsg_search2_s {
+/**
+ * Implementation of FSG search (and "FSG set") structure.
+ */
+typedef struct fsg_search_s {
     ps_search_t base;
 
     hmm_context_t *hmmctx; /**< HMM context. */
@@ -97,84 +93,42 @@ typedef struct fsg_search2_s {
   
     int32 n_hmm_eval;		/**< Total HMMs evaluated this utt */
     int32 n_sen_eval;		/**< Total senones evaluated this utt */
-} fsg_search2_t;
-
+} fsg_search_t;
 
 /* Access macros */
-#define fsg_search2_frame(s)	((s)->frame)
-
+#define fsg_search_frame(s)	((s)->frame)
 
 /**
  * Create, initialize and return a search module.
  */
-ps_search_t *fsg_search2_init(cmd_ln_t *config,
+ps_search_t *fsg_search_init(cmd_ln_t *config,
                               acmod_t *acmod,
                               dict_t *dict);
 
 /**
  * Deallocate search structure.
  */
-void fsg_search2_free(ps_search_t *search);
-
-
-/**
- * Lookup the FSG associated with the given name.
- *
- * @return The FSG associated with name, or NULL if no match found.
- */
-fsg_model_t *fsg_search2_get_fsg(fsg_search2_t *fsgs, char const *name);
-
-/**
- * Add the given FSG to the collection of FSGs known to this search object.
- *
- * The given fsg is simply added to the collection.  It is not automatically
- * made the currently active one.
- *
- * @param name Name to associate with this FSG.  If NULL, this will be
- * taken from the FSG structure.
- * @return A pointer to the FSG associated with name, or NULL on
- * failure.  If this pointer is not equal to wfsg, then there was a
- * name conflict, and wfsg was not added.
- */
-fsg_model_t *fsg_search2_add(fsg_search2_t *fsgs, char const *name, fsg_model_t *wfsg);
-
-/**
- * Delete the given FSG from the known collection.
- */
-fsg_model_t *fsg_search2_remove(fsg_search2_t *fsgs, fsg_model_t *wfsg);
-
-/**
- * Like fsg_search2_del_fsg(), but identifies the FSG by its name.
- */
-fsg_model_t *fsg_search2_remove_byname(fsg_search2_t *fsgs, char const *name);
-
-/**
- * Switch to a new FSG (identified by its string name).
- *
- * @return Pointer to new FSG, or NULL on failure.
- */
-fsg_model_t *fsg_search2_select(fsg_search2_t *fsgs, const char *name);
-
+void fsg_search_free(ps_search_t *search);
 
 /**
  * Prepare the FSG search structure for beginning decoding of the next
  * utterance.
  */
-int fsg_search2_start(ps_search_t *search);
+int fsg_search_start(ps_search_t *search);
 
 /**
  * Step one frame forward through the Viterbi search.
  */
-int fsg_search2_step(ps_search_t *search);
+int fsg_search_step(ps_search_t *search);
 
 /**
  * Windup and clean the FSG search structure after utterance.
  */
-int fsg_search2_finish(ps_search_t *search);
+int fsg_search_finish(ps_search_t *search);
 
 /**
  * Get hypothesis string from the FSG search.
  */
-char const *fsg_search2_hyp(ps_search_t *search, int32 *out_score);
+char const *fsg_search_hyp(ps_search_t *search, int32 *out_score);
 
 #endif

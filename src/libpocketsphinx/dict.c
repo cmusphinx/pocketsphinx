@@ -127,7 +127,6 @@
 /* Local headers. */
 #include "dict.h"
 #include "search_const.h"
-#include "kb.h"
 #include "phone.h"
 
 #ifdef DEBUG
@@ -812,7 +811,7 @@ dict_add_word(dict_t * dict, char const *word, char *pron)
 
     /* Word already exists */
     new_entry = 0;
-    if ((wid = kb_get_word_id(word)) < 0) {
+    if ((wid = dict_to_id(dict, word)) < 0) {
         /* FIXME: Do some pointer juggling to make this work? */
         /* Or better yet, use a better way to determine what words are
          * filler words... */

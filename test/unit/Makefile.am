@@ -6,7 +6,6 @@ gst_tests += test_gst
 endif
 
 check_PROGRAMS = \
-	test_lm_read \
 	test_ps_init \
 	test_ps_fwdtree \
 	test_ps_fwdtree_fwdflat \
@@ -17,7 +16,6 @@ check_PROGRAMS = \
 	test_acmod \
 	test_acmod_grow \
 	test_fwdtree \
-	test_fwdtree_fbs \
 	test_fwdflat \
 	test_fwdtree_fwdflat \
 	test_fwdtree_bestpath \
@@ -29,7 +27,6 @@ check_PROGRAMS = \
 TESTS = \
 	test_lm_init.sh \
 	test_lmctl_init.sh \
-	test_lm_read \
 	test_ps_init \
 	test_ps_fwdtree \
 	test_ps_fwdtree_fwdflat \
@@ -40,7 +37,6 @@ TESTS = \
 	test_acmod \
 	test_acmod_grow \
 	test_fwdtree \
-	test_fwdtree_fbs \
 	test_fwdflat \
 	test_fwdtree_fwdflat \
 	test_fwdtree_bestpath \

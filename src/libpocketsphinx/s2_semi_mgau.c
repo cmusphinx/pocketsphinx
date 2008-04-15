@@ -62,12 +62,9 @@
 #include <sphinx_types.h>
 
 /* Local headers */
-#include "log.h"
 #include "s2_semi_mgau.h"
 #include "kdtree.h"
-#include "kb.h"
 #include "s2io.h"
-#include "senscr.h"
 #include "posixwin32.h"
 
 #define MGAU_MIXW_VERSION	"1.0"   /* Sphinx-3 file format version for mixw */
@@ -153,8 +150,6 @@ fast_logmath_add(logmath_t *lmath, int mlx, int mly)
  * Optimization for various topn cases, PDF-size(#bits) cases of
  * SCVQComputeScores() and SCVQComputeScores_all().
  */
-static int32 get_scores4_8b_map(s2_semi_mgau_t * s, int16 *senone_scores,
-                                int32 *out_bestidx);
 static int32 get_scores4_8b(s2_semi_mgau_t * s, int16 *senone_scores,
                             int32 *senone_active, int32 n_senone_active,
                             int32 *out_bestidx);
@@ -389,10 +384,7 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
         }
     }
 
-    if (s->mixw_map) {
-	    return get_scores4_8b_map(s, senone_scores, out_bestidx);
-    }
-    else if (compallsen) {
+    if (compallsen) {
 	switch (s->topn) {
 	case 4:
 	    return get_scores4_8b_all(s, senone_scores, out_bestidx);
@@ -528,56 +520,12 @@ get_scores4_8b(s2_semi_mgau_t * s, int16 *senone_scores,
 }
 
 static int32
-get_scores4_8b_map(s2_semi_mgau_t * s, int16 *senone_scores,
-                   int32 *out_bestidx)
-{
-    int32 best = (int32)0x7fffffff;
-    int j, n, bestidx = 0;
-
-    n_senone_active = s->n_sen;
-    memset(s->mixw_score, 0, s->n_mixw * sizeof(*s->mixw_score));
-    for (j = 0; j < s->n_feat; j++) {
-        uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
-        int32 n;
-
-        /* ptrs to senone prob ids */
-        pid_cw0 = s->mixw[j][s->f[j][0].codeword];
-        pid_cw1 = s->mixw[j][s->f[j][1].codeword];
-        pid_cw2 = s->mixw[j][s->f[j][2].codeword];
-        pid_cw3 = s->mixw[j][s->f[j][3].codeword];
-
-        /* mapping of senones to mixture weights. */
-        for (n = 0; n < s->n_mixw; n++) {
-            int32 tmp1, tmp2;
-
-            tmp1 = pid_cw0[n] + s->f[j][0].score;
-            tmp2 = pid_cw1[n] + s->f[j][1].score;
-            tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-            tmp2 = pid_cw2[n] + s->f[j][2].score;
-            tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-            tmp2 = pid_cw3[n] + s->f[j][3].score;
-            tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-            s->mixw_score[n] += tmp1;
-            if (j == s->n_feat - 1 && s->mixw_score[n] > best) {
-                bestidx = n;
-                best = s->mixw_score[n];
-            }
-        }
-    }
-    for (n = 0; n < s->n_sen; n++)
-        senone_scores[n] = s->mixw_score[s->mixw_map[n]];
-    *out_bestidx = s->mixw_map[bestidx];
-    return best;
-}
-
-static int32
 get_scores4_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
                    int32 *out_bestidx)
 {
     int32 j;
     int32 best = (int32)0x7fffffff;
 
-    n_senone_active = s->n_sen;
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     for (j = 0; j < s->n_feat; j++) {
         uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
@@ -667,7 +615,6 @@ get_scores2_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
     int32 best = (int32)0x7fffffff;
     int32 n;
 
-    n_senone_active = s->n_sen;
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     /* ptrs to senone prob ids */
     pid_cw00 = s->mixw[0][s->f[0][0].codeword];
@@ -740,8 +687,6 @@ get_scores1_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
     int32 j;
     int32 best = (int32)0x7fffffff;
     uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
-
-    n_senone_active = s->n_sen;
 
     /* Ptrs to senone prob values for the top codeword of all codebooks */
     pid_cw0 = s->mixw[0][s->f[0][0].codeword];
@@ -1319,7 +1264,7 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
         read_mixw(s, cmd_ln_str_r(config, "-mixw"),
                   cmd_ln_float32_r(config, "-mixwfloor"));
     s->topn = cmd_ln_int32_r(config, "-topn");
-    s->ds_ratio = cmd_ln_int32_r(config, "-dsratio");
+    s->ds_ratio = cmd_ln_int32_r(config, "-ds");
 
     /* Top-N scores from current, previous frame */
     s->f = (vqFeature_t **) ckd_calloc_2d(s->n_feat, s->topn,

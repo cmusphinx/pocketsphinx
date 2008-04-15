@@ -47,7 +47,7 @@
 /* Local headers. */
 #include "pocketsphinx_internal.h"
 #include "cmdln_macro.h"
-#include "fsg_search2.h"
+#include "fsg_search_internal.h"
 #include "ngram_search.h"
 #include "ngram_search_fwdtree.h"
 #include "ngram_search_fwdflat.h"
@@ -116,28 +116,40 @@ pocketsphinx_init_defaults(pocketsphinx_t *ps)
     }
 }
 
-pocketsphinx_t *
-pocketsphinx_init(cmd_ln_t *config)
+int
+pocketsphinx_reinit(pocketsphinx_t *ps, cmd_ln_t *config)
 {
-    pocketsphinx_t *ps;
-    char *fsgfile, *fsgctl = NULL;
+    char *fsgfile = NULL;
     char *lmfile, *lmctl = NULL;
+    gnode_t *gn;
 
-    /* First initialize the structure itself */
-    ps = ckd_calloc(1, sizeof(*ps));
-    ps->config = config;
-
+    if (config && config != ps->config) {
+        if (ps->config) {
+            for (gn = ps->strings; gn; gn = gnode_next(gn))
+                ckd_free(gnode_ptr(gn));
+            cmd_ln_free_r(ps->config);
+        }
+        ps->config = config;
+    }
     /* Fill in some default arguments. */
     pocketsphinx_init_defaults(ps);
 
     /* Logmath computation (used in acmod and search) */
-    ps->lmath = logmath_init
-        ((float64)cmd_ln_float32_r(config, "-logbase"), 0, FALSE);
+    if (ps->lmath == NULL
+        || (logmath_get_base(ps->lmath) != 
+            (float64)cmd_ln_float32_r(config, "-logbase"))) {
+        if (ps->lmath)
+            logmath_free(ps->lmath);
+        ps->lmath = logmath_init
+            ((float64)cmd_ln_float32_r(config, "-logbase"), 0, FALSE);
+    }
 
     /* Acoustic model (this is basically everything that
      * uttproc.c, senscr.c, and others used to do) */
+    if (ps->acmod)
+        acmod_free(ps->acmod);
     if ((ps->acmod = acmod_init(config, ps->lmath, NULL, NULL)) == NULL)
-        goto error_out;
+        return -1;
 
     /* Make the acmod's feature buffer growable if we are doing two-pass search. */
     if (cmd_ln_boolean_r(config, "-fwdflat")
@@ -145,15 +157,23 @@ pocketsphinx_init(cmd_ln_t *config)
         acmod_set_grow(ps->acmod, TRUE);
 
     /* Dictionary and triphone mappings (depends on acmod). */
+    if (ps->dict)
+        dict_free(ps->dict);
     if ((ps->dict = dict_init(config, ps->acmod->mdef)) == NULL)
-        goto error_out;
+        return -1;
 
     /* Determine whether we are starting out in FSG or N-Gram search mode. */
-    if ((fsgfile = cmd_ln_str_r(config, "-fsg"))
-        || (fsgctl = cmd_ln_str_r(config, "-fsgctlfn"))) {
+    if (ps->searches) {
+        for (gn = ps->searches; gn; gn = gnode_next(gn))
+            ps_search_free(gnode_ptr(gn));
+        glist_free(ps->searches);
+        ps->searches = NULL;
+        ps->search = NULL;
+    }
+    if ((fsgfile = cmd_ln_str_r(config, "-fsg"))) {
         ps_search_t *fsgs;
 
-        fsgs = fsg_search2_init(config, ps->acmod, ps->dict);
+        fsgs = fsg_search_init(config, ps->acmod, ps->dict);
         ps->searches = glist_add_ptr(ps->searches, fsgs);
         ps->search = fsgs;
     }
@@ -172,10 +192,20 @@ pocketsphinx_init(cmd_ln_t *config)
     ps->perf.name = "decode";
     ptmr_init(&ps->perf);
 
+    return 0;
+}
+
+pocketsphinx_t *
+pocketsphinx_init(cmd_ln_t *config)
+{
+    pocketsphinx_t *ps;
+
+    ps = ckd_calloc(1, sizeof(*ps));
+    if (pocketsphinx_reinit(ps, config) < 0) {
+        pocketsphinx_free(ps);
+        return NULL;
+    }
     return ps;
-error_out:
-    pocketsphinx_free(ps);
-    return NULL;
 }
 
 arg_t const *
@@ -208,21 +238,22 @@ pocketsphinx_get_config(pocketsphinx_t *ps)
     return ps->config;
 }
 
-const char *
-pocketsphinx_load_fsgfile(pocketsphinx_t *ps, const char *fsgfile)
+logmath_t *
+pocketsphinx_get_logmath(pocketsphinx_t *ps)
 {
-    return NULL;
+    return ps->lmath;
 }
 
-const char *
-pocketsphinx_load_fsgctl(pocketsphinx_t *ps, const char *fsgctlfile, int set_default)
+fsg_set_t *
+pocketsphinx_get_fsgset(pocketsphinx_t *ps)
 {
     return NULL;
 }
 
 int
 pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
-			  char const *ctlfile)
+			  char const *ctlfile,
+                          char const *format)
 {
     return -1;
 }
