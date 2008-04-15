@@ -43,6 +43,7 @@ main(int argc, char *argv[])
 	fsg_model_write(fsg, stdout);
 	TEST_ASSERT(fsg_set_add(fsgs, "<goforward.move2>", fsg));
 	TEST_ASSERT(fsg_set_select(fsgs, "<goforward.move2>"));
+	fsg_search_reinit(ps_search_base(fsgs));
 
 	setbuf(stdout, NULL);
 	c = clock();

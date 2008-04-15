@@ -16,7 +16,6 @@ main(int argc, char *argv[])
 				"-hmm", MODELDIR "/hmm/wsj1",
 				"-lm", MODELDIR "/lm/swb/swb.lm.DMP",
 				"-dict", MODELDIR "/lm/swb/swb.dic",
-				"-cepext", "",
 				"-fwdtree", "yes",
 				"-fwdflat", "no",
 				"-bestpath", "no",
