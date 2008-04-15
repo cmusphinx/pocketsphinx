@@ -87,7 +87,7 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(fh = fopen("test_gst.out", "r"));
 	TEST_ASSERT(fgets(line, sizeof(line), fh));
-	TEST_EQUAL(0, strcmp(line, "GO FORWARD TEN METERS \n"));
+	TEST_EQUAL(0, strcmp(line, "GO FORWARD TEN METERS\n"));
 
 	return 0;
 }

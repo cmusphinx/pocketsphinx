@@ -111,6 +111,7 @@ utterance_loop()
     int16 adbuf[4096];
     int32 k, ts, rem, score;
     char const *hyp;
+    char const *uttid;
     cont_ad_t *cont;
     char word[256];
 
@@ -139,7 +140,7 @@ utterance_loop()
          * Non-zero amount of data received; start recognition of new utterance.
          * NULL argument to uttproc_begin_utt => automatic generation of utterance-id.
          */
-        if (pocketsphinx_start_utt(ps) < 0)
+        if (pocketsphinx_start_utt(ps, NULL) < 0)
             E_FATAL("pocketsphinx_start_utt() failed\n");
         pocketsphinx_process_raw(ps, adbuf, k, FALSE, FALSE);
         printf("Listening...\n");
@@ -188,8 +189,8 @@ utterance_loop()
         fflush(stdout);
         /* Finish decoding, obtain and print result */
         pocketsphinx_end_utt(ps);
-        hyp = pocketsphinx_get_hyp(ps, &score);
-        printf("%s\n", hyp);
+        hyp = pocketsphinx_get_hyp(ps, &score, &uttid);
+        printf("%s: %s (%d)\n", uttid, hyp, score);
         fflush(stdout);
 
         /* Exit if the first word spoken was GOODBYE */

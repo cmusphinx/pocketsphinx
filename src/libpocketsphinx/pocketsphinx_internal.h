@@ -57,16 +57,8 @@
 #include "dict.h"
 
 /**
- * Utterance processing state.
+ * Search algorithm structure.
  */
-typedef enum {
-    UTTSTATE_UNDEF = -1,  /**< Undefined state */
-    UTTSTATE_IDLE = 0,    /**< Idle, can change models, etc. */
-    UTTSTATE_BEGUN = 1,   /**< Begun, can only do recognition. */
-    UTTSTATE_ENDED = 2,   /**< Ended, a result is now available. */
-    UTTSTATE_STOPPED = 3  /**< Stopped, can be resumed. */
-} uttstate_t;
-
 typedef struct ps_search_s ps_search_t;
 
 /**
@@ -164,14 +156,9 @@ struct pocketsphinx_s {
     ps_search_t *search; /**< Currently active search module. */
 
     /* Utterance-processing related stuff. */
-    uttstate_t uttstate;/**< Current state of utterance processing. */
-    int32 uttno;        /**< Utterance counter. */
+    uint32 uttno;       /**< Utterance counter. */
     char *uttid;        /**< Utterance ID for current utterance. */
-    char *uttid_prefix; /**< Prefix for automatic utterance IDs. */
-    char *hypstr;       /**< Hypothesis string for current utt. */
-    FILE *matchfp;      /**< File for writing recognition results. */
-    FILE *matchsegfp;   /**< File for writing segmentation results. */
-    ptmr_t perf;    /**< Performance counter for all of decoding. */
+    ptmr_t perf;        /**< Performance counter for all of decoding. */
     uint32 n_frame;     /**< Total number of frames processed. */
 };
 

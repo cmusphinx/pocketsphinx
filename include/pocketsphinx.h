@@ -201,10 +201,12 @@ fsg_set_t *pocketsphinx_update_fsgset(pocketsphinx_t *ps);
  * reinitializes internal data structures.
  *
  * @param ps Decoder to be started.
+ * @param uttid String uniquely identifying this utterance.  If NULL,
+ *              one will be created.
  * @return 0 for success, <0 on error.
  */
 POCKETSPHINX_EXPORT
-int pocketsphinx_start_utt(pocketsphinx_t *ps);
+int pocketsphinx_start_utt(pocketsphinx_t *ps, char const *uttid);
 
 /**
  * Decode raw audio data.
@@ -257,11 +259,13 @@ int pocketsphinx_end_utt(pocketsphinx_t *ps);
  * Get hypothesis string and path score.
  *
  * @param out_best_score Output: path score corresponding to returned string.
+ * @param out_uttid Output: utterance ID for this utterance.
  * @return String containing best hypothesis at this point in
  *         decoding.  NULL if no hypothesis is available.
  */
 POCKETSPHINX_EXPORT
-char const *pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score);
+char const *pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score,
+                                 char const **out_uttid);
 
 /**
  * Get an iterator over the word segmentation for the best hypothesis.

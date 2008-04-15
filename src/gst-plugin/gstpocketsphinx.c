@@ -489,7 +489,7 @@ gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer)
      * that the VADER is "leaky") */
     if (!ps->listening) {
         ps->listening = TRUE;
-        pocketsphinx_start_utt(ps->ps);
+        pocketsphinx_start_utt(ps->ps, NULL);
     }
     pocketsphinx_process_raw(ps->ps,
                              (short *)GST_BUFFER_DATA(buffer),
@@ -502,8 +502,9 @@ gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer)
         || (GST_BUFFER_TIMESTAMP(buffer) - ps->last_result_time) > 100*10*1000) {
         int32 score;
         char const *hyp;
+        char const *uttid;
 
-        hyp = pocketsphinx_get_hyp(ps->ps, &score);
+        hyp = pocketsphinx_get_hyp(ps->ps, &score, &uttid);
         ps->last_result_time = GST_BUFFER_TIMESTAMP(buffer);
         if (hyp && strlen(hyp) > 0) {
             if (ps->last_result == NULL || 0 != strcmp(ps->last_result, hyp)) {
@@ -511,7 +512,7 @@ gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer)
                 ps->last_result = g_strdup(hyp);
                 /* Emit a signal for applications. */
                 g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_PARTIAL_RESULT],
-                              0, hyp, pocketsphinx_get_uttid(ps->ps));
+                              0, hyp, uttid);
             }
         }
     }
@@ -534,7 +535,7 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
         return gst_pad_event_default(pad, event);
     case GST_EVENT_VADER_START:
         ps->listening = TRUE;
-        pocketsphinx_start_utt(ps->ps);
+        pocketsphinx_start_utt(ps->ps, NULL);
         /* Forward this event. */
         return gst_pad_event_default(pad, event);
     case GST_EVENT_EOS:
@@ -542,17 +543,18 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
         GstBuffer *buffer;
         int32 score;
         char const *hyp;
+        char const *uttid;
 
         hyp = NULL;
         if (ps->listening) {
             ps->listening = FALSE;
             pocketsphinx_end_utt(ps->ps);
-            hyp = pocketsphinx_get_hyp(ps->ps, &score);
+            hyp = pocketsphinx_get_hyp(ps->ps, &score, &uttid);
         }
         if (hyp) {
             /* Emit a signal for applications. */
             g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_RESULT],
-                          0, hyp, uttproc_get_uttid());
+                          0, hyp, uttid);
             /* Forward this result in a buffer. */
             buffer = gst_buffer_new_and_alloc(strlen(hyp) + 2);
             strcpy((char *)GST_BUFFER_DATA(buffer), hyp);

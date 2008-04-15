@@ -34,6 +34,7 @@ pocketsphinx_test(cmd_ln_t *config, char const *sname, char const *expected)
 	size_t nsamps;
 	int32 nfr, i, score;
 	char const *hyp;
+	char const *uttid;
 	double n_speech, n_cpu, n_wall;
 	ps_seg_t *seg;
 
@@ -42,7 +43,7 @@ pocketsphinx_test(cmd_ln_t *config, char const *sname, char const *expected)
 	cmn_prior_set(ps->acmod->fcb->cmn_struct, prior);
 
 	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
-	TEST_EQUAL(0, pocketsphinx_start_utt(ps));
+	TEST_EQUAL(0, pocketsphinx_start_utt(ps, "goforward"));
 	nsamps = 2048;
 	buf = ckd_calloc(nsamps, sizeof(*buf));
 	while (!feof(rawfh)) {
@@ -50,8 +51,8 @@ pocketsphinx_test(cmd_ln_t *config, char const *sname, char const *expected)
 		pocketsphinx_process_raw(ps, buf, nread, FALSE, FALSE);
 	}
 	TEST_EQUAL(0, pocketsphinx_end_utt(ps));
-	hyp = pocketsphinx_get_hyp(ps, &score);
-	printf("%s: %s (%d)\n", sname, hyp, score);
+	hyp = pocketsphinx_get_hyp(ps, &score, &uttid);
+	printf("%s (%s): %s (%d)\n", sname, uttid, hyp, score);
 	TEST_EQUAL(0, strcmp(hyp, expected));
 	pocketsphinx_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
 	printf("%.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
@@ -75,14 +76,14 @@ pocketsphinx_test(cmd_ln_t *config, char const *sname, char const *expected)
 	fe_end_utt(ps->acmod->fe, cepbuf[nfr], &i);
 
 	/* Decode it with process_cep() */
-	TEST_EQUAL(0, pocketsphinx_start_utt(ps));
+	TEST_EQUAL(0, pocketsphinx_start_utt(ps, NULL));
 	cmn_prior_set(ps->acmod->fcb->cmn_struct, prior);
 	for (i = 0; i < nfr; ++i) {
 		pocketsphinx_process_cep(ps, cepbuf + i, 1, FALSE, FALSE);
 	}
 	TEST_EQUAL(0, pocketsphinx_end_utt(ps));
-	hyp = pocketsphinx_get_hyp(ps, &score);
-	printf("%s: %s (%d)\n", sname, hyp, score);
+	hyp = pocketsphinx_get_hyp(ps, &score, &uttid);
+	printf("%s (%s): %s (%d)\n", sname, uttid, hyp, score);
 	TEST_EQUAL(0, strcmp(hyp, expected));
 	for (seg = pocketsphinx_seg_iter(ps, &score); seg;
 	     seg = pocketsphinx_seg_next(seg)) {

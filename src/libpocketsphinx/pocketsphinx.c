@@ -221,6 +221,7 @@ pocketsphinx_free(pocketsphinx_t *ps)
     for (gn = ps->strings; gn; gn = gnode_next(gn))
         ckd_free(gnode_ptr(gn));
     glist_free(ps->strings);
+    ckd_free(ps->uttid);
     ckd_free(ps);
 }
 
@@ -323,12 +324,23 @@ pocketsphinx_update_fsgset(pocketsphinx_t *ps)
 }
 
 int
-pocketsphinx_start_utt(pocketsphinx_t *ps)
+pocketsphinx_start_utt(pocketsphinx_t *ps, char const *uttid)
 {
     int rv;
 
     ptmr_reset(&ps->perf);
     ptmr_start(&ps->perf);
+
+    if (uttid) {
+        ckd_free(ps->uttid);
+        ps->uttid = ckd_salloc(uttid);
+    }
+    else {
+        char nuttid[16];
+        ckd_free(ps->uttid);
+        sprintf(nuttid, "%09u", ps->uttno);
+        ps->uttid = ckd_salloc(nuttid);
+    }
 
     if ((rv = acmod_start_utt(ps->acmod)) < 0)
         return rv;
@@ -422,12 +434,14 @@ pocketsphinx_end_utt(pocketsphinx_t *ps)
 }
 
 char const *
-pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score)
+pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score, char const **uttid)
 {
     char const *hyp;
 
     ptmr_start(&ps->perf);
     hyp = ps_search_hyp(ps->search, out_best_score);
+    if (uttid)
+        *uttid = ps->uttid;
     ptmr_stop(&ps->perf);
     return hyp;
 }
