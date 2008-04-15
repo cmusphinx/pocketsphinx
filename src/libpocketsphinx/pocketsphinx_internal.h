@@ -78,6 +78,7 @@ typedef struct ps_searchfuncs_s {
     int (*start)(ps_search_t *search);
     int (*step)(ps_search_t *search);
     int (*finish)(ps_search_t *search);
+    int (*reinit)(ps_search_t *search);
     void (*free)(ps_search_t *search);
 
     char const *(*hyp)(ps_search_t *search, int32 *out_score);
@@ -104,6 +105,7 @@ struct ps_search_s {
 #define ps_search_start(s) (*(ps_search_base(s)->vt->start))(s)
 #define ps_search_step(s) (*(ps_search_base(s)->vt->step))(s)
 #define ps_search_finish(s) (*(ps_search_base(s)->vt->finish))(s)
+#define ps_search_reinit(s) (*(ps_search_base(s)->vt->reinit))(s)
 #define ps_search_free(s) (*(ps_search_base(s)->vt->free))(s)
 #define ps_search_hyp(s,sc) (*(ps_search_base(s)->vt->hyp))(s,sc)
 #define ps_search_seg_iter(s,sc) (*(ps_search_base(s)->vt->seg_iter))(s,sc)

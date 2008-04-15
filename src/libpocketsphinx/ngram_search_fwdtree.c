@@ -406,6 +406,14 @@ ngram_fwdtree_deinit(ngram_search_t *ngs)
     ckd_free(ngs->lastphn_cand);
 }
 
+int
+ngram_fwdtree_reinit(ngram_search_t *ngs)
+{
+    reinit_search_tree(ngs);
+    create_search_tree(ngs);
+    return 0;
+}
+
 void
 ngram_fwdtree_start(ngram_search_t *ngs)
 {

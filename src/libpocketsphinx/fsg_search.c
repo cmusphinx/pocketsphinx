@@ -75,6 +75,7 @@ static ps_searchfuncs_t fsg_funcs = {
     /* start: */  fsg_search_start,
     /* step: */   fsg_search_step,
     /* finish: */ fsg_search_finish,
+    /* reinit: */ fsg_search_reinit,
     /* free: */   fsg_search_free,
     /* hyp: */      fsg_search_hyp,
     /* seg_iter: */ fsg_search_seg_iter,
@@ -89,7 +90,7 @@ fsg_search_init(cmd_ln_t *config,
     char const *path;
 
     fsgs = ckd_calloc(1, sizeof(*fsgs));
-    ps_search_init(&fsgs->base, &fsg_funcs, config, acmod, dict);
+    ps_search_init(ps_search_base(fsgs), &fsg_funcs, config, acmod, dict);
 
     /* Initialize HMM context. */
     fsgs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
@@ -132,10 +133,10 @@ fsg_search_init(cmd_ln_t *config,
             fsg_model_free(fsg);
             goto error_out;
         }
-        if (fsg_set_select(fsgs, fsg_model_name(fsg)) == NULL) {
-            fsg_model_free(fsg);
+        if (fsg_set_select(fsgs, fsg_model_name(fsg)) == NULL)
             goto error_out;
-        }
+        if (fsg_search_reinit(ps_search_base(fsgs)) < 0)
+            goto error_out;
     }
 
     return ps_search_base(fsgs);
@@ -166,16 +167,26 @@ fsg_search_free(ps_search_t *search)
     ckd_free(fsgs);
 }
 
-
-fsg_model_t *
-fsg_set_get_fsg(fsg_search_t *fsgs, const char *name)
+int
+fsg_search_reinit(ps_search_t *search)
 {
-    void *val;
+    fsg_search_t *fsgs = (fsg_search_t *)search;
 
-    if (hash_table_lookup(fsgs->fsgs, name, &val) < 0)
-        return NULL;
-    return (fsg_model_t *)val;
+    /* Free the old lextree */
+    if (fsgs->lextree)
+        fsg_lextree_free(fsgs->lextree);
+
+    /* Allocate new lextree for the given FSG */
+    fsgs->lextree = fsg_lextree_init(fsgs->fsg, ps_search_dict(fsgs),
+                                     ps_search_acmod(fsgs)->mdef,
+                                     fsgs->hmmctx, fsgs->wip, fsgs->pip);
+
+    /* Inform the history module of the new fsg */
+    fsg_history_set_fsg(fsgs->history, fsgs->fsg, ps_search_dict(fsgs));
+
+    return 0;
 }
+
 
 static int
 fsg_search_add_silences(fsg_search_t *fsgs, fsg_model_t *fsg)
@@ -232,6 +243,16 @@ fsg_search_add_altpron(fsg_search_t *fsgs, fsg_model_t *fsg)
     }
 
     return n_alt;
+}
+
+fsg_model_t *
+fsg_set_get_fsg(fsg_search_t *fsgs, const char *name)
+{
+    void *val;
+
+    if (hash_table_lookup(fsgs->fsgs, name, &val) < 0)
+        return NULL;
+    return (fsg_model_t *)val;
 }
 
 fsg_model_t *
@@ -315,20 +336,7 @@ fsg_set_select(fsg_search_t *fsgs, const char *name)
         E_ERROR("FSG '%s' not known; cannot make it current\n", name);
         return NULL;
     }
-
-    /* Free the old lextree */
-    if (fsgs->lextree)
-        fsg_lextree_free(fsgs->lextree);
-
-    /* Allocate new lextree for the given FSG */
-    fsgs->lextree = fsg_lextree_init(fsg, ps_search_dict(fsgs),
-                                     ps_search_acmod(fsgs)->mdef,
-                                     fsgs->hmmctx, fsgs->wip, fsgs->pip);
-
-    /* Inform the history module of the new fsg */
-    fsg_history_set_fsg(fsgs->history, fsg, ps_search_dict(fsgs));
     fsgs->fsg = fsg;
-
     return fsg;
 }
 

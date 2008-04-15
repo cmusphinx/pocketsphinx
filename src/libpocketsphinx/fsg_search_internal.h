@@ -102,13 +102,18 @@ typedef struct fsg_search_s {
  * Create, initialize and return a search module.
  */
 ps_search_t *fsg_search_init(cmd_ln_t *config,
-                              acmod_t *acmod,
-                              dict_t *dict);
+                             acmod_t *acmod,
+                             dict_t *dict);
 
 /**
  * Deallocate search structure.
  */
 void fsg_search_free(ps_search_t *search);
+
+/**
+ * Update FSG search module for new or updated FSGs.
+ */
+int fsg_search_reinit(ps_search_t *fsgs);
 
 /**
  * Prepare the FSG search structure for beginning decoding of the next

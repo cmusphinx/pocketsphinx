@@ -56,6 +56,7 @@
 static int ngram_search_start(ps_search_t *search);
 static int ngram_search_step(ps_search_t *search);
 static int ngram_search_finish(ps_search_t *search);
+static int ngram_search_reinit(ps_search_t *search);
 static char const *ngram_search_hyp(ps_search_t *search, int32 *out_score);
 static ps_seg_t *ngram_search_seg_iter(ps_search_t *search, int32 *out_score);
 
@@ -64,6 +65,7 @@ static ps_searchfuncs_t ngram_funcs = {
     /* start: */  ngram_search_start,
     /* step: */   ngram_search_step,
     /* finish: */ ngram_search_finish,
+    /* reinit: */ ngram_search_reinit,
     /* free: */   ngram_search_free,
     /* hyp: */      ngram_search_hyp,
     /* seg_iter: */ ngram_search_seg_iter,
@@ -84,137 +86,180 @@ ngram_search_update_widmap(ngram_search_t *ngs)
     ckd_free(words);
 }
 
+static void
+ngram_search_calc_beams(ngram_search_t *ngs)
+{
+    cmd_ln_t *config;
+    acmod_t *acmod;
+
+    config = ps_search_config(ngs);
+    acmod = ps_search_acmod(ngs);
+
+    /* Log beam widths. */
+    ngs->beam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam"));
+    ngs->wbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-wbeam"));
+    ngs->pbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pbeam"));
+    ngs->lpbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-lpbeam"));
+    ngs->lponlybeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-lponlybeam"));
+    ngs->fwdflatbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatbeam"));
+    ngs->fwdflatwbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatwbeam"));
+
+    /* Absolute pruning parameters. */
+    ngs->maxwpf = cmd_ln_int32_r(config, "-maxwpf");
+    ngs->maxhmmpf = cmd_ln_int32_r(config, "-maxhmmpf");
+
+    /* Various penalties which may or may not be useful. */
+    ngs->wip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-wip"));
+    ngs->nwpen = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-nwpen"));
+    ngs->pip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-pip"));
+    ngs->silpen = ngs->pip
+        + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-silprob"));
+    ngs->fillpen = ngs->pip
+        + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-fillprob"));
+
+    /* Language weight ratios for fwdflat and bestpath search. */
+    ngs->fwdflat_fwdtree_lw_ratio =
+        cmd_ln_float32_r(config, "-fwdflatlw")
+        / cmd_ln_float32_r(config, "-lw");
+    ngs->bestpath_fwdtree_lw_ratio =
+        cmd_ln_float32_r(config, "-bestpathlw")
+        / cmd_ln_float32_r(config, "-lw");
+}
+
 ps_search_t *
 ngram_search_init(cmd_ln_t *config,
 		  acmod_t *acmod,
 		  dict_t *dict)
 {
-	ngram_search_t *ngs;
-        const char *path;
+    ngram_search_t *ngs;
+    const char *path;
 
-	ngs = ckd_calloc(1, sizeof(*ngs));
-        ps_search_init(&ngs->base, &ngram_funcs, config, acmod, dict);
-	ngs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
-				       acmod->tmat->tp, NULL, acmod->mdef->sseq);
-        ngs->chan_alloc = listelem_alloc_init(sizeof(chan_t));
-        ngs->root_chan_alloc = listelem_alloc_init(sizeof(root_chan_t));
-        ngs->latnode_alloc = listelem_alloc_init(sizeof(latnode_t));
+    ngs = ckd_calloc(1, sizeof(*ngs));
+    ps_search_init(&ngs->base, &ngram_funcs, config, acmod, dict);
+    ngs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
+                                   acmod->tmat->tp, NULL, acmod->mdef->sseq);
+    ngs->chan_alloc = listelem_alloc_init(sizeof(chan_t));
+    ngs->root_chan_alloc = listelem_alloc_init(sizeof(root_chan_t));
+    ngs->latnode_alloc = listelem_alloc_init(sizeof(latnode_t));
 
-        /* Calculate log beam widths. */
-        ngs->beam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam"));
-        ngs->wbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-wbeam"));
-        ngs->pbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pbeam"));
-        ngs->lpbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-lpbeam"));
-        ngs->lponlybeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-lponlybeam"));
-        ngs->fwdflatbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatbeam"));
-        ngs->fwdflatwbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatwbeam"));
+    /* Calculate various beam widths and such. */
+    ngram_search_calc_beams(ngs);
 
-        /* Absolute pruning parameters. */
-        ngs->maxwpf = cmd_ln_int32_r(config, "-maxwpf");
-        ngs->maxhmmpf = cmd_ln_int32_r(config, "-maxhmmpf");
+    /* This is useful for something. */
+    ngs->start_wid = dict_to_id(dict, "<s>");
+    ngs->finish_wid = dict_to_id(dict, "</s>");
+    ngs->silence_wid = dict_to_id(dict, "<sil>");
 
-        /* Various penalties which may or may not be useful. */
-        ngs->wip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-wip"));
-        ngs->nwpen = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-nwpen"));
-        ngs->pip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-pip"));
-        ngs->silpen = ngs->pip
-            + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-silprob"));
-        ngs->fillpen = ngs->pip
-            + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-fillprob"));
+    /* Allocate a billion different tables for stuff. */
+    ngs->word_chan = ckd_calloc(dict->dict_entry_count,
+                                sizeof(*ngs->word_chan));
+    ngs->word_lat_idx = ckd_calloc(dict->dict_entry_count,
+                                   sizeof(*ngs->word_lat_idx));
+    ngs->zeroPermTab = ckd_calloc(bin_mdef_n_ciphone(acmod->mdef),
+                                  sizeof(*ngs->zeroPermTab));
+    ngs->word_active = bitvec_alloc(dict->dict_entry_count);
+    ngs->last_ltrans = ckd_calloc(dict->dict_entry_count,
+                                  sizeof(*ngs->last_ltrans));
 
-        /* Language weight ratios for fwdflat and bestpath search. */
-        ngs->fwdflat_fwdtree_lw_ratio =
-            cmd_ln_float32_r(config, "-fwdflatlw")
-            / cmd_ln_float32_r(config, "-lw");
-        ngs->bestpath_fwdtree_lw_ratio =
-            cmd_ln_float32_r(config, "-bestpathlw")
-            / cmd_ln_float32_r(config, "-lw");
+    /* FIXME: All these structures need to be made dynamic with
+     * garbage collection. */
+    ngs->bp_table_size = cmd_ln_int32_r(config, "-latsize");
+    ngs->bp_table = ckd_calloc(ngs->bp_table_size,
+                               sizeof(*ngs->bp_table));
+    /* FIXME: This thing is frickin' huge. */
+    ngs->bscore_stack_size = ngs->bp_table_size * 20;
+    ngs->bscore_stack = ckd_calloc(ngs->bscore_stack_size,
+                                   sizeof(*ngs->bscore_stack));
+    ngs->n_frame_alloc = 256;
+    ngs->bp_table_idx = ckd_calloc(ngs->n_frame_alloc + 1,
+                                   sizeof(*ngs->bp_table_idx));
+    ++ngs->bp_table_idx; /* Make bptableidx[-1] valid */
 
-        /* This is useful for something. */
-        ngs->start_wid = dict_to_id(dict, "<s>");
-        ngs->finish_wid = dict_to_id(dict, "</s>");
-        ngs->silence_wid = dict_to_id(dict, "<sil>");
+    /* Allocate active word list array */
+    ngs->active_word_list = ckd_calloc_2d(2, dict->dict_entry_count,
+                                          sizeof(**ngs->active_word_list));
 
-        /* Allocate a billion different tables for stuff. */
-        ngs->word_chan = ckd_calloc(dict->dict_entry_count,
-                                    sizeof(*ngs->word_chan));
-        ngs->word_lat_idx = ckd_calloc(dict->dict_entry_count,
-                                       sizeof(*ngs->word_lat_idx));
-        ngs->zeroPermTab = ckd_calloc(bin_mdef_n_ciphone(acmod->mdef),
-                                      sizeof(*ngs->zeroPermTab));
-        ngs->word_active = bitvec_alloc(dict->dict_entry_count);
-        ngs->last_ltrans = ckd_calloc(dict->dict_entry_count,
-                                      sizeof(*ngs->last_ltrans));
-
-        /* FIXME: All these structures need to be made dynamic with
-         * garbage collection. */
-        ngs->bp_table_size = cmd_ln_int32_r(config, "-latsize");
-        ngs->bp_table = ckd_calloc(ngs->bp_table_size,
-                                   sizeof(*ngs->bp_table));
-        /* FIXME: This thing is frickin' huge. */
-        ngs->bscore_stack_size = ngs->bp_table_size * 20;
-        ngs->bscore_stack = ckd_calloc(ngs->bscore_stack_size,
-                                       sizeof(*ngs->bscore_stack));
-        ngs->n_frame_alloc = 256;
-        ngs->bp_table_idx = ckd_calloc(ngs->n_frame_alloc + 1,
-                                       sizeof(*ngs->bp_table_idx));
-        ++ngs->bp_table_idx; /* Make bptableidx[-1] valid */
-
-        /* Allocate active word list array */
-        ngs->active_word_list = ckd_calloc_2d(2, dict->dict_entry_count,
-                                              sizeof(**ngs->active_word_list));
-
-        /* Load language model(s) */
-        if ((path = cmd_ln_str_r(config, "-lmctlfn"))) {
-            ngs->lmset = ngram_model_set_read(config, path, acmod->lmath);
-            if (ngs->lmset == NULL) {
-                E_ERROR("Failed to read language model control file: %s\n",
-                        path);
-                goto error_out;
-            }
-            /* Set the default language model if needed. */
-            if ((path = cmd_ln_str_r(config, "-lmname"))) {
-                ngram_model_set_select(ngs->lmset, path);
-            }
+    /* Load language model(s) */
+    if ((path = cmd_ln_str_r(config, "-lmctlfn"))) {
+        ngs->lmset = ngram_model_set_read(config, path, acmod->lmath);
+        if (ngs->lmset == NULL) {
+            E_ERROR("Failed to read language model control file: %s\n",
+                    path);
+            goto error_out;
         }
-        else if ((path = cmd_ln_str_r(config, "-lm"))) {
-            static const char *name = "default";
-            ngram_model_t *lm;
+        /* Set the default language model if needed. */
+        if ((path = cmd_ln_str_r(config, "-lmname"))) {
+            ngram_model_set_select(ngs->lmset, path);
+        }
+    }
+    else if ((path = cmd_ln_str_r(config, "-lm"))) {
+        static const char *name = "default";
+        ngram_model_t *lm;
 
-            lm = ngram_model_read(config, path, NGRAM_AUTO, acmod->lmath);
-            if (lm == NULL) {
-                E_ERROR("Failed to read language model file: %s\n", path);
-                goto error_out;
-            }
-            ngs->lmset = ngram_model_set_init(config,
-                                              &lm, (char **)&name,
-                                              NULL, 1);
-            if (ngs->lmset == NULL) {
-                E_ERROR("Failed to initialize language model set\n");
-                goto error_out;
-            }
+        lm = ngram_model_read(config, path, NGRAM_AUTO, acmod->lmath);
+        if (lm == NULL) {
+            E_ERROR("Failed to read language model file: %s\n", path);
+            goto error_out;
         }
+        ngs->lmset = ngram_model_set_init(config,
+                                          &lm, (char **)&name,
+                                          NULL, 1);
+        if (ngs->lmset == NULL) {
+            E_ERROR("Failed to initialize language model set\n");
+            goto error_out;
+        }
+    }
 
-        /* Create word mappings. */
-        ngram_search_update_widmap(ngs);
+    /* Create word mappings. */
+    ngram_search_update_widmap(ngs);
 
-        /* Initialize fwdtree, fwdflat, bestpath modules if necessary. */
-        if (cmd_ln_boolean_r(config, "-fwdtree")) {
-            ngram_fwdtree_init(ngs);
-            ngs->fwdtree = TRUE;
-        }
-        if (cmd_ln_boolean_r(config, "-fwdflat")) {
-            ngram_fwdflat_init(ngs);
-            ngs->fwdflat = TRUE;
-        }
-        if (cmd_ln_boolean_r(config, "-bestpath")) {
-            ngs->bestpath = TRUE;
-        }
-	return (ps_search_t *)ngs;
+    /* Initialize fwdtree, fwdflat, bestpath modules if necessary. */
+    if (cmd_ln_boolean_r(config, "-fwdtree")) {
+        ngram_fwdtree_init(ngs);
+        ngs->fwdtree = TRUE;
+    }
+    if (cmd_ln_boolean_r(config, "-fwdflat")) {
+        ngram_fwdflat_init(ngs);
+        ngs->fwdflat = TRUE;
+    }
+    if (cmd_ln_boolean_r(config, "-bestpath")) {
+        ngs->bestpath = TRUE;
+    }
+    return (ps_search_t *)ngs;
 
 error_out:
-        ngram_search_free((ps_search_t *)ngs);
-        return NULL;
+    ngram_search_free((ps_search_t *)ngs);
+    return NULL;
+}
+
+static int
+ngram_search_reinit(ps_search_t *search)
+{
+    ngram_search_t *ngs = (ngram_search_t *)search;
+    int rv = 0;
+
+    /*
+     * NOTE!!! This is not a general-purpose reinit function.  It only
+     * deals with updates to the language model set and beam widths.
+     */
+
+    /* Update beam widths. */
+    ngram_search_calc_beams(ngs);
+
+    /* Update word mappings. */
+    ngram_search_update_widmap(ngs);
+
+    /* Now rebuild lextrees or what have you. */
+    if (ngs->fwdtree) {
+        if ((rv = ngram_fwdtree_reinit(ngs)) < 0)
+            return rv;
+    }
+    if (ngs->fwdflat) {
+        if ((rv = ngram_fwdflat_reinit(ngs)) < 0)
+            return rv;
+    }
+
+    return rv;
 }
 
 void

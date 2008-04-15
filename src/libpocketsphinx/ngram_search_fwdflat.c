@@ -58,6 +58,27 @@
 #define chan_v_eval(chan) hmm_vit_eval(&(chan)->hmm)
 #endif
 
+static void
+ngram_fwdflat_expand_all(ngram_search_t *ngs)
+{
+    int n_words, i;
+
+    ngs->n_expand_words = 0;
+    n_words = ps_search_n_words(ngs);
+    bitvec_clear_all(ngs->expand_word_flag, ps_search_n_words(ngs));
+    for (i = 0; i < ngs->start_wid; i++) {
+        if (ngram_model_set_known_wid(ngs->lmset,
+                                      ps_search_dict(ngs)->dict_list[i]->wid)) {
+            ngs->fwdflat_wordlist[ngs->n_expand_words] = i;
+            ngs->expand_word_list[ngs->n_expand_words] = i;
+            bitvec_set(ngs->expand_word_flag, i);
+            ngs->n_expand_words++;
+        }
+    }
+    ngs->expand_word_list[ngs->n_expand_words] = -1;
+    ngs->fwdflat_wordlist[ngs->n_expand_words] = -1;
+}
+
 void
 ngram_fwdflat_init(ngram_search_t *ngs)
 {
@@ -77,21 +98,10 @@ ngram_fwdflat_init(ngram_search_t *ngs)
     if (!ngs->fwdtree) {
         int w;
 
-        ngs->n_expand_words = 0;
-        bitvec_clear_all(ngs->expand_word_flag, ps_search_n_words(ngs));
-        for (i = 0; i < ngs->start_wid; i++) {
-            if (ngram_model_set_known_wid(ngs->lmset,
-                                          ps_search_dict(ngs)->dict_list[i]->wid)) {
-                ngs->fwdflat_wordlist[ngs->n_expand_words] = i;
-                ngs->expand_word_list[ngs->n_expand_words] = i;
-                bitvec_set(ngs->expand_word_flag, i);
-                ngs->n_expand_words++;
-            }
-        }
-        ngs->expand_word_list[ngs->n_expand_words] = -1;
-        ngs->fwdflat_wordlist[ngs->n_expand_words] = -1;
+        /* Build full expansion list from LM words. */
+        ngram_fwdflat_expand_all(ngs);
 
-        /* Also allocate single-phone words, since they won't have
+        /* Allocate single-phone words, since they won't have
          * been allocated for us by fwdtree initialization. */
         ngs->n_1ph_words = 0;
         for (w = 0; w < n_words; w++) {
@@ -128,6 +138,19 @@ ngram_fwdflat_deinit(ngram_search_t *ngs)
     bitvec_free(ngs->expand_word_flag);
     ckd_free(ngs->expand_word_list);
     ckd_free(ngs->frm_wordlist);
+}
+
+int
+ngram_fwdflat_reinit(ngram_search_t *ngs)
+{
+    /* No tree-search; re-build the expansion list from all LM words. */
+    if (!ngs->fwdtree) {
+        /* Rebuild full expansion list from LM words. */
+        ngram_fwdflat_expand_all(ngs);
+    }
+    /* Otherwise there is nothing to do since the wordlist is
+     * generated anew every utterance. */
+    return 0;
 }
 
 /**

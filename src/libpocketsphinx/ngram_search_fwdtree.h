@@ -58,6 +58,11 @@ void ngram_fwdtree_init(ngram_search_t *ngs);
 void ngram_fwdtree_deinit(ngram_search_t *ngs);
 
 /**
+ * Rebuild search structures for updated language models.
+ */
+int ngram_fwdtree_reinit(ngram_search_t *ngs);
+
+/**
  * Start fwdtree decoding for an utterance.
  */
 void ngram_fwdtree_start(ngram_search_t *ngs);

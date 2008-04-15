@@ -58,6 +58,11 @@ void ngram_fwdflat_init(ngram_search_t *ngs);
 void ngram_fwdflat_deinit(ngram_search_t *ngs);
 
 /**
+ * Rebuild search structures for updated language models.
+ */
+int ngram_fwdflat_reinit(ngram_search_t *ngs);
+
+/**
  * Start fwdflat decoding for an utterance.
  */
 void ngram_fwdflat_start(ngram_search_t *ngs);

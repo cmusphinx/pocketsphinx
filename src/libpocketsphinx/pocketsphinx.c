@@ -54,15 +54,7 @@
 #include "ngram_search_dag.h"
 
 static const arg_t ps_args_def[] = {
-    input_cmdln_options(),
-    waveform_to_cepstral_command_line_macro(),
-    output_cmdln_options(),
-    am_cmdln_options(),
-    lm_cmdln_options(),
-    dictionary_cmdln_options(),
-    fsg_cmdln_options(),
-    beam_cmdln_options(),
-    search_cmdln_options(),
+    POCKETSPHINX_OPTIONS,
     CMDLN_EMPTY_OPTION
 };
 
@@ -244,18 +236,90 @@ pocketsphinx_get_logmath(pocketsphinx_t *ps)
     return ps->lmath;
 }
 
+ngram_model_t *
+pocketsphinx_get_lmset(pocketsphinx_t *ps)
+{
+    gnode_t *gn;
+
+    /* Look for N-Gram search. */
+    for (gn = ps->searches; gn; gn = gnode_next(gn)) {
+        if (0 == strcmp(ps_search_name(gnode_ptr(gn)), "ngram"))
+            break;
+    }
+    if (gn == NULL)
+        return NULL;
+    return ((ngram_search_t *)gnode_ptr(gn))->lmset;
+}
+
+ngram_model_t *
+pocketsphinx_update_lmset(pocketsphinx_t *ps)
+{
+    ngram_search_t *ngs;
+    gnode_t *gn;
+
+    /* Look for N-Gram search. */
+    for (gn = ps->searches; gn; gn = gnode_next(gn)) {
+        if (0 == strcmp(ps_search_name(gnode_ptr(gn)), "ngram"))
+            break;
+    }
+    if (gn == NULL) {
+        /* Initialize N-Gram search. */
+        ngs = (ngram_search_t *)ngram_search_init(ps->config,
+                                                  ps->acmod, ps->dict);
+        if (ngs == NULL)
+            return NULL;
+        ps->searches = glist_add_ptr(ps->searches, ngs);
+    }
+    else {
+        /* Tell N-Gram search to update its view of the world. */
+        ngs = gnode_ptr(gn);
+        if (ps_search_reinit(ps_search_base(ngs)) < 0)
+            return NULL;
+    }
+    ps->search = ps_search_base(ngs);
+    return ngs->lmset;
+}
+
 fsg_set_t *
 pocketsphinx_get_fsgset(pocketsphinx_t *ps)
 {
-    return NULL;
+    gnode_t *gn;
+
+    /* Look for FSG search. */
+    for (gn = ps->searches; gn; gn = gnode_next(gn)) {
+        if (0 == strcmp(ps_search_name(gnode_ptr(gn)), "fsg"))
+            break;
+    }
+    if (gn == NULL)
+        return NULL;
+    return (fsg_set_t *)gnode_ptr(gn);
 }
 
-int
-pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
-			  char const *ctlfile,
-                          char const *format)
+fsg_set_t *
+pocketsphinx_update_fsgset(pocketsphinx_t *ps)
 {
-    return -1;
+    gnode_t *gn;
+    fsg_search_t *fsgs;
+
+    /* Look for FSG search. */
+    for (gn = ps->searches; gn; gn = gnode_next(gn)) {
+        if (0 == strcmp(ps_search_name(gnode_ptr(gn)), "fsg"))
+            break;
+    }
+    if (gn == NULL) {
+        /* Initialize FSG search. */
+        fsgs = (fsg_search_t *)fsg_search_init(ps->config,
+                                               ps->acmod, ps->dict);
+        ps->searches = glist_add_ptr(ps->searches, fsgs);
+    }
+    else {
+        /* Tell FSG search to update its view of the world. */
+        fsgs = gnode_ptr(gn);
+        if (ps_search_reinit(ps_search_base(fsgs)) < 0)
+            return NULL;
+    }
+    ps->search = ps_search_base(fsgs);
+    return (fsg_set_t *)fsgs;
 }
 
 int
