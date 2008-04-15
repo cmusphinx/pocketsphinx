@@ -41,134 +41,20 @@
 #define __PS_CMDLN_MACRO_H__
 
 #include <cmd_ln.h>
-#include <fe.h> /* For waveform_to_cepstral_command_line_macro() */
+#include <feat.h>
+#include <fe.h>
 
-#ifdef WORDS_BIGENDIAN
-#define NATIVE_ENDIAN "big"
-#else
-#define NATIVE_ENDIAN "little"
-#endif
-
-/** Options defining speech data input */
-#define input_cmdln_options()                                           \
-{ "-ctl",                                                               \
-      ARG_STRING,                                                       \
-      NULL,                                                             \
-      "Control file listing utterances to be processed" },              \
-{ "-ctloffset",                                                         \
-      ARG_INT32,                                                        \
-      "0",                                                              \
-      "No. of utterances at the beginning of -ctl file to be skipped" }, \
-{ "-ctlcount",                                                          \
-      ARG_INT32,                                                        \
-      "-1",                                                             \
-      "No. of utterances to be processed (after skipping -ctloffset entries)" }, \
-{ "-ctlincr",                                                           \
-      ARG_INT32,                                                        \
-      "1",                                                              \
-      "Do every Nth line in the control file" },                        \
-{ "-adcin",                                                             \
-      ARG_BOOLEAN,                                                      \
-      "no",                                                             \
-      "Input is raw audio data" },                                      \
-{ "-adchdr",                                                            \
-      ARG_INT32,                                                        \
-      "0",                                                              \
-      "Size of audio file header in bytes (headers are ignored)" },     \
-{ "-adcdev",                                                            \
-      ARG_STRING,                                                       \
-      NULL,                                                             \
-      "Device name for audio input (platform-specific)" },              \
-{ "-cepdir",                                                            \
-      ARG_STRING,                                                       \
-      NULL,                                                             \
-      "Input files directory (prefixed to filespecs in control file)" }, \
-{ "-cepext",                                                            \
-      ARG_STRING,                                                       \
-      ".mfc",                                                           \
-      "Input files extension (suffixed to filespecs in control file)" }, \
-{ "-rawlogdir",                                                         \
-      ARG_STRING,                                                       \
-      NULL,                                                             \
-      "Directory for dumping raw audio" },	                        \
-{ "-mfclogdir",                                                         \
-      ARG_STRING,                                                       \
-      NULL,                                                             \
-      "Directory for dumping features" },	                        \
-{ "-cmn",                                                               \
-      ARG_STRING,                                                       \
-      "current",                                                        \
-      "Cepstral mean normalization scheme ('current', 'prior', or 'none')" }, \
-{ "-cmninit",                                                           \
-      ARG_STRING,                                                       \
-      "8.0",                                                            \
-      "Initial values (comma-separated) for cepstral mean when 'prior' is used" }, \
-{ "-varnorm",                                                           \
-      ARG_BOOLEAN,                                                      \
-      "no",                                                             \
-      "Variance normalize each utterance (only if CMN == current)" },   \
-{ "-agc",                                                               \
-      ARG_STRING,                                                       \
-      "none",                                                           \
-      "Automatic gain control for c0 ('max', 'emax', 'noise', or 'none')" }, \
-{ "-agcthresh",                                                         \
-      ARG_FLOAT32,                                                      \
-      "2.0",                                                            \
-      "Initial threshold for automatic gain control" },                 \
-{ "-lda",                                                               \
-      ARG_STRING,                                                       \
-      NULL,                                                             \
-      "File containing transformation matrix to be applied to features (single-stream features only)" }, \
-{ "-ldadim",                                                            \
-      ARG_INT32,                                                        \
-      "0",                                                              \
-      "Dimensionality of output of feature transformation (0 to use entire matrix)" }
-
-/** Options defining recognition data output and logging */
-#define output_cmdln_options()							\
-{ "-logfn",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Recognition log file name" },						\
-{ "-backtrace",									\
-      ARG_BOOLEAN,								\
-      "yes",									\
-      "Print back trace of recognition results" },				\
-{ "-hyp",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Recognition output file name" },						\
-{ "-hypseg",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Recognition output with segmentation file name" },			\
-{ "-matchscore",								\
-      ARG_BOOLEAN,								\
-      "no",									\
-      "Report score in hyp file" },						\
-{ "-reportpron",								\
-      ARG_BOOLEAN,								\
-      "no",									\
-      "Report alternate pronunciations in match file" },			\
-{ "-nbestdir",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Directory for writing N-best hypothesis lists" },			\
-{ "-nbestext",									\
-      ARG_STRING,								\
-      "hyp",									\
-      "Extension for N-best hypothesis list files" },				\
-{ "-nbest",									\
-      ARG_INT32,								\
-      "0",									\
-      "Number of N-best hypotheses to write to -nbestdir" },			\
-{ "-outlatdir",									\
-      ARG_STRING,								\
-      NULL,									\
-      "Directory for dumping lattices" }
+/** Minimal set of command-line options for PocketSphinx. */
+#define POCKETSPHINX_OPTIONS \
+    POCKETSPHINX_ACMOD_OPTIONS, \
+        POCKETSPHINX_BEAM_OPTIONS,   \
+        POCKETSPHINX_SEARCH_OPTIONS, \
+        POCKETSPHINX_DICT_OPTIONS, \
+        POCKETSPHINX_NGRAM_OPTIONS, \
+        POCKETSPHINX_FSG_OPTIONS
 
 /** Options defining beam width parameters for tuning the search. */
-#define beam_cmdln_options()									\
+#define POCKETSPHINX_BEAM_OPTIONS								\
 { "-beam",											\
       ARG_FLOAT64,										\
       "1e-48",											\
@@ -199,7 +85,7 @@
       "Beam width applied to word exits in second-pass flat search" }
 
 /** Options defining other parameters for tuning the search. */
-#define search_cmdln_options()                                                                  \
+#define POCKETSPHINX_SEARCH_OPTIONS \
 { "-compallsen",                                                                                \
       ARG_BOOLEAN,                                                                              \
       "no",                                                                                     \
@@ -242,7 +128,7 @@
       "Window of frames in lattice to search for successor words in fwdflat search " }
 
 /** Command-line options for finite state grammars. */
-#define fsg_cmdln_options()                                     \
+#define POCKETSPHINX_FSG_OPTIONS \
     { "-fsg",                                                   \
             ARG_STRING,                                         \
             NULL,                                               \
@@ -265,7 +151,7 @@
         "Insert filler words at each state."}
 
 /** Command-line options for statistical language models. */
-#define lm_cmdln_options()								\
+#define POCKETSPHINX_NGRAM_OPTIONS \
 { "-lm",										\
       ARG_STRING,									\
       NULL,										\
@@ -316,7 +202,7 @@
       "Filler word transition probability" }
 
 /** Command-line options for dictionaries. */
-#define dictionary_cmdln_options()				\
+#define POCKETSPHINX_DICT_OPTIONS \
     { "-dict",							\
       REQARG_STRING,						\
       NULL,							\
@@ -335,15 +221,7 @@
       "Use within-word phones only" }
 
 /** Command-line options for acoustic modeling */
-#define am_cmdln_options()                                                      \
-{ "-feat",                                                                      \
-      ARG_STRING,                                                               \
-      "s2_4x",                                                                  \
-      "Feature stream type, depends on the acoustic model" },                   \
-{ "-ceplen",                                                                    \
-      ARG_INT32,                                                                \
-      "13",                                                                     \
-     "Number of components in the input feature vector" },			\
+#define POCKETSPHINX_ACMOD_OPTIONS \
 { "-hmm",                                                                       \
       ARG_STRING,                                                               \
       NULL,                                                                     \

@@ -54,6 +54,7 @@ extern "C" {
 
 /* PocketSphinx headers (not many of them!) */
 #include <pocketsphinx_export.h>
+#include <cmdln_macro.h>
 #include <fsg_set.h>
 
 /**
@@ -143,6 +144,9 @@ logmath_t *pocketsphinx_get_logmath(pocketsphinx_t *ps);
 /**
  * Get the language model set object for this decoder.
  *
+ * If N-Gram decoding is not enabled, this will return NULL.  You will
+ * need to enable it using pocketsphinx_update_lmset().
+ *
  * @return The language model set object for this decoder.  The
  *         decoder retains ownership of this pointer, so you should
  *         not attempt to free it manually.
@@ -166,6 +170,12 @@ ngram_model_t *pocketsphinx_update_lmset(pocketsphinx_t *ps);
 
 /**
  * Get the finite-state grammar set object for this decoder.
+ *
+ * If FSG decoding is not enabled, this returns NULL.  Call
+ * pocketsphinx_update_fsgset() to enable it.
+ *
+ * @return The current FSG set object for this decoder, or
+ *         NULL if none is available.
  */
 POCKETSPHINX_EXPORT
 fsg_set_t *pocketsphinx_get_fsgset(pocketsphinx_t *ps);
@@ -182,27 +192,6 @@ fsg_set_t *pocketsphinx_get_fsgset(pocketsphinx_t *ps);
  */
 POCKETSPHINX_EXPORT
 fsg_set_t *pocketsphinx_update_fsgset(pocketsphinx_t *ps);
-
-/**
- * Run a control file in batch mode.
- *
- * By default, the Sphinx format control file simply consists of a
- * list of file IDs (i.e. basenames of input files).  The directory
- * specified with the <code>-cepdir</code> configuration paramter is
- * prepended, while the file extension in <code>-cepext</code> is
- * appended.
- *
- * It is also possible to specify subparts of files
- *
- * @param ps Decoder to run batch control file with.
- * @param ctlfile Control file to run batch decoding on.
- * @param fmt Format of <code>ctlfile</code>.  If NULL, a standard
- *            Sphinx format control file is assumed (see above).
- */
-POCKETSPHINX_EXPORT
-int pocketsphinx_run_ctl_file(pocketsphinx_t *ps,
-                              char const *ctlfile,
-			      char const *fmt);
 
 /**
  * Start utterance processing.

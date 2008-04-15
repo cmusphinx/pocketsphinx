@@ -13,7 +13,7 @@ pocketsphinx_batch_LDADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la \
 	-lsphinxbase
 
-pocketsphinx_continuous_SOURCES = tty-continuous.c
+pocketsphinx_continuous_SOURCES = continuous.c
 pocketsphinx_continuous_LDADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la \
 	-lsphinxbase -lsphinxad
