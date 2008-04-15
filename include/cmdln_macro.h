@@ -46,6 +46,8 @@
 
 /** Minimal set of command-line options for PocketSphinx. */
 #define POCKETSPHINX_OPTIONS \
+    waveform_to_cepstral_command_line_macro(), \
+    cepstral_to_feature_command_line_macro(), \
     POCKETSPHINX_ACMOD_OPTIONS, \
         POCKETSPHINX_BEAM_OPTIONS,   \
         POCKETSPHINX_SEARCH_OPTIONS, \
