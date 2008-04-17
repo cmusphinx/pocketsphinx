@@ -45,6 +45,9 @@ extern "C" {
 }
 #endif
 
+/* System headers we need. */
+#include <stdio.h>
+
 /* SphinxBase headers we need. */
 #include <cmd_ln.h>
 #include <logmath.h>
@@ -162,6 +165,9 @@ ngram_model_t *pocketsphinx_get_lmset(pocketsphinx_t *ps);
  * data structures to reflect any changes made to the language model
  * set (e.g. switching language models, adding words, etc).
  *
+ * FIXME: Is there any good reason why switching lmsets shouldn't
+ * work?  We should probably allow it if it does.
+ *
  * @return The current language model set object for this decoder, or
  *         NULL on failure.
  */
@@ -194,6 +200,50 @@ POCKETSPHINX_EXPORT
 fsg_set_t *pocketsphinx_update_fsgset(pocketsphinx_t *ps);
 
 /**
+ * Add a word to the pronunciation dictionary.
+ *
+ * This function adds a word to the pronunciation dictionary and the
+ * current language model (but, obviously, not to the current FSG if
+ * FSG mode is enabled).  If the word is already present in one or the
+ * other, it does whatever is necessary to ensure that the word can be
+ * recognized.
+ *
+ * @param word Word string to add.
+ * @param phones Whitespace-separated list of phoneme strings
+ *               describing pronunciation of <code>word</code>.
+ * @param update If TRUE, update the search module (whichever one is
+ *               currently active) to recognize the newly added word.
+ *               If adding multiple words, it is more efficient to
+ *               pass FALSE here in all but the last word.
+ * @return The internal ID (>= 0) of the newly added word, or <0 on
+ *         failure.
+ */
+POCKETSPHINX_EXPORT
+int pocketsphinx_add_word(pocketsphinx_t *ps,
+                          char const *word,
+                          char const *phones,
+                          int update);
+
+/**
+ * Decode a raw audio stream.
+ *
+ * No headers are recognized in this files.  The configuration
+ * parameters <tt>-samprate</tt> and <tt>-input_endian</tt> are used
+ * to determine the sampling rate and endianness of the stream,
+ * respectively.  Audio is always assumed to be 16-bit signed PCM.
+ *
+ * @param ps Decoder.
+ * @param rawfh Previously opened file stream.
+ * @param uttid Utterance ID (or NULL to generate automatically).
+ * @param maxsamps Maximum number of samples to read from rawfh, or -1
+ *                 to read until end-of-file.
+ * @return Number of samples of audio.
+ */
+POCKETSPHINX_EXPORT
+int pocketsphinx_decode_raw(pocketsphinx_t *ps, FILE *rawfh,
+                            char const *uttid, long maxsamps);
+
+/**
  * Start utterance processing.
  *
  * This function should be called before any utterance data is passed
@@ -213,11 +263,12 @@ int pocketsphinx_start_utt(pocketsphinx_t *ps, char const *uttid);
  *
  * @param ps Decoder.
  * @param no_search If non-zero, perform feature extraction but don't
- * do any recognition yet.  This may be necessary if your processor
- * has trouble doing recognition in real-time.
+ *                  do any recognition yet.  This may be necessary if
+ *                  your processor has trouble doing recognition in
+ *                  real-time.
  * @param full_utt If non-zero, this block of data is a full utterance
- * worth of data.  This may allow the recognizer to produce more
- * accurate results.
+ *                 worth of data.  This may allow the recognizer to
+ *                 produce more accurate results.
  * @return Number of frames of data searched, or <0 for error.
  */
 POCKETSPHINX_EXPORT
@@ -232,11 +283,12 @@ int pocketsphinx_process_raw(pocketsphinx_t *ps,
  *
  * @param ps Decoder.
  * @param no_search If non-zero, perform feature extraction but don't
- * do any recognition yet.  This may be necessary if your processor
- * has trouble doing recognition in real-time.
+ *                  do any recognition yet.  This may be necessary if
+ *                  your processor has trouble doing recognition in
+ *                  real-time.
  * @param full_utt If non-zero, this block of data is a full utterance
- * worth of data.  This may allow the recognizer to produce more
- * accurate results.
+ *                 worth of data.  This may allow the recognizer to
+ *                 produce more accurate results.
  * @return Number of frames of data searched, or <0 for error.
  */
 POCKETSPHINX_EXPORT

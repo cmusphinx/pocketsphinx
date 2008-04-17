@@ -240,16 +240,10 @@ pocketsphinx_get_logmath(pocketsphinx_t *ps)
 ngram_model_t *
 pocketsphinx_get_lmset(pocketsphinx_t *ps)
 {
-    gnode_t *gn;
-
-    /* Look for N-Gram search. */
-    for (gn = ps->searches; gn; gn = gnode_next(gn)) {
-        if (0 == strcmp(ps_search_name(gnode_ptr(gn)), "ngram"))
-            break;
-    }
-    if (gn == NULL)
+    if (ps->search == NULL
+        || 0 != strcmp(ps_search_name(ps->search), "ngram"))
         return NULL;
-    return ((ngram_search_t *)gnode_ptr(gn))->lmset;
+    return ((ngram_search_t *)ps->search)->lmset;
 }
 
 ngram_model_t *
@@ -284,16 +278,10 @@ pocketsphinx_update_lmset(pocketsphinx_t *ps)
 fsg_set_t *
 pocketsphinx_get_fsgset(pocketsphinx_t *ps)
 {
-    gnode_t *gn;
-
-    /* Look for FSG search. */
-    for (gn = ps->searches; gn; gn = gnode_next(gn)) {
-        if (0 == strcmp(ps_search_name(gnode_ptr(gn)), "fsg"))
-            break;
-    }
-    if (gn == NULL)
+    if (ps->search == NULL
+        || 0 != strcmp(ps_search_name(ps->search), "fsg"))
         return NULL;
-    return (fsg_set_t *)gnode_ptr(gn);
+    return (fsg_set_t *)ps->search;
 }
 
 fsg_set_t *
@@ -324,6 +312,86 @@ pocketsphinx_update_fsgset(pocketsphinx_t *ps)
 }
 
 int
+pocketsphinx_add_word(pocketsphinx_t *ps,
+                      char const *word,
+                      char const *phones,
+                      int update)
+{
+    int32 wid, lmwid;
+    ngram_model_t *lmset;
+    char *pron;
+    int rv;
+
+    pron = ckd_salloc(phones);
+    if ((wid = dict_add_word(ps->dict, word, pron)) == -1) {
+        ckd_free(pron);
+        return -1;
+    }
+    ckd_free(pron);
+
+    if ((lmset = pocketsphinx_get_lmset(ps)) != NULL) {
+        /* FIXME: There is a way more efficient way to do this, since all
+         * we did was replace a placeholder string with the new word
+         * string - therefore what we ought to do is add it directly to
+         * the current LM, then update the mapping without reallocating
+         * everything. */
+        /* Add it to the LM set (meaning, the current LM).  In a perfect
+         * world, this would result in the same WID, but because of the
+         * weird way that word IDs are handled, it doesn't. */
+        if ((lmwid = ngram_model_add_word(lmset, word, 1.0))
+            == NGRAM_INVALID_WID)
+            return -1;
+    }
+ 
+    /* Rebuild the widmap and search tree if requested. */
+    if (update) {
+        if ((rv = ps_search_reinit(ps->search) < 0))
+            return rv;
+    }
+    return wid;
+}
+
+int
+pocketsphinx_decode_raw(pocketsphinx_t *ps, FILE *rawfh,
+                        char const *uttid, long maxsamps)
+{
+    long total, pos;
+
+    pocketsphinx_start_utt(ps, uttid);
+    /* If this file is seekable or maxsamps is specified, then decode
+     * the whole thing at once. */
+    if (maxsamps != -1 || (pos = ftell(rawfh)) >= 0) {
+        int16 *data;
+
+        if (maxsamps == -1) {
+            long endpos;
+            fseek(rawfh, 0, SEEK_END);
+            endpos = ftell(rawfh);
+            fseek(rawfh, pos, SEEK_SET);
+            maxsamps = endpos - pos;
+        }
+        data = ckd_calloc(maxsamps, sizeof(*data));
+        total = fread(data, sizeof(*data), maxsamps, rawfh);
+        pocketsphinx_process_raw(ps, data, total, FALSE, TRUE);
+        ckd_free(data);
+    }
+    else {
+        /* Otherwise decode it in a stream. */
+        total = 0;
+        while (!feof(rawfh)) {
+            int16 data[256];
+            size_t nread;
+
+            nread = fread(data, sizeof(*data), sizeof(data)/sizeof(*data), rawfh);
+            pocketsphinx_process_raw(ps, data, nread, FALSE, FALSE);
+            total += nread;
+        }
+    }
+    pocketsphinx_end_utt(ps);
+    return total;
+}
+
+int
 pocketsphinx_start_utt(pocketsphinx_t *ps, char const *uttid)
 {
     int rv;
@@ -340,6 +408,7 @@ pocketsphinx_start_utt(pocketsphinx_t *ps, char const *uttid)
         ckd_free(ps->uttid);
         sprintf(nuttid, "%09u", ps->uttno);
         ps->uttid = ckd_salloc(nuttid);
+        ++ps->uttno;
     }
 
     if ((rv = acmod_start_utt(ps->acmod)) < 0)

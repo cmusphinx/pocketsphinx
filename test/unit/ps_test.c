@@ -39,11 +39,26 @@ pocketsphinx_test(cmd_ln_t *config, char const *sname, char const *expected)
 	ps_seg_t *seg;
 
 	TEST_ASSERT(ps = pocketsphinx_init(config));
-	/* HACK!  Need a way to do this in the API. */
-	cmn_prior_set(ps->acmod->fcb->cmn_struct, prior);
 
+	/* Test it first with pocketsphinx_decode_raw() */
 	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
-	TEST_EQUAL(0, pocketsphinx_start_utt(ps, "goforward"));
+	pocketsphinx_decode_raw(ps, rawfh, "goforward", -1);
+	hyp = pocketsphinx_get_hyp(ps, &score, &uttid);
+	printf("%s (%s): %s (%d)\n", sname, uttid, hyp, score);
+	TEST_EQUAL(0, strcmp(hyp, expected));
+	pocketsphinx_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
+	printf("%.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
+	       n_speech, n_cpu, n_wall);
+	printf("%.2f xRT (CPU), %.2f xRT (elapsed)\n",
+	       n_cpu / n_speech, n_wall / n_speech);
+
+	/* Test it with pocketsphinx_process_raw() */
+	cmn_prior_set(ps->acmod->fcb->cmn_struct, prior);
+	clearerr(rawfh);
+	fseek(rawfh, 0, SEEK_END);
+	nsamps = ftell(rawfh) / sizeof(*buf);
+	fseek(rawfh, 0, SEEK_SET);
+	TEST_EQUAL(0, pocketsphinx_start_utt(ps, NULL));
 	nsamps = 2048;
 	buf = ckd_calloc(nsamps, sizeof(*buf));
 	while (!feof(rawfh)) {
@@ -53,6 +68,7 @@ pocketsphinx_test(cmd_ln_t *config, char const *sname, char const *expected)
 	TEST_EQUAL(0, pocketsphinx_end_utt(ps));
 	hyp = pocketsphinx_get_hyp(ps, &score, &uttid);
 	printf("%s (%s): %s (%d)\n", sname, uttid, hyp, score);
+	TEST_EQUAL(0, strcmp(uttid, "000000000"));
 	TEST_EQUAL(0, strcmp(hyp, expected));
 	pocketsphinx_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
 	printf("%.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
@@ -84,6 +100,7 @@ pocketsphinx_test(cmd_ln_t *config, char const *sname, char const *expected)
 	TEST_EQUAL(0, pocketsphinx_end_utt(ps));
 	hyp = pocketsphinx_get_hyp(ps, &score, &uttid);
 	printf("%s (%s): %s (%d)\n", sname, uttid, hyp, score);
+	TEST_EQUAL(0, strcmp(uttid, "000000001"));
 	TEST_EQUAL(0, strcmp(hyp, expected));
 	for (seg = pocketsphinx_seg_iter(ps, &score); seg;
 	     seg = pocketsphinx_seg_next(seg)) {
