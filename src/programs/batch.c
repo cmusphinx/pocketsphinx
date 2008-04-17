@@ -8,41 +8,50 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
+ * This work was supported in part by funding from the Defense Advanced
+ * Research Projects Agency and the National Science Foundation of the
  * United States of America, and the CMU Sphinx Speech Consortium.
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
  *
  */
 
+/* System headers. */
 #include <stdio.h>
 
-#include "pocketsphinx.h"
+/* SphinxBase headers. */
+#include <pio.h>
+#include <err.h>
+#include <strfuncs.h>
+#include <byteorder.h>
+
+/* PocketSphinx headers. */
+#include <pocketsphinx.h>
 
 static const arg_t ps_args_def[] = {
     POCKETSPHINX_OPTIONS,
 
     /* Various options specific to batch-mode processing. */
+    /* Control file. */
     { "-ctl",
       ARG_STRING,
       NULL,
@@ -59,6 +68,8 @@ static const arg_t ps_args_def[] = {
       ARG_INT32,
       "1",
       "Do every Nth line in the control file" },
+
+    /* Input file types and locations. */
     { "-adcin",
       ARG_BOOLEAN,
       "no",
@@ -67,10 +78,6 @@ static const arg_t ps_args_def[] = {
       ARG_INT32,
       "0",
       "Size of audio file header in bytes (headers are ignored)" },
-    { "-adcdev",
-      ARG_STRING,
-      NULL,
-      "Device name for audio input (platform-specific)" },
     { "-cepdir",
       ARG_STRING,
       NULL,
@@ -79,71 +86,254 @@ static const arg_t ps_args_def[] = {
       ARG_STRING,
       ".mfc",
       "Input files extension (suffixed to filespecs in control file)" },
-    { "-rawlogdir",
+
+    /* File for logging (we'd rather you used shell redirection but
+     * people use crap like Windows and csh that doesn't do it right,
+     * so...) */
+    { "-logfn",
       ARG_STRING,
       NULL,
-      "Directory for dumping raw audio" },	
-    { "-mfclogdir",
+      "Recognition log file name" },
+
+    /* Output files. */
+    { "-hyp",
       ARG_STRING,
       NULL,
-      "Directory for dumping features" },	
-    { "-logfn",									
-      ARG_STRING,								
-      NULL,									
-      "Recognition log file name" },						
-    { "-backtrace",									
-      ARG_BOOLEAN,								
-      "yes",									
-      "Print back trace of recognition results" },				
-    { "-hyp",									
-      ARG_STRING,								
-      NULL,									
-      "Recognition output file name" },						
-    { "-hypseg",									
-      ARG_STRING,								
-      NULL,									
-      "Recognition output with segmentation file name" },			
-    { "-matchscore",								
-      ARG_BOOLEAN,								
-      "no",									
-      "Report score in hyp file" },						
-    { "-reportpron",								
-      ARG_BOOLEAN,								
-      "no",									
-      "Report alternate pronunciations in match file" },			
-    { "-nbestdir",									
-      ARG_STRING,								
-      NULL,									
-      "Directory for writing N-best hypothesis lists" },			
-    { "-nbestext",									
-      ARG_STRING,								
-      "hyp",									
-      "Extension for N-best hypothesis list files" },				
-    { "-nbest",									
-      ARG_INT32,								
-      "0",									
-      "Number of N-best hypotheses to write to -nbestdir" },			
-    { "-outlatdir",									
-      ARG_STRING,								
-      NULL,									
-      "Directory for dumping lattices" },
+      "Recognition output file name" },
+    { "-hypseg",
+      ARG_STRING,
+      NULL,
+      "Recognition output with segmentation file name" },
+    { "-outlatdir",
+      ARG_STRING,
+      NULL,
+      "Directory for dumping word lattices" },
+    { "-nbestdir",
+      ARG_STRING,
+      NULL,
+      "Directory for writing N-best hypothesis lists" },
+    { "-nbestext",
+      ARG_STRING,
+      ".hyp",
+      "Extension for N-best hypothesis list files" },
+    { "-nbest",
+      ARG_INT32,
+      "0",
+      "Number of N-best hypotheses to write to -nbestdir (0 for no N-best)" },
+
     CMDLN_EMPTY_OPTION
 };
+
+int
+process_ctl_line(pocketsphinx_t *ps, cmd_ln_t *config,
+                 char const *file, char const *uttid, int32 sf, int32 ef)
+{
+    FILE *infh;
+    char *cepdir, *cepext;
+    char *infile;
+
+    cepdir = cmd_ln_str_r(config, "-cepdir");
+    cepext = cmd_ln_str_r(config, "-cepext");
+
+    /* Build input filename. */
+    infile = string_join(cepdir ? cepdir : "",
+                         "/", file,
+                         cepext ? cepext : "", NULL);
+    if (uttid == NULL) uttid = file;
+
+    if ((infh = fopen(infile, "rb")) == NULL) {
+        E_ERROR_SYSTEM("Failed to open %s", infile);
+        ckd_free(infile);
+        return -1;
+    }
+    if (cmd_ln_boolean_r(config, "-adcin")) {
+        fseek(infh, cmd_ln_int32_r(config, "-adchdr"), SEEK_SET);
+        if (ef != -1) {
+            ef = (int32)((ef - sf)
+                         * (cmd_ln_float32_r(config, "-samprate")
+                            / cmd_ln_int32_r(config, "-frate"))
+                         + (cmd_ln_float32_r(config, "-samprate")
+                            * cmd_ln_int32_r(config, "-wlen")));
+        }
+        sf = (int32)(sf
+                     * (cmd_ln_float32_r(config, "-samprate")
+                        / cmd_ln_int32_r(config, "-frate")));
+        fseek(infh, sf * sizeof(int16), SEEK_CUR);
+        pocketsphinx_decode_raw(ps, infh, uttid, ef);
+    }
+    else {
+        long flen;
+        int32 nmfc, nfr, ceplen;
+        float32 *floats;
+        mfcc_t **mfcs;
+        int swap, i;
+
+        fseek(infh, 0, SEEK_END);
+        flen = ftell(infh);
+        fseek(infh, 0, SEEK_SET);
+        if (fread(&nmfc, 4, 1, infh) != 1) {
+            E_ERROR_SYSTEM("Failed to read 4 bytes from %s", file);
+            fclose(infh);
+            return -1;
+        }
+        swap = 0;
+        if (nmfc != flen / 4 - 1) {
+            SWAP_INT32(&nmfc);
+            swap = 1;
+            if (nmfc != flen / 4 - 1) {
+                E_ERROR("File length mismatch: 0x%x != 0x%x\n",
+                        nmfc, flen / 4 - 1);
+                fclose(infh);
+                ckd_free(infile);
+                return -1;
+            }
+        }
+
+        ceplen = cmd_ln_int32_r(config, "-ceplen");
+        fseek(infh, sf * 4 * ceplen, SEEK_CUR);
+        if (ef == -1)
+            ef = nmfc / ceplen;
+        nfr = ef - sf;
+        mfcs = ckd_calloc_2d(nfr, ceplen, sizeof(**mfcs));
+        floats = (float32 *)mfcs[0];
+        fread(floats, 4, nfr * ceplen, infh);
+        if (swap) {
+            for (i = 0; i < nfr * ceplen; ++i)
+                SWAP_FLOAT32(&floats[i]);
+        }
+#ifdef FIXED_POINT
+        for (i = 0; i < nfr * ceplen; ++i)
+            mfcs[0][i] = FLOAT2MFCC(floats[i]);
+#endif
+        pocketsphinx_start_utt(ps, uttid);
+        pocketsphinx_process_cep(ps, mfcs,
+                                 nfr, FALSE, TRUE);
+        pocketsphinx_end_utt(ps);
+        ckd_free_2d(mfcs);
+    }
+    fclose(infh);
+    ckd_free(infile);
+    return 0;
+}
+
+void
+process_ctl(pocketsphinx_t *ps, cmd_ln_t *config, FILE *ctlfh)
+{
+    int32 ctloffset, ctlcount, ctlincr;
+    int32 i;
+    char *line;
+    size_t len;
+    FILE *hypfh = NULL, *hypsegfh = NULL;
+
+    ctloffset = cmd_ln_int32_r(config, "-ctloffset");
+    ctlcount = cmd_ln_int32_r(config, "-ctlcount");
+    ctlincr = cmd_ln_int32_r(config, "-ctlincr");
+
+    if (cmd_ln_str_r(config, "-hyp")) {
+        hypfh = fopen(cmd_ln_str_r(config, "-hyp"), "w");
+        if (hypfh == NULL) {
+            E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing", hypfh);
+            return;
+        }
+    }
+    if (cmd_ln_str_r(config, "-hypseg")) {
+        hypsegfh = fopen(cmd_ln_str_r(config, "-hypseg"), "w");
+        if (hypsegfh == NULL) {
+            E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing",
+                           hypsegfh);
+            return;
+        }
+    }
+
+    i = 0;
+    while ((line = fread_line(ctlfh, &len))) {
+        char *wptr[4];
+        int32 nf, sf, ef;
+
+        if (i < ctloffset) {
+            i += ctlincr;
+            ckd_free(line);
+            continue;
+        }
+        if (ctlcount != -1 && i >= ctloffset + ctlcount) {
+            ckd_free(line);
+            break;
+        }
+
+        sf = 0;
+        ef = -1;
+        nf = str2words(line, wptr, 4);
+        if (nf == 0) {
+            /* Do nothing. */
+        }
+        else if (nf < 0) {
+            E_ERROR("Unexpected extra data in control file at line %d\n", i);
+        }
+        else {
+            char const *hyp, *file, *uttid;
+            int32 score;
+
+            file = wptr[0];
+            uttid = NULL;
+            if (nf > 1)
+                sf = atoi(wptr[1]);
+            if (nf > 2)
+                ef = atoi(wptr[2]);
+            if (nf > 3)
+                uttid = wptr[3];
+            /* Do actual decoding. */
+            process_ctl_line(ps, config, file, uttid, sf, ef);
+            hyp = pocketsphinx_get_hyp(ps, &score, &uttid);
+            
+            /* Write out results and such. */
+            if (hypfh) {
+                fprintf(hypfh, "%s (%s %d)\n", hyp, uttid, score);
+            }
+            if (hypsegfh) {
+                /* FIXME */
+            }
+        }
+        ckd_free(line);
+        i += ctlincr;
+    }
+
+    if (hypfh)
+        fclose(hypfh);
+    if (hypsegfh)
+        fclose(hypsegfh);
+}
 
 int
 main(int32 argc, char *argv[])
 {
     pocketsphinx_t *ps;
     cmd_ln_t *config;
-    int rv = 0;
+    char const *ctl;
+    FILE *ctlfh;
 
-    config = cmd_ln_parse_r(NULL, pocketsphinx_args(), argc, argv, TRUE);
-    if (config == NULL)
-        return 1;
+    config = cmd_ln_parse_r(NULL, ps_args_def, argc, argv, TRUE);
+    if (config == NULL) {
+        /* This probably just means that we got no arguments. */
+        return 2;
+    }
+    if ((ctl = cmd_ln_str_r(config, "-ctl")) == NULL) {
+        E_FATAL("-ctl argument not present, nothing to do in batch mode!\n");
+    }
+    if (cmd_ln_str_r(config, "-outlatdir")
+        && !(cmd_ln_boolean_r(config, "-bestpath")
+             || cmd_ln_int32_r(config, "-nbest"))) {
+        E_ERROR("-outlatdir requires -bespath or -nbest.  No lattices will be saved.\n");
+    }
+    if ((ctlfh = fopen(ctl, "r")) == NULL) {
+        E_FATAL_SYSTEM("Failed to open control file %s", ctl);
+    }
     ps = pocketsphinx_init(config);
-    if (ps == NULL)
-        return 1;
+    if (ps == NULL) {
+        E_FATAL("PocketSphinx decoder init failed\n");
+    }
+
+    process_ctl(ps, config, ctlfh);
 
     pocketsphinx_free(ps);
-    return rv;
+    return 0;
 }
