@@ -228,10 +228,6 @@ typedef struct ngram_search_stats_s {
     int32 n_senone_active_utt;
 } ngram_search_stats_t;
 
-/**
- * Forward declaration of DAG structure.
- */
-typedef struct ngram_dag_s ngram_dag_t;
 
 /**
  * N-Gram search module structure.
@@ -376,7 +372,7 @@ struct ngram_search_s {
     /*
      * DAG (3rd pass) search stuff.
      */
-    ngram_dag_t *dag; /**< Word graph of current utterance. */
+    ps_lattice_t *dag; /**< Word graph of current utterance. */
     float32 bestpath_fwdtree_lw_ratio;
 
     ngram_search_stats_t st; /**< Various statistics for profiling. */

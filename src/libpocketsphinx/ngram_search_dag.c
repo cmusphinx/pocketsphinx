@@ -55,7 +55,7 @@
  * choose one with the best link_scr.
  */
 static void
-link_latnodes(ngram_dag_t *dag, latnode_t *from, latnode_t *to, int32 score, int32 ef)
+link_latnodes(ps_lattice_t *dag, latnode_t *from, latnode_t *to, int32 score, int32 ef)
 {
     latlink_t *link;
 
@@ -87,7 +87,7 @@ link_latnodes(ngram_dag_t *dag, latnode_t *from, latnode_t *to, int32 score, int
 }
 
 static void
-bypass_filler_nodes(ngram_dag_t *dag)
+bypass_filler_nodes(ps_lattice_t *dag)
 {
     latnode_t *node, *to, *from, *prev_node, *t_node;
     latlink_t *link, *f_link, *t_link, *prev_link;
@@ -195,7 +195,7 @@ mark_reachable(latnode_t * from)
 
 
 static void
-delete_unreachable(ngram_dag_t *dag)
+delete_unreachable(ps_lattice_t *dag)
 {
     latnode_t *node, *t_node, *prev_node;
     latlink_t *link, *t_link;
@@ -221,7 +221,7 @@ delete_unreachable(ngram_dag_t *dag)
 }
 
 static int32
-latnode_seqid(ngram_dag_t *dag, latnode_t * target)
+latnode_seqid(ps_lattice_t *dag, latnode_t * target)
 {
     int32 i;
     latnode_t *d;
@@ -232,7 +232,7 @@ latnode_seqid(ngram_dag_t *dag, latnode_t * target)
 }
 
 int32
-ngram_dag_write(ngram_dag_t *dag, char *filename)
+pocketsphinx_lattice_write(ps_lattice_t *dag, char const *filename)
 {
     FILE *fp;
     int32 i;
@@ -290,7 +290,7 @@ ngram_dag_write(ngram_dag_t *dag, char *filename)
 }
 
 static void
-create_dag_nodes(ngram_search_t *ngs, ngram_dag_t *dag)
+create_dag_nodes(ngram_search_t *ngs, ps_lattice_t *dag)
 {
     bptbl_t *bp_ptr;
     int32 i;
@@ -343,7 +343,7 @@ create_dag_nodes(ngram_search_t *ngs, ngram_dag_t *dag)
 }
 
 static latnode_t *
-find_start_node(ngram_search_t *ngs, ngram_dag_t *dag)
+find_start_node(ngram_search_t *ngs, ps_lattice_t *dag)
 {
     latnode_t *node;
 
@@ -361,7 +361,7 @@ find_start_node(ngram_search_t *ngs, ngram_dag_t *dag)
 }
 
 static latnode_t *
-find_end_node(ngram_search_t *ngs, ngram_dag_t *dag, float32 lwf)
+find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
 {
     latnode_t *node;
     int32 ef, bestbp, bp, bestscore;
@@ -419,12 +419,12 @@ find_end_node(ngram_search_t *ngs, ngram_dag_t *dag, float32 lwf)
 /*
  * Build lattice from bptable.
  */
-ngram_dag_t *
+ps_lattice_t *
 ngram_dag_build(ngram_search_t *ngs)
 {
     int32 i, ef, lef, score, bss_offset;
     latnode_t *node, *from, *to;
-    ngram_dag_t *dag;
+    ps_lattice_t *dag;
 
     dag = ckd_calloc(1, sizeof(*dag));
     dag->ngs = ngs;
@@ -528,7 +528,7 @@ error_out:
 }
 
 void
-ngram_dag_free(ngram_dag_t *dag)
+ngram_dag_free(ps_lattice_t *dag)
 {
     if (dag == NULL)
         return;
@@ -540,7 +540,7 @@ ngram_dag_free(ngram_dag_t *dag)
 }
 
 char const *
-ngram_dag_hyp(ngram_dag_t *dag, latlink_t *link)
+ngram_dag_hyp(ps_lattice_t *dag, latlink_t *link)
 {
     latlink_t *l;
     size_t len;
@@ -638,7 +638,7 @@ static ps_segfuncs_t ngram_dag_segfuncs = {
 };
 
 ps_seg_t *
-ngram_dag_iter(ngram_dag_t *dag, latlink_t *link)
+ngram_dag_iter(ps_lattice_t *dag, latlink_t *link)
 {
     dag_seg_t *itor;
     latlink_t *l;
@@ -676,7 +676,7 @@ ngram_dag_iter(ngram_dag_t *dag, latlink_t *link)
  * The implementation is a bit different though.  Needs documented.
  */
 latlink_t *
-ngram_dag_bestpath(ngram_dag_t *dag)
+ngram_dag_bestpath(ps_lattice_t *dag)
 {
     ngram_search_t *ngs;
     latnode_t *node;
@@ -784,7 +784,7 @@ ngram_dag_bestpath(ngram_dag_t *dag)
 static int32
 best_rem_score(ngram_nbest_t *nbest, latnode_t * from)
 {
-    ngram_dag_t *dag;
+    ps_lattice_t *dag;
     latlink_t *link;
     int32 bestscore, score;
     float32 lw_factor;
@@ -819,7 +819,7 @@ best_rem_score(ngram_nbest_t *nbest, latnode_t * from)
 static void
 path_insert(ngram_nbest_t *nbest, latpath_t *newpath, int32 total_score)
 {
-    ngram_dag_t *dag;
+    ps_lattice_t *dag;
     latpath_t *prev, *p;
     int32 i;
 
@@ -870,7 +870,7 @@ path_extend(ngram_nbest_t *nbest, latpath_t * path)
     latpath_t *newpath;
     int32 total_score, tail_score;
     float32 lw_factor;
-    ngram_dag_t *dag;
+    ps_lattice_t *dag;
 
     dag = nbest->dag;
     lw_factor = dag->ngs->bestpath_fwdtree_lw_ratio;
@@ -919,7 +919,7 @@ path_extend(ngram_nbest_t *nbest, latpath_t * path)
 }
 
 ngram_nbest_t *
-ngram_nbest_start(ngram_dag_t *dag,
+ngram_nbest_start(ps_lattice_t *dag,
                   int sf, int ef,
                   int w1, int w2)
 {
@@ -974,7 +974,7 @@ latpath_t *
 ngram_nbest_next(ngram_nbest_t *nbest)
 {
     latpath_t *top;
-    ngram_dag_t *dag;
+    ps_lattice_t *dag;
 
     dag = nbest->dag;
 

@@ -66,6 +66,11 @@ extern "C" {
 typedef struct pocketsphinx_s pocketsphinx_t;
 
 /**
+ * PocketSphinx word lattice object.
+ */
+typedef struct ps_lattice_s ps_lattice_t;
+
+/**
  * PocketSphinx N-best hypothesis iterator object.
  */
 typedef struct ps_nbest_s ps_nbest_t;
@@ -320,6 +325,26 @@ char const *pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score,
                                  char const **out_uttid);
 
 /**
+ * Get word lattice.
+ *
+ * There isn't much you can do with this so far, a public API will
+ * appear in the future.
+ *
+ * @return Word lattice object containing all hypotheses so far.  NULL
+ *         if no hypotheses are available.
+ */
+POCKETSPHINX_EXPORT
+ps_lattice_t *pocketsphinx_get_lattice(pocketsphinx_t *ps);
+
+/**
+ * Write a lattice to disk.
+ */
+POCKETSPHINX_EXPORT
+int32
+pocketsphinx_lattice_write(ps_lattice_t *dag, char const *filename);
+
+
+/**
  * Get an iterator over the word segmentation for the best hypothesis.
  *
  * @param out_best_score Output: path score corresponding to hypothesis.
@@ -358,7 +383,7 @@ void pocketsphinx_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef);
  * @param out_pprob Output: log posterior probability of current
  *                  segment.  Log is expressed in the log-base used in
  *                  the decoder.  To convert to linear floating-point,
- *                  use pocketsphinx_exp().
+ *                  use logmath_exp(pocketsphinx_get_logmath(), pprob).
  */
 POCKETSPHINX_EXPORT
 void pocketsphinx_seg_prob(ps_seg_t *seg, int32 *out_pprob);
@@ -372,6 +397,8 @@ void pocketsphinx_seg_free(ps_seg_t *seg);
 /**
  * Get an iterator over the best hypotheses, optionally within a
  * selected region of the utterance.
+ *
+ * FIXME: Not implemented yet!  (already exists internally...)
  *
  * @param ps Decoder.
  * @param sf Start frame for N-best search (0 for whole utterance) 

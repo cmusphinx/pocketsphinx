@@ -50,7 +50,7 @@
 /**
  * Word graph structure used in bestpath/nbest search.
  */
-struct ngram_dag_s {
+struct ps_lattice_s {
     ngram_search_t *ngs; /**< Search object which produced this DAG. */
 
     latnode_t *nodes;  /**< List of all nodes. */
@@ -93,7 +93,7 @@ typedef struct latpath_s {
  * N-best search structure.
  */
 typedef struct ngram_nbest_s {
-    ngram_dag_t *dag;
+    ps_lattice_t *dag;
     int16 sf;
     int16 ef;
     int32 w1;
@@ -116,34 +116,29 @@ typedef struct ngram_nbest_s {
 /**
  * Construct a word graph from the current hypothesis.
  */
-ngram_dag_t *ngram_dag_build(ngram_search_t *ngs);
+ps_lattice_t *ngram_dag_build(ngram_search_t *ngs);
 
 /**
  * Destruct a word graph.
  */
-void ngram_dag_free(ngram_dag_t *dag);
-
-/**
- * Write a lattice to disk.
- */
-int32 ngram_dag_write(ngram_dag_t *dag, char *filename);
+void ngram_dag_free(ps_lattice_t *dag);
 
 /**
  * Do best-path search on a word graph.
  *
  * @return First link in best path, NULL on error.
  */
-latlink_t *ngram_dag_bestpath(ngram_dag_t *dag);
+latlink_t *ngram_dag_bestpath(ps_lattice_t *dag);
 
 /**
  * Get hypothesis string after bestpath search.
  */
-char const *ngram_dag_hyp(ngram_dag_t *dag, latlink_t *link);
+char const *ngram_dag_hyp(ps_lattice_t *dag, latlink_t *link);
 
 /**
  * Get hypothesis segmentation iterator after bestpath search.
  */
-ps_seg_t *ngram_dag_iter(ngram_dag_t *dag, latlink_t *link);
+ps_seg_t *ngram_dag_iter(ps_lattice_t *dag, latlink_t *link);
 
 /**
  * Begin N-best search on a word graph.
@@ -154,7 +149,7 @@ ps_seg_t *ngram_dag_iter(ngram_dag_t *dag, latlink_t *link);
  * @param w2 Second context word, or -1 for none.
  * @return 0 for success, <0 on error.
  */
-ngram_nbest_t *ngram_nbest_start(ngram_dag_t *dag,
+ngram_nbest_t *ngram_nbest_start(ps_lattice_t *dag,
                                  int sf, int ef,
                                  int w1, int w2);
 
