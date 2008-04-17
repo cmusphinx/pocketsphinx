@@ -6,7 +6,6 @@ libpocketsphinx_la_LDFLAGS = -version-info 1:0:0
 
 libpocketsphinx_la_SOURCES =			\
 	acmod.c					\
-	awriteshort.c				\
 	bin_mdef.c				\
 	blkarray_list.c				\
 	dict.c					\
@@ -52,7 +51,6 @@ noinst_HEADERS =				\
 	phone.h					\
 	posixwin32.h				\
 	s2_semi_mgau.h				\
-	s2io.h					\
 	search_const.h				\
 	tmat.h					\
 	vector.h
