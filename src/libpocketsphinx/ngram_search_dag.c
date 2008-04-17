@@ -403,7 +403,7 @@ find_end_node(ngram_search_t *ngs, ngram_dag_t *dag, float32 lwf)
         }
     }
     E_WARN("</s> not found in last frame, using %s.%d instead\n",
-           dict_word_str(ps_search_dict(ngs), ngs->bp_table[bestbp].real_wid), ef);
+           dict_base_str(ps_search_dict(ngs), ngs->bp_table[bestbp].real_wid), ef);
 
     /* Now find the node that corresponds to it. */
     for (node = dag->nodes; node; node = node->next) {
@@ -412,7 +412,7 @@ find_end_node(ngram_search_t *ngs, ngram_dag_t *dag, float32 lwf)
     }
 
     E_ERROR("Failed to find DAG node corresponding to %s.%d\n",
-           dict_word_str(ps_search_dict(ngs), ngs->bp_table[bestbp].real_wid), ef);
+           dict_base_str(ps_search_dict(ngs), ngs->bp_table[bestbp].real_wid), ef);
     return NULL;
 }
 
@@ -507,10 +507,12 @@ ngram_dag_build(ngram_search_t *ngs)
     }
 
     /* Change node->wid to base wid. */
+#if 0
     /* FIXME: Not sure we want/need to do this. */
     for (node = dag->nodes; node; node = node->next) {
         node->wid = dict_base_wid(ps_search_dict(ngs), node->wid);
     }
+#endif
 
     /* Remove SIL and noise nodes from DAG; extend links through them */
     bypass_filler_nodes(dag);
@@ -547,10 +549,10 @@ ngram_dag_hyp(ngram_dag_t *dag, latlink_t *link)
     /* Backtrace once to get hypothesis length. */
     len = 0;
     if (ISA_REAL_WORD(dag->ngs, link->to->wid))
-        len += strlen(dict_word_str(ps_search_dict(dag->ngs), link->to->wid)) + 1;
+        len += strlen(dict_base_str(ps_search_dict(dag->ngs), link->to->wid)) + 1;
     for (l = link; l; l = l->best_prev) {
         if (ISA_REAL_WORD(dag->ngs, l->from->wid))
-            len += strlen(dict_word_str(ps_search_dict(dag->ngs), l->from->wid)) + 1;
+            len += strlen(dict_base_str(ps_search_dict(dag->ngs), l->from->wid)) + 1;
     }
 
     /* Backtrace again to construct hypothesis string. */
@@ -558,9 +560,9 @@ ngram_dag_hyp(ngram_dag_t *dag, latlink_t *link)
     dag->hyp_str = ckd_calloc(1, len);
     c = dag->hyp_str + len - 1;
     if (ISA_REAL_WORD(dag->ngs, link->to->wid)) {
-        len = strlen(dict_word_str(ps_search_dict(dag->ngs), link->to->wid));
+        len = strlen(dict_base_str(ps_search_dict(dag->ngs), link->to->wid));
         c -= len;
-        memcpy(c, dict_word_str(ps_search_dict(dag->ngs), link->to->wid), len);
+        memcpy(c, dict_base_str(ps_search_dict(dag->ngs), link->to->wid), len);
         if (c > dag->hyp_str) {
             --c;
             *c = ' ';
@@ -568,9 +570,9 @@ ngram_dag_hyp(ngram_dag_t *dag, latlink_t *link)
     }
     for (l = link; l; l = l->best_prev) {
         if (ISA_REAL_WORD(dag->ngs, l->from->wid)) {
-            len = strlen(dict_word_str(ps_search_dict(dag->ngs), l->from->wid));
+            len = strlen(dict_base_str(ps_search_dict(dag->ngs), l->from->wid));
             c -= len;
-            memcpy(c, dict_word_str(ps_search_dict(dag->ngs), l->from->wid), len);
+            memcpy(c, dict_base_str(ps_search_dict(dag->ngs), l->from->wid), len);
             if (c > dag->hyp_str) {
                 --c;
                 *c = ' ';
@@ -1022,7 +1024,7 @@ ngram_nbest_hyp(ngram_nbest_t *nbest, latpath_t *path)
     len = 0;
     for (p = path; p; p = p->parent) {
         if (ISA_REAL_WORD(ngs, p->node->wid))
-            len += strlen(dict_word_str(ps_search_dict(ngs), p->node->wid)) + 1;
+            len += strlen(dict_base_str(ps_search_dict(ngs), p->node->wid)) + 1;
     }
 
     /* Backtrace again to construct hypothesis string. */
@@ -1030,9 +1032,9 @@ ngram_nbest_hyp(ngram_nbest_t *nbest, latpath_t *path)
     c = hyp + len - 1;
     for (p = path; p; p = p->parent) {
         if (ISA_REAL_WORD(ngs, p->node->wid)) {
-            len = strlen(dict_word_str(ps_search_dict(ngs), p->node->wid));
+            len = strlen(dict_base_str(ps_search_dict(ngs), p->node->wid));
             c -= len;
-            memcpy(c, dict_word_str(ps_search_dict(ngs), p->node->wid), len);
+            memcpy(c, dict_base_str(ps_search_dict(ngs), p->node->wid), len);
             if (c > hyp) {
                 --c;
                 *c = ' ';

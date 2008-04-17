@@ -80,6 +80,7 @@ ngram_search_update_widmap(ngram_search_t *ngs)
     /* It's okay to include fillers since they won't be in the LM */
     n_words = ps_search_n_words(ngs);
     words = ckd_calloc(n_words, sizeof(*words));
+    /* This will include alternates, again, that's okay since they aren't in the LM */
     for (i = 0; i < n_words; ++i)
         words[i] = dict_word_str(ps_search_dict(ngs), i);
     ngram_model_set_map_words(ngs->lmset, words, n_words);
@@ -456,7 +457,7 @@ ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx)
         bp = be->bp;
         if (dict_is_filler_word(ps_search_dict(ngs), be->wid))
             continue;
-        len += strlen(dict_word_str(ps_search_dict(ngs), be->wid)) + 1;
+        len += strlen(dict_base_str(ps_search_dict(ngs), be->wid)) + 1;
     }
 
     ckd_free(base->hyp_str);
@@ -471,9 +472,9 @@ ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx)
         if (dict_is_filler_word(ps_search_dict(ngs), be->wid))
             continue;
 
-        len = strlen(dict_word_str(ps_search_dict(ngs), be->wid));
+        len = strlen(dict_base_str(ps_search_dict(ngs), be->wid));
         c -= len;
-        memcpy(c, dict_word_str(ps_search_dict(ngs), be->wid), len);
+        memcpy(c, dict_base_str(ps_search_dict(ngs), be->wid), len);
         if (c > base->hyp_str) {
             --c;
             *c = ' ';
@@ -655,7 +656,11 @@ ngram_search_hyp(ps_search_t *search, int32 *out_score)
     /* Use the DAG if it exists (means that the utt is done, for now
      * at least...) */
     if (ngs->bestpath && ngs->dag) {
-        return ngram_dag_hyp(ngs->dag, ngram_dag_bestpath(ngs->dag));
+        latlink_t *link;
+
+        link = ngram_dag_bestpath(ngs->dag);
+        if (out_score) *out_score = link->path_scr;
+        return ngram_dag_hyp(ngs->dag, link);
     }
     else {
         int32 bpidx;
