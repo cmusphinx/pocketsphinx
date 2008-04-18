@@ -449,9 +449,8 @@ ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx)
     while (bp != NO_BP) {
         bptbl_t *be = &ngs->bp_table[bp];
         bp = be->bp;
-        if (dict_is_filler_word(ps_search_dict(ngs), be->wid))
-            continue;
-        len += strlen(dict_base_str(ps_search_dict(ngs), be->wid)) + 1;
+        if (ISA_REAL_WORD(ngs, be->wid))
+            len += strlen(dict_base_str(ps_search_dict(ngs), be->wid)) + 1;
     }
 
     ckd_free(base->hyp_str);
@@ -463,15 +462,14 @@ ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx)
         size_t len;
 
         bp = be->bp;
-        if (dict_is_filler_word(ps_search_dict(ngs), be->wid))
-            continue;
-
-        len = strlen(dict_base_str(ps_search_dict(ngs), be->wid));
-        c -= len;
-        memcpy(c, dict_base_str(ps_search_dict(ngs), be->wid), len);
-        if (c > base->hyp_str) {
-            --c;
-            *c = ' ';
+        if (ISA_REAL_WORD(ngs, be->wid)) {
+            len = strlen(dict_base_str(ps_search_dict(ngs), be->wid));
+            c -= len;
+            memcpy(c, dict_base_str(ps_search_dict(ngs), be->wid), len);
+            if (c > base->hyp_str) {
+                --c;
+                *c = ' ';
+            }
         }
     }
 
