@@ -1045,10 +1045,91 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score)
     return search->hyp_str;
 }
 
+static void
+fsg_seg_bp2itor(ps_seg_t *seg, fsg_hist_entry_t *hist_entry)
+{
+    fsg_search_t *fsgs = (fsg_search_t *)seg->search;
+    fsg_hist_entry_t *ph = NULL;
+    int32 bp;
+
+    if ((bp = fsg_hist_entry_pred(hist_entry)) >= 0)
+        ph = fsg_history_entry_get(fsgs->history, bp);
+    seg->word = fsg_model_word_str(fsgs->fsg, hist_entry->fsglink->wid);
+    seg->ef = fsg_hist_entry_frame(hist_entry);
+    seg->sf = ph ? fsg_hist_entry_frame(ph) + 1 : 0;
+    /* This is kind of silly but it happens for null transitions. */
+    if (seg->sf > seg->ef) seg->sf = seg->ef;
+    seg->prob = 0; /* Bogus value... */
+}
+
+
+static void
+fsg_seg_free(ps_seg_t *seg)
+{
+    fsg_seg_t *itor = (fsg_seg_t *)seg;
+    ckd_free(itor->hist);
+    ckd_free(itor);
+}
+
+static ps_seg_t *
+fsg_seg_next(ps_seg_t *seg)
+{
+    fsg_seg_t *itor = (fsg_seg_t *)seg;
+
+    if (++itor->cur == itor->n_hist) {
+        fsg_seg_free(seg);
+        return NULL;
+    }
+
+    fsg_seg_bp2itor(seg, itor->hist[itor->cur]);
+    return seg;
+}
+
+static ps_segfuncs_t fsg_segfuncs = {
+    /* seg_next */ fsg_seg_next,
+    /* seg_free */ fsg_seg_free
+};
+
 static ps_seg_t *
 fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
 {
-    return NULL;
+    fsg_search_t *fsgs = (fsg_search_t *)search;
+    fsg_seg_t *itor;
+    int bp, bpidx, cur;
+
+    bpidx = fsg_search_find_exit(fsgs, fsgs->frame, fsgs->final, out_score);
+    /* No hypothesis (yet). */
+    if (bpidx <= 0)
+        return NULL;
+
+    /* Calling this an "iterator" is a bit of a misnomer since we have
+     * to get the entire backtrace in order to produce it.  On the
+     * other hand, all we actually need is the bptbl IDs, and we can
+     * allocate a fixed-size array of them. */
+    itor = ckd_calloc(1, sizeof(*itor));
+    itor->base.vt = &fsg_segfuncs;
+    itor->base.search = search;
+    itor->n_hist = 0;
+    bp = bpidx;
+    while (bp > 0) {
+        fsg_hist_entry_t *hist_entry = fsg_history_entry_get(fsgs->history, bp);
+        bp = fsg_hist_entry_pred(hist_entry);
+        ++itor->n_hist;
+    }
+    itor->hist = ckd_calloc(itor->n_hist, sizeof(*itor->hist));
+    cur = itor->n_hist - 1;
+    bp = bpidx;
+    while (bp > 0) {
+        fsg_hist_entry_t *hist_entry = fsg_history_entry_get(fsgs->history, bp);
+        itor->hist[cur] = hist_entry;
+        bp = fsg_hist_entry_pred(hist_entry);
+        --cur;
+    }
+
+    /* Fill in relevant fields for first element. */
+    fsg_seg_bp2itor((ps_seg_t *)itor, itor->hist[0]);
+    
+    return (ps_seg_t *)itor;
 }
 
 static ps_lattice_t *

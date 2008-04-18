@@ -331,7 +331,8 @@ char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score,
  * appear in the future.
  *
  * @return Word lattice object containing all hypotheses so far.  NULL
- *         if no hypotheses are available.
+ *         if no hypotheses are available.  This pointer is owned by
+ *         the decoder and you should not attempt to free it manually.
  */
 POCKETSPHINX_EXPORT
 ps_lattice_t *ps_get_lattice(ps_decoder_t *ps);
@@ -340,9 +341,7 @@ ps_lattice_t *ps_get_lattice(ps_decoder_t *ps);
  * Write a lattice to disk.
  */
 POCKETSPHINX_EXPORT
-int32
-ps_lattice_write(ps_lattice_t *dag, char const *filename);
-
+int32 ps_lattice_write(ps_lattice_t *dag, char const *filename);
 
 /**
  * Get an iterator over the word segmentation for the best hypothesis.

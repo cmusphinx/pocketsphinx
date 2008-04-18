@@ -49,10 +49,18 @@
 /* Local headers. */
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
+#include "fsg_history.h"
+#include "fsg_lextree.h"
 
-/* Forward declare some things. */
-struct fsg_lextree_s;
-struct fsg_history_s;
+/**
+ * Segmentation "iterator" for FSG history.
+ */
+typedef struct fsg_seg_s {
+    ps_seg_t base;  /**< Base structure. */
+    fsg_hist_entry_t **hist;   /**< Sequence of history entries. */
+    int16 n_hist;  /**< Number of history entries. */
+    int16 cur;      /**< Current position in hist. */
+} fsg_seg_t;
 
 /**
  * Implementation of FSG search (and "FSG set") structure.

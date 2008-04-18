@@ -57,6 +57,7 @@
 #include <ckd_alloc.h>
 
 /* Local headers. */
+#include "fsg_search_internal.h"
 #include "fsg_history.h"
 
 

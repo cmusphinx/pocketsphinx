@@ -20,6 +20,7 @@ main(int argc, char *argv[])
 	jsgf_t *jsgf;
 	jsgf_rule_t *rule;
 	fsg_model_t *fsg;
+	ps_seg_t *seg;
 	int32 score;
 	clock_t c;
 	int i;
@@ -75,6 +76,16 @@ main(int argc, char *argv[])
 	}
 	TEST_EQUAL(0, strcmp("GO FORWARD TEN METERS",
 			     fsg_search_hyp(ps_search_base(fsgs), &score)));
+	ps->search = fsgs;
+	for (seg = ps_seg_iter(ps, &score); seg;
+	     seg = ps_seg_next(seg)) {
+		char const *word;
+		int sf, ef;
+
+		word = ps_seg_word(seg);
+		ps_seg_frames(seg, &sf, &ef);
+		printf("%s %d %d\n", word, sf, ef);
+	}
 	c = clock() - c;
 	printf("5 * fsg search in %.2f sec\n", (double)c / CLOCKS_PER_SEC);
 	ps_free(ps);
