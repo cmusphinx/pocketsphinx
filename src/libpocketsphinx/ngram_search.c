@@ -51,7 +51,6 @@
 #include "ngram_search.h"
 #include "ngram_search_fwdtree.h"
 #include "ngram_search_fwdflat.h"
-#include "ngram_search_dag.h"
 
 static int ngram_search_start(ps_search_t *search);
 static int ngram_search_step(ps_search_t *search);
@@ -145,11 +144,6 @@ ngram_search_init(cmd_ln_t *config,
 
     /* Calculate various beam widths and such. */
     ngram_search_calc_beams(ngs);
-
-    /* This is useful for something. */
-    ngs->start_wid = dict_to_id(dict, "<s>");
-    ngs->finish_wid = dict_to_id(dict, "</s>");
-    ngs->silence_wid = dict_to_id(dict, "<sil>");
 
     /* Allocate a billion different tables for stuff. */
     ngs->word_chan = ckd_calloc(dict->dict_entry_count,
@@ -273,7 +267,7 @@ ngram_search_free(ps_search_t *search)
         ngram_fwdtree_deinit(ngs);
     if (ngs->fwdflat)
         ngram_fwdflat_deinit(ngs);
-    ngram_dag_free(ngs->dag);
+    ps_lattice_free(ngs->dag);
 
     hmm_context_free(ngs->hmmctx);
     listelem_alloc_free(ngs->chan_alloc);
@@ -325,7 +319,7 @@ cache_bptable_paths(ngram_search_t *ngs, int32 bp)
     prev_bp = bp;
     w = bpe->wid;
     /* FIXME: This isn't the ideal way to tell if it's a filler. */
-    while (w >= ngs->silence_wid) {
+    while (w >= ps_search_silence_wid(ngs)) {
         prev_bp = ngs->bp_table[prev_bp].bp;
         w = ngs->bp_table[prev_bp].wid;
     }
@@ -566,7 +560,7 @@ ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf)
         start_score =
             ngs->bscore_stack[p_bpe->s_idx + rcpermtab[de->ci_phone_ids[0]]];
 
-        if (bpe->wid == ngs->silence_wid) {
+        if (bpe->wid == ps_search_silence_wid(ngs)) {
             bpe->lscr = ngs->silpen;
         }
         else if (ISA_FILLER_WORD(ngs, bpe->wid)) {
@@ -641,7 +635,7 @@ ngram_search_finish(ps_search_t *search)
 
     /* Build a DAG if necessary. */
     if (ngs->bestpath) {
-        ngram_dag_free(ngs->dag);
+        ps_lattice_free(ngs->dag);
         ngs->dag = ngram_dag_build(ngs);
     }
 
@@ -658,9 +652,10 @@ ngram_search_hyp(ps_search_t *search, int32 *out_score)
     if (ngs->bestpath && ngs->dag) {
         latlink_t *link;
 
-        link = ngram_dag_bestpath(ngs->dag);
+        link = ps_lattice_bestpath(ngs->dag, ngs->lmset,
+                                   ngs->bestpath_fwdtree_lw_ratio);
         if (out_score) *out_score = link->path_scr;
-        return ngram_dag_hyp(ngs->dag, link);
+        return ps_lattice_hyp(ngs->dag, link);
     }
     else {
         int32 bpidx;
@@ -762,8 +757,9 @@ ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
     if (ngs->bestpath && ngs->dag) {
         latlink_t *last;
 
-        last = ngram_dag_bestpath(ngs->dag);
-        return ngram_dag_iter(ngs->dag, last);
+        last = ps_lattice_bestpath(ngs->dag, ngs->lmset,
+                                   ngs->bestpath_fwdtree_lw_ratio);
+        return ps_lattice_iter(ngs->dag, last);
     }
     else {
         int32 bpidx;
@@ -775,3 +771,234 @@ ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
 
     return NULL;
 }
+
+static void
+create_dag_nodes(ngram_search_t *ngs, ps_lattice_t *dag)
+{
+    bptbl_t *bp_ptr;
+    int32 i;
+
+    for (i = 0, bp_ptr = ngs->bp_table; i < ngs->bpidx; ++i, ++bp_ptr) {
+        int32 sf, ef, wid;
+        latnode_t *node;
+
+        if (!bp_ptr->valid)
+            continue;
+
+        sf = (bp_ptr->bp < 0) ? 0 : ngs->bp_table[bp_ptr->bp].frame + 1;
+        ef = bp_ptr->frame;
+        wid = bp_ptr->wid;
+
+        assert(ef < dag->n_frames);
+        /* Skip non-final </s> entries. */
+        if ((wid == ps_search_finish_wid(ngs)) && (ef < dag->n_frames - 1))
+            continue;
+
+        /* Skip if word not in LM */
+        if ((!ISA_FILLER_WORD(ngs, wid))
+            && (!ngram_model_set_known_wid(ngs->lmset,
+                                           ps_search_dict(ngs)->dict_list[wid]->wid)))
+            continue;
+
+        /* See if bptbl entry <wid,sf> already in lattice */
+        for (node = dag->nodes; node; node = node->next) {
+            if ((node->wid == wid) && (node->sf == sf))
+                break;
+        }
+
+        /* For the moment, store bptbl indices in node.{fef,lef} */
+        if (node)
+            node->lef = i;
+        else {
+            /* New node; link to head of list */
+            node = listelem_malloc(dag->latnode_alloc);
+            node->wid = wid;
+            node->sf = sf; /* This is a frame index. */
+            node->fef = node->lef = i; /* These are backpointer indices (argh) */
+            node->reachable = FALSE;
+            node->links = NULL;
+            node->revlinks = NULL;
+
+            node->next = dag->nodes;
+            dag->nodes = node;
+        }
+    }
+}
+
+static latnode_t *
+find_start_node(ngram_search_t *ngs, ps_lattice_t *dag)
+{
+    latnode_t *node;
+
+    /* Find start node <s>.0 */
+    for (node = dag->nodes; node; node = node->next) {
+        if ((node->wid == ps_search_start_wid(ngs)) && (node->sf == 0))
+            break;
+    }
+    if (!node) {
+        /* This is probably impossible. */
+        E_ERROR("Couldn't find <s> in first frame\n");
+        return NULL;
+    }
+    return node;
+}
+
+static latnode_t *
+find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
+{
+    latnode_t *node;
+    int32 ef, bestbp, bp, bestscore;
+
+    /* Find final node </s>.last_frame; nothing can follow this node */
+    for (node = dag->nodes; node; node = node->next) {
+        int32 lef = ngs->bp_table[node->lef].frame;
+        if ((node->wid == ps_search_finish_wid(ngs))
+            && (lef == dag->n_frames - 1))
+            break;
+    }
+    if (node != NULL)
+        return node;
+
+    /* It is quite likely that no </s> exited in the last frame.  So,
+     * find the node corresponding to the best exit. */
+    /* Find the last frame containing a word exit. */
+    for (ef = dag->n_frames - 1;
+         ef >= 0 && ngs->bp_table_idx[ef] == ngs->bpidx;
+         --ef);
+    if (ef < 0) {
+        E_ERROR("Empty backpointer table: can not build DAG.\n");
+        return NULL;
+    }
+
+    /* Find best word exit in that frame. */
+    bestscore = WORST_SCORE;
+    bestbp = NO_BP;
+    for (bp = ngs->bp_table_idx[ef]; bp < ngs->bp_table_idx[ef + 1]; ++bp) {
+        int32 n_used, l_scr;
+        l_scr = ngram_tg_score(ngs->lmset, ps_search_finish_wid(ngs),
+                               ngs->bp_table[bp].real_wid,
+                               ngs->bp_table[bp].prev_real_wid,
+                               &n_used);
+        l_scr = l_scr * lwf;
+
+        if (ngs->bp_table[bp].score + l_scr > bestscore) {
+            bestscore = ngs->bp_table[bp].score + l_scr;
+            bestbp = bp;
+        }
+    }
+    E_WARN("</s> not found in last frame, using %s.%d instead\n",
+           dict_base_str(ps_search_dict(ngs), ngs->bp_table[bestbp].real_wid), ef);
+
+    /* Now find the node that corresponds to it. */
+    for (node = dag->nodes; node; node = node->next) {
+        if (node->lef == bestbp)
+            return node;
+    }
+
+    E_ERROR("Failed to find DAG node corresponding to %s.%d\n",
+           dict_base_str(ps_search_dict(ngs), ngs->bp_table[bestbp].real_wid), ef);
+    return NULL;
+}
+
+/*
+ * Build lattice from bptable.
+ */
+ps_lattice_t *
+ngram_dag_build(ngram_search_t *ngs)
+{
+    int32 i, ef, lef, score, bss_offset;
+    latnode_t *node, *from, *to;
+    ps_lattice_t *dag;
+
+    dag = ps_lattice_init(ps_search_base(ngs), ngs->n_frame);
+    ngram_compute_seg_scores(ngs, ngs->bestpath_fwdtree_lw_ratio);
+    create_dag_nodes(ngs, dag);
+    if ((dag->start = find_start_node(ngs, dag)) == NULL)
+        goto error_out;
+    if ((dag->end = find_end_node(ngs, dag, ngs->bestpath_fwdtree_lw_ratio)) == NULL)
+        goto error_out;
+    dag->final_node_ascr = ngs->bp_table[dag->end->lef].ascr;
+
+    /*
+     * At this point, dag->nodes is ordered such that nodes earlier in
+     * the list can follow (in time) those later in the list, but not
+     * vice versa.  Now create precedence links and simultanesously
+     * mark all nodes that can reach dag->end.  (All nodes are reached
+     * from dag->start; no problem there.)
+     */
+    dag->end->reachable = TRUE;
+    for (to = dag->end; to; to = to->next) {
+        /* Skip if not reachable; it will never be reachable from dag->end */
+        if (!to->reachable)
+            continue;
+
+        /* Find predecessors of to : from->fef+1 <= to->sf <= from->lef+1 */
+        for (from = to->next; from; from = from->next) {
+            bptbl_t *bp_ptr;
+
+            ef = ngs->bp_table[from->fef].frame;
+            lef = ngs->bp_table[from->lef].frame;
+
+            if ((to->sf <= ef) || (to->sf > lef + 1))
+                continue;
+
+            /* Find bptable entry for "from" that exactly precedes "to" */
+            i = from->fef;
+            bp_ptr = ngs->bp_table + i;
+            for (; i <= from->lef; i++, bp_ptr++) {
+                if (bp_ptr->wid != from->wid)
+                    continue;
+                if (bp_ptr->frame >= to->sf - 1)
+                    break;
+            }
+
+            if ((i > from->lef) || (bp_ptr->frame != to->sf - 1))
+                continue;
+
+            /* Find acoustic score from.sf->to.sf-1 with right context = to */
+            if (bp_ptr->r_diph >= 0)
+                bss_offset =
+                    ps_search_dict(ngs)->rcFwdPermTable[bp_ptr->r_diph]
+                    [ps_search_dict(ngs)->dict_list[to->wid]->ci_phone_ids[0]];
+            else
+                bss_offset = 0;
+            score =
+                (ngs->bscore_stack[bp_ptr->s_idx + bss_offset] - bp_ptr->score) +
+                bp_ptr->ascr;
+            if (score > WORST_SCORE) {
+                link_latnodes(dag, from, to, score, bp_ptr->frame);
+                from->reachable = TRUE;
+            }
+        }
+    }
+
+    /* There must be at least one path between dag->start and dag->end */
+    if (!dag->start->reachable) {
+        E_ERROR("<s> isolated; unreachable\n");
+        goto error_out;
+    }
+
+    /* Now change node->{fef,lef} from bptbl indices to frames. */
+    for (node = dag->nodes; node; node = node->next) {
+        node->fef = ngs->bp_table[node->fef].frame;
+        node->lef = ngs->bp_table[node->lef].frame;
+    }
+
+    /* Find base wid for nodes. */
+    for (node = dag->nodes; node; node = node->next) {
+        node->basewid = dict_base_wid(ps_search_dict(ngs), node->wid);
+    }
+
+    /* Remove SIL and noise nodes from DAG; extend links through them */
+    ps_lattice_bypass_fillers(dag, ngs->silpen, ngs->fillpen);
+
+    /* Free nodes unreachable from dag->start and their links */
+    ps_lattice_delete_unreachable(dag);
+
+    return dag;
+
+error_out:
+    ps_lattice_free(dag);
+    return NULL;
+}
+

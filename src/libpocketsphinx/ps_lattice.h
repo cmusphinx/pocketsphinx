@@ -36,22 +36,61 @@
  */
 
 /**
- * @file ngram_search_dag.h Word graph search
+ * @file ps_lattice.h Word graph search
  */
 
-#ifndef __NGRAM_SEARCH_DAG_H__
-#define __NGRAM_SEARCH_DAG_H__
+#ifndef __PS_LATTICE_H__
+#define __PS_LATTICE_H__
 
 /* SphinxBase headers. */
 
 /* Local headers. */
-#include "ngram_search.h"
+#include "pocketsphinx_internal.h"
+
+/**
+ * Links between DAG nodes (see latnode_t below).
+ * Also used to keep scores in a bestpath search.
+ */
+typedef struct latlink_s {
+    struct latnode_s *from;	/**< From node */
+    struct latnode_s *to;	/**< To node */
+    struct latlink_s *next;	/**< Next link from the same "from" node */
+    struct latlink_s *best_prev;
+    struct latlink_s *q_next;
+    int32 link_scr;		/**< Score for from->wid (from->sf to this->ef) */
+    int32 path_scr;		/**< Best path score from root of DAG */
+    int32 ef;			/**< end-frame for the "from" node */
+} latlink_t;
+
+typedef struct rev_latlink_s {
+    latlink_t *link;
+    struct rev_latlink_s *next;
+} rev_latlink_t;
+
+/**
+ * DAG nodes.
+ */
+typedef struct latnode_s {
+    int32 wid;			/**< Dictionary word id */
+    int32 basewid;		/**< Dictionary base word id */
+    int16 fef;			/**< First end frame */
+    int16 lef;			/**< Last end frame */
+    int16 sf;			/**< Start frame */
+    int16 reachable;		/**< From </s> or <s> */
+    union {
+	int32 fanin;		/**< #nodes with links to this node */
+	int32 rem_score;	/**< Estimated best score from node.sf to end */
+    } info;
+    latlink_t *links;		/**< Links out of this node */
+    rev_latlink_t *revlinks;	/**< Reverse links (for housekeeping purposes only) */
+    struct latnode_s *next;	/**< Next node (for housekeeping purposes only) */
+} latnode_t;
 
 /**
  * Word graph structure used in bestpath/nbest search.
  */
 struct ps_lattice_s {
-    ngram_search_t *ngs; /**< Search object which produced this DAG. */
+    ps_search_t *search; /**< Search object which produced this DAG. */
 
     latnode_t *nodes;  /**< List of all nodes. */
     latnode_t *start;  /**< Starting node. */
@@ -90,10 +129,13 @@ typedef struct latpath_s {
 } latpath_t;
 
 /**
- * N-best search structure.
+ * A* search structure.
  */
-typedef struct ngram_nbest_s {
+typedef struct ps_astar_s {
     ps_lattice_t *dag;
+    ngram_model_t *lmset;
+    float32 lwf;
+
     int16 sf;
     int16 ef;
     int32 w1;
@@ -111,37 +153,54 @@ typedef struct ngram_nbest_s {
 
     glist_t hyps;	             /**< List of hypothesis strings. */
     listelem_alloc_t *latpath_alloc; /**< Path allocator for N-best search. */
-} ngram_nbest_t;
+} ps_astar_t;
 
 /**
- * Construct a word graph from the current hypothesis.
+ * Construct an empty word graph.
  */
-ps_lattice_t *ngram_dag_build(ngram_search_t *ngs);
+ps_lattice_t *ps_lattice_init(ps_search_t *search, int n_frame);
 
 /**
  * Destruct a word graph.
  */
-void ngram_dag_free(ps_lattice_t *dag);
+void ps_lattice_free(ps_lattice_t *dag);
 
 /**
- * Do best-path search on a word graph.
- *
- * @return First link in best path, NULL on error.
+ * Create a directed link between "from" and "to" nodes, but if a link already exists,
+ * choose one with the best link_scr.
  */
-latlink_t *ngram_dag_bestpath(ps_lattice_t *dag);
+void link_latnodes(ps_lattice_t *dag, latnode_t *from, latnode_t *to,
+                   int32 score, int32 ef);
+
+/**
+ * Add bypass links around filler words.
+ */
+void ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen);
+
+/**
+ * Remove nodes not marked as reachable.
+ */
+void ps_lattice_delete_unreachable(ps_lattice_t *dag);
+
+/**
+ * Do N-Gram based best-path search on a word graph.
+ *
+ * @return Final link in best path, NULL on error.
+ */
+latlink_t *ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf);
 
 /**
  * Get hypothesis string after bestpath search.
  */
-char const *ngram_dag_hyp(ps_lattice_t *dag, latlink_t *link);
+char const *ps_lattice_hyp(ps_lattice_t *dag, latlink_t *link);
 
 /**
  * Get hypothesis segmentation iterator after bestpath search.
  */
-ps_seg_t *ngram_dag_iter(ps_lattice_t *dag, latlink_t *link);
+ps_seg_t *ps_lattice_iter(ps_lattice_t *dag, latlink_t *link);
 
 /**
- * Begin N-best search on a word graph.
+ * Begin N-Gram based A* search on a word graph.
  *
  * @param sf Starting frame for N-best search.
  * @param ef Ending frame for N-best search, or -1 for last frame.
@@ -149,26 +208,28 @@ ps_seg_t *ngram_dag_iter(ps_lattice_t *dag, latlink_t *link);
  * @param w2 Second context word, or -1 for none.
  * @return 0 for success, <0 on error.
  */
-ngram_nbest_t *ngram_nbest_start(ps_lattice_t *dag,
-                                 int sf, int ef,
-                                 int w1, int w2);
+ps_astar_t *ps_astar_start(ps_lattice_t *dag,
+                              ngram_model_t *lmset,
+                              float32 lwf,
+                              int sf, int ef,
+                              int w1, int w2);
 
 
 /**
- * Find next best hypothesis of N-best on a word graph.
+ * Find next best hypothesis of A* on a word graph.
  *
  * @return a complete path, or NULL if no more hypotheses exist.
  */
-latpath_t *ngram_nbest_next(ngram_nbest_t *nbest);
+latpath_t *ps_astar_next(ps_astar_t *nbest);
 
 /**
- * Get hypothesis string from N-best search.
+ * Get hypothesis string from A* search.
  */
-char const *ngram_nbest_hyp(ngram_nbest_t *nbest, latpath_t *path);
+char const *ps_astar_hyp(ps_astar_t *nbest, latpath_t *path);
 
 /**
  * Finish N-best search, releasing resources associated with it.
  */
-void ngram_nbest_finish(ngram_nbest_t *nbest);
+void ps_astar_finish(ps_astar_t *nbest);
 
-#endif /* __NGRAM_SEARCH_DAG_H__ */
+#endif /* __PS_LATTICE_H__ */

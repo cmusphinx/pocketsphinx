@@ -50,6 +50,7 @@
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"
+#include "ps_lattice.h"
 #include "hmm.h"
 
 /**
@@ -175,44 +176,6 @@ typedef struct bestbp_rc_s {
 #define NO_BP		-1
 
 /**
- * Links between DAG nodes (see latnode_t below).
- * Also used to keep scores in a bestpath search.
- */
-typedef struct latlink_s {
-    struct latnode_s *from;	/**< From node */
-    struct latnode_s *to;	/**< To node */
-    struct latlink_s *next;	/**< Next link from the same "from" node */
-    struct latlink_s *best_prev;
-    struct latlink_s *q_next;
-    int32 link_scr;		/**< Score for from->wid (from->sf to this->ef) */
-    int32 path_scr;		/**< Best path score from root of DAG */
-    int32 ef;			/**< end-frame for the "from" node */
-} latlink_t;
-
-typedef struct rev_latlink_s {
-    latlink_t *link;
-    struct rev_latlink_s *next;
-} rev_latlink_t;
-
-/**
- * DAG nodes.
- */
-typedef struct latnode_s {
-    int32 wid;			/**< Dictionary word id */
-    int32 fef;			/**< First end frame */
-    int32 lef;			/**< Last end frame */
-    int16 sf;			/**< Start frame */
-    int16 reachable;		/**< From </s> or <s> */
-    union {
-	int32 fanin;		/**< #nodes with links to this node */
-	int32 rem_score;	/**< Estimated best score from node.sf to end */
-    } info;
-    latlink_t *links;		/**< Links out of this node */
-    rev_latlink_t *revlinks;	/**< Reverse links (for housekeeping purposes only) */
-    struct latnode_s *next;	/**< Next node (for housekeeping purposes only) */
-} latnode_t;
-
-/**
  * Various statistics for profiling.
  */
 typedef struct ngram_search_stats_s {
@@ -278,13 +241,6 @@ struct ngram_search_s {
      */
     chan_t **word_chan;
     bitvec_t *word_active;      /**< array of active flags for all words. */
-
-    /*
-     * Some words have special meanings so we track them here.
-     */
-    int32 start_wid;
-    int32 finish_wid;
-    int32 silence_wid;
 
     /**
      * Each node in the HMM tree structure may point to a set of words
@@ -396,11 +352,6 @@ struct ngram_search_s {
 };
 typedef struct ngram_search_s ngram_search_t;
 
-/* FIXME: This code makes some irritating assumptions about the
- * ordering of the dictionary. */
-#define ISA_FILLER_WORD(ngs,x)	((x) >= ngs->silence_wid)
-#define ISA_REAL_WORD(ngs,x)	((x) < ngs->finish_wid)
-
 /**
  * Initialize the N-Gram search module.
  */
@@ -454,6 +405,11 @@ char const *ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx);
  * Compute language and acoustic scores for backpointer table entries.
  */
 void ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf);
+
+/**
+ * Construct a word graph from the current hypothesis.
+ */
+ps_lattice_t *ngram_dag_build(ngram_search_t *ngs);
 
 
 #endif /* __NGRAM_SEARCH_H__ */

@@ -86,6 +86,11 @@ struct ps_search_s {
     acmod_t *acmod;        /**< Acoustic model. */
     dict_t *dict;          /**< Pronunciation dictionary. */
     char *hyp_str;         /**< Current hypothesis string. */
+
+    /* Magical word IDs that must exist in the dictionary: */
+    int32 start_wid;       /**< Start word ID. */
+    int32 silence_wid;     /**< Silence word ID. */
+    int32 finish_wid;      /**< Finish word ID. */
 };
 
 #define ps_search_base(s) ((ps_search_t *)s)
@@ -104,7 +109,14 @@ struct ps_search_s {
 
 /* For convenience... */
 #define ps_search_n_words(s) dict_n_words(ps_search_dict(s))
+#define ps_search_silence_wid(s) ps_search_base(s)->silence_wid
+#define ps_search_start_wid(s) ps_search_base(s)->start_wid
+#define ps_search_finish_wid(s) ps_search_base(s)->finish_wid
 
+/* FIXME: This code makes some irritating assumptions about the
+ * ordering of the dictionary. */
+#define ISA_FILLER_WORD(s,x)	((x) >= ps_search_silence_wid(s))
+#define ISA_REAL_WORD(s,x)	((x) < ps_search_finish_wid(s))
 
 /**
  * Initialize base structure.

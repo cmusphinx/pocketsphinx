@@ -21,7 +21,7 @@ libpocketsphinx_la_SOURCES =			\
 	ngram_search.c				\
 	ngram_search_fwdtree.c			\
 	ngram_search_fwdflat.c			\
-	ngram_search_dag.c			\
+	ps_lattice.c				\
 	phone.c					\
 	s2_semi_mgau.c				\
 	tmat.c					\
@@ -47,7 +47,7 @@ noinst_HEADERS =				\
 	ngram_search.h				\
 	ngram_search_fwdtree.h			\
 	ngram_search_fwdflat.h			\
-	ngram_search_dag.h			\
+	ps_lattice.h				\
 	phone.h					\
 	posixwin32.h				\
 	s2_semi_mgau.h				\

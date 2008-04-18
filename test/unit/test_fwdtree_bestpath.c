@@ -5,7 +5,7 @@
 
 #include "pocketsphinx_internal.h"
 #include "ngram_search_fwdtree.h"
-#include "ngram_search_dag.h"
+#include "ps_lattice.h"
 #include "test_macros.h"
 
 int
@@ -42,7 +42,7 @@ main(int argc, char *argv[])
 		size_t nread;
 		int16 const *bptr;
 		int nfr;
-		ngram_dag_t *dag;
+		ps_lattice_t *dag;
 
 		TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
 		TEST_EQUAL(0, acmod_start_utt(acmod));
@@ -68,8 +68,8 @@ main(int argc, char *argv[])
 			return 1;
 		}
 		printf("BESTPATH: %s\n",
-		       ngram_dag_hyp(dag, ngram_dag_bestpath(dag)));
-		ngram_dag_free(dag);
+		       ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset, 1.461538)));
+		ps_lattice_free(dag);
 	}
 	TEST_EQUAL(0, strcmp("GO FOR WORDS TEN YEARS",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));

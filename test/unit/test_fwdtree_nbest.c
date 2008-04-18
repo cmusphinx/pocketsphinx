@@ -5,7 +5,7 @@
 
 #include "pocketsphinx_internal.h"
 #include "ngram_search_fwdtree.h"
-#include "ngram_search_dag.h"
+#include "ps_lattice.h"
 #include "test_macros.h"
 
 int
@@ -42,8 +42,8 @@ main(int argc, char *argv[])
 		size_t nread;
 		int16 const *bptr;
 		int nfr;
-		ngram_dag_t *dag;
-		ngram_nbest_t *nbest;
+		ps_lattice_t *dag;
+		ps_astar_t *nbest;
 		latpath_t *path;
 		int i;
 
@@ -71,16 +71,18 @@ main(int argc, char *argv[])
 			return 1;
 		}
 		printf("BESTPATH: %s\n",
-		       ngram_dag_hyp(dag, ngram_dag_bestpath(dag)));
+		       ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset, 1.461538)));
 
-		TEST_ASSERT(nbest = ngram_nbest_start(dag, 0, -1, -1, -1));
+		/* FIXME: We should assert that bestpath and 1-best
+		 * give the same results (they really ought to...) */
+		TEST_ASSERT(nbest = ps_astar_start(dag, ngs->lmset, 1.461538, 0, -1, -1, -1));
 		i = 0;
-		while ((path = ngram_nbest_next(nbest))) {
+		while ((path = ps_astar_next(nbest))) {
 			if (i++ < 10)
 				printf("NBEST %d: %s\n", i,
-				       ngram_nbest_hyp(nbest, path));
+				       ps_astar_hyp(nbest, path));
 		}
-		ngram_nbest_finish(nbest);
+		ps_astar_finish(nbest);
 	}
 	TEST_EQUAL(0, strcmp("GO FOR WORDS TEN YEARS",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));

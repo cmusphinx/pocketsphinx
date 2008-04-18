@@ -26,8 +26,6 @@ check_PROGRAMS = \
 	$(gst_programs)
 
 TESTS = \
-	test_lm_init.sh \
-	test_lmctl_init.sh \
 	test_ps_init \
 	test_ps_fwdtree \
 	test_ps_fwdtree_fwdflat \
@@ -63,8 +61,3 @@ LDADD = \
 	-lsphinxbase
 
 CLEANFILES = *.log *.out
-
-EXTRA_DIST = \
-	test_lm_init.sh \
-	test_lmctl_init.sh
-

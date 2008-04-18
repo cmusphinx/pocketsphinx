@@ -630,7 +630,7 @@ eval_word_chan(ngram_search_t *ngs, int frame_idx)
 
         score = chan_v_eval(rhmm);
         /* printf("eval 1ph word chan %d score %d\n", w, score); */
-        if (bestscore < score && w != ngs->finish_wid)
+        if (bestscore < score && w != ps_search_finish_wid(ngs))
             bestscore = score;
 
         j++;
@@ -1204,7 +1204,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
         bpe = &(ngs->bp_table[bp]);
         ngs->word_lat_idx[bpe->wid] = NO_BP;
 
-        if (bpe->wid == ngs->finish_wid)
+        if (bpe->wid == ps_search_finish_wid(ngs))
             continue;
         k++;
 
@@ -1308,7 +1308,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     bestbp_rc_ptr = &(ngs->bestbp_rc[ps_search_acmod(ngs)->mdef->sil]);
     newscore = bestbp_rc_ptr->score + ngs->silpen + ngs->pip;
     if (newscore > thresh) {
-        w = ngs->silence_wid;
+        w = ps_search_silence_wid(ngs);
         rhmm = (root_chan_t *) ngs->word_chan[w];
         if ((hmm_frame(&rhmm->hmm) < frame_idx)
             || (hmm_in_score(&rhmm->hmm) < newscore)) {
@@ -1320,7 +1320,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     if (newscore > thresh) {
         /* FIXME FIXME: This depends on having the noise words
          * immediately following silence in the dictionary... */
-        for (w = ngs->silence_wid + 1; w < ps_search_n_words(ngs); w++) {
+        for (w = ps_search_silence_wid(ngs) + 1; w < ps_search_n_words(ngs); w++) {
             rhmm = (root_chan_t *) ngs->word_chan[w];
             if ((hmm_frame(&rhmm->hmm) < frame_idx)
                 || (hmm_in_score(&rhmm->hmm) < newscore)) {

@@ -51,7 +51,6 @@
 #include "ngram_search.h"
 #include "ngram_search_fwdtree.h"
 #include "ngram_search_fwdflat.h"
-#include "ngram_search_dag.h"
 
 static const arg_t ps_args_def[] = {
     POCKETSPHINX_OPTIONS,
@@ -589,6 +588,9 @@ ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
     search->config = config;
     search->acmod = acmod;
     search->dict = dict;
+    search->start_wid = dict_to_id(dict, "<s>");
+    search->finish_wid = dict_to_id(dict, "</s>");
+    search->silence_wid = dict_to_id(dict, "<sil>");
 }
 
 void
