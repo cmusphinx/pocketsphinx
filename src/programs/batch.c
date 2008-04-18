@@ -224,6 +224,7 @@ process_ctl(pocketsphinx_t *ps, cmd_ln_t *config, FILE *ctlfh)
     char *line;
     size_t len;
     FILE *hypfh = NULL, *hypsegfh = NULL;
+    double n_speech, n_cpu, n_wall;
 
     ctloffset = cmd_ln_int32_r(config, "-ctloffset");
     ctlcount = cmd_ln_int32_r(config, "-ctlcount");
@@ -292,10 +293,21 @@ process_ctl(pocketsphinx_t *ps, cmd_ln_t *config, FILE *ctlfh)
             if (hypsegfh) {
                 /* FIXME */
             }
+            pocketsphinx_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
+            E_INFO("%s: %.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
+                   uttid, n_speech, n_cpu, n_wall);
+            E_INFO("%s: %.2f xRT (CPU), %.2f xRT (elapsed)\n",
+                   uttid, n_cpu / n_speech, n_wall / n_speech);
         }
         ckd_free(line);
         i += ctlincr;
     }
+
+    pocketsphinx_get_all_time(ps, &n_speech, &n_cpu, &n_wall);
+    E_INFO("TOTAL %.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
+           n_speech, n_cpu, n_wall);
+    E_INFO("AVERAGE %.2f xRT (CPU), %.2f xRT (elapsed)\n",
+           n_cpu / n_speech, n_wall / n_speech);
 
     if (hypfh)
         fclose(hypfh);
