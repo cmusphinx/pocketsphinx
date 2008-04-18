@@ -66,6 +66,7 @@ static ps_searchfuncs_t ngram_funcs = {
     /* finish: */ ngram_search_finish,
     /* reinit: */ ngram_search_reinit,
     /* free: */   ngram_search_free,
+    /* lattice: */  ngram_search_lattice,
     /* hyp: */      ngram_search_hyp,
     /* seg_iter: */ ngram_search_seg_iter,
 };
@@ -633,8 +634,7 @@ ngram_search_finish(ps_search_t *search)
 
     /* Build a DAG if necessary. */
     if (ngs->bestpath) {
-        ps_lattice_free(ngs->dag);
-        ngs->dag = ngram_dag_build(ngs);
+        ngram_search_lattice(search);
     }
 
     return 0;
@@ -902,13 +902,21 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
  * Build lattice from bptable.
  */
 ps_lattice_t *
-ngram_dag_build(ngram_search_t *ngs)
+ngram_search_lattice(ps_search_t *search)
 {
     int32 i, ef, lef, score, bss_offset;
     latnode_t *node, *from, *to;
+    ngram_search_t *ngs;
     ps_lattice_t *dag;
 
-    dag = ps_lattice_init(ps_search_base(ngs), ngs->n_frame);
+    ngs = (ngram_search_t *)search;
+    /* Remove previous lattice and cache this one. */
+    if (ngs->dag) {
+        ps_lattice_free(ngs->dag);
+        ngs->dag = NULL;
+    }
+
+    dag = ps_lattice_init(search, ngs->n_frame);
     ngram_compute_seg_scores(ngs, ngs->bestpath_fwdtree_lw_ratio);
     create_dag_nodes(ngs, dag);
     if ((dag->start = find_start_node(ngs, dag)) == NULL)
@@ -956,8 +964,8 @@ ngram_dag_build(ngram_search_t *ngs)
             /* Find acoustic score from.sf->to.sf-1 with right context = to */
             if (bp_ptr->r_diph >= 0)
                 bss_offset =
-                    ps_search_dict(ngs)->rcFwdPermTable[bp_ptr->r_diph]
-                    [ps_search_dict(ngs)->dict_list[to->wid]->ci_phone_ids[0]];
+                    search->dict->rcFwdPermTable[bp_ptr->r_diph]
+                    [search->dict->dict_list[to->wid]->ci_phone_ids[0]];
             else
                 bss_offset = 0;
             score =
@@ -984,7 +992,7 @@ ngram_dag_build(ngram_search_t *ngs)
 
     /* Find base wid for nodes. */
     for (node = dag->nodes; node; node = node->next) {
-        node->basewid = dict_base_wid(ps_search_dict(ngs), node->wid);
+        node->basewid = dict_base_wid(search->dict, node->wid);
     }
 
     /* Remove SIL and noise nodes from DAG; extend links through them */
@@ -993,6 +1001,7 @@ ngram_dag_build(ngram_search_t *ngs)
     /* Free nodes unreachable from dag->start and their links */
     ps_lattice_delete_unreachable(dag);
 
+    ngs->dag = dag;
     return dag;
 
 error_out:

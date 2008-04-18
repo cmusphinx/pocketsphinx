@@ -216,6 +216,24 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
     return 0;
 }
 
+int
+write_lattice(ps_decoder_t *ps, char const *latdir, char const *uttid)
+{
+    ps_lattice_t *lat;
+    char *outfile;
+
+    if ((lat = ps_get_lattice(ps)) == NULL) {
+        E_ERROR("Failed to obtain word lattice for utterance %s\n", uttid);
+        return -1;
+    }
+    outfile = string_join(latdir, "/", uttid, ".lat", NULL);
+    if (ps_lattice_write(lat, outfile) < 0) {
+        E_ERROR("Failed to write lattice to %s\n", outfile);
+        return -1;
+    }
+    return 0;
+}
+
 void
 process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
 {
@@ -225,10 +243,12 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     size_t len;
     FILE *hypfh = NULL, *hypsegfh = NULL;
     double n_speech, n_cpu, n_wall;
+    char const *outlatdir;
 
     ctloffset = cmd_ln_int32_r(config, "-ctloffset");
     ctlcount = cmd_ln_int32_r(config, "-ctlcount");
     ctlincr = cmd_ln_int32_r(config, "-ctlincr");
+    outlatdir = cmd_ln_str_r(config, "-outlatdir");
 
     if (cmd_ln_str_r(config, "-hyp")) {
         hypfh = fopen(cmd_ln_str_r(config, "-hyp"), "w");
@@ -293,6 +313,9 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             if (hypsegfh) {
                 /* FIXME */
             }
+            if (outlatdir) {
+                write_lattice(ps, outlatdir, uttid);
+            }
             ps_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
             E_INFO("%s: %.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
                    uttid, n_speech, n_cpu, n_wall);
@@ -330,11 +353,6 @@ main(int32 argc, char *argv[])
     }
     if ((ctl = cmd_ln_str_r(config, "-ctl")) == NULL) {
         E_FATAL("-ctl argument not present, nothing to do in batch mode!\n");
-    }
-    if (cmd_ln_str_r(config, "-outlatdir")
-        && !(cmd_ln_boolean_r(config, "-bestpath")
-             || cmd_ln_int32_r(config, "-nbest"))) {
-        E_ERROR("-outlatdir requires -bespath or -nbest.  No lattices will be saved.\n");
     }
     if ((ctlfh = fopen(ctl, "r")) == NULL) {
         E_FATAL_SYSTEM("Failed to open control file %s", ctl);

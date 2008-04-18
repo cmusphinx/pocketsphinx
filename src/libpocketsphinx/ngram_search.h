@@ -407,9 +407,8 @@ char const *ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx);
 void ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf);
 
 /**
- * Construct a word graph from the current hypothesis.
+ * Construct a word lattice from the current hypothesis.
  */
-ps_lattice_t *ngram_dag_build(ngram_search_t *ngs);
-
+ps_lattice_t *ngram_search_lattice(ps_search_t *search);
 
 #endif /* __NGRAM_SEARCH_H__ */

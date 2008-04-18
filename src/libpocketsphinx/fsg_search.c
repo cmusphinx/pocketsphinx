@@ -69,6 +69,7 @@
 #define __FSG_DBG_CHAN__	0
 
 static ps_seg_t *fsg_search_seg_iter(ps_search_t *search, int32 *out_score);
+static ps_lattice_t *fsg_search_lattice(ps_search_t *search);
 
 static ps_searchfuncs_t fsg_funcs = {
     /* name: */   "fsg",
@@ -77,6 +78,7 @@ static ps_searchfuncs_t fsg_funcs = {
     /* finish: */ fsg_search_finish,
     /* reinit: */ fsg_search_reinit,
     /* free: */   fsg_search_free,
+    /* lattice: */  fsg_search_lattice,
     /* hyp: */      fsg_search_hyp,
     /* seg_iter: */ fsg_search_seg_iter,
 };
@@ -1046,5 +1048,12 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score)
 static ps_seg_t *
 fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
 {
+    return NULL;
+}
+
+static ps_lattice_t *
+fsg_search_lattice(ps_search_t *search)
+{
+    /* FIXME: Does nothing for now. */
     return NULL;
 }

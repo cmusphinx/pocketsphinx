@@ -556,6 +556,12 @@ ps_seg_free(ps_seg_t *seg)
     ps_search_seg_free(seg);
 }
 
+ps_lattice_t *
+ps_get_lattice(ps_decoder_t *ps)
+{
+    return ps_search_lattice(ps->search);
+}
+
 void
 ps_get_utt_time(ps_decoder_t *ps, double *out_nspeech,
                 double *out_ncpu, double *out_nwall)

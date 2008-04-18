@@ -48,6 +48,7 @@
 #include <listelem_alloc.h>
 
 /* Local headers. */
+#include "pocketsphinx.h" /* To make sure ps_lattice_write() gets exported */
 #include "ps_lattice.h"
 
 /*
@@ -218,7 +219,7 @@ latnode_seqid(ps_lattice_t *dag, latnode_t * target)
 }
 
 int32
-pocketsphinx_lattice_write(ps_lattice_t *dag, char const *filename)
+ps_lattice_write(ps_lattice_t *dag, char const *filename)
 {
     FILE *fp;
     int32 i;

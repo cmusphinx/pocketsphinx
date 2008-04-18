@@ -65,7 +65,7 @@ main(int argc, char *argv[])
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 
-		dag = ngram_dag_build(ngs);
+		dag = ngram_search_lattice(ps->search);
 		if (dag == NULL) {
 			E_ERROR("Failed to build DAG!\n");
 			return 1;

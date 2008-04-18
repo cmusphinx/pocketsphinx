@@ -62,14 +62,13 @@ main(int argc, char *argv[])
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 
-		dag = ngram_dag_build(ngs);
+		dag = ngram_search_lattice(ps->search);
 		if (dag == NULL) {
 			E_ERROR("Failed to build DAG!\n");
 			return 1;
 		}
 		printf("BESTPATH: %s\n",
 		       ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset, 1.461538)));
-		ps_lattice_free(dag);
 	}
 	TEST_EQUAL(0, strcmp("GO FOR WORDS TEN YEARS",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
