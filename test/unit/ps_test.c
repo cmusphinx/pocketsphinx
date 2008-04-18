@@ -23,9 +23,9 @@ static const mfcc_t prior[13] = {
 };
 
 int
-pocketsphinx_test(cmd_ln_t *config, char const *sname, char const *expected)
+ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
 {
-	pocketsphinx_t *ps;
+	ps_decoder_t *ps;
 	mfcc_t **cepbuf;
 	FILE *rawfh;
 	int16 *buf;
@@ -38,39 +38,39 @@ pocketsphinx_test(cmd_ln_t *config, char const *sname, char const *expected)
 	double n_speech, n_cpu, n_wall;
 	ps_seg_t *seg;
 
-	TEST_ASSERT(ps = pocketsphinx_init(config));
+	TEST_ASSERT(ps = ps_init(config));
 
 	/* Test it first with pocketsphinx_decode_raw() */
 	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
-	pocketsphinx_decode_raw(ps, rawfh, "goforward", -1);
-	hyp = pocketsphinx_get_hyp(ps, &score, &uttid);
+	ps_decode_raw(ps, rawfh, "goforward", -1);
+	hyp = ps_get_hyp(ps, &score, &uttid);
 	printf("%s (%s): %s (%d)\n", sname, uttid, hyp, score);
 	TEST_EQUAL(0, strcmp(hyp, expected));
-	pocketsphinx_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
+	ps_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
 	printf("%.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
 	       n_speech, n_cpu, n_wall);
 	printf("%.2f xRT (CPU), %.2f xRT (elapsed)\n",
 	       n_cpu / n_speech, n_wall / n_speech);
 
-	/* Test it with pocketsphinx_process_raw() */
+	/* Test it with ps_process_raw() */
 	cmn_prior_set(ps->acmod->fcb->cmn_struct, prior);
 	clearerr(rawfh);
 	fseek(rawfh, 0, SEEK_END);
 	nsamps = ftell(rawfh) / sizeof(*buf);
 	fseek(rawfh, 0, SEEK_SET);
-	TEST_EQUAL(0, pocketsphinx_start_utt(ps, NULL));
+	TEST_EQUAL(0, ps_start_utt(ps, NULL));
 	nsamps = 2048;
 	buf = ckd_calloc(nsamps, sizeof(*buf));
 	while (!feof(rawfh)) {
 		nread = fread(buf, sizeof(*buf), nsamps, rawfh);
-		pocketsphinx_process_raw(ps, buf, nread, FALSE, FALSE);
+		ps_process_raw(ps, buf, nread, FALSE, FALSE);
 	}
-	TEST_EQUAL(0, pocketsphinx_end_utt(ps));
-	hyp = pocketsphinx_get_hyp(ps, &score, &uttid);
+	TEST_EQUAL(0, ps_end_utt(ps));
+	hyp = ps_get_hyp(ps, &score, &uttid);
 	printf("%s (%s): %s (%d)\n", sname, uttid, hyp, score);
 	TEST_EQUAL(0, strcmp(uttid, "000000000"));
 	TEST_EQUAL(0, strcmp(hyp, expected));
-	pocketsphinx_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
+	ps_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
 	printf("%.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
 	       n_speech, n_cpu, n_wall);
 	printf("%.2f xRT (CPU), %.2f xRT (elapsed)\n",
@@ -92,39 +92,39 @@ pocketsphinx_test(cmd_ln_t *config, char const *sname, char const *expected)
 	fe_end_utt(ps->acmod->fe, cepbuf[nfr], &i);
 
 	/* Decode it with process_cep() */
-	TEST_EQUAL(0, pocketsphinx_start_utt(ps, NULL));
+	TEST_EQUAL(0, ps_start_utt(ps, NULL));
 	cmn_prior_set(ps->acmod->fcb->cmn_struct, prior);
 	for (i = 0; i < nfr; ++i) {
-		pocketsphinx_process_cep(ps, cepbuf + i, 1, FALSE, FALSE);
+		ps_process_cep(ps, cepbuf + i, 1, FALSE, FALSE);
 	}
-	TEST_EQUAL(0, pocketsphinx_end_utt(ps));
-	hyp = pocketsphinx_get_hyp(ps, &score, &uttid);
+	TEST_EQUAL(0, ps_end_utt(ps));
+	hyp = ps_get_hyp(ps, &score, &uttid);
 	printf("%s (%s): %s (%d)\n", sname, uttid, hyp, score);
 	TEST_EQUAL(0, strcmp(uttid, "000000001"));
 	TEST_EQUAL(0, strcmp(hyp, expected));
-	for (seg = pocketsphinx_seg_iter(ps, &score); seg;
-	     seg = pocketsphinx_seg_next(seg)) {
+	for (seg = ps_seg_iter(ps, &score); seg;
+	     seg = ps_seg_next(seg)) {
 		char const *word;
 		int sf, ef;
 
-		word = pocketsphinx_seg_word(seg);
-		pocketsphinx_seg_frames(seg, &sf, &ef);
+		word = ps_seg_word(seg);
+		ps_seg_frames(seg, &sf, &ef);
 		printf("%s %d %d\n", word, sf, ef);
 	}
 
-	pocketsphinx_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
+	ps_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
 	printf("%.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
 	       n_speech, n_cpu, n_wall);
 	printf("%.2f xRT (CPU), %.2f xRT (elapsed)\n",
 	       n_cpu / n_speech, n_wall / n_speech);
-	pocketsphinx_get_all_time(ps, &n_speech, &n_cpu, &n_wall);
+	ps_get_all_time(ps, &n_speech, &n_cpu, &n_wall);
 	printf("TOTAL: %.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
 	       n_speech, n_cpu, n_wall);
 	printf("TOTAL: %.2f xRT (CPU), %.2f xRT (elapsed)\n",
 	       n_cpu / n_speech, n_wall / n_speech);
 
 	fclose(rawfh);
-	pocketsphinx_free(ps);
+	ps_free(ps);
 	ckd_free_2d(cepbuf);
 	ckd_free(buf);
 

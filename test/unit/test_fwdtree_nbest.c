@@ -11,7 +11,7 @@
 int
 main(int argc, char *argv[])
 {
-	pocketsphinx_t *ps;
+	ps_decoder_t *ps;
 	cmd_ln_t *config;
 	acmod_t *acmod;
 	ngram_search_t *ngs;
@@ -19,7 +19,7 @@ main(int argc, char *argv[])
 	int i;
 
 	TEST_ASSERT(config =
-		    cmd_ln_init(NULL, pocketsphinx_args(), TRUE,
+		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/hmm/wsj1",
 				"-lm", MODELDIR "/lm/swb/swb.lm.DMP",
 				"-dict", MODELDIR "/lm/swb/swb.dic",
@@ -28,7 +28,7 @@ main(int argc, char *argv[])
 				"-bestpath", "yes",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
-	TEST_ASSERT(ps = pocketsphinx_init(config));
+	TEST_ASSERT(ps = ps_init(config));
 
 	ngs = (ngram_search_t *)ps->search;
 	acmod = ps->acmod;
@@ -89,7 +89,7 @@ main(int argc, char *argv[])
 	c = clock() - c;
 	printf("5 * fwdtree + bestpath + N-best search in %.2f sec\n",
 	       (double)c / CLOCKS_PER_SEC);
-	pocketsphinx_free(ps);
+	ps_free(ps);
 
 	return 0;
 }

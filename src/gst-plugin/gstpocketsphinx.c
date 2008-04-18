@@ -174,7 +174,7 @@ gst_pocketsphinx_finalize(GObject * gobject)
     g_hash_table_foreach(ps->arghash, string_disposal, NULL);
     g_hash_table_destroy(ps->arghash);
     g_free(ps->last_result);
-    pocketsphinx_free(ps->ps);
+    ps_free(ps->ps);
     GST_CALL_PARENT(G_OBJECT_CLASS, finalize,(gobject));
 }
 
@@ -327,7 +327,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_string(ps, "-hmm", value);
         if (ps->inited) {
             /* Reinitialize the decoder with the new acoustic model. */
-            pocketsphinx_reinit(ps->ps, NULL);
+            ps_reinit(ps->ps, NULL);
         }
         break;
     case PROP_LM_FILE:
@@ -341,23 +341,23 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
             lm = ngram_model_read(ps->config,
                                   g_value_get_string(value),
                                   NGRAM_AUTO,
-                                  pocketsphinx_get_logmath(ps->ps));
-            lmset = pocketsphinx_get_lmset(ps->ps);
+                                  ps_get_logmath(ps->ps));
+            lmset = ps_get_lmset(ps->ps);
             ngram_model_set_add(lmset, lm, g_value_get_string(value),
                                 1.0, TRUE);
-            pocketsphinx_update_lmset(ps->ps);
+            ps_update_lmset(ps->ps);
         }
         break;
     case PROP_DICT_FILE:
         gst_pocketsphinx_set_string(ps, "-dict", value);
         if (ps->inited) {
             /* Reinitialize the decoder with the new dictionary. */
-            pocketsphinx_reinit(ps->ps, NULL);
+            ps_reinit(ps->ps, NULL);
         }
         break;
     case PROP_FSG_MODEL:
     {
-        fsg_set_t *fsgs = pocketsphinx_get_fsgset(ps->ps);
+        fsg_set_t *fsgs = ps_get_fsgset(ps->ps);
         fsg_model_t *fsg = g_value_get_pointer(value);
 
         fsg_set_remove_byname(fsgs, fsg_model_name(fsg));
@@ -372,11 +372,11 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
 
         if (ps->inited) {
             /* Switch to this new FSG. */
-            fsg_set_t *fsgs = pocketsphinx_get_fsgset(ps->ps);
+            fsg_set_t *fsgs = ps_get_fsgset(ps->ps);
             fsg_model_t *fsg;
 
             fsg = fsg_model_readfile(g_value_get_string(value),
-                                     pocketsphinx_get_logmath(ps->ps),
+                                     ps_get_logmath(ps->ps),
                                      cmd_ln_float32_r(ps->config, "-lw"));
             if (fsg) {
                 fsg_set_add(fsgs, fsg_model_name(fsg), fsg);
@@ -462,7 +462,7 @@ gst_pocketsphinx_init(GstPocketSphinx * ps,
     ps->arghash = g_hash_table_new(g_str_hash, g_str_equal);
 
     /* Parse default command-line options. */
-    ps->config = cmd_ln_parse_r(NULL, pocketsphinx_args(), default_argc, default_argv, FALSE);
+    ps->config = cmd_ln_parse_r(NULL, ps_args(), default_argc, default_argv, FALSE);
 
     /* Set up pads. */
     gst_element_add_pad(GST_ELEMENT(ps), ps->sinkpad);
@@ -489,12 +489,12 @@ gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer)
      * that the VADER is "leaky") */
     if (!ps->listening) {
         ps->listening = TRUE;
-        pocketsphinx_start_utt(ps->ps, NULL);
+        ps_start_utt(ps->ps, NULL);
     }
-    pocketsphinx_process_raw(ps->ps,
-                             (short *)GST_BUFFER_DATA(buffer),
-                             GST_BUFFER_SIZE(buffer) / sizeof(short),
-                             FALSE, FALSE);
+    ps_process_raw(ps->ps,
+                   (short *)GST_BUFFER_DATA(buffer),
+                   GST_BUFFER_SIZE(buffer) / sizeof(short),
+                   FALSE, FALSE);
 
     /* Get a partial result every now and then, see if it is different. */
     if (ps->last_result_time == 0
@@ -504,7 +504,7 @@ gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer)
         char const *hyp;
         char const *uttid;
 
-        hyp = pocketsphinx_get_hyp(ps->ps, &score, &uttid);
+        hyp = ps_get_hyp(ps->ps, &score, &uttid);
         ps->last_result_time = GST_BUFFER_TIMESTAMP(buffer);
         if (hyp && strlen(hyp) > 0) {
             if (ps->last_result == NULL || 0 != strcmp(ps->last_result, hyp)) {
@@ -530,12 +530,12 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
     switch (event->type) {
     case GST_EVENT_NEWSEGMENT:
         /* Initialize the decoder once the audio starts. (HACK) */
-        ps->ps = pocketsphinx_init(ps->config);
+        ps->ps = ps_init(ps->config);
         ps->inited = TRUE;
         return gst_pad_event_default(pad, event);
     case GST_EVENT_VADER_START:
         ps->listening = TRUE;
-        pocketsphinx_start_utt(ps->ps, NULL);
+        ps_start_utt(ps->ps, NULL);
         /* Forward this event. */
         return gst_pad_event_default(pad, event);
     case GST_EVENT_EOS:
@@ -548,8 +548,8 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
         hyp = NULL;
         if (ps->listening) {
             ps->listening = FALSE;
-            pocketsphinx_end_utt(ps->ps);
-            hyp = pocketsphinx_get_hyp(ps->ps, &score, &uttid);
+            ps_end_utt(ps->ps);
+            hyp = ps_get_hyp(ps->ps, &score, &uttid);
         }
         if (hyp) {
             /* Emit a signal for applications. */

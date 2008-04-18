@@ -69,8 +69,8 @@ file_exists(const char *path)
 }
 
 static void
-pocketsphinx_add_file(pocketsphinx_t *ps, const char *arg,
-                      const char *hmmdir, const char *file)
+ps_add_file(ps_decoder_t *ps, const char *arg,
+            const char *hmmdir, const char *file)
 {
     char *tmp = string_join(hmmdir, "/", file, NULL);
 
@@ -84,7 +84,7 @@ pocketsphinx_add_file(pocketsphinx_t *ps, const char *arg,
 }
 
 static void
-pocketsphinx_init_defaults(pocketsphinx_t *ps)
+ps_init_defaults(ps_decoder_t *ps)
 {
     char *hmmdir;
 
@@ -95,20 +95,20 @@ pocketsphinx_init_defaults(pocketsphinx_t *ps)
 #endif
     /* Get acoustic model filenames and add them to the command-line */
     if ((hmmdir = cmd_ln_str_r(ps->config, "-hmm")) != NULL) {
-        pocketsphinx_add_file(ps, "-mdef", hmmdir, "mdef");
-        pocketsphinx_add_file(ps, "-mean", hmmdir, "means");
-        pocketsphinx_add_file(ps, "-var", hmmdir, "variances");
-        pocketsphinx_add_file(ps, "-tmat", hmmdir, "transition_matrices");
-        pocketsphinx_add_file(ps, "-mixw", hmmdir, "mixture_weights");
-        pocketsphinx_add_file(ps, "-sendump", hmmdir, "sendump");
-        pocketsphinx_add_file(ps, "-kdtree", hmmdir, "kdtrees");
-        pocketsphinx_add_file(ps, "-fdict", hmmdir, "noisedict");
-        pocketsphinx_add_file(ps, "-featparams", hmmdir, "feat.params");
+        ps_add_file(ps, "-mdef", hmmdir, "mdef");
+        ps_add_file(ps, "-mean", hmmdir, "means");
+        ps_add_file(ps, "-var", hmmdir, "variances");
+        ps_add_file(ps, "-tmat", hmmdir, "transition_matrices");
+        ps_add_file(ps, "-mixw", hmmdir, "mixture_weights");
+        ps_add_file(ps, "-sendump", hmmdir, "sendump");
+        ps_add_file(ps, "-kdtree", hmmdir, "kdtrees");
+        ps_add_file(ps, "-fdict", hmmdir, "noisedict");
+        ps_add_file(ps, "-featparams", hmmdir, "feat.params");
     }
 }
 
 int
-pocketsphinx_reinit(pocketsphinx_t *ps, cmd_ln_t *config)
+ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 {
     char *fsgfile = NULL;
     char *lmfile, *lmctl = NULL;
@@ -123,7 +123,7 @@ pocketsphinx_reinit(pocketsphinx_t *ps, cmd_ln_t *config)
         ps->config = config;
     }
     /* Fill in some default arguments. */
-    pocketsphinx_init_defaults(ps);
+    ps_init_defaults(ps);
 
     /* Logmath computation (used in acmod and search) */
     if (ps->lmath == NULL
@@ -186,27 +186,27 @@ pocketsphinx_reinit(pocketsphinx_t *ps, cmd_ln_t *config)
     return 0;
 }
 
-pocketsphinx_t *
-pocketsphinx_init(cmd_ln_t *config)
+ps_decoder_t *
+ps_init(cmd_ln_t *config)
 {
-    pocketsphinx_t *ps;
+    ps_decoder_t *ps;
 
     ps = ckd_calloc(1, sizeof(*ps));
-    if (pocketsphinx_reinit(ps, config) < 0) {
-        pocketsphinx_free(ps);
+    if (ps_reinit(ps, config) < 0) {
+        ps_free(ps);
         return NULL;
     }
     return ps;
 }
 
 arg_t const *
-pocketsphinx_args(void)
+ps_args(void)
 {
     return ps_args_def;
 }
 
 void
-pocketsphinx_free(pocketsphinx_t *ps)
+ps_free(ps_decoder_t *ps)
 {
     gnode_t *gn;
 
@@ -225,19 +225,19 @@ pocketsphinx_free(pocketsphinx_t *ps)
 }
 
 cmd_ln_t *
-pocketsphinx_get_config(pocketsphinx_t *ps)
+ps_get_config(ps_decoder_t *ps)
 {
     return ps->config;
 }
 
 logmath_t *
-pocketsphinx_get_logmath(pocketsphinx_t *ps)
+ps_get_logmath(ps_decoder_t *ps)
 {
     return ps->lmath;
 }
 
 ngram_model_t *
-pocketsphinx_get_lmset(pocketsphinx_t *ps)
+ps_get_lmset(ps_decoder_t *ps)
 {
     if (ps->search == NULL
         || 0 != strcmp(ps_search_name(ps->search), "ngram"))
@@ -246,7 +246,7 @@ pocketsphinx_get_lmset(pocketsphinx_t *ps)
 }
 
 ngram_model_t *
-pocketsphinx_update_lmset(pocketsphinx_t *ps)
+ps_update_lmset(ps_decoder_t *ps)
 {
     ngram_search_t *ngs;
     gnode_t *gn;
@@ -275,7 +275,7 @@ pocketsphinx_update_lmset(pocketsphinx_t *ps)
 }
 
 fsg_set_t *
-pocketsphinx_get_fsgset(pocketsphinx_t *ps)
+ps_get_fsgset(ps_decoder_t *ps)
 {
     if (ps->search == NULL
         || 0 != strcmp(ps_search_name(ps->search), "fsg"))
@@ -284,7 +284,7 @@ pocketsphinx_get_fsgset(pocketsphinx_t *ps)
 }
 
 fsg_set_t *
-pocketsphinx_update_fsgset(pocketsphinx_t *ps)
+ps_update_fsgset(ps_decoder_t *ps)
 {
     gnode_t *gn;
     fsg_search_t *fsgs;
@@ -311,10 +311,10 @@ pocketsphinx_update_fsgset(pocketsphinx_t *ps)
 }
 
 int
-pocketsphinx_add_word(pocketsphinx_t *ps,
-                      char const *word,
-                      char const *phones,
-                      int update)
+ps_add_word(ps_decoder_t *ps,
+            char const *word,
+            char const *phones,
+            int update)
 {
     int32 wid, lmwid;
     ngram_model_t *lmset;
@@ -328,7 +328,7 @@ pocketsphinx_add_word(pocketsphinx_t *ps,
     }
     ckd_free(pron);
 
-    if ((lmset = pocketsphinx_get_lmset(ps)) != NULL) {
+    if ((lmset = ps_get_lmset(ps)) != NULL) {
         /* FIXME: There is a way more efficient way to do this, since all
          * we did was replace a placeholder string with the new word
          * string - therefore what we ought to do is add it directly to
@@ -351,12 +351,12 @@ pocketsphinx_add_word(pocketsphinx_t *ps,
 }
 
 int
-pocketsphinx_decode_raw(pocketsphinx_t *ps, FILE *rawfh,
-                        char const *uttid, long maxsamps)
+ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
+              char const *uttid, long maxsamps)
 {
     long total, pos;
 
-    pocketsphinx_start_utt(ps, uttid);
+    ps_start_utt(ps, uttid);
     /* If this file is seekable or maxsamps is specified, then decode
      * the whole thing at once. */
     if (maxsamps != -1 || (pos = ftell(rawfh)) >= 0) {
@@ -371,7 +371,7 @@ pocketsphinx_decode_raw(pocketsphinx_t *ps, FILE *rawfh,
         }
         data = ckd_calloc(maxsamps, sizeof(*data));
         total = fread(data, sizeof(*data), maxsamps, rawfh);
-        pocketsphinx_process_raw(ps, data, total, FALSE, TRUE);
+        ps_process_raw(ps, data, total, FALSE, TRUE);
         ckd_free(data);
     }
     else {
@@ -382,16 +382,16 @@ pocketsphinx_decode_raw(pocketsphinx_t *ps, FILE *rawfh,
             size_t nread;
 
             nread = fread(data, sizeof(*data), sizeof(data)/sizeof(*data), rawfh);
-            pocketsphinx_process_raw(ps, data, nread, FALSE, FALSE);
+            ps_process_raw(ps, data, nread, FALSE, FALSE);
             total += nread;
         }
     }
-    pocketsphinx_end_utt(ps);
+    ps_end_utt(ps);
     return total;
 }
 
 int
-pocketsphinx_start_utt(pocketsphinx_t *ps, char const *uttid)
+ps_start_utt(ps_decoder_t *ps, char const *uttid)
 {
     int rv;
 
@@ -417,11 +417,11 @@ pocketsphinx_start_utt(pocketsphinx_t *ps, char const *uttid)
 }
 
 int
-pocketsphinx_process_raw(pocketsphinx_t *ps,
-			 int16 const *data,
-			 size_t n_samples,
-			 int no_search,
-			 int full_utt)
+ps_process_raw(ps_decoder_t *ps,
+               int16 const *data,
+               size_t n_samples,
+               int no_search,
+               int full_utt)
 {
     int n_searchfr = 0;
 
@@ -433,7 +433,7 @@ pocketsphinx_process_raw(pocketsphinx_t *ps,
 
         /* Process some data into features. */
         if ((nfr = acmod_process_raw(ps->acmod, &data,
-                                    &n_samples, full_utt)) < 0)
+                                     &n_samples, full_utt)) < 0)
             return nfr;
 
         /* Score and search as much data as possible */
@@ -451,11 +451,11 @@ pocketsphinx_process_raw(pocketsphinx_t *ps,
 }
 
 int
-pocketsphinx_process_cep(pocketsphinx_t *ps,
-			 mfcc_t **data,
-			 int32 n_frames,
-			 int no_search,
-			 int full_utt)
+ps_process_cep(ps_decoder_t *ps,
+               mfcc_t **data,
+               int32 n_frames,
+               int no_search,
+               int full_utt)
 {
     int n_searchfr = 0;
 
@@ -485,7 +485,7 @@ pocketsphinx_process_cep(pocketsphinx_t *ps,
 }
 
 int
-pocketsphinx_end_utt(pocketsphinx_t *ps)
+ps_end_utt(ps_decoder_t *ps)
 {
     int rv;
 
@@ -502,7 +502,7 @@ pocketsphinx_end_utt(pocketsphinx_t *ps)
 }
 
 char const *
-pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score, char const **uttid)
+ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score, char const **uttid)
 {
     char const *hyp;
 
@@ -515,7 +515,7 @@ pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score, char const **utt
 }
 
 ps_seg_t *
-pocketsphinx_seg_iter(pocketsphinx_t *ps, int32 *out_best_score)
+ps_seg_iter(ps_decoder_t *ps, int32 *out_best_score)
 {
     ps_seg_t *itor;
 
@@ -526,39 +526,39 @@ pocketsphinx_seg_iter(pocketsphinx_t *ps, int32 *out_best_score)
 }
 
 ps_seg_t *
-pocketsphinx_seg_next(ps_seg_t *seg)
+ps_seg_next(ps_seg_t *seg)
 {
     return ps_search_seg_next(seg);
 }
 
 char const *
-pocketsphinx_seg_word(ps_seg_t *seg)
+ps_seg_word(ps_seg_t *seg)
 {
     return seg->word;
 }
 
 void
-pocketsphinx_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef)
+ps_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef)
 {
     *out_sf = seg->sf;
     *out_ef = seg->ef;
 }
 
 void
-pocketsphinx_seg_prob(ps_seg_t *seg, int32 *out_pprob)
+ps_seg_prob(ps_seg_t *seg, int32 *out_pprob)
 {
     *out_pprob = seg->prob;
 }
 
 void
-pocketsphinx_seg_free(ps_seg_t *seg)
+ps_seg_free(ps_seg_t *seg)
 {
     ps_search_seg_free(seg);
 }
 
 void
-pocketsphinx_get_utt_time(pocketsphinx_t *ps, double *out_nspeech,
-                          double *out_ncpu, double *out_nwall)
+ps_get_utt_time(ps_decoder_t *ps, double *out_nspeech,
+                double *out_ncpu, double *out_nwall)
 {
     int32 frate;
 
@@ -569,8 +569,8 @@ pocketsphinx_get_utt_time(pocketsphinx_t *ps, double *out_nspeech,
 }
 
 void
-pocketsphinx_get_all_time(pocketsphinx_t *ps, double *out_nspeech,
-                          double *out_ncpu, double *out_nwall)
+ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
+                double *out_ncpu, double *out_nwall)
 {
     int32 frate;
 

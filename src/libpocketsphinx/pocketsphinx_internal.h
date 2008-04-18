@@ -153,7 +153,7 @@ struct ps_seg_s {
 /**
  * Decoder object.
  */
-struct pocketsphinx_s {
+struct ps_decoder_s {
     /* Model parameters and such. */
     cmd_ln_t *config;  /**< Configuration. */
     glist_t strings;   /**< Extra strings added to config. */

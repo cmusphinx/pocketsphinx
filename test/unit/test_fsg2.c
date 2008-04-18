@@ -10,7 +10,7 @@
 int
 main(int argc, char *argv[])
 {
-	pocketsphinx_t *ps;
+	ps_decoder_t *ps;
 	cmd_ln_t *config;
 	acmod_t *acmod;
 	fsg_search_t *fsgs;
@@ -19,13 +19,13 @@ main(int argc, char *argv[])
 	int i;
 
 	TEST_ASSERT(config =
-		    cmd_ln_init(NULL, pocketsphinx_args(), TRUE,
+		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/hmm/wsj1",
 				"-fsg", DATADIR "/goforward.fsg",
 				"-dict", MODELDIR "/lm/turtle/turtle.dic",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
-	TEST_ASSERT(ps = pocketsphinx_init(config));
+	TEST_ASSERT(ps = ps_init(config));
 
 	fsgs = (fsg_search_t *)ps->search;
 	acmod = ps->acmod;
@@ -62,7 +62,7 @@ main(int argc, char *argv[])
 			     fsg_search_hyp(ps_search_base(fsgs), &score)));
 	c = clock() - c;
 	printf("5 * fsg search in %.2f sec\n", (double)c / CLOCKS_PER_SEC);
-	pocketsphinx_free(ps);
+	ps_free(ps);
 
 	return 0;
 }

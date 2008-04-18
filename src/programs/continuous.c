@@ -78,7 +78,7 @@
 #endif
 
 static ad_rec_t *ad;
-static pocketsphinx_t *ps;
+static ps_decoder_t *ps;
 
 /* Sleep for specified msec */
 static void
@@ -140,9 +140,9 @@ utterance_loop()
          * Non-zero amount of data received; start recognition of new utterance.
          * NULL argument to uttproc_begin_utt => automatic generation of utterance-id.
          */
-        if (pocketsphinx_start_utt(ps, NULL) < 0)
-            E_FATAL("pocketsphinx_start_utt() failed\n");
-        pocketsphinx_process_raw(ps, adbuf, k, FALSE, FALSE);
+        if (ps_start_utt(ps, NULL) < 0)
+            E_FATAL("ps_start_utt() failed\n");
+        ps_process_raw(ps, adbuf, k, FALSE, FALSE);
         printf("Listening...\n");
         fflush(stdout);
 
@@ -170,7 +170,7 @@ utterance_loop()
             /*
              * Decode whatever data was read above.
              */
-            rem = pocketsphinx_process_raw(ps, adbuf, k, FALSE, FALSE);
+            rem = ps_process_raw(ps, adbuf, k, FALSE, FALSE);
 
             /* If no work to be done, sleep a bit */
             if ((rem == 0) && (k == 0))
@@ -188,8 +188,8 @@ utterance_loop()
         printf("Stopped listening, please wait...\n");
         fflush(stdout);
         /* Finish decoding, obtain and print result */
-        pocketsphinx_end_utt(ps);
-        hyp = pocketsphinx_get_hyp(ps, &score, &uttid);
+        ps_end_utt(ps);
+        hyp = ps_get_hyp(ps, &score, &uttid);
         printf("%s: %s (%d)\n", uttid, hyp, score);
         fflush(stdout);
 
@@ -224,10 +224,10 @@ main(int argc, char *argv[])
     signal(SIGINT, &sighandler);
 #endif
 
-    config = cmd_ln_parse_r(NULL, pocketsphinx_args(), argc, argv, TRUE);
+    config = cmd_ln_parse_r(NULL, ps_args(), argc, argv, TRUE);
     if (config == NULL)
         return 1;
-    ps = pocketsphinx_init(config);
+    ps = ps_init(config);
     if (ps == NULL)
         return 1;
 
@@ -241,7 +241,7 @@ main(int argc, char *argv[])
         utterance_loop();
     }
 
-    pocketsphinx_free(ps);
+    ps_free(ps);
     ad_close(ad);
 
     return 0;

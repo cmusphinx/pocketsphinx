@@ -125,7 +125,7 @@ static const arg_t ps_args_def[] = {
 };
 
 int
-process_ctl_line(pocketsphinx_t *ps, cmd_ln_t *config,
+process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
                  char const *file, char const *uttid, int32 sf, int32 ef)
 {
     FILE *infh;
@@ -159,7 +159,7 @@ process_ctl_line(pocketsphinx_t *ps, cmd_ln_t *config,
                      * (cmd_ln_float32_r(config, "-samprate")
                         / cmd_ln_int32_r(config, "-frate")));
         fseek(infh, sf * sizeof(int16), SEEK_CUR);
-        pocketsphinx_decode_raw(ps, infh, uttid, ef);
+        ps_decode_raw(ps, infh, uttid, ef);
     }
     else {
         long flen;
@@ -205,10 +205,10 @@ process_ctl_line(pocketsphinx_t *ps, cmd_ln_t *config,
         for (i = 0; i < nfr * ceplen; ++i)
             mfcs[0][i] = FLOAT2MFCC(floats[i]);
 #endif
-        pocketsphinx_start_utt(ps, uttid);
-        pocketsphinx_process_cep(ps, mfcs,
+        ps_start_utt(ps, uttid);
+        ps_process_cep(ps, mfcs,
                                  nfr, FALSE, TRUE);
-        pocketsphinx_end_utt(ps);
+        ps_end_utt(ps);
         ckd_free_2d(mfcs);
     }
     fclose(infh);
@@ -217,7 +217,7 @@ process_ctl_line(pocketsphinx_t *ps, cmd_ln_t *config,
 }
 
 void
-process_ctl(pocketsphinx_t *ps, cmd_ln_t *config, FILE *ctlfh)
+process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
 {
     int32 ctloffset, ctlcount, ctlincr;
     int32 i;
@@ -284,7 +284,7 @@ process_ctl(pocketsphinx_t *ps, cmd_ln_t *config, FILE *ctlfh)
                 uttid = wptr[3];
             /* Do actual decoding. */
             process_ctl_line(ps, config, file, uttid, sf, ef);
-            hyp = pocketsphinx_get_hyp(ps, &score, &uttid);
+            hyp = ps_get_hyp(ps, &score, &uttid);
             
             /* Write out results and such. */
             if (hypfh) {
@@ -293,7 +293,7 @@ process_ctl(pocketsphinx_t *ps, cmd_ln_t *config, FILE *ctlfh)
             if (hypsegfh) {
                 /* FIXME */
             }
-            pocketsphinx_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
+            ps_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
             E_INFO("%s: %.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
                    uttid, n_speech, n_cpu, n_wall);
             E_INFO("%s: %.2f xRT (CPU), %.2f xRT (elapsed)\n",
@@ -303,7 +303,7 @@ process_ctl(pocketsphinx_t *ps, cmd_ln_t *config, FILE *ctlfh)
         i += ctlincr;
     }
 
-    pocketsphinx_get_all_time(ps, &n_speech, &n_cpu, &n_wall);
+    ps_get_all_time(ps, &n_speech, &n_cpu, &n_wall);
     E_INFO("TOTAL %.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
            n_speech, n_cpu, n_wall);
     E_INFO("AVERAGE %.2f xRT (CPU), %.2f xRT (elapsed)\n",
@@ -318,7 +318,7 @@ process_ctl(pocketsphinx_t *ps, cmd_ln_t *config, FILE *ctlfh)
 int
 main(int32 argc, char *argv[])
 {
-    pocketsphinx_t *ps;
+    ps_decoder_t *ps;
     cmd_ln_t *config;
     char const *ctl;
     FILE *ctlfh;
@@ -339,13 +339,13 @@ main(int32 argc, char *argv[])
     if ((ctlfh = fopen(ctl, "r")) == NULL) {
         E_FATAL_SYSTEM("Failed to open control file %s", ctl);
     }
-    ps = pocketsphinx_init(config);
+    ps = ps_init(config);
     if (ps == NULL) {
         E_FATAL("PocketSphinx decoder init failed\n");
     }
 
     process_ctl(ps, config, ctlfh);
 
-    pocketsphinx_free(ps);
+    ps_free(ps);
     return 0;
 }

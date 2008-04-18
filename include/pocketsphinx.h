@@ -63,7 +63,7 @@ extern "C" {
 /**
  * PocketSphinx speech recognizer object.
  */
-typedef struct pocketsphinx_s pocketsphinx_t;
+typedef struct ps_decoder_s ps_decoder_t;
 
 /**
  * PocketSphinx word lattice object.
@@ -90,7 +90,7 @@ typedef struct ps_seg_s ps_seg_t;
  * cmd_ln_parse_r() or cmd_ln_parse_file_r().
  */
 POCKETSPHINX_EXPORT
-pocketsphinx_t *pocketsphinx_init(cmd_ln_t *config);
+ps_decoder_t *ps_init(cmd_ln_t *config);
 
 /**
  * Reinitialize the decoder with updated configuration.
@@ -106,28 +106,28 @@ pocketsphinx_t *pocketsphinx_init(cmd_ln_t *config);
  * @return 0 for success, <0 for failure.
  */
 POCKETSPHINX_EXPORT
-int pocketsphinx_reinit(pocketsphinx_t *ps, cmd_ln_t *config);
+int ps_reinit(ps_decoder_t *ps, cmd_ln_t *config);
 
 /**
- * Returns the argument definitions used in pocketsphinx_init().
+ * Returns the argument definitions used in ps_init().
  *
  * This is here to avoid exporting global data, which is problematic
  * on Win32 and Symbian (and possibly other platforms).
  */
 POCKETSPHINX_EXPORT
-arg_t const *pocketsphinx_args(void);
+arg_t const *ps_args(void);
 
 /**
  * Finalize the decoder.
  *
  * This releases all resources associated with the decoder, including
  * any language models or grammars which have been added to it, and
- * the initial configuration object passed to pocketsphinx_init().
+ * the initial configuration object passed to ps_init().
  *
  * @param ps Decoder to be freed.
  */
 POCKETSPHINX_EXPORT
-void pocketsphinx_free(pocketsphinx_t *ps);
+void ps_free(ps_decoder_t *ps);
 
 /**
  * Get the configuration object for this decoder.
@@ -137,7 +137,7 @@ void pocketsphinx_free(pocketsphinx_t *ps);
  *         attempt to free it manually.
  */
 POCKETSPHINX_EXPORT
-cmd_ln_t *pocketsphinx_get_config(pocketsphinx_t *ps);
+cmd_ln_t *ps_get_config(ps_decoder_t *ps);
 
 /**
  * Get the log-math computation object for this decoder.
@@ -147,20 +147,20 @@ cmd_ln_t *pocketsphinx_get_config(pocketsphinx_t *ps);
  *         attempt to free it manually.
  */
 POCKETSPHINX_EXPORT
-logmath_t *pocketsphinx_get_logmath(pocketsphinx_t *ps);
+logmath_t *ps_get_logmath(ps_decoder_t *ps);
 
 /**
  * Get the language model set object for this decoder.
  *
  * If N-Gram decoding is not enabled, this will return NULL.  You will
- * need to enable it using pocketsphinx_update_lmset().
+ * need to enable it using ps_update_lmset().
  *
  * @return The language model set object for this decoder.  The
  *         decoder retains ownership of this pointer, so you should
  *         not attempt to free it manually.
  */
 POCKETSPHINX_EXPORT
-ngram_model_t *pocketsphinx_get_lmset(pocketsphinx_t *ps);
+ngram_model_t *ps_get_lmset(ps_decoder_t *ps);
 
 /**
  * Update the language model set object for this decoder.
@@ -177,19 +177,19 @@ ngram_model_t *pocketsphinx_get_lmset(pocketsphinx_t *ps);
  *         NULL on failure.
  */
 POCKETSPHINX_EXPORT
-ngram_model_t *pocketsphinx_update_lmset(pocketsphinx_t *ps);
+ngram_model_t *ps_update_lmset(ps_decoder_t *ps);
 
 /**
  * Get the finite-state grammar set object for this decoder.
  *
  * If FSG decoding is not enabled, this returns NULL.  Call
- * pocketsphinx_update_fsgset() to enable it.
+ * ps_update_fsgset() to enable it.
  *
  * @return The current FSG set object for this decoder, or
  *         NULL if none is available.
  */
 POCKETSPHINX_EXPORT
-fsg_set_t *pocketsphinx_get_fsgset(pocketsphinx_t *ps);
+fsg_set_t *ps_get_fsgset(ps_decoder_t *ps);
 
 /**
  * Update the finite-state grammar set object for this decoder.
@@ -202,7 +202,7 @@ fsg_set_t *pocketsphinx_get_fsgset(pocketsphinx_t *ps);
  *         NULL on failure.
  */
 POCKETSPHINX_EXPORT
-fsg_set_t *pocketsphinx_update_fsgset(pocketsphinx_t *ps);
+fsg_set_t *ps_update_fsgset(ps_decoder_t *ps);
 
 /**
  * Add a word to the pronunciation dictionary.
@@ -224,10 +224,10 @@ fsg_set_t *pocketsphinx_update_fsgset(pocketsphinx_t *ps);
  *         failure.
  */
 POCKETSPHINX_EXPORT
-int pocketsphinx_add_word(pocketsphinx_t *ps,
-                          char const *word,
-                          char const *phones,
-                          int update);
+int ps_add_word(ps_decoder_t *ps,
+                char const *word,
+                char const *phones,
+                int update);
 
 /**
  * Decode a raw audio stream.
@@ -245,8 +245,8 @@ int pocketsphinx_add_word(pocketsphinx_t *ps,
  * @return Number of samples of audio.
  */
 POCKETSPHINX_EXPORT
-int pocketsphinx_decode_raw(pocketsphinx_t *ps, FILE *rawfh,
-                            char const *uttid, long maxsamps);
+int ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
+                  char const *uttid, long maxsamps);
 
 /**
  * Start utterance processing.
@@ -261,7 +261,7 @@ int pocketsphinx_decode_raw(pocketsphinx_t *ps, FILE *rawfh,
  * @return 0 for success, <0 on error.
  */
 POCKETSPHINX_EXPORT
-int pocketsphinx_start_utt(pocketsphinx_t *ps, char const *uttid);
+int ps_start_utt(ps_decoder_t *ps, char const *uttid);
 
 /**
  * Decode raw audio data.
@@ -277,11 +277,11 @@ int pocketsphinx_start_utt(pocketsphinx_t *ps, char const *uttid);
  * @return Number of frames of data searched, or <0 for error.
  */
 POCKETSPHINX_EXPORT
-int pocketsphinx_process_raw(pocketsphinx_t *ps,
-                             int16 const *data,
-                             size_t n_samples,
-                             int no_search,
-                             int full_utt);
+int ps_process_raw(ps_decoder_t *ps,
+                   int16 const *data,
+                   size_t n_samples,
+                   int no_search,
+                   int full_utt);
 
 /**
  * Decode acoustic feature data.
@@ -297,11 +297,11 @@ int pocketsphinx_process_raw(pocketsphinx_t *ps,
  * @return Number of frames of data searched, or <0 for error.
  */
 POCKETSPHINX_EXPORT
-int pocketsphinx_process_cep(pocketsphinx_t *ps,
-                             mfcc_t **data,
-                             int n_frames,
-                             int no_search,
-                             int full_utt);
+int ps_process_cep(ps_decoder_t *ps,
+                   mfcc_t **data,
+                   int n_frames,
+                   int no_search,
+                   int full_utt);
 
 /**
  * End utterance processing.
@@ -310,7 +310,7 @@ int pocketsphinx_process_cep(pocketsphinx_t *ps,
  * @return 0 for success, <0 on error
  */
 POCKETSPHINX_EXPORT
-int pocketsphinx_end_utt(pocketsphinx_t *ps);
+int ps_end_utt(ps_decoder_t *ps);
 
 /**
  * Get hypothesis string and path score.
@@ -321,8 +321,8 @@ int pocketsphinx_end_utt(pocketsphinx_t *ps);
  *         decoding.  NULL if no hypothesis is available.
  */
 POCKETSPHINX_EXPORT
-char const *pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score,
-                                 char const **out_uttid);
+char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score,
+                       char const **out_uttid);
 
 /**
  * Get word lattice.
@@ -334,14 +334,14 @@ char const *pocketsphinx_get_hyp(pocketsphinx_t *ps, int32 *out_best_score,
  *         if no hypotheses are available.
  */
 POCKETSPHINX_EXPORT
-ps_lattice_t *pocketsphinx_get_lattice(pocketsphinx_t *ps);
+ps_lattice_t *ps_get_lattice(ps_decoder_t *ps);
 
 /**
  * Write a lattice to disk.
  */
 POCKETSPHINX_EXPORT
 int32
-pocketsphinx_lattice_write(ps_lattice_t *dag, char const *filename);
+ps_lattice_write(ps_lattice_t *dag, char const *filename);
 
 
 /**
@@ -352,7 +352,7 @@ pocketsphinx_lattice_write(ps_lattice_t *dag, char const *filename);
  *         decoding.  NULL if no hypothesis is available.
  */
 POCKETSPHINX_EXPORT
-ps_seg_t *pocketsphinx_seg_iter(pocketsphinx_t *ps, int32 *out_best_score);
+ps_seg_t *ps_seg_iter(ps_decoder_t *ps, int32 *out_best_score);
 
 /**
  * Get the next segment in a word segmentation.
@@ -361,19 +361,19 @@ ps_seg_t *pocketsphinx_seg_iter(pocketsphinx_t *ps, int32 *out_best_score);
  *         utterance (the iterator will be freed in this case).
  */
 POCKETSPHINX_EXPORT
-ps_seg_t *pocketsphinx_seg_next(ps_seg_t *seg);
+ps_seg_t *ps_seg_next(ps_seg_t *seg);
 
 /**
  * Get word string from a segmentation iterator.
  */
 POCKETSPHINX_EXPORT
-char const *pocketsphinx_seg_word(ps_seg_t *seg);
+char const *ps_seg_word(ps_seg_t *seg);
 
 /**
  * Get start and end frames from a segmentation iterator.
  */
 POCKETSPHINX_EXPORT
-void pocketsphinx_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef);
+void ps_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef);
 
 /**
  * Get log posterior probability from a segmentation iterator.
@@ -383,16 +383,16 @@ void pocketsphinx_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef);
  * @param out_pprob Output: log posterior probability of current
  *                  segment.  Log is expressed in the log-base used in
  *                  the decoder.  To convert to linear floating-point,
- *                  use logmath_exp(pocketsphinx_get_logmath(), pprob).
+ *                  use logmath_exp(ps_get_logmath(), pprob).
  */
 POCKETSPHINX_EXPORT
-void pocketsphinx_seg_prob(ps_seg_t *seg, int32 *out_pprob);
+void ps_seg_prob(ps_seg_t *seg, int32 *out_pprob);
 
 /**
  * Finish iterating over a word segmentation early, freeing resources.
  */
 POCKETSPHINX_EXPORT
-void pocketsphinx_seg_free(ps_seg_t *seg);
+void ps_seg_free(ps_seg_t *seg);
 
 /**
  * Get an iterator over the best hypotheses, optionally within a
@@ -408,8 +408,8 @@ void pocketsphinx_seg_free(ps_seg_t *seg);
  * @return Iterator over N-best hypotheses.
  */
 POCKETSPHINX_EXPORT
-ps_nbest_t *pocketsphinx_nbest(pocketsphinx_t *ps, int sf, int ef,
-			       char const *ctx1, char const *ctx2);
+ps_nbest_t *ps_nbest(ps_decoder_t *ps, int sf, int ef,
+                     char const *ctx1, char const *ctx2);
 
 /**
  * Move an N-best list iterator forward.
@@ -419,7 +419,7 @@ ps_nbest_t *pocketsphinx_nbest(pocketsphinx_t *ps, int sf, int ef,
  *         available (iterator is freed ni this case).
  */
 POCKETSPHINX_EXPORT 
-ps_nbest_t *pocketsphinx_nbest_next(ps_nbest_t *nbest);
+ps_nbest_t *ps_nbest_next(ps_nbest_t *nbest);
 
 /**
  * Get the hypothesis string from an N-best list iterator.
@@ -429,7 +429,7 @@ ps_nbest_t *pocketsphinx_nbest_next(ps_nbest_t *nbest);
  * @return String containing next best hypothesis.
  */
 POCKETSPHINX_EXPORT
-char const *pocketsphinx_nbest_hyp(ps_nbest_t *nbest, int32 *out_score);
+char const *ps_nbest_hyp(ps_nbest_t *nbest, int32 *out_score);
 
 /**
  * Get the word segmentation from an N-best list iterator.
@@ -439,7 +439,7 @@ char const *pocketsphinx_nbest_hyp(ps_nbest_t *nbest, int32 *out_score);
  * @return Iterator over the next best hypothesis.
  */
 POCKETSPHINX_EXPORT
-ps_seg_t *pocketsphinx_nbest_seg(ps_nbest_t *nbest, int32 *out_score);
+ps_seg_t *ps_nbest_seg(ps_nbest_t *nbest, int32 *out_score);
 
 /**
  * Finish N-best search early, releasing resources.
@@ -447,7 +447,7 @@ ps_seg_t *pocketsphinx_nbest_seg(ps_nbest_t *nbest, int32 *out_score);
  * @param nbest N-best iterator.
  */
 POCKETSPHINX_EXPORT
-void pocketsphinx_nbest_free(ps_nbest_t *nbest);
+void ps_nbest_free(ps_nbest_t *nbest);
 
 /**
  * Get performance information for the current utterance.
@@ -458,8 +458,8 @@ void pocketsphinx_nbest_free(ps_nbest_t *nbest);
  * @param out_nwall   Output: Number of seconds of wall time used.
  */
 POCKETSPHINX_EXPORT
-void pocketsphinx_get_utt_time(pocketsphinx_t *ps, double *out_nspeech,
-			       double *out_ncpu, double *out_nwall);
+void ps_get_utt_time(ps_decoder_t *ps, double *out_nspeech,
+                     double *out_ncpu, double *out_nwall);
 
 /**
  * Get overall performance information.
@@ -470,8 +470,8 @@ void pocketsphinx_get_utt_time(pocketsphinx_t *ps, double *out_nspeech,
  * @param out_nwall   Output: Number of seconds of wall time used.
  */
 POCKETSPHINX_EXPORT
-void pocketsphinx_get_all_time(pocketsphinx_t *ps, double *out_nspeech,
-			       double *out_ncpu, double *out_nwall);
+void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
+                     double *out_ncpu, double *out_nwall);
 
 /**
  * @mainpage PocketSphinx API Documentation

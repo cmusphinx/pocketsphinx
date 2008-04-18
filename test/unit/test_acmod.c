@@ -38,7 +38,7 @@ main(int argc, char *argv[])
 	int bestsen1[270];
 
 	lmath = logmath_init(1.0001, 0, 0);
-	config = cmd_ln_init(NULL, pocketsphinx_args(), TRUE,
+	config = cmd_ln_init(NULL, ps_args(), TRUE,
 			     "-featparams", MODELDIR "/hmm/wsj1/feat.params",
 			     "-mdef", MODELDIR "/hmm/wsj1/mdef",
 			     "-mean", MODELDIR "/hmm/wsj1/means",

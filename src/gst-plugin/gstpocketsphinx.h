@@ -65,7 +65,7 @@ struct _GstPocketSphinx
 
     GstPad *sinkpad, *srcpad;
 
-    pocketsphinx_t *ps;
+    ps_decoder_t *ps;
     cmd_ln_t *config;
 
     GHashTable *arghash;
