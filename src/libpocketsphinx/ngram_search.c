@@ -931,7 +931,7 @@ ngram_search_lattice(ps_search_t *search)
         goto error_out;
     if ((dag->end = find_end_node(ngs, dag, ngs->bestpath_fwdtree_lw_ratio)) == NULL)
         goto error_out;
-    E_INFO("Start %s.%d End %s.%d\n",
+    E_INFO("lattice start node %s.%d end node %s.%d\n",
            dict_word_str(search->dict, dag->start->wid), dag->start->sf,
            dict_word_str(search->dict, dag->end->wid), dag->end->sf);
 
@@ -1018,6 +1018,7 @@ ngram_search_lattice(ps_search_t *search)
     /* Free nodes unreachable from dag->start and their links */
     ps_lattice_delete_unreachable(dag);
 
+#if 0
     {
         int nn, nl;
         latlink_t *link;
@@ -1027,8 +1028,9 @@ ngram_search_lattice(ps_search_t *search)
                 nl++;
             nn++;
         }
-        E_INFO("%8d nodes, %d links in word lattice\n", nn, nl);
+        E_INFO("lattice has %d nodes, %d links\n", nn, nl);
     }
+#endif
 
     ngs->dag = dag;
     return dag;
