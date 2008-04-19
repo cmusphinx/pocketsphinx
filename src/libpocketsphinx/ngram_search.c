@@ -986,16 +986,13 @@ ngram_search_lattice(ps_search_t *search)
             if (score > WORST_SCORE) {
                 link_latnodes(dag, from, to, score, bp_ptr->frame);
                 from->reachable = TRUE;
-                E_INFO("Linked %s.%d -> %s.%d\n",
-                       dict_word_str(search->dict, from->wid), from->sf,
-                       dict_word_str(search->dict, to->wid), to->sf);
             }
         }
     }
 
     /* There must be at least one path between dag->start and dag->end */
     if (!dag->start->reachable) {
-        E_ERROR("<s> isolated; unreachable\n");
+        E_ERROR("End node of lattice isolated; unreachable\n");
         goto error_out;
     }
 
