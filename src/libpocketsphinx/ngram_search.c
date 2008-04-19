@@ -422,12 +422,15 @@ ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score
         return NO_BP;
     }
 
-    /* Now find the best scoring entry. */
+    /* Now find the entry for </s> OR the best scoring entry. */
     for (bp = ngs->bp_table_idx[frame_idx]; bp < end_bpidx; ++bp) {
-        if (ngs->bp_table[bp].score > best_score) {
+        if (ngs->bp_table[bp].wid == ps_search_finish_wid(ngs)
+            || ngs->bp_table[bp].score > best_score) {
             best_score = ngs->bp_table[bp].score;
             best_exit = bp;
         }
+        if (ngs->bp_table[bp].wid == ps_search_finish_wid(ngs))
+            break;
     }
 
     if (out_best_score) *out_best_score = best_score;
@@ -634,6 +637,10 @@ ngram_search_finish(ps_search_t *search)
 
     /* Build a DAG if necessary. */
     if (ngs->bestpath) {
+        /* Compute these such that they agree with the fwdtree language weight. */
+        ngram_compute_seg_scores(ngs,
+                                 ngs->fwdflat
+                                 ? ngs->fwdflat_fwdtree_lw_ratio : 1.0);
         ngram_search_lattice(search);
     }
 
@@ -795,7 +802,7 @@ create_dag_nodes(ngram_search_t *ngs, ps_lattice_t *dag)
         /* Skip if word not in LM */
         if ((!ISA_FILLER_WORD(ngs, wid))
             && (!ngram_model_set_known_wid(ngs->lmset,
-                                           ps_search_dict(ngs)->dict_list[wid]->wid)))
+                                           dict_base_wid(ps_search_dict(ngs), wid))))
             continue;
 
         /* See if bptbl entry <wid,sf> already in lattice */
@@ -917,7 +924,6 @@ ngram_search_lattice(ps_search_t *search)
     }
 
     dag = ps_lattice_init(search, ngs->n_frame);
-    ngram_compute_seg_scores(ngs, ngs->bestpath_fwdtree_lw_ratio);
     create_dag_nodes(ngs, dag);
     if ((dag->start = find_start_node(ngs, dag)) == NULL)
         goto error_out;

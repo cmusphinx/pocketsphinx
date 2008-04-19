@@ -487,6 +487,14 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf)
     while (q_head) {
         /* Update path score for all possible links out of q_head->to */
         node = q_head->to;
+
+#if 0
+        printf("QHD %s.%d -> %s.%d (%d, %d)\n",
+               dict_word_str(search->dict, q_head->from->wid), q_head->from->sf,
+               dict_word_str(search->dict, node->wid), node->sf,
+               q_head->link_scr, q_head->path_scr);
+#endif
+
         for (link = node->links; link; link = link->next) {
             int32 n_used;
 
