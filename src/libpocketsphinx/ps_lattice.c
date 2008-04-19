@@ -99,7 +99,7 @@ ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
     for (node = dag->nodes; node; node = node->next) {
         for (link = node->links; link; link = link->next) {
             to = link->to;
-            if (ISA_FILLER_WORD(dag->search, to->wid)) {
+            if (to != dag->end && ISA_FILLER_WORD(dag->search, to->basewid)) {
                 revlink = listelem_malloc(dag->rev_latlink_alloc);
                 revlink->link = link;
                 revlink->next = to->revlinks;
@@ -110,7 +110,7 @@ ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
 
     /* Bypass filler nodes */
     for (node = dag->nodes; node; node = node->next) {
-        if (!ISA_FILLER_WORD(dag->search, node->basewid))
+        if (node == dag->end || !ISA_FILLER_WORD(dag->search, node->basewid))
             continue;
 
         /* Replace each link entering filler node with links to all its successors */
@@ -118,7 +118,7 @@ ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
             link = revlink->link;       /* link entering filler node */
             from = link->from;
 
-            score = (node->wid == ps_search_silence_wid(dag->search)) ? silpen : fillpen;
+            score = (node->basewid == ps_search_silence_wid(dag->search)) ? silpen : fillpen;
             score += link->link_scr;
 
             /*
@@ -129,7 +129,7 @@ ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
              * points to a filler node.
              */
             for (f_link = node->links; f_link; f_link = f_link->next) {
-                if (!ISA_FILLER_WORD(dag->search, f_link->to->wid))
+                if (!ISA_FILLER_WORD(dag->search, f_link->to->basewid))
                     link_latnodes(dag, from, f_link->to,
                                   score + f_link->link_scr, link->ef);
             }
@@ -140,7 +140,7 @@ ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
     prev_node = NULL;
     for (node = dag->nodes; node; node = t_node) {
         t_node = node->next;
-        if (ISA_FILLER_WORD(dag->search, node->wid)) {
+        if (node != dag->end && ISA_FILLER_WORD(dag->search, node->basewid)) {
             for (revlink = node->revlinks; revlink; revlink = t_revlink) {
                 t_revlink = revlink->next;
                 revlink->link->to = NULL;
@@ -312,31 +312,31 @@ ps_lattice_hyp(ps_lattice_t *dag, latlink_t *link)
 
     /* Backtrace once to get hypothesis length. */
     len = 0;
-    if (ISA_REAL_WORD(dag->search, link->to->wid))
-        len += strlen(dict_base_str(ps_search_dict(dag->search), link->to->wid)) + 1;
+    if (ISA_REAL_WORD(dag->search, link->to->basewid))
+        len += strlen(dict_word_str(ps_search_dict(dag->search), link->to->basewid)) + 1;
     for (l = link; l; l = l->best_prev) {
-        if (ISA_REAL_WORD(dag->search, l->from->wid))
-            len += strlen(dict_base_str(ps_search_dict(dag->search), l->from->wid)) + 1;
+        if (ISA_REAL_WORD(dag->search, l->from->basewid))
+            len += strlen(dict_word_str(ps_search_dict(dag->search), l->from->basewid)) + 1;
     }
 
     /* Backtrace again to construct hypothesis string. */
     ckd_free(dag->hyp_str);
     dag->hyp_str = ckd_calloc(1, len);
     c = dag->hyp_str + len - 1;
-    if (ISA_REAL_WORD(dag->search, link->to->wid)) {
-        len = strlen(dict_base_str(ps_search_dict(dag->search), link->to->wid));
+    if (ISA_REAL_WORD(dag->search, link->to->basewid)) {
+        len = strlen(dict_word_str(ps_search_dict(dag->search), link->to->basewid));
         c -= len;
-        memcpy(c, dict_base_str(ps_search_dict(dag->search), link->to->wid), len);
+        memcpy(c, dict_word_str(ps_search_dict(dag->search), link->to->basewid), len);
         if (c > dag->hyp_str) {
             --c;
             *c = ' ';
         }
     }
     for (l = link; l; l = l->best_prev) {
-        if (ISA_REAL_WORD(dag->search, l->from->wid)) {
-            len = strlen(dict_base_str(ps_search_dict(dag->search), l->from->wid));
+        if (ISA_REAL_WORD(dag->search, l->from->basewid)) {
+            len = strlen(dict_word_str(ps_search_dict(dag->search), l->from->basewid));
             c -= len;
-            memcpy(c, dict_base_str(ps_search_dict(dag->search), l->from->wid), len);
+            memcpy(c, dict_word_str(ps_search_dict(dag->search), l->from->basewid), len);
             if (c > dag->hyp_str) {
                 --c;
                 *c = ' ';
@@ -469,7 +469,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf)
     for (link = dag->start->links; link; link = link->next) {
         int32 n_used;
 
-        assert(!(ISA_FILLER_WORD(search, link->to->wid)));
+        assert(link->to == dag->end || !ISA_FILLER_WORD(search, link->to->basewid));
         link->path_scr = link->link_scr +
             ngram_bg_score(lmset, link->to->basewid,
                            ps_search_start_wid(search), &n_used) * lwf;
@@ -488,17 +488,17 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf)
         /* Update path score for all possible links out of q_head->to */
         node = q_head->to;
 
-#if 0
-        printf("QHD %s.%d -> %s.%d (%d, %d)\n",
-               dict_word_str(search->dict, q_head->from->wid), q_head->from->sf,
-               dict_word_str(search->dict, node->wid), node->sf,
+#if 1
+        E_INFO("QHD %s.%d -> %s.%d (%d, %d)\n",
+               dict_word_str(search->dict, q_head->from->basewid), q_head->from->sf,
+               dict_word_str(search->dict, node->basewid), node->sf,
                q_head->link_scr, q_head->path_scr);
 #endif
 
         for (link = node->links; link; link = link->next) {
             int32 n_used;
 
-            assert(!(ISA_FILLER_WORD(search, link->to->wid)));
+            assert(link->to == dag->end || !ISA_FILLER_WORD(search, link->to->basewid));
 
             score = q_head->path_scr + link->link_scr +
                 ngram_tg_score(lmset, link->to->basewid,
@@ -795,18 +795,18 @@ ps_astar_hyp(ps_astar_t *nbest, latpath_t *path)
     /* Backtrace once to get hypothesis length. */
     len = 0;
     for (p = path; p; p = p->parent) {
-        if (ISA_REAL_WORD(search, p->node->wid))
-            len += strlen(dict_base_str(ps_search_dict(search), p->node->wid)) + 1;
+        if (ISA_REAL_WORD(search, p->node->basewid))
+            len += strlen(dict_word_str(ps_search_dict(search), p->node->basewid)) + 1;
     }
 
     /* Backtrace again to construct hypothesis string. */
     hyp = ckd_calloc(1, len);
     c = hyp + len - 1;
     for (p = path; p; p = p->parent) {
-        if (ISA_REAL_WORD(search, p->node->wid)) {
-            len = strlen(dict_base_str(ps_search_dict(search), p->node->wid));
+        if (ISA_REAL_WORD(search, p->node->basewid)) {
+            len = strlen(dict_word_str(ps_search_dict(search), p->node->basewid));
             c -= len;
-            memcpy(c, dict_base_str(ps_search_dict(search), p->node->wid), len);
+            memcpy(c, dict_word_str(ps_search_dict(search), p->node->basewid), len);
             if (c > hyp) {
                 --c;
                 *c = ' ';

@@ -659,6 +659,8 @@ ngram_search_hyp(ps_search_t *search, int32 *out_score)
 
         link = ps_lattice_bestpath(ngs->dag, ngs->lmset,
                                    ngs->bestpath_fwdtree_lw_ratio);
+        if (link == NULL) /* No hypothesis... */
+            return NULL;
         if (out_score) *out_score = link->path_scr + ngs->dag->final_node_ascr;
         return ps_lattice_hyp(ngs->dag, link);
     }
@@ -891,8 +893,8 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
             bestbp = bp;
         }
     }
-    E_WARN("</s> not found in last frame, using %s.%d instead\n",
-           dict_base_str(ps_search_dict(ngs), ngs->bp_table[bestbp].real_wid), ef);
+    E_WARN("</s> not found in last frame, using %s instead\n",
+           dict_base_str(ps_search_dict(ngs), ngs->bp_table[bestbp].wid));
 
     /* Now find the node that corresponds to it. */
     for (node = dag->nodes; node; node = node->next) {
@@ -900,8 +902,8 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
             return node;
     }
 
-    E_ERROR("Failed to find DAG node corresponding to %s.%d\n",
-           dict_base_str(ps_search_dict(ngs), ngs->bp_table[bestbp].real_wid), ef);
+    E_ERROR("Failed to find DAG node corresponding to %s\n",
+           dict_base_str(ps_search_dict(ngs), ngs->bp_table[bestbp].wid));
     return NULL;
 }
 
@@ -929,6 +931,10 @@ ngram_search_lattice(ps_search_t *search)
         goto error_out;
     if ((dag->end = find_end_node(ngs, dag, ngs->bestpath_fwdtree_lw_ratio)) == NULL)
         goto error_out;
+    E_INFO("Start %s.%d End %s.%d\n",
+           dict_word_str(search->dict, dag->start->wid), dag->start->sf,
+           dict_word_str(search->dict, dag->end->wid), dag->end->sf);
+
     dag->final_node_ascr = ngs->bp_table[dag->end->lef].ascr;
 
     /*
@@ -980,6 +986,9 @@ ngram_search_lattice(ps_search_t *search)
             if (score > WORST_SCORE) {
                 link_latnodes(dag, from, to, score, bp_ptr->frame);
                 from->reachable = TRUE;
+                E_INFO("Linked %s.%d -> %s.%d\n",
+                       dict_word_str(search->dict, from->wid), from->sf,
+                       dict_word_str(search->dict, to->wid), to->sf);
             }
         }
     }
@@ -1000,12 +1009,29 @@ ngram_search_lattice(ps_search_t *search)
     for (node = dag->nodes; node; node = node->next) {
         node->basewid = dict_base_wid(search->dict, node->wid);
     }
+    /* Minor hack: If the final node is a filler word and not </s>,
+     * then set its base word ID to </s>, so that the language model
+     * scores won't be screwed up. */
+    if (ISA_FILLER_WORD(ngs, dag->end->wid))
+        dag->end->basewid = ps_search_finish_wid(ngs);
 
     /* Remove SIL and noise nodes from DAG; extend links through them */
     ps_lattice_bypass_fillers(dag, ngs->silpen, ngs->fillpen);
 
     /* Free nodes unreachable from dag->start and their links */
     ps_lattice_delete_unreachable(dag);
+
+    {
+        int nn, nl;
+        latlink_t *link;
+        nn = nl = 0;
+        for (node = dag->nodes; node; node = node->next) {
+            for (link = node->links; link; link = link->next)
+                nl++;
+            nn++;
+        }
+        E_INFO("%8d nodes, %d links in word lattice\n", nn, nl);
+    }
 
     ngs->dag = dag;
     return dag;
