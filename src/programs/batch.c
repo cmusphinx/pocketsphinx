@@ -124,6 +124,54 @@ static const arg_t ps_args_def[] = {
     CMDLN_EMPTY_OPTION
 };
 
+mfcc_t **
+read_mfc_file(FILE *infh, int sf, int ef, int *out_nfr, int ceplen)
+{
+    long flen;
+    int32 nmfc, nfr;
+    float32 *floats;
+    mfcc_t **mfcs;
+    int swap, i;
+
+    fseek(infh, 0, SEEK_END);
+    flen = ftell(infh);
+    fseek(infh, 0, SEEK_SET);
+    if (fread(&nmfc, 4, 1, infh) != 1) {
+        E_ERROR_SYSTEM("Failed to read 4 bytes from MFCC file");
+        fclose(infh);
+        return NULL;
+    }
+    swap = 0;
+    if (nmfc != flen / 4 - 1) {
+        SWAP_INT32(&nmfc);
+        swap = 1;
+        if (nmfc != flen / 4 - 1) {
+            E_ERROR("File length mismatch: 0x%x != 0x%x\n",
+                    nmfc, flen / 4 - 1);
+            fclose(infh);
+            return NULL;
+        }
+    }
+
+    fseek(infh, sf * 4 * ceplen, SEEK_CUR);
+    if (ef == -1)
+        ef = nmfc / ceplen;
+    nfr = ef - sf;
+    mfcs = ckd_calloc_2d(nfr, ceplen, sizeof(**mfcs));
+    floats = (float32 *)mfcs[0];
+    fread(floats, 4, nfr * ceplen, infh);
+    if (swap) {
+        for (i = 0; i < nfr * ceplen; ++i)
+            SWAP_FLOAT32(&floats[i]);
+    }
+#ifdef FIXED_POINT
+    for (i = 0; i < nfr * ceplen; ++i)
+        mfcs[0][i] = FLOAT2MFCC(floats[i]);
+#endif
+    *out_nfr = nfr;
+    return mfcs;
+}
+
 int
 process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
                  char const *file, char const *uttid, int32 sf, int32 ef)
@@ -162,52 +210,17 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
         ps_decode_raw(ps, infh, uttid, ef);
     }
     else {
-        long flen;
-        int32 nmfc, nfr, ceplen;
-        float32 *floats;
         mfcc_t **mfcs;
-        int swap, i;
+        int nfr;
 
-        fseek(infh, 0, SEEK_END);
-        flen = ftell(infh);
-        fseek(infh, 0, SEEK_SET);
-        if (fread(&nmfc, 4, 1, infh) != 1) {
-            E_ERROR_SYSTEM("Failed to read 4 bytes from %s", file);
+        if (NULL == (mfcs = read_mfc_file(infh, sf, ef, &nfr,
+                                          cmd_ln_int32_r(config, "-ceplen")))) {
             fclose(infh);
+            ckd_free(infile);
             return -1;
         }
-        swap = 0;
-        if (nmfc != flen / 4 - 1) {
-            SWAP_INT32(&nmfc);
-            swap = 1;
-            if (nmfc != flen / 4 - 1) {
-                E_ERROR("File length mismatch: 0x%x != 0x%x\n",
-                        nmfc, flen / 4 - 1);
-                fclose(infh);
-                ckd_free(infile);
-                return -1;
-            }
-        }
-
-        ceplen = cmd_ln_int32_r(config, "-ceplen");
-        fseek(infh, sf * 4 * ceplen, SEEK_CUR);
-        if (ef == -1)
-            ef = nmfc / ceplen;
-        nfr = ef - sf;
-        mfcs = ckd_calloc_2d(nfr, ceplen, sizeof(**mfcs));
-        floats = (float32 *)mfcs[0];
-        fread(floats, 4, nfr * ceplen, infh);
-        if (swap) {
-            for (i = 0; i < nfr * ceplen; ++i)
-                SWAP_FLOAT32(&floats[i]);
-        }
-#ifdef FIXED_POINT
-        for (i = 0; i < nfr * ceplen; ++i)
-            mfcs[0][i] = FLOAT2MFCC(floats[i]);
-#endif
         ps_start_utt(ps, uttid);
-        ps_process_cep(ps, mfcs,
-                                 nfr, FALSE, TRUE);
+        ps_process_cep(ps, mfcs, nfr, FALSE, TRUE);
         ps_end_utt(ps);
         ckd_free_2d(mfcs);
     }
