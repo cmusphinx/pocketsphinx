@@ -659,7 +659,7 @@ ngram_search_hyp(ps_search_t *search, int32 *out_score)
 
         link = ps_lattice_bestpath(ngs->dag, ngs->lmset,
                                    ngs->bestpath_fwdtree_lw_ratio);
-        if (out_score) *out_score = link->path_scr;
+        if (out_score) *out_score = link->path_scr + ngs->dag->final_node_ascr;
         return ps_lattice_hyp(ngs->dag, link);
     }
     else {
