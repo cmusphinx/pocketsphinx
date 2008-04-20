@@ -284,7 +284,6 @@ acmod_grow_feat_buf(acmod_t *acmod, int nfr)
 {
     mfcc_t ***new_feat_buf;
 
-    acmod->n_feat_alloc = nfr;
     new_feat_buf = feat_array_alloc(acmod->fcb, nfr);
     if (acmod->n_feat_frame || acmod->grow_feat) {
         memcpy(new_feat_buf[0][0], acmod->feat_buf[0][0],
