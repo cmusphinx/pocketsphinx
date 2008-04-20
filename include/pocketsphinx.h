@@ -73,7 +73,7 @@ typedef struct ps_lattice_s ps_lattice_t;
 /**
  * PocketSphinx N-best hypothesis iterator object.
  */
-typedef struct ps_nbest_s ps_nbest_t;
+typedef struct ps_astar_s ps_nbest_t;
 
 /**
  * PocketSphinx segmentation iterator object.
@@ -396,8 +396,6 @@ void ps_seg_free(ps_seg_t *seg);
 /**
  * Get an iterator over the best hypotheses, optionally within a
  * selected region of the utterance.
- *
- * FIXME: Not implemented yet!  (already exists internally...)
  *
  * @param ps Decoder.
  * @param sf Start frame for N-best search (0 for whole utterance) 

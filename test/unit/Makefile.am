@@ -13,6 +13,7 @@ check_PROGRAMS = \
 	test_ps_fwdflat_bestpath \
 	test_ps_fwdtree_bestpath \
 	test_ps_simple \
+	test_ps_nbest \
 	test_acmod \
 	test_acmod_grow \
 	test_fwdtree \
@@ -33,6 +34,7 @@ TESTS = \
 	test_ps_fwdflat_bestpath \
 	test_ps_fwdtree_bestpath \
 	test_ps_simple \
+	test_ps_nbest \
 	test_acmod \
 	test_acmod_grow \
 	test_fwdtree \

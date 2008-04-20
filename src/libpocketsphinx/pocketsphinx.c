@@ -37,6 +37,7 @@
 
 /* System headers. */
 #include <stdio.h>
+#include <assert.h>
 
 /* SphinxBase headers. */
 #include <err.h>
@@ -562,6 +563,152 @@ ps_lattice_t *
 ps_get_lattice(ps_decoder_t *ps)
 {
     return ps_search_lattice(ps->search);
+}
+
+ps_nbest_t *
+ps_nbest(ps_decoder_t *ps, int sf, int ef,
+         char const *ctx1, char const *ctx2)
+{
+    ps_lattice_t *dag;
+    ngram_model_t *lmset;
+    ps_astar_t *nbest;
+    float32 lwf;
+    int32 w1, w2;
+
+    if (ps->search == NULL)
+        return NULL;
+    if ((dag = ps_get_lattice(ps)) == NULL)
+        return NULL;
+
+    /* FIXME: This is all quite specific to N-Gram search.  Either we
+     * should make N-best a method for each search module or it needs
+     * to be abstracted to work for N-Gram and FSG. */
+    if (0 != strcmp(ps_search_name(ps->search), "ngram")) {
+        lmset = NULL;
+        lwf = 1.0f;
+    }
+    else {
+        lmset = ((ngram_search_t *)ps->search)->lmset;
+        lwf = ((ngram_search_t *)ps->search)->bestpath_fwdtree_lw_ratio;
+    }
+
+    w1 = ctx1 ? dict_to_id(ps_search_dict(ps->search), ctx1) : -1;
+    w2 = ctx2 ? dict_to_id(ps_search_dict(ps->search), ctx2) : -1;
+    nbest = ps_astar_start(dag, lmset, lwf, sf, ef, w1, w2);
+
+    return (ps_nbest_t *)nbest;
+}
+
+void
+ps_nbest_free(ps_nbest_t *nbest)
+{
+    ps_astar_finish(nbest);
+}
+
+ps_nbest_t *
+ps_nbest_next(ps_nbest_t *nbest)
+{
+    latpath_t *next;
+
+    next = ps_astar_next(nbest);
+    if (next == NULL) {
+        ps_nbest_free(nbest);
+        return NULL;
+    }
+    return nbest;
+}
+
+char const *
+ps_nbest_hyp(ps_nbest_t *nbest, int32 *out_score)
+{
+    if (nbest->paths_done == NULL)
+        return NULL;
+    if (out_score) *out_score = nbest->paths_done->score;
+    return ps_astar_hyp(nbest, nbest->paths_done);
+}
+
+typedef struct nbest_seg_s {
+    ps_seg_t base;
+    latnode_t **nodes;
+    int n_nodes;
+    int cur;
+} nbest_seg_t;
+
+static void
+ps_nbest_node2itor(nbest_seg_t *itor)
+{
+    ps_seg_t *seg = (ps_seg_t *)itor;
+    latnode_t *node;
+
+    assert(itor->cur < itor->n_nodes);
+    node = itor->nodes[itor->cur];
+    if (itor->cur == itor->n_nodes - 1)
+        seg->ef = node->lef;
+    else
+        seg->ef = itor->nodes[itor->cur + 1]->sf - 1;
+    seg->word = dict_word_str(ps_search_dict(seg->search), node->wid);
+    seg->sf = node->sf;
+    seg->prob = 0; /* FIXME: implement forward-backward */
+}
+
+static void
+ps_nbest_seg_free(ps_seg_t *seg)
+{
+    nbest_seg_t *itor = (nbest_seg_t *)seg;
+    ckd_free(itor->nodes);
+    ckd_free(itor);
+}
+
+static ps_seg_t *
+ps_nbest_seg_next(ps_seg_t *seg)
+{
+    nbest_seg_t *itor = (nbest_seg_t *)seg;
+
+    ++itor->cur;
+    if (itor->cur == itor->n_nodes) {
+        ps_nbest_seg_free(seg);
+        return NULL;
+    }
+    else {
+        ps_nbest_node2itor(itor);
+    }
+
+    return seg;
+}
+
+static ps_segfuncs_t ps_nbest_segfuncs = {
+    /* seg_next */ ps_nbest_seg_next,
+    /* seg_free */ ps_nbest_seg_free
+};
+
+ps_seg_t *
+ps_nbest_seg(ps_nbest_t *nbest, int32 *out_score)
+{
+    nbest_seg_t *itor;
+    latpath_t *p;
+    int cur;
+
+    if (nbest->paths_done == NULL)
+        return NULL;
+    if (out_score) *out_score = nbest->paths_done->score;
+
+    /* Backtrace and make an iterator, this should look familiar by now. */
+    itor = ckd_calloc(1, sizeof(*itor));
+    itor->base.vt = &ps_nbest_segfuncs;
+    itor->base.search = nbest->dag->search;
+    itor->n_nodes = itor->cur = 0;
+    for (p = nbest->paths_done; p; p = p->parent) {
+        ++itor->n_nodes;
+    }
+    itor->nodes = ckd_calloc(itor->n_nodes, sizeof(*itor->nodes));
+    cur = itor->n_nodes - 1;
+    for (p = nbest->paths_done; p; p = p->parent) {
+        itor->nodes[cur] = p->node;
+        --cur;
+    }
+
+    ps_nbest_node2itor(itor);
+    return (ps_seg_t *)itor;
 }
 
 void

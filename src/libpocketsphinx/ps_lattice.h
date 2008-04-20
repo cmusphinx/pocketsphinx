@@ -209,11 +209,10 @@ ps_seg_t *ps_lattice_iter(ps_lattice_t *dag, latlink_t *link);
  * @return 0 for success, <0 on error.
  */
 ps_astar_t *ps_astar_start(ps_lattice_t *dag,
-                              ngram_model_t *lmset,
-                              float32 lwf,
-                              int sf, int ef,
-                              int w1, int w2);
-
+                           ngram_model_t *lmset,
+                           float32 lwf,
+                           int sf, int ef,
+                           int w1, int w2);
 
 /**
  * Find next best hypothesis of A* on a word graph.

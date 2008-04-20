@@ -348,7 +348,7 @@ ps_lattice_hyp(ps_lattice_t *dag, latlink_t *link)
 }
 
 static void
-ngram_search_link2itor(ps_seg_t *seg, latlink_t *link, int to)
+ps_lattice_link2itor(ps_seg_t *seg, latlink_t *link, int to)
 {
     latnode_t *node;
 
@@ -387,10 +387,10 @@ ps_lattice_seg_next(ps_seg_t *seg)
     }
     else if (itor->cur == itor->n_links) {
         /* Re-use the last link but with the "to" node. */
-        ngram_search_link2itor(seg, itor->links[itor->cur - 1], TRUE);
+        ps_lattice_link2itor(seg, itor->links[itor->cur - 1], TRUE);
     }
     else {
-        ngram_search_link2itor(seg, itor->links[itor->cur], FALSE);
+        ps_lattice_link2itor(seg, itor->links[itor->cur], FALSE);
     }
 
     return seg;
@@ -426,7 +426,7 @@ ps_lattice_iter(ps_lattice_t *dag, latlink_t *link)
         --cur;
     }
 
-    ngram_search_link2itor((ps_seg_t *)itor, itor->links[0], FALSE);
+    ps_lattice_link2itor((ps_seg_t *)itor, itor->links[0], FALSE);
     return (ps_seg_t *)itor;
 }
 
