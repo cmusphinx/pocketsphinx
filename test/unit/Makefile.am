@@ -45,6 +45,8 @@ TESTS = \
 	test_lm_read \
 	$(gst_tests)
 
+EXTRA_DIST = ps_test.c
+
 noinst_HEADERS = test_macros.h
 
 test_gst_LDADD = $(GST_LIBS)
@@ -53,6 +55,7 @@ INCLUDES = $(GST_CFLAGS) \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/src/libpocketsphinx \
 	-I$(top_builddir)/include \
+	-I$(srcdir) \
 	-DMODELDIR=\"${top_srcdir}/model\" \
 	-DDATADIR=\"${top_srcdir}/test/data\"
 

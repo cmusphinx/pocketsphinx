@@ -164,7 +164,8 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     if ((fsgfile = cmd_ln_str_r(config, "-fsg"))) {
         ps_search_t *fsgs;
 
-        fsgs = fsg_search_init(config, ps->acmod, ps->dict);
+        if ((fsgs = fsg_search_init(config, ps->acmod, ps->dict)) == NULL)
+            return -1;
         ps->searches = glist_add_ptr(ps->searches, fsgs);
         ps->search = fsgs;
     }
@@ -172,7 +173,8 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
              || (lmctl = cmd_ln_str_r(config, "-lmctlfn"))) {
         ps_search_t *ngs;
 
-        ngs = ngram_search_init(config, ps->acmod, ps->dict);
+        if ((ngs = ngram_search_init(config, ps->acmod, ps->dict)) == NULL)
+            return -1;
         ps->searches = glist_add_ptr(ps->searches, ngs);
         ps->search = ngs;
     }

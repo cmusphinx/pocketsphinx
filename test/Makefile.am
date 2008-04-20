@@ -3,6 +3,8 @@ EXTRA_DIST=compare_table.pl				\
 	word_align.pl					\
 	data/test.lmctl                                 \
 	data/goforward.raw                              \
+	data/goforward.fsg                              \
+	data/goforward.gram                             \
 	data/tidigits/man.ah.111a.mfc			\
 	data/tidigits/man.ah.1b.mfc			\
 	data/tidigits/man.ah.2934za.mfc			\
