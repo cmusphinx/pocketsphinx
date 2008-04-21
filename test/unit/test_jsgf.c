@@ -90,6 +90,7 @@ main(int argc, char *argv[])
 	printf("5 * fsg search in %.2f sec\n", (double)c / CLOCKS_PER_SEC);
 	ps_free(ps);
 	jsgf_grammar_free(jsgf);
+	fsg_search_free(ps_search_base(fsgs));
 
 	return 0;
 }
