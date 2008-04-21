@@ -720,92 +720,6 @@ s2_semi_mgau_load_kdtree(s2_semi_mgau_t * s, const char *kdtree_path,
 }
 
 static int32
-read_clustered_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
-{
-    FILE *fh;
-    char **name, **val;
-    int i, n_feat, n_sen, n_mixw, n_density;
-    int32 swap;
-    uint32 chksum;
-    double logbase;
-
-    chksum = 0;
-
-    /* Open the file and read the header. */
-    if ((fh = fopen(file, "rb")) == NULL)
-        return -1;
-    if (bio_readhdr(fh, &name, &val, &swap) < 0) {
-        fclose(fh);
-        return -1;
-    }
-
-    /* Set defaults for some values. */
-    n_feat = s->n_feat;
-    n_density = s->n_density;
-    n_sen = bin_mdef_n_sen(mdef);
-
-    E_INFO("Reading clustered senone file: %s\n", file);
-    for (i = 0; name[i]; ++i) {
-        if (0 == strcmp(name[i], "n_sen"))
-            n_sen = atoi(val[i]);
-        else if (0 == strcmp(name[i], "n_mixw"))
-            n_mixw = atoi(val[i]);
-        else if (0 == strcmp(name[i], "n_feat"))
-            n_feat = atoi(val[i]);
-        else if (0 == strcmp(name[i], "n_density"))
-            n_density = atoi(val[i]);
-        else if (0 == strcmp(name[i], "logbase"))
-            logbase = atof(val[i]);
-        else if (0 == strcmp(name[i], "version")
-                 && 0 != strcmp(val[i], "0.4")) {
-            /* FIXME! Shouldn't be E_FATAL */
-            E_FATAL("Unsupported file version %s\n", val[i]);
-        }
-        ckd_free(name[i]);
-        ckd_free(val[i]);
-    }
-    ckd_free(name);
-    ckd_free(val);
-
-    /* Check values are still valid. */
-    if (n_feat != s->n_feat) {
-        E_ERROR("Number of features mismatch: %d != %d\n", n_feat, s->n_feat);
-        fclose(fh);
-        return -1;
-    }
-    if (n_density != s->n_density) {
-        E_ERROR("Number of densities mismatch: %d != %d\n", n_density, s->n_density);
-        fclose(fh);
-        return -1;
-    }
-    /* This won't have been set in s yet. */
-    if (n_sen != bin_mdef_n_sen(mdef)) {
-        E_ERROR("Number of distributions mismatch: %d != %d\n", n_sen,
-                bin_mdef_n_sen(mdef));
-        fclose(fh);
-        return -1;
-    }
-    /* So set it. */
-    s->n_sen = n_sen;
-    s->n_mixw = n_mixw;
-
-    /* Allocate things. */
-    s->mixw = ckd_calloc_3d(n_feat, n_density, n_mixw, sizeof(***s->mixw));
-    /* Cluster IDs and scores for each senone. */
-    s->mixw_map = ckd_calloc(n_sen, sizeof(*s->mixw_map));
-    s->mixw_score = ckd_calloc(n_sen, sizeof(*s->mixw_score));
-    /* Read the senone to mixw mappings. */
-    bio_fread(s->mixw_map, sizeof(*s->mixw_map), n_sen, fh, swap, &chksum);
-
-    /* Now read the actual mixture weight distributions. */
-    for (i = 0; i < n_feat; ++i)
-        bio_fread(s->mixw[i][0], sizeof(***s->mixw), n_density * n_mixw,
-                  fh, swap, &chksum);
-    fclose(fh);
-    return 0;
-}
-
-static int32
 read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
 {
     FILE *fp;
@@ -1249,15 +1163,7 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     s3_precomp(s, lmath, cmd_ln_float32_r(config, "-varfloor"));
 
     /* Read mixture weights */
-    if ((sendump_path = cmd_ln_str_r(config, "-senclust"))) {
-        read_clustered_sendump(s, mdef, sendump_path);
-        /* This implies -compallsen. */
-        if (!cmd_ln_boolean_r(config, "-compallsen")) {
-            E_FATAL("-senclust requires -compallsen yes\n");
-            /* FIXME: Obviously, just set it and don't fail... */
-        }
-    }
-    else if ((sendump_path = cmd_ln_str_r(config, "-sendump")))
+    if ((sendump_path = cmd_ln_str_r(config, "-sendump")))
         read_sendump(s, mdef, sendump_path);
     else
         read_mixw(s, cmd_ln_str_r(config, "-mixw"),
@@ -1296,11 +1202,6 @@ s2_semi_mgau_free(s2_semi_mgau_t * s)
         }
         ckd_free(s->mixw); 
        mmio_file_unmap(s->sendump_mmap);
-    }
-    else if (s->mixw_map) {
-        ckd_free_3d(s->mixw);
-        ckd_free(s->mixw_map);
-        ckd_free(s->mixw_score);
     }
     else {
         ckd_free_3d(s->mixw);

@@ -264,10 +264,6 @@
       ARG_FLOAT32,                                                              \
       "0.0000001",                                                              \
       "Senone mixture weights floor (applied to data from -mixw file)" },       \
-{ "-senclust",                                                                  \
-      ARG_STRING,                                                               \
-      NULL,                                                                     \
-      "Clustered mixture weight distribution input file" },                     \
 { "-sendump",                                                                   \
       ARG_STRING,                                                               \
       NULL,                                                                     \
