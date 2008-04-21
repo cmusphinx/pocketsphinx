@@ -475,6 +475,12 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
  * @version 0.5
  * @date April, 2008
+ *
+ * @section intro_sec Introduction
+ *
+ * This is the API documentation for the PocketSphinx speech
+ * recognition engine.  The main API calls are documented in
+ * <pocketsphinx.h>.
  */
 
 #endif /* __POCKETSPHINX_H__ */

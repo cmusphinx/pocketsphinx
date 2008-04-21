@@ -175,6 +175,8 @@ AC_PATH_PROG(PERL,perl)
 AC_PATH_PROG(CSH,csh)
 AC_SUBST(PERL)
 AC_SUBST(CSH)
+AC_SUBST(sphinxbase)
+AC_SUBST(sphinxbasebuild)
 
 AC_OUTPUT([
 pocketsphinx.pc

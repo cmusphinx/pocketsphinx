@@ -36,3 +36,7 @@ html/index.html: doxyfile $(headers)
 
 clean-local:
 	-rm -rf html latex
+
+# Totally CMU-specific rule for uploading documentation
+upload: html/index.html
+	rsync -av html/ fife:/usr12/apache2/htdocs/sphinx/doc/doxygen/pocketsphinx/
