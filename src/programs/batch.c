@@ -257,11 +257,13 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     FILE *hypfh = NULL, *hypsegfh = NULL;
     double n_speech, n_cpu, n_wall;
     char const *outlatdir;
+    char const *nbestdir;
 
     ctloffset = cmd_ln_int32_r(config, "-ctloffset");
     ctlcount = cmd_ln_int32_r(config, "-ctlcount");
     ctlincr = cmd_ln_int32_r(config, "-ctlincr");
     outlatdir = cmd_ln_str_r(config, "-outlatdir");
+    nbestdir = cmd_ln_str_r(config, "-nbestdir");
 
     if (cmd_ln_str_r(config, "-hyp")) {
         hypfh = fopen(cmd_ln_str_r(config, "-hyp"), "w");
@@ -328,6 +330,8 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             }
             if (outlatdir) {
                 write_lattice(ps, outlatdir, uttid);
+            }
+            if (nbestdir) {
             }
             ps_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
             E_INFO("%s: %.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
