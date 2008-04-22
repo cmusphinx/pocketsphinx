@@ -361,7 +361,7 @@ gauden_dist_precompute(gauden_t * g, logmath_t *lmath, float32 varfloor)
 
 
 gauden_t *
-gauden_init(char *meanfile, char *varfile, float32 varfloor, logmath_t *lmath)
+gauden_init(char const *meanfile, char const *varfile, float32 varfloor, logmath_t *lmath)
 {
     int32 i, m, f, d, *flen;
     float32 ****fgau;

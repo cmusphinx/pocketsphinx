@@ -177,7 +177,7 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
                  char const *file, char const *uttid, int32 sf, int32 ef)
 {
     FILE *infh;
-    char *cepdir, *cepext;
+    char const *cepdir, *cepext;
     char *infile;
 
     cepdir = cmd_ln_str_r(config, "-cepdir");

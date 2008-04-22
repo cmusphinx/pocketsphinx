@@ -67,7 +67,7 @@ static int32 acmod_process_mfcbuf(acmod_t *acmod);
 static int
 acmod_init_am(acmod_t *acmod)
 {
-    char *mdeffn, *tmatfn, *featparams;
+    char const *mdeffn, *tmatfn, *featparams;
 
     /* Look for feat.params in acoustic model dir. */
     if ((featparams = cmd_ln_str_r(acmod->config, "-featparams"))) {
@@ -108,7 +108,7 @@ acmod_init_am(acmod_t *acmod)
     acmod->mgau
         = s2_semi_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
     if (acmod->mgau) {
-        char *kdtreefn = cmd_ln_str_r(acmod->config, "-kdtree");
+        char const *kdtreefn = cmd_ln_str_r(acmod->config, "-kdtree");
         if (kdtreefn)
             s2_semi_mgau_load_kdtree(acmod->mgau, kdtreefn,
                                      cmd_ln_int32_r(acmod->config, "-kdmaxdepth"),

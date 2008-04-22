@@ -150,13 +150,13 @@ static dict_entry_t *_new_dict_entry(dict_t *dict,
                                      int32 use_context);
 static void _dict_list_add(dict_t * dict, dict_entry_t * entry);
 static void dict_load(dict_t * dict, bin_mdef_t *mdef,
-                      char *filename, int32 * word_id,
+                      char const *filename, int32 * word_id,
                       int32 use_context);
 
 #define MAX_PRONOUN_LEN 	150
 
 static int32
-get_dict_size(char *file)
+get_dict_size(char const *file)
 {
     FILE *fp;
     __BIGSTACKVARIABLE__ char line[1024];
@@ -179,7 +179,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
     dict_entry_t *entry;
     int32 max_new_oov;
     void *val;
-    char *filename, *n_filename;
+    char const *filename, *n_filename;
     int use_context;
 
     dict->config = config;
@@ -375,7 +375,7 @@ dict_free(dict_t * dict)
 
 static void
 dict_load(dict_t * dict, bin_mdef_t *mdef,
-          char *filename, int32 *word_id, int32 use_context)
+          char const *filename, int32 *word_id, int32 use_context)
 {
     static char const *rname = "dict_load";
     __BIGSTACKVARIABLE__ char dict_str[1024];

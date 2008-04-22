@@ -171,8 +171,8 @@ typedef struct {
  * @return pointer to senone structure created.  Caller MUST NOT change its contents.
  */
 senone_t *senone_init (gauden_t *g,             /**< In: codebooks */
-                       char *mixwfile,		/**< In: mixing weights file */
-		       char *mgau_mapfile,	/**< In: file specifying mapping from each
+                       char const *mixwfile,	/**< In: mixing weights file */
+		       char const *mgau_mapfile,/**< In: file specifying mapping from each
 						   senone to mixture gaussian codebook.
 						   If NULL all senones map to codebook 0 */
 		       float32 mixwfloor,	/**< In: Floor value for senone weights */

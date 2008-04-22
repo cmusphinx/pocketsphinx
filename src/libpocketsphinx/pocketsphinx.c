@@ -87,7 +87,7 @@ ps_add_file(ps_decoder_t *ps, const char *arg,
 static void
 ps_init_defaults(ps_decoder_t *ps)
 {
-    char *hmmdir;
+    char const *hmmdir;
 
     /* Disable memory mapping on Blackfin (FIXME: should be uClinux in general). */
 #ifdef __ADSPBLACKFIN__
@@ -111,8 +111,8 @@ ps_init_defaults(ps_decoder_t *ps)
 int
 ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 {
-    char *fsgfile = NULL;
-    char *lmfile, *lmctl = NULL;
+    char const *fsgfile = NULL;
+    char const *lmfile, *lmctl = NULL;
     gnode_t *gn;
 
     if (config && config != ps->config) {

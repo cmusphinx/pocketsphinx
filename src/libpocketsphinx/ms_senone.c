@@ -60,7 +60,7 @@
 #endif
 
 static int32
-senone_mgau_map_read(senone_t * s, char *file_name)
+senone_mgau_map_read(senone_t * s, char const *file_name)
 {
     FILE *fp;
     int32 byteswap, chksum_present, n_gauden_present;
@@ -144,7 +144,7 @@ senone_mgau_map_read(senone_t * s, char *file_name)
 
 
 static int32
-senone_mixw_read(senone_t * s, char *file_name, logmath_t *lmath)
+senone_mixw_read(senone_t * s, char const *file_name, logmath_t *lmath)
 {
     char eofchk;
     FILE *fp;
@@ -278,7 +278,7 @@ senone_mixw_read(senone_t * s, char *file_name, logmath_t *lmath)
 
 
 senone_t *
-senone_init(gauden_t *g, char *mixwfile, char *sen2mgau_map_file,
+senone_init(gauden_t *g, char const *mixwfile, char const *sen2mgau_map_file,
 	    float32 mixwfloor, logmath_t *lmath)
 {
     senone_t *s;
