@@ -57,6 +57,8 @@ extern "C" {
 
 /* SphinxBase headers. */
 #include <mdef.h>
+#include <mmio.h>
+#include <cmd_ln.h>
 #include <sphinx_types.h>
 
 #define BIN_MDEF_FORMAT_VERSION 1
@@ -114,6 +116,7 @@ struct bin_mdef_s {
 	int32 n_cd_tree;    /**< Number of nodes in cd_tree (below) */
 	s3cipid_t sil;	    /**< CI phone ID for silence */
 
+	mmio_file_t *filemap; /**< File map for this file (if any) */
 	char **ciname; /**< CI phone names */
 	cd_tree_t *cd_tree; /**< Tree mapping CD phones to phone IDs */
 	mdef_entry_t *phone; /**< All phone structures */
@@ -148,9 +151,9 @@ struct bin_mdef_s {
                                          : (m)->phone[p].info.cd.ctx[0])
 
 /** Read a binary mdef from a file. */
-bin_mdef_t *bin_mdef_read(const char *filename);
+bin_mdef_t *bin_mdef_read(cmd_ln_t *config, const char *filename);
 /** Read a text mdef from a file (creating an in-memory binary mdef). */
-bin_mdef_t *bin_mdef_read_text(const char *filename);
+bin_mdef_t *bin_mdef_read_text(cmd_ln_t *config, const char *filename);
 /** Write a binary mdef to a file. */
 int bin_mdef_write(bin_mdef_t *m, const char *filename);
 /** Write a binary mdef to a text file. */

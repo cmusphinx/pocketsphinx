@@ -76,7 +76,7 @@ main(int argc, char *argv[])
     outfile = argv[2];
 
     if (tobin) {
-        if ((bin = bin_mdef_read_text(infile)) == NULL) {
+        if ((bin = bin_mdef_read_text(NULL, infile)) == NULL) {
             fprintf(stderr, "Failed to read text mdef from %s\n", infile);
             return 1;
         }
@@ -87,7 +87,7 @@ main(int argc, char *argv[])
         }
     }
     else {
-        if ((bin = bin_mdef_read(infile)) == NULL) {
+        if ((bin = bin_mdef_read(NULL, infile)) == NULL) {
             fprintf(stderr, "Failed to read binary mdef from %s\n",
                     infile);
             return 1;

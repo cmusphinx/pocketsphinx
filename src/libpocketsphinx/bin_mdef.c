@@ -63,7 +63,7 @@
 #include "bin_mdef.h"
 
 bin_mdef_t *
-bin_mdef_read_text(const char *filename)
+bin_mdef_read_text(cmd_ln_t *config, const char *filename)
 {
     bin_mdef_t *bmdef;
     mdef_t *mdef;
@@ -238,15 +238,21 @@ bin_mdef_read_text(const char *filename)
 void
 bin_mdef_free(bin_mdef_t * m)
 {
-    if (m->alloc_mode == BIN_MDEF_FROM_TEXT) {
+    switch (m->alloc_mode) {
+    case BIN_MDEF_FROM_TEXT:
         ckd_free(m->ciname[0]);
         ckd_free(m->sseq[0]);
         ckd_free(m->phone);
         ckd_free(m->cd_tree);
-    }
-    if (m->alloc_mode == BIN_MDEF_IN_MEMORY)
+        break;
+    case BIN_MDEF_IN_MEMORY:
         ckd_free(m->ciname[0]);
-
+        break;
+    case BIN_MDEF_ON_DISK:
+        break;
+    }
+    if (m->filemap)
+        mmio_file_unmap(m->filemap);
     ckd_free(m->cd2cisen);
     ckd_free(m->sen2cimap);
     ckd_free(m->ciname);
@@ -275,16 +281,17 @@ static const char format_desc[] =
     "END FILE FORMAT DESCRIPTION\n";
 
 bin_mdef_t *
-bin_mdef_read(const char *filename)
+bin_mdef_read(cmd_ln_t *config, const char *filename)
 {
     bin_mdef_t *m;
     FILE *fh;
     size_t tree_start;
     int32 val, i, swap, pos, end;
     int32 *sseq_size;
+    int do_mmap;
 
     /* Try to read it as text first. */
-    if ((m = bin_mdef_read_text(filename)) != NULL)
+    if ((m = bin_mdef_read_text(config, filename)) != NULL)
         return m;
 
     E_INFO("Reading binary model definition: %s\n", filename);
@@ -351,19 +358,40 @@ bin_mdef_read(const char *filename)
         E_FATAL_SYSTEM("Failed to read header from %s\n", filename);
     m->sil = val;
 
-    /* Read the rest of the file as a big block of memory, and
-     * carve it into the relevant chunks (in the future we will
-     * mmap() it instead if possible). */
-    pos = ftell(fh);
-    fseek(fh, 0, SEEK_END);
-    end = ftell(fh);
-    fseek(fh, pos, SEEK_SET);
-
+    /* CI names are first in the file. */
     m->ciname = ckd_calloc(m->n_ciphone, sizeof(*m->ciname));
-    m->ciname[0] = ckd_malloc(end - pos);
-    if (fread(m->ciname[0], 1, end - pos, fh) != end - pos)
-        E_FATAL_SYSTEM("Failed to read %d bytes of data from %s\n",
-                       end - pos, filename);
+
+    /* Decide whether to read in the whole file or mmap it. */
+    do_mmap = config ? cmd_ln_boolean_r(config, "-mmap") : TRUE;
+    if (swap) {
+        E_WARN("-mmap specified, but mdef is other-endian.  Will not memory-map.\n");
+        do_mmap = FALSE;
+    } 
+    /* Actually try to mmap it. */
+    if (do_mmap) {
+        m->filemap = mmio_file_read(filename);
+        if (m->filemap == NULL)
+            do_mmap = FALSE;
+    }
+    pos = ftell(fh);
+    if (do_mmap) {
+        /* Get the base pointer from the memory map. */
+        m->ciname[0] = (char *)mmio_file_ptr(m->filemap) + pos;
+        /* Success! */
+        m->alloc_mode = BIN_MDEF_ON_DISK;
+    }
+    else {
+        /* Read everything into memory. */
+        m->alloc_mode = BIN_MDEF_IN_MEMORY;
+        fseek(fh, 0, SEEK_END);
+        end = ftell(fh);
+        fseek(fh, pos, SEEK_SET);
+        m->ciname[0] = ckd_malloc(end - pos);
+        if (fread(m->ciname[0], 1, end - pos, fh) != end - pos)
+            E_FATAL_SYSTEM("Failed to read %d bytes of data from %s\n",
+                           end - pos, filename);
+    }
+
     for (i = 1; i < m->n_ciphone; ++i)
         m->ciname[i] = m->ciname[i - 1] + strlen(m->ciname[i - 1]) + 1;
 
@@ -449,7 +477,6 @@ bin_mdef_read(const char *filename)
         ("%d CI-phone, %d CD-phone, %d emitstate/phone, %d CI-sen, %d Sen, %d Sen-Seq\n",
          m->n_ciphone, m->n_phone - m->n_ciphone, m->n_emit_state,
          m->n_ci_sen, m->n_sen, m->n_sseq);
-    m->alloc_mode = BIN_MDEF_IN_MEMORY;
     fclose(fh);
     return m;
 }

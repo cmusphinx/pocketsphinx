@@ -82,7 +82,7 @@ acmod_init_am(acmod_t *acmod)
         return -1;
     }
 
-    if ((acmod->mdef = bin_mdef_read(mdeffn)) == NULL) {
+    if ((acmod->mdef = bin_mdef_read(acmod->config, mdeffn)) == NULL) {
         E_ERROR("Failed to read model definition from %s\n", mdeffn);
         return -1;
     }
