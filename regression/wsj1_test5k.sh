@@ -17,10 +17,9 @@ $decode \
     -adcin yes -adchdr 1024 \
     -ctl wsj_test.fileids \
     -hyp $expt.hyp \
-    -latsize 50000 \
     > $expt.log 2>&1
 
-cat wsj_test.transcription | ./word_align.pl - $expt.hyp > $expt.align
+cat wsj_test.transcription | ./word_align.pl -i - $expt.hyp > $expt.align
 
 grep -h ': AVERAGE' $expt.log
 tail -n3 $expt.align
