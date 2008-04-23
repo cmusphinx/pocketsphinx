@@ -106,8 +106,8 @@
       "Run bestpath (Dijkstra) search over word lattice (3rd pass)" },                          \
 { "-latsize",                                                                                   \
       ARG_INT32,                                                                                \
-      "50000",                                                                                  \
-      "Lattice size" },                                                                         \
+      "5000",                                                                                   \
+      "Initial backpointer table size" },                                                       \
 { "-maxwpf",                                                                                    \
       ARG_INT32,                                                                                \
       "-1",                                                                                     \
