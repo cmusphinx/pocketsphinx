@@ -95,28 +95,14 @@ void dict_free (dict_t *dict);
 
 #define DICT_SILENCE_WORDSTR	"<sil>"
 
-dict_entry_t *dict_get_entry (dict_t *dict, int i);
-int32 **dict_left_context_fwd(void);
-int32 **dict_right_context_fwd(void);
-int32 **dict_left_context_bwd(void);
-int32 **dict_right_context_bwd(void);
-int32 **dict_right_context_fwd_perm (void);
-int32 *dict_right_context_fwd_size (void);
-int32 **dict_left_context_bwd_perm (void);
-int32 *dict_left_context_bwd_size (void);
 int32 dict_to_id(dict_t *dict, char const *dict_str);
-char const *dictid_to_str(dict_t *dict, int32 id);
-int32 dictStrToWordId (dict_t *dict, char const *dict_str, int verbose);
 int32 dict_add_word (dict_t *dict, char const *word, char *pron);
 int32 dict_pron (dict_t *dict, int32 w, int32 **pron);
 int32 dict_next_alt (dict_t *dict, int32 w);
-int32 dict_write_oovdict (dict_t *dict, char const *file);
-int32 dictid_to_baseid (dict_t *dict, int32 wid);
 int32 dict_get_num_main_words (dict_t *dict);
 
 /* Return TRUE if the given wid is a filler word, FALSE otherwise */
 int32 dict_is_filler_word (dict_t *dict, int32 wid);
-
 
 #define dict_word_str(d,x)	((x == NO_WORD) ? "" : d->dict_list[x]->word)
 

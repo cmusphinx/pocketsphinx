@@ -359,7 +359,7 @@ dict_free(dict_t * dict)
     entry_count = dict->dict_entry_count;
 
     for (i = 0; i < entry_count; i++) {
-        entry = dict_get_entry(dict, i);
+        entry = dict->dict_list[i];
         ckd_free(entry->word);
         ckd_free(entry->phone_ids);
         ckd_free(entry->ci_phone_ids);
@@ -470,33 +470,13 @@ dict_load(dict_t * dict, bin_mdef_t *mdef,
 }
 
 int32
-dictStrToWordId(dict_t * dict, char const *dict_str, int verbose)
-/*------------------------------------------------------------*
- * return the dict id for dict_str
- *------------------------------------------------------------*/
-{
-    static char const *rname = "dict_to_id";
-    void * dict_id;
-
-    if (hash_table_lookup(dict->dict, dict_str, &dict_id)) {
-        if (verbose)
-            fprintf(stderr, "%s: did not find %s\n", rname, dict_str);
-        return NO_WORD;
-    }
-
-    return (int32)(long)dict_id;
-}
-
-int32
 dict_to_id(dict_t * dict, char const *dict_str)
 {
-    return ((int32) dictStrToWordId(dict, dict_str, FALSE));
-}
+    int32 dictid;
 
-char const *
-dictid_to_str(dict_t * dict, int32 id)
-{
-    return (dict->dict_list[id]->word);
+    if (hash_table_lookup_int32(dict->dict, dict_str, &dictid) < 0)
+        return NO_WORD;
+    return dictid;
 }
 
 static dict_entry_t *
@@ -850,13 +830,6 @@ _dict_list_add(dict_t * dict, dict_entry_t * entry)
     dict->dict_list[dict->dict_entry_count++] = entry;
 }
 
-dict_entry_t *
-dict_get_entry(dict_t * dict, int i)
-{
-    return ((i < dict->dict_entry_count) ?
-            dict->dict_list[i] : (dict_entry_t *) 0);
-}
-
 static int32
 addToContextTable(char *diphone, hash_table_t * table, glist_t *list)
 {
@@ -882,21 +855,6 @@ static int32
 addToRightContextTable(dict_t *dict, char *diphone)
 {
     return addToContextTable(diphone, dict->rcHT, &dict->rcList);
-}
-
-static int
-cmp(void const *a, void const *b)
-{
-    return (*(int32 const *) a - *(int32 const *) b);
-}
-
-/* FIXME: Not re-entrant. */
-static int32 *linkTable;
-
-static int
-cmpPT(void const *a, void const *b)
-{
-    return (linkTable[*(int32 const *) a] - linkTable[*(int32 const *) b]);
 }
 
 static void
@@ -955,6 +913,21 @@ buildEntryTable(glist_t list, int32 *** table_p, bin_mdef_t *mdef)
     }
     E_INFO("\t%6d triphones\n\t%6d pseudo diphones\n\t%6d uniphones\n",
            triphoneContext, silContext, noContext);
+}
+
+static int
+cmp(void const *a, void const *b)
+{
+    return (*(int32 const *) a - *(int32 const *) b);
+}
+
+/* FIXME: Not re-entrant. */
+static int32 *linkTable;
+
+static int
+cmpPT(void const *a, void const *b)
+{
+    return (linkTable[*(int32 const *) a] - linkTable[*(int32 const *) b]);
 }
 
 static void
@@ -1060,13 +1033,8 @@ buildExitTable(glist_t list, int32 *** table_p, int32 *** permuTab_p,
 int32
 dict_get_num_main_words(dict_t * dict)
 {
-    return ((int32) dictStrToWordId(dict, "</s>", FALSE));
-}
-
-int32
-dictid_to_baseid(dict_t * dict, int32 wid)
-{
-    return (dict->dict_list[wid]->wid);
+    /* FIXME FIXME: Relies on a particular ordering of the dictionary. */
+    return dict_to_id(dict, "</s>");
 }
 
 int32
