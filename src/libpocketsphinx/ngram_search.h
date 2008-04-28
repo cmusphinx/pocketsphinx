@@ -97,9 +97,9 @@ typedef struct root_chan_s {
     int32  this_phn_wid;	/**< list of words consisting of this single phone;
 				   actually the first of the list, like penult_phn_wid;
 				   -1 if none */
-    int32    diphone;		/**< first diphone of this node; all words rooted at this
+    int16    diphone;		/**< first diphone of this node; all words rooted at this
 				   node begin with this diphone */
-    int32    ciphone;		/**< first ciphone of this node; all words rooted at this
+    int16    ciphone;		/**< first ciphone of this node; all words rooted at this
 				   node begin with this ciphone */
 } root_chan_t;
 
