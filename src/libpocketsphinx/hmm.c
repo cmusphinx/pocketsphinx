@@ -99,7 +99,6 @@
 
 /* Local headers. */
 #include "hmm.h"
-#include "search_const.h"
 
 hmm_context_t *
 hmm_context_init(int32 n_emit_state,

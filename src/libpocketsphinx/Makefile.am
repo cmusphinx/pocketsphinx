@@ -51,7 +51,6 @@ noinst_HEADERS =				\
 	phone.h					\
 	posixwin32.h				\
 	s2_semi_mgau.h				\
-	search_const.h				\
 	tmat.h					\
 	vector.h
 

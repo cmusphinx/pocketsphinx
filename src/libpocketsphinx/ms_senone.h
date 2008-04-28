@@ -118,7 +118,6 @@
 #include <logmath.h>
 
 /* Local headers. */
-#include "search_const.h"
 #include "ms_gauden.h"
 
 /** \file ms_senone.h

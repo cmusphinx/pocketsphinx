@@ -126,7 +126,6 @@
 
 /* Local headers. */
 #include "dict.h"
-#include "search_const.h"
 #include "phone.h"
 
 #ifdef DEBUG

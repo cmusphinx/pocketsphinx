@@ -36,7 +36,7 @@
  */
 
 /**
- * @file ngram_search_dag.c Word graph search.
+ * @file ps_lattice.c Word graph search.
  */
 
 /* System headers. */
