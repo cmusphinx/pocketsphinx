@@ -485,7 +485,7 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
 {
     dict_entry_t *de;
     chan_t *hmm, *thmm;
-    int32 *sseq_rc;             /* list of sseqid for all possible right context for w */
+    int16 *sseq_rc;             /* list of sseqid for all possible right context for w */
     int32 i;
 
     de = ps_search_dict(ngs)->dict_list[w];
@@ -541,7 +541,7 @@ ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf)
 {
     int32 bp, start_score;
     bptbl_t *bpe, *p_bpe;
-    int32 *rcpermtab;
+    int16 *rcpermtab;
     dict_entry_t *de;
 
     for (bp = 0; bp < ngs->bpidx; bp++) {

@@ -83,8 +83,7 @@ hmm_context_free(hmm_context_t *ctx)
 }
 
 void
-hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx,
-         int32 ssid, int tmatid)
+hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx, int ssid, int tmatid)
 {
     hmm->ctx = ctx;
     hmm->mpx = mpx;

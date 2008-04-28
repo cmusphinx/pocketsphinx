@@ -136,10 +136,10 @@
 
 #define QUIT(x)		{fprintf x; exit(-1);}
 
-static void buildEntryTable(glist_t list, int32 *** table_p,
+static void buildEntryTable(glist_t list, int16 *** table_p,
                             bin_mdef_t *mdef);
-static void buildExitTable(glist_t list, int32 *** table_p,
-                           int32 *** permuTab_p, int32 ** sizeTab_p,
+static void buildExitTable(glist_t list, int16 *** table_p,
+                           int16 *** permuTab_p, int16 ** sizeTab_p,
                            bin_mdef_t *mdef);
 static int32 addToLeftContextTable(dict_t *dict, char *diphone);
 static int32 addToRightContextTable(dict_t *dict, char *diphone);
@@ -857,7 +857,7 @@ addToRightContextTable(dict_t *dict, char *diphone)
 }
 
 static void
-buildEntryTable(glist_t list, int32 *** table_p, bin_mdef_t *mdef)
+buildEntryTable(glist_t list, int16 *** table_p, bin_mdef_t *mdef)
 {
     int32 i, j;
     char triphoneStr[128];
@@ -865,49 +865,50 @@ buildEntryTable(glist_t list, int32 *** table_p, bin_mdef_t *mdef)
     int32 silContext = 0;
     int32 triphoneContext = 0;
     int32 noContext = 0;
-    int32 **table;
+    int16 **table;
     gnode_t *gn;
     int n;
 
-    *table_p = ckd_calloc(glist_count(list), sizeof(int32 *));
+    *table_p = ckd_calloc(glist_count(list), sizeof(**table_p));
     table = *table_p;
     n = glist_count(list);
     E_INFO("Entry Context table contains\n\t%6d entries\n", n);
     E_INFO("\t%6d possible cross word triphones.\n", n * ciCount);
 
     for (i = 0, gn = list; gn; gn = gnode_next(gn), ++i) {
-        table[i] = ckd_calloc(ciCount, sizeof(int32));
+        table[i] = ckd_calloc(ciCount, sizeof(**table));
         for (j = 0; j < ciCount; j++) {
+            int32 phoneid;
             /*
              * Look for the triphone
              */
             sprintf(triphoneStr, (char *)gnode_ptr(gn),
                     bin_mdef_ciphone_str(mdef, j));
-            table[i][j] = phone_to_id(mdef, triphoneStr);
-            if (table[i][j] >= 0)
+            phoneid = phone_to_id(mdef, triphoneStr);
+            if (phoneid >= 0)
                 triphoneContext++;
             /*
              * If we can't find the desired right context use "SIL"
              */
-            if (table[i][j] < 0) {
+            if (phoneid < 0) {
                 sprintf(triphoneStr, (char *)gnode_ptr(gn), "SIL");
-                table[i][j] = phone_to_id(mdef, triphoneStr);
-                if (table[i][j] >= 0)
+                phoneid = phone_to_id(mdef, triphoneStr);
+                if (phoneid >= 0)
                     silContext++;
             }
             /*
              * If we can't find "SIL" use context indepedent
              */
-            if (table[i][j] < 0) {
+            if (phoneid < 0) {
                 char stmp[32];
                 char *p;
                 strcpy(stmp, (char *)gnode_ptr(gn));
                 p = strchr(stmp, '(');
                 *p = '\0';
-                table[i][j] = phone_to_id(mdef, stmp);
+                phoneid = phone_to_id(mdef, stmp);
                 noContext++;
             }
-            table[i][j] = bin_mdef_pid2ssid(mdef, table[i][j]);
+            table[i][j] = bin_mdef_pid2ssid(mdef, phoneid);
         }
     }
     E_INFO("\t%6d triphones\n\t%6d pseudo diphones\n\t%6d uniphones\n",
@@ -917,21 +918,21 @@ buildEntryTable(glist_t list, int32 *** table_p, bin_mdef_t *mdef)
 static int
 cmp(void const *a, void const *b)
 {
-    return (*(int32 const *) a - *(int32 const *) b);
+    return (*(int16 const *) a - *(int16 const *) b);
 }
 
 /* FIXME: Not re-entrant. */
-static int32 *linkTable;
+static int16 *linkTable;
 
 static int
 cmpPT(void const *a, void const *b)
 {
-    return (linkTable[*(int32 const *) a] - linkTable[*(int32 const *) b]);
+    return (linkTable[*(int16 const *) a] - linkTable[*(int16 const *) b]);
 }
 
 static void
-buildExitTable(glist_t list, int32 *** table_p, int32 *** permuTab_p,
-               int32 ** sizeTab_p, bin_mdef_t *mdef)
+buildExitTable(glist_t list, int16 *** table_p, int16 *** permuTab_p,
+               int16 ** sizeTab_p, bin_mdef_t *mdef)
 {
     int32 i, j, k;
     char triphoneStr[128];
@@ -940,21 +941,19 @@ buildExitTable(glist_t list, int32 *** table_p, int32 *** permuTab_p,
     int32 triphoneContext = 0;
     int32 noContext = 0;
     int32 entries = 0;
-    int32 **table;
-    int32 **permuTab;
-    int32 *sizeTab;
-    int32 ptab[128];
+    int16 **table;
+    int16 **permuTab;
+    int16 *sizeTab;
+    int16 ptab[128];
     gnode_t *gn;
     int32 n;
 
     n = glist_count(list);
-    *table_p =
-        (int32 **) ckd_calloc_2d(n, ciCount + 1, sizeof(int32 *));
+    *table_p = ckd_calloc_2d(n, ciCount + 1, sizeof(***table_p));
     table = *table_p;
-    *permuTab_p =
-        (int32 **) ckd_calloc_2d(n, ciCount + 1, sizeof(int32 *));
+    *permuTab_p = ckd_calloc_2d(n, ciCount + 1, sizeof(***permuTab_p));
     permuTab = *permuTab_p;
-    *sizeTab_p = ckd_calloc(n, sizeof(int32 *));
+    *sizeTab_p = ckd_calloc(n, sizeof(**sizeTab_p));
     sizeTab = *sizeTab_p;
 
     E_INFO("Exit Context table contains\n\t%6d entries\n", n);
@@ -962,36 +961,38 @@ buildExitTable(glist_t list, int32 *** table_p, int32 *** permuTab_p,
 
     for (i = 0, gn = list; gn; gn = gnode_next(gn), ++i) {
         for (j = 0; j < ciCount; j++) {
+            int32 phoneid;
+
             /*
              * Look for the triphone
              */
             sprintf(triphoneStr, (char *)gnode_ptr(gn),
                     bin_mdef_ciphone_str(mdef, j));
-            table[i][j] = phone_to_id(mdef, triphoneStr);
-            if (table[i][j] >= 0)
+            phoneid = phone_to_id(mdef, triphoneStr);
+            if (phoneid >= 0)
                 triphoneContext++;
             /*
              * If we can't find the desired context use "SIL"
              */
-            if (table[i][j] < 0) {
+            if (phoneid < 0) {
                 sprintf(triphoneStr, (char *)gnode_ptr(gn), "SIL");
-                table[i][j] = phone_to_id(mdef, triphoneStr);
-                if (table[i][j] >= 0)
+                phoneid = phone_to_id(mdef, triphoneStr);
+                if (phoneid >= 0)
                     silContext++;
             }
             /*
              * If we can't find "SIL" use context indepedent
              */
-            if (table[i][j] < 0) {
+            if (phoneid < 0) {
                 char stmp[32];
                 char *p;
                 strcpy(stmp, (char *)gnode_ptr(gn));
                 p = strchr(stmp, '(');
                 *p = '\0';
-                table[i][j] = phone_to_id(mdef, stmp);
+                phoneid = phone_to_id(mdef, stmp);
                 noContext++;
             }
-            table[i][j] = bin_mdef_pid2ssid(mdef, table[i][j]);
+            table[i][j] = bin_mdef_pid2ssid(mdef, phoneid);
         }
     }
     /*
@@ -1005,9 +1006,9 @@ buildExitTable(glist_t list, int32 *** table_p, int32 *** permuTab_p,
             ptab[k] = k;
         }
         linkTable = table[i];
-        qsort(ptab, ciCount, sizeof(int32), cmpPT);
+        qsort(ptab, ciCount, sizeof(*ptab), cmpPT);
 
-        qsort(table[i], ciCount, sizeof(int32), cmp);
+        qsort(table[i], ciCount, sizeof(**table), cmp);
         for (k = 0, j = 0; j < ciCount; j++) {
             if (table[i][k] != table[i][j]) {
                 k = k + 1;

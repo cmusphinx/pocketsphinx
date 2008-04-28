@@ -827,7 +827,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
     lastphn_cand_t *candp;
     int32 *nawl;
     int32 thresh;
-    int32 *rcpermtab, ciph0;
+    int16 *rcpermtab, ciph0;
     int32 bestscore, dscr;
     dict_entry_t *de;
     chan_t *hmm;
@@ -1183,7 +1183,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     int32 i, k, bp, w, nf;
     int32 rc;
     int32 *rcss;                /* right context score stack */
-    int32 *rcpermtab;
+    int16 *rcpermtab;
     int32 thresh, newscore;
     bptbl_t *bpe;
     dict_entry_t *pde, *de;     /* previous dict entry, dict entry */

@@ -72,17 +72,17 @@ typedef struct dict_s {
 
     hash_table_t *lcHT;      /* Left context hash table */
     glist_t lcList;
-    int32 **lcFwdTable;
-    int32 **lcBwdTable;
-    int32 **lcBwdPermTable;
-    int32 *lcBwdSizeTable;
+    int16 **lcFwdTable;
+    int16 **lcBwdTable;
+    int16 **lcBwdPermTable;
+    int16 *lcBwdSizeTable;
 
     hash_table_t *rcHT;      /* Right context hash table */
     glist_t rcList;
-    int32 **rcFwdTable;
-    int32 **rcFwdPermTable;
-    int32 **rcBwdTable;
-    int32 *rcFwdSizeTable;
+    int16 **rcFwdTable;
+    int16 **rcFwdPermTable;
+    int16 **rcBwdTable;
+    int16 *rcFwdSizeTable;
 
     int32 initial_dummy;     /* 1st placeholder for dynamic OOVs after initialization */
     int32 first_dummy;       /* 1st dummy available for dynamic OOVs at any time */

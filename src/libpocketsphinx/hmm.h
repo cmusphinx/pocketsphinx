@@ -222,8 +222,7 @@ void hmm_context_free(hmm_context_t *ctx);
 /**
  * Populate a previously-allocated HMM structure, allocating internal data.
  **/
-void hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx,
-              int32 ssid, int tmatid);
+void hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx, int ssid, int tmatid);
 
 /**
  * Free an HMM structure, releasing internal data (but not the HMM structure itself).
