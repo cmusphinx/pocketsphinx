@@ -34,58 +34,9 @@
  * ====================================================================
  *
  */
-/*
- * hmm.c -- HMM Viterbi search.
- *
- * **********************************************
- * CMU ARPA Speech Project
- *
- * Copyright (c) 1997 Carnegie Mellon University.
- * ALL RIGHTS RESERVED.
- * **********************************************
- *
- * HISTORY
- * $Log$
- * Revision 1.6  2006/02/22  16:46:38  arthchan2003
- * Merged from SPHINX3_5_2_RCI_IRII_BRANCH: 1, Added function hmm_vit_eval, a wrapper of computing the hmm level scores. 2, Fixed issues in , 3, Fixed issues of dox-doc
- * 
- * Revision 1.5.4.1  2005/09/25 18:53:36  arthchan2003
- * Added hmm_vit_eval, in lextree.c, hmm_dump and hmm_vit_eval is now separated.
- *
- * Revision 1.5  2005/06/21 18:34:41  arthchan2003
- * Log. 1, Fixed doxygen documentation for all functions. 2, Add $Log$
- * Revision 1.6  2006/02/22  16:46:38  arthchan2003
- * Merged from SPHINX3_5_2_RCI_IRII_BRANCH: 1, Added function hmm_vit_eval, a wrapper of computing the hmm level scores. 2, Fixed issues in , 3, Fixed issues of dox-doc
- * 
- *
- * Revision 1.3  2005/03/30 01:22:46  archan
- * Fixed mistakes in last updates. Add
- *
- * 
- * 30-Dec-2000  Rita Singh (rsingh@cs.cmu.edu) at Carnegie Mellon University
- *		Modified hmm_vit_eval_3st() to include explicit checks for
- *		tr[0][2] and tr[1][3]. Included compiler directive activated
- *		checks for int32 underflow
- *
- * 29-Feb-2000	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Modified hmm_t.state to be a run-time array instead of a compile-time
- * 		one.  Modified compile-time 3 and 5-state versions of hmm_vit_eval
- * 		into hmm_vit_eval_3st and hmm_vit_eval_5st, to allow run-time selection.
- * 		Removed hmm_init().
- * 
- * 11-Dec-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Bugfix in computing HMM exit state score.
- * 
- * 08-Dec-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added HMM_SKIPARCS compile-time option and hmm_init().
- * 
- * 20-Sep-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Bugfix in hmm_eval: If state1->state2 transition took place,
- * 		state1 history didn't get propagated to state2.
- * 		Also, included tp[][] in HMM evaluation.
- * 
- * 10-May-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Started, based on an earlier version.
+
+/**
+ * @file hmm.h Implementation of HMM base structure.
  */
 
 /* System headers. */
@@ -109,7 +60,6 @@ hmm_context_init(int32 n_emit_state,
     hmm_context_t *ctx;
 
     assert(n_emit_state > 0);
-    assert(n_emit_state <= MAX_HMM_NSTATE);
 
     ctx = ckd_calloc(1, sizeof(*ctx));
     ctx->n_emit_state = n_emit_state;
@@ -117,6 +67,8 @@ hmm_context_init(int32 n_emit_state,
     ctx->senscore = senscore;
     ctx->sseq = sseq;
     ctx->st_sen_scr = ckd_calloc(n_emit_state, sizeof(*ctx->st_sen_scr));
+    ctx->state_alloc = listelem_alloc_init(sizeof(hmm_state_t) * (ctx->n_emit_state + 1));
+    ctx->mpx_ssid_alloc = listelem_alloc_init(sizeof(int32) * ctx->n_emit_state);
 
     return ctx;
 }
@@ -124,6 +76,8 @@ hmm_context_init(int32 n_emit_state,
 void
 hmm_context_free(hmm_context_t *ctx)
 {
+    listelem_alloc_free(ctx->state_alloc);
+    listelem_alloc_free(ctx->mpx_ssid_alloc);
     ckd_free(ctx->st_sen_scr);
     ckd_free(ctx);
 }
@@ -135,8 +89,9 @@ hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx,
     hmm->ctx = ctx;
     hmm->mpx = mpx;
     hmm->n_emit_state = ctx->n_emit_state;
+    hmm->state = listelem_malloc(ctx->state_alloc);
     if (mpx) {
-        hmm->s.mpx_ssid = ckd_calloc(hmm_n_emit_state(hmm), sizeof(*hmm->s.mpx_ssid));
+        hmm->s.mpx_ssid = listelem_malloc(ctx->mpx_ssid_alloc);
         memset(hmm->s.mpx_ssid, -1, sizeof(*hmm->s.mpx_ssid) * hmm_n_emit_state(hmm));
         hmm->s.mpx_ssid[0] = ssid;
     }
@@ -150,9 +105,11 @@ hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx,
 void
 hmm_deinit(hmm_t *hmm)
 {
-    if (hmm_is_mpx(hmm)) {
-        ckd_free(hmm->s.mpx_ssid);
-    }
+    hmm_context_t *ctx = hmm->ctx;
+
+    listelem_free(ctx->state_alloc, hmm->state);
+    if (hmm->mpx)
+        listelem_free(ctx->mpx_ssid_alloc, hmm->s.mpx_ssid);
 }
 
 void

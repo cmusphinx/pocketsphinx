@@ -47,6 +47,7 @@
 
 /* SphinxBase headers. */
 #include <fixpoint.h>
+#include <listelem_alloc.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,9 +55,6 @@ extern "C" {
 #if 0
 } /* Fool Emacs into not indenting things. */
 #endif
-
-/** Hardcoded limit on the number of states (temporary) */
-#define MAX_HMM_NSTATE 5
 
 /** Shift count for senone scores. */
 #define SENSCR_SHIFT 10
@@ -133,6 +131,8 @@ typedef struct hmm_context_s {
                                (negated scaled logs3 values). */
     int16 * const *sseq;    /**< Senone sequence mapping. */
     int32 *st_sen_scr;      /**< Temporary array of senone scores (for some topologies). */
+    listelem_alloc_t *state_alloc;    /**< Allocator for state arrays. */
+    listelem_alloc_t *mpx_ssid_alloc; /**< Allocator for senone sequence ID arrays. */
     void *udata;            /**< Whatever you feel like, gosh. */
 } hmm_context_t;
 
@@ -155,9 +155,8 @@ typedef struct {
  */
 
 typedef struct hmm_s {
-    hmm_context_t *ctx;                /**< Shared context data for this HMM. */
-    hmm_state_t state[MAX_HMM_NSTATE]; /**< Per-state data for emitting states */
-    hmm_state_t out;                   /**< Non-emitting exit state */
+    hmm_context_t *ctx;   /**< Shared context data for this HMM. */
+    hmm_state_t *state;   /**< Per-state data for emitting states */
     union {
         int32 *mpx_ssid; /**< Senone sequence IDs for each state (for multiplex HMMs). */
         int32 ssid;      /**< Senone sequence ID. */
@@ -176,11 +175,11 @@ typedef struct hmm_s {
 
 #define hmm_in_score(h) hmm_state(h,0).score
 #define hmm_score(h,st) hmm_state(h,st).score
-#define hmm_out_score(h) (h)->out.score
+#define hmm_out_score(h) hmm_state(h,(h)->n_emit_state).score
 
 #define hmm_in_history(h) hmm_state(h,0).history
 #define hmm_history(h,st) hmm_state(h,st).history
-#define hmm_out_history(h) (h)->out.history
+#define hmm_out_history(h) hmm_state(h,(h)->n_emit_state).history
 
 #define hmm_bestscore(h) (h)->bestscore
 #define hmm_frame(h) (h)->frame
