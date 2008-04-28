@@ -75,13 +75,9 @@ ps_add_file(ps_decoder_t *ps, const char *arg,
 {
     char *tmp = string_join(hmmdir, "/", file, NULL);
 
-    if (cmd_ln_str_r(ps->config, arg) == NULL && file_exists(tmp)) {
+    if (cmd_ln_str_r(ps->config, arg) == NULL && file_exists(tmp))
         cmd_ln_set_str_r(ps->config, arg, tmp);
-        ps->strings = glist_add_ptr(ps->strings, tmp);
-    }
-    else {
-        ckd_free(tmp);
-    }
+    ckd_free(tmp);
 }
 
 static void

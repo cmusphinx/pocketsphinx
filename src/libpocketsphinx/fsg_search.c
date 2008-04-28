@@ -155,7 +155,6 @@ fsg_search_free(ps_search_t *search)
     hash_iter_t *itor;
 
     ps_search_deinit(search);
-    hmm_context_free(fsgs->hmmctx);
     fsg_lextree_free(fsgs->lextree);
     fsg_history_reset(fsgs->history);
     fsg_history_set_fsg(fsgs->history, NULL, NULL);
@@ -166,6 +165,7 @@ fsg_search_free(ps_search_t *search)
     }
     hash_table_free(fsgs->fsgs);
     fsg_history_free(fsgs->history);
+    hmm_context_free(fsgs->hmmctx);
     ckd_free(fsgs);
 }
 
