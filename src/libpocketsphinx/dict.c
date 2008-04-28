@@ -183,6 +183,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
 
     dict->config = config;
     dict->mdef = mdef;
+    dict->dict_entry_alloc = listelem_alloc_init(sizeof(dict_entry_t));
     filename = cmd_ln_str_r(config, "-dict");
     n_filename = cmd_ln_str_r(config, "-fdict");
     use_context = !cmd_ln_boolean_r(config, "-usewdphones");
@@ -362,9 +363,8 @@ dict_free(dict_t * dict)
         ckd_free(entry->word);
         ckd_free(entry->phone_ids);
         ckd_free(entry->ci_phone_ids);
-        ckd_free(entry);
     }
-
+    listelem_alloc_free(dict->dict_entry_alloc);
     ckd_free(dict->dict_list);
     ckd_free(dict->ci_index);
     if (dict->dict)
@@ -617,7 +617,7 @@ _new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_conte
         }
     }
 
-    entry = (dict_entry_t *) ckd_calloc((size_t) 1, sizeof(dict_entry_t));
+    entry = listelem_malloc(dict->dict_entry_alloc);
     entry->word = ckd_salloc(word_str);
     entry->len = pronoun_len;
     entry->mpx = use_context;
@@ -820,7 +820,7 @@ _dict_list_add(dict_t * dict, dict_entry_t * entry)
             ckd_calloc(hash_table_size(dict->dict), sizeof(dict_entry_t *));
 
     if (dict->dict_entry_count >= hash_table_size(dict->dict)) {
-        E_FATAL("dict size (%d) exceeded\n", hash_table_size(dict->dict));
+        E_WARN("dict size (%d) exceeded\n", hash_table_size(dict->dict));
         dict->dict_list = (dict_entry_t **)
             ckd_realloc(dict->dict_list,
                         (hash_table_size(dict->dict) + 16) * sizeof(dict_entry_t *));

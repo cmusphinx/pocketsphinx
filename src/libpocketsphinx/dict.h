@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
  * reserved.
@@ -37,6 +38,7 @@
 /* SphinxBase headers. */
 #include <hash_table.h>
 #include <glist.h>
+#include <listelem_alloc.h>
 #include <cmd_ln.h>
 
 /* Local headers. */
@@ -65,6 +67,7 @@ typedef struct dict_s {
     bin_mdef_t		*mdef;
     hash_table_t 	*dict;
     int32 		dict_entry_count;
+    listelem_alloc_t    *dict_entry_alloc;
     dict_entry_t	**dict_list;
     int32		ci_index_len;	 	/* number of indecies */
     int32		*ci_index;		/* Index to each group */
