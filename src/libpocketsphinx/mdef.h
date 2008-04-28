@@ -55,7 +55,6 @@
 #include <stdio.h>
 
 /* SphinxBase headers. */
-#include <sphinx_types.h>
 #include <hash_table.h>
 
 #ifdef __cplusplus
@@ -99,13 +98,13 @@ typedef struct {
  * \brief Triphone information, including base phones as a subset.  For the latter, lc, rc and wpos are non-existent.
  */
 typedef struct {
-    s3ssid_t ssid;		/**< State sequence (or senone sequence) ID, considering the
+    int16 ssid;			/**< State sequence (or senone sequence) ID, considering the
 				   n_emit_state senone-ids are a unit.  The senone sequences
 				   themselves are in a separate table */
-    s3tmatid_t tmat;		/**< Transition matrix id */
-    s3cipid_t ci, lc, rc;	/**< Base, left, right context ciphones */
+    int32 tmat;			/**< Transition matrix id */
+    int16 ci, lc, rc;		/**< Base, left, right context ciphones */
     word_posn_t wpos;		/**< Word position */
-    s3senid_t *state;           /**< State->senone mappings */
+    int16 *state;               /**< State->senone mappings */
     
 } phone_t;
 
@@ -115,8 +114,8 @@ typedef struct {
  * NOTE: Both ph_rc_t and ph_lc_t FOR INTERNAL USE ONLY.
  */
 typedef struct ph_rc_s {
-    s3cipid_t rc;		/**< Specific rc for a parent <wpos,ci,lc> */
-    s3pid_t pid;		/**< Triphone id for above rc instance */
+    int16 rc;			/**< Specific rc for a parent <wpos,ci,lc> */
+    int32 pid;			/**< Triphone id for above rc instance */
     struct ph_rc_s *next;	/**< Next rc entry for same parent <wpos,ci,lc> */
 } ph_rc_t;
 
@@ -126,7 +125,7 @@ typedef struct ph_rc_s {
  */
 
 typedef struct ph_lc_s {
-    s3cipid_t lc;		/**< Specific lc for a parent <wpos,ci> */
+    int16 lc;			/**< Specific lc for a parent <wpos,ci> */
     ph_rc_t *rclist;		/**< rc list for above lc instance */
     struct ph_lc_s *next;	/**< Next lc entry for same parent <wpos,ci> */
 } ph_lc_t;
@@ -148,16 +147,16 @@ typedef struct {
     hash_table_t *ciphone_ht;	/**< Hash table for mapping ciphone strings to ids */
     ciphone_t *ciphone;		/**< CI-phone information for all ciphones */
     phone_t *phone;		/**< Information for all ciphones and triphones */
-    s3senid_t **sseq;		/**< Unique state (or senone) sequences in this model, shared
+    int16 **sseq;		/**< Unique state (or senone) sequences in this model, shared
                                    among all phones/triphones */
     int32 n_sseq;		/**< No. of unique senone sequences in this model */
     
-    s3senid_t *cd2cisen;	/**< Parent CI-senone id for each senone; the first
+    int16 *cd2cisen;		/**< Parent CI-senone id for each senone; the first
 				   n_ci_sen are identity mappings; the CD-senones are
 				   contiguous for each parent CI-phone */
-    s3cipid_t *sen2cimap;	/**< Parent CI-phone for each senone (CI or CD) */
+    int16 *sen2cimap;		/**< Parent CI-phone for each senone (CI or CD) */
     
-    s3cipid_t sil;		/**< SILENCE_CIPHONE id */
+    int16 sil;			/**< SILENCE_CIPHONE id */
     
     ph_lc_t ***wpos_ci_lclist;	/**< wpos_ci_lclist[wpos][ci] = list of lc for <wpos,ci>.
                                    wpos_ci_lclist[wpos][ci][lc].rclist = list of rc for
@@ -165,7 +164,7 @@ typedef struct {
                                    are created to conserve space.
                                    (NOTE: FOR INTERNAL USE ONLY.) */
   
-    s3senid_t *st2senmap; /**< A mapping from State to senone. Only used
+    int16 *st2senmap;	 /**< A mapping from State to senone. Only used
                              in sphinx 3.0 HACK!, In general, there is
                              only need for either one of st2senmap or
                              sseq. 
@@ -194,7 +193,7 @@ typedef struct {
  * @return pointer to the phone structure created.
  */
 mdef_t *mdef_init (char *mdeffile, /**< In: Model definition file */
-		   int32 breport   /**< In: whether to report the progress or not */
+		   int breport     /**< In: whether to report the progress or not */
     );
 
 
@@ -202,76 +201,64 @@ mdef_t *mdef_init (char *mdeffile, /**< In: Model definition file */
     Get the ciphone id given a string name
     @return ciphone id for the given ciphone string name 
 */
-s3cipid_t mdef_ciphone_id (mdef_t *m,		/**< In: Model structure being queried */
-			   char *ciphone	/**< In: ciphone for which id wanted */
+int mdef_ciphone_id(mdef_t *m,		/**< In: Model structure being queried */
+                    char *ciphone	/**< In: ciphone for which id wanted */
     );
 
 /** 
     Get the phone string given the ci phone id.
     @return: READ-ONLY ciphone string name for the given ciphone id 
 */
-const char *mdef_ciphone_str (mdef_t *m,	/**< In: Model structure being queried */
-			      s3cipid_t ci	/**< In: ciphone id for which name wanted */
+const char *mdef_ciphone_str(mdef_t *m,	/**< In: Model structure being queried */
+                             int ci	/**< In: ciphone id for which name wanted */
     );
 
 /** 
     Decide whether the phone is ci phone.
     @return 1 if given triphone argument is a ciphone, 0 if not, -1 if error 
 */
-int32 mdef_is_ciphone (mdef_t *m,		/**< In: Model structure being queried */
-		       s3pid_t p		/**< In: triphone id being queried */
+int mdef_is_ciphone (mdef_t *m,		/**< In: Model structure being queried */
+                     int p		/**< In: triphone id being queried */
     );
 
 /**
    Decide whether the senone is a senone for a ci phone, or a ci senone
    @return 1 if a given senone is a ci senone
 */  
-int32 mdef_is_cisenone(mdef_t *m,               /**< In: Model structure being queried */
-		       s3senid_t s            /**< In: senone id being queried */
+int mdef_is_cisenone(mdef_t *m,               /**< In: Model structure being queried */
+                     int s		        /**< In: senone id being queried */
     );
 
 /** 
     Decide the phone id given the left, right and base phones. 
     @return: phone id for the given constituents if found, else BAD_S3PID 
 */
-s3pid_t mdef_phone_id (mdef_t *m,		/**< In: Model structure being queried */
-		       s3cipid_t b,		/**< In: base ciphone id */
-		       s3cipid_t l,		/**< In: left context ciphone id */
-		       s3cipid_t r,		/**< In: right context ciphone id */
-		       word_posn_t pos	/**< In: Word position */
+int mdef_phone_id (mdef_t *m,		/**< In: Model structure being queried */
+                   int b,		/**< In: base ciphone id */
+                   int l,		/**< In: left context ciphone id */
+                   int r,		/**< In: right context ciphone id */
+                   word_posn_t pos	/**< In: Word position */
     );
 
 /**
  * Like phone_id, but backs off to other word positions if exact triphone not found.
  * Also, non-SILENCE_PHONE filler phones back off to SILENCE_PHONE.
- * Ultimately, backs off to base phone id.  Thus, it should never return BAD_S3PID.
+ * Ultimately, backs off to base phone id.  Thus, it should never return -1.
  */
-s3pid_t mdef_phone_id_nearest (mdef_t *m,	/**< In: Model structure being queried */
-			       s3cipid_t b,	/**< In: base ciphone id */
-			       s3cipid_t l,	/**< In: left context ciphone id */
-			       s3cipid_t r,	/**< In: right context ciphone id */
-			       word_posn_t pos	/**< In: Word position */
+int mdef_phone_id_nearest (mdef_t *m,	/**< In: Model structure being queried */
+                           int b,	/**< In: base ciphone id */
+                           int l,	/**< In: left context ciphone id */
+                           int r,	/**< In: right context ciphone id */
+                           word_posn_t pos	/**< In: Word position */
     );
 
 /**
  * Create a phone string for the given phone (base or triphone) id in the given buf.
  * @return 0 if successful, -1 if error.
  */
-int32 mdef_phone_str (mdef_t *m,		/**< In: Model structure being queried */
-		      s3pid_t pid,		/**< In: phone id being queried */
-		      char *buf		/**< Out: On return, buf has the string */
-    );
-
-/**
- * Obtain phone components: inverse of mdef_phone_id().
- * @return 0 if successful, -1 otherwise.
- */
-int32 mdef_phone_components (mdef_t *m,		/**< In: Model structure being queried */
-			     s3pid_t p,		/**< In: triphone id being queried */
-			     s3cipid_t *b,	/**< Out: base ciphone id */
-			     s3cipid_t *l,	/**< Out: left context ciphone id */
-			     s3cipid_t *r,	/**< Out: right context ciphone id */
-			     word_posn_t *pos	/**< Out: Word position */
+int mdef_phone_str(mdef_t *m,		/**< In: Model structure being queried */
+                   int pid,		/**< In: phone id being queried */
+                   char *buf		/**< Out: On return, buf has the string */
     );
 
 /**
@@ -279,25 +266,9 @@ int32 mdef_phone_components (mdef_t *m,		/**< In: Model structure being queried 
  * matrix IDs and the individual state(senone) IDs).
  * @return 0 iff the HMMs are identical, -1 otherwise.
  */
-int32 mdef_hmm_cmp (mdef_t *m,			/**< In: Model being queried */
-		    s3pid_t p1, /**< In: One of the two triphones being compared */
-		    s3pid_t p2	/**< In: One of the two triphones being compared */
-    );
-
-/**
- * From the given array of active senone-sequence flags, mark the corresponding senones that
- * are active.  Caller responsible for allocating sen[], and for clearing it, if necessary.
- */
-void mdef_sseq2sen_active (mdef_t *mdef,        /**< In: The model definition */
-			   int32 *sseq,		/**< In: sseq[ss] is != 0 iff senone-sequence ID
-						   ss is active */
-			   int32 *sen		/**< In/Out: Set sen[s] to non-0 if so indicated
-						   by any active senone sequence */
-    );
-
-/** For debugging: dump the mdef_t structure out. */
-void mdef_dump (FILE *fp,  /**< In: a file pointer */
-		mdef_t *m  /**< In: a model definition structure */
+int mdef_hmm_cmp (mdef_t *m,	/**< In: Model being queried */
+                  int p1, 	/**< In: One of the two triphones being compared */
+                  int p2	/**< In: One of the two triphones being compared */
     );
 
 /** Report the model definition's parameters */

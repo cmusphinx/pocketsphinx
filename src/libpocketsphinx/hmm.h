@@ -34,80 +34,18 @@
  * ====================================================================
  *
  */
-/*
- * hmm.h -- HMM data structure.
- *
- * **********************************************
- * CMU ARPA Speech Project
- *
- * Copyright (c) 1997 Carnegie Mellon University.
- * ALL RIGHTS RESERVED.
- * **********************************************
- *
- * HISTORY
- * $Log$
- * Revision 1.1  2006/04/05  20:27:30  dhdfu
- * A Great Reorganzation of header files and executables
- * 
- * Revision 1.9  2006/02/22 16:46:38  arthchan2003
- * Merged from SPHINX3_5_2_RCI_IRII_BRANCH: 1, Added function hmm_vit_eval, a wrapper of computing the hmm level scores. 2, Fixed issues in , 3, Fixed issues of dox-doc
- *
- * Revision 1.8.4.6  2005/09/25 18:53:36  arthchan2003
- * Added hmm_vit_eval, in lextree.c, hmm_dump and hmm_vit_eval is now separated.
- *
- * Revision 1.8.4.5  2005/07/26 02:17:44  arthchan2003
- * Fixed  keyword problem.
- *
- * Revision 1.8.4.4  2005/07/17 05:15:47  arthchan2003
- * Totally removed the data members in hmm_t structure
- *
- * Revision 1.8.4.3  2005/07/05 05:47:59  arthchan2003
- * Fixed dox-doc. struct level of documentation are included.
- *
- * Revision 1.8.4.2  2005/07/04 07:15:55  arthchan2003
- * Removed fsg compliant stuff from hmm_t
- *
- * Revision 1.8.4.1  2005/06/27 05:38:54  arthchan2003
- * Added changes to make libsearch/fsg_* family of code to be compiled.
- *
- * Revision 1.8  2005/06/21 18:34:41  arthchan2003
- * Log. 1, Fixed doxygen documentation for all functions. 2, Add $Log$
- * Revision 1.1  2006/04/05  20:27:30  dhdfu
- * A Great Reorganzation of header files and executables
- * 
- * Log. 1, Fixed doxygen documentation for all functions. 2, Add Revision 1.9  2006/02/22 16:46:38  arthchan2003
- * Log. 1, Fixed doxygen documentation for all functions. 2, Add Merged from SPHINX3_5_2_RCI_IRII_BRANCH: 1, Added function hmm_vit_eval, a wrapper of computing the hmm level scores. 2, Fixed issues in , 3, Fixed issues of dox-doc
- * Log. 1, Fixed doxygen documentation for all functions. 2, Add
- *
- * Revision 1.4  2005/06/13 04:02:55  archan
- * Fixed most doxygen-style documentation under libs3decoder.
- *
- * Revision 1.3  2005/03/30 01:22:46  archan
- * Fixed mistakes in last updates. Add
- *
- * 
- * 29-Feb-2000	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Modified hmm_t.state to be a run-time array instead of a compile-time
- * 		one.  Modified compile-time 3 and 5-state versions of hmm_vit_eval
- * 		into hmm_vit_eval_3st and hmm_vit_eval_5st, to allow run-time selection.
- * 		Removed hmm_init().
- * 
- * 08-Dec-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added HMM_SKIPARCS compile-time option and hmm_init().
- * 
- * 10-May-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Started, based on an earlier version.
+
+/**
+ * @file hmm.h Hidden Markov Model base structures.
  */
 
-
-#ifndef _S3_HMM_H_
-#define _S3_HMM_H_
+#ifndef __HMM_H__
+#define __HMM_H__
 
 /* System headers. */
 #include <stdio.h>
 
 /* SphinxBase headers. */
-#include <sphinx_types.h>
 #include <fixpoint.h>
 
 #ifdef __cplusplus
@@ -193,7 +131,7 @@ typedef struct hmm_context_s {
     int32 ** const *tp;	    /**< State transition scores tp[id][from][to] (logs3 values). */
     int16 const *senscore;  /**< State emission scores senscore[senid]
                                (negated scaled logs3 values). */
-    s3senid_t * const *sseq;/**< Senone sequence mapping. */
+    int16 * const *sseq;    /**< Senone sequence mapping. */
     int32 *st_sen_scr;      /**< Temporary array of senone scores (for some topologies). */
     void *udata;            /**< Whatever you feel like, gosh. */
 } hmm_context_t;
@@ -225,8 +163,8 @@ typedef struct hmm_s {
         int32 ssid;      /**< Senone sequence ID. */
     } s;
     int32 bestscore;	/**< Best [emitting] state score in current frame (for pruning). */
-    s3tmatid_t tmatid;  /**< Transition matrix ID (see hmm_context_t). */
-    s3frmid_t frame;	/**< Frame in which this HMM was last active; <0 if inactive */
+    int16 tmatid;       /**< Transition matrix ID (see hmm_context_t). */
+    int16 frame;	/**< Frame in which this HMM was last active; <0 if inactive */
     uint8 mpx;          /**< Is this HMM multiplex? (hoisted for speed) */
     uint8 n_emit_state; /**< Number of emitting states (hoisted for speed) */
 } hmm_t;
@@ -266,7 +204,7 @@ typedef struct hmm_s {
 hmm_context_t *hmm_context_init(int32 n_emit_state,
                                 int32 ** const *tp,
                                 int16 const *senscore,
-                                s3senid_t * const *sseq);
+                                int16 * const *sseq);
 
 /**
  * Change the senone score array for a context.
@@ -286,7 +224,7 @@ void hmm_context_free(hmm_context_t *ctx);
  * Populate a previously-allocated HMM structure, allocating internal data.
  **/
 void hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx,
-              int32 ssid, s3tmatid_t tmatid);
+              int32 ssid, int tmatid);
 
 /**
  * Free an HMM structure, releasing internal data (but not the HMM structure itself).
@@ -314,7 +252,7 @@ void hmm_normalize(hmm_t *h, int32 bestscr);
  * Enter an HMM with the given path score and history ID.
  **/
 void hmm_enter(hmm_t *h, int32 score,
-               int32 histid, int32 frame);
+               int32 histid, int frame);
 
 /**
  * Viterbi evaluation of given HMM.
@@ -354,4 +292,4 @@ void hmm_dump(hmm_t *h,  /**< In/Out: HMM being updated */
 }
 #endif
 
-#endif
+#endif /* __HMM_H__ */

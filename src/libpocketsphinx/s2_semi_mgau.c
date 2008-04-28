@@ -59,7 +59,6 @@
 #include <bio.h>
 #include <err.h>
 #include <prim_type.h>
-#include <sphinx_types.h>
 
 /* Local headers */
 #include "s2_semi_mgau.h"
@@ -1125,7 +1124,7 @@ s2_semi_mgau_t *
 s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
 {
     s2_semi_mgau_t *s;
-    char *sendump_path;
+    char const *sendump_path;
     float32 **fgau;
     int i;
 

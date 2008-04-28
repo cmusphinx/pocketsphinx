@@ -89,7 +89,6 @@
 #include <stdio.h>
 
 /* SphinxBase headers. */
-#include <sphinx_types.h>
 #include <logmath.h>
 
 /** \file tmat.h

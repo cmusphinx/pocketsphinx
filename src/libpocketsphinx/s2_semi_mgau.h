@@ -43,7 +43,6 @@
 #define __S2_SEMI_MGAU_H__
 
 /* SphinxBase headesr. */
-#include <sphinx_types.h>
 #include <fe.h>
 #include <logmath.h>
 #include <mmio.h>

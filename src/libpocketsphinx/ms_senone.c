@@ -114,7 +114,7 @@ senone_mgau_map_read(senone_t * s, char const *file_name)
     }
 
     /* Read 1d array data */
-    if (bio_fread_1d(&ptr, sizeof(s3mgauid_t), &(s->n_sen), fp,
+    if (bio_fread_1d(&ptr, sizeof(int16), &(s->n_sen), fp,
 		     byteswap, &chksum) < 0) {
         E_FATAL("bio_fread_1d(%s) failed\n", file_name);
     }
@@ -307,7 +307,7 @@ senone_init(gauden_t *g, char const *mixwfile, char const *sen2mgau_map_file,
 
     if (strcmp(sen2mgau_map_file, ".semi.") == 0) {
         /* All-to-1 senones-codebook mapping */
-        s->mgau = (s3mgauid_t *) ckd_calloc(s->n_sen, sizeof(s3mgauid_t));
+        s->mgau = (int16 *) ckd_calloc(s->n_sen, sizeof(*s->mgau));
     }
     else if (strcmp(sen2mgau_map_file, ".cont.") == 0
              || strcmp(sen2mgau_map_file, ".s3cont.") == 0) {
@@ -315,7 +315,7 @@ senone_init(gauden_t *g, char const *mixwfile, char const *sen2mgau_map_file,
         if (s->n_sen <= 1)
             E_FATAL("#senone=%d; must be >1\n", s->n_sen);
 
-        s->mgau = (s3mgauid_t *) ckd_calloc(s->n_sen, sizeof(s3mgauid_t));
+        s->mgau = (int16 *) ckd_calloc(s->n_sen, sizeof(*s->mgau));
         for (i = 0; i < s->n_sen; i++)
             s->mgau[i] = i;
 
@@ -353,7 +353,7 @@ senone_free(senone_t * s)
  * NOTE:  Remember also that PDF data may be transposed or not depending on s->n_gauden.
  */
 int32
-senone_eval(senone_t * s, s3senid_t id, gauden_dist_t ** dist, int32 n_top)
+senone_eval(senone_t * s, int id, gauden_dist_t ** dist, int32 n_top)
 {
     int32 scr;                  /* total senone score */
     int32 fden;                 /* Gaussian density */

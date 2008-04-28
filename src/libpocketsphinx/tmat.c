@@ -241,9 +241,9 @@ tmat_init(char const *file_name, logmath_t *lmath, float64 tpfloor, int32 brepor
         || (bio_fread(&i, sizeof(int32), 1, fp, byteswap, &chksum) != 1)) {
         E_FATAL("bio_fread(%s) (arraysize) failed\n", file_name);
     }
-    if (t->n_tmat >= MAX_S3TMATID)
+    if (t->n_tmat >= MAX_INT32) /* Comparison is always false... */
         E_FATAL("%s: #tmat (%d) exceeds limit (%d)\n", file_name,
-                t->n_tmat, MAX_S3TMATID);
+                t->n_tmat, MAX_INT32);
     if (n_dst != n_src + 1)
         E_FATAL("%s: #from-states(%d) != #to-states(%d)-1\n", file_name,
                 n_src, n_dst);

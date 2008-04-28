@@ -242,7 +242,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
         /*
          * Check if there is a special end silence phone.
          */
-        if (BAD_S3CIPID == bin_mdef_ciphone_id(mdef, "SILe")) {
+        if (-1 == bin_mdef_ciphone_id(mdef, "SILe")) {
             strcpy(pronstr, "SIL");
             entry = _new_dict_entry(dict, "</s>", pronstr, FALSE);
             if (!entry)
@@ -270,7 +270,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
         /*
          * Check if there is a special begin silence phone.
          */
-        if (BAD_S3CIPID == bin_mdef_ciphone_id(mdef, "SILb")) {
+        if (-1 == bin_mdef_ciphone_id(mdef, "SILb")) {
             strcpy(pronstr, "SIL");
             entry =
                 _new_dict_entry(dict, "<s>", pronstr, FALSE);
@@ -521,7 +521,7 @@ _new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_conte
             continue;
         }
         ciPhoneId[pronoun_len] = bin_mdef_ciphone_id(mdef, phone[pronoun_len]);
-        if (ciPhoneId[pronoun_len] == BAD_S3CIPID) {
+        if (ciPhoneId[pronoun_len] == -1) {
             E_ERROR("'%s': Unknown phone '%s'\n", word_str,
                     phone[pronoun_len]);
             return NULL;
@@ -559,7 +559,7 @@ _new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_conte
         else {
             triphone_ids[i] = bin_mdef_phone_id(mdef,
                                                 bin_mdef_ciphone_id(mdef, phone[i]),
-                                                BAD_S3CIPID,
+                                                -1,
                                                 bin_mdef_ciphone_id(mdef, phone[i+1]),
                                                 WORD_POSN_BEGIN);
             if (triphone_ids[i] < 0)
@@ -587,7 +587,7 @@ _new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_conte
             triphone_ids[i] = bin_mdef_phone_id(mdef,
                                                 bin_mdef_ciphone_id(mdef, phone[i]),
                                                 bin_mdef_ciphone_id(mdef, phone[i-1]),
-                                                BAD_S3CIPID,
+                                                -1,
                                                 position[i]);
             if (triphone_ids[i] < 0)
                 triphone_ids[i] = bin_mdef_ciphone_id(mdef, phone[i]);
@@ -689,7 +689,7 @@ replace_dict_entry(dict_t * dict,
         pronoun_str = phone[pronoun_len] + n + 1;
 
         ciPhoneId[pronoun_len] = bin_mdef_ciphone_id(dict->mdef, phone[pronoun_len]);
-        if (ciPhoneId[pronoun_len] == BAD_S3CIPID) {
+        if (ciPhoneId[pronoun_len] == -1) {
             E_ERROR("'%s': Unknown phone '%s'\n", word_str,
                     phone[pronoun_len]);
             return 0;

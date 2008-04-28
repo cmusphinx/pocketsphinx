@@ -73,7 +73,6 @@
 #include <math.h>
 
 /* SphinxBase headers. */
-#include <sphinx_types.h>
 #include <err.h>
 #include <ckd_alloc.h>
 #include <bitvec.h>

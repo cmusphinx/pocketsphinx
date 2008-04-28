@@ -97,7 +97,6 @@
 #define _LIBFBS_MS_CONT_MGAU_H_
 
 /* SphinxBase headers. */
-#include <sphinx_types.h>
 #include <cmd_ln.h>
 #include <logmath.h>
 #include <feat.h>
@@ -112,7 +111,7 @@
    \brief a mapping from gaussian to senone
 */
 typedef struct mgau2sen_s {
-    s3senid_t sen;		/**< Senone shared by this mixture Gaussian */
+    int16 sen;			/**< Senone shared by this mixture Gaussian */
     struct mgau2sen_s *next;	/**< Next entry in list for this mixture Gaussian */
 } mgau2sen_t;
 
@@ -124,7 +123,7 @@ typedef struct {
     gauden_t* g;   /**< The codebook */
     senone_t* s;   /**< The senone */
     mgau2sen_t **mgau2sen; /**< Senones sharing mixture Gaussian codebooks */
-    int32 topn;    /**< Top-n gaussian will be computed */
+    int topn;      /**< Top-n gaussian will be computed */
 
     /**< Intermediate used in computation */
     gauden_dist_t ***dist;  

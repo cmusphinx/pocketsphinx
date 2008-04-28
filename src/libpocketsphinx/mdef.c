@@ -98,57 +98,8 @@
 
 #define MODEL_DEF_VERSION	"0.3"
 
-void
-mdef_dump(FILE * fp, mdef_t * m)
-{
-    int32 i, j;
-    int32 ssid;
-    __BIGSTACKVARIABLE__ char buf[1024];
-
-    fprintf(fp, "%d ciphone\n", m->n_ciphone);
-    fprintf(fp, "%d phone\n", m->n_phone);
-    fprintf(fp, "%d emitstate\n", m->n_emit_state);
-    fprintf(fp, "%d cisen\n", m->n_ci_sen);
-    fprintf(fp, "%d sen\n", m->n_sen);
-    fprintf(fp, "%d tmat\n", m->n_tmat);
-
-    for (i = 0; i < m->n_phone; i++) {
-        mdef_phone_str(m, i, buf);
-        ssid = m->phone[i].ssid;
-
-        fprintf(fp, "%3d %5d", m->phone[i].tmat, ssid);
-        for (j = 0; j < m->n_emit_state; j++)
-            fprintf(fp, " %5d", m->sseq[ssid][j]);
-        fprintf(fp, "\t");
-        for (j = 0; j < m->n_emit_state; j++)
-            fprintf(fp, " %3d", m->cd2cisen[m->sseq[ssid][j]]);
-        fprintf(fp, "\t%s\n", buf);
-    }
-
-    fflush(fp);
-}
-
-
-#if 0
-int32
-mdef_hmm_cmp(mdef_t * m, s3pid_t p1, s3pid_t p2)
-{
-    int32 i;
-
-    if (m->phone[p1].tmat != m->phone[p2].tmat)
-        return -1;
-
-    for (i = 0; i < m->n_emit_state; i++)
-        if (m->phone[p1].state[i] != m->phone[p2].state[i])
-            return -1;
-
-    return 0;
-}
-#endif
-
-
 static void
-ciphone_add(mdef_t * m, char *ci, s3pid_t p)
+ciphone_add(mdef_t * m, char *ci, int p)
 {
     assert(p < m->n_ciphone);
 
@@ -161,7 +112,7 @@ ciphone_add(mdef_t * m, char *ci, s3pid_t p)
 
 
 static ph_lc_t *
-find_ph_lc(ph_lc_t * lclist, s3cipid_t lc)
+find_ph_lc(ph_lc_t * lclist, int lc)
 {
     ph_lc_t *lcptr;
 
@@ -171,7 +122,7 @@ find_ph_lc(ph_lc_t * lclist, s3cipid_t lc)
 
 
 static ph_rc_t *
-find_ph_rc(ph_rc_t * rclist, s3cipid_t rc)
+find_ph_rc(ph_rc_t * rclist, int rc)
 {
     ph_rc_t *rcptr;
 
@@ -182,8 +133,8 @@ find_ph_rc(ph_rc_t * rclist, s3cipid_t rc)
 
 static void
 triphone_add(mdef_t * m,
-             s3cipid_t ci, s3cipid_t lc, s3cipid_t rc, word_posn_t wpos,
-             s3pid_t p)
+             int ci, int lc, int rc, word_posn_t wpos,
+             int p)
 {
     ph_lc_t *lcptr;
     ph_rc_t *rcptr;
@@ -221,32 +172,28 @@ triphone_add(mdef_t * m,
 }
 
 
-s3cipid_t
+int
 mdef_ciphone_id(mdef_t * m, char *ci)
 {
-    void *id;
-
-    assert(m);
-    assert(ci);
-
-    if (hash_table_lookup(m->ciphone_ht, ci, &id) < 0)
-        return (BAD_S3CIPID);
-    return ((s3cipid_t)(long)id);
+    int32 id;
+    if (hash_table_lookup_int32(m->ciphone_ht, ci, &id) < 0)
+        return -1;
+    return id;
 }
 
 
 const char *
-mdef_ciphone_str(mdef_t * m, s3cipid_t id)
+mdef_ciphone_str(mdef_t * m, int id)
 {
     assert(m);
     assert((id >= 0) && (id < m->n_ciphone));
 
-    return (m->ciphone[(int) id].name);
+    return (m->ciphone[id].name);
 }
 
 
-int32
-mdef_phone_str(mdef_t * m, s3pid_t pid, char *buf)
+int
+mdef_phone_str(mdef_t * m, int pid, char *buf)
 {
     char *wpos_name;
 
@@ -256,7 +203,7 @@ mdef_phone_str(mdef_t * m, s3pid_t pid, char *buf)
 
     buf[0] = '\0';
     if (pid < m->n_ciphone)
-        sprintf(buf, "%s", mdef_ciphone_str(m, (s3cipid_t) pid));
+        sprintf(buf, "%s", mdef_ciphone_str(m, pid));
     else {
         sprintf(buf, "%s %s %s %c",
                 mdef_ciphone_str(m, m->phone[pid].ci),
@@ -268,13 +215,13 @@ mdef_phone_str(mdef_t * m, s3pid_t pid, char *buf)
 }
 
 
-s3pid_t
+int
 mdef_phone_id(mdef_t * m,
-              s3cipid_t ci, s3cipid_t lc, s3cipid_t rc, word_posn_t wpos)
+              int ci, int lc, int rc, word_posn_t wpos)
 {
     ph_lc_t *lcptr;
     ph_rc_t *rcptr;
-    s3cipid_t newl, newr;
+    int newl, newr;
 
     assert(m);
     assert((ci >= 0) && (ci < m->n_ciphone));
@@ -286,13 +233,13 @@ mdef_phone_id(mdef_t * m,
           find_ph_lc(m->wpos_ci_lclist[wpos][(int) ci], lc)) == NULL)
         || ((rcptr = find_ph_rc(lcptr->rclist, rc)) == NULL)) {
         /* Not found; backoff to silence context if non-silence filler context */
-        if (NOT_S3CIPID(m->sil))
-            return BAD_S3PID;
+        if (m->sil < 0)
+            return -1;
 
         newl = m->ciphone[(int) lc].filler ? m->sil : lc;
         newr = m->ciphone[(int) rc].filler ? m->sil : rc;
         if ((newl == lc) && (newr == rc))
-            return BAD_S3PID;
+            return -1;
 
         return (mdef_phone_id(m, ci, newl, newr, wpos));
     }
@@ -301,52 +248,52 @@ mdef_phone_id(mdef_t * m,
 }
 
 
-s3pid_t
+int
 mdef_phone_id_nearest(mdef_t * m,
-                      s3cipid_t b, s3cipid_t l, s3cipid_t r,
+                      int b, int l, int r,
                       word_posn_t pos)
 {
     word_posn_t tmppos;
-    s3pid_t p;
-    s3cipid_t newl, newr;
+    int p;
+    int newl, newr;
     char *wpos_name;
 
     assert(m);
     assert((b >= 0) && (b < m->n_ciphone));
     assert((pos >= 0) && (pos < N_WORD_POSN));
 
-    if ((NOT_S3CIPID(l)) || (NOT_S3CIPID(r)))
-        return ((s3pid_t) b);
+    if (l < 0 || r < 0)
+        return b;
 
     assert((l >= 0) && (l < m->n_ciphone));
     assert((r >= 0) && (r < m->n_ciphone));
 
     p = mdef_phone_id(m, b, l, r, pos);
-    if (IS_S3PID(p))
+    if (p >= 0)
         return p;
 
     /* Exact triphone not found; backoff to other word positions */
     for (tmppos = 0; tmppos < N_WORD_POSN; tmppos++) {
         if (tmppos != pos) {
             p = mdef_phone_id(m, b, l, r, tmppos);
-            if (IS_S3PID(p))
+            if (p >= 0)
                 return p;
         }
     }
 
     /* Nothing yet; backoff to silence phone if non-silence filler context */
-    if (IS_S3CIPID(m->sil)) {
+    if (m->sil >= 0) {
         newl = m->ciphone[(int) l].filler ? m->sil : l;
         newr = m->ciphone[(int) r].filler ? m->sil : r;
         if ((newl != l) || (newr != r)) {
             p = mdef_phone_id(m, b, newl, newr, pos);
-            if (IS_S3PID(p))
+            if (p >= 0)
                 return p;
 
             for (tmppos = 0; tmppos < N_WORD_POSN; tmppos++) {
                 if (tmppos != pos) {
                     p = mdef_phone_id(m, b, newl, newr, tmppos);
-                    if (IS_S3PID(p))
+                    if (p >= 0)
                         return p;
                 }
             }
@@ -363,30 +310,11 @@ mdef_phone_id_nearest(mdef_t * m,
                mdef_ciphone_str(m, r), wpos_name[pos]);
 #endif
     }
-    return ((s3pid_t) b);
+    return ((int) b);
 }
 
-
-int32
-mdef_phone_components(mdef_t * m,
-                      s3pid_t p,
-                      s3cipid_t * b,
-                      s3cipid_t * l, s3cipid_t * r, word_posn_t * pos)
-{
-    assert(m);
-    assert((p >= 0) && (p < m->n_phone));
-
-    *b = m->phone[p].ci;
-    *l = m->phone[p].lc;
-    *r = m->phone[p].rc;
-    *pos = m->phone[p].wpos;
-
-    return 0;
-}
-
-
-int32
-mdef_is_ciphone(mdef_t * m, s3pid_t p)
+int
+mdef_is_ciphone(mdef_t * m, int p)
 {
     assert(m);
     assert((p >= 0) && (p < m->n_phone));
@@ -394,8 +322,8 @@ mdef_is_ciphone(mdef_t * m, s3pid_t p)
     return ((p < m->n_ciphone) ? 1 : 0);
 }
 
-int32
-mdef_is_cisenone(mdef_t * m, s3senid_t s)
+int
+mdef_is_cisenone(mdef_t * m, int s)
 {
     assert(m);
     if (s >= m->n_sen) {
@@ -408,7 +336,7 @@ mdef_is_cisenone(mdef_t * m, s3senid_t s)
 
 /* Parse tmat and state->senone mappings for phone p and fill in structure */
 static void
-parse_tmat_senmap(mdef_t * m, char *line, int32 off, s3pid_t p)
+parse_tmat_senmap(mdef_t * m, char *line, int32 off, int p)
 {
     int32 wlen, n, s;
     __BIGSTACKVARIABLE__ char word[1024], *lp;
@@ -456,11 +384,11 @@ parse_tmat_senmap(mdef_t * m, char *line, int32 off, s3pid_t p)
 
 
 static void
-parse_base_line(mdef_t * m, char *line, s3pid_t p)
+parse_base_line(mdef_t * m, char *line, int p)
 {
     int32 wlen, n;
     __BIGSTACKVARIABLE__ char word[1024], *lp;
-    s3cipid_t ci;
+    int ci;
 
     lp = line;
 
@@ -471,12 +399,12 @@ parse_base_line(mdef_t * m, char *line, s3pid_t p)
 
     /* Make sure it's not a duplicate */
     ci = mdef_ciphone_id(m, word);
-    if (IS_S3CIPID(ci))
+    if (ci >= 0)
         E_FATAL("Duplicate base phone: %s\n", line);
 
     /* Add ciphone to ciphone table with id p */
     ciphone_add(m, word, p);
-    ci = (s3cipid_t) p;
+    ci = (int) p;
 
     /* Read and skip "-" for lc, rc, wpos */
     for (n = 0; n < 3; n++) {
@@ -497,7 +425,7 @@ parse_base_line(mdef_t * m, char *line, s3pid_t p)
     else
         E_FATAL("Bad filler attribute field: %s\n", line);
 
-    triphone_add(m, ci, BAD_S3CIPID, BAD_S3CIPID, WORD_POSN_UNDEFINED, p);
+    triphone_add(m, ci, -1, -1, WORD_POSN_UNDEFINED, p);
 
     /* Parse remainder of line: transition matrix and state->senone mappings */
     parse_tmat_senmap(m, line, lp - line, p);
@@ -505,11 +433,11 @@ parse_base_line(mdef_t * m, char *line, s3pid_t p)
 
 
 static void
-parse_tri_line(mdef_t * m, char *line, s3pid_t p)
+parse_tri_line(mdef_t * m, char *line, int p)
 {
     int32 wlen;
     __BIGSTACKVARIABLE__ char word[1024], *lp;
-    s3cipid_t ci, lc, rc;
+    int ci, lc, rc;
     word_posn_t wpos = WORD_POSN_BEGIN;
 
     lp = line;
@@ -520,7 +448,7 @@ parse_tri_line(mdef_t * m, char *line, s3pid_t p)
     lp += wlen;
 
     ci = mdef_ciphone_id(m, word);
-    if (NOT_S3CIPID(ci))
+    if (ci < 0)
         E_FATAL("Unknown base phone: %s\n", line);
 
     /* Read lc */
@@ -528,7 +456,7 @@ parse_tri_line(mdef_t * m, char *line, s3pid_t p)
         E_FATAL("Missing left context: %s\n", line);
     lp += wlen;
     lc = mdef_ciphone_id(m, word);
-    if (NOT_S3CIPID(lc))
+    if (lc < 0)
         E_FATAL("Unknown left context: %s\n", line);
 
     /* Read rc */
@@ -536,7 +464,7 @@ parse_tri_line(mdef_t * m, char *line, s3pid_t p)
         E_FATAL("Missing right context: %s\n", line);
     lp += wlen;
     rc = mdef_ciphone_id(m, word);
-    if (NOT_S3CIPID(rc))
+    if (rc < 0)
         E_FATAL("Unknown right  context: %s\n", line);
 
     /* Read tripone word-position within word */
@@ -582,14 +510,14 @@ static void
 sseq_compress(mdef_t * m)
 {
     hash_table_t *h;
-    s3senid_t **sseq;
+    int16 **sseq;
     int32 n_sseq;
     int32 p, j, k;
     glist_t g;
     gnode_t *gn;
     hash_entry_t *he;
 
-    k = m->n_emit_state * sizeof(s3senid_t);
+    k = m->n_emit_state * sizeof(int16);
 
     h = hash_table_new(m->n_phone, HASH_CASE_YES);
     n_sseq = 0;
@@ -606,7 +534,7 @@ sseq_compress(mdef_t * m)
     }
 
     /* Generate compacted sseq table */
-    sseq = (s3senid_t **) ckd_calloc_2d(n_sseq, m->n_emit_state, sizeof(s3senid_t));    /* freed in mdef_free() */
+    sseq = (int16 **) ckd_calloc_2d(n_sseq, m->n_emit_state, sizeof(int16)); /* freed in mdef_free() */
 
     g = hash_table_tolist(h, &j);
     assert(j == n_sseq);
@@ -619,7 +547,7 @@ sseq_compress(mdef_t * m)
     glist_free(g);
 
     /* Free the old, temporary senone sequence table, replace with compacted one */
-    ckd_free_2d((void **) m->sseq);
+    ckd_free_2d(m->sseq);
     m->sseq = sseq;
     m->n_sseq = n_sseq;
 
@@ -647,8 +575,8 @@ mdef_init(char *mdeffile, int32 breport)
     FILE *fp;
     int32 n_ci, n_tri, n_map, n;
     __BIGSTACKVARIABLE__ char tag[1024], buf[1024];
-    s3senid_t **senmap;
-    s3pid_t p;
+    int16 **senmap;
+    int p;
     int32 s, ci, cd;
     mdef_t *m;
 
@@ -714,18 +642,18 @@ mdef_init(char *mdeffile, int32 breport)
         E_FATAL("%s: Error in header\n", mdeffile);
 
     /* Check typesize limits */
-    if (n_ci >= MAX_S3CIPID)
+    if (n_ci >= MAX_INT16)
         E_FATAL("%s: #CI phones (%d) exceeds limit (%d)\n", mdeffile, n_ci,
-                MAX_S3CIPID);
-    if (n_ci + n_tri >= MAX_S3PID)
+                MAX_INT16);
+    if (n_ci + n_tri >= MAX_INT32) /* Comparison is always false... */
         E_FATAL("%s: #Phones (%d) exceeds limit (%d)\n", mdeffile,
-                n_ci + n_tri, MAX_S3PID);
-    if (m->n_sen >= MAX_S3SENID)
+                n_ci + n_tri, MAX_INT32);
+    if (m->n_sen >= MAX_INT16)
         E_FATAL("%s: #senones (%d) exceeds limit (%d)\n", mdeffile,
-                m->n_sen, MAX_S3SENID);
-    if (m->n_tmat >= MAX_S3TMATID)
+                m->n_sen, MAX_INT16);
+    if (m->n_tmat >= MAX_INT32) /* Comparison is always false... */
         E_FATAL("%s: #tmats (%d) exceeds limit (%d)\n", mdeffile,
-                m->n_tmat, MAX_S3TMATID);
+                m->n_tmat, MAX_INT32);
 
     m->n_emit_state = (n_map / (n_ci + n_tri)) - 1;
     if ((m->n_emit_state + 1) * (n_ci + n_tri) != n_map)
@@ -742,7 +670,7 @@ mdef_init(char *mdeffile, int32 breport)
     m->phone = (phone_t *) ckd_calloc(m->n_phone, sizeof(phone_t));     /* freed in mdef_free */
 
     /* Allocate space for state->senone map for each phone */
-    senmap = (s3senid_t **) ckd_calloc_2d(m->n_phone, m->n_emit_state, sizeof(s3senid_t));      /* freed in mdef_free */
+    senmap = (int16 **) ckd_calloc_2d(m->n_phone, m->n_emit_state, sizeof(**senmap));      /* freed in mdef_free */
     m->sseq = senmap;           /* TEMPORARY; until it is compressed into just the unique ones */
 
 
@@ -761,8 +689,8 @@ mdef_init(char *mdeffile, int32 breport)
 
     /* ARCHAN, this part should not be used when one of the recognizer is used. */
     m->st2senmap =
-        (s3senid_t *) ckd_calloc(m->n_phone * m->n_emit_state,
-                                 sizeof(s3senid_t));
+        (int16 *) ckd_calloc(m->n_phone * m->n_emit_state,
+                                 sizeof(*m->st2senmap));
     for (p = 0; p < m->n_phone; p++)
         m->phone[p].state = m->st2senmap + (p * m->n_emit_state);
     /******************************************************************************************************/
@@ -800,21 +728,21 @@ mdef_init(char *mdeffile, int32 breport)
         E_FATAL
             ("#CI-senones(%d) != #CI-phone(%d) x #emitting-states(%d)\n",
              m->n_ci_sen, m->n_ciphone, m->n_emit_state);
-    m->cd2cisen = (s3senid_t *) ckd_calloc(m->n_sen, sizeof(s3senid_t));        /* freed in mdef_free */
+    m->cd2cisen = (int16 *) ckd_calloc(m->n_sen, sizeof(*m->cd2cisen)); /* freed in mdef_free */
 
-    m->sen2cimap = (s3cipid_t *) ckd_calloc(m->n_sen, sizeof(s3cipid_t));       /* freed in mdef_free */
+    m->sen2cimap = (int16 *) ckd_calloc(m->n_sen, sizeof(*m->sen2cimap)); /* freed in mdef_free */
 
     for (s = 0; s < m->n_sen; s++)
-        m->sen2cimap[s] = BAD_S3CIPID;
+        m->sen2cimap[s] = -1;
     for (s = 0; s < m->n_ci_sen; s++) { /* CI senones */
-        m->cd2cisen[s] = (s3senid_t) s;
+        m->cd2cisen[s] = s;
         m->sen2cimap[s] = s / m->n_emit_state;
     }
     for (p = n_ci; p < m->n_phone; p++) {       /* CD senones */
         for (s = 0; s < m->n_emit_state; s++) {
             cd = m->sseq[p][s];
-            ci = m->sseq[(int) m->phone[p].ci][s];
-            m->cd2cisen[cd] = (s3senid_t) ci;
+            ci = m->sseq[m->phone[p].ci][s];
+            m->cd2cisen[cd] = ci;
             m->sen2cimap[cd] = m->phone[p].ci;
         }
     }
@@ -835,21 +763,6 @@ mdef_report(mdef_t * m)
          m->n_ci_sen, m->n_sen, m->n_sseq);
     E_INFO_NOFN("\n");
 
-}
-
-void
-mdef_sseq2sen_active(mdef_t * mdef, int32 * sseq, int32 * sen)
-{
-    int32 ss, i;
-    s3senid_t *sp;
-
-    for (ss = 0; ss < mdef_n_sseq(mdef); ss++) {
-        if (sseq[ss]) {
-            sp = mdef->sseq[ss];
-            for (i = 0; i < mdef_n_emit_state(mdef); i++)
-                sen[sp[i]] = 1;
-        }
-    }
 }
 
 /* RAH 4.23.01, Need to step down the ->next list to see if there are

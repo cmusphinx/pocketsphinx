@@ -133,14 +133,14 @@ phone_to_id(bin_mdef_t *mdef, char const *phone_str)
 
     len = parse_triphone(phone_str, ci, lc, rc, pc);
     cipid = bin_mdef_ciphone_id(mdef, ci);
-    if (cipid == BAD_S3PID) {
+    if (cipid < 0) {
         free(ci);
         return NO_PHONE;
     }
     if (len > 1) {
         lcpid = bin_mdef_ciphone_id(mdef, lc);
         rcpid = bin_mdef_ciphone_id(mdef, rc);
-        if (lcpid == BAD_S3PID || rcpid == BAD_S3PID) {
+        if (lcpid < 0 || rcpid < 0) {
             free(ci);
             return NO_PHONE;
         }

@@ -51,7 +51,6 @@
  */
 
 /* SphinxBase headers. */
-#include <sphinx_types.h>
 #include <feat.h>
 #include <logmath.h>
 
@@ -118,9 +117,9 @@ void gauden_free(gauden_t *g); /**< In: The gauden_t to free */
  */
 int32
 gauden_dist (gauden_t *g,	/**< In: handle to entire ensemble of codebooks */
-	     s3mgauid_t mgau,	/**< In: codebook for which density values to be evaluated
+	     int mgau,		/**< In: codebook for which density values to be evaluated
 				   (g->{mean,var}[mgau]) */
-	     int32 n_top,	/**< In: #top densities to be evaluated */
+	     int n_top,		/**< In: #top densities to be evaluated */
 	     mfcc_t **obs,	/**< In: Observation vector; obs[f] = for feature f */
 	     gauden_dist_t **out_dist
 	     /**< Out: n_top best codewords and density values,

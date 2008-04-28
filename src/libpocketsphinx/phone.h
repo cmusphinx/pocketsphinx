@@ -44,7 +44,7 @@
 
 #include "bin_mdef.h"
 
-#define NO_PHONE	BAD_S3PID
+#define NO_PHONE -1
 
 int32 phone_to_id(bin_mdef_t *mdef, char const *phone_str);
 

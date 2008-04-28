@@ -55,7 +55,6 @@
 #include <prim_type.h>
 #include <ckd_alloc.h>
 #include <byteorder.h>
-#include <sphinx_types.h>
 #include <err.h>
 
 /* Local headers. */
@@ -198,9 +197,9 @@ bin_mdef_read_text(cmd_ln_t *config, const char *filename)
                 }
                 /* If there are no triphones here,
                  * this is considered a leafnode, so
-                 * set the pid to BAD_S3PID. */
+                 * set the pid to -1. */
                 if (bmdef->cd_tree[lc_idx].n_down == 0)
-                    bmdef->cd_tree[lc_idx].c.pid = BAD_S3PID;
+                    bmdef->cd_tree[lc_idx].c.pid = -1;
 #if 0
                 E_INFO("%d => %s %s %c (%d@%d)\n",
                        lc_idx,
@@ -217,7 +216,7 @@ bin_mdef_read_text(cmd_ln_t *config, const char *filename)
 
             /* As above, so below. */
             if (bmdef->cd_tree[ci_idx].n_down == 0)
-                bmdef->cd_tree[ci_idx].c.pid = BAD_S3PID;
+                bmdef->cd_tree[ci_idx].c.pid = -1;
 #if 0
             E_INFO("%d => %d=%s (%d@%d)\n",
                    ci_idx, j, bmdef->ciname[j],
@@ -418,7 +417,7 @@ bin_mdef_read(cmd_ln_t *config, const char *filename)
     if (swap)
         SWAP_INT32(sseq_size);
     m->sseq = ckd_calloc(m->n_sseq, sizeof(*m->sseq));
-    m->sseq[0] = (s3senid_t *) (sseq_size + 1);
+    m->sseq[0] = (int16 *) (sseq_size + 1);
     if (swap) {
         for (i = 0; i < *sseq_size; ++i)
             SWAP_INT16(m->sseq[0] + i);
@@ -437,24 +436,24 @@ bin_mdef_read(cmd_ln_t *config, const char *filename)
      * This is the only really accurate way to do it, though it is
      * still inaccurate in the case of heterogeneous topologies or
      * cross-state tying. */
-    m->cd2cisen = (s3senid_t *) ckd_malloc(m->n_sen * sizeof(s3senid_t));
-    m->sen2cimap = (s3cipid_t *) ckd_malloc(m->n_sen * sizeof(s3cipid_t));
+    m->cd2cisen = (int16 *) ckd_malloc(m->n_sen * sizeof(*m->cd2cisen));
+    m->sen2cimap = (int16 *) ckd_malloc(m->n_sen * sizeof(*m->sen2cimap));
 
     /* Default mappings (identity, none) */
     for (i = 0; i < m->n_ci_sen; ++i)
         m->cd2cisen[i] = i;
     for (; i < m->n_sen; ++i)
-        m->cd2cisen[i] = BAD_S3SENID;
+        m->cd2cisen[i] = -1;
     for (i = 0; i < m->n_sen; ++i)
-        m->sen2cimap[i] = BAD_S3CIPID;
+        m->sen2cimap[i] = -1;
     for (i = 0; i < m->n_phone; ++i) {
         int32 j, ssid = m->phone[i].ssid;
 
         for (j = 0; j < bin_mdef_n_emit_state_phone(m, i); ++j) {
-            s3senid_t s = bin_mdef_sseq2sen(m, ssid, j);
-            s3cipid_t ci = bin_mdef_pid2ci(m, i);
+            int s = bin_mdef_sseq2sen(m, ssid, j);
+            int ci = bin_mdef_pid2ci(m, i);
             /* Take the first one and warn if we have cross-state tying. */
-            if (m->sen2cimap[s] == BAD_S3CIPID)
+            if (m->sen2cimap[s] == -1)
                 m->sen2cimap[s] = ci;
             if (m->sen2cimap[s] != ci)
                 E_WARN
@@ -540,8 +539,8 @@ bin_mdef_write(bin_mdef_t * m, const char *filename)
         fwrite(&val, 4, 1, fh);
 
         /* Write sseq */
-        fwrite(m->sseq[0], sizeof(s3senid_t), m->n_sseq * m->n_emit_state,
-               fh);
+        fwrite(m->sseq[0], sizeof(**m->sseq),
+               m->n_sseq * m->n_emit_state, fh);
     }
     else {
         int32 n;
@@ -555,7 +554,7 @@ bin_mdef_write(bin_mdef_t * m, const char *filename)
         fwrite(&n, 4, 1, fh);
 
         /* Write sseq */
-        fwrite(m->sseq[0], sizeof(s3senid_t), n, fh);
+        fwrite(m->sseq[0], sizeof(**m->sseq), n, fh);
 
         /* Write sseq_len */
         fwrite(m->sseq_len, 1, m->n_sseq, fh);
@@ -650,7 +649,7 @@ bin_mdef_write_text(bin_mdef_t * m, const char *filename)
     return 0;
 }
 
-s3cipid_t
+int
 bin_mdef_ciphone_id(bin_mdef_t * m, const char *ciphone)
 {
     int low, mid, high;
@@ -670,7 +669,7 @@ bin_mdef_ciphone_id(bin_mdef_t * m, const char *ciphone)
         else if (c < 0)
             high = mid;
     }
-    return BAD_S3CIPID;
+    return -1;
 }
 
 const char *
@@ -681,12 +680,12 @@ bin_mdef_ciphone_str(bin_mdef_t * m, int32 ci)
     return m->ciname[ci];
 }
 
-s3pid_t
+int
 bin_mdef_phone_id(bin_mdef_t * m, int32 ci, int32 lc, int32 rc, int32 wpos)
 {
     cd_tree_t *cd_tree;
     int level, max;
-    s3cipid_t ctx[4];
+    int16 ctx[4];
 
     assert(m);
     assert((ci >= 0) && (ci < m->n_ciphone));
@@ -697,9 +696,9 @@ bin_mdef_phone_id(bin_mdef_t * m, int32 ci, int32 lc, int32 rc, int32 wpos)
     /* Create a context list, mapping fillers to silence. */
     ctx[0] = wpos;
     ctx[1] = ci;
-    ctx[2] = (IS_S3CIPID(m->sil)
+    ctx[2] = (m->sil >= 0
               && m->phone[lc].info.ci.filler) ? m->sil : lc;
-    ctx[3] = (IS_S3CIPID(m->sil)
+    ctx[3] = (m->sil >= 0
               && m->phone[rc].info.ci.filler) ? m->sil : rc;
 
     /* Walk down the cd_tree. */
@@ -724,7 +723,7 @@ bin_mdef_phone_id(bin_mdef_t * m, int32 ci, int32 lc, int32 rc, int32 wpos)
                 break;
         }
         if (i == max)
-            return BAD_S3PID;
+            return -1;
 #if 0
         E_INFO("Found context %d=%s at %d, n_down=%d, down=%d\n",
                ctx[level], m->ciname[ctx[level]],
@@ -741,11 +740,11 @@ bin_mdef_phone_id(bin_mdef_t * m, int32 ci, int32 lc, int32 rc, int32 wpos)
         ++level;
     }
     /* We probably shouldn't get here. */
-    return BAD_S3PID;
+    return -1;
 }
 
-int32
-bin_mdef_phone_str(bin_mdef_t * m, s3pid_t pid, char *buf)
+int
+bin_mdef_phone_str(bin_mdef_t * m, int pid, char *buf)
 {
     char *wpos_name;
 
@@ -755,7 +754,7 @@ bin_mdef_phone_str(bin_mdef_t * m, s3pid_t pid, char *buf)
 
     buf[0] = '\0';
     if (pid < m->n_ciphone)
-        sprintf(buf, "%s", bin_mdef_ciphone_str(m, (s3cipid_t) pid));
+        sprintf(buf, "%s", bin_mdef_ciphone_str(m, pid));
     else {
         sprintf(buf, "%s %s %s %c",
                 bin_mdef_ciphone_str(m, m->phone[pid].info.cd.ctx[0]),

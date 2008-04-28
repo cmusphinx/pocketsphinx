@@ -59,7 +59,6 @@ extern "C" {
 #include <mdef.h>
 #include <mmio.h>
 #include <cmd_ln.h>
-#include <sphinx_types.h>
 
 #define BIN_MDEF_FORMAT_VERSION 1
 /* Little-endian machines will write "BMDF" to disk, big-endian ones "FDMB". */
@@ -97,7 +96,7 @@ struct cd_tree_s {
 	int16 ctx; /**< Context (word position or CI phone) */
 	int16 n_down; /**< Number of children (0 for leafnode) */
 	union {
-		s3pid_t pid; /**< Phone ID (leafnode) */
+		int32 pid; /**< Phone ID (leafnode) */
 		int32 down; /**< Next level of the tree (offset from start of cd_trees) */ 
 	} c;
 };
@@ -114,18 +113,18 @@ struct bin_mdef_s {
 	int32 n_sseq;       /**< Number of unique senone sequences */
 	int32 n_ctx;	    /**< Number of phones of context */
 	int32 n_cd_tree;    /**< Number of nodes in cd_tree (below) */
-	s3cipid_t sil;	    /**< CI phone ID for silence */
+	int16 sil;	    /**< CI phone ID for silence */
 
-	mmio_file_t *filemap; /**< File map for this file (if any) */
-	char **ciname; /**< CI phone names */
-	cd_tree_t *cd_tree; /**< Tree mapping CD phones to phone IDs */
+	mmio_file_t *filemap;/**< File map for this file (if any) */
+	char **ciname;       /**< CI phone names */
+	cd_tree_t *cd_tree;  /**< Tree mapping CD phones to phone IDs */
 	mdef_entry_t *phone; /**< All phone structures */
-	s3senid_t **sseq;    /**< Unique senone sequences (2D array built at load time) */
+	int16 **sseq;        /**< Unique senone sequences (2D array built at load time) */
 	int8 *sseq_len;      /**< Number of states in each sseq (NULL for homogeneous) */
 
 	/* These two are not stored on disk, but are generated at load time. */
-	s3senid_t *cd2cisen;	/**< Parent CI-senone id for each senone */
-	s3cipid_t *sen2cimap;	/**< Parent CI-phone for each senone (CI or CD) */
+	int16 *cd2cisen;	/**< Parent CI-senone id for each senone */
+	int16 *sen2cimap;	/**< Parent CI-phone for each senone (CI or CD) */
 
 	/** Allocation mode for this object. */
 	enum { BIN_MDEF_FROM_TEXT, BIN_MDEF_IN_MEMORY, BIN_MDEF_ON_DISK } alloc_mode;
@@ -163,15 +162,15 @@ int bin_mdef_write_text(bin_mdef_t *m, const char *filename);
 void bin_mdef_free(bin_mdef_t *m);
 
 /* Return value: ciphone id for the given ciphone string name */
-s3cipid_t bin_mdef_ciphone_id (bin_mdef_t *m,	/* In: Model structure being queried */
-			       const char *ciphone); /* In: ciphone for which id wanted */
+int bin_mdef_ciphone_id (bin_mdef_t *m,	/* In: Model structure being queried */
+			 const char *ciphone); /* In: ciphone for which id wanted */
 
 /* Return value: READ-ONLY ciphone string name for the given ciphone id */
 const char *bin_mdef_ciphone_str (bin_mdef_t *m,	/* In: Model structure being queried */
 				  int32 ci);	/* In: ciphone id for which name wanted */
 
-/* Return value: phone id for the given constituents if found, else BAD_S3PID */
-s3pid_t bin_mdef_phone_id (bin_mdef_t *m,	/* In: Model structure being queried */
+/* Return value: phone id for the given constituents if found, else -1 */
+int bin_mdef_phone_id (bin_mdef_t *m,	/* In: Model structure being queried */
 		       int32 b,		/* In: base ciphone id */
 		       int32 l,		/* In: left context ciphone id */
 		       int32 r,		/* In: right context ciphone id */
@@ -181,9 +180,9 @@ s3pid_t bin_mdef_phone_id (bin_mdef_t *m,	/* In: Model structure being queried *
  * Create a phone string for the given phone (base or triphone) id in the given buf.
  * Return value: 0 if successful, -1 if error.
  */
-int32 bin_mdef_phone_str (bin_mdef_t *m,	/* In: Model structure being queried */
-			  s3pid_t pid,	/* In: phone id being queried */
-			  char *buf);	/* Out: On return, buf has the string */
+int bin_mdef_phone_str (bin_mdef_t *m,	/* In: Model structure being queried */
+			int pid,	/* In: phone id being queried */
+			char *buf);	/* Out: On return, buf has the string */
 
 #ifdef __cplusplus
 }; /* extern "C" */

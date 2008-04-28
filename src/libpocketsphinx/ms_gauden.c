@@ -530,8 +530,7 @@ compute_dist(gauden_dist_t * out_dist, int32 n_top,
  */
 int32
 gauden_dist(gauden_t * g,
-            s3mgauid_t mgau,
-            int32 n_top, mfcc_t** obs, gauden_dist_t ** out_dist)
+            int mgau, int32 n_top, mfcc_t** obs, gauden_dist_t ** out_dist)
 {
     int32 f;
 

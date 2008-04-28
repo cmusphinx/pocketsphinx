@@ -111,7 +111,6 @@
 
 
 /* SphinxBase headers. */
-#include <sphinx_types.h>
 #include <err.h>
 #include <ckd_alloc.h>
 #include <cmd_ln.h>
@@ -158,7 +157,7 @@ typedef struct {
     uint32 n_cw;		/**< #codewords per codebook,stream */
     uint32 n_gauden;		/**< #gaussian density codebooks referred to by senones */
     float32 mixwfloor;		/**< floor applied to each PDF entry */
-    s3mgauid_t *mgau;		/**< senone-id -> mgau-id mapping for senones in this set */
+    int16 *mgau;		/**< senone-id -> mgau-id mapping for senones in this set */
     int32* featscr;              /**< The feature score for every senone, will be initialized inside senone_eval_all */
 } senone_t;
 
@@ -185,12 +184,12 @@ void senone_free(senone_t *s); /**< In: The senone_t to free */
  * Evaluate the score for the given senone wrt to the given top N gaussian codewords.
  * @return senone score (in logs3 domain).
  */
-int32 senone_eval (senone_t *s, s3senid_t id,	/**< In: senone for which score desired */
+int32 senone_eval (senone_t *s, int id,		/**< In: senone for which score desired */
 		   gauden_dist_t **dist,	/**< In: top N codewords and densities for
 						   all features, to be combined into
 						   senone score.  IE, dist[f][i] = i-th
 						   best <codeword,density> for feaure f */
-		   int32 n_top		/**< In: Length of dist[f], for each f */
+		   int n_top		/**< In: Length of dist[f], for each f */
     );
 
 /**
