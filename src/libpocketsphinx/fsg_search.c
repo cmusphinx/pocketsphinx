@@ -238,10 +238,12 @@ fsg_search_add_altpron(fsg_search_t *fsgs, fsg_model_t *fsg)
 
         word = fsg_model_word_str(fsg, i);
         wid = dict_to_id(dict, word);
-        while ((wid = dict_next_alt(dict, wid)) != NO_WORD) {
-            fsg_model_add_alt(fsg, word, dict_word_str(dict, wid));
-            ++n_alt;
-        }
+        if (wid != NO_WORD) {
+            while ((wid = dict_next_alt(dict, wid)) != NO_WORD) {
+	        fsg_model_add_alt(fsg, word, dict_word_str(dict, wid));
+    	        ++n_alt;
+    	    }
+    	}
     }
 
     return n_alt;
