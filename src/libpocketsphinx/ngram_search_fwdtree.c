@@ -123,20 +123,20 @@ init_search_tree(ngram_search_t *ngs)
                    sizeof(*ngs->first_phone_rchan_map));
 
     /* Permanently allocate channels for single-phone words (1/word) */
-    ngs->all_rhmm = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->all_rhmm));
+    ngs->rhmm_1ph = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->rhmm_1ph));
     i = 0;
     for (w = 0; w < n_words; w++) {
         de = ps_search_dict(ngs)->dict_list[w];
         if (de->len != 1)
             continue;
 
-        ngs->all_rhmm[i].diphone = de->phone_ids[0];
-        ngs->all_rhmm[i].ciphone = de->ci_phone_ids[0];
-        hmm_init(ngs->hmmctx, &ngs->all_rhmm[i].hmm, de->mpx,
+        ngs->rhmm_1ph[i].diphone = de->phone_ids[0];
+        ngs->rhmm_1ph[i].ciphone = de->ci_phone_ids[0];
+        hmm_init(ngs->hmmctx, &ngs->rhmm_1ph[i].hmm, de->mpx,
                  de->phone_ids[0], de->ci_phone_ids[0]);
-        ngs->all_rhmm[i].next = NULL;
+        ngs->rhmm_1ph[i].next = NULL;
 
-        ngs->word_chan[w] = (chan_t *) &(ngs->all_rhmm[i]);
+        ngs->word_chan[w] = (chan_t *) &(ngs->rhmm_1ph[i]);
         i++;
     }
 
@@ -385,14 +385,14 @@ ngram_fwdtree_deinit(ngram_search_t *ngs)
     for (i = 0; i < ngs->n_root_chan_alloc; i++) {
         hmm_deinit(&ngs->root_chan[i].hmm);
     }
-    if (ngs->all_rhmm) {
+    if (ngs->rhmm_1ph) {
         for (i = w = 0; w < n_words; ++w) {
             if (ps_search_dict(ngs)->dict_list[w]->len != 1)
                 continue;
-            hmm_deinit(&ngs->all_rhmm[i].hmm);
+            hmm_deinit(&ngs->rhmm_1ph[i].hmm);
             ++i;
         }
-        ckd_free(ngs->all_rhmm);
+        ckd_free(ngs->rhmm_1ph);
     }
     ngs->n_nonroot_chan = 0;
     ckd_free(ngs->first_phone_rchan_map);

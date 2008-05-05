@@ -109,19 +109,19 @@ ngram_fwdflat_init(ngram_search_t *ngs)
             if (de->len == 1)
                 ++ngs->n_1ph_words;
         }
-        ngs->all_rhmm = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->all_rhmm));
+        ngs->rhmm_1ph = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->rhmm_1ph));
         i = 0;
         for (w = 0; w < n_words; w++) {
             dict_entry_t *de = ps_search_dict(ngs)->dict_list[w];
             if (de->len != 1)
                 continue;
 
-            ngs->all_rhmm[i].diphone = de->phone_ids[0];
-            ngs->all_rhmm[i].ciphone = de->ci_phone_ids[0];
-            hmm_init(ngs->hmmctx, &ngs->all_rhmm[i].hmm, de->mpx,
+            ngs->rhmm_1ph[i].diphone = de->phone_ids[0];
+            ngs->rhmm_1ph[i].ciphone = de->ci_phone_ids[0];
+            hmm_init(ngs->hmmctx, &ngs->rhmm_1ph[i].hmm, de->mpx,
                      de->phone_ids[0], de->ci_phone_ids[0]);
-            ngs->all_rhmm[i].next = NULL;
-            ngs->word_chan[w] = (chan_t *) &(ngs->all_rhmm[i]);
+            ngs->rhmm_1ph[i].next = NULL;
+            ngs->word_chan[w] = (chan_t *) &(ngs->rhmm_1ph[i]);
             i++;
         }
     }
@@ -132,7 +132,7 @@ ngram_fwdflat_deinit(ngram_search_t *ngs)
 {
     /* Free single-phone words if we allocated them. */
     if (!ngs->fwdtree) {
-        ckd_free(ngs->all_rhmm);
+        ckd_free(ngs->rhmm_1ph);
     }
     ckd_free(ngs->fwdflat_wordlist);
     bitvec_free(ngs->expand_word_flag);
