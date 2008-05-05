@@ -195,8 +195,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
     j = get_dict_size(filename);
     if (n_filename)
         j += get_dict_size(n_filename);
-    /* FIXME: <unk> is no longer used, is this still correct? */
-    j += 4;                     /* </s>, <s>, <unk> and <sil> */
+    j += 3;                     /* </s>, <s> and <sil> */
     if (dict->dict)
         hash_table_free(dict->dict);
     dict->dict = hash_table_new(j, HASH_CASE_NO);
@@ -224,8 +223,11 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
         /* new_dict_entry clobbers pronstr! so need this strcpy in the loop */
         strcpy(pronstr, "SIL");
         entry = _new_dict_entry(dict, tmpstr, pronstr, use_context);
-        if (!entry)
-            E_FATAL("Failed to add DUMMY(SIL) entry to dictionary\n");
+        if (!entry) {
+            E_ERROR("Failed to add DUMMY(SIL) entry to dictionary\n");
+            dict_free(dict);
+            return NULL;
+        }
 
         _dict_list_add(dict, entry);
         (void)hash_table_enter_int32(dict->dict, entry->word, word_id);
@@ -246,8 +248,11 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
         if (-1 == bin_mdef_ciphone_id(mdef, "SILe")) {
             strcpy(pronstr, "SIL");
             entry = _new_dict_entry(dict, "</s>", pronstr, FALSE);
-            if (!entry)
-                E_FATAL("Failed to add </s>(SIL) to dictionary\n");
+            if (!entry) {
+                E_ERROR("Failed to add </s>(SIL) to dictionary\n");
+                dict_free(dict);
+                return NULL;
+            }
         }
         else {
             E_INFO("Using special end silence for </s>\n");
@@ -275,16 +280,22 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
             strcpy(pronstr, "SIL");
             entry =
                 _new_dict_entry(dict, "<s>", pronstr, FALSE);
-            if (!entry)
-                E_FATAL("Failed to add <s>(SIL) to dictionary\n");
+            if (!entry) {
+                E_ERROR("Failed to add <s>(SIL) to dictionary\n");
+                dict_free(dict);
+                return NULL;
+            }
         }
         else {
             E_INFO("Using special begin silence for <s>\n");
             strcpy(pronstr, "SILb");
             entry =
                 _new_dict_entry(dict, "<s>", pronstr, FALSE);
-            if (!entry)
-                E_FATAL("Failed to add <s>(SILb) to dictionary\n");
+            if (!entry) {
+                E_ERROR("Failed to add <s>(SILb) to dictionary\n");
+                dict_free(dict);
+                return NULL;
+            }
         }
         _dict_list_add(dict, entry);
         hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
@@ -298,8 +309,11 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
 
         strcpy(pronstr, "SIL");
         entry = _new_dict_entry(dict, "<sil>", pronstr, FALSE);
-        if (!entry)
-            E_FATAL("Failed to add <sil>(SIL) to dictionary\n");
+        if (!entry) {
+            E_ERROR("Failed to add <sil>(SIL) to dictionary\n");
+            dict_free(dict);
+            return NULL;
+        }
         _dict_list_add(dict, entry);
         hash_table_enter(dict->dict, entry->word, (void *)(long)word_id);
         entry->wid = word_id;
@@ -374,7 +388,8 @@ dict_free(dict_t * dict)
 
 static void
 dict_load(dict_t * dict, bin_mdef_t *mdef,
-          char const *filename, int32 *word_id, int32 use_context)
+          char const *filename, int32 *word_id,
+          int32 use_context)
 {
     static char const *rname = "dict_load";
     __BIGSTACKVARIABLE__ char dict_str[1024];
