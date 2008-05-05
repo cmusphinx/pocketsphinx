@@ -241,18 +241,6 @@ int mdef_phone_id (mdef_t *m,		/**< In: Model structure being queried */
     );
 
 /**
- * Like phone_id, but backs off to other word positions if exact triphone not found.
- * Also, non-SILENCE_PHONE filler phones back off to SILENCE_PHONE.
- * Ultimately, backs off to base phone id.  Thus, it should never return -1.
- */
-int mdef_phone_id_nearest (mdef_t *m,	/**< In: Model structure being queried */
-                           int b,	/**< In: base ciphone id */
-                           int l,	/**< In: left context ciphone id */
-                           int r,	/**< In: right context ciphone id */
-                           word_posn_t pos	/**< In: Word position */
-    );
-
-/**
  * Create a phone string for the given phone (base or triphone) id in the given buf.
  * @return 0 if successful, -1 if error.
  */
