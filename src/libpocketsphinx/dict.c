@@ -148,9 +148,9 @@ static dict_entry_t *_new_dict_entry(dict_t *dict,
                                      char *pronoun_str,
                                      int32 use_context);
 static void _dict_list_add(dict_t * dict, dict_entry_t * entry);
-static void dict_load(dict_t * dict, bin_mdef_t *mdef,
-                      char const *filename, int32 * word_id,
-                      int32 use_context);
+static int dict_load(dict_t * dict, bin_mdef_t *mdef,
+                     char const *filename, int32 * word_id,
+                     int32 use_context);
 
 #define MAX_PRONOUN_LEN 	150
 
@@ -237,7 +237,10 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
     dict->last_dummy = word_id - 1;
 
     /* Load dictionaries */
-    dict_load(dict, mdef, filename, &word_id, use_context);
+    if (dict_load(dict, mdef, filename, &word_id, use_context) != 0) {
+        dict_free(dict);
+        return NULL;
+    }
 
     /* Make sure that <s>, </s>, and <sil> are always in the dictionary. */
     if (hash_table_lookup(dict->dict, "</s>", &val) != 0) {
@@ -320,8 +323,12 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
         word_id++;
     }
 
-    if (n_filename)
-        dict_load(dict, mdef, n_filename, &word_id, FALSE /* use_context */);
+    if (n_filename) {
+        if (dict_load(dict, mdef, n_filename, &word_id, FALSE /* use_context */) != 0) {
+            dict_free(dict);
+            return NULL;
+        }
+    }
 
     E_INFO("LEFT CONTEXT TABLES\n");
     dict->lcList = glist_reverse(dict->lcList);
@@ -386,7 +393,7 @@ dict_free(dict_t * dict)
     ckd_free(dict);
 }
 
-static void
+static int
 dict_load(dict_t * dict, bin_mdef_t *mdef,
           char const *filename, int32 *word_id,
           int32 use_context)
@@ -453,10 +460,10 @@ dict_load(dict_t * dict, bin_mdef_t *mdef,
 
                 *p = '\0';
                 if (hash_table_lookup(dict->dict, dict_str, &wid) != 0) {
-                    E_FATAL
+                    E_ERROR
                         ("%s: Missing first pronunciation for [%s]\nThis means that e.g. [%s(2)] was found with no [%s]\nPlease correct the dictionary and re-run.\n",
                          rname, dict_str, dict_str, dict_str);
-                    exit(1);
+                    return -1;
                 }
                 DFPRINTF((stdout,
                           "Alternate transcription for [%s](wid = %d)\n",
@@ -478,9 +485,7 @@ dict_load(dict_t * dict, bin_mdef_t *mdef,
     if (fs)
         fclose(fs);
 
-    if (err) {
-        E_FATAL("Dictionary errors; cannot continue\n");
-    }
+    return err;
 }
 
 int32

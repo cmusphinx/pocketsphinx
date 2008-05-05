@@ -688,6 +688,12 @@ bin_mdef_phone_id(bin_mdef_t * m, int32 ci, int32 lc, int32 rc, int32 wpos)
     int16 ctx[4];
 
     assert(m);
+
+    /* In the future, we might back off when context is not available,
+     * but for now we'll just return the CI phone. */
+    if (lc < 0 || rc < 0)
+        return ci;
+
     assert((ci >= 0) && (ci < m->n_ciphone));
     assert((lc >= 0) && (lc < m->n_ciphone));
     assert((rc >= 0) && (rc < m->n_ciphone));
