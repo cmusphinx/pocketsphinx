@@ -47,6 +47,7 @@
 
 /* SphinxBase headers. */
 #include <ckd_alloc.h>
+#include <err.h>
 
 /* Local headers. */
 #include "hmm.h"
@@ -60,6 +61,10 @@ hmm_context_init(int32 n_emit_state,
     hmm_context_t *ctx;
 
     assert(n_emit_state > 0);
+    if (n_emit_state > HMM_MAX_NSTATE) {
+        E_ERROR("Number of emitting states must be <= 5\n");
+        return NULL;
+    }
 
     ctx = ckd_calloc(1, sizeof(*ctx));
     ctx->n_emit_state = n_emit_state;
@@ -67,7 +72,6 @@ hmm_context_init(int32 n_emit_state,
     ctx->senscore = senscore;
     ctx->sseq = sseq;
     ctx->st_sen_scr = ckd_calloc(n_emit_state, sizeof(*ctx->st_sen_scr));
-    ctx->state_alloc = listelem_alloc_init(sizeof(hmm_state_t) * (ctx->n_emit_state + 1));
     ctx->mpx_ssid_alloc = listelem_alloc_init(sizeof(int32) * ctx->n_emit_state);
 
     return ctx;
@@ -76,7 +80,6 @@ hmm_context_init(int32 n_emit_state,
 void
 hmm_context_free(hmm_context_t *ctx)
 {
-    listelem_alloc_free(ctx->state_alloc);
     listelem_alloc_free(ctx->mpx_ssid_alloc);
     ckd_free(ctx->st_sen_scr);
     ckd_free(ctx);
@@ -88,7 +91,6 @@ hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx, int ssid, int tmatid)
     hmm->ctx = ctx;
     hmm->mpx = mpx;
     hmm->n_emit_state = ctx->n_emit_state;
-    hmm->state = listelem_malloc(ctx->state_alloc);
     if (mpx) {
         hmm->s.mpx_ssid = listelem_malloc(ctx->mpx_ssid_alloc);
         memset(hmm->s.mpx_ssid, -1, sizeof(*hmm->s.mpx_ssid) * hmm_n_emit_state(hmm));
@@ -106,7 +108,6 @@ hmm_deinit(hmm_t *hmm)
 {
     hmm_context_t *ctx = hmm->ctx;
 
-    listelem_free(ctx->state_alloc, hmm->state);
     if (hmm->mpx)
         listelem_free(ctx->mpx_ssid_alloc, hmm->s.mpx_ssid);
 }
