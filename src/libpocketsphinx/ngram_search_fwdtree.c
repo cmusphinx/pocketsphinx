@@ -107,6 +107,16 @@ init_search_tree(ngram_search_t *ngs)
     /* Add remaining dict words (</s>, <s>, <sil>, noise words) to single-phone words */
     ngs->n_1ph_words += (n_words - n_main_words);
     ngs->n_root_chan_alloc = max_ph0 + 1;
+    /* Verify that these are *actually* single-phone words, otherwise
+     * really bad things will happen to us. */
+    for (w = n_main_words; w < n_words; ++w) {
+        de = ps_search_dict(ngs)->dict_list[w];
+        if (de->len != 1) {
+            E_WARN("Filler word %d = %s has more than one phone, ignoring it.\n",
+                   w, de->word);
+            --ngs->n_1ph_words;
+        }
+    }
 
     /* Allocate and initialize root channels */
     ngs->root_chan =
@@ -290,13 +300,18 @@ create_search_tree(ngram_search_t *ngs)
         }
     }
 
+    /* FIXME: This depends on the ordering of the dictionary and is
+     * thus rather fragile... */
     ngs->n_1ph_words = ngs->n_1ph_LMwords;
     ngs->n_1ph_LMwords++;            /* including </s> */
 
-    /* FIXME: I'm not really sure why n_1ph_words got reset above. */
-    for (w = dict_to_id(ps_search_dict(ngs), "</s>"); w < n_words; ++w) {
+    for (w = n_main_words; w < n_words; ++w) {
         de = ps_search_dict(ngs)->dict_list[w];
-        /* Skip any non-fillers that aren't in the LM. */
+        /* Skip anything that doesn't actually have a single phone. */
+        if (de->len != 1)
+            continue;
+        /* If something isn't a filler word (which is very unlikely),
+         * then skip it if it isn't in the language model. */
         if ((!ISA_FILLER_WORD(ngs, w))
             && (!ngram_model_set_known_wid(ngs->lmset, de->wid)))
             continue;
@@ -1322,6 +1337,9 @@ word_transition(ngram_search_t *ngs, int frame_idx)
          * immediately following silence in the dictionary... */
         for (w = ps_search_silence_wid(ngs) + 1; w < ps_search_n_words(ngs); w++) {
             rhmm = (root_chan_t *) ngs->word_chan[w];
+            /* If this was not actually a single-phone word, rhmm will be NULL. */
+            if (rhmm == NULL)
+                continue;
             if ((hmm_frame(&rhmm->hmm) < frame_idx)
                 || (hmm_in_score(&rhmm->hmm) < newscore)) {
                 hmm_enter(&rhmm->hmm,

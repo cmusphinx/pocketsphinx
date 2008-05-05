@@ -651,6 +651,9 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
     if ((newscore > thresh) && (newscore > WORST_SCORE)) {
         for (w = ps_search_silence_wid(ngs) + 1; w < ps_search_n_words(ngs); w++) {
             rhmm = (root_chan_t *) ngs->word_chan[w];
+            /* Noise words that aren't a single phone will have NULL here. */
+            if (rhmm == NULL)
+                continue;
             if ((hmm_frame(&rhmm->hmm) < cf)
                 || (hmm_in_score(&rhmm->hmm) < newscore)) {
                 hmm_enter(&rhmm->hmm, newscore,
