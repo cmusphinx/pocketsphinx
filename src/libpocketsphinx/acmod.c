@@ -49,6 +49,7 @@
 #include <cmd_ln.h>
 #include <strfuncs.h>
 #include <string.h>
+#include <feat.h>
 
 /* Local headers. */
 #include "cmdln_macro.h"
