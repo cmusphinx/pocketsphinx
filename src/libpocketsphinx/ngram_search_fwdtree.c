@@ -135,7 +135,8 @@ init_search_tree(ngram_search_t *ngs)
     /* Permanently allocate channels for single-phone words (1/word) */
     ngs->rhmm_1ph = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->rhmm_1ph));
     i = 0;
-    for (w = 0; w < n_words; w++) {
+    /* Don't allocate channels for placeholders!! */
+    for (w = ps_search_dict(ngs)->last_dummy + 1; w < n_words; w++) {
         de = ps_search_dict(ngs)->dict_list[w];
         if (de->len != 1)
             continue;
