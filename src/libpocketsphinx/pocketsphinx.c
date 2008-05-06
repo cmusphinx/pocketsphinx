@@ -209,6 +209,8 @@ ps_free(ps_decoder_t *ps)
 {
     gnode_t *gn;
 
+    if (ps == NULL)
+        return;
     for (gn = ps->searches; gn; gn = gnode_next(gn))
         ps_search_free(gnode_ptr(gn));
     glist_free(ps->searches);
