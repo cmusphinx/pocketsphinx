@@ -55,7 +55,7 @@ main(int argc, char *argv[])
 	pipeline = gst_pipeline_new("test_gst");
 	src = gst_element_factory_make("filesrc", "file-source");
 	g_object_set(G_OBJECT(src), "location", DATADIR "/goforward.raw", NULL);
-	caps = gst_caps_from_string("audio/x-raw-int,channels=1,endianness=1234,width=16,depth=16,rate=16000,signed=true");
+	caps = gst_caps_from_string("audio/x-raw-int,channels=1,endianness=1234,width=16,depth=16,rate=16000,signed=(bool)true");
 	if (caps == NULL) {
 		g_print("Failed to create caps!\n");
 		return 1;
