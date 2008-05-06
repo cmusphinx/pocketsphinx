@@ -150,8 +150,10 @@ dnl
 : ${sphinxbasebuild=$sphinxbase}
 if test x$sphinxbase != x && test x$cross_compiling = xyes; then
    CPPFLAGS="-I$sphinxbase/include -I$sphinxbasebuild/include $CPPFLAGS"
+   # We include libsphinxbase/.libs because of stupid broken versions of libtool
    LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxad \
-		     -L$sphinxbasebuild/src/libsphinxbase"
+		     -L$sphinxbasebuild/src/libsphinxbase \
+		     -L$sphinxbasebuild/src/libsphinxbase/.libs"
 fi
 if test x$sphinxbase != x && test x$cross_compiling != xyes; then
    AC_CHECK_FILE($sphinxbase/include/prim_type.h,CPPFLAGS="-I$sphinxbase/include $CPPFLAGS",
@@ -160,11 +162,13 @@ if test x$sphinxbase != x && test x$cross_compiling != xyes; then
 --with-sphinxbase option to `configure' to specify the location of
 SphinxBase.  Run $0 --help for more information.]))
 fi
+# We include libsphinxbase/.libs because of stupid broken versions of libtool
 if test x$sphinxbasebuild != x && test x$cross_compiling != xyes; then
    AC_CHECK_FILE($sphinxbasebuild/src/libsphinxbase/libsphinxbase.la,
 [CPPFLAGS="-I$sphinxbasebuild/include $CPPFLAGS"
 LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxad \
-		  -L$sphinxbasebuild/src/libsphinxbase"],
+		  -L$sphinxbasebuild/src/libsphinxbase \
+		  -L$sphinxbasebuild/src/libsphinxbase/.libs"],
 		   AC_ERROR(
 [SphinxBase libraries were not found in $sphinxbasebuild.
 Use the --with-sphinxbase-build option to `configure' to specify
