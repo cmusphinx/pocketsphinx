@@ -326,7 +326,7 @@ ps_lattice_pushq(ps_lattice_t *dag, latlink_t *link)
     if (dag->q_head == NULL)
         dag->q_head = dag->q_tail = latlink_list_new(dag, link, NULL);
     else {
-        dag->q_tail = latlink_list_new(dag, link, NULL);
+        dag->q_tail->next = latlink_list_new(dag, link, NULL);
         dag->q_tail = dag->q_tail->next;
     }
 
@@ -398,6 +398,7 @@ ps_lattice_traverse_next(ps_lattice_t *dag, latnode_t *end)
     if (next->to->info.fanin == 0) {
         latlink_list_t *x;
 
+        if (end == NULL) end = dag->end;
         if (next->to == end) {
             /* If we have traversed all links entering the end node,
              * clear the queue, causing future calls to this function
@@ -453,6 +454,7 @@ ps_lattice_reverse_next(ps_lattice_t *dag, latnode_t *start)
     if (next->from->info.fanin == 0) {
         latlink_list_t *x;
 
+        if (start == NULL) start = dag->start;
         if (next->from == start) {
             /* If we have traversed all links entering the start node,
              * clear the queue, causing future calls to this function
@@ -478,72 +480,53 @@ latlink_t *
 ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf)
 {
     ps_search_t *search;
-    latlink_list_t *q_head, *q_tail, *x;
-    latlink_t *best;
     latnode_t *node;
-    int32 score, escore;
+    latlink_t *link;
+    latlink_t *bestend;
+    latlink_list_t *x;
+    int32 bestescr;
 
     search = dag->search;
 
-    /* Initialize node fanin counts and path scores */
-    for (node = dag->nodes; node; node = node->next)
-        node->info.fanin = 0;
+    /* Initialize path scores for all links exiting dag->start, and
+     * set all other scores to the minimum. */
     for (node = dag->nodes; node; node = node->next) {
-        latlink_list_t *x;
-        if (ISA_FILLER_WORD(search, node->basewid) && node != dag->end)
-            continue;
-        for (x = node->exits; x; x = x->next) {
-            (x->link->to->info.fanin)++;
+        for (x = node->exits; x; x = x->next)
             x->link->path_scr = MAX_NEG_INT32;
-        }
     }
-
-    /*
-     * Form initial queue of optimal partial paths; = links out of start_node.
-     * Path score includes LM score for the "to" node of the last link in the
-     * path, but not the acoustic score for that node.
-     */
-    q_head = q_tail = NULL;
     for (x = dag->start->exits; x; x = x->next) {
         int32 n_used;
 
-        if (ISA_FILLER_WORD(search, x->link->to->basewid) && x->link->to != dag->end)
+        /* Ignore filler words. */
+        if (ISA_FILLER_WORD(search, x->link->to->basewid)
+            && x->link->to != dag->end)
             continue;
-
         x->link->path_scr = x->link->ascr +
             ngram_bg_score(lmset, x->link->to->basewid,
                            ps_search_start_wid(search), &n_used) * lwf;
         x->link->best_prev = NULL;
-
-        if (q_head == NULL)
-            q_head = q_tail = latlink_list_new(dag, x->link, NULL);
-        else {
-            q_tail->next = latlink_list_new(dag, x->link, NULL);
-            q_tail = q_tail->next;
-        }
     }
 
     /* Track the best link entering dag->end. */
-    escore = MAX_NEG_INT32;
-    best = NULL;
-    /* Extend partial paths in queue as long as queue not empty */
-    while (q_head) {
-        latlink_t *link;
+    bestend = NULL;
+    bestescr = MAX_NEG_INT32;
 
-        /* Pull a link off the queue. */
-        link = q_head->link;
-        node = link->to;
-        --node->info.fanin;
+    /* Traverse the edges in the graph, updating path scores. */
+    for (link = ps_lattice_traverse_edges(dag, NULL, NULL);
+         link; link = ps_lattice_traverse_next(dag, NULL)) {
+        /* Skip filler nodes in traversal. */
+        if (ISA_FILLER_WORD(search, link->from->basewid))
+            continue;
+        if (ISA_FILLER_WORD(search, link->to->basewid) && link->to != dag->end)
+            continue;
 
-        /* Remove q_head from the queue. */
-        x = q_head->next;
-        listelem_free(dag->latlink_list_alloc, q_head);
-        q_head = x;
-        if (q_head == NULL)
-            q_tail = NULL;
+        /* Sanity check, we should not be traversing edges that
+         * weren't previously updated, otherwise nasty overflows will result. */
+        assert(link->path_scr != MAX_NEG_INT32);
 
-        for (x = node->exits; x; x = x->next) {
-            int32 n_used;
+        /* Update scores for all paths exiting link->to. */
+        for (x = link->to->exits; x; x = x->next) {
+            int32 score, n_used;
 
             /* Skip links to filler words in update. */
             if (ISA_FILLER_WORD(search, x->link->to->basewid)
@@ -552,40 +535,23 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf)
 
             score = link->path_scr + x->link->ascr +
                 ngram_tg_score(lmset, x->link->to->basewid,
-                               node->basewid,
+                               link->to->basewid,
                                link->from->basewid, &n_used) * lwf;
 
+            /* Update link score. */
             if (score > x->link->path_scr) {
                 x->link->path_scr = score;
                 x->link->best_prev = link;
-                if (x->link->to == dag->end && x->link->path_scr > escore) {
-                    escore = x->link->path_scr;
-                    best = x->link;
-                }
-            }
-        }
-
-        if (node->info.fanin == 0) {
-            /*
-             * Links out of node updated wrt all incoming links at
-             * node.  They all now have optimal partial path scores;
-             * insert them in optimal partial path queue.
-             */
-            for (x = node->exits; x; x = x->next) {
-                /* Don't push links to fillers on the queue. */
-                if (ISA_FILLER_WORD(search, x->link->to->basewid) && x->link->to != dag->end)
-                    continue;
-                if (q_head == NULL)
-                    q_head = q_tail = latlink_list_new(dag, x->link, NULL);
-                else {
-                    q_tail->next = latlink_list_new(dag, x->link, NULL);
-                    q_tail = q_tail->next;
+                /* Track best link entering final node. */
+                if (x->link->to == dag->end && x->link->path_scr > bestescr) {
+                    bestescr = x->link->path_scr;
+                    bestend = x->link;
                 }
             }
         }
     }
 
-    return best;
+    return bestend;
 }
 
 /* Parameters to prune n-best alternatives search */
