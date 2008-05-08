@@ -112,6 +112,7 @@ struct ps_lattice_s {
     listelem_alloc_t *latlink_alloc;     /**< Link allocator for this DAG. */
     listelem_alloc_t *latlink_list_alloc; /**< List element allocator for this DAG. */
 
+    /* This will probably be replaced with a heap. */
     latlink_list_t *q_head; /**< Queue of links for traversal. */
     latlink_list_t *q_tail; /**< Queue of links for traversal. */
 };
@@ -184,6 +185,27 @@ void ps_lattice_link(ps_lattice_t *dag, latnode_t *from, latnode_t *to,
                      int32 score, int32 ef);
 
 /**
+ * Create a new lattice link element.
+ */
+latlink_list_t *latlink_list_new(ps_lattice_t *dag, latlink_t *link,
+                                 latlink_list_t *next);
+
+/**
+ * Add an edge to the traversal queue.
+ */
+void ps_lattice_pushq(ps_lattice_t *dag, latlink_t *link);
+
+/**
+ * Remove an edge from the traversal queue.
+ */
+latlink_t *ps_lattice_popq(ps_lattice_t *dag);
+
+/**
+ * Clear and reset the traversal queue.
+ */
+void ps_lattice_delq(ps_lattice_t *dag);
+
+/**
  * Start a forward traversal of edges in a word graph.
  */
 latlink_t *ps_lattice_traverse_edges(ps_lattice_t *dag, latnode_t *start, latnode_t *end);
@@ -218,7 +240,7 @@ char const *ps_lattice_hyp(ps_lattice_t *dag, latlink_t *link);
 /**
  * Get hypothesis segmentation iterator after bestpath search.
  */
-ps_seg_t *ps_lattice_iter(ps_lattice_t *dag, latlink_t *link);
+ps_seg_t *ps_lattice_seg_iter(ps_lattice_t *dag, latlink_t *link);
 
 /**
  * Begin N-Gram based A* search on a word graph.

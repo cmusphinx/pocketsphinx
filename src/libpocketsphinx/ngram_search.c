@@ -766,7 +766,7 @@ ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
 
         last = ps_lattice_bestpath(ngs->dag, ngs->lmset,
                                    ngs->bestpath_fwdtree_lw_ratio);
-        return ps_lattice_iter(ngs->dag, last);
+        return ps_lattice_seg_iter(ngs->dag, last);
     }
     else {
         int32 bpidx;

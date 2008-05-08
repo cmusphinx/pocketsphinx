@@ -280,7 +280,7 @@ static ps_segfuncs_t ps_lattice_segfuncs = {
 };
 
 ps_seg_t *
-ps_lattice_iter(ps_lattice_t *dag, latlink_t *link)
+ps_lattice_seg_iter(ps_lattice_t *dag, latlink_t *link)
 {
     dag_seg_t *itor;
     latlink_t *l;
@@ -321,7 +321,7 @@ latlink_list_new(ps_lattice_t *dag, latlink_t *link, latlink_list_t *next)
 }
 
 void
-agenda_push(ps_lattice_t *dag, latlink_t *link)
+ps_lattice_pushq(ps_lattice_t *dag, latlink_t *link)
 {
     if (dag->q_head == NULL)
         dag->q_head = dag->q_tail = latlink_list_new(dag, link, NULL);
@@ -333,7 +333,7 @@ agenda_push(ps_lattice_t *dag, latlink_t *link)
 }
 
 latlink_t *
-agenda_pop(ps_lattice_t *dag)
+ps_lattice_popq(ps_lattice_t *dag)
 {
     latlink_list_t *x;
     latlink_t *link;
@@ -349,10 +349,10 @@ agenda_pop(ps_lattice_t *dag)
     return link;
 }
 
-static void
-clear_agenda(ps_lattice_t *dag)
+void
+ps_lattice_delq(ps_lattice_t *dag)
 {
-    while (agenda_pop(dag)) {
+    while (ps_lattice_popq(dag)) {
         /* Do nothing. */
     }
 }
@@ -364,7 +364,7 @@ ps_lattice_traverse_edges(ps_lattice_t *dag, latnode_t *start, latnode_t *end)
     latlink_list_t *x;
 
     /* Cancel any unfinished traversal. */
-    clear_agenda(dag);
+    ps_lattice_delq(dag);
 
     /* Initialize node fanin counts and path scores. */
     for (node = dag->nodes; node; node = node->next)
@@ -377,7 +377,7 @@ ps_lattice_traverse_edges(ps_lattice_t *dag, latnode_t *start, latnode_t *end)
     /* Initialize agenda with all exits from start. */
     if (start == NULL) start = dag->start;
     for (x = start->exits; x; x = x->next)
-        agenda_push(dag, x->link);
+        ps_lattice_pushq(dag, x->link);
 
     /* Pull the first edge off the queue. */
     return ps_lattice_traverse_next(dag, end);
@@ -388,7 +388,7 @@ ps_lattice_traverse_next(ps_lattice_t *dag, latnode_t *end)
 {
     latlink_t *next;
 
-    next = agenda_pop(dag);
+    next = ps_lattice_popq(dag);
     if (next == NULL)
         return NULL;
 
@@ -402,13 +402,13 @@ ps_lattice_traverse_next(ps_lattice_t *dag, latnode_t *end)
             /* If we have traversed all links entering the end node,
              * clear the queue, causing future calls to this function
              * to return NULL. */
-            clear_agenda(dag);
+            ps_lattice_delq(dag);
             return next;
         }
 
         /* Extend all outgoing edges. */
         for (x = next->to->exits; x; x = x->next)
-            agenda_push(dag, x->link);
+            ps_lattice_pushq(dag, x->link);
     }
     return next;
 }
@@ -420,7 +420,7 @@ ps_lattice_reverse_edges(ps_lattice_t *dag, latnode_t *start, latnode_t *end)
     latlink_list_t *x;
 
     /* Cancel any unfinished traversal. */
-    clear_agenda(dag);
+    ps_lattice_delq(dag);
 
     /* Initialize node fanout counts and path scores. */
     for (node = dag->nodes; node; node = node->next) {
@@ -432,7 +432,7 @@ ps_lattice_reverse_edges(ps_lattice_t *dag, latnode_t *start, latnode_t *end)
     /* Initialize agenda with all entries from end. */
     if (end == NULL) end = dag->end;
     for (x = end->entries; x; x = x->next)
-        agenda_push(dag, x->link);
+        ps_lattice_pushq(dag, x->link);
 
     /* Pull the first edge off the queue. */
     return ps_lattice_reverse_next(dag, start);
@@ -443,7 +443,7 @@ ps_lattice_reverse_next(ps_lattice_t *dag, latnode_t *start)
 {
     latlink_t *next;
 
-    next = agenda_pop(dag);
+    next = ps_lattice_popq(dag);
     if (next == NULL)
         return NULL;
 
@@ -457,13 +457,13 @@ ps_lattice_reverse_next(ps_lattice_t *dag, latnode_t *start)
             /* If we have traversed all links entering the start node,
              * clear the queue, causing future calls to this function
              * to return NULL. */
-            clear_agenda(dag);
+            ps_lattice_delq(dag);
             return next;
         }
 
         /* Extend all outgoing edges. */
         for (x = next->from->entries; x; x = x->next)
-            agenda_push(dag, x->link);
+            ps_lattice_pushq(dag, x->link);
     }
     return next;
 }
