@@ -161,8 +161,8 @@ typedef struct fsg_pnode_s {
     fsg_pnode_ctxt_t ctxt;
   
     uint16 ci_ext;	/* This node's CIphone as viewed externally (context) */
-    uint16 ppos;	/* Phoneme position in pronunciation */
-    intbool leaf;	/* Whether this is a leaf node */
+    uint8 ppos;	/* Phoneme position in pronunciation */
+    uint8 leaf;	/* Whether this is a leaf node */
   
     /* HMM-state-level stuff here */
     hmm_context_t *ctx;
