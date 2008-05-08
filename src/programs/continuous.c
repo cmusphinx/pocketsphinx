@@ -77,6 +77,12 @@
 #include <sys/time.h>
 #endif
 
+static const arg_t cont_args_def[] = {
+    POCKETSPHINX_OPTIONS,
+    { "-adcdev", ARG_STRING, NULL, "Name of audio device to use for input." },
+    CMDLN_EMPTY_OPTION
+};
+
 static ad_rec_t *ad;
 static ps_decoder_t *ps;
 
@@ -224,7 +230,7 @@ main(int argc, char *argv[])
     signal(SIGINT, &sighandler);
 #endif
 
-    config = cmd_ln_parse_r(NULL, ps_args(), argc, argv, TRUE);
+    config = cmd_ln_parse_r(NULL, cont_args_def, argc, argv, TRUE);
     if (config == NULL)
         return 1;
     ps = ps_init(config);
