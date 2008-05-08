@@ -53,169 +53,48 @@
 
 /*
  * Create a directed link between "from" and "to" nodes, but if a link already exists,
- * choose one with the best link_scr.
+ * choose one with the best ascr.
  */
 void
-link_latnodes(ps_lattice_t *dag, latnode_t *from, latnode_t *to, int32 score, int32 ef)
+ps_lattice_link(ps_lattice_t *dag, latnode_t *from, latnode_t *to, int32 score, int32 ef)
 {
-    latlink_t *link;
+    latlink_list_t *fwdlink;
 
     assert(to->reachable);
 
     /* Look for an existing link between "from" and "to" nodes */
-    for (link = from->links; link && (link->to != to); link = link->next);
+    for (fwdlink = from->exits; fwdlink; fwdlink = fwdlink->next)
+        if (fwdlink->link->to == to)
+            break;
 
-    if (!link) {
+    if (fwdlink == NULL) {
+        latlink_list_t *revlink;
+        latlink_t *link;
+
         /* No link between the two nodes; create a new one */
         link = listelem_malloc(dag->latlink_alloc);
+        fwdlink = listelem_malloc(dag->latlink_list_alloc);
+        revlink = listelem_malloc(dag->latlink_list_alloc);
 
         link->from = from;
         link->to = to;
-        link->link_scr = score;
+        link->ascr = score;
         link->ef = ef;
         link->best_prev = NULL;
 
-        link->next = from->links;
-        from->links = link;
+        fwdlink->link = revlink->link = link;
+        fwdlink->next = from->exits;
+        from->exits = fwdlink;
+        revlink->next = to->entries;
+        to->entries = revlink;
     }
     else {
-        /* Link already exists; just retain the best link_scr */
-        if (link->link_scr < score) {
-            link->link_scr = score;
-            link->ef = ef;
+        /* Link already exists; just retain the best ascr */
+        if (fwdlink->link->ascr < score) {
+            fwdlink->link->ascr = score;
+            fwdlink->link->ef = ef;
         }
     }
-}
-
-void
-ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
-{
-    latnode_t *node, *to, *from, *prev_node, *t_node;
-    latlink_t *link, *f_link, *t_link, *prev_link;
-    rev_latlink_t *revlink, *t_revlink;
-    int32 score;
-
-    /* Create reverse links for all links pointing to filler nodes */
-    for (node = dag->nodes; node; node = node->next) {
-        for (link = node->links; link; link = link->next) {
-            to = link->to;
-            if (to != dag->end && ISA_FILLER_WORD(dag->search, to->basewid)) {
-                revlink = listelem_malloc(dag->rev_latlink_alloc);
-                revlink->link = link;
-                revlink->next = to->revlinks;
-                to->revlinks = revlink;
-            }
-        }
-    }
-
-    /* Bypass filler nodes */
-    for (node = dag->nodes; node; node = node->next) {
-        if (node == dag->end || !ISA_FILLER_WORD(dag->search, node->basewid))
-            continue;
-
-        /* Replace each link entering filler node with links to all its successors */
-        for (revlink = node->revlinks; revlink; revlink = revlink->next) {
-            link = revlink->link;       /* link entering filler node */
-            from = link->from;
-
-            score = (node->basewid == ps_search_silence_wid(dag->search)) ? silpen : fillpen;
-            score += link->link_scr;
-
-            /*
-             * Make links from predecessor of filler (from) to successors of filler.
-             * But if successor is a filler, it has already been eliminated since it
-             * appears earlier in latnode_list (see build...).  So it can be skipped.
-             * Likewise, no reverse links needed for the new links; none of them
-             * points to a filler node.
-             */
-            for (f_link = node->links; f_link; f_link = f_link->next) {
-                if (!ISA_FILLER_WORD(dag->search, f_link->to->basewid))
-                    link_latnodes(dag, from, f_link->to,
-                                  score + f_link->link_scr, link->ef);
-            }
-        }
-    }
-
-    /* Delete filler nodes and all links and reverse links from it */
-    prev_node = NULL;
-    for (node = dag->nodes; node; node = t_node) {
-        t_node = node->next;
-        if (node != dag->end && ISA_FILLER_WORD(dag->search, node->basewid)) {
-            for (revlink = node->revlinks; revlink; revlink = t_revlink) {
-                t_revlink = revlink->next;
-                revlink->link->to = NULL;
-                listelem_free(dag->rev_latlink_alloc, revlink);
-            }
-
-            for (link = node->links; link; link = t_link) {
-                t_link = link->next;
-                listelem_free(dag->latlink_alloc, link);
-            }
-
-            if (prev_node)
-                prev_node->next = t_node;
-            else
-                dag->nodes = t_node;
-
-            listelem_free(dag->latnode_alloc, node);
-        }
-        else
-            prev_node = node;
-    }
-
-    /* Reclaim links pointing nowhere */
-    for (node = dag->nodes; node; node = node->next) {
-        prev_link = NULL;
-        for (link = node->links; link; link = t_link) {
-            t_link = link->next;
-            if (link->to == NULL) {
-                if (prev_link)
-                    prev_link->next = t_link;
-                else
-                    node->links = t_link;
-                listelem_free(dag->latlink_alloc, link);
-            }
-            else
-                prev_link = link;
-        }
-    }
-}
-
-void
-ps_lattice_delete_unreachable(ps_lattice_t *dag)
-{
-    latnode_t *node, *t_node, *prev_node;
-    latlink_t *link, *t_link;
-
-    prev_node = NULL;
-    for (node = dag->nodes; node; node = t_node) {
-        t_node = node->next;
-        if (!node->reachable) {
-            /* Node and its links can be removed */
-            if (prev_node)
-                prev_node->next = node->next;
-            else
-                dag->nodes = node->next;
-            for (link = node->links; link; link = t_link) {
-                t_link = link->next;
-                listelem_free(dag->latlink_alloc, link);
-            }
-            listelem_free(dag->latnode_alloc, node);
-        }
-        else
-            prev_node = node;
-    }
-}
-
-static int32
-latnode_seqid(ps_lattice_t *dag, latnode_t * target)
-{
-    int32 i;
-    latnode_t *d;
-
-    for (i = 0, d = dag->nodes; d && (d != target); d = d->next, i++);
-    assert(d);
-    return (i);
 }
 
 int32
@@ -248,14 +127,14 @@ ps_lattice_write(ps_lattice_t *dag, char const *filename)
             "Nodes %d (NODEID WORD STARTFRAME FIRST-ENDFRAME LAST-ENDFRAME)\n",
             i);
     for (i = 0, d = dag->nodes; d; d = d->next, i++) {
+        d->id = i;
         fprintf(fp, "%d %s %d %d %d\n",
                 i, dict_word_str(ps_search_dict(dag->search), d->wid),
                 d->sf, d->fef, d->lef);
     }
     fprintf(fp, "#\n");
 
-    fprintf(fp, "Initial %d\nFinal %d\n", latnode_seqid(dag, initial),
-            latnode_seqid(dag, final));
+    fprintf(fp, "Initial %d\nFinal %d\n", initial->id, final->id);
     fprintf(fp, "#\n");
 
     /* Don't bother with this, it's not used by anything. */
@@ -265,11 +144,10 @@ ps_lattice_write(ps_lattice_t *dag, char const *filename)
 
     fprintf(fp, "Edges (FROM-NODEID TO-NODEID ASCORE)\n");
     for (d = dag->nodes; d; d = d->next) {
-        latlink_t *l;
-        for (l = d->links; l; l = l->next)
+        latlink_list_t *l;
+        for (l = d->exits; l; l = l->next)
             fprintf(fp, "%d %d %d\n",
-                    latnode_seqid(dag, d), latnode_seqid(dag, l->to),
-                    l->link_scr);
+                    d->id, l->link->to->id, l->link->ascr);
     }
     fprintf(fp, "End\n");
     fclose(fp);
@@ -287,7 +165,7 @@ ps_lattice_init(ps_search_t *search, int n_frame)
     dag->n_frames = n_frame;
     dag->latnode_alloc = listelem_alloc_init(sizeof(latnode_t));
     dag->latlink_alloc = listelem_alloc_init(sizeof(latlink_t));
-    dag->rev_latlink_alloc = listelem_alloc_init(sizeof(rev_latlink_t));
+    dag->latlink_list_alloc = listelem_alloc_init(sizeof(latlink_list_t));
     return dag;
 }
 
@@ -298,7 +176,7 @@ ps_lattice_free(ps_lattice_t *dag)
         return;
     listelem_alloc_free(dag->latnode_alloc);
     listelem_alloc_free(dag->latlink_alloc);
-    listelem_alloc_free(dag->rev_latlink_alloc);
+    listelem_alloc_free(dag->latlink_list_alloc);
     ckd_free(dag->hyp_str);
     ckd_free(dag);
 }
@@ -430,23 +308,32 @@ ps_lattice_iter(ps_lattice_t *dag, latlink_t *link)
     return (ps_seg_t *)itor;
 }
 
+latlink_list_t *
+latlink_list_new(ps_lattice_t *dag, latlink_t *link, latlink_list_t *next)
+{
+    latlink_list_t *ll;
+
+    ll = listelem_malloc(dag->latlink_list_alloc);
+    ll->link = link;
+    ll->next = next;
+
+    return ll;
+}
+
 /*
  * Find the best score from dag->start to end point of any link and
- * use it to update links further down the path.  This is basically
- * just single-source shortest path search:
- *
- * http://en.wikipedia.org/wiki/Dijkstra's_algorithm
- *
- * The implementation is a bit different though.  Needs documented.
+ * use it to update links further down the path.  This is like
+ * single-source shortest path search, except that it is done over
+ * edges rather than nodes, which allows us to do exact trigram scoring.
  */
 latlink_t *
 ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf)
 {
     ps_search_t *search;
+    latlink_list_t *q_head, *q_tail, *x;
+    latlink_t *best;
     latnode_t *node;
-    latlink_t *link, *best;
-    latlink_t *q_head, *q_tail;
-    int32 score;
+    int32 score, escore;
 
     search = dag->search;
 
@@ -454,9 +341,12 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf)
     for (node = dag->nodes; node; node = node->next)
         node->info.fanin = 0;
     for (node = dag->nodes; node; node = node->next) {
-        for (link = node->links; link; link = link->next) {
-            (link->to->info.fanin)++;
-            link->path_scr = (int32) 0x80000000;
+        latlink_list_t *x;
+        if (ISA_FILLER_WORD(search, node->basewid) && node != dag->end)
+            continue;
+        for (x = node->exits; x; x = x->next) {
+            (x->link->to->info.fanin)++;
+            x->link->path_scr = (int32) 0x80000000;
         }
     }
 
@@ -466,79 +356,87 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf)
      * path, but not the acoustic score for that node.
      */
     q_head = q_tail = NULL;
-    for (link = dag->start->links; link; link = link->next) {
+    for (x = dag->start->exits; x; x = x->next) {
         int32 n_used;
 
-        assert(link->to == dag->end || !ISA_FILLER_WORD(search, link->to->basewid));
-        link->path_scr = link->link_scr +
-            ngram_bg_score(lmset, link->to->basewid,
+        if (ISA_FILLER_WORD(search, x->link->to->basewid) && x->link->to != dag->end)
+            continue;
+
+        x->link->path_scr = x->link->ascr +
+            ngram_bg_score(lmset, x->link->to->basewid,
                            ps_search_start_wid(search), &n_used) * lwf;
-        link->best_prev = NULL;
+        x->link->best_prev = NULL;
 
-        if (!q_head)
-            q_head = link;
-        else
-            q_tail->q_next = link;
-        q_tail = link;
+        if (q_head == NULL)
+            q_head = q_tail = latlink_list_new(dag, x->link, NULL);
+        else {
+            q_tail->next = latlink_list_new(dag, x->link, NULL);
+            q_tail = q_tail->next;
+        }
     }
-    q_tail->q_next = NULL;
 
+    /* Track the best link entering dag->end. */
+    escore = (int32) 0x80000000;
+    best = NULL;
     /* Extend partial paths in queue as long as queue not empty */
     while (q_head) {
-        /* Update path score for all possible links out of q_head->to */
-        node = q_head->to;
+        latlink_t *link;
 
-#if 0
-        E_INFO("QHD %s.%d -> %s.%d (%d, %d)\n",
-               dict_word_str(search->dict, q_head->from->basewid), q_head->from->sf,
-               dict_word_str(search->dict, node->basewid), node->sf,
-               q_head->link_scr, q_head->path_scr);
-#endif
+        /* Pull a link off the queue. */
+        link = q_head->link;
+        node = link->to;
+        --node->info.fanin;
 
-        for (link = node->links; link; link = link->next) {
+        /* Remove q_head from the queue. */
+        x = q_head->next;
+        listelem_free(dag->latlink_list_alloc, q_head);
+        q_head = x;
+        if (q_head == NULL)
+            q_tail = NULL;
+
+        for (x = node->exits; x; x = x->next) {
             int32 n_used;
 
-            assert(link->to == dag->end || !ISA_FILLER_WORD(search, link->to->basewid));
+            /* Skip links to filler words in update. */
+            if (ISA_FILLER_WORD(search, x->link->to->basewid)
+                && x->link->to != dag->end)
+                continue;
 
-            score = q_head->path_scr + link->link_scr +
-                ngram_tg_score(lmset, link->to->basewid,
-                               node->basewid, q_head->from->basewid, &n_used) * lwf;
+            score = link->path_scr + x->link->ascr +
+                ngram_tg_score(lmset, x->link->to->basewid,
+                               node->basewid,
+                               link->from->basewid, &n_used) * lwf;
 
-            if (score > link->path_scr) {
-                link->path_scr = score;
-                link->best_prev = q_head;
+            if (score > x->link->path_scr) {
+                x->link->path_scr = score;
+                x->link->best_prev = link;
+                if (x->link->to == dag->end && x->link->path_scr > escore) {
+                    escore = x->link->path_scr;
+                    best = x->link;
+                }
             }
         }
 
-        if (--(node->info.fanin) == 0) {
+        if (node->info.fanin == 0) {
             /*
-             * Links out of node (q_head->to) updated wrt all incoming links at node.
-             * They all now have optimal partial path scores; insert them in optimal
-             * partial path queue.
+             * Links out of node updated wrt all incoming links at
+             * node.  They all now have optimal partial path scores;
+             * insert them in optimal partial path queue.
              */
-            for (link = node->links; link; link = link->next) {
-                q_tail->q_next = link;
-                q_tail = link;
+            for (x = node->exits; x; x = x->next) {
+                /* Don't push links to fillers on the queue. */
+                if (ISA_FILLER_WORD(search, x->link->to->basewid) && x->link->to != dag->end)
+                    continue;
+                if (q_head == NULL)
+                    q_head = q_tail = latlink_list_new(dag, x->link, NULL);
+                else {
+                    q_tail->next = latlink_list_new(dag, x->link, NULL);
+                    q_tail = q_tail->next;
+                }
             }
-            q_tail->q_next = NULL;
         }
-
-        q_head = q_head->q_next;
     }
 
-    /*
-     * Rescored all paths to dag->end; Find the best link entering
-     * dag->end.  We will trace this back to get a hypothesis.
-     */
-    score = (int32) 0x80000000;
-    best = NULL;
-    for (node = dag->nodes; node; node = node->next) {
-        for (link = node->links; link; link = link->next)
-            if ((link->to == dag->end) && (link->path_scr > score)) {
-                score = link->path_scr;
-                best = link;
-            }
-    }
     return best;
 }
 
@@ -556,7 +454,7 @@ static int32
 best_rem_score(ps_astar_t *nbest, latnode_t * from)
 {
     ps_lattice_t *dag;
-    latlink_t *link;
+    latlink_list_t *x;
     int32 bestscore, score;
 
     dag = nbest->dag;
@@ -565,12 +463,12 @@ best_rem_score(ps_astar_t *nbest, latnode_t * from)
 
     /* Best score from "from" to end of utt not known; compute from successors */
     bestscore = WORST_SCORE;
-    for (link = from->links; link; link = link->next) {
+    for (x = from->exits; x; x = x->next) {
         int32 n_used;
 
-        score = best_rem_score(nbest, link->to);
-        score += link->link_scr;
-        score += ngram_bg_score(nbest->lmset, link->to->basewid,
+        score = best_rem_score(nbest, x->link->to);
+        score += x->link->ascr;
+        score += ngram_bg_score(nbest->lmset, x->link->to->basewid,
                                 from->basewid, &n_used) * nbest->lwf;
         if (score > bestscore)
             bestscore = score;
@@ -635,7 +533,7 @@ path_insert(ps_astar_t *nbest, latpath_t *newpath, int32 total_score)
 static void
 path_extend(ps_astar_t *nbest, latpath_t * path)
 {
-    latlink_t *link;
+    latlink_list_t *x;
     latpath_t *newpath;
     int32 total_score, tail_score;
     ps_lattice_t *dag;
@@ -643,18 +541,18 @@ path_extend(ps_astar_t *nbest, latpath_t * path)
     dag = nbest->dag;
 
     /* Consider all successors of path->node */
-    for (link = path->node->links; link; link = link->next) {
+    for (x = path->node->exits; x; x = x->next) {
         int32 n_used;
 
         /* Skip successor if no path from it reaches the final node */
-        if (link->to->info.rem_score <= WORST_SCORE)
+        if (x->link->to->info.rem_score <= WORST_SCORE)
             continue;
 
         /* Create path extension and compute exact score for this extension */
         newpath = listelem_malloc(nbest->latpath_alloc);
-        newpath->node = link->to;
+        newpath->node = x->link->to;
         newpath->parent = path;
-        newpath->score = path->score + link->link_scr;
+        newpath->score = path->score + x->link->ascr;
         if (path->parent) {
             newpath->score += nbest->lwf
                 * ngram_tg_score(nbest->lmset, newpath->node->basewid,
@@ -713,7 +611,7 @@ ps_astar_start(ps_lattice_t *dag,
     for (node = dag->nodes; node; node = node->next) {
         if (node == dag->end)
             node->info.rem_score = 0;
-        else if (!node->links)
+        else if (node->exits == NULL)
             node->info.rem_score = WORST_SCORE;
         else
             node->info.rem_score = 1;   /* +ve => unknown value */

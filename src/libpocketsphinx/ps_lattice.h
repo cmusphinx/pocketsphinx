@@ -54,23 +54,30 @@
 typedef struct latlink_s {
     struct latnode_s *from;	/**< From node */
     struct latnode_s *to;	/**< To node */
-    struct latlink_s *next;	/**< Next link from the same "from" node */
     struct latlink_s *best_prev;
-    struct latlink_s *q_next;
-    int32 link_scr;		/**< Score for from->wid (from->sf to this->ef) */
+    int32 ascr;			/**< Score for from->wid (from->sf to this->ef) */
     int32 path_scr;		/**< Best path score from root of DAG */
     int32 ef;			/**< end-frame for the "from" node */
 } latlink_t;
 
-typedef struct rev_latlink_s {
+/**
+ * Linked list of DAG link pointers.
+ *
+ * Because the same link structure is used for forward and reverse
+ * links, as well as for the agenda used in bestpath search, we can't
+ * store the list pointer inside latlink_t.  We could use glist_t
+ * here, but it wastes 4 bytes per entry on 32-bit machines.
+ */
+typedef struct latlink_list_s {
     latlink_t *link;
-    struct rev_latlink_s *next;
-} rev_latlink_t;
+    struct latlink_list_s *next;
+} latlink_list_t;
 
 /**
  * DAG nodes.
  */
 typedef struct latnode_s {
+    int32 id;			/**< Unique id for this node */
     int32 wid;			/**< Dictionary word id */
     int32 basewid;		/**< Dictionary base word id */
     int16 fef;			/**< First end frame */
@@ -81,9 +88,10 @@ typedef struct latnode_s {
 	int32 fanin;		/**< #nodes with links to this node */
 	int32 rem_score;	/**< Estimated best score from node.sf to end */
     } info;
-    latlink_t *links;		/**< Links out of this node */
-    rev_latlink_t *revlinks;	/**< Reverse links (for housekeeping purposes only) */
-    struct latnode_s *next;	/**< Next node (for housekeeping purposes only) */
+    latlink_list_t *exits;      /**< Links out of this node */
+    latlink_list_t *entries;    /**< Links into this node */
+
+    struct latnode_s *next;	/**< Next node in DAG (no ordering implied) */
 } latnode_t;
 
 /**
@@ -102,7 +110,9 @@ struct ps_lattice_s {
 
     listelem_alloc_t *latnode_alloc;     /**< Node allocator for this DAG. */
     listelem_alloc_t *latlink_alloc;     /**< Link allocator for this DAG. */
-    listelem_alloc_t *rev_latlink_alloc; /**< Reverse link allocator for this DAG. */
+    listelem_alloc_t *latlink_list_alloc; /**< List element allocator for this DAG. */
+
+    latlink_list_t *q; /**< Queue of links for traversal. */
 };
 
 /**
@@ -110,7 +120,7 @@ struct ps_lattice_s {
  */
 typedef struct dag_seg_s {
     ps_seg_t base;       /**< Base structure. */
-    latlink_t **links;   /**< Sequence of lattice links. */
+    latlink_t **links;   /**< Array of lattice links. */
     int16 n_links;  /**< Number of lattice links. */
     int16 cur;      /**< Current position in bpidx. */
 } dag_seg_t;
@@ -169,18 +179,8 @@ void ps_lattice_free(ps_lattice_t *dag);
  * Create a directed link between "from" and "to" nodes, but if a link already exists,
  * choose one with the best link_scr.
  */
-void link_latnodes(ps_lattice_t *dag, latnode_t *from, latnode_t *to,
-                   int32 score, int32 ef);
-
-/**
- * Add bypass links around filler words.
- */
-void ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen);
-
-/**
- * Remove nodes not marked as reachable.
- */
-void ps_lattice_delete_unreachable(ps_lattice_t *dag);
+void ps_lattice_link(ps_lattice_t *dag, latnode_t *from, latnode_t *to,
+                     int32 score, int32 ef);
 
 /**
  * Do N-Gram based best-path search on a word graph.
