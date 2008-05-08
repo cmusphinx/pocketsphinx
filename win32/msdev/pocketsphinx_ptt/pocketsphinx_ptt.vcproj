@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="pocketsphinx_ptt"
 	ProjectGUID="{A73B489C-F7DA-4DC3-9A6C-0DC7D0806A67}"
+	RootNamespace="pocketsphinx_ptt"
 	>
 	<Platforms>
 		<Platform
@@ -206,28 +207,6 @@
 			Name="Source Files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
-			<File
-				RelativePath="..\..\..\src\programs\tty-ptt.c"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

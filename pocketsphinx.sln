@@ -13,11 +13,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx_continuous", "
 		{94001A0E-A837-445C-8004-F918F10D0226} = {94001A0E-A837-445C-8004-F918F10D0226}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx_ptt", "win32\msdev\pocketsphinx_ptt\pocketsphinx_ptt.vcproj", "{A73B489C-F7DA-4DC3-9A6C-0DC7D0806A67}"
-	ProjectSection(ProjectDependencies) = postProject
-		{94001A0E-A837-445C-8004-F918F10D0226} = {94001A0E-A837-445C-8004-F918F10D0226}
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -36,10 +31,6 @@ Global
 		{1380AF76-C926-44D0-8002-06C228AC869A}.Debug|Win32.Build.0 = Debug|Win32
 		{1380AF76-C926-44D0-8002-06C228AC869A}.Release|Win32.ActiveCfg = Release|Win32
 		{1380AF76-C926-44D0-8002-06C228AC869A}.Release|Win32.Build.0 = Release|Win32
-		{A73B489C-F7DA-4DC3-9A6C-0DC7D0806A67}.Debug|Win32.ActiveCfg = Debug|Win32
-		{A73B489C-F7DA-4DC3-9A6C-0DC7D0806A67}.Debug|Win32.Build.0 = Debug|Win32
-		{A73B489C-F7DA-4DC3-9A6C-0DC7D0806A67}.Release|Win32.ActiveCfg = Release|Win32
-		{A73B489C-F7DA-4DC3-9A6C-0DC7D0806A67}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
