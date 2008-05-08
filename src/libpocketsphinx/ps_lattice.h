@@ -112,7 +112,8 @@ struct ps_lattice_s {
     listelem_alloc_t *latlink_alloc;     /**< Link allocator for this DAG. */
     listelem_alloc_t *latlink_list_alloc; /**< List element allocator for this DAG. */
 
-    latlink_list_t *q; /**< Queue of links for traversal. */
+    latlink_list_t *q_head; /**< Queue of links for traversal. */
+    latlink_list_t *q_tail; /**< Queue of links for traversal. */
 };
 
 /**
@@ -181,6 +182,26 @@ void ps_lattice_free(ps_lattice_t *dag);
  */
 void ps_lattice_link(ps_lattice_t *dag, latnode_t *from, latnode_t *to,
                      int32 score, int32 ef);
+
+/**
+ * Start a forward traversal of edges in a word graph.
+ */
+latlink_t *ps_lattice_traverse_edges(ps_lattice_t *dag, latnode_t *start, latnode_t *end);
+
+/**
+ * Get the next link in forward traversal.
+ */
+latlink_t *ps_lattice_traverse_next(ps_lattice_t *dag, latnode_t *end);
+
+/**
+ * Start a reverse traversal of edges in a word graph.
+ */
+latlink_t *ps_lattice_reverse_edges(ps_lattice_t *dag, latnode_t *start, latnode_t *end);
+
+/**
+ * Get the next link in forward traversal.
+ */
+latlink_t *ps_lattice_reverse_next(ps_lattice_t *dag, latnode_t *start);
 
 /**
  * Do N-Gram based best-path search on a word graph.

@@ -320,6 +320,154 @@ latlink_list_new(ps_lattice_t *dag, latlink_t *link, latlink_list_t *next)
     return ll;
 }
 
+void
+agenda_push(ps_lattice_t *dag, latlink_t *link)
+{
+    if (dag->q_head == NULL)
+        dag->q_head = dag->q_tail = latlink_list_new(dag, link, NULL);
+    else {
+        dag->q_tail = latlink_list_new(dag, link, NULL);
+        dag->q_tail = dag->q_tail->next;
+    }
+
+}
+
+latlink_t *
+agenda_pop(ps_lattice_t *dag)
+{
+    latlink_list_t *x;
+    latlink_t *link;
+
+    if (dag->q_head == NULL)
+        return NULL;
+    link = dag->q_head->link;
+    x = dag->q_head->next;
+    listelem_free(dag->latlink_list_alloc, dag->q_head);
+    dag->q_head = x;
+    if (dag->q_head == NULL)
+        dag->q_tail = NULL;
+    return link;
+}
+
+static void
+clear_agenda(ps_lattice_t *dag)
+{
+    while (agenda_pop(dag)) {
+        /* Do nothing. */
+    }
+}
+
+latlink_t *
+ps_lattice_traverse_edges(ps_lattice_t *dag, latnode_t *start, latnode_t *end)
+{
+    latnode_t *node;
+    latlink_list_t *x;
+
+    /* Cancel any unfinished traversal. */
+    clear_agenda(dag);
+
+    /* Initialize node fanin counts and path scores. */
+    for (node = dag->nodes; node; node = node->next)
+        node->info.fanin = 0;
+    for (node = dag->nodes; node; node = node->next) {
+        for (x = node->exits; x; x = x->next)
+            (x->link->to->info.fanin)++;
+    }
+
+    /* Initialize agenda with all exits from start. */
+    if (start == NULL) start = dag->start;
+    for (x = start->exits; x; x = x->next)
+        agenda_push(dag, x->link);
+
+    /* Pull the first edge off the queue. */
+    return ps_lattice_traverse_next(dag, end);
+}
+
+latlink_t *
+ps_lattice_traverse_next(ps_lattice_t *dag, latnode_t *end)
+{
+    latlink_t *next;
+
+    next = agenda_pop(dag);
+    if (next == NULL)
+        return NULL;
+
+    /* Decrease fanin count for destination node and expand outgoing
+     * edges if all incoming edges have been seen. */
+    --next->to->info.fanin;
+    if (next->to->info.fanin == 0) {
+        latlink_list_t *x;
+
+        if (next->to == end) {
+            /* If we have traversed all links entering the end node,
+             * clear the queue, causing future calls to this function
+             * to return NULL. */
+            clear_agenda(dag);
+            return next;
+        }
+
+        /* Extend all outgoing edges. */
+        for (x = next->to->exits; x; x = x->next)
+            agenda_push(dag, x->link);
+    }
+    return next;
+}
+
+latlink_t *
+ps_lattice_reverse_edges(ps_lattice_t *dag, latnode_t *start, latnode_t *end)
+{
+    latnode_t *node;
+    latlink_list_t *x;
+
+    /* Cancel any unfinished traversal. */
+    clear_agenda(dag);
+
+    /* Initialize node fanout counts and path scores. */
+    for (node = dag->nodes; node; node = node->next) {
+        node->info.fanin = 0;
+        for (x = node->exits; x; x = x->next)
+            ++node->info.fanin;
+    }
+
+    /* Initialize agenda with all entries from end. */
+    if (end == NULL) end = dag->end;
+    for (x = end->entries; x; x = x->next)
+        agenda_push(dag, x->link);
+
+    /* Pull the first edge off the queue. */
+    return ps_lattice_reverse_next(dag, start);
+}
+
+latlink_t *
+ps_lattice_reverse_next(ps_lattice_t *dag, latnode_t *start)
+{
+    latlink_t *next;
+
+    next = agenda_pop(dag);
+    if (next == NULL)
+        return NULL;
+
+    /* Decrease fanout count for source node and expand incoming
+     * edges if all incoming edges have been seen. */
+    --next->from->info.fanin;
+    if (next->from->info.fanin == 0) {
+        latlink_list_t *x;
+
+        if (next->from == start) {
+            /* If we have traversed all links entering the start node,
+             * clear the queue, causing future calls to this function
+             * to return NULL. */
+            clear_agenda(dag);
+            return next;
+        }
+
+        /* Extend all outgoing edges. */
+        for (x = next->from->entries; x; x = x->next)
+            agenda_push(dag, x->link);
+    }
+    return next;
+}
+
 /*
  * Find the best score from dag->start to end point of any link and
  * use it to update links further down the path.  This is like
@@ -346,7 +494,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf)
             continue;
         for (x = node->exits; x; x = x->next) {
             (x->link->to->info.fanin)++;
-            x->link->path_scr = (int32) 0x80000000;
+            x->link->path_scr = MAX_NEG_INT32;
         }
     }
 
@@ -376,7 +524,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf)
     }
 
     /* Track the best link entering dag->end. */
-    escore = (int32) 0x80000000;
+    escore = MAX_NEG_INT32;
     best = NULL;
     /* Extend partial paths in queue as long as queue not empty */
     while (q_head) {
