@@ -71,7 +71,7 @@ main(int argc, char *argv[])
 			return 1;
 		}
 		printf("BESTPATH: %s\n",
-		       ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset, 1.461538)));
+		       ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset, 1.461538, 15.0)));
 
 		/* FIXME: We should assert that bestpath and 1-best
 		 * give the same results (they really ought to...) */

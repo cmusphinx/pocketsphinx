@@ -204,7 +204,9 @@ struct ngram_search_s {
     uint8 fwdtree;
     uint8 fwdflat;
     uint8 bestpath;
-    uint8 reserved;
+
+    /* State of procesing. */
+    uint8 done;
 
     /* Allocators */
     listelem_alloc_t *chan_alloc; /**< For chan_t */
@@ -330,6 +332,7 @@ struct ngram_search_s {
      */
     ps_lattice_t *dag; /**< Word graph of current utterance. */
     float32 bestpath_fwdtree_lw_ratio;
+    float32 ascale; /**< Acoustic score scale for posterior probabilities. */
 
     ngram_search_stats_t st; /**< Various statistics for profiling. */
 

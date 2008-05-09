@@ -48,8 +48,10 @@
 #include "pocketsphinx_internal.h"
 
 /**
- * Links between DAG nodes (see latnode_t below).
- * Also used to keep scores in a bestpath search.
+ * Links between DAG nodes.
+ *
+ * A link corresponds to a single hypothesized instance of a word with
+ * a given start and end point.
  */
 typedef struct latlink_s {
     struct latnode_s *from;	/**< From node */
@@ -57,7 +59,9 @@ typedef struct latlink_s {
     struct latlink_s *best_prev;
     int32 ascr;			/**< Score for from->wid (from->sf to this->ef) */
     int32 path_scr;		/**< Best path score from root of DAG */
-    int32 ef;			/**< end-frame for the "from" node */
+    int32 ef;			/**< Ending frame of this word  */
+    int32 alpha;                /**< Forward probability of this link P(w,o_1^{ef}) */
+    int32 beta;                 /**< Backward probability of this link P(w|o_{ef+1}^T) */
 } latlink_t;
 
 /**
@@ -75,6 +79,9 @@ typedef struct latlink_list_s {
 
 /**
  * DAG nodes.
+ *
+ * A node corresponds to a number of hypothesized instances of a word
+ * which all share the same starting point.
  */
 typedef struct latnode_s {
     int32 id;			/**< Unique id for this node */
@@ -105,7 +112,8 @@ struct ps_lattice_s {
     latnode_t *end;    /**< Ending node. */
 
     int32 n_frames;    /**< Number of frames for this utterance. */
-    int32 final_node_ascr;
+    int32 final_node_ascr; /**< Acoustic score of implicit link exiting final node. */
+    int32 norm;        /**< Normalizer for posterior probabilities. */
     char *hyp_str;     /**< Current hypothesis string. */
 
     listelem_alloc_t *latnode_alloc;     /**< Node allocator for this DAG. */
@@ -228,9 +236,23 @@ latlink_t *ps_lattice_reverse_next(ps_lattice_t *dag, latnode_t *start);
 /**
  * Do N-Gram based best-path search on a word graph.
  *
+ * This function calculates both the best path as well as the forward
+ * probability used in confidence estimation.
+ *
  * @return Final link in best path, NULL on error.
  */
-latlink_t *ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf);
+latlink_t *ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
+                               float32 lwf, float32 ascale);
+
+/**
+ * Calculate link posterior probabilities on a word graph.
+ *
+ * This function assumes that bestpath search has already been done.
+ *
+ * @return Posterior probability of the utterance as a whole.
+ */
+int32 ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
+                           float32 ascale);
 
 /**
  * Get hypothesis string after bestpath search.

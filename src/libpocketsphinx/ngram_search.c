@@ -125,6 +125,9 @@ ngram_search_calc_beams(ngram_search_t *ngs)
     ngs->bestpath_fwdtree_lw_ratio =
         cmd_ln_float32_r(config, "-bestpathlw")
         / cmd_ln_float32_r(config, "-lw");
+
+    /* Acoustic score scale for posterior probabilities. */
+    ngs->ascale = 1.0 / cmd_ln_float32_r(config, "-ascale");
 }
 
 ps_search_t *
@@ -584,6 +587,8 @@ ngram_search_start(ps_search_t *search)
 {
     ngram_search_t *ngs = (ngram_search_t *)search;
 
+    ngs->done = FALSE;
+
     if (ngs->fwdtree)
         ngram_fwdtree_start(ngs);
     else if (ngs->fwdflat)
@@ -635,15 +640,8 @@ ngram_search_finish(ps_search_t *search)
         ngram_fwdflat_finish(ngs);
     }
 
-    /* Build a DAG if necessary. */
-    if (ngs->bestpath) {
-        /* Compute these such that they agree with the fwdtree language weight. */
-        ngram_compute_seg_scores(ngs,
-                                 ngs->fwdflat
-                                 ? ngs->fwdflat_fwdtree_lw_ratio : 1.0);
-        ngram_search_lattice(search);
-    }
-
+    /* Mark the current utterance as done. */
+    ngs->done = TRUE;
     return 0;
 }
 
@@ -652,13 +650,18 @@ ngram_search_hyp(ps_search_t *search, int32 *out_score)
 {
     ngram_search_t *ngs = (ngram_search_t *)search;
 
-    /* Use the DAG if it exists (means that the utt is done, for now
-     * at least...) */
-    if (ngs->bestpath && ngs->dag) {
+    /* Only do bestpath search if the utterance is complete. */
+    if (ngs->bestpath && ngs->done) {
         latlink_t *link;
 
+        /* Compute these such that they agree with the fwdtree language weight. */
+        ngram_compute_seg_scores(ngs,
+                                 ngs->fwdflat
+                                 ? ngs->fwdflat_fwdtree_lw_ratio : 1.0);
+        ngram_search_lattice(search);
         link = ps_lattice_bestpath(ngs->dag, ngs->lmset,
-                                   ngs->bestpath_fwdtree_lw_ratio);
+                                   ngs->bestpath_fwdtree_lw_ratio,
+                                   ngs->ascale);
         if (link == NULL) /* No hypothesis... */
             return NULL;
         if (out_score) *out_score = link->path_scr + ngs->dag->final_node_ascr;
@@ -759,13 +762,14 @@ ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
 {
     ngram_search_t *ngs = (ngram_search_t *)search;
 
-    /* Use the DAG if it exists (means that the utt is done, for now
-     * at least...) */
-    if (ngs->bestpath && ngs->dag) {
+    /* Only do bestpath search if the utterance is done. */
+    if (ngs->bestpath && ngs->done) {
         latlink_t *last;
 
         last = ps_lattice_bestpath(ngs->dag, ngs->lmset,
-                                   ngs->bestpath_fwdtree_lw_ratio);
+                                   ngs->bestpath_fwdtree_lw_ratio,
+                                   ngs->ascale);
+        ps_lattice_posterior(ngs->dag, ngs->lmset, ngs->ascale);
         return ps_lattice_seg_iter(ngs->dag, last);
     }
     else {
@@ -1148,4 +1152,3 @@ error_out:
     ps_lattice_free(dag);
     return NULL;
 }
-

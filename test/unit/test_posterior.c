@@ -68,7 +68,10 @@ main(int argc, char *argv[])
 			return 1;
 		}
 		printf("BESTPATH: %s\n",
-		       ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset, 1.461538, 15.0)));
+		       ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset, 1.0, 1.0)));
+		ps_lattice_posterior(dag, ngs->lmset, 1.0);
+		/* FIXME: Need to do various verification here
+		 * (e.g. are all sums of alpha*beta equal?) */
 	}
 	TEST_EQUAL(0, strcmp("GO FOR WORDS TEN YEARS",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));

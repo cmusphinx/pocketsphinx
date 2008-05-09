@@ -475,24 +475,35 @@ ps_lattice_reverse_next(ps_lattice_t *dag, latnode_t *start)
  * use it to update links further down the path.  This is like
  * single-source shortest path search, except that it is done over
  * edges rather than nodes, which allows us to do exact trigram scoring.
+ *
+ * Helpfully enough, we get half of the posterior probability
+ * calculation for free that way too.  (interesting research topic: is
+ * there a reliable Viterbi analogue to word-level Forward-Backward
+ * like there is for state-level?  Or, is it just lattice density?)
  */
 latlink_t *
-ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf)
+ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
+                    float32 lwf, float32 ascale)
 {
     ps_search_t *search;
     latnode_t *node;
     latlink_t *link;
     latlink_t *bestend;
     latlink_list_t *x;
+    logmath_t *lmath;
     int32 bestescr;
 
     search = dag->search;
+    lmath = dag->search->acmod->lmath;
 
     /* Initialize path scores for all links exiting dag->start, and
-     * set all other scores to the minimum. */
+     * set all other scores to the minimum.  Also initialize alphas to
+     * log-zero. */
     for (node = dag->nodes; node; node = node->next) {
-        for (x = node->exits; x; x = x->next)
+        for (x = node->exits; x; x = x->next) {
             x->link->path_scr = MAX_NEG_INT32;
+            x->link->alpha = logmath_get_zero(lmath);
+        }
     }
     for (x = dag->start->exits; x; x = x->next) {
         int32 n_used;
@@ -501,19 +512,20 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf)
         if (ISA_FILLER_WORD(search, x->link->to->basewid)
             && x->link->to != dag->end)
             continue;
+        /* Best path points to dag->start, obviously. */
         x->link->path_scr = x->link->ascr +
             ngram_bg_score(lmset, x->link->to->basewid,
                            ps_search_start_wid(search), &n_used) * lwf;
         x->link->best_prev = NULL;
+        /* Alpha is just the acoustic score as there are no predecessors. */
+        x->link->alpha = x->link->ascr * ascale;
     }
-
-    /* Track the best link entering dag->end. */
-    bestend = NULL;
-    bestescr = MAX_NEG_INT32;
 
     /* Traverse the edges in the graph, updating path scores. */
     for (link = ps_lattice_traverse_edges(dag, NULL, NULL);
          link; link = ps_lattice_traverse_next(dag, NULL)) {
+        int32 bprob, n_used;
+
         /* Skip filler nodes in traversal. */
         if (ISA_FILLER_WORD(search, link->from->basewid))
             continue;
@@ -524,35 +536,117 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset, float32 lwf)
          * weren't previously updated, otherwise nasty overflows will result. */
         assert(link->path_scr != MAX_NEG_INT32);
 
+        /* Calculate common bigram probability for all alphas. */
+        bprob = ngram_ng_prob(lmset,
+                               link->to->basewid,
+                               &link->from->basewid, 1, &n_used);
         /* Update scores for all paths exiting link->to. */
         for (x = link->to->exits; x; x = x->next) {
-            int32 score, n_used;
+            int32 tscore, score;
 
             /* Skip links to filler words in update. */
             if (ISA_FILLER_WORD(search, x->link->to->basewid)
                 && x->link->to != dag->end)
                 continue;
 
-            score = link->path_scr + x->link->ascr +
-                ngram_tg_score(lmset, x->link->to->basewid,
-                               link->to->basewid,
-                               link->from->basewid, &n_used) * lwf;
+            /* Update alpha with sum of previous alphas. */
+            score = link->alpha + bprob + x->link->ascr * ascale;
+            x->link->alpha = logmath_add(lmath, x->link->alpha, score);
 
-            /* Update link score. */
+            /* Calculate trigram score for bestpath. */
+            tscore = ngram_tg_score(lmset, x->link->to->basewid,
+                                     link->to->basewid,
+                                     link->from->basewid, &n_used) * lwf;
+            /* Update link score with maximum link score. */
+            score = link->path_scr + tscore + x->link->ascr;
             if (score > x->link->path_scr) {
                 x->link->path_scr = score;
                 x->link->best_prev = link;
-                /* Track best link entering final node. */
-                if (x->link->to == dag->end && x->link->path_scr > bestescr) {
-                    bestescr = x->link->path_scr;
-                    bestend = x->link;
-                }
             }
         }
     }
 
+    /* Find best link entering final node, and calculate normalizer
+     * for posterior probabilities. */
+    bestend = NULL;
+    bestescr = MAX_NEG_INT32;
+    dag->norm = logmath_get_zero(lmath);
+
+    for (x = dag->end->entries; x; x = x->next) {
+        if (ISA_FILLER_WORD(search, x->link->from->basewid))
+            continue;
+        dag->norm = logmath_add(lmath, dag->norm, x->link->alpha);
+        if (x->link->path_scr > bestescr) {
+            bestescr = x->link->path_scr;
+            bestend = x->link;
+        }
+    }
+    E_INFO("Sum of alphas = %d\n", dag->norm);
+
     return bestend;
 }
+
+int32
+ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
+                     float32 ascale)
+{
+    ps_search_t *search;
+    logmath_t *lmath;
+    latnode_t *node;
+    latlink_t *link;
+    latlink_list_t *x;
+    int32 norm;
+
+    search = dag->search;
+    lmath = dag->search->acmod->lmath;
+
+    /* Reset all betas to zero. */
+    for (node = dag->nodes; node; node = node->next)
+        for (x = node->exits; x; x = x->next)
+            x->link->beta = logmath_get_zero(lmath);
+
+    /* Accumulate backward probabilities for all links. */
+    for (link = ps_lattice_reverse_edges(dag, NULL, NULL);
+         link; link = ps_lattice_reverse_next(dag, NULL)) {
+        /* Skip filler nodes in traversal. */
+        if (ISA_FILLER_WORD(search, link->from->basewid))
+            continue;
+        if (ISA_FILLER_WORD(search, link->to->basewid) && link->to != dag->end)
+            continue;
+
+        /* Beta for arcs into dag->end = 1.0. */
+        if (link->to == dag->end)
+            link->beta = 0;
+        else {
+            int32 bprob, n_used;
+
+            /* Calculate LM probability. */
+            bprob = ngram_ng_prob(lmset, link->to->basewid,
+                                  &link->from->basewid, 1, &n_used);
+
+            /* Update beta from all outgoing betas. */
+            for (x = link->to->exits; x; x = x->next) {
+                if (ISA_FILLER_WORD(search, x->link->to->basewid) && link->to != dag->end)
+                    continue;
+                link->beta = logmath_add(lmath, link->beta,
+                                         x->link->beta + bprob + x->link->ascr * ascale);
+            }
+        }
+    }
+
+    /* Verify that alphas and betas give the same estimate of P(O) */
+    norm = logmath_get_zero(lmath);
+    for (x = dag->start->exits; x; x = x->next) {
+        if (ISA_FILLER_WORD(search, x->link->to->basewid))
+            continue;
+        norm = logmath_add(lmath, norm, x->link->beta);
+    }
+    E_INFO("Sum of betas = %d\n", norm);
+
+
+    return 0;
+}
+
 
 /* Parameters to prune n-best alternatives search */
 #define MAX_PATHS	500     /* Max allowed active paths at any time */

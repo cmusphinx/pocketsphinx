@@ -21,6 +21,7 @@ check_PROGRAMS = \
 	test_fwdtree_fwdflat \
 	test_fwdtree_bestpath \
 	test_fwdtree_nbest \
+	test_posterior \
 	test_fsg2 \
 	test_jsgf \
 	test_lm_read \
@@ -42,6 +43,7 @@ TESTS = \
 	test_fwdtree_fwdflat \
 	test_fwdtree_bestpath \
 	test_fwdtree_nbest \
+	test_posterior \
 	test_fsg2 \
 	test_jsgf \
 	test_lm_read \
