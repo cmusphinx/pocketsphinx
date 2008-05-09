@@ -375,17 +375,29 @@ POCKETSPHINX_EXPORT
 void ps_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef);
 
 /**
- * Get log posterior probability from a segmentation iterator.
+ * Get language, acoustic, and posterior probabilities from a
+ * segmentation iterator.
  *
- * @note This is currently not implemented.
+ * @note Unless the -bestpath option is enabled, this function will
+ * always return zero (corresponding to a posterior probability of
+ * 1.0).  Even if -bestpath is enabled, it will also return zero when
+ * called on a partial result.  Ongoing research into effective
+ * confidence annotation for partial hypotheses may result in these
+ * restrictions being lifted in future versions.
  *
- * @param out_pprob Output: log posterior probability of current
- *                  segment.  Log is expressed in the log-base used in
- *                  the decoder.  To convert to linear floating-point,
- *                  use logmath_exp(ps_get_logmath(), pprob).
+ * @param out_ascr Output: acoustic model score for this segment.
+ * @param out_lscr Output: language model score for this segment.
+ * @param out_lback Output: language model backoff mode for this
+ *                  segment (i.e. the number of words used in
+ *                  calculating lscr).  This field is, of course, only
+ *                  meaningful for N-Gram models.
+ * @return Log posterior probability of current segment.  Log is
+ *         expressed in the log-base used in the decoder.  To convert
+ *         to linear floating-point, use logmath_exp(ps_get_logmath(),
+ *         pprob).
  */
 POCKETSPHINX_EXPORT
-void ps_seg_prob(ps_seg_t *seg, int32 *out_pprob);
+int32 ps_seg_prob(ps_seg_t *seg, int32 *out_ascr, int32 *out_lscr, int32 *out_lback);
 
 /**
  * Finish iterating over a word segmentation early, freeing resources.

@@ -131,6 +131,7 @@ struct ps_lattice_s {
 typedef struct dag_seg_s {
     ps_seg_t base;       /**< Base structure. */
     latlink_t **links;   /**< Array of lattice links. */
+    int32 norm;     /**< Normalizer for posterior probabilities. */
     int16 n_links;  /**< Number of lattice links. */
     int16 cur;      /**< Current position in bpidx. */
 } dag_seg_t;
@@ -262,7 +263,8 @@ char const *ps_lattice_hyp(ps_lattice_t *dag, latlink_t *link);
 /**
  * Get hypothesis segmentation iterator after bestpath search.
  */
-ps_seg_t *ps_lattice_seg_iter(ps_lattice_t *dag, latlink_t *link);
+ps_seg_t *ps_lattice_seg_iter(ps_lattice_t *dag, latlink_t *link,
+                              float32 lwf);
 
 /**
  * Begin N-Gram based A* search on a word graph.

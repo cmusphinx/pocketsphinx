@@ -691,6 +691,39 @@ ngram_search_bp2itor(ps_seg_t *seg, int bp)
     seg->ef = be->frame;
     seg->sf = pbe ? pbe->frame + 1 : 0;
     seg->prob = 0; /* Bogus value... */
+    /* Compute acoustic and LM scores for this segment. */
+    if (pbe == NULL) {
+        seg->ascr = be->ascr = be->score;
+        seg->lscr = be->lscr = 0;
+        seg->lback = 0;
+    }
+    else {
+        dict_entry_t *de;
+        int16 *rcpermtab;
+        int32 start_score;
+
+        de = seg->search->dict->dict_list[be->wid];
+        /* Find ending path score of previous word. */
+        rcpermtab = (pbe->r_diph >= 0)
+            ? seg->search->dict->rcFwdPermTable[pbe->r_diph]
+            : ngs->zeroPermTab;
+        start_score = ngs->bscore_stack[pbe->s_idx + rcpermtab[de->ci_phone_ids[0]]];
+        if (be->wid == ps_search_silence_wid(ngs)) {
+            be->lscr = ngs->silpen;
+        }
+        else if (ISA_FILLER_WORD(ngs, be->wid)) {
+            be->lscr = ngs->fillpen;
+        }
+        else {
+            be->lscr = ngram_tg_score(ngs->lmset, de->wid,
+                                      pbe->real_wid,
+                                      pbe->prev_real_wid, &seg->lback);
+            be->lscr = (int32)(be->lscr * seg->lwf);
+        }
+        be->ascr = be->score - start_score - be->lscr;
+        seg->ascr = be->ascr;
+        seg->lscr = be->lscr;
+    }
 }
 
 static void
@@ -722,7 +755,7 @@ static ps_segfuncs_t ngram_bp_segfuncs = {
 };
 
 static ps_seg_t *
-ngram_search_bp_iter(ngram_search_t *ngs, int bpidx)
+ngram_search_bp_iter(ngram_search_t *ngs, int bpidx, float32 lwf)
 {
     bptbl_seg_t *itor;
     int bp, cur;
@@ -734,6 +767,7 @@ ngram_search_bp_iter(ngram_search_t *ngs, int bpidx)
     itor = ckd_calloc(1, sizeof(*itor));
     itor->base.vt = &ngram_bp_segfuncs;
     itor->base.search = ps_search_base(ngs);
+    itor->base.lwf = lwf;
     itor->n_bpidx = 0;
     bp = bpidx;
     while (bp != NO_BP) {
@@ -769,15 +803,21 @@ ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
         last = ps_lattice_bestpath(ngs->dag, ngs->lmset,
                                    ngs->bestpath_fwdtree_lw_ratio,
                                    ngs->ascale);
+        /* Also calculate betas so we can fill in the posterior
+         * probability field in the segmentation. */
         ps_lattice_posterior(ngs->dag, ngs->lmset, ngs->ascale);
-        return ps_lattice_seg_iter(ngs->dag, last);
+        return ps_lattice_seg_iter(ngs->dag, last,
+                                   ngs->bestpath_fwdtree_lw_ratio);
     }
     else {
         int32 bpidx;
 
         /* fwdtree and fwdflat use same backpointer table. */
         bpidx = ngram_search_find_exit(ngs, -1, out_score);
-        return ngram_search_bp_iter(ngs, bpidx);
+        return ngram_search_bp_iter(ngs, bpidx,
+                                    /* but different language weights... */
+                                    (ngs->done && ngs->fwdflat)
+                                    ? ngs->fwdflat_fwdtree_lw_ratio : 1.0);
     }
 
     return NULL;

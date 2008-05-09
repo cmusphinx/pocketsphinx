@@ -178,6 +178,10 @@
       ARG_FLOAT32,									\
       "9.5",										\
       "Language model probability weight for bestpath search" },			\
+{ "-ascale",										\
+      ARG_FLOAT32,									\
+      "20.0",										\
+      "Inverse of acoustic model scale for confidence score calculation" },		\
 { "-wip",										\
       ARG_FLOAT32,									\
       "0.65",										\

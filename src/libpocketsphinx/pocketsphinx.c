@@ -541,14 +541,17 @@ ps_seg_word(ps_seg_t *seg)
 void
 ps_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef)
 {
-    *out_sf = seg->sf;
-    *out_ef = seg->ef;
+    if (out_sf) *out_sf = seg->sf;
+    if (out_ef) *out_ef = seg->ef;
 }
 
-void
-ps_seg_prob(ps_seg_t *seg, int32 *out_pprob)
+int32
+ps_seg_prob(ps_seg_t *seg, int32 *out_ascr, int32 *out_lscr, int32 *out_lback)
 {
-    *out_pprob = seg->prob;
+    if (out_ascr) *out_ascr = seg->ascr;
+    if (out_lscr) *out_lscr = seg->lscr;
+    if (out_lback) *out_lback = seg->lback;
+    return seg->prob;
 }
 
 void

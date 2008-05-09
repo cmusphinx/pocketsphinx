@@ -106,10 +106,13 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
 	     seg = ps_seg_next(seg)) {
 		char const *word;
 		int sf, ef;
+		int32 post, lscr, ascr, lback;
 
 		word = ps_seg_word(seg);
 		ps_seg_frames(seg, &sf, &ef);
-		printf("%s %d %d\n", word, sf, ef);
+		post = ps_seg_prob(seg, &ascr, &lscr, &lback);
+		printf("%s (%d:%d) P(w|o) = %f ascr = %d lscr = %d lback = %d\n", word, sf, ef,
+		       logmath_exp(ps_get_logmath(ps), post), ascr, lscr, lback);
 	}
 
 	ps_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);

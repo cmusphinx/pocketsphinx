@@ -143,9 +143,16 @@ struct ps_seg_s {
     ps_segfuncs_t *vt;     /**< V-table of seg methods */
     ps_search_t *search;   /**< Search object from whence this came */
     char const *word;      /**< Word string (pointer into dictionary hash) */
-    int sf;                /**< Start frame. */
-    int ef;                /**< End frame. */
+    int16 sf;                /**< Start frame. */
+    int16 ef;                /**< End frame. */
+    int32 ascr;            /**< Acoustic score. */
+    int32 lscr;            /**< Language model score. */
     int32 prob;            /**< Log posterior probability. */
+    /* This doesn't need to be 32 bits, so once the scores above are
+     * reduced to 16 bits (or less!), this will be too. */
+    int32 lback;           /**< Language model backoff. */
+    /* Not sure if this should be here at all. */
+    float32 lwf;           /**< Language weight factor (for second-pass searches) */
 };
 
 #define ps_search_seg_next(seg) (*(seg->vt->seg_next))(seg)

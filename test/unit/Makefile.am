@@ -67,4 +67,4 @@ LDADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la \
 	-lsphinxbase
 
-CLEANFILES = *.log *.out
+CLEANFILES = *.log *.out *.lat

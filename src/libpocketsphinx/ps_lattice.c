@@ -50,6 +50,7 @@
 /* Local headers. */
 #include "pocketsphinx.h" /* To make sure ps_lattice_write() gets exported */
 #include "ps_lattice.h"
+#include "ngram_search.h"
 
 /*
  * Create a directed link between "from" and "to" nodes, but if a link already exists,
@@ -226,8 +227,54 @@ ps_lattice_hyp(ps_lattice_t *dag, latlink_t *link)
 }
 
 static void
+ps_lattice_compute_lscr(ps_seg_t *seg, latlink_t *link, int to)
+{
+    ngram_model_t *lmset;
+
+    /* Dunno what to do if this isn't N-Gram search (FIXME: this
+     * should be a method of the search object) */
+    if (0 != strcmp(ps_search_name(seg->search), "ngram")) {
+        seg->lback = 2;
+        seg->lscr = 0;
+    }
+        
+    lmset = ((ngram_search_t *)seg->search)->lmset;
+
+    if (link->best_prev == NULL) {
+        if (to) /* Sentence has only two words. */
+            seg->lscr = ngram_bg_score(lmset, link->to->basewid,
+                                       link->from->basewid, &seg->lback);
+        else {/* This is the start symbol, its lscr is always 0. */
+            seg->lscr = 0;
+            seg->lback = 1;
+        }
+    }
+    else {
+        /* Find the two predecessor words. */
+        if (to) {
+            seg->lscr = ngram_tg_score(lmset, link->to->basewid,
+                                       link->from->basewid,
+                                       link->best_prev->from->basewid,
+                                       &seg->lback);
+        }
+        else {
+            if (link->best_prev->best_prev)
+                seg->lscr = ngram_tg_score(lmset, link->from->basewid,
+                                           link->best_prev->from->basewid,
+                                           link->best_prev->best_prev->from->basewid,
+                                           &seg->lback);
+            else
+                seg->lscr = ngram_bg_score(lmset, link->from->basewid,
+                                           link->best_prev->from->basewid,
+                                           &seg->lback);
+        }
+    }
+}
+
+static void
 ps_lattice_link2itor(ps_seg_t *seg, latlink_t *link, int to)
 {
+    dag_seg_t *itor = (dag_seg_t *)seg;
     latnode_t *node;
 
     if (to) {
@@ -238,10 +285,12 @@ ps_lattice_link2itor(ps_seg_t *seg, latlink_t *link, int to)
         node = link->from;
         seg->ef = link->ef;
     }
-
     seg->word = dict_word_str(ps_search_dict(seg->search), node->wid);
     seg->sf = node->sf;
-    seg->prob = 0; /* FIXME: implement forward-backward */
+    seg->prob = link->alpha + link->beta - itor->norm;
+    seg->ascr = link->ascr;
+    /* Compute language model score from best predecessors. */
+    ps_lattice_compute_lscr(seg, link, to);
 }
 
 static void
@@ -280,7 +329,7 @@ static ps_segfuncs_t ps_lattice_segfuncs = {
 };
 
 ps_seg_t *
-ps_lattice_seg_iter(ps_lattice_t *dag, latlink_t *link)
+ps_lattice_seg_iter(ps_lattice_t *dag, latlink_t *link, float32 lwf)
 {
     dag_seg_t *itor;
     latlink_t *l;
@@ -292,7 +341,9 @@ ps_lattice_seg_iter(ps_lattice_t *dag, latlink_t *link)
     itor = ckd_calloc(1, sizeof(*itor));
     itor->base.vt = &ps_lattice_segfuncs;
     itor->base.search = dag->search;
+    itor->base.lwf = lwf;
     itor->n_links = 0;
+    itor->norm = dag->norm;
 
     for (l = link; l; l = l->best_prev) {
         ++itor->n_links;
@@ -572,6 +623,9 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
     bestescr = MAX_NEG_INT32;
     dag->norm = logmath_get_zero(lmath);
 
+    /* FIXME: It's also possible to calculate an alpha for the
+     * implicit edge exiting dag->end.  We are basically assuming that
+     * it has a posterior of 1.0 here. */
     for (x = dag->end->entries; x; x = x->next) {
         if (ISA_FILLER_WORD(search, x->link->from->basewid))
             continue;
@@ -581,7 +635,6 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
             bestend = x->link;
         }
     }
-    E_INFO("Sum of alphas = %d\n", dag->norm);
 
     return bestend;
 }
@@ -595,7 +648,6 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
     latnode_t *node;
     latlink_t *link;
     latlink_list_t *x;
-    int32 norm;
 
     search = dag->search;
     lmath = dag->search->acmod->lmath;
@@ -633,17 +685,6 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
             }
         }
     }
-
-    /* Verify that alphas and betas give the same estimate of P(O) */
-    norm = logmath_get_zero(lmath);
-    for (x = dag->start->exits; x; x = x->next) {
-        if (ISA_FILLER_WORD(search, x->link->to->basewid))
-            continue;
-        norm = logmath_add(lmath, norm, x->link->beta);
-    }
-    E_INFO("Sum of betas = %d\n", norm);
-
-
     return 0;
 }
 
