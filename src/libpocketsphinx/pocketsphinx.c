@@ -410,6 +410,11 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
         ps->uttid = ckd_salloc(nuttid);
         ++ps->uttno;
     }
+    /* Remove any residual word lattice and hypothesis. */
+    ps_lattice_free(ps->search->dag);
+    ps->search->dag = NULL;
+    ckd_free(ps->search->hyp_str);
+    ps->search->hyp_str = NULL;
 
     if ((rv = acmod_start_utt(ps->acmod)) < 0)
         return rv;

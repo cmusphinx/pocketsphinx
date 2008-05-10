@@ -964,12 +964,15 @@ ngram_search_lattice(ps_search_t *search)
     ps_lattice_t *dag;
 
     ngs = (ngram_search_t *)search;
-    /* Remove previous lattice and cache this one. */
-    if (ps_search_dag(ngs)) {
-        ps_lattice_free(ps_search_dag(ngs));
-        ps_search_dag(ngs) = NULL;
-    }
 
+    /* Check to see if a lattice has previously been created over the
+     * same number of frames, and reuse it if so. */
+    if (search->dag && search->dag->n_frames == ngs->n_frame)
+        return search->dag;
+
+    /* Nope, create a new one. */
+    ps_lattice_free(search->dag);
+    search->dag = NULL;
     dag = ps_lattice_init(search, ngs->n_frame);
     create_dag_nodes(ngs, dag);
     if ((dag->start = find_start_node(ngs, dag)) == NULL)
@@ -1062,7 +1065,7 @@ ngram_search_lattice(ps_search_t *search)
      * exist in the language model. */
     ps_lattice_bypass_fillers(dag, ngs->silpen, ngs->fillpen);
 
-    ps_search_dag(ngs) = dag;
+    search->dag = dag;
     return dag;
 
 error_out:

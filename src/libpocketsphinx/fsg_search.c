@@ -1358,11 +1358,15 @@ fsg_search_lattice(ps_search_t *search)
     int32 i, n;
 
     fsgs = (fsg_search_t *)search;
-    /* Remove previous lattice. */
-    if (search->dag) {
-        ps_lattice_free(search->dag);
-        search->dag = NULL;
-    }
+
+    /* Check to see if a lattice has previously been created over the
+     * same number of frames, and reuse it if so. */
+    if (search->dag && search->dag->n_frames == fsgs->frame)
+        return search->dag;
+
+    /* Nope, create a new one. */
+    ps_lattice_free(search->dag);
+    search->dag = NULL;
     dag = ps_lattice_init(search, fsgs->frame);
     fsg = fsgs->fsg;
 
