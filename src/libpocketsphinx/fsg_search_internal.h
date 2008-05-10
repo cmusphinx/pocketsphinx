@@ -91,7 +91,10 @@ typedef struct fsg_search_s {
     int32 lw, pip, wip;         /**< Language weights */
   
     int16 frame;		/**< Current frame. */
-    int16 final;		/**< Decoding is finished for this utterance. */
+    uint8 final;		/**< Decoding is finished for this utterance. */
+    uint8 bestpath;		/**< Whether to run bestpath search
+                                   and confidence annotation at end. */
+    float32 ascale;             /**< Acoustic score scale for posterior probabilities. */
 
     int32 bestscore;		/**< For beam pruning */
     int32 bpidx_start;		/**< First history entry index this frame */

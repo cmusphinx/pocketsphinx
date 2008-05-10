@@ -18,13 +18,12 @@ main(int argc, char *argv[])
 	ps_lattice_t *dag;
 	ps_seg_t *seg;
 	int32 score;
-	latlink_t *link;
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/wsj1",
-				"-fsg", DATADIR "/goforward.fsg",
-				"-dict", MODELDIR "/lm/turtle/turtle.dic",
+				"-hmm", MODELDIR "/hmm/tidigits",
+				"-fsg", MODELDIR "/lm/tidigits/test.digits.fsg",
+				"-dict", MODELDIR "/lm/tidigits/tidigits.dic",
 				"-bestpath", "no",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
@@ -42,7 +41,7 @@ main(int argc, char *argv[])
 		char const *hyp;
 		int nfr;
 
-		TEST_ASSERT(rawfh = fopen(DATADIR "/something.raw", "rb"));
+		TEST_ASSERT(rawfh = fopen(DATADIR "/numbers.raw", "rb"));
 		TEST_EQUAL(0, acmod_start_utt(acmod));
 		fsg_search_start(ps_search_base(fsgs));
 		while (!feof(rawfh)) {
@@ -68,26 +67,17 @@ main(int argc, char *argv[])
 
 		word = ps_seg_word(seg);
 		ps_seg_frames(seg, &sf, &ef);
-		if (sf == ef)
-			continue;
 		post = ps_seg_prob(seg, &ascr, &lscr, &lback);
 		printf("%s (%d:%d) P(w|o) = %f ascr = %d lscr = %d lback = %d\n", word, sf, ef,
 		       logmath_exp(ps_get_logmath(ps), post), ascr, lscr, lback);
 	}
+
+	/* Now get the DAG and play with it. */
 	dag = ps_get_lattice(ps);
-	ps_lattice_write(dag, "test_fsg2.lat");
-	link = ps_lattice_bestpath(dag, NULL, 1.0, 1.0/15.0);
-	printf("BESTPATH: %s\n", ps_lattice_hyp(dag, link));
-	ps_lattice_posterior(dag, NULL, 1.0/15.0);
-	while (link) {
-		printf("%s %d P(w|o) = %d + %d - %d = %d = %f\n",
-		       dict_word_str(ps_search_dict(ps), link->from->wid),
-		       link->ef, link->alpha, link->beta, dag->norm,
-		       link->alpha + link->beta - dag->norm,
-		       logmath_exp(ps_get_logmath(ps),
-				   link->alpha + link->beta - dag->norm));
-		link = link->best_prev;
-	}
+	ps_lattice_write(dag, "test_fsg3.lat");
+	printf("BESTPATH: %s\n",
+	       ps_lattice_hyp(dag, ps_lattice_bestpath(dag, NULL, 1.0, 15.0)));
+	ps_lattice_posterior(dag, NULL, 15.0);
 	ps_free(ps);
 
 	return 0;

@@ -94,6 +94,7 @@ typedef struct latnode_s {
     union {
 	int32 fanin;		/**< #nodes with links to this node */
 	int32 rem_score;	/**< Estimated best score from node.sf to end */
+	int32 best_exit;	/**< Best exit score (used for final nodes only) */
     } info;
     latlink_list_t *exits;      /**< Links out of this node */
     latlink_list_t *entries;    /**< Links into this node */

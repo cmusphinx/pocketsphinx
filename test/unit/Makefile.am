@@ -22,7 +22,9 @@ check_PROGRAMS = \
 	test_fwdtree_bestpath \
 	test_fwdtree_nbest \
 	test_posterior \
+	test_fsg \
 	test_fsg2 \
+	test_fsg3 \
 	test_jsgf \
 	test_lm_read \
 	$(gst_programs)
@@ -44,7 +46,9 @@ TESTS = \
 	test_fwdtree_bestpath \
 	test_fwdtree_nbest \
 	test_posterior \
+	test_fsg \
 	test_fsg2 \
+	test_fsg3 \
 	test_jsgf \
 	test_lm_read \
 	$(gst_tests)

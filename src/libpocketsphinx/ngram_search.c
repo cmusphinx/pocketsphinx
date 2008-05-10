@@ -799,6 +799,8 @@ ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
     if (ngs->bestpath && ngs->done) {
         latlink_t *last;
 
+        /* FIXME: Probably we don't need to recompute this whole DAG. */
+        ngram_search_lattice(search);
         last = ps_lattice_bestpath(ps_search_dag(ngs), ngs->lmset,
                                    ngs->bestpath_fwdtree_lw_ratio,
                                    ngs->ascale);

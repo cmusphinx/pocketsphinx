@@ -353,11 +353,12 @@ ps_lattice_compute_lscr(ps_seg_t *seg, latlink_t *link, int to)
 {
     ngram_model_t *lmset;
 
-    /* Dunno what to do if this isn't N-Gram search (FIXME: this
-     * should be a method of the search object) */
+    /* Language model score is included in the link score for FSG
+     * search.  FIXME: Of course, this is sort of a hack :( */
     if (0 != strcmp(ps_search_name(seg->search), "ngram")) {
-        seg->lback = 2;
+        seg->lback = 1; /* Unigram... */
         seg->lscr = 0;
+        return;
     }
         
     lmset = ((ngram_search_t *)seg->search)->lmset;
@@ -685,10 +686,14 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
         if (ISA_FILLER_WORD(search, x->link->to->basewid)
             && x->link->to != dag->end)
             continue;
+
         /* Best path points to dag->start, obviously. */
-        x->link->path_scr = x->link->ascr +
-            ngram_bg_score(lmset, x->link->to->basewid,
-                           ps_search_start_wid(search), &n_used) * lwf;
+        if (lmset)
+            x->link->path_scr = x->link->ascr +
+                ngram_bg_score(lmset, x->link->to->basewid,
+                               ps_search_start_wid(search), &n_used) * lwf;
+        else
+            x->link->path_scr = x->link->ascr;
         x->link->best_prev = NULL;
         /* Alpha is just the acoustic score as there are no predecessors. */
         x->link->alpha = x->link->ascr * ascale;
@@ -700,7 +705,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
         int32 bprob, n_used;
 
         /* Skip filler nodes in traversal. */
-        if (ISA_FILLER_WORD(search, link->from->basewid))
+        if (ISA_FILLER_WORD(search, link->from->basewid) && link->from != dag->start)
             continue;
         if (ISA_FILLER_WORD(search, link->to->basewid) && link->to != dag->end)
             continue;
@@ -710,9 +715,12 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
         assert(link->path_scr != MAX_NEG_INT32);
 
         /* Calculate common bigram probability for all alphas. */
-        bprob = ngram_ng_prob(lmset,
-                               link->to->basewid,
-                               &link->from->basewid, 1, &n_used);
+        if (lmset)
+            bprob = ngram_ng_prob(lmset,
+                                  link->to->basewid,
+                                  &link->from->basewid, 1, &n_used);
+        else
+            bprob = 0;
         /* Update scores for all paths exiting link->to. */
         for (x = link->to->exits; x; x = x->next) {
             int32 tscore, score;
@@ -727,9 +735,12 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
             x->link->alpha = logmath_add(lmath, x->link->alpha, score);
 
             /* Calculate trigram score for bestpath. */
-            tscore = ngram_tg_score(lmset, x->link->to->basewid,
-                                     link->to->basewid,
-                                     link->from->basewid, &n_used) * lwf;
+            if (lmset)
+                tscore = ngram_tg_score(lmset, x->link->to->basewid,
+                                        link->to->basewid,
+                                        link->from->basewid, &n_used) * lwf;
+            else
+                tscore = 0;
             /* Update link score with maximum link score. */
             score = link->path_scr + tscore + x->link->ascr;
             if (score > x->link->path_scr) {
@@ -745,9 +756,6 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
     bestescr = MAX_NEG_INT32;
     dag->norm = logmath_get_zero(lmath);
 
-    /* FIXME: It's also possible to calculate an alpha for the
-     * implicit edge exiting dag->end.  We are basically assuming that
-     * it has a posterior of 1.0 here. */
     for (x = dag->end->entries; x; x = x->next) {
         if (ISA_FILLER_WORD(search, x->link->from->basewid))
             continue;
@@ -775,15 +783,17 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
     lmath = dag->search->acmod->lmath;
 
     /* Reset all betas to zero. */
-    for (node = dag->nodes; node; node = node->next)
-        for (x = node->exits; x; x = x->next)
+    for (node = dag->nodes; node; node = node->next) {
+        for (x = node->exits; x; x = x->next) {
             x->link->beta = logmath_get_zero(lmath);
+        }
+    }
 
     /* Accumulate backward probabilities for all links. */
     for (link = ps_lattice_reverse_edges(dag, NULL, NULL);
          link; link = ps_lattice_reverse_next(dag, NULL)) {
         /* Skip filler nodes in traversal. */
-        if (ISA_FILLER_WORD(search, link->from->basewid))
+        if (ISA_FILLER_WORD(search, link->from->basewid) && link->from != dag->start)
             continue;
         if (ISA_FILLER_WORD(search, link->to->basewid) && link->to != dag->end)
             continue;
@@ -795,12 +805,15 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
             int32 bprob, n_used;
 
             /* Calculate LM probability. */
-            bprob = ngram_ng_prob(lmset, link->to->basewid,
-                                  &link->from->basewid, 1, &n_used);
+            if (lmset)
+                bprob = ngram_ng_prob(lmset, link->to->basewid,
+                                      &link->from->basewid, 1, &n_used);
+            else
+                bprob = 0;
 
             /* Update beta from all outgoing betas. */
             for (x = link->to->exits; x; x = x->next) {
-                if (ISA_FILLER_WORD(search, x->link->to->basewid) && link->to != dag->end)
+                if (ISA_FILLER_WORD(search, x->link->to->basewid) && x->link->to != dag->end)
                     continue;
                 link->beta = logmath_add(lmath, link->beta,
                                          x->link->beta + bprob + x->link->ascr * ascale);
@@ -839,8 +852,9 @@ best_rem_score(ps_astar_t *nbest, latnode_t * from)
 
         score = best_rem_score(nbest, x->link->to);
         score += x->link->ascr;
-        score += ngram_bg_score(nbest->lmset, x->link->to->basewid,
-                                from->basewid, &n_used) * nbest->lwf;
+        if (nbest->lmset)
+            score += ngram_bg_score(nbest->lmset, x->link->to->basewid,
+                                    from->basewid, &n_used) * nbest->lwf;
         if (score > bestscore)
             bestscore = score;
     }
@@ -924,16 +938,18 @@ path_extend(ps_astar_t *nbest, latpath_t * path)
         newpath->node = x->link->to;
         newpath->parent = path;
         newpath->score = path->score + x->link->ascr;
-        if (path->parent) {
-            newpath->score += nbest->lwf
-                * ngram_tg_score(nbest->lmset, newpath->node->basewid,
-                                 path->node->basewid,
-                                 path->parent->node->basewid, &n_used);
+        if (nbest->lmset) {
+            if (path->parent) {
+                newpath->score += nbest->lwf
+                    * ngram_tg_score(nbest->lmset, newpath->node->basewid,
+                                     path->node->basewid,
+                                     path->parent->node->basewid, &n_used);
+            }
+            else 
+                newpath->score += nbest->lwf
+                    * ngram_bg_score(nbest->lmset, newpath->node->basewid,
+                                     path->node->basewid, &n_used);
         }
-        else 
-            newpath->score += nbest->lwf
-                * ngram_bg_score(nbest->lmset, newpath->node->basewid,
-                                 path->node->basewid, &n_used);
 
         /* Insert new partial path hypothesis into sorted path_list */
         nbest->n_hyp_tried++;
@@ -993,18 +1009,20 @@ ps_astar_start(ps_lattice_t *dag,
     for (node = dag->nodes; node; node = node->next) {
         if (node->sf == sf) {
             latpath_t *path;
-            int32 n_used, scr;
+            int32 n_used;
 
             best_rem_score(nbest, node);
             path = listelem_malloc(nbest->latpath_alloc);
             path->node = node;
             path->parent = NULL;
-            scr = nbest->lwf *
-                (w1 < 0)
-                ? ngram_bg_score(nbest->lmset, node->basewid, w2, &n_used)
-                : ngram_tg_score(nbest->lmset, node->basewid, w2, w1, &n_used);
-            path->score = scr;
-            path_insert(nbest, path, scr + node->info.rem_score);
+            if (nbest->lmset)
+                path->score = nbest->lwf *
+                    (w1 < 0)
+                    ? ngram_bg_score(nbest->lmset, node->basewid, w2, &n_used)
+                    : ngram_tg_score(nbest->lmset, node->basewid, w2, w1, &n_used);
+            else
+                path->score = 0;
+            path_insert(nbest, path, path->score + node->info.rem_score);
         }
     }
 

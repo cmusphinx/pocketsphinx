@@ -122,6 +122,13 @@ fsg_search_init(cmd_ln_t *config,
     fsgs->wip = (int32) (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-wip"))
                            * fsgs->lw);
 
+    /* Best path search (and confidence annotation)? */
+    if (cmd_ln_boolean_r(config, "-bestpath"))
+        fsgs->bestpath = TRUE;
+
+    /* Acoustic score scale for posterior probabilities. */
+    fsgs->ascale = 1.0 / cmd_ln_float32_r(config, "-ascale");
+
     E_INFO("FSG(beam: %d, pbeam: %d, wbeam: %d; wip: %d, pip: %d)\n",
            fsgs->beam_orig, fsgs->pbeam_orig, fsgs->wbeam_orig,
            fsgs->wip, fsgs->pip);
@@ -199,15 +206,23 @@ fsg_search_add_silences(fsg_search_t *fsgs, fsg_model_t *fsg)
     int n_sil;
 
     dict = ps_search_dict(fsgs);
-    /* Add <s> and </s> to the first and last states. */
-    fsg_model_add_silence(fsg, "<s>", fsg_model_start_state(fsg),
-                          cmd_ln_float32_r(ps_search_config(fsgs), "-silprob"));
-    fsg_model_add_silence(fsg, "</s>", fsg_model_final_state(fsg),
-                          cmd_ln_float32_r(ps_search_config(fsgs), "-silprob"));
-    /* Add any other fillers to all states. */
+    /*
+     * NOTE: Unlike N-Gram search, we do not use explicit start and
+     * end symbols.  This is because the start and end nodes are
+     * defined in the grammar.  We do add silence/filler self-loops to
+     * all states in order to allow for silence between words and at
+     * the beginning and end of utterances.
+     *
+     * This has some implications for word graph generation, namely,
+     * that there can (and usually will) be multiple start and end
+     * states in the word graph.  We therefore do add explicit start
+     * and end nodes to the graph.
+     */
+    /* Add silence self-loops to all states. */
     fsg_model_add_silence(fsg, "<sil>", -1,
                           cmd_ln_float32_r(ps_search_config(fsgs), "-silprob"));
     n_sil = 0;
+    /* Add self-loops for all other fillers. */
     for (wid = dict_to_id(dict, "<sil>") + 1; wid < dict_n_words(dict); ++wid) {
         char const *word = dict_word_str(dict, wid);
         /* FIXME: Shouldn't happen?  Also we need a better way to mark fillers. */
@@ -1010,6 +1025,19 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score)
     if (bpidx <= 0)
         return NULL;
 
+    /* If bestpath is enabled and the utterance is complete, then run it. */
+    if (fsgs->bestpath && fsgs->final) {
+        ps_lattice_t *dag;
+        latlink_t *link;
+
+        dag = fsg_search_lattice(search);
+        link = ps_lattice_bestpath(dag, NULL, 1.0, fsgs->ascale);
+        if (link == NULL) /* No hypothesis... */
+            return NULL;
+        if (out_score) *out_score = link->path_scr + dag->final_node_ascr;
+        return ps_lattice_hyp(dag, link);
+    }
+
     bp = bpidx;
     len = 0;
     while (bp > 0) {
@@ -1069,10 +1097,10 @@ fsg_seg_bp2itor(ps_seg_t *seg, fsg_hist_entry_t *hist_entry)
     seg->lscr = hist_entry->fsglink->logs2prob;
     if (ph) {
         /* FIXME: Not sure exactly how cross-word triphones are handled. */
-        seg->ascr = hist_entry->score - ph->score;
+        seg->ascr = hist_entry->score - ph->score - seg->lscr;
     }
     else
-        seg->ascr = hist_entry->score;
+        seg->ascr = hist_entry->score - seg->lscr;
 }
 
 
@@ -1115,6 +1143,19 @@ fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
     if (bpidx <= 0)
         return NULL;
 
+    /* If bestpath is enabled and the utterance is complete, then run it. */
+    if (fsgs->bestpath && fsgs->final) {
+        ps_lattice_t *dag;
+        latlink_t *last;
+
+        dag = fsg_search_lattice(search);
+        last = ps_lattice_bestpath(dag, NULL, 1.0, fsgs->ascale);
+        /* Also calculate betas so we can fill in the posterior
+         * probability field in the segmentation. */
+        ps_lattice_posterior(dag, NULL, fsgs->ascale);
+        return ps_lattice_seg_iter(dag, last, 1.0);
+    }
+
     /* Calling this an "iterator" is a bit of a misnomer since we have
      * to get the entire backtrace in order to produce it.  On the
      * other hand, all we actually need is the bptbl IDs, and we can
@@ -1147,7 +1188,7 @@ fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
 }
 
 static latnode_t *
-new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid)
+new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid, int32 ascr)
 {
     latnode_t *node;
 
@@ -1161,6 +1202,9 @@ new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid)
             node->lef = ef;
         if (node->fef == -1 || node->fef > ef)
             node->fef = ef;
+        /* Update best link score. */
+        if (node->info.best_exit < ascr)
+            node->info.best_exit = ascr;
     }
     else {
         /* New node; link to head of list */
@@ -1171,6 +1215,7 @@ new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid)
         node->reachable = FALSE;
         node->entries = NULL;
         node->exits = NULL;
+        node->info.best_exit = ascr;
 
         node->next = dag->nodes;
         dag->nodes = node;
@@ -1193,41 +1238,81 @@ find_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int32 wid)
 static latnode_t *
 find_start_node(fsg_search_t *fsgs, ps_lattice_t *dag)
 {
-    latnode_t *node, *start = NULL;
+    latnode_t *node;
+    glist_t start = NULL;
+    int nstart = 0;
 
     /* Look for all nodes starting in frame zero with some exits. */
     for (node = dag->nodes; node; node = node->next) {
         if (node->sf == 0 && node->exits) {
-            E_INFO("Potential start node %s.%d:%d\n",
-                   fsg_model_word_str(fsgs->fsg, node->wid), node->fef, node->lef);
-            start = node;
+            E_INFO("Start node %s.%d:%d:%d\n",
+                   fsg_model_word_str(fsgs->fsg, node->wid),
+                   node->sf, node->fef, node->lef);
+            start = glist_add_ptr(start, node);
+            ++nstart;
         }
     }
-    /*
-     * FIXME: If there are multiple nodes above, we need to create an
-     * artificial start node which links to all of them.
-     */
-    return start;
+
+    /* If there was more than one start node candidate, then we need
+     * to create an artificial start node with epsilon transitions to
+     * all of them. */
+    if (nstart == 1) {
+        node = gnode_ptr(start);
+    }
+    else {
+        gnode_t *st;
+        int wid;
+
+        wid = fsg_model_word_add(fsgs->fsg, "<s>");
+        bitvec_set(fsgs->fsg->silwords, wid);
+        node = new_node(dag, fsgs->fsg, 0, 0, wid, 0);
+        for (st = start; st; st = gnode_next(st))
+            ps_lattice_link(dag, node, gnode_ptr(st), 0, 0);
+    }
+    glist_free(start);
+    return node;
 }
 
 static latnode_t *
 find_end_node(fsg_search_t *fsgs, ps_lattice_t *dag)
 {
-    latnode_t *node, *end = NULL;
+    latnode_t *node;
+    glist_t end = NULL;
+    int nend = 0;
 
     /* Look for all nodes ending in last frame with some entries. */
     for (node = dag->nodes; node; node = node->next) {
         if (node->lef == fsgs->frame - 1 && node->entries) {
-            E_INFO("Potential end node %s.%d:%d\n",
-                   fsg_model_word_str(fsgs->fsg, node->wid), node->fef, node->lef);
-            end = node;
+            E_INFO("End node %s.%d:%d:%d (%d)\n",
+                   fsg_model_word_str(fsgs->fsg, node->wid),
+                   node->sf, node->fef, node->lef, node->info.best_exit);
+            end = glist_add_ptr(end, node);
+            ++nend;
         }
     }
-    /*
-     * FIXME: If there are multiple nodes above, we need to create an
-     * artificial end node which links to all of them.
-     */
-    return end;
+
+    /* If there was more than one end node candidate, then we need to
+     * create an artificial end node with epsilon transitions out of
+     * all of them. */
+    if (nend == 1) {
+        node = gnode_ptr(end);
+    }
+    else {
+        gnode_t *st;
+        int wid;
+
+        wid = fsg_model_word_add(fsgs->fsg, "</s>");
+        bitvec_set(fsgs->fsg->silwords, wid);
+        node = new_node(dag, fsgs->fsg, fsgs->frame, fsgs->frame, wid, 0);
+        /* Use the "best" (in reality it will be the only) exit link
+         * score from this final node as the link score. */
+        for (st = end; st; st = gnode_next(st)) {
+            latnode_t *src = gnode_ptr(st);
+            ps_lattice_link(dag, src, node, src->info.best_exit, fsgs->frame);
+        }
+    }
+    glist_free(end);
+    return node;
 }
 
 static void
@@ -1270,7 +1355,7 @@ fsg_search_lattice(ps_search_t *search)
     fsg_model_t *fsg;
     latnode_t *node;
     ps_lattice_t *dag;
-    int32 i, n, exit;
+    int32 i, n;
 
     fsgs = (fsg_search_t *)search;
     /* Remove previous lattice. */
@@ -1288,11 +1373,10 @@ fsg_search_lattice(ps_search_t *search)
      * first find all those nodes.
      */
     n = fsg_history_n_entries(fsgs->history);
-    /* Figure out which entry is the actual final one. */
-    exit = fsg_search_find_exit(fsgs, fsgs->frame, fsgs->final, NULL);
     for (i = 0; i < n; ++i) {
         fsg_hist_entry_t *fh = fsg_history_entry_get(fsgs->history, i);
         latnode_t *node;
+        int32 ascr;
         int sf;
 
         /* Skip null transitions. */
@@ -1302,13 +1386,28 @@ fsg_search_lattice(ps_search_t *search)
         /* Find the start node of this link. */
         if (fh->pred) {
             fsg_hist_entry_t *pfh = fsg_history_entry_get(fsgs->history, fh->pred);
+            /* FIXME: We include the transition score in the lattice
+             * link score.  This is because of the practical
+             * difficulty of obtaining it separately in bestpath or
+             * forward-backward search, and because it is essentially
+             * a unigram probability, so there is no need to treat it
+             * separately from the acoustic score.  However, it's not
+             * clear that this will actually yield correct results.*/
+            ascr = fh->score - pfh->score;
             sf = pfh->frame + 1;
         }
-        else
+        else {
+            ascr = fh->score;
             sf = 0;
+        }
 
-        /* Create or update a node for this link. */
-        node = new_node(dag, fsg, sf, fh->frame, fh->fsglink->wid);
+        /*
+         * Note that although scores are tied to links rather than
+         * nodes, it's possible that there are no links out of the
+         * destination node, and thus we need to preserve its score in
+         * case it turns out to be utterance-final.
+         */
+        node = new_node(dag, fsg, sf, fh->frame, fh->fsglink->wid, ascr);
     }
 
     /*
@@ -1318,6 +1417,7 @@ fsg_search_lattice(ps_search_t *search)
     for (i = 0; i < n; ++i) {
         fsg_hist_entry_t *fh = fsg_history_entry_get(fsgs->history, i);
         latnode_t *src, *dest;
+        int32 ascr;
         int sf;
         int j;
 
@@ -1325,13 +1425,16 @@ fsg_search_lattice(ps_search_t *search)
         if (fh->fsglink == NULL || fh->fsglink->wid == -1)
             continue;
 
-        /* Find the start node of this link. */
+        /* Find the start node of this link and calculate its link score. */
         if (fh->pred) {
             fsg_hist_entry_t *pfh = fsg_history_entry_get(fsgs->history, fh->pred);
             sf = pfh->frame + 1;
+            ascr = fh->score - pfh->score;
         }
-        else
+        else {
+            ascr = fh->score;
             sf = 0;
+        }
         src = find_node(dag, fsg, sf, fh->fsglink->wid);
     
         /*
@@ -1345,7 +1448,7 @@ fsg_search_lattice(ps_search_t *search)
             for (gn = fsg_model_trans(fsg, fh->fsglink->to_state, j); gn; gn = gnode_next(gn)) {
                 fsg_link_t *link = gnode_ptr(gn);
                 if ((dest = find_node(dag, fsg, sf, link->wid)) != NULL)
-                    ps_lattice_link(dag, src, dest, fh->score, fh->frame);
+                    ps_lattice_link(dag, src, dest, ascr, fh->frame);
             }
 
             /*
@@ -1361,7 +1464,7 @@ fsg_search_lattice(ps_search_t *search)
                     for (gn2 = fsg_model_trans(fsg, j, k); gn2; gn2 = gnode_next(gn2)) {
                         fsg_link_t *link = gnode_ptr(gn2);
                         if ((dest = find_node(dag, fsg, sf, link->wid)) != NULL)
-                            ps_lattice_link(dag, src, dest, fh->score, fh->frame);
+                            ps_lattice_link(dag, src, dest, ascr, fh->frame);
                     }
                 }
             }
