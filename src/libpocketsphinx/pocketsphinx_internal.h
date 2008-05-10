@@ -87,6 +87,7 @@ struct ps_search_s {
     acmod_t *acmod;        /**< Acoustic model. */
     dict_t *dict;          /**< Pronunciation dictionary. */
     char *hyp_str;         /**< Current hypothesis string. */
+    ps_lattice_t *dag;	   /**< Current hypothesis word graph. */
 
     /* Magical word IDs that must exist in the dictionary: */
     int32 start_wid;       /**< Start word ID. */
@@ -98,6 +99,7 @@ struct ps_search_s {
 #define ps_search_config(s) ps_search_base(s)->config
 #define ps_search_acmod(s) ps_search_base(s)->acmod
 #define ps_search_dict(s) ps_search_base(s)->dict
+#define ps_search_dag(s) ps_search_base(s)->dag
 
 #define ps_search_name(s) ps_search_base(s)->vt->name
 #define ps_search_start(s) (*(ps_search_base(s)->vt->start))(s)

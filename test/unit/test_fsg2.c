@@ -14,6 +14,7 @@ main(int argc, char *argv[])
 	cmd_ln_t *config;
 	acmod_t *acmod;
 	fsg_search_t *fsgs;
+	ps_lattice_t *dag;
 	ps_seg_t *seg;
 	int32 score;
 	clock_t c;
@@ -65,13 +66,21 @@ main(int argc, char *argv[])
 	     seg = ps_seg_next(seg)) {
 		char const *word;
 		int sf, ef;
+		int32 post, lscr, ascr, lback;
 
 		word = ps_seg_word(seg);
 		ps_seg_frames(seg, &sf, &ef);
-		printf("%s %d %d\n", word, sf, ef);
+		post = ps_seg_prob(seg, &ascr, &lscr, &lback);
+		printf("%s (%d:%d) P(w|o) = %f ascr = %d lscr = %d lback = %d\n", word, sf, ef,
+		       logmath_exp(ps_get_logmath(ps), post), ascr, lscr, lback);
 	}
 	c = clock() - c;
 	printf("5 * fsg search in %.2f sec\n", (double)c / CLOCKS_PER_SEC);
+
+	/* Now get the DAG and play with it. */
+	dag = ps_get_lattice(ps);
+	ps_lattice_write(dag, "test_fsg2.lat");
+
 	ps_free(ps);
 
 	return 0;

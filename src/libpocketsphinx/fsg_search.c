@@ -63,6 +63,7 @@
 #include "fsg_search_internal.h"
 #include "fsg_history.h"
 #include "fsg_lextree.h"
+#include "ps_lattice.h"
 
 /* Turn this on for detailed debugging dump */
 #define __FSG_DBG__		0
@@ -990,7 +991,8 @@ fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_sc
     }
 
     /* This here's the one we want. */
-    *out_score = bestscore;
+    if (out_score)
+        *out_score = bestscore;
     return besthist;
 }
 
@@ -1062,6 +1064,15 @@ fsg_seg_bp2itor(ps_seg_t *seg, fsg_hist_entry_t *hist_entry)
     /* This is kind of silly but it happens for null transitions. */
     if (seg->sf > seg->ef) seg->sf = seg->ef;
     seg->prob = 0; /* Bogus value... */
+    /* "Language model" score = transition probability. */
+    seg->lback = 1;
+    seg->lscr = hist_entry->fsglink->logs2prob;
+    if (ph) {
+        /* FIXME: Not sure exactly how cross-word triphones are handled. */
+        seg->ascr = hist_entry->score - ph->score;
+    }
+    else
+        seg->ascr = hist_entry->score;
 }
 
 
@@ -1111,6 +1122,7 @@ fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
     itor = ckd_calloc(1, sizeof(*itor));
     itor->base.vt = &fsg_segfuncs;
     itor->base.search = search;
+    itor->base.lwf = 1.0;
     itor->n_hist = 0;
     bp = bpidx;
     while (bp > 0) {
@@ -1134,9 +1146,271 @@ fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
     return (ps_seg_t *)itor;
 }
 
+static latnode_t *
+new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid)
+{
+    latnode_t *node;
+
+    for (node = dag->nodes; node; node = node->next)
+        if (node->sf == sf && node->wid == wid)
+            break;
+
+    if (node) {
+        /* Update end frames. */
+        if (node->lef == -1 || node->lef < ef)
+            node->lef = ef;
+        if (node->fef == -1 || node->fef > ef)
+            node->fef = ef;
+    }
+    else {
+        /* New node; link to head of list */
+        node = listelem_malloc(dag->latnode_alloc);
+        node->wid = wid;
+        node->sf = sf;
+        node->fef = node->lef = ef;
+        node->reachable = FALSE;
+        node->entries = NULL;
+        node->exits = NULL;
+
+        node->next = dag->nodes;
+        dag->nodes = node;
+    }
+
+    return node;
+}
+
+static latnode_t *
+find_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int32 wid)
+{
+    latnode_t *node;
+
+    for (node = dag->nodes; node; node = node->next)
+        if (node->sf == sf && node->wid == wid)
+            break;
+    return node;
+}
+
+static latnode_t *
+find_start_node(fsg_search_t *fsgs, ps_lattice_t *dag)
+{
+    latnode_t *node, *start = NULL;
+
+    /* Look for all nodes starting in frame zero with some exits. */
+    for (node = dag->nodes; node; node = node->next) {
+        if (node->sf == 0 && node->exits) {
+            E_INFO("Potential start node %s.%d:%d\n",
+                   fsg_model_word_str(fsgs->fsg, node->wid), node->fef, node->lef);
+            start = node;
+        }
+    }
+    /*
+     * FIXME: If there are multiple nodes above, we need to create an
+     * artificial start node which links to all of them.
+     */
+    return start;
+}
+
+static latnode_t *
+find_end_node(fsg_search_t *fsgs, ps_lattice_t *dag)
+{
+    latnode_t *node, *end = NULL;
+
+    /* Look for all nodes ending in last frame with some entries. */
+    for (node = dag->nodes; node; node = node->next) {
+        if (node->lef == fsgs->frame - 1 && node->entries) {
+            E_INFO("Potential end node %s.%d:%d\n",
+                   fsg_model_word_str(fsgs->fsg, node->wid), node->fef, node->lef);
+            end = node;
+        }
+    }
+    /*
+     * FIXME: If there are multiple nodes above, we need to create an
+     * artificial end node which links to all of them.
+     */
+    return end;
+}
+
+static void
+mark_reachable(ps_lattice_t *dag, latnode_t *end)
+{
+    glist_t q;
+
+    /* It doesn't matter which order we do this in. */
+    end->reachable = TRUE;
+    q = glist_add_ptr(NULL, end);
+    while (q) {
+        latnode_t *node = gnode_ptr(q);
+        latlink_list_t *x;
+
+        /* Pop the front of the list. */
+        q = gnode_free(q, NULL);
+        /* Expand all its predecessors that haven't been seen yet. */
+        for (x = node->entries; x; x = x->next) {
+            latnode_t *next = x->link->from;
+            if (!next->reachable) {
+                next->reachable = TRUE;
+                q = glist_add_ptr(q, next);
+            }
+        }
+    }
+}
+
+/**
+ * Generate a lattice from FSG search results.
+ *
+ * One might think that this is simply a matter of adding acoustic
+ * scores to the FSG's edges.  However, one would be wrong.  The
+ * crucial difference here is that the word lattice is acyclic, and it
+ * also contains timing information.
+ */
 static ps_lattice_t *
 fsg_search_lattice(ps_search_t *search)
 {
-    /* FIXME: Does nothing for now. */
+    fsg_search_t *fsgs;
+    fsg_model_t *fsg;
+    latnode_t *node;
+    ps_lattice_t *dag;
+    int32 i, n, exit;
+
+    fsgs = (fsg_search_t *)search;
+    /* Remove previous lattice. */
+    if (search->dag) {
+        ps_lattice_free(search->dag);
+        search->dag = NULL;
+    }
+    dag = ps_lattice_init(search, fsgs->frame);
+    fsg = fsgs->fsg;
+
+    /*
+     * Each history table entry represents a link in the word graph.
+     * The set of nodes is determined by the number of unique
+     * (word,start-frame) pairs in the history table.  So we will
+     * first find all those nodes.
+     */
+    n = fsg_history_n_entries(fsgs->history);
+    /* Figure out which entry is the actual final one. */
+    exit = fsg_search_find_exit(fsgs, fsgs->frame, fsgs->final, NULL);
+    for (i = 0; i < n; ++i) {
+        fsg_hist_entry_t *fh = fsg_history_entry_get(fsgs->history, i);
+        latnode_t *node;
+        int sf;
+
+        /* Skip null transitions. */
+        if (fh->fsglink == NULL || fh->fsglink->wid == -1)
+            continue;
+
+        /* Find the start node of this link. */
+        if (fh->pred) {
+            fsg_hist_entry_t *pfh = fsg_history_entry_get(fsgs->history, fh->pred);
+            sf = pfh->frame + 1;
+        }
+        else
+            sf = 0;
+
+        /* Create or update a node for this link. */
+        node = new_node(dag, fsg, sf, fh->frame, fh->fsglink->wid);
+    }
+
+    /*
+     * Now, we will create links only to nodes that actually exist.
+     */
+    n = fsg_history_n_entries(fsgs->history);
+    for (i = 0; i < n; ++i) {
+        fsg_hist_entry_t *fh = fsg_history_entry_get(fsgs->history, i);
+        latnode_t *src, *dest;
+        int sf;
+        int j;
+
+        /* Skip null transitions. */
+        if (fh->fsglink == NULL || fh->fsglink->wid == -1)
+            continue;
+
+        /* Find the start node of this link. */
+        if (fh->pred) {
+            fsg_hist_entry_t *pfh = fsg_history_entry_get(fsgs->history, fh->pred);
+            sf = pfh->frame + 1;
+        }
+        else
+            sf = 0;
+        src = find_node(dag, fsg, sf, fh->fsglink->wid);
+    
+        /*
+         * For each non-epsilon link following this one, look for a
+         * matching node in the lattice and link to it.
+         */
+        sf = fh->frame + 1;
+        for (j = 0; j < fsg->n_state; ++j) {
+            gnode_t *gn;
+
+            for (gn = fsg_model_trans(fsg, fh->fsglink->to_state, j); gn; gn = gnode_next(gn)) {
+                fsg_link_t *link = gnode_ptr(gn);
+                if ((dest = find_node(dag, fsg, sf, link->wid)) != NULL)
+                    ps_lattice_link(dag, src, dest, fh->score, fh->frame);
+            }
+
+            /*
+             * Transitive closure on nulls has already been done, so we
+             * just need to look one link forward from them.
+             */
+            if (fsg_model_null_trans(fsg, fh->fsglink->to_state,j)) {
+                gnode_t *gn2;
+                int k;
+
+                /* Add all non-null links out of j. */
+                for (k = 0; k < fsg->n_state; ++k) {
+                    for (gn2 = fsg_model_trans(fsg, j, k); gn2; gn2 = gnode_next(gn2)) {
+                        fsg_link_t *link = gnode_ptr(gn2);
+                        if ((dest = find_node(dag, fsg, sf, link->wid)) != NULL)
+                            ps_lattice_link(dag, src, dest, fh->score, fh->frame);
+                    }
+                }
+            }
+        }
+    }
+
+    /* Figure out which nodes are the start and end nodes. */
+    if ((dag->start = find_start_node(fsgs, dag)) == NULL)
+        goto error_out;
+    if ((dag->end = find_end_node(fsgs, dag)) == NULL)
+        goto error_out;
+    E_INFO("lattice start node %s.%d end node %s.%d\n",
+           fsg_model_word_str(fsg, dag->start->wid), dag->start->sf,
+           fsg_model_word_str(fsg, dag->end->wid), dag->end->sf);
+    /* FIXME: Need to calculate final_node_ascr here. */
+
+    /*
+     * Convert word IDs from FSG to dictionary.
+     */
+    for (node = dag->nodes; node; node = node->next) {
+        node->wid = dict_to_id(dag->search->dict,
+                               fsg_model_word_str(fsg, node->wid));
+        node->basewid = dict_base_wid(dag->search->dict, node->wid);
+    }
+
+    /*
+     * Now we are done, because the links in the graph are uniquely
+     * defined by the history table.  However we should remove any
+     * nodes which are not reachable from the end node of the FSG.
+     * Everything is reachable from the start node by definition.
+     */
+    mark_reachable(dag, dag->end);
+
+    ps_lattice_delete_unreachable(dag);
+    {
+        int32 silpen, fillpen;
+
+        silpen = (int32)(logmath_log(fsg->lmath,
+                                     cmd_ln_float32_r(ps_search_config(fsgs), "-silprob"))
+                         * fsg->lw);
+        fillpen = (int32)(logmath_log(fsg->lmath,
+                                      cmd_ln_float32_r(ps_search_config(fsgs), "-fillprob"))
+                          * fsg->lw);
+        ps_lattice_bypass_fillers(dag, silpen, fillpen);
+    }
+    return dag;
+
+error_out:
+    ps_lattice_free(dag);
     return NULL;
+
 }

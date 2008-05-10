@@ -194,6 +194,17 @@ void ps_lattice_link(ps_lattice_t *dag, latnode_t *from, latnode_t *to,
                      int32 score, int32 ef);
 
 /**
+ * Bypass filler words.
+ */
+void ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen);
+
+/**
+ * Remove nodes marked as unreachable.
+ */
+void ps_lattice_delete_unreachable(ps_lattice_t *dag);
+
+
+/**
  * Create a new lattice link element.
  */
 latlink_list_t *latlink_list_new(ps_lattice_t *dag, latlink_t *link,

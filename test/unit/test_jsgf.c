@@ -21,6 +21,7 @@ main(int argc, char *argv[])
 	jsgf_rule_t *rule;
 	fsg_model_t *fsg;
 	ps_seg_t *seg;
+	ps_lattice_t *dag;
 	int32 score;
 	clock_t c;
 	int i;
@@ -88,6 +89,9 @@ main(int argc, char *argv[])
 	}
 	c = clock() - c;
 	printf("5 * fsg search in %.2f sec\n", (double)c / CLOCKS_PER_SEC);
+
+	dag = ps_get_lattice(ps);
+	ps_lattice_write(dag, "test_jsgf.lat");
 	ps_free(ps);
 	jsgf_grammar_free(jsgf);
 	fsg_search_free(ps_search_base(fsgs));

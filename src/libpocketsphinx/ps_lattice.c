@@ -61,8 +61,6 @@ ps_lattice_link(ps_lattice_t *dag, latnode_t *from, latnode_t *to, int32 score, 
 {
     latlink_list_t *fwdlink;
 
-    assert(to->reachable);
-
     /* Look for an existing link between "from" and "to" nodes */
     for (fwdlink = from->exits; fwdlink; fwdlink = fwdlink->next)
         if (fwdlink->link->to == to)
@@ -95,6 +93,130 @@ ps_lattice_link(ps_lattice_t *dag, latnode_t *from, latnode_t *to, int32 score, 
             fwdlink->link->ascr = score;
             fwdlink->link->ef = ef;
         }
+    }
+}
+
+void
+ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
+{
+    latnode_t *node;
+    int32 score;
+
+    /* Bypass filler nodes */
+    for (node = dag->nodes; node; node = node->next) {
+        latlink_list_t *revlink;
+        if (node == dag->end || !ISA_FILLER_WORD(dag->search, node->basewid))
+            continue;
+
+        /* Replace each link entering filler node with links to all its successors */
+        for (revlink = node->entries; revlink; revlink = revlink->next) {
+            latlink_list_t *forlink;
+            latlink_t *rlink = revlink->link;
+
+            score = (node->basewid == ps_search_silence_wid(dag->search)) ? silpen : fillpen;
+            score += rlink->ascr;
+            /*
+             * Make links from predecessor of filler (from) to successors of filler.
+             * But if successor is a filler, it has already been eliminated since it
+             * appears earlier in latnode_list (see build...).  So it can be skipped.
+             */
+            for (forlink = node->exits; forlink; forlink = forlink->next) {
+                latlink_t *flink = forlink->link;
+                if (!ISA_FILLER_WORD(dag->search, flink->to->basewid)) {
+                    ps_lattice_link(dag, rlink->from, flink->to,
+                                    score + flink->ascr, flink->ef);
+                }
+            }
+        }
+    }
+}
+
+static void
+delete_node(ps_lattice_t *dag, latnode_t *node)
+{
+    latlink_list_t *x, *next_x;
+
+    for (x = node->exits; x; x = next_x) {
+        next_x = x->next;
+        x->link->from = NULL;
+        listelem_free(dag->latlink_list_alloc, x);
+    }
+    for (x = node->entries; x; x = next_x) {
+        next_x = x->next;
+        x->link->to = NULL;
+        listelem_free(dag->latlink_list_alloc, x);
+    }
+    listelem_free(dag->latnode_alloc, node);
+}
+
+static void
+remove_dangling_links(ps_lattice_t *dag, latnode_t *node)
+{
+    latlink_list_t *x, *prev_x, *next_x;
+
+    prev_x = NULL;
+    for (x = node->exits; x; x = next_x) {
+        next_x = x->next;
+        if (x->link->to == NULL) {
+            if (prev_x)
+                prev_x->next = next_x;
+            else
+                node->exits = next_x;
+            listelem_free(dag->latlink_alloc, x->link);
+            listelem_free(dag->latlink_list_alloc, x);
+        }
+        else
+            prev_x = x;
+    }
+    prev_x = NULL;
+    for (x = node->entries; x; x = next_x) {
+        next_x = x->next;
+        if (x->link->from == NULL) {
+            if (prev_x)
+                prev_x->next = next_x;
+            else
+                node->exits = next_x;
+            listelem_free(dag->latlink_alloc, x->link);
+            listelem_free(dag->latlink_list_alloc, x);
+        }
+        else
+            prev_x = x;
+    }
+}
+
+void
+ps_lattice_delete_unreachable(ps_lattice_t *dag)
+{
+    latnode_t *node, *prev_node, *next_node;
+    int i;
+
+    /* Remove unreachable nodes from the list of nodes. */
+    prev_node = NULL;
+    for (node = dag->nodes; node; node = next_node) {
+        next_node = node->next;
+        if (!node->reachable) {
+            if (prev_node)
+                prev_node->next = next_node;
+            else
+                dag->nodes = next_node;
+            /* Delete this node and NULLify links to it. */
+            delete_node(dag, node);
+        }
+        else
+            prev_node = node;
+    }
+
+    /* Remove all links to and from unreachable nodes. */
+    i = 0;
+    for (node = dag->nodes; node; node = node->next) {
+        /* Assign sequence numbers. */
+        node->id = i++;
+
+        /* We should obviously not encounter unreachable nodes here! */
+        assert(node->reachable);
+
+        /* Remove all links that go nowhere. */
+        remove_dangling_links(dag, node);
     }
 }
 

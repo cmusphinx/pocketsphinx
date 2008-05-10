@@ -755,4 +755,6 @@ ps_search_deinit(ps_search_t *search)
     /* FIXME: We will have refcounting on acmod, config, etc, at which
      * point we will free them here too. */
     ckd_free(search->hyp_str);
+
+    ps_lattice_free(search->dag);
 }

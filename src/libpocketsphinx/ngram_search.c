@@ -271,7 +271,6 @@ ngram_search_free(ps_search_t *search)
         ngram_fwdtree_deinit(ngs);
     if (ngs->fwdflat)
         ngram_fwdflat_deinit(ngs);
-    ps_lattice_free(ngs->dag);
 
     hmm_context_free(ngs->hmmctx);
     listelem_alloc_free(ngs->chan_alloc);
@@ -659,13 +658,13 @@ ngram_search_hyp(ps_search_t *search, int32 *out_score)
                                  ngs->fwdflat
                                  ? ngs->fwdflat_fwdtree_lw_ratio : 1.0);
         ngram_search_lattice(search);
-        link = ps_lattice_bestpath(ngs->dag, ngs->lmset,
+        link = ps_lattice_bestpath(ps_search_dag(ngs), ngs->lmset,
                                    ngs->bestpath_fwdtree_lw_ratio,
                                    ngs->ascale);
         if (link == NULL) /* No hypothesis... */
             return NULL;
-        if (out_score) *out_score = link->path_scr + ngs->dag->final_node_ascr;
-        return ps_lattice_hyp(ngs->dag, link);
+        if (out_score) *out_score = link->path_scr + ps_search_dag(ngs)->final_node_ascr;
+        return ps_lattice_hyp(ps_search_dag(ngs), link);
     }
     else {
         int32 bpidx;
@@ -800,13 +799,13 @@ ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
     if (ngs->bestpath && ngs->done) {
         latlink_t *last;
 
-        last = ps_lattice_bestpath(ngs->dag, ngs->lmset,
+        last = ps_lattice_bestpath(ps_search_dag(ngs), ngs->lmset,
                                    ngs->bestpath_fwdtree_lw_ratio,
                                    ngs->ascale);
         /* Also calculate betas so we can fill in the posterior
          * probability field in the segmentation. */
-        ps_lattice_posterior(ngs->dag, ngs->lmset, ngs->ascale);
-        return ps_lattice_seg_iter(ngs->dag, last,
+        ps_lattice_posterior(ps_search_dag(ngs), ngs->lmset, ngs->ascale);
+        return ps_lattice_seg_iter(ps_search_dag(ngs), last,
                                    ngs->bestpath_fwdtree_lw_ratio);
     }
     else {
@@ -951,130 +950,6 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
     return NULL;
 }
 
-static void
-bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
-{
-    latnode_t *node;
-    int32 score;
-
-    /* Bypass filler nodes */
-    for (node = dag->nodes; node; node = node->next) {
-        latlink_list_t *revlink;
-        if (node == dag->end || !ISA_FILLER_WORD(dag->search, node->basewid))
-            continue;
-
-        /* Replace each link entering filler node with links to all its successors */
-        for (revlink = node->entries; revlink; revlink = revlink->next) {
-            latlink_list_t *forlink;
-            latlink_t *rlink = revlink->link;
-
-            score = (node->basewid == ps_search_silence_wid(dag->search)) ? silpen : fillpen;
-            score += rlink->ascr;
-            /*
-             * Make links from predecessor of filler (from) to successors of filler.
-             * But if successor is a filler, it has already been eliminated since it
-             * appears earlier in latnode_list (see build...).  So it can be skipped.
-             */
-            for (forlink = node->exits; forlink; forlink = forlink->next) {
-                latlink_t *flink = forlink->link;
-                if (!ISA_FILLER_WORD(dag->search, flink->to->basewid)) {
-                    ps_lattice_link(dag, rlink->from, flink->to,
-                                    score + flink->ascr, flink->ef);
-                }
-            }
-        }
-    }
-}
-
-static void
-delete_node(ps_lattice_t *dag, latnode_t *node)
-{
-    latlink_list_t *x, *next_x;
-
-    for (x = node->exits; x; x = next_x) {
-        next_x = x->next;
-        x->link->from = NULL;
-        listelem_free(dag->latlink_list_alloc, x);
-    }
-    for (x = node->entries; x; x = next_x) {
-        next_x = x->next;
-        x->link->to = NULL;
-        listelem_free(dag->latlink_list_alloc, x);
-    }
-    listelem_free(dag->latnode_alloc, node);
-}
-
-static void
-remove_dangling_links(ps_lattice_t *dag, latnode_t *node)
-{
-    latlink_list_t *x, *prev_x, *next_x;
-
-    prev_x = NULL;
-    for (x = node->exits; x; x = next_x) {
-        next_x = x->next;
-        if (x->link->to == NULL) {
-            if (prev_x)
-                prev_x->next = next_x;
-            else
-                node->exits = next_x;
-            listelem_free(dag->latlink_alloc, x->link);
-            listelem_free(dag->latlink_list_alloc, x);
-        }
-        else
-            prev_x = x;
-    }
-    prev_x = NULL;
-    for (x = node->entries; x; x = next_x) {
-        next_x = x->next;
-        if (x->link->from == NULL) {
-            if (prev_x)
-                prev_x->next = next_x;
-            else
-                node->exits = next_x;
-            listelem_free(dag->latlink_alloc, x->link);
-            listelem_free(dag->latlink_list_alloc, x);
-        }
-        else
-            prev_x = x;
-    }
-}
-
-static void
-delete_unreachable(ps_lattice_t *dag)
-{
-    latnode_t *node, *prev_node, *next_node;
-    int i;
-
-    /* Remove unreachable nodes from the list of nodes. */
-    prev_node = NULL;
-    for (node = dag->nodes; node; node = next_node) {
-        next_node = node->next;
-        if (!node->reachable) {
-            if (prev_node)
-                prev_node->next = next_node;
-            else
-                dag->nodes = next_node;
-            /* Delete this node and NULLify links to it. */
-            delete_node(dag, node);
-        }
-        else
-            prev_node = node;
-    }
-
-    /* Remove all links to and from unreachable nodes. */
-    i = 0;
-    for (node = dag->nodes; node; node = node->next) {
-        /* Assign sequence numbers. */
-        node->id = i++;
-
-        /* We should obviously not encounter unreachable nodes here! */
-        assert(node->reachable);
-
-        /* Remove all links that go nowhere. */
-        remove_dangling_links(dag, node);
-    }
-}
-
 /*
  * Build lattice from bptable.
  */
@@ -1088,9 +963,9 @@ ngram_search_lattice(ps_search_t *search)
 
     ngs = (ngram_search_t *)search;
     /* Remove previous lattice and cache this one. */
-    if (ngs->dag) {
-        ps_lattice_free(ngs->dag);
-        ngs->dag = NULL;
+    if (ps_search_dag(ngs)) {
+        ps_lattice_free(ps_search_dag(ngs));
+        ps_search_dag(ngs) = NULL;
     }
 
     dag = ps_lattice_init(search, ngs->n_frame);
@@ -1179,13 +1054,13 @@ ngram_search_lattice(ps_search_t *search)
         dag->end->basewid = ps_search_finish_wid(ngs);
 
     /* Free nodes unreachable from dag->end and their links */
-    delete_unreachable(dag);
+    ps_lattice_delete_unreachable(dag);
 
     /* Build links around silence and filler words, since they do not
      * exist in the language model. */
-    bypass_fillers(dag, ngs->silpen, ngs->fillpen);
+    ps_lattice_bypass_fillers(dag, ngs->silpen, ngs->fillpen);
 
-    ngs->dag = dag;
+    ps_search_dag(ngs) = dag;
     return dag;
 
 error_out:

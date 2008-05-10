@@ -330,7 +330,6 @@ struct ngram_search_s {
     /*
      * DAG (3rd pass) search stuff.
      */
-    ps_lattice_t *dag; /**< Word graph of current utterance. */
     float32 bestpath_fwdtree_lw_ratio;
     float32 ascale; /**< Acoustic score scale for posterior probabilities. */
 
