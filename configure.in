@@ -202,7 +202,6 @@ model/lm/swb/Makefile
 model/lm/tidigits/Makefile
 scripts/Makefile
 scripts/pocketsphinx_test
-scripts/pocketsphinx_swb
 scripts/pocketsphinx_tidigits
 test/Makefile
 test/testfuncs.sh
