@@ -67,6 +67,7 @@ main(int argc, char *argv[])
 	g_object_set(G_OBJECT(filter), "hmm", MODELDIR "/hmm/wsj1", NULL);
 	g_object_set(G_OBJECT(filter), "lm", MODELDIR "/lm/turtle/turtle.lm.DMP", NULL);
 	g_object_set(G_OBJECT(filter), "dict", MODELDIR "/lm/turtle/turtle.dic", NULL);
+	g_object_set(G_OBJECT(filter), "latdir", ".", NULL);
 	sink = gst_element_factory_make("filesink", "sink");
 	g_object_set(G_OBJECT(sink), "location", "test_gst.out", NULL);
 	gst_bin_add_many(GST_BIN(pipeline),

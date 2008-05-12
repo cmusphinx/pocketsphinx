@@ -63,7 +63,9 @@
 
 #include <string.h>
 #include <gst/gst.h>
+
 #include <sphinx_config.h>
+#include <strfuncs.h>
 
 #include "gstpocketsphinx.h"
 #include "gstvader.h"
@@ -391,7 +393,9 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_boolean(ps, "-bestpath", value);
         break;
     case PROP_LATDIR:
-        gst_pocketsphinx_set_string(ps, "-outlatdir", value);
+        if (ps->latdir)
+            g_free(ps->latdir);
+        ps->latdir = g_strdup(g_value_get_string(value));
         break;
     case PROP_MAXHMMPF:
         gst_pocketsphinx_set_int(ps, "-maxhmmpf", value);
@@ -412,36 +416,38 @@ static void
 gst_pocketsphinx_get_property(GObject * object, guint prop_id,
                               GValue * value, GParamSpec * pspec)
 {
+    GstPocketSphinx *ps = GST_POCKETSPHINX(object);
+
     switch (prop_id) {
     case PROP_HMM_DIR:
-        g_value_set_string(value, cmd_ln_str("-hmm"));
+        g_value_set_string(value, cmd_ln_str_r(ps->config, "-hmm"));
         break;
     case PROP_LM_FILE:
-        g_value_set_string(value, cmd_ln_str("-lm"));
+        g_value_set_string(value, cmd_ln_str_r(ps->config, "-lm"));
         break;
     case PROP_DICT_FILE:
-        g_value_set_string(value, cmd_ln_str("-dict"));
+        g_value_set_string(value, cmd_ln_str_r(ps->config, "-dict"));
         break;
     case PROP_FSG_FILE:
-        g_value_set_string(value, cmd_ln_str("-fsg"));
+        g_value_set_string(value, cmd_ln_str_r(ps->config, "-fsg"));
         break;
     case PROP_FWDFLAT:
-        g_value_set_boolean(value, cmd_ln_boolean("-fwdflat"));
+        g_value_set_boolean(value, cmd_ln_boolean_r(ps->config, "-fwdflat"));
         break;
     case PROP_BESTPATH:
-        g_value_set_boolean(value, cmd_ln_boolean("-bestpath"));
+        g_value_set_boolean(value, cmd_ln_boolean_r(ps->config, "-bestpath"));
         break;
     case PROP_LATDIR:
-        g_value_set_string(value, cmd_ln_str("-outlatdir"));
+        g_value_set_string(value, ps->latdir);
         break;
     case PROP_MAXHMMPF:
-        g_value_set_int(value, cmd_ln_int32("-maxhmmpf"));
+        g_value_set_int(value, cmd_ln_int32_r(ps->config, "-maxhmmpf"));
         break;
     case PROP_MAXWPF:
-        g_value_set_int(value, cmd_ln_int32("-maxwpf"));
+        g_value_set_int(value, cmd_ln_int32_r(ps->config, "-maxwpf"));
         break;
     case PROP_DSRATIO:
-        g_value_set_int(value, cmd_ln_int32("-ds"));
+        g_value_set_int(value, cmd_ln_int32_r(ps->config, "-ds"));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -550,6 +556,15 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
             ps->listening = FALSE;
             ps_end_utt(ps->ps);
             hyp = ps_get_hyp(ps->ps, &score, &uttid);
+            /* Dump the lattice if requested. */
+            if (ps->latdir) {
+                char *latfile = string_join(ps->latdir, "/", uttid, ".lat", NULL);
+                ps_lattice_t *dag;
+
+                if ((dag = ps_get_lattice(ps->ps)))
+                    ps_lattice_write(dag, latfile);
+                ckd_free(latfile);
+            }
         }
         if (hyp) {
             /* Emit a signal for applications. */

@@ -67,6 +67,7 @@ struct _GstPocketSphinx
 
     ps_decoder_t *ps;
     cmd_ln_t *config;
+    gchar *latdir;                 /**< Output directory for word lattices. */
 
     GHashTable *arghash;
     gboolean inited;
