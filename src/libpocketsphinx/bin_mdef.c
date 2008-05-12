@@ -55,6 +55,7 @@
 #include <prim_type.h>
 #include <ckd_alloc.h>
 #include <byteorder.h>
+#include <case.h>
 #include <err.h>
 
 /* Local headers. */
@@ -104,8 +105,12 @@ bin_mdef_read_text(cmd_ln_t *config, const char *filename)
         bmdef->ciname[i] =
             bmdef->ciname[i - 1] + strlen(bmdef->ciname[i - 1]) + 1;
         strcpy(bmdef->ciname[i], mdef->ciphone[i].name);
-        if (i > 0 && strcmp(bmdef->ciname[i - 1], bmdef->ciname[i]) > 0)
-            E_FATAL("Phone names are not in sorted order, sorry.");
+        if (i > 0 && strcmp(bmdef->ciname[i - 1], bmdef->ciname[i]) > 0) {
+            /* FIXME: there should be a solution to this, actually. */
+            E_ERROR("Phone names are not in sorted order, sorry.");
+            bin_mdef_free(bmdef);
+            return NULL;
+        }
     }
 
     /* Copy over phone information. */
@@ -662,6 +667,29 @@ bin_mdef_ciphone_id(bin_mdef_t * m, const char *ciphone)
 
         mid = (low + high) / 2;
         c = strcmp(ciphone, m->ciname[mid]);
+        if (c == 0)
+            return mid;
+        else if (c > 0)
+            low = mid + 1;
+        else if (c < 0)
+            high = mid;
+    }
+    return -1;
+}
+
+int
+bin_mdef_ciphone_id_nocase(bin_mdef_t * m, const char *ciphone)
+{
+    int low, mid, high;
+
+    /* Exact binary search on m->ciphone */
+    low = 0;
+    high = m->n_ciphone;
+    while (low < high) {
+        int c;
+
+        mid = (low + high) / 2;
+        c = strcmp_nocase(ciphone, m->ciname[mid]);
         if (c == 0)
             return mid;
         else if (c > 0)

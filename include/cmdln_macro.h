@@ -217,6 +217,10 @@
       ARG_STRING,						\
       NULL,							\
       "Noise word pronunciation dictionary input file" },	\
+    { "-dictcase",						\
+      ARG_BOOLEAN,						\
+      "no",							\
+      "Dictionary is case sensitive (NOTE: case insensitivity applies to ASCII characters only)" },	\
     { "-maxnewoov",						\
       ARG_INT32,						\
       "20",							\

@@ -136,11 +136,9 @@
 
 #define QUIT(x)		{fprintf x; exit(-1);}
 
-static void buildEntryTable(glist_t list, int16 *** table_p,
-                            bin_mdef_t *mdef);
-static void buildExitTable(glist_t list, int16 *** table_p,
-                           int16 *** permuTab_p, int16 ** sizeTab_p,
-                           bin_mdef_t *mdef);
+static void buildEntryTable(dict_t *dict, glist_t list, int16 *** table_p);
+static void buildExitTable(dict_t *dict, glist_t list, int16 *** table_p,
+                           int16 *** permuTab_p, int16 ** sizeTab_p);
 static int32 addToLeftContextTable(dict_t *dict, char *diphone);
 static int32 addToRightContextTable(dict_t *dict, char *diphone);
 static dict_entry_t *_new_dict_entry(dict_t *dict,
@@ -198,14 +196,23 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
     j += 3;                     /* </s>, <s> and <sil> */
     if (dict->dict)
         hash_table_free(dict->dict);
-    dict->dict = hash_table_new(j, HASH_CASE_NO);
+    if (cmd_ln_boolean_r(config, "-dictcase"))
+        dict->dict = hash_table_new(j, HASH_CASE_YES);
+    else
+        dict->dict = hash_table_new(j, HASH_CASE_NO);
 
     /* Context table size hint: (#CI*#CI)/2 */
     j = bin_mdef_n_ciphone(mdef);
     j = ((j * j) >> 1) + 1;
     if (use_context) {
-        dict->lcHT = hash_table_new(j, HASH_CASE_YES);
-        dict->rcHT = hash_table_new(j, HASH_CASE_YES);
+        if (cmd_ln_boolean_r(config, "-dictcase")) {
+            dict->lcHT = hash_table_new(j, HASH_CASE_YES);
+            dict->rcHT = hash_table_new(j, HASH_CASE_YES);
+        }
+        else {
+            dict->lcHT = hash_table_new(j, HASH_CASE_NO);
+            dict->rcHT = hash_table_new(j, HASH_CASE_NO);
+        }
     }
 
     /* Placeholders (dummy pronunciations) for new words that can be
@@ -248,7 +255,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
         /*
          * Check if there is a special end silence phone.
          */
-        if (-1 == bin_mdef_ciphone_id(mdef, "SILe")) {
+        if (-1 == dict_ciphone_id(dict, "SILe")) {
             strcpy(pronstr, "SIL");
             entry = _new_dict_entry(dict, "</s>", pronstr, FALSE);
             if (!entry) {
@@ -279,7 +286,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
         /*
          * Check if there is a special begin silence phone.
          */
-        if (-1 == bin_mdef_ciphone_id(mdef, "SILb")) {
+        if (-1 == dict_ciphone_id(dict, "SILb")) {
             strcpy(pronstr, "SIL");
             entry =
                 _new_dict_entry(dict, "<s>", pronstr, FALSE);
@@ -332,15 +339,15 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
 
     E_INFO("LEFT CONTEXT TABLES\n");
     dict->lcList = glist_reverse(dict->lcList);
-    buildEntryTable(dict->lcList, &dict->lcFwdTable, mdef);
-    buildExitTable(dict->lcList, &dict->lcBwdTable, &dict->lcBwdPermTable,
-                   &dict->lcBwdSizeTable, mdef);
+    buildEntryTable(dict, dict->lcList, &dict->lcFwdTable);
+    buildExitTable(dict, dict->lcList, &dict->lcBwdTable, &dict->lcBwdPermTable,
+                   &dict->lcBwdSizeTable);
 
     E_INFO("RIGHT CONTEXT TABLES\n");
     dict->rcList = glist_reverse(dict->rcList);
-    buildEntryTable(dict->rcList, &dict->rcBwdTable, mdef);
-    buildExitTable(dict->rcList, &dict->rcFwdTable, &dict->rcFwdPermTable,
-                   &dict->rcFwdSizeTable, mdef);
+    buildEntryTable(dict, dict->rcList, &dict->rcBwdTable);
+    buildExitTable(dict, dict->rcList, &dict->rcFwdTable, &dict->rcFwdPermTable,
+                   &dict->rcFwdSizeTable);
 
     return dict;
 }
@@ -540,7 +547,7 @@ _new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_conte
             position[pronoun_len] = WORD_POSN_BEGIN;
             continue;
         }
-        ciPhoneId[pronoun_len] = bin_mdef_ciphone_id(mdef, phone[pronoun_len]);
+        ciPhoneId[pronoun_len] = dict_ciphone_id(dict, phone[pronoun_len]);
         if (ciPhoneId[pronoun_len] == -1) {
             E_ERROR("'%s': Unknown phone '%s'\n", word_str,
                     phone[pronoun_len]);
@@ -578,23 +585,23 @@ _new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_conte
         }
         else {
             triphone_ids[i] = bin_mdef_phone_id(mdef,
-                                                bin_mdef_ciphone_id(mdef, phone[i]),
+                                                dict_ciphone_id(dict, phone[i]),
                                                 -1,
-                                                bin_mdef_ciphone_id(mdef, phone[i+1]),
+                                                dict_ciphone_id(dict, phone[i+1]),
                                                 WORD_POSN_BEGIN);
             if (triphone_ids[i] < 0)
-                triphone_ids[i] = bin_mdef_ciphone_id(mdef, phone[i]);
+                triphone_ids[i] = dict_ciphone_id(dict, phone[i]);
             triphone_ids[i] = bin_mdef_pid2ssid(mdef, triphone_ids[i]);
         }
 
         for (i = 1; i < pronoun_len - 1; i++) {
             triphone_ids[i] = bin_mdef_phone_id(mdef,
-                                                bin_mdef_ciphone_id(mdef, phone[i]),
-                                                bin_mdef_ciphone_id(mdef, phone[i-1]),
-                                                bin_mdef_ciphone_id(mdef, phone[i+1]),
+                                                dict_ciphone_id(dict, phone[i]),
+                                                dict_ciphone_id(dict, phone[i-1]),
+                                                dict_ciphone_id(dict, phone[i+1]),
                                                 position[i]);
             if (triphone_ids[i] < 0)
-                triphone_ids[i] = bin_mdef_ciphone_id(mdef, phone[i]);
+                triphone_ids[i] = dict_ciphone_id(dict, phone[i]);
             triphone_ids[i] = bin_mdef_pid2ssid(mdef, triphone_ids[i]);
         }
 
@@ -605,12 +612,12 @@ _new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_conte
         }
         else {
             triphone_ids[i] = bin_mdef_phone_id(mdef,
-                                                bin_mdef_ciphone_id(mdef, phone[i]),
-                                                bin_mdef_ciphone_id(mdef, phone[i-1]),
+                                                dict_ciphone_id(dict, phone[i]),
+                                                dict_ciphone_id(dict, phone[i-1]),
                                                 -1,
                                                 position[i]);
             if (triphone_ids[i] < 0)
-                triphone_ids[i] = bin_mdef_ciphone_id(mdef, phone[i]);
+                triphone_ids[i] = dict_ciphone_id(dict, phone[i]);
             triphone_ids[i] = bin_mdef_pid2ssid(mdef, triphone_ids[i]);
         }
     }
@@ -632,7 +639,7 @@ _new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_conte
             triphone_ids[1] = rcTabId;
         }
         else {
-            triphone_ids[0] = bin_mdef_ciphone_id(mdef,phone[0]);
+            triphone_ids[0] = dict_ciphone_id(dict,phone[0]);
             triphone_ids[0] = bin_mdef_pid2ssid(mdef,triphone_ids[0]);
         }
     }
@@ -708,7 +715,7 @@ replace_dict_entry(dict_t * dict,
             break;
         pronoun_str = phone[pronoun_len] + n + 1;
 
-        ciPhoneId[pronoun_len] = bin_mdef_ciphone_id(dict->mdef, phone[pronoun_len]);
+        ciPhoneId[pronoun_len] = dict_ciphone_id(dict, phone[pronoun_len]);
         if (ciPhoneId[pronoun_len] == -1) {
             E_ERROR("'%s': Unknown phone '%s'\n", word_str,
                     phone[pronoun_len]);
@@ -753,9 +760,9 @@ replace_dict_entry(dict_t * dict,
 
     for (i = 1; i < pronoun_len - 1; i++) {
         triphone_ids[i] = bin_mdef_phone_id(dict->mdef,
-                                            bin_mdef_ciphone_id(dict->mdef, phone[i]),
-                                            bin_mdef_ciphone_id(dict->mdef, phone[i-1]),
-                                            bin_mdef_ciphone_id(dict->mdef, phone[i+1]),
+                                            dict_ciphone_id(dict, phone[i]),
+                                            dict_ciphone_id(dict, phone[i-1]),
+                                            dict_ciphone_id(dict, phone[i+1]),
                                             WORD_POSN_INTERNAL);
         triphone_ids[i] = bin_mdef_pid2ssid(dict->mdef, triphone_ids[i]);
     }
@@ -876,12 +883,116 @@ addToRightContextTable(dict_t *dict, char *diphone)
     return addToContextTable(diphone, dict->rcHT, &dict->rcList);
 }
 
+
+static int32
+parse_triphone(const char *instr, char *ciph, char *lc, char *rc, char *pc)
+/*------------------------------------------------------------*
+ * The ANSI standard scanf can't deal with empty field matches
+ * so we have this routine.
+ */
+{
+    const char *lp;
+    char *cp;
+
+    ciph[0] = '\0';
+    lc[0] = '\0';
+    rc[0] = '\0';
+    pc[0] = '\0';
+
+    /* parse ci-phone */
+    for (lp = instr, cp = ciph; (*lp != '(') && (*lp != '\0'); lp++, cp++)
+        *cp = *lp;
+    *cp = '\0';
+    if (*lp == '\0') {
+        return 1;
+    }
+
+    /* parse leftcontext */
+    for (lp++, cp = lc; (*lp != ',') && (*lp != '\0'); lp++, cp++)
+        *cp = *lp;
+    *cp = '\0';
+    if (*lp == '\0') {
+        return 2;
+    }
+
+    /* parse rightcontext */
+    for (lp++, cp = rc; (*lp != ')') && (*lp != '\0'); lp++, cp++)
+        *cp = *lp;
+    *cp = '\0';
+    if (*lp == '\0') {
+        return 3;
+    }
+
+    /* parse positioncontext */
+    for (lp++, cp = pc; (*lp != '\0'); lp++, cp++)
+        *cp = *lp;
+    *cp = '\0';
+    return 4;
+}
+
+static int32
+triphone_to_id(dict_t *dict, char const *phone_str)
+{
+    char *ci, *lc, *rc, *pc;
+    int32 cipid, lcpid, rcpid, pid;
+    word_posn_t wpos;
+    size_t len;
+
+    /* Play it safe - subparts must be shorter than phone_str */
+    len = strlen(phone_str) + 1;
+    /* Do one malloc to avoid fragmentation on WinCE (and yet, this
+     * may still be too many). */
+    ci = ckd_calloc(len * 4 + 1, 1);
+    lc = ci + len;
+    rc = lc + len;
+    pc = rc + len;
+
+    len = parse_triphone(phone_str, ci, lc, rc, pc);
+    cipid = dict_ciphone_id(dict, ci);
+    if (cipid < 0) {
+        free(ci);
+        return NO_PHONE;
+    }
+    if (len > 1) {
+        lcpid = dict_ciphone_id(dict, lc);
+        rcpid = dict_ciphone_id(dict, rc);
+        if (lcpid < 0 || rcpid < 0) {
+            free(ci);
+            return NO_PHONE;
+        }
+        if (len == 4) {
+            switch (*pc) {
+            case 'b':
+                wpos = WORD_POSN_BEGIN;
+                break;
+            case 'e':
+                wpos = WORD_POSN_END;
+                break;
+            case 's':
+                wpos = WORD_POSN_SINGLE;
+                break;
+            default:
+                wpos = WORD_POSN_INTERNAL;
+            }
+        }
+        else {
+            wpos = WORD_POSN_INTERNAL;
+        }
+        pid = bin_mdef_phone_id(dict->mdef, cipid, lcpid, rcpid, wpos);
+    }
+    else
+        pid = cipid;
+
+    free(ci);
+    return pid;
+}
+
 static void
-buildEntryTable(glist_t list, int16 *** table_p, bin_mdef_t *mdef)
+buildEntryTable(dict_t *dict, glist_t list, int16 *** table_p)
 {
     int32 i, j;
     char triphoneStr[128];
-    int32 ciCount = bin_mdef_n_ciphone(mdef);
+    int32 ciCount = bin_mdef_n_ciphone(dict->mdef);
     int32 silContext = 0;
     int32 triphoneContext = 0;
     int32 noContext = 0;
@@ -903,8 +1014,8 @@ buildEntryTable(glist_t list, int16 *** table_p, bin_mdef_t *mdef)
              * Look for the triphone
              */
             sprintf(triphoneStr, (char *)gnode_ptr(gn),
-                    bin_mdef_ciphone_str(mdef, j));
-            phoneid = phone_to_id(mdef, triphoneStr);
+                    bin_mdef_ciphone_str(dict->mdef, j));
+            phoneid = triphone_to_id(dict, triphoneStr);
             if (phoneid >= 0)
                 triphoneContext++;
             /*
@@ -912,7 +1023,7 @@ buildEntryTable(glist_t list, int16 *** table_p, bin_mdef_t *mdef)
              */
             if (phoneid < 0) {
                 sprintf(triphoneStr, (char *)gnode_ptr(gn), "SIL");
-                phoneid = phone_to_id(mdef, triphoneStr);
+                phoneid = triphone_to_id(dict, triphoneStr);
                 if (phoneid >= 0)
                     silContext++;
             }
@@ -925,10 +1036,10 @@ buildEntryTable(glist_t list, int16 *** table_p, bin_mdef_t *mdef)
                 strcpy(stmp, (char *)gnode_ptr(gn));
                 p = strchr(stmp, '(');
                 *p = '\0';
-                phoneid = phone_to_id(mdef, stmp);
+                phoneid = triphone_to_id(dict, stmp);
                 noContext++;
             }
-            table[i][j] = bin_mdef_pid2ssid(mdef, phoneid);
+            table[i][j] = bin_mdef_pid2ssid(dict->mdef, phoneid);
         }
     }
     E_INFO("\t%6d triphones\n\t%6d pseudo diphones\n\t%6d uniphones\n",
@@ -951,12 +1062,12 @@ cmpPT(void const *a, void const *b)
 }
 
 static void
-buildExitTable(glist_t list, int16 *** table_p, int16 *** permuTab_p,
-               int16 ** sizeTab_p, bin_mdef_t *mdef)
+buildExitTable(dict_t *dict, glist_t list, int16 *** table_p, int16 *** permuTab_p,
+               int16 ** sizeTab_p)
 {
     int32 i, j, k;
     char triphoneStr[128];
-    int32 ciCount = bin_mdef_n_ciphone(mdef);
+    int32 ciCount = bin_mdef_n_ciphone(dict->mdef);
     int32 silContext = 0;
     int32 triphoneContext = 0;
     int32 noContext = 0;
@@ -987,8 +1098,8 @@ buildExitTable(glist_t list, int16 *** table_p, int16 *** permuTab_p,
              * Look for the triphone
              */
             sprintf(triphoneStr, (char *)gnode_ptr(gn),
-                    bin_mdef_ciphone_str(mdef, j));
-            phoneid = phone_to_id(mdef, triphoneStr);
+                    bin_mdef_ciphone_str(dict->mdef, j));
+            phoneid = triphone_to_id(dict, triphoneStr);
             if (phoneid >= 0)
                 triphoneContext++;
             /*
@@ -996,7 +1107,7 @@ buildExitTable(glist_t list, int16 *** table_p, int16 *** permuTab_p,
              */
             if (phoneid < 0) {
                 sprintf(triphoneStr, (char *)gnode_ptr(gn), "SIL");
-                phoneid = phone_to_id(mdef, triphoneStr);
+                phoneid = triphone_to_id(dict, triphoneStr);
                 if (phoneid >= 0)
                     silContext++;
             }
@@ -1009,10 +1120,10 @@ buildExitTable(glist_t list, int16 *** table_p, int16 *** permuTab_p,
                 strcpy(stmp, (char *)gnode_ptr(gn));
                 p = strchr(stmp, '(');
                 *p = '\0';
-                phoneid = phone_to_id(mdef, stmp);
+                phoneid = triphone_to_id(dict, stmp);
                 noContext++;
             }
-            table[i][j] = bin_mdef_pid2ssid(mdef, phoneid);
+            table[i][j] = bin_mdef_pid2ssid(dict->mdef, phoneid);
         }
     }
     /*

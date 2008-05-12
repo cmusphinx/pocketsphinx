@@ -121,4 +121,8 @@ int32 dict_is_filler_word (dict_t *dict, int32 wid);
 
 #define dict_n_words(d)		((d)->dict_entry_count)
 
+#define dict_ciphone_id(d,p) \
+    ((d)->dict->nocase \
+     ? bin_mdef_ciphone_id_nocase((d)->mdef, (p)) \
+     : bin_mdef_ciphone_id((d)->mdef, (p)))
 #endif

@@ -34,17 +34,14 @@
  * ====================================================================
  *
  */
-/*********************************************************************
- *
- * File: bin_mdef.h
+/**
+ * @file bin_mdef.h
  * 
- * Description: 
- *	Binary format model definition files, with support for
- *	heterogeneous topologies and variable-size N-phones
+ * Binary format model definition files, with support for
+ * heterogeneous topologies and variable-size N-phones
  *
- * Author: 
- * 	David Huggins-Daines <dhuggins@cs.cmu.edu>
- *********************************************************************/
+ * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ */
 #ifndef __BIN_MDEF_H__
 #define __BIN_MDEF_H__
 
@@ -70,7 +67,9 @@ extern "C" {
 #define ATTRIBUTE_PACKED
 #endif
 
-/**< Phone entry (on-disk, 12 bytes) */
+/**
+ * Phone entry (on-disk, 12 bytes)
+ */
 typedef struct mdef_entry_s mdef_entry_t;
 struct mdef_entry_s {
 	int32 ssid; /**< Senone sequence ID */
@@ -90,7 +89,9 @@ struct mdef_entry_s {
 	} info;
 } ATTRIBUTE_PACKED;
 
-/**< Node in CD phone tree (on-disk, 8 bytes).  */
+/**
+ * Node in CD phone tree (on-disk, 8 bytes).
+ */
 typedef struct cd_tree_s cd_tree_t;
 struct cd_tree_s {
 	int16 ctx; /**< Context (word position or CI phone) */
@@ -101,7 +102,9 @@ struct cd_tree_s {
 	} c;
 };
 
-/**< Model definition structure (in-memory). */
+/**
+ * Model definition structure (in-memory).
+ */
 typedef struct bin_mdef_s bin_mdef_t;
 struct bin_mdef_s {
 	int32 n_ciphone;    /**< Number of base (CI) phones */
@@ -161,9 +164,19 @@ int bin_mdef_write_text(bin_mdef_t *m, const char *filename);
 /** Free a binary mdef. */
 void bin_mdef_free(bin_mdef_t *m);
 
-/* Return value: ciphone id for the given ciphone string name */
+/**
+ * Context-independent phone lookup.
+ * @return phone id for ciphone.
+ */
 int bin_mdef_ciphone_id (bin_mdef_t *m,	/* In: Model structure being queried */
 			 const char *ciphone); /* In: ciphone for which id wanted */
+
+/**
+ * Case-insensitive context-independent phone lookup.
+ * @return phone id for ciphone.
+ */
+int bin_mdef_ciphone_id_nocase(bin_mdef_t *m,	/* In: Model structure being queried */
+			       const char *ciphone); /* In: ciphone for which id wanted */
 
 /* Return value: READ-ONLY ciphone string name for the given ciphone id */
 const char *bin_mdef_ciphone_str (bin_mdef_t *m,	/* In: Model structure being queried */
@@ -176,9 +189,10 @@ int bin_mdef_phone_id (bin_mdef_t *m,	/* In: Model structure being queried */
 		       int32 r,		/* In: right context ciphone id */
 		       int32 pos);	/* In: Word position */
 
-/*
+/**
  * Create a phone string for the given phone (base or triphone) id in the given buf.
- * Return value: 0 if successful, -1 if error.
+ *
+ * @return 0 if successful, -1 if error.
  */
 int bin_mdef_phone_str (bin_mdef_t *m,	/* In: Model structure being queried */
 			int pid,	/* In: phone id being queried */
