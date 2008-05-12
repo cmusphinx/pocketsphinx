@@ -495,4 +495,8 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * <pocketsphinx.h>.
  */
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #endif /* __POCKETSPHINX_H__ */

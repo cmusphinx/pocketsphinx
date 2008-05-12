@@ -130,4 +130,8 @@ fsg_model_t *fsg_set_remove_byname(fsg_set_t *fsgs, char const *name);
 POCKETSPHINX_EXPORT
 fsg_model_t *fsg_set_select(fsg_set_t *fsgs, const char *name);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #endif /* __FSG_SET_H__ */
