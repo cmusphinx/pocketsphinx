@@ -7,6 +7,7 @@ EXTRA_DIST=compare_table.pl				\
 	data/something.raw                              \
 	data/goforward.fsg                              \
 	data/goforward.gram                             \
+	data/defective.dic                              \
 	data/tidigits/man.ah.111a.mfc			\
 	data/tidigits/man.ah.1b.mfc			\
 	data/tidigits/man.ah.2934za.mfc			\
