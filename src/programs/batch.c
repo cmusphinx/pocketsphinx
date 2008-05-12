@@ -271,6 +271,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing", hypfh);
             return;
         }
+        setbuf(hypfh, NULL);
     }
     if (cmd_ln_str_r(config, "-hypseg")) {
         hypsegfh = fopen(cmd_ln_str_r(config, "-hypseg"), "w");
@@ -279,6 +280,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                            hypsegfh);
             return;
         }
+        setbuf(hypfh, NULL);
     }
 
     i = 0;
