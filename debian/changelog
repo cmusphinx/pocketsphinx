@@ -1,3 +1,9 @@
+pocketsphinx (0.5-0svn1) unstable; urgency=low
+
+  * Snapshot version!
+
+ -- David Huggins-Daines <dhuggins@cs.cmu.edu>  Mon, 12 May 2008 12:59:35 -0400
+
 pocketsphinx (0.4-0svn4) unstable; urgency=low
 
   * Add changes from Ubuntu packaging
