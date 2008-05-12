@@ -15,14 +15,15 @@ main(int argc, char *argv[])
 	cmd_ln_t *config;
 	acmod_t *acmod;
 	ngram_search_t *ngs;
+	ps_lattice_t *dag;
 	clock_t c;
 	int i;
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/hmm/wsj1",
-				"-lm", MODELDIR "/lm/swb/swb.lm.DMP",
-				"-dict", MODELDIR "/lm/swb/swb.dic",
+				"-lm", DATADIR "/wsj/wlist5o.nvp.lm.DMP",
+				"-dict", MODELDIR "/lm/cmudict.0.6d",
 				"-fwdtree", "yes",
 				"-fwdflat", "no",
 				"-bestpath", "yes",
@@ -42,10 +43,14 @@ main(int argc, char *argv[])
 		size_t nread;
 		int16 const *bptr;
 		int nfr;
-		ps_lattice_t *dag;
 		ps_astar_t *nbest;
 		latpath_t *path;
+		char *besthyp;
 		int i;
+
+		/* PocketSphinx API would do this for us but we have to do it manually here. */
+		ps_lattice_free(ps->search->dag);
+		ps->search->dag = NULL;
 
 		TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
 		TEST_EQUAL(0, acmod_start_utt(acmod));
@@ -70,21 +75,25 @@ main(int argc, char *argv[])
 			E_ERROR("Failed to build DAG!\n");
 			return 1;
 		}
-		printf("BESTPATH: %s\n",
-		       ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset, 1.461538, 15.0)));
+		besthyp = ckd_salloc
+			(ps_lattice_hyp(dag, ps_lattice_bestpath
+					(dag, ngs->lmset, 1.461538, 15.0)));
+		printf("BESTPATH: %s\n", besthyp);
 
-		/* FIXME: We should assert that bestpath and 1-best
-		 * give the same results (they really ought to...) */
 		TEST_ASSERT(nbest = ps_astar_start(dag, ngs->lmset, 1.461538, 0, -1, -1, -1));
 		i = 0;
 		while ((path = ps_astar_next(nbest))) {
+			if (i == 0)
+				TEST_EQUAL(0,
+					   strcmp(besthyp, ps_astar_hyp(nbest, path)));
 			if (i++ < 10)
 				printf("NBEST %d: %s\n", i,
 				       ps_astar_hyp(nbest, path));
 		}
 		ps_astar_finish(nbest);
+		ckd_free(besthyp);
 	}
-	TEST_EQUAL(0, strcmp("GO FOR WORDS TEN YEARS",
+	TEST_EQUAL(0, strcmp("GO FORWARD TEN YEARS",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
 	c = clock() - c;
 	printf("5 * fwdtree + bestpath + N-best search in %.2f sec\n",

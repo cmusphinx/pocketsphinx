@@ -20,8 +20,8 @@ main(int argc, char *argv[])
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/hmm/wsj1",
-				"-lm", MODELDIR "/lm/swb/swb.lm.DMP",
-				"-dict", MODELDIR "/lm/swb/swb.dic",
+				"-lm", DATADIR "/wsj/wlist5o.nvp.lm.DMP",
+				"-dict", MODELDIR "/lm/cmudict.0.6d",
 				"-fwdtree", "yes",
 				"-fwdflat", "no",
 				"-bestpath", "no",
@@ -59,7 +59,7 @@ main(int argc, char *argv[])
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
-	TEST_EQUAL(0, strcmp("GO FOR WORDS TEN YEARS",
+	TEST_EQUAL(0, strcmp("GO FORWARD TEN YEARS",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
 	c = clock() - c;
 	printf("5 * fwdtree search in %.2f sec\n",

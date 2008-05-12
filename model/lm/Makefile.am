@@ -1,4 +1,4 @@
-SUBDIRS = turtle swb tidigits
+SUBDIRS = turtle tidigits
 
 lmdir = $(prefix)/share/pocketsphinx/model/lm
 

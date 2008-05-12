@@ -198,7 +198,6 @@ model/hmm/wsj1/Makefile
 model/hmm/tidigits/Makefile
 model/lm/Makefile
 model/lm/turtle/Makefile
-model/lm/swb/Makefile
 model/lm/tidigits/Makefile
 scripts/Makefile
 scripts/pocketsphinx_test

@@ -146,8 +146,7 @@ acmod_init_feat(acmod_t *acmod)
                           cmd_ln_float32_r(acmod->config, "-agcthresh"));
     }
 
-    if (cmd_ln_exists_r(acmod->config, "-cmninit")
-        && 0 == strcmp(cmd_ln_str_r(acmod->config, "-cmn"), "prior")) {
+    if (cmd_ln_exists_r(acmod->config, "-cmninit")) {
         char *c, *cc, *vallist;
         int32 nvals;
 

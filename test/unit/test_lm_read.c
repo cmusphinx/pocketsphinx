@@ -19,8 +19,8 @@ main(int argc, char *argv[])
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/hmm/wsj1",
-				"-lm", MODELDIR "/lm/swb/swb.lm.DMP",
-				"-dict", MODELDIR "/lm/swb/swb.dic",
+				"-lm", DATADIR "/wsj/wlist5o.nvp.lm.DMP",
+				"-dict", DATADIR "/defective.dic",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = ps_init(config));
@@ -28,8 +28,7 @@ main(int argc, char *argv[])
 	ps_decode_raw(ps, rawfh, "goforward", -1);
 	hyp = ps_get_hyp(ps, &score, &uttid);
 	printf("%s: %s (%d)\n", uttid, hyp, score);
-	TEST_ASSERT((0 == strcmp(hyp, "GO FORWARD TEN YEARS"))
-		    || (0 == strcmp(hyp, "GO FOR WORDS TEN YEARS")));
+	TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN YEARS"));
 
 	/* Now load the turtle language model. */
 	lm = ngram_model_read(config, 

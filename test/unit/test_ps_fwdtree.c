@@ -14,12 +14,12 @@ main(int argc, char *argv[])
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/hmm/wsj1",
-				"-lm", MODELDIR "/lm/swb/swb.lm.DMP",
-				"-dict", MODELDIR "/lm/swb/swb.dic",
+				"-lm", DATADIR "/wsj/wlist5o.nvp.lm.DMP",
+				"-dict", MODELDIR "/lm/cmudict.0.6d",
 				"-fwdtree", "yes",
 				"-fwdflat", "no",
 				"-bestpath", "no",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
-	return ps_decoder_test(config, "FWDTREE", "GO FOR WORDS TEN YEARS");
+	return ps_decoder_test(config, "FWDTREE", "GO FORWARD TEN YEARS");
 }

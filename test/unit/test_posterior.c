@@ -138,12 +138,13 @@ main(int argc, char *argv[])
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/hmm/wsj1",
-				"-lm", MODELDIR "/lm/swb/swb.lm.DMP",
-				"-dict", MODELDIR "/lm/swb/swb.dic",
+				"-lm", DATADIR "/wsj/wlist5o.nvp.lm.DMP",
+				"-dict", MODELDIR "/lm/cmudict.0.6d",
 				"-fwdtree", "yes",
 				"-fwdflat", "no",
 				"-bestpath", "yes",
 				"-input_endian", "little",
+				"-cmninit", "37",
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = ps_init(config));
 	rv = test_decode(ps);
