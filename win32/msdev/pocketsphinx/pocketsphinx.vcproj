@@ -287,10 +287,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\libpocketsphinx\phone.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\include\pocketsphinx.h"
 				>
 			</File>
@@ -605,28 +601,6 @@
 			<File
 				RelativePath="..\..\..\src\libpocketsphinx\ngram_search_fwdtree.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\phone.c"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\src\libpocketsphinx\pocketsphinx.c"
