@@ -126,7 +126,6 @@
 
 /* Local headers. */
 #include "dict.h"
-#include "phone.h"
 
 #ifdef DEBUG
 #define DFPRINTF(x)		fprintf x
@@ -951,14 +950,14 @@ triphone_to_id(dict_t *dict, char const *phone_str)
     cipid = dict_ciphone_id(dict, ci);
     if (cipid < 0) {
         free(ci);
-        return NO_PHONE;
+        return -1;
     }
     if (len > 1) {
         lcpid = dict_ciphone_id(dict, lc);
         rcpid = dict_ciphone_id(dict, rc);
         if (lcpid < 0 || rcpid < 0) {
             free(ci);
-            return NO_PHONE;
+            return -1;
         }
         if (len == 4) {
             switch (*pc) {
