@@ -100,9 +100,6 @@ enum
 /* Default command line. (will go away soon and be constructed using properties) */
 static char *default_argv[] = {
     "gst-pocketsphinx",
-    "-hmm", POCKETSPHINX_PREFIX "/share/pocketsphinx/model/hmm/wsj1",
-    "-lm", POCKETSPHINX_PREFIX "/share/pocketsphinx/model/lm/swb/swb.lm.DMP",
-    "-dict", POCKETSPHINX_PREFIX "/share/pocketsphinx/model/lm/swb/swb.dic",
     "-samprate", "8000",
     "-cmn", "prior",
     "-nfft", "256",
@@ -197,13 +194,13 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
         (gobject_class, PROP_HMM_DIR,
          g_param_spec_string("hmm", "HMM Directory",
                              "Directory containing acoustic model parameters",
-                             POCKETSPHINX_PREFIX "/share/pocketsphinx/model/hmm/wsj1",
+                             NULL,
                              G_PARAM_READWRITE));
     g_object_class_install_property
         (gobject_class, PROP_LM_FILE,
          g_param_spec_string("lm", "LM File",
                              "Language model file",
-                             POCKETSPHINX_PREFIX "/share/pocketsphinx/model/lm/swb/swb.lm.DMP",
+                             NULL,
                              G_PARAM_READWRITE));
     g_object_class_install_property
         (gobject_class, PROP_FSG_FILE,
@@ -220,7 +217,7 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
         (gobject_class, PROP_DICT_FILE,
          g_param_spec_string("dict", "Dictionary File",
                              "Dictionary File",
-                             POCKETSPHINX_PREFIX "/share/pocketsphinx/model/lm/swb/swb.dic",
+                             NULL,
                              G_PARAM_READWRITE));
 
     g_object_class_install_property
