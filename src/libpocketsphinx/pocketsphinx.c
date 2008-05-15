@@ -100,6 +100,7 @@ ps_init_defaults(ps_decoder_t *ps)
         ps_add_file(ps, "-sendump", hmmdir, "sendump");
         ps_add_file(ps, "-kdtree", hmmdir, "kdtrees");
         ps_add_file(ps, "-fdict", hmmdir, "noisedict");
+        ps_add_file(ps, "-lda", hmmdir, "feature_transform");
         ps_add_file(ps, "-featparams", hmmdir, "feat.params");
     }
 }

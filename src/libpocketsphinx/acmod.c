@@ -140,6 +140,15 @@ acmod_init_feat(acmod_t *acmod)
     if (acmod->fcb == NULL)
         return -1;
 
+    if (cmd_ln_str_r(acmod->config, "-lda")) {
+        E_INFO("Reading linear feature transformation from %s\n",
+               cmd_ln_str_r(acmod->config, "-lda"));
+        if (feat_read_lda(acmod->fcb,
+                          cmd_ln_str_r(acmod->config, "-lda"),
+                          cmd_ln_int32_r(acmod->config, "-ldadim")) < 0)
+            return -1;
+    }
+
     if (cmd_ln_exists_r(acmod->config, "-agcthresh")
         && 0 != strcmp(cmd_ln_str_r(acmod->config, "-agc"), "none")) {
         agc_set_threshold(acmod->fcb->agc_struct,
