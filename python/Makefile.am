@@ -13,12 +13,12 @@ uninstall-local:
 clean-local:
 	python setup.py clean --all
 # This is dumb, but distutils is completely incapable of VPATH building
-	test -n "$(VPATH)" && $(RM) pocketsphinx.c
+	test -z "$(VPATH)" || $(RM) pocketsphinx.c
 	$(RM) pymod-build-stamp
 
 pymod-build-stamp: pocketsphinx.c
 # This is dumb, but distutils is completely incapable of VPATH building
-	test -n "$(VPATH)" && cp "$(srcdir)/pocketsphinx.c" pocketsphinx.c
+	test -z "$(VPATH)" || cp "$(srcdir)/pocketsphinx.c" pocketsphinx.c
 	python setup.py build
 	touch $@
 endif
