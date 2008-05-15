@@ -60,6 +60,7 @@ cdef extern from "pocketsphinx.h":
     int ps_seg_prob(ps_seg_t *seg, int32 *out_ascr, int32 *out_lscr, int32 *out_lback)
     void ps_seg_free(ps_seg_t *seg)
     ps_nbest_t *ps_nbest(ps_decoder_t *ps, int sf, int ef, char *ctx1, char *ctx2)
+    ps_nbest_t *ps_nbest_next(ps_nbest_t *nbest)
     char *ps_nbest_hyp(ps_nbest_t *nbest, int32 *out_score)
     ps_seg_t *ps_nbest_seg(ps_nbest_t *nbest, int32 *out_score)
     void ps_nbest_free(ps_nbest_t *nbest)
