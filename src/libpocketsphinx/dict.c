@@ -135,9 +135,9 @@
 
 #define QUIT(x)		{fprintf x; exit(-1);}
 
-static void buildEntryTable(dict_t *dict, glist_t list, int16 *** table_p);
-static void buildExitTable(dict_t *dict, glist_t list, int16 *** table_p,
-                           int16 *** permuTab_p, int16 ** sizeTab_p);
+static void buildEntryTable(dict_t *dict, glist_t list, uint16 *** table_p);
+static void buildExitTable(dict_t *dict, glist_t list, uint16 *** table_p,
+                           uint16 *** permuTab_p, uint16 ** sizeTab_p);
 static int32 addToLeftContextTable(dict_t *dict, char *diphone);
 static int32 addToRightContextTable(dict_t *dict, char *diphone);
 static dict_entry_t *_new_dict_entry(dict_t *dict,
@@ -177,6 +177,11 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
     void *val;
     char const *filename, *n_filename;
     int use_context;
+
+    if (bin_mdef_n_sseq(mdef) > 65534) {
+        E_ERROR("Model definition has more than 65534 unique senone sequences, cannot be used.\n");
+        return NULL;
+    }
 
     dict->config = config;
     dict->mdef = mdef;
@@ -592,6 +597,7 @@ _new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_conte
                 triphone_ids[i] = dict_ciphone_id(dict, phone[i]);
             triphone_ids[i] = bin_mdef_pid2ssid(mdef, triphone_ids[i]);
         }
+        assert(triphone_ids[i] >= 0);
 
         for (i = 1; i < pronoun_len - 1; i++) {
             triphone_ids[i] = bin_mdef_phone_id(mdef,
@@ -602,6 +608,7 @@ _new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_conte
             if (triphone_ids[i] < 0)
                 triphone_ids[i] = dict_ciphone_id(dict, phone[i]);
             triphone_ids[i] = bin_mdef_pid2ssid(mdef, triphone_ids[i]);
+            assert(triphone_ids[i] >= 0);
         }
 
         if (use_context) {
@@ -619,6 +626,7 @@ _new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_conte
                 triphone_ids[i] = dict_ciphone_id(dict, phone[i]);
             triphone_ids[i] = bin_mdef_pid2ssid(mdef, triphone_ids[i]);
         }
+        assert(triphone_ids[i] >= 0);
     }
 
     /*
@@ -987,7 +995,7 @@ triphone_to_id(dict_t *dict, char const *phone_str)
 }
 
 static void
-buildEntryTable(dict_t *dict, glist_t list, int16 *** table_p)
+buildEntryTable(dict_t *dict, glist_t list, uint16 *** table_p)
 {
     int32 i, j;
     char triphoneStr[128];
@@ -995,7 +1003,7 @@ buildEntryTable(dict_t *dict, glist_t list, int16 *** table_p)
     int32 silContext = 0;
     int32 triphoneContext = 0;
     int32 noContext = 0;
-    int16 **table;
+    uint16 **table;
     gnode_t *gn;
     int n;
 
@@ -1052,7 +1060,7 @@ cmp(void const *a, void const *b)
 }
 
 /* FIXME: Not re-entrant. */
-static int16 *linkTable;
+static uint16 *linkTable;
 
 static int
 cmpPT(void const *a, void const *b)
@@ -1061,8 +1069,10 @@ cmpPT(void const *a, void const *b)
 }
 
 static void
-buildExitTable(dict_t *dict, glist_t list, int16 *** table_p, int16 *** permuTab_p,
-               int16 ** sizeTab_p)
+buildExitTable(dict_t *dict, glist_t list,
+               uint16 *** table_p,
+               uint16 *** permuTab_p,
+               uint16 ** sizeTab_p)
 {
     int32 i, j, k;
     char triphoneStr[128];
@@ -1071,10 +1081,10 @@ buildExitTable(dict_t *dict, glist_t list, int16 *** table_p, int16 *** permuTab
     int32 triphoneContext = 0;
     int32 noContext = 0;
     int32 entries = 0;
-    int16 **table;
-    int16 **permuTab;
-    int16 *sizeTab;
-    int16 ptab[128];
+    uint16 **table;
+    uint16 **permuTab;
+    uint16 *sizeTab;
+    uint16 ptab[128];
     gnode_t *gn;
     int32 n;
 
@@ -1149,7 +1159,7 @@ buildExitTable(dict_t *dict, glist_t list, int16 *** table_p, int16 *** permuTab
              */
             permuTab[i][ptab[j]] = k;
         }
-        table[i][k + 1] = -1;   /* End of table Marker */
+        table[i][k + 1] = 65535;   /* End of table Marker */
         sizeTab[i] = k + 1;
         entries += k + 1;
     }

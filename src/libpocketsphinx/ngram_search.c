@@ -487,7 +487,7 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
 {
     dict_entry_t *de;
     chan_t *hmm, *thmm;
-    int16 *sseq_rc;             /* list of sseqid for all possible right context for w */
+    uint16 *sseq_rc;             /* list of sseqid for all possible right context for w */
     int32 i;
 
     de = ps_search_dict(ngs)->dict_list[w];
@@ -506,7 +506,7 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
         hmm->ciphone = de->ci_phone_ids[de->len - 1];
         hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, *sseq_rc, hmm->ciphone);
     }
-    for (i = 1, sseq_rc++; *sseq_rc >= 0; sseq_rc++, i++) {
+    for (i = 1, sseq_rc++; *sseq_rc != 65535; sseq_rc++, i++) {
         if ((hmm->next == NULL) || (hmm->next->hmm.s.ssid != *sseq_rc)) {
             thmm = listelem_malloc(ngs->chan_alloc);
             thmm->next = hmm->next;
@@ -543,7 +543,7 @@ ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf)
 {
     int32 bp, start_score;
     bptbl_t *bpe, *p_bpe;
-    int16 *rcpermtab;
+    uint16 *rcpermtab;
     dict_entry_t *de;
 
     for (bp = 0; bp < ngs->bpidx; bp++) {
@@ -698,7 +698,7 @@ ngram_search_bp2itor(ps_seg_t *seg, int bp)
     }
     else {
         dict_entry_t *de;
-        int16 *rcpermtab;
+        uint16 *rcpermtab;
         int32 start_score;
 
         de = seg->search->dict->dict_list[be->wid];

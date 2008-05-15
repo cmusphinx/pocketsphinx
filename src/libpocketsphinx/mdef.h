@@ -98,7 +98,7 @@ typedef struct {
  * \brief Triphone information, including base phones as a subset.  For the latter, lc, rc and wpos are non-existent.
  */
 typedef struct {
-    int16 ssid;			/**< State sequence (or senone sequence) ID, considering the
+    int32 ssid;			/**< State sequence (or senone sequence) ID, considering the
 				   n_emit_state senone-ids are a unit.  The senone sequences
 				   themselves are in a separate table */
     int32 tmat;			/**< Transition matrix id */

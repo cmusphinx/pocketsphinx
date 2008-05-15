@@ -459,9 +459,8 @@ sseq_compress(mdef_t * m)
     /* Identify unique senone-sequence IDs.  BUG: tmat-id not being considered!! */
     for (p = 0; p < m->n_phone; p++) {
         /* Add senone sequence to hash table */
-	if ((j = (long)
-             hash_table_enter_bkey(h, (char *) (m->sseq[p]), k,
-				   (void *)(long)n_sseq)) == n_sseq)
+	if (n_sseq
+            == (j = hash_table_enter_bkey_int32(h, (char *)m->sseq[p], k, n_sseq)))
             n_sseq++;
 
         m->phone[p].ssid = j;

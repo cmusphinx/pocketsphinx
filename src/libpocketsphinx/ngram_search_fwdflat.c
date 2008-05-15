@@ -565,7 +565,7 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
     int32 best_silrc_score = 0, best_silrc_bp = 0;      /* FIXME: good defaults? */
     bptbl_t *bp;
     dict_entry_t *de, *newde;
-    int16 *rcpermtab;
+    uint16 *rcpermtab;
     int32 *rcss;
     root_chan_t *rhmm;
     int32 *awl;

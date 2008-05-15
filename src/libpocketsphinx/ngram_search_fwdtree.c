@@ -843,7 +843,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
     lastphn_cand_t *candp;
     int32 *nawl;
     int32 thresh;
-    int16 *rcpermtab, ciph0;
+    uint16 *rcpermtab, ciph0;
     int32 bestscore, dscr;
     dict_entry_t *de;
     chan_t *hmm;
@@ -861,8 +861,9 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
         bpe = &(ngs->bp_table[candp->bp]);
         /* Right context phone table. */
         rcpermtab =
-            (bpe->r_diph >=
-             0) ? ps_search_dict(ngs)->rcFwdPermTable[bpe->r_diph] : ngs->zeroPermTab;
+            (bpe->r_diph >= 0)
+            ? ps_search_dict(ngs)->rcFwdPermTable[bpe->r_diph]
+            : ngs->zeroPermTab;
 
         /* Subtract starting score for candidate, leave it with only word score */
         de = ps_search_dict(ngs)->dict_list[candp->wid];
@@ -1199,7 +1200,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     int32 i, k, bp, w, nf;
     int32 rc;
     int32 *rcss;                /* right context score stack */
-    int16 *rcpermtab;
+    uint16 *rcpermtab;
     int32 thresh, newscore;
     bptbl_t *bpe;
     dict_entry_t *pde, *de;     /* previous dict entry, dict entry */
@@ -1226,8 +1227,9 @@ word_transition(ngram_search_t *ngs, int frame_idx)
 
         de = ps_search_dict(ngs)->dict_list[bpe->wid];
         rcpermtab =
-            (bpe->r_diph >=
-             0) ? ps_search_dict(ngs)->rcFwdPermTable[bpe->r_diph] : ngs->zeroPermTab;
+            (bpe->r_diph >= 0)
+            ? ps_search_dict(ngs)->rcFwdPermTable[bpe->r_diph]
+            : ngs->zeroPermTab;
         last_ciph = de->ci_phone_ids[de->len - 1];
 
         rcss = &(ngs->bscore_stack[bpe->s_idx]);

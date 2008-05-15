@@ -88,6 +88,8 @@ hmm_context_free(hmm_context_t *ctx)
 void
 hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx, int ssid, int tmatid)
 {
+    /* Watch for integer overflows in ssids (shouldn't happen anymore) */
+    assert(ssid >= -1);
     hmm->ctx = ctx;
     hmm->mpx = mpx;
     hmm->n_emit_state = ctx->n_emit_state;

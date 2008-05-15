@@ -351,18 +351,18 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                    int16 *lclist, int16 *rclist,
                    fsg_pnode_t ** alloc_head)
 {
-    int16 **lcfwd;              /* Uncompressed left cross-word context map;
+    uint16 **lcfwd;              /* Uncompressed left cross-word context map;
                                    lcfwd[left-diphone][p] = SSID for p.left-diphone */
-    int16 **lcbwd;              /* Compressed left cross-word context map;
+    uint16 **lcbwd;              /* Compressed left cross-word context map;
                                    lcbwd[left-diphone] = array of unique SSIDs for all
                                    possible left contexts */
-    int16 **lcbwdperm;          /* For CIphone p, lcbwdperm[d][p] = index in lcbwd[d]
+    uint16 **lcbwdperm;          /* For CIphone p, lcbwdperm[d][p] = index in lcbwd[d]
                                    containing the SSID for triphone p.d */
-    int16 **rcbwd;              /* Uncompressed right cross-word context map;
+    uint16 **rcbwd;              /* Uncompressed right cross-word context map;
                                    rcbwd[right-diphone][p] = SSID for right-diphone.p */
-    int16 **rcfwd;              /* Compressed right cross-word context map; similar to
+    uint16 **rcfwd;              /* Compressed right cross-word context map; similar to
                                    lcbwd */
-    int16 **rcfwdperm;
+    uint16 **rcfwdperm;
 
     int32 silcipid;             /* Silence CI phone ID */
     int32 pronlen;              /* Pronunciation length */
