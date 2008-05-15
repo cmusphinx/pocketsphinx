@@ -69,19 +69,24 @@ cdef extern from "pocketsphinx.h":
                          double *out_ncpu, double *out_nwall)
 
 # Now the fun begins.
-cdef class Config:
-    cdef cmd_ln_t *config
-    # cmd_ln_t is not refcounted, but we need to be able to prevent it
-    # from being freed in some situations, because of the ownership
-    # rules in PocketSphinx.
-    cdef int retained
-    # And, if that weren't annoying enough, cmd_ln_t doesn't retain
-    # ownership of the strings from argv, so we will keep them here.
-    # Who invented this API?  Oh wait, I did... crud.
+cdef class Decoder:
+    """
+    PocketSphinx decoder class.
+
+    To initialize the PocketSphinx decoder, pass a list of keyword
+    arguments to the constructor:
+
+    d = pocketsphinx.Decoder(hmm='/path/to/acoustic/model',
+                             lm='/path/to/language/model',
+                             dict='/path/to/dictionary',
+                             beam='1e-80')
+    """
+    cdef ps_decoder_t *ps
     cdef char **argv
     cdef int argc
 
     def __cinit__(self, **kwargs):
+        cdef cmd_ln_t *config
         cdef int i
         # A much more concise version of what pocketsphinx_parse_argdict used to do
         self.argc = len(kwargs) * 2
@@ -93,42 +98,18 @@ cdef class Config:
             self.argv[i] = sb.ckd_salloc(k)
             self.argv[i+1] = sb.ckd_salloc(v)
             i = i + 2
-        self.config = sb.cmd_ln_parse_r(NULL, ps_args(), self.argc, self.argv, 0)
-        if self.config == NULL:
+        config = sb.cmd_ln_parse_r(NULL, ps_args(), self.argc, self.argv, 0)
+        if config == NULL:
             raise RuntimeError, "Failed to parse argument list"
-        self.retained = 0
-
-    def __dealloc__(self):
-        if self.retained == 0:
-            sb.cmd_ln_free_r(self.config)
-            for i from 0 <= i < self.argc:
-                sb.ckd_free(self.argv[i])
-            sb.ckd_free(self.argv)
-            self.argv = NULL
-            self.argc = 0
-
-    def retain(self):
-        self.retained = self.retained + 1
-
-    def release(self):
-        self.retained = self.retained - 1
-
-cdef class Decoder:
-    """
-    PocketSphinx decoder class.
-
-    To initialize the PocketSphinx decoder, you must first create a
-    pocketsphinx.Config object.
-    """
-    cdef ps_decoder_t *ps
-
-    def __cinit__(self, Config cmdln):
-        # Prevent this from being freed on exit
-        cmdln.retain()
-        self.ps = ps_init(cmdln.config)
+        self.ps = ps_init(config)
         if self.ps == NULL:
             raise RuntimeError, "Failed to initialize PocketSphinx"
 
     def __dealloc__(self):
         ps_free(self.ps)
+        for i from 0 <= i < self.argc:
+            sb.ckd_free(self.argv[i])
+        sb.ckd_free(self.argv)
+        self.argv = NULL
+        self.argc = 0
 
