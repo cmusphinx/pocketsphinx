@@ -280,7 +280,7 @@ static const char format_desc[] =
     "char padding[];     /**< Padding to a 4-bytes boundary */\n"
     "struct { int16 ctx; int16 n_down; int32 pid/down } cd_tree[];\n"
     "struct { int32 ssid; int32 tmat; int8 attr[4] } phones[];\n"
-    "int32 sseq[];       /**< Unique senone sequences */\n"
+    "int16 sseq[];       /**< Unique senone sequences */\n"
     "int8 sseq_len[];    /**< Number of states in each sseq (none if homogeneous) */\n"
     "END FILE FORMAT DESCRIPTION\n";
 
