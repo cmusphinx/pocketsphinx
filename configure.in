@@ -199,10 +199,6 @@ Use the --with-sphinxbase-build option to `configure' to specify
 the build directory for SphinxBase.  Run $0 --help for more information.]))
 fi
 
-AC_PATH_PROG(PERL,perl)
-AC_PATH_PROG(CSH,csh)
-AC_SUBST(PERL)
-AC_SUBST(CSH)
 AC_SUBST(sphinxbase)
 AC_SUBST(sphinxbasebuild)
 

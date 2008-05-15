@@ -25,5 +25,5 @@ endif
 
 if BUILD_PYREX
 $(srcdir)/pocketsphinx.c: pocketsphinx.pyx
-	pyrexc -o $@ $<
+	pyrexc -o $@ $< $(CPPFLAGS) -I$(sphinxbase)/python
 endif

@@ -7,28 +7,14 @@
 #
 # Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
 
-# SphinxBase declarations
-# FIXME: We should share these with SphinxBase via a .pxd file.
-cdef extern from "cmd_ln.h":
-    ctypedef struct cmd_ln_t
-    ctypedef struct arg_t
-    cmd_ln_t *cmd_ln_parse_r(cmd_ln_t *inout_cmdln, arg_t * defn,
-                             int argc, char **argv, int strict)
-    void cmd_ln_free_r(cmd_ln_t *cmdln)
+# Import SphinxBase C types
+from sphinxbase cimport arg_t, cmd_ln_t, ngram_model_t, fsg_model_t, logmath_t
 
-cdef extern from "ckd_alloc.h":
-    void *ckd_calloc(int n, int size)
-    char *ckd_salloc(char *str)
-    void ckd_free(void *ptr)
+# Import SphinxBase extention types
+from sphinxbase cimport NGramModel
 
-cdef extern from "ngram_model.h":
-    ctypedef struct ngram_model_t
-
-cdef extern from "fsg_model.h":
-    ctypedef struct fsg_model_t
-
-cdef extern from "logmath.h":
-    ctypedef struct logmath_t
+# Finally, import this for SphinxBase functions (since there are too many to list)
+cimport sphinxbase as sb
 
 # PocketSphinx declarations
 cdef extern from "fsg_set.h":
@@ -99,23 +85,25 @@ cdef class Config:
         cdef int i
         # A much more concise version of what pocketsphinx_parse_argdict used to do
         self.argc = len(kwargs) * 2
-        self.argv = <char **>ckd_calloc(self.argc, sizeof(char *))
+        self.argv = <char **>sb.ckd_calloc(self.argc, sizeof(char *))
         i = 0
         for k, v in kwargs.iteritems():
             if k[0] != '-':
                 k = '-' + k
-            self.argv[i] = ckd_salloc(k)
-            self.argv[i+1] = ckd_salloc(v)
+            self.argv[i] = sb.ckd_salloc(k)
+            self.argv[i+1] = sb.ckd_salloc(v)
             i = i + 2
-        self.config = cmd_ln_parse_r(NULL, ps_args(), self.argc, self.argv, 0)
+        self.config = sb.cmd_ln_parse_r(NULL, ps_args(), self.argc, self.argv, 0)
+        if self.config == NULL:
+            raise RuntimeError, "Failed to parse argument list"
         self.retained = 0
 
     def __dealloc__(self):
         if self.retained == 0:
-            cmd_ln_free_r(self.config)
+            sb.cmd_ln_free_r(self.config)
             for i from 0 <= i < self.argc:
-                ckd_free(self.argv[i])
-            ckd_free(self.argv)
+                sb.ckd_free(self.argv[i])
+            sb.ckd_free(self.argv)
             self.argv = NULL
             self.argc = 0
 
@@ -143,3 +131,4 @@ cdef class Decoder:
 
     def __dealloc__(self):
         ps_free(self.ps)
+
