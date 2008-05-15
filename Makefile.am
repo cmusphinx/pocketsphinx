@@ -3,7 +3,8 @@ SUBDIRS = src \
 	  model \
 	  include \
 	  scripts \
-	  test
+	  test \
+	python
 
 EXTRA_DIST = autogen.sh								\
 	pocketsphinx.pc.in							\
@@ -14,9 +15,6 @@ EXTRA_DIST = autogen.sh								\
 	win32/msdev/pocketsphinx_continuous/pocketsphinx_continuous.vcproj	\
 	win32/msdev/pocketsphinx_ptt/pocketsphinx.args				\
 	win32/msdev/pocketsphinx_ptt/pocketsphinx_ptt.vcproj			\
-	python/setup.py								\
-	python/_pocketsphinxmodule.c						\
-	python/_pocketsphinx_test.py \
 	m4/pkg.m4
 
 pkgconfigdir = $(libdir)/pkgconfig
