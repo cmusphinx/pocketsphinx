@@ -1,5 +1,4 @@
 from distutils.core import setup, Extension
-from Pyrex.Distutils import build_ext
 
 import distutils.command.install
 import os
@@ -50,6 +49,5 @@ setup(name = 'PocketSphinx',
                    library_dirs=['@top_builddir@/src/libpocketsphinx/.libs',
                                  '@sphinxbasebuild@/src/libsphinxbase/.libs'])
         ],
-      cmdclass = {'build_ext' : build_ext,
-                  'bogus_uninstall' : bogus_uninstall}
+      cmdclass = {'bogus_uninstall' : bogus_uninstall}
      ) 
