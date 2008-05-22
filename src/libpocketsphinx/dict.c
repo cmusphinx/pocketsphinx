@@ -158,7 +158,8 @@ get_dict_size(char const *file)
     __BIGSTACKVARIABLE__ char line[1024];
     int32 n;
 
-    fp = myfopen(file, "r");
+    if ((fp = fopen(file, "r")) == NULL)
+        return -1;
     for (n = 0;; n++)
         if (fgets(line, sizeof(line), fp) == NULL)
             break;
@@ -194,7 +195,11 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
      * Find size of dictionary and set hash and list table size hints.
      * (Otherwise, the simple-minded PC malloc library goes berserk.)
      */
-    j = get_dict_size(filename);
+    if ((j = get_dict_size(filename)) < 0){
+        E_ERROR("Failed to open dictionary file %s\n", filename);
+        dict_free(dict);
+        return NULL;
+    }
     if (n_filename)
         j += get_dict_size(n_filename);
     j += 3;                     /* </s>, <s> and <sil> */
@@ -409,7 +414,6 @@ dict_load(dict_t * dict, bin_mdef_t *mdef,
           char const *filename, int32 *word_id,
           int32 use_context)
 {
-    static char const *rname = "dict_load";
     __BIGSTACKVARIABLE__ char dict_str[1024];
     __BIGSTACKVARIABLE__ char pronoun_str[1024];
     dict_entry_t *entry;
@@ -417,15 +421,8 @@ dict_load(dict_t * dict, bin_mdef_t *mdef,
     int32 start_wid = *word_id;
     int32 err = 0;
 
-    fs = myfopen(filename, "r");
-
-    fscanf(fs, "%s\n", dict_str);
-    if (strcmp(dict_str, "!") != 0) {
-        E_INFO("%s: first line of %s was %s, expecting '!'\n",
-               rname, filename, dict_str);
-        E_INFO("%s: will assume first line contains a word\n", rname);
-        fseek(fs, 0, SEEK_SET);
-    }
+    if ((fs = fopen(filename, "r")) == NULL)
+        return -1;
 
     pronoun_str[0] = '\0';
     while (EOF != fscanf(fs, "%s%[^\n]\n", dict_str, pronoun_str)) {
@@ -472,8 +469,8 @@ dict_load(dict_t * dict, bin_mdef_t *mdef,
                 *p = '\0';
                 if (hash_table_lookup(dict->dict, dict_str, &wid) != 0) {
                     E_ERROR
-                        ("%s: Missing first pronunciation for [%s]\nThis means that e.g. [%s(2)] was found with no [%s]\nPlease correct the dictionary and re-run.\n",
-                         rname, dict_str, dict_str, dict_str);
+                        ("Missing first pronunciation for [%s]\nThis means that e.g. [%s(2)] was found with no [%s]\nPlease correct the dictionary and re-run.\n",
+                         dict_str, dict_str, dict_str);
                     return -1;
                 }
                 DFPRINTF((stdout,
