@@ -98,17 +98,28 @@ dnl
 dnl Check for Python, and build python module if present
 dnl
 use_python=true
+PYTHON=python
 AC_ARG_WITH(python,
 	AC_HELP_STRING([--without-python],
 		       [Disable Python extension]),[
 if test x$withval = xno; then
    use_python=false
+   PYTHON=bogus
+elif test x$withval = xyes; then
+   # No specific python binary was given, so check for it in PATH
+   use_python=true
+   PYTHON=python
+else
+   # A python was given, assume it is in the user's PATH or is fully qualified
+   use_python=true
+   PYTHON="$withval"
 fi
 ])
-if test x$use_python = xtrue; then
-   AC_CHECK_PROG(HAVE_PYTHON, python, yes, no)
+if test "x$use_python" = xtrue -a "x$PYTHON" = xpython; then
+   AC_PATH_PROG(PYTHON, python, bogus)
 fi
-AM_CONDITIONAL(BUILD_PYTHON, test "x$HAVE_PYTHON" = "xyes")
+AM_CONDITIONAL(BUILD_PYTHON, test "$PYTHON" != "xbogus")
+AC_SUBST(PYTHON)
 
 dnl
 dnl Check for Pyrex, and rebuild python module if present
