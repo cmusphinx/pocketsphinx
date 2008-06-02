@@ -62,8 +62,6 @@ struct s2_semi_mgau_s {
     var_t   **vars;	/* inverse var vectors foreach feature */
     var_t   **dets;	/* det values foreach feature */
 
-    uint16 *mixw_map;    /* mixture weight cluster mapping (NULL if none) */
-    uint16 *mixw_score;  /* mixture weight cluster scores (NULL if none) */
     uint32 n_mixw;     /* number of distributions */
     uint8 ***mixw;     /* mixture weight distributions */
     mmio_file_t *sendump_mmap;/* memory map for mixw (or NULL if not mmap) */
