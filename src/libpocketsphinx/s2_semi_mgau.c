@@ -1073,8 +1073,8 @@ s3_read_mgau(s2_semi_mgau_t *s, const char *file_name, float32 ***out_cb)
 
     fclose(fp);
 
-    E_INFO("%d mixture Gaussians, %d components, veclen %d\n", n_mgau,
-           n_density, blk);
+    E_INFO("%d mixture Gaussians, %d components, %d feature streams, veclen %d\n", n_mgau,
+           n_density, n_feat, blk);
 
     return n;
 }

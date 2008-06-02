@@ -149,6 +149,16 @@ acmod_init_feat(acmod_t *acmod)
             return -1;
     }
 
+    if (cmd_ln_str_r(acmod->config, "-svspec")) {
+        int32 **subvecs;
+        E_INFO("Using subvector specification %s\n", 
+               cmd_ln_str_r(acmod->config, "-svspec"));
+        if ((subvecs = parse_subvecs(cmd_ln_str_r(acmod->config, "-svspec"))) == NULL)
+            return -1;
+        if ((feat_set_subvecs(acmod->fcb, subvecs)) < 0)
+            return -1;
+    }
+
     if (cmd_ln_exists_r(acmod->config, "-agcthresh")
         && 0 != strcmp(cmd_ln_str_r(acmod->config, "-agc"), "none")) {
         agc_set_threshold(acmod->fcb->agc_struct,
@@ -592,9 +602,9 @@ acmod_process_feat(acmod_t *acmod,
     }
 
     inptr = (acmod->feat_outidx + acmod->n_feat_frame) % acmod->n_feat_alloc;
-    for (i = 0; i < feat_n_stream(acmod->fcb); ++i)
+    for (i = 0; i < feat_dimension1(acmod->fcb); ++i)
         memcpy(acmod->feat_buf[inptr][i],
-               feat[i], feat_stream_len(acmod->fcb, i) * sizeof(**feat));
+               feat[i], feat_dimension2(acmod->fcb, i) * sizeof(**feat));
     ++acmod->n_feat_frame;
 
     return 1;
