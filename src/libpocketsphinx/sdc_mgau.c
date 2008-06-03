@@ -87,68 +87,12 @@
 #endif
 
 
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ == 199901L)
-#define LOGMATH_INLINE inline
-#elif defined(__GNUC__)
-#define LOGMATH_INLINE static inline
-#elif defined(_MSC_VER)
-#define LOGMATH_INLINE __inline
-#else
-#define LOGMATH_INLINE static
-#endif
-
-/* Allocate 0..159 for negated quantized mixture weights and 0..96 for
- * negated normalized acoustic scores, so that the combination of the
- * two (for a single mixture) can never exceed 255. */
-#define MAX_NEG_MIXW 159 /**< Maximum negated mixture weight value. */
-#define MAX_NEG_ASCR 96  /**< Maximum negated acoustic score value. */
-
-/**
- * Quickly log-add two negated log probabilities.
- *
- * @param lmath The log-math object
- * @param mlx A negative log probability (0 < mlx < 255)
- * @param mly A negative log probability (0 < mly < 255)
- * @return -log(exp(-mlx)+exp(-mly))
- *
- * We can do some extra-fast log addition since we know that
- * mixw+ascr is always less than 256 and hence x-y is also always less
- * than 256.  This relies on some cooperation from logmath_t which
- * will never produce a logmath table smaller than 256 entries.
- *
- * Note that the parameters are *negated* log probabilities (and
- * hence, are positive numbers), as is the return value.  This is the
- * key to the "fastness" of this function.
- */
-LOGMATH_INLINE int
-fast_logmath_add(logmath_t *lmath, int mlx, int mly)
-{
-    logadd_t *t = LOGMATH_TABLE(lmath);
-    int d, r;
-
-    /* d must be positive, obviously. */
-    if (mlx > mly) {
-        d = (mlx - mly);
-        r = mly;
-    }
-    else {
-        d = (mly - mlx);
-        r = mlx;
-    }
-
-    return r - (((uint8 *)t->table)[d]);
-}
-
 static void
-eval_cb(sdc_mgau_t *s, int frame, int feat, mfcc_t *z)
+eval_cb(sdc_mgau_t *s, int feat, mfcc_t *z)
 {
     mean_t *mean;
     var_t *var, *det;
     int32 i, ceplen;
-
-    /* If this frame is skipped, do nothing. */
-    if (frame % s->ds_ratio)
-        return;
 
     /* Thes are organized in 2-d arrays for some reason. */
     mean = s->means[feat];
@@ -170,35 +114,29 @@ eval_cb(sdc_mgau_t *s, int frame, int feat, mfcc_t *z)
             d = GMMSUB(d, compl);
             ++var;
         }
+        /* FIXME: Do computations themselves shifted. */
         s->cb_scores[feat][i] = (int32)d >> SENSCR_SHIFT;
     }
 }
 
 /**
- * Normalize senone scores for each subvector.
+ * Normalize senone scores for all subvectors.
  */
 static void
-norm_cb(sdc_mgau_t *s, int frame, int feat)
+norm_cb(sdc_mgau_t *s)
 {
     int32 norm;
-    int j;
+    int i, j;
 
-    /* If this frame is skipped, do nothing. */
-    if (frame % s->ds_ratio)
-        return;
-
-    /* Compute quantized normalizing constant. */
-    norm = s->cb_scores[feat][0];
-    for (j = 1; j < s->n_density; ++j) {
-        norm = logmath_add(s->lmath_8b, norm, s->cb_scores[feat][j]);
-    }
-
-    /* Normalize the scores, negate them, and clamp their dynamic range. */
-    for (j = 0; j < s->n_density; ++j) {
-        s->cb_scores[feat][j] = -(s->cb_scores[feat][j] - norm);
-        if (s->cb_scores[feat][j] < 0 || s->cb_scores[feat][j] > MAX_NEG_ASCR)
-            s->cb_scores[feat][j] = MAX_NEG_ASCR;
-    }
+    /* Normalize by the best subvector score. */
+    norm = WORST_DIST;
+    for (i = 0; i < s->n_sv; ++i)
+        for (j = 1; j < s->n_density; ++j)
+            if (s->cb_scores[i][j] > norm)
+                norm = s->cb_scores[i][j];
+    for (i = 0; i < s->n_sv; ++i)
+        for (j = 0; j < s->n_density; ++j)
+            s->cb_scores[i][j] = s->cb_scores[i][j] - norm;
 }
 
 static int32
@@ -210,14 +148,13 @@ compute_scores(sdc_mgau_t * s, int16 *senone_scores,
     int i;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
-    /* This is the slow way to do it, we'll speed it up soon. */
     for (i = 0; i < n_senone_active; ++i) {
         /* Get the senone ID. */
         int sen = senone_active[i];
         int c;
         /* Sum up mixture densities. */
         for (c = 0; c < s->n_mixw_den; ++c) {
-            int32 mden = s->mixw[sen][c];
+            int32 mden = -(int32)s->mixw[sen][c];
             int f;
             /* For each subvector. */
             for (f = 0; f < s->n_sv; ++f) {
@@ -231,8 +168,10 @@ compute_scores(sdc_mgau_t * s, int16 *senone_scores,
                 senone_scores[sen] = mden;
             else
                 senone_scores[sen] =
-                    fast_logmath_add(s->lmath_8b, senone_scores[sen], mden);
+                    logmath_add(s->lmath_8b, senone_scores[sen], mden);
         }
+        /* Negate it since that is what everything else expects at the moment. */
+        senone_scores[sen] = -senone_scores[sen];
         if (senone_scores[sen] < best) {
             best = senone_scores[sen];
             *out_bestidx = sen;
@@ -248,12 +187,11 @@ compute_scores_all(sdc_mgau_t * s, int16 *senone_scores,
     int32 best = (int32)0x7fffffff;
     int sen;
 
-    /* This is the slow way to do it, we'll speed it up soon. */
     for (sen = 0; sen < s->n_sen; ++sen) {
         int c;
         /* Sum up mixture densities. */
         for (c = 0; c < s->n_mixw_den; ++c) {
-            int32 mden = s->mixw[sen][c];
+            int32 mden = -(int32)s->mixw[sen][c];
             int f;
             /* For each subvector. */
             for (f = 0; f < s->n_sv; ++f) {
@@ -267,9 +205,11 @@ compute_scores_all(sdc_mgau_t * s, int16 *senone_scores,
                 senone_scores[sen] = mden;
             else
                 senone_scores[sen] =
-                    fast_logmath_add(s->lmath_8b, senone_scores[sen], mden);
+                    logmath_add(s->lmath_8b, senone_scores[sen], mden);
         }
-        if (senone_scores[sen] > best) {
+        /* Negate it since that is what everything else expects at the moment. */
+        senone_scores[sen] = -senone_scores[sen];
+        if (senone_scores[sen] < best) {
             best = senone_scores[sen];
             *out_bestidx = sen;
         }
@@ -289,12 +229,16 @@ sdc_mgau_frame_eval(sdc_mgau_t * s,
                     int32 compallsen,
                     int32 *out_bestidx)
 {
-    int i;
+    /* Compute codebook scores, unless this frame is skipped. */
+    if (frame % s->ds_ratio == 0) {
+        int sv;
 
-    /* Compute codebook scores. */
-    for (i = 0; i < s->n_sv; ++i) {
-        eval_cb(s, frame, i, featbuf[i]);
-        norm_cb(s, frame, i);
+        for (sv = 0; sv < s->n_sv; ++sv)
+            eval_cb(s, sv, featbuf[sv]);
+
+        /* Normalize codebook scores (has to be done across all subvectors
+         * since they are not independent) */
+        norm_cb(s);
     }
 
     /* Compute senone scores. */
@@ -395,8 +339,8 @@ read_mixw(sdc_mgau_t * s, char const *file_name, double SmoothMin)
             int32 qscr;
 
             qscr = -logmath_log(s->lmath_8b, pdf[c]);
-            if ((qscr > MAX_NEG_MIXW) || (qscr < 0))
-                qscr = MAX_NEG_MIXW;
+            if ((qscr > 255) || (qscr < 0))
+                qscr = 255;
             s->mixw[i][c] = qscr;
         }
     }
