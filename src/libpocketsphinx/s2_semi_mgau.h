@@ -62,7 +62,6 @@ struct s2_semi_mgau_s {
     var_t   **vars;	/* inverse var vectors foreach feature */
     var_t   **dets;	/* det values foreach feature */
 
-    uint32 n_mixw;     /* number of distributions */
     uint8 ***mixw;     /* mixture weight distributions */
     mmio_file_t *sendump_mmap;/* memory map for mixw (or NULL if not mmap) */
 
@@ -82,7 +81,6 @@ struct s2_semi_mgau_s {
 
     /* Top-N scores and codewords from current, last frame. */
     vqFeature_t **f, **lastf;
-    int32 *score_tmp;
 
     /* Log-add table for compressed values. */
     logmath_t *lmath_8b;

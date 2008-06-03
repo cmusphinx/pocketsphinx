@@ -192,6 +192,7 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
         obs = z;
         for (j = 0; j < ceplen; j++) {
             diff = *obs++ - *mean++;
+            /* FIXME: Use standard deviations, to avoid squaring, as per Bhiksha. */
             sqdiff = MFCCMUL(diff, diff);
             compl = MFCCMUL(sqdiff, *var);
             d = GMMSUB(d, compl);
@@ -233,6 +234,7 @@ eval_cb_kdtree(s2_semi_mgau_t *s, int32 feat, mfcc_t *z,
         obs = z;
         for (j = 0; (j < ceplen) && (d >= worst->score); j++) {
             diff = *obs++ - *mean++;
+            /* FIXME: Use standard deviations, to avoid squaring, as per Bhiksha. */
             sqdiff = MFCCMUL(diff, diff);
             compl = MFCCMUL(sqdiff, *var);
             d = GMMSUB(d, compl);
@@ -286,6 +288,7 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
         cw = detP - det;
         for (j = 0; (j < ceplen) && (d >= worst->score); ++j) {
             diff = *obs++ - *mean++;
+            /* FIXME: Use standard deviations, to avoid squaring, as per Bhiksha. */
             sqdiff = MFCCMUL(diff, diff);
             compl = MFCCMUL(sqdiff, *var);
             d = GMMSUB(d, compl);
@@ -347,6 +350,27 @@ mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
     memcpy(s->lastf[feat], s->f[feat], sizeof(vqFeature_t) * s->topn);
 }
 
+static void
+mgau_norm(s2_semi_mgau_t *s, int feat)
+{
+    int32 norm;
+    int j;
+
+    /* Compute quantized normalizing constant. */
+    norm = s->f[feat][0].score >> SENSCR_SHIFT;
+    for (j = 1; j < s->topn; ++j) {
+        norm = logmath_add(s->lmath_8b, norm,
+                           s->f[feat][j].score >> SENSCR_SHIFT);
+    }
+
+    /* Normalize the scores, negate them, and clamp their dynamic range. */
+    for (j = 0; j < s->topn; ++j) {
+        s->f[feat][j].score = -((s->f[feat][j].score >> SENSCR_SHIFT) - norm);
+        if (s->f[feat][j].score < 0 || s->f[feat][j].score > MAX_NEG_ASCR)
+            s->f[feat][j].score = MAX_NEG_ASCR;
+    }
+}
+
 /*
  * Compute senone scores for the active senones.
  */
@@ -361,25 +385,9 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
 {
     int i, j;
 
-    for (i = 0; i < s->n_feat; ++i)
+    for (i = 0; i < s->n_feat; ++i) {
         mgau_dist(s, frame, i, featbuf[i]);
-
-    /* Compute quantized normalizing constant. */
-    for (j = 0; j < s->n_feat; j++) {
-        s->score_tmp[j] = s->f[j][0].score >> SENSCR_SHIFT;
-        for (i = 1; i < s->topn; i++) {
-            s->score_tmp[j] = logmath_add(s->lmath_8b,
-                                          s->score_tmp[j],
-                                          s->f[j][i].score >> SENSCR_SHIFT);
-        }
-    }
-    /* Normalize the scores, negate them, and clamp their dynamic range. */
-    for (i = 0; i < s->topn; i++) {
-        for (j = 0; j < s->n_feat; j++) {
-            s->f[j][i].score = -((s->f[j][i].score >> SENSCR_SHIFT) - s->score_tmp[j]);
-            if (s->f[j][i].score < 0 || s->f[j][i].score > MAX_NEG_ASCR)
-                s->f[j][i].score = MAX_NEG_ASCR;
-        }
+        mgau_norm(s, i);
     }
 
     if (compallsen) {
@@ -1183,9 +1191,6 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
         }
     }
 
-    /* Temporary array used in senone eval */
-    s->score_tmp = ckd_calloc(s->n_feat, sizeof(int32));
-
     return s;
 }
 
@@ -1218,6 +1223,5 @@ s2_semi_mgau_free(s2_semi_mgau_t * s)
     ckd_free_2d((void **)s->f);
     ckd_free_2d((void **)s->lastf);
     ckd_free_2d((void **)s->dets);
-    ckd_free(s->score_tmp);
     ckd_free(s);
 }
