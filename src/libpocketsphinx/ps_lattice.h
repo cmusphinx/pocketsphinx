@@ -87,8 +87,9 @@ typedef struct latnode_s {
     int32 id;			/**< Unique id for this node */
     int32 wid;			/**< Dictionary word id */
     int32 basewid;		/**< Dictionary base word id */
-    int16 fef;			/**< First end frame */
-    int16 lef;			/**< Last end frame */
+    /* FIXME: These are (ab)used to store backpointer indices, therefore they MUST be 32 bits. */
+    int32 fef;			/**< First end frame */
+    int32 lef;			/**< Last end frame */
     int16 sf;			/**< Start frame */
     int16 reachable;		/**< From </s> or <s> */
     union {
