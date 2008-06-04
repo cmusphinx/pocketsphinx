@@ -104,6 +104,10 @@
       ARG_BOOLEAN,                                                                              \
       "yes",                                                                                    \
       "Run bestpath (Dijkstra) search over word lattice (3rd pass)" },                          \
+{ "-backtrace",                                                                                 \
+      ARG_BOOLEAN,                                                                              \
+      "no",                                                                                     \
+      "Print results and backtraces to log file." },                                            \
 { "-latsize",                                                                                   \
       ARG_INT32,                                                                                \
       "5000",                                                                                   \

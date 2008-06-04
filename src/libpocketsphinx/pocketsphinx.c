@@ -509,6 +509,30 @@ ps_end_utt(ps_decoder_t *ps)
     }
     rv = ps_search_finish(ps->search);
     ptmr_stop(&ps->perf);
+
+    /* Log a backtrace if requested. */
+    if (cmd_ln_boolean_r(ps->config, "-backtrace")) {
+        char const *uttid, *hyp;
+        ps_seg_t *seg;
+        int32 score;
+
+        hyp = ps_get_hyp(ps, &score, &uttid);
+        E_INFO("%s: %s\n", uttid, hyp, score);
+        E_INFO_NOFN("%-20s %-5s %-5s %-5s %-10s %-10s %-3s\n",
+                    "word", "start", "end", "prob", "ascr", "lscr", "lback");
+        for (seg = ps_seg_iter(ps, &score); seg;
+             seg = ps_seg_next(seg)) {
+            char const *word;
+            int sf, ef;
+            int32 post, lscr, ascr, lback;
+
+            word = ps_seg_word(seg);
+            ps_seg_frames(seg, &sf, &ef);
+            post = ps_seg_prob(seg, &ascr, &lscr, &lback);
+            E_INFO_NOFN("%-20s %-5d %-5d %-1.3f %-10d %-10d %-3d\n",
+                        word, sf, ef, logmath_exp(ps_get_logmath(ps), post), ascr, lscr, lback);
+        }
+    }
     return rv;
 }
 
