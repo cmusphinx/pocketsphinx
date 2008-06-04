@@ -119,26 +119,6 @@ eval_cb(sdc_mgau_t *s, int feat, mfcc_t *z)
     }
 }
 
-/**
- * Normalize senone scores for all subvectors.
- */
-static void
-norm_cb(sdc_mgau_t *s)
-{
-    int32 norm;
-    int i, j;
-
-    /* Normalize by the best subvector score. */
-    norm = WORST_DIST;
-    for (i = 0; i < s->n_sv; ++i)
-        for (j = 1; j < s->n_density; ++j)
-            if (s->cb_scores[i][j] > norm)
-                norm = s->cb_scores[i][j];
-    for (i = 0; i < s->n_sv; ++i)
-        for (j = 0; j < s->n_density; ++j)
-            s->cb_scores[i][j] = s->cb_scores[i][j] - norm;
-}
-
 static int32
 compute_scores(sdc_mgau_t * s, int16 *senone_scores,
                int32 *senone_active, int32 n_senone_active,
@@ -229,25 +209,29 @@ sdc_mgau_frame_eval(sdc_mgau_t * s,
                     int32 compallsen,
                     int32 *out_bestidx)
 {
+    int32 bscore;
+    int i;
+
     /* Compute codebook scores, unless this frame is skipped. */
     if (frame % s->ds_ratio == 0) {
         int sv;
 
         for (sv = 0; sv < s->n_sv; ++sv)
             eval_cb(s, sv, featbuf[sv]);
-
-        /* Normalize codebook scores (has to be done across all subvectors
-         * since they are not independent) */
-        norm_cb(s);
     }
 
     /* Compute senone scores. */
     if (compallsen)
-        return compute_scores_all(s, senone_scores, out_bestidx);
+        bscore = compute_scores_all(s, senone_scores, out_bestidx);
     else
-        return compute_scores(s, senone_scores,
-                              senone_active, n_senone_active,
-                              out_bestidx);
+        bscore = compute_scores(s, senone_scores,
+                                senone_active, n_senone_active,
+                                out_bestidx);
+    /* Normalize them. */
+    for (i = 0; i < s->n_sen; ++i)
+        senone_scores[i] -= bscore;
+
+    return bscore;
 }
 
 static int32
