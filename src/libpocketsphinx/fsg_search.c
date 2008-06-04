@@ -1171,6 +1171,10 @@ fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
         bp = fsg_hist_entry_pred(hist_entry);
         ++itor->n_hist;
     }
+    if (itor->n_hist == 0) {
+        ckd_free(itor);
+        return NULL;
+    }
     itor->hist = ckd_calloc(itor->n_hist, sizeof(*itor->hist));
     cur = itor->n_hist - 1;
     bp = bpidx;

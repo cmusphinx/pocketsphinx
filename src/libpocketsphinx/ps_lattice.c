@@ -471,6 +471,11 @@ ps_lattice_seg_iter(ps_lattice_t *dag, latlink_t *link, float32 lwf)
     for (l = link; l; l = l->best_prev) {
         ++itor->n_links;
     }
+    if (itor->n_links == 0) {
+        ckd_free(itor);
+        return NULL;
+    }
+
     itor->links = ckd_calloc(itor->n_links, sizeof(*itor->links));
     cur = itor->n_links - 1;
     for (l = link; l; l = l->best_prev) {

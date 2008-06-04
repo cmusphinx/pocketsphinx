@@ -667,7 +667,8 @@ ngram_search_hyp(ps_search_t *search, int32 *out_score)
         ngram_compute_seg_scores(ngs,
                                  ngs->fwdflat
                                  ? ngs->fwdflat_fwdtree_lw_ratio : 1.0);
-        ngram_search_lattice(search);
+        if (ngram_search_lattice(search) == NULL)
+            return NULL;
         link = ps_lattice_bestpath(ps_search_dag(ngs), ngs->lmset,
                                    ngs->bestpath_fwdtree_lw_ratio,
                                    ngs->ascale);
@@ -784,6 +785,10 @@ ngram_search_bp_iter(ngram_search_t *ngs, int bpidx, float32 lwf)
         bp = be->bp;
         ++itor->n_bpidx;
     }
+    if (itor->n_bpidx == 0) {
+        ckd_free(itor);
+        return NULL;
+    }
     itor->bpidx = ckd_calloc(itor->n_bpidx, sizeof(*itor->bpidx));
     cur = itor->n_bpidx - 1;
     bp = bpidx;
@@ -810,7 +815,8 @@ ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
         latlink_t *last;
 
         /* FIXME: Probably we don't need to recompute this whole DAG. */
-        ngram_search_lattice(search);
+        if (ngram_search_lattice(search) == NULL)
+            return NULL;
         last = ps_lattice_bestpath(ps_search_dag(ngs), ngs->lmset,
                                    ngs->bestpath_fwdtree_lw_ratio,
                                    ngs->ascale);
@@ -957,6 +963,7 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
             return node;
     }
 
+    /* FIXME: This seems to happen a lot! */
     E_ERROR("Failed to find DAG node corresponding to %s\n",
            dict_base_str(ps_search_dict(ngs), ngs->bp_table[bestbp].wid));
     return NULL;
