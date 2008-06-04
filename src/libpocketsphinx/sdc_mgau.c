@@ -383,7 +383,7 @@ read_sdmap(sdc_mgau_t *s, const char *file_name)
 
     /* Parse argument-value list */
     chksum_present = 0;
-    n_sv = 0;
+    n_sen = n_comp = n_sv = 0;
     for (i = 0; argname[i]; i++) {
         if (strcmp(argname[i], "version") == 0) {
             if (strcmp(argval[i], MGAU_SDMAP_VERSION) != 0)
@@ -406,6 +406,10 @@ read_sdmap(sdc_mgau_t *s, const char *file_name)
     bio_hdrarg_free(argname, argval);
     argname = argval = NULL;
 
+    if (n_sen == 0 || n_comp == 0 || n_sv == 0) {
+        E_ERROR("Dimensions seem to be missing from file header!\n");
+        return -1;
+    }
     if (n_sv != s->n_sv) {
         E_ERROR("Number of subvectors mismatch between kmeans and sdmap: %d != %d\n",
                 n_sv, s->n_sv);
