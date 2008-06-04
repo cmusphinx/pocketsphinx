@@ -383,7 +383,7 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
 			int32 compallsen,
                         int32 *out_bestidx)
 {
-    int i, j;
+    int i;
 
     for (i = 0; i < s->n_feat; ++i) {
         mgau_dist(s, frame, i, featbuf[i]);
