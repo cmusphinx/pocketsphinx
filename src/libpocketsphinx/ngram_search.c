@@ -563,7 +563,17 @@ ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf)
             ps_search_dict(ngs)->rcFwdPermTable[p_bpe->r_diph] : ngs->zeroPermTab;
         start_score =
             ngs->bscore_stack[p_bpe->s_idx + rcpermtab[de->ci_phone_ids[0]]];
+        /* FIXME: WORST_SCORE shouldn't propagate, but sometimes it
+           does.  We cannot allow it to go any further because that
+           will result in positive acoustic scores.  Tracing the
+           source of this may be a bit involved. */
+        if (start_score == WORST_SCORE)
+            start_score = 0;
 
+        /* FIXME: These result in positive acoustic scores when filler
+           words have non-filler pronunciations.  That whole business
+           is still pretty much broken but at least it doesn't
+           segfault. */
         if (bpe->wid == ps_search_silence_wid(ngs)) {
             bpe->lscr = ngs->silpen;
         }
@@ -1031,7 +1041,16 @@ ngram_search_lattice(ps_search_t *search)
             score =
                 (ngs->bscore_stack[bp_ptr->s_idx + bss_offset] - bp_ptr->score) +
                 bp_ptr->ascr;
-            if (score > WORST_SCORE) {
+            if (score > 0) {
+                /* Scores must be negative, or Bad Things will happen.
+                   In general, they are, except in corner cases
+                   involving filler words.  We don't want to throw any
+                   links away so we'll keep these, but with some
+                   arbitrarily improbable but recognizable score. */
+                ps_lattice_link(dag, from, to, -424242, bp_ptr->frame);
+                from->reachable = TRUE;
+            }
+            else if (score > WORST_SCORE) {
                 ps_lattice_link(dag, from, to, score, bp_ptr->frame);
                 from->reachable = TRUE;
             }
