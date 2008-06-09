@@ -81,6 +81,10 @@ struct _GstVader
     gint silence_mean;            /**< Mean RMS power of silence frames. */
     gint silence_stddev;          /**< Variance in RMS power of silence frames. */
     gint silence_frames;          /**< Number of frames used in estimating mean/variance */
+
+    gchar *dumpdir;               /**< Directory to dump audio to (for debugging). */
+    FILE *dumpfile;		  /**< Current audio dump file. */
+    gint dumpidx;                 /**< Dump file index. */
 };
 
 struct _GstVaderClass

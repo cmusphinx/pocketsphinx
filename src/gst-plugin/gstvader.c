@@ -85,7 +85,8 @@ enum
     PROP_AUTO_THRESHOLD,
     PROP_RUN_LENGTH,
     PROP_PRE_LENGTH,
-    PROP_SILENT
+    PROP_SILENT,
+    PROP_DUMPDIR
 };
 
 GST_BOILERPLATE(GstVader, gst_vader, GstElement, GST_TYPE_ELEMENT);
@@ -94,6 +95,7 @@ static void gst_vader_set_property(GObject * object, guint prop_id,
                                    const GValue * value, GParamSpec * pspec);
 static void gst_vader_get_property(GObject * object, guint prop_id,
                                    GValue * value, GParamSpec * pspec);
+static void gst_vader_finalize(GObject *gobject);
 
 static GstFlowReturn gst_vader_chain(GstPad * pad, GstBuffer * buffer);
 
@@ -120,6 +122,7 @@ gst_vader_class_init(GstVaderClass * klass)
 
     gobject_class->set_property = gst_vader_set_property;
     gobject_class->get_property = gst_vader_get_property;
+    gobject_class->finalize = gst_vader_finalize;
 
     g_object_class_install_property
         (G_OBJECT_CLASS(klass), PROP_THRESHOLD,
@@ -146,6 +149,12 @@ gst_vader_class_init(GstVaderClass * klass)
          g_param_spec_boolean("silent", "Silent",
                              "Whether the VADER is currently in a silence region",
                               TRUE, G_PARAM_READWRITE));
+    g_object_class_install_property
+        (gobject_class, PROP_DUMPDIR,
+         g_param_spec_string("dump-dir", "Audio dump directory",
+                             "Directory in which to write audio segments for debugging",
+                             NULL,
+                             G_PARAM_READWRITE));
 
     gst_vader_signals[SIGNAL_VADER_START] = 
         g_signal_new("vader_start",
@@ -189,6 +198,9 @@ gst_vader_init(GstVader * filter, GstVaderClass * g_class)
     filter->silence_mean = 0;
     filter->silence_stddev = 0;
     filter->silence_frames = 0;
+    filter->dumpdir = NULL;
+    filter->dumpfile = NULL;
+    filter->dumpidx = 0;
 
     memset(filter->window, 0, VADER_WINDOW * sizeof(*filter->window));
     filter->silent = TRUE;
@@ -205,6 +217,18 @@ gst_vader_init(GstVader * filter, GstVaderClass * g_class)
 
     gst_element_add_pad(GST_ELEMENT(filter), filter->srcpad);
     gst_pad_use_fixed_caps(filter->srcpad);
+}
+
+static void
+gst_vader_finalize(GObject *gobject)
+{
+    GstVader *vader = GST_VADER(gobject);
+
+    if (vader->dumpfile)
+        fclose(vader->dumpfile);
+    if (vader->dumpdir)
+        g_free(vader->dumpdir);
+    GST_CALL_PARENT(G_OBJECT_CLASS, finalize, (gobject));
 }
 
 static GstMessage *
@@ -347,6 +371,12 @@ gst_vader_transition(GstVader *filter, GstClockTime ts)
         g_static_rec_mutex_lock(&filter->mtx);
         /* FIXME: That event's timestamp is wrong... as is this one. */
         g_signal_emit(filter, gst_vader_signals[SIGNAL_VADER_STOP], 0, ts);
+        /* Stop dumping audio */
+        if (filter->dumpfile) {
+            fclose(filter->dumpfile);
+            filter->dumpfile = NULL;
+            ++filter->dumpidx;
+        }
     } else {
         /* Silence to sound transition. */
         gint count = 0;
@@ -374,6 +404,14 @@ gst_vader_transition(GstVader *filter, GstClockTime ts)
         gst_pad_push_event(filter->srcpad, e);
         g_static_rec_mutex_lock(&filter->mtx);
 
+        /* Start dumping audio */
+        if (filter->dumpdir) {
+            gchar *filename = g_strdup_printf("%s/%08d.raw", filter->dumpdir,
+                                              filter->dumpidx);
+            filter->dumpfile = fopen(filename, "wb");
+            g_free(filename);
+        }
+
         /* first of all, flush current buffer */
         GST_DEBUG_OBJECT(filter, "flushing buffer of length %" GST_TIME_FORMAT,
                          GST_TIME_ARGS(filter->pre_run_length));
@@ -382,6 +420,9 @@ gst_vader_transition(GstVader *filter, GstClockTime ts)
 
             prebuf = (g_list_first(filter->pre_buffer))->data;
             filter->pre_buffer = g_list_remove(filter->pre_buffer, prebuf);
+            if (filter->dumpfile)
+                fwrite(GST_BUFFER_DATA(prebuf), 1, GST_BUFFER_SIZE(prebuf),
+                       filter->dumpfile);
             /* This will block if the pipeline is paused so we have to unlock. */
             g_static_rec_mutex_unlock(&filter->mtx);
             gst_pad_push(filter->srcpad, prebuf);
@@ -511,6 +552,9 @@ gst_vader_chain(GstPad * pad, GstBuffer * buf)
         }
         g_static_rec_mutex_unlock(&filter->mtx);
     } else {
+        if (filter->dumpfile)
+            fwrite(GST_BUFFER_DATA(buf), 1, GST_BUFFER_SIZE(buf),
+                   filter->dumpfile);
         gst_pad_push(filter->srcpad, buf);
     }
 
@@ -571,6 +615,10 @@ gst_vader_set_property(GObject * object, guint prop_id,
     case PROP_PRE_LENGTH:
         filter->pre_length = g_value_get_uint64(value);
         break;
+    case PROP_DUMPDIR:
+        g_free(filter->dumpdir);
+        filter->dumpdir = g_strdup(g_value_get_string(value));
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -601,6 +649,9 @@ gst_vader_get_property(GObject * object, guint prop_id,
         break;
     case PROP_SILENT:
         g_value_set_boolean(value, filter->silent);
+        break;
+    case PROP_DUMPDIR:
+        g_value_set_string(value, filter->dumpdir);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
