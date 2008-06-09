@@ -408,8 +408,12 @@ ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score
     int best_exit, bp;
     int32 best_score;
 
-    if (frame_idx == -1)
-        frame_idx = acmod_frame_idx(ps_search_acmod(ngs));
+    /* No hypothesis means no exit node! */
+    if (ngs->n_frame == 0)
+        return NO_BP;
+
+    if (frame_idx == -1 || frame_idx >= ngs->n_frame)
+        frame_idx = ngs->n_frame - 1;
     end_bpidx = ngs->bp_table_idx[frame_idx];
 
     /* FIXME: WORST_SCORE has to go away and be replaced with a log-zero number. */
@@ -419,12 +423,12 @@ ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score
     /* Scan back to find a frame with some backpointers in it. */
     while (frame_idx >= 0 && ngs->bp_table_idx[frame_idx] == end_bpidx)
         --frame_idx;
-    if (frame_idx < 0) {
-        E_ERROR("ngram_search_find_exit() called with empty backpointer table\n");
+    /* This is NOT an error, it just means there is no hypothesis yet. */
+    if (frame_idx < 0)
         return NO_BP;
-    }
 
     /* Now find the entry for </s> OR the best scoring entry. */
+    assert(end_bpidx < ngs->bp_table_size);
     for (bp = ngs->bp_table_idx[frame_idx]; bp < end_bpidx; ++bp) {
         if (ngs->bp_table[bp].wid == ps_search_finish_wid(ngs)
             || ngs->bp_table[bp].score > best_score) {
