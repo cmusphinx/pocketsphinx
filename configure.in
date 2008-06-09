@@ -1,7 +1,7 @@
 dnl Welcome to the Sphinx automated build system.
 dnl try not to hurt yourself ;)
 
-AC_INIT(pocketsphinx, 0.5)
+AC_INIT(pocketsphinx, 0.5.99)
 AM_INIT_AUTOMAKE([no-define dist-bzip2 dist-zip])
 AC_SUBST(ACLOCAL_AMFLAGS, "-I m4")
 
