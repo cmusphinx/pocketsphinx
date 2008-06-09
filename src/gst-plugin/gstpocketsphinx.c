@@ -95,6 +95,7 @@ enum
     PROP_MAXWPF,
     PROP_DSRATIO,
     PROP_LATDIR,
+    PROP_CONFIGURED
 };
 
 /* Default command line. (will go away soon and be constructed using properties) */
@@ -259,6 +260,13 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                           1, 10, 1,
                           G_PARAM_READWRITE));
 
+    g_object_class_install_property
+        (gobject_class, PROP_CONFIGURED,
+         g_param_spec_boolean("configured", "Finalize configuration",
+                              "Set this to finalize configuration",
+                              FALSE,
+                              G_PARAM_READWRITE));
+
     gst_pocketsphinx_signals[SIGNAL_PARTIAL_RESULT] = 
         g_signal_new("partial_result",
                      G_TYPE_FROM_CLASS(klass),
@@ -322,9 +330,15 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     GstPocketSphinx *ps = GST_POCKETSPHINX(object);
 
     switch (prop_id) {
+    case PROP_CONFIGURED:
+        if (ps->ps)
+            ps_reinit(ps->ps, NULL);
+        else
+            ps->ps = ps_init(ps->config);
+        break;
     case PROP_HMM_DIR:
         gst_pocketsphinx_set_string(ps, "-hmm", value);
-        if (ps->inited) {
+        if (ps->ps) {
             /* Reinitialize the decoder with the new acoustic model. */
             ps_reinit(ps->ps, NULL);
         }
@@ -333,7 +347,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         /* FSG and LM are mutually exclusive. */
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
         gst_pocketsphinx_set_string(ps, "-lm", value);
-        if (ps->inited) {
+        if (ps->ps) {
             ngram_model_t *lm, *lmset;
 
             /* Switch to this new LM. */
@@ -349,7 +363,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         break;
     case PROP_DICT_FILE:
         gst_pocketsphinx_set_string(ps, "-dict", value);
-        if (ps->inited) {
+        if (ps->ps) {
             /* Reinitialize the decoder with the new dictionary. */
             ps_reinit(ps->ps, NULL);
         }
@@ -369,7 +383,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_string(ps, "-lm", NULL);
         gst_pocketsphinx_set_string(ps, "-fsg", value);
 
-        if (ps->inited) {
+        if (ps->ps) {
             /* Switch to this new FSG. */
             fsg_set_t *fsgs = ps_get_fsgset(ps->ps);
             fsg_model_t *fsg;
@@ -416,6 +430,9 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
     GstPocketSphinx *ps = GST_POCKETSPHINX(object);
 
     switch (prop_id) {
+    case PROP_CONFIGURED:
+        g_value_set_boolean(value, ps->ps != NULL);
+        break;
     case PROP_HMM_DIR:
         g_value_set_string(value, cmd_ln_str_r(ps->config, "-hmm"));
         break;
@@ -532,9 +549,10 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
     /* Pick out VAD events. */
     switch (event->type) {
     case GST_EVENT_NEWSEGMENT:
-        /* Initialize the decoder once the audio starts. (HACK) */
-        ps->ps = ps_init(ps->config);
-        ps->inited = TRUE;
+        /* Initialize the decoder once the audio starts, if it's not
+         * there yet. */
+        if (ps->ps == NULL)
+            ps->ps = ps_init(ps->config);
         return gst_pad_event_default(pad, event);
     case GST_EVENT_VADER_START:
         ps->listening = TRUE;

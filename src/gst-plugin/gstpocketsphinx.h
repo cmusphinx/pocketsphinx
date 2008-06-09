@@ -70,7 +70,6 @@ struct _GstPocketSphinx
     gchar *latdir;                 /**< Output directory for word lattices. */
 
     GHashTable *arghash;
-    gboolean inited;
     gboolean listening;
 
     GstClockTime last_result_time; /**< Timestamp of last partial result. */
