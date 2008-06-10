@@ -84,7 +84,13 @@ struct _GstPocketSphinxClass
     void (*result)          (GstElement *element, const gchar *hyp_str);
 };
 
-GType gst_pocketsphinx_get_type (void);
+GType gst_pocketsphinx_get_type(void);
+
+/*
+ * Boxing of lattices.
+ */
+#define PS_LATTICE_TYPE (ps_lattice_get_type())
+GType ps_lattice_get_type(void);
 
 G_END_DECLS
 

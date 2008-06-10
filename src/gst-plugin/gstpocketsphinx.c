@@ -74,6 +74,17 @@
 GST_DEBUG_CATEGORY_STATIC(pocketsphinx_debug);
 #define GST_CAT_DEFAULT pocketsphinx_debug
 
+/*
+ * Forward declarations.
+ */
+
+static void gst_pocketsphinx_set_property(GObject * object, guint prop_id,
+                                          const GValue * value, GParamSpec * pspec);
+static void gst_pocketsphinx_get_property(GObject * object, guint prop_id,
+                                          GValue * value, GParamSpec * pspec);
+static GstFlowReturn gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer);
+static gboolean gst_pocketsphinx_event(GstPad *pad, GstEvent *event);
+
 enum
 {
     SIGNAL_PARTIAL_RESULT,
@@ -95,8 +106,14 @@ enum
     PROP_MAXWPF,
     PROP_DSRATIO,
     PROP_LATDIR,
+    PROP_LATTICE,
+    PROP_DECODER,
     PROP_CONFIGURED
 };
+
+/*
+ * Static data.
+ */
 
 /* Default command line. (will go away soon and be constructed using properties) */
 static char *default_argv[] = {
@@ -130,16 +147,32 @@ static GstStaticPadTemplate src_factory =
                             GST_PAD_ALWAYS,
                             GST_STATIC_CAPS("text/plain")
         );
-	
-static void gst_pocketsphinx_set_property(GObject * object, guint prop_id,
-                                          const GValue * value, GParamSpec * pspec);
-static void gst_pocketsphinx_get_property(GObject * object, guint prop_id,
-                                          GValue * value, GParamSpec * pspec);
-static GstFlowReturn gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer);
-static gboolean gst_pocketsphinx_event(GstPad *pad, GstEvent *event);
-
 static guint gst_pocketsphinx_signals[LAST_SIGNAL];
 
+/*
+ * Boxing of ps_lattice_t.
+ */
+
+GType
+ps_lattice_get_type(void)
+{
+    static GType ps_lattice_type = 0;
+
+    if (G_UNLIKELY(ps_lattice_type == 0)) {
+        ps_lattice_type = g_boxed_type_register_static
+            ("PSLattice",
+             /* Conveniently, these should just work. */
+             (GBoxedCopyFunc) ps_lattice_retain,
+             (GBoxedFreeFunc) ps_lattice_free);
+    }
+
+    return ps_lattice_type;
+}
+
+
+/*
+ * gst_pocketsphinx element.
+ */
 GST_BOILERPLATE (GstPocketSphinx, gst_pocketsphinx, GstElement, GST_TYPE_ELEMENT);
 
 static void
@@ -240,6 +273,12 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                              "Output Directory for Lattices",
                              NULL,
                              G_PARAM_READWRITE));
+    g_object_class_install_property
+        (gobject_class, PROP_LATTICE,
+         g_param_spec_boxed("lattice", "Word Lattice",
+                            "Word lattice object for most recent result",
+                            PS_LATTICE_TYPE,
+                            G_PARAM_READABLE));
 
     g_object_class_install_property
         (gobject_class, PROP_MAXHMMPF,
@@ -260,6 +299,11 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                           1, 10, 1,
                           G_PARAM_READWRITE));
 
+    g_object_class_install_property
+        (gobject_class, PROP_DECODER,
+         g_param_spec_pointer("decoder", "Decoder object",
+                              "Pointer to the underlying decoder",
+                              G_PARAM_READABLE));
     g_object_class_install_property
         (gobject_class, PROP_CONFIGURED,
          g_param_spec_boolean("configured", "Finalize configuration",
@@ -430,6 +474,9 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
     GstPocketSphinx *ps = GST_POCKETSPHINX(object);
 
     switch (prop_id) {
+    case PROP_DECODER:
+        g_value_set_pointer(value, ps->ps);
+        break;
     case PROP_CONFIGURED:
         g_value_set_boolean(value, ps->ps != NULL);
         break;
@@ -454,6 +501,15 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
     case PROP_LATDIR:
         g_value_set_string(value, ps->latdir);
         break;
+    case PROP_LATTICE: {
+        ps_lattice_t *dag;
+
+        if (ps->ps && (dag = ps_get_lattice(ps->ps)))
+            g_value_set_boxed(value, dag);
+        else
+            g_value_set_boxed(value, NULL);
+        break;
+    }
     case PROP_MAXHMMPF:
         g_value_set_int(value, cmd_ln_int32_r(ps->config, "-maxhmmpf"));
         break;
