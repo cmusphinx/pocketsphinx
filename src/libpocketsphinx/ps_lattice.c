@@ -289,19 +289,30 @@ ps_lattice_init(ps_search_t *search, int n_frame)
     dag->latnode_alloc = listelem_alloc_init(sizeof(latnode_t));
     dag->latlink_alloc = listelem_alloc_init(sizeof(latlink_t));
     dag->latlink_list_alloc = listelem_alloc_init(sizeof(latlink_list_t));
+    dag->refcount = 1;
     return dag;
 }
 
-void
+ps_lattice_t *
+ps_lattice_retain(ps_lattice_t *dag)
+{
+    ++dag->refcount;
+    return dag;
+}
+
+int
 ps_lattice_free(ps_lattice_t *dag)
 {
     if (dag == NULL)
-        return;
+        return 0;
+    if (--dag->refcount > 0)
+        return dag->refcount;
     listelem_alloc_free(dag->latnode_alloc);
     listelem_alloc_free(dag->latlink_alloc);
     listelem_alloc_free(dag->latlink_list_alloc);
     ckd_free(dag->hyp_str);
     ckd_free(dag);
+    return 0;
 }
 
 char const *

@@ -109,6 +109,8 @@ typedef struct latnode_s {
 struct ps_lattice_s {
     ps_search_t *search; /**< Search object which produced this DAG. */
 
+    int refcount;      /**< Reference count. */
+
     latnode_t *nodes;  /**< List of all nodes. */
     latnode_t *start;  /**< Starting node. */
     latnode_t *end;    /**< Ending node. */
@@ -182,11 +184,6 @@ typedef struct ps_astar_s {
  * Construct an empty word graph.
  */
 ps_lattice_t *ps_lattice_init(ps_search_t *search, int n_frame);
-
-/**
- * Destruct a word graph.
- */
-void ps_lattice_free(ps_lattice_t *dag);
 
 /**
  * Create a directed link between "from" and "to" nodes, but if a link already exists,

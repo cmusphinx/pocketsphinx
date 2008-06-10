@@ -333,9 +333,31 @@ char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score,
  * @return Word lattice object containing all hypotheses so far.  NULL
  *         if no hypotheses are available.  This pointer is owned by
  *         the decoder and you should not attempt to free it manually.
+ *         It is only valid until the next utterance, unless you use
+ *         ps_lattice_retain() to retain it.
  */
 POCKETSPHINX_EXPORT
 ps_lattice_t *ps_get_lattice(ps_decoder_t *ps);
+
+/**
+ * Retain a lattice.
+ *
+ * This function retains ownership of a lattice for the caller,
+ * preventing it from being freed automatically.  You must call
+ * ps_lattice_free() to free it after having called this function.
+ *
+ * @return pointer to the retained lattice.
+ */
+POCKETSPHINX_EXPORT
+ps_lattice_t *ps_lattice_retain(ps_lattice_t *dag);
+
+/**
+ * Free a lattice.
+ *
+ * @return new reference count (0 if dag was freed)
+ */
+POCKETSPHINX_EXPORT
+int ps_lattice_free(ps_lattice_t *dag);
 
 /**
  * Write a lattice to disk.
