@@ -40,7 +40,7 @@ cdef extern from "pocketsphinx.h":
     cmd_ln_t *ps_get_config(ps_decoder_t *ps)
     logmath_t *ps_get_logmath(ps_decoder_t *ps)
     ngram_model_t *ps_get_lmset(ps_decoder_t *ps)
-    ngram_model_t *ps_update_lmset(ps_decoder_t *ps)
+    ngram_model_t *ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset)
     fsg_set_t *ps_get_fsgset(ps_decoder_t *ps)
     fsg_set_t *ps_update_fsgset(ps_decoder_t *ps)
     int ps_add_word(ps_decoder_t *ps, char *word, char *phones, int update)

@@ -39,7 +39,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(lmset);
 	ngram_model_set_add(lmset, lm, "turtle", 1.0, TRUE);
 	ngram_model_set_select(lmset, "turtle");
-	ps_update_lmset(ps);
+	ps_update_lmset(ps, lmset);
 	clearerr(rawfh);
 	fseek(rawfh, 0, SEEK_SET);
 	TEST_ASSERT(ps_decode_raw(ps, rawfh, "goforward", -1));

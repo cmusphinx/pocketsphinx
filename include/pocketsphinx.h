@@ -170,14 +170,14 @@ ngram_model_t *ps_get_lmset(ps_decoder_t *ps);
  * data structures to reflect any changes made to the language model
  * set (e.g. switching language models, adding words, etc).
  *
- * FIXME: Is there any good reason why switching lmsets shouldn't
- * work?  We should probably allow it if it does.
- *
- * @return The current language model set object for this decoder, or
+ * @param lmset The new lmset to use, or NULL to update the existing
+ *              lmset.  The decoder retains ownership of this pointer,
+ *              so you should not attempt to free it manually.
+ * @return The updated language model set object for this decoder, or
  *         NULL on failure.
  */
 POCKETSPHINX_EXPORT
-ngram_model_t *ps_update_lmset(ps_decoder_t *ps);
+ngram_model_t *ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset);
 
 /**
  * Get the finite-state grammar set object for this decoder.

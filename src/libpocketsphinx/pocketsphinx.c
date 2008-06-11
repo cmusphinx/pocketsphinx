@@ -252,7 +252,7 @@ ps_get_lmset(ps_decoder_t *ps)
 }
 
 ngram_model_t *
-ps_update_lmset(ps_decoder_t *ps)
+ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset)
 {
     ngram_search_t *ngs;
     gnode_t *gn;
@@ -271,8 +271,12 @@ ps_update_lmset(ps_decoder_t *ps)
         ps->searches = glist_add_ptr(ps->searches, ngs);
     }
     else {
-        /* Tell N-Gram search to update its view of the world. */
         ngs = gnode_ptr(gn);
+        /* Free any previous lmset if this is a new one. */
+        if (ngs->lmset != NULL && ngs->lmset != lmset)
+            ngram_model_free(ngs->lmset);
+        ngs->lmset = lmset;
+        /* Tell N-Gram search to update its view of the world. */
         if (ps_search_reinit(ps_search_base(ngs)) < 0)
             return NULL;
     }

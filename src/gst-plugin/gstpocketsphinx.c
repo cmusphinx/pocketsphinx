@@ -97,6 +97,8 @@ enum
     PROP_0,
     PROP_HMM_DIR,
     PROP_LM_FILE,
+    PROP_LMCTL_FILE,
+    PROP_LM_NAME,
     PROP_DICT_FILE,
     PROP_FSG_FILE,
     PROP_FSG_MODEL,
@@ -234,6 +236,18 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
         (gobject_class, PROP_LM_FILE,
          g_param_spec_string("lm", "LM File",
                              "Language model file",
+                             NULL,
+                             G_PARAM_READWRITE));
+    g_object_class_install_property
+        (gobject_class, PROP_LMCTL_FILE,
+         g_param_spec_string("lmctl", "LM Control File",
+                             "Language model control file (for class LMs)",
+                             NULL,
+                             G_PARAM_READWRITE));
+    g_object_class_install_property
+        (gobject_class, PROP_LM_NAME,
+         g_param_spec_string("lmname", "LM Name",
+                             "Language model name (to select LMs from lmctl)",
                              NULL,
                              G_PARAM_READWRITE));
     g_object_class_install_property
@@ -390,6 +404,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     case PROP_LM_FILE:
         /* FSG and LM are mutually exclusive. */
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
         gst_pocketsphinx_set_string(ps, "-lm", value);
         if (ps->ps) {
             ngram_model_t *lm, *lmset;
@@ -402,9 +417,33 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
             lmset = ps_get_lmset(ps->ps);
             ngram_model_set_add(lmset, lm, g_value_get_string(value),
                                 1.0, TRUE);
-            ps_update_lmset(ps->ps);
+            ps_update_lmset(ps->ps, lmset);
         }
         break;
+    case PROP_LMCTL_FILE:
+        /* FSG and LM are mutually exclusive. */
+        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "-lmctl", value);
+        gst_pocketsphinx_set_string(ps, "-lm", NULL);
+        if (ps->ps) {
+            ngram_model_t *lmset;
+            lmset = ngram_model_set_read(ps->config,
+                                         g_value_get_string(value),
+                                         ps_get_logmath(ps->ps));
+            ps_update_lmset(ps->ps, lmset);
+        }
+        break;
+    case PROP_LM_NAME:
+        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "-lmname", value);
+        if (ps->ps) {
+            ngram_model_t *lm, *lmset;
+
+            lmset = ps_get_lmset(ps->ps);
+            lm = ngram_model_set_select(lmset, g_value_get_string(value));
+            ps_update_lmset(ps->ps, lmset);
+        }
+
     case PROP_DICT_FILE:
         gst_pocketsphinx_set_string(ps, "-dict", value);
         if (ps->ps) {
@@ -485,6 +524,12 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
         break;
     case PROP_LM_FILE:
         g_value_set_string(value, cmd_ln_str_r(ps->config, "-lm"));
+        break;
+    case PROP_LMCTL_FILE:
+        g_value_set_string(value, cmd_ln_str_r(ps->config, "-lmctl"));
+        break;
+    case PROP_LM_NAME:
+        g_value_set_string(value, cmd_ln_str_r(ps->config, "-lmname"));
         break;
     case PROP_DICT_FILE:
         g_value_set_string(value, cmd_ln_str_r(ps->config, "-dict"));
