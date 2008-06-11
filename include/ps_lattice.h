@@ -68,12 +68,22 @@ typedef struct ps_astar_s ps_astar_t;
 typedef struct ps_latnode_s ps_latnode_t;
 
 /**
+ * Iterator over DAG nodes.
+ */
+typedef struct ps_latnode_iter_s ps_latnode_iter_t;
+
+/**
  * Links between DAG nodes.
  *
  * A link corresponds to a single hypothesized instance of a word with
  * a given start and end point.
  */
 typedef struct ps_latlink_s ps_latlink_t;
+
+/**
+ * Iterator over DAG links.
+ */
+typedef struct ps_latlink_iter_s ps_latlink_iter_t;
 
 /**
  * Partial path structure used in N-best (A*) search.
@@ -105,9 +115,147 @@ int ps_lattice_free(ps_lattice_t *dag);
 
 /**
  * Write a lattice to disk.
+ *
+ * @return 0 for success, <0 on failure.
  */
 POCKETSPHINX_EXPORT
-int32 ps_lattice_write(ps_lattice_t *dag, char const *filename);
+int ps_lattice_write(ps_lattice_t *dag, char const *filename);
+
+/**
+ * Get the log-math computation object for this lattice
+ *
+ * @return The log-math object for this lattice.  The lattice retains
+ *         ownership of this pointer, so you should not attempt to
+ *         free it manually.  Use logmath_retain() if you wish to
+ *         reuse it elsewhere.
+ */
+POCKETSPHINX_EXPORT
+logmath_t *ps_lattice_get_logmath(ps_lattice_t *dag);
+
+
+/**
+ * Start iterating over nodes in the lattice.
+ *
+ * @note No particular order of traversal is guaranteed, and you
+ * should not depend on this.
+ *
+ * @param dag Lattice to iterate over.
+ * @return Iterator over lattice nodes.
+ */
+POCKETSPHINX_EXPORT
+ps_latnode_iter_t *ps_latnode_iter(ps_lattice_t *dag);
+
+/**
+ * Move to next node in iteration.
+ * @param itor Node iterator.
+ * @return Updated node iterator, or NULL if finished
+ */
+POCKETSPHINX_EXPORT
+ps_latnode_iter_t *ps_latnode_iter_next(ps_latnode_iter_t *itor);
+
+/**
+ * Stop iterating over nodes.
+ * @param itor Node iterator.
+ */
+POCKETSPHINX_EXPORT
+void ps_latnode_iter_free(ps_latnode_iter_t *itor);
+
+/**
+ * Get node from iterator.
+ */
+POCKETSPHINX_EXPORT
+ps_latnode_t *ps_latnode_iter_node(ps_latnode_iter_t *itor);
+
+/**
+ * Get start and end time range for a node.
+ *
+ * @param node Node inquired about.
+ * @param out_fef Output: End frame of first exit from this node.
+ * @param out_lef Output: End frame of last exit from this node.
+ * @return Start frame for all edges exiting this node.
+ */
+POCKETSPHINX_EXPORT
+int ps_latnode_times(ps_latnode_t *node, int16 *outfef, int16 *out_lef);
+
+/**
+ * Get word string for this node.
+ *
+ * @param node Node inquired about
+ * @return Word string for this node.
+ */
+POCKETSPHINX_EXPORT
+char const *ps_latnode_word(ps_latnode_t *node);
+
+/**
+ * Iterate over exits from this node.
+ *
+ * @param node Node inquired about.
+ * @return Iterator over exit links from this node.
+ */
+POCKETSPHINX_EXPORT
+ps_latlink_iter_t *ps_latnode_exits(ps_latnode_t *node);
+
+/**
+ * Iterate over entries to this node.
+ *
+ * @param node Node inquired about.
+ * @return Iterator over entry links to this node.
+ */
+POCKETSPHINX_EXPORT
+ps_latlink_iter_t *ps_latnode_entries(ps_latnode_t *node);
+
+/**
+ * Get next link from a lattice link iterator.
+ *
+ * @param itor Iterator.
+ * @return Updated iterator, or NULL if finished.
+ */
+POCKETSPHINX_EXPORT
+ps_latlink_iter_t *ps_latlink_iter_next(ps_latlink_iter_t *itor);
+
+/**
+ * Stop iterating over links.
+ * @param itor Link iterator.
+ */
+POCKETSPHINX_EXPORT
+void ps_latlink_iter_free(ps_latlink_iter_t *itor);
+
+/**
+ * Get link from iterator.
+ */
+POCKETSPHINX_EXPORT
+ps_latlink_t *ps_latlink_iter_link(ps_latlink_iter_t *itor);
+
+/**
+ * Get destination and source nodes from a lattice link
+ *
+ * @param node Link inquired about
+ * @param out_src Output: (optional) source node.
+ * @return destination node
+ */
+POCKETSPHINX_EXPORT
+ps_latnode_t *ps_latlink_nodes(ps_latlink_t *link, ps_latnode_t **out_src);
+
+/**
+ * Get word string from a lattice link.
+ *
+ * @param node Link inquired about
+ * @return Word string for this link.
+ */
+POCKETSPHINX_EXPORT
+char const *ps_latlink_word(ps_latlink_t *link);
+
+/**
+ * Get acoustic score and posterior probability from a lattice link.
+ *
+ * @param node Link inquired about
+ * @param out_ascr Output: (optional) acoustic score.
+ * @return Posterior probability for this link.  Log is expressed in
+ *         the log-base used in the decoder.  To convert to linear
+ *         floating-point, use logmath_exp(ps_lattice_get_logmath(), pprob).
+ */
+POCKETSPHINX_EXPORT
+int32 ps_latlink_prob(ps_latlink_t *link, int32 *out_ascr);
 
 /**
  * Create a directed link between "from" and "to" nodes, but if a link already exists,

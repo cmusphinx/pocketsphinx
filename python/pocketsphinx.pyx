@@ -24,9 +24,19 @@ cdef extern from "fsg_set.h":
 cdef extern from "stdio.h":
     ctypedef struct FILE # oh dear...
 
+cdef extern from "ps_lattice.h":
+    ctypedef struct ps_lattice_t
+    ctypedef struct ps_latnode_t
+    ctypedef struct ps_latlink_t
+    ctypedef struct ps_latpath_t
+    ctypedef struct ps_astar_t
+
+    ps_lattice_t *ps_lattice_retain(ps_lattice_t *dag)
+    int ps_lattice_free(ps_lattice_t *dag)
+    int ps_lattice_write(ps_lattice_t *dag, char *filename)
+
 cdef extern from "pocketsphinx.h":
     ctypedef struct ps_decoder_t
-    ctypedef struct ps_lattice_t
     ctypedef struct ps_nbest_t
     ctypedef struct ps_seg_t
     ctypedef int size_t
@@ -52,7 +62,6 @@ cdef extern from "pocketsphinx.h":
     int ps_end_utt(ps_decoder_t *ps)
     char *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score, char **out_uttid)
     ps_lattice_t *ps_get_lattice(ps_decoder_t *ps)
-    int ps_lattice_write(ps_lattice_t *dag, char *filename)
     ps_seg_t *ps_seg_iter(ps_decoder_t *ps, int32 *out_best_score)
     ps_seg_t *ps_seg_next(ps_seg_t *seg)
     char *ps_seg_word(ps_seg_t *seg)

@@ -14,6 +14,7 @@ check_PROGRAMS = \
 	test_ps_fwdtree_bestpath \
 	test_ps_simple \
 	test_ps_nbest \
+	test_ps_lattice \
 	test_acmod \
 	test_acmod_grow \
 	test_fwdtree \
@@ -29,29 +30,7 @@ check_PROGRAMS = \
 	test_lm_read \
 	$(gst_programs)
 
-TESTS = \
-	test_ps_init \
-	test_ps_fwdtree \
-	test_ps_fwdtree_fwdflat \
-	test_ps_fwdflat \
-	test_ps_fwdflat_bestpath \
-	test_ps_fwdtree_bestpath \
-	test_ps_simple \
-	test_ps_nbest \
-	test_acmod \
-	test_acmod_grow \
-	test_fwdtree \
-	test_fwdflat \
-	test_fwdtree_fwdflat \
-	test_fwdtree_bestpath \
-	test_fwdtree_nbest \
-	test_posterior \
-	test_fsg \
-	test_fsg2 \
-	test_fsg3 \
-	test_jsgf \
-	test_lm_read \
-	$(gst_tests)
+TESTS = $(check_PROGRAMS)
 
 EXTRA_DIST = ps_test.c
 
