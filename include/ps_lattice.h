@@ -149,24 +149,51 @@ void ps_lattice_delq(ps_lattice_t *dag);
 
 /**
  * Start a forward traversal of edges in a word graph.
+ *
+ * @note A keen eye will notice an inconsistency in this API versus
+ * other types of iterators in PocketSphinx.  The reason for this is
+ * that the traversal algorithm is much more efficient when it is able
+ * to modify the lattice structure.  Therefore, to avoid giving the
+ * impression that multiple traversals are possible at once, no
+ * separate iterator structure is provided.
+ *
+ * @param dag Lattice to be traversed.
+ * @param start Start node (source) of traversal.
+ * @param end End node (goal) of traversal.
+ * @return First link in traversal.
  */
 POCKETSPHINX_EXPORT
 ps_latlink_t *ps_lattice_traverse_edges(ps_lattice_t *dag, ps_latnode_t *start, ps_latnode_t *end);
 
 /**
  * Get the next link in forward traversal.
+ *
+ * @param dag Lattice to be traversed.
+ * @param end End node (goal) of traversal.
+ * @return Next link in traversal.
  */
 POCKETSPHINX_EXPORT
 ps_latlink_t *ps_lattice_traverse_next(ps_lattice_t *dag, ps_latnode_t *end);
 
 /**
  * Start a reverse traversal of edges in a word graph.
+ *
+ * @note See ps_lattice_traverse_edges() for why this API is the way it is.
+ *
+ * @param dag Lattice to be traversed.
+ * @param start Start node (goal) of traversal.
+ * @param end End node (source) of traversal.
+ * @return First link in traversal.
  */
 POCKETSPHINX_EXPORT
 ps_latlink_t *ps_lattice_reverse_edges(ps_lattice_t *dag, ps_latnode_t *start, ps_latnode_t *end);
 
 /**
- * Get the next link in forward traversal.
+ * Get the next link in reverse traversal.
+ *
+ * @param dag Lattice to be traversed.
+ * @param end End node (goal) of traversal.
+ * @return Next link in traversal.
  */
 POCKETSPHINX_EXPORT
 ps_latlink_t *ps_lattice_reverse_next(ps_lattice_t *dag, ps_latnode_t *start);
@@ -181,7 +208,7 @@ ps_latlink_t *ps_lattice_reverse_next(ps_lattice_t *dag, ps_latnode_t *start);
  */
 POCKETSPHINX_EXPORT
 ps_latlink_t *ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
-                               float32 lwf, float32 ascale);
+                                  float32 lwf, float32 ascale);
 
 /**
  * Calculate link posterior probabilities on a word graph.
