@@ -59,9 +59,10 @@ typedef struct latlink_list_s {
  * Word graph structure used in bestpath/nbest search.
  */
 struct ps_lattice_s {
-    ps_search_t *search; /**< Search object which produced this DAG. */
-
     int refcount;      /**< Reference count. */
+
+    ps_search_t *search; /**< Search object which produced this DAG. */
+    logmath_t *lmath;    /**< Log-math object. */
 
     ps_latnode_t *nodes;  /**< List of all nodes. */
     ps_latnode_t *start;  /**< Starting node. */
@@ -188,9 +189,9 @@ typedef struct astar_seg_s {
 } astar_seg_t;
 
 /**
- * Construct an empty word graph.
+ * Construct an empty word graph with reference to a search structure.
  */
-ps_lattice_t *ps_lattice_init(ps_search_t *search, int n_frame);
+ps_lattice_t *ps_lattice_init_search(ps_search_t *search, int n_frame);
 
 /**
  * Create a new lattice link element.

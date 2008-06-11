@@ -996,7 +996,7 @@ ngram_search_lattice(ps_search_t *search)
     /* Nope, create a new one. */
     ps_lattice_free(search->dag);
     search->dag = NULL;
-    dag = ps_lattice_init(search, ngs->n_frame);
+    dag = ps_lattice_init_search(search, ngs->n_frame);
     create_dag_nodes(ngs, dag);
     if ((dag->start = find_start_node(ngs, dag)) == NULL)
         goto error_out;
