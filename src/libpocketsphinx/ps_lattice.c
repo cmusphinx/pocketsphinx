@@ -48,8 +48,8 @@
 #include <listelem_alloc.h>
 
 /* Local headers. */
-#include "pocketsphinx.h" /* To make sure ps_lattice_write() gets exported */
-#include "ps_lattice.h"
+#include "pocketsphinx_internal.h"
+#include "ps_lattice_internal.h"
 #include "ngram_search.h"
 
 /*
@@ -57,7 +57,7 @@
  * choose one with the best ascr.
  */
 void
-ps_lattice_link(ps_lattice_t *dag, latnode_t *from, latnode_t *to, int32 score, int32 ef)
+ps_lattice_link(ps_lattice_t *dag, ps_latnode_t *from, ps_latnode_t *to, int32 score, int32 ef)
 {
     latlink_list_t *fwdlink;
 
@@ -68,7 +68,7 @@ ps_lattice_link(ps_lattice_t *dag, latnode_t *from, latnode_t *to, int32 score, 
 
     if (fwdlink == NULL) {
         latlink_list_t *revlink;
-        latlink_t *link;
+        ps_latlink_t *link;
 
         /* No link between the two nodes; create a new one */
         link = listelem_malloc(dag->latlink_alloc);
@@ -99,7 +99,7 @@ ps_lattice_link(ps_lattice_t *dag, latnode_t *from, latnode_t *to, int32 score, 
 void
 ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
 {
-    latnode_t *node;
+    ps_latnode_t *node;
     int32 score;
 
     /* Bypass filler nodes */
@@ -111,7 +111,7 @@ ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
         /* Replace each link entering filler node with links to all its successors */
         for (revlink = node->entries; revlink; revlink = revlink->next) {
             latlink_list_t *forlink;
-            latlink_t *rlink = revlink->link;
+            ps_latlink_t *rlink = revlink->link;
 
             score = (node->basewid == ps_search_silence_wid(dag->search)) ? silpen : fillpen;
             score += rlink->ascr;
@@ -121,7 +121,7 @@ ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
              * appears earlier in latnode_list (see build...).  So it can be skipped.
              */
             for (forlink = node->exits; forlink; forlink = forlink->next) {
-                latlink_t *flink = forlink->link;
+                ps_latlink_t *flink = forlink->link;
                 if (!ISA_FILLER_WORD(dag->search, flink->to->basewid)) {
                     ps_lattice_link(dag, rlink->from, flink->to,
                                     score + flink->ascr, flink->ef);
@@ -132,7 +132,7 @@ ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
 }
 
 static void
-delete_node(ps_lattice_t *dag, latnode_t *node)
+delete_node(ps_lattice_t *dag, ps_latnode_t *node)
 {
     latlink_list_t *x, *next_x;
 
@@ -150,7 +150,7 @@ delete_node(ps_lattice_t *dag, latnode_t *node)
 }
 
 static void
-remove_dangling_links(ps_lattice_t *dag, latnode_t *node)
+remove_dangling_links(ps_lattice_t *dag, ps_latnode_t *node)
 {
     latlink_list_t *x, *prev_x, *next_x;
 
@@ -187,7 +187,7 @@ remove_dangling_links(ps_lattice_t *dag, latnode_t *node)
 void
 ps_lattice_delete_unreachable(ps_lattice_t *dag)
 {
-    latnode_t *node, *prev_node, *next_node;
+    ps_latnode_t *node, *prev_node, *next_node;
     int i;
 
     /* Remove unreachable nodes from the list of nodes. */
@@ -225,7 +225,7 @@ ps_lattice_write(ps_lattice_t *dag, char const *filename)
 {
     FILE *fp;
     int32 i;
-    latnode_t *d, *initial, *final;
+    ps_latnode_t *d, *initial, *final;
 
     initial = dag->start;
     final = dag->end;
@@ -286,8 +286,8 @@ ps_lattice_init(ps_search_t *search, int n_frame)
     dag = ckd_calloc(1, sizeof(*dag));
     dag->search = search;
     dag->n_frames = n_frame;
-    dag->latnode_alloc = listelem_alloc_init(sizeof(latnode_t));
-    dag->latlink_alloc = listelem_alloc_init(sizeof(latlink_t));
+    dag->latnode_alloc = listelem_alloc_init(sizeof(ps_latnode_t));
+    dag->latlink_alloc = listelem_alloc_init(sizeof(ps_latlink_t));
     dag->latlink_list_alloc = listelem_alloc_init(sizeof(latlink_list_t));
     dag->refcount = 1;
     return dag;
@@ -316,9 +316,9 @@ ps_lattice_free(ps_lattice_t *dag)
 }
 
 char const *
-ps_lattice_hyp(ps_lattice_t *dag, latlink_t *link)
+ps_lattice_hyp(ps_lattice_t *dag, ps_latlink_t *link)
 {
-    latlink_t *l;
+    ps_latlink_t *l;
     size_t len;
     char *c;
 
@@ -360,7 +360,7 @@ ps_lattice_hyp(ps_lattice_t *dag, latlink_t *link)
 }
 
 static void
-ps_lattice_compute_lscr(ps_seg_t *seg, latlink_t *link, int to)
+ps_lattice_compute_lscr(ps_seg_t *seg, ps_latlink_t *link, int to)
 {
     ngram_model_t *lmset;
 
@@ -406,10 +406,10 @@ ps_lattice_compute_lscr(ps_seg_t *seg, latlink_t *link, int to)
 }
 
 static void
-ps_lattice_link2itor(ps_seg_t *seg, latlink_t *link, int to)
+ps_lattice_link2itor(ps_seg_t *seg, ps_latlink_t *link, int to)
 {
     dag_seg_t *itor = (dag_seg_t *)seg;
-    latnode_t *node;
+    ps_latnode_t *node;
 
     if (to) {
         node = link->to;
@@ -463,10 +463,10 @@ static ps_segfuncs_t ps_lattice_segfuncs = {
 };
 
 ps_seg_t *
-ps_lattice_seg_iter(ps_lattice_t *dag, latlink_t *link, float32 lwf)
+ps_lattice_seg_iter(ps_lattice_t *dag, ps_latlink_t *link, float32 lwf)
 {
     dag_seg_t *itor;
-    latlink_t *l;
+    ps_latlink_t *l;
     int cur;
 
     /* Calling this an "iterator" is a bit of a misnomer since we have
@@ -499,7 +499,7 @@ ps_lattice_seg_iter(ps_lattice_t *dag, latlink_t *link, float32 lwf)
 }
 
 latlink_list_t *
-latlink_list_new(ps_lattice_t *dag, latlink_t *link, latlink_list_t *next)
+latlink_list_new(ps_lattice_t *dag, ps_latlink_t *link, latlink_list_t *next)
 {
     latlink_list_t *ll;
 
@@ -511,7 +511,7 @@ latlink_list_new(ps_lattice_t *dag, latlink_t *link, latlink_list_t *next)
 }
 
 void
-ps_lattice_pushq(ps_lattice_t *dag, latlink_t *link)
+ps_lattice_pushq(ps_lattice_t *dag, ps_latlink_t *link)
 {
     if (dag->q_head == NULL)
         dag->q_head = dag->q_tail = latlink_list_new(dag, link, NULL);
@@ -522,11 +522,11 @@ ps_lattice_pushq(ps_lattice_t *dag, latlink_t *link)
 
 }
 
-latlink_t *
+ps_latlink_t *
 ps_lattice_popq(ps_lattice_t *dag)
 {
     latlink_list_t *x;
-    latlink_t *link;
+    ps_latlink_t *link;
 
     if (dag->q_head == NULL)
         return NULL;
@@ -547,10 +547,10 @@ ps_lattice_delq(ps_lattice_t *dag)
     }
 }
 
-latlink_t *
-ps_lattice_traverse_edges(ps_lattice_t *dag, latnode_t *start, latnode_t *end)
+ps_latlink_t *
+ps_lattice_traverse_edges(ps_lattice_t *dag, ps_latnode_t *start, ps_latnode_t *end)
 {
-    latnode_t *node;
+    ps_latnode_t *node;
     latlink_list_t *x;
 
     /* Cancel any unfinished traversal. */
@@ -573,10 +573,10 @@ ps_lattice_traverse_edges(ps_lattice_t *dag, latnode_t *start, latnode_t *end)
     return ps_lattice_traverse_next(dag, end);
 }
 
-latlink_t *
-ps_lattice_traverse_next(ps_lattice_t *dag, latnode_t *end)
+ps_latlink_t *
+ps_lattice_traverse_next(ps_lattice_t *dag, ps_latnode_t *end)
 {
-    latlink_t *next;
+    ps_latlink_t *next;
 
     next = ps_lattice_popq(dag);
     if (next == NULL)
@@ -604,10 +604,10 @@ ps_lattice_traverse_next(ps_lattice_t *dag, latnode_t *end)
     return next;
 }
 
-latlink_t *
-ps_lattice_reverse_edges(ps_lattice_t *dag, latnode_t *start, latnode_t *end)
+ps_latlink_t *
+ps_lattice_reverse_edges(ps_lattice_t *dag, ps_latnode_t *start, ps_latnode_t *end)
 {
-    latnode_t *node;
+    ps_latnode_t *node;
     latlink_list_t *x;
 
     /* Cancel any unfinished traversal. */
@@ -629,10 +629,10 @@ ps_lattice_reverse_edges(ps_lattice_t *dag, latnode_t *start, latnode_t *end)
     return ps_lattice_reverse_next(dag, start);
 }
 
-latlink_t *
-ps_lattice_reverse_next(ps_lattice_t *dag, latnode_t *start)
+ps_latlink_t *
+ps_lattice_reverse_next(ps_lattice_t *dag, ps_latnode_t *start)
 {
-    latlink_t *next;
+    ps_latlink_t *next;
 
     next = ps_lattice_popq(dag);
     if (next == NULL)
@@ -671,14 +671,14 @@ ps_lattice_reverse_next(ps_lattice_t *dag, latnode_t *start)
  * there a reliable Viterbi analogue to word-level Forward-Backward
  * like there is for state-level?  Or, is it just lattice density?)
  */
-latlink_t *
+ps_latlink_t *
 ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
                     float32 lwf, float32 ascale)
 {
     ps_search_t *search;
-    latnode_t *node;
-    latlink_t *link;
-    latlink_t *bestend;
+    ps_latnode_t *node;
+    ps_latlink_t *link;
+    ps_latlink_t *bestend;
     latlink_list_t *x;
     logmath_t *lmath;
     int32 bestescr;
@@ -791,8 +791,8 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
 {
     ps_search_t *search;
     logmath_t *lmath;
-    latnode_t *node;
-    latlink_t *link;
+    ps_latnode_t *node;
+    ps_latlink_t *link;
     latlink_list_t *x;
 
     search = dag->search;
@@ -851,7 +851,7 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
  * this is the "heuristic score" used in A* search)
  */
 static int32
-best_rem_score(ps_astar_t *nbest, latnode_t * from)
+best_rem_score(ps_astar_t *nbest, ps_latnode_t * from)
 {
     ps_lattice_t *dag;
     latlink_list_t *x;
@@ -885,10 +885,10 @@ best_rem_score(ps_astar_t *nbest, latnode_t * from)
  * total_score = path score (newpath) + rem_score to end of utt.
  */
 static void
-path_insert(ps_astar_t *nbest, latpath_t *newpath, int32 total_score)
+path_insert(ps_astar_t *nbest, ps_latpath_t *newpath, int32 total_score)
 {
     ps_lattice_t *dag;
-    latpath_t *prev, *p;
+    ps_latpath_t *prev, *p;
     int32 i;
 
     dag = nbest->dag;
@@ -932,10 +932,10 @@ path_insert(ps_astar_t *nbest, latpath_t *newpath, int32 total_score)
 
 /* Find all possible extensions to given partial path */
 static void
-path_extend(ps_astar_t *nbest, latpath_t * path)
+path_extend(ps_astar_t *nbest, ps_latpath_t * path)
 {
     latlink_list_t *x;
-    latpath_t *newpath;
+    ps_latpath_t *newpath;
     int32 total_score, tail_score;
     ps_lattice_t *dag;
 
@@ -995,7 +995,7 @@ ps_astar_start(ps_lattice_t *dag,
                   int w1, int w2)
 {
     ps_astar_t *nbest;
-    latnode_t *node;
+    ps_latnode_t *node;
 
     nbest = ckd_calloc(1, sizeof(*nbest));
     nbest->dag = dag;
@@ -1008,7 +1008,7 @@ ps_astar_start(ps_lattice_t *dag,
         nbest->ef = ef;
     nbest->w1 = w1;
     nbest->w2 = w2;
-    nbest->latpath_alloc = listelem_alloc_init(sizeof(latpath_t));
+    nbest->latpath_alloc = listelem_alloc_init(sizeof(ps_latpath_t));
 
     /* Initialize rem_score (A* heuristic) to default values */
     for (node = dag->nodes; node; node = node->next) {
@@ -1024,7 +1024,7 @@ ps_astar_start(ps_lattice_t *dag,
     nbest->path_list = nbest->path_tail = NULL;
     for (node = dag->nodes; node; node = node->next) {
         if (node->sf == sf) {
-            latpath_t *path;
+            ps_latpath_t *path;
             int32 n_used;
 
             best_rem_score(nbest, node);
@@ -1045,10 +1045,10 @@ ps_astar_start(ps_lattice_t *dag,
     return nbest;
 }
 
-latpath_t *
+ps_latpath_t *
 ps_astar_next(ps_astar_t *nbest)
 {
-    latpath_t *top;
+    ps_latpath_t *top;
     ps_lattice_t *dag;
 
     dag = nbest->dag;
@@ -1085,10 +1085,10 @@ ps_astar_next(ps_astar_t *nbest)
 }
 
 char const *
-ps_astar_hyp(ps_astar_t *nbest, latpath_t *path)
+ps_astar_hyp(ps_astar_t *nbest, ps_latpath_t *path)
 {
     ps_search_t *search;
-    latpath_t *p;
+    ps_latpath_t *p;
     size_t len;
     char *c;
     char *hyp;
@@ -1119,6 +1119,80 @@ ps_astar_hyp(ps_astar_t *nbest, latpath_t *path)
 
     nbest->hyps = glist_add_ptr(nbest->hyps, hyp);
     return hyp;
+}
+
+static void
+ps_astar_node2itor(astar_seg_t *itor)
+{
+    ps_seg_t *seg = (ps_seg_t *)itor;
+    ps_latnode_t *node;
+
+    assert(itor->cur < itor->n_nodes);
+    node = itor->nodes[itor->cur];
+    if (itor->cur == itor->n_nodes - 1)
+        seg->ef = node->lef;
+    else
+        seg->ef = itor->nodes[itor->cur + 1]->sf - 1;
+    seg->word = dict_word_str(ps_search_dict(seg->search), node->wid);
+    seg->sf = node->sf;
+    seg->prob = 0; /* FIXME: implement forward-backward */
+}
+
+static void
+ps_astar_seg_free(ps_seg_t *seg)
+{
+    astar_seg_t *itor = (astar_seg_t *)seg;
+    ckd_free(itor->nodes);
+    ckd_free(itor);
+}
+
+static ps_seg_t *
+ps_astar_seg_next(ps_seg_t *seg)
+{
+    astar_seg_t *itor = (astar_seg_t *)seg;
+
+    ++itor->cur;
+    if (itor->cur == itor->n_nodes) {
+        ps_astar_seg_free(seg);
+        return NULL;
+    }
+    else {
+        ps_astar_node2itor(itor);
+    }
+
+    return seg;
+}
+
+static ps_segfuncs_t ps_astar_segfuncs = {
+    /* seg_next */ ps_astar_seg_next,
+    /* seg_free */ ps_astar_seg_free
+};
+
+ps_seg_t *
+ps_astar_seg_iter(ps_astar_t *astar, ps_latpath_t *path, float32 lwf)
+{
+    astar_seg_t *itor;
+    ps_latpath_t *p;
+    int cur;
+
+    /* Backtrace and make an iterator, this should look familiar by now. */
+    itor = ckd_calloc(1, sizeof(*itor));
+    itor->base.vt = &ps_astar_segfuncs;
+    itor->base.search = astar->dag->search;
+    itor->base.lwf = lwf;
+    itor->n_nodes = itor->cur = 0;
+    for (p = path; p; p = p->parent) {
+        ++itor->n_nodes;
+    }
+    itor->nodes = ckd_calloc(itor->n_nodes, sizeof(*itor->nodes));
+    cur = itor->n_nodes - 1;
+    for (p = path; p; p = p->parent) {
+        itor->nodes[cur] = p->node;
+        --cur;
+    }
+
+    ps_astar_node2itor(itor);
+    return (ps_seg_t *)itor;
 }
 
 void

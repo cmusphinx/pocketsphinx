@@ -58,17 +58,13 @@ extern "C" {
 /* PocketSphinx headers (not many of them!) */
 #include <pocketsphinx_export.h>
 #include <cmdln_macro.h>
+#include <ps_lattice.h>
 #include <fsg_set.h>
 
 /**
  * PocketSphinx speech recognizer object.
  */
 typedef struct ps_decoder_s ps_decoder_t;
-
-/**
- * PocketSphinx word lattice object.
- */
-typedef struct ps_lattice_s ps_lattice_t;
 
 /**
  * PocketSphinx N-best hypothesis iterator object.
@@ -338,32 +334,6 @@ char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score,
  */
 POCKETSPHINX_EXPORT
 ps_lattice_t *ps_get_lattice(ps_decoder_t *ps);
-
-/**
- * Retain a lattice.
- *
- * This function retains ownership of a lattice for the caller,
- * preventing it from being freed automatically.  You must call
- * ps_lattice_free() to free it after having called this function.
- *
- * @return pointer to the retained lattice.
- */
-POCKETSPHINX_EXPORT
-ps_lattice_t *ps_lattice_retain(ps_lattice_t *dag);
-
-/**
- * Free a lattice.
- *
- * @return new reference count (0 if dag was freed)
- */
-POCKETSPHINX_EXPORT
-int ps_lattice_free(ps_lattice_t *dag);
-
-/**
- * Write a lattice to disk.
- */
-POCKETSPHINX_EXPORT
-int32 ps_lattice_write(ps_lattice_t *dag, char const *filename);
 
 /**
  * Get an iterator over the word segmentation for the best hypothesis.

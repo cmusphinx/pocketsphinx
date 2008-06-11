@@ -5,7 +5,7 @@
 
 #include "pocketsphinx_internal.h"
 #include "ngram_search_fwdtree.h"
-#include "ps_lattice.h"
+#include "ps_lattice_internal.h"
 #include "test_macros.h"
 
 int
@@ -20,8 +20,8 @@ test_decode(ps_decoder_t *ps)
 	acmod_t *acmod;
 	ngram_search_t *ngs;
 	int i, j;
-	latlink_t *link;
-	latnode_t *node;
+	ps_latlink_t *link;
+	ps_latnode_t *node;
 	latlink_list_t *x;
 	int32 norm;
 

@@ -5,7 +5,7 @@
 
 #include "pocketsphinx_internal.h"
 #include "ngram_search_fwdtree.h"
-#include "ps_lattice.h"
+#include "ps_lattice_internal.h"
 #include "test_macros.h"
 
 int
@@ -44,7 +44,7 @@ main(int argc, char *argv[])
 		int16 const *bptr;
 		int nfr;
 		ps_astar_t *nbest;
-		latpath_t *path;
+		ps_latpath_t *path;
 		char *besthyp;
 		int i;
 

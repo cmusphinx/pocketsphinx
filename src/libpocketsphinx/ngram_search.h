@@ -50,7 +50,6 @@
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"
-#include "ps_lattice.h"
 #include "hmm.h"
 
 /**
@@ -314,7 +313,7 @@ struct ngram_search_s {
     /*
      * Flat lexicon (2nd pass) search stuff.
      */
-    latnode_t **frm_wordlist;   /**< List of active words in each frame. */
+    ps_latnode_t **frm_wordlist;   /**< List of active words in each frame. */
     int32 *fwdflat_wordlist;    /**< List of active word IDs for utterance. */
     bitvec_t *expand_word_flag;
     int32 *expand_word_list;

@@ -47,7 +47,7 @@ noinst_HEADERS =				\
 	ngram_search.h				\
 	ngram_search_fwdtree.h			\
 	ngram_search_fwdflat.h			\
-	ps_lattice.h				\
+	ps_lattice_internal.h			\
 	posixwin32.h				\
 	s2_semi_mgau.h				\
 	sdc_mgau.h				\

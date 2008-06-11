@@ -49,6 +49,7 @@
 
 /* Local headers. */
 #include "ngram_search.h"
+#include "ps_lattice_internal.h"
 
 /* Turn this on to dump channels for debugging */
 #define __CHAN_DUMP__		0
@@ -161,7 +162,7 @@ build_fwdflat_wordlist(ngram_search_t *ngs)
 {
     int32 i, f, sf, ef, wid, nwd;
     bptbl_t *bp;
-    latnode_t *node, *prevnode, *nextnode;
+    ps_latnode_t *node, *prevnode, *nextnode;
     dict_entry_t *de;
 
     /* No tree-search, use statically allocated wordlist. */
@@ -529,7 +530,7 @@ static void
 get_expand_wordlist(ngram_search_t *ngs, int32 frm, int32 win)
 {
     int32 f, sf, ef;
-    latnode_t *node;
+    ps_latnode_t *node;
 
     if (!ngs->fwdtree) {
         ngs->st.n_fwdflat_word_transition += ngs->n_expand_words;
@@ -772,7 +773,7 @@ ngram_fwdflat_search(ngram_search_t *ngs)
 static void
 destroy_fwdflat_wordlist(ngram_search_t *ngs)
 {
-    latnode_t *node, *tnode;
+    ps_latnode_t *node, *tnode;
     int32 f;
 
     if (!ngs->fwdtree)

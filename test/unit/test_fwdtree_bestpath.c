@@ -5,7 +5,7 @@
 
 #include "pocketsphinx_internal.h"
 #include "ngram_search_fwdtree.h"
-#include "ps_lattice.h"
+#include "ps_lattice_internal.h"
 #include "test_macros.h"
 
 int

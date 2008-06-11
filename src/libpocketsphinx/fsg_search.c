@@ -60,10 +60,10 @@
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"
+#include "ps_lattice_internal.h"
 #include "fsg_search_internal.h"
 #include "fsg_history.h"
 #include "fsg_lextree.h"
-#include "ps_lattice.h"
 
 /* Turn this on for detailed debugging dump */
 #define __FSG_DBG__		0
@@ -1028,7 +1028,7 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score)
     /* If bestpath is enabled and the utterance is complete, then run it. */
     if (fsgs->bestpath && fsgs->final) {
         ps_lattice_t *dag;
-        latlink_t *link;
+        ps_latlink_t *link;
 
         dag = fsg_search_lattice(search);
         link = ps_lattice_bestpath(dag, NULL, 1.0, fsgs->ascale);
@@ -1146,7 +1146,7 @@ fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
     /* If bestpath is enabled and the utterance is complete, then run it. */
     if (fsgs->bestpath && fsgs->final) {
         ps_lattice_t *dag;
-        latlink_t *last;
+        ps_latlink_t *last;
 
         dag = fsg_search_lattice(search);
         last = ps_lattice_bestpath(dag, NULL, 1.0, fsgs->ascale);
@@ -1191,10 +1191,10 @@ fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
     return (ps_seg_t *)itor;
 }
 
-static latnode_t *
+static ps_latnode_t *
 new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid, int32 ascr)
 {
-    latnode_t *node;
+    ps_latnode_t *node;
 
     for (node = dag->nodes; node; node = node->next)
         if (node->sf == sf && node->wid == wid)
@@ -1228,10 +1228,10 @@ new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid, int32 a
     return node;
 }
 
-static latnode_t *
+static ps_latnode_t *
 find_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int32 wid)
 {
-    latnode_t *node;
+    ps_latnode_t *node;
 
     for (node = dag->nodes; node; node = node->next)
         if (node->sf == sf && node->wid == wid)
@@ -1239,10 +1239,10 @@ find_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int32 wid)
     return node;
 }
 
-static latnode_t *
+static ps_latnode_t *
 find_start_node(fsg_search_t *fsgs, ps_lattice_t *dag)
 {
-    latnode_t *node;
+    ps_latnode_t *node;
     glist_t start = NULL;
     int nstart = 0;
 
@@ -1277,10 +1277,10 @@ find_start_node(fsg_search_t *fsgs, ps_lattice_t *dag)
     return node;
 }
 
-static latnode_t *
+static ps_latnode_t *
 find_end_node(fsg_search_t *fsgs, ps_lattice_t *dag)
 {
-    latnode_t *node;
+    ps_latnode_t *node;
     glist_t end = NULL;
     int nend = 0;
 
@@ -1311,7 +1311,7 @@ find_end_node(fsg_search_t *fsgs, ps_lattice_t *dag)
         /* Use the "best" (in reality it will be the only) exit link
          * score from this final node as the link score. */
         for (st = end; st; st = gnode_next(st)) {
-            latnode_t *src = gnode_ptr(st);
+            ps_latnode_t *src = gnode_ptr(st);
             ps_lattice_link(dag, src, node, src->info.best_exit, fsgs->frame);
         }
     }
@@ -1320,7 +1320,7 @@ find_end_node(fsg_search_t *fsgs, ps_lattice_t *dag)
 }
 
 static void
-mark_reachable(ps_lattice_t *dag, latnode_t *end)
+mark_reachable(ps_lattice_t *dag, ps_latnode_t *end)
 {
     glist_t q;
 
@@ -1328,14 +1328,14 @@ mark_reachable(ps_lattice_t *dag, latnode_t *end)
     end->reachable = TRUE;
     q = glist_add_ptr(NULL, end);
     while (q) {
-        latnode_t *node = gnode_ptr(q);
+        ps_latnode_t *node = gnode_ptr(q);
         latlink_list_t *x;
 
         /* Pop the front of the list. */
         q = gnode_free(q, NULL);
         /* Expand all its predecessors that haven't been seen yet. */
         for (x = node->entries; x; x = x->next) {
-            latnode_t *next = x->link->from;
+            ps_latnode_t *next = x->link->from;
             if (!next->reachable) {
                 next->reachable = TRUE;
                 q = glist_add_ptr(q, next);
@@ -1357,7 +1357,7 @@ fsg_search_lattice(ps_search_t *search)
 {
     fsg_search_t *fsgs;
     fsg_model_t *fsg;
-    latnode_t *node;
+    ps_latnode_t *node;
     ps_lattice_t *dag;
     int32 i, n;
 
@@ -1383,7 +1383,7 @@ fsg_search_lattice(ps_search_t *search)
     n = fsg_history_n_entries(fsgs->history);
     for (i = 0; i < n; ++i) {
         fsg_hist_entry_t *fh = fsg_history_entry_get(fsgs->history, i);
-        latnode_t *node;
+        ps_latnode_t *node;
         int32 ascr;
         int sf;
 
@@ -1424,7 +1424,7 @@ fsg_search_lattice(ps_search_t *search)
     n = fsg_history_n_entries(fsgs->history);
     for (i = 0; i < n; ++i) {
         fsg_hist_entry_t *fh = fsg_history_entry_get(fsgs->history, i);
-        latnode_t *src, *dest;
+        ps_latnode_t *src, *dest;
         int32 ascr;
         int sf;
         int j;

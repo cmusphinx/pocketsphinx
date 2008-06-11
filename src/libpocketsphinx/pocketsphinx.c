@@ -46,8 +46,9 @@
 #include <pio.h>
 
 /* Local headers. */
-#include "pocketsphinx_internal.h"
 #include "cmdln_macro.h"
+#include "pocketsphinx_internal.h"
+#include "ps_lattice_internal.h"
 #include "fsg_search_internal.h"
 #include "ngram_search.h"
 #include "ngram_search_fwdtree.h"
@@ -647,7 +648,7 @@ ps_nbest_free(ps_nbest_t *nbest)
 ps_nbest_t *
 ps_nbest_next(ps_nbest_t *nbest)
 {
-    latpath_t *next;
+    ps_latpath_t *next;
 
     next = ps_astar_next(nbest);
     if (next == NULL) {
@@ -666,88 +667,13 @@ ps_nbest_hyp(ps_nbest_t *nbest, int32 *out_score)
     return ps_astar_hyp(nbest, nbest->paths_done);
 }
 
-typedef struct nbest_seg_s {
-    ps_seg_t base;
-    latnode_t **nodes;
-    int n_nodes;
-    int cur;
-} nbest_seg_t;
-
-static void
-ps_nbest_node2itor(nbest_seg_t *itor)
-{
-    ps_seg_t *seg = (ps_seg_t *)itor;
-    latnode_t *node;
-
-    assert(itor->cur < itor->n_nodes);
-    node = itor->nodes[itor->cur];
-    if (itor->cur == itor->n_nodes - 1)
-        seg->ef = node->lef;
-    else
-        seg->ef = itor->nodes[itor->cur + 1]->sf - 1;
-    seg->word = dict_word_str(ps_search_dict(seg->search), node->wid);
-    seg->sf = node->sf;
-    seg->prob = 0; /* FIXME: implement forward-backward */
-}
-
-static void
-ps_nbest_seg_free(ps_seg_t *seg)
-{
-    nbest_seg_t *itor = (nbest_seg_t *)seg;
-    ckd_free(itor->nodes);
-    ckd_free(itor);
-}
-
-static ps_seg_t *
-ps_nbest_seg_next(ps_seg_t *seg)
-{
-    nbest_seg_t *itor = (nbest_seg_t *)seg;
-
-    ++itor->cur;
-    if (itor->cur == itor->n_nodes) {
-        ps_nbest_seg_free(seg);
-        return NULL;
-    }
-    else {
-        ps_nbest_node2itor(itor);
-    }
-
-    return seg;
-}
-
-static ps_segfuncs_t ps_nbest_segfuncs = {
-    /* seg_next */ ps_nbest_seg_next,
-    /* seg_free */ ps_nbest_seg_free
-};
-
 ps_seg_t *
 ps_nbest_seg(ps_nbest_t *nbest, int32 *out_score)
 {
-    nbest_seg_t *itor;
-    latpath_t *p;
-    int cur;
-
     if (nbest->paths_done == NULL)
         return NULL;
     if (out_score) *out_score = nbest->paths_done->score;
-
-    /* Backtrace and make an iterator, this should look familiar by now. */
-    itor = ckd_calloc(1, sizeof(*itor));
-    itor->base.vt = &ps_nbest_segfuncs;
-    itor->base.search = nbest->dag->search;
-    itor->n_nodes = itor->cur = 0;
-    for (p = nbest->paths_done; p; p = p->parent) {
-        ++itor->n_nodes;
-    }
-    itor->nodes = ckd_calloc(itor->n_nodes, sizeof(*itor->nodes));
-    cur = itor->n_nodes - 1;
-    for (p = nbest->paths_done; p; p = p->parent) {
-        itor->nodes[cur] = p->node;
-        --cur;
-    }
-
-    ps_nbest_node2itor(itor);
-    return (ps_seg_t *)itor;
+    return ps_astar_seg_iter(nbest, nbest->paths_done, 1.0);
 }
 
 void
