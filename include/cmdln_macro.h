@@ -162,14 +162,14 @@
       ARG_STRING,									\
       NULL,										\
       "Word trigram language model input file" },					\
-{ "-lmctlfn",										\
+{ "-lmctl",										\
       ARG_STRING,									\
       NULL,										\
       "Specify a set of language model\n"},						\
 { "-lmname",										\
       ARG_STRING,									\
       "default",									\
-      "Which language model in -lmctlfn to use by default"},				\
+      "Which language model in -lmctl to use by default"},				\
 { "-lw",										\
       ARG_FLOAT32,									\
       "6.5",										\

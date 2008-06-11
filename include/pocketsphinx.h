@@ -81,6 +81,7 @@ typedef struct ps_seg_s ps_seg_t;
  *
  * @note The decoder retains ownership of the pointer
  * <code>config</code>, so you must not attempt to free it manually.
+ * If you wish to reuse it elsewhere, call cmd_ln_retain() on it.
  *
  * @param config a command-line structure, as created by
  * cmd_ln_parse_r() or cmd_ln_parse_file_r().
@@ -94,6 +95,10 @@ ps_decoder_t *ps_init(cmd_ln_t *config);
  * This function allows you to switch the acoustic model, dictionary,
  * or other configuration without creating an entirely new decoding
  * object.
+ *
+ * @note The decoder retains ownership of the pointer
+ * <code>config</code>, so you must not attempt to free it manually.
+ * If you wish to reuse it elsewhere, call cmd_ln_retain() on it.
  *
  * @param ps Decoder.
  * @param config An optional new configuration to use.  If this is
@@ -130,7 +135,8 @@ void ps_free(ps_decoder_t *ps);
  *
  * @return The configuration object for this decoder.  The decoder
  *         retains ownership of this pointer, so you should not
- *         attempt to free it manually.
+ *         attempt to free it manually.  Use cmd_ln_retain() if you
+ *         wish to reuse it elsewhere.
  */
 POCKETSPHINX_EXPORT
 cmd_ln_t *ps_get_config(ps_decoder_t *ps);
@@ -138,9 +144,10 @@ cmd_ln_t *ps_get_config(ps_decoder_t *ps);
 /**
  * Get the log-math computation object for this decoder.
  *
- * @return The log-math object for this decoder.  The decoder
- *         retains ownership of this pointer, so you should not
- *         attempt to free it manually.
+ * @return The log-math object for this decoder.  The decoder retains
+ *         ownership of this pointer, so you should not attempt to
+ *         free it manually.  Use logmath_retain() if you wish to
+ *         reuse it elsewhere.
  */
 POCKETSPHINX_EXPORT
 logmath_t *ps_get_logmath(ps_decoder_t *ps);
@@ -153,7 +160,8 @@ logmath_t *ps_get_logmath(ps_decoder_t *ps);
  *
  * @return The language model set object for this decoder.  The
  *         decoder retains ownership of this pointer, so you should
- *         not attempt to free it manually.
+ *         not attempt to free it manually.  Use ngram_model_retain()
+ *         if you wish to reuse it elsewhere.
  */
 POCKETSPHINX_EXPORT
 ngram_model_t *ps_get_lmset(ps_decoder_t *ps);
@@ -168,7 +176,9 @@ ngram_model_t *ps_get_lmset(ps_decoder_t *ps);
  *
  * @param lmset The new lmset to use, or NULL to update the existing
  *              lmset.  The decoder retains ownership of this pointer,
- *              so you should not attempt to free it manually.
+ *              so you should not attempt to free it manually.  Use
+ *              ngram_model_retain() if you wish to reuse it
+ *              elsewhere.
  * @return The updated language model set object for this decoder, or
  *         NULL on failure.
  */

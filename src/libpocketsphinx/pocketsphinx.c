@@ -114,11 +114,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     gnode_t *gn;
 
     if (config && config != ps->config) {
-        if (ps->config) {
-            for (gn = ps->strings; gn; gn = gnode_next(gn))
-                ckd_free(gnode_ptr(gn));
-            cmd_ln_free_r(ps->config);
-        }
+        cmd_ln_free_r(ps->config);
         ps->config = config;
     }
     /* Fill in some default arguments. */
@@ -169,7 +165,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         ps->search = fsgs;
     }
     else if ((lmfile = cmd_ln_str_r(config, "-lm"))
-             || (lmctl = cmd_ln_str_r(config, "-lmctlfn"))) {
+             || (lmctl = cmd_ln_str_r(config, "-lmctl"))) {
         ps_search_t *ngs;
 
         if ((ngs = ngram_search_init(config, ps->acmod, ps->dict)) == NULL)
@@ -216,17 +212,10 @@ ps_free(ps_decoder_t *ps)
     for (gn = ps->searches; gn; gn = gnode_next(gn))
         ps_search_free(gnode_ptr(gn));
     glist_free(ps->searches);
-    if (ps->dict)
-        dict_free(ps->dict);
-    if (ps->acmod)
-        acmod_free(ps->acmod);
-    if (ps->lmath)
-        logmath_free(ps->lmath);
-    if (ps->config)
-        cmd_ln_free_r(ps->config);
-    for (gn = ps->strings; gn; gn = gnode_next(gn))
-        ckd_free(gnode_ptr(gn));
-    glist_free(ps->strings);
+    dict_free(ps->dict);
+    acmod_free(ps->acmod);
+    logmath_free(ps->lmath);
+    cmd_ln_free_r(ps->config);
     ckd_free(ps->uttid);
     ckd_free(ps);
 }

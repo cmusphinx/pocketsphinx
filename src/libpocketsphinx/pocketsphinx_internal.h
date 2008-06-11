@@ -167,7 +167,6 @@ struct ps_seg_s {
 struct ps_decoder_s {
     /* Model parameters and such. */
     cmd_ln_t *config;  /**< Configuration. */
-    glist_t strings;   /**< Extra strings added to config. */
 
     /* Basic units of computation. */
     acmod_t *acmod;    /**< Acoustic model. */

@@ -181,7 +181,7 @@ ngram_search_init(cmd_ln_t *config,
                                           sizeof(**ngs->active_word_list));
 
     /* Load language model(s) */
-    if ((path = cmd_ln_str_r(config, "-lmctlfn"))) {
+    if ((path = cmd_ln_str_r(config, "-lmctl"))) {
         ngs->lmset = ngram_model_set_read(config, path, acmod->lmath);
         if (ngs->lmset == NULL) {
             E_ERROR("Failed to read language model control file: %s\n",

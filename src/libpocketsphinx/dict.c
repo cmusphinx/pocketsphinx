@@ -369,6 +369,9 @@ dict_free(dict_t * dict)
     dict_entry_t *entry;
     gnode_t *gn;
 
+    if (dict == NULL)
+        return;
+
     for (i = 0, gn = dict->lcList; gn; gn = gnode_next(gn), ++i) {
         ckd_free(dict->lcFwdTable[i]);
         ckd_free(gnode_ptr(gn));

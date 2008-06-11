@@ -242,11 +242,12 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
     if (fe) {
         if (acmod_fe_mismatch(acmod, fe))
             goto error_out;
+        fe_retain(fe);
         acmod->fe = fe;
     }
     else {
         /* Initialize a new front end. */
-        acmod->retain_fe = TRUE;
+        cmd_ln_retain(config);
         acmod->fe = fe_init_auto_r(config);
         if (acmod->fe == NULL)
             goto error_out;
@@ -254,11 +255,11 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
     if (fcb) {
         if (acmod_feat_mismatch(acmod, fcb))
             goto error_out;
+        feat_retain(fcb);
         acmod->fcb = fcb;
     }
     else {
         /* Initialize a new fcb. */
-        acmod->retain_fcb = TRUE;
         if (acmod_init_feat(acmod) < 0)
             goto error_out;
     }
@@ -292,10 +293,11 @@ error_out:
 void
 acmod_free(acmod_t *acmod)
 {
-    if (acmod->retain_fcb)
-        feat_free(acmod->fcb);
-    if (acmod->retain_fe)
-        fe_close(acmod->fe);
+    if (acmod == NULL)
+        return;
+
+    feat_free(acmod->fcb);
+    fe_free(acmod->fe);
 
     if (acmod->mfc_buf)
         ckd_free_2d((void **)acmod->mfc_buf);

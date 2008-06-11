@@ -135,8 +135,6 @@ struct acmod_s {
     FILE *mfcfp;        /**< File for writing acoustic feature data. */
 
     /* A whole bunch of flags and counters: */
-    uint8 retain_fe;    /**< Do we own the fe pointer. */
-    uint8 retain_fcb;   /**< Do we own the fcb poitner. */
     uint8 state;        /**< State of utterance processing. */
     uint8 compallsen;   /**< Compute all senones? */
     uint8 grow_feat;    /**< Whether to grow feat_buf. */
