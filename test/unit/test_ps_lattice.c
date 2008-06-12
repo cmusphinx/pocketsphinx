@@ -37,9 +37,12 @@ main(int argc, char *argv[])
 	ps_lattice_bestpath(dag, ps_get_lmset(ps), 1.0, 1.0/15.0);
 	score = ps_lattice_posterior(dag, ps_get_lmset(ps), 1.0/15.0);
 
-	/* Test node iterators. */
+	/* Test node and link iterators. */
 	{
 		ps_latnode_iter_t *itor;
+		ps_latlink_iter_t *litor;
+		ps_latnode_t *forward = NULL;
+
 		TEST_ASSERT(itor = ps_latnode_iter(dag));
 		while ((itor = ps_latnode_iter_next(itor))) {
 			int16 sf, fef, lef;
@@ -50,9 +53,46 @@ main(int argc, char *argv[])
 			sf = ps_latnode_times(node, &fef, &lef);
 			post = logmath_exp(ps_lattice_get_logmath(dag),
 					   ps_latnode_prob(dag, node, NULL));
-			printf("%s %d -> (%d,%d) %f\n",
-			       ps_latnode_word(dag, node), sf,
-			       fef, lef, post);
+			if (post > 0.0001)
+				printf("%s %s %d -> (%d,%d) %f\n",
+				       ps_latnode_baseword(dag, node),
+				       ps_latnode_word(dag, node),
+				       sf, fef, lef, post);
+			if (0 == strcmp(ps_latnode_baseword(dag, node), "FORWARD"))
+				forward = node;
+		}
+		TEST_ASSERT(forward);
+
+		printf("FORWARD entries:\n");
+		for (litor = ps_latnode_entries(forward);
+		     litor; litor = ps_latlink_iter_next(litor)) {
+			ps_latlink_t *link = ps_latlink_iter_link(litor);
+			int16 sf, ef;
+			float64 post;
+			int32 ascr;
+
+			ef = ps_latlink_times(link, &sf);
+			post = logmath_exp(ps_lattice_get_logmath(dag),
+					   ps_latlink_prob(dag, link, &ascr));
+			if (post > 0.0001)
+				printf("%s %d -> %d prob %f ascr %d\n",
+				       ps_latlink_baseword(dag, link),
+				       sf, ef, post, ascr);
+		}
+		printf("FORWARD exits:\n");
+		for (litor = ps_latnode_exits(forward);
+		     litor; litor = ps_latlink_iter_next(litor)) {
+			ps_latlink_t *link = ps_latlink_iter_link(litor);
+			int16 sf, ef;
+			float64 post;
+			int32 ascr;
+
+			ef = ps_latlink_times(link, &sf);
+			post = logmath_exp(ps_lattice_get_logmath(dag),
+					   ps_latlink_prob(dag, link, &ascr));
+			if (post > 0.0001)
+				printf("%d -> %d prob %f ascr %d\n",
+				       sf, ef, post, ascr);
 		}
 	}
 

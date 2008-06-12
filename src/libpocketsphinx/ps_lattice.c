@@ -383,6 +383,80 @@ ps_latnode_prob(ps_lattice_t *dag, ps_latnode_t *node,
     return bestpost;
 }
 
+ps_latlink_iter_t *
+ps_latnode_exits(ps_latnode_t *node)
+{
+    return node->exits;
+}
+
+ps_latlink_iter_t *
+ps_latnode_entries(ps_latnode_t *node)
+{
+    return node->entries;
+}
+
+ps_latlink_iter_t *
+ps_latlink_iter_next(ps_latlink_iter_t *itor)
+{
+    return itor->next;
+}
+
+void
+ps_latlink_iter_free(ps_latlink_iter_t *itor)
+{
+    /* Do absolutely nothing. */
+}
+
+ps_latlink_t *
+ps_latlink_iter_link(ps_latlink_iter_t *itor)
+{
+    return itor->link;
+}
+
+int
+ps_latlink_times(ps_latlink_t *link, int16 *out_sf)
+{
+    if (out_sf) {
+        if (link->from) {
+            *out_sf = link->from->sf;
+        }
+        else {
+            *out_sf = 0;
+        }
+    }
+    return link->ef;
+}
+
+ps_latnode_t *
+ps_latlink_nodes(ps_latlink_t *link, ps_latnode_t **out_src)
+{
+    if (out_src) *out_src = link->from;
+    return link->to;
+}
+
+char const *
+ps_latlink_word(ps_lattice_t *dag, ps_latlink_t *link)
+{
+    if (link->from == NULL)
+        return NULL;
+    return dict_word_str(ps_search_dict(dag->search), link->from->wid);
+}
+
+char const *
+ps_latlink_baseword(ps_lattice_t *dag, ps_latlink_t *link)
+{
+    if (link->from == NULL)
+        return NULL;
+    return dict_word_str(ps_search_dict(dag->search), link->from->basewid);
+}
+
+int32
+ps_latlink_prob(ps_lattice_t *dag, ps_latlink_t *link, int32 *out_ascr)
+{
+    int32 post = link->alpha + link->beta - dag->norm;
+    if (out_ascr) *out_ascr = link->ascr;
+    return post;
+}
 
 char const *
 ps_lattice_hyp(ps_lattice_t *dag, ps_latlink_t *link)

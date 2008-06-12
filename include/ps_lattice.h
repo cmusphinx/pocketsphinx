@@ -83,7 +83,7 @@ typedef struct ps_latlink_s ps_latlink_t;
 /**
  * Iterator over DAG links.
  */
-typedef struct ps_latlink_iter_s ps_latlink_iter_t;
+typedef struct latlink_list_s ps_latlink_iter_t;
 
 /**
  * Partial path structure used in N-best (A*) search.
@@ -253,6 +253,19 @@ POCKETSPHINX_EXPORT
 ps_latlink_t *ps_latlink_iter_link(ps_latlink_iter_t *itor);
 
 /**
+ * Get start and end times from a lattice link.
+ *
+ * @note these are <strong>inclusive</strong> - i.e. the last frame of
+ * this word is ef, not ef-1.
+ *
+ * @param link Link inquired about.
+ * @param out_sf Output: (optional) start frame of this link.
+ * @return End frame of this link.
+ */
+POCKETSPHINX_EXPORT
+int ps_latlink_times(ps_latlink_t *link, int16 *out_sf);
+
+/**
  * Get destination and source nodes from a lattice link
  *
  * @param node Link inquired about
@@ -265,15 +278,27 @@ ps_latnode_t *ps_latlink_nodes(ps_latlink_t *link, ps_latnode_t **out_src);
 /**
  * Get word string from a lattice link.
  *
+ * @param dag Lattice to which node belongs.
  * @param node Link inquired about
- * @return Word string for this link.
+ * @return Word string for this link (possibly a pronunciation variant).
  */
 POCKETSPHINX_EXPORT
-char const *ps_latlink_word(ps_latlink_t *link);
+char const *ps_latlink_word(ps_lattice_t *dag, ps_latlink_t *link);
+
+/**
+ * Get base word string from a lattice link.
+ *
+ * @param dag Lattice to which node belongs.
+ * @param node Link inquired about
+ * @return Base word string for this link
+ */
+POCKETSPHINX_EXPORT
+char const *ps_latlink_baseword(ps_lattice_t *dag, ps_latlink_t *link);
 
 /**
  * Get acoustic score and posterior probability from a lattice link.
  *
+ * @param dag Lattice to which node belongs.
  * @param node Link inquired about
  * @param out_ascr Output: (optional) acoustic score.
  * @return Posterior probability for this link.  Log is expressed in
@@ -281,7 +306,7 @@ char const *ps_latlink_word(ps_latlink_t *link);
  *         floating-point, use logmath_exp(ps_lattice_get_logmath(), pprob).
  */
 POCKETSPHINX_EXPORT
-int32 ps_latlink_prob(ps_latlink_t *link, int32 *out_ascr);
+int32 ps_latlink_prob(ps_lattice_t *dag, ps_latlink_t *link, int32 *out_ascr);
 
 /**
  * Create a directed link between "from" and "to" nodes, but if a link already exists,
