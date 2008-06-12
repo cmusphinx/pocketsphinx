@@ -124,7 +124,7 @@ AC_SUBST(PYTHON)
 dnl
 dnl Check for Pyrex, and rebuild python module if present
 dnl
-if test x$HAVE_PYTHON = xyes; then
+if test "x$PYTHON" != "xbogus"; then
    AC_CHECK_PROG(HAVE_PYREX, pyrexc, yes, no)
 fi
 AM_CONDITIONAL(BUILD_PYREX, test "x$HAVE_PYREX" = "xyes")

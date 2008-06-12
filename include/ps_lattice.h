@@ -214,7 +214,7 @@ ps_latlink_iter_t *ps_latnode_entries(ps_latnode_t *node);
  *         logmath_exp(ps_lattice_get_logmath(), pprob).
  */
 POCKETSPHINX_EXPORT
-int32 ps_latnode_prob(ps_lattice_t *dag, ps_latnode_t *link,
+int32 ps_latnode_prob(ps_lattice_t *dag, ps_latnode_t *node,
                       ps_latlink_t **out_link);
 
 /**
