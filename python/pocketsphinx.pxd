@@ -1,3 +1,12 @@
+# Copyright (c) 2008 Carnegie Mellon University. All rights
+# reserved.
+#
+# You may copy, modify, and distribute this code under the same terms
+# as PocketSphinx or Python, at your convenience, as long as this
+# notice is not removed.
+#
+# Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
+
 # Import SphinxBase C types
 from sphinxbase cimport arg_t, cmd_ln_t, ngram_model_t, fsg_model_t, logmath_t
 
