@@ -6,7 +6,7 @@ endif
 plugin_LTLIBRARIES = $(my_plugins)
 
 libgstpocketsphinx_la_SOURCES = gstpocketsphinx.c gstvader.c psmarshal.c
-libgstpocketsphinx_la_CFLAGS = $(GST_CFLAGS) -DPOCKETSPHINX_PREFIX=\"$(prefix)\"
+libgstpocketsphinx_la_CFLAGS = $(GST_CFLAGS) -DMODELDIR=\"$(pkgdatadir)/model\"
 libgstpocketsphinx_la_LIBADD = $(GST_LIBS) -lgstaudio-$(GST_MAJORMINOR) \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la -lsphinxbase
 libgstpocketsphinx_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)

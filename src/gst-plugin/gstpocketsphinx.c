@@ -120,6 +120,11 @@ enum
 /* Default command line. (will go away soon and be constructed using properties) */
 static char *default_argv[] = {
     "gst-pocketsphinx",
+#ifdef MODELDIR
+    "-hmm", MODELDIR "/hmm/wsj1",
+    "-lm", MODELDIR "/lm/turtle/turtle.lm.DMP",
+    "-dict", MODELDIR "/lm/cmudict.0.6d",
+#endif
     "-samprate", "8000",
     "-cmn", "prior",
     "-nfft", "256",
