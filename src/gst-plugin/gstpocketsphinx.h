@@ -92,6 +92,12 @@ GType gst_pocketsphinx_get_type(void);
 #define PS_LATTICE_TYPE (ps_lattice_get_type())
 GType ps_lattice_get_type(void);
 
+/*
+ * Boxing of decoder.
+ */
+#define PS_DECODER_TYPE (ps_decoder_get_type())
+GType ps_decoder_get_type(void);
+
 G_END_DECLS
 
 #endif /* __GST_POCKETSPHINX_H__ */

@@ -176,6 +176,26 @@ ps_lattice_get_type(void)
     return ps_lattice_type;
 }
 
+/*
+ * Boxing of ps_decoder_t.
+ */
+
+GType
+ps_decoder_get_type(void)
+{
+    static GType ps_decoder_type = 0;
+
+    if (G_UNLIKELY(ps_decoder_type == 0)) {
+        ps_decoder_type = g_boxed_type_register_static
+            ("PSDecoder",
+             /* Conveniently, these should just work. */
+             (GBoxedCopyFunc) ps_retain,
+             (GBoxedFreeFunc) ps_free);
+    }
+
+    return ps_decoder_type;
+}
+
 
 /*
  * gst_pocketsphinx element.
@@ -320,9 +340,10 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
 
     g_object_class_install_property
         (gobject_class, PROP_DECODER,
-         g_param_spec_pointer("decoder", "Decoder object",
-                              "Pointer to the underlying decoder",
-                              G_PARAM_READABLE));
+         g_param_spec_boxed("decoder", "Decoder object",
+                            "The underlying decoder",
+                            PS_DECODER_TYPE,
+                            G_PARAM_READABLE));
     g_object_class_install_property
         (gobject_class, PROP_CONFIGURED,
          g_param_spec_boolean("configured", "Finalize configuration",
@@ -519,7 +540,7 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
 
     switch (prop_id) {
     case PROP_DECODER:
-        g_value_set_pointer(value, ps->ps);
+        g_value_set_boxed(value, ps->ps);
         break;
     case PROP_CONFIGURED:
         g_value_set_boolean(value, ps->ps != NULL);

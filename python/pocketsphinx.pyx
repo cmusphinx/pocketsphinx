@@ -182,9 +182,9 @@ cdef class Decoder:
         cdef int i
 
         # Construct from an existing GObject pointer if given
-        if 'pointer' in kwargs:
+        if 'boxed' in kwargs:
             self.argc = 0
-            self.set_pointer(kwargs['pointer'])
+            self.set_boxed(kwargs['boxed'])
             return
 
         # A much more concise version of what pocketsphinx_parse_argdict used to do
@@ -204,9 +204,9 @@ cdef class Decoder:
         if self.ps == NULL:
             raise RuntimeError, "Failed to initialize PocketSphinx"
 
-    cdef set_pointer(Decoder self, ptr):
+    cdef set_boxed(Decoder self, box):
         cdef ps_decoder_t *ps
-        ps = <ps_decoder_t *>(<PyGPointer *>ptr).pointer
+        ps = <ps_decoder_t *>(<PyGBoxed *>box).boxed
         self.ps = ps
 
     def __dealloc__(self):

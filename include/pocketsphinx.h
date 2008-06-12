@@ -119,6 +119,19 @@ POCKETSPHINX_EXPORT
 arg_t const *ps_args(void);
 
 /**
+ * Retain a pointer to the decoder.
+ *
+ * This increments the reference count on the decoder, allowing it to
+ * be shared between multiple parent objects.  In general you will not
+ * need to use this function, ever.  It is mainly here for the
+ * convenience of scripting language bindings.
+ *
+ * @return pointer to retained decoder.
+ */
+POCKETSPHINX_EXPORT
+ps_decoder_t *ps_retain(ps_decoder_t *ps);
+
+/**
  * Finalize the decoder.
  *
  * This releases all resources associated with the decoder, including
@@ -126,9 +139,10 @@ arg_t const *ps_args(void);
  * the initial configuration object passed to ps_init().
  *
  * @param ps Decoder to be freed.
+ * @return New reference count (0 if freed).
  */
 POCKETSPHINX_EXPORT
-void ps_free(ps_decoder_t *ps);
+int ps_free(ps_decoder_t *ps);
 
 /**
  * Get the configuration object for this decoder.

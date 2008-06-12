@@ -189,6 +189,7 @@ ps_init(cmd_ln_t *config)
     ps_decoder_t *ps;
 
     ps = ckd_calloc(1, sizeof(*ps));
+    ps->refcount = 1;
     if (ps_reinit(ps, config) < 0) {
         ps_free(ps);
         return NULL;
@@ -202,13 +203,22 @@ ps_args(void)
     return ps_args_def;
 }
 
-void
+ps_decoder_t *
+ps_retain(ps_decoder_t *ps)
+{
+    ++ps->refcount;
+    return ps;
+}
+
+int
 ps_free(ps_decoder_t *ps)
 {
     gnode_t *gn;
 
     if (ps == NULL)
-        return;
+        return 0;
+    if (--ps->refcount > 0)
+        return ps->refcount;
     for (gn = ps->searches; gn; gn = gnode_next(gn))
         ps_search_free(gnode_ptr(gn));
     glist_free(ps->searches);
@@ -218,6 +228,7 @@ ps_free(ps_decoder_t *ps)
     cmd_ln_free_r(ps->config);
     ckd_free(ps->uttid);
     ckd_free(ps);
+    return 0;
 }
 
 cmd_ln_t *
