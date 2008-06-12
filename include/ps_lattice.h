@@ -55,11 +55,6 @@
 typedef struct ps_lattice_s ps_lattice_t;
 
 /**
- * A* search structure (an iterator over N-best results).
- */
-typedef struct ps_astar_s ps_astar_t;
-
-/**
  * DAG nodes.
  *
  * A node corresponds to a number of hypothesized instances of a word
@@ -84,14 +79,6 @@ typedef struct ps_latlink_s ps_latlink_t;
  * Iterator over DAG links.
  */
 typedef struct latlink_list_s ps_latlink_iter_t;
-
-/**
- * Partial path structure used in N-best (A*) search.
- *
- * Each partial path (latpath_t) is constructed by extending another
- * partial path--parent--by one node.
- */
-typedef struct ps_latpath_s ps_latpath_t;
 
 /**
  * Retain a lattice.
@@ -389,35 +376,5 @@ ps_latlink_t *ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
 POCKETSPHINX_EXPORT
 int32 ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
                            float32 ascale);
-
-/**
- * Begin N-Gram based A* search on a word graph.
- *
- * @param sf Starting frame for N-best search.
- * @param ef Ending frame for N-best search, or -1 for last frame.
- * @param w1 First context word, or -1 for none.
- * @param w2 Second context word, or -1 for none.
- * @return 0 for success, <0 on error.
- */
-POCKETSPHINX_EXPORT
-ps_astar_t *ps_astar_start(ps_lattice_t *dag,
-                           ngram_model_t *lmset,
-                           float32 lwf,
-                           int sf, int ef,
-                           int w1, int w2);
-
-/**
- * Find next best hypothesis of A* on a word graph.
- *
- * @return a complete path, or NULL if no more hypotheses exist.
- */
-POCKETSPHINX_EXPORT
-ps_latpath_t *ps_astar_next(ps_astar_t *nbest);
-
-/**
- * Finish N-best search, releasing resources associated with it.
- */
-POCKETSPHINX_EXPORT
-void ps_astar_finish(ps_astar_t *nbest);
 
 #endif /* __PS_LATTICE_H__ */

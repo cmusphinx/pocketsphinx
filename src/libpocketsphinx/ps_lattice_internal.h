@@ -137,9 +137,22 @@ typedef struct dag_seg_s {
 } dag_seg_t;
 
 /**
+ * Partial path structure used in N-best (A*) search.
+ *
+ * Each partial path (latpath_t) is constructed by extending another
+ * partial path--parent--by one node.
+ */
+typedef struct ps_latpath_s {
+    ps_latnode_t *node;            /**< Node ending this path. */
+    struct ps_latpath_s *parent;   /**< Previous element in this path. */
+    struct ps_latpath_s *next;     /**< Pointer to next path in list of paths. */
+    int32 score;                  /**< Exact score from start node up to node->sf. */
+} ps_latpath_t;
+
+/**
  * A* search structure.
  */
-struct ps_astar_s {
+typedef struct ps_astar_s {
     ps_lattice_t *dag;
     ngram_model_t *lmset;
     float32 lwf;
@@ -161,21 +174,7 @@ struct ps_astar_s {
 
     glist_t hyps;	             /**< List of hypothesis strings. */
     listelem_alloc_t *latpath_alloc; /**< Path allocator for N-best search. */
-};
-
-/**
- * Partial path structure used in N-best (A*) search.
- *
- * Each partial path (latpath_t) is constructed by extending another
- * partial path--parent--by one node.
- */
-struct ps_latpath_s {
-    ps_latnode_t *node;            /**< Node ending this path. */
-    struct ps_latpath_s *parent;   /**< Previous element in this path. */
-    struct ps_latpath_s *next;     /**< Pointer to next path in list of paths. */
-    int32 score;                  /**< Exact score from start node up to node->sf. */
-};
-
+} ps_astar_t;
 
 /**
  * Segmentation "iterator" for A* search results.
@@ -233,6 +232,33 @@ char const *ps_lattice_hyp(ps_lattice_t *dag, ps_latlink_t *link);
  */
 ps_seg_t *ps_lattice_seg_iter(ps_lattice_t *dag, ps_latlink_t *link,
                               float32 lwf);
+
+/**
+ * Begin N-Gram based A* search on a word graph.
+ *
+ * @param sf Starting frame for N-best search.
+ * @param ef Ending frame for N-best search, or -1 for last frame.
+ * @param w1 First context word, or -1 for none.
+ * @param w2 Second context word, or -1 for none.
+ * @return 0 for success, <0 on error.
+ */
+ps_astar_t *ps_astar_start(ps_lattice_t *dag,
+                           ngram_model_t *lmset,
+                           float32 lwf,
+                           int sf, int ef,
+                           int w1, int w2);
+
+/**
+ * Find next best hypothesis of A* on a word graph.
+ *
+ * @return a complete path, or NULL if no more hypotheses exist.
+ */
+ps_latpath_t *ps_astar_next(ps_astar_t *nbest);
+
+/**
+ * Finish N-best search, releasing resources associated with it.
+ */
+void ps_astar_finish(ps_astar_t *nbest);
 
 /**
  * Get hypothesis string from A* search.
