@@ -937,6 +937,7 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
     ps_latnode_t *node;
     ps_latlink_t *link;
     latlink_list_t *x;
+    int32 jprob;
 
     search = dag->search;
     lmath = dag->lmath;
@@ -948,6 +949,7 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
         }
     }
 
+    jprob = MAX_NEG_INT32;
     /* Accumulate backward probabilities for all links. */
     for (link = ps_lattice_reverse_edges(dag, NULL, NULL);
          link; link = ps_lattice_reverse_next(dag, NULL)) {
@@ -957,9 +959,13 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
         if (ISA_FILLER_WORD(search, link->to->basewid) && link->to != dag->end)
             continue;
 
-        /* Beta for arcs into dag->end = 1.0. */
-        if (link->to == dag->end)
+        if (link->to == dag->end) {
+            /* Beta for arcs into dag->end = 1.0. */
             link->beta = 0;
+            /* Also, track entries, the best one's path score is P(O,S) */
+            if (link->path_scr > jprob)
+                jprob = link->path_scr;
+        }
         else {
             int32 bprob, n_used;
 
@@ -979,7 +985,9 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
             }
         }
     }
-    return 0;
+
+    /* This *should* be an approximation of P(S|O) = P(O|S) * P(S) / P(O) */
+    return jprob + dag->final_node_ascr - dag->norm;
 }
 
 

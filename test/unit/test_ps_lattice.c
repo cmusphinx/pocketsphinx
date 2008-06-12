@@ -36,6 +36,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(dag = ps_get_lattice(ps));
 	ps_lattice_bestpath(dag, ps_get_lmset(ps), 1.0, 1.0/15.0);
 	score = ps_lattice_posterior(dag, ps_get_lmset(ps), 1.0/15.0);
+	printf("P(S|O) = %d\n", score);
 
 	/* Test node and link iterators. */
 	{
