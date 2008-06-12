@@ -316,6 +316,74 @@ ps_lattice_free(ps_lattice_t *dag)
     return 0;
 }
 
+logmath_t *
+ps_lattice_get_logmath(ps_lattice_t *dag)
+{
+    return dag->lmath;
+}
+
+ps_latnode_iter_t *
+ps_latnode_iter(ps_lattice_t *dag)
+{
+    return dag->nodes;
+}
+
+ps_latnode_iter_t *
+ps_latnode_iter_next(ps_latnode_iter_t *itor)
+{
+    return itor->next;
+}
+
+void
+ps_latnode_iter_free(ps_latnode_iter_t *itor)
+{
+    /* Do absolutely nothing. */
+}
+
+ps_latnode_t *
+ps_latnode_iter_node(ps_latnode_iter_t *itor)
+{
+    return itor;
+}
+
+int
+ps_latnode_times(ps_latnode_t *node, int16 *out_fef, int16 *out_lef)
+{
+    if (out_fef) *out_fef = (int16)node->fef;
+    if (out_lef) *out_lef = (int16)node->lef;
+    return node->sf;
+}
+
+char const *
+ps_latnode_word(ps_lattice_t *dag, ps_latnode_t *node)
+{
+    return dict_word_str(ps_search_dict(dag->search), node->wid);
+}
+
+char const *
+ps_latnode_baseword(ps_lattice_t *dag, ps_latnode_t *node)
+{
+    return dict_word_str(ps_search_dict(dag->search), node->basewid);
+}
+
+int32
+ps_latnode_prob(ps_lattice_t *dag, ps_latnode_t *node,
+                ps_latlink_t **out_link)
+{
+    latlink_list_t *links;
+    int32 bestpost = logmath_get_zero(dag->lmath);
+
+    for (links = node->exits; links; links = links->next) {
+        int32 post = links->link->alpha + links->link->beta - dag->norm;
+        if (post > bestpost) {
+            if (out_link) *out_link = links->link;
+            bestpost = post;
+        }
+    }
+    return bestpost;
+}
+
+
 char const *
 ps_lattice_hyp(ps_lattice_t *dag, ps_latlink_t *link)
 {

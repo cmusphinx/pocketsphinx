@@ -70,7 +70,7 @@ typedef struct ps_latnode_s ps_latnode_t;
 /**
  * Iterator over DAG nodes.
  */
-typedef struct ps_latnode_iter_s ps_latnode_iter_t;
+typedef struct ps_latnode_s ps_latnode_iter_t; /* pay no attention to the man behind the curtain */
 
 /**
  * Links between DAG nodes.
@@ -175,16 +175,27 @@ ps_latnode_t *ps_latnode_iter_node(ps_latnode_iter_t *itor);
  * @return Start frame for all edges exiting this node.
  */
 POCKETSPHINX_EXPORT
-int ps_latnode_times(ps_latnode_t *node, int16 *outfef, int16 *out_lef);
+int ps_latnode_times(ps_latnode_t *node, int16 *out_fef, int16 *out_lef);
 
 /**
  * Get word string for this node.
  *
- * @param node Node inquired about
- * @return Word string for this node.
+ * @param dag Lattice to which node belongs.
+ * @param node Node inquired about.
+ * @return Word string for this node (possibly a pronunciation variant).
  */
 POCKETSPHINX_EXPORT
-char const *ps_latnode_word(ps_latnode_t *node);
+char const *ps_latnode_word(ps_lattice_t *dag, ps_latnode_t *node);
+
+/**
+ * Get base word string for this node.
+ *
+ * @param dag Lattice to which node belongs.
+ * @param node Node inquired about.
+ * @return Base word string for this node.
+ */
+POCKETSPHINX_EXPORT
+char const *ps_latnode_baseword(ps_lattice_t *dag, ps_latnode_t *node);
 
 /**
  * Iterate over exits from this node.
@@ -203,6 +214,21 @@ ps_latlink_iter_t *ps_latnode_exits(ps_latnode_t *node);
  */
 POCKETSPHINX_EXPORT
 ps_latlink_iter_t *ps_latnode_entries(ps_latnode_t *node);
+
+/**
+ * Get best posterior probability and associated acoustic score from a lattice node.
+ *
+ * @param dag Lattice to which node belongs.
+ * @param node Node inquired about.
+ * @param out_link Output: exit link with highest posterior probability
+ * @return Posterior probability of the best link exiting this node.
+ *         Log is expressed in the log-base used in the decoder.  To
+ *         convert to linear floating-point, use
+ *         logmath_exp(ps_lattice_get_logmath(), pprob).
+ */
+POCKETSPHINX_EXPORT
+int32 ps_latnode_prob(ps_lattice_t *dag, ps_latnode_t *link,
+                      ps_latlink_t **out_link);
 
 /**
  * Get next link from a lattice link iterator.
@@ -264,36 +290,6 @@ int32 ps_latlink_prob(ps_latlink_t *link, int32 *out_ascr);
 POCKETSPHINX_EXPORT
 void ps_lattice_link(ps_lattice_t *dag, ps_latnode_t *from, ps_latnode_t *to,
                      int32 score, int32 ef);
-
-/**
- * Bypass filler words.
- */
-POCKETSPHINX_EXPORT
-void ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen);
-
-/**
- * Remove nodes marked as unreachable.
- */
-POCKETSPHINX_EXPORT
-void ps_lattice_delete_unreachable(ps_lattice_t *dag);
-
-/**
- * Add an edge to the traversal queue.
- */
-POCKETSPHINX_EXPORT
-void ps_lattice_pushq(ps_lattice_t *dag, ps_latlink_t *link);
-
-/**
- * Remove an edge from the traversal queue.
- */
-POCKETSPHINX_EXPORT
-ps_latlink_t *ps_lattice_popq(ps_lattice_t *dag);
-
-/**
- * Clear and reset the traversal queue.
- */
-POCKETSPHINX_EXPORT
-void ps_lattice_delq(ps_lattice_t *dag);
 
 /**
  * Start a forward traversal of edges in a word graph.

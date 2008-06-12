@@ -125,7 +125,6 @@ struct ps_latnode_s {
     struct ps_latnode_s *next;	/**< Next node in DAG (no ordering implied) */
 };
 
-
 /**
  * Segmentation "iterator" for backpointer table results.
  */
@@ -192,6 +191,31 @@ typedef struct astar_seg_s {
  * Construct an empty word graph with reference to a search structure.
  */
 ps_lattice_t *ps_lattice_init_search(ps_search_t *search, int n_frame);
+
+/**
+ * Bypass filler words.
+ */
+void ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen);
+
+/**
+ * Remove nodes marked as unreachable.
+ */
+void ps_lattice_delete_unreachable(ps_lattice_t *dag);
+
+/**
+ * Add an edge to the traversal queue.
+ */
+void ps_lattice_pushq(ps_lattice_t *dag, ps_latlink_t *link);
+
+/**
+ * Remove an edge from the traversal queue.
+ */
+ps_latlink_t *ps_lattice_popq(ps_lattice_t *dag);
+
+/**
+ * Clear and reset the traversal queue.
+ */
+void ps_lattice_delq(ps_lattice_t *dag);
 
 /**
  * Create a new lattice link element.
