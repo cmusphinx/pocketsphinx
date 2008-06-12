@@ -125,10 +125,18 @@ cdef class Lattice:
     """
     PocketSphinx word lattice class.
     """
-    def __cinit__(self):
+    def __cinit__(self, boxed=None):
         self.dag = NULL
+        if boxed: self.set_boxed(boxed)
 
     cdef set_dag(Lattice self, ps_lattice_t *dag):
+        ps_lattice_retain(dag)
+        ps_lattice_free(self.dag)
+        self.dag = dag
+
+    cdef set_boxed(Lattice self, box):
+        cdef ps_lattice_t *dag
+        dag = <ps_lattice_t *>(<PyGBoxed *>box).boxed
         ps_lattice_retain(dag)
         ps_lattice_free(self.dag)
         self.dag = dag
@@ -172,6 +180,13 @@ cdef class Decoder:
     def __cinit__(self, **kwargs):
         cdef cmd_ln_t *config
         cdef int i
+
+        # Construct from an existing GObject pointer if given
+        if 'pointer' in kwargs:
+            self.argc = 0
+            self.set_pointer(kwargs['pointer'])
+            return
+
         # A much more concise version of what pocketsphinx_parse_argdict used to do
         self.argc = len(kwargs) * 2
         self.argv = <char **>sb.ckd_calloc(self.argc, sizeof(char *))
@@ -188,6 +203,11 @@ cdef class Decoder:
         self.ps = ps_init(config)
         if self.ps == NULL:
             raise RuntimeError, "Failed to initialize PocketSphinx"
+
+    cdef set_pointer(Decoder self, ptr):
+        cdef ps_decoder_t *ps
+        ps = <ps_decoder_t *>(<PyGPointer *>ptr).pointer
+        self.ps = ps
 
     def __dealloc__(self):
         ps_free(self.ps)

@@ -4,6 +4,8 @@ EXTRA_DIST = pocketsphinx.c \
 
 pkginclude_HEADERS = pocketsphinx.pxd
 
+noinst_HEADERS = bogus_pygobject.h
+
 if BUILD_PYTHON
 all-local: pymod-build-stamp
 
@@ -27,6 +29,6 @@ pymod-build-stamp: $(srcdir)/pocketsphinx.c
 endif
 
 if BUILD_PYREX
-$(srcdir)/pocketsphinx.c: $(srcdir)/pocketsphinx.pyx
+$(srcdir)/pocketsphinx.c: $(srcdir)/pocketsphinx.pyx $(srcdir)/pocketsphinx.pxd
 	pyrexc -o $@ $< $(CPPFLAGS) -I$(sphinxbase)/python
 endif

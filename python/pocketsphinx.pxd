@@ -24,6 +24,13 @@ cdef extern from "Python.h":
     FILE *PyFile_AsFile(object p)
     int PyString_AsStringAndSize(object p, char **buf, Py_ssize_t *len) except -1
 
+# Don't rely on having PyGTK actually installed
+cdef extern from "bogus_pygobject.h":
+    ctypedef struct PyGBoxed:
+        void *boxed
+    ctypedef struct PyGPointer:
+        void *pointer
+
 # PocketSphinx declarations
 cdef extern from "fsg_set.h":
     ctypedef struct fsg_set_t
@@ -118,6 +125,7 @@ cdef extern from "pocketsphinx.h":
 cdef class Lattice:
     cdef ps_lattice_t *dag
     cdef set_dag(Lattice self, ps_lattice_t *dag)
+    cdef set_boxed(Lattice self, box)
 
 cdef class LatNode:
     cdef ps_latnode_t *node

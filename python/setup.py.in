@@ -2,6 +2,7 @@ from distutils.core import setup, Extension
 
 import distutils.command.install
 import os
+import commands
 
 class bogus_uninstall(distutils.command.install.install):
     """
@@ -37,6 +38,18 @@ class bogus_uninstall(distutils.command.install.install):
                     pass
                 d = os.path.dirname(d)
 
+def pkgconfig(*packages, **kw):
+    flag_map = {'-I': 'include_dirs', '-L': 'library_dirs', '-l': 'libraries'}
+    for token in commands.getoutput("pkg-config --libs --cflags %s" % ' '.join(packages)).split():
+        kw.setdefault(flag_map.get(token[:2]), []).append(token[2:])
+    return kw
+
+# We actually just need the header files so that we know how to unbox things
+try:
+    pygtk_includes = pkgconfig('pygtk-2.0')['include_dirs']
+except KeyError:
+    pygtk_includes = []
+
 setup(name = 'PocketSphinx',
       ext_modules = [
         Extension('pocketsphinx',
@@ -44,8 +57,10 @@ setup(name = 'PocketSphinx',
                    libraries=['pocketsphinx', 'sphinxbase'],
                    include_dirs=['@top_builddir@/include',
                                  '@top_srcdir@/include',
+                                 '@top_srcdir@/python',
                                  '@sphinxbasebuild@/include',
-                                 '@sphinxbase@/include'],
+                                 '@sphinxbase@/include'
+                                 ] + pygtk_includes,
                    library_dirs=['@top_builddir@/src/libpocketsphinx/.libs',
                                  '@sphinxbasebuild@/src/libsphinxbase/.libs'])
         ],
