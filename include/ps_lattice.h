@@ -80,6 +80,19 @@ typedef struct ps_latlink_s ps_latlink_t;
  */
 typedef struct latlink_list_s ps_latlink_iter_t;
 
+/* Forward declaration needed to avoid circular includes */
+struct ps_decoder_s;
+
+/**
+ * Read a lattice from a file on disk.
+ *
+ * @param ps Decoder to use for processing this lattice.
+ * @param file Path to lattice file.
+ * @return Newly created lattice, or NULL for failure.
+ */
+ps_lattice_t *ps_lattice_read(struct ps_decoder_s *ps,
+                              char const *file);
+
 /**
  * Retain a lattice.
  *
