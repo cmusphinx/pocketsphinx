@@ -20,7 +20,30 @@ dag.bestpath(lmset, 1.0, 1.0/15)
 prob = dag.posterior(lmset, 1.0/15)
 print "P(S|O) = %e" % prob
 
-for n in dag.nodes():
+for n in dag.nodes(50, 150):
+    if n.prob > 0.0001:
+        print "%s %s %d -> (%d,%d) %f" % (n.word, n.baseword,
+                                          n.sf, n.fef, n.lef, n.prob)
+        if n.baseword == 'FORWARD':
+            forward = n
+
+print "FORWARD is:", forward.word, forward.sf, forward.fef, forward.lef, forward.prob
+print "FORWARD entries:"
+for x in forward.entries():
+    if x.prob > 0.0001:
+        print "%s %d -> %d prob %f" % (x.baseword, x.sf, x.ef, x.prob)
+print "FORWARD exits:"
+for x in forward.exits():
+    if x.prob > 0.0001:
+        print "%d -> %d prob %f" % (x.sf, x.ef, x.prob)
+
+dag.write("goforward.lat")
+dag = ps.Lattice(decoder, "goforward.lat")
+dag.bestpath(lmset, 1.0, 1.0/15)
+prob = dag.posterior(lmset, 1.0/15)
+print "P(S|O) = %e" % prob
+
+for n in dag.nodes(50, 150):
     if n.prob > 0.0001:
         print "%s %s %d -> (%d,%d) %f" % (n.word, n.baseword,
                                           n.sf, n.fef, n.lef, n.prob)

@@ -16,6 +16,7 @@ cdef class LatNode:
 
     cdef set_node(LatNode self, ps_lattice_t *dag, ps_latnode_t *node):
         cdef short fef, lef
+        cdef ps_latlink_t *best_exit
         self.dag = dag
         self.node = node
         self.word = ps_latnode_word(dag, node)
@@ -23,8 +24,13 @@ cdef class LatNode:
         self.sf = ps_latnode_times(node, &fef, &lef)
         self.fef = fef
         self.lef = lef
+        self.best_exit = None
+        best_exit = NULL
         self.prob = sb.logmath_exp(ps_lattice_get_logmath(dag),
-                                   ps_latnode_prob(dag, node, NULL))
+                                   ps_latnode_prob(dag, node, &best_exit))
+        if best_exit != NULL:
+            self.best_exit = LatLink()
+            self.best_exit.set_link(dag, best_exit)
 
     def exits(self):
         cdef LatLinkIterator itor
@@ -50,23 +56,41 @@ cdef class LatNodeIterator:
     """
     Iterator over word lattice nodes.
     """
-    def __cinit__(self):
+    def __cinit__(self, start, end):
         self.itor = NULL
         self.first_node = True
+        self.start = start
+        self.end = end
 
     def __iter__(self):
         return self
 
     def __next__(self):
         cdef LatNode node
+        cdef int start
+        cdef ps_latnode_t *cnode
+
+        # Make sure we keep raising exceptions at the end
+        if self.itor == NULL:
+            raise StopIteration
+        # Advance the iterator if this isn't the first item
         if self.first_node:
             self.first_node = False
         else:
             self.itor = ps_latnode_iter_next(self.itor)
-        if self.itor == NULL:
-            raise StopIteration
+            if self.itor == NULL:
+                raise StopIteration
+        # Look for the next node within the given time range
+        cnode = ps_latnode_iter_node(self.itor)
+        start = ps_latnode_times(cnode, NULL, NULL)
+        while start < self.start or start >= self.end:
+            self.itor = ps_latnode_iter_next(self.itor)
+            if self.itor == NULL:
+                raise StopIteration
+            cnode = ps_latnode_iter_node(self.itor)
+            start = ps_latnode_times(cnode, NULL, NULL)
         node = LatNode()
-        node.set_node(self.dag, ps_latnode_iter_node(self.itor))
+        node.set_node(self.dag, cnode)
         return node
 
 cdef class LatLink:
@@ -98,6 +122,17 @@ cdef class LatLink:
         dest.set_node(self.dag, cdest)
         return src, dest
 
+    def pred(self):
+        cdef LatLink pred
+        cdef ps_latlink_t *cpred
+
+        cpred = ps_latlink_pred(self.link)
+        if cpred == NULL:
+            return None
+        pred = LatLink()
+        pred.set_link(self.dag, cpred)
+        return pred
+
 cdef class LatLinkIterator:
     """
     Iterator over word lattice nodes.
@@ -125,14 +160,21 @@ cdef class Lattice:
     """
     PocketSphinx word lattice class.
     """
-    def __cinit__(self, boxed=None):
+    def __cinit__(self, ps=None, latfile=None, boxed=None):
+        cdef Decoder decoder
         self.dag = NULL
+        if ps and latfile:
+            decoder = ps
+            self.dag = ps_lattice_read(decoder.ps, latfile)
+            if self.dag == NULL:
+                raise RuntimeError, "Failed to read lattice from %s" % latfile
         if boxed: self.set_boxed(boxed)
 
     cdef set_dag(Lattice self, ps_lattice_t *dag):
         ps_lattice_retain(dag)
         ps_lattice_free(self.dag)
         self.dag = dag
+        self.n_frames = ps_lattice_n_frames(dag)
 
     cdef set_boxed(Lattice self, box):
         cdef ps_lattice_t *dag
@@ -140,12 +182,18 @@ cdef class Lattice:
         ps_lattice_retain(dag)
         ps_lattice_free(self.dag)
         self.dag = dag
+        self.n_frames = ps_lattice_n_frames(self.dag)
 
     def __dealloc__(self):
         ps_lattice_free(self.dag)
 
     def bestpath(self, NGramModel lmset, float lwf, float ascale):
-        ps_lattice_bestpath(self.dag, lmset.lm, lwf, ascale)
+        cdef ps_latlink_t *end
+        cdef LatLink link
+        end = ps_lattice_bestpath(self.dag, lmset.lm, lwf, ascale)
+        link = LatLink()
+        link.set_link(self.dag, end)
+        return link
 
     def posterior(self, NGramModel lmset, float ascale):
         cdef logmath_t *lmath
@@ -153,13 +201,22 @@ cdef class Lattice:
         return sb.logmath_exp(lmath,
                               ps_lattice_posterior(self.dag, lmset.lm, ascale))
 
-    def nodes(self):
+    def nodes(self, start=0, end=-1):
         cdef LatNodeIterator itor
 
-        itor = LatNodeIterator()
+        if end == -1:
+            end = ps_lattice_n_frames(self.dag)
+        itor = LatNodeIterator(start, end)
         itor.dag = self.dag
         itor.itor = ps_latnode_iter(self.dag)
         return itor
+
+    def write(self, outfile):
+        cdef int rv
+
+        rv = ps_lattice_write(self.dag, outfile)
+        if rv < 0:
+            raise RuntimeError, "Failed to write lattice to %s" % outfile
 
 cdef class Decoder:
     """
@@ -173,10 +230,6 @@ cdef class Decoder:
                              dict='/path/to/dictionary',
                              beam='1e-80')
     """
-    cdef ps_decoder_t *ps
-    cdef char **argv
-    cdef int argc
-
     def __cinit__(self, **kwargs):
         cdef cmd_ln_t *config
         cdef int i
@@ -207,6 +260,8 @@ cdef class Decoder:
     cdef set_boxed(Decoder self, box):
         cdef ps_decoder_t *ps
         ps = <ps_decoder_t *>(<PyGBoxed *>box).boxed
+        ps_retain(ps)
+        ps_free(self.ps)
         self.ps = ps
 
     def __dealloc__(self):
@@ -276,5 +331,5 @@ cdef class Decoder:
         clm = ps_get_lmset(self.ps)
         lm = NGramModel()
         lm.set_lm(clm)
-        lm.set_lmath(ps_get_logmath(self.ps))
+        lm.set_lmath(sb.logmath_retain(ps_get_logmath(self.ps)))
         return lm

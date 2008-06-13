@@ -42,9 +42,9 @@ cdef extern from "ps_lattice.h":
     ctypedef struct ps_latnode_iter_t
     ctypedef struct ps_latlink_t
     ctypedef struct ps_latlink_iter_t
-    ctypedef struct ps_latpath_t
-    ctypedef struct ps_astar_t
+    ctypedef struct ps_decoder_t
 
+    ps_lattice_t *ps_lattice_read(ps_decoder_t *ps, char *file)
     ps_lattice_t *ps_lattice_retain(ps_lattice_t *dag)
     int ps_lattice_free(ps_lattice_t *dag)
     int ps_lattice_write(ps_lattice_t *dag, char *filename)
@@ -67,6 +67,7 @@ cdef extern from "ps_lattice.h":
     char *ps_latlink_word(ps_lattice_t *dag, ps_latlink_t *link)
     char *ps_latlink_baseword(ps_lattice_t *dag, ps_latlink_t *link)
     int ps_latlink_prob(ps_lattice_t *dag, ps_latlink_t *link, int *out_ascr)
+    ps_latlink_t *ps_latlink_pred(ps_latlink_t *link)
     void ps_lattice_link(ps_lattice_t *dag, ps_latnode_t *src, ps_latnode_t *dest,
                          int score, int ef)
     ps_latlink_t *ps_lattice_traverse_edges(ps_lattice_t *dag, ps_latnode_t *start,
@@ -78,6 +79,7 @@ cdef extern from "ps_lattice.h":
     ps_latlink_t *ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
                                       float lwf, float ascale)
     int ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset, float ascale)
+    int ps_lattice_n_frames(ps_lattice_t *dag)
 
 cdef extern from "pocketsphinx.h":
     ctypedef struct ps_decoder_t
@@ -88,6 +90,7 @@ cdef extern from "pocketsphinx.h":
 
     ps_decoder_t *ps_init(cmd_ln_t *config)
     int ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
+    ps_decoder_t *ps_retain(ps_decoder_t *ps)
     void ps_free(ps_decoder_t *ps)
     arg_t *ps_args()
     cmd_ln_t *ps_get_config(ps_decoder_t *ps)
@@ -122,23 +125,17 @@ cdef extern from "pocketsphinx.h":
                          double *out_ncpu, double *out_nwall)
 
 # Now, our extension classes
+cdef class Decoder:
+    cdef ps_decoder_t *ps
+    cdef char **argv
+    cdef int argc
+    cdef set_boxed(Decoder self, box)
+
 cdef class Lattice:
     cdef ps_lattice_t *dag
     cdef set_dag(Lattice self, ps_lattice_t *dag)
     cdef set_boxed(Lattice self, box)
-
-cdef class LatNode:
-    cdef ps_latnode_t *node
-    cdef ps_lattice_t *dag # FIXME: This may or may not cause memory leaks?
-    cdef readonly char *word, *baseword
-    cdef readonly int sf, fef, lef
-    cdef readonly double prob
-    cdef set_node(LatNode self, ps_lattice_t *dag, ps_latnode_t *node)
-
-cdef class LatNodeIterator:
-    cdef ps_lattice_t *dag
-    cdef ps_latnode_iter_t *itor
-    cdef int first_node
+    cdef readonly n_frames
 
 cdef class LatLink:
     cdef ps_latlink_t *link
@@ -152,3 +149,18 @@ cdef class LatLinkIterator:
     cdef ps_lattice_t *dag
     cdef ps_latlink_iter_t *itor
     cdef int first_link
+
+cdef class LatNode:
+    cdef ps_latnode_t *node
+    cdef ps_lattice_t *dag # FIXME: This may or may not cause memory leaks?
+    cdef readonly char *word, *baseword
+    cdef readonly int sf, fef, lef
+    cdef readonly double prob
+    cdef readonly LatLink best_exit
+    cdef set_node(LatNode self, ps_lattice_t *dag, ps_latnode_t *node)
+
+cdef class LatNodeIterator:
+    cdef ps_lattice_t *dag
+    cdef ps_latnode_iter_t *itor
+    cdef int first_node
+    cdef int start, end
