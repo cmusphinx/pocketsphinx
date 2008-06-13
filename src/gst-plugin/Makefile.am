@@ -1,6 +1,10 @@
 my_plugins = 
+my_headers =
+my_files =
 if BUILD_GST
 my_plugins += libgstpocketsphinx.la
+my_headers += psmarshal.h
+my_files += psmarshal.h psmarshal.c
 endif
 
 plugin_LTLIBRARIES = $(my_plugins)
@@ -11,14 +15,14 @@ libgstpocketsphinx_la_LIBADD = $(GST_LIBS) -lgstaudio-$(GST_MAJORMINOR) \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la -lsphinxbase
 libgstpocketsphinx_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 
-noinst_HEADERS = gstpocketsphinx.h gstvader.h psmarshal.h
+noinst_HEADERS = gstpocketsphinx.h gstvader.h $(my_headers)
 
 INCLUDES = -I$(top_srcdir)/include \
 	-I$(top_builddir)/include
 
 EXTRA_DIST = psmarshal.list
-BUILT_SOURCES = psmarshal.h psmarshal.c
-CLEANFILES = psmarshal.h psmarshal.c
+BUILT_SOURCES = $(my_files)
+CLEANFILES = $(my_filse)
 
 psmarshal.h: psmarshal.list
 	glib-genmarshal --header --prefix=ps_marshal $(srcdir)/psmarshal.list > psmarshal.h.tmp
