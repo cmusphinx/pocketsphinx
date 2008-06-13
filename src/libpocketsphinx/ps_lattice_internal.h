@@ -87,6 +87,7 @@ struct ps_lattice_s {
  *
  * A link corresponds to a single hypothesized instance of a word with
  * a given start and end point.
+
  */
 struct ps_latlink_s {
     struct ps_latnode_s *from;	/**< From node */

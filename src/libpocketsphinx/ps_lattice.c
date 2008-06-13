@@ -305,6 +305,18 @@ dag_param_read(lineiter_t *li, char *param)
     return -1;
 }
 
+/* Mark every node that has a path to the argument dagnode as "reachable". */
+static void
+dag_mark_reachable(ps_latnode_t * d)
+{
+    latlink_list_t *l;
+
+    d->reachable = 1;
+    for (l = d->entries; l; l = l->next)
+        if (l->link->from && !l->link->from->reachable)
+            dag_mark_reachable(l->link->from);
+}
+
 ps_lattice_t *
 ps_lattice_read(ps_decoder_t *ps,
                 char const *file)
@@ -313,11 +325,12 @@ ps_lattice_read(ps_decoder_t *ps,
     int32 ispipe;
     lineiter_t *line;
     float64 lb;
-    int32 logratio;
+    float32 logratio;
     ps_latnode_t *tail;
     ps_latnode_t **darray;
     ps_lattice_t *dag;
     int i, k, n_nodes;
+    int32 pip, silpen, fillpen;
 
     dag = ckd_calloc(1, sizeof(*dag));
     dag->search = ps->search;
@@ -355,15 +368,15 @@ ps_lattice_read(ps_decoder_t *ps,
         E_WARN("%s: Cannot find -logbase in header\n", file);
         lb = 1.0001;
     }
-    logratio = 1;
+    logratio = 1.0f;
     if (dag->lmath == NULL)
         dag->lmath = logmath_init(lb, 0, 0);
     else {
         float32 pb = logmath_get_base(dag->lmath);
         if (fabs(lb - pb) >= 0.0001) {
             E_WARN("Inconsistent logbases: %f vs %f: will compensate\n", lb, pb);
-            /* This only works for things like 1.0001 vs. 1.0003 */
-            logratio = (int32)(log(pb) / log(lb));
+            logratio = (float32)(log(lb) / log(pb));
+            E_INFO("Lattice log ratio: %f\n", logratio);
         }
     }
     /* Read Frames parameter */
@@ -477,6 +490,8 @@ ps_lattice_read(ps_decoder_t *ps,
             break;
         pd = darray[from];
         d = darray[to];
+        if (logratio != 1.0f)
+            ascr = (int32)(ascr * logratio);
         ps_lattice_link(dag, pd, d, ascr, d->sf - 1);
     }
     if (strcmp(line->buf, "End\n") != 0) {
@@ -486,6 +501,28 @@ ps_lattice_read(ps_decoder_t *ps,
     if (line) lineiter_free(line);
     fclose_comp(fp, ispipe);
     ckd_free(darray);
+
+    /* Minor hack: If the final node is a filler word and not </s>,
+     * then set its base word ID to </s>, so that the language model
+     * scores won't be screwed up. */
+    if (ISA_FILLER_WORD(dag->search, dag->end->wid))
+        dag->end->basewid = ps_search_finish_wid(dag->search);
+
+    /* Mark reachable from dag->end */
+    dag_mark_reachable(dag->end);
+
+    /* Free nodes unreachable from dag->end and their links */
+    ps_lattice_delete_unreachable(dag);
+
+    /* Build links around silence and filler words, since they do not
+     * exist in the language model. */
+    pip = logmath_log(dag->lmath, cmd_ln_float32_r(ps->config, "-pip"));
+    silpen = pip + logmath_log(dag->lmath,
+                               cmd_ln_float32_r(ps->config, "-silprob"));
+    fillpen = pip + logmath_log(dag->lmath,
+                                cmd_ln_float32_r(ps->config, "-fillprob"));
+    ps_lattice_bypass_fillers(dag, silpen, fillpen);
+
     return dag;
 
   load_error:
