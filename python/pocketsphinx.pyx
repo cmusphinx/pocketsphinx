@@ -26,8 +26,8 @@ cdef class LatNode:
         self.lef = lef
         self.best_exit = None
         best_exit = NULL
-        self.prob = sb.logmath_exp(ps_lattice_get_logmath(dag),
-                                   ps_latnode_prob(dag, node, &best_exit))
+        self.prob = sb.logmath_log_to_ln(ps_lattice_get_logmath(dag),
+                                         ps_latnode_prob(dag, node, &best_exit))
         if best_exit != NULL:
             self.best_exit = LatLink()
             self.best_exit.set_link(dag, best_exit)
@@ -108,8 +108,8 @@ cdef class LatLink:
         self.baseword = ps_latlink_baseword(dag, link)
         self.ef = ps_latlink_times(link, &sf)
         self.sf = sf
-        self.prob = sb.logmath_exp(ps_lattice_get_logmath(dag),
-                                   ps_latlink_prob(dag, link, NULL))
+        self.prob = sb.logmath_log_to_ln(ps_lattice_get_logmath(dag),
+                                         ps_latlink_prob(dag, link, NULL))
 
     def nodes(self):
         cdef LatNode src, dest
@@ -198,8 +198,8 @@ cdef class Lattice:
     def posterior(self, NGramModel lmset, float ascale):
         cdef logmath_t *lmath
         lmath = ps_lattice_get_logmath(self.dag)
-        return sb.logmath_exp(lmath,
-                              ps_lattice_posterior(self.dag, lmset.lm, ascale))
+        return sb.logmath_log_to_ln(lmath,
+                                    ps_lattice_posterior(self.dag, lmset.lm, ascale))
 
     def nodes(self, start=0, end=-1):
         cdef LatNodeIterator itor
@@ -326,10 +326,19 @@ cdef class Decoder:
 
     def get_lmset(self):
         cdef ngram_model_t *clm
+        cdef logmath_t *lmath
+        cdef cmd_ln_t *config
         cdef NGramModel lm
+        cdef int wip, uw
 
         clm = ps_get_lmset(self.ps)
         lm = NGramModel()
         lm.set_lm(clm)
-        lm.set_lmath(sb.logmath_retain(ps_get_logmath(self.ps)))
+        lmath = sb.logmath_retain(ps_get_logmath(self.ps))
+        lm.set_lmath(lmath)
+        config = ps_get_config(self.ps)
+        # This is not necessarily true but it will have to do
+        lm.lw = sb.cmd_ln_float32_r(config, "-lw")
+        lm.wip = sb.cmd_ln_float32_r(config, "-wip")
+        lm.uw = sb.cmd_ln_float32_r(config, "-uw")
         return lm
