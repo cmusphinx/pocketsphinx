@@ -296,6 +296,15 @@ POCKETSPHINX_EXPORT
 char const *ps_latlink_baseword(ps_lattice_t *dag, ps_latlink_t *link);
 
 /**
+ * Get predecessor link in best path.
+ *
+ * @param link Link inquired about
+ * @return Best previous link from bestpath search, if any.  Otherwise NULL
+ */
+POCKETSPHINX_EXPORT
+ps_latlink_t *ps_latlink_pred(ps_latlink_t *link);
+
+/**
  * Get acoustic score and posterior probability from a lattice link.
  *
  * @param dag Lattice to which node belongs.
@@ -389,5 +398,14 @@ ps_latlink_t *ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
 POCKETSPHINX_EXPORT
 int32 ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
                            float32 ascale);
+
+/**
+ * Get the number of frames in the lattice.
+ *
+ * @param lattice The lattice in question.
+ * @return Number of frames in this lattice.
+ */
+POCKETSPHINX_EXPORT
+int ps_lattice_n_frames(ps_lattice_t *dag);
 
 #endif /* __PS_LATTICE_H__ */

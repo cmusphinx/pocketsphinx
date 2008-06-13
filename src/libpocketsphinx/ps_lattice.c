@@ -497,6 +497,11 @@ ps_lattice_read(ps_decoder_t *ps,
     return NULL;
 }
 
+int
+ps_lattice_n_frames(ps_lattice_t *dag)
+{
+    return dag->n_frames;
+}
 
 ps_lattice_t *
 ps_lattice_init_search(ps_search_t *search, int n_frame)
@@ -669,6 +674,12 @@ ps_latlink_baseword(ps_lattice_t *dag, ps_latlink_t *link)
     if (link->from == NULL)
         return NULL;
     return dict_word_str(ps_search_dict(dag->search), link->from->basewid);
+}
+
+ps_latlink_t *
+ps_latlink_pred(ps_latlink_t *link)
+{
+    return link->best_prev;
 }
 
 int32
