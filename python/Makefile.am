@@ -1,6 +1,6 @@
 EXTRA_DIST = pocketsphinx.c \
 	pocketsphinx.pyx \
-	pocketshpinx.pxd
+	pocketsphinx.pxd
 
 pkginclude_HEADERS = pocketsphinx.pxd
 
