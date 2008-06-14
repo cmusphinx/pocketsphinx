@@ -498,7 +498,7 @@ ps_lattice_read(ps_decoder_t *ps,
         E_ERROR("Terminating 'End' missing\n");
         goto load_error;
     }
-    if (line) lineiter_free(line);
+    lineiter_free(line);
     fclose_comp(fp, ispipe);
     ckd_free(darray);
 
@@ -527,10 +527,9 @@ ps_lattice_read(ps_decoder_t *ps,
 
   load_error:
     E_ERROR("Failed to load %s\n", file);
-    if (fp)
-        fclose_comp(fp, ispipe);
-    if (darray)
-        ckd_free(darray);
+    lineiter_free(line);
+    if (fp) fclose_comp(fp, ispipe);
+    ckd_free(darray);
     return NULL;
 }
 

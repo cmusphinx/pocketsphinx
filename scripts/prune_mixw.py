@@ -3,6 +3,7 @@
 import sys
 import sphinx.s3mixw
 import numpy
+import struct
 
 def perplexity(dist):
     return numpy.exp(-(dist * numpy.log(dist)).sum())
@@ -113,3 +114,55 @@ def prune_mixw_thresh(mixw, thresh):
     print "Average #mixw: %.2f" % (float(avgtop) / count)
     print "Min #mixw: %d Max #mixw: %d" % (mintop, maxtop)
     return histo
+
+def norm_floor_mixw(mixw, floor=1e-7):
+    return (mixw.T / mixw.T.sum(0)).T.clip(floor, 1.0)
+
+fmtdesc = \
+"""BEGIN FILE FORMAT DESCRIPTION
+(int32) <length(string)> (including trailing 0)
+<string> (including trailing 0)
+... preceding 2 items repeated any number of times
+(int32) 0 (length(string)=0 terminates the header)
+(int32) <#codewords>
+(int32) <#pdfs>
+#pdf (unsigned char) quantized pdfs for codebook-0 codeword-0
+preceding 3 items repeated for all codebooks.
+END FILE FORMAT DESCRIPTION
+cluster_count 0
+logbase 1.0001
+codebook_count 1
+feature_count %d"""
+
+def write_sendump(mixw, outfile, floor=1e-7):
+    n_sen, n_feat, n_gau = mixw.shape
+    fh = open(outfile, "wb")
+    # Write the header
+    fmtdesc0 = fmtdesc % (n_feat)
+    for line in fmtdesc0.split('\n'):
+        fh.write(struct.pack('>I', len(line) + 1))
+        fh.write(line)
+        fh.write('\0')
+    # Align to 4 bytes
+    k = fh.tell() & 3
+    if k > 0:
+        k = 4 - k
+        fh.write(struct.pack('>I', k))
+        fh.write('!' * k)
+    fh.write(struct.pack('>I', 0))
+    # Align number of senones to 4 bytes
+    aligned_n_sen = (n_sen + 3) & ~3
+    fh.write(struct.pack('>I', n_gau))
+    fh.write(struct.pack('>I', aligned_n_sen))
+    # Write them out transposed and quantized (could be much faster)
+    qmixw = (-numpy.log(norm_floor_mixw(mixw, floor))
+              / numpy.log(1.0001)).astype('i') >> 10
+    qmixw = qmixw.clip(0, 159).astype('uint8')
+    for f in range(0, n_feat):
+        for d in range(0, n_gau):
+            qmixw[:,f,d].tofile(fh)
+            # Align it to 4 byte boundary
+            if aligned_n_sen > n_sen:
+                fh.write('\0' * (aligned_n_sen - n_sen))
+    fh.close()
+            
