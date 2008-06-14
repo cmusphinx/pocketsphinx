@@ -307,7 +307,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\ps_lattice_internal.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\s2_semi_mgau.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\sdc_mgau.h"
 				>
 			</File>
 			<File
@@ -631,6 +639,10 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\sdc_mgau.c"
+				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\libpocketsphinx\tmat.c"
