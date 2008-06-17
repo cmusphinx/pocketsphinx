@@ -334,7 +334,7 @@ ps_lattice_read(ps_decoder_t *ps,
 
     dag = ckd_calloc(1, sizeof(*dag));
     dag->search = ps->search;
-    dag->lmath = ps->lmath;
+    dag->lmath = logmath_retain(ps->lmath);
     dag->latnode_alloc = listelem_alloc_init(sizeof(ps_latnode_t));
     dag->latlink_alloc = listelem_alloc_init(sizeof(ps_latlink_t));
     dag->latlink_list_alloc = listelem_alloc_init(sizeof(latlink_list_t));
