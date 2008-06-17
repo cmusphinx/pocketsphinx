@@ -3,6 +3,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 libs=@LIBS@
+datarootdir=@datarootdir@
+modeldir=@datadir@/@PACKAGE@/model
 
 Name: PocketSphinx
 Description: Lightweight speech recognition system
