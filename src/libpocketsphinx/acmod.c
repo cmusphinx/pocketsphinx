@@ -750,6 +750,10 @@ acmod_flags2list(acmod_t *acmod)
     bitvec_t *flagptr;
 
     total_dists = bin_mdef_n_sen(acmod->mdef);
+    if (acmod->compallsen) {
+        acmod->n_senone_active = total_dists;
+        return total_dists;
+    }
     total_words = total_dists / BITVEC_BITS;
     extra_bits = total_dists % BITVEC_BITS;
     w = n = 0;
