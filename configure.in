@@ -172,8 +172,10 @@ Make sure that you have installed it and that the
 PKG_CONFIG_PATH environment variable is set correctly, if
 it was installed in a non-standard prefix.])])
    fi
-   AC_CHECK_HEADER(sphinxbase/sphinx_config.h,
-   CPPFLAGS="$SphinxBase_CFLAGS",[
+   AC_CHECK_HEADER(sphinxbase/sphinx_config.h,[
+   LIBS="$LIBS $SphinxBase_LIBS"
+   CPPFLAGS="$CPPFLAGS $SphinxBase_CFLAGS"
+],[
    AC_MSG_FAILURE(dnl
 [SphinxBase was not found on your system.])])
 fi
@@ -185,6 +187,7 @@ dnl
 : ${sphinxbasebuild=$sphinxbase}
 if test x$sphinxbase != x && test x$cross_compiling = xyes; then
    CPPFLAGS="-I$sphinxbase/include -I$sphinxbasebuild/include $CPPFLAGS"
+   LIBS="$LIBS -lsphinxbase"
    # We include libsphinxbase/.libs because of stupid broken versions of libtool
    LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxad \
 		     -L$sphinxbasebuild/src/libsphinxbase \
@@ -201,6 +204,7 @@ fi
 if test x$sphinxbasebuild != x && test x$cross_compiling != xyes; then
    AC_CHECK_FILE($sphinxbasebuild/src/libsphinxbase/libsphinxbase.la,
 [CPPFLAGS="-I$sphinxbasebuild/include $CPPFLAGS"
+LIBS="$LIBS -lsphinxbase"
 LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxad \
 		  -L$sphinxbasebuild/src/libsphinxbase \
 		  -L$sphinxbasebuild/src/libsphinxbase/.libs"],
