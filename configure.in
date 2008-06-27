@@ -234,10 +234,12 @@ model/hmm/Makefile
 model/hmm/wsj1/Makefile
 model/hmm/tidigits/Makefile
 model/lm/Makefile
+model/lm/wsj/Makefile
 model/lm/turtle/Makefile
 model/lm/tidigits/Makefile
 scripts/Makefile
 scripts/pocketsphinx_test
+scripts/pocketsphinx_wsj
 scripts/pocketsphinx_tidigits
 test/Makefile
 test/testfuncs.sh
