@@ -17,5 +17,4 @@ $S2CONTINUOUS \
 	-dict ${DICT} \
         -hmm ${HMM} \
 	-samprate 8000 \
-	-nfft 256
-
+	-nfft 256 $@
