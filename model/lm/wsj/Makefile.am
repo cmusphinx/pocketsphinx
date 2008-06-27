@@ -1,6 +1,6 @@
 lmdir = $(prefix)/share/pocketsphinx/model/lm/wsj
 
-lmdata = wsj_5k_open_vp_3e-7_tg.lm.DMP
+lmdata = wlist5o.3e-7.vp.tg.lm.DMP
 
 lm_DATA = $(lmdata)
 EXTRA_DIST = $(lmdata)
