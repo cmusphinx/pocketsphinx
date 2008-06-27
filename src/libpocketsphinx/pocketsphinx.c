@@ -406,6 +406,12 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
 {
     int rv;
 
+    if (ps->search == NULL) {
+        E_ERROR("No search module is selected, did you forget to "
+                "specify a language model or grammar?\n");
+        return -1;
+    }
+
     ptmr_reset(&ps->perf);
     ptmr_start(&ps->perf);
 
