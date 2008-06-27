@@ -20,7 +20,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/hmm/wsj1",
-				"-lm", DATADIR "/wsj/wlist5o.nvp.lm.DMP",
+				"-lm", MODELDIR "/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP",
 				"-dict", MODELDIR "/lm/cmudict.0.6d",
 				"-fwdtree", "yes",
 				"-fwdflat", "yes",

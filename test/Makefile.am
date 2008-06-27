@@ -53,8 +53,6 @@ EXTRA_DIST=compare_table.pl				\
 	data/wsj/444c0201.mfc				\
 	data/wsj/446c0201.mfc				\
 	data/wsj/447c0201.mfc				\
-	data/wsj/wlist5o.nvp.lm.DMP			\
-	data/wsj/test-wsj1-fwdflat.match		\
 	data/wsj/test5k.n800.lsn			\
 	data/wsj/n800_440c0202.wav			\
 	data/wsj/n800_440c0203.wav			\

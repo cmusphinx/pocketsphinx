@@ -20,7 +20,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/hmm/wsj1",
-				"-lm", DATADIR "/wsj/wlist5o.nvp.lm.DMP",
+				"-lm", MODELDIR "/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP",
 				"-dict", MODELDIR "/lm/cmudict.0.6d",
 				"-fwdtree", "no",
 				"-fwdflat", "yes",
@@ -34,7 +34,7 @@ main(int argc, char *argv[])
 
 	setbuf(stdout, NULL);
 	c = clock();
-	for (i = 0; i < 2; ++i) {
+	{
 		FILE *rawfh;
 		int16 buf[2048];
 		size_t nread;
@@ -59,10 +59,10 @@ main(int argc, char *argv[])
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
-	TEST_EQUAL(0, strcmp("GO FORWARD TEN YEARS",
+	TEST_EQUAL(0, strcmp("GO FORWARD TEN YEARS TO",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
 	c = clock() - c;
-	printf("2 * fwdtree search in %.2f sec\n",
+	printf("2 * fwdflat search in %.2f sec\n",
 	       (double)c / CLOCKS_PER_SEC);
 	ps_free(ps);
 

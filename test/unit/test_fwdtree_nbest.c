@@ -22,7 +22,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/hmm/wsj1",
-				"-lm", DATADIR "/wsj/wlist5o.nvp.lm.DMP",
+				"-lm", MODELDIR "/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP",
 				"-dict", MODELDIR "/lm/cmudict.0.6d",
 				"-fwdtree", "yes",
 				"-fwdflat", "no",
@@ -93,7 +93,7 @@ main(int argc, char *argv[])
 		ps_astar_finish(nbest);
 		ckd_free(besthyp);
 	}
-	TEST_EQUAL(0, strcmp("GO FORWARD TEN YEARS",
+	TEST_EQUAL(0, strcmp("GO FORWARD TEN READERS",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
 	c = clock() - c;
 	printf("5 * fwdtree + bestpath + N-best search in %.2f sec\n",
