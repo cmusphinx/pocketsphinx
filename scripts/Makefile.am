@@ -11,5 +11,4 @@ EXTRA_DIST =  \
 	psdecode.pl \
 	setup_sphinx.pl \
 	setup_tutorial.pl \
-	slave.pl \
 	prune_mixw.py

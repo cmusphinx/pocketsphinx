@@ -95,7 +95,12 @@ $ctlcount = int ( ( $nlines * $part ) / $npart ) - $ctloffset;
 
 $ST::DEC_CFG_WORDPENALTY = 0.2 unless defined($ST::DEC_CFG_WORDPENALTY);
 
+if (defined($ST::DEC_CFG_SVSPEC)) {
+    push(@ST::DEC_CFG_EXTRA_ARGS, -svspec => $ST::DEC_CFG_SVSPEC);
+}
+
 Log("Decoding $ctlcount segments starting at $ctloffset (part $part of $npart) ", 'result');
+
 my $rv = RunTool('pocketsphinx_batch', $logfile, $ctlcount,
 		 -hmm => $hmm_dir,
 		 -lw => $ST::DEC_CFG_LANGUAGEWEIGHT ,
