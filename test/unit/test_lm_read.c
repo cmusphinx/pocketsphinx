@@ -60,6 +60,7 @@ main(int argc, char *argv[])
 	/* Bingo! */
 	TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN METERS"));
 
+	fclose(rawfh);
 	ps_free(ps);
 
 	return 0;
