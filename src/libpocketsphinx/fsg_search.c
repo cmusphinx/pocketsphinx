@@ -1518,6 +1518,7 @@ fsg_search_lattice(ps_search_t *search)
                           * fsg->lw);
         ps_lattice_bypass_fillers(dag, silpen, fillpen);
     }
+    search->dag = dag;
     return dag;
 
 error_out:
