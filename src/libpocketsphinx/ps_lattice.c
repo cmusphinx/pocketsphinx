@@ -1231,6 +1231,7 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
             /* Beta for arcs into dag->end = 1.0. */
             link->beta = 0;
             /* Also, track entries, the best one's path score is P(O,S) */
+            /* FIXME: This is incorrect, because of acoustic scaling. */
             if (link->path_scr > jprob)
                 jprob = link->path_scr;
         }
@@ -1255,6 +1256,7 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
     }
 
     /* This *should* be an approximation of P(S|O) = P(O|S) * P(S) / P(O) */
+    /* FIXME: This is incorrect, because of acoustic scaling. */
     return jprob + dag->final_node_ascr - dag->norm;
 }
 

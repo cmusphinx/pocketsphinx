@@ -393,6 +393,9 @@ ps_latlink_t *ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
  *
  * This function assumes that bestpath search has already been done.
  *
+ * @bug The return value is currently not calculated correctly, and is
+ *      thus not useful as a confidence score.
+ *
  * @return Posterior probability of the utterance as a whole.
  */
 POCKETSPHINX_EXPORT
