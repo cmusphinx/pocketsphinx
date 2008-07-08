@@ -122,8 +122,8 @@ static char *default_argv[] = {
     "gst-pocketsphinx",
 #ifdef MODELDIR
     "-hmm", MODELDIR "/hmm/wsj1",
-    "-lm", MODELDIR "/lm/turtle/turtle.lm.DMP",
-    "-dict", MODELDIR "/lm/cmudict.0.6d",
+    "-lm", MODELDIR "/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP",
+    "-dict", MODELDIR "/lm/wsj/wlist5o.dic",
 #endif
     "-samprate", "8000",
     "-cmn", "prior",

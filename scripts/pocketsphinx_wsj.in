@@ -3,7 +3,7 @@ S2CONTINUOUS=@prefix@/bin/pocketsphinx_continuous
 HMM=@prefix@/share/pocketsphinx/model/hmm/wsj1
 LM=@prefix@/share/pocketsphinx/model/lm/wsj
 LMFILE=@prefix@/share/pocketsphinx/model/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP
-DICT=@prefix@/share/pocketsphinx/model/lm/cmudict.0.6d
+DICT=@prefix@/share/pocketsphinx/model/lm/wsj/wlist5o.dic
 
 echo " "
 echo "pocketsphinx_wsj:"

@@ -29,6 +29,7 @@ Package: gstreamer0.10-pocketsphinx
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: pocketsphinx-hmm-wsj1, pocketsphinx-lm-wsj
 Description: Lightweight speech recognition - GStreamer plugin
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
@@ -46,6 +47,19 @@ Description: Lightweight speech recognition - WSJ1 acoustic model
  This package contains the default acoustic model for PocketSphinx.
  It was trained from 180 hours of speech, recorded on a close-talking
  microphone and downsampled to 8kHz.
+
+Package: pocketsphinx-lm-wsj
+Section: sound
+Architecture: all
+Depends: pocketsphinx-utils
+Description: Lightweight speech recognition - WSJ language model
+ PocketSphinx is a lightweight, cross-platform, speaker-independent,
+ large-vocabulary continuous speech recognition engine.
+ .
+ This package contains the default language model for PocketSphinx.
+ It was trained from approximately 270 million words of newspaper text
+ from the CSR-1 corpus, and has a vocabulary of 5000 word types.
+ Verbalized punctuation is included.
 
 Package: pocketsphinx-hmm-tidigits
 Section: sound

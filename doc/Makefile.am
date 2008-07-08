@@ -2,13 +2,15 @@ man_MANS = \
 	pocketsphinx_batch.1 \
 	pocketsphinx_continuous.1 \
 	pocketsphinx_mdef_convert.1 \
-	pocketsphinx_tidigits.1
+	pocketsphinx_tidigits.1 \
+	pocketsphinx_wsj.1
 
 EXTRA_DIST = \
 	pocketsphinx_batch.1 \
 	pocketsphinx_continuous.1 \
 	pocketsphinx_mdef_convert.1 \
-	pocketsphinx_tidigits.1
+	pocketsphinx_tidigits.1 \
+	pocketsphinx_wsj.1 \
 	args2man.pl
 
 # pocketsphinx_batch.1: pocketsphinx_batch.1.in
