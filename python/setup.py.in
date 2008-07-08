@@ -50,7 +50,23 @@ try:
 except KeyError:
     pygtk_includes = []
 
+# If there is no @sphinxbase@ and friends use pkg-config
+if '@sphinxbase@' == '' or '@sphinxbasebuild@' == '':
+    sbconf = pkgconfig('sphinxbase')
+    sb_libdirs = sbconf.get('library_dirs', [])
+    sb_includes = sbconf.get('include_dirs', [])
+else:
+    sb_includes = ['@sphinxbasebuild@/include',
+                   '@sphinxbase@/include']
+    sb_libdirs = ['sphinxbasebuild@/src/libsphinxbase/.libs']
+
 setup(name = 'PocketSphinx',
+      version = '@VERSION@',
+      author = 'David Huggins-Daines',
+      author_email = 'dhuggins@cs.cmu.edu',
+      description = 'Python interface to CMU PocketSphinx speech recognition',
+      license = 'BSD',
+      url = 'http://cmusphinx.org',
       ext_modules = [
         Extension('pocketsphinx',
                    sources=['pocketsphinx.c'],
@@ -58,11 +74,8 @@ setup(name = 'PocketSphinx',
                    include_dirs=['@top_builddir@/include',
                                  '@top_srcdir@/include',
                                  '@top_srcdir@/python',
-                                 '@sphinxbasebuild@/include',
-                                 '@sphinxbase@/include'
-                                 ] + pygtk_includes,
-                   library_dirs=['@top_builddir@/src/libpocketsphinx/.libs',
-                                 '@sphinxbasebuild@/src/libsphinxbase/.libs'])
+                                 ] + sb_includes + pygtk_includes,
+                   library_dirs=['@top_builddir@/src/libpocketsphinx/.libs'] + sb_libdirs)
         ],
       cmdclass = {'bogus_uninstall' : bogus_uninstall}
      ) 

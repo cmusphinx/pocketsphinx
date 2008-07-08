@@ -18,6 +18,8 @@ else
 	CFLAGS += -O2
 endif
 
+PYVERS=$(shell pyversions -r)
+
 config.status: configure
 	dh_testdir
 	# Add here commands to configure the package.
@@ -33,7 +35,15 @@ build-stamp:  config.status
 
 	# Add here commands to compile the package.
 	$(MAKE)
-
+	-$(MAKE) -C python clean
+	set -e; \
+	for PYTHON in $(PYVERS); do \
+		(cd python && $$PYTHON setup.py build); \
+	done
+	set -e; \
+	for PYTHON in $(PYVERS); do \
+		(cd python && $$PYTHON-dbg setup.py build); \
+	done
 	touch $@
 
 clean:
@@ -49,9 +59,8 @@ endif
 ifneq "$(wildcard /usr/share/misc/config.guess)" ""
 	cp -f /usr/share/misc/config.guess config.guess
 endif
-
-
 	dh_clean 
+	$(RM) -r debian/python-pocketsphinx debian/python-pocketsphinx-dbg
 
 install: build
 	dh_testdir
@@ -61,6 +70,21 @@ install: build
 
 	# Add here commands to install the package into debian/tmp
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+
+	set -e; \
+	for PYTHON in $(PYVERS); do \
+	    (cd python && $$PYTHON setup.py install --root=$(CURDIR)/debian/python-pocketsphinx) ; \
+	done
+	set -e; \
+	for PYTHON in $(PYVERS); do \
+	    (cd python && $$PYTHON-dbg setup.py install --root=$(CURDIR)/debian/python-pocketsphinx-dbg) ; \
+	done
+	mkdir -p debian/python-pocketsphinx/usr/share/doc/python-pocketsphinx
+	cp python/ps_test.py debian/python-pocketsphinx/usr/share/doc/python-pocketsphinx
+	find debian/python-*-dbg ! -type d ! -name '*.so' | xargs rm -f
+	find debian/python-*-dbg -depth -empty -exec rmdir {} \;
+
+	-find debian -name '*.py[co]' | xargs rm -f
 
 
 # Build architecture-independent files here.
@@ -78,7 +102,10 @@ binary-arch: build install
 	dh_installman
 	dh_link
 	dh_strip
-	dh_compress
+	rm -rf debian/python-pocketsphinx-dbg/usr/share/doc/python-pocketsphinx-dbg
+	ln -s python-pocketsphinx \
+		debian/python-pocketsphinx-dbg/usr/share/doc/python-pocketsphinx-dbg
+	dh_compress -X.py
 	dh_fixperms
 	dh_makeshlibs
 	dh_installdeb
