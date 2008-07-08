@@ -37,53 +37,6 @@ AC_CHECK_SIZEOF(long long)
 AC_CHECK_FUNCS(dup2)
 
 dnl
-dnl Get SphinxBase source from command line if given
-dnl
-AC_ARG_WITH(sphinxbase,
-	AS_HELP_STRING([--with-sphinxbase=DIRECTORY],
-			[look for SphinxBase source files in DIRECTORY]),
-			sphinxbase=$withval)
-
-dnl
-dnl Get SphinxBase build directory from command line if given
-dnl
-AC_ARG_WITH(sphinxbase-build,
-	AS_HELP_STRING([--with-sphinxbase-build=DIRECTORY],
-			[look for SphinxBase object files in DIRECTORY]),
-	sphinxbasebuild=$withval)
-
-
-dnl
-dnl Check for SphinxBase in parent directories
-dnl
-if test x$sphinxbase = x; then
-   dn=`dirname $0`
-   case "$dn" in
-	.)
-	sbdir="`pwd`/.."
-	;;
-	[\\/]* | ?:[\\/]*)
-	sbdir="$dn/.."
-	;;
-	*)
-	sbdir="`pwd`/$dn/.."
-	;;
-   esac
-   # Look for sphinxbase in the parent directory
-   for sb in "$sbdir/sphinxbase" \
-	  "$sbdir/sphinxbase"*; do
-       AC_MSG_CHECKING([for sphinxbase in $sb])
-       if test -f "$sb/include/prim_type.h"; then
-          sphinxbase="$sb"
-	  AC_MSG_RESULT(yes)
-	  break
-       else
-	  AC_MSG_RESULT(no)
-       fi
-   done
-fi
-
-dnl
 dnl Check for pkgconfig
 dnl
 AC_CHECK_PROG(HAVE_PKGCONFIG, pkg-config, yes, no)
@@ -158,9 +111,59 @@ GST_PLUGIN_LDFLAGS='-module -avoid-version -export-symbols-regex [_]*\(gst_\|Gst
 AC_SUBST(GST_PLUGIN_LDFLAGS)
 
 dnl
-dnl Check for system SphinxBase if none was passed to us
+dnl Get SphinxBase source from command line if given
+dnl
+AC_ARG_WITH(sphinxbase,
+	AS_HELP_STRING([--with-sphinxbase=DIRECTORY],
+			[Look for SphinxBase source files in DIRECTORY.  If this is 'auto',
+			 the system-wide installation will be used.]),
+			sphinxbase=$withval)
+
+dnl
+dnl Get SphinxBase build directory from command line if given
+dnl
+AC_ARG_WITH(sphinxbase-build,
+	AS_HELP_STRING([--with-sphinxbase-build=DIRECTORY],
+			[Look for SphinxBase object files in DIRECTORY]),
+	sphinxbasebuild=$withval)
+
+
+dnl
+dnl Check for SphinxBase in parent directories
 dnl
 if test x$sphinxbase = x; then
+   dn=`dirname $0`
+   case "$dn" in
+	.)
+	sbdir="`pwd`/.."
+	;;
+	[\\/]* | ?:[\\/]*)
+	sbdir="$dn/.."
+	;;
+	*)
+	sbdir="`pwd`/$dn/.."
+	;;
+   esac
+   # Look for sphinxbase in the parent directory
+   for sb in "$sbdir/sphinxbase" \
+	  "$sbdir/sphinxbase"*; do
+       AC_MSG_CHECKING([for sphinxbase in $sb])
+       if test -f "$sb/src/libsphinxbase/libsphinxbase.la"; then
+          sphinxbase="$sb"
+	  AC_MSG_RESULT(yes)
+	  break
+       else
+	  AC_MSG_RESULT(no)
+       fi
+   done
+fi
+
+dnl
+dnl Check for system SphinxBase if none was passed to us
+dnl Also allow --with-sphinxbase=auto to use system one explicitly
+dnl
+if test x$sphinxbase = x || test x$sphinxbase = xauto; then
+   sphinxbase=
    if test "x$HAVE_PKGCONFIG" = "xno"; then
       SphinxBase_CFLAGS = "-Iusr/include/sphinxbase -I/usr/local/include/sphinxbase"
       SphinxBase_LIBS = "-lsphinxbase"
