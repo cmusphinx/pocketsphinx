@@ -7,6 +7,7 @@ endif
 
 check_PROGRAMS = \
 	test_ps_init \
+	test_ps_reinit \
 	test_ps_fwdtree \
 	test_ps_fwdtree_fwdflat \
 	test_ps_fwdflat \

@@ -120,6 +120,25 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     /* Fill in some default arguments. */
     ps_init_defaults(ps);
 
+    /* Free old searches (do this before other reinit) */
+    if (ps->searches) {
+        for (gn = ps->searches; gn; gn = gnode_next(gn))
+            ps_search_free(gnode_ptr(gn));
+        glist_free(ps->searches);
+        ps->searches = NULL;
+        ps->search = NULL;
+    }
+    /* Free old acmod. */
+    if (ps->acmod) {
+        acmod_free(ps->acmod);
+        ps->acmod = NULL;
+    }
+    /* Free old dictionary (must be done after the two things above) */
+    if (ps->dict) {
+        dict_free(ps->dict);
+        ps->dict = NULL;
+    }
+
     /* Logmath computation (used in acmod and search) */
     if (ps->lmath == NULL
         || (logmath_get_base(ps->lmath) != 
@@ -132,30 +151,18 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     /* Acoustic model (this is basically everything that
      * uttproc.c, senscr.c, and others used to do) */
-    if (ps->acmod)
-        acmod_free(ps->acmod);
     if ((ps->acmod = acmod_init(config, ps->lmath, NULL, NULL)) == NULL)
         return -1;
-
     /* Make the acmod's feature buffer growable if we are doing two-pass search. */
     if (cmd_ln_boolean_r(config, "-fwdflat")
         && cmd_ln_boolean_r(config, "-fwdtree"))
         acmod_set_grow(ps->acmod, TRUE);
 
     /* Dictionary and triphone mappings (depends on acmod). */
-    if (ps->dict)
-        dict_free(ps->dict);
     if ((ps->dict = dict_init(config, ps->acmod->mdef)) == NULL)
         return -1;
 
     /* Determine whether we are starting out in FSG or N-Gram search mode. */
-    if (ps->searches) {
-        for (gn = ps->searches; gn; gn = gnode_next(gn))
-            ps_search_free(gnode_ptr(gn));
-        glist_free(ps->searches);
-        ps->searches = NULL;
-        ps->search = NULL;
-    }
     if ((fsgfile = cmd_ln_str_r(config, "-fsg"))) {
         ps_search_t *fsgs;
 
