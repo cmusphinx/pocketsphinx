@@ -58,7 +58,7 @@ if '@sphinxbase@' == '' or '@sphinxbasebuild@' == '':
 else:
     sb_includes = ['@sphinxbasebuild@/include',
                    '@sphinxbase@/include']
-    sb_libdirs = ['sphinxbasebuild@/src/libsphinxbase/.libs']
+    sb_libdirs = ['@sphinxbasebuild@/src/libsphinxbase/.libs']
 
 setup(name = 'PocketSphinx',
       version = '@VERSION@',
