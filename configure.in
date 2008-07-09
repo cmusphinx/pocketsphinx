@@ -71,7 +71,7 @@ fi
 if test "x$use_python" = xtrue -a "x$PYTHON" = xpython; then
    AC_PATH_PROG(PYTHON, python, bogus)
 fi
-AM_CONDITIONAL(BUILD_PYTHON, test "$PYTHON" != "xbogus")
+AM_CONDITIONAL(BUILD_PYTHON, test "x$PYTHON" != "xbogus")
 AC_SUBST(PYTHON)
 
 dnl
