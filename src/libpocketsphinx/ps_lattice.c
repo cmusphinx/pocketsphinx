@@ -370,7 +370,7 @@ ps_lattice_read(ps_decoder_t *ps,
     }
     logratio = 1.0f;
     if (dag->lmath == NULL)
-        dag->lmath = logmath_init(lb, 0, 0);
+        dag->lmath = logmath_init(lb, 0, TRUE);
     else {
         float32 pb = logmath_get_base(dag->lmath);
         if (fabs(lb - pb) >= 0.0001) {
@@ -1160,7 +1160,6 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
             /* Update alpha with sum of previous alphas. */
             score = link->alpha + bprob + x->link->ascr * ascale;
             x->link->alpha = logmath_add(lmath, x->link->alpha, score);
-
             /* Calculate trigram score for bestpath. */
             if (lmset)
                 tscore = ngram_tg_score(lmset, x->link->to->basewid,

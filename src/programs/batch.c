@@ -100,6 +100,10 @@ static const arg_t ps_args_def[] = {
       ARG_STRING,
       NULL,
       "Recognition output file name" },
+    { "-hypconf",
+      ARG_STRING,
+      NULL,
+      "Recognition output with confidence file name" },
     { "-hypseg",
       ARG_STRING,
       NULL,
@@ -124,7 +128,7 @@ static const arg_t ps_args_def[] = {
     CMDLN_EMPTY_OPTION
 };
 
-mfcc_t **
+static mfcc_t **
 read_mfc_file(FILE *infh, int sf, int ef, int *out_nfr, int ceplen)
 {
     long flen;
@@ -172,7 +176,7 @@ read_mfc_file(FILE *infh, int sf, int ef, int *out_nfr, int ceplen)
     return mfcs;
 }
 
-int
+static int
 process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
                  char const *file, char const *uttid, int32 sf, int32 ef)
 {
@@ -229,7 +233,7 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
     return 0;
 }
 
-int
+static int
 write_lattice(ps_decoder_t *ps, char const *latdir, char const *uttid)
 {
     ps_lattice_t *lat;
@@ -247,14 +251,38 @@ write_lattice(ps_decoder_t *ps, char const *latdir, char const *uttid)
     return 0;
 }
 
-void
+static int
+write_hypseg(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int32 score)
+{
+    return 0;
+}
+
+static int
+write_hypconf(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int32 score)
+{
+    logmath_t *lmath = ps_get_logmath(ps);
+
+    while (itor) {
+        char const *w = ps_seg_word(itor);
+        int32 prob = ps_seg_prob(itor, NULL, NULL, NULL);
+
+        fprintf(fh, "%s(%.2f) ", w, logmath_log_to_ln(lmath, prob));
+        itor = ps_seg_next(itor);
+    }
+    /* FIXME: This will contain sentence posterior */
+    fprintf(fh, "(%s 1.0)\n", uttid);
+
+    return 0;
+}
+
+static void
 process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
 {
     int32 ctloffset, ctlcount, ctlincr;
     int32 i;
     char *line;
     size_t len;
-    FILE *hypfh = NULL, *hypsegfh = NULL;
+    FILE *hypfh = NULL, *hypsegfh = NULL, *hypconffh = NULL;
     double n_speech, n_cpu, n_wall;
     char const *outlatdir;
     char const *nbestdir;
@@ -280,7 +308,16 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                            hypsegfh);
             return;
         }
-        setbuf(hypfh, NULL);
+        setbuf(hypsegfh, NULL);
+    }
+    if (cmd_ln_str_r(config, "-hypconf")) {
+        hypconffh = fopen(cmd_ln_str_r(config, "-hypconf"), "w");
+        if (hypconffh == NULL) {
+            E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing",
+                           hypconffh);
+            return;
+        }
+        setbuf(hypconffh, NULL);
     }
 
     i = 0;
@@ -328,7 +365,12 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                 fprintf(hypfh, "%s (%s %d)\n", hyp, uttid, score);
             }
             if (hypsegfh) {
-                /* FIXME */
+                ps_seg_t *itor = ps_seg_iter(ps, &score);
+                write_hypseg(hypsegfh, ps, itor, uttid, score);
+            }
+            if (hypconffh) {
+                ps_seg_t *itor = ps_seg_iter(ps, &score);
+                write_hypconf(hypconffh, ps, itor, uttid, score);
             }
             if (outlatdir) {
                 write_lattice(ps, outlatdir, uttid);
@@ -355,6 +397,8 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
         fclose(hypfh);
     if (hypsegfh)
         fclose(hypsegfh);
+    if (hypconffh)
+        fclose(hypconffh);
 }
 
 int
