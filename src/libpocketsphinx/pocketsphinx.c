@@ -147,7 +147,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
             logmath_free(ps->lmath);
         ps->lmath = logmath_init
             ((float64)cmd_ln_float32_r(config, "-logbase"), 0,
-             cmd_ln_boolean(config, "-bestpath"));
+             cmd_ln_boolean_r(config, "-bestpath"));
     }
 
     /* Acoustic model (this is basically everything that
