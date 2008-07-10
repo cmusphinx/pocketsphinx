@@ -32,7 +32,7 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
 	int16 const *bptr;
 	size_t nread;
 	size_t nsamps;
-	int32 nfr, i, score;
+	int32 nfr, i, score, prob;
 	char const *hyp;
 	char const *uttid;
 	double n_speech, n_cpu, n_wall;
@@ -44,7 +44,8 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
 	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
 	ps_decode_raw(ps, rawfh, "goforward", -1);
 	hyp = ps_get_hyp(ps, &score, &uttid);
-	printf("%s (%s): %s (%d)\n", sname, uttid, hyp, score);
+	prob = ps_get_prob(ps, &uttid);
+	printf("%s (%s): %s (%d, %d)\n", sname, uttid, hyp, score, prob);
 	TEST_EQUAL(0, strcmp(hyp, expected));
 	ps_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
 	printf("%.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
@@ -67,7 +68,8 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
 	}
 	TEST_EQUAL(0, ps_end_utt(ps));
 	hyp = ps_get_hyp(ps, &score, &uttid);
-	printf("%s (%s): %s (%d)\n", sname, uttid, hyp, score);
+	prob = ps_get_prob(ps, &uttid);
+	printf("%s (%s): %s (%d, %d)\n", sname, uttid, hyp, score, prob);
 	TEST_EQUAL(0, strcmp(uttid, "000000000"));
 	TEST_EQUAL(0, strcmp(hyp, expected));
 	ps_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
@@ -99,7 +101,8 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
 	}
 	TEST_EQUAL(0, ps_end_utt(ps));
 	hyp = ps_get_hyp(ps, &score, &uttid);
-	printf("%s (%s): %s (%d)\n", sname, uttid, hyp, score);
+	prob = ps_get_prob(ps, &uttid);
+	printf("%s (%s): %s (%d, %d)\n", sname, uttid, hyp, score, prob);
 	TEST_EQUAL(0, strcmp(uttid, "000000001"));
 	TEST_EQUAL(0, strcmp(hyp, expected));
 	for (seg = ps_seg_iter(ps, &score); seg;

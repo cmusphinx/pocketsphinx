@@ -71,6 +71,7 @@
 
 static ps_seg_t *fsg_search_seg_iter(ps_search_t *search, int32 *out_score);
 static ps_lattice_t *fsg_search_lattice(ps_search_t *search);
+static int fsg_search_prob(ps_search_t *search);
 
 static ps_searchfuncs_t fsg_funcs = {
     /* name: */   "fsg",
@@ -81,6 +82,7 @@ static ps_searchfuncs_t fsg_funcs = {
     /* free: */   fsg_search_free,
     /* lattice: */  fsg_search_lattice,
     /* hyp: */      fsg_search_hyp,
+    /* prob: */     fsg_search_prob,
     /* seg_iter: */ fsg_search_seg_iter,
 };
 
@@ -1011,6 +1013,27 @@ fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_sc
     return besthist;
 }
 
+/* FIXME: Mostly duplicated with ngram_search_bestpath(). */
+static ps_latlink_t *
+fsg_search_bestpath(ps_search_t *search, int32 *out_score, int backward)
+{
+    fsg_search_t *fsgs = (fsg_search_t *)search;
+
+    if (search->last_link == NULL) {
+        search->last_link = ps_lattice_bestpath(search->dag, NULL,
+                                                1.0, fsgs->ascale);
+        if (search->last_link == NULL)
+            return NULL;
+        if (out_score)
+            *out_score = search->last_link->path_scr + search->dag->final_node_ascr;
+        /* Also calculate betas so we can fill in the posterior
+         * probability field in the segmentation. */
+        if (search->post == 0)
+            search->post = ps_lattice_posterior(search->dag, NULL, fsgs->ascale);
+    }
+    return search->last_link;
+}
+
 char const *
 fsg_search_hyp(ps_search_t *search, int32 *out_score)
 {
@@ -1030,11 +1053,10 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score)
         ps_lattice_t *dag;
         ps_latlink_t *link;
 
-        dag = fsg_search_lattice(search);
-        link = ps_lattice_bestpath(dag, NULL, 1.0, fsgs->ascale);
-        if (link == NULL) /* No hypothesis... */
+        if ((dag = fsg_search_lattice(search)) == NULL)
             return NULL;
-        if (out_score) *out_score = link->path_scr + dag->final_node_ascr;
+        if ((link = fsg_search_bestpath(search, out_score, FALSE)) == NULL)
+            return NULL;
         return ps_lattice_hyp(dag, link);
     }
 
@@ -1146,14 +1168,13 @@ fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
     /* If bestpath is enabled and the utterance is complete, then run it. */
     if (fsgs->bestpath && fsgs->final) {
         ps_lattice_t *dag;
-        ps_latlink_t *last;
+        ps_latlink_t *link;
 
-        dag = fsg_search_lattice(search);
-        last = ps_lattice_bestpath(dag, NULL, 1.0, fsgs->ascale);
-        /* Also calculate betas so we can fill in the posterior
-         * probability field in the segmentation. */
-        ps_lattice_posterior(dag, NULL, fsgs->ascale);
-        return ps_lattice_seg_iter(dag, last, 1.0);
+        if ((dag = fsg_search_lattice(search)) == NULL)
+            return NULL;
+        if ((link = fsg_search_bestpath(search, out_score, TRUE)) == NULL)
+            return NULL;
+        return ps_lattice_seg_iter(dag, link, 1.0);
     }
 
     /* Calling this an "iterator" is a bit of a misnomer since we have
@@ -1189,6 +1210,28 @@ fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
     fsg_seg_bp2itor((ps_seg_t *)itor, itor->hist[0]);
     
     return (ps_seg_t *)itor;
+}
+
+static int
+fsg_search_prob(ps_search_t *search)
+{
+    fsg_search_t *fsgs = (fsg_search_t *)search;
+
+    /* If bestpath is enabled and the utterance is complete, then run it. */
+    if (fsgs->bestpath && fsgs->final) {
+        ps_lattice_t *dag;
+        ps_latlink_t *link;
+
+        if ((dag = fsg_search_lattice(search)) == NULL)
+            return 0;
+        if ((link = fsg_search_bestpath(search, NULL, TRUE)) == NULL)
+            return 0;
+        return search->post;
+    }
+    else {
+        /* FIXME: Give some kind of good estimate here, eventually. */
+        return 0;
+    }
 }
 
 static ps_latnode_t *

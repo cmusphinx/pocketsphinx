@@ -331,7 +331,7 @@ struct ngram_search_s {
      */
     float32 bestpath_fwdtree_lw_ratio;
     float32 ascale; /**< Acoustic score scale for posterior probabilities. */
-
+    
     ngram_search_stats_t st; /**< Various statistics for profiling. */
 
     /* A collection of beam widths. */

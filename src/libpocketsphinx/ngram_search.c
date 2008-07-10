@@ -59,6 +59,7 @@ static int ngram_search_step(ps_search_t *search);
 static int ngram_search_finish(ps_search_t *search);
 static int ngram_search_reinit(ps_search_t *search);
 static char const *ngram_search_hyp(ps_search_t *search, int32 *out_score);
+static int32 ngram_search_prob(ps_search_t *search);
 static ps_seg_t *ngram_search_seg_iter(ps_search_t *search, int32 *out_score);
 
 static ps_searchfuncs_t ngram_funcs = {
@@ -70,6 +71,7 @@ static ps_searchfuncs_t ngram_funcs = {
     /* free: */   ngram_search_free,
     /* lattice: */  ngram_search_lattice,
     /* hyp: */      ngram_search_hyp,
+    /* prob: */     ngram_search_prob,
     /* seg_iter: */ ngram_search_seg_iter,
 };
 
@@ -660,6 +662,28 @@ ngram_search_finish(ps_search_t *search)
     return 0;
 }
 
+static ps_latlink_t *
+ngram_search_bestpath(ps_search_t *search, int32 *out_score, int backward)
+{
+    ngram_search_t *ngs = (ngram_search_t *)search;
+
+    if (search->last_link == NULL) {
+        search->last_link = ps_lattice_bestpath(search->dag, ngs->lmset,
+                                                ngs->bestpath_fwdtree_lw_ratio,
+                                                ngs->ascale);
+        if (search->last_link == NULL)
+            return NULL;
+        if (out_score)
+            *out_score = search->last_link->path_scr + search->dag->final_node_ascr;
+        /* Also calculate betas so we can fill in the posterior
+         * probability field in the segmentation. */
+        if (search->post == 0)
+            search->post = ps_lattice_posterior(search->dag, ngs->lmset,
+                                                ngs->ascale);
+    }
+    return search->last_link;
+}
+
 static char const *
 ngram_search_hyp(ps_search_t *search, int32 *out_score)
 {
@@ -667,21 +691,14 @@ ngram_search_hyp(ps_search_t *search, int32 *out_score)
 
     /* Only do bestpath search if the utterance is complete. */
     if (ngs->bestpath && ngs->done) {
+        ps_lattice_t *dag;
         ps_latlink_t *link;
 
-        /* Compute these such that they agree with the fwdtree language weight. */
-        ngram_compute_seg_scores(ngs,
-                                 ngs->fwdflat
-                                 ? ngs->fwdflat_fwdtree_lw_ratio : 1.0);
-        if (ngram_search_lattice(search) == NULL)
+        if ((dag = ngram_search_lattice(search)) == NULL)
             return NULL;
-        link = ps_lattice_bestpath(ps_search_dag(ngs), ngs->lmset,
-                                   ngs->bestpath_fwdtree_lw_ratio,
-                                   ngs->ascale);
-        if (link == NULL) /* No hypothesis... */
+        if ((link = ngram_search_bestpath(search, out_score, FALSE)) == NULL)
             return NULL;
-        if (out_score) *out_score = link->path_scr + ps_search_dag(ngs)->final_node_ascr;
-        return ps_lattice_hyp(ps_search_dag(ngs), link);
+        return ps_lattice_hyp(dag, link);
     }
     else {
         int32 bpidx;
@@ -818,18 +835,14 @@ ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
 
     /* Only do bestpath search if the utterance is done. */
     if (ngs->bestpath && ngs->done) {
-        ps_latlink_t *last;
+        ps_lattice_t *dag;
+        ps_latlink_t *link;
 
-        /* FIXME: Probably we don't need to recompute this whole DAG. */
-        if (ngram_search_lattice(search) == NULL)
+        if ((dag = ngram_search_lattice(search)) == NULL)
             return NULL;
-        last = ps_lattice_bestpath(ps_search_dag(ngs), ngs->lmset,
-                                   ngs->bestpath_fwdtree_lw_ratio,
-                                   ngs->ascale);
-        /* Also calculate betas so we can fill in the posterior
-         * probability field in the segmentation. */
-        ps_lattice_posterior(ps_search_dag(ngs), ngs->lmset, ngs->ascale);
-        return ps_lattice_seg_iter(ps_search_dag(ngs), last,
+        if ((link = ngram_search_bestpath(search, out_score, TRUE)) == NULL)
+            return NULL;
+        return ps_lattice_seg_iter(dag, link,
                                    ngs->bestpath_fwdtree_lw_ratio);
     }
     else {
@@ -844,6 +857,28 @@ ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
     }
 
     return NULL;
+}
+
+static int32
+ngram_search_prob(ps_search_t *search)
+{
+    ngram_search_t *ngs = (ngram_search_t *)search;
+
+    /* Only do bestpath search if the utterance is done. */
+    if (ngs->bestpath && ngs->done) {
+        ps_lattice_t *dag;
+        ps_latlink_t *link;
+
+        if ((dag = ngram_search_lattice(search)) == NULL)
+            return 0;
+        if ((link = ngram_search_bestpath(search, NULL, TRUE)) == NULL)
+            return 0;
+        return search->post;
+    }
+    else {
+        /* FIXME: Give some kind of good estimate here, eventually. */
+        return 0;
+    }
 }
 
 static void
@@ -997,6 +1032,10 @@ ngram_search_lattice(ps_search_t *search)
     ps_lattice_free(search->dag);
     search->dag = NULL;
     dag = ps_lattice_init_search(search, ngs->n_frame);
+    /* Compute these such that they agree with the fwdtree language weight. */
+    ngram_compute_seg_scores(ngs,
+                             ngs->fwdflat
+                             ? ngs->fwdflat_fwdtree_lw_ratio : 1.0);
     create_dag_nodes(ngs, dag);
     if ((dag->start = find_start_node(ngs, dag)) == NULL)
         goto error_out;

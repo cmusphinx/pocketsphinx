@@ -1195,6 +1195,46 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
     return bestend;
 }
 
+static int32
+ps_lattice_joint(ps_lattice_t *dag, ps_latlink_t *link, float32 ascale)
+{
+    ngram_model_t *lmset;
+    int32 jprob;
+
+    /* Sort of a hack... */
+    if (dag->search && 0 == strcmp(ps_search_name(dag->search), "ngram"))
+        lmset = ((ngram_search_t *)dag->search)->lmset;
+    else
+        lmset = NULL;
+
+    jprob = 0;
+    while (link) {
+        if (lmset) {
+            int32 lprob, lback, hist[2];
+            /* Compute unscaled language model probability.  Note that
+               this is actually not the language model probability
+               that corresponds to this link, but that is okay,
+               because we are just taking the sum over all links in
+               the best path. */
+            hist[0] = link->from->wid;
+            if (link->best_prev)
+                hist[1] = link->best_prev->from->wid;
+            else
+                hist[1] = -1;
+            lprob = ngram_ng_prob(lmset, link->to->wid, hist, 2, &lback);
+            jprob += lprob;
+        }
+        /* If there is no language model, we assume that the language
+           model probability (such as it is) has been included in the
+           link score. */
+        jprob += link->ascr * ascale;
+        link = link->best_prev;
+    }
+
+    jprob += dag->final_node_ascr * ascale;
+    return jprob;
+}
+
 int32
 ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
                      float32 ascale)
@@ -1204,7 +1244,8 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
     ps_latnode_t *node;
     ps_latlink_t *link;
     latlink_list_t *x;
-    int32 jprob;
+    ps_latlink_t *bestend;
+    int32 bestescr;
 
     search = dag->search;
     lmath = dag->lmath;
@@ -1216,7 +1257,8 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
         }
     }
 
-    jprob = MAX_NEG_INT32;
+    bestend = NULL;
+    bestescr = MAX_NEG_INT32;
     /* Accumulate backward probabilities for all links. */
     for (link = ps_lattice_reverse_edges(dag, NULL, NULL);
          link; link = ps_lattice_reverse_next(dag, NULL)) {
@@ -1229,10 +1271,13 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
         if (link->to == dag->end) {
             /* Beta for arcs into dag->end = 1.0. */
             link->beta = 0;
-            /* Also, track entries, the best one's path score is P(O,S) */
-            /* FIXME: This is incorrect, because of acoustic scaling. */
-            if (link->path_scr > jprob)
-                jprob = link->path_scr;
+            /* Track the best path - we will backtrace in order to
+               calculate the unscaled joint probability for sentence
+               posterior. */
+            if (link->path_scr > bestescr) {
+                bestescr = link->path_scr;
+                bestend = link;
+            }
         }
         else {
             int32 bprob, n_used;
@@ -1254,9 +1299,8 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
         }
     }
 
-    /* This *should* be an approximation of P(S|O) = P(O|S) * P(S) / P(O) */
-    /* FIXME: This is incorrect, because of acoustic scaling. */
-    return jprob + dag->final_node_ascr - dag->norm;
+    /* Return P(S|O) = P(O,S)/P(O) */
+    return ps_lattice_joint(dag, bestend, ascale) - dag->norm;
 }
 
 

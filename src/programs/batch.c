@@ -269,8 +269,7 @@ write_hypconf(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int
         fprintf(fh, "%s(%.2f) ", w, logmath_log_to_ln(lmath, prob));
         itor = ps_seg_next(itor);
     }
-    /* FIXME: This will contain sentence posterior */
-    fprintf(fh, "(%s 1.0)\n", uttid);
+    fprintf(fh, "(%s %.2f)\n", uttid, logmath_log_to_ln(lmath, ps_get_prob(ps, NULL)));
 
     return 0;
 }

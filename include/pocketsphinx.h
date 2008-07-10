@@ -345,6 +345,22 @@ char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score,
                        char const **out_uttid);
 
 /**
+ * Get posterior probability.
+ *
+ * @note Unless the -bestpath option is enabled, this function will
+ * always return zero (corresponding to a posterior probability of
+ * 1.0).  Even if -bestpath is enabled, it will also return zero when
+ * called on a partial result.  Ongoing research into effective
+ * confidence annotation for partial hypotheses may result in these
+ * restrictions being lifted in future versions.
+ *
+ * @param out_uttid Output: utterance ID for this utterance.
+ * @return Posterior probability of the best hypothesis.
+ */
+POCKETSPHINX_EXPORT
+int32 ps_get_prob(ps_decoder_t *ps, char const **out_uttid);
+
+/**
  * Get word lattice.
  *
  * There isn't much you can do with this so far, a public API will

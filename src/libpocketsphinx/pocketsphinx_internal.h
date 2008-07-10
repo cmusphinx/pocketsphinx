@@ -75,6 +75,7 @@ typedef struct ps_searchfuncs_s {
 
     ps_lattice_t *(*lattice)(ps_search_t *search);
     char const *(*hyp)(ps_search_t *search, int32 *out_score);
+    int32 (*prob)(ps_search_t *search);
     ps_seg_t *(*seg_iter)(ps_search_t *search, int32 *out_score);
 } ps_searchfuncs_t;
 
@@ -88,6 +89,8 @@ struct ps_search_s {
     dict_t *dict;          /**< Pronunciation dictionary. */
     char *hyp_str;         /**< Current hypothesis string. */
     ps_lattice_t *dag;	   /**< Current hypothesis word graph. */
+    ps_latlink_t *last_link; /**< Final link in best path. */
+    int32 post;            /**< Utterance posterior probability. */
 
     /* Magical word IDs that must exist in the dictionary: */
     int32 start_wid;       /**< Start word ID. */
@@ -100,6 +103,8 @@ struct ps_search_s {
 #define ps_search_acmod(s) ps_search_base(s)->acmod
 #define ps_search_dict(s) ps_search_base(s)->dict
 #define ps_search_dag(s) ps_search_base(s)->dag
+#define ps_search_last_link(s) ps_search_base(s)->last_link
+#define ps_search_post(s) ps_search_base(s)->post
 
 #define ps_search_name(s) ps_search_base(s)->vt->name
 #define ps_search_start(s) (*(ps_search_base(s)->vt->start))(s)
@@ -109,6 +114,7 @@ struct ps_search_s {
 #define ps_search_free(s) (*(ps_search_base(s)->vt->free))(s)
 #define ps_search_lattice(s) (*(ps_search_base(s)->vt->lattice))(s)
 #define ps_search_hyp(s,sc) (*(ps_search_base(s)->vt->hyp))(s,sc)
+#define ps_search_prob(s) (*(ps_search_base(s)->vt->prob))(s)
 #define ps_search_seg_iter(s,sc) (*(ps_search_base(s)->vt->seg_iter))(s,sc)
 
 /* For convenience... */

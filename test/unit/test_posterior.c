@@ -23,7 +23,7 @@ test_decode(ps_decoder_t *ps)
 	ps_latlink_t *link;
 	ps_latnode_t *node;
 	latlink_list_t *x;
-	int32 norm;
+	int32 norm, post;
 
 	ngs = (ngram_search_t *)ps->search;
 	acmod = ps->acmod;
@@ -100,11 +100,14 @@ test_decode(ps_decoder_t *ps)
 	}
 	
 	/* Find and print best path. */
-	link = ps_lattice_bestpath(dag, ngs->lmset, 1.0, 1.0/15.0);
+	link = ps_lattice_bestpath(dag, ngs->lmset, 1.0, 1.0/20.0);
 	printf("BESTPATH: %s\n", ps_lattice_hyp(dag, link));
 
 	/* Calculate betas. */
-	ps_lattice_posterior(dag, ngs->lmset, 1.0/15.0);
+	post = ps_lattice_posterior(dag, ngs->lmset, 1.0/20.0);
+	printf("Best path score: %d\n",
+	       link->path_scr + dag->final_node_ascr);
+	printf("P(S|O) = %d\n", post);
 
 	/* Verify that sum of final alphas and initial alphas+betas is
 	 * sufficiently similar. */
