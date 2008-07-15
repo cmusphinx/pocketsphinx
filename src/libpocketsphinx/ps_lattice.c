@@ -1217,11 +1217,13 @@ ps_lattice_joint(ps_lattice_t *dag, ps_latlink_t *link, float32 ascale)
                because we are just taking the sum over all links in
                the best path. */
             hist[0] = link->from->wid;
-            if (link->best_prev)
+            if (link->best_prev) {
                 hist[1] = link->best_prev->from->wid;
-            else
-                hist[1] = -1;
-            lprob = ngram_ng_prob(lmset, link->to->wid, hist, 2, &lback);
+                lprob = ngram_ng_prob(lmset, link->to->wid, hist, 2, &lback);
+            }
+            else {
+                lprob = ngram_ng_prob(lmset, link->to->wid, hist, 1, &lback);
+            }
             jprob += lprob;
         }
         /* If there is no language model, we assume that the language
