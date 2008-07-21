@@ -259,8 +259,8 @@ struct ngram_search_s {
      */
     int32 *homophone_set;
     int32 *single_phone_wid; /**< list of single-phone word ids */
-    int32 n_1ph_words;       /**< #single phone words in dict (total) */
-    int32 n_1ph_LMwords;     /**< #single phone dict words also in LM;
+    int32 n_1ph_words;       /**< Number single phone words in dict (total) */
+    int32 n_1ph_LMwords;     /**< Number single phone dict words also in LM;
                                 these come first in single_phone_wid */
     /**
      * Array of active channels for current and next frame.
@@ -270,7 +270,7 @@ struct ngram_search_s {
      * tree active in frame f.
      */
     chan_t ***active_chan_list;
-    int32 n_active_chan[2];  /**< #entries in active_chan_list */
+    int32 n_active_chan[2];  /**< Number entries in active_chan_list */
     /**
      * Array of active multi-phone words for current and next frame.
      *
@@ -282,7 +282,7 @@ struct ngram_search_s {
      * should not appear in this list.
      */
     int32 **active_word_list;
-    int32 n_active_word[2];  /**< #entries in active_word_list */
+    int32 n_active_word[2];  /**< Number entries in active_word_list */
 
     /*
      * FIXME: Document all of these bits.

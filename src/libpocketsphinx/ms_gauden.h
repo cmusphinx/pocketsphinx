@@ -86,9 +86,9 @@ typedef struct {
     var_t ***det;	/**< log(determinant) for each variance vector;
 			   actually, log(sqrt(2*pi*det)) */
     logmath_t *lmath;   /**< log math computation */
-    int32 n_mgau;	/**< #codebooks */
-    int32 n_feat;	/**< #feature streams in each codebook */
-    int32 n_density;	/**< #gaussian densities in each codebook-feature stream */
+    int32 n_mgau;	/**< Number codebooks */
+    int32 n_feat;	/**< Number feature streams in each codebook */
+    int32 n_density;	/**< Number gaussian densities in each codebook-feature stream */
     int32 *featlen;	/**< feature length for each feature */
 } gauden_t;
 
@@ -119,7 +119,7 @@ int32
 gauden_dist (gauden_t *g,	/**< In: handle to entire ensemble of codebooks */
 	     int mgau,		/**< In: codebook for which density values to be evaluated
 				   (g->{mean,var}[mgau]) */
-	     int n_top,		/**< In: #top densities to be evaluated */
+	     int n_top,		/**< In: Number top densities to be evaluated */
 	     mfcc_t **obs,	/**< In: Observation vector; obs[f] = for feature f */
 	     gauden_dist_t **out_dist
 	     /**< Out: n_top best codewords and density values,

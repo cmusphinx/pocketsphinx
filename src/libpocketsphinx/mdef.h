@@ -137,12 +137,12 @@ typedef struct ph_lc_s {
    \brief strcture for storing the model definition. 
 */
 typedef struct {
-    int32 n_ciphone;		/**< #basephones actually present */
-    int32 n_phone;		/**< #basephones + #triphones actually present */
-    int32 n_emit_state;		/**< #emitting states per phone */
-    int32 n_ci_sen;		/**< #CI senones; these are the first */
-    int32 n_sen;		/**< #senones (CI+CD) */
-    int32 n_tmat;		/**< #transition matrices */
+    int32 n_ciphone;		/**< number basephones actually present */
+    int32 n_phone;		/**< number basephones + number triphones actually present */
+    int32 n_emit_state;		/**< number emitting states per phone */
+    int32 n_ci_sen;		/**< number CI senones; these are the first */
+    int32 n_sen;		/**< number senones (CI+CD) */
+    int32 n_tmat;		/**< number transition matrices */
     
     hash_table_t *ciphone_ht;	/**< Hash table for mapping ciphone strings to ids */
     ciphone_t *ciphone;		/**< CI-phone information for all ciphones */

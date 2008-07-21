@@ -114,9 +114,9 @@ struct ps_latnode_s {
     int32 fef;			/**< First end frame */
     int32 lef;			/**< Last end frame */
     int16 sf;			/**< Start frame */
-    int16 reachable;		/**< From </s> or <s> */
+    int16 reachable;		/**< From \verbatim </s> \endverbatim or \verbatim <s> \endverbatim */
     union {
-	int32 fanin;		/**< #nodes with links to this node */
+	int32 fanin;		/**< Number nodes with links to this node */
 	int32 rem_score;	/**< Estimated best score from node.sf to end */
 	int32 best_exit;	/**< Best exit score (used for final nodes only) */
     } info;

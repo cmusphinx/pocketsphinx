@@ -109,9 +109,9 @@ extern "C" {
 typedef struct {
     int32 ***tp;	/**< The transition matrices; int32 since probs in logs3 domain:
 			   tp[tmatid][from-state][to-state] */
-    int32 n_tmat;	/**< #matrices */
-    int32 n_state;	/**< #source states in matrix (only the emitting states);
-			   #destination states = n_state+1, it includes the exit state */
+    int32 n_tmat;	/**< Number matrices */
+    int32 n_state;	/**< Number source states in matrix (only the emitting states);
+			   Number destination states = n_state+1, it includes the exit state */
 } tmat_t;
 
 

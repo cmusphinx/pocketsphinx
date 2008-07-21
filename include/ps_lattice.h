@@ -268,7 +268,7 @@ int ps_latlink_times(ps_latlink_t *link, int16 *out_sf);
 /**
  * Get destination and source nodes from a lattice link
  *
- * @param node Link inquired about
+ * @param link Link inquired about
  * @param out_src Output: (optional) source node.
  * @return destination node
  */
@@ -279,7 +279,7 @@ ps_latnode_t *ps_latlink_nodes(ps_latlink_t *link, ps_latnode_t **out_src);
  * Get word string from a lattice link.
  *
  * @param dag Lattice to which node belongs.
- * @param node Link inquired about
+ * @param link Link inquired about
  * @return Word string for this link (possibly a pronunciation variant).
  */
 POCKETSPHINX_EXPORT
@@ -289,7 +289,7 @@ char const *ps_latlink_word(ps_lattice_t *dag, ps_latlink_t *link);
  * Get base word string from a lattice link.
  *
  * @param dag Lattice to which node belongs.
- * @param node Link inquired about
+ * @param link Link inquired about
  * @return Base word string for this link
  */
 POCKETSPHINX_EXPORT
@@ -308,7 +308,7 @@ ps_latlink_t *ps_latlink_pred(ps_latlink_t *link);
  * Get acoustic score and posterior probability from a lattice link.
  *
  * @param dag Lattice to which node belongs.
- * @param node Link inquired about
+ * @param link Link inquired about
  * @param out_ascr Output: (optional) acoustic score.
  * @return Posterior probability for this link.  Log is expressed in
  *         the log-base used in the decoder.  To convert to linear
@@ -370,7 +370,7 @@ ps_latlink_t *ps_lattice_reverse_edges(ps_lattice_t *dag, ps_latnode_t *start, p
  * Get the next link in reverse traversal.
  *
  * @param dag Lattice to be traversed.
- * @param end End node (goal) of traversal.
+ * @param start Start node (goal) of traversal.
  * @return Next link in traversal.
  */
 POCKETSPHINX_EXPORT
@@ -405,7 +405,7 @@ int32 ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
 /**
  * Get the number of frames in the lattice.
  *
- * @param lattice The lattice in question.
+ * @param dag The lattice in question.
  * @return Number of frames in this lattice.
  */
 POCKETSPHINX_EXPORT
