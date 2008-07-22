@@ -90,6 +90,7 @@ struct ps_decoder_s;
  * @param file Path to lattice file.
  * @return Newly created lattice, or NULL for failure.
  */
+POCKETSPHINX_EXPORT
 ps_lattice_t *ps_lattice_read(struct ps_decoder_s *ps,
                               char const *file);
 
