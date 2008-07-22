@@ -144,6 +144,9 @@ push @dir_candidates, "$SPHINX_DECODER_DIR/src/programs";
 push @dir_candidates, "$SPHINX_DECODER_DIR/bin/Release";
 push @dir_candidates, "$SPHINX_DECODER_DIR/bin/Debug";
 push @dir_candidates, "$SPHINX_DECODER_DIR/bin";
+push @dir_candidates, "$SPHINX_DECODER_DIR/../sphinxbase/lib/Release";
+push @dir_candidates, "$SPHINX_DECODER_DIR/../sphinxbase/lib/Debug";
+push @dir_candidates, "$SPHINX_DECODER_DIR/../sphinxbase/lib";
 push @dir_candidates, "$INSTALL/bin" if ($INSTALL ne "");
 
 my $execdir = executable_dir(@dir_candidates);
@@ -153,7 +156,12 @@ die "Couldn't find executables. Did you compile pocketsphinx?\n" if ($execdir eq
 print "Copying executables from $execdir\n";
 
 opendir(DIR, "$execdir") or die "Can't open $execdir\n";
-@dirlist = grep !/^\./, readdir DIR;
+if ($^O eq 'MSWin32' or $^O eq 'msys' or $^O eq 'cygwin') {
+    @dirlist = grep /^[^\.].*\.(dll|exe)/i, readdir DIR;
+}
+else {
+    @dirlist = grep /^[^\.].*/, readdir DIR;
+}
 closedir(DIR);
 foreach my $executable (@dirlist) {
  replace_file("$execdir/$executable",
