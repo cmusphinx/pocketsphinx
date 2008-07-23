@@ -1329,7 +1329,7 @@ find_end_node(fsg_search_t *fsgs, ps_lattice_t *dag)
 
     /* Look for all nodes ending in last frame with some entries. */
     for (node = dag->nodes; node; node = node->next) {
-        if (node->lef == fsgs->frame - 1 && node->entries) {
+        if (node->lef == dag->n_frames - 1 && node->entries) {
             E_INFO("End node %s.%d:%d:%d (%d)\n",
                    fsg_model_word_str(fsgs->fsg, node->wid),
                    node->sf, node->fef, node->lef, node->info.best_exit);
@@ -1338,13 +1338,31 @@ find_end_node(fsg_search_t *fsgs, ps_lattice_t *dag)
         }
     }
 
-    /* If there was more than one end node candidate, then we need to
-     * create an artificial end node with epsilon transitions out of
-     * all of them. */
     if (nend == 1) {
         node = gnode_ptr(end);
     }
+    else if (nend == 0) {
+        ps_latnode_t *last = NULL;
+        int ef = 0;
+
+        /* If there were no end node candidates, then just use the
+         * node with the last exit frame. */
+        for (node = dag->nodes; node; node = node->next) {
+            if (node->lef > ef && node->entries) {
+                last = node;
+                ef = node->lef;
+            }
+        }
+        node = last;
+        if (node)
+            E_INFO("End node %s.%d:%d:%d (%d)\n",
+                   fsg_model_word_str(fsgs->fsg, node->wid),
+                   node->sf, node->fef, node->lef, node->info.best_exit);
+    }    
     else {
+        /* If there was more than one end node candidate, then we need
+         * to create an artificial end node with epsilon transitions
+         * out of all of them. */
         gnode_t *st;
         int wid;
 
