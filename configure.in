@@ -175,10 +175,9 @@ Make sure that you have installed it and that the
 PKG_CONFIG_PATH environment variable is set correctly, if
 it was installed in a non-standard prefix.])])
    fi
-   AC_CHECK_HEADER(sphinxbase/sphinx_config.h,[
    LIBS="$LIBS $SphinxBase_LIBS"
    CPPFLAGS="$CPPFLAGS $SphinxBase_CFLAGS"
-],[
+   AC_CHECK_HEADER(sphinx_config.h,,[
    AC_MSG_FAILURE(dnl
 [SphinxBase was not found on your system.])])
 fi
