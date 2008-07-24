@@ -1122,8 +1122,8 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
         else
             x->link->path_scr = x->link->ascr;
         x->link->best_prev = NULL;
-        /* Alpha is just the acoustic score as there are no predecessors. */
-        x->link->alpha = x->link->ascr * ascale;
+        /* No predecessors for start links. */
+        x->link->alpha = 0;
     }
 
     /* Traverse the edges in the graph, updating path scores. */
@@ -1148,6 +1148,10 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
                                   &link->from->basewid, 1, &n_used);
         else
             bprob = 0;
+        /* Add in this link's acoustic score, which was a constant
+           factor in previous computations (if any). */
+        link->alpha += link->ascr * ascale;
+
         /* Update scores for all paths exiting link->to. */
         for (x = link->to->exits; x; x = x->next) {
             int32 tscore, score;
@@ -1158,7 +1162,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
                 continue;
 
             /* Update alpha with sum of previous alphas. */
-            score = link->alpha + bprob + x->link->ascr * ascale;
+            score = link->alpha + bprob;
             x->link->alpha = logmath_add(lmath, x->link->alpha, score);
             /* Calculate trigram score for bestpath. */
             if (lmset)
