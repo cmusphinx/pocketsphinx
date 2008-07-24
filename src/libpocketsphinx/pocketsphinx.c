@@ -538,7 +538,7 @@ ps_end_utt(ps_decoder_t *ps)
         int32 score;
 
         hyp = ps_get_hyp(ps, &score, &uttid);
-        E_INFO("%s: %s\n", uttid, hyp, score);
+        E_INFO("%s: %s (%d)\n", uttid, hyp, score);
         E_INFO_NOFN("%-20s %-5s %-5s %-5s %-10s %-10s %-3s\n",
                     "word", "start", "end", "pprob", "ascr", "lscr", "lback");
         for (seg = ps_seg_iter(ps, &score); seg;

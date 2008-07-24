@@ -673,14 +673,14 @@ ngram_search_bestpath(ps_search_t *search, int32 *out_score, int backward)
                                                 ngs->ascale);
         if (search->last_link == NULL)
             return NULL;
-        if (out_score)
-            *out_score = search->last_link->path_scr + search->dag->final_node_ascr;
         /* Also calculate betas so we can fill in the posterior
          * probability field in the segmentation. */
         if (search->post == 0)
             search->post = ps_lattice_posterior(search->dag, ngs->lmset,
                                                 ngs->ascale);
     }
+    if (out_score)
+        *out_score = search->last_link->path_scr + search->dag->final_node_ascr;
     return search->last_link;
 }
 
