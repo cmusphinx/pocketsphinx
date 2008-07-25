@@ -825,14 +825,15 @@ ps_lattice_link2itor(ps_seg_t *seg, ps_latlink_t *link, int to)
     if (to) {
         node = link->to;
         seg->ef = node->lef;
+        seg->prob = 0; /* norm + beta - norm */
     }
     else {
         node = link->from;
         seg->ef = link->ef;
+        seg->prob = link->alpha + link->beta - itor->norm;
     }
     seg->word = dict_word_str(ps_search_dict(seg->search), node->wid);
     seg->sf = node->sf;
-    seg->prob = link->alpha + link->beta - itor->norm;
     seg->ascr = link->ascr;
     /* Compute language model score from best predecessors. */
     ps_lattice_compute_lscr(seg, link, to);
@@ -1162,8 +1163,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
                 continue;
 
             /* Update alpha with sum of previous alphas. */
-            score = link->alpha + bprob;
-            x->link->alpha = logmath_add(lmath, x->link->alpha, score);
+            x->link->alpha = logmath_add(lmath, x->link->alpha, link->alpha + bprob);
             /* Calculate trigram score for bestpath. */
             if (lmset)
                 tscore = ngram_tg_score(lmset, x->link->to->basewid,
@@ -1184,18 +1184,34 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
      * for posterior probabilities. */
     bestend = NULL;
     bestescr = MAX_NEG_INT32;
-    dag->norm = logmath_get_zero(lmath);
 
+    /* Normalizer is the alpha for the imaginary link exiting the
+       final node. */
+    dag->norm = logmath_get_zero(lmath);
     for (x = dag->end->entries; x; x = x->next) {
+        int32 bprob, n_used;
+
         if (ISA_FILLER_WORD(search, x->link->from->basewid))
             continue;
-        dag->norm = logmath_add(lmath, dag->norm, x->link->alpha);
+        if (lmset)
+            bprob = ngram_ng_prob(lmset,
+                                  x->link->to->basewid,
+                                  &x->link->from->basewid, 1, &n_used);
+        else
+            bprob = 0;
+        dag->norm = logmath_add(lmath, dag->norm, x->link->alpha + bprob);
         if (x->link->path_scr > bestescr) {
             bestescr = x->link->path_scr;
             bestend = x->link;
         }
     }
+    /* FIXME: floating point... */
+    dag->norm += (int32)dag->final_node_ascr * ascale;
 
+    E_INFO("Normalizer P(O) = alpha(%s:%d:%d) = %d\n",
+           dict_word_str(dag->search->dict, dag->end->wid),
+           dag->end->sf, dag->end->lef,
+           dag->norm);
     return bestend;
 }
 
@@ -1211,24 +1227,17 @@ ps_lattice_joint(ps_lattice_t *dag, ps_latlink_t *link, float32 ascale)
     else
         lmset = NULL;
 
-    jprob = 0;
+    jprob = dag->final_node_ascr * ascale;
     while (link) {
         if (lmset) {
-            int32 lprob, lback, hist[2];
+            int lback;
             /* Compute unscaled language model probability.  Note that
                this is actually not the language model probability
                that corresponds to this link, but that is okay,
                because we are just taking the sum over all links in
                the best path. */
-            hist[0] = link->from->wid;
-            if (link->best_prev) {
-                hist[1] = link->best_prev->from->wid;
-                lprob = ngram_ng_prob(lmset, link->to->wid, hist, 2, &lback);
-            }
-            else {
-                lprob = ngram_ng_prob(lmset, link->to->wid, hist, 1, &lback);
-            }
-            jprob += lprob;
+            jprob += ngram_ng_prob(lmset, link->to->basewid,
+                                   &link->from->basewid, 1, &lback);
         }
         /* If there is no language model, we assume that the language
            model probability (such as it is) has been included in the
@@ -1237,7 +1246,7 @@ ps_lattice_joint(ps_lattice_t *dag, ps_latlink_t *link, float32 ascale)
         link = link->best_prev;
     }
 
-    jprob += dag->final_node_ascr * ascale;
+    E_INFO("Joint P(O,S) = %d P(S|O) = %d\n", jprob, jprob - dag->norm);
     return jprob;
 }
 
@@ -1268,15 +1277,22 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
     /* Accumulate backward probabilities for all links. */
     for (link = ps_lattice_reverse_edges(dag, NULL, NULL);
          link; link = ps_lattice_reverse_next(dag, NULL)) {
+        int32 bprob, n_used;
+
         /* Skip filler nodes in traversal. */
         if (ISA_FILLER_WORD(search, link->from->basewid) && link->from != dag->start)
             continue;
         if (ISA_FILLER_WORD(search, link->to->basewid) && link->to != dag->end)
             continue;
 
+        /* Calculate LM probability. */
+        if (lmset)
+            bprob = ngram_ng_prob(lmset, link->to->basewid,
+                                  &link->from->basewid, 1, &n_used);
+        else
+            bprob = 0;
+
         if (link->to == dag->end) {
-            /* Beta for arcs into dag->end = 1.0. */
-            link->beta = 0;
             /* Track the best path - we will backtrace in order to
                calculate the unscaled joint probability for sentence
                posterior. */
@@ -1284,17 +1300,10 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
                 bestescr = link->path_scr;
                 bestend = link;
             }
+            /* Imaginary exit link from final node has beta = 1.0 */
+            link->beta = bprob + dag->final_node_ascr * ascale;
         }
         else {
-            int32 bprob, n_used;
-
-            /* Calculate LM probability. */
-            if (lmset)
-                bprob = ngram_ng_prob(lmset, link->to->basewid,
-                                      &link->from->basewid, 1, &n_used);
-            else
-                bprob = 0;
-
             /* Update beta from all outgoing betas. */
             for (x = link->to->exits; x; x = x->next) {
                 if (ISA_FILLER_WORD(search, x->link->to->basewid) && x->link->to != dag->end)
