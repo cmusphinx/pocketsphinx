@@ -87,14 +87,6 @@ static const arg_t ps_args_def[] = {
       ".mfc",
       "Input files extension (suffixed to filespecs in control file)" },
 
-    /* File for logging (we'd rather you used shell redirection but
-     * people use crap like Windows and csh that doesn't do it right,
-     * so...) */
-    { "-logfn",
-      ARG_STRING,
-      NULL,
-      "Recognition log file name" },
-
     /* Output files. */
     { "-hyp",
       ARG_STRING,

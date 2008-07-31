@@ -117,6 +117,10 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         cmd_ln_free_r(ps->config);
         ps->config = config;
     }
+    /* Set up logging. */
+    if (cmd_ln_str_r(ps->config, "-logfn"))
+        err_set_logfile(cmd_ln_str_r(ps->config, "-logfn"));
+
     /* Fill in some default arguments. */
     ps_init_defaults(ps);
 
@@ -142,41 +146,41 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     /* Logmath computation (used in acmod and search) */
     if (ps->lmath == NULL
         || (logmath_get_base(ps->lmath) != 
-            (float64)cmd_ln_float32_r(config, "-logbase"))) {
+            (float64)cmd_ln_float32_r(ps->config, "-logbase"))) {
         if (ps->lmath)
             logmath_free(ps->lmath);
         ps->lmath = logmath_init
-            ((float64)cmd_ln_float32_r(config, "-logbase"), 0,
-             cmd_ln_boolean_r(config, "-bestpath"));
+            ((float64)cmd_ln_float32_r(ps->config, "-logbase"), 0,
+             cmd_ln_boolean_r(ps->config, "-bestpath"));
     }
 
     /* Acoustic model (this is basically everything that
      * uttproc.c, senscr.c, and others used to do) */
-    if ((ps->acmod = acmod_init(config, ps->lmath, NULL, NULL)) == NULL)
+    if ((ps->acmod = acmod_init(ps->config, ps->lmath, NULL, NULL)) == NULL)
         return -1;
     /* Make the acmod's feature buffer growable if we are doing two-pass search. */
-    if (cmd_ln_boolean_r(config, "-fwdflat")
-        && cmd_ln_boolean_r(config, "-fwdtree"))
+    if (cmd_ln_boolean_r(ps->config, "-fwdflat")
+        && cmd_ln_boolean_r(ps->config, "-fwdtree"))
         acmod_set_grow(ps->acmod, TRUE);
 
     /* Dictionary and triphone mappings (depends on acmod). */
-    if ((ps->dict = dict_init(config, ps->acmod->mdef)) == NULL)
+    if ((ps->dict = dict_init(ps->config, ps->acmod->mdef)) == NULL)
         return -1;
 
     /* Determine whether we are starting out in FSG or N-Gram search mode. */
-    if ((fsgfile = cmd_ln_str_r(config, "-fsg"))) {
+    if ((fsgfile = cmd_ln_str_r(ps->config, "-fsg"))) {
         ps_search_t *fsgs;
 
-        if ((fsgs = fsg_search_init(config, ps->acmod, ps->dict)) == NULL)
+        if ((fsgs = fsg_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
             return -1;
         ps->searches = glist_add_ptr(ps->searches, fsgs);
         ps->search = fsgs;
     }
-    else if ((lmfile = cmd_ln_str_r(config, "-lm"))
-             || (lmctl = cmd_ln_str_r(config, "-lmctl"))) {
+    else if ((lmfile = cmd_ln_str_r(ps->config, "-lm"))
+             || (lmctl = cmd_ln_str_r(ps->config, "-lmctl"))) {
         ps_search_t *ngs;
 
-        if ((ngs = ngram_search_init(config, ps->acmod, ps->dict)) == NULL)
+        if ((ngs = ngram_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
             return -1;
         ps->searches = glist_add_ptr(ps->searches, ngs);
         ps->search = ngs;
