@@ -255,6 +255,18 @@ ps_get_logmath(ps_decoder_t *ps)
     return ps->lmath;
 }
 
+fe_t *
+ps_get_fe(ps_decoder_t *ps)
+{
+    return ps->acmod->fe;
+}
+
+feat_t *
+ps_get_feat(ps_decoder_t *ps)
+{
+    return ps->acmod->fcb;
+}
+
 ngram_model_t *
 ps_get_lmset(ps_decoder_t *ps)
 {
@@ -707,6 +719,12 @@ ps_nbest_seg(ps_nbest_t *nbest, int32 *out_score)
         return NULL;
     if (out_score) *out_score = nbest->paths_done->score;
     return ps_astar_seg_iter(nbest, nbest->paths_done, 1.0);
+}
+
+int
+ps_get_n_frames(ps_decoder_t *ps)
+{
+    return ps->acmod->output_frame;
 }
 
 void

@@ -167,6 +167,28 @@ POCKETSPHINX_EXPORT
 logmath_t *ps_get_logmath(ps_decoder_t *ps);
 
 /**
+ * Get the feature extraction object for this decoder.
+ *
+ * @return The feature extraction object for this decoder.  The
+ *         decoder retains ownership of this pointer, so you should
+ *         not attempt to free it manually.  Use fe_retain() if you
+ *         wish to reuse it elsewhere.
+ */
+POCKETSPHINX_EXPORT
+fe_t *ps_get_fe(ps_decoder_t *ps);
+
+/**
+ * Get the dynamic feature computation object for this decoder.
+ *
+ * @return The dynamic feature computation object for this decoder.  The
+ *         decoder retains ownership of this pointer, so you should
+ *         not attempt to free it manually.  Use feat_retain() if you
+ *         wish to reuse it elsewhere.
+ */
+POCKETSPHINX_EXPORT
+feat_t *ps_get_feat(ps_decoder_t *ps);
+
+/**
  * Get the language model set object for this decoder.
  *
  * If N-Gram decoding is not enabled, this will return NULL.  You will
@@ -322,6 +344,15 @@ int ps_process_cep(ps_decoder_t *ps,
                    int n_frames,
                    int no_search,
                    int full_utt);
+
+/**
+ * Get the number of frames of data searched.
+ *
+ * @return Number of frames of speech data which have been recognized
+ * so far.
+ */
+POCKETSPHINX_EXPORT
+int ps_get_n_frames(ps_decoder_t *ps);
 
 /**
  * End utterance processing.
