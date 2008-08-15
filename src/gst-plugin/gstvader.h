@@ -74,6 +74,7 @@ struct _GstVader
     guint64 pre_run_length;       /**< How much pre-silence have we endured so far? */
 
     gint threshold_level;         /**< Silence threshold level (Q15, adaptive). */
+    gint prior_sample;		  /**< Prior sample for pre-emphasis filter. */
     guint64 threshold_length;     /**< Minimum silence for cutting, in nanoseconds. */
     guint64 pre_length;           /**< Pre-buffer to add on silence->speech transition. */
 

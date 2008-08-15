@@ -194,6 +194,7 @@ gst_vader_init(GstVader * filter, GstVaderClass * g_class)
 
     filter->threshold_level = 256;
     filter->threshold_length = (guint64)(0.5 * GST_SECOND);
+    filter->prior_sample = 0;
     filter->auto_threshold = FALSE;
     filter->silence_mean = 0;
     filter->silence_stddev = 0;
@@ -255,16 +256,23 @@ gst_vader_event_new(GstVader *c, GstEventType type, GstClockTime timestamp)
 }
 
 static guint
-compute_normed_power(gint16 *in_data, guint num_samples)
+compute_normed_power(gint16 *in_data, guint num_samples, gint *inout_prior)
 {
-    guint i, shift, sumsq;
+    guint i, shift, sumsq, prior;
 
     sumsq = 0;
     shift = 0;
+    prior = *inout_prior;
     for (i = 0; i < num_samples; ++i) {
         guint sq;
+        gint x;
 
-        sq = in_data[i] * in_data[i];
+        /* Do pre-emphasis to remove low-frequency noise (this should
+         * be sufficient, although ideally we'd band-pass filter the
+         * data from about 200 to 6000Hz) */
+        x = in_data[i] - prior;
+        prior = in_data[i];
+        sq = x * x;
         sumsq += (sq >> shift);
         /* Prevent overflows. */
         while (sumsq > 0x10000) {
@@ -272,6 +280,7 @@ compute_normed_power(gint16 *in_data, guint num_samples)
             shift += 1;
         }
     }
+    *inout_prior = prior;
 
     /* Normalize it to Q15 (this is equivalent to dividing by (1<<30)
      * then multiplying by (1<<15)). */
@@ -481,7 +490,7 @@ gst_vader_chain(GstPad * pad, GstBuffer * buf)
         gint frame_len, j;
 
         frame_len = MIN(num_samples - i, VADER_FRAME);
-        power = compute_normed_power(in_data + i, frame_len);
+        power = compute_normed_power(in_data + i, frame_len, &filter->prior_sample);
         rms = fixpoint_sqrt_q15(power);
 
         /* If we are in auto-threshold mode, don't do any voting etc. */
