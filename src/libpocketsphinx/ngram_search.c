@@ -86,7 +86,7 @@ ngram_search_update_widmap(ngram_search_t *ngs)
     words = ckd_calloc(n_words, sizeof(*words));
     /* This will include alternates, again, that's okay since they aren't in the LM */
     for (i = 0; i < n_words; ++i)
-        words[i] = dict_word_str(ps_search_dict(ngs), i);
+        words[i] = (const char *)dict_word_str(ps_search_dict(ngs), i);
     ngram_model_set_map_words(ngs->lmset, words, n_words);
     ckd_free(words);
 }

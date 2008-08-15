@@ -432,7 +432,7 @@ bin_mdef_read(cmd_ln_t *config, const char *filename)
             m->sseq[i] = m->sseq[0] + i * m->n_emit_state;
     }
     else {
-        m->sseq_len = (int8 *) (m->sseq[0] + *sseq_size);
+        m->sseq_len = (uint8 *) (m->sseq[0] + *sseq_size);
         for (i = 1; i < m->n_sseq; ++i)
             m->sseq[i] = m->sseq[i - 1] + m->sseq_len[i - 1];
     }
