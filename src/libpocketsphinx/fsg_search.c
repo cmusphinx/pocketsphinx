@@ -1311,7 +1311,8 @@ find_start_node(fsg_search_t *fsgs, ps_lattice_t *dag)
         int wid;
 
         wid = fsg_model_word_add(fsgs->fsg, "<s>");
-        bitvec_set(fsgs->fsg->silwords, wid);
+        if (fsgs->fsg->silwords)
+            bitvec_set(fsgs->fsg->silwords, wid);
         node = new_node(dag, fsgs->fsg, 0, 0, wid, 0);
         for (st = start; st; st = gnode_next(st))
             ps_lattice_link(dag, node, gnode_ptr(st), 0, 0);
@@ -1367,7 +1368,8 @@ find_end_node(fsg_search_t *fsgs, ps_lattice_t *dag)
         int wid;
 
         wid = fsg_model_word_add(fsgs->fsg, "</s>");
-        bitvec_set(fsgs->fsg->silwords, wid);
+        if (fsgs->fsg->silwords)
+            bitvec_set(fsgs->fsg->silwords, wid);
         node = new_node(dag, fsgs->fsg, fsgs->frame, fsgs->frame, wid, 0);
         /* Use the "best" (in reality it will be the only) exit link
          * score from this final node as the link score. */
