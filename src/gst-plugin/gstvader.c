@@ -189,7 +189,6 @@ gst_vader_init(GstVader * filter, GstVaderClass * g_class)
     filter->srcpad =
         gst_pad_new_from_static_template(&vader_src_factory, "src");
 
-    /* FIXME: Need to free this on finalization of the vader. */
     g_static_rec_mutex_init(&filter->mtx);
 
     filter->threshold_level = 256;
@@ -225,6 +224,7 @@ gst_vader_finalize(GObject *gobject)
 {
     GstVader *vader = GST_VADER(gobject);
 
+    g_static_rec_mutex_free(&vader->mtx);
     if (vader->dumpfile)
         fclose(vader->dumpfile);
     if (vader->dumpdir)
