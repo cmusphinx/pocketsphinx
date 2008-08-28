@@ -318,9 +318,9 @@ gauden_dist_precompute(gauden_t * g, logmath_t *lmath, float32 varfloor)
     mean_t *meanp;
     var_t *varp;
     var_t *detp;
-    int32 floored, removed;
+    int32 floored;
 
-    floored = removed = 0;
+    floored = 0;
     /* Allocate space for determinants */
     g->det = ckd_calloc_3d(g->n_mgau, g->n_feat, g->n_density, sizeof(***g->det));
 
@@ -331,21 +331,6 @@ gauden_dist_precompute(gauden_t * g, logmath_t *lmath, float32 varfloor)
             /* Determinants for all variance vectors in g->[m][f] */
             for (d = 0, detp = g->det[m][f]; d < g->n_density; d++, detp++) {
                 *detp = 0;
-                /*
-                 * In larger acoustic models it is likely that some components were
-                 * only observed once, or were never observed, and thus have zero
-                 * variance.  These will totally screw up the decoder, so we "remove"
-                 * them, actually by setting their determinant to an improbable value.
-                 */
-                for (i = 0; i < flen; ++i)
-                    if (g->var[m][f][d][i] != 0.0)
-                        break;
-                if (i == flen) {
-                    *detp = logmath_get_zero(lmath);
-                    ++removed;
-                    continue;
-                }
-
                 for (i = 0, varp = g->var[m][f][d], meanp = g->mean[m][f][d];
                      i < flen; i++, varp++, meanp++) {
                     float32 *fvarp = (float32 *)varp;
@@ -366,8 +351,7 @@ gauden_dist_precompute(gauden_t * g, logmath_t *lmath, float32 varfloor)
         }
     }
 
-    E_INFO("%d variance values floored, %d zero-variance components removed\n",
-           floored, removed);
+    E_INFO("%d variance values floored\n", floored);
 
     return 0;
 }

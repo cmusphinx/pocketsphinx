@@ -205,7 +205,12 @@ ms_cont_mgau_frame_eval(ms_mgau_model_t * msg,
     /* Normalize senone scores */
     for (i = 0; i < n_senone_active; i++) {
 	int32 s = senone_active[i];
-	senscr[s] -= best;
+	int32 bs = senscr[s] - best;
+	if (bs > 32767)
+	  bs = 32767;
+	if (bs < -32768)
+	  bs = -32768;
+	senscr[s] = bs;
     }
 
     return best;

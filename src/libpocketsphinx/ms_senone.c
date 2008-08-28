@@ -389,6 +389,11 @@ senone_eval(senone_t * s, int id, gauden_dist_t ** dist, int32 n_top)
         scr -= fscr;
     }
 
+    /* Avoid overflowing int16 */
+    if (scr > 32767)
+      scr = 32767;
+    if (scr < -32768)
+      scr = -32768;
     return scr;
 }
 
