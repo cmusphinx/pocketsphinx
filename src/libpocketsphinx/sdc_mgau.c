@@ -121,10 +121,8 @@ eval_cb(sdc_mgau_t *s, int feat, mfcc_t *z)
 
 static int32
 compute_scores(sdc_mgau_t * s, int16 *senone_scores,
-               int32 *senone_active, int32 n_senone_active,
-               int32 *out_bestidx)
+               int32 *senone_active, int32 n_senone_active)
 {
-    int32 best = (int32)0x7fffffff;
     int i;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
@@ -152,19 +150,13 @@ compute_scores(sdc_mgau_t * s, int16 *senone_scores,
         }
         /* Negate it since that is what everything else expects at the moment. */
         senone_scores[sen] = -senone_scores[sen];
-        if (senone_scores[sen] < best) {
-            best = senone_scores[sen];
-            *out_bestidx = sen;
-        }
     }
-    return best;
+    return 0;
 }
 
 static int32
-compute_scores_all(sdc_mgau_t * s, int16 *senone_scores,
-                   int32 *out_bestidx)
+compute_scores_all(sdc_mgau_t * s, int16 *senone_scores)
 {
-    int32 best = (int32)0x7fffffff;
     int sen;
 
     for (sen = 0; sen < s->n_sen; ++sen) {
@@ -189,12 +181,8 @@ compute_scores_all(sdc_mgau_t * s, int16 *senone_scores,
         }
         /* Negate it since that is what everything else expects at the moment. */
         senone_scores[sen] = -senone_scores[sen];
-        if (senone_scores[sen] < best) {
-            best = senone_scores[sen];
-            *out_bestidx = sen;
-        }
     }
-    return best;
+    return 0;
 }
 
 /*
@@ -206,8 +194,7 @@ sdc_mgau_frame_eval(sdc_mgau_t * s,
                     int32 *senone_active,
                     int32 n_senone_active,
                     mfcc_t ** featbuf, int32 frame,
-                    int32 compallsen,
-                    int32 *out_bestidx)
+                    int32 compallsen)
 {
     int32 bscore;
     int i;
@@ -222,11 +209,10 @@ sdc_mgau_frame_eval(sdc_mgau_t * s,
 
     /* Compute senone scores. */
     if (compallsen)
-        bscore = compute_scores_all(s, senone_scores, out_bestidx);
+        bscore = compute_scores_all(s, senone_scores);
     else
         bscore = compute_scores(s, senone_scores,
-                                senone_active, n_senone_active,
-                                out_bestidx);
+                                senone_active, n_senone_active);
     /* Normalize them. */
     for (i = 0; i < s->n_sen; ++i)
         senone_scores[i] -= bscore;

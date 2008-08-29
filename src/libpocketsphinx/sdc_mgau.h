@@ -83,12 +83,11 @@ sdc_mgau_t *sdc_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef);
 void sdc_mgau_free(sdc_mgau_t *s);
 
 int32 sdc_mgau_frame_eval(sdc_mgau_t *s,
-                              int16 *senone_scores,
-                              int32 *senone_active,
-                              int32 n_senone_active,
-			      mfcc_t **featbuf,
-			      int32 frame,
-                              int32 compallsen,
-                              int32 *out_bestidx);
+                          int16 *senone_scores,
+                          int32 *senone_active,
+                          int32 n_senone_active,
+                          mfcc_t **featbuf,
+                          int32 frame,
+                          int32 compallsen);
 
 #endif /*  __SDC_MGAU_H__ */
