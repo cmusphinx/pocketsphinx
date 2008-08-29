@@ -763,8 +763,7 @@ fsg_search_step(ps_search_t *search)
 {
     fsg_search_t *fsgs = (fsg_search_t *)search;
     int16 const *senscr;
-    int frame_idx, best_senid;
-    int16 best_senscr;
+    int frame_idx;
     acmod_t *acmod = search->acmod;
     gnode_t *gn;
     fsg_pnode_t *pnode;
@@ -778,7 +777,7 @@ fsg_search_step(ps_search_t *search)
     if (!acmod->compallsen)
         fsg_search_sen_active(fsgs);
     /* Compute GMM scores for the current frame. */
-    senscr = acmod_score(acmod, &frame_idx, &best_senscr, &best_senid);
+    senscr = acmod_score(acmod, &frame_idx);
     fsgs->n_sen_eval += acmod->n_senone_active;
     hmm_context_set_senscore(fsgs->hmmctx, senscr);
 

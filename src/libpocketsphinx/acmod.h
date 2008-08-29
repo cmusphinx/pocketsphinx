@@ -80,8 +80,7 @@ typedef int (*frame_eval_t)(void *eval_obj,
                             int32 n_senone_active,
                             mfcc_t ** feat,
                             int32 frame,
-                            int32 compallsen,
-                            int32 *out_bestidx);
+                            int32 compallsen);
 
 /**
  * Acoustic model structure.
@@ -264,16 +263,12 @@ int acmod_frame_idx(acmod_t *acmod);
  *
  * @param out_frame_idx  Output: frame index corresponding to this set
  *                       of scores.
- * @param out_best_score Output: best un-normalized acoustic score.
- * @param out_best_senid Output: senone ID corresponding to best score.
  * @return Array of senone scores for this frame, or NULL if no frame
  *         is available for scoring.  The data pointed to persists only
  *         until the next call to acmod_score().
  */
 int16 const *acmod_score(acmod_t *acmod,
-                         int *out_frame_idx,
-                         int16 *out_best_score,
-                         int32 *out_best_senid);
+                         int *out_frame_idx);
 
 /**
  * Clear set of active senones.

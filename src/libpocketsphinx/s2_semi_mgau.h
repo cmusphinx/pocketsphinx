@@ -97,8 +97,7 @@ int32 s2_semi_mgau_frame_eval(s2_semi_mgau_t *s,
                               int32 n_senone_active,
 			      mfcc_t **featbuf,
 			      int32 frame,
-                              int32 compallsen,
-                              int32 *out_bestidx);
+                              int32 compallsen);
 
 int32 s2_semi_mgau_load_kdtree(s2_semi_mgau_t *s, const char *kdtree_path,
 			       uint32 maxdepth, int32 maxbbi);

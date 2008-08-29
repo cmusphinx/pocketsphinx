@@ -1378,8 +1378,7 @@ int
 ngram_fwdtree_search(ngram_search_t *ngs)
 {
     int16 const *senscr;
-    int frame_idx, best_senid;
-    int16 best_senscr;
+    int frame_idx;
 
     /* Determine if we actually have a frame to process. */
     if (ps_search_acmod(ngs)->n_feat_frame == 0)
@@ -1390,8 +1389,7 @@ ngram_fwdtree_search(ngram_search_t *ngs)
         compute_sen_active(ngs, acmod_frame_idx(ps_search_acmod(ngs)));
 
     /* Compute GMM scores for the current frame. */
-    senscr = acmod_score(ps_search_acmod(ngs), &frame_idx,
-                         &best_senscr, &best_senid);
+    senscr = acmod_score(ps_search_acmod(ngs), &frame_idx);
     ngs->st.n_senone_active_utt += ps_search_acmod(ngs)->n_senone_active;
 
     /* Mark backpointer table for current frame. */

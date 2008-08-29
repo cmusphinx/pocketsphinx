@@ -148,28 +148,20 @@ fast_logmath_add(logmath_t *lmath, int mlx, int mly)
  * Optimization for various topn cases, PDF-size(#bits) cases of
  * SCVQComputeScores() and SCVQComputeScores_all().
  */
-static int32 get_scores4_8b_rle(s2_semi_mgau_t * s, int16 *senone_scores,
-                                int32 *out_bestidx);
+static int32 get_scores4_8b_rle(s2_semi_mgau_t * s, int16 *senone_scores);
 static int32 get_scores4_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-                            int32 *senone_active, int32 n_senone_active,
-                            int32 *out_bestidx);
+                            int32 *senone_active, int32 n_senone_active);
 static int32 get_scores2_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-                            int32 *senone_active, int32 n_senone_active,
-                            int32 *out_bestidx);
+                            int32 *senone_active, int32 n_senone_active);
 static int32 get_scores1_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-                            int32 *senone_active, int32 n_senone_active,
-                            int32 *out_bestidx);
+                            int32 *senone_active, int32 n_senone_active);
 static int32 get_scores_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-                           int32 *senone_active, int32 n_senone_active,
-                           int32 *out_bestidx);
-static int32 get_scores4_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
-                                int32 *out_bestidx);
-static int32 get_scores2_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
-                                int32 *out_bestidx);
-static int32 get_scores1_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
-                                int32 *out_bestidx);
-static int32 get_scores_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
-                               int32 *out_bestidx);
+                           int32 *senone_active, int32 n_senone_active);
+static int32 get_scores4_8b_all(s2_semi_mgau_t * s, int16 *senone_scores);
+static int32 get_scores2_8b_all(s2_semi_mgau_t * s, int16 *senone_scores);
+static int32 get_scores1_8b_all(s2_semi_mgau_t * s, int16 *senone_scores);
+static int32 get_scores_8b_all(s2_semi_mgau_t * s, int16 *senone_scores);
+static int32 get_scores_8b_rle(s2_semi_mgau_t * s, int16 *senone_scores);
 
 static void
 eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
@@ -382,8 +374,7 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
                         int32 *senone_active,
                         int32 n_senone_active,
 			mfcc_t ** featbuf, int32 frame,
-			int32 compallsen,
-                        int32 *out_bestidx)
+			int32 compallsen)
 {
     int i;
 
@@ -395,7 +386,7 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
     if (s->rle) {
 	switch (s->topn) {
 	case 4:
-	    return get_scores4_8b_rle(s, senone_scores, out_bestidx);
+	    return get_scores4_8b_rle(s, senone_scores);
 	case 2:
 	case 1:
 	default:
@@ -407,44 +398,38 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
     else if (compallsen) {
 	switch (s->topn) {
 	case 4:
-	    return get_scores4_8b_all(s, senone_scores, out_bestidx);
+	    return get_scores4_8b_all(s, senone_scores);
 	case 2:
-	    return get_scores2_8b_all(s, senone_scores, out_bestidx);
+	    return get_scores2_8b_all(s, senone_scores);
 	case 1:
-	    return get_scores1_8b_all(s, senone_scores, out_bestidx);
+	    return get_scores1_8b_all(s, senone_scores);
 	default:
-	    return get_scores_8b_all(s, senone_scores, out_bestidx);
+	    return get_scores_8b_all(s, senone_scores);
 	}
     }
     else {
 	switch (s->topn) {
 	case 4:
 	    return get_scores4_8b(s, senone_scores,
-                                  senone_active, n_senone_active,
-                                  out_bestidx);
+                                  senone_active, n_senone_active);
 	case 2:
 	    return get_scores2_8b(s, senone_scores,
-                                  senone_active, n_senone_active,
-                                  out_bestidx);
+                                  senone_active, n_senone_active);
 	case 1:
 	    return get_scores1_8b(s, senone_scores,
-                                  senone_active, n_senone_active,
-                                  out_bestidx);
+                                  senone_active, n_senone_active);
 	default:
 	    return get_scores_8b(s, senone_scores,
-                                  senone_active, n_senone_active,
-                                  out_bestidx);
+                                 senone_active, n_senone_active);
 	}
     }
 }
 
 static int32
 get_scores_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-              int32 *senone_active, int32 n_senone_active,
-              int32 *out_bestidx)
+              int32 *senone_active, int32 n_senone_active)
 {
     int32 i, j, k;
-    int32 best = (int32)0x7fffffff;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     for (i = 0; i < s->n_feat; ++i) {
@@ -460,21 +445,15 @@ get_scores_8b(s2_semi_mgau_t * s, int16 *senone_scores,
                                        pid_cw[sen] + s->f[i][k].score);
             }
             senone_scores[sen] += tmp;
-            if (i == s->n_feat - 1 && senone_scores[sen] < best) {
-                best = senone_scores[sen];
-                *out_bestidx = sen;
-            }
         }
     }
-    return best;
+    return 0;
 }
 
 static int32
-get_scores_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
-                  int32 *out_bestidx)
+get_scores_8b_all(s2_semi_mgau_t * s, int16 *senone_scores)
 {
     int32 i, j, k;
-    int32 best = (int32)0x7fffffff;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     for (i = 0; i < s->n_feat; ++i) {
@@ -489,22 +468,45 @@ get_scores_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
                                        pid_cw[j] + s->f[i][k].score);
             }
             senone_scores[j] += tmp;
-            if (i == s->n_feat - 1 && senone_scores[j] < best) {
-                best = senone_scores[j];
-                *out_bestidx = j;
-            }
         }
     }
-    return best;
+    return 0;
 }
 
 static int32
+get_scores_8b_rle(s2_semi_mgau_t * s, int16 *senone_scores)
+{
+    int32 i, j, k;
+    int32 best = (int32)0x7fffffff;
+
+#if 0
+    memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
+    for (i = 0; i < s->n_feat; ++i) {
+        for (k = 0; k < s->topn; ++k) {
+            uint8 *pid_cw, den_cw, wden_cw;
+            /* Get compressed mixture weight array. */
+            pid_cw = s->mixw[i][s->f[i][k].codeword];
+            /* Get Gaussian density for this codeword. */
+            den_cw = s->f[i][k].score;
+
+            for (j = 0; j < s->n_sen; j++) {
+                wden = *pid_cw + den_cw;
+                tmp = fast_logmath_add(s->lmath_8b, tmp,
+                                       pid_cw[j] + s->f[i][k].score);
+                senone_scores[j] += tmp;
+            }
+        }
+    }
+#endif
+    return best;
+}
+
+
+static int32
 get_scores4_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-               int32 *senone_active, int32 n_senone_active,
-               int32 *out_bestidx)
+               int32 *senone_active, int32 n_senone_active)
 {
     int32 j;
-    int32 best = (int32)0x7fffffff;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     for (j = 0; j < s->n_feat; j++) {
@@ -530,21 +532,15 @@ get_scores4_8b(s2_semi_mgau_t * s, int16 *senone_scores,
             tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
 
             senone_scores[n] += tmp1;
-            if (j == s->n_feat - 1 && senone_scores[n] < best) {
-                best = senone_scores[n];
-                *out_bestidx = n;
-            }
         }
     }
-    return best;
+    return 0;
 }
 
 static int32
-get_scores4_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
-                   int32 *out_bestidx)
+get_scores4_8b_all(s2_semi_mgau_t * s, int16 *senone_scores)
 {
     int32 j;
-    int32 best = (int32)0x7fffffff;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     for (j = 0; j < s->n_feat; j++) {
@@ -571,22 +567,16 @@ get_scores4_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
             tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
 
             *senscr += tmp1;
-            if (j == s->n_feat - 1 && *senscr < best) {
-                best = *senscr;
-                *out_bestidx = n;
-            }
             ++senscr;
         }
     }
-    return best;
+    return 0;
 }
 
 static int32
-get_scores4_8b_rle(s2_semi_mgau_t * s, int16 *senone_scores,
-                   int32 *out_bestidx)
+get_scores4_8b_rle(s2_semi_mgau_t * s, int16 *senone_scores)
 {
     int32 j;
-    int32 best = (int32)0x7fffffff;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     for (j = 0; j < s->n_feat; j++) {
@@ -671,23 +661,17 @@ get_scores4_8b_rle(s2_semi_mgau_t * s, int16 *senone_scores,
 #endif
 
             *senscr += tmp1;
-            if (j == s->n_feat - 1 && *senscr < best) {
-                best = *senscr;
-                *out_bestidx = n;
-            }
             ++senscr;
         }
     }
-    return best;
+    return 0;
 }
 
 static int32
 get_scores2_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-               int32 *senone_active, int32 n_senone_active,
-               int32 *out_bestidx)
+               int32 *senone_active, int32 n_senone_active)
 {
     int32 k;
-    int32 best = (int32)0x7fffffff;
     uint8 *pid_cw00, *pid_cw10, *pid_cw01, *pid_cw11,
         *pid_cw02, *pid_cw12, *pid_cw03, *pid_cw13;
 
@@ -722,21 +706,15 @@ get_scores2_8b(s2_semi_mgau_t * s, int16 *senone_scores,
         tmp2 = pid_cw13[n] + s->f[3][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
         senone_scores[n] += tmp1;
-        if (senone_scores[n] < best) {
-            best = senone_scores[n];
-            *out_bestidx = n;
-        }
     }
-    return best;
+    return 0;
 }
 
 static int32
-get_scores2_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
-                   int32 *out_bestidx)
+get_scores2_8b_all(s2_semi_mgau_t * s, int16 *senone_scores)
 {
     uint8 *pid_cw00, *pid_cw10, *pid_cw01, *pid_cw11,
         *pid_cw02, *pid_cw12, *pid_cw03, *pid_cw13;
-    int32 best = (int32)0x7fffffff;
     int32 n;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
@@ -769,21 +747,15 @@ get_scores2_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
         tmp2 = pid_cw13[n] + s->f[3][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
         senone_scores[n] += tmp1;
-        if (senone_scores[n] < best) {
-            best = senone_scores[n];
-            *out_bestidx = n;
-        }
     }
-    return best;
+    return 0;
 }
 
 static int32
 get_scores1_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-               int32 *senone_active, int32 n_senone_active,
-               int32 *out_bestidx)
+               int32 *senone_active, int32 n_senone_active)
 {
     int32 j, k;
-    int32 best = (int32)0x7fffffff;
     uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
 
     /* Ptrs to senone prob values for the top codeword of all codebooks */
@@ -796,20 +768,14 @@ get_scores1_8b(s2_semi_mgau_t * s, int16 *senone_scores,
         j = senone_active[k];
         senone_scores[j] =
             (pid_cw0[j] + pid_cw1[j] + pid_cw2[j] + pid_cw3[j]);
-        if (senone_scores[j] < best) {
-            best = senone_scores[j];
-            *out_bestidx = j;
-        }
     }
-    return best;
+    return 0;
 }
 
 static int32
-get_scores1_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
-                   int32 *out_bestidx)
+get_scores1_8b_all(s2_semi_mgau_t * s, int16 *senone_scores)
 {
     int32 j;
-    int32 best = (int32)0x7fffffff;
     uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
 
     /* Ptrs to senone prob values for the top codeword of all codebooks */
@@ -821,12 +787,8 @@ get_scores1_8b_all(s2_semi_mgau_t * s, int16 *senone_scores,
     for (j = 0; j < s->n_sen; j++) {
         senone_scores[j] =
             (pid_cw0[j] + pid_cw1[j] + pid_cw2[j] + pid_cw3[j]);
-        if (senone_scores[j] < best) {
-            best = senone_scores[j];
-            *out_bestidx = j;
-        }
     }
-    return best;
+    return 0;
 }
 
 int32

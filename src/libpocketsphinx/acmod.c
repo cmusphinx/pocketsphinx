@@ -651,9 +651,7 @@ acmod_rewind(acmod_t *acmod)
 
 int16 const *
 acmod_score(acmod_t *acmod,
-	    int *out_frame_idx,
-	    int16 *out_best_score,
-	    int32 *out_best_senid)
+	    int *out_frame_idx)
 {
     /* No frames available to score. */
     if (acmod->n_feat_frame == 0)
@@ -670,15 +668,13 @@ acmod_score(acmod_t *acmod,
     if (acmod->feat_outidx == acmod->n_feat_alloc)
         acmod->feat_outidx = 0;
     /* Generate scores for the next available frame */
-    *out_best_score = 
-        (*acmod->frame_eval)(acmod->mgau,
-                             acmod->senone_scores,
-                             acmod->senone_active,
-                             acmod->n_senone_active,
-                             acmod->feat_buf[acmod->feat_outidx],
-                             acmod->output_frame,
-                             acmod->compallsen,
-                             out_best_senid);
+    (*acmod->frame_eval)(acmod->mgau,
+                         acmod->senone_scores,
+                         acmod->senone_active,
+                         acmod->n_senone_active,
+                         acmod->feat_buf[acmod->feat_outidx],
+                         acmod->output_frame,
+                         acmod->compallsen);
     /* Advance the output pointers. */
     ++acmod->feat_outidx;
     --acmod->n_feat_frame;
