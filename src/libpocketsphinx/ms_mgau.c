@@ -153,7 +153,7 @@ ms_mgau_free(ms_mgau_model_t * msg)
 int32
 ms_cont_mgau_frame_eval(ms_mgau_model_t * msg,
 			int16 *senscr,
-			int16 *senone_active,
+			uint8 *senone_active,
 			int32 n_senone_active,
                         mfcc_t ** feat,
 			int32 frame,

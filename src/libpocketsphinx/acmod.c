@@ -759,7 +759,14 @@ acmod_flags2list(acmod_t *acmod)
         for (b = 0; b < BITVEC_BITS; ++b) {
             if (*flagptr & (1UL << b)) {
                 int32 sen = w * BITVEC_BITS + b;
-                acmod->senone_active[n++] = sen - l;
+                int32 delta = sen - l;
+                /* Handle excessive deltas "lossily" by adding a few
+                   extra senones to bridge the gap. */
+                while (delta > 255) {
+                    acmod->senone_active[n++] = 255;
+                    delta -= 255;
+                }
+                acmod->senone_active[n++] = delta;
                 l = sen;
             }
         }
@@ -768,7 +775,14 @@ acmod_flags2list(acmod_t *acmod)
     for (b = 0; b < extra_bits; ++b) {
         if (*flagptr & (1UL << b)) {
             int32 sen = w * BITVEC_BITS + b;
-            acmod->senone_active[n++] = sen - l;
+            int32 delta = sen - l;
+            /* Handle excessive deltas "lossily" by adding a few
+               extra senones to bridge the gap. */
+            while (delta > 255) {
+                acmod->senone_active[n++] = 255;
+                delta -= 255;
+            }
+            acmod->senone_active[n++] = delta;
             l = sen;
         }
     }

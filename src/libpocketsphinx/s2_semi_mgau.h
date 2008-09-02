@@ -93,7 +93,7 @@ void s2_semi_mgau_free(s2_semi_mgau_t *s);
 
 int32 s2_semi_mgau_frame_eval(s2_semi_mgau_t *s,
                               int16 *senone_scores,
-                              int16 *senone_active,
+                              uint8 *senone_active,
                               int32 n_senone_active,
 			      mfcc_t **featbuf,
 			      int32 frame,
