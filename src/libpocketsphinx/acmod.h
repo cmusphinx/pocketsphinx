@@ -76,7 +76,7 @@ typedef enum acmod_state_e {
  */
 typedef int (*frame_eval_t)(void *eval_obj,
                             int16 *senscr,
-                            int32 *senone_active,
+                            int16 *senone_active,
                             int32 n_senone_active,
                             mfcc_t ** feat,
                             int32 frame,
@@ -121,7 +121,7 @@ struct acmod_s {
     frame_eval_t frame_eval;   /**< Function to compute GMM scores. */
     int16 *senone_scores;      /**< GMM scores for current frame. */
     bitvec_t *senone_active_vec; /**< Active GMMs in current frame. */
-    int *senone_active;        /**< Array of active GMMs. */
+    int16 *senone_active;       /**< Array of deltas to active GMMs. */
     int n_senone_active;       /**< Number of active GMMs. */
     int log_zero;              /**< Zero log-probability value. */
 
@@ -279,13 +279,5 @@ void acmod_clear_active(acmod_t *acmod);
  * Activate senones associated with an HMM.
  */
 void acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm);
-
-/**
- * Return the array of active senones.
- *
- * @param out_n_active Output: number of elements in returned array.
- * @return array of active senone IDs.
- */
-int const *acmod_active_list(acmod_t *acmod, int *out_n_active);
 
 #endif /* __ACMOD_H__ */

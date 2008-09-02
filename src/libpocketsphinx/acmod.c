@@ -742,7 +742,7 @@ acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm)
 static int32
 acmod_flags2list(acmod_t *acmod)
 {
-    int32 w, n, b, total_dists, total_words, extra_bits;
+    int32 w, l, n, b, total_dists, total_words, extra_bits;
     bitvec_t *flagptr;
 
     total_dists = bin_mdef_n_sen(acmod->mdef);
@@ -752,27 +752,27 @@ acmod_flags2list(acmod_t *acmod)
     }
     total_words = total_dists / BITVEC_BITS;
     extra_bits = total_dists % BITVEC_BITS;
-    w = n = 0;
+    w = n = l = 0;
     for (flagptr = acmod->senone_active_vec; w < total_words; ++w, ++flagptr) {
         if (*flagptr == 0)
             continue;
-        for (b = 0; b < BITVEC_BITS; ++b)
-            if (*flagptr & (1UL << b))
-                acmod->senone_active[n++] = w * BITVEC_BITS + b;
+        for (b = 0; b < BITVEC_BITS; ++b) {
+            if (*flagptr & (1UL << b)) {
+                int32 sen = w * BITVEC_BITS + b;
+                acmod->senone_active[n++] = sen - l;
+                l = sen;
+            }
+        }
     }
 
-    for (b = 0; b < extra_bits; ++b)
-        if (*flagptr & (1UL << b))
-            acmod->senone_active[n++] = w * BITVEC_BITS + b;
+    for (b = 0; b < extra_bits; ++b) {
+        if (*flagptr & (1UL << b)) {
+            int32 sen = w * BITVEC_BITS + b;
+            acmod->senone_active[n++] = sen - l;
+            l = sen;
+        }
+    }
 
     acmod->n_senone_active = n;
     return n;
-}
-
-int const *
-acmod_active_list(acmod_t *acmod, int32 *out_n_active)
-{
-    acmod_flags2list(acmod);
-    if (out_n_active) *out_n_active = acmod->n_senone_active;
-    return acmod->senone_active;
 }

@@ -121,14 +121,14 @@ eval_cb(sdc_mgau_t *s, int feat, mfcc_t *z)
 
 static int32
 compute_scores(sdc_mgau_t * s, int16 *senone_scores,
-               int32 *senone_active, int32 n_senone_active)
+               int16 *senone_active, int32 n_senone_active)
 {
-    int i;
+    int i, l;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     for (i = 0; i < n_senone_active; ++i) {
         /* Get the senone ID. */
-        int sen = senone_active[i];
+        int sen = senone_active[i] + l;
         int c;
         /* Sum up mixture densities. */
         for (c = 0; c < s->n_mixw_den; ++c) {
@@ -150,6 +150,7 @@ compute_scores(sdc_mgau_t * s, int16 *senone_scores,
         }
         /* Negate it since that is what everything else expects at the moment. */
         senone_scores[sen] = -senone_scores[sen];
+        l = sen;
     }
     return 0;
 }
@@ -191,7 +192,7 @@ compute_scores_all(sdc_mgau_t * s, int16 *senone_scores)
 int32
 sdc_mgau_frame_eval(sdc_mgau_t * s,
                     int16 *senone_scores,
-                    int32 *senone_active,
+                    int16 *senone_active,
                     int32 n_senone_active,
                     mfcc_t ** featbuf, int32 frame,
                     int32 compallsen)

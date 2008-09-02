@@ -150,18 +150,17 @@ fast_logmath_add(logmath_t *lmath, int mlx, int mly)
  */
 static int32 get_scores4_8b_rle(s2_semi_mgau_t * s, int16 *senone_scores);
 static int32 get_scores4_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-                            int32 *senone_active, int32 n_senone_active);
+                            int16 *senone_active, int32 n_senone_active);
 static int32 get_scores2_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-                            int32 *senone_active, int32 n_senone_active);
+                            int16 *senone_active, int32 n_senone_active);
 static int32 get_scores1_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-                            int32 *senone_active, int32 n_senone_active);
+                            int16 *senone_active, int32 n_senone_active);
 static int32 get_scores_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-                           int32 *senone_active, int32 n_senone_active);
+                           int16 *senone_active, int32 n_senone_active);
 static int32 get_scores4_8b_all(s2_semi_mgau_t * s, int16 *senone_scores);
 static int32 get_scores2_8b_all(s2_semi_mgau_t * s, int16 *senone_scores);
 static int32 get_scores1_8b_all(s2_semi_mgau_t * s, int16 *senone_scores);
 static int32 get_scores_8b_all(s2_semi_mgau_t * s, int16 *senone_scores);
-static int32 get_scores_8b_rle(s2_semi_mgau_t * s, int16 *senone_scores);
 
 static void
 eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
@@ -371,7 +370,7 @@ mgau_norm(s2_semi_mgau_t *s, int feat)
 int32
 s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
                         int16 *senone_scores,
-                        int32 *senone_active,
+                        int16 *senone_active,
                         int32 n_senone_active,
 			mfcc_t ** featbuf, int32 frame,
 			int32 compallsen)
@@ -427,14 +426,14 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
 
 static int32
 get_scores_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-              int32 *senone_active, int32 n_senone_active)
+              int16 *senone_active, int32 n_senone_active)
 {
-    int32 i, j, k;
+    int32 i, j, k, l;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     for (i = 0; i < s->n_feat; ++i) {
-        for (j = 0; j < n_senone_active; j++) {
-            int sen = senone_active[j];
+        for (l = j = 0; j < n_senone_active; j++) {
+            int sen = senone_active[j] + l;
             uint8 *pid_cw;
             int32 tmp;
             pid_cw = s->mixw[i][s->f[i][0].codeword];
@@ -445,6 +444,7 @@ get_scores_8b(s2_semi_mgau_t * s, int16 *senone_scores,
                                        pid_cw[sen] + s->f[i][k].score);
             }
             senone_scores[sen] += tmp;
+            l = sen;
         }
     }
     return 0;
@@ -474,43 +474,15 @@ get_scores_8b_all(s2_semi_mgau_t * s, int16 *senone_scores)
 }
 
 static int32
-get_scores_8b_rle(s2_semi_mgau_t * s, int16 *senone_scores)
-{
-    int32 i, j, k;
-    int32 best = (int32)0x7fffffff;
-
-#if 0
-    memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
-    for (i = 0; i < s->n_feat; ++i) {
-        for (k = 0; k < s->topn; ++k) {
-            uint8 *pid_cw, den_cw, wden_cw;
-            /* Get compressed mixture weight array. */
-            pid_cw = s->mixw[i][s->f[i][k].codeword];
-            /* Get Gaussian density for this codeword. */
-            den_cw = s->f[i][k].score;
-
-            for (j = 0; j < s->n_sen; j++) {
-                wden = *pid_cw + den_cw;
-                tmp = fast_logmath_add(s->lmath_8b, tmp,
-                                       pid_cw[j] + s->f[i][k].score);
-                senone_scores[j] += tmp;
-            }
-        }
-    }
-#endif
-    return best;
-}
-
-
-static int32
 get_scores4_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-               int32 *senone_active, int32 n_senone_active)
+               int16 *senone_active, int32 n_senone_active)
 {
     int32 j;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     for (j = 0; j < s->n_feat; j++) {
         uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
+        int16 *senscr;
         int32 k;
 
         /* ptrs to senone prob ids */
@@ -519,19 +491,27 @@ get_scores4_8b(s2_semi_mgau_t * s, int16 *senone_scores,
         pid_cw2 = s->mixw[j][s->f[j][2].codeword];
         pid_cw3 = s->mixw[j][s->f[j][3].codeword];
 
+        senscr = senone_scores;
         for (k = 0; k < n_senone_active; k++) {
             int32 tmp1, tmp2;
-	    int32 n = senone_active[k];
+	    int32 n = senone_active[k]; /* Actually a delta. */
 
-            tmp1 = pid_cw0[n] + s->f[j][0].score;
-            tmp2 = pid_cw1[n] + s->f[j][1].score;
+            /* Increment all the pointers. */
+            senscr += n;
+            pid_cw0 += n;
+            pid_cw1 += n;
+            pid_cw2 += n;
+            pid_cw3 += n;
+
+            tmp1 = *pid_cw0 + s->f[j][0].score;
+            tmp2 = *pid_cw1 + s->f[j][1].score;
             tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-            tmp2 = pid_cw2[n] + s->f[j][2].score;
+            tmp2 = *pid_cw2 + s->f[j][2].score;
             tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-            tmp2 = pid_cw3[n] + s->f[j][3].score;
+            tmp2 = *pid_cw3 + s->f[j][3].score;
             tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
 
-            senone_scores[n] += tmp1;
+            *senscr += tmp1;
         }
     }
     return 0;
@@ -669,9 +649,9 @@ get_scores4_8b_rle(s2_semi_mgau_t * s, int16 *senone_scores)
 
 static int32
 get_scores2_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-               int32 *senone_active, int32 n_senone_active)
+               int16 *senone_active, int32 n_senone_active)
 {
-    int32 k;
+    int32 k, l;
     uint8 *pid_cw00, *pid_cw10, *pid_cw01, *pid_cw11,
         *pid_cw02, *pid_cw12, *pid_cw03, *pid_cw13;
 
@@ -686,9 +666,9 @@ get_scores2_8b(s2_semi_mgau_t * s, int16 *senone_scores,
     pid_cw03 = s->mixw[3][s->f[3][0].codeword];
     pid_cw13 = s->mixw[3][s->f[3][1].codeword];
 
-    for (k = 0; k < n_senone_active; k++) {
+    for (l = k = 0; k < n_senone_active; k++) {
         int32 tmp1, tmp2, n;
-	n = senone_active[k];
+	n = senone_active[k] + l;
 
         tmp1 = pid_cw00[n] + s->f[0][0].score;
         tmp2 = pid_cw10[n] + s->f[0][1].score;
@@ -706,6 +686,7 @@ get_scores2_8b(s2_semi_mgau_t * s, int16 *senone_scores,
         tmp2 = pid_cw13[n] + s->f[3][1].score;
         tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
         senone_scores[n] += tmp1;
+        l = n;
     }
     return 0;
 }
@@ -753,10 +734,11 @@ get_scores2_8b_all(s2_semi_mgau_t * s, int16 *senone_scores)
 
 static int32
 get_scores1_8b(s2_semi_mgau_t * s, int16 *senone_scores,
-               int32 *senone_active, int32 n_senone_active)
+               int16 *senone_active, int32 n_senone_active)
 {
     int32 j, k;
     uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
+    int16 *senscr;
 
     /* Ptrs to senone prob values for the top codeword of all codebooks */
     pid_cw0 = s->mixw[0][s->f[0][0].codeword];
@@ -764,10 +746,15 @@ get_scores1_8b(s2_semi_mgau_t * s, int16 *senone_scores,
     pid_cw2 = s->mixw[2][s->f[2][0].codeword];
     pid_cw3 = s->mixw[3][s->f[3][0].codeword];
 
+    senscr = senone_scores;
     for (k = 0; k < n_senone_active; k++) {
         j = senone_active[k];
-        senone_scores[j] =
-            (pid_cw0[j] + pid_cw1[j] + pid_cw2[j] + pid_cw3[j]);
+        senscr += j;
+        pid_cw0 += j;
+        pid_cw1 += j;
+        pid_cw2 += j;
+        pid_cw3 += j;
+        *senscr = (*pid_cw0 + *pid_cw1 + *pid_cw2 + *pid_cw3);
     }
     return 0;
 }
