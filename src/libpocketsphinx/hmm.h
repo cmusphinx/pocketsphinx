@@ -49,6 +49,9 @@
 #include <fixpoint.h>
 #include <listelem_alloc.h>
 
+/* PocketSphinx headers. */
+#include <bin_mdef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -129,7 +132,7 @@ typedef struct hmm_context_s {
     uint8 ** const *tp;	    /**< State transition scores tp[id][from][to] (logs3 values). */
     int16 const *senscore;  /**< State emission scores senscore[senid]
                                (negated scaled logs3 values). */
-    int16 * const *sseq;    /**< Senone sequence mapping. */
+    uint16 * const *sseq;   /**< Senone sequence mapping. */
     int32 *st_sen_scr;      /**< Temporary array of senone scores (for some topologies). */
     listelem_alloc_t *mpx_ssid_alloc; /**< Allocator for senone sequence ID arrays. */
     void *udata;            /**< Whatever you feel like, gosh. */
@@ -155,8 +158,8 @@ typedef struct hmm_s {
     int32 out_score;               /**< Score for non-emitting exit state. */
     int32 out_history;             /**< History index for non-emitting exit state. */
     union {
-        int32 *mpx_ssid; /**< Senone sequence IDs for each state (for multiplex HMMs). */
-        int32 ssid;      /**< Senone sequence ID. */
+        uint16 *mpx_ssid; /**< Senone sequence IDs for each state (for multiplex HMMs). */
+        uint16 ssid;      /**< Senone sequence ID. */
     } s;
     int32 bestscore;	/**< Best [emitting] state score in current frame (for pruning). */
     int16 tmatid;       /**< Transition matrix ID (see hmm_context_t). */
@@ -183,9 +186,9 @@ typedef struct hmm_s {
 #define hmm_nonmpx_ssid(h) (h)->s.ssid
 #define hmm_ssid(h,st) (hmm_is_mpx(h)                           \
                         ? hmm_mpx_ssid(h,st) : (h)->s.ssid)
-#define hmm_senid(h,st) (hmm_ssid(h,st) == -1                           \
-                         ? -1 : (h)->ctx->sseq[hmm_ssid(h,st)][st])
-#define hmm_senscr(h,st) (hmm_ssid(h,st) == -1                          \
+#define hmm_senid(h,st) (hmm_ssid(h,st) == BAD_SSID                     \
+                         ? BAD_SENID : (h)->ctx->sseq[hmm_ssid(h,st)][st])
+#define hmm_senscr(h,st) (hmm_ssid(h,st) == BAD_SSID                    \
                           ? WORST_SCORE                                 \
                           : -(h)->ctx->senscore[hmm_senid(h,st)] << SENSCR_SHIFT)
 #define hmm_tmatid(h) (h)->tmatid
@@ -199,7 +202,7 @@ typedef struct hmm_s {
 hmm_context_t *hmm_context_init(int32 n_emit_state,
                                 uint8 ** const *tp,
                                 int16 const *senscore,
-                                int16 * const *sseq);
+                                uint16 * const *sseq);
 
 /**
  * Change the senone score array for a context.

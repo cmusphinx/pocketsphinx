@@ -147,7 +147,7 @@ typedef struct {
     hash_table_t *ciphone_ht;	/**< Hash table for mapping ciphone strings to ids */
     ciphone_t *ciphone;		/**< CI-phone information for all ciphones */
     phone_t *phone;		/**< Information for all ciphones and triphones */
-    int16 **sseq;		/**< Unique state (or senone) sequences in this model, shared
+    uint16 **sseq;		/**< Unique state (or senone) sequences in this model, shared
                                    among all phones/triphones */
     int32 n_sseq;		/**< No. of unique senone sequences in this model */
     

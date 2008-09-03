@@ -693,7 +693,7 @@ acmod_clear_active(acmod_t *acmod)
 }
 
 #define MPX_BITVEC_SET(a,h,i)                                           \
-    if ((h)->s.mpx_ssid[i] != -1)                                       \
+    if ((h)->s.mpx_ssid[i] != BAD_SSID)                                 \
         bitvec_set((a)->senone_active_vec,                              \
                    bin_mdef_sseq2sen((a)->mdef, (h)->s.mpx_ssid[i], (i)));
 #define NONMPX_BITVEC_SET(a,h,i)                                        \

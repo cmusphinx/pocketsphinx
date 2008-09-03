@@ -90,6 +90,15 @@ struct mdef_entry_s {
 } ATTRIBUTE_PACKED;
 
 /**
+ * Invalid senone sequence ID (limited to 16 bits for PocketSphinx).
+ */
+#define BAD_SSID 0xffff
+/**
+ * Invalid senone ID (limited to 16 bits for PocketSphinx).
+ */
+#define BAD_SENID 0xffff
+
+/**
  * Node in CD phone tree (on-disk, 8 bytes).
  */
 typedef struct cd_tree_s cd_tree_t;
@@ -122,8 +131,8 @@ struct bin_mdef_s {
 	char **ciname;       /**< CI phone names */
 	cd_tree_t *cd_tree;  /**< Tree mapping CD phones to phone IDs */
 	mdef_entry_t *phone; /**< All phone structures */
-	int16 **sseq;        /**< Unique senone sequences (2D array built at load time) */
-	int8 *sseq_len;      /**< Number of states in each sseq (NULL for homogeneous) */
+	uint16 **sseq;       /**< Unique senone sequences (2D array built at load time) */
+	uint8 *sseq_len;     /**< Number of states in each sseq (NULL for homogeneous) */
 
 	/* These two are not stored on disk, but are generated at load time. */
 	int16 *cd2cisen;	/**< Parent CI-senone id for each senone */

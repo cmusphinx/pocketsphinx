@@ -73,6 +73,21 @@ bin_mdef_read_text(cmd_ln_t *config, const char *filename)
     if ((mdef = mdef_init((char *) filename, TRUE)) == NULL)
         return NULL;
 
+    /* Enforce some limits.  */
+    if (mdef->n_sen > BAD_SENID) {
+        E_ERROR("Number of senones exceeds limit: %d > %d\n",
+                mdef->n_sen, BAD_SENID);
+        mdef_free(mdef);
+        return NULL;
+    }
+    if (mdef->n_sseq > BAD_SSID) {
+        E_ERROR("Number of senone sequences exceeds limit: %d > %d\n",
+                mdef->n_sseq, BAD_SSID);
+        mdef_free(mdef);
+        return NULL;
+    }
+
+
     bmdef = ckd_calloc(1, sizeof(*bmdef));
 
     /* Easy stuff.  The mdef.c code has done the heavy lifting for us. */
@@ -422,7 +437,7 @@ bin_mdef_read(cmd_ln_t *config, const char *filename)
     if (swap)
         SWAP_INT32(sseq_size);
     m->sseq = ckd_calloc(m->n_sseq, sizeof(*m->sseq));
-    m->sseq[0] = (int16 *) (sseq_size + 1);
+    m->sseq[0] = (uint16 *) (sseq_size + 1);
     if (swap) {
         for (i = 0; i < *sseq_size; ++i)
             SWAP_INT16(m->sseq[0] + i);

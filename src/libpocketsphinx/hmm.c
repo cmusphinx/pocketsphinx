@@ -56,7 +56,7 @@ hmm_context_t *
 hmm_context_init(int32 n_emit_state,
 		 uint8 ** const *tp,
 		 int16 const *senscore,
-		 int16 * const *sseq)
+		 uint16 * const *sseq)
 {
     hmm_context_t *ctx;
 
@@ -72,7 +72,7 @@ hmm_context_init(int32 n_emit_state,
     ctx->senscore = senscore;
     ctx->sseq = sseq;
     ctx->st_sen_scr = ckd_calloc(n_emit_state, sizeof(*ctx->st_sen_scr));
-    ctx->mpx_ssid_alloc = listelem_alloc_init(sizeof(int32) * ctx->n_emit_state);
+    ctx->mpx_ssid_alloc = listelem_alloc_init(sizeof(int16) * ctx->n_emit_state);
 
     return ctx;
 }
@@ -88,15 +88,15 @@ hmm_context_free(hmm_context_t *ctx)
 void
 hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx, int ssid, int tmatid)
 {
-    /* Watch for integer overflows in ssids (shouldn't happen anymore) */
-    assert(ssid >= -1);
     hmm->ctx = ctx;
     hmm->mpx = mpx;
     hmm->n_emit_state = ctx->n_emit_state;
     if (mpx) {
+        int i;
         hmm->s.mpx_ssid = listelem_malloc(ctx->mpx_ssid_alloc);
-        memset(hmm->s.mpx_ssid, -1, sizeof(*hmm->s.mpx_ssid) * hmm_n_emit_state(hmm));
         hmm->s.mpx_ssid[0] = ssid;
+        for (i = 1; i < hmm_n_emit_state(hmm); ++i)
+            hmm->s.mpx_ssid[i] = BAD_SSID;
     }
     else {
         hmm->s.ssid = ssid;
@@ -229,7 +229,7 @@ hmm_vit_eval_5st_lr(hmm_t * hmm)
     int16 const *senscore = hmm->ctx->senscore;
     uint8 const *tp = hmm->ctx->tp[hmm->tmatid][0];
     /* Cache problem here! */
-    int16 const *sseq = hmm->ctx->sseq[hmm_ssid(hmm, 0)];
+    uint16 const *sseq = hmm->ctx->sseq[hmm_ssid(hmm, 0)];
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0, bestScore;
 
     /* It was the best of scores, it was the worst of scores. */
@@ -362,19 +362,19 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
 {
     uint8 const *tp = hmm->ctx->tp[hmm->tmatid][0];
     int16 const *senscore = hmm->ctx->senscore;
-    int16 * const *sseq = hmm->ctx->sseq;
-    int32 *ssid = hmm->s.mpx_ssid;
+    uint16 * const *sseq = hmm->ctx->sseq;
+    uint16 *ssid = hmm->s.mpx_ssid;
     int32 bestScore;
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0;
 
     /* Don't propagate WORST_SCORE */
-    if (ssid[4] == -1)
+    if (ssid[4] == BAD_SSID)
         s4 = t1 = WORST_SCORE;
     else {
         s4 = hmm_score(hmm, 4) + mpx_senscr(4);
         t1 = s4 + hmm_tprob_5st(4, 5);
     }
-    if (ssid[3] == -1)
+    if (ssid[3] == BAD_SSID)
         s3 = t2 = WORST_SCORE;
     else {
         s3 = hmm_score(hmm, 3) + mpx_senscr(3);
@@ -393,7 +393,7 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
     bestScore = s5;
 
     /* Don't propagate WORST_SCORE */
-    if (ssid[2] == -1)
+    if (ssid[2] == BAD_SSID)
         s2 = t2 = WORST_SCORE;
     else {
         s2 = hmm_score(hmm, 2) + mpx_senscr(2);
@@ -432,7 +432,7 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
     hmm_score(hmm, 4) = s4;
 
     /* Don't propagate WORST_SCORE */
-    if (ssid[1] == -1)
+    if (ssid[1] == BAD_SSID)
         s1 = t2 = WORST_SCORE;
     else {
         s1 = hmm_score(hmm, 1) + mpx_senscr(1);
@@ -536,7 +536,7 @@ hmm_vit_eval_3st_lr(hmm_t * hmm)
 {
     int16 const *senscore = hmm->ctx->senscore;
     uint8 const *tp = hmm->ctx->tp[hmm->tmatid][0];
-    int16 const *sseq = hmm->ctx->sseq[hmm_ssid(hmm, 0)];
+    uint16 const *sseq = hmm->ctx->sseq[hmm_ssid(hmm, 0)];
     int32 s3, s2, s1, s0, t2, t1, t0, bestScore;
 
     s2 = hmm_score(hmm, 2) + nonmpx_senscr(2);
@@ -616,20 +616,20 @@ hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
 {
     uint8 const *tp = hmm->ctx->tp[hmm->tmatid][0];
     int16 const *senscore = hmm->ctx->senscore;
-    int16 * const *sseq = hmm->ctx->sseq;
-    int32 *ssid = hmm->s.mpx_ssid;
+    uint16 * const *sseq = hmm->ctx->sseq;
+    uint16 *ssid = hmm->s.mpx_ssid;
     int32 bestScore;
     int32 s3, s2, s1, s0, t2, t1, t0;
 
     /* Don't propagate WORST_SCORE */
     t2 = INT_MIN; /* Not used unless skipstate is true */
-    if (ssid[2] == -1)
+    if (ssid[2] == BAD_SSID)
         s2 = t1 = WORST_SCORE;
     else {
         s2 = hmm_score(hmm, 2) + mpx_senscr(2);
         t1 = s2 + hmm_tprob_3st(2, 3);
     }
-    if (ssid[1] == -1)
+    if (ssid[1] == BAD_SSID)
         s1 = WORST_SCORE;
     else {
         s1 = hmm_score(hmm, 1) + mpx_senscr(1);
