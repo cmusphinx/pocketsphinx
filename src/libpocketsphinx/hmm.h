@@ -126,7 +126,7 @@ typedef float32 var_t;
  */
 typedef struct hmm_context_s {
     int32 n_emit_state;     /**< Number of emitting states in this set of HMMs. */
-    int32 ** const *tp;	    /**< State transition scores tp[id][from][to] (logs3 values). */
+    uint8 ** const *tp;	    /**< State transition scores tp[id][from][to] (logs3 values). */
     int16 const *senscore;  /**< State emission scores senscore[senid]
                                (negated scaled logs3 values). */
     int16 * const *sseq;    /**< Senone sequence mapping. */
@@ -189,7 +189,7 @@ typedef struct hmm_s {
                           ? WORST_SCORE                                 \
                           : -(h)->ctx->senscore[hmm_senid(h,st)] << SENSCR_SHIFT)
 #define hmm_tmatid(h) (h)->tmatid
-#define hmm_tprob(h,i,j) (h)->ctx->tp[hmm_tmatid(h)][i][j]
+#define hmm_tprob(h,i,j) (-(h)->ctx->tp[hmm_tmatid(h)][i][j] << SENSCR_SHIFT)
 #define hmm_n_emit_state(h) ((h)->n_emit_state)
 #define hmm_n_state(h) ((h)->n_emit_state + 1)
 
@@ -197,7 +197,7 @@ typedef struct hmm_s {
  * Create an HMM context.
  **/
 hmm_context_t *hmm_context_init(int32 n_emit_state,
-                                int32 ** const *tp,
+                                uint8 ** const *tp,
                                 int16 const *senscore,
                                 int16 * const *sseq);
 

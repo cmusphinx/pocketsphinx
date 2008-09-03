@@ -102,6 +102,7 @@
 
 /* Local headers. */
 #include "tmat.h"
+#include "hmm.h"
 #include "bio.h"
 #include "vector.h"
 
@@ -156,7 +157,7 @@ tmat_chk_uppertri(tmat_t * tmat, logmath_t *lmath)
     for (i = 0; i < tmat->n_tmat; i++) {
         for (dst = 0; dst < tmat->n_state; dst++)
             for (src = dst + 1; src < tmat->n_state; src++)
-                if (tmat->tp[i][src][dst] > logmath_get_zero(lmath)) {
+                if (tmat->tp[i][src][dst] < 255) {
                     E_ERROR("tmat[%d][%d][%d] = %d\n",
                             i, src, dst, tmat->tp[i][src][dst]);
                     return -1;
@@ -175,7 +176,7 @@ tmat_chk_1skip(tmat_t * tmat, logmath_t *lmath)
     for (i = 0; i < tmat->n_tmat; i++) {
         for (src = 0; src < tmat->n_state; src++)
             for (dst = src + 3; dst <= tmat->n_state; dst++)
-                if (tmat->tp[i][src][dst] > logmath_get_zero(lmath)) {
+                if (tmat->tp[i][src][dst] < 255) {
                     E_ERROR("tmat[%d][%d][%d] = %d\n",
                             i, src, dst, tmat->tp[i][src][dst]);
                     return -1;
@@ -241,9 +242,9 @@ tmat_init(char const *file_name, logmath_t *lmath, float64 tpfloor, int32 brepor
         || (bio_fread(&i, sizeof(int32), 1, fp, byteswap, &chksum) != 1)) {
         E_FATAL("bio_fread(%s) (arraysize) failed\n", file_name);
     }
-    if (t->n_tmat >= MAX_INT32) /* Comparison is always false... */
+    if (t->n_tmat >= MAX_INT16) /* Comparison is always false... */
         E_FATAL("%s: #tmat (%d) exceeds limit (%d)\n", file_name,
-                t->n_tmat, MAX_INT32);
+                t->n_tmat, MAX_INT16);
     if (n_dst != n_src + 1)
         E_FATAL("%s: #from-states(%d) != #to-states(%d)-1\n", file_name,
                 n_src, n_dst);
@@ -256,11 +257,10 @@ tmat_init(char const *file_name, logmath_t *lmath, float64 tpfloor, int32 brepor
     }
 
     /* Allocate memory for tmat data */
-    t->tp =
-        (int32 ***) ckd_calloc_3d(t->n_tmat, n_src, n_dst, sizeof(int32));
+    t->tp = ckd_calloc_3d(t->n_tmat, n_src, n_dst, sizeof(***t->tp));
 
     /* Temporary structure to read in the float data */
-    tp = (float32 **) ckd_calloc_2d(n_src, n_dst, sizeof(float32));
+    tp = ckd_calloc_2d(n_src, n_dst, sizeof(**tp));
 
     /* Read transition matrices, normalize and floor them, and convert to log domain */
     tp_per_tmat = n_src * n_dst;
@@ -280,16 +280,20 @@ tmat_init(char const *file_name, logmath_t *lmath, float64 tpfloor, int32 brepor
 
             /* Convert to logs3. */
             for (k = 0; k < n_dst; k++) {
+                int ltp;
                 /* For these ones, we floor them even if they are
                  * zero, otherwise HMM evaluation goes nuts. */
                 if (k >= j && k-j < 3 && tp[j][k] == 0.0f)
                     tp[j][k] = tpfloor;
-                t->tp[i][j][k] = logmath_log(lmath, tp[j][k]);
+                /* Log and quantize them. */
+                ltp = -logmath_log(lmath, tp[j][k]) >> SENSCR_SHIFT;
+                if (ltp > 255) ltp = 255;
+                t->tp[i][j][k] = (uint8)ltp;
             }
         }
     }
 
-    ckd_free_2d((void **) tp);
+    ckd_free_2d(tp);
 
     if (chksum_present)
         bio_verify_chksum(fp, byteswap, chksum);
@@ -298,7 +302,6 @@ tmat_init(char const *file_name, logmath_t *lmath, float64 tpfloor, int32 brepor
         E_ERROR("Non-empty file beyond end of data\n");
 
     fclose(fp);
-
 
     if (tmat_chk_uppertri(t, lmath) < 0)
         E_FATAL("Tmat not upper triangular\n");
@@ -326,7 +329,7 @@ tmat_free(tmat_t * t)
 {
     if (t) {
         if (t->tp)
-            ckd_free_3d((void ***) t->tp);
-        ckd_free((void *) t);
+            ckd_free_3d(t->tp);
+        ckd_free(t);
     }
 }

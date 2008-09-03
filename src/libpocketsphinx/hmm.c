@@ -54,7 +54,7 @@
 
 hmm_context_t *
 hmm_context_init(int32 n_emit_state,
-		 int32 ** const *tp,
+		 uint8 ** const *tp,
 		 int16 const *senscore,
 		 int16 * const *sseq)
 {
@@ -220,14 +220,14 @@ hmm_normalize(hmm_t *h, int32 bestscr)
         hmm_out_score(h) -= bestscr;
 }
 
-#define hmm_tprob_5st(i, j) (tp[(i)*6+(j)])
-#define nonmpx_senscr(i) (-senscore[sseq[i]] << 10)
+#define hmm_tprob_5st(i, j) (-tp[(i)*6+(j)] << SENSCR_SHIFT)
+#define nonmpx_senscr(i) (-senscore[sseq[i]] << SENSCR_SHIFT)
 
 static int32
 hmm_vit_eval_5st_lr(hmm_t * hmm)
 {
     int16 const *senscore = hmm->ctx->senscore;
-    int32 const *tp = hmm->ctx->tp[hmm->tmatid][0];
+    uint8 const *tp = hmm->ctx->tp[hmm->tmatid][0];
     /* Cache problem here! */
     int16 const *sseq = hmm->ctx->sseq[hmm_ssid(hmm, 0)];
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0, bestScore;
@@ -355,13 +355,13 @@ hmm_vit_eval_5st_lr(hmm_t * hmm)
 }
 
 #define mpx_senid(st) sseq[ssid[st]][st]
-#define mpx_senscr(st) (-senscore[mpx_senid(st)] << 10)
+#define mpx_senscr(st) (-senscore[mpx_senid(st)] << SENSCR_SHIFT)
 
 static int32
 hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
 {
-    const int32 *tp = hmm->ctx->tp[hmm->tmatid][0];
-    const int16 *senscore = hmm->ctx->senscore;
+    uint8 const *tp = hmm->ctx->tp[hmm->tmatid][0];
+    int16 const *senscore = hmm->ctx->senscore;
     int16 * const *sseq = hmm->ctx->sseq;
     int32 *ssid = hmm->s.mpx_ssid;
     int32 bestScore;
@@ -529,14 +529,14 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
     return bestScore;
 }
 
-#define hmm_tprob_3st(i, j) (tp[(i)*4+(j)])
+#define hmm_tprob_3st(i, j) (-tp[(i)*4+(j)] << SENSCR_SHIFT)
 
 static int32
 hmm_vit_eval_3st_lr(hmm_t * hmm)
 {
-    const int16 *senscore = hmm->ctx->senscore;
-    const int32 *tp = hmm->ctx->tp[hmm->tmatid][0];
-    const int16 *sseq = hmm->ctx->sseq[hmm_ssid(hmm, 0)];
+    int16 const *senscore = hmm->ctx->senscore;
+    uint8 const *tp = hmm->ctx->tp[hmm->tmatid][0];
+    int16 const *sseq = hmm->ctx->sseq[hmm_ssid(hmm, 0)];
     int32 s3, s2, s1, s0, t2, t1, t0, bestScore;
 
     s2 = hmm_score(hmm, 2) + nonmpx_senscr(2);
@@ -614,7 +614,7 @@ hmm_vit_eval_3st_lr(hmm_t * hmm)
 static int32
 hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
 {
-    int32 const *tp = hmm->ctx->tp[hmm->tmatid][0];
+    uint8 const *tp = hmm->ctx->tp[hmm->tmatid][0];
     int16 const *senscore = hmm->ctx->senscore;
     int16 * const *sseq = hmm->ctx->sseq;
     int32 *ssid = hmm->s.mpx_ssid;

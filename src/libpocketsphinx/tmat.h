@@ -107,10 +107,10 @@ extern "C" {
  * topology.
  */
 typedef struct {
-    int32 ***tp;	/**< The transition matrices; int32 since probs in logs3 domain:
+    uint8 ***tp;	/**< The transition matrices; kept in the same scale as acoustic scores;
 			   tp[tmatid][from-state][to-state] */
-    int32 n_tmat;	/**< Number matrices */
-    int32 n_state;	/**< Number source states in matrix (only the emitting states);
+    int16 n_tmat;	/**< Number matrices */
+    int16 n_state;	/**< Number source states in matrix (only the emitting states);
 			   Number destination states = n_state+1, it includes the exit state */
 } tmat_t;
 
