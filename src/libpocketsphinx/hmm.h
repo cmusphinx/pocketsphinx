@@ -136,15 +136,6 @@ typedef struct hmm_context_s {
 } hmm_context_t;
 
 /**
- * @struct hmm_state_t
- * @brief A single state in the HMM 
- */
-typedef struct {
-    int32 score;	/**< State score (path log-likelihood) */
-    int32 history;	/**< History index */
-} hmm_state_t;
-
-/**
  * Hard-coded limit on the number of emitting states.
  */
 #define HMM_MAX_NSTATE 5
@@ -154,13 +145,15 @@ typedef struct {
  * @brief An individual HMM among the HMM search space.
  *
  * An individual HMM among the HMM search space.  An HMM with N
- * emitting states consists of N+2 internal states including the
- * non-emitting entry (in) and exit (out) states.
+ * emitting states consists of N+1 internal states including the
+ * non-emitting exit (out) state.
  */
 typedef struct hmm_s {
-    hmm_context_t *ctx;   /**< Shared context data for this HMM. */
-    hmm_state_t state[HMM_MAX_NSTATE]; /**< Per-state data for emitting states */
-    hmm_state_t out;      /**< Non-emitting output state */
+    hmm_context_t *ctx;            /**< Shared context data for this HMM. */
+    int32 score[HMM_MAX_NSTATE];   /**< State scores for emitting states. */
+    int32 history[HMM_MAX_NSTATE]; /**< History indices for emitting states. */
+    int32 out_score;               /**< Score for non-emitting exit state. */
+    int32 out_history;             /**< History index for non-emitting exit state. */
     union {
         int32 *mpx_ssid; /**< Senone sequence IDs for each state (for multiplex HMMs). */
         int32 ssid;      /**< Senone sequence ID. */
@@ -175,15 +168,14 @@ typedef struct hmm_s {
 /** Access macros. */
 #define hmm_context(h) (h)->ctx
 #define hmm_is_mpx(h) (h)->mpx
-#define hmm_state(h,st) (h)->state[st]
 
-#define hmm_in_score(h) hmm_state(h,0).score
-#define hmm_score(h,st) hmm_state(h,st).score
-#define hmm_out_score(h) (h)->out.score
+#define hmm_in_score(h) (h)->score[0]
+#define hmm_score(h,st) (h)->score[st]
+#define hmm_out_score(h) (h)->out_score
 
-#define hmm_in_history(h) hmm_state(h,0).history
-#define hmm_history(h,st) hmm_state(h,st).history
-#define hmm_out_history(h) (h)->out.history
+#define hmm_in_history(h) (h)->history[0]
+#define hmm_history(h,st) (h)->history[st]
+#define hmm_out_history(h) (h)->out_history
 
 #define hmm_bestscore(h) (h)->bestscore
 #define hmm_frame(h) (h)->frame
