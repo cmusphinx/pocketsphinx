@@ -53,7 +53,16 @@
         POCKETSPHINX_SEARCH_OPTIONS, \
         POCKETSPHINX_DICT_OPTIONS, \
         POCKETSPHINX_NGRAM_OPTIONS, \
-        POCKETSPHINX_FSG_OPTIONS
+        POCKETSPHINX_FSG_OPTIONS, \
+        POCKETSPHINX_DEBUG_OPTIONS
+
+/** Options for debugging and logging. */
+#define POCKETSPHINX_DEBUG_OPTIONS              \
+    { "-logfn",                                 \
+            ARG_STRING,                         \
+            NULL,                               \
+            "File to write log messages in"     \
+            }
 
 /** Options defining beam width parameters for tuning the search. */
 #define POCKETSPHINX_BEAM_OPTIONS								\
