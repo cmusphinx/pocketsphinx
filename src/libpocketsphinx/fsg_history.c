@@ -169,7 +169,7 @@ fsg_history_entry_add(fsg_history_t * h,
     for (gn = h->frame_entries[s][lc]; gn; gn = gnode_next(gn)) {
         entry = (fsg_hist_entry_t *) gnode_ptr(gn);
 
-        if (entry->score < score)
+        if (score BETTER_THAN entry->score)
             break;              /* Found where to insert new entry */
 
         /* Existing entry score not worse than new score */

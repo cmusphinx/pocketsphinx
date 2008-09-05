@@ -345,7 +345,7 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
 
     _bp_ = ngs->word_lat_idx[w];
     if (_bp_ != NO_BP) {
-        if (ngs->bp_table[_bp_].score < score) {
+        if (ngs->bp_table[_bp_].score WORSE_THAN score) {
             if (ngs->bp_table[_bp_].bp != path) {
                 ngs->bp_table[_bp_].bp = path;
                 cache_bptable_paths(ngs, _bp_);
@@ -420,7 +420,6 @@ ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score
         frame_idx = ngs->n_frame - 1;
     end_bpidx = ngs->bp_table_idx[frame_idx];
 
-    /* FIXME: WORST_SCORE has to go away and be replaced with a log-zero number. */
     best_score = WORST_SCORE;
     best_exit = NO_BP;
 
@@ -435,7 +434,7 @@ ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score
     assert(end_bpidx < ngs->bp_table_size);
     for (bp = ngs->bp_table_idx[frame_idx]; bp < end_bpidx; ++bp) {
         if (ngs->bp_table[bp].wid == ps_search_finish_wid(ngs)
-            || ngs->bp_table[bp].score > best_score) {
+            || ngs->bp_table[bp].score BETTER_THAN best_score) {
             best_score = ngs->bp_table[bp].score;
             best_exit = bp;
         }
@@ -990,7 +989,7 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
                                &n_used);
         l_scr = l_scr * lwf;
 
-        if (ngs->bp_table[bp].score + l_scr > bestscore) {
+        if (ngs->bp_table[bp].score + l_scr BETTER_THAN bestscore) {
             bestscore = ngs->bp_table[bp].score + l_scr;
             bestbp = bp;
         }
@@ -1093,7 +1092,7 @@ ngram_search_lattice(ps_search_t *search)
             score =
                 (ngs->bscore_stack[bp_ptr->s_idx + bss_offset] - bp_ptr->score) +
                 bp_ptr->ascr;
-            if (score > 0) {
+            if (score BETTER_THAN 0) {
                 /* Scores must be negative, or Bad Things will happen.
                    In general, they are, except in corner cases
                    involving filler words.  We don't want to throw any
@@ -1102,7 +1101,7 @@ ngram_search_lattice(ps_search_t *search)
                 ps_lattice_link(dag, from, to, -424242, bp_ptr->frame);
                 from->reachable = TRUE;
             }
-            else if (score > WORST_SCORE) {
+            else if (score BETTER_THAN WORST_SCORE) {
                 ps_lattice_link(dag, from, to, score, bp_ptr->frame);
                 from->reachable = TRUE;
             }

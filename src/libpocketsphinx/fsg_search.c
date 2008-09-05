@@ -443,7 +443,7 @@ fsg_search_hmm_eval(fsg_search_t *fsgs)
         hmm_dump(hmm, stdout);
 #endif
 
-        if (bestscore < score)
+        if (score BETTER_THAN bestscore)
             bestscore = score;
     }
 
@@ -503,7 +503,8 @@ fsg_search_pnode_trans(fsg_search_t *fsgs, fsg_pnode_t * pnode)
          child; child = fsg_pnode_sibling(child)) {
         newscore = hmm_out_score(hmm) + child->logs2prob;
 
-        if ((newscore >= thresh) && (newscore > hmm_in_score(&child->hmm))) {
+        if ((newscore BETTER_THAN thresh)
+            && (newscore BETTER_THAN hmm_in_score(&child->hmm))) {
             /* Incoming score > pruning threshold and > target's existing score */
             if (hmm_frame(&child->hmm) < nf) {
                 /* Child node not yet activated; do so */
@@ -729,8 +730,8 @@ fsg_search_word_trans(fsg_search_t *fsgs)
                  */
                 newscore = score + root->logs2prob;
 
-                if ((newscore >= thresh)
-                    && (newscore > hmm_in_score(&root->hmm))) {
+                if ((newscore BETTER_THAN thresh)
+                    && (newscore BETTER_THAN hmm_in_score(&root->hmm))) {
                     if (hmm_frame(&root->hmm) < nf) {
                         /* Newly activated node; add to active list */
                         fsgs->pnode_active_next =
@@ -984,7 +985,7 @@ fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_sc
         fl = fsg_hist_entry_fsglink(hist_entry);
         score = fsg_hist_entry_score(hist_entry);
 
-        if (score > bestscore) {
+        if (score BETTER_THAN bestscore) {
             /* Only enforce the final state constraint if this is a final hypothesis. */
             if ((!final)
                 || fsg_link_to_state(fl) == fsg_model_final_state(fsg)) {
@@ -1249,7 +1250,7 @@ new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid, int32 a
         if (node->fef == -1 || node->fef > ef)
             node->fef = ef;
         /* Update best link score. */
-        if (node->info.best_exit < ascr)
+        if (ascr BETTER_THAN node->info.best_exit)
             node->info.best_exit = ascr;
     }
     else {

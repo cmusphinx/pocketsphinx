@@ -92,7 +92,7 @@ ps_lattice_link(ps_lattice_t *dag, ps_latnode_t *from, ps_latnode_t *to, int32 s
     }
     else {
         /* Link already exists; just retain the best ascr */
-        if (fwdlink->link->ascr < score) {
+        if (score BETTER_THAN fwdlink->link->ascr) {
             fwdlink->link->ascr = score;
             fwdlink->link->ef = ef;
         }
@@ -1173,7 +1173,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
                 tscore = 0;
             /* Update link score with maximum link score. */
             score = link->path_scr + tscore + x->link->ascr;
-            if (score > x->link->path_scr) {
+            if (score BETTER_THAN x->link->path_scr) {
                 x->link->path_scr = score;
                 x->link->best_prev = link;
             }
@@ -1200,7 +1200,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
         else
             bprob = 0;
         dag->norm = logmath_add(lmath, dag->norm, x->link->alpha + bprob);
-        if (x->link->path_scr > bestescr) {
+        if (x->link->path_scr BETTER_THAN bestescr) {
             bestescr = x->link->path_scr;
             bestend = x->link;
         }
@@ -1296,7 +1296,7 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
             /* Track the best path - we will backtrace in order to
                calculate the unscaled joint probability for sentence
                posterior. */
-            if (link->path_scr > bestescr) {
+            if (link->path_scr BETTER_THAN bestescr) {
                 bestescr = link->path_scr;
                 bestend = link;
             }
@@ -1350,7 +1350,7 @@ best_rem_score(ps_astar_t *nbest, ps_latnode_t * from)
         if (nbest->lmset)
             score += ngram_bg_score(nbest->lmset, x->link->to->basewid,
                                     from->basewid, &n_used) * nbest->lwf;
-        if (score > bestscore)
+        if (score BETTER_THAN bestscore)
             bestscore = score;
     }
     from->info.rem_score = bestscore;

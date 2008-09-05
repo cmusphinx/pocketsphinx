@@ -574,7 +574,7 @@ eval_root_chan(ngram_search_t *ngs, int frame_idx)
     for (i = ngs->n_root_chan, rhmm = ngs->root_chan; i > 0; --i, rhmm++) {
         if (hmm_frame(&rhmm->hmm) == frame_idx) {
             int32 score = chan_v_eval(rhmm);
-            if (bestscore < score)
+            if (score BETTER_THAN bestscore)
                 bestscore = score;
             ++ngs->st.n_root_chan_eval;
         }
@@ -596,7 +596,7 @@ eval_nonroot_chan(ngram_search_t *ngs, int frame_idx)
     for (hmm = *(acl++); i > 0; --i, hmm = *(acl++)) {
         int32 score = chan_v_eval(hmm);
         assert(hmm_frame(&hmm->hmm) == frame_idx);
-        if (bestscore < score)
+        if (score BETTER_THAN bestscore)
             bestscore = score;
     }
 
@@ -627,7 +627,7 @@ eval_word_chan(ngram_search_t *ngs, int frame_idx)
             score = chan_v_eval(hmm);
             /*printf("eval word chan %d score %d\n", w, score); */
 
-            if (bestscore < score)
+            if (score BETTER_THAN bestscore)
                 bestscore = score;
 
             k++;
@@ -646,7 +646,7 @@ eval_word_chan(ngram_search_t *ngs, int frame_idx)
 
         score = chan_v_eval(rhmm);
         /* printf("eval 1ph word chan %d score %d\n", w, score); */
-        if (bestscore < score && w != ps_search_finish_wid(ngs))
+        if (score BETTER_THAN bestscore && w != ps_search_finish_wid(ngs))
             bestscore = score;
 
         j++;
@@ -667,9 +667,9 @@ evaluate_channels(ngram_search_t *ngs, int16 const *senone_scores, int frame_idx
 
     hmm_context_set_senscore(ngs->hmmctx, senone_scores);
     ngs->best_score = eval_root_chan(ngs, frame_idx);
-    if ((bs = eval_nonroot_chan(ngs, frame_idx)) > ngs->best_score)
+    if ((bs = eval_nonroot_chan(ngs, frame_idx)) BETTER_THAN ngs->best_score)
         ngs->best_score = bs;
-    if ((bs = eval_word_chan(ngs, frame_idx)) > ngs->best_score)
+    if ((bs = eval_word_chan(ngs, frame_idx)) BETTER_THAN ngs->best_score)
         ngs->best_score = bs;
     ngs->last_phone_best_score = bs;
 
@@ -709,17 +709,16 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
         if (hmm_frame(&rhmm->hmm) < frame_idx)
             continue;
 
-        if (hmm_bestscore(&rhmm->hmm) > thresh) {
+        if (hmm_bestscore(&rhmm->hmm) BETTER_THAN thresh) {
             hmm_frame(&rhmm->hmm) = nf;  /* rhmm will be active in next frame */
 
             /* transitions out of this root channel */
             newphone_score = hmm_out_score(&rhmm->hmm) + ngs->pip;
-            if (newphone_score > newphone_thresh) {
+            if (newphone_score BETTER_THAN newphone_thresh) {
                 /* transition to all next-level channels in the HMM tree */
                 for (hmm = rhmm->next; hmm; hmm = hmm->alt) {
                     if ((hmm_frame(&hmm->hmm) < frame_idx)
-                        || (hmm_in_score(&hmm->hmm)
-                            < newphone_score)) {
+                        || (newphone_score BETTER_THAN hmm_in_score(&hmm->hmm))) {
                         hmm_enter(&hmm->hmm, newphone_score,
                                   hmm_out_history(&rhmm->hmm), nf);
                         *(nacl++) = hmm;
@@ -731,7 +730,7 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
                  * penultimate phone (the last phones may need multiple right contexts).
                  * Remember to remove the temporary newword_penalty.
                  */
-                if (newphone_score > lastphn_thresh) {
+                if (newphone_score BETTER_THAN lastphn_thresh) {
                     for (w = rhmm->penult_phn_wid; w >= 0;
                          w = ngs->homophone_set[w]) {
                         de = ps_search_dict(ngs)->dict_list[w];
@@ -782,7 +781,7 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
          --i, hmm = *(acl++)) {
         assert(hmm_frame(&hmm->hmm) >= frame_idx);
 
-        if (hmm_bestscore(&hmm->hmm) > thresh) {
+        if (hmm_bestscore(&hmm->hmm) BETTER_THAN thresh) {
             /* retain this channel in next frame */
             if (hmm_frame(&hmm->hmm) != nf) {
                 hmm_frame(&hmm->hmm) = nf;
@@ -791,11 +790,11 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
 
             /* transitions out of this channel */
             newphone_score = hmm_out_score(&hmm->hmm) + ngs->pip;
-            if (newphone_score > newphone_thresh) {
+            if (newphone_score BETTER_THAN newphone_thresh) {
                 /* transition to all next-level channel in the HMM tree */
                 for (nexthmm = hmm->next; nexthmm; nexthmm = nexthmm->alt) {
                     if ((hmm_frame(&nexthmm->hmm) < frame_idx)
-                        || (hmm_in_score(&nexthmm->hmm) < newphone_score)) {
+                        || (newphone_score BETTER_THAN hmm_in_score(&nexthmm->hmm))) {
                         if (hmm_frame(&nexthmm->hmm) != nf) {
                             /* Keep this HMM on the active list */
                             *(nacl++) = nexthmm;
@@ -810,7 +809,7 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
                  * penultimate phone (the last phones may need multiple right contexts).
                  * Remember to remove the temporary newword_penalty.
                  */
-                if (newphone_score > lastphn_thresh) {
+                if (newphone_score BETTER_THAN lastphn_thresh) {
                     for (w = hmm->info.penult_phn_wid; w >= 0;
                          w = ngs->homophone_set[w]) {
                         de = ps_search_dict(ngs)->dict_list[w];
@@ -943,7 +942,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
                 dscr += ngram_tg_score(ngs->lmset, de->wid, bpe->real_wid,
                                        bpe->prev_real_wid, &n_used);
 
-                if (ngs->last_ltrans[candp->wid].dscr < dscr) {
+                if (dscr BETTER_THAN ngs->last_ltrans[candp->wid].dscr) {
                     ngs->last_ltrans[candp->wid].dscr = dscr;
                     ngs->last_ltrans[candp->wid].bp = bp;
                 }
@@ -957,7 +956,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
         candp->score += ngs->last_ltrans[candp->wid].dscr;
         candp->bp = ngs->last_ltrans[candp->wid].bp;
 
-        if (bestscore < candp->score)
+        if (candp->score BETTER_THAN bestscore)
             bestscore = candp->score;
     }
     ngs->last_phone_best_score = bestscore;
@@ -965,7 +964,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
     /* At this pt, we know the best entry score (with LM component) for all candidates */
     thresh = bestscore + ngs->lponlybeam;
     for (i = ngs->n_lastphn_cand, candp = ngs->lastphn_cand; i > 0; --i, candp++) {
-        if (candp->score > thresh) {
+        if (candp->score BETTER_THAN thresh) {
             w = candp->wid;
 
             ngram_search_alloc_all_rc(ngs, w);
@@ -973,7 +972,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
             k = 0;
             for (hmm = ngs->word_chan[w]; hmm; hmm = hmm->next) {
                 if ((hmm_frame(&hmm->hmm) < frame_idx)
-                    || (hmm_in_score(&hmm->hmm) < candp->score)) {
+                    || (candp->score BETTER_THAN hmm_in_score(&hmm->hmm))) {
                     assert(hmm_frame(&hmm->hmm) != nf);
                     hmm_enter(&hmm->hmm,
                               candp->score, candp->bp, nf);
@@ -1028,14 +1027,14 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
             assert(hmm_frame(&hmm->hmm) >= frame_idx);
 
             thmm = hmm->next;
-            if (hmm_bestscore(&hmm->hmm) > lastphn_thresh) {
+            if (hmm_bestscore(&hmm->hmm) BETTER_THAN lastphn_thresh) {
                 /* retain this channel in next frame */
                 hmm_frame(&hmm->hmm) = nf;
                 k++;
                 phmmp = &(hmm->next);
 
                 /* Could if ((! skip_alt_frm) || (frame_idx & 0x1)) the following */
-                if (hmm_out_score(&hmm->hmm) > newword_thresh) {
+                if (hmm_out_score(&hmm->hmm) BETTER_THAN newword_thresh) {
                     /* can exit channel and recognize word */
                     ngram_search_save_bp(ngs, frame_idx, w,
                                  hmm_out_score(&hmm->hmm),
@@ -1069,11 +1068,11 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
         rhmm = (root_chan_t *) ngs->word_chan[w];
         if (hmm_frame(&rhmm->hmm) < frame_idx)
             continue;
-        if (hmm_bestscore(&rhmm->hmm) > lastphn_thresh) {
+        if (hmm_bestscore(&rhmm->hmm) BETTER_THAN lastphn_thresh) {
             hmm_frame(&rhmm->hmm) = nf;
 
             /* Could if ((! skip_alt_frm) || (frame_idx & 0x1)) the following */
-            if (hmm_out_score(&rhmm->hmm) > newword_thresh) {
+            if (hmm_out_score(&rhmm->hmm) BETTER_THAN newword_thresh) {
                 ngram_search_save_bp(ngs, frame_idx, w,
                              hmm_out_score(&rhmm->hmm),
                              hmm_out_history(&rhmm->hmm), 0);
@@ -1159,7 +1158,7 @@ bptable_maxwpf(ngram_search_t *ngs, int frame_idx)
         bpe = &(ngs->bp_table[bp]);
         /* FIXME: Not the ideal way to tell if this is a filler word. */
         if (ISA_FILLER_WORD(ngs, bpe->wid)) {
-            if (bpe->score > bestscr) {
+            if (bpe->score BETTER_THAN bestscr) {
                 bestscr = bpe->score;
                 bestbpe = bpe;
             }
@@ -1182,7 +1181,7 @@ bptable_maxwpf(ngram_search_t *ngs, int frame_idx)
         worstbpe = NULL;
         for (bp = ngs->bp_table_idx[frame_idx]; (bp < ngs->bpidx); bp++) {
             bpe = &(ngs->bp_table[bp]);
-            if (bpe->valid && (bpe->score < worstscr)) {
+            if (bpe->valid && (bpe->score WORSE_THAN worstscr)) {
                 worstscr = bpe->score;
                 worstbpe = bpe;
             }
@@ -1234,7 +1233,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
 
         rcss = &(ngs->bscore_stack[bpe->s_idx]);
         for (rc = bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef) - 1; rc >= 0; --rc) {
-            if (rcss[rcpermtab[rc]] > ngs->bestbp_rc[rc].score) {
+            if (rcss[rcpermtab[rc]] BETTER_THAN ngs->bestbp_rc[rc].score) {
                 ngs->bestbp_rc[rc].score = rcss[rcpermtab[rc]];
                 ngs->bestbp_rc[rc].path = bp;
                 ngs->bestbp_rc[rc].lc = last_ciph;
@@ -1254,9 +1253,9 @@ word_transition(ngram_search_t *ngs, int frame_idx)
         bestbp_rc_ptr = &(ngs->bestbp_rc[rhmm->ciphone]);
 
         newscore = bestbp_rc_ptr->score + ngs->nwpen + ngs->pip;
-        if (newscore > thresh) {
+        if (newscore BETTER_THAN thresh) {
             if ((hmm_frame(&rhmm->hmm) < frame_idx)
-                || (hmm_in_score(&rhmm->hmm) < newscore)) {
+                || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
                 ssid =
                     ps_search_dict(ngs)->lcFwdTable[rhmm->diphone][bestbp_rc_ptr->lc];
                 hmm_enter(&rhmm->hmm, newscore,
@@ -1295,7 +1294,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
             newscore += ngram_tg_score(ngs->lmset, de->wid, bpe->real_wid,
                                        bpe->prev_real_wid, &n_used);
 
-            if (ngs->last_ltrans[w].dscr < newscore) {
+            if (newscore BETTER_THAN ngs->last_ltrans[w].dscr) {
                 ngs->last_ltrans[w].dscr = newscore;
                 ngs->last_ltrans[w].bp = bp;
             }
@@ -1306,12 +1305,12 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     for (i = 0; i < ngs->n_1ph_LMwords; i++) {
         w = ngs->single_phone_wid[i];
         rhmm = (root_chan_t *) ngs->word_chan[w];
-        if ((newscore = ngs->last_ltrans[w].dscr + ngs->pip) > thresh) {
+        if ((newscore = ngs->last_ltrans[w].dscr + ngs->pip) BETTER_THAN thresh) {
             bpe = ngs->bp_table + ngs->last_ltrans[w].bp;
             pde = ps_search_dict(ngs)->dict_list[bpe->wid];
 
             if ((hmm_frame(&rhmm->hmm) < frame_idx)
-                || (hmm_in_score(&rhmm->hmm) < newscore)) {
+                || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
                 hmm_enter(&rhmm->hmm,
                           newscore, ngs->last_ltrans[w].bp, nf);
                 if (hmm_is_mpx(&rhmm->hmm)) {
@@ -1325,17 +1324,17 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     /* Remaining words: <sil>, noise words.  No mpx for these! */
     bestbp_rc_ptr = &(ngs->bestbp_rc[ps_search_acmod(ngs)->mdef->sil]);
     newscore = bestbp_rc_ptr->score + ngs->silpen + ngs->pip;
-    if (newscore > thresh) {
+    if (newscore BETTER_THAN thresh) {
         w = ps_search_silence_wid(ngs);
         rhmm = (root_chan_t *) ngs->word_chan[w];
         if ((hmm_frame(&rhmm->hmm) < frame_idx)
-            || (hmm_in_score(&rhmm->hmm) < newscore)) {
+            || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
             hmm_enter(&rhmm->hmm,
                       newscore, bestbp_rc_ptr->path, nf);
         }
     }
     newscore = bestbp_rc_ptr->score + ngs->fillpen + ngs->pip;
-    if (newscore > thresh) {
+    if (newscore BETTER_THAN thresh) {
         /* FIXME FIXME: This depends on having the noise words
          * immediately following silence in the dictionary... */
         for (w = ps_search_silence_wid(ngs) + 1; w < ps_search_n_words(ngs); w++) {
@@ -1344,7 +1343,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
             if (rhmm == NULL)
                 continue;
             if ((hmm_frame(&rhmm->hmm) < frame_idx)
-                || (hmm_in_score(&rhmm->hmm) < newscore)) {
+                || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
                 hmm_enter(&rhmm->hmm,
                           newscore, bestbp_rc_ptr->path, nf);
             }
@@ -1396,7 +1395,7 @@ ngram_fwdtree_search(ngram_search_t *ngs)
     ngram_search_mark_bptable(ngs, frame_idx);
 
     /* Renormalize if necessary (FIXME: Make sure to test this) */
-    if (ngs->best_score + (2 * ngs->beam) < WORST_SCORE) {
+    if (ngs->best_score + (2 * ngs->beam) WORSE_THAN WORST_SCORE) {
         E_INFO("Renormalizing Scores at frame %d, best score %d\n",
                frame_idx, ngs->best_score);
         renormalize_scores(ngs, frame_idx, ngs->best_score);

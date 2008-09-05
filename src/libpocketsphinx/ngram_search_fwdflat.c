@@ -382,7 +382,7 @@ fwdflat_eval_chan(ngram_search_t *ngs, int frame_idx)
         rhmm = (root_chan_t *) ngs->word_chan[w];
         if (hmm_frame(&rhmm->hmm) == frame_idx) {
             int32 score = chan_v_eval(rhmm);
-            if ((bestscore < score) && (w != ps_search_finish_wid(ngs)))
+            if ((score BETTER_THAN bestscore) && (w != ps_search_finish_wid(ngs)))
                 bestscore = score;
             ngs->st.n_fwdflat_chan++;
         }
@@ -390,7 +390,7 @@ fwdflat_eval_chan(ngram_search_t *ngs, int frame_idx)
         for (hmm = rhmm->next; hmm; hmm = hmm->next) {
             if (hmm_frame(&hmm->hmm) == frame_idx) {
                 int32 score = chan_v_eval(hmm);
-                if (bestscore < score)
+                if (score BETTER_THAN bestscore)
                     bestscore = score;
                 ngs->st.n_fwdflat_chan++;
             }
@@ -426,7 +426,7 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
         rhmm = (root_chan_t *) ngs->word_chan[w];
         /* Propagate active root channels */
         if (hmm_frame(&rhmm->hmm) == cf
-            && hmm_bestscore(&rhmm->hmm) > thresh) {
+            && hmm_bestscore(&rhmm->hmm) BETTER_THAN thresh) {
             hmm_frame(&rhmm->hmm) = nf;
             bitvec_set(ngs->word_active, w);
 
@@ -436,13 +436,13 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
                 assert(de->len > 1);
 
                 newscore += pip;
-                if (newscore > thresh) {
+                if (newscore BETTER_THAN thresh) {
                     hmm = rhmm->next;
                     /* Enter all right context phones */
                     if (hmm->info.rc_id >= 0) {
                         for (; hmm; hmm = hmm->next) {
                             if ((hmm_frame(&hmm->hmm) < cf)
-                                || (hmm_in_score(&hmm->hmm) < newscore)) {
+                                || (newscore BETTER_THAN hmm_in_score(&hmm->hmm))) {
                                 hmm_enter(&hmm->hmm, newscore,
                                           hmm_out_history(&rhmm->hmm), nf);
                             }
@@ -451,7 +451,7 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
                     /* Just a normal word internal phone */
                     else {
                         if ((hmm_frame(&hmm->hmm) < cf)
-                            || (hmm_in_score(&hmm->hmm) < newscore)) {
+                            || (newscore BETTER_THAN hmm_in_score(&hmm->hmm))) {
                                 hmm_enter(&hmm->hmm, newscore,
                                           hmm_out_history(&rhmm->hmm), nf);
                         }
@@ -463,7 +463,7 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
 
                 /* Word exit for single-phone words (where did their
                  * whmms come from?) */
-                if (newscore > wordthresh) {
+                if (newscore BETTER_THAN wordthresh) {
                     ngram_search_save_bp(ngs, cf, w, newscore,
                                          hmm_out_history(&rhmm->hmm), 0);
                 }
@@ -474,7 +474,7 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
         for (hmm = rhmm->next; hmm; hmm = hmm->next) {
             if (hmm_frame(&hmm->hmm) >= cf) {
                 /* Propagate forward HMMs inside the beam. */
-                if (hmm_bestscore(&hmm->hmm) > thresh) {
+                if (hmm_bestscore(&hmm->hmm) BETTER_THAN thresh) {
                     hmm_frame(&hmm->hmm) = nf;
                     bitvec_set(ngs->word_active, w);
 
@@ -482,14 +482,14 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
                     /* Word-internal phones */
                     if (hmm->info.rc_id < 0) {
                         newscore += pip;
-                        if (newscore > thresh) {
+                        if (newscore BETTER_THAN thresh) {
                             nexthmm = hmm->next;
                             /* Enter all right-context phones. */
                             if (nexthmm->info.rc_id >= 0) {
                                 for (; nexthmm; nexthmm = nexthmm->next) {
                                     if ((hmm_frame(&nexthmm->hmm) < cf)
-                                        || (hmm_in_score(&nexthmm->hmm)
-                                            < newscore)) {
+                                        || (newscore BETTER_THAN
+                                            hmm_in_score(&nexthmm->hmm))) {
                                         hmm_enter(&nexthmm->hmm,
                                                   newscore,
                                                   hmm_out_history(&hmm->hmm),
@@ -500,8 +500,8 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
                             /* Enter single word-internal phone. */
                             else {
                                 if ((hmm_frame(&nexthmm->hmm) < cf)
-                                    || (hmm_in_score(&nexthmm->hmm)
-                                        < newscore)) {
+                                    || (newscore BETTER_THAN
+                                        hmm_in_score(&nexthmm->hmm))) {
                                     hmm_enter(&nexthmm->hmm, newscore,
                                               hmm_out_history(&hmm->hmm), nf);
                                 }
@@ -510,7 +510,7 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
                     }
                     /* Right-context phones - apply word beam and exit. */
                     else {
-                        if (newscore > wordthresh) {
+                        if (newscore BETTER_THAN wordthresh) {
                             ngram_search_save_bp(ngs, cf, w, newscore,
                                                  hmm_out_history(&hmm->hmm),
                                                  hmm->info.rc_id);
@@ -612,10 +612,10 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
             newscore += pip;
 
             /* Enter the next word */
-            if (newscore > thresh) {
+            if (newscore BETTER_THAN thresh) {
                 rhmm = (root_chan_t *) ngs->word_chan[w];
                 if ((hmm_frame(&rhmm->hmm) < cf)
-                    || (hmm_in_score(&rhmm->hmm) < newscore)) {
+                    || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
                     hmm_enter(&rhmm->hmm, newscore, b, nf);
                     if (hmm_is_mpx(&rhmm->hmm)) {
                         rhmm->hmm.s.mpx_ssid[0] =
@@ -629,7 +629,7 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
         }
 
         /* Get the best exit into silence. */
-        if (best_silrc_score < rcss[rcpermtab[ps_search_acmod(ngs)->mdef->sil]]) {
+        if (rcss[rcpermtab[ps_search_acmod(ngs)->mdef->sil]] BETTER_THAN best_silrc_score) {
             best_silrc_score = rcss[rcpermtab[ps_search_acmod(ngs)->mdef->sil]];
             best_silrc_bp = b;
         }
@@ -637,11 +637,11 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
 
     /* Transition to <sil> */
     newscore = best_silrc_score + ngs->silpen + pip;
-    if ((newscore > thresh) && (newscore > WORST_SCORE)) {
+    if ((newscore BETTER_THAN thresh) && (newscore BETTER_THAN WORST_SCORE)) {
         w = ps_search_silence_wid(ngs);
         rhmm = (root_chan_t *) ngs->word_chan[w];
         if ((hmm_frame(&rhmm->hmm) < cf)
-            || (hmm_in_score(&rhmm->hmm) < newscore)) {
+            || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
             hmm_enter(&rhmm->hmm, newscore,
                       best_silrc_bp, nf);
             bitvec_set(ngs->word_active, w);
@@ -649,14 +649,14 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
     }
     /* Transition to noise words */
     newscore = best_silrc_score + ngs->fillpen + pip;
-    if ((newscore > thresh) && (newscore > WORST_SCORE)) {
+    if ((newscore BETTER_THAN thresh) && (newscore BETTER_THAN WORST_SCORE)) {
         for (w = ps_search_silence_wid(ngs) + 1; w < ps_search_n_words(ngs); w++) {
             rhmm = (root_chan_t *) ngs->word_chan[w];
             /* Noise words that aren't a single phone will have NULL here. */
             if (rhmm == NULL)
                 continue;
             if ((hmm_frame(&rhmm->hmm) < cf)
-                || (hmm_in_score(&rhmm->hmm) < newscore)) {
+                || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
                 hmm_enter(&rhmm->hmm, newscore,
                           best_silrc_bp, nf);
                 bitvec_set(ngs->word_active, w);
@@ -726,7 +726,7 @@ ngram_fwdflat_search(ngram_search_t *ngs)
     ngram_search_mark_bptable(ngs, frame_idx);
 
     /* Renormalize if necessary (FIXME: Make sure to test this) */
-    if (ngs->best_score + (2 * ngs->beam) < WORST_SCORE) {
+    if (ngs->best_score + (2 * ngs->beam) WORSE_THAN WORST_SCORE) {
         E_INFO("Renormalizing Scores at frame %d, best score %d\n",
                frame_idx, ngs->best_score);
         fwdflat_renormalize_scores(ngs, frame_idx, ngs->best_score);
