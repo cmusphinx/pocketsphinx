@@ -504,7 +504,7 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
     sseq_rc = ps_search_dict(ngs)->rcFwdTable[de->phone_ids[de->len - 1]];
 
     hmm = ngs->word_chan[w];
-    if ((hmm == NULL) || (hmm->hmm.s.ssid != *sseq_rc)) {
+    if ((hmm == NULL) || (hmm_nonmpx_ssid(&hmm->hmm) != *sseq_rc)) {
         hmm = listelem_malloc(ngs->chan_alloc);
         hmm->next = ngs->word_chan[w];
         ngs->word_chan[w] = hmm;
@@ -514,7 +514,7 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
         hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, *sseq_rc, hmm->ciphone);
     }
     for (i = 1, sseq_rc++; *sseq_rc != 65535; sseq_rc++, i++) {
-        if ((hmm->next == NULL) || (hmm->next->hmm.s.ssid != *sseq_rc)) {
+        if ((hmm->next == NULL) || (hmm_nonmpx_ssid(&hmm->next->hmm) != *sseq_rc)) {
             thmm = listelem_malloc(ngs->chan_alloc);
             thmm->next = hmm->next;
             hmm->next = thmm;

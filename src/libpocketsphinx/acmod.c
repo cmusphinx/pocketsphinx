@@ -721,13 +721,12 @@ acmod_clear_active(acmod_t *acmod)
     acmod->n_senone_active = 0;
 }
 
-#define MPX_BITVEC_SET(a,h,i)                                           \
-    if ((h)->s.mpx_ssid[i] != BAD_SSID)                                 \
-        bitvec_set((a)->senone_active_vec,                              \
-                   bin_mdef_sseq2sen((a)->mdef, (h)->s.mpx_ssid[i], (i)));
+#define MPX_BITVEC_SET(a,h,i)                                   \
+    if (hmm_mpx_ssid(h,i) != BAD_SSID)                          \
+        bitvec_set((a)->senone_active_vec, hmm_mpx_senid(h,i))
 #define NONMPX_BITVEC_SET(a,h,i)                                        \
     bitvec_set((a)->senone_active_vec,                                  \
-               bin_mdef_sseq2sen((a)->mdef, (h)->s.ssid, (i)));
+               hmm_nonmpx_senid(h,i))
 
 void
 acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm)

@@ -225,9 +225,9 @@ create_search_tree(ngram_search_t *ngs)
             ngs->first_phone_rchan_map[de->phone_ids[0]] = ngs->n_root_chan;
             rhmm = &(ngs->root_chan[ngs->n_root_chan]);
             if (hmm_is_mpx(&rhmm->hmm))
-                rhmm->hmm.s.mpx_ssid[0] = de->phone_ids[0];
+                hmm_mpx_ssid(&rhmm->hmm, 0) = de->phone_ids[0];
             else
-                rhmm->hmm.s.ssid = de->phone_ids[0];
+                hmm_nonmpx_ssid(&rhmm->hmm) = de->phone_ids[0];
             rhmm->hmm.tmatid = de->ci_phone_ids[0];
             rhmm->diphone = de->phone_ids[0];
             rhmm->ciphone = de->ci_phone_ids[0];
@@ -259,7 +259,7 @@ create_search_tree(ngram_search_t *ngs)
             else {
                 chan_t *prev_hmm = NULL;
 
-                for (; hmm && (hmm->hmm.s.ssid != ph); hmm = hmm->alt)
+                for (; hmm && (hmm_nonmpx_ssid(&hmm->hmm) != ph); hmm = hmm->alt)
                     prev_hmm = hmm;
                 if (!hmm) {     /* thanks, rkm! */
                     prev_hmm->alt = hmm = listelem_malloc(ngs->chan_alloc);
@@ -280,7 +280,7 @@ create_search_tree(ngram_search_t *ngs)
                 else {
                     chan_t *prev_hmm = NULL;
 
-                    for (hmm = hmm->next; hmm && (hmm->hmm.s.ssid != ph);
+                    for (hmm = hmm->next; hmm && (hmm_nonmpx_ssid(&hmm->hmm) != ph);
                          hmm = hmm->alt)
                         prev_hmm = hmm;
                     if (!hmm) { /* thanks, rkm! */
@@ -1261,7 +1261,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
                 hmm_enter(&rhmm->hmm, newscore,
                           bestbp_rc_ptr->path, nf);
                 if (hmm_is_mpx(&rhmm->hmm)) {
-                    rhmm->hmm.s.mpx_ssid[0] = ssid;
+                    hmm_mpx_ssid(&rhmm->hmm, 0) = ssid;
                 }
             }
         }
@@ -1314,7 +1314,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
                 hmm_enter(&rhmm->hmm,
                           newscore, ngs->last_ltrans[w].bp, nf);
                 if (hmm_is_mpx(&rhmm->hmm)) {
-                    rhmm->hmm.s.mpx_ssid[0] =
+                    hmm_mpx_ssid(&rhmm->hmm, 0) =
                         ps_search_dict(ngs)->lcFwdTable[rhmm->diphone][pde->ci_phone_ids[pde->len - 1]];
                 }
             }

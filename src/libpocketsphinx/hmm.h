@@ -166,10 +166,8 @@ typedef struct hmm_s {
     int32 history[HMM_MAX_NSTATE]; /**< History indices for emitting states. */
     int32 out_score;               /**< Score for non-emitting exit state. */
     int32 out_history;             /**< History index for non-emitting exit state. */
-    union {
-        uint16 *mpx_ssid; /**< Senone sequence IDs for each state (for multiplex HMMs). */
-        uint16 ssid;      /**< Senone sequence ID. */
-    } s;
+    uint16 ssid;                   /**< Senone sequence ID (for non-MPX) */
+    uint16 senid[HMM_MAX_NSTATE];  /**< Senone IDs (non-MPX) or sequence IDs (MPX) */
     int32 bestscore;	/**< Best [emitting] state score in current frame (for pruning). */
     int16 tmatid;       /**< Transition matrix ID (see hmm_context_t). */
     int16 frame;	/**< Frame in which this HMM was last active; <0 if inactive */
@@ -191,13 +189,15 @@ typedef struct hmm_s {
 
 #define hmm_bestscore(h) (h)->bestscore
 #define hmm_frame(h) (h)->frame
-#define hmm_mpx_ssid(h,st) (h)->s.mpx_ssid[st]
-#define hmm_nonmpx_ssid(h) (h)->s.ssid
-#define hmm_ssid(h,st) (hmm_is_mpx(h)                           \
-                        ? hmm_mpx_ssid(h,st) : (h)->s.ssid)
-#define hmm_senid(h,st) (hmm_ssid(h,st) == BAD_SSID                     \
-                         ? BAD_SENID : (h)->ctx->sseq[hmm_ssid(h,st)][st])
-#define hmm_senscr(h,st) (hmm_ssid(h,st) == BAD_SSID                    \
+#define hmm_mpx_ssid(h,st) (h)->senid[st]
+#define hmm_nonmpx_ssid(h) (h)->ssid
+#define hmm_ssid(h,st) (hmm_is_mpx(h)                                   \
+                        ? hmm_mpx_ssid(h,st) : hmm_nonmpx_ssid(h))
+#define hmm_mpx_senid(h,st) ((h)->ctx->sseq[hmm_mpx_ssid(h,st)][st])
+#define hmm_nonmpx_senid(h,st) ((h)->senid[st])
+#define hmm_senid(h,st) (hmm_is_mpx(h)                                  \
+                         ? hmm_mpx_senid(h,st) : hmm_nonmpx_senid(h,st))
+#define hmm_senscr(h,st) (hmm_senid(h,st) == BAD_SENID                  \
                           ? WORST_SCORE                                 \
                           : -(h)->ctx->senscore[hmm_senid(h,st)] << SENSCR_SHIFT)
 #define hmm_tmatid(h) (h)->tmatid

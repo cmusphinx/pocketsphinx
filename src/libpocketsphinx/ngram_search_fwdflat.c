@@ -618,7 +618,7 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
                     || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
                     hmm_enter(&rhmm->hmm, newscore, b, nf);
                     if (hmm_is_mpx(&rhmm->hmm)) {
-                        rhmm->hmm.s.mpx_ssid[0] =
+                        hmm_mpx_ssid(&rhmm->hmm, 0) =
                             ps_search_dict(ngs)->lcFwdTable[rhmm->diphone]
                             [de->ci_phone_ids[de->len-1]];
                     }
