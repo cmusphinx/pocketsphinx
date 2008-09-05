@@ -444,7 +444,7 @@ static void
 sseq_compress(mdef_t * m)
 {
     hash_table_t *h;
-    int16 **sseq;
+    uint16 **sseq;
     int32 n_sseq;
     int32 p, j, k;
     glist_t g;
@@ -467,7 +467,7 @@ sseq_compress(mdef_t * m)
     }
 
     /* Generate compacted sseq table */
-    sseq = (int16 **) ckd_calloc_2d(n_sseq, m->n_emit_state, sizeof(int16)); /* freed in mdef_free() */
+    sseq = ckd_calloc_2d(n_sseq, m->n_emit_state, sizeof(**sseq)); /* freed in mdef_free() */
 
     g = hash_table_tolist(h, &j);
     assert(j == n_sseq);
@@ -508,7 +508,7 @@ mdef_init(char *mdeffile, int32 breport)
     FILE *fp;
     int32 n_ci, n_tri, n_map, n;
     __BIGSTACKVARIABLE__ char tag[1024], buf[1024];
-    int16 **senmap;
+    uint16 **senmap;
     int p;
     int32 s, ci, cd;
     mdef_t *m;
@@ -603,7 +603,7 @@ mdef_init(char *mdeffile, int32 breport)
     m->phone = (phone_t *) ckd_calloc(m->n_phone, sizeof(phone_t));     /* freed in mdef_free */
 
     /* Allocate space for state->senone map for each phone */
-    senmap = (int16 **) ckd_calloc_2d(m->n_phone, m->n_emit_state, sizeof(**senmap));      /* freed in mdef_free */
+    senmap = ckd_calloc_2d(m->n_phone, m->n_emit_state, sizeof(**senmap));      /* freed in mdef_free */
     m->sseq = senmap;           /* TEMPORARY; until it is compressed into just the unique ones */
 
 
