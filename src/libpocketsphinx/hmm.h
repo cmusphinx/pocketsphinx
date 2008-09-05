@@ -63,16 +63,25 @@ extern "C" {
 #define SENSCR_SHIFT 10
 
 /**
- * Large negative number.
+ * Large "bad" score.
  *
- * This number must be small enough so that
- * 4 times WORST_SCORE will not overflow. The reason for this is
- * that the search doesn't check the scores in a model before
- * evaluating the model and it may require as many was 4 plies
- * before the new 'good' score can wipe out the initial WORST_SCORE
- * initialization.
+ * This number must be "bad" enough so that 4 times WORST_SCORE will
+ * not overflow. The reason for this is that the search doesn't check
+ * the scores in a model before evaluating the model and it may
+ * require as many was 4 plies before the new 'good' score can wipe
+ * out the initial WORST_SCORE initialization.
  */
 #define WORST_SCORE		((int)0xE0000000)
+
+/**
+ * Is one score better than another?
+ */
+#define BETTER_THAN >
+
+/**
+ * Is one score worse than another?
+ */
+#define WORSE_THAN <
 
 #ifdef FIXED_POINT
 /** Gaussian mean storage type. */

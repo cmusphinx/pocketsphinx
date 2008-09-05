@@ -271,6 +271,11 @@ int16 const *acmod_score(acmod_t *acmod,
                          int *out_frame_idx);
 
 /**
+ * Get best score and senone index for current frame.
+ */
+int acmod_best_score(acmod_t *acmod, int *out_best_senid);
+
+/**
  * Clear set of active senones.
  */
 void acmod_clear_active(acmod_t *acmod);

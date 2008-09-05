@@ -685,6 +685,35 @@ acmod_score(acmod_t *acmod,
     return acmod->senone_scores;
 }
 
+int
+acmod_best_score(acmod_t *acmod, int *out_best_senid)
+{
+    int i, best;
+
+    best = WORST_SCORE;
+    if (acmod->compallsen) {
+        for (i = 0; i < bin_mdef_n_sen(acmod->mdef); ++i) {
+            if (acmod->senone_scores[i] BETTER_THAN best) {
+                best = acmod->senone_scores[i];
+                *out_best_senid = i;
+            }
+        }
+    }
+    else {
+        int16 *senscr;
+        senscr = acmod->senone_scores;
+        for (i = 0; i < acmod->n_senone_active; ++i) {
+            senscr += acmod->senone_active[i];
+            if (*senscr BETTER_THAN best) {
+                best = *senscr;
+                *out_best_senid = i;
+            }
+        }
+    }
+    return best;
+}
+
+
 void
 acmod_clear_active(acmod_t *acmod)
 {
