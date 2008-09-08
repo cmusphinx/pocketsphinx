@@ -148,7 +148,6 @@ fast_logmath_add(logmath_t *lmath, int mlx, int mly)
  * Optimization for various topn cases, PDF-size(#bits) cases of
  * SCVQComputeScores() and SCVQComputeScores_all().
  */
-static int32 get_scores4_8b_rle(s2_semi_mgau_t * s, int16 *senone_scores);
 static int32 get_scores4_8b(s2_semi_mgau_t * s, int16 *senone_scores,
                             uint8 *senone_active, int32 n_senone_active);
 static int32 get_scores2_8b(s2_semi_mgau_t * s, int16 *senone_scores,
@@ -382,19 +381,7 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
         mgau_norm(s, i);
     }
 
-    if (s->rle) {
-	switch (s->topn) {
-	case 4:
-	    return get_scores4_8b_rle(s, senone_scores);
-	case 2:
-	case 1:
-	default:
-            /* FAIL, for now */
-            E_FATAL("FAIL!\n");
-            return -1;
-	}
-    }
-    else if (compallsen) {
+    if (compallsen) {
 	switch (s->topn) {
 	case 4:
 	    return get_scores4_8b_all(s, senone_scores);
@@ -554,100 +541,6 @@ get_scores4_8b_all(s2_semi_mgau_t * s, int16 *senone_scores)
 }
 
 static int32
-get_scores4_8b_rle(s2_semi_mgau_t * s, int16 *senone_scores)
-{
-    int32 j;
-
-    memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
-    for (j = 0; j < s->n_feat; j++) {
-        uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
-        uint8 zero_cw0 = 0, zero_cw1 = 0, zero_cw2 = 0, zero_cw3 = 0;
-        int16 *senscr;
-        int32 n;
-
-        /* ptrs to senone prob id arrays */
-        pid_cw0 = s->mixw[j][s->f[j][0].codeword];
-        pid_cw1 = s->mixw[j][s->f[j][1].codeword];
-        pid_cw2 = s->mixw[j][s->f[j][2].codeword];
-        pid_cw3 = s->mixw[j][s->f[j][3].codeword];
-        /* ptr to senone scores */
-        senscr = senone_scores;
-
-        for (n = 0; n < s->n_sen; n++) {
-            int32 tmp1, tmp2;
-
-            /* 255 is only ever used as a flag value (zero runs are
-               limited to 254 entries), so this is a safe check even
-               if a particular codeword is inside a zero run. */
-            if (*pid_cw0 == 255)
-                zero_cw0 = *(++pid_cw0); /* Get the run length */
-            if (*pid_cw1 == 255)
-                zero_cw1 = *(++pid_cw1);
-            if (*pid_cw2 == 255)
-                zero_cw2 = *(++pid_cw2);
-            if (*pid_cw3 == 255)
-                zero_cw3 = *(++pid_cw3);
-#if 0
-            uint8 mw0, mw1, mw2, mw3;
-            mw0 = mw1 = mw2 = mw3 = 159;
-            if (zero_cw0 == 0)
-                mw0 = *(pid_cw0++);
-            else if (--zero_cw0 == 0)
-                ++pid_cw0; /* Skip past the run length */
-            if (zero_cw1 == 0)
-                mw1 = *(pid_cw1++);
-            else if (--zero_cw1 == 0)
-                ++pid_cw1;
-            if (zero_cw2 == 0)
-                mw2 = *(pid_cw2++);
-            else if (--zero_cw2 == 0)
-                ++pid_cw2;
-            if (zero_cw3 == 0)
-                mw3 = *(pid_cw3++);
-            else if (--zero_cw3 == 0)
-                ++pid_cw3;
-
-            tmp1 = mw0 + s->f[j][0].score;
-            tmp2 = mw1 + s->f[j][1].score;
-            tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-            tmp2 = mw2 + s->f[j][1].score;
-            tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-            tmp2 = mw3 + s->f[j][1].score;
-            tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-#else
-            tmp1 = 159; /* default "zero" value. */
-            if (zero_cw0 == 0)
-                tmp1 = *(pid_cw0++) + s->f[j][0].score;
-            else if (--zero_cw0 == 0)
-                ++pid_cw0; /* Skip past the run length */
-            if (zero_cw1 == 0) {
-                tmp2 = *(pid_cw1++) + s->f[j][1].score;
-                tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-            }
-            else if (--zero_cw1 == 0)
-                ++pid_cw1;
-            if (zero_cw2 == 0) {
-                tmp2 = *(pid_cw2++) + s->f[j][2].score;
-                tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-            }
-            else if (--zero_cw2 == 0)
-                ++pid_cw2;
-            if (zero_cw3 == 0) {
-                tmp2 = *(pid_cw3++) + s->f[j][3].score;
-                tmp1 = fast_logmath_add(s->lmath_8b, tmp1, tmp2);
-            }
-            else if (--zero_cw3 == 0)
-                ++pid_cw3;
-#endif
-
-            *senscr += tmp1;
-            ++senscr;
-        }
-    }
-    return 0;
-}
-
-static int32
 get_scores2_8b(s2_semi_mgau_t * s, int16 *senone_scores,
                uint8 *senone_active, int32 n_senone_active)
 {
@@ -794,61 +687,6 @@ s2_semi_mgau_load_kdtree(s2_semi_mgau_t * s, const char *kdtree_path,
 }
 
 static int32
-read_sendump_rle(s2_semi_mgau_t *s, FILE *file,
-                 size_t offset, size_t filesize,
-                 int32 n_comp, int32 n_sen)
-{
-    uint8 *mwdata, *x, *e;
-    int32 f, c, i;
-
-    /* Read in the data. */
-    if (s->sendump_mmap) {
-        mwdata = (uint8 *)mmio_file_ptr(s->sendump_mmap) + offset;
-    }
-    else {
-        mwdata = ckd_malloc(filesize - offset);
-        if (fread(mwdata, 1, filesize - offset, file) != filesize - offset) {
-            E_ERROR("Failed to read %d bytes from sendump\n", filesize - offset);
-            return -1;
-        }
-    }
-
-    /* Now decode it to find the endpoints for each (feature,component) */
-    s->mixw = ckd_calloc_2d(s->n_feat, n_comp, sizeof(**s->mixw));
-    x = mwdata;
-    e = mwdata + filesize - offset;
-    for (f = 0; f < s->n_feat; ++f) {
-        for (c = 0; c < n_comp; ++c) {
-            s->mixw[f][c] = x;
-            i = 0;
-            while (i < n_sen) {
-                if (x >= e) {
-                    E_ERROR("Inconsistent RLE in sendump: final n_sen = %d\n", i);
-                    return -1;
-                }
-                /* Run of zeros (zero = 159) */
-                if (*x == 255) {
-                    /* Run length. */
-                    i += x[1];
-                    x += 2;
-                }
-                /* Ordinary thing. */
-                else {
-                    ++i;
-                    ++x;
-                }
-            }
-        }
-    }
-
-    /* Don't track active senones in RLE mode, since we are going to
-       knock a lot of them out anyway */
-    cmd_ln_set_boolean_r(s->config, "-compallsen", TRUE);
-    fclose(file);
-    return 0;
-}
-
-static int32
 read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
 {
     FILE *fp;
@@ -909,9 +747,6 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
         if (!strncmp(line, "cluster_count ", strlen("cluster_count "))) {
             n_clust = atoi(line + strlen("cluster_count "));
         }
-        if (!strncmp(line, "rle_compressed 1", strlen("rle_compressed 1"))) {
-            s->rle = TRUE;
-        }
     }
 
     /* Read #codewords, #pdfs */
@@ -937,10 +772,6 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
     /* Allocate memory for pdfs (or memory map them) */
     if (do_mmap)
         s->sendump_mmap = mmio_file_read(file);
-
-    /* Handle RLE compressed weights separately. */
-    if (s->rle)
-        return read_sendump_rle(s, fp, offset, filesize, r, c);
 
     /* Otherwise, set up all pointers, etc. */
     if (s->sendump_mmap) {

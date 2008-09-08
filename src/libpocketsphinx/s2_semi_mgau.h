@@ -70,7 +70,6 @@ struct s2_semi_mgau_s {
     int16 n_density;	/* Number of mixtures per codebook */
     int32 n_sen;	/* Number of senones */
     int16 topn;		/* Number of top densities to compute (<S2_MAX_TOPN) */
-    int16 rle;          /* RLE compression applied to mixture weights */
 
     kd_tree_t **kdtrees;
     uint32 n_kdtrees;
