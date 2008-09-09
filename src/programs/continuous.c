@@ -79,6 +79,11 @@
 
 static const arg_t cont_args_def[] = {
     POCKETSPHINX_OPTIONS,
+    /* Argument file. */
+    { "-argfile",
+      ARG_STRING,
+      NULL,
+      "Argument file giving extra arguments." },
     { "-adcdev", ARG_STRING, NULL, "Name of audio device to use for input." },
     CMDLN_EMPTY_OPTION
 };
@@ -223,6 +228,7 @@ int
 main(int argc, char *argv[])
 {
     cmd_ln_t *config;
+    char const *cfg;
 
     /* Make sure we exit cleanly (needed for profiling among other things) */
     /* Signals seem to be broken in arm-wince-pe. */
@@ -230,7 +236,16 @@ main(int argc, char *argv[])
     signal(SIGINT, &sighandler);
 #endif
 
-    config = cmd_ln_parse_r(NULL, cont_args_def, argc, argv, TRUE);
+    if (argc == 2) {
+        config = cmd_ln_parse_file_r(NULL, cont_args_def, argv[1], TRUE);
+    }
+    else {
+        config = cmd_ln_parse_r(NULL, cont_args_def, argc, argv, TRUE);
+    }
+    /* Handle argument file as -argfile. */
+    if (config && (cfg = cmd_ln_str_r(config, "-argfile")) != NULL) {
+        config = cmd_ln_parse_file_r(config, cont_args_def, cfg, FALSE);
+    }
     if (config == NULL)
         return 1;
     ps = ps_init(config);

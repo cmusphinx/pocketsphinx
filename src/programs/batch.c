@@ -49,8 +49,12 @@
 
 static const arg_t ps_args_def[] = {
     POCKETSPHINX_OPTIONS,
-
     /* Various options specific to batch-mode processing. */
+    /* Argument file. */
+    { "-argfile",
+      ARG_STRING,
+      NULL,
+      "Argument file giving extra arguments." },
     /* Control file. */
     { "-ctl",
       ARG_STRING,
@@ -400,7 +404,17 @@ main(int32 argc, char *argv[])
     char const *ctl;
     FILE *ctlfh;
 
-    config = cmd_ln_parse_r(NULL, ps_args_def, argc, argv, TRUE);
+    /* Handle argument file as only argument. */
+    if (argc == 2) {
+        config = cmd_ln_parse_file_r(NULL, ps_args_def, argv[1], TRUE);
+    }
+    else {
+        config = cmd_ln_parse_r(NULL, ps_args_def, argc, argv, TRUE);
+    }
+    /* Handle argument file as -argfile. */
+    if (config && (ctl = cmd_ln_str_r(config, "-argfile")) != NULL) {
+        config = cmd_ln_parse_file_r(config, ps_args_def, ctl, FALSE);
+    }
     if (config == NULL) {
         /* This probably just means that we got no arguments. */
         return 2;
