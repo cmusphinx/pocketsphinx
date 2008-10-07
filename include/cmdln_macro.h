@@ -57,12 +57,21 @@
         POCKETSPHINX_DEBUG_OPTIONS
 
 /** Options for debugging and logging. */
-#define POCKETSPHINX_DEBUG_OPTIONS              \
-    { "-logfn",                                 \
-            ARG_STRING,                         \
-            NULL,                               \
-            "File to write log messages in"     \
-            }
+#define POCKETSPHINX_DEBUG_OPTIONS                      \
+    { "-logfn",                                         \
+            ARG_STRING,                                 \
+            NULL,                                       \
+            "File to write log messages in"             \
+     },                                                 \
+     { "-mfclogdir",                                    \
+             ARG_STRING,                                \
+             NULL,                                      \
+             "Directory to log feature files to"        \
+             },                                         \
+    { "-rawlogdir",                                     \
+            ARG_STRING,                                 \
+            NULL,                                       \
+            "Directory to log raw audio files to" }
 
 /** Options defining beam width parameters for tuning the search. */
 #define POCKETSPHINX_BEAM_OPTIONS								\

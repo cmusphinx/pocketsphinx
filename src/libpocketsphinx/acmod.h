@@ -128,10 +128,8 @@ struct acmod_s {
     /* Utterance processing: */
     mfcc_t **mfc_buf;   /**< Temporary buffer of acoustic features. */
     mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */
-    char *mfclogdir;    /**< Log directory for MFCC files. */
-    char *rawlogdir;    /**< Log directory for raw audio files. */
-    FILE *rawfp;        /**< File for writing raw audio data. */
-    FILE *mfcfp;        /**< File for writing acoustic feature data. */
+    FILE *rawfh;        /**< File for writing raw audio data. */
+    FILE *mfcfh;        /**< File for writing acoustic feature data. */
 
     /* A whole bunch of flags and counters: */
     uint8 state;        /**< State of utterance processing. */
@@ -165,6 +163,24 @@ typedef struct acmod_s acmod_t;
  * @return a newly initialized acmod_t, or NULL on failure.
  */
 acmod_t *acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb);
+
+/**
+ * Start logging MFCCs to a filehandle.
+ *
+ * @param acmod Acoustic model object.
+ * @param logfh Filehandle to log to.
+ * @return 0 for success, <0 on error.
+ */
+int acmod_set_mfcfh(acmod_t *acmod, FILE *logfh);
+
+/**
+ * Start logging raw audio to a filehandle.
+ *
+ * @param acmod Acoustic model object.
+ * @param logfh Filehandle to log to.
+ * @return 0 for success, <0 on error.
+ */
+int acmod_set_rawfh(acmod_t *acmod, FILE *logfh);
 
 /**
  * Finalize an acoustic model.

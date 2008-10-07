@@ -189,6 +189,8 @@ struct ps_decoder_s {
     char *uttid;        /**< Utterance ID for current utterance. */
     ptmr_t perf;        /**< Performance counter for all of decoding. */
     uint32 n_frame;     /**< Total number of frames processed. */
+    char const *mfclogdir; /**< Log directory for MFCC files. */
+    char const *rawlogdir; /**< Log directory for audio files. */
 };
 
 #endif /* __POCKETSPHINX_INTERNAL_H__ */

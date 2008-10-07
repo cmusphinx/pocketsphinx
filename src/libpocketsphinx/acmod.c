@@ -49,6 +49,7 @@
 #include <cmd_ln.h>
 #include <strfuncs.h>
 #include <string.h>
+#include <byteorder.h>
 #include <feat.h>
 
 /* Local headers. */
@@ -61,6 +62,10 @@ static const arg_t feat_defn[] = {
     cepstral_to_feature_command_line_macro(),
     CMDLN_EMPTY_OPTION
 };
+
+#ifndef WORDS_BIGENDIAN
+#define WORDS_BIGENDIAN 1
+#endif
 
 static int32 acmod_flags2list(acmod_t *acmod);
 static int32 acmod_process_mfcbuf(acmod_t *acmod);
@@ -304,6 +309,11 @@ acmod_free(acmod_t *acmod)
     if (acmod->feat_buf)
         feat_array_free(acmod->feat_buf);
 
+    if (acmod->mfcfh)
+        fclose(acmod->mfcfh);
+    if (acmod->rawfh)
+        fclose(acmod->rawfh);
+
     ckd_free(acmod->senone_scores);
     ckd_free(acmod->senone_active_vec);
     ckd_free(acmod->senone_active);
@@ -317,6 +327,27 @@ acmod_free(acmod_t *acmod)
         (*acmod->mgau_free)(acmod->mgau);
     
     ckd_free(acmod);
+}
+
+int
+acmod_set_mfcfh(acmod_t *acmod, FILE *logfh)
+{
+    int rv = 0;
+
+    if (acmod->mfcfh)
+        fclose(acmod->mfcfh);
+    acmod->mfcfh = logfh;
+    fwrite(&rv, 4, 1, acmod->mfcfh);
+    return rv;
+}
+
+int
+acmod_set_rawfh(acmod_t *acmod, FILE *logfh)
+{
+    if (acmod->rawfh)
+        fclose(acmod->rawfh);
+    acmod->rawfh = logfh;
+    return 0;
 }
 
 void
@@ -365,7 +396,7 @@ acmod_start_utt(acmod_t *acmod)
 int
 acmod_end_utt(acmod_t *acmod)
 {
-    int32 nfr;
+    int32 nfr = 0;
 
     acmod->state = ACMOD_ENDED;
     if (acmod->n_mfc_frame < acmod->n_mfc_alloc) {
@@ -377,7 +408,52 @@ acmod_end_utt(acmod_t *acmod)
         acmod->n_mfc_frame += nfr;
         /* Process whatever's left, and any leadout. */
         if (nfr)
-            return acmod_process_mfcbuf(acmod);
+            nfr = acmod_process_mfcbuf(acmod);
+    }
+    if (acmod->mfcfh) {
+        int32 outlen, rv;
+        outlen = (ftell(acmod->mfcfh) - 4) / 4;
+        if (!WORDS_BIGENDIAN)
+            SWAP_INT32(&outlen);
+        /* Try to seek and write */
+        if ((rv = fseek(acmod->mfcfh, 0, SEEK_SET)) == 0) {
+            fwrite(&outlen, 4, 1, acmod->mfcfh);
+        }
+        fclose(acmod->mfcfh);
+        acmod->mfcfh = NULL;
+    }
+    if (acmod->rawfh) {
+        fclose(acmod->rawfh);
+        acmod->rawfh = NULL;
+    }
+
+    return nfr;
+}
+
+static int
+acmod_log_mfc(acmod_t *acmod,
+              mfcc_t **cep, int n_frames)
+{
+    int i, n;
+    int32 *ptr = (int32 *)cep[0];
+
+    n = n_frames * feat_cepsize(acmod->fcb);
+    /* Swap bytes. */
+    if (!WORDS_BIGENDIAN) {
+        for (i = 0; i < (n * sizeof(mfcc_t)); ++i) {
+            SWAP_INT32(ptr + i);
+        }
+    }
+    /* Write features. */
+    if (fwrite(cep[0], sizeof(mfcc_t), n, acmod->mfcfh) != n) {
+        E_ERROR_SYSTEM("Failed to write %d values to log file", n);
+    }
+
+    /* Swap them back. */
+    if (!WORDS_BIGENDIAN) {
+        for (i = 0; i < (n * sizeof(mfcc_t)); ++i) {
+            SWAP_INT32(ptr + i);
+        }
     }
     return 0;
 }
@@ -388,6 +464,10 @@ acmod_process_full_cep(acmod_t *acmod,
                        int *inout_n_frames)
 {
     int32 nfr;
+
+    /* Write to log file. */
+    if (acmod->mfcfh)
+        acmod_log_mfc(acmod, *inout_cep, *inout_n_frames);
 
     /* Resize feat_buf to fit. */
     if (acmod->n_feat_alloc < *inout_n_frames) {
@@ -414,6 +494,9 @@ acmod_process_full_raw(acmod_t *acmod,
     int32 nfr, ntail;
     mfcc_t **cepptr;
 
+    /* Write to logging file if any. */
+    if (acmod->rawfh)
+        fwrite(*inout_raw, 2, *inout_n_samps, acmod->rawfh);
     /* Resize mfc_buf to fit. */
     if (fe_process_frames(acmod->fe, NULL, inout_n_samps, NULL, &nfr) < 0)
         return -1;
@@ -486,6 +569,9 @@ acmod_process_raw(acmod_t *acmod,
     if (full_utt)
         return acmod_process_full_raw(acmod, inout_raw, inout_n_samps);
 
+    /* Write to logging file if any. */
+    if (acmod->rawfh)
+        fwrite(*inout_raw, 2, *inout_n_samps, acmod->rawfh);
     /* Append MFCCs to the end of any that are previously in there
      * (in practice, there will probably be none) */
     if (inout_n_samps && *inout_n_samps) {
@@ -530,6 +616,10 @@ acmod_process_cep(acmod_t *acmod,
     /* If this is a full utterance, process it all at once. */
     if (full_utt)
         return acmod_process_full_cep(acmod, inout_cep, inout_n_frames);
+
+    /* Write to log file. */
+    if (acmod->mfcfh)
+        acmod_log_mfc(acmod, *inout_cep, *inout_n_frames);
 
     /* Maximum number of frames we're going to generate. */
     orig_n_frames = ncep = nfeat = *inout_n_frames;

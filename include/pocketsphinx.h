@@ -306,6 +306,15 @@ POCKETSPHINX_EXPORT
 int ps_start_utt(ps_decoder_t *ps, char const *uttid);
 
 /**
+ * Get current utterance ID.
+ *
+ * @param ps Decoder to query.
+ * @return Read-only string of the current utterance ID.  This is
+ * valid only until the beginning of the next utterance.
+ */
+POCKETSPHINX_EXPORT
+char const *ps_get_uttid(ps_decoder_t *ps);
+/**
  * Decode raw audio data.
  *
  * @param ps Decoder.

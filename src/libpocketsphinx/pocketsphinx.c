@@ -120,6 +120,8 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     /* Set up logging. */
     if (cmd_ln_str_r(ps->config, "-logfn"))
         err_set_logfile(cmd_ln_str_r(ps->config, "-logfn"));
+    ps->mfclogdir = cmd_ln_str_r(ps->config, "-mfclogdir");
+    ps->rawlogdir = cmd_ln_str_r(ps->config, "-rawlogdir");
 
     /* Fill in some default arguments. */
     ps_init_defaults(ps);
@@ -241,6 +243,12 @@ ps_free(ps_decoder_t *ps)
     ckd_free(ps->uttid);
     ckd_free(ps);
     return 0;
+}
+
+char const *
+ps_get_uttid(ps_decoder_t *ps)
+{
+    return ps->uttid;
 }
 
 cmd_ln_t *
@@ -428,6 +436,8 @@ ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
 int
 ps_start_utt(ps_decoder_t *ps, char const *uttid)
 {
+    FILE *mfcfh = NULL;
+    FILE *rawfh = NULL;
     int rv;
 
     if (ps->search == NULL) {
@@ -460,6 +470,32 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
 
     if ((rv = acmod_start_utt(ps->acmod)) < 0)
         return rv;
+
+    /* Start logging features and audio if requested. */
+    if (ps->mfclogdir) {
+        char *logfn = string_join(ps->mfclogdir, "/",
+                                  ps->uttid, ".mfc", NULL);
+        E_INFO("Writing MFCC log file: %s\n", logfn);
+        if ((mfcfh = fopen(logfn, "wb")) == NULL) {
+            E_ERROR_SYSTEM("Failed to open MFCC log file %s", logfn);
+            ckd_free(logfn);
+            return -1;
+        }
+        ckd_free(logfn);
+        acmod_set_mfcfh(ps->acmod, mfcfh);
+    }
+    if (ps->rawlogdir) {
+        char *logfn = string_join(ps->rawlogdir, "/",
+                                  ps->uttid, ".raw", NULL);
+        E_INFO("Writing raw audio log file: %s\n", logfn);
+        if ((rawfh = fopen(logfn, "wb")) == NULL) {
+            E_ERROR_SYSTEM("Failed to open raw audio log file %s", logfn);
+            ckd_free(logfn);
+            return -1;
+        }
+        ckd_free(logfn);
+        acmod_set_rawfh(ps->acmod, rawfh);
+    }
 
     return ps_search_start(ps->search);
 }

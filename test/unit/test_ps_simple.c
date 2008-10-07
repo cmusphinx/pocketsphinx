@@ -19,6 +19,8 @@ main(int argc, char *argv[])
 				"-fwdtree", "yes",
 				"-fwdflat", "yes",
 				"-bestpath", "yes",
+				"-mfclogdir", ".",
+				"-rawlogdir", ".",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
 	return ps_decoder_test(config, "BESTPATH", "GO FORWARD TEN YEARS");
