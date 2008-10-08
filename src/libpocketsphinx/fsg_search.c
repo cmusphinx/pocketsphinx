@@ -150,6 +150,56 @@ fsg_search_init(cmd_ln_t *config,
         if (fsg_search_reinit(ps_search_base(fsgs)) < 0)
             goto error_out;
     }
+    /* Or load a JSGF grammar */
+    else if ((path = cmd_ln_str_r(config, "-jsgf"))) {
+        fsg_model_t *fsg;
+        jsgf_rule_t *rule;
+        char const *toprule;
+
+        if ((fsgs->jsgf = jsgf_parse_file(path, NULL)) == NULL)
+            goto error_out;
+
+        rule = NULL;
+        /* Take the -toprule if specified. */
+        if ((toprule = cmd_ln_str_r(config, "-toprule"))) {
+            char *anglerule;
+
+            anglerule = ckd_calloc(1, strlen(toprule) + 3);
+            anglerule[0] = '<';
+            strcat(anglerule, toprule);
+            strcat(anglerule, ">");
+            rule = jsgf_get_rule(fsgs->jsgf, anglerule);
+            ckd_free(anglerule);
+            if (rule == NULL) {
+                E_ERROR("Start rule %s not found\n", toprule);
+                goto error_out;
+            }
+        }
+        /* Otherwise, take the first public rule. */
+        else {
+            jsgf_rule_iter_t *itor;
+
+            for (itor = jsgf_rule_iter(fsgs->jsgf); itor;
+                 itor = jsgf_rule_iter_next(itor)) {
+                rule = jsgf_rule_iter_rule(itor);
+                if (jsgf_rule_public(rule))
+                    break;
+            }
+            if (rule == NULL) {
+                E_ERROR("No public rules found in %s\n", path);
+                goto error_out;
+            }
+        }
+        fsg = jsgf_build_fsg(fsgs->jsgf, rule, acmod->lmath, fsgs->lw);
+        if (fsg_set_add(fsgs, fsg_model_name(fsg), fsg) != fsg) {
+            fsg_model_free(fsg);
+            goto error_out;
+        }
+        if (fsg_set_select(fsgs, fsg_model_name(fsg)) == NULL)
+            goto error_out;
+        if (fsg_search_reinit(ps_search_base(fsgs)) < 0)
+            goto error_out;
+    }
 
     return ps_search_base(fsgs);
 
@@ -165,6 +215,8 @@ fsg_search_free(ps_search_t *search)
     hash_iter_t *itor;
 
     ps_search_deinit(search);
+    if (fsgs->jsgf)
+        jsgf_grammar_free(fsgs->jsgf);
     fsg_lextree_free(fsgs->lextree);
     fsg_history_reset(fsgs->history);
     fsg_history_set_fsg(fsgs->history, NULL, NULL);

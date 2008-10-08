@@ -109,7 +109,6 @@ ps_init_defaults(ps_decoder_t *ps)
 int
 ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 {
-    char const *fsgfile = NULL;
     char const *lmfile, *lmctl = NULL;
     gnode_t *gn;
 
@@ -170,7 +169,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         return -1;
 
     /* Determine whether we are starting out in FSG or N-Gram search mode. */
-    if ((fsgfile = cmd_ln_str_r(ps->config, "-fsg"))) {
+    if (cmd_ln_str_r(ps->config, "-fsg") || cmd_ln_str_r(ps->config, "-jsgf")) {
         ps_search_t *fsgs;
 
         if ((fsgs = fsg_search_init(ps->config, ps->acmod, ps->dict)) == NULL)

@@ -74,6 +74,7 @@ typedef struct fsg_search_s {
     fsg_model_t *fsg;		/**< Currently active FSG; NULL if none.  One
 				   must be made active before starting FSG
 				   decoding */
+    jsgf_t *jsgf;               /**< Active JSGF grammar file. */
     struct fsg_lextree_s *lextree;/**< Lextree structure for the currently
 				   active FSG */
     struct fsg_history_s *history;/**< For storing the Viterbi search history */
