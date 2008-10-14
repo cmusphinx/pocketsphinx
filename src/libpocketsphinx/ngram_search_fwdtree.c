@@ -690,18 +690,11 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
     int32 thresh, newphone_thresh, lastphn_thresh, newphone_score;
     chan_t **nacl;              /* next active list */
     lastphn_cand_t *candp;
-    dict_entry_t *de;
 
     nf = frame_idx + 1;
     thresh = ngs->best_score + ngs->dynamic_beam;
-    newphone_thresh =
-        ngs->best_score + (ngs->dynamic_beam >
-                           ngs->pbeam ? ngs->dynamic_beam :
-                           ngs->pbeam);
-    lastphn_thresh =
-        ngs->best_score + (ngs->dynamic_beam >
-                           ngs->lpbeam ? ngs->dynamic_beam :
-                           ngs->lpbeam);
+    newphone_thresh = ngs->best_score + ngs->pbeam;
+    lastphn_thresh = ngs->best_score + ngs->lpbeam;
     nacl = ngs->active_chan_list[nf & 0x1];
 
     for (i = 0, rhmm = ngs->root_chan; i < ngs->n_root_chan; i++, rhmm++) {
@@ -733,7 +726,6 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
                 if (newphone_score BETTER_THAN lastphn_thresh) {
                     for (w = rhmm->penult_phn_wid; w >= 0;
                          w = ngs->homophone_set[w]) {
-                        de = ps_search_dict(ngs)->dict_list[w];
                         candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
                         ngs->n_lastphn_cand++;
                         candp->wid = w;
@@ -765,14 +757,8 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
     nf = frame_idx + 1;
 
     thresh = ngs->best_score + ngs->dynamic_beam;
-    newphone_thresh =
-        ngs->best_score + (ngs->dynamic_beam >
-                           ngs->pbeam ? ngs->dynamic_beam :
-                           ngs->pbeam);
-    lastphn_thresh =
-        ngs->best_score + (ngs->dynamic_beam >
-                           ngs->lpbeam ? ngs->dynamic_beam :
-                           ngs->lpbeam);
+    newphone_thresh = ngs->best_score + ngs->pbeam;
+    lastphn_thresh = ngs->best_score + ngs->lpbeam;
 
     acl = ngs->active_chan_list[frame_idx & 0x1];   /* currently active HMMs in tree */
     nacl = ngs->active_chan_list[nf & 0x1] + ngs->n_active_chan[nf & 0x1];
@@ -1005,15 +991,8 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
     int32 *awl, *nawl;
 
     nf = frame_idx + 1;
-    newword_thresh =
-        ngs->last_phone_best_score + (ngs->dynamic_beam >
-                                      ngs->wbeam ? ngs->dynamic_beam :
-                                      ngs->wbeam);
-    lastphn_thresh =
-        ngs->last_phone_best_score + (ngs->dynamic_beam >
-                                      ngs->lponlybeam ?
-                                      ngs->dynamic_beam :
-                                      ngs->lponlybeam);
+    newword_thresh = ngs->last_phone_best_score + ngs->wbeam;
+    lastphn_thresh = ngs->last_phone_best_score + ngs->lponlybeam;
 
     awl = ngs->active_word_list[frame_idx & 0x1];
     nawl = ngs->active_word_list[nf & 0x1] + ngs->n_active_word[nf & 0x1];
