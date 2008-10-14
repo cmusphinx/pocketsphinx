@@ -205,9 +205,11 @@ utterance_loop()
         fflush(stdout);
 
         /* Exit if the first word spoken was GOODBYE */
-        sscanf(hyp, "%s", word);
-        if (strcmp(word, "goodbye") == 0)
-            break;
+        if (hyp) {
+            sscanf(hyp, "%s", word);
+            if (strcmp(word, "goodbye") == 0)
+                break;
+        }
 
         /* Resume A/D recording for next utterance */
         if (ad_start_rec(ad) < 0)
