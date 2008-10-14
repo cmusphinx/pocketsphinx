@@ -604,7 +604,7 @@ ngram_search_start(ps_search_t *search)
     ngram_search_t *ngs = (ngram_search_t *)search;
 
     ngs->done = FALSE;
-
+    ngram_model_flush(ngs->lmset);
     if (ngs->fwdtree)
         ngram_fwdtree_start(ngs);
     else if (ngs->fwdflat)
