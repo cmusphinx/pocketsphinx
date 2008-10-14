@@ -795,6 +795,8 @@ destroy_fwdflat_chan(ngram_search_t *ngs)
     dict_entry_t *de;
 
     for (i = 0; ngs->fwdflat_wordlist[i] >= 0; i++) {
+        root_chan_t *rhmm;
+        chan_t *thmm;
         wid = ngs->fwdflat_wordlist[i];
         de = ps_search_dict(ngs)->dict_list[wid];
 
@@ -804,6 +806,15 @@ destroy_fwdflat_chan(ngram_search_t *ngs)
         assert(de->mpx);
         assert(ngs->word_chan[wid] != NULL);
 
+        /* The first HMM in ngs->word_chan[wid] was allocated with
+         * ngs->root_chan_alloc, but this will attempt to free it
+         * using ngs->chan_alloc, which will not work.  Therefore we
+         * free it manually and move the list forward before handing
+         * it off. */
+        rhmm = (root_chan_t *)ngs->word_chan[wid];
+        thmm = rhmm->next;
+        listelem_free(ngs->root_chan_alloc, rhmm);
+        ngs->word_chan[wid] = thmm;
         ngram_search_free_all_rc(ngs, wid);
     }
 }

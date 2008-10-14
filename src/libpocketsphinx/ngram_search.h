@@ -238,7 +238,11 @@ struct ngram_search_s {
 
     /**
      * Channels associated with a given word (only used for right
-     * contexts and single-phone words in fwdtree search)
+     * contexts, single-phone words in fwdtree search, and word HMMs
+     * in fwdflat search).  WARNING: For single-phone words and
+     * fwdflat search, this actually contains pointers to root_chan_t,
+     * which are allocated using root_chan_alloc.  This is a
+     * suboptimal state of affairs.
      */
     chan_t **word_chan;
     bitvec_t *word_active;      /**< array of active flags for all words. */
