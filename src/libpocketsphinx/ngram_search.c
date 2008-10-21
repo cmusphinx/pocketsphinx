@@ -343,15 +343,27 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
 {
     int32 _bp_;
 
+    /* Look for an existing exit for this word in this frame. */
     _bp_ = ngs->word_lat_idx[w];
     if (_bp_ != NO_BP) {
+        /* Keep only the best scoring one (actually not an
+         * unreasonable thing to do) */
         if (ngs->bp_table[_bp_].score WORSE_THAN score) {
             if (ngs->bp_table[_bp_].bp != path) {
+                /* Unreference the old backpointer. */
+                if (ngs->bp_table[_bp_].bp != NO_BP)
+                    --ngs->bp_table[ngs->bp_table[_bp_].bp].refcnt;
                 ngs->bp_table[_bp_].bp = path;
                 cache_bptable_paths(ngs, _bp_);
+                /* Reference the new backpointer. */
+                if (ngs->bp_table[_bp_].bp != NO_BP)
+                    ++ngs->bp_table[ngs->bp_table[_bp_].bp].refcnt;
             }
             ngs->bp_table[_bp_].score = score;
         }
+        /* But do keep track of scores for all right contexts, since
+         * we need them to determine the starting path scores for any
+         * successors of this word exit. */
         ngs->bscore_stack[ngs->bp_table[_bp_].s_idx + rc] = score;
     }
     else {
@@ -398,6 +410,9 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
             *bss = WORST_SCORE;
         ngs->bscore_stack[ngs->bss_head + rc] = score;
         cache_bptable_paths(ngs, ngs->bpidx);
+        /* Reference the new backpointer. */
+        if (path != NO_BP)
+            ++ngs->bp_table[path].refcnt;
 
         ngs->bpidx++;
         ngs->bss_head += rcsize;
@@ -890,7 +905,13 @@ create_dag_nodes(ngram_search_t *ngs, ps_lattice_t *dag)
         int32 sf, ef, wid;
         ps_latnode_t *node;
 
+        /* Skip invalid backpointers (these result from -maxwpf pruning) */
         if (!bp_ptr->valid)
+            continue;
+
+        /* Skip backpointers with no successors, unless of course they are in the last frame. */
+        if (bp_ptr->refcnt == 0
+            && bp_ptr->frame != dag->n_frames - 1)
             continue;
 
         sf = (bp_ptr->bp < 0) ? 0 : ngs->bp_table[bp_ptr->bp].frame + 1;
