@@ -28,7 +28,6 @@ check_PROGRAMS = \
 	test_fsg2 \
 	test_fsg3 \
 	test_jsgf \
-	test_jsgf2 \
 	test_lm_read \
 	$(gst_programs)
 
