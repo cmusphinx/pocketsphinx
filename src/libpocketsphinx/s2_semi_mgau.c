@@ -717,10 +717,6 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
         }
         do_swap = 1;
     }
-    if (do_swap && do_mmap) {
-        E_ERROR("Dump file is byte-swapped, cannot use memory-mapping\n");
-        do_mmap = 0;
-    }
     if (fread(line, sizeof(char), n, fp) != n)
         E_FATAL("Cannot read title\n");
     if (line[n - 1] != '\0')
