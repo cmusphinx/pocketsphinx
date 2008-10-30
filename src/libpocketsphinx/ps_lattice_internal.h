@@ -123,6 +123,7 @@ struct ps_latnode_s {
     latlink_list_t *exits;      /**< Links out of this node */
     latlink_list_t *entries;    /**< Links into this node */
 
+    struct ps_latnode_s *alt;   /**< Node with alternate pronunciation for this word */
     struct ps_latnode_s *next;	/**< Next node in DAG (no ordering implied) */
 };
 

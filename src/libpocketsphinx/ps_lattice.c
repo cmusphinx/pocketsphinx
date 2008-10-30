@@ -828,9 +828,23 @@ ps_lattice_link2itor(ps_seg_t *seg, ps_latlink_t *link, int to)
         seg->prob = 0; /* norm + beta - norm */
     }
     else {
+        latlink_list_t *x;
+        ps_latnode_t *n;
+        logmath_t *lmath = ps_search_acmod(seg->search)->lmath;
+
         node = link->from;
         seg->ef = link->ef;
         seg->prob = link->alpha + link->beta - itor->norm;
+        /* Sum over all exits for this word and any alternate
+           pronunciations at the same frame. */
+        for (n = node; n; n = n->alt) {
+            for (x = n->exits; x; x = x->next) {
+                if (x->link == link)
+                    continue;
+                seg->prob = logmath_add(lmath, seg->prob,
+                                        x->link->alpha + x->link->beta - itor->norm);
+            }
+        }
     }
     seg->word = dict_word_str(ps_search_dict(seg->search), node->wid);
     seg->sf = node->sf;
