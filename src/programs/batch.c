@@ -248,8 +248,39 @@ write_lattice(ps_decoder_t *ps, char const *latdir, char const *uttid)
 }
 
 static int
-write_hypseg(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int32 score)
+write_hypseg(FILE *fh, ps_decoder_t *ps, char const *uttid)
 {
+    int32 score, lscr, sf, ef;
+    ps_seg_t *itor = ps_seg_iter(ps, &score);
+    ngram_model_t *lm = ps_get_lmset(ps);
+
+    /* Accumulate language model scores. */
+    while (itor) {
+        int32 ascr, wlscr;
+        ps_seg_prob(itor, &ascr, &wlscr, NULL);
+        lscr += wlscr;
+        itor = ps_seg_next(itor);
+    }
+    fprintf(fh, "%s S %d T %d A %d L %d", uttid,
+            0, /* "scaling factor" which is mostly useless anyway */
+            score, score - lscr, lscr);
+    /* Now print out words. */
+    itor = ps_seg_iter(ps, &score);
+    while (itor) {
+        char const *w = ps_seg_word(itor);
+        int32 ascr, wlscr;
+
+        ps_seg_prob(itor, &ascr, &wlscr, NULL);
+        ps_seg_frames(itor, &sf, &ef);
+        fprintf(fh, " %d %d %d %s",
+                sf, ascr,
+                /* FIXME: This is inconsistent with the total lm
+                   score, but that's the way it's done in S3... */
+                lm ? ngram_score_to_prob(lm, wlscr) : wlscr, w);
+        itor = ps_seg_next(itor);
+    }
+    fprintf(fh, " %d\n", ef);
+
     return 0;
 }
 
@@ -360,8 +391,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                 fprintf(hypfh, "%s (%s %d)\n", hyp, uttid, score);
             }
             if (hypsegfh) {
-                ps_seg_t *itor = ps_seg_iter(ps, &score);
-                write_hypseg(hypsegfh, ps, itor, uttid, score);
+                write_hypseg(hypsegfh, ps, uttid);
             }
             if (hypconffh) {
                 ps_seg_t *itor = ps_seg_iter(ps, &score);
