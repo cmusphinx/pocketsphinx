@@ -759,7 +759,7 @@ ps_nbest_seg(ps_nbest_t *nbest, int32 *out_score)
 int
 ps_get_n_frames(ps_decoder_t *ps)
 {
-    return ps->acmod->output_frame;
+    return ps->acmod->output_frame + 1;
 }
 
 void

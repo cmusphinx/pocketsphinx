@@ -357,6 +357,13 @@ int ps_process_cep(ps_decoder_t *ps,
 /**
  * Get the number of frames of data searched.
  *
+ * Note that there is a delay between this and the number of frames of
+ * audio which have been input to the system.  This is due to the fact
+ * that acoustic features are computed using a sliding window of
+ * audio, and dynamic features are computed over a sliding window of
+ * acoustic features.
+ *
+ * @param ps Decoder.
  * @return Number of frames of speech data which have been recognized
  * so far.
  */
@@ -375,6 +382,7 @@ int ps_end_utt(ps_decoder_t *ps);
 /**
  * Get hypothesis string and path score.
  *
+ * @param ps Decoder.
  * @param out_best_score Output: path score corresponding to returned string.
  * @param out_uttid Output: utterance ID for this utterance.
  * @return String containing best hypothesis at this point in
@@ -394,6 +402,7 @@ char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score,
  * confidence annotation for partial hypotheses may result in these
  * restrictions being lifted in future versions.
  *
+ * @param ps Decoder.
  * @param out_uttid Output: utterance ID for this utterance.
  * @return Posterior probability of the best hypothesis.
  */
@@ -406,6 +415,7 @@ int32 ps_get_prob(ps_decoder_t *ps, char const **out_uttid);
  * There isn't much you can do with this so far, a public API will
  * appear in the future.
  *
+ * @param ps Decoder.
  * @return Word lattice object containing all hypotheses so far.  NULL
  *         if no hypotheses are available.  This pointer is owned by
  *         the decoder and you should not attempt to free it manually.
@@ -418,6 +428,7 @@ ps_lattice_t *ps_get_lattice(ps_decoder_t *ps);
 /**
  * Get an iterator over the word segmentation for the best hypothesis.
  *
+ * @param ps Decoder.
  * @param out_best_score Output: path score corresponding to hypothesis.
  * @return Iterator over the best hypothesis at this point in
  *         decoding.  NULL if no hypothesis is available.
@@ -428,6 +439,7 @@ ps_seg_t *ps_seg_iter(ps_decoder_t *ps, int32 *out_best_score);
 /**
  * Get the next segment in a word segmentation.
  *
+ * @param seg Segment iterator.
  * @return Updated iterator with the next segment.  NULL at end of
  *         utterance (the iterator will be freed in this case).
  */
@@ -436,12 +448,24 @@ ps_seg_t *ps_seg_next(ps_seg_t *seg);
 
 /**
  * Get word string from a segmentation iterator.
+ *
+ * @param seg Segment iterator.
+ * @return Read-only string giving string name of this segment.  This
+ * is only valid until the next call to ps_seg_next().
  */
 POCKETSPHINX_EXPORT
 char const *ps_seg_word(ps_seg_t *seg);
 
 /**
- * Get start and end frames from a segmentation iterator.
+ * Get inclusive start and end frames from a segmentation iterator.
+ *
+ * @note These frame numbers are inclusive, i.e. the end frame refers
+ * to the last frame in which the given word or other segment was
+ * active.  Therefore, the actual duration is *out_ef - *out_sf + 1.
+ *
+ * @param seg Segment iterator.
+ * @param out_sf Output: First frame index in segment.
+ * @param out_sf Output: Last frame index in segment.
  */
 POCKETSPHINX_EXPORT
 void ps_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef);
