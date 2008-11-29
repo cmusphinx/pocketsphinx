@@ -255,6 +255,7 @@ write_hypseg(FILE *fh, ps_decoder_t *ps, char const *uttid)
     ngram_model_t *lm = ps_get_lmset(ps);
 
     /* Accumulate language model scores. */
+    lscr = 0;
     while (itor) {
         int32 ascr, wlscr;
         ps_seg_prob(itor, &ascr, &wlscr, NULL);
@@ -462,6 +463,7 @@ main(int32 argc, char *argv[])
 
     process_ctl(ps, config, ctlfh);
 
+    fclose(ctlfh);
     ps_free(ps);
     return 0;
 }

@@ -678,8 +678,15 @@ gst_pocketsphinx_event(GstPad *pad, GstEvent *event)
     case GST_EVENT_NEWSEGMENT:
         /* Initialize the decoder once the audio starts, if it's not
          * there yet. */
-        if (ps->ps == NULL)
+        if (ps->ps == NULL) {
             ps->ps = ps_init(ps->config);
+            if (ps->ps == NULL) {
+                GST_ELEMENT_ERROR(GST_ELEMENT(ps), LIBRARY, INIT,
+                                  ("Failed to initialize PocketSphinx"),
+                                  ("Failed to initialize PocketSphinx"));
+                return FALSE;
+            }
+        }
         return gst_pad_event_default(pad, event);
     case GST_EVENT_VADER_START:
         ps->listening = TRUE;
