@@ -172,7 +172,7 @@ typedef struct ps_astar_s {
 
     ps_latpath_t *path_list;
     ps_latpath_t *path_tail;
-    ps_latpath_t *paths_done;
+    ps_latpath_t *top;
 
     glist_t hyps;	             /**< List of hypothesis strings. */
     listelem_alloc_t *latpath_alloc; /**< Path allocator for N-best search. */

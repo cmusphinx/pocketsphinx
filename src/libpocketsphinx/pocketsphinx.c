@@ -741,19 +741,19 @@ ps_nbest_next(ps_nbest_t *nbest)
 char const *
 ps_nbest_hyp(ps_nbest_t *nbest, int32 *out_score)
 {
-    if (nbest->paths_done == NULL)
+    if (nbest->top == NULL)
         return NULL;
-    if (out_score) *out_score = nbest->paths_done->score;
-    return ps_astar_hyp(nbest, nbest->paths_done);
+    if (out_score) *out_score = nbest->top->score;
+    return ps_astar_hyp(nbest, nbest->top);
 }
 
 ps_seg_t *
 ps_nbest_seg(ps_nbest_t *nbest, int32 *out_score)
 {
-    if (nbest->paths_done == NULL)
+    if (nbest->top == NULL)
         return NULL;
-    if (out_score) *out_score = nbest->paths_done->score;
-    return ps_astar_seg_iter(nbest, nbest->paths_done, 1.0);
+    if (out_score) *out_score = nbest->top->score;
+    return ps_astar_seg_iter(nbest, nbest->top, 1.0);
 }
 
 int

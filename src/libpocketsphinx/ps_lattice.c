@@ -1496,7 +1496,7 @@ ps_astar_start(ps_lattice_t *dag,
     nbest->lwf = lwf;
     nbest->sf = sf;
     if (ef < 0)
-        nbest->ef = dag->n_frames - ef;
+        nbest->ef = dag->n_frames + 1;
     else
         nbest->ef = ef;
     nbest->w1 = w1;
@@ -1541,36 +1541,30 @@ ps_astar_start(ps_lattice_t *dag,
 ps_latpath_t *
 ps_astar_next(ps_astar_t *nbest)
 {
-    ps_latpath_t *top;
     ps_lattice_t *dag;
 
     dag = nbest->dag;
 
     /* Pop the top (best) partial hypothesis */
-    while ((top = nbest->path_list) != NULL) {
+    while ((nbest->top = nbest->path_list) != NULL) {
         nbest->path_list = nbest->path_list->next;
-        if (top == nbest->path_tail)
+        if (nbest->top == nbest->path_tail)
             nbest->path_tail = NULL;
         nbest->n_path--;
 
         /* Complete hypothesis? */
-        if ((top->node->sf >= nbest->ef)
-            || ((top->node == dag->end) &&
+        if ((nbest->top->node->sf >= nbest->ef)
+            || ((nbest->top->node == dag->end) &&
                 (nbest->ef > dag->end->sf))) {
-            /* FIXME: Verify that it is non-empty. */
-            return top;
+            /* FIXME: Verify that it is non-empty.  Also we may want
+             * to verify that it is actually distinct from other
+             * paths, since often this is not the case*/
+            return nbest->top;
         }
         else {
-            if (top->node->fef < nbest->ef)
-                path_extend(nbest, top);
+            if (nbest->top->node->fef < nbest->ef)
+                path_extend(nbest, nbest->top);
         }
-
-        /*
-         * Add top to paths already processed; cannot be freed because other paths
-         * point to it.
-         */
-        top->next = nbest->paths_done;
-        nbest->paths_done = top;
     }
 
     /* Did not find any more paths to extend. */
