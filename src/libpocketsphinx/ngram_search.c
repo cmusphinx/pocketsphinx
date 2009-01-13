@@ -558,59 +558,56 @@ ngram_search_free_all_rc(ngram_search_t *ngs, int32 w)
 }
 
 /*
- * Compute acoustic and LM scores for each BPTable entry (segment).
+ * Compute acoustic and LM scores for a BPTable entry (segment).
  */
 void
-ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf)
+ngram_compute_seg_score(ngram_search_t *ngs, bptbl_t *bpe, float32 lwf,
+                        int32 *out_ascr, int32 *out_lscr)
 {
-    int32 bp, start_score;
-    bptbl_t *bpe, *p_bpe;
     uint16 *rcpermtab;
     dict_entry_t *de;
+    bptbl_t *p_bpe;
+    int32 start_score;
 
-    for (bp = 0; bp < ngs->bpidx; bp++) {
-        bpe = ngs->bp_table + bp;
-
-        /* Start of utterance. */
-        if (bpe->bp == NO_BP) {
-            bpe->ascr = bpe->score;
-            bpe->lscr = 0;
-            continue;
-        }
-
-        /* Otherwise, calculate lscr and ascr. */
-        de = ps_search_dict(ngs)->dict_list[bpe->wid];
-        p_bpe = ngs->bp_table + bpe->bp;
-        rcpermtab = (p_bpe->r_diph >= 0) ?
-            ps_search_dict(ngs)->rcFwdPermTable[p_bpe->r_diph] : ngs->zeroPermTab;
-        start_score =
-            ngs->bscore_stack[p_bpe->s_idx + rcpermtab[de->ci_phone_ids[0]]];
-        /* FIXME: WORST_SCORE shouldn't propagate, but sometimes it
-           does.  We cannot allow it to go any further because that
-           will result in positive acoustic scores.  Tracing the
-           source of this may be a bit involved. */
-        if (start_score == WORST_SCORE)
-            start_score = 0;
-
-        /* FIXME: These result in positive acoustic scores when filler
-           words have non-filler pronunciations.  That whole business
-           is still pretty much broken but at least it doesn't
-           segfault. */
-        if (bpe->wid == ps_search_silence_wid(ngs)) {
-            bpe->lscr = ngs->silpen;
-        }
-        else if (ISA_FILLER_WORD(ngs, bpe->wid)) {
-            bpe->lscr = ngs->fillpen;
-        }
-        else {
-            int32 n_used;
-            bpe->lscr = ngram_tg_score(ngs->lmset, de->wid,
-                                       p_bpe->real_wid,
-                                       p_bpe->prev_real_wid, &n_used);
-            bpe->lscr = bpe->lscr * lwf;
-        }
-        bpe->ascr = bpe->score - start_score - bpe->lscr;
+    /* Start of utterance. */
+    if (bpe->bp == NO_BP) {
+        *out_ascr = bpe->score;
+        *out_lscr = 0;
+        return;
     }
+
+    /* Otherwise, calculate lscr and ascr. */
+    de = ps_search_dict(ngs)->dict_list[bpe->wid];
+    p_bpe = ngs->bp_table + bpe->bp;
+    rcpermtab = (p_bpe->r_diph >= 0) ?
+        ps_search_dict(ngs)->rcFwdPermTable[p_bpe->r_diph] : ngs->zeroPermTab;
+    start_score =
+        ngs->bscore_stack[p_bpe->s_idx + rcpermtab[de->ci_phone_ids[0]]];
+    /* FIXME: WORST_SCORE shouldn't propagate, but sometimes it
+       does.  We cannot allow it to go any further because that
+       will result in positive acoustic scores.  Tracing the
+       source of this may be a bit involved. */
+    if (start_score == WORST_SCORE)
+        start_score = 0;
+
+    /* FIXME: These result in positive acoustic scores when filler
+       words have non-filler pronunciations.  That whole business
+       is still pretty much broken but at least it doesn't
+       segfault. */
+    if (bpe->wid == ps_search_silence_wid(ngs)) {
+        *out_lscr = ngs->silpen;
+    }
+    else if (ISA_FILLER_WORD(ngs, bpe->wid)) {
+        *out_lscr = ngs->fillpen;
+    }
+    else {
+        int32 n_used;
+        *out_lscr = ngram_tg_score(ngs->lmset, de->wid,
+                                   p_bpe->real_wid,
+                                   p_bpe->prev_real_wid, &n_used);
+        *out_lscr = *out_lscr * lwf;
+    }
+    *out_ascr = bpe->score - start_score - *out_lscr;
 }
 
 static int
@@ -740,8 +737,8 @@ ngram_search_bp2itor(ps_seg_t *seg, int bp)
     seg->prob = 0; /* Bogus value... */
     /* Compute acoustic and LM scores for this segment. */
     if (pbe == NULL) {
-        seg->ascr = be->ascr = be->score;
-        seg->lscr = be->lscr = 0;
+        seg->ascr = be->score;
+        seg->lscr = 0;
         seg->lback = 0;
     }
     else {
@@ -756,20 +753,18 @@ ngram_search_bp2itor(ps_seg_t *seg, int bp)
             : ngs->zeroPermTab;
         start_score = ngs->bscore_stack[pbe->s_idx + rcpermtab[de->ci_phone_ids[0]]];
         if (be->wid == ps_search_silence_wid(ngs)) {
-            be->lscr = ngs->silpen;
+            seg->lscr = ngs->silpen;
         }
         else if (ISA_FILLER_WORD(ngs, be->wid)) {
-            be->lscr = ngs->fillpen;
+            seg->lscr = ngs->fillpen;
         }
         else {
-            be->lscr = ngram_tg_score(ngs->lmset, de->wid,
+            seg->lscr = ngram_tg_score(ngs->lmset, de->wid,
                                       pbe->real_wid,
                                       pbe->prev_real_wid, &seg->lback);
-            be->lscr = (int32)(be->lscr * seg->lwf);
+            seg->lscr = (int32)(seg->lscr * seg->lwf);
         }
-        be->ascr = be->score - start_score - be->lscr;
-        seg->ascr = be->ascr;
-        seg->lscr = be->lscr;
+        seg->ascr = be->score - start_score - seg->lscr;
     }
 }
 
@@ -1036,10 +1031,11 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
 ps_lattice_t *
 ngram_search_lattice(ps_search_t *search)
 {
-    int32 i, ef, lef, score, bss_offset;
+    int32 i, ef, lef, score, ascr, lscr, bss_offset;
     ps_latnode_t *node, *from, *to;
     ngram_search_t *ngs;
     ps_lattice_t *dag;
+    float lwf;
 
     ngs = (ngram_search_t *)search;
 
@@ -1053,9 +1049,7 @@ ngram_search_lattice(ps_search_t *search)
     search->dag = NULL;
     dag = ps_lattice_init_search(search, ngs->n_frame);
     /* Compute these such that they agree with the fwdtree language weight. */
-    ngram_compute_seg_scores(ngs,
-                             ngs->fwdflat
-                             ? ngs->fwdflat_fwdtree_lw_ratio : 1.0);
+    lwf = ngs->fwdflat ? ngs->fwdflat_fwdtree_lw_ratio : 1.0;
     create_dag_nodes(ngs, dag);
     if ((dag->start = find_start_node(ngs, dag)) == NULL)
         goto error_out;
@@ -1065,7 +1059,8 @@ ngram_search_lattice(ps_search_t *search)
            dict_word_str(search->dict, dag->start->wid), dag->start->sf,
            dict_word_str(search->dict, dag->end->wid), dag->end->sf);
 
-    dag->final_node_ascr = ngs->bp_table[dag->end->lef].ascr;
+    ngram_compute_seg_score(ngs, ngs->bp_table + dag->end->lef, lwf,
+                            &dag->final_node_ascr, &lscr);
 
     /*
      * At this point, dag->nodes is ordered such that nodes earlier in
@@ -1104,6 +1099,9 @@ ngram_search_lattice(ps_search_t *search)
                 continue;
 
             /* Find acoustic score from.sf->to.sf-1 with right context = to */
+            ngram_compute_seg_score(ngs, bp_ptr, lwf,
+                                    &ascr, &lscr);
+            /* Remove context score calculated above (FIXME: just don't calculate it...) */
             if (bp_ptr->r_diph >= 0)
                 bss_offset =
                     search->dict->rcFwdPermTable[bp_ptr->r_diph]
@@ -1111,8 +1109,7 @@ ngram_search_lattice(ps_search_t *search)
             else
                 bss_offset = 0;
             score =
-                (ngs->bscore_stack[bp_ptr->s_idx + bss_offset] - bp_ptr->score) +
-                bp_ptr->ascr;
+                (ngs->bscore_stack[bp_ptr->s_idx + bss_offset] - bp_ptr->score) + ascr;
             if (score BETTER_THAN 0) {
                 /* Scores must be negative, or Bad Things will happen.
                    In general, they are, except in corner cases
