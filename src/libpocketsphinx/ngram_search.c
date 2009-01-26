@@ -350,14 +350,8 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
          * unreasonable thing to do) */
         if (ngs->bp_table[_bp_].score WORSE_THAN score) {
             if (ngs->bp_table[_bp_].bp != path) {
-                /* Unreference the old backpointer. */
-                if (ngs->bp_table[_bp_].bp != NO_BP)
-                    --ngs->bp_table[ngs->bp_table[_bp_].bp].refcnt;
                 ngs->bp_table[_bp_].bp = path;
                 cache_bptable_paths(ngs, _bp_);
-                /* Reference the new backpointer. */
-                if (ngs->bp_table[_bp_].bp != NO_BP)
-                    ++ngs->bp_table[ngs->bp_table[_bp_].bp].refcnt;
             }
             ngs->bp_table[_bp_].score = score;
         }
@@ -410,9 +404,6 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
             *bss = WORST_SCORE;
         ngs->bscore_stack[ngs->bss_head + rc] = score;
         cache_bptable_paths(ngs, ngs->bpidx);
-        /* Reference the new backpointer. */
-        if (path != NO_BP)
-            ++ngs->bp_table[path].refcnt;
 
         ngs->bpidx++;
         ngs->bss_head += rcsize;
@@ -904,11 +895,6 @@ create_dag_nodes(ngram_search_t *ngs, ps_lattice_t *dag)
         if (!bp_ptr->valid)
             continue;
 
-        /* Skip backpointers with no successors, unless of course they are in the last frame. */
-        if (bp_ptr->refcnt == 0
-            && bp_ptr->frame != dag->n_frames - 1)
-            continue;
-
         sf = (bp_ptr->bp < 0) ? 0 : ngs->bp_table[bp_ptr->bp].frame + 1;
         ef = bp_ptr->frame;
         wid = bp_ptr->wid;
@@ -1138,6 +1124,19 @@ ngram_search_lattice(ps_search_t *search)
         node->lef = ngs->bp_table[node->lef].frame;
         /* Find base wid for nodes. */
         node->basewid = dict_base_wid(search->dict, node->wid);
+    }
+
+    /* Link nodes with alternate pronunciations at the same timepoint. */
+    for (node = dag->nodes; node; node = node->next) {
+        ps_latnode_t *alt;
+        /* Scan forward to find the next alternate, then stop. */
+        for (alt = node->next; alt && alt->sf == node->sf; alt = alt->next) {
+            if (alt->basewid == node->basewid) {
+                alt->alt = node->alt;
+                node->alt = alt;
+                break;
+            }
+        }
     }
 
     /* Minor hack: If the final node is a filler word and not </s>,
