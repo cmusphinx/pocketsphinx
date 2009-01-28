@@ -354,7 +354,6 @@ dict_init(cmd_ln_t *config, bin_mdef_t *mdef)
 
     E_INFO("RIGHT CONTEXT TABLES\n");
     dict->rcList = glist_reverse(dict->rcList);
-    buildEntryTable(dict, dict->rcList, &dict->rcBwdTable);
     buildExitTable(dict, dict->rcList, &dict->rcFwdTable, &dict->rcFwdPermTable,
                    &dict->rcFwdSizeTable);
 
@@ -385,10 +384,8 @@ dict_free(dict_t * dict)
     glist_free(dict->lcList);
 
     for (i = 0, gn = dict->rcList; gn; gn = gnode_next(gn), ++i) {
-        ckd_free(dict->rcBwdTable[i]);
         ckd_free(gnode_ptr(gn));
     }
-    ckd_free(dict->rcBwdTable);
     ckd_free_2d(dict->rcFwdTable);
     ckd_free_2d(dict->rcFwdPermTable);
     ckd_free(dict->rcFwdSizeTable);
@@ -1026,7 +1023,7 @@ buildEntryTable(dict_t *dict, glist_t list, uint16 *** table_p)
             if (phoneid >= 0)
                 triphoneContext++;
             /*
-             * If we can't find the desired right context use "SIL"
+             * If we can't find the desired context use "SIL"
              */
             if (phoneid < 0) {
                 sprintf(triphoneStr, (char *)gnode_ptr(gn), "SIL");
@@ -1049,7 +1046,7 @@ buildEntryTable(dict_t *dict, glist_t list, uint16 *** table_p)
             table[i][j] = bin_mdef_pid2ssid(dict->mdef, phoneid);
         }
     }
-    E_INFO("\t%6d triphones\n\t%6d pseudo diphones\n\t%6d uniphones\n",
+    E_INFO("\t%6d triphonesn\t%6d pseudo diphones\n\t%6d uniphones\n",
            triphoneContext, silContext, noContext);
 }
 

@@ -73,18 +73,73 @@ typedef struct dict_s {
     int32		*ci_index;		/* Index to each group */
     int32		filler_start;		/* Start of filler words */
 
+    /* Context tables - these are quite mysterious and possibly unnecessary. */
     hash_table_t *lcHT;      /* Left context hash table */
+    /**
+     * List of left context triphones.  This is a list of strings
+     * describing the cross-word triphones which need to be expanded
+     * at the start of words.  They look like "B(%s,IY)b", where the
+     * %s is a placeholder for possible left contexts (yes ... it uses
+     * sprintf() to fill this in, which is extremely hacky).  This
+     * consists of all the word-initial diphones from the
+     * pronunciation dictionary.
+     */
     glist_t lcList;
+    /**
+     * Left context table.  This is a 2d array mapping each left
+     * context triphone in lcList to an array of senone sequence IDs,
+     * corresponding to all possible triphone expansions.
+     * lcFwdTable[i][ci] gives the senone sequence corresponding to
+     * filling in the placeholder in lcList[i] with the context
+     * independent phone ci.
+     */
     uint16 **lcFwdTable;
+    /**
+     * Left context table, compressed version.  It's not entirely
+     * clear what this is useful for.  It's only used in one place in
+     * FSG search and it contains the same information as lcFwdTable,
+     * except that duplicate entries in lcList[i] have been
+     * eliminated, and lcBwdPermTable[i] contains the mapping of
+     * context-independent phones to unique entries here.
+     */
     uint16 **lcBwdTable;
+    /**
+     * Mapping of context-independent phones to entries in lcBwdTable.
+     */
     uint16 **lcBwdPermTable;
+    /**
+     * Number of entries in each entry in lcBwdTable.
+     */
     uint16 *lcBwdSizeTable;
 
     hash_table_t *rcHT;      /* Right context hash table */
+    /**
+     * List of right context triphones.  This is a list of strings
+     * describing the cross-word triphones which need to be expanded
+     * at the end of words.  They look like "IY(B,%s)e", where the
+     * %s is a placeholder for possible left contexts (yes ... it uses
+     * sprintf() to fill this in, which is extremely hacky).  This
+     * consists of all the word-final diphones from the
+     * pronunciation dictionary.
+     */
     glist_t rcList;
+    /**
+     * Right context table, compressed version.  Contains the same
+     * information as rcBwdTable, except that duplicate entries in
+     * rcList[i] have been eliminated, and rcFwdPermTable[i] contains
+     * the mapping of context-independent phones to unique entries
+     * here.  This mainly exists so that forward search can activate
+     * only the set of unique senone sequences associated with a given
+     * right context triphone.
+     */
     uint16 **rcFwdTable;
+    /**
+     * Mapping of context-independent phones to entries in rcFwdTable.
+     */
     uint16 **rcFwdPermTable;
-    uint16 **rcBwdTable;
+    /**
+     * Number of entries in each entry in rcFwdTable.
+     */
     uint16 *rcFwdSizeTable;
 
     int32 initial_dummy;     /* 1st placeholder for dynamic OOVs after initialization */

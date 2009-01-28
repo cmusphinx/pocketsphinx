@@ -358,8 +358,6 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                                    possible left contexts */
     uint16 **lcbwdperm;          /* For CIphone p, lcbwdperm[d][p] = index in lcbwd[d]
                                    containing the SSID for triphone p.d */
-    uint16 **rcbwd;              /* Uncompressed right cross-word context map;
-                                   rcbwd[right-diphone][p] = SSID for right-diphone.p */
     uint16 **rcfwd;              /* Compressed right cross-word context map; similar to
                                    lcbwd */
     uint16 **rcfwdperm;
@@ -375,7 +373,6 @@ psubtree_add_trans(fsg_lextree_t *lextree,
     int32 n_ci, p, lc, rc;
     glist_t lc_pnodelist;       /* Temp pnodes list for different left contexts */
     glist_t rc_pnodelist;       /* Temp pnodes list for different right contexts */
-    fsg_pnode_t **ssid_pnode_map;       /* Temp array of ssid->pnode mapping */
     int32 i, j;
 
     silcipid = bin_mdef_ciphone_id(lextree->mdef, "SIL");
@@ -383,7 +380,6 @@ psubtree_add_trans(fsg_lextree_t *lextree,
     lcfwd = lextree->dict->lcFwdTable;
     lcbwd = lextree->dict->lcBwdTable;
     lcbwdperm = lextree->dict->lcBwdPermTable;
-    rcbwd = lextree->dict->rcBwdTable;
     rcfwd = lextree->dict->rcFwdTable;
     rcfwdperm = lextree->dict->rcFwdPermTable;
 
@@ -469,6 +465,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
         }
     }
     else {                      /* Multi-phone word */
+        fsg_pnode_t **ssid_pnode_map;       /* Temp array of ssid->pnode mapping */
         assert(dict_mpx(lextree->dict, dictwid));    /* S2 HACK: pronlen>1 => mpx?? */
 
         ssid_pnode_map =
