@@ -346,8 +346,8 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
     /* Look for an existing exit for this word in this frame. */
     _bp_ = ngs->word_lat_idx[w];
     if (_bp_ != NO_BP) {
-        /* Keep only the best scoring one (actually not an
-         * unreasonable thing to do) */
+        /* Keep only the best scoring one (this is a potential source
+         * of search errors...) */
         if (ngs->bp_table[_bp_].score WORSE_THAN score) {
             if (ngs->bp_table[_bp_].bp != path) {
                 ngs->bp_table[_bp_].bp = path;
@@ -628,6 +628,23 @@ ngram_search_step(ps_search_t *search)
         return ngram_fwdflat_search(ngs);
     else
         return -1;
+}
+
+static void
+dump_bptable(ngram_search_t *ngs)
+{
+    int i;
+    E_INFO("Backpointer table (%d entries):\n", ngs->bpidx);
+    for (i = 0; i < ngs->bpidx; ++i) {
+        E_INFO_NOFN("%-5d %-10s start %-3d end %-3d score %-8d bp\n", /* %-3d history %08x\n", */
+                    i, dict_word_str(ps_search_dict(ngs), ngs->bp_table[i].wid),
+                    ngs->bp_table[i].bp == -1 ? 0 : 
+                    ngs->bp_table[ngs->bp_table[i].bp].frame + 1,
+                    ngs->bp_table[i].frame,
+                    ngs->bp_table[i].score,
+                    ngs->bp_table[i].bp);
+        /* ngs->bp_table[i].hist_hash); */
+    }
 }
 
 static int

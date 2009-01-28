@@ -1195,6 +1195,8 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     for (i = bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef) - 1; i >= 0; --i)
         ngs->bestbp_rc[i].score = WORST_SCORE;
     k = 0;
+    /* Ugh, this is complicated.  Scan all word exits for this frame
+     * (they have already been created by prune_word_chan()). */
     for (bp = ngs->bp_table_idx[frame_idx]; bp < ngs->bpidx; bp++) {
         bpe = &(ngs->bp_table[bp]);
         ngs->word_lat_idx[bpe->wid] = NO_BP;
@@ -1204,12 +1206,21 @@ word_transition(ngram_search_t *ngs, int frame_idx)
         k++;
 
         de = ps_search_dict(ngs)->dict_list[bpe->wid];
+        /* Get the mapping of right context phones to score stack
+         * entries for the final phone in this word.  bpe->r_diph is a
+         * pseudo-phone ID which is actually an index into the first
+         * level of the right context tables. */
         rcpermtab =
             (bpe->r_diph >= 0)
             ? ps_search_dict(ngs)->rcFwdPermTable[bpe->r_diph]
             : ngs->zeroPermTab;
+        /* This is the context-independent phone ID. */
         last_ciph = de->ci_phone_ids[de->len - 1];
 
+        /* And this is the array of HMM scores corresponding to all
+         * the possible right context expansions of the final phone.
+         * It's likely that a lot of these are going to be missing,
+         * actually. */
         rcss = &(ngs->bscore_stack[bpe->s_idx]);
         for (rc = bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef) - 1; rc >= 0; --rc) {
             if (rcss[rcpermtab[rc]] BETTER_THAN ngs->bestbp_rc[rc].score) {
