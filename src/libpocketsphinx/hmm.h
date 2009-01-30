@@ -74,6 +74,12 @@ extern "C" {
 #define WORST_SCORE		((int)0xE0000000)
 
 /**
+ * Watch out, though!  Transition matrix entries that are supposed to
+ * be "zero" don't actually get that small due to quantization.
+ */
+#define TMAT_WORST_SCORE	(-255 << SENSCR_SHIFT)
+
+/**
  * Is one score better than another?
  */
 #define BETTER_THAN >
@@ -193,7 +199,8 @@ typedef struct hmm_s {
 #define hmm_nonmpx_ssid(h) (h)->ssid
 #define hmm_ssid(h,st) (hmm_is_mpx(h)                                   \
                         ? hmm_mpx_ssid(h,st) : hmm_nonmpx_ssid(h))
-#define hmm_mpx_senid(h,st) ((h)->ctx->sseq[hmm_mpx_ssid(h,st)][st])
+#define hmm_mpx_senid(h,st) (hmm_mpx_ssid(h,st) == BAD_SENID \
+                             ? BAD_SENID : (h)->ctx->sseq[hmm_mpx_ssid(h,st)][st])
 #define hmm_nonmpx_senid(h,st) ((h)->senid[st])
 #define hmm_senid(h,st) (hmm_is_mpx(h)                                  \
                          ? hmm_mpx_senid(h,st) : hmm_nonmpx_senid(h,st))

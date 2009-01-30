@@ -545,7 +545,7 @@ hmm_vit_eval_3st_lr(hmm_t * hmm)
     /* Transitions into non-emitting state 3 */
     if (s1 BETTER_THAN WORST_SCORE) {
         t1 = s2 + hmm_tprob_3st(2, 3);
-        if (hmm_tprob_3st(1,3) BETTER_THAN WORST_SCORE)
+        if (hmm_tprob_3st(1,3) BETTER_THAN TMAT_WORST_SCORE)
             t2 = s1 + hmm_tprob_3st(1, 3);
         if (t1 BETTER_THAN t2) {
             s3 = t1;
@@ -562,7 +562,7 @@ hmm_vit_eval_3st_lr(hmm_t * hmm)
     /* All transitions into state 2 (state 0 is always active) */
     t0 = s2 + hmm_tprob_3st(2, 2);
     t1 = s1 + hmm_tprob_3st(1, 2);
-    if (hmm_tprob_3st(0, 2) BETTER_THAN WORST_SCORE)
+    if (hmm_tprob_3st(0, 2) BETTER_THAN TMAT_WORST_SCORE)
         t2 = s0 + hmm_tprob_3st(0, 2);
     if (t0 BETTER_THAN t1) {
         if (t2 BETTER_THAN t0) {
@@ -625,10 +625,11 @@ hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
         t1 = s2 + hmm_tprob_3st(2, 3);
     }
     if (ssid[1] == BAD_SSID)
-        s1 = WORST_SCORE;
+        s1 = t2 = WORST_SCORE;
     else {
         s1 = hmm_score(hmm, 1) + mpx_senscr(1);
-        t2 = s1 + hmm_tprob_3st(1, 3);
+        if (hmm_tprob_3st(1,3) BETTER_THAN TMAT_WORST_SCORE)
+            t2 = s1 + hmm_tprob_3st(1, 3);
     }
     if (t1 BETTER_THAN t2) {
         s3 = t1;
@@ -651,7 +652,7 @@ hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
         t0 = s2 + hmm_tprob_3st(2, 2);
     if (s1 != WORST_SCORE)
         t1 = s1 + hmm_tprob_3st(1, 2);
-    if (hmm_tprob_3st(0,2) BETTER_THAN WORST_SCORE)
+    if (hmm_tprob_3st(0,2) BETTER_THAN TMAT_WORST_SCORE)
         t2 = s0 + hmm_tprob_3st(0, 2);
     if (t0 BETTER_THAN t1) {
         if (t2 BETTER_THAN t0) {
@@ -728,7 +729,7 @@ hmm_vit_eval_anytopo(hmm_t * hmm)
     scr = WORST_SCORE;
     bestfrom = -1;
     for (from = to - 1; from >= 0; --from) {
-        if ((hmm_tprob(hmm, from, to) BETTER_THAN WORST_SCORE) &&
+        if ((hmm_tprob(hmm, from, to) BETTER_THAN TMAT_WORST_SCORE) &&
             ((newscr = ctx->st_sen_scr[from]
               + hmm_tprob(hmm, from, to)) BETTER_THAN scr)) {
             scr = newscr;
@@ -744,14 +745,14 @@ hmm_vit_eval_anytopo(hmm_t * hmm)
     for (to = final_state - 1; to >= 0; --to) {
         /* Score from self-transition, if any */
         scr =
-            (hmm_tprob(hmm, to, to) BETTER_THAN WORST_SCORE)
+            (hmm_tprob(hmm, to, to) BETTER_THAN TMAT_WORST_SCORE)
             ? ctx->st_sen_scr[to] + hmm_tprob(hmm, to, to)
             : WORST_SCORE;
 
         /* Scores from transitions from other states */
         bestfrom = -1;
         for (from = to - 1; from >= 0; --from) {
-            if ((hmm_tprob(hmm, from, to) BETTER_THAN WORST_SCORE) &&
+            if ((hmm_tprob(hmm, from, to) BETTER_THAN TMAT_WORST_SCORE) &&
                 ((newscr = ctx->st_sen_scr[from]
                   + hmm_tprob(hmm, from, to)) BETTER_THAN scr)) {
                 scr = newscr;

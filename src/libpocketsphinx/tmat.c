@@ -281,10 +281,12 @@ tmat_init(char const *file_name, logmath_t *lmath, float64 tpfloor, int32 brepor
             /* Convert to logs3. */
             for (k = 0; k < n_dst; k++) {
                 int ltp;
+#if 0 /* No, don't do this!  It will subtly break 3-state HMMs. */
                 /* For these ones, we floor them even if they are
                  * zero, otherwise HMM evaluation goes nuts. */
                 if (k >= j && k-j < 3 && tp[j][k] == 0.0f)
                     tp[j][k] = tpfloor;
+#endif
                 /* Log and quantize them. */
                 ltp = -logmath_log(lmath, tp[j][k]) >> SENSCR_SHIFT;
                 if (ltp > 255) ltp = 255;
