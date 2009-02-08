@@ -70,8 +70,20 @@ fi
 ])
 if test "x$use_python" = xtrue -a "x$PYTHON" = xpython; then
    AC_PATH_PROG(PYTHON, python, bogus)
+   AC_PATH_PROG(PYTHON_CONFIG, python-config, bogus)
 fi
-AM_CONDITIONAL(BUILD_PYTHON, test "x$PYTHON" != "xbogus")
+if test "x$use_python" = xtrue -a "x$PYTHON" != xbogus -a "x$PYTHON_CONFIG" != xbogus; then
+    PYTHON_INCLUDES=`"$PYTHON_CONFIG" --includes` 
+    CPPFLAGS="$CPPFLAGS $PYTHON_INCLUDES"
+    AC_CHECK_HEADER(Python.h,use_python=true,use_python=false)
+else
+    use_python=false
+    PYTHON=bogus
+fi
+if test "x$use_python" != xtrue ; then
+    AC_WARN([Disabling python since development headers were not found])
+fi
+AM_CONDITIONAL(BUILD_PYTHON, test "x$use_python" = "xtrue")
 AC_SUBST(PYTHON)
 
 dnl
