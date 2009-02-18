@@ -1096,6 +1096,7 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     s = ckd_calloc(1, sizeof(*s));
     s->config = config;
 
+    s->lmath = logmath_retain(lmath);
     /* Log-add table. */
     s->lmath_8b = logmath_init(logmath_get_base(lmath), SENSCR_SHIFT, TRUE);
     if (s->lmath_8b == NULL) {
@@ -1154,10 +1155,63 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
 }
 
 int
-s2_semi_mgau_mllr_transform(ps_mgau_t *s,
+s2_semi_mgau_mllr_transform(ps_mgau_t *ps,
                             ps_mllr_t *mllr)
 {
-    return -1;
+    s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
+    int32 i, d, l, m;
+    float32 **fmean, *mp, **fvar, *vp;
+    float64 *temp;
+
+    /* Reload means and variances. */
+    if (s3_read_mgau(s, cmd_ln_str_r(s->config, "-mean"), &fmean) < 0) {
+        return -1;
+    }
+    if (s3_read_mgau(s, cmd_ln_str_r(s->config, "-var"), &fvar) < 0) {
+        return -1;
+    }
+
+    /* Transform codebook for each stream s */
+    for (i = 0; i < s->n_feat; i++) {
+        temp = (float64 *) ckd_calloc(s->veclen[i], sizeof(float64));
+        mp = fmean[i];
+        vp = fvar[i];
+
+        /* Transform each density d in selected codebook */
+        for (d = 0; d < s->n_density; d++) {
+            for (l = 0; l < s->veclen[i]; l++) {
+                temp[l] = 0.0;
+                for (m = 0; m < s->veclen[i]; m++) {
+                    temp[l] += mllr->A[i][0][l][m] * mp[m];
+                }
+                temp[l] += mllr->b[i][0][l];
+            }
+
+            for (l = 0; l < s->veclen[i]; l++) {
+                mp[l] = (float32) temp[l];
+		vp[l] *= mllr->h[i][0][l];
+            }
+            mp += s->veclen[i];
+            vp += s->veclen[i];
+        }
+
+        ckd_free(temp);
+    }
+
+    for (i = 0; i < s->n_feat; ++i) {
+        if (s->means)
+            ckd_free(s->means[i]);
+        if (s->vars)
+            ckd_free(s->vars[i]);
+    }
+    ckd_free(s->means);
+    ckd_free(s->vars);
+
+    s->means = (mean_t **)fmean;
+    s->vars = (var_t **)fvar;
+    s3_precomp(s, s->lmath, cmd_ln_float32_r(s->config, "-varfloor"));
+
+    return 0;
 }
 
 void
@@ -1166,6 +1220,7 @@ s2_semi_mgau_free(ps_mgau_t *ps)
     s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
     uint32 i;
 
+    logmath_free(s->lmath);
     logmath_free(s->lmath_8b);
     if (s->sendump_mmap) {
         for (i = 0; i < s->n_feat; ++i) {

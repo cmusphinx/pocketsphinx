@@ -86,6 +86,8 @@ struct s2_semi_mgau_s {
 
     /* Log-add table for compressed values. */
     logmath_t *lmath_8b;
+    /* Log-add object for reloading means/variances. */
+    logmath_t *lmath;
 };
 
 ps_mgau_t *s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef);

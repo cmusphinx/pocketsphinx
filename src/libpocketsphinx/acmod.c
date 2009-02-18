@@ -76,7 +76,7 @@ static int32 acmod_process_mfcbuf(acmod_t *acmod);
 static int
 acmod_init_am(acmod_t *acmod)
 {
-    char const *mdeffn, *tmatfn, *featparams;
+    char const *mdeffn, *tmatfn, *featparams, *mllrfn;
 
     /* Look for feat.params in acoustic model dir. */
     if ((featparams = cmd_ln_str_r(acmod->config, "-featparams"))) {
@@ -139,6 +139,14 @@ acmod_init_am(acmod_t *acmod)
             acmod->mgau =
                 ms_mgau_init(acmod->config, acmod->lmath);
         }
+    }
+
+    /* If there is an MLLR transform, apply it. */
+    if ((mllrfn = cmd_ln_str_r(acmod->config, "-mllr"))) {
+        ps_mllr_t *mllr = ps_mllr_read(mllrfn);
+        if (mllr == NULL)
+            return -1;
+        acmod_update_mllr(acmod, mllr);
     }
 
     return 0;
