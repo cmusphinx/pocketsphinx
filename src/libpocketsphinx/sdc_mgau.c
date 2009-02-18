@@ -64,6 +64,13 @@
 #include "sdc_mgau.h"
 #include "vector.h"
 
+static ps_mgaufuncs_t sdc_mgau_funcs = {
+    "sdc",
+    &sdc_mgau_frame_eval, /* frame_eval */
+    &sdc_mgau_mllr_transform,  /* transform */
+    &sdc_mgau_free             /* free */
+};
+
 #define MGAU_MIXW_VERSION	"1.0"   /* Sphinx-3 file format version for mixw */
 #define MGAU_PARAM_VERSION	"1.0"   /* Sphinx-3 file format version for mean/var */
 #define MGAU_SDMAP_VERSION	"0.1"   /* file format version for sdmap */
@@ -191,13 +198,14 @@ compute_scores_all(sdc_mgau_t * s, int16 *senone_scores)
  * Compute senone scores for the active senones.
  */
 int32
-sdc_mgau_frame_eval(sdc_mgau_t * s,
+sdc_mgau_frame_eval(ps_mgau_t * ps,
                     int16 *senone_scores,
                     uint8 *senone_active,
                     int32 n_senone_active,
                     mfcc_t ** featbuf, int32 frame,
                     int32 compallsen)
 {
+    sdc_mgau_t *s = (sdc_mgau_t *)ps;
     int32 bscore;
     int i;
 
@@ -569,10 +577,11 @@ s3_precomp(sdc_mgau_t *s, logmath_t *lmath, float32 vFloor)
     return 0;
 }
 
-sdc_mgau_t *
+ps_mgau_t *
 sdc_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
 {
     sdc_mgau_t *s;
+    ps_mgau_t *ps;
     float32 **fgau;
 
     s = ckd_calloc(1, sizeof(*s));
@@ -581,25 +590,25 @@ sdc_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     /* Log-add table. */
     s->lmath_8b = logmath_init(logmath_get_base(lmath), SENSCR_SHIFT, TRUE);
     if (s->lmath_8b == NULL) {
-        sdc_mgau_free(s);
+        sdc_mgau_free(ps_mgau_base(s));
         return NULL;
     }
     /* Ensure that it is only 8 bits wide so that fast_logmath_add() works. */
     if (logmath_get_width(s->lmath_8b) != 1) {
         E_ERROR("Log base %f is too small to represent add table in 8 bits\n",
                 logmath_get_base(s->lmath_8b));
-        sdc_mgau_free(s);
+        sdc_mgau_free(ps_mgau_base(s));
         return NULL;
     }
 
     /* Read means and variances. */
     if (s3_read_mgau(s, cmd_ln_str_r(config, "-mean"), &fgau) < 0) {
-        sdc_mgau_free(s);
+        sdc_mgau_free(ps_mgau_base(s));
         return NULL;
     }
     s->means = (mean_t **)fgau;
     if (s3_read_mgau(s, cmd_ln_str_r(config, "-var"), &fgau) < 0) {
-        sdc_mgau_free(s);
+        sdc_mgau_free(ps_mgau_base(s));
         return NULL;
     }
     s->vars = (var_t **)fgau;
@@ -611,14 +620,14 @@ sdc_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     /* Read mixture weights */
     if (read_mixw(s, cmd_ln_str_r(config, "-mixw"),
                   cmd_ln_float32_r(config, "-mixwfloor")) < 0) {
-        sdc_mgau_free(s);
+        sdc_mgau_free(ps_mgau_base(s));
         return NULL;
     }
     s->ds_ratio = cmd_ln_int32_r(config, "-ds");
 
     /* Read subspace cluster mapping */
     if (read_sdmap(s, cmd_ln_str_r(config, "-sdmap")) < 0) {
-        sdc_mgau_free(s);
+        sdc_mgau_free(ps_mgau_base(s));
         return NULL;
     }
 
@@ -626,12 +635,25 @@ sdc_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     s->cb_scores = ckd_calloc_2d(s->n_sv, s->n_density,
                                  sizeof(**s->cb_scores));
 
-    return s;
+    ps = ps_mgau_base(ps_mgau_base(s));
+    ps->vt = &sdc_mgau_funcs;
+    return ps;
+}
+
+int
+sdc_mgau_mllr_transform(ps_mgau_t *s,
+                        float32 ***A,
+                        float32 **b,
+                        float32 **h,
+                        int32 *cb2mllr)
+{
+    return -1;
 }
 
 void
-sdc_mgau_free(sdc_mgau_t * s)
+sdc_mgau_free(ps_mgau_t * ps)
 {
+    sdc_mgau_t *s = (sdc_mgau_t *)ps;
     uint32 i;
 
     logmath_free(s->lmath_8b);

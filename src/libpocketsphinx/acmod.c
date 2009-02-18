@@ -55,6 +55,9 @@
 /* Local headers. */
 #include "cmdln_macro.h"
 #include "acmod.h"
+#include "s2_semi_mgau.h"
+#include "ms_mgau.h"
+#include "sdc_mgau.h"
 
 /* Feature and front-end parameters that may be in feat.params */
 static const arg_t feat_defn[] = {
@@ -118,8 +121,6 @@ acmod_init_am(acmod_t *acmod)
             E_ERROR("SDCHMM init failed\n");
             return -1;
         }
-        acmod->frame_eval = (frame_eval_t)&sdc_mgau_frame_eval;
-        acmod->mgau_free = (void *)&sdc_mgau_free;
     }
     /* Otherwise, try to use SCHMM or CDHMM computation. */
     else {
@@ -132,15 +133,11 @@ acmod_init_am(acmod_t *acmod)
                 s2_semi_mgau_load_kdtree(acmod->mgau, kdtreefn,
                                          cmd_ln_int32_r(acmod->config, "-kdmaxdepth"),
                                          cmd_ln_int32_r(acmod->config, "-kdmaxbbi"));
-            acmod->frame_eval = (frame_eval_t)&s2_semi_mgau_frame_eval;
-            acmod->mgau_free = (void *)&s2_semi_mgau_free;
         }
         else {
             E_INFO("Falling back to general multi-stream GMM computation\n");
             acmod->mgau =
                 ms_mgau_init(acmod->config, acmod->lmath);
-            acmod->frame_eval = (frame_eval_t)&ms_cont_mgau_frame_eval;
-            acmod->mgau_free = (void *)&ms_mgau_free;
         }
     }
 
@@ -323,8 +320,8 @@ acmod_free(acmod_t *acmod)
     if (acmod->tmat)
         tmat_free(acmod->tmat);
 
-    if (acmod->mgau_free)
-        (*acmod->mgau_free)(acmod->mgau);
+    if (acmod->mgau)
+        ps_mgau_free(acmod->mgau);
     
     ckd_free(acmod);
 }
@@ -758,13 +755,13 @@ acmod_score(acmod_t *acmod,
     if (acmod->feat_outidx == acmod->n_feat_alloc)
         acmod->feat_outidx = 0;
     /* Generate scores for the next available frame */
-    (*acmod->frame_eval)(acmod->mgau,
-                         acmod->senone_scores,
-                         acmod->senone_active,
-                         acmod->n_senone_active,
-                         acmod->feat_buf[acmod->feat_outidx],
-                         acmod->output_frame,
-                         acmod->compallsen);
+    ps_mgau_frame_eval(acmod->mgau,
+                       acmod->senone_scores,
+                       acmod->senone_active,
+                       acmod->n_senone_active,
+                       acmod->feat_buf[acmod->feat_outidx],
+                       acmod->output_frame,
+                       acmod->compallsen);
     /* Advance the output pointers. */
     ++acmod->feat_outidx;
     --acmod->n_feat_frame;

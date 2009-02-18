@@ -48,6 +48,7 @@
 #include <mmio.h>
 
 /* Local headers. */
+#include "acmod.h"
 #include "hmm.h"
 #include "kdtree.h"
 #include "bin_mdef.h"
@@ -56,6 +57,7 @@ typedef struct vqFeature_s vqFeature_t;
 
 typedef struct s2_semi_mgau_s s2_semi_mgau_t;
 struct s2_semi_mgau_s {
+    ps_mgau_t base;     /**< base structure. */
     cmd_ln_t *config;   /* configuration parameters */
 
     mean_t  **means;	/* mean vectors foreach feature */
@@ -86,20 +88,22 @@ struct s2_semi_mgau_s {
     logmath_t *lmath_8b;
 };
 
-s2_semi_mgau_t *s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef);
-
-void s2_semi_mgau_free(s2_semi_mgau_t *s);
-
-int32 s2_semi_mgau_frame_eval(s2_semi_mgau_t *s,
-                              int16 *senone_scores,
-                              uint8 *senone_active,
-                              int32 n_senone_active,
-			      mfcc_t **featbuf,
-			      int32 frame,
-                              int32 compallsen);
-
-int32 s2_semi_mgau_load_kdtree(s2_semi_mgau_t *s, const char *kdtree_path,
-			       uint32 maxdepth, int32 maxbbi);
+ps_mgau_t *s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef);
+void s2_semi_mgau_free(ps_mgau_t *s);
+int s2_semi_mgau_frame_eval(ps_mgau_t *s,
+                            int16 *senone_scores,
+                            uint8 *senone_active,
+                            int32 n_senone_active,
+                            mfcc_t **featbuf,
+                            int32 frame,
+                            int32 compallsen);
+int s2_semi_mgau_mllr_transform(ps_mgau_t *s,
+                                float32 ***A,
+                                float32 **b,
+                                float32 **h,
+                                int32 *cb2mllr);
+int s2_semi_mgau_load_kdtree(ps_mgau_t *s, const char *kdtree_path,
+                             uint32 maxdepth, int32 maxbbi);
 
 
 #endif /*  __S2_SEMI_MGAU_H__ */

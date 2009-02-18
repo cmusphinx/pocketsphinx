@@ -65,6 +65,13 @@
 #include "kdtree.h"
 #include "posixwin32.h"
 
+static ps_mgaufuncs_t s2_semi_mgau_funcs = {
+    "s2_semi",
+    &s2_semi_mgau_frame_eval,      /* frame_eval */
+    &s2_semi_mgau_mllr_transform,  /* transform */
+    &s2_semi_mgau_free             /* free */
+};
+
 #define MGAU_MIXW_VERSION	"1.0"   /* Sphinx-3 file format version for mixw */
 #define MGAU_PARAM_VERSION	"1.0"   /* Sphinx-3 file format version for mean/var */
 #define NONE		-1
@@ -367,13 +374,14 @@ mgau_norm(s2_semi_mgau_t *s, int feat)
  * Compute senone scores for the active senones.
  */
 int32
-s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
+s2_semi_mgau_frame_eval(ps_mgau_t * ps,
                         int16 *senone_scores,
                         uint8 *senone_active,
                         int32 n_senone_active,
 			mfcc_t ** featbuf, int32 frame,
 			int32 compallsen)
 {
+    s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
     int i;
 
     for (i = 0; i < s->n_feat; ++i) {
@@ -672,9 +680,10 @@ get_scores1_8b_all(s2_semi_mgau_t * s, int16 *senone_scores)
 }
 
 int32
-s2_semi_mgau_load_kdtree(s2_semi_mgau_t * s, const char *kdtree_path,
+s2_semi_mgau_load_kdtree(ps_mgau_t * ps, const char *kdtree_path,
                          uint32 maxdepth, int32 maxbbi)
 {
+    s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
     if (read_kd_trees(kdtree_path, &s->kdtrees, &s->n_kdtrees,
                       maxdepth, maxbbi) == -1)
         E_FATAL("Failed to read kd-trees from %s\n", kdtree_path);
@@ -1075,10 +1084,11 @@ s3_precomp(s2_semi_mgau_t *s, logmath_t *lmath, float32 vFloor)
     return 0;
 }
 
-s2_semi_mgau_t *
+ps_mgau_t *
 s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
 {
     s2_semi_mgau_t *s;
+    ps_mgau_t *ps;
     char const *sendump_path;
     float32 **fgau;
     int i;
@@ -1089,25 +1099,25 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     /* Log-add table. */
     s->lmath_8b = logmath_init(logmath_get_base(lmath), SENSCR_SHIFT, TRUE);
     if (s->lmath_8b == NULL) {
-        s2_semi_mgau_free(s);
+        s2_semi_mgau_free(ps_mgau_base(s));
         return NULL;
     }
     /* Ensure that it is only 8 bits wide so that fast_logmath_add() works. */
     if (logmath_get_width(s->lmath_8b) != 1) {
         E_ERROR("Log base %f is too small to represent add table in 8 bits\n",
                 logmath_get_base(s->lmath_8b));
-        s2_semi_mgau_free(s);
+        s2_semi_mgau_free(ps_mgau_base(s));
         return NULL;
     }
 
     /* Read means and variances. */
     if (s3_read_mgau(s, cmd_ln_str_r(config, "-mean"), &fgau) < 0) {
-        s2_semi_mgau_free(s);
+        s2_semi_mgau_free(ps_mgau_base(s));
         return NULL;
     }
     s->means = (mean_t **)fgau;
     if (s3_read_mgau(s, cmd_ln_str_r(config, "-var"), &fgau) < 0) {
-        s2_semi_mgau_free(s);
+        s2_semi_mgau_free(ps_mgau_base(s));
         return NULL;
     }
     s->vars = (var_t **)fgau;
@@ -1138,12 +1148,25 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
         }
     }
 
-    return s;
+    ps = (ps_mgau_t *)s;
+    ps->vt = &s2_semi_mgau_funcs;
+    return ps;
+}
+
+int
+s2_semi_mgau_mllr_transform(ps_mgau_t *s,
+                            float32 ***A,
+                            float32 **b,
+                            float32 **h,
+                            int32 *cb2mllr)
+{
+    return -1;
 }
 
 void
-s2_semi_mgau_free(s2_semi_mgau_t * s)
+s2_semi_mgau_free(ps_mgau_t *ps)
 {
+    s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
     uint32 i;
 
     logmath_free(s->lmath_8b);

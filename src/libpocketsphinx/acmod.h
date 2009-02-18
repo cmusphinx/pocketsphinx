@@ -52,12 +52,10 @@
 #include <fe.h>
 #include <feat.h>
 #include <bitvec.h>
+#include <err.h>
 
 /* Local headers. */
 #include "bin_mdef.h"
-#include "s2_semi_mgau.h"
-#include "sdc_mgau.h"
-#include "ms_mgau.h"
 #include "tmat.h"
 #include "hmm.h"
 
@@ -72,15 +70,40 @@ typedef enum acmod_state_e {
 } acmod_state_t;
 
 /**
- * Function which computes one frame of GMM scores.
+ * Acoustic model parameter structure. 
  */
-typedef int (*frame_eval_t)(void *eval_obj,
-                            int16 *senscr,
-                            uint8 *senone_active,
-                            int32 n_senone_active,
-                            mfcc_t ** feat,
-                            int32 frame,
-                            int32 compallsen);
+typedef struct ps_mgau_s ps_mgau_t;
+
+typedef struct ps_mgaufuncs_s {
+    char const *name;
+
+    int (*frame_eval)(ps_mgau_t *mgau,
+                      int16 *senscr,
+                      uint8 *senone_active,
+                      int32 n_senone_active,
+                      mfcc_t ** feat,
+                      int32 frame,
+                      int32 compallsen);
+    int (*transform)(ps_mgau_t *mgau,
+                     float32 ***A,
+                     float32 **b,
+                     float32 **h,
+                     int32 *cb2mllr);
+    void (*free)(ps_mgau_t *mgau);
+} ps_mgaufuncs_t;    
+
+struct ps_mgau_s {
+    ps_mgaufuncs_t *vt;
+};
+
+#define ps_mgau_base(mg) ((ps_mgau_t *)(mg))
+#define ps_mgau_frame_eval(mg,senscr,senone_active,n_senone_active,feat,frame,compallsen) \
+    (*ps_mgau_base(mg)->vt->frame_eval)                                 \
+    (mg, senscr, senone_active, n_senone_active, feat, frame, compallsen)
+#define ps_mgau_transform(mg,A,b,h,cb2mllr)                                  \
+    (*ps_mgau_base(mg)->vt->transform)(mg, A, b, h, cb2mllr)
+#define ps_mgau_free(mg)                                  \
+    (*ps_mgau_base(mg)->vt->free)(mg)
 
 /**
  * Acoustic model structure.
@@ -112,13 +135,9 @@ struct acmod_s {
     /* Model parameters: */
     bin_mdef_t *mdef;          /**< Model definition. */
     tmat_t *tmat;              /**< Transition matrices. */
-    void *mgau;                /**< either s2_semi_mgau_t or
-                                  ms_mgau_t, will make this more
-                                  type-safe in the future. */
-    void (*mgau_free)(void *); /**< Function to dealloate mgau. */
+    ps_mgau_t *mgau;           /**< Model parameters. */
 
     /* Senone scoring: */
-    frame_eval_t frame_eval;   /**< Function to compute GMM scores. */
     int16 *senone_scores;      /**< GMM scores for current frame. */
     bitvec_t *senone_active_vec; /**< Active GMMs in current frame. */
     uint8 *senone_active;      /**< Array of deltas to active GMMs. */

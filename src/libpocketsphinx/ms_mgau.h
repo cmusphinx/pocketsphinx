@@ -102,9 +102,9 @@
 #include <feat.h>
 
 /* Local headers. */
+#include "acmod.h"
 #include "ms_gauden.h"
 #include "ms_senone.h"
-
 
 /* Lists of senones sharing each mixture Gaussian codebook */
 /* \struct mgau2sen_t
@@ -120,6 +120,7 @@ typedef struct mgau2sen_s {
 */
 
 typedef struct {
+    ps_mgau_t base;
     gauden_t* g;   /**< The codebook */
     senone_t* s;   /**< The senone */
     mgau2sen_t **mgau2sen; /**< Senones sharing mixture Gaussian codebooks */
@@ -136,19 +137,20 @@ typedef struct {
 #define ms_mgau_mgau2sen(msg) (msg->mgau2sen)
 #define ms_mgau_topn(msg) (msg->topn)
 
-ms_mgau_model_t* ms_mgau_init(cmd_ln_t *config, logmath_t *lmath);
-
-/** Free memory allocated by ms_mgau_init */
-void ms_mgau_free(ms_mgau_model_t *g /**< In: A set of models to free */
-    );
-
-int32 ms_cont_mgau_frame_eval(ms_mgau_model_t * msg,
+ps_mgau_t* ms_mgau_init(cmd_ln_t *config, logmath_t *lmath);
+void ms_mgau_free(ps_mgau_t *g);
+int32 ms_cont_mgau_frame_eval(ps_mgau_t * msg,
                               int16 *senscr,
                               uint8 *senone_active,
                               int32 n_senone_active,
                               mfcc_t ** feat,
                               int32 frame,
                               int32 compallsen);
+int32 ms_mgau_mllr_transform(ps_mgau_t *s,
+                             float32 ***A,
+                             float32 **b,
+                             float32 **h,
+                             int32 *cb2mllr);
 
 #endif /* _LIBFBS_MS_CONT_MGAU_H_*/
 

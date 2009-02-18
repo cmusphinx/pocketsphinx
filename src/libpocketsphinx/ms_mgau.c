@@ -70,19 +70,26 @@
 /* Local headers. */
 #include "ms_mgau.h"
 
-ms_mgau_model_t *
+static ps_mgaufuncs_t ms_mgau_funcs = {
+    "ms",
+    &ms_cont_mgau_frame_eval, /* frame_eval */
+    &ms_mgau_mllr_transform,  /* transform */
+    &ms_mgau_free             /* free */
+};
+
+ps_mgau_t *
 ms_mgau_init(cmd_ln_t *config, logmath_t *lmath)
 {
     /* Codebooks */
     int32 i;
     ms_mgau_model_t *msg;
+    ps_mgau_t *mg;
     gauden_t *g;
     senone_t *s;
     mgau2sen_t *m2s;
 
     msg = (ms_mgau_model_t *) ckd_calloc(1, sizeof(ms_mgau_model_t));
-
-
+    
     msg->g = NULL;
     msg->s = NULL;
 
@@ -134,12 +141,15 @@ ms_mgau_init(cmd_ln_t *config, logmath_t *lmath)
                       sizeof(gauden_dist_t));
     msg->mgau_active = ckd_calloc(g->n_mgau, sizeof(int8));
 
-    return msg;
+    mg = (ps_mgau_t *)msg;
+    mg->vt = &ms_mgau_funcs;
+    return mg;
 }
 
 void
-ms_mgau_free(ms_mgau_model_t * msg)
+ms_mgau_free(ps_mgau_t * mg)
 {
+    ms_mgau_model_t *msg = (ms_mgau_model_t *)mg;
     if (msg == NULL)
         return;
 
@@ -150,8 +160,18 @@ ms_mgau_free(ms_mgau_model_t * msg)
     ckd_free(msg);
 }
 
+int
+ms_mgau_mllr_transform(ps_mgau_t *s,
+                        float32 ***A,
+                        float32 **b,
+                        float32 **h,
+                        int32 *cb2mllr)
+{
+    return -1;
+}
+
 int32
-ms_cont_mgau_frame_eval(ms_mgau_model_t * msg,
+ms_cont_mgau_frame_eval(ps_mgau_t * mg,
 			int16 *senscr,
 			uint8 *senone_active,
 			int32 n_senone_active,
@@ -159,6 +179,7 @@ ms_cont_mgau_frame_eval(ms_mgau_model_t * msg,
 			int32 frame,
 			int32 compallsen)
 {
+    ms_mgau_model_t *msg = (ms_mgau_model_t *)mg;
     int32 gid;
     int32 i, n;
     int32 topn;
