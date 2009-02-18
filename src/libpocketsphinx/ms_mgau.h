@@ -147,10 +147,7 @@ int32 ms_cont_mgau_frame_eval(ps_mgau_t * msg,
                               int32 frame,
                               int32 compallsen);
 int32 ms_mgau_mllr_transform(ps_mgau_t *s,
-                             float32 ***A,
-                             float32 **b,
-                             float32 **h,
-                             int32 *cb2mllr);
+                             ps_mllr_t *mllr);
 
 #endif /* _LIBFBS_MS_CONT_MGAU_H_*/
 

@@ -22,6 +22,7 @@ libpocketsphinx_la_SOURCES =			\
 	ngram_search_fwdtree.c			\
 	ngram_search_fwdflat.c			\
 	ps_lattice.c				\
+	ps_mllr.c				\
 	s2_semi_mgau.c				\
 	sdc_mgau.c				\
 	tmat.c					\

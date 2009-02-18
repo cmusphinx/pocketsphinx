@@ -90,9 +90,6 @@ int32 sdc_mgau_frame_eval(ps_mgau_t *s,
                           int32 frame,
                           int32 compallsen);
 int32 sdc_mgau_mllr_transform(ps_mgau_t *s,
-                              float32 ***A,
-                              float32 **b,
-                              float32 **h,
-                              int32 *cb2mllr);
+                              ps_mllr_t *mllr);
 
 #endif /*  __SDC_MGAU_H__ */

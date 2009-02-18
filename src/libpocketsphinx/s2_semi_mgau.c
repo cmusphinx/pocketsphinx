@@ -1155,10 +1155,7 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
 
 int
 s2_semi_mgau_mllr_transform(ps_mgau_t *s,
-                            float32 ***A,
-                            float32 **b,
-                            float32 **h,
-                            int32 *cb2mllr)
+                            ps_mllr_t *mllr)
 {
     return -1;
 }

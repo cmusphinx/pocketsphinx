@@ -55,6 +55,7 @@
 #include <err.h>
 
 /* Local headers. */
+#include "ps_mllr.h"
 #include "bin_mdef.h"
 #include "tmat.h"
 #include "hmm.h"
@@ -68,6 +69,20 @@ typedef enum acmod_state_e {
     ACMOD_PROCESSING,   /**< Utterance in progress. */
     ACMOD_ENDED         /**< Utterance ended, still buffering. */
 } acmod_state_t;
+
+/**
+ * Feature space linear transform structure.
+ */
+struct ps_mllr_s {
+    int refcnt;     /**< Reference count. */
+    int n_class;    /**< Number of MLLR classes. */
+    int n_feat;     /**< Number of feature streams. */
+    int *veclen;    /**< Length of input vectors for each stream. */
+    float32 ****A;  /**< Rotation part of mean transformations. */
+    float32 ***b;   /**< Bias part of mean transformations. */
+    float32 ***h;   /**< Diagonal transformation of variances. */
+    int32 *cb2mllr; /**< Mapping from codebooks to transformations. */
+};
 
 /**
  * Acoustic model parameter structure. 
@@ -85,10 +100,7 @@ typedef struct ps_mgaufuncs_s {
                       int32 frame,
                       int32 compallsen);
     int (*transform)(ps_mgau_t *mgau,
-                     float32 ***A,
-                     float32 **b,
-                     float32 **h,
-                     int32 *cb2mllr);
+                     ps_mllr_t *mllr);
     void (*free)(ps_mgau_t *mgau);
 } ps_mgaufuncs_t;    
 
@@ -100,8 +112,8 @@ struct ps_mgau_s {
 #define ps_mgau_frame_eval(mg,senscr,senone_active,n_senone_active,feat,frame,compallsen) \
     (*ps_mgau_base(mg)->vt->frame_eval)                                 \
     (mg, senscr, senone_active, n_senone_active, feat, frame, compallsen)
-#define ps_mgau_transform(mg,A,b,h,cb2mllr)                                  \
-    (*ps_mgau_base(mg)->vt->transform)(mg, A, b, h, cb2mllr)
+#define ps_mgau_transform(mg, mllr)                                  \
+    (*ps_mgau_base(mg)->vt->transform)(mg, mllr)
 #define ps_mgau_free(mg)                                  \
     (*ps_mgau_base(mg)->vt->free)(mg)
 
@@ -136,6 +148,7 @@ struct acmod_s {
     bin_mdef_t *mdef;          /**< Model definition. */
     tmat_t *tmat;              /**< Transition matrices. */
     ps_mgau_t *mgau;           /**< Model parameters. */
+    ps_mllr_t *mllr;           /**< Speaker transformation. */
 
     /* Senone scoring: */
     int16 *senone_scores;      /**< GMM scores for current frame. */
@@ -182,6 +195,19 @@ typedef struct acmod_s acmod_t;
  * @return a newly initialized acmod_t, or NULL on failure.
  */
 acmod_t *acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb);
+
+/**
+ * Adapt acoustic model using a linear transform.
+ *
+ * @param mllr The new transform to use, or NULL to update the existing
+ *              transform.  The decoder retains ownership of this pointer,
+ *              so you should not attempt to free it manually.  Use
+ *              ps_mllr_retain() if you wish to reuse it
+ *              elsewhere.
+ * @return The updated transform object for this decoder, or
+ *         NULL on failure.
+ */
+ps_mllr_t *acmod_update_mllr(acmod_t *acmod, ps_mllr_t *mllr);
 
 /**
  * Start logging MFCCs to a filehandle.

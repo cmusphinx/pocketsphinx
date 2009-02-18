@@ -274,6 +274,12 @@ ps_get_feat(ps_decoder_t *ps)
     return ps->acmod->fcb;
 }
 
+ps_mllr_t *
+ps_update_mllr(ps_decoder_t *ps, ps_mllr_t *mllr)
+{
+    return acmod_update_mllr(ps->acmod, mllr);
+}
+
 ngram_model_t *
 ps_get_lmset(ps_decoder_t *ps)
 {

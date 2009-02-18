@@ -59,6 +59,7 @@ extern "C" {
 #include <pocketsphinx_export.h>
 #include <cmdln_macro.h>
 #include <ps_lattice.h>
+#include <ps_mllr.h>
 #include <fsg_set.h>
 
 /**
@@ -187,6 +188,20 @@ fe_t *ps_get_fe(ps_decoder_t *ps);
  */
 POCKETSPHINX_EXPORT
 feat_t *ps_get_feat(ps_decoder_t *ps);
+
+/**
+ * Adapt current acoustic model using a linear transform.
+ *
+ * @param mllr The new transform to use, or NULL to update the existing
+ *              transform.  The decoder retains ownership of this pointer,
+ *              so you should not attempt to free it manually.  Use
+ *              ps_mllr_retain() if you wish to reuse it
+ *              elsewhere.
+ * @return The updated transform object for this decoder, or
+ *         NULL on failure.
+ */
+POCKETSPHINX_EXPORT
+ps_mllr_t *ps_update_mllr(ps_decoder_t *ps, ps_mllr_t *mllr);
 
 /**
  * Get the language model set object for this decoder.

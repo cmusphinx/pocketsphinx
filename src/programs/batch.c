@@ -72,6 +72,14 @@ static const arg_t ps_args_def[] = {
       ARG_INT32,
       "1",
       "Do every Nth line in the control file" },
+    { "-mllrctl",
+      ARG_STRING,
+      NULL,
+      "Control file listing MLLR transforms to use for each file" },
+    { "-mllrdir",
+      ARG_STRING,
+      NULL,
+      "Base directory for MLLR transforms" },
 
     /* Input file types and locations. */
     { "-adcin",
@@ -170,6 +178,35 @@ read_mfc_file(FILE *infh, int sf, int ef, int *out_nfr, int ceplen)
 #endif
     *out_nfr = nfr;
     return mfcs;
+}
+
+static int
+process_mllrctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
+{
+    char const *mllrdir;
+    char *infile = NULL;
+    ps_mllr_t *mllr;
+
+    if (file == NULL)
+        return 0;
+
+    if ((mllrdir = cmd_ln_str_r(config, "-mllrdir")))
+        infile = string_join(infile, "/", file, NULL);
+    else
+        infile = ckd_salloc(file);
+
+    if ((mllr = ps_mllr_read(infile)) == NULL) {
+        ckd_free(infile);
+        return -1;
+    }
+    if (ps_update_mllr(ps, mllr) == NULL) {
+        ps_mllr_free(mllr);
+        ckd_free(infile);
+        return -1;
+    }
+
+    ckd_free(infile);
+    return 0;
 }
 
 static int
@@ -310,9 +347,11 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     char *line;
     size_t len;
     FILE *hypfh = NULL, *hypsegfh = NULL, *hypconffh = NULL;
+    FILE *mllrfh = NULL;
     double n_speech, n_cpu, n_wall;
     char const *outlatdir;
     char const *nbestdir;
+    char const *str;
 
     ctloffset = cmd_ln_int32_r(config, "-ctloffset");
     ctlcount = cmd_ln_int32_r(config, "-ctlcount");
@@ -320,29 +359,34 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     outlatdir = cmd_ln_str_r(config, "-outlatdir");
     nbestdir = cmd_ln_str_r(config, "-nbestdir");
 
-    if (cmd_ln_str_r(config, "-hyp")) {
-        hypfh = fopen(cmd_ln_str_r(config, "-hyp"), "w");
+    if ((str = cmd_ln_str_r(config, "-mllrctl"))) {
+        mllrfh = fopen(str, "r");
+        if (mllrfh == NULL) {
+            E_ERROR_SYSTEM("Failed to open MLLR control file file %s", str);
+            goto done;
+        }
+    }
+    if ((str = cmd_ln_str_r(config, "-hyp"))) {
+        hypfh = fopen(str, "w");
         if (hypfh == NULL) {
-            E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing", hypfh);
-            return;
+            E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing", str);
+            goto done;
         }
         setbuf(hypfh, NULL);
     }
-    if (cmd_ln_str_r(config, "-hypseg")) {
-        hypsegfh = fopen(cmd_ln_str_r(config, "-hypseg"), "w");
+    if ((str = cmd_ln_str_r(config, "-hypseg"))) {
+        hypsegfh = fopen(str, "w");
         if (hypsegfh == NULL) {
-            E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing",
-                           hypsegfh);
-            return;
+            E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing", str);
+            goto done;
         }
         setbuf(hypsegfh, NULL);
     }
-    if (cmd_ln_str_r(config, "-hypconf")) {
-        hypconffh = fopen(cmd_ln_str_r(config, "-hypconf"), "w");
+    if ((str = cmd_ln_str_r(config, "-hypconf"))) {
+        hypconffh = fopen(str, "w");
         if (hypconffh == NULL) {
-            E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing",
-                           hypconffh);
-            return;
+            E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing", str);
+            goto done;
         }
         setbuf(hypconffh, NULL);
     }
@@ -351,13 +395,26 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     while ((line = fread_line(ctlfh, &len))) {
         char *wptr[4];
         int32 nf, sf, ef;
+        char *mllrline = NULL;
+
+        if (mllrfh) {
+            mllrline = fread_line(mllrfh, &len);
+            if (mllrline == NULL) {
+                E_ERROR("File size mismatch between control and MLLR control\n");
+                ckd_free(line);
+                ckd_free(mllrline);
+                goto done;
+            }
+        }
 
         if (i < ctloffset) {
             i += ctlincr;
+            ckd_free(mllrline);
             ckd_free(line);
             continue;
         }
         if (ctlcount != -1 && i >= ctloffset + ctlcount) {
+            ckd_free(mllrline);
             ckd_free(line);
             break;
         }
@@ -384,6 +441,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             if (nf > 3)
                 uttid = wptr[3];
             /* Do actual decoding. */
+            process_mllrctl_line(ps, config, mllrline);
             process_ctl_line(ps, config, file, uttid, sf, ef);
             hyp = ps_get_hyp(ps, &score, &uttid);
             
@@ -409,6 +467,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             E_INFO("%s: %.2f xRT (CPU), %.2f xRT (elapsed)\n",
                    uttid, n_cpu / n_speech, n_wall / n_speech);
         }
+        ckd_free(mllrline);
         ckd_free(line);
         i += ctlincr;
     }
@@ -419,6 +478,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     E_INFO("AVERAGE %.2f xRT (CPU), %.2f xRT (elapsed)\n",
            n_cpu / n_speech, n_wall / n_speech);
 
+done:
     if (hypfh)
         fclose(hypfh);
     if (hypsegfh)

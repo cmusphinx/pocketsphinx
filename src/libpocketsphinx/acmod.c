@@ -319,11 +319,23 @@ acmod_free(acmod_t *acmod)
         bin_mdef_free(acmod->mdef);
     if (acmod->tmat)
         tmat_free(acmod->tmat);
-
     if (acmod->mgau)
         ps_mgau_free(acmod->mgau);
+    if (acmod->mllr)
+        ps_mllr_free(acmod->mllr);
     
     ckd_free(acmod);
+}
+
+ps_mllr_t *
+acmod_update_mllr(acmod_t *acmod, ps_mllr_t *mllr)
+{
+    if (acmod->mllr)
+        ps_mllr_free(acmod->mllr);
+    acmod->mllr = mllr;
+    ps_mgau_transform(acmod->mgau, mllr);
+
+    return mllr;
 }
 
 int
