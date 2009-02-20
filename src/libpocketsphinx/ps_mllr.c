@@ -108,10 +108,11 @@ ps_mllr_read(char const *regmatfile)
                 }
             }
             for (j = 0; j < mllr->veclen[i]; ++j) {
-                if (fscanf(fp, "%f ", &mllr->b[i][m][j]) != 1)
+                if (fscanf(fp, "%f ", &mllr->b[i][m][j]) != 1) {
                     E_ERROR("Failed reading MLLR bias (%d,%d,%d)\n",
                             i, m, j);
-                goto error_out;
+                    goto error_out;
+                }
             }
             for (j = 0; j < mllr->veclen[i]; ++j) {
                 if (fscanf(fp, "%f ", &mllr->h[i][m][j]) != 1) {

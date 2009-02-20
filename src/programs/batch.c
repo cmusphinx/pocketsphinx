@@ -395,7 +395,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     while ((line = fread_line(ctlfh, &len))) {
         char *wptr[4];
         int32 nf, sf, ef;
-        char *mllrline = NULL;
+        char *mllrline = NULL, *mllrfile = NULL;
 
         if (mllrfh) {
             mllrline = fread_line(mllrfh, &len);
@@ -405,6 +405,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                 ckd_free(mllrline);
                 goto done;
             }
+            mllrfile = string_trim(mllrline, STRING_BOTH);
         }
 
         if (i < ctloffset) {
@@ -441,7 +442,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             if (nf > 3)
                 uttid = wptr[3];
             /* Do actual decoding. */
-            process_mllrctl_line(ps, config, mllrline);
+            process_mllrctl_line(ps, config, mllrfile);
             process_ctl_line(ps, config, file, uttid, sf, ef);
             hyp = ps_get_hyp(ps, &score, &uttid);
             
