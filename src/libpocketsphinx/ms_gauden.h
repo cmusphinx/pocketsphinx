@@ -71,7 +71,7 @@ extern "C" {
  */
 typedef struct {
     int32 id;		/**< Index of codeword (gaussian density) */
-    var_t dist;		/**< Density value for input observation wrt above codeword;
+    mfcc_t dist;		/**< Density value for input observation wrt above codeword;
                            NOTE: result in logs3 domain, but var_t used for speed */
 
 } gauden_dist_t;
@@ -81,9 +81,9 @@ typedef struct {
  * \brief Multivariate gaussian mixture density parameters
  */
 typedef struct {
-    mean_t ****mean;	/**< mean[codebook][feature][codeword] vector */
-    var_t ****var;	/**< like mean; diagonal covariance vector only */
-    var_t ***det;	/**< log(determinant) for each variance vector;
+    mfcc_t ****mean;	/**< mean[codebook][feature][codeword] vector */
+    mfcc_t ****var;	/**< like mean; diagonal covariance vector only */
+    mfcc_t ***det;	/**< log(determinant) for each variance vector;
 			   actually, log(sqrt(2*pi*det)) */
     logmath_t *lmath;   /**< log math computation */
     int32 n_mgau;	/**< Number codebooks */

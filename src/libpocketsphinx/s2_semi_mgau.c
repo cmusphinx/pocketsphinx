@@ -178,9 +178,9 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
     ceplen = s->veclen[feat];
     
     for (i = 0; i < s->topn; i++) {
-        mean_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
+        mfcc_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
         vqFeature_t vtmp;
-        var_t *var, d;
+        mfcc_t *var, d;
         mfcc_t *obs;
         int32 cw, j;
 
@@ -220,8 +220,8 @@ eval_cb_kdtree(s2_semi_mgau_t *s, int32 feat, mfcc_t *z,
     ceplen = s->veclen[feat];
 
     for (i = 0; i < maxbbi; ++i) {
-        mean_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
-        var_t *var, d;
+        mfcc_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
+        mfcc_t *var, d;
         mfcc_t *obs;
         vqFeature_t *cur;
         int32 cw, j, k;
@@ -263,8 +263,8 @@ static void
 eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
 {
     vqFeature_t *worst, *best, *topn;
-    mean_t *mean;
-    var_t *var, *det, *detP, *detE;
+    mfcc_t *mean;
+    mfcc_t *var, *det, *detP, *detE;
     int32 i, ceplen;
 
     best = topn = s->f[feat];
@@ -276,8 +276,8 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
     ceplen = s->veclen[feat];
 
     for (detP = det; detP < detE; ++detP) {
-        mean_t diff, sqdiff, compl; /* diff, diff^2, component likelihood */
-        var_t d;
+        mfcc_t diff, sqdiff, compl; /* diff, diff^2, component likelihood */
+        mfcc_t d;
         mfcc_t *obs;
         vqFeature_t *cur;
         int32 cw, j;
@@ -1050,8 +1050,8 @@ s3_precomp(s2_semi_mgau_t *s, logmath_t *lmath, float32 vFloor)
 
     for (feat = 0; feat < s->n_feat; ++feat) {
         float32 *fmp;
-        mean_t *mp;
-        var_t *vp, *dp;
+        mfcc_t *mp;
+        mfcc_t *vp, *dp;
         int32 vecLen, i;
 
         vecLen = s->veclen[feat];
@@ -1061,7 +1061,7 @@ s3_precomp(s2_semi_mgau_t *s, logmath_t *lmath, float32 vFloor)
         dp = s->dets[feat];
 
         for (i = 0; i < s->n_density; ++i) {
-            var_t d;
+            mfcc_t d;
             int32 j;
 
             d = 0;
@@ -1075,8 +1075,8 @@ s3_precomp(s2_semi_mgau_t *s, logmath_t *lmath, float32 vFloor)
                 fvar = *(float32 *) vp;
                 if (fvar < vFloor)
                     fvar = vFloor;
-                d += (var_t)logmath_log(lmath, 1 / sqrt(fvar * 2.0 * M_PI));
-                *vp = (var_t)logmath_ln_to_log(lmath, 1.0 / (2.0 * fvar));
+                d += (mfcc_t)logmath_log(lmath, 1 / sqrt(fvar * 2.0 * M_PI));
+                *vp = (mfcc_t)logmath_ln_to_log(lmath, 1.0 / (2.0 * fvar));
             }
             *dp++ = d;
         }
@@ -1116,15 +1116,15 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
         s2_semi_mgau_free(ps_mgau_base(s));
         return NULL;
     }
-    s->means = (mean_t **)fgau;
+    s->means = (mfcc_t **)fgau;
     if (s3_read_mgau(s, cmd_ln_str_r(config, "-var"), &fgau) < 0) {
         s2_semi_mgau_free(ps_mgau_base(s));
         return NULL;
     }
-    s->vars = (var_t **)fgau;
+    s->vars = (mfcc_t **)fgau;
 
     /* Precompute (and fixed-point-ize) means, variances, and determinants. */
-    s->dets = (var_t **)ckd_calloc_2d(s->n_feat, s->n_density, sizeof(**s->dets));
+    s->dets = (mfcc_t **)ckd_calloc_2d(s->n_feat, s->n_density, sizeof(**s->dets));
     s3_precomp(s, lmath, cmd_ln_float32_r(config, "-varfloor"));
 
     /* Read mixture weights */
@@ -1207,8 +1207,8 @@ s2_semi_mgau_mllr_transform(ps_mgau_t *ps,
     ckd_free(s->means);
     ckd_free(s->vars);
 
-    s->means = (mean_t **)fmean;
-    s->vars = (var_t **)fvar;
+    s->means = (mfcc_t **)fmean;
+    s->vars = (mfcc_t **)fvar;
     s3_precomp(s, s->lmath, cmd_ln_float32_r(s->config, "-varfloor"));
 
     return 0;

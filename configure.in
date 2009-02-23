@@ -30,6 +30,7 @@ case $host in
 esac     
 
 AC_PROG_CC
+AC_PROG_CXX
 AM_PROG_LIBTOOL
 AC_WORDS_BIGENDIAN
 AC_CHECK_TYPES(long long)

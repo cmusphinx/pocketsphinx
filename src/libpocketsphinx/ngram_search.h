@@ -47,6 +47,7 @@
 #include <logmath.h>
 #include <ngram_model.h>
 #include <listelem_alloc.h>
+#include <err.h>
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"

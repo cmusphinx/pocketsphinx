@@ -46,6 +46,7 @@
 
 /* SphinxBase headers. */
 #include <prim_type.h>
+#include <err.h>
 #include <cmd_ln.h>
 #include <strfuncs.h>
 #include <string.h>

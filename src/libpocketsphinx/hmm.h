@@ -89,15 +89,6 @@ extern "C" {
  */
 #define WORSE_THAN <
 
-#ifdef FIXED_POINT
-/** Gaussian mean storage type. */
-typedef fixed32 mean_t;
-typedef int32 var_t;
-#else
-typedef float32 mean_t;
-typedef float32 var_t;
-#endif
-
 /** \file hmm.h
  * \brief HMM data structure and operation
  *

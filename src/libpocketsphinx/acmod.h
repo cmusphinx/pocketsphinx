@@ -133,6 +133,10 @@ struct ps_mgau_s {
  * scores (due to dynamic feature calculation), results may not be
  * immediately available after input, and the output results will not
  * correspond to the last piece of data input.
+ *
+ * TODO: In addition, this structure serves the purpose of queueing
+ * frames of features (and potentially also scores in the future) for
+ * asynchronous passes of recognition operating in parallel.
  */
 struct acmod_s {
     /* Global objects, not retained. */
@@ -265,6 +269,13 @@ int acmod_rewind(acmod_t *acmod);
  * @return previous allocation policy.
  */
 int acmod_set_grow(acmod_t *acmod, int grow_feat);
+
+/**
+ * TODO: Set queue length for utterance processing.
+ *
+ * This function allows multiple concurrent passes of search to
+ * operate on different parts of the utterance.
+ */
 
 /**
  * Feed raw audio data to the acoustic model for scoring.

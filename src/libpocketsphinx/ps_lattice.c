@@ -48,6 +48,7 @@
 #include <ckd_alloc.h>
 #include <listelem_alloc.h>
 #include <strfuncs.h>
+#include <err.h>
 #include <pio.h>
 
 /* Local headers. */

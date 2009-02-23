@@ -60,9 +60,9 @@ struct s2_semi_mgau_s {
     ps_mgau_t base;     /**< base structure. */
     cmd_ln_t *config;   /* configuration parameters */
 
-    mean_t  **means;	/* mean vectors foreach feature */
-    var_t   **vars;	/* inverse var vectors foreach feature */
-    var_t   **dets;	/* det values foreach feature */
+    mfcc_t  **means;	/* mean vectors foreach feature */
+    mfcc_t  **vars;	/* inverse var vectors foreach feature */
+    mfcc_t  **dets;	/* det values foreach feature */
 
     uint8 ***mixw;     /* mixture weight distributions */
     mmio_file_t *sendump_mmap;/* memory map for mixw (or NULL if not mmap) */

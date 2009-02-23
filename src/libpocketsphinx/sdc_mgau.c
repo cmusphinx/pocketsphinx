@@ -97,8 +97,8 @@ static ps_mgaufuncs_t sdc_mgau_funcs = {
 static void
 eval_cb(sdc_mgau_t *s, int feat, mfcc_t *z)
 {
-    mean_t *mean;
-    var_t *var, *det;
+    mfcc_t *mean;
+    mfcc_t *var, *det;
     int32 i, ceplen;
 
     /* Thes are organized in 2-d arrays for some reason. */
@@ -108,12 +108,12 @@ eval_cb(sdc_mgau_t *s, int feat, mfcc_t *z)
     ceplen = s->veclen[feat];
 
     for (i = 0; i < s->n_density; ++i) {
-        var_t d;
+        mfcc_t d;
         int j;
 
         d = det[i];
         for (j = 0; j < ceplen; ++j) {
-            mean_t diff, sqdiff, compl; /* diff, diff^2, component likelihood */
+            mfcc_t diff, sqdiff, compl; /* diff, diff^2, component likelihood */
             diff = z[j] - *mean++;
             /* FIXME: Use standard deviations, to avoid squaring, as per Bhiksha. */
             sqdiff = MFCCMUL(diff, diff);
@@ -543,8 +543,8 @@ s3_precomp(sdc_mgau_t *s, logmath_t *lmath, float32 vFloor)
 
     for (feat = 0; feat < s->n_sv; ++feat) {
         float32 *fmp;
-        mean_t *mp;
-        var_t *vp, *dp;
+        mfcc_t *mp;
+        mfcc_t *vp, *dp;
         int32 vecLen, i;
 
         vecLen = s->veclen[feat];
@@ -554,7 +554,7 @@ s3_precomp(sdc_mgau_t *s, logmath_t *lmath, float32 vFloor)
         dp = s->dets[feat];
 
         for (i = 0; i < s->n_density; ++i) {
-            var_t d;
+            mfcc_t d;
             int32 j;
 
             d = 0;
@@ -568,8 +568,8 @@ s3_precomp(sdc_mgau_t *s, logmath_t *lmath, float32 vFloor)
                 fvar = *(float32 *) vp;
                 if (fvar < vFloor)
                     fvar = vFloor;
-                d += (var_t)logmath_log(lmath, 1 / sqrt(fvar * 2.0 * M_PI));
-                *vp = (var_t)logmath_ln_to_log(lmath, 1.0 / (2.0 * fvar));
+                d += (mfcc_t)logmath_log(lmath, 1 / sqrt(fvar * 2.0 * M_PI));
+                *vp = (mfcc_t)logmath_ln_to_log(lmath, 1.0 / (2.0 * fvar));
             }
             *dp++ = d;
         }
@@ -606,15 +606,15 @@ sdc_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
         sdc_mgau_free(ps_mgau_base(s));
         return NULL;
     }
-    s->means = (mean_t **)fgau;
+    s->means = (mfcc_t **)fgau;
     if (s3_read_mgau(s, cmd_ln_str_r(config, "-var"), &fgau) < 0) {
         sdc_mgau_free(ps_mgau_base(s));
         return NULL;
     }
-    s->vars = (var_t **)fgau;
+    s->vars = (mfcc_t **)fgau;
 
     /* Precompute (and fixed-point-ize) means, variances, and determinants. */
-    s->dets = (var_t **)ckd_calloc_2d(s->n_sv, s->n_density, sizeof(**s->dets));
+    s->dets = (mfcc_t **)ckd_calloc_2d(s->n_sv, s->n_density, sizeof(**s->dets));
     s3_precomp(s, lmath, cmd_ln_float32_r(config, "-varfloor"));
 
     /* Read mixture weights */

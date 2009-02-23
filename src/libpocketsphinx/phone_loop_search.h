@@ -1,6 +1,6 @@
 /* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
- * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
+ * Copyright (c) 2008 Carnegie Mellon University.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,62 +34,54 @@
  * ====================================================================
  *
  */
-/*
- * Interface for subspace distribution clustered GMM evaluation.
+
+/**
+ * @file phone_loop_search.h Fast and rough context-independent
+ * phoneme loop search.
+ *
+ * This exists for the purposes of phoneme lookahead, and thus it
+ * actually does not do phoneme recognition (it wouldn't be very
+ * accurate anyway).
  */
 
-#ifndef __SDC_MGAU_H__
-#define __SDC_MGAU_H__
+#ifndef __PHONE_LOOP_SEARCH_H__
+#define __PHONE_LOOP_SEARCH_H__
 
-/* SphinxBase headesr. */
-#include <fe.h>
+/* SphinxBase headers. */
+#include <cmd_ln.h>
 #include <logmath.h>
-#include <mmio.h>
+#include <ngram_model.h>
+#include <listelem_alloc.h>
 
 /* Local headers. */
-#include "acmod.h"
+#include "pocketsphinx_internal.h"
 #include "hmm.h"
-#include "bin_mdef.h"
-#include "s2_semi_mgau.h"
 
-typedef struct sdc_mgau_s sdc_mgau_t;
-struct sdc_mgau_s {
-    ps_mgau_t base;     /**< base structure. */
-    cmd_ln_t *config;   /* configuration parameters */
-
-    mfcc_t  **means;	/* mean vectors foreach feature */
-    mfcc_t   **vars;	/* inverse var vectors foreach feature */
-    mfcc_t   **dets;	/* det values foreach feature */
-
-    int32 n_mixw_den;  /* Number of distributions per senone */
-    uint8 **mixw;     /* Mixture weight distributions */
-    uint8 ***sdmap;    /* Mapping from senones to codewords */
-
-    int32 n_sv;		/* Number of subspaces */
-    int32 *veclen;	/* Length of subspaces */
-    int32 n_density;	/* Number of distributions per codebook */
-    int32 n_sen;	/* Number of senones */
-
-    int32 num_frames;
-    int32 ds_ratio;
-
-    int32 **cb_scores;
-    int32 *score_tmp;
-
-    /* Log-add table for compressed values. */
-    logmath_t *lmath_8b;
+/**
+ * Phone loop structure.
+ */
+struct phone_loop_s {
+    hmm_t hmm;       /**< Basic HMM structure. */
+    int16 ciphone;   /**< Context-independent phone ID. */
+    int16 frame;     /**< Last frame this phone was active. */
 };
+typedef struct phone_loop_s phone_loop_t;
 
-ps_mgau_t *sdc_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef);
-void sdc_mgau_free(ps_mgau_t *s);
-int32 sdc_mgau_frame_eval(ps_mgau_t *s,
-                          int16 *senone_scores,
-                          uint8 *senone_active,
-                          int32 n_senone_active,
-                          mfcc_t **featbuf,
-                          int32 frame,
-                          int32 compallsen);
-int32 sdc_mgau_mllr_transform(ps_mgau_t *s,
-                              ps_mllr_t *mllr);
+/**
+ * Phone loop search structure.
+ */
+struct phone_loop_search_s {
+    ps_search_t base;       /**< Base search structure. */
+    hmm_context_t *hmmctx;  /**< HMM context structure. */
+    int16 frame;            /**< Current frame being searched. */
+    int16 n_phones;         /**< Size of phone array. */
+    phone_loop_t *phones;   /**< Array of phone arcs. */
+};
+typedef struct phone_loop_search_s phone_loop_search_t;
 
-#endif /*  __SDC_MGAU_H__ */
+ps_search_t *phone_loop_search_init(cmd_ln_t *config,
+                                    acmod_t *acmod,
+                                    dict_t *dict);
+void phone_loop_search_free(ps_search_t *search);
+
+#endif /* __PHONE_LOOP_SEARCH_H__ */

@@ -315,9 +315,9 @@ static int32
 gauden_dist_precompute(gauden_t * g, logmath_t *lmath, float32 varfloor)
 {
     int32 i, m, f, d, flen;
-    mean_t *meanp;
-    var_t *varp;
-    var_t *detp;
+    mfcc_t *meanp;
+    mfcc_t *varp;
+    mfcc_t *detp;
     int32 floored;
 
     floored = 0;
@@ -343,9 +343,11 @@ gauden_dist_precompute(gauden_t * g, logmath_t *lmath, float32 varfloor)
                         *fvarp = varfloor;
                         ++floored;
                     }
-                    *detp += (var_t)logmath_log(lmath, 1.0 / sqrt(*fvarp * 2.0 * M_PI));
+                    *detp += (mfcc_t)logmath_log(lmath,
+                                                 1.0 / sqrt(*fvarp * 2.0 * M_PI));
                     /* Precompute this part of the exponential */
-                    *varp = (var_t)logmath_ln_to_log(lmath, (1.0 / (*fvarp * 2.0)));
+                    *varp = (mfcc_t)logmath_ln_to_log(lmath,
+                                                      (1.0 / (*fvarp * 2.0)));
                 }
             }
         }
@@ -375,10 +377,10 @@ gauden_init(char const *meanfile, char const *varfile, float32 varfloor, logmath
     fgau = NULL;
     gauden_param_read(&fgau, &g->n_mgau, &g->n_feat, &g->n_density,
                       &g->featlen, meanfile);
-    g->mean = (mean_t ****)fgau;
+    g->mean = (mfcc_t ****)fgau;
     fgau = NULL;
     gauden_param_read(&fgau, &m, &f, &d, &flen, varfile);
-    g->var = (var_t ****)fgau;
+    g->var = (mfcc_t ****)fgau;
 
     /* Verify mean and variance parameter dimensions */
     if ((m != g->n_mgau) || (f != g->n_feat) || (d != g->n_density))
@@ -414,25 +416,25 @@ gauden_free(gauden_t * g)
 /* See compute_dist below */
 static int32
 compute_dist_all(gauden_dist_t * out_dist, mfcc_t* obs, int32 featlen,
-                 mean_t ** mean, var_t ** var, var_t * det,
+                 mfcc_t ** mean, mfcc_t ** var, mfcc_t * det,
                  int32 n_density)
 {
     int32 i, d;
 
     for (d = 0; d < n_density; ++d) {
-        mean_t *m;
-        var_t *v;
-        var_t dval;
+        mfcc_t *m;
+        mfcc_t *v;
+        mfcc_t dval;
 
         m = mean[d];
         v = var[d];
         dval = det[d];
 
         for (i = 0; i < featlen; i++) {
-            mean_t diff;
+            mfcc_t diff;
 #ifdef FIXED_POINT
             /* Have to check for underflows here. */
-            var_t pdval = dval;
+            mfcc_t pdval = dval;
             diff = obs[i] - m[i];
             dval -= MFCCMUL(MFCCMUL(diff, diff), v[i]);
             if (dval > pdval) {
@@ -462,7 +464,7 @@ compute_dist_all(gauden_dist_t * out_dist, mfcc_t* obs, int32 featlen,
 static int32
 compute_dist(gauden_dist_t * out_dist, int32 n_top,
              mfcc_t * obs, int32 featlen,
-             mean_t ** mean, var_t ** var, var_t * det,
+             mfcc_t ** mean, mfcc_t ** var, mfcc_t * det,
              int32 n_density)
 {
     int32 i, j, d;
@@ -478,19 +480,19 @@ compute_dist(gauden_dist_t * out_dist, int32 n_top,
     worst = &(out_dist[n_top - 1]);
 
     for (d = 0; d < n_density; d++) {
-        mean_t *m;
-        var_t *v;
-        var_t dval;
+        mfcc_t *m;
+        mfcc_t *v;
+        mfcc_t dval;
 
         m = mean[d];
         v = var[d];
         dval = det[d];
 
         for (i = 0; (i < featlen) && (dval >= worst->dist); i++) {
-            mean_t diff;
+            mfcc_t diff;
 #ifdef FIXED_POINT
             /* Have to check for underflows here. */
-            var_t pdval = dval;
+            mfcc_t pdval = dval;
             diff = obs[i] - m[i];
             dval -= MFCCMUL(MFCCMUL(diff, diff), v[i]);
             if (dval > pdval) {

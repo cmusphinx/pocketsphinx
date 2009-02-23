@@ -189,6 +189,10 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     /* Otherwise, we will initialize the search whenever the user
      * decides to load an FSG or a language model. */
 
+    /* TODO: If phoneme lookahead is requested then initialize an
+     * auxiliary phone loop search, which will run in "parallel" with
+     * FSG or N-Gram search. */
+
     /* Initialize performance timer. */
     ps->perf.name = "decode";
     ptmr_init(&ps->perf);
@@ -502,6 +506,8 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
         acmod_set_rawfh(ps->acmod, rawfh);
     }
 
+    /* TODO: Start the auxiliary phone loop search if requested. */
+
     return ps_search_start(ps->search);
 }
 
@@ -800,9 +806,14 @@ ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
     search->config = config;
     search->acmod = acmod;
     search->dict = dict;
-    search->start_wid = dict_to_id(dict, "<s>");
-    search->finish_wid = dict_to_id(dict, "</s>");
-    search->silence_wid = dict_to_id(dict, "<sil>");
+    if (dict) {
+        search->start_wid = dict_to_id(dict, "<s>");
+        search->finish_wid = dict_to_id(dict, "</s>");
+        search->silence_wid = dict_to_id(dict, "<sil>");
+    }
+    else {
+        search->start_wid = search->finish_wid = search->silence_wid = -1;
+    }
 }
 
 void
