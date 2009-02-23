@@ -71,15 +71,14 @@ struct s2_semi_mgau_s {
     int16 n_feat;	/* Number of feature streams */
     int16 n_density;	/* Number of mixtures per codebook */
     int32 n_sen;	/* Number of senones */
-    int16 topn;		/* Number of top densities to compute (<S2_MAX_TOPN) */
+    uint8 *topn_beam;   /* Beam for determining per-frame top-N densities */
+    int16 max_topn;
+    int16 ds_ratio;
 
     kd_tree_t **kdtrees;
     uint32 n_kdtrees;
     uint32 kd_maxdepth;
     int32 kd_maxbbi;
-
-    int32 num_frames;
-    int32 ds_ratio;
 
     /* Top-N scores and codewords from current, last frame. */
     vqFeature_t **f, **lastf;

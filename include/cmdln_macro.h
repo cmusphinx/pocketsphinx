@@ -317,7 +317,11 @@
 { "-topn",                                                                      \
       ARG_INT32,                                                                \
       "4",                                                                      \
-      "Number of top Gaussians to use in scoring" },                            \
+      "Maximum number of top Gaussians to use in scoring." },                   \
+{ "-topn_beam",                                                                 \
+      ARG_STRING,                                                               \
+      "0",                                                                     \
+      "Beam width used to determine top-N Gaussians (or a list, per-feature)" },\
 { "-kdtree",                                                                    \
       ARG_STRING,                                                               \
       NULL,                                                                     \
