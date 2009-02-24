@@ -68,6 +68,15 @@ struct phone_loop_s {
 typedef struct phone_loop_s phone_loop_t;
 
 /**
+ * Renormalization event.
+ */
+struct phone_loop_renorm_s {
+    int frame_idx;  /**< Frame of renormalization. */
+    int32 norm;     /**< Normalization constant. */
+};
+typedef struct phone_loop_renorm_s phone_loop_renorm_t;
+
+/**
  * Phone loop search structure.
  */
 struct phone_loop_search_s {
@@ -76,6 +85,12 @@ struct phone_loop_search_s {
     int16 frame;            /**< Current frame being searched. */
     int16 n_phones;         /**< Size of phone array. */
     phone_loop_t *phones;   /**< Array of phone arcs. */
+
+    int32 best_score;       /**< Best Viterbi score in current frame. */
+    int32 beam;             /**< HMM pruning beam width. */
+    int32 pbeam;            /**< Phone exit pruning beam width. */
+    int32 pip;              /**< Phone insertion penalty ("language score"). */
+    glist_t renorm;         /**< List of renormalizations. */
 };
 typedef struct phone_loop_search_s phone_loop_search_t;
 
