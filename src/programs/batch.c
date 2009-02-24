@@ -186,12 +186,19 @@ process_mllrctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
     char const *mllrdir;
     char *infile = NULL;
     ps_mllr_t *mllr;
+    static char *lastfile;
 
     if (file == NULL)
         return 0;
 
+    if (lastfile && 0 == strcmp(file, lastfile))
+        return 0;
+
+    ckd_free(lastfile);
+    lastfile = ckd_salloc(file);
+
     if ((mllrdir = cmd_ln_str_r(config, "-mllrdir")))
-        infile = string_join(infile, "/", file, NULL);
+        infile = string_join(mllrdir, "/", file, NULL);
     else
         infile = ckd_salloc(file);
 
