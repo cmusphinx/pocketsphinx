@@ -92,12 +92,12 @@ phone_loop_search_reinit(ps_search_t *search)
                  FALSE,
                  bin_mdef_pid2ssid(acmod->mdef, i),
                  bin_mdef_pid2tmatid(acmod->mdef, i));
-        /* All CI senones are active all the time. */
-        acmod_activate_hmm(acmod, (hmm_t *)&pls->phones[i]);
     }
     pls->beam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam"));
     pls->pbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pbeam"));
     pls->pip = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pip"));
+    E_INFO("State beam %d Phone exit beam %d Insertion penalty %d\n",
+           pls->beam, pls->pbeam, pls->pip);
 
     return 0;
 }
@@ -149,12 +149,14 @@ phone_loop_search_start(ps_search_t *search)
     phone_loop_search_t *pls = (phone_loop_search_t *)search;
     int i;
 
-    /* Reset scores and backpointers in phone HMMs. */
+    /* Reset and enter all phone HMMs. */
     for (i = 0; i < pls->n_phones; ++i) {
-        hmm_clear((hmm_t *)&pls->phones[i]);
-        pls->phones[i].frame = -1;
+        hmm_t *hmm = (hmm_t *)&pls->phones[i];
+        hmm_clear(hmm);
+        hmm_enter(hmm, 0, -1, 0);
     }
-    pls->best_score = WORST_SCORE;
+    phone_loop_search_free_renorm(pls);
+    pls->best_score = 0;
 
     return 0;
 }
@@ -178,10 +180,12 @@ static int32
 evaluate_hmms(phone_loop_search_t *pls, int16 const *senscr, int frame_idx)
 {
     int32 bs = WORST_SCORE;
-    int i;
+    int i, bi;
 
     hmm_context_set_senscore(pls->hmmctx, senscr);
 
+    /* E_INFO("Active in frame %d:", frame_idx); */
+    bi = 0;
     for (i = 0; i < pls->n_phones; ++i) {
         hmm_t *hmm = (hmm_t *)&pls->phones[i];
         int32 score;
@@ -189,10 +193,17 @@ evaluate_hmms(phone_loop_search_t *pls, int16 const *senscr, int frame_idx)
         if (hmm_frame(hmm) < frame_idx)
             continue;
         score = hmm_vit_eval(hmm);
-        if (score BETTER_THAN bs)
+        /* E_INFOCONT(" %s(%d)",
+           bin_mdef_ciphone_str(ps_search_acmod(pls)->mdef, i), score); */
+        if (score BETTER_THAN bs) {
             bs = score;
+            bi = i;
+        }
     }
     pls->best_score = bs;
+    /* E_INFOCONT("\n"); */
+    /* E_INFO("Best phone %s score %d\n",
+       bin_mdef_ciphone_str(ps_search_acmod(pls)->mdef, bi), bs); */
 
     return bs;
 }
@@ -211,8 +222,9 @@ prune_hmms(phone_loop_search_t *pls, int frame_idx)
         if (hmm_frame(hmm) < frame_idx)
             continue;
         /* Retain if score better than threshold. */
-        if (hmm_bestscore(hmm) BETTER_THAN thresh)
+        if (hmm_bestscore(hmm) BETTER_THAN thresh) {
             hmm_frame(hmm) = nf;
+        }
         else
             hmm_clear_scores(hmm);
     }
@@ -236,7 +248,12 @@ phone_transition(phone_loop_search_t *pls, int frame_idx)
             continue;
 
         newphone_score = hmm_out_score(hmm) + pls->pip;
-        if (hmm_bestscore(hmm) BETTER_THAN thresh) {
+        if (newphone_score BETTER_THAN thresh) {
+#if 0
+            E_INFO("Exiting phone %s in frame %d score %d thresh %d\n",
+                   bin_mdef_ciphone_str(ps_search_acmod(pls)->mdef, i),
+                   frame_idx, newphone_score, thresh);
+#endif
             /* Transition into all phones using the usual Viterbi rule. */
             for (j = 0; j < pls->n_phones; ++j) {
                 hmm_t *nhmm = (hmm_t *)&pls->phones[j];
@@ -256,11 +273,16 @@ phone_loop_search_step(ps_search_t *search)
     phone_loop_search_t *pls = (phone_loop_search_t *)search;
     acmod_t *acmod = ps_search_acmod(search);
     int16 const *senscr;
-    int frame_idx;
+    int frame_idx, i;
 
     /* Determine if we actually have a frame to process. */
     if (acmod->n_feat_frame == 0)
         return 0;
+
+    /* All CI senones are active all the time. */
+    if (!ps_search_acmod(pls)->compallsen)
+        for (i = 0; i < pls->n_phones; ++i)
+            acmod_activate_hmm(acmod, (hmm_t *)&pls->phones[i]);
 
     /* Calculate senone scores for current frame. */
     senscr = acmod_score(acmod, &frame_idx);

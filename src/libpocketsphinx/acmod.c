@@ -778,8 +778,8 @@ acmod_score(acmod_t *acmod,
     if (acmod->n_feat_frame == 0)
         return NULL;
 
-    /* Current frame has already been scored. */
-    if (acmod->senscr_frame == acmod->output_frame)
+    /* If all senones are being computed then we can reuse existing scores. */
+    if (acmod->compallsen && acmod->senscr_frame == acmod->output_frame)
         return acmod->senone_scores;
 
     /* Build active senone list. */
