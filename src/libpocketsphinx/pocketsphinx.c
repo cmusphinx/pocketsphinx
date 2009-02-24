@@ -106,11 +106,37 @@ ps_init_defaults(ps_decoder_t *ps)
     }
 }
 
+static void
+ps_free_searches(ps_decoder_t *ps)
+{
+    gnode_t *gn;
+
+    if (ps->searches == NULL)
+        return;
+
+    for (gn = ps->searches; gn; gn = gnode_next(gn))
+        ps_search_free(gnode_ptr(gn));
+    glist_free(ps->searches);
+    ps->searches = NULL;
+    ps->search = NULL;
+}
+
+static ps_search_t *
+ps_find_search(ps_decoder_t *ps, char const *name)
+{
+    gnode_t *gn;
+
+    for (gn = ps->searches; gn; gn = gnode_next(gn)) {
+        if (0 == strcmp(ps_search_name(gnode_ptr(gn)), name))
+            return (ps_search_t *)gnode_ptr(gn);
+    }
+    return NULL;
+}
+
 int
 ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 {
     char const *lmfile, *lmctl = NULL;
-    gnode_t *gn;
 
     if (config && config != ps->config) {
         cmd_ln_free_r(ps->config);
@@ -126,13 +152,8 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     ps_init_defaults(ps);
 
     /* Free old searches (do this before other reinit) */
-    if (ps->searches) {
-        for (gn = ps->searches; gn; gn = gnode_next(gn))
-            ps_search_free(gnode_ptr(gn));
-        glist_free(ps->searches);
-        ps->searches = NULL;
-        ps->search = NULL;
-    }
+    ps_free_searches(ps);
+
     /* Free old acmod. */
     if (ps->acmod) {
         acmod_free(ps->acmod);
@@ -297,32 +318,30 @@ ngram_model_t *
 ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset)
 {
     ngram_search_t *ngs;
-    gnode_t *gn;
+    ps_search_t *search;
 
     /* Look for N-Gram search. */
-    for (gn = ps->searches; gn; gn = gnode_next(gn)) {
-        if (0 == strcmp(ps_search_name(gnode_ptr(gn)), "ngram"))
-            break;
-    }
-    if (gn == NULL) {
+    search = ps_find_search(ps, "ngram");
+    if (search == NULL) {
         /* Initialize N-Gram search. */
-        ngs = (ngram_search_t *)ngram_search_init(ps->config,
-                                                  ps->acmod, ps->dict);
-        if (ngs == NULL)
+        search = ngram_search_init(ps->config,
+                                   ps->acmod, ps->dict);
+        if (search == NULL)
             return NULL;
-        ps->searches = glist_add_ptr(ps->searches, ngs);
+        ps->searches = glist_add_ptr(ps->searches, search);
+        ngs = (ngram_search_t *)search;
     }
     else {
-        ngs = gnode_ptr(gn);
+        ngs = (ngram_search_t *)search;
         /* Free any previous lmset if this is a new one. */
         if (ngs->lmset != NULL && ngs->lmset != lmset)
             ngram_model_free(ngs->lmset);
         ngs->lmset = lmset;
         /* Tell N-Gram search to update its view of the world. */
-        if (ps_search_reinit(ps_search_base(ngs)) < 0)
+        if (ps_search_reinit(search) < 0)
             return NULL;
     }
-    ps->search = ps_search_base(ngs);
+    ps->search = search;
     return ngs->lmset;
 }
 
@@ -338,28 +357,23 @@ ps_get_fsgset(ps_decoder_t *ps)
 fsg_set_t *
 ps_update_fsgset(ps_decoder_t *ps)
 {
-    gnode_t *gn;
-    fsg_search_t *fsgs;
+    ps_search_t *search;
 
     /* Look for FSG search. */
-    for (gn = ps->searches; gn; gn = gnode_next(gn)) {
-        if (0 == strcmp(ps_search_name(gnode_ptr(gn)), "fsg"))
-            break;
-    }
-    if (gn == NULL) {
+    search = ps_find_search(ps, "fsg");
+    if (search == NULL) {
         /* Initialize FSG search. */
-        fsgs = (fsg_search_t *)fsg_search_init(ps->config,
-                                               ps->acmod, ps->dict);
-        ps->searches = glist_add_ptr(ps->searches, fsgs);
+        search = fsg_search_init(ps->config,
+                                 ps->acmod, ps->dict);
+        ps->searches = glist_add_ptr(ps->searches, search);
     }
     else {
         /* Tell FSG search to update its view of the world. */
-        fsgs = gnode_ptr(gn);
-        if (ps_search_reinit(ps_search_base(fsgs)) < 0)
+        if (ps_search_reinit(search) < 0)
             return NULL;
     }
-    ps->search = ps_search_base(fsgs);
-    return (fsg_set_t *)fsgs;
+    ps->search = search;
+    return (fsg_set_t *)search;
 }
 
 int
