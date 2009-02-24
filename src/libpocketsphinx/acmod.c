@@ -408,6 +408,8 @@ acmod_start_utt(acmod_t *acmod)
     acmod->mfc_outidx = 0;
     acmod->feat_outidx = 0;
     acmod->output_frame = 0;
+    acmod->senscr_frame = -1;
+    acmod->n_senone_active = 0;
     return 0;
 }
 
@@ -753,8 +755,19 @@ acmod_rewind(acmod_t *acmod)
     /* Reset output pointers. */
     acmod->feat_outidx = 0;
     acmod->output_frame = 0;
+    acmod->senscr_frame = -1;
 
     return 0;
+}
+
+int
+acmod_advance(acmod_t *acmod)
+{
+    /* Advance the output pointers. */
+    ++acmod->feat_outidx;
+    --acmod->n_feat_frame;
+
+    return ++acmod->output_frame;
 }
 
 int16 const *
@@ -765,16 +778,20 @@ acmod_score(acmod_t *acmod,
     if (acmod->n_feat_frame == 0)
         return NULL;
 
+    /* Current frame has already been scored. */
+    if (acmod->senscr_frame == acmod->output_frame)
+        return acmod->senone_scores;
+
     /* Build active senone list. */
     acmod_flags2list(acmod);
 
-    /* Wrap around output pointer.  It is very important that we do
-     * this *before* scoring instead of after, in order for
-     * acmod_rewind() to work - i.e. the output pointer always needs
-     * to reflect the number of frames processed when the buffer is
-     * not circular. */
+    /* If the buffer is circular, then wrap it around if necessary.
+     * This has to be done here so that acmod_rewind() will calculate
+     * the number of available frames properly.
+     */
     if (acmod->feat_outidx == acmod->n_feat_alloc)
         acmod->feat_outidx = 0;
+
     /* Generate scores for the next available frame */
     ps_mgau_frame_eval(acmod->mgau,
                        acmod->senone_scores,
@@ -783,13 +800,8 @@ acmod_score(acmod_t *acmod,
                        acmod->feat_buf[acmod->feat_outidx],
                        acmod->output_frame,
                        acmod->compallsen);
-    /* Advance the output pointers. */
-    ++acmod->feat_outidx;
-    --acmod->n_feat_frame;
 
-    *out_frame_idx = acmod->output_frame;
-    ++acmod->output_frame;
-
+    acmod->senscr_frame = *out_frame_idx = acmod->output_frame;
     return acmod->senone_scores;
 }
 

@@ -158,6 +158,7 @@ struct acmod_s {
     int16 *senone_scores;      /**< GMM scores for current frame. */
     bitvec_t *senone_active_vec; /**< Active GMMs in current frame. */
     uint8 *senone_active;      /**< Array of deltas to active GMMs. */
+    int senscr_frame;          /**< Frame index for senone_scores. */
     int n_senone_active;       /**< Number of active GMMs. */
     int log_zero;              /**< Zero log-probability value. */
 
@@ -261,6 +262,17 @@ int acmod_end_utt(acmod_t *acmod);
 int acmod_rewind(acmod_t *acmod);
 
 /**
+ * Advance the frame index.
+ *
+ * This function moves to the next frame of input data.  Subsequent
+ * calls to acmod_score() will return scores for that frame, until the
+ * next call to acmod_advance().
+ *
+ * @return New frame index.
+ */
+int acmod_advance(acmod_t *acmod);
+
+/**
  * Set memory allocation policy for utterance processing.
  *
  * @param grow_feat If non-zero, the internal dynamic feature buffer
@@ -337,7 +349,7 @@ int acmod_frame_idx(acmod_t *acmod);
  *                       of scores.
  * @return Array of senone scores for this frame, or NULL if no frame
  *         is available for scoring.  The data pointed to persists only
- *         until the next call to acmod_score().
+ *         until the next call to acmod_advance().
  */
 int16 const *acmod_score(acmod_t *acmod,
                          int *out_frame_idx);

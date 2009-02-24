@@ -50,6 +50,7 @@
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
 #include "fsg_search_internal.h"
+#include "phone_loop_search.h"
 #include "ngram_search.h"
 #include "ngram_search_fwdtree.h"
 #include "ngram_search_fwdflat.h"
@@ -210,9 +211,14 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     /* Otherwise, we will initialize the search whenever the user
      * decides to load an FSG or a language model. */
 
-    /* TODO: If phoneme lookahead is requested then initialize an
-     * auxiliary phone loop search, which will run in "parallel" with
-     * FSG or N-Gram search. */
+#if 0
+    /* Initialize an auxiliary phone loop search, which will run in
+     * "parallel" with FSG or N-Gram search. */
+    if ((ps->phone_loop = phone_loop_search_init(ps->config,
+                                                 ps->acmod, ps->dict)) == NULL)
+        return -1;
+    ps->searches = glist_add_ptr(ps->searches, ps->phone_loop);
+#endif
 
     /* Initialize performance timer. */
     ps->perf.name = "decode";
@@ -520,7 +526,9 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
         acmod_set_rawfh(ps->acmod, rawfh);
     }
 
-    /* TODO: Start the auxiliary phone loop search if requested. */
+    /* Start auxiliary phone loop search. */
+    if (ps->phone_loop)
+        ps_search_start(ps->phone_loop);
 
     return ps_search_start(ps->search);
 }
@@ -548,6 +556,10 @@ ps_process_raw(ps_decoder_t *ps,
         /* Score and search as much data as possible */
         if (!no_search) {
             while ((nfr = ps_search_step(ps->search)) > 0) {
+                assert(nfr == 1);
+                if (ps->phone_loop)
+                    ps_search_step(ps->phone_loop);
+                acmod_advance(ps->acmod);
                 n_searchfr += nfr;
             }
             if (nfr < 0)
@@ -582,6 +594,10 @@ ps_process_cep(ps_decoder_t *ps,
         /* Score and search as much data as possible */
         if (!no_search) {
             while ((nfr = ps_search_step(ps->search)) > 0) {
+                assert(nfr == 1);
+                if (ps->phone_loop)
+                    ps_search_step(ps->phone_loop);
+                acmod_advance(ps->acmod);
                 n_searchfr += nfr;
             }
             if (nfr < 0)
@@ -600,12 +616,17 @@ ps_end_utt(ps_decoder_t *ps)
 
     acmod_end_utt(ps->acmod);
     while ((rv = ps_search_step(ps->search)) > 0) {
+        assert(rv == 1);
+        if (ps->phone_loop)
+            ps_search_step(ps->phone_loop);
     }
     if (rv < 0) {
         ptmr_stop(&ps->perf);
         return rv;
     }
     rv = ps_search_finish(ps->search);
+    if (ps->phone_loop)
+        ps_search_finish(ps->phone_loop);
     ptmr_stop(&ps->perf);
 
     /* Log a backtrace if requested. */

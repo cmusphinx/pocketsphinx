@@ -665,7 +665,8 @@ ngram_search_finish(ps_search_t *search)
             /* Now redo search. */
             ngram_fwdflat_start(ngs);
             while ((nfr = ngram_fwdflat_search(ngs)) > 0) {
-                /* Do nothing! */
+                assert(nfr == 1);
+                acmod_advance(ps_search_acmod(ngs));
             }
             if (nfr < 0)
                 return nfr;

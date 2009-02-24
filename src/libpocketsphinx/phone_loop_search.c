@@ -118,19 +118,26 @@ phone_loop_search_init(cmd_ln_t *config,
     return ps_search_base(pls);
 }
 
+static void
+phone_loop_search_free_renorm(phone_loop_search_t *pls)
+{
+    gnode_t *gn;
+    for (gn = pls->renorm; gn; gn = gnode_next(gn))
+        ckd_free(gnode_ptr(gn));
+    glist_free(pls->renorm);
+    pls->renorm = NULL;
+}
+
 void
 phone_loop_search_free(ps_search_t *search)
 {
     phone_loop_search_t *pls = (phone_loop_search_t *)search;
-    gnode_t *gn;
     int i;
 
     ps_search_deinit(search);
     for (i = 0; i < pls->n_phones; ++i)
         hmm_deinit((hmm_t *)&pls->phones[i]);
-    for (gn = pls->renorm; gn; gn = gnode_next(gn))
-        ckd_free(gnode_ptr(gn));
-    glist_free(pls->renorm);
+    phone_loop_search_free_renorm(pls);
     ckd_free(pls->phones);
     hmm_context_free(pls->hmmctx);
     ckd_free(pls);
@@ -147,6 +154,7 @@ phone_loop_search_start(ps_search_t *search)
         hmm_clear((hmm_t *)&pls->phones[i]);
         pls->phones[i].frame = -1;
     }
+    pls->best_score = WORST_SCORE;
 
     return 0;
 }
