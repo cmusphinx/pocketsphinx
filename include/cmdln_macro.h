@@ -74,35 +74,39 @@
             "Directory to log raw audio files to" }
 
 /** Options defining beam width parameters for tuning the search. */
-#define POCKETSPHINX_BEAM_OPTIONS								\
-{ "-beam",											\
-      ARG_FLOAT64,										\
-      "1e-48",											\
-      "Beam width applied to every frame in Viterbi search (smaller values mean wider beam)" },	\
-{ "-wbeam",											\
-      ARG_FLOAT64,										\
-      "7e-29",											\
-      "Beam width applied to word exits" },							\
-{ "-pbeam",											\
-      ARG_FLOAT64,										\
-      "1e-48",											\
-      "Beam width applied to phone transitions" },						\
-{ "-lpbeam",											\
-      ARG_FLOAT64,										\
-      "1e-40",											\
-      "Beam width applied to last phone in words" },						\
-{ "-lponlybeam",										\
-      ARG_FLOAT64,										\
-      "7e-29",											\
-      "Beam width applied to last phone in single-phone words" },				\
-{ "-fwdflatbeam",										\
-      ARG_FLOAT64,										\
-      "1e-64",											\
-      "Beam width applied to every frame in second-pass flat search" },				\
-{ "-fwdflatwbeam",										\
-      ARG_FLOAT64,										\
-      "7e-29",											\
-      "Beam width applied to word exits in second-pass flat search" }
+#define POCKETSPHINX_BEAM_OPTIONS                                       \
+{ "-beam",                                                              \
+      ARG_FLOAT64,                                                      \
+      "1e-48",                                                          \
+      "Beam width applied to every frame in Viterbi search (smaller values mean wider beam)" }, \
+{ "-wbeam",                                                             \
+      ARG_FLOAT64,                                                      \
+      "7e-29",                                                          \
+      "Beam width applied to word exits" },                             \
+{ "-pbeam",                                                             \
+      ARG_FLOAT64,                                                      \
+      "1e-48",                                                          \
+      "Beam width applied to phone transitions" },                      \
+{ "-lpbeam",                                                            \
+      ARG_FLOAT64,                                                      \
+      "1e-40",                                                          \
+      "Beam width applied to last phone in words" },                    \
+{ "-lponlybeam",                                                        \
+      ARG_FLOAT64,                                                      \
+      "7e-29",                                                          \
+      "Beam width applied to last phone in single-phone words" },       \
+{ "-fwdflatbeam",                                                       \
+      ARG_FLOAT64,                                                      \
+      "1e-64",                                                          \
+      "Beam width applied to every frame in second-pass flat search" }, \
+{ "-fwdflatwbeam",                                                      \
+      ARG_FLOAT64,                                                      \
+      "7e-29",                                                          \
+      "Beam width applied to word exits in second-pass flat search" },  \
+{ "-pl_window",                                                         \
+      ARG_INT32,                                                        \
+      "0",                                                              \
+      "Phoneme lookahead window size, in frames" }
 
 /** Options defining other parameters for tuning the search. */
 #define POCKETSPHINX_SEARCH_OPTIONS \

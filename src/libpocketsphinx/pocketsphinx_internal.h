@@ -184,6 +184,7 @@ struct ps_decoder_s {
     glist_t searches;        /**< List of search modules. */
     ps_search_t *search;     /**< Currently active search module. */
     ps_search_t *phone_loop; /**< Phone loop search for lookahead. */
+    int pl_window;           /**< Window size for phoneme lookahead. */
 
     /* Utterance-processing related stuff. */
     uint32 uttno;       /**< Utterance counter. */

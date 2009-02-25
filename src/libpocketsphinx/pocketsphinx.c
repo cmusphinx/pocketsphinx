@@ -571,7 +571,7 @@ ps_process_raw(ps_decoder_t *ps,
             return nfr;
 
         /* Score and search as much data as possible */
-        if (!no_search)
+        if (no_search)
             continue;
         if ((nfr = ps_search_forward(ps)) < 0)
             return nfr;
@@ -603,7 +603,7 @@ ps_process_cep(ps_decoder_t *ps,
             return nfr;
 
         /* Score and search as much data as possible */
-        if (!no_search)
+        if (no_search)
             continue;
         if ((nfr = ps_search_forward(ps)) < 0)
             return nfr;

@@ -283,7 +283,7 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
                       sizeof(**acmod->mfc_buf));
 
     /* Feature buffer has to be at least as large as MFCC buffer. */
-    acmod->n_feat_alloc = acmod->n_mfc_alloc;
+    acmod->n_feat_alloc = acmod->n_mfc_alloc + cmd_ln_int32_r(config, "-pl_window");
     acmod->feat_buf = feat_array_alloc(acmod->fcb, acmod->n_feat_alloc);
 
     /* Senone computation stuff. */
@@ -774,20 +774,30 @@ int16 const *
 acmod_score(acmod_t *acmod,
 	    int *inout_frame_idx)
 {
-    int frame_idx;
+    int frame_idx, feat_idx, n_backfr;
 
     /* No frames available to score. */
     if (acmod->n_feat_frame == 0)
         return NULL;
 
-    if (inout_frame_idx == NULL || *inout_frame_idx == -1)
+    if (inout_frame_idx == NULL)
         frame_idx = acmod->output_frame;
+    else if (*inout_frame_idx < 0)
+        frame_idx = acmod->output_frame + 1 + *inout_frame_idx;
+    else
+        frame_idx = *inout_frame_idx;
+
+    /* Check to make sure features are available for the requested frame index. */
+    n_backfr = acmod->n_feat_alloc - acmod->n_feat_frame;
+    if (acmod->output_frame - frame_idx > n_backfr) {
+        E_ERROR("Frame %d outside queue (%d:%d), cannot score\n",
+                frame_idx, acmod->output_frame - n_backfr, acmod->output_frame);
+        return NULL;
+    }
 
     /* If all senones are being computed then we can reuse existing scores. */
     if (acmod->compallsen && frame_idx == acmod->senscr_frame)
         return acmod->senone_scores;
-
-    /* Check to make sure features are available for the requested frame index. */
 
     /* Build active senone list. */
     acmod_flags2list(acmod);
@@ -799,12 +809,16 @@ acmod_score(acmod_t *acmod,
     if (acmod->feat_outidx == acmod->n_feat_alloc)
         acmod->feat_outidx = 0;
 
+    /* Get the circular index (usually zero...) of the frame to score. */
+    feat_idx = ((acmod->feat_outidx + acmod->output_frame - frame_idx)
+                % acmod->n_feat_alloc);
+
     /* Generate scores for the next available frame */
     ps_mgau_frame_eval(acmod->mgau,
                        acmod->senone_scores,
                        acmod->senone_active,
                        acmod->n_senone_active,
-                       acmod->feat_buf[acmod->feat_outidx],
+                       acmod->feat_buf[feat_idx],
                        frame_idx,
                        acmod->compallsen);
 

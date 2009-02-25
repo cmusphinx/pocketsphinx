@@ -49,6 +49,7 @@ main(int argc, char *argv[])
 			bptr = buf;
 			while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
 				while (ngram_fwdflat_search(ngs)) {
+					acmod_advance(acmod);
 				}
 			}
 		}

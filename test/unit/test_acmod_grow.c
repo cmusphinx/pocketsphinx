@@ -71,8 +71,9 @@ main(int argc, char *argv[])
 		while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
 			int16 const *senscr;
 			int16 best_score;
-			int frame_idx, best_senid;
+			int frame_idx = -1, best_senid;
 			while ((senscr = acmod_score(acmod, &frame_idx))) {
+				acmod_advance(acmod);
 				best_score = acmod_best_score(acmod, &best_senid);
 				printf("Frame %d best senone %d score %d\n",
 				       frame_idx, best_senid, best_score);
@@ -80,6 +81,7 @@ main(int argc, char *argv[])
 				if (frame_counter < 270)
 					bestsen1[frame_counter] = best_senid;
 				++frame_counter;
+				frame_idx = -1;
 			}
 		}
 	}
@@ -89,8 +91,9 @@ main(int argc, char *argv[])
 	{
 		int16 const *senscr;
 		int16 best_score;
-		int frame_idx, best_senid;
+		int frame_idx = -1, best_senid;
 		while ((senscr = acmod_score(acmod, &frame_idx))) {
+			acmod_advance(acmod);
 			best_score = acmod_best_score(acmod, &best_senid);
 			printf("Frame %d best senone %d score %d\n",
 			       frame_idx, best_senid, best_score);
@@ -98,6 +101,7 @@ main(int argc, char *argv[])
 				bestsen1[frame_counter] = best_senid;
 			TEST_EQUAL(frame_counter, frame_idx);
 			++frame_counter;
+			frame_idx = -1;
 		}
 	}
 
@@ -106,9 +110,10 @@ main(int argc, char *argv[])
 	{
 		int16 const *senscr;
 		int16 best_score;
-		int frame_idx, best_senid;
+		int frame_idx = -1, best_senid;
 		frame_counter = 0;
 		while ((senscr = acmod_score(acmod, &frame_idx))) {
+			acmod_advance(acmod);
 			best_score = acmod_best_score(acmod, &best_senid);
 			printf("Frame %d best senone %d score %d\n",
 			       frame_idx, best_senid, best_score);
@@ -116,6 +121,7 @@ main(int argc, char *argv[])
 				TEST_EQUAL(best_senid, bestsen1[frame_counter]);
 			TEST_EQUAL(frame_counter, frame_idx);
 			++frame_counter;
+			frame_idx = -1;
 		}
 	}
 

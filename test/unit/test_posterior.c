@@ -37,6 +37,7 @@ test_decode(ps_decoder_t *ps)
 		bptr = buf;
 		while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
 			while (ngram_fwdtree_search(ngs)) {
+				acmod_advance(acmod);
 			}
 		}
 	}
