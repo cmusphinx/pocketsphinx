@@ -210,7 +210,6 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     }
     /* Otherwise, we will initialize the search whenever the user
      * decides to load an FSG or a language model. */
-
 #if 0
     /* Initialize an auxiliary phone loop search, which will run in
      * "parallel" with FSG or N-Gram search. */
@@ -533,6 +532,24 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
     return ps_search_start(ps->search);
 }
 
+static int
+ps_search_forward(ps_decoder_t *ps)
+{
+    int nfr, k;
+
+    nfr = 0;
+    while ((k = ps_search_step(ps->search)) > 0) {
+        assert(k == 1);
+        if (ps->phone_loop)
+            ps_search_step(ps->phone_loop);
+        acmod_advance(ps->acmod);
+        nfr += k;
+    }
+    if (k < 0)
+        return k;
+    return nfr;
+}
+
 int
 ps_process_raw(ps_decoder_t *ps,
                int16 const *data,
@@ -554,17 +571,11 @@ ps_process_raw(ps_decoder_t *ps,
             return nfr;
 
         /* Score and search as much data as possible */
-        if (!no_search) {
-            while ((nfr = ps_search_step(ps->search)) > 0) {
-                assert(nfr == 1);
-                if (ps->phone_loop)
-                    ps_search_step(ps->phone_loop);
-                acmod_advance(ps->acmod);
-                n_searchfr += nfr;
-            }
-            if (nfr < 0)
-                return nfr;
-        }
+        if (!no_search)
+            continue;
+        if ((nfr = ps_search_forward(ps)) < 0)
+            return nfr;
+        n_searchfr += nfr;
     }
 
     ps->n_frame += n_searchfr;
@@ -592,17 +603,11 @@ ps_process_cep(ps_decoder_t *ps,
             return nfr;
 
         /* Score and search as much data as possible */
-        if (!no_search) {
-            while ((nfr = ps_search_step(ps->search)) > 0) {
-                assert(nfr == 1);
-                if (ps->phone_loop)
-                    ps_search_step(ps->phone_loop);
-                acmod_advance(ps->acmod);
-                n_searchfr += nfr;
-            }
-            if (nfr < 0)
-                return nfr;
-        }
+        if (!no_search)
+            continue;
+        if ((nfr = ps_search_forward(ps)) < 0)
+            return nfr;
+        n_searchfr += nfr;
     }
 
     ps->n_frame += n_searchfr;
@@ -612,19 +617,19 @@ ps_process_cep(ps_decoder_t *ps,
 int
 ps_end_utt(ps_decoder_t *ps)
 {
-    int rv;
+    int nfr;
 
     acmod_end_utt(ps->acmod);
-    while ((rv = ps_search_step(ps->search)) > 0) {
-        assert(rv == 1);
-        if (ps->phone_loop)
-            ps_search_step(ps->phone_loop);
-    }
-    if (rv < 0) {
+    if ((nfr = ps_search_forward(ps)) < 0) {
         ptmr_stop(&ps->perf);
-        return rv;
+        return nfr;
     }
-    rv = ps_search_finish(ps->search);
+    ps->n_frame += nfr;
+    if ((nfr = ps_search_finish(ps->search)) < 0) {
+        ptmr_stop(&ps->perf);
+        return nfr;
+    }
+    ps->n_frame += nfr;
     if (ps->phone_loop)
         ps_search_finish(ps->phone_loop);
     ptmr_stop(&ps->perf);
@@ -652,7 +657,7 @@ ps_end_utt(ps_decoder_t *ps)
                         word, sf, ef, logmath_exp(ps_get_logmath(ps), post), ascr, lscr, lback);
         }
     }
-    return rv;
+    return nfr;
 }
 
 char const *

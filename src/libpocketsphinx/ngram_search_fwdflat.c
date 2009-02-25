@@ -707,7 +707,7 @@ int
 ngram_fwdflat_search(ngram_search_t *ngs)
 {
     int16 const *senscr;
-    int frame_idx;
+    int frame_idx = -1;
     int32 nf, i, j;
     int32 *nawl;
 

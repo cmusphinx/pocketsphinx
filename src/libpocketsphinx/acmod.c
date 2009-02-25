@@ -772,15 +772,22 @@ acmod_advance(acmod_t *acmod)
 
 int16 const *
 acmod_score(acmod_t *acmod,
-	    int *out_frame_idx)
+	    int *inout_frame_idx)
 {
+    int frame_idx;
+
     /* No frames available to score. */
     if (acmod->n_feat_frame == 0)
         return NULL;
 
+    if (inout_frame_idx == NULL || *inout_frame_idx == -1)
+        frame_idx = acmod->output_frame;
+
     /* If all senones are being computed then we can reuse existing scores. */
-    if (acmod->compallsen && acmod->senscr_frame == acmod->output_frame)
+    if (acmod->compallsen && frame_idx == acmod->senscr_frame)
         return acmod->senone_scores;
+
+    /* Check to make sure features are available for the requested frame index. */
 
     /* Build active senone list. */
     acmod_flags2list(acmod);
@@ -798,10 +805,13 @@ acmod_score(acmod_t *acmod,
                        acmod->senone_active,
                        acmod->n_senone_active,
                        acmod->feat_buf[acmod->feat_outidx],
-                       acmod->output_frame,
+                       frame_idx,
                        acmod->compallsen);
 
-    acmod->senscr_frame = *out_frame_idx = acmod->output_frame;
+    if (inout_frame_idx)
+        *inout_frame_idx = frame_idx;
+    acmod->senscr_frame = frame_idx;
+
     return acmod->senone_scores;
 }
 

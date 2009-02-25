@@ -273,7 +273,7 @@ phone_loop_search_step(ps_search_t *search)
     phone_loop_search_t *pls = (phone_loop_search_t *)search;
     acmod_t *acmod = ps_search_acmod(search);
     int16 const *senscr;
-    int frame_idx, i;
+    int frame_idx = -1, i;
 
     /* Determine if we actually have a frame to process. */
     if (acmod->n_feat_frame == 0)

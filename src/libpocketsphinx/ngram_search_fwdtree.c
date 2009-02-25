@@ -1368,7 +1368,7 @@ int
 ngram_fwdtree_search(ngram_search_t *ngs)
 {
     int16 const *senscr;
-    int frame_idx;
+    int frame_idx = -1;
 
     /* Determine if we actually have a frame to process. */
     if (ps_search_acmod(ngs)->n_feat_frame == 0)

@@ -345,14 +345,18 @@ int acmod_frame_idx(acmod_t *acmod);
 /**
  * Score one frame of data.
  *
- * @param out_frame_idx  Output: frame index corresponding to this set
- *                       of scores.
+ * @param inout_frame_idx Input: frame index to score, or -1 or NULL
+ *                        to obtain scores for the most recent frame.
+ *                        Output: frame index corresponding to this
+ *                        set of scores.
  * @return Array of senone scores for this frame, or NULL if no frame
- *         is available for scoring.  The data pointed to persists only
- *         until the next call to acmod_advance().
+ *         is available for scoring (such as if a frame index is
+ *         requested that is not yet or no longer available).  The
+ *         data pointed to persists only until the next call to
+ *         acmod_score() or acmod_advance().
  */
 int16 const *acmod_score(acmod_t *acmod,
-                         int *out_frame_idx);
+                         int *inout_frame_idx);
 
 /**
  * Get best score and senone index for current frame.

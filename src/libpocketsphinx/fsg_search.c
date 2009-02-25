@@ -816,7 +816,7 @@ fsg_search_step(ps_search_t *search)
 {
     fsg_search_t *fsgs = (fsg_search_t *)search;
     int16 const *senscr;
-    int frame_idx;
+    int frame_idx = -1;
     acmod_t *acmod = search->acmod;
     gnode_t *gn;
     fsg_pnode_t *pnode;
