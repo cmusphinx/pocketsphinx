@@ -25,7 +25,6 @@ libpocketsphinx_la_SOURCES =			\
 	ps_lattice.c				\
 	ps_mllr.c				\
 	s2_semi_mgau.c				\
-	sdc_mgau.c				\
 	tmat.c					\
 	vector.c				\
 	pocketsphinx.c
@@ -53,7 +52,6 @@ noinst_HEADERS =				\
 	ps_lattice_internal.h			\
 	posixwin32.h				\
 	s2_semi_mgau.h				\
-	sdc_mgau.h				\
 	tmat.h					\
 	vector.h
 

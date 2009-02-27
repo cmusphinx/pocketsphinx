@@ -338,11 +338,6 @@ int acmod_process_feat(acmod_t *acmod,
                        mfcc_t **feat);
 
 /**
- * Get the current frame index.
- */                       
-int acmod_frame_idx(acmod_t *acmod);
-
-/**
  * Score one frame of data.
  *
  * @param inout_frame_idx Input: frame index to score, or -1 or NULL

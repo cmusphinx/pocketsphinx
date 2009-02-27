@@ -50,7 +50,8 @@ main(int argc, char *argv[])
 			nread = fread(buf, sizeof(*buf), 2048, rawfh);
 			bptr = buf;
 			while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
-				while (ngram_fwdtree_search(ngs)) {
+				while (acmod->n_feat_frame > 0) {
+					ngram_fwdtree_search(ngs, acmod->output_frame);
 					acmod_advance(acmod);
 				}
 			}
@@ -64,8 +65,9 @@ main(int argc, char *argv[])
 
 		TEST_EQUAL(0, acmod_rewind(acmod));
 		ngram_fwdflat_start(ngs);
-		while (ngram_fwdflat_search(ngs)) {
-				acmod_advance(acmod);
+		while (acmod->n_feat_frame > 0) {
+			ngram_fwdflat_search(ngs, acmod->output_frame);
+			acmod_advance(acmod);
 		}
 		ngram_fwdflat_finish(ngs);
 		printf("FWDFLAT: %s\n",

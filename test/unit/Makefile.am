@@ -23,6 +23,7 @@ check_PROGRAMS = \
 	test_fwdtree_fwdflat \
 	test_fwdtree_bestpath \
 	test_fwdtree_nbest \
+	test_pl_fwdtree \
 	test_posterior \
 	test_fsg \
 	test_fsg2 \

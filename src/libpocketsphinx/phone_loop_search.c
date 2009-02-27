@@ -44,7 +44,7 @@
 #include "phone_loop_search.h"
 
 static int phone_loop_search_start(ps_search_t *search);
-static int phone_loop_search_step(ps_search_t *search);
+static int phone_loop_search_step(ps_search_t *search, int frame_idx);
 static int phone_loop_search_finish(ps_search_t *search);
 static int phone_loop_search_reinit(ps_search_t *search);
 static char const *phone_loop_search_hyp(ps_search_t *search, int32 *out_score);
@@ -268,16 +268,12 @@ phone_transition(phone_loop_search_t *pls, int frame_idx)
 }
 
 static int
-phone_loop_search_step(ps_search_t *search)
+phone_loop_search_step(ps_search_t *search, int frame_idx)
 {
     phone_loop_search_t *pls = (phone_loop_search_t *)search;
     acmod_t *acmod = ps_search_acmod(search);
     int16 const *senscr;
-    int frame_idx = -1, i;
-
-    /* Determine if we actually have a frame to process. */
-    if (acmod->n_feat_frame == 0)
-        return 0;
+    int i;
 
     /* All CI senones are active all the time. */
     if (!ps_search_acmod(pls)->compallsen)

@@ -64,7 +64,9 @@ main(int argc, char *argv[])
 			nread = fread(buf, sizeof(*buf), 2048, rawfh);
 			bptr = buf;
 			while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
-				while (fsg_search_step(ps_search_base(fsgs))) {
+				while (acmod->n_feat_frame > 0) {
+					fsg_search_step(ps_search_base(fsgs),
+							acmod->output_frame);
 					acmod_advance(acmod);
 				}
 			}

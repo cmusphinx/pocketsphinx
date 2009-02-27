@@ -210,14 +210,15 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     }
     /* Otherwise, we will initialize the search whenever the user
      * decides to load an FSG or a language model. */
-#if 0
-    /* Initialize an auxiliary phone loop search, which will run in
-     * "parallel" with FSG or N-Gram search. */
-    if ((ps->phone_loop = phone_loop_search_init(ps->config,
-                                                 ps->acmod, ps->dict)) == NULL)
-        return -1;
-    ps->searches = glist_add_ptr(ps->searches, ps->phone_loop);
-#endif
+
+    if (cmd_ln_int32_r(ps->config, "-pl_window")) {
+        /* Initialize an auxiliary phone loop search, which will run in
+         * "parallel" with FSG or N-Gram search. */
+        if ((ps->phone_loop = phone_loop_search_init(ps->config,
+                                                     ps->acmod, ps->dict)) == NULL)
+            return -1;
+        ps->searches = glist_add_ptr(ps->searches, ps->phone_loop);
+    }
 
     /* Initialize performance timer. */
     ps->perf.name = "decode";
@@ -535,18 +536,22 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
 static int
 ps_search_forward(ps_decoder_t *ps)
 {
-    int nfr, k;
+    int nfr;
 
     nfr = 0;
-    while ((k = ps_search_step(ps->search)) > 0) {
-        assert(k == 1);
+    while (ps->acmod->n_feat_frame > 0) {
+        int k;
         if (ps->phone_loop)
-            ps_search_step(ps->phone_loop);
+            if ((k = ps_search_step(ps->phone_loop, ps->acmod->output_frame)) < 0)
+                return k;
+        if (ps->n_frame >= ps->pl_window)
+            if ((k = ps_search_step(ps->search,
+                                    ps->acmod->output_frame - ps->pl_window)) < 0)
+                return k;
         acmod_advance(ps->acmod);
-        nfr += k;
+        ++ps->n_frame;
+        ++nfr;
     }
-    if (k < 0)
-        return k;
     return nfr;
 }
 
@@ -578,7 +583,6 @@ ps_process_raw(ps_decoder_t *ps,
         n_searchfr += nfr;
     }
 
-    ps->n_frame += n_searchfr;
     return n_searchfr;
 }
 
@@ -610,28 +614,37 @@ ps_process_cep(ps_decoder_t *ps,
         n_searchfr += nfr;
     }
 
-    ps->n_frame += n_searchfr;
     return n_searchfr;
 }
 
 int
 ps_end_utt(ps_decoder_t *ps)
 {
-    int nfr;
+    int rv, i;
 
     acmod_end_utt(ps->acmod);
-    if ((nfr = ps_search_forward(ps)) < 0) {
+
+    /* Search any remaining frames. */
+    if ((rv = ps_search_forward(ps)) < 0) {
         ptmr_stop(&ps->perf);
-        return nfr;
+        return rv;
     }
-    ps->n_frame += nfr;
-    if ((nfr = ps_search_finish(ps->search)) < 0) {
+    /* Finish phone loop search. */
+    if (ps->phone_loop) {
+        if ((rv = ps_search_finish(ps->phone_loop)) < 0) {
+            ptmr_stop(&ps->perf);
+            return rv;
+        }
+    }
+    /* Search any frames remaining in the lookahead window. */
+    for (i = ps->acmod->output_frame - ps->pl_window;
+         i < ps->acmod->output_frame; ++i)
+        ps_search_step(ps->search, i);
+    /* Finish main search. */
+    if ((rv = ps_search_finish(ps->search)) < 0) {
         ptmr_stop(&ps->perf);
-        return nfr;
+        return rv;
     }
-    ps->n_frame += nfr;
-    if (ps->phone_loop)
-        ps_search_finish(ps->phone_loop);
     ptmr_stop(&ps->perf);
 
     /* Log a backtrace if requested. */
@@ -657,7 +670,7 @@ ps_end_utt(ps_decoder_t *ps)
                         word, sf, ef, logmath_exp(ps_get_logmath(ps), post), ascr, lscr, lback);
         }
     }
-    return nfr;
+    return rv;
 }
 
 char const *

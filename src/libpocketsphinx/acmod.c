@@ -58,7 +58,6 @@
 #include "acmod.h"
 #include "s2_semi_mgau.h"
 #include "ms_mgau.h"
-#include "sdc_mgau.h"
 
 /* Feature and front-end parameters that may be in feat.params */
 static const arg_t feat_defn[] = {
@@ -114,32 +113,20 @@ acmod_init_am(acmod_t *acmod)
         return -1;
     }
 
-    /* If there is a subspace distribution map, use SDCHMM computation. */
-    if (cmd_ln_str_r(acmod->config, "-sdmap")) {
-        E_INFO("Using SDCHMM computation module\n");
-        acmod->mgau = sdc_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
-        if (acmod == NULL) {
-            E_ERROR("SDCHMM init failed\n");
-            return -1;
-        }
+    E_INFO("Attempting to use SCHMM computation module\n");
+    acmod->mgau
+        = s2_semi_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
+    if (acmod->mgau) {
+        char const *kdtreefn = cmd_ln_str_r(acmod->config, "-kdtree");
+        if (kdtreefn)
+            s2_semi_mgau_load_kdtree(acmod->mgau, kdtreefn,
+                                     cmd_ln_int32_r(acmod->config, "-kdmaxdepth"),
+                                     cmd_ln_int32_r(acmod->config, "-kdmaxbbi"));
     }
-    /* Otherwise, try to use SCHMM or CDHMM computation. */
     else {
-        E_INFO("Attempting to use SCHMM computation module\n");
-        acmod->mgau
-            = s2_semi_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
-        if (acmod->mgau) {
-            char const *kdtreefn = cmd_ln_str_r(acmod->config, "-kdtree");
-            if (kdtreefn)
-                s2_semi_mgau_load_kdtree(acmod->mgau, kdtreefn,
-                                         cmd_ln_int32_r(acmod->config, "-kdmaxdepth"),
-                                         cmd_ln_int32_r(acmod->config, "-kdmaxbbi"));
-        }
-        else {
-            E_INFO("Falling back to general multi-stream GMM computation\n");
-            acmod->mgau =
-                ms_mgau_init(acmod->config, acmod->lmath);
-        }
+        E_INFO("Falling back to general multi-stream GMM computation\n");
+        acmod->mgau =
+            ms_mgau_init(acmod->config, acmod->lmath);
     }
 
     /* If there is an MLLR transform, apply it. */
@@ -501,6 +488,7 @@ acmod_process_full_cep(acmod_t *acmod,
     nfr = feat_s2mfc2feat_live(acmod->fcb, *inout_cep, inout_n_frames,
                                TRUE, TRUE, acmod->feat_buf);
     acmod->n_feat_frame = nfr;
+    assert(acmod->n_feat_frame <= acmod->n_feat_alloc);
     *inout_cep += *inout_n_frames;
     *inout_n_frames = 0;
     return nfr;
@@ -688,6 +676,7 @@ acmod_process_cep(acmod_t *acmod,
             return -1;
         /* Move the output feature pointer forward. */
         acmod->n_feat_frame += nfeat;
+        assert(acmod->n_feat_frame <= acmod->n_feat_alloc);
         inptr += nfeat;
         inptr %= acmod->n_feat_alloc;
         /* Move the input feature pointers forward. */
@@ -706,6 +695,7 @@ acmod_process_cep(acmod_t *acmod,
     if (nfeat < 0)
         return -1;
     acmod->n_feat_frame += nfeat;
+    assert(acmod->n_feat_frame <= acmod->n_feat_alloc);
     /* Move the input feature pointers forward. */
     *inout_n_frames -= ncep;
     *inout_cep += ncep;
@@ -732,14 +722,9 @@ acmod_process_feat(acmod_t *acmod,
         memcpy(acmod->feat_buf[inptr][i],
                feat[i], feat_dimension2(acmod->fcb, i) * sizeof(**feat));
     ++acmod->n_feat_frame;
+    assert(acmod->n_feat_frame <= acmod->n_feat_alloc);
 
     return 1;
-}
-
-int
-acmod_frame_idx(acmod_t *acmod)
-{
-    return acmod->output_frame;
 }
 
 int
@@ -776,10 +761,6 @@ acmod_score(acmod_t *acmod,
 {
     int frame_idx, feat_idx, n_backfr;
 
-    /* No frames available to score. */
-    if (acmod->n_feat_frame == 0)
-        return NULL;
-
     if (inout_frame_idx == NULL)
         frame_idx = acmod->output_frame;
     else if (*inout_frame_idx < 0)
@@ -789,9 +770,10 @@ acmod_score(acmod_t *acmod,
 
     /* Check to make sure features are available for the requested frame index. */
     n_backfr = acmod->n_feat_alloc - acmod->n_feat_frame;
-    if (acmod->output_frame - frame_idx > n_backfr) {
-        E_ERROR("Frame %d outside queue (%d:%d), cannot score\n",
-                frame_idx, acmod->output_frame - n_backfr, acmod->output_frame);
+    if (frame_idx < 0 || acmod->output_frame - frame_idx > n_backfr) {
+        E_ERROR("Frame %d outside queue of %d frames, %d alloc (%d > %d), cannot score\n",
+                frame_idx, acmod->n_feat_frame, acmod->n_feat_alloc,
+                acmod->output_frame - frame_idx, n_backfr);
         return NULL;
     }
 
@@ -810,8 +792,9 @@ acmod_score(acmod_t *acmod,
         acmod->feat_outidx = 0;
 
     /* Get the circular index (usually zero...) of the frame to score. */
-    feat_idx = ((acmod->feat_outidx + acmod->output_frame - frame_idx)
+    feat_idx = ((acmod->feat_outidx + frame_idx - acmod->output_frame)
                 % acmod->n_feat_alloc);
+    if (feat_idx < 0) feat_idx += acmod->n_feat_alloc;
 
     /* Generate scores for the next available frame */
     ps_mgau_frame_eval(acmod->mgau,

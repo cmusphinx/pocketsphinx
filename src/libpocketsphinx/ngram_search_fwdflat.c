@@ -704,20 +704,15 @@ fwdflat_renormalize_scores(ngram_search_t *ngs, int frame_idx, int32 norm)
 }
 
 int
-ngram_fwdflat_search(ngram_search_t *ngs)
+ngram_fwdflat_search(ngram_search_t *ngs, int frame_idx)
 {
     int16 const *senscr;
-    int frame_idx = -1;
     int32 nf, i, j;
     int32 *nawl;
 
-    /* Determine if we actually have a frame to process. */
-    if (ps_search_acmod(ngs)->n_feat_frame == 0)
-        return 0;
-
     /* Activate our HMMs for the current frame if need be. */
     if (!ps_search_acmod(ngs)->compallsen)
-        compute_fwdflat_sen_active(ngs, acmod_frame_idx(ps_search_acmod(ngs)));
+        compute_fwdflat_sen_active(ngs, frame_idx);
 
     /* Compute GMM scores for the current frame. */
     senscr = acmod_score(ps_search_acmod(ngs), &frame_idx);
@@ -830,7 +825,7 @@ ngram_fwdflat_finish(ngram_search_t *ngs)
     bitvec_clear_all(ngs->word_active, ps_search_n_words(ngs));
 
     /* This is the number of frames processed. */
-    cf = acmod_frame_idx(ps_search_acmod(ngs));
+    cf = ps_search_acmod(ngs)->output_frame;
     /* Add a mark in the backpointer table for one past the final frame. */
     ngram_search_mark_bptable(ngs, cf);
 

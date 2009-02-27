@@ -812,19 +812,14 @@ fsg_search_word_trans(fsg_search_t *fsgs)
 
 
 int
-fsg_search_step(ps_search_t *search)
+fsg_search_step(ps_search_t *search, int frame_idx)
 {
     fsg_search_t *fsgs = (fsg_search_t *)search;
     int16 const *senscr;
-    int frame_idx = -1;
     acmod_t *acmod = search->acmod;
     gnode_t *gn;
     fsg_pnode_t *pnode;
     hmm_t *hmm;
-
-    /* Determine if we actually have a frame to process. */
-    if (acmod->n_feat_frame == 0)
-        return 0;
 
     /* Activate our HMMs for the current frame if need be. */
     if (!acmod->compallsen)

@@ -306,10 +306,6 @@
       ARG_STRING,                                                               \
       NULL,                                                                     \
       "MLLR transformation to apply to means and variances" },                  \
-{ "-sdmap",                                                                     \
-      ARG_STRING,                                                               \
-      NULL,                                                                     \
-      "Subspace distribution cluster map file" },                               \
 { "-mmap",                                                                      \
       ARG_BOOLEAN,                                                              \
       "yes",                                                                    \

@@ -72,7 +72,7 @@ void ngram_fwdtree_start(ngram_search_t *ngs);
  *
  * @return Number of frames searched (either 0 or 1).
  */
-int ngram_fwdtree_search(ngram_search_t *ngs);
+int ngram_fwdtree_search(ngram_search_t *ngs, int frame_idx);
 
 /**
  * Finish fwdtree decoding for an utterance.

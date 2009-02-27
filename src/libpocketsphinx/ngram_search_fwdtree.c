@@ -1365,21 +1365,17 @@ deactivate_channels(ngram_search_t *ngs, int frame_idx)
 }
 
 int
-ngram_fwdtree_search(ngram_search_t *ngs)
+ngram_fwdtree_search(ngram_search_t *ngs, int frame_idx)
 {
     int16 const *senscr;
-    int frame_idx = -1;
-
-    /* Determine if we actually have a frame to process. */
-    if (ps_search_acmod(ngs)->n_feat_frame == 0)
-        return 0;
 
     /* Activate our HMMs for the current frame if need be. */
     if (!ps_search_acmod(ngs)->compallsen)
-        compute_sen_active(ngs, acmod_frame_idx(ps_search_acmod(ngs)));
+        compute_sen_active(ngs, frame_idx);
 
     /* Compute GMM scores for the current frame. */
-    senscr = acmod_score(ps_search_acmod(ngs), &frame_idx);
+    if ((senscr = acmod_score(ps_search_acmod(ngs), &frame_idx)) == NULL)
+        return 0;
     ngs->st.n_senone_active_utt += ps_search_acmod(ngs)->n_senone_active;
 
     /* Mark backpointer table for current frame. */
@@ -1416,7 +1412,7 @@ ngram_fwdtree_finish(ngram_search_t *ngs)
     chan_t *hmm, **acl;
 
     /* This is the number of frames processed. */
-    cf = acmod_frame_idx(ps_search_acmod(ngs));
+    cf = ps_search_acmod(ngs)->output_frame;
     /* Add a mark in the backpointer table for one past the final frame. */
     ngram_search_mark_bptable(ngs, cf);
 

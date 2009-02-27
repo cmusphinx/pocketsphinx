@@ -56,7 +56,7 @@
 #include "ngram_search_fwdflat.h"
 
 static int ngram_search_start(ps_search_t *search);
-static int ngram_search_step(ps_search_t *search);
+static int ngram_search_step(ps_search_t *search, int frame_idx);
 static int ngram_search_finish(ps_search_t *search);
 static int ngram_search_reinit(ps_search_t *search);
 static char const *ngram_search_hyp(ps_search_t *search, int32 *out_score);
@@ -619,14 +619,14 @@ ngram_search_start(ps_search_t *search)
 }
 
 static int
-ngram_search_step(ps_search_t *search)
+ngram_search_step(ps_search_t *search, int frame_idx)
 {
     ngram_search_t *ngs = (ngram_search_t *)search;
 
     if (ngs->fwdtree)
-        return ngram_fwdtree_search(ngs);
+        return ngram_fwdtree_search(ngs, frame_idx);
     else if (ngs->fwdflat)
-        return ngram_fwdflat_search(ngs);
+        return ngram_fwdflat_search(ngs, frame_idx);
     else
         return -1;
 }
@@ -658,18 +658,19 @@ ngram_search_finish(ps_search_t *search)
 
         /* Now do fwdflat search in its entirety, if requested. */
         if (ngs->fwdflat) {
-            int nfr;
-
+            int i;
             /* Rewind the acoustic model. */
             acmod_rewind(ps_search_acmod(ngs));
             /* Now redo search. */
             ngram_fwdflat_start(ngs);
-            while ((nfr = ngram_fwdflat_search(ngs)) > 0) {
-                assert(nfr == 1);
+            i = 0;
+            while (ps_search_acmod(ngs)->n_feat_frame > 0) {
+                int nfr;
+                if ((nfr = ngram_fwdflat_search(ngs, i)) < 0)
+                    return nfr;
                 acmod_advance(ps_search_acmod(ngs));
+                ++i;
             }
-            if (nfr < 0)
-                return nfr;
             ngram_fwdflat_finish(ngs);
             /* And now, we should have a result... */
         }
