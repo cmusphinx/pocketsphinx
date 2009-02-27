@@ -397,6 +397,7 @@ acmod_start_utt(acmod_t *acmod)
     acmod->output_frame = 0;
     acmod->senscr_frame = -1;
     acmod->n_senone_active = 0;
+    acmod->mgau->frame_idx = 0;
     return 0;
 }
 
@@ -741,6 +742,7 @@ acmod_rewind(acmod_t *acmod)
     acmod->feat_outidx = 0;
     acmod->output_frame = 0;
     acmod->senscr_frame = -1;
+    acmod->mgau->frame_idx = 0;
 
     return 0;
 }
@@ -751,6 +753,7 @@ acmod_advance(acmod_t *acmod)
     /* Advance the output pointers. */
     ++acmod->feat_outidx;
     --acmod->n_feat_frame;
+    ++acmod->mgau->frame_idx;
 
     return ++acmod->output_frame;
 }

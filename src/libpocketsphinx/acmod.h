@@ -105,7 +105,8 @@ typedef struct ps_mgaufuncs_s {
 } ps_mgaufuncs_t;    
 
 struct ps_mgau_s {
-    ps_mgaufuncs_t *vt;
+    ps_mgaufuncs_t *vt;  /**< vtable of mgau functions. */
+    int frame_idx;       /**< frame counter. */
 };
 
 #define ps_mgau_base(mg) ((ps_mgau_t *)(mg))

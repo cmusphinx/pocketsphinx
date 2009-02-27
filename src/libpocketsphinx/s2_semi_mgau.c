@@ -174,7 +174,6 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
         obs = z;
         for (j = 0; j < ceplen; j++) {
             diff = *obs++ - *mean++;
-            /* FIXME: Use standard deviations, to avoid squaring, as per Bhiksha. */
             sqdiff = MFCCMUL(diff, diff);
             compl = MFCCMUL(sqdiff, *var);
             d = GMMSUB(d, compl);
@@ -216,7 +215,6 @@ eval_cb_kdtree(s2_semi_mgau_t *s, int32 feat, mfcc_t *z,
         obs = z;
         for (j = 0; (j < ceplen) && (d >= worst->score); j++) {
             diff = *obs++ - *mean++;
-            /* FIXME: Use standard deviations, to avoid squaring, as per Bhiksha. */
             sqdiff = MFCCMUL(diff, diff);
             compl = MFCCMUL(sqdiff, *var);
             d = GMMSUB(d, compl);
@@ -270,7 +268,6 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
         cw = detP - det;
         for (j = 0; (j < ceplen) && (d >= worst->score); ++j) {
             diff = *obs++ - *mean++;
-            /* FIXME: Use standard deviations, to avoid squaring, as per Bhiksha. */
             sqdiff = MFCCMUL(diff, diff);
             compl = MFCCMUL(sqdiff, *var);
             d = GMMSUB(d, compl);
@@ -599,34 +596,33 @@ s2_semi_mgau_frame_eval(ps_mgau_t *ps,
 			int32 compallsen)
 {
     s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
-    vqFeature_t **lastf;
-    int i;
+    int i, topn_idx;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
-
-    /* Find previous frame of topn. */
-    if (s->cur_topn_hist == 0)
-        lastf = s->topn_hist[s->n_topn_hist-1];
-    else
-        lastf = s->topn_hist[s->cur_topn_hist-1];
+    /* No bounds checking is done here, which just means you'll get
+     * semi-random crap if you request a frame in the future or one
+     * that's too far in the past. */
+    topn_idx = frame % s->n_topn_hist;
+    s->f = s->topn_hist[topn_idx];
     for (i = 0; i < s->n_feat; ++i) {
-        int topn;
-
-        /* Initialize topn codewords to topn codewords from previous frame. */
-        memcpy(s->f[i], lastf[i], sizeof(vqFeature_t) * s->max_topn);
-        mgau_dist(s, frame, i, featbuf[i]);
-        topn = mgau_norm(s, i);
+        /* For past frames this will already be computed. */
+        if (frame >= ps_mgau_base(ps)->frame_idx) {
+            vqFeature_t **lastf;
+            if (topn_idx == 0)
+                lastf = s->topn_hist[s->n_topn_hist-1];
+            else
+                lastf = s->topn_hist[topn_idx-1];
+            memcpy(s->f[i], lastf[i], sizeof(vqFeature_t) * s->max_topn);
+            mgau_dist(s, frame, i, featbuf[i]);
+            s->topn_hist_n[topn_idx] = mgau_norm(s, i);
+        }
 
         if (compallsen)
-	    get_scores_8b_feat_all(s, i, topn, senone_scores);
+	    get_scores_8b_feat_all(s, i, s->topn_hist_n[topn_idx], senone_scores);
         else
-            get_scores_8b_feat(s, i, topn, senone_scores,
+            get_scores_8b_feat(s, i, s->topn_hist_n[topn_idx], senone_scores,
                                senone_active, n_senone_active);
     }
-    /* Advance topn codeword pointer to next frame */
-    if (++s->cur_topn_hist >= s->n_topn_hist)
-        s->cur_topn_hist = 0;
-    s->f = s->topn_hist[s->cur_topn_hist];
 
     return 0;
 }
@@ -1127,11 +1123,11 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     E_INFOCONT("\n");
 
     /* Top-N scores from recent frames */
-    s->n_topn_hist = cmd_ln_int32_r(config, "-pl_window");
-    if (s->n_topn_hist < 2) s->n_topn_hist = 2;
+    s->n_topn_hist = cmd_ln_int32_r(config, "-pl_window") + 2;
     s->topn_hist = (vqFeature_t ***)
         ckd_calloc_3d(s->n_topn_hist, s->n_feat, s->max_topn,
-                      sizeof(vqFeature_t));
+                      sizeof(***s->topn_hist));
+    s->topn_hist_n = ckd_calloc(s->n_topn_hist, sizeof(*s->topn_hist_n));
     for (i = 0; i < s->n_topn_hist; ++i) {
         int j;
         for (j = 0; j < s->n_feat; ++j) {
@@ -1142,8 +1138,6 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
             }
         }
     }
-    s->f = s->topn_hist[0];
-    s->cur_topn_hist = 0;
 
     ps = (ps_mgau_t *)s;
     ps->vt = &s2_semi_mgau_funcs;
@@ -1239,6 +1233,7 @@ s2_semi_mgau_free(ps_mgau_t *ps)
     ckd_free(s->means);
     ckd_free(s->vars);
     ckd_free(s->topn_beam);
+    ckd_free(s->topn_hist_n);
     ckd_free_3d((void **)s->topn_hist);
     ckd_free_2d((void **)s->dets);
     ckd_free(s);
