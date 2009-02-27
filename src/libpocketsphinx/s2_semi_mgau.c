@@ -616,7 +616,14 @@ s2_semi_mgau_frame_eval(ps_mgau_t *ps,
             mgau_dist(s, frame, i, featbuf[i]);
             s->topn_hist_n[topn_idx] = mgau_norm(s, i);
         }
-
+#if 0
+        int j;
+        E_INFO("TopN[%d][%d] =", frame, i);
+        for (j = 0; j < s->topn_hist_n[topn_idx]; ++j) {
+            E_INFOCONT(" %d:%d", s->f[i][j].codeword, s->f[i][j].score);
+        }
+        E_INFOCONT("\n");
+#endif
         if (compallsen)
 	    get_scores_8b_feat_all(s, i, s->topn_hist_n[topn_idx], senone_scores);
         else

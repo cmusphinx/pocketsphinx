@@ -544,7 +544,7 @@ ps_search_forward(ps_decoder_t *ps)
         if (ps->phone_loop)
             if ((k = ps_search_step(ps->phone_loop, ps->acmod->output_frame)) < 0)
                 return k;
-        if (ps->n_frame >= ps->pl_window)
+        if (ps->acmod->output_frame >= ps->pl_window)
             if ((k = ps_search_step(ps->search,
                                     ps->acmod->output_frame - ps->pl_window)) < 0)
                 return k;

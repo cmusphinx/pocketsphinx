@@ -299,7 +299,7 @@ phone_loop_search_step(ps_search_t *search, int frame_idx)
     /* Do phone transitions. */
     phone_transition(pls, frame_idx);
 
-    return -1;
+    return 0;
 }
 
 static int

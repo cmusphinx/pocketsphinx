@@ -53,6 +53,7 @@ main(int argc, char *argv[])
 			bptr = buf;
 			while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
 				while (acmod->n_feat_frame > 0) {
+					ps_search_step(pls, n_searchfr);
 					if (n_searchfr >= 6)
 						ps_search_step(ngs, n_searchfr - 6);
 					acmod_advance(acmod);
@@ -70,6 +71,7 @@ main(int argc, char *argv[])
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
+	printf("%s\n", ps_search_hyp(ngs, &score));
 	TEST_EQUAL(0, strcmp("GO FORWARD TEN READERS", ps_search_hyp(ngs, &score)));
 	c = clock() - c;
 	printf("5 * fwdtree search in %.2f sec\n",
