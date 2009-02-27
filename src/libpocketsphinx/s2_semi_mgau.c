@@ -303,9 +303,6 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
 static void
 mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
 {
-    /* Initialize topn codewords to topn codewords from previous
-     * frame, and calculate their densities. */
-    memcpy(s->f[feat], s->lastf[feat], sizeof(vqFeature_t) * s->max_topn);
     eval_topn(s, feat, z);
 
     /* If this frame is skipped, do nothing else. */
@@ -327,9 +324,6 @@ mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
     else {
         eval_cb(s, feat, z);
     }
-
-    /* Make a copy of current topn. */
-    memcpy(s->lastf[feat], s->f[feat], sizeof(vqFeature_t) * s->max_topn);
 }
 
 static int
@@ -605,12 +599,21 @@ s2_semi_mgau_frame_eval(ps_mgau_t *ps,
 			int32 compallsen)
 {
     s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
+    vqFeature_t **lastf;
     int i;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
+
+    /* Find previous frame of topn. */
+    if (s->cur_topn_hist == 0)
+        lastf = s->topn_hist[s->n_topn_hist-1];
+    else
+        lastf = s->topn_hist[s->cur_topn_hist-1];
     for (i = 0; i < s->n_feat; ++i) {
         int topn;
 
+        /* Initialize topn codewords to topn codewords from previous frame. */
+        memcpy(s->f[i], lastf[i], sizeof(vqFeature_t) * s->max_topn);
         mgau_dist(s, frame, i, featbuf[i]);
         topn = mgau_norm(s, i);
 
@@ -620,6 +623,11 @@ s2_semi_mgau_frame_eval(ps_mgau_t *ps,
             get_scores_8b_feat(s, i, topn, senone_scores,
                                senone_active, n_senone_active);
     }
+    /* Advance topn codeword pointer to next frame */
+    if (++s->cur_topn_hist >= s->n_topn_hist)
+        s->cur_topn_hist = 0;
+    s->f = s->topn_hist[s->cur_topn_hist];
+
     return 0;
 }
 
@@ -1118,18 +1126,24 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     }
     E_INFOCONT("\n");
 
-    /* Top-N scores from current, previous frame */
-    s->f = (vqFeature_t **) ckd_calloc_2d(s->n_feat, s->max_topn,
-                                          sizeof(vqFeature_t));
-    s->lastf = (vqFeature_t **) ckd_calloc_2d(s->n_feat, s->max_topn,
-                                              sizeof(vqFeature_t));
-    for (i = 0; i < s->n_feat; ++i) {
-        int32 j;
-        for (j = 0; j < s->max_topn; ++j) {
-            s->lastf[i][j].score = WORST_DIST;
-            s->lastf[i][j].codeword = j;
+    /* Top-N scores from recent frames */
+    s->n_topn_hist = cmd_ln_int32_r(config, "-pl_window");
+    if (s->n_topn_hist < 2) s->n_topn_hist = 2;
+    s->topn_hist = (vqFeature_t ***)
+        ckd_calloc_3d(s->n_topn_hist, s->n_feat, s->max_topn,
+                      sizeof(vqFeature_t));
+    for (i = 0; i < s->n_topn_hist; ++i) {
+        int j;
+        for (j = 0; j < s->n_feat; ++j) {
+            int k;
+            for (k = 0; k < s->max_topn; ++k) {
+                s->topn_hist[i][j][k].score = WORST_DIST;
+                s->topn_hist[i][j][k].codeword = k;
+            }
         }
     }
+    s->f = s->topn_hist[0];
+    s->cur_topn_hist = 0;
 
     ps = (ps_mgau_t *)s;
     ps->vt = &s2_semi_mgau_funcs;
@@ -1225,8 +1239,7 @@ s2_semi_mgau_free(ps_mgau_t *ps)
     ckd_free(s->means);
     ckd_free(s->vars);
     ckd_free(s->topn_beam);
-    ckd_free_2d((void **)s->f);
-    ckd_free_2d((void **)s->lastf);
+    ckd_free_3d((void **)s->topn_hist);
     ckd_free_2d((void **)s->dets);
     ckd_free(s);
 }

@@ -80,8 +80,10 @@ struct s2_semi_mgau_s {
     uint32 kd_maxdepth;
     int32 kd_maxbbi;
 
-    /* Top-N scores and codewords from current, last frame. */
-    vqFeature_t **f, **lastf;
+    /* Top-N scores and codewords from last N frames. */
+    vqFeature_t ***topn_hist;
+    vqFeature_t **f;
+    int16 n_topn_hist, cur_topn_hist;
 
     /* Log-add table for compressed values. */
     logmath_t *lmath_8b;
