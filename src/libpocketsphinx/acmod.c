@@ -736,7 +736,7 @@ acmod_rewind(acmod_t *acmod)
         return -1;
 
     /* Frames consumed + frames available */
-    acmod->n_feat_frame = acmod->feat_outidx + acmod->n_feat_frame;
+    acmod->n_feat_frame = acmod->output_frame + acmod->n_feat_frame;
 
     /* Reset output pointers. */
     acmod->feat_outidx = 0;
@@ -751,7 +751,8 @@ int
 acmod_advance(acmod_t *acmod)
 {
     /* Advance the output pointers. */
-    ++acmod->feat_outidx;
+    if (++acmod->feat_outidx == acmod->n_feat_alloc)
+        acmod->feat_outidx = 0;
     --acmod->n_feat_frame;
     ++acmod->mgau->frame_idx;
 
@@ -764,6 +765,7 @@ acmod_score(acmod_t *acmod,
 {
     int frame_idx, feat_idx, n_backfr;
 
+    /* Calculate the absolute frame index to be scored. */
     if (inout_frame_idx == NULL)
         frame_idx = acmod->output_frame;
     else if (*inout_frame_idx < 0)
@@ -787,14 +789,7 @@ acmod_score(acmod_t *acmod,
     /* Build active senone list. */
     acmod_flags2list(acmod);
 
-    /* If the buffer is circular, then wrap it around if necessary.
-     * This has to be done here so that acmod_rewind() will calculate
-     * the number of available frames properly.
-     */
-    if (acmod->feat_outidx == acmod->n_feat_alloc)
-        acmod->feat_outidx = 0;
-
-    /* Get the circular index (usually zero...) of the frame to score. */
+    /* Get the index in feat_buf of the frame to be scored. */
     feat_idx = ((acmod->feat_outidx + frame_idx - acmod->output_frame)
                 % acmod->n_feat_alloc);
     if (feat_idx < 0) feat_idx += acmod->n_feat_alloc;

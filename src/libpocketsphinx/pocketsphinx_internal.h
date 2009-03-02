@@ -84,6 +84,7 @@ typedef struct ps_searchfuncs_s {
  */
 struct ps_search_s {
     ps_searchfuncs_t *vt;  /**< V-table of search methods. */
+    ps_search_t *pls;      /**< Phoneme loop for lookahead. */
     cmd_ln_t *config;      /**< Configuration. */
     acmod_t *acmod;        /**< Acoustic model. */
     dict_t *dict;          /**< Pronunciation dictionary. */
@@ -105,6 +106,7 @@ struct ps_search_s {
 #define ps_search_dag(s) ps_search_base(s)->dag
 #define ps_search_last_link(s) ps_search_base(s)->last_link
 #define ps_search_post(s) ps_search_base(s)->post
+#define ps_search_lookahead(s) ps_search_base(s)->pls
 
 #define ps_search_name(s) ps_search_base(s)->vt->name
 #define ps_search_start(s) (*(ps_search_base(s)->vt->start))(s)

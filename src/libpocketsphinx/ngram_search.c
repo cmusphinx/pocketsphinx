@@ -655,12 +655,14 @@ ngram_search_finish(ps_search_t *search)
 
     if (ngs->fwdtree) {
         ngram_fwdtree_finish(ngs);
+        /* dump_bptable(ngs); */
 
         /* Now do fwdflat search in its entirety, if requested. */
         if (ngs->fwdflat) {
             int i;
             /* Rewind the acoustic model. */
-            acmod_rewind(ps_search_acmod(ngs));
+            if (acmod_rewind(ps_search_acmod(ngs)) < 0)
+                return -1;
             /* Now redo search. */
             ngram_fwdflat_start(ngs);
             i = 0;
@@ -673,6 +675,7 @@ ngram_search_finish(ps_search_t *search)
             }
             ngram_fwdflat_finish(ngs);
             /* And now, we should have a result... */
+            /* dump_bptable(ngs); */
         }
     }
     else if (ngs->fwdflat) {

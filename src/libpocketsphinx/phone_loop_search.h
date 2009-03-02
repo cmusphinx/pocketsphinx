@@ -97,6 +97,10 @@ typedef struct phone_loop_search_s phone_loop_search_t;
 ps_search_t *phone_loop_search_init(cmd_ln_t *config,
                                     acmod_t *acmod,
                                     dict_t *dict);
-void phone_loop_search_free(ps_search_t *search);
+
+/**
+ * Return lookahead heuristic score for a specific phone.
+ */
+int32 phone_loop_search_score(phone_loop_search_t *pls, int ciphone);
 
 #endif /* __PHONE_LOOP_SEARCH_H__ */

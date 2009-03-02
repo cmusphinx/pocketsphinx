@@ -190,12 +190,22 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     if ((ps->dict = dict_init(ps->config, ps->acmod->mdef)) == NULL)
         return -1;
 
+    if ((ps->pl_window = cmd_ln_int32_r(ps->config, "-pl_window"))) {
+        /* Initialize an auxiliary phone loop search, which will run in
+         * "parallel" with FSG or N-Gram search. */
+        if ((ps->phone_loop = phone_loop_search_init(ps->config,
+                                                     ps->acmod, ps->dict)) == NULL)
+            return -1;
+        ps->searches = glist_add_ptr(ps->searches, ps->phone_loop);
+    }
+
     /* Determine whether we are starting out in FSG or N-Gram search mode. */
     if (cmd_ln_str_r(ps->config, "-fsg") || cmd_ln_str_r(ps->config, "-jsgf")) {
         ps_search_t *fsgs;
 
         if ((fsgs = fsg_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
             return -1;
+        fsgs->pls = ps->phone_loop;
         ps->searches = glist_add_ptr(ps->searches, fsgs);
         ps->search = fsgs;
     }
@@ -205,20 +215,12 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
         if ((ngs = ngram_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
             return -1;
+        ngs->pls = ps->phone_loop;
         ps->searches = glist_add_ptr(ps->searches, ngs);
         ps->search = ngs;
     }
     /* Otherwise, we will initialize the search whenever the user
      * decides to load an FSG or a language model. */
-
-    if (cmd_ln_int32_r(ps->config, "-pl_window")) {
-        /* Initialize an auxiliary phone loop search, which will run in
-         * "parallel" with FSG or N-Gram search. */
-        if ((ps->phone_loop = phone_loop_search_init(ps->config,
-                                                     ps->acmod, ps->dict)) == NULL)
-            return -1;
-        ps->searches = glist_add_ptr(ps->searches, ps->phone_loop);
-    }
 
     /* Initialize performance timer. */
     ps->perf.name = "decode";
@@ -334,6 +336,7 @@ ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset)
                                    ps->acmod, ps->dict);
         if (search == NULL)
             return NULL;
+        search->pls = ps->phone_loop;
         ps->searches = glist_add_ptr(ps->searches, search);
         ngs = (ngram_search_t *)search;
     }
@@ -371,6 +374,7 @@ ps_update_fsgset(ps_decoder_t *ps)
         /* Initialize FSG search. */
         search = fsg_search_init(ps->config,
                                  ps->acmod, ps->dict);
+        search->pls = ps->phone_loop;
         ps->searches = glist_add_ptr(ps->searches, search);
     }
     else {

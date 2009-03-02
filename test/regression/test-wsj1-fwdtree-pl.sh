@@ -13,8 +13,11 @@ run_program pocketsphinx_batch \
     -cepdir $data/wsj \
     -cepext .mfc \
     -hyp $bn.match \
-    -backtrace yes \
+    -fwdtree TRUE \
+    -fwdflat FALSE \
+    -bestpath FALSE \
     -pl_window 10 \
+    -backtrace yes \
     > $bn.log 2>&1
 
 # Test whether it actually completed

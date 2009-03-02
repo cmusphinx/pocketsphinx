@@ -50,6 +50,7 @@
 
 /* Local headers. */
 #include "ngram_search_fwdtree.h"
+#include "phone_loop_search.h"
 
 /*
  * NOTE: this module assumes that the dictionary is organized as follows:
@@ -691,12 +692,14 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
     int32 thresh, newphone_thresh, lastphn_thresh, newphone_score;
     chan_t **nacl;              /* next active list */
     lastphn_cand_t *candp;
+    phone_loop_search_t *pls;
 
     nf = frame_idx + 1;
     thresh = ngs->best_score + ngs->dynamic_beam;
     newphone_thresh = ngs->best_score + ngs->pbeam;
     lastphn_thresh = ngs->best_score + ngs->lpbeam;
     nacl = ngs->active_chan_list[nf & 0x1];
+    pls = (phone_loop_search_t *)ps_search_lookahead(ngs);
 
     for (i = 0, rhmm = ngs->root_chan; i < ngs->n_root_chan; i++, rhmm++) {
         /* First check if this channel was active in current frame */
@@ -707,10 +710,11 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
             hmm_frame(&rhmm->hmm) = nf;  /* rhmm will be active in next frame */
 
             /* transitions out of this root channel */
-            newphone_score = hmm_out_score(&rhmm->hmm) + ngs->pip;
-            if (newphone_score BETTER_THAN newphone_thresh) {
-                /* transition to all next-level channels in the HMM tree */
-                for (hmm = rhmm->next; hmm; hmm = hmm->alt) {
+            /* transition to all next-level channels in the HMM tree */
+            for (hmm = rhmm->next; hmm; hmm = hmm->alt) {
+                newphone_score = hmm_out_score(&rhmm->hmm) + ngs->pip
+                    + phone_loop_search_score(pls, hmm->ciphone);
+                if (newphone_score BETTER_THAN newphone_thresh) {
                     if ((hmm_frame(&hmm->hmm) < frame_idx)
                         || (newphone_score BETTER_THAN hmm_in_score(&hmm->hmm))) {
                         hmm_enter(&hmm->hmm, newphone_score,
@@ -718,22 +722,25 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
                         *(nacl++) = hmm;
                     }
                 }
+            }
 
-                /*
-                 * Transition to last phone of all words for which this is the
-                 * penultimate phone (the last phones may need multiple right contexts).
-                 * Remember to remove the temporary newword_penalty.
-                 */
+            /*
+             * Transition to last phone of all words for which this is the
+             * penultimate phone (the last phones may need multiple right contexts).
+             * Remember to remove the temporary newword_penalty.
+             */
+            for (w = rhmm->penult_phn_wid; w >= 0;
+                 w = ngs->homophone_set[w]) {
+                dict_entry_t *de = ps_search_dict(ngs)->dict_list[w];
+                newphone_score = hmm_out_score(&rhmm->hmm) + ngs->pip
+                    + phone_loop_search_score(pls, de->ci_phone_ids[de->len - 1]);
                 if (newphone_score BETTER_THAN lastphn_thresh) {
-                    for (w = rhmm->penult_phn_wid; w >= 0;
-                         w = ngs->homophone_set[w]) {
-                        candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
-                        ngs->n_lastphn_cand++;
-                        candp->wid = w;
-                        candp->score =
-                            newphone_score - ngs->nwpen;
-                        candp->bp = hmm_out_history(&rhmm->hmm);
-                    }
+                    candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
+                    ngs->n_lastphn_cand++;
+                    candp->wid = w;
+                    candp->score =
+                        newphone_score - ngs->nwpen;
+                    candp->bp = hmm_out_history(&rhmm->hmm);
                 }
             }
         }
@@ -754,12 +761,14 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
     chan_t **acl, **nacl;       /* active list, next active list */
     lastphn_cand_t *candp;
     dict_entry_t *de;
+    phone_loop_search_t *pls;
 
     nf = frame_idx + 1;
 
     thresh = ngs->best_score + ngs->dynamic_beam;
     newphone_thresh = ngs->best_score + ngs->pbeam;
     lastphn_thresh = ngs->best_score + ngs->lpbeam;
+    pls = (phone_loop_search_t *)ps_search_lookahead(ngs);
 
     acl = ngs->active_chan_list[frame_idx & 0x1];   /* currently active HMMs in tree */
     nacl = ngs->active_chan_list[nf & 0x1] + ngs->n_active_chan[nf & 0x1];
@@ -775,38 +784,40 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
                 *(nacl++) = hmm;
             }
 
-            /* transitions out of this channel */
-            newphone_score = hmm_out_score(&hmm->hmm) + ngs->pip;
-            if (newphone_score BETTER_THAN newphone_thresh) {
-                /* transition to all next-level channel in the HMM tree */
-                for (nexthmm = hmm->next; nexthmm; nexthmm = nexthmm->alt) {
-                    if ((hmm_frame(&nexthmm->hmm) < frame_idx)
-                        || (newphone_score BETTER_THAN hmm_in_score(&nexthmm->hmm))) {
-                        if (hmm_frame(&nexthmm->hmm) != nf) {
-                            /* Keep this HMM on the active list */
-                            *(nacl++) = nexthmm;
-                        }
-                        hmm_enter(&nexthmm->hmm, newphone_score,
-                                  hmm_out_history(&hmm->hmm), nf);
+            /* transition to all next-level channel in the HMM tree */
+            for (nexthmm = hmm->next; nexthmm; nexthmm = nexthmm->alt) {
+                newphone_score = hmm_out_score(&hmm->hmm) + ngs->pip
+                    + phone_loop_search_score(pls, nexthmm->ciphone);
+                if ((newphone_score BETTER_THAN newphone_thresh)
+                    && ((hmm_frame(&nexthmm->hmm) < frame_idx)
+                        || (newphone_score
+                            BETTER_THAN hmm_in_score(&nexthmm->hmm)))) {
+                    if (hmm_frame(&nexthmm->hmm) != nf) {
+                        /* Keep this HMM on the active list */
+                        *(nacl++) = nexthmm;
                     }
+                    hmm_enter(&nexthmm->hmm, newphone_score,
+                              hmm_out_history(&hmm->hmm), nf);
                 }
+            }
 
-                /*
-                 * Transition to last phone of all words for which this is the
-                 * penultimate phone (the last phones may need multiple right contexts).
-                 * Remember to remove the temporary newword_penalty.
-                 */
+            /*
+             * Transition to last phone of all words for which this is the
+             * penultimate phone (the last phones may need multiple right contexts).
+             * Remember to remove the temporary newword_penalty.
+             */
+            for (w = hmm->info.penult_phn_wid; w >= 0;
+                 w = ngs->homophone_set[w]) {
+                de = ps_search_dict(ngs)->dict_list[w];
+                newphone_score = hmm_out_score(&hmm->hmm) + ngs->pip
+                    + phone_loop_search_score(pls, de->ci_phone_ids[de->len - 1]);
                 if (newphone_score BETTER_THAN lastphn_thresh) {
-                    for (w = hmm->info.penult_phn_wid; w >= 0;
-                         w = ngs->homophone_set[w]) {
-                        de = ps_search_dict(ngs)->dict_list[w];
-                        candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
-                        ngs->n_lastphn_cand++;
-                        candp->wid = w;
-                        candp->score =
-                            newphone_score - ngs->nwpen;
-                        candp->bp = hmm_out_history(&hmm->hmm);
-                    }
+                    candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
+                    ngs->n_lastphn_cand++;
+                    candp->wid = w;
+                    candp->score =
+                        newphone_score - ngs->nwpen;
+                    candp->bp = hmm_out_history(&hmm->hmm);
                 }
             }
         }
@@ -1187,6 +1198,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     struct bestbp_rc_s *bestbp_rc_ptr;
     int32 last_ciph;
     int32 ssid;
+    phone_loop_search_t *pls;
 
     /*
      * Transition to start of new word instances (HMM tree roots); but only if words
@@ -1196,6 +1208,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     for (i = bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef) - 1; i >= 0; --i)
         ngs->bestbp_rc[i].score = WORST_SCORE;
     k = 0;
+    pls = (phone_loop_search_t *)ps_search_lookahead(ngs);
     /* Ugh, this is complicated.  Scan all word exits for this frame
      * (they have already been created by prune_word_chan()). */
     for (bp = ngs->bp_table_idx[frame_idx]; bp < ngs->bpidx; bp++) {
@@ -1243,7 +1256,8 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     for (i = ngs->n_root_chan, rhmm = ngs->root_chan; i > 0; --i, rhmm++) {
         bestbp_rc_ptr = &(ngs->bestbp_rc[rhmm->ciphone]);
 
-        newscore = bestbp_rc_ptr->score + ngs->nwpen + ngs->pip;
+        newscore = bestbp_rc_ptr->score + ngs->nwpen + ngs->pip
+            + phone_loop_search_score(pls, rhmm->ciphone);
         if (newscore BETTER_THAN thresh) {
             if ((hmm_frame(&rhmm->hmm) < frame_idx)
                 || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
@@ -1296,7 +1310,9 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     for (i = 0; i < ngs->n_1ph_LMwords; i++) {
         w = ngs->single_phone_wid[i];
         rhmm = (root_chan_t *) ngs->word_chan[w];
-        if ((newscore = ngs->last_ltrans[w].dscr + ngs->pip) BETTER_THAN thresh) {
+        newscore = ngs->last_ltrans[w].dscr + ngs->pip
+            + phone_loop_search_score(pls, rhmm->ciphone);
+        if (newscore BETTER_THAN thresh) {
             bpe = ngs->bp_table + ngs->last_ltrans[w].bp;
             pde = ps_search_dict(ngs)->dict_list[bpe->wid];
 
@@ -1313,26 +1329,28 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     }
 
     /* Remaining words: <sil>, noise words.  No mpx for these! */
+    w = ps_search_silence_wid(ngs);
+    rhmm = (root_chan_t *) ngs->word_chan[w];
     bestbp_rc_ptr = &(ngs->bestbp_rc[ps_search_acmod(ngs)->mdef->sil]);
-    newscore = bestbp_rc_ptr->score + ngs->silpen + ngs->pip;
+    newscore = bestbp_rc_ptr->score + ngs->silpen + ngs->pip
+        + phone_loop_search_score(pls, rhmm->ciphone);
     if (newscore BETTER_THAN thresh) {
-        w = ps_search_silence_wid(ngs);
-        rhmm = (root_chan_t *) ngs->word_chan[w];
         if ((hmm_frame(&rhmm->hmm) < frame_idx)
             || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
             hmm_enter(&rhmm->hmm,
                       newscore, bestbp_rc_ptr->path, nf);
         }
     }
-    newscore = bestbp_rc_ptr->score + ngs->fillpen + ngs->pip;
-    if (newscore BETTER_THAN thresh) {
-        /* FIXME FIXME: This depends on having the noise words
-         * immediately following silence in the dictionary... */
-        for (w = ps_search_silence_wid(ngs) + 1; w < ps_search_n_words(ngs); w++) {
-            rhmm = (root_chan_t *) ngs->word_chan[w];
-            /* If this was not actually a single-phone word, rhmm will be NULL. */
-            if (rhmm == NULL)
-                continue;
+    /* FIXME FIXME: This depends on having the noise words
+     * immediately following silence in the dictionary... */
+    for (w = ps_search_silence_wid(ngs) + 1; w < ps_search_n_words(ngs); w++) {
+        rhmm = (root_chan_t *) ngs->word_chan[w];
+        /* If this was not actually a single-phone word, rhmm will be NULL. */
+        if (rhmm == NULL)
+            continue;
+        newscore = bestbp_rc_ptr->score + ngs->fillpen + ngs->pip
+            + phone_loop_search_score(pls, rhmm->ciphone);
+        if (newscore BETTER_THAN thresh) {
             if ((hmm_frame(&rhmm->hmm) < frame_idx)
                 || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
                 hmm_enter(&rhmm->hmm,

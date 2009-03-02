@@ -47,6 +47,7 @@ static int phone_loop_search_start(ps_search_t *search);
 static int phone_loop_search_step(ps_search_t *search, int frame_idx);
 static int phone_loop_search_finish(ps_search_t *search);
 static int phone_loop_search_reinit(ps_search_t *search);
+static void phone_loop_search_free(ps_search_t *search);
 static char const *phone_loop_search_hyp(ps_search_t *search, int32 *out_score);
 static int32 phone_loop_search_prob(ps_search_t *search);
 static ps_seg_t *phone_loop_search_seg_iter(ps_search_t *search, int32 *out_score);
@@ -128,7 +129,7 @@ phone_loop_search_free_renorm(phone_loop_search_t *pls)
     pls->renorm = NULL;
 }
 
-void
+static void
 phone_loop_search_free(ps_search_t *search)
 {
     phone_loop_search_t *pls = (phone_loop_search_t *)search;
@@ -184,7 +185,6 @@ evaluate_hmms(phone_loop_search_t *pls, int16 const *senscr, int frame_idx)
 
     hmm_context_set_senscore(pls->hmmctx, senscr);
 
-    /* E_INFO("Active in frame %d:", frame_idx); */
     bi = 0;
     for (i = 0; i < pls->n_phones; ++i) {
         hmm_t *hmm = (hmm_t *)&pls->phones[i];
@@ -193,17 +193,20 @@ evaluate_hmms(phone_loop_search_t *pls, int16 const *senscr, int frame_idx)
         if (hmm_frame(hmm) < frame_idx)
             continue;
         score = hmm_vit_eval(hmm);
-        /* E_INFOCONT(" %s(%d)",
-           bin_mdef_ciphone_str(ps_search_acmod(pls)->mdef, i), score); */
         if (score BETTER_THAN bs) {
             bs = score;
             bi = i;
         }
     }
     pls->best_score = bs;
-    /* E_INFOCONT("\n"); */
-    /* E_INFO("Best phone %s score %d\n",
-       bin_mdef_ciphone_str(ps_search_acmod(pls)->mdef, bi), bs); */
+
+    for (i = 0; i < pls->n_phones; ++i) {
+        hmm_t *hmm = (hmm_t *)&pls->phones[i];
+        if (hmm_frame(hmm) < frame_idx)
+            continue;
+        if (hmm_bestscore(hmm) < bs + pls->beam)
+            continue;
+    }
 
     return bs;
 }
@@ -249,11 +252,6 @@ phone_transition(phone_loop_search_t *pls, int frame_idx)
 
         newphone_score = hmm_out_score(hmm) + pls->pip;
         if (newphone_score BETTER_THAN thresh) {
-#if 0
-            E_INFO("Exiting phone %s in frame %d score %d thresh %d\n",
-                   bin_mdef_ciphone_str(ps_search_acmod(pls)->mdef, i),
-                   frame_idx, newphone_score, thresh);
-#endif
             /* Transition into all phones using the usual Viterbi rule. */
             for (j = 0; j < pls->n_phones; ++j) {
                 hmm_t *nhmm = (hmm_t *)&pls->phones[j];
@@ -300,6 +298,15 @@ phone_loop_search_step(ps_search_t *search, int frame_idx)
     phone_transition(pls, frame_idx);
 
     return 0;
+}
+
+int32
+phone_loop_search_score(phone_loop_search_t *pls, int ciphone)
+{
+    if (pls == NULL)
+        return 0;
+
+    return hmm_bestscore((hmm_t *)&pls->phones[ciphone]) - pls->best_score;
 }
 
 static int

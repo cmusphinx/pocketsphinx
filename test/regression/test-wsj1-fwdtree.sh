@@ -16,6 +16,7 @@ run_program pocketsphinx_batch \
     -fwdtree TRUE \
     -fwdflat FALSE \
     -bestpath FALSE \
+    -backtrace yes \
     > $bn.log 2>&1
 
 # Test whether it actually completed
