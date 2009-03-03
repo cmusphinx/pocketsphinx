@@ -614,20 +614,12 @@ s2_semi_mgau_frame_eval(ps_mgau_t *ps,
                 lastf = s->topn_hist[topn_idx-1];
             memcpy(s->f[i], lastf[i], sizeof(vqFeature_t) * s->max_topn);
             mgau_dist(s, frame, i, featbuf[i]);
-            s->topn_hist_n[topn_idx] = mgau_norm(s, i);
+            s->topn_hist_n[topn_idx][i] = mgau_norm(s, i);
         }
-#if 0
-        int j;
-        E_INFO("TopN[%d][%d] =", frame, i);
-        for (j = 0; j < s->topn_hist_n[topn_idx]; ++j) {
-            E_INFOCONT(" %d:%d", s->f[i][j].codeword, s->f[i][j].score);
-        }
-        E_INFOCONT("\n");
-#endif
         if (compallsen)
-	    get_scores_8b_feat_all(s, i, s->topn_hist_n[topn_idx], senone_scores);
+	    get_scores_8b_feat_all(s, i, s->topn_hist_n[topn_idx][i], senone_scores);
         else
-            get_scores_8b_feat(s, i, s->topn_hist_n[topn_idx], senone_scores,
+            get_scores_8b_feat(s, i, s->topn_hist_n[topn_idx][i], senone_scores,
                                senone_active, n_senone_active);
     }
 
@@ -1134,7 +1126,8 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     s->topn_hist = (vqFeature_t ***)
         ckd_calloc_3d(s->n_topn_hist, s->n_feat, s->max_topn,
                       sizeof(***s->topn_hist));
-    s->topn_hist_n = ckd_calloc(s->n_topn_hist, sizeof(*s->topn_hist_n));
+    s->topn_hist_n = ckd_calloc_2d(s->n_topn_hist, s->n_feat,
+                                   sizeof(**s->topn_hist_n));
     for (i = 0; i < s->n_topn_hist; ++i) {
         int j;
         for (j = 0; j < s->n_feat; ++j) {
@@ -1240,7 +1233,7 @@ s2_semi_mgau_free(ps_mgau_t *ps)
     ckd_free(s->means);
     ckd_free(s->vars);
     ckd_free(s->topn_beam);
-    ckd_free(s->topn_hist_n);
+    ckd_free_2d(s->topn_hist_n);
     ckd_free_3d((void **)s->topn_hist);
     ckd_free_2d((void **)s->dets);
     ckd_free(s);
