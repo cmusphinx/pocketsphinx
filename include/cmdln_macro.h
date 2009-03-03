@@ -106,7 +106,15 @@
 { "-pl_window",                                                         \
       ARG_INT32,                                                        \
       "0",                                                              \
-      "Phoneme lookahead window size, in frames" }
+      "Phoneme lookahead window size, in frames" },                     \
+{ "-pl_beam",                                                           \
+      ARG_FLOAT64,                                                      \
+      "1e-10",                                                          \
+      "Beam width applied to phone loop search for lookahead" },        \
+{ "-pl_pbeam",                                                          \
+      ARG_FLOAT64,                                                      \
+      "1e-5",                                                           \
+      "Beam width applied to phone loop transitions for lookahead" }
 
 /** Options defining other parameters for tuning the search. */
 #define POCKETSPHINX_SEARCH_OPTIONS \

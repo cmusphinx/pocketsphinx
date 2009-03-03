@@ -94,8 +94,8 @@ phone_loop_search_reinit(ps_search_t *search)
                  bin_mdef_pid2ssid(acmod->mdef, i),
                  bin_mdef_pid2tmatid(acmod->mdef, i));
     }
-    pls->beam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam"));
-    pls->pbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pbeam"));
+    pls->beam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pl_beam"));
+    pls->pbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pl_pbeam"));
     pls->pip = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pip"));
     E_INFO("State beam %d Phone exit beam %d Insertion penalty %d\n",
            pls->beam, pls->pbeam, pls->pip);
@@ -303,10 +303,13 @@ phone_loop_search_step(ps_search_t *search, int frame_idx)
 int32
 phone_loop_search_score(phone_loop_search_t *pls, int ciphone)
 {
+    hmm_t *hmm;
+
     if (pls == NULL)
         return 0;
 
-    return hmm_bestscore((hmm_t *)&pls->phones[ciphone]) - pls->best_score;
+    hmm = (hmm_t *)&pls->phones[ciphone];
+    return hmm_bestscore(hmm) - pls->best_score;
 }
 
 static int
