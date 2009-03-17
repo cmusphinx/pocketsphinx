@@ -91,7 +91,7 @@ struct s2_semi_mgau_s {
     logmath_t *lmath;
 };
 
-ps_mgau_t *s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef);
+ps_mgau_t *s2_semi_mgau_init(acmod_t *acmod);
 void s2_semi_mgau_free(ps_mgau_t *s);
 int s2_semi_mgau_frame_eval(ps_mgau_t *s,
                             int16 *senone_scores,

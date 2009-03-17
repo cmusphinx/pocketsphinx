@@ -159,7 +159,7 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
 
     topn = s->f[feat];
     ceplen = s->veclen[feat];
-    
+
     for (i = 0; i < s->max_topn; i++) {
         mfcc_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
         vqFeature_t vtmp;
@@ -939,8 +939,6 @@ s3_read_mgau(s2_semi_mgau_t *s, const char *file_name, float32 ***out_cb)
                 file_name, n_mgau, s->n_density);
 
     /* Vector length of feature stream */
-    if (s->veclen == NULL)
-        s->veclen = ckd_calloc(s->n_feat, sizeof(int32));
     veclen = ckd_calloc(s->n_feat, sizeof(int32));
     if (bio_fread(veclen, sizeof(int32), s->n_feat,
                   fp, byteswap, &chksum) != s->n_feat)
@@ -1060,7 +1058,7 @@ split_topn(char const *str, uint8 *out, int nfeat)
 
 
 ps_mgau_t *
-s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
+s2_semi_mgau_init(acmod_t *acmod)
 {
     s2_semi_mgau_t *s;
     ps_mgau_t *ps;
@@ -1069,11 +1067,11 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     int i;
 
     s = ckd_calloc(1, sizeof(*s));
-    s->config = config;
+    s->config = acmod->config;
 
-    s->lmath = logmath_retain(lmath);
+    s->lmath = logmath_retain(acmod->lmath);
     /* Log-add table. */
-    s->lmath_8b = logmath_init(logmath_get_base(lmath), SENSCR_SHIFT, TRUE);
+    s->lmath_8b = logmath_init(logmath_get_base(acmod->lmath), SENSCR_SHIFT, TRUE);
     if (s->lmath_8b == NULL) {
         s2_semi_mgau_free(ps_mgau_base(s));
         return NULL;
@@ -1086,13 +1084,19 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
         return NULL;
     }
 
+    /* Inherit stream dimensions from acmod, will be checked below. */
+    s->n_feat = feat_dimension1(acmod->fcb);
+    s->veclen = ckd_calloc(s->n_feat, sizeof(int32));
+    for (i = 0; i < s->n_feat; ++i)
+        s->veclen[i] = feat_dimension2(acmod->fcb, i);
+
     /* Read means and variances. */
-    if (s3_read_mgau(s, cmd_ln_str_r(config, "-mean"), &fgau) < 0) {
+    if (s3_read_mgau(s, cmd_ln_str_r(s->config, "-mean"), &fgau) < 0) {
         s2_semi_mgau_free(ps_mgau_base(s));
         return NULL;
     }
     s->means = (mfcc_t **)fgau;
-    if (s3_read_mgau(s, cmd_ln_str_r(config, "-var"), &fgau) < 0) {
+    if (s3_read_mgau(s, cmd_ln_str_r(s->config, "-var"), &fgau) < 0) {
         s2_semi_mgau_free(ps_mgau_base(s));
         return NULL;
     }
@@ -1100,20 +1104,20 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
 
     /* Precompute (and fixed-point-ize) means, variances, and determinants. */
     s->dets = (mfcc_t **)ckd_calloc_2d(s->n_feat, s->n_density, sizeof(**s->dets));
-    s3_precomp(s, lmath, cmd_ln_float32_r(config, "-varfloor"));
+    s3_precomp(s, s->lmath, cmd_ln_float32_r(s->config, "-varfloor"));
 
     /* Read mixture weights */
-    if ((sendump_path = cmd_ln_str_r(config, "-sendump")))
-        read_sendump(s, mdef, sendump_path);
+    if ((sendump_path = cmd_ln_str_r(s->config, "-sendump")))
+        read_sendump(s, acmod->mdef, sendump_path);
     else
-        read_mixw(s, cmd_ln_str_r(config, "-mixw"),
-                  cmd_ln_float32_r(config, "-mixwfloor"));
-    s->ds_ratio = cmd_ln_int32_r(config, "-ds");
+        read_mixw(s, cmd_ln_str_r(s->config, "-mixw"),
+                  cmd_ln_float32_r(s->config, "-mixwfloor"));
+    s->ds_ratio = cmd_ln_int32_r(s->config, "-ds");
 
     /* Determine top-N for each feature */
     s->topn_beam = ckd_calloc(s->n_feat, sizeof(*s->topn_beam));
-    s->max_topn = cmd_ln_int32_r(config, "-topn");
-    split_topn(cmd_ln_str_r(config, "-topn_beam"), s->topn_beam, s->n_feat);
+    s->max_topn = cmd_ln_int32_r(s->config, "-topn");
+    split_topn(cmd_ln_str_r(s->config, "-topn_beam"), s->topn_beam, s->n_feat);
     E_INFO("Maximum top-N: %d ", s->max_topn);
     E_INFOCONT("Top-N beams:");
     for (i = 0; i < s->n_feat; ++i) {
@@ -1122,7 +1126,7 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     E_INFOCONT("\n");
 
     /* Top-N scores from recent frames */
-    s->n_topn_hist = cmd_ln_int32_r(config, "-pl_window") + 2;
+    s->n_topn_hist = cmd_ln_int32_r(s->config, "-pl_window") + 2;
     s->topn_hist = (vqFeature_t ***)
         ckd_calloc_3d(s->n_topn_hist, s->n_feat, s->max_topn,
                       sizeof(***s->topn_hist));
