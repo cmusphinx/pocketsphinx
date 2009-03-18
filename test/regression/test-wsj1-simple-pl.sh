@@ -14,7 +14,7 @@ run_program pocketsphinx_batch \
     -cepext .mfc \
     -hyp $bn.match \
     -backtrace yes \
-    -pl_window 10 \
+    -pl_window 10 -pl_beam 1e-20 -pl_pbeam 1e-10 \
     > $bn.log 2>&1
 
 # Test whether it actually completed

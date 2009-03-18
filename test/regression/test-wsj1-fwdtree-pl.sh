@@ -16,7 +16,7 @@ run_program pocketsphinx_batch \
     -fwdtree TRUE \
     -fwdflat FALSE \
     -bestpath FALSE \
-    -pl_window 10 \
+    -pl_window 10 -pl_beam 1e-20 -pl_pbeam 1e-10 \
     -backtrace yes \
     > $bn.log 2>&1
 
