@@ -44,6 +44,7 @@ EXTRA_DIST=compare_table.pl				\
 	data/tidigits/tidigits.lsn			\
 	data/tidigits/test-tidigits-simple.match	\
 	data/tidigits/test-tidigits-fsg.match		\
+	data/wsj/s1.mllr				\
 	data/wsj/test5k.s1.ctl				\
 	data/wsj/test5k.s1.lsn				\
 	data/wsj/440c0201.mfc				\
