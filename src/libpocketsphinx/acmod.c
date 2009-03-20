@@ -593,22 +593,33 @@ acmod_process_raw(acmod_t *acmod,
         /* Where to start writing them (circular buffer) */
         inptr = (acmod->mfc_outidx + acmod->n_mfc_frame) % acmod->n_mfc_alloc;
 
-        /* Write them in two parts if there is wraparound. */
-        if (inptr + ncep > acmod->n_mfc_alloc) {
+        /* Write them in two (or more) parts if there is wraparound. */
+        while (inptr + ncep > acmod->n_mfc_alloc) {
             int32 ncep1 = acmod->n_mfc_alloc - inptr;
             if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                                   acmod->mfc_buf + inptr, &ncep1) < 0)
                 return -1;
+            /* ncep1 now contains the number of frames actually
+             * processed.  This is a good thing, but it means we
+             * actually still might have some room left at the end of
+             * the buffer, hence the while loop.  Unfortunately it
+             * also means that in the case where we are really
+             * actually done, we need to get out totally, hence the
+             * goto. */
             acmod->n_mfc_frame += ncep1;
-            /* It's possible that not all available frames were filled. */
             ncep -= ncep1;
             inptr += ncep1;
             inptr %= acmod->n_mfc_alloc;
+            if (ncep1 == 0)
+                goto alldone;
         }
+        assert(inptr + ncep <= acmod->n_mfc_alloc);
         if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                               acmod->mfc_buf + inptr, &ncep) < 0)
             return -1;
         acmod->n_mfc_frame += ncep;
+    alldone:
+        ;
     }
 
     /* Hand things off to acmod_process_cep. */
