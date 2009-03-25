@@ -611,6 +611,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\phone_loop_search.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\pocketsphinx.c"
 				>
 			</File>
@@ -639,10 +643,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\sdc_mgau.c"
-				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\libpocketsphinx\tmat.c"
@@ -694,6 +694,10 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 		</Filter>
+		<File
+			RelativePath="..\..\..\src\libpocketsphinx\ps_mllr.c"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
