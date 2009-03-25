@@ -47,6 +47,12 @@
 /* PocketSphinx headers. */
 #include <pocketsphinx.h>
 
+/* Silvio Moioli: setbuf doesn't exist in Windows CE */
+#if defined(_WIN32_WCE)
+	void setbuf(FILE* file, char* buf){
+	}
+#endif
+
 static const arg_t ps_args_def[] = {
     POCKETSPHINX_OPTIONS,
     /* Various options specific to batch-mode processing. */
@@ -535,3 +541,28 @@ main(int32 argc, char *argv[])
     ps_free(ps);
     return 0;
 }
+
+/** Silvio Moioli: Windows CE/Mobile entry point added. */
+#if defined(_WIN32_WCE)
+#pragma comment(linker,"/entry:mainWCRTStartup")
+#include <windows.h>
+
+//Windows Mobile has the Unicode main only
+int wmain(int32 argc, wchar_t *wargv[]) {
+    char** argv;
+    size_t wlen;
+    size_t len;
+    int i;
+
+    argv = malloc(argc*sizeof(char*));
+    for (i=0; i<argc; i++){
+        wlen = lstrlenW(wargv[i]);
+        len = wcstombs(NULL, wargv[i], wlen);
+        argv[i] = malloc(len+1);
+        wcstombs(argv[i], wargv[i], wlen);
+    }
+
+    //assuming ASCII parameters
+    return main(argc, argv);
+}
+#endif
