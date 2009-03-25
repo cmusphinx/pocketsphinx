@@ -143,9 +143,11 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         cmd_ln_free_r(ps->config);
         ps->config = config;
     }
+#ifndef _WIN32_WCE
     /* Set up logging. */
     if (cmd_ln_str_r(ps->config, "-logfn"))
         err_set_logfile(cmd_ln_str_r(ps->config, "-logfn"));
+#endif
     ps->mfclogdir = cmd_ln_str_r(ps->config, "-mfclogdir");
     ps->rawlogdir = cmd_ln_str_r(ps->config, "-rawlogdir");
 

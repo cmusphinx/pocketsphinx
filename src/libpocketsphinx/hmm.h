@@ -50,7 +50,7 @@
 #include <listelem_alloc.h>
 
 /* PocketSphinx headers. */
-#include <bin_mdef.h>
+#include "bin_mdef.h"
 
 #ifdef __cplusplus
 extern "C" {
