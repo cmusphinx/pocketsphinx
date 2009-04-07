@@ -534,7 +534,7 @@ _new_dict_entry(dict_t *dict, char *word_str, char *pronoun_str, int32 use_conte
 		    word_str, MAX_PRONOUN_LEN);
 	    return NULL;
 	}
-        n = nextword(pronoun_str, " \t", &phone[pronoun_len], &delim);
+        n = nextword(pronoun_str, " \t\r", &phone[pronoun_len], &delim);
         if (n < 0)
             break;
         pronoun_str = phone[pronoun_len] + n + 1;
