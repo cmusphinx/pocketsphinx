@@ -1,5 +1,5 @@
 #!/bin/sh
-S2BATCH=@prefix@/bin/pocketsphinx_continuous
+S2BATCH=@prefix@/bin/pocketsphinx_batch
 HMM=@prefix@/share/pocketsphinx/model/hmm/wsj1
 TASK=@prefix@/share/pocketsphinx/model/lm/turtle
 CTLFILE=@prefix@/share/pocketsphinx/model/lm/turtle/turtle.ctl
@@ -20,7 +20,8 @@ $S2BATCH -adcin yes \
     -lm ${TASK}/turtle.lm \
     -dict ${TASK}/turtle.dic \
     -hmm ${HMM} \
-    -mmap yes
+    -mmap yes \
+    -backtrace yes
 
 echo ""
 echo "TEST FINISHED"
