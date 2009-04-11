@@ -142,7 +142,7 @@ utterance_loop()
 
         /* Await data for next utterance */
         while ((k = cont_ad_read(cont, adbuf, 4096)) == 0)
-            sleep_msec(200);
+            sleep_msec(100);
 
         if (k < 0)
             E_FATAL("cont_ad_read failed\n");
