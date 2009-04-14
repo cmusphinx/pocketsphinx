@@ -1226,16 +1226,22 @@ s2_semi_mgau_free(ps_mgau_t *ps)
     else {
         ckd_free_3d(s->mixw);
     }
-    for (i = 0; i < s->n_feat; ++i) {
-        ckd_free(s->means[i]);
-        ckd_free(s->vars[i]);
+    if (s->means) {
+	for (i = 0; i < s->n_feat; ++i) {
+            ckd_free(s->means[i]);
+	}
+        ckd_free(s->means);
+    }
+    if (s->vars) {
+	for (i = 0; i < s->n_feat; ++i) {
+    	    ckd_free(s->vars[i]);
+    	}
+        ckd_free(s->vars);
     }
     for (i = 0; i < s->n_kdtrees; ++i)
         free_kd_tree(s->kdtrees[i]);
     ckd_free(s->kdtrees);
     ckd_free(s->veclen);
-    ckd_free(s->means);
-    ckd_free(s->vars);
     ckd_free(s->topn_beam);
     ckd_free_2d(s->topn_hist_n);
     ckd_free_3d((void **)s->topn_hist);
