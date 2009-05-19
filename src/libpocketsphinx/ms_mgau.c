@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
  * reserved.
@@ -178,7 +179,6 @@ ms_cont_mgau_frame_eval(ps_mgau_t * mg,
 {
     ms_mgau_model_t *msg = (ms_mgau_model_t *)mg;
     int32 gid;
-    int32 i, n;
     int32 topn;
     int32 best;
     gauden_t *g;
@@ -188,51 +188,73 @@ ms_cont_mgau_frame_eval(ps_mgau_t * mg,
     g = ms_mgau_gauden(msg);
     sen = ms_mgau_senone(msg);
 
-    /*
-     * Evaluate gaussian density codebooks and senone scores for input codeword.
-     * Evaluate only active codebooks and senones. (ignore compallsen...)
-     */
+    if (compallsen) {
+	int32 s;
 
-    /* Flag all active mixture-gaussian codebooks */
-    for (gid = 0; gid < g->n_mgau; gid++)
-        msg->mgau_active[gid] = 0;
+	for (gid = 0; gid < g->n_mgau; gid++)
+	    gauden_dist(g, gid, topn, feat, msg->dist[gid]);
 
-    n = 0;
-    for (i = 0; i < n_senone_active; i++) {
-	/* senone_active consists of deltas. */
-	int32 s = senone_active[i] + n;
-	msg->mgau_active[sen->mgau[s]] = 1;
-	n = s;
-    }
-
-    /* Compute topn gaussian density values (for active codebooks) */
-    for (gid = 0; gid < g->n_mgau; gid++) {
-	if (msg->mgau_active[gid])
-            gauden_dist(g, gid, topn, feat, msg->dist[gid]);
-    }
-
-    best = (int32) 0x7fffffff;
-    n = 0;
-    for (i = 0; i < n_senone_active; i++) {
-	int32 s = senone_active[i] + n;
-	senscr[s] = senone_eval(sen, s, msg->dist[sen->mgau[s]], topn);
-	if (best > senscr[s]) {
-	    best = senscr[s];
+	best = (int32) 0x7fffffff;
+	for (s = 0; s < sen->n_sen; s++) {
+	    senscr[s] = senone_eval(sen, s, msg->dist[sen->mgau[s]], topn);
+	    if (best > senscr[s]) {
+		best = senscr[s];
+	    }
 	}
-	n = s;
-    }
 
-    /* Normalize senone scores */
-    n = 0;
-    for (i = 0; i < n_senone_active; i++) {
-	int32 s = senone_active[i] + n;
-	int32 bs = senscr[s] - best;
-	if (bs > 32767)
-	  bs = 32767;
-	if (bs < -32768)
-	  bs = -32768;
-	senscr[s] = bs;
-	n = s;
+	/* Normalize senone scores */
+	for (s = 0; s < sen->n_sen; s++) {
+	    int32 bs = senscr[s] - best;
+	    if (bs > 32767)
+		bs = 32767;
+	    if (bs < -32768)
+		bs = -32768;
+	    senscr[s] = bs;
+	}
+    }
+    else {
+	int32 i, n;
+	/* Flag all active mixture-gaussian codebooks */
+	for (gid = 0; gid < g->n_mgau; gid++)
+	    msg->mgau_active[gid] = 0;
+
+	n = 0;
+	for (i = 0; i < n_senone_active; i++) {
+	    /* senone_active consists of deltas. */
+	    int32 s = senone_active[i] + n;
+	    msg->mgau_active[sen->mgau[s]] = 1;
+	    n = s;
+	}
+
+	/* Compute topn gaussian density values (for active codebooks) */
+	for (gid = 0; gid < g->n_mgau; gid++) {
+	    if (msg->mgau_active[gid])
+		gauden_dist(g, gid, topn, feat, msg->dist[gid]);
+	}
+
+	best = (int32) 0x7fffffff;
+	n = 0;
+	for (i = 0; i < n_senone_active; i++) {
+	    int32 s = senone_active[i] + n;
+	    senscr[s] = senone_eval(sen, s, msg->dist[sen->mgau[s]], topn);
+	    if (best > senscr[s]) {
+		best = senscr[s];
+	    }
+	    n = s;
+	}
+
+	/* Normalize senone scores */
+	n = 0;
+	for (i = 0; i < n_senone_active; i++) {
+	    int32 s = senone_active[i] + n;
+	    int32 bs = senscr[s] - best;
+	    if (bs > 32767)
+		bs = 32767;
+	    if (bs < -32768)
+		bs = -32768;
+	    senscr[s] = bs;
+	    n = s;
+	}
     }
 
     return 0;
