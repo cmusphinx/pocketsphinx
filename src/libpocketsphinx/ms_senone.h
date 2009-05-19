@@ -192,17 +192,6 @@ int32 senone_eval (senone_t *s, int id,		/**< In: senone for which score desired
 		   int n_top		/**< In: Length of dist[f], for each f */
     );
 
-/**
- * Like senone_eval, but compute all senone scores for the shared density case (ie,
- * number of codebooks = 1).
- */
-void senone_eval_all (senone_t *s,		/**< In: Senone structure */
-		      gauden_dist_t **dist,	/**< In: as in senone_eval above */
-		      int32 n_top,		/**< In: as in senone_eval above */
-		      int16 *senscr		/**< Out: Upon return, senscr[i] will contain
-						   score for senone i */
-    );
-
 #if 0
 { /* Stop indent from complaining */
 #endif

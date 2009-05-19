@@ -212,11 +212,13 @@ senone_mixw_read(senone_t * s, char const *file_name, logmath_t *lmath)
      * s->n_gauden.
      */
     if (s->n_gauden > 1) {
+	E_INFO("Not transposing mixture weights in memory\n");
         s->pdf =
             (senprob_t ***) ckd_calloc_3d(s->n_sen, s->n_feat, s->n_cw,
                                           sizeof(senprob_t));
     }
     else {
+	E_INFO("Transposing mixture weights in memory\n");
         s->pdf =
             (senprob_t ***) ckd_calloc_3d(s->n_feat, s->n_cw, s->n_sen,
                                           sizeof(senprob_t));
@@ -371,17 +373,17 @@ senone_eval(senone_t * s, int id, gauden_dist_t ** dist, int32 n_top)
         fdist = dist[f];
 
         /* Top codeword for feature f */
-	fden = ((int32)fdist[0].dist) >> SENSCR_SHIFT;
+	fden = ((int32)fdist[0].dist + ((1<<SENSCR_SHIFT) - 1)) >> SENSCR_SHIFT;
         fscr = (s->n_gauden > 1)
-	    ? (fden - s->pdf[id][f][fdist[0].id])  /* untransposed */
-	    : (fden - s->pdf[f][fdist[0].id][id]); /* transposed */
+	    ? (fden + -s->pdf[id][f][fdist[0].id])  /* untransposed */
+	    : (fden + -s->pdf[f][fdist[0].id][id]); /* transposed */
 
         /* Remaining of n_top codewords for feature f */
         for (t = 1; t < n_top; t++) {
-	    fden = ((int32)fdist[t].dist) >> SENSCR_SHIFT;
+	    fden = ((int32)fdist[t].dist + ((1<<SENSCR_SHIFT) - 1)) >> SENSCR_SHIFT;
             fwscr = (s->n_gauden > 1) ?
-                (fden - s->pdf[id][f][fdist[t].id]) :
-                (fden - s->pdf[f][fdist[t].id][id]);
+                (fden + -s->pdf[id][f][fdist[t].id]) :
+                (fden + -s->pdf[f][fdist[t].id][id]);
             fscr = logmath_add(s->lmath, fscr, fwscr);
         }
 	/* Senone scores are also scaled, negated logs3 values.  Hence
@@ -395,71 +397,4 @@ senone_eval(senone_t * s, int id, gauden_dist_t ** dist, int32 n_top)
     if (scr < -32768)
       scr = -32768;
     return scr;
-}
-
-
-/*
- * Optimized for special case of all senones sharing one codebook (perhaps many features).
- * In particular, the PDF tables are transposed in memory.
- */
-void
-senone_eval_all(senone_t * s, gauden_dist_t ** dist, int32 n_top,
-                int16 * senscr)
-{
-    int32 i, f, k, cwdist, scr;
-
-    senprob_t *pdf;
-    int32 *featscr = NULL;
-    featscr = s->featscr;
-
-    assert(s->n_gauden == 1);
-    assert((n_top > 0) && (n_top <= s->n_cw));
-
-    if ((s->n_feat > 1) && (!featscr))
-        featscr = (int32 *) ckd_calloc(s->n_sen, sizeof(int32));
-
-    /* Feature 0 */
-    /* Top-N codeword 0 */
-    cwdist = ((int32)dist[0][0].dist) >> SENSCR_SHIFT;
-    pdf = s->pdf[0][dist[0][0].id];
-
-    for (i = 0; i < s->n_sen; i++)
-        senscr[i] = cwdist - pdf[i];
-
-    /* Remaining top-N codewords */
-    for (k = 1; k < n_top; k++) {
-        cwdist = ((int32)dist[0][k].dist) >> SENSCR_SHIFT;
-        pdf = s->pdf[0][dist[0][k].id];
-
-        for (i = 0; i < s->n_sen; i++) {
-            scr = cwdist - pdf[i];
-            senscr[i] = logmath_add(s->lmath, senscr[i], scr);
-	    if (k == n_top - 1)
-		senscr[i] = -senscr[i];
-        }
-    }
-
-    /* Remaining features */
-    for (f = 1; f < s->n_feat; f++) {
-        /* Top-N codeword 0 */
-        cwdist = ((int32)dist[f][0].dist) >> SENSCR_SHIFT;
-        pdf = s->pdf[f][dist[f][0].id];
-
-        for (i = 0; i < s->n_sen; i++)
-            featscr[i] = cwdist - pdf[i];
-
-        /* Remaining top-N codewords */
-        for (k = 1; k < n_top; k++) {
-            cwdist = ((int32)dist[f][k].dist) >> SENSCR_SHIFT;
-            pdf = s->pdf[f][dist[f][k].id];
-
-            for (i = 0; i < s->n_sen; i++) {
-                scr = cwdist - pdf[i];
-                featscr[i] = logmath_add(s->lmath, featscr[i], scr);
-            }
-        }
-
-        for (i = 0; i < s->n_sen; i++)
-            senscr[i] -= featscr[i];
-    }
 }
