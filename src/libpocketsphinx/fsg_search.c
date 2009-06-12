@@ -292,6 +292,29 @@ fsg_search_add_silences(fsg_search_t *fsgs, fsg_model_t *fsg)
     return n_sil;
 }
 
+/* Scans the dictionary and check if all words are present. */
+static int
+fsg_search_check_dict(fsg_search_t *fsgs, fsg_model_t *fsg)
+{
+    dict_t *dict;
+    int i;
+
+    dict = ps_search_dict(fsgs);
+    for (i = 0; i < fsg_model_n_word(fsg); ++i) {
+        char const *word;
+        int32 wid;
+
+        word = fsg_model_word_str(fsg, i);
+        wid = dict_to_id(dict, word);
+        if (wid == NO_WORD) {
+    	    E_ERROR("The word '%s' is missing in the dictionary\n", word);
+    	    return FALSE;
+    	}
+    }
+
+    return TRUE;
+}
+
 static int
 fsg_search_add_altpron(fsg_search_t *fsgs, fsg_model_t *fsg)
 {
@@ -334,6 +357,9 @@ fsg_set_add(fsg_search_t *fsgs, char const *name, fsg_model_t *fsg)
 {
     if (name == NULL)
         name = fsg_model_name(fsg);
+
+    if (!fsg_search_check_dict(fsgs, fsg))
+	return NULL;
 
     /* Add silence transitions and alternate words. */
     if (cmd_ln_boolean_r(ps_search_config(fsgs), "-fsgusefiller")
