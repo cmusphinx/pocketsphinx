@@ -16,7 +16,7 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\..\..\..\bin\Release"
+			OutputDirectory="$(SolutionDir)\bin\Release"
 			IntermediateDirectory=".\Release"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
@@ -75,7 +75,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="sphinxbase.lib winmm.lib"
-				OutputFile=".\..\..\..\bin\Release/pocketsphinx.dll"
+				OutputFile="$(SolutionDir)\bin\Release\pocketsphinx.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\sphinxbase\lib\Release"

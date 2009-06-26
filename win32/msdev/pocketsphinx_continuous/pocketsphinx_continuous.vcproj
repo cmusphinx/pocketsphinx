@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="pocketsphinx_continuous"
 	ProjectGUID="{1380AF76-C926-44D0-8002-06C228AC869A}"
+	RootNamespace="pocketsphinx_continuous"
 	>
 	<Platforms>
 		<Platform
@@ -108,7 +109,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\..\..\..\bin\Release"
+			OutputDirectory="$(SolutionDir)\bin\Release"
 			IntermediateDirectory=".\Release"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
@@ -163,7 +164,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="sphinxbase.lib winmm.lib"
-				OutputFile=".\..\..\..\bin\Release/pocketsphinx_continuous.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\sphinxbase\lib\Release"

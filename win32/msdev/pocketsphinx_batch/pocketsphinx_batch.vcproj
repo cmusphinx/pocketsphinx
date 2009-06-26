@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="pocketsphinx_batch"
 	ProjectGUID="{CB47D94B-2F84-41BC-A3C4-A1EBDCDE922A}"
+	RootNamespace="pocketsphinx_batch"
 	>
 	<Platforms>
 		<Platform
@@ -15,7 +16,7 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\..\..\..\bin\Release"
+			OutputDirectory="$(SolutionDir)\bin\Release"
 			IntermediateDirectory=".\Release"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
@@ -70,7 +71,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="sphinxbase.lib winmm.lib"
-				OutputFile=".\..\..\..\bin\Release/pocketsphinx_batch.exe"
+				OutputFile="$(SolutionDir)\bin\Release\pocketsphinx_batch.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\sphinxbase\lib\Release"
