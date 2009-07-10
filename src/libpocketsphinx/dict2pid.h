@@ -103,9 +103,10 @@
 #include <stdio.h>
 
 #include <logmath.h>
+
 #include "s3types.h"
-#include "mdef.h"
-#include "dict.h"
+#include "bin_mdef.h"
+#include "s3dict.h"
 #include "ctxt_table.h"
 
 /** \file dict2pid.h
@@ -238,8 +239,8 @@ typedef struct {
 #define NOT_COMPOSITE 0
 
 /** Build the dict2pid structure for the given model/dictionary */
-dict2pid_t *dict2pid_build(mdef_t *mdef,  /**< A  model definition*/
-                           dict_t *dict,   /**< An initialized dictionary */
+dict2pid_t *dict2pid_build(bin_mdef_t *mdef,   /**< A  model definition*/
+                           dict_t *dict,       /**< An initialized dictionary */
                            int32 is_composite, /**< Whether composite triphones will be built */
                            logmath_t *logmath
     );
@@ -261,7 +262,7 @@ void dict2pid_comsenscr(dict2pid_t *d2p,        /**< In: a dict2pid_t structure 
  * Caller responsible for allocating and clearing sen[] before calling this function.
  */
 void dict2pid_comsseq2sen_active(dict2pid_t *d2p,      /**< In: a dict2pid_t structure */
-                                 mdef_t *mdef,         /**< In: a mdef_t structure */
+                                 bin_mdef_t *mdef,         /**< In: a bin_mdef_t structure */
                                  uint8 *comssid,	/**< In: Active flag for each comssid */
                                  uint8 *sen		/**< In/Out: Active flags set for senones
 							   indicated by the active comssid */
@@ -269,7 +270,7 @@ void dict2pid_comsseq2sen_active(dict2pid_t *d2p,      /**< In: a dict2pid_t str
 /** For debugging */
 void dict2pid_dump(FILE *fp,        /**< In: a file pointer */
                    dict2pid_t *d2p, /**< In: a dict2pid_t structure */
-                   mdef_t *mdef,    /**< In: a mdef_t structure*/
+                   bin_mdef_t *mdef,    /**< In: a bin_mdef_t structure*/
                    dict_t *dict     /**< In: a dictionary structure */
     );
 
