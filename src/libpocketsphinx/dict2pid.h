@@ -238,10 +238,10 @@ typedef struct {
 #define NOT_COMPOSITE 0
 
 /** Build the dict2pid structure for the given model/dictionary */
-dict2pid_t *dict2pid_build (mdef_t *mdef,  /**< A  model definition*/
-			    dict_t *dict,   /**< An initialized dictionary */
-			    int32 is_composite, /**< Whether composite triphones will be built */
-			    logmath_t *logmath
+dict2pid_t *dict2pid_build(mdef_t *mdef,  /**< A  model definition*/
+                           dict_t *dict,   /**< An initialized dictionary */
+                           int32 is_composite, /**< Whether composite triphones will be built */
+                           logmath_t *logmath
     );
 
   
@@ -251,26 +251,26 @@ void dict2pid_free(dict2pid_t *d2p /**< In: the d2p */
 /**
  * Compute composite senone scores from ordinary senone scores (max of component senones)
  */
-void dict2pid_comsenscr (dict2pid_t *d2p,        /**< In: a dict2pid_t structure */
-			 int32 *senscr,		/**< In: Ordinary senone scores */
-			 int32 *comsenscr	/**< Out: Composite senone scores */
+void dict2pid_comsenscr(dict2pid_t *d2p,        /**< In: a dict2pid_t structure */
+                        int32 *senscr,		/**< In: Ordinary senone scores */
+                        int32 *comsenscr	/**< Out: Composite senone scores */
     );
 
 /** 
  * Mark active senones as indicated by the input array of composite senone-sequence active flags.
  * Caller responsible for allocating and clearing sen[] before calling this function.
  */
-void dict2pid_comsseq2sen_active (dict2pid_t *d2p,      /**< In: a dict2pid_t structure */
-				  mdef_t *mdef,         /**< In: a mdef_t structure */
-				  uint8 *comssid,	/**< In: Active flag for each comssid */
-				  uint8 *sen		/**< In/Out: Active flags set for senones
+void dict2pid_comsseq2sen_active(dict2pid_t *d2p,      /**< In: a dict2pid_t structure */
+                                 mdef_t *mdef,         /**< In: a mdef_t structure */
+                                 uint8 *comssid,	/**< In: Active flag for each comssid */
+                                 uint8 *sen		/**< In/Out: Active flags set for senones
 							   indicated by the active comssid */
     );
 /** For debugging */
-void dict2pid_dump (FILE *fp,        /**< In: a file pointer */
-		    dict2pid_t *d2p, /**< In: a dict2pid_t structure */
-		    mdef_t *mdef,    /**< In: a mdef_t structure*/
-		    dict_t *dict     /**< In: a dictionary structure */
+void dict2pid_dump(FILE *fp,        /**< In: a file pointer */
+                   dict2pid_t *d2p, /**< In: a dict2pid_t structure */
+                   mdef_t *mdef,    /**< In: a mdef_t structure*/
+                   dict_t *dict     /**< In: a dictionary structure */
     );
 
 /** Report a dict2pid data structure */
