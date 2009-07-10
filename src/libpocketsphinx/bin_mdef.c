@@ -793,6 +793,53 @@ bin_mdef_phone_id(bin_mdef_t * m, int32 ci, int32 lc, int32 rc, int32 wpos)
 }
 
 int
+bin_mdef_phone_id_nearest(bin_mdef_t * m, int32 b, int32 l, int32 r, int32 pos)
+{
+    int p, tmppos;
+
+    /* In the future, we might back off when context is not available,
+     * but for now we'll just return the CI phone. */
+    if (l < 0 || r < 0)
+        return b;
+
+    p = bin_mdef_phone_id(m, b, l, r, pos);
+    if (p >= 0)
+        return p;
+
+    /* Exact triphone not found; backoff to other word positions */
+    for (tmppos = 0; tmppos < N_WORD_POSN; tmppos++) {
+        if (tmppos != pos) {
+            p = bin_mdef_phone_id(m, b, l, r, tmppos);
+            if (p >= 0)
+                return p;
+        }
+    }
+
+    /* Nothing yet; backoff to silence phone if non-silence filler context */
+    if (m->sil >= 0) {
+        int newl, newr;
+        newl = m->phone[(int)l].info.ci.filler ? m->sil : l;
+        newr = m->phone[(int)r].info.ci.filler ? m->sil : r;
+        if ((newl != l) || (newr != r)) {
+            p = bin_mdef_phone_id(m, b, newl, newr, pos);
+            if (p >= 0)
+                return p;
+
+            for (tmppos = 0; tmppos < N_WORD_POSN; tmppos++) {
+                if (tmppos != pos) {
+                    p = bin_mdef_phone_id(m, b, newl, newr, tmppos);
+                    if (p >= 0)
+                        return p;
+                }
+            }
+        }
+    }
+
+    /* Nothing yet; backoff to base phone */
+    return b;
+}
+
+int
 bin_mdef_phone_str(bin_mdef_t * m, int pid, char *buf)
 {
     char *wpos_name;

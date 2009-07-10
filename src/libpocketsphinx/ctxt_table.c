@@ -80,7 +80,7 @@
 #include "ctxt_table.h"
 
 void
-dump_xwdssidmap(xwdssid_t ** x, mdef_t * mdef)
+dump_xwdssidmap(xwdssid_t ** x, bin_mdef_t * mdef)
 {
     s3cipid_t b, c1, c2;
     s3ssid_t p;
@@ -94,12 +94,12 @@ dump_xwdssidmap(xwdssid_t ** x, mdef_t * mdef)
                 continue;
 
             printf("n_ssid(%s, %s) = %d\n",
-                   mdef_ciphone_str(mdef, b), mdef_ciphone_str(mdef, c1),
+                   bin_mdef_ciphone_str(mdef, b), bin_mdef_ciphone_str(mdef, c1),
                    x[b][c1].n_ssid);
 
             for (c2 = 0; c2 < mdef->n_ciphone; c2++) {
                 p = x[b][c1].ssid[x[b][c1].cimap[c2]];
-                printf("  %10s %5d\n", mdef_ciphone_str(mdef, c2), p);
+                printf("  %10s %5d\n", bin_mdef_ciphone_str(mdef, c2), p);
             }
         }
     }
@@ -112,12 +112,12 @@ dump_xwdssidmap(xwdssid_t ** x, mdef_t * mdef)
  */
 int32
 xwdssid_compress(s3pid_t p, s3ssid_t * out_ssid, s3cipid_t * map, s3cipid_t ctx,
-                 int32 n, mdef_t * mdef)
+                 int32 n, bin_mdef_t * mdef)
 {
     s3cipid_t i;
     int32 ssid;
 
-    ssid = mdef_pid2ssid(mdef, p);
+    ssid = bin_mdef_pid2ssid(mdef, p);
     for (i = 0; i < n; i++) {
         if (out_ssid[i] == ssid) {
             /* This state sequence same as a previous ones; just map to it */
@@ -139,7 +139,7 @@ xwdssid_compress(s3pid_t p, s3ssid_t * out_ssid, s3cipid_t * map, s3cipid_t ctx,
  * for all left context ciphones.  Compress map to unique list.
  */
 void
-build_lcssid(ctxt_table_t * ct, s3cipid_t b, s3cipid_t rc, mdef_t * mdef,
+build_lcssid(ctxt_table_t * ct, s3cipid_t b, s3cipid_t rc, bin_mdef_t * mdef,
              uint8 *word_end_ci, s3pid_t *tmp_xwdssid)
 
 {
@@ -152,9 +152,9 @@ build_lcssid(ctxt_table_t * ct, s3cipid_t b, s3cipid_t rc, mdef_t * mdef,
 
     n = 0;
     for (lc = 0; lc < mdef->n_ciphone; lc++) {
-        p = mdef_phone_id_nearest(mdef, b, lc, rc, WORD_POSN_BEGIN);
-        if ((!mdef->ciphone[b].filler) && word_end_ci[lc] &&
-            mdef_is_ciphone(mdef, p))
+        p = bin_mdef_phone_id_nearest(mdef, b, lc, rc, WORD_POSN_BEGIN);
+        if ((!mdef->phone[b].info.ci.filler) && word_end_ci[lc] &&
+            bin_mdef_is_ciphone(mdef, p))
             ct->n_backoff_ci++;
 
         n = xwdssid_compress(p, tmp_xwdssid, map, lc, n, mdef);
@@ -176,7 +176,7 @@ build_lcssid(ctxt_table_t * ct, s3cipid_t b, s3cipid_t rc, mdef_t * mdef,
  * \note This is identical to build_lcssid except for right contexts.
  */
 void
-build_rcssid(ctxt_table_t * ct, s3cipid_t b, s3cipid_t lc, mdef_t * mdef,
+build_rcssid(ctxt_table_t * ct, s3cipid_t b, s3cipid_t lc, bin_mdef_t * mdef,
              uint8 *word_start_ci, s3pid_t *tmp_xwdssid)
 {
     s3cipid_t rc, *map;
@@ -188,9 +188,9 @@ build_rcssid(ctxt_table_t * ct, s3cipid_t b, s3cipid_t lc, mdef_t * mdef,
 
     n = 0;
     for (rc = 0; rc < mdef->n_ciphone; rc++) {
-        p = mdef_phone_id_nearest(mdef, b, lc, rc, WORD_POSN_END);
-        if ((!mdef->ciphone[b].filler) && word_start_ci[rc] &&
-            mdef_is_ciphone(mdef, p))
+        p = bin_mdef_phone_id_nearest(mdef, b, lc, rc, WORD_POSN_END);
+        if ((!mdef->phone[b].info.ci.filler) && word_start_ci[rc] &&
+            bin_mdef_is_ciphone(mdef, p))
             ct->n_backoff_ci++;
 
         n = xwdssid_compress(p, tmp_xwdssid, map, rc, n, mdef);
@@ -211,7 +211,7 @@ build_rcssid(ctxt_table_t * ct, s3cipid_t b, s3cipid_t lc, mdef_t * mdef,
  * These are uncompressed for some reason.
  */
 void
-build_lrcssid(ctxt_table_t * ct, s3cipid_t b, mdef_t * mdef,
+build_lrcssid(ctxt_table_t * ct, s3cipid_t b, bin_mdef_t * mdef,
               uint8 *word_start_ci, uint8 *word_end_ci)
 {
     s3cipid_t rc, lc;
@@ -225,11 +225,11 @@ build_lrcssid(ctxt_table_t * ct, s3cipid_t b, mdef_t * mdef,
             (s3cipid_t *) ckd_calloc(mdef->n_ciphone, sizeof(s3cipid_t));
 
         for (rc = 0; rc < mdef->n_ciphone; rc++) {
-            p = mdef_phone_id_nearest(mdef, b, lc, rc, WORD_POSN_SINGLE);
+            p = bin_mdef_phone_id_nearest(mdef, b, lc, rc, WORD_POSN_SINGLE);
             ct->lrcssid[b][lc].cimap[rc] = rc;
-            ct->lrcssid[b][lc].ssid[rc] = mdef_pid2ssid(mdef, p);
-            if ((!mdef->ciphone[b].filler) && word_start_ci[rc]
-                && word_end_ci[lc] && mdef_is_ciphone(mdef, p))
+            ct->lrcssid[b][lc].ssid[rc] = bin_mdef_pid2ssid(mdef, p);
+            if ((!mdef->phone[b].info.ci.filler) && word_start_ci[rc]
+                && word_end_ci[lc] && bin_mdef_is_ciphone(mdef, p))
                 ct->n_backoff_ci++;
         }
         ct->lrcssid[b][lc].n_ssid = mdef->n_ciphone;
@@ -245,7 +245,7 @@ build_lrcssid(ctxt_table_t * ct, s3cipid_t b, mdef_t * mdef,
  */
 
 void
-build_wwssid(ctxt_table_t * ct, dict_t * dict, mdef_t * mdef)
+build_wwssid(ctxt_table_t * ct, s3dict_t * dict, bin_mdef_t * mdef)
 {
     s3wid_t w;
     s3ssid_t p;
@@ -268,9 +268,9 @@ build_wwssid(ctxt_table_t * ct, dict_t * dict, mdef_t * mdef)
         b = dict->word[w].ciphone[1];
         for (l = 1; l < pronlen - 1; l++) {
             rc = dict->word[w].ciphone[l + 1];
-            p = mdef_phone_id_nearest(mdef, b, lc, rc, WORD_POSN_INTERNAL);
-            ct->wwssid[w][l] = mdef_pid2ssid(mdef, p);
-            if ((!mdef->ciphone[b].filler) && mdef_is_ciphone(mdef, p))
+            p = bin_mdef_phone_id_nearest(mdef, b, lc, rc, WORD_POSN_INTERNAL);
+            ct->wwssid[w][l] = bin_mdef_pid2ssid(mdef, p);
+            if ((!mdef->phone[b].info.ci.filler) && bin_mdef_is_ciphone(mdef, p))
                 ct->n_backoff_ci++;
 
             lc = b;
@@ -293,7 +293,7 @@ build_wwssid(ctxt_table_t * ct, dict_t * dict, mdef_t * mdef)
  * Build cross-word triphones map for the entire dictionary.
  */
 void
-build_xwdssid_map(ctxt_table_t * ct, dict_t * dict, mdef_t * mdef)
+build_xwdssid_map(ctxt_table_t * ct, s3dict_t * dict, bin_mdef_t * mdef)
 {
     s3wid_t w;
     int32 pronlen;
@@ -383,7 +383,7 @@ build_xwdssid_map(ctxt_table_t * ct, dict_t * dict, mdef_t * mdef)
 }
 
 ctxt_table_t *
-ctxt_table_init(dict_t * dict, mdef_t * mdef)
+ctxt_table_init(s3dict_t * dict, bin_mdef_t * mdef)
 {
     ctxt_table_t *ct;
     ct = (ctxt_table_t *) ckd_calloc(1, sizeof(ctxt_table_t));
@@ -433,7 +433,7 @@ ctxt_table_free(ctxt_table_t * ct)
 }
 
 s3cipid_t *
-get_rc_cimap(ctxt_table_t * ct, s3wid_t w, dict_t * dict)
+get_rc_cimap(ctxt_table_t * ct, s3wid_t w, s3dict_t * dict)
 {
     int32 pronlen;
     s3cipid_t b, lc;
@@ -451,7 +451,7 @@ get_rc_cimap(ctxt_table_t * ct, s3wid_t w, dict_t * dict)
 }
 
 s3cipid_t *
-get_lc_cimap(ctxt_table_t * ct, s3wid_t w, dict_t * dict)
+get_lc_cimap(ctxt_table_t * ct, s3wid_t w, s3dict_t * dict)
 {
     int32 pronlen;
     s3cipid_t b, rc;
@@ -471,7 +471,7 @@ get_lc_cimap(ctxt_table_t * ct, s3wid_t w, dict_t * dict)
 
 void
 get_rcssid(ctxt_table_t * ct, s3wid_t w, s3ssid_t ** ssid, int32 * nssid,
-           dict_t * dict)
+           s3dict_t * dict)
 {
     int32 pronlen;
     s3cipid_t b, lc;
@@ -488,7 +488,7 @@ get_rcssid(ctxt_table_t * ct, s3wid_t w, s3ssid_t ** ssid, int32 * nssid,
 
 void
 get_lcssid(ctxt_table_t * ct, s3wid_t w, s3ssid_t ** ssid, int32 * nssid,
-           dict_t * dict)
+           s3dict_t * dict)
 {
     int32 pronlen;
     s3cipid_t b, rc;
@@ -504,7 +504,7 @@ get_lcssid(ctxt_table_t * ct, s3wid_t w, s3ssid_t ** ssid, int32 * nssid,
 }
 
 int32
-ct_get_rc_nssid(ctxt_table_t * ct, s3wid_t w, dict_t * dict)
+ct_get_rc_nssid(ctxt_table_t * ct, s3wid_t w, s3dict_t * dict)
 {
     int32 pronlen;
     s3cipid_t b, lc;

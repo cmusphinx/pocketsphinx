@@ -199,6 +199,10 @@ int bin_mdef_phone_id(bin_mdef_t *m,	/* In: Model structure being queried */
 		      int32 r,		/* In: right context ciphone id */
 		      int32 pos);	/* In: Word position */
 
+/* Look up a phone id, backing off to other word positions. */
+int bin_mdef_phone_id_nearest(bin_mdef_t * m, int32 b,
+			      int32 l, int32 r, int32 pos);
+
 /**
  * Create a phone string for the given phone (base or triphone) id in the given buf.
  *

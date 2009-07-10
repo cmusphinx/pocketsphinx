@@ -83,7 +83,7 @@
 
 #include "s3types.h"
 #include "bin_mdef.h"
-#include "s3dict.h"
+#include "s3_dict.h"
 
 
 #ifdef __cplusplus
@@ -380,7 +380,7 @@ typedef struct {
  * Initialize a context table 
  */
 
-ctxt_table_t *ctxt_table_init(dict_t *dict,  /**< A dictionary*/
+ctxt_table_t *ctxt_table_init(s3dict_t *dict,  /**< A dictionary*/
 			      bin_mdef_t *mdef   /**< A model definition*/
     );
 
@@ -397,7 +397,7 @@ void get_rcssid(ctxt_table_t *ct,   /**< A context table */
                 s3wid_t w,          /**< A word for query */
                 s3ssid_t **ssid,    /**< Out: An array of right context phone ID */
                 int32 *nssid,       /**< Out: Number of SSID */
-                dict_t *dict        /**< In: a dictionary */
+                s3dict_t *dict        /**< In: a dictionary */
     );
 
 /**
@@ -407,7 +407,7 @@ void get_lcssid(ctxt_table_t *ct,  /**< A context table */
                 s3wid_t w,         /**< A word for query */
                 s3ssid_t **ssid,    /**< Out: An array of right context SSID */
                 int32 *nssid,      /**< Out: Number of SSID */
-                dict_t *dict       /**< In: a dictionary */
+                s3dict_t *dict       /**< In: a dictionary */
     );
 
 
@@ -418,7 +418,7 @@ void get_lcssid(ctxt_table_t *ct,  /**< A context table */
  */
 s3cipid_t *get_rc_cimap(ctxt_table_t *ct, /**< A context table */
                         s3wid_t w, /**< A word for query*/
-                        dict_t *dict /**< A dictionary */
+                        s3dict_t *dict /**< A dictionary */
     );
 
 /**
@@ -428,7 +428,7 @@ s3cipid_t *get_rc_cimap(ctxt_table_t *ct, /**< A context table */
  */
 s3cipid_t *get_lc_cimap(ctxt_table_t *ct, /**< A context table */
                         s3wid_t w, /**< A word for query*/
-                        dict_t *dict /**< A dictionary */
+                        s3dict_t *dict /**< A dictionary */
     );
 
 /**
@@ -438,7 +438,7 @@ s3cipid_t *get_lc_cimap(ctxt_table_t *ct, /**< A context table */
  */
 int32 ct_get_rc_nssid(ctxt_table_t *ct,  /**< A context table */
                       s3wid_t w,          /**< Word for query. */
-                      dict_t *dict        /**< A dictionary */
+                      s3dict_t *dict        /**< A dictionary */
     );
 
 #ifdef __cplusplus
