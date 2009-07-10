@@ -36,44 +36,89 @@
  */
 
 /**
- * @file tst_search.h Time-conditioned lexicon tree search ("S3")
+ * @file tst_search.c Time-conditioned lexicon tree search ("S3")
  */
 
-#ifndef __TST_SEARCH_H__
-#define __TST_SEARCH_H__
+/* System headers. */
+#include <string.h>
+#include <assert.h>
 
 /* SphinxBase headers. */
-#include <cmd_ln.h>
-#include <logmath.h>
-#include <ngram_model.h>
+#include <ckd_alloc.h>
 #include <listelem_alloc.h>
 #include <err.h>
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"
-#include "hmm.h"
+#include "ps_lattice_internal.h"
+#include "tst_search.h"
 
-/**
- * Time-switch tree search module structure.
- */
-struct tst_search_s {
-    ps_search_t base;
-    ngram_model_t *lmset;  /**< Set of language models. */
-    hmm_context_t *hmmctx; /**< HMM context. */
+static int tst_search_start(ps_search_t *search);
+static int tst_search_step(ps_search_t *search, int frame_idx);
+static int tst_search_finish(ps_search_t *search);
+static int tst_search_reinit(ps_search_t *search);
+static ps_lattice_t *tst_search_lattice(ps_search_t *search);
+static char const *tst_search_hyp(ps_search_t *search, int32 *out_score);
+static int32 tst_search_prob(ps_search_t *search);
+static ps_seg_t *tst_search_seg_iter(ps_search_t *search, int32 *out_score);
+
+static ps_searchfuncs_t tst_funcs = {
+    /* name: */   "tst",
+    /* start: */  tst_search_start,
+    /* step: */   tst_search_step,
+    /* finish: */ tst_search_finish,
+    /* reinit: */ tst_search_reinit,
+    /* free: */   tst_search_free,
+    /* lattice: */  tst_search_lattice,
+    /* hyp: */      tst_search_hyp,
+    /* prob: */     tst_search_prob,
+    /* seg_iter: */ tst_search_seg_iter,
 };
-typedef struct tst_search_s tst_search_t;
 
-/**
- * Initialize the N-Gram search module.
- */
-ps_search_t *tst_search_init(cmd_ln_t *config,
-                             acmod_t *acmod,
-                             dict_t *dict);
+static int
+tst_search_start(ps_search_t *search)
+{
+    return -1;
+}
 
-/**
- * Finalize the N-Gram search module.
- */
-void tst_search_free(ps_search_t *ngs);
+static int
+tst_search_step(ps_search_t *search, int frame_idx)
+{
+    return -1;
+}
 
+static int
+tst_search_finish(ps_search_t *search)
+{
+    return -1;
+}
 
-#endif /* __TST_SEARCH_H__ */
+static int
+tst_search_reinit(ps_search_t *search)
+{
+    return -1;
+}
+
+static ps_lattice_t *
+tst_search_lattice(ps_search_t *search)
+{
+    return NULL;
+}
+
+static char const *
+tst_search_hyp(ps_search_t *search, int32 *out_score)
+{
+    return NULL;
+}
+
+static int32
+tst_search_prob(ps_search_t *search)
+{
+    return 1;
+}
+
+static ps_seg_t *
+tst_search_seg_iter(ps_search_t *search, int32 *out_score)
+{
+    return NULL;
+}
