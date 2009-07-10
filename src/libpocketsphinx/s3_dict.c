@@ -118,7 +118,7 @@ extern const char *const cmu6_lts_phone_table[];
 static s3cipid_t
 s3dict_ciphone_id(s3dict_t * d, const char *str)
 {
-    return mdef_ciphone_id(d->mdef, str);
+    return bin_mdef_ciphone_id(d->mdef, str);
 }
 
 
@@ -129,10 +129,7 @@ s3dict_ciphone_str(s3dict_t * d, s3wid_t wid, int32 pos)
     assert((wid >= 0) && (wid < d->n_word));
     assert((pos >= 0) && (pos < d->word[wid].pronlen));
 
-    if (d->mdef)
-        return mdef_ciphone_str(d->mdef, d->word[wid].ciphone[pos]);
-    else
-        return (d->ciphone_str[(int) d->word[wid].ciphone[pos]]);
+    return bin_mdef_ciphone_str(d->mdef, d->word[wid].ciphone[pos]);
 }
 
 
@@ -160,7 +157,7 @@ s3dict_add_word(s3dict_t * d, char *word, s3cipid_t * p, int32 np)
     wordp->word = (char *) ckd_salloc(word);    /* Freed in s3dict_free */
 
     /* Associate word string with d->n_word in hash table */
-    if (hash_table_enter(d->ht, wordp->word, (void *)(long)d->n_word) != (void *)(long)d->n_word) {
+    if (hash_table_enter_int32(d->ht, wordp->word, d->n_word) != d->n_word) {
         ckd_free(wordp->word);
         return (BAD_S3WID);
     }
@@ -180,11 +177,10 @@ s3dict_add_word(s3dict_t * d, char *word, s3cipid_t * p, int32 np)
 
     /* Determine base/alt wids */
     if ((len = s3dict_word2basestr(word)) > 0) {
-	void *val;
-	s3wid_t w;
+	int32 w;
 
         /* Truncated to a baseword string; find its ID */
-        if (hash_table_lookup(d->ht, word, &val) < 0) {
+        if (hash_table_lookup_int32(d->ht, word, &w) < 0) {
             word[len] = '(';    /* Get back the original word */
             E_FATAL("Missing base word for: %s\n", word);
         }
@@ -192,7 +188,6 @@ s3dict_add_word(s3dict_t * d, char *word, s3cipid_t * p, int32 np)
             word[len] = '(';    /* Get back the original word */
 
         /* Link into alt list */
-	w = (s3wid_t)(long)val;
         wordp->basewid = w;
         wordp->alt = d->word[w].alt;
         d->word[w].alt = d->n_word;
@@ -200,7 +195,7 @@ s3dict_add_word(s3dict_t * d, char *word, s3cipid_t * p, int32 np)
 
     newwid = d->n_word++;
 
-    return (newwid);
+    return newwid;
 }
 
 
@@ -262,15 +257,15 @@ s3dict_read(FILE * fp, s3dict_t * d)
 #if 1                           /* Until we allow user to put in a mapping of the phoneset from LTS to the phoneset from mdef, 
                                    The checking will intrusively stop the recognizer.  */
 
-        for (ci = 0; ci < mdef_n_ciphone(d->mdef); ci++) {
+        for (ci = 0; ci < bin_mdef_n_ciphone(d->mdef); ci++) {
 
-            if (!mdef_is_fillerphone(d->mdef, ci)) {
+            if (!bin_mdef_is_fillerphone(d->mdef, ci)) {
                 for (ph = 0; cmu6_lts_phone_table[ph] != NULL; ph++) {
 
                     /*        E_INFO("%s %s\n",cmu6_lts_phone_table[ph],mdef_ciphone_str(d->mdef,ci)); */
                     if (!strcmp
                         (cmu6_lts_phone_table[ph],
-                         mdef_ciphone_str(d->mdef, ci)))
+                         bin_mdef_ciphone_str(d->mdef, ci)))
                         break;
                 }
                 if (cmu6_lts_phone_table[ph] == NULL) {
@@ -290,13 +285,15 @@ s3dict_read(FILE * fp, s3dict_t * d)
 }
 
 s3dict_t *
-s3dict_init(mdef_t * mdef, const char *dictfile, const char *fillerfile, int useLTS, int breport)
+s3dict_init(bin_mdef_t * mdef, const char *dictfile, const char *fillerfile,
+            int useLTS, int breport)
 {
     FILE *fp, *fp2;
     int32 n;
     int proper = 1;
     char line[1024];
     s3dict_t *d;
+    s3cipid_t i, sil;
 
     if (!dictfile)
         E_FATAL("No dictionary file\n");
@@ -341,15 +338,6 @@ s3dict_init(mdef_t * mdef, const char *dictfile, const char *fillerfile, int use
     d->word = (dictword_t *) ckd_calloc(d->max_words, sizeof(dictword_t));      /* freed in s3dict_free() */
     d->n_word = 0;
     d->mdef = mdef;
-    if (mdef) {
-        d->pht = NULL;
-        d->ciphone_str = NULL;
-    }
-    else {
-        d->pht = hash_table_new(DEFAULT_NUM_PHONE, 1 /* No case */ );
-        d->ciphone_str = (char **) ckd_calloc(DEFAULT_NUM_PHONE, sizeof(char *));       /* freed in s3dict_free() */
-    }
-    d->n_ciphone = 0;
 
     /* Create new hash table for word strings; case-insensitive word strings */
     d->ht = hash_table_new(d->max_words, 1 /* no-case */ );
@@ -373,45 +361,40 @@ s3dict_init(mdef_t * mdef, const char *dictfile, const char *fillerfile, int use
         fclose(fp2);
         E_INFO("%d words read\n", d->n_word - d->filler_start);
     }
-    if (mdef) {
-        s3cipid_t i;
-        s3cipid_t sil = mdef_silphone(mdef);
-        for (n = i = 0; i < mdef->n_ciphone; ++i) {
+    sil = bin_mdef_silphone(mdef);
+    for (n = i = 0; i < mdef->n_ciphone; ++i) {
+        /*
+         * SIL is disguised as <sil>
+         */
+        if (i != sil && bin_mdef_is_fillerphone(mdef, i)) {
             /*
-             * SIL is disguised as <sil>
+             * Add as a filler word, like ++NOISE++
              */
-            if (i != sil && mdef_is_fillerphone(mdef, i)) {
-                /*
-                 * Add as a filler word, like ++NOISE++
-                 */
-                snprintf(line, sizeof(line), "+%s+", mdef_ciphone_str(mdef, i));
-                if (s3dict_wordid(d, line) == BAD_S3WID) {
-                    E_INFO("Adding filler word: %s\n", line);
-                    s3dict_add_word(d, line, &i, 1);
-                    ++n;
-                }
-                /*
-                 * Add as a pure filler phone for the allphone decoder
-                 */
-                if (s3dict_wordid(d, mdef_ciphone_str(mdef, i)) == BAD_S3WID) {
-                    E_INFO("Adding filler phone: %s\n", mdef_ciphone_str(mdef, i));
-                    s3dict_add_word(d, (char*)mdef_ciphone_str(mdef, i), &i, 1);
-                    ++n;
-                }
+            snprintf(line, sizeof(line), "+%s+", bin_mdef_ciphone_str(mdef, i));
+            if (s3dict_wordid(d, line) == BAD_S3WID) {
+                E_INFO("Adding filler word: %s\n", line);
+                s3dict_add_word(d, line, &i, 1);
+                ++n;
+            }
+            /*
+             * Add as a pure filler phone for the allphone decoder
+             */
+            if (s3dict_wordid(d, bin_mdef_ciphone_str(mdef, i)) == BAD_S3WID) {
+                E_INFO("Adding filler phone: %s\n", bin_mdef_ciphone_str(mdef, i));
+                s3dict_add_word(d, (char*)bin_mdef_ciphone_str(mdef, i), &i, 1);
+                ++n;
             }
         }
-        E_INFO("Added %d fillers from mdef file\n", n);
-        if (s3dict_wordid(d, S3_START_WORD) == BAD_S3WID) {
-            s3dict_add_word(d, S3_START_WORD, &sil, 1);
-        }
-        if (s3dict_wordid(d, S3_FINISH_WORD) == BAD_S3WID) {
-            s3dict_add_word(d, S3_FINISH_WORD, &sil, 1);
-        }
-        if (s3dict_wordid(d, S3_SILENCE_WORD) == BAD_S3WID) {
-            s3dict_add_word(d, S3_SILENCE_WORD, &sil, 1);
-        }
-    } else if (fillerfile == NULL) {
-        E_WARN("Neither an mdef nor a filler dictionary is specified\n");
+    }
+    E_INFO("Added %d fillers from mdef file\n", n);
+    if (s3dict_wordid(d, S3_START_WORD) == BAD_S3WID) {
+        s3dict_add_word(d, S3_START_WORD, &sil, 1);
+    }
+    if (s3dict_wordid(d, S3_FINISH_WORD) == BAD_S3WID) {
+        s3dict_add_word(d, S3_FINISH_WORD, &sil, 1);
+    }
+    if (s3dict_wordid(d, S3_SILENCE_WORD) == BAD_S3WID) {
+        s3dict_add_word(d, S3_SILENCE_WORD, &sil, 1);
     }
 
     d->filler_end = d->n_word - 1;
@@ -455,14 +438,14 @@ s3dict_init(mdef_t * mdef, const char *dictfile, const char *fillerfile, int use
 s3wid_t
 s3dict_wordid(s3dict_t * d, const char *word)
 {
-    void *w;
+    int32 w;
 
     assert(d);
     assert(word);
 
-    if (hash_table_lookup(d->ht, word, &w) < 0)
+    if (hash_table_lookup_int32(d->ht, word, &w) < 0)
         return (BAD_S3WID);
-    return ((s3wid_t)(long)w);
+    return w;
 }
 
 
@@ -552,14 +535,6 @@ s3dict_free(s3dict_t * d)
 
         if (d->word)
             ckd_free((void *) d->word);
-        for (i = 0; i < d->n_ciphone; i++) {
-            if (d->ciphone_str[i])
-                ckd_free((void *) d->ciphone_str[i]);
-        }
-        if (d->ciphone_str)
-            ckd_free((void *) d->ciphone_str);
-        if (d->pht)
-            hash_table_free(d->pht);
         if (d->ht)
             hash_table_free(d->ht);
         ckd_free((void *) d);
@@ -570,7 +545,6 @@ void
 s3dict_report(s3dict_t * d)
 {
     E_INFO_NOFN("Initialization of s3dict_t, report:\n");
-    E_INFO_NOFN("No of CI phone: %d\n", d->n_ciphone);
     E_INFO_NOFN("Max word: %d\n", d->max_words);
     E_INFO_NOFN("No of word: %d\n", d->n_word);
     E_INFO_NOFN("\n");

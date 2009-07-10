@@ -51,7 +51,13 @@
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"
+/* #include "lextree.h" */
 #include "hmm.h"
+
+/* Forward-declare these for the time being so things will compile. */
+typedef struct lextree_s lextree_t;
+typedef struct vithist_s vithist_t;
+typedef struct histprune_s histprune_t;
 
 /**
  * Time-switch tree search module structure.
@@ -60,6 +66,24 @@ struct tst_search_s {
     ps_search_t base;
     ngram_model_t *lmset;  /**< Set of language models. */
     hmm_context_t *hmmctx; /**< HMM context. */
+
+    /**
+     * There can be several unigram lextrees.  If we're at the end of frame f, we can only
+     * transition into the roots of lextree[(f+1) % n_lextree]; same for fillertree[].  This
+     * alleviates the problem of excessive Viterbi pruning in lextrees.
+     */
+
+    int32 n_lextree;        /**< Number of lexical tree for time switching: n_lextree */
+    lextree_t **curugtree;  /**< The current unigram tree that used in the search for this utterance. */
+
+    lextree_t **ugtree;     /**< The pool of trees that stores all word trees. */
+    lextree_t **fillertree; /**< The pool of trees that stores all filler trees. */
+    int32 n_lextrans;	    /**< #Transitions to lextree (root) made so far */
+    int32 epl;              /**< The number of entry per lexical tree */
+
+    histprune_t *histprune; /**< Structure that wraps up parameters related to  */
+  
+    vithist_t *vithist;     /**< Viterbi history (backpointer) table */
 };
 typedef struct tst_search_s tst_search_t;
 

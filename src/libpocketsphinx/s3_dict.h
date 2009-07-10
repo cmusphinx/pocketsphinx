@@ -161,12 +161,11 @@ typedef struct {
  * (but external modules might impose their own requirements).
  * Return ptr to s3dict_t if successful, NULL otherwise.
  */
-s3dict_t *s3dict_init (mdef_t *mdef,	/**< For looking up CI phone IDs; NULL if none,
-					   in which case CI phones kept internally */
-		   const char *dictfile,	/**< Main dictionary file */
-		   const char *fillerfile,	/**< Filler dictionary file */
-		   int useLTS,          /**< Whether to use letter-to-sound rules */
-		   int breport          /**< Whether we should report the progress */
+s3dict_t *s3dict_init (bin_mdef_t *mdef,	/**< For looking up CI phone IDs */
+                       const char *dictfile,	/**< Main dictionary file */
+                       const char *fillerfile,	/**< Filler dictionary file */
+                       int useLTS,          /**< Whether to use letter-to-sound rules */
+                       int breport          /**< Whether we should report the progress */
     );
 
 /** Return word id for given word string if present.  Otherwise return BAD_S3WID */
@@ -177,7 +176,7 @@ s3wid_t s3dict_wordid (s3dict_t *d, const char *word);
  * filler dictionary; however, sentence START and FINISH words are not filler words.
  */
 int32 s3dict_filler_word (s3dict_t *d,  /**< The dictionary structure */
-			s3wid_t w     /**< The The word */
+                          s3wid_t w     /**< The The word */
     );
 
 /**
@@ -185,17 +184,17 @@ int32 s3dict_filler_word (s3dict_t *d,  /**< The dictionary structure */
  * Return value: Result word id if successful, BAD_S3WID otherwise
  */
 s3wid_t s3dict_add_word (s3dict_t *d,  /**< The dictionary structure */
-		       char *word, /**< The word */
-		       s3cipid_t *p, 
-		       int32 np
+                         char *word, /**< The word */
+                         s3cipid_t *p, 
+                         int32 np
     );
 
 /**
  * Return value: CI phone string for the given word, phone position.
  */
 const char *s3dict_ciphone_str (s3dict_t *d,	/**< In: Dictionary to look up */
-			      s3wid_t wid,	/**< In: Component word being looked up */
-			      int32 pos   	/**< In: Pronunciation phone position */
+                                s3wid_t wid,	/**< In: Component word being looked up */
+                                int32 pos   	/**< In: Pronunciation phone position */
     );
 
 /** Packaged macro access to dictionary members */

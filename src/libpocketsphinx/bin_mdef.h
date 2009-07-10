@@ -178,35 +178,35 @@ void bin_mdef_free(bin_mdef_t *m);
  * Context-independent phone lookup.
  * @return phone id for ciphone.
  */
-int bin_mdef_ciphone_id (bin_mdef_t *m,	/* In: Model structure being queried */
+int bin_mdef_ciphone_id (bin_mdef_t *m,	       /* In: Model structure being queried */
 			 const char *ciphone); /* In: ciphone for which id wanted */
 
 /**
  * Case-insensitive context-independent phone lookup.
  * @return phone id for ciphone.
  */
-int bin_mdef_ciphone_id_nocase(bin_mdef_t *m,	/* In: Model structure being queried */
+int bin_mdef_ciphone_id_nocase(bin_mdef_t *m,	     /* In: Model structure being queried */
 			       const char *ciphone); /* In: ciphone for which id wanted */
 
 /* Return value: READ-ONLY ciphone string name for the given ciphone id */
-const char *bin_mdef_ciphone_str (bin_mdef_t *m,	/* In: Model structure being queried */
-				  int32 ci);	/* In: ciphone id for which name wanted */
+const char *bin_mdef_ciphone_str(bin_mdef_t *m,	/* In: Model structure being queried */
+				 int32 ci);	/* In: ciphone id for which name wanted */
 
 /* Return value: phone id for the given constituents if found, else -1 */
-int bin_mdef_phone_id (bin_mdef_t *m,	/* In: Model structure being queried */
-		       int32 b,		/* In: base ciphone id */
-		       int32 l,		/* In: left context ciphone id */
-		       int32 r,		/* In: right context ciphone id */
-		       int32 pos);	/* In: Word position */
+int bin_mdef_phone_id(bin_mdef_t *m,	/* In: Model structure being queried */
+		      int32 b,		/* In: base ciphone id */
+		      int32 l,		/* In: left context ciphone id */
+		      int32 r,		/* In: right context ciphone id */
+		      int32 pos);	/* In: Word position */
 
 /**
  * Create a phone string for the given phone (base or triphone) id in the given buf.
  *
  * @return 0 if successful, -1 if error.
  */
-int bin_mdef_phone_str (bin_mdef_t *m,	/* In: Model structure being queried */
-			int pid,	/* In: phone id being queried */
-			char *buf);	/* Out: On return, buf has the string */
+int bin_mdef_phone_str(bin_mdef_t *m,	/* In: Model structure being queried */
+		       int pid,		/* In: phone id being queried */
+		       char *buf);	/* Out: On return, buf has the string */
 
 #ifdef __cplusplus
 }; /* extern "C" */
