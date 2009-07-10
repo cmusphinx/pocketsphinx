@@ -118,13 +118,18 @@
 #include <glist.h>
 #include "kbcore.h"
 #include "hmm.h"
-#include "lm.h"
 #include "vithist.h"
 #include "ascr.h"
 #include "fast_algo_struct.h"
 #include "dict.h"
 #include "mdef.h"
+#ifdef OLD_LM_API
+#include "lm.h"
+#else
+#include <ngram_model.h>
+#include "wid.h"
 
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -274,8 +279,12 @@ typedef struct {
  */
 lextree_t* lextree_init(
     kbcore_t *kbcore, /**< In: Initialized kbcore */
+#ifdef OLD_LM_API
     lm_t* lm,         /**< In: LM, to decide which set of word list is used */
-    char *lmname,     /**< In: LM name */
+#else
+    ngram_model_t* lm,
+#endif
+    const char *lmname,     /**< In: LM name */
     int32 istreeUgProb, /**< In: Decide whether LM factoring is used or not */
     int32 bReport,     /**< In: Whether to report the progress so far. */
     int32 type        /**< In: Type of the lexical tree, 0: unigram lextree, 1: 2g, 2: 3g lextree*/

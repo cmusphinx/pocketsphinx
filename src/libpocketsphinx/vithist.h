@@ -133,7 +133,11 @@
 #include "kbcore.h"
 #include "search.h"
 #include "dict.h"
+#ifdef OLD_LM_API
 #include "lm.h"
+#else
+#include <ngram_model.h>
+#endif
 #include "fillpen.h"
 
 #include "dag.h"  
@@ -161,7 +165,11 @@ extern "C" {
  */
 typedef union vh_lmstate_u {
     struct {
+#ifdef OLD_LM_API
         s3lmwid32_t lwid[2];	/**< 2-word history; [0] is most recent */
+#else
+        int32 lwid[2];		/**< 2-word history; [0] is most recent */
+#endif
     } lm3g;
 } vh_lmstate_t;
 
@@ -407,15 +415,6 @@ void vithist_dump (vithist_t *vh,     /**< In: a Viterbi history data structure 
 dag_t *vithist_dag_build(vithist_t * vh, glist_t hyp, dict_t * dict, int32 endid,
                          cmd_ln_t *config, logmath_t *logmath);
 
-/**
- * Write a word graph (DAG) built from Viterbi history (temporary function)
- */
-int32 vithist_dag_write(vithist_t *vithist,
-                        const char *filename,
-                        dag_t * dag,
-                        lm_t * lm,
-                        dict_t * dict);
-
 /** 
  * Free a Viterbi history data structure 
  */
@@ -584,12 +583,16 @@ s3latid_t lat_pscr_rc_history (latticehist_t *lathist, /**< A table of lattice e
 			       dict_t *dict     /** The dictionary */
     );
 
-int32 lat_seg_lscr (latticehist_t *lathist, 
-		    s3latid_t l, 
-		    lm_t *lm, 
-		    dict_t *dict, 
-		    ctxt_table_t *ct, 
-		    fillpen_t *fillpen, 
+int32 lat_seg_lscr (latticehist_t *lathist,
+		    s3latid_t l,
+#ifdef OLD_LM_API
+		    lm_t *lm,
+#else
+		    ngram_model_t *lm,
+#endif
+		    dict_t *dict,
+		    ctxt_table_t *ct,
+		    fillpen_t *fillpen,
 		    int32 isCand);
 
 
@@ -602,7 +605,11 @@ void lat_seg_ascr_lscr (latticehist_t *lathist, /**< A table of lattice entries 
 			s3wid_t w_rc, /**< The right context word */
 			int32 *ascr,  /**< Out: Acoustic score */
 			int32 *lscr,  /**< Out: language score */
+#ifdef OLD_LM_API
 			lm_t *lm,     /**< LM */
+#else
+			ngram_model_t *lm,
+#endif
 			dict_t *dict,  /**< Dictionary */
 			ctxt_table_t *ct,  /** Context table */
 			fillpen_t *fillpen /**< filler penalty */
@@ -625,7 +632,11 @@ srch_hyp_t *lattice_backtrace (latticehist_t *lathist, /**< A table of lattice e
 			       s3latid_t l,   /**< The lattice ID */
 			       s3wid_t w_rc,   /**< The word on the right */
 			       srch_hyp_t **hyp, /**< Output: final hypothesis */ 
+#ifdef OLD_LM_API
 			       lm_t *lm,       /**< LM */
+#else
+			       ngram_model_t *lm,
+#endif
 			       dict_t *dict,   /**< Dictionary */
 			       ctxt_table_t *ct,  /**< Context table */
 			       fillpen_t *fillpen /**< filler penalty struct */
@@ -644,7 +655,11 @@ srch_hyp_t *lattice_backtrace (latticehist_t *lathist, /**< A table of lattice e
  * absurdum.
  */
 dag_t * latticehist_dag_build(latticehist_t * vh, glist_t hyp, dict_t * dict,
+#ifdef OLD_LM_API
                               lm_t *lm, ctxt_table_t *ctxt, fillpen_t *fpen,
+#else
+                              ngram_model_t *lm, ctxt_table_t *ctxt, fillpen_t *fpen,
+#endif
                               int32 endid, cmd_ln_t *config, logmath_t *logmath);
 
 /** 
@@ -653,7 +668,11 @@ dag_t * latticehist_dag_build(latticehist_t * vh, glist_t hyp, dict_t * dict,
 int32 latticehist_dag_write (latticehist_t *lathist,  /**< A table off lattice entries */
                              const char *filename,
 			     dag_t *dag,
-			     lm_t *lm, 
+#ifdef OLD_LM_API
+			     lm_t *lm,
+#else
+			     ngram_model_t *lm,
+#endif
 			     dict_t *dict, 
 			     ctxt_table_t *ct, 
 			     fillpen_t *fillpen

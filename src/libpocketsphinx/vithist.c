@@ -143,7 +143,6 @@ vh_lmstate_display(vh_lmstate_t * vhl, dict_t * dict)
 void
 vithist_entry_display(vithist_entry_t * ve, dict_t * dict)
 {
-
     E_INFO("Word ID %d \n", ve->wid);
     E_INFO("Sf %d Ef %d \n", ve->sf, ve->ef);
     E_INFO("Ascr %d Lscr %d \n", ve->ascr, ve->lscr);
@@ -158,9 +157,13 @@ vithist_t *
 vithist_init(kbcore_t * kbc, int32 wbeam, int32 bghist, int32 report)
 {
     vithist_t *vh;
+#ifdef OLD_LM_API
     lmset_t *lmset;
-    dict_t *dict;
     int i;
+#else
+    ngram_model_t *lmset;
+#endif
+    dict_t *dict;
 
     int max = -1;
 
@@ -187,12 +190,17 @@ vithist_init(kbcore_t * kbc, int32 wbeam, int32 bghist, int32 report)
     lmset = kbcore_lmset(kbc);
     dict = kbcore_dict(kbc);
 
+#ifdef OLD_LM_API
     for (i = 0; i < kbc->lmset->n_lm; i++) {
         if (lm_n_ug(lmset->lmarray[i]) > max) {
             max = lm_n_ug(lmset->lmarray[i]);
         }
     }
-    /*E_INFO("Allocation for Viterbi history, final size %d\n", max); */
+#else
+    max = ngram_model_get_counts(lmset)[0];
+#endif
+
+    E_INFO("Allocation for Viterbi history, lmset-final size: %d\n", max);
     vh->lms2vh_root =
         (vh_lms2vh_t **) ckd_calloc(max, sizeof(vh_lms2vh_t *));
     vh->n_ci = mdef_n_ciphone(kbc->mdef);
@@ -298,10 +306,12 @@ int32
 vithist_utt_begin(vithist_t * vh, kbcore_t * kbc)
 {
     vithist_entry_t *ve;
-    lm_t *lm;
     dict_t *dict;
+#ifdef OLD_LM_API
+    lm_t *lm;
 
     lm = kbcore_lm(kbc);
+#endif
     dict = kbcore_dict(kbc);
 
     assert(vh->n_entry == 0);
@@ -320,8 +330,13 @@ vithist_utt_begin(vithist_t * vh, kbcore_t * kbc)
     ve->path.pred = -1;
     ve->type = 0;
     ve->valid = 1;
+#ifdef OLD_LM_API
     ve->lmstate.lm3g.lwid[0] = lm_startwid(lm);
     ve->lmstate.lm3g.lwid[1] = BAD_LMWID(lm);
+#else
+    ve->lmstate.lm3g.lwid[0] = ngram_wid(kbcore_lm(kbc), S3_START_WORD);
+    ve->lmstate.lm3g.lwid[1] = NGRAM_INVALID_WID;
+#endif
     vh->n_frm = 0;
     vh->frame_start[0] = 1;
     vh->bestscore[0] = MAX_NEG_INT32;
@@ -492,7 +507,11 @@ vithist_rescore(vithist_t * vh, kbcore_t * kbc,
                 int32 pred, int32 type, int32 rc)
 {
     vithist_entry_t *pve, tve;
+#ifdef OLD_LM_API
     s3lmwid32_t lwid;
+#else
+    int32 lwid;
+#endif
     int32 se, fe;
     int32 i;
 
@@ -520,14 +539,6 @@ vithist_rescore(vithist_t * vh, kbcore_t * kbc,
     tve.rc = NULL;
     tve.n_rc = 0;
 
-    if (pred == 0) {            /* Special case for the initial <s> entry */
-        se = 0;
-        fe = 1;
-    }
-    else {
-        se = vh->frame_start[pve->ef];
-        fe = vh->frame_start[pve->ef + 1];
-    }
 
     if (dict_filler_word(kbcore_dict(kbc), wid)) {
 
@@ -540,12 +551,28 @@ vithist_rescore(vithist_t * vh, kbcore_t * kbc,
         vithist_enter(vh, kbc, &tve, rc);
     }
     else {
+#ifndef OLD_LM_API
+        int32 n_used;
+#endif
+
+        if (pred == 0) {            /* Special case for the initial <s> entry */
+            se = 0;
+            fe = 1;
+        }
+        else {
+            se = vh->frame_start[pve->ef];
+            fe = vh->frame_start[pve->ef + 1];
+        }
 
         /* Now if it is a word, backtrack again to get all possible previous word
            So  pve becomes the w_{n-2}. 
          */
 
+#ifdef OLD_LM_API
         lwid = kbc->lmset->cur_lm->dict2lmwid[wid];
+#else
+        lwid = ngram_wid(kbcore_lm(kbc), dict_wordstr(kbcore_dict(kbc), dict_basewid(kbcore_dict(kbc), wid)));
+#endif
 
         tve.lmstate.lm3g.lwid[0] = lwid;
 
@@ -554,10 +581,14 @@ vithist_rescore(vithist_t * vh, kbcore_t * kbc,
 
             if (pve->valid) {
                 tve.path.score = pve->path.score + tve.ascr;
+#ifdef OLD_LM_API
                 tve.lscr = lm_tg_score(kbcore_lm(kbc),
                                        pve->lmstate.lm3g.lwid[1],
                                        pve->lmstate.lm3g.lwid[0],
                                        lwid, wid);
+#else
+                tve.lscr = ngram_tg_score(kbcore_lm(kbc), lwid, pve->lmstate.lm3g.lwid[0], pve->lmstate.lm3g.lwid[1], &n_used);
+#endif
                 tve.path.score += tve.lscr;
                 if ((tve.path.score - vh->wbeam) >= vh->bestscore[vh->n_frm]) {
                     tve.path.pred = i;
@@ -760,8 +791,13 @@ vithist_utt_end(vithist_t * vh, kbcore_t * kbc)
     int32 f, i;
     int32 sv, nsv, scr, bestscore, bestvh, vhid;
     vithist_entry_t *ve, *bestve = 0;
+#ifdef OLD_LM_API
     s3lmwid32_t endwid = BAD_S3LMWID32;
     lm_t *lm;
+#else
+    int32 endwid = NGRAM_INVALID_WID;
+    ngram_model_t *lm;
+#endif
     dict_t *dict;
 
     bestscore = MAX_NEG_INT32;
@@ -788,15 +824,26 @@ vithist_utt_end(vithist_t * vh, kbcore_t * kbc)
     lm = kbcore_lm(kbc);
     dict = kbcore_dict(kbc);
 
+#ifdef OLD_LM_API
     endwid = lm_finishwid(lm);
+#else
+    endwid = ngram_wid(lm, S3_FINISH_WORD);
+#endif
 
     for (i = sv; i < nsv; i++) {
+#ifndef OLD_LM_API
+        int32 n_used;
+#endif
         ve = vithist_id2entry(vh, i);
         scr = ve->path.score;
+#ifdef OLD_LM_API
         scr +=
             lm_tg_score(lm, ve->lmstate.lm3g.lwid[1],
                         ve->lmstate.lm3g.lwid[0], endwid,
                         dict_finishwid(dict));
+#else
+        scr += ngram_tg_score(lm, endwid, ve->lmstate.lm3g.lwid[0], ve->lmstate.lm3g.lwid[1], &n_used);
+#endif
 
         if (bestscore < scr) {
             bestscore = scr;
@@ -855,8 +902,13 @@ vithist_partialutt_end(vithist_t * vh, kbcore_t * kbc)
     int32 f, i;
     int32 sv, nsv, scr, bestscore, bestvh;
     vithist_entry_t *ve, *bestve;
+#ifdef OLD_LM_API
     s3lmwid32_t endwid;
     lm_t *lm;
+#else
+    ngram_model_t *lm;
+    int32 endwid;
+#endif
     dict_t *dict;
 
     /* Find last frame with entries in vithist table */
@@ -879,19 +931,31 @@ vithist_partialutt_end(vithist_t * vh, kbcore_t * kbc)
     /* Terminate in a final </s> node (make this optional?) */
     lm = kbcore_lm(kbc);
     dict = kbcore_dict(kbc);
+
+#ifdef OLD_LM_API
     endwid = lm_finishwid(lm);
+#else
+    endwid = ngram_wid(lm, S3_FINISH_WORD);
+#endif
 
     bestscore = MAX_NEG_INT32;
     bestvh = -1;
 
     for (i = sv; i < nsv; i++) {
+#ifndef OLD_LM_API
+        int32 n_used;
+#endif
         ve = vithist_id2entry(vh, i);
 
         scr = ve->path.score;
+#ifdef OLD_LM_API
         scr +=
             lm_tg_score(lm, ve->lmstate.lm3g.lwid[1],
                         ve->lmstate.lm3g.lwid[0], endwid,
                         dict_finishwid(dict));
+#else
+        scr += ngram_tg_score(lm, endwid, ve->lmstate.lm3g.lwid[0], ve->lmstate.lm3g.lwid[1], &n_used);
+#endif
 
         if (bestscore < scr) {
             bestscore = scr;
@@ -938,7 +1002,11 @@ vithist_lmstate_subtree_dump(vithist_t * vh, kbcore_t * kbc,
     gnode_t *gn;
     vh_lmstate2vithist_t *child;
     int32 i;
+#ifdef OLD_LM_API
     lm_t *lm;
+#else
+    ngram_model_t *lm;
+#endif
 
     lm = kbcore_lm(kbc);
 
@@ -947,8 +1015,13 @@ vithist_lmstate_subtree_dump(vithist_t * vh, kbcore_t * kbc,
 
         for (i = 0; i < level; i++)
             fprintf(fp, "\t");
+#ifdef OLD_LM_API
         fprintf(fp, "\t%s -> %d\n", lm_wordstr(lm, child->state),
                 child->vhid);
+#else
+        fprintf(fp, "\t%s -> %d\n", ngram_word(lm, child->state),
+                child->vhid);
+#endif
 
         vithist_lmstate_subtree_dump(vh, kbc, child, level + 1, fp);
     }
@@ -963,7 +1036,11 @@ vithist_lmstate_dump(vithist_t * vh, kbcore_t * kbc, FILE * fp)
     int32 i;
     vh_lmstate2vithist_t *lms2vh;
     mdef_t *mdef;
+#ifdef OLD_LM_API
     lm_t *lm;
+#else
+    ngram_model_t *lm;
+#endif
 
     mdef = kbcore_mdef(kbc);
     lm = kbcore_lm(kbc);
@@ -979,7 +1056,11 @@ vithist_lmstate_dump(vithist_t * vh, kbcore_t * kbc, FILE * fp)
             lms2vh = (vh_lmstate2vithist_t *) gnode_ptr(gn);
 
             fprintf(fp, "\t%s.%s -> %d\n",
+#ifdef OLD_LM_API
                     lm_wordstr(lm, i), mdef_ciphone_str(mdef,
+#else
+                    ngram_word(lm, i), mdef_ciphone_str(mdef,
+#endif
                                                         lms2vh->state),
                     lms2vh->vhid);
             vithist_lmstate_subtree_dump(vh, kbc, lms2vh, 1, fp);
@@ -996,9 +1077,14 @@ vithist_dump(vithist_t * vh, int32 frm, kbcore_t * kbc, FILE * fp)
 {
     int32 i, j;
     dict_t *dict;
-    lm_t *lm;
     vithist_entry_t *ve;
+#ifdef OLD_LM_API
+    lm_t *lm;
     s3lmwid32_t lwid;
+#else
+    ngram_model_t *lm;
+    int32 lwid;
+#endif
     int32 sf, ef;
 
     dict = kbcore_dict(kbc);
@@ -1034,10 +1120,16 @@ vithist_dump(vithist_t * vh, int32 frm, kbcore_t * kbc, FILE * fp)
                     ve->sf, ve->ef, ve->path.score, ve->ascr, ve->lscr,
                     ve->path.pred, ve->type, dict_wordstr(dict, ve->wid));
 
+#ifdef OLD_LM_API
             fprintf(fp, " (%s", lm_wordstr(lm, ve->lmstate.lm3g.lwid[0]));
             lwid = ve->lmstate.lm3g.lwid[1];
             if (IS_LMWID(lm, lwid))
                 fprintf(fp, ", %s", lm_wordstr(lm, lwid));
+#else
+            fprintf(fp, " (%s", ngram_word(lm, ve->lmstate.lm3g.lwid[0]));
+            lwid = ve->lmstate.lm3g.lwid[1];
+            fprintf(fp, ", %s", ngram_word(lm, lwid));
+#endif
             fprintf(fp, ")\n");
         }
 
@@ -1545,21 +1637,34 @@ two_word_history(latticehist_t * lathist, s3latid_t l, s3wid_t * w0,
  * Find LM score for transition into lattice entry l.
  */
 int32
+#ifdef OLD_LM_API
 lat_seg_lscr(latticehist_t * lathist, s3latid_t l, lm_t * lm,
              dict_t * dict, ctxt_table_t * ct, fillpen_t * fpen,
              int32 isCand)
+#else
+lat_seg_lscr(latticehist_t * lathist, s3latid_t l, ngram_model_t * lm,
+             dict_t * dict, ctxt_table_t * ct, fillpen_t * fpen,
+             int32 isCand)
+#endif
 {
     s3wid_t bw0, bw1, bw2;
+#ifdef OLD_LM_API
     s3lmwid32_t lw0;
-    int32 lscr, bowt, bo_lscr;
+    int32 bowt;
+#else
+    int32 lw0;
+    int32 n_used;
+#endif
+    int32 lscr, bo_lscr;
+#ifdef OLD_LM_API
     tg_t *tgptr;
     bg_t *bgptr;
 
     tg32_t *tgptr32;
     bg32_t *bgptr32;
     int is32bits;
-
     is32bits = lm->is32bits;
+#endif
     bw2 = dict_basewid(dict, lathist->lattice[l].wid);
 
     if (dict_filler_word(dict, bw2))
@@ -1574,12 +1679,17 @@ lat_seg_lscr(latticehist_t * lathist, s3latid_t l, lm_t * lm,
                      dict);
 
     /*    E_INFO("lathist->lattice[l].history %d , bw0 %d, bw1 %d. bw2 %d\n",lathist->lattice[l].history,bw0,bw1,bw2); */
+#ifdef OLD_LM_API
     lw0 =
         IS_S3WID(bw0) ? lm->
         dict2lmwid[dict_basewid(dict, bw0)] : BAD_LMWID(lm);
     lscr =
         lm_tg_score(lm, lw0, lm->dict2lmwid[dict_basewid(dict, bw1)],
                     lm->dict2lmwid[bw2], bw2);
+#else
+    lw0 = ngram_wid(lm, dict_wordstr(dict, dict_basewid(dict, bw0)));
+    lscr = ngram_tg_score(lm, ngram_wid(lm, dict_wordstr(dict, dict_basewid(dict, bw2))), ngram_wid(lm, dict_wordstr(dict, dict_basewid(dict, bw1))), lw0, &n_used);
+#endif
     if (isCand)
         return lscr;
 
@@ -1587,6 +1697,7 @@ lat_seg_lscr(latticehist_t * lathist, s3latid_t l, lm_t * lm,
     bo_lscr = 0;
 
 
+#ifdef OLD_LM_API
     if (is32bits) {
         if ((IS_S3WID(bw0)) && (lm_tg32list(lm,
                                             lm->
@@ -1621,6 +1732,10 @@ lat_seg_lscr(latticehist_t * lathist, s3latid_t l, lm_t * lm,
     bo_lscr +=
         lm_ug_score(lm, lm->dict2lmwid[dict_basewid(dict, bw2)],
                     dict_basewid(dict, bw2));
+#else
+#warning Finish porting lat_seg_lscr
+    bo_lscr += ngram_ng_score(lm, ngram_wid(lm, dict_wordstr(dict, dict_basewid(dict, bw2))), NULL, 0, &n_used);
+#endif
 
     return ((lscr > bo_lscr) ? lscr : bo_lscr);
 }
@@ -1637,7 +1752,11 @@ lat_seg_ascr_lscr(latticehist_t * lathist,
                   s3wid_t w_rc,
                   int32 * ascr,
                   int32 * lscr,
+#ifdef OLD_LM_API
                   lm_t * lm,
+#else
+                  ngram_model_t * lm,
+#endif
                   dict_t * dict, ctxt_table_t * ct, fillpen_t * fillpen)
 {
     int32 start_score, end_score;
@@ -1714,7 +1833,11 @@ lattice_backtrace(latticehist_t * lathist,
                   s3latid_t l,
                   s3wid_t w_rc,
                   srch_hyp_t ** hyp,
+#ifdef OLD_LM_API
                   lm_t * lm,
+#else
+                  ngram_model_t * lm,
+#endif
                   dict_t * dict, ctxt_table_t * ct, fillpen_t * fillpen)
 {
     srch_hyp_t *h, *prevh;
@@ -1763,7 +1886,11 @@ lattice_backtrace(latticehist_t * lathist,
  */
 dag_t *
 latticehist_dag_build(latticehist_t * vh, glist_t hyp, dict_t * dict,
+#ifdef OLD_LM_API
                       lm_t *lm, ctxt_table_t *ctxt, fillpen_t *fpen,
+#else
+                      ngram_model_t *lm, ctxt_table_t *ctxt, fillpen_t *fpen,
+#endif
                       int32 endid, cmd_ln_t *config, logmath_t *logmath)
 {
     glist_t *sfwid;             /* To maintain <start-frame, word-id> pair dagnodes */
@@ -1971,7 +2098,11 @@ int32
 latticehist_dag_write(latticehist_t * lathist,
                       const char *filename,
                       dag_t * dag,
+#ifdef OLD_LM_API
                       lm_t * lm,
+#else
+                      ngram_model_t * lm,
+#endif
                       dict_t * dict,
                       ctxt_table_t * ct, fillpen_t * fillpen)
 {

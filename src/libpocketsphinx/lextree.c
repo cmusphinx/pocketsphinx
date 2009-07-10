@@ -176,8 +176,13 @@ lextree_node_free(lextree_node_t * ln)
 }
 
 lextree_t *
-lextree_init(kbcore_t * kbc, lm_t * lm, char *lmname, int32 istreeUgProb,
+#ifdef OLD_LM_API
+lextree_init(kbcore_t * kbc, lm_t * lm, const char *lmname, int32 istreeUgProb,
              int32 bReport, int32 type)
+#else
+lextree_init(kbcore_t * kbc, ngram_model_t * lm, const char *lmname, int32 istreeUgProb,
+             int32 bReport, int32 type)
+#endif
 {
     s3cipid_t *lc;
     s3cipid_t ci;
@@ -229,6 +234,7 @@ lextree_init(kbcore_t * kbc, lm_t * lm, char *lmname, int32 istreeUgProb,
         wp[j].wid = -1;
         wp[j].prob = -1;
     }
+#ifdef OLD_LM_API
     n = lm_ug_wordprob(lm, dict, MAX_NEG_INT32, wp);
 
     if (bReport)
@@ -243,6 +249,31 @@ lextree_init(kbcore_t * kbc, lm_t * lm, char *lmname, int32 istreeUgProb,
     if (bReport)
         E_INFO("Size of word table after adding alternative prons: %d.\n",
                n);
+#else
+    j = dict_size(dict);
+    for (i = 0, n = 0; i < j; ++i) {
+        int32 lmwid;
+        if (dict_basewid(dict, i) != i || dict_startwid(dict) == i || dict_finishwid(dict) == i)
+            continue;
+        if ((lmwid = ngram_wid(lm, dict_wordstr(dict, dict_basewid(dict, i)))) == NGRAM_INVALID_WID) {
+            continue;
+        }
+        wp[n].prob = ngram_ng_score(lm, lmwid, NULL, 0, &n_lc);
+        wp[n].wid = i;
+        ++n;
+    }
+    for (i = 0; i < j; ++i) {
+        int32 lmwid;
+        if (dict_basewid(dict, i) == i || dict_startwid(dict) == i || dict_finishwid(dict) == i)
+            continue;
+        if ((lmwid = ngram_wid(lm, dict_wordstr(dict, dict_basewid(dict, i)))) == NGRAM_INVALID_WID) {
+            continue;
+        }
+        wp[n].prob = ngram_ng_score(lm, lmwid, NULL, 0, &n_lc);
+        wp[n].wid = i;
+        ++n;
+    }
+#endif
     if (istreeUgProb == 0) {
         for (i = 0; i < n; i++) {
             wp[i].prob = -1;    /* Flatten all initial probabilities */
@@ -298,7 +329,7 @@ lextree_report(lextree_t * ltree)
     E_INFO_NOFN("Type of the tree %d (0:unigram, 1: 2g, 2: 3g etc.)\n",
                 ltree->type);
     E_INFO_NOFN("Number of left contexts %d \n", ltree->n_lc);
-    E_INFO_NOFN("Number of node %d \n", ltree->n_node);
+    E_INFO_NOFN("Number of nodes %d \n", ltree->n_node);
     E_INFO_NOFN("Number of links in the tree %d\n",
                 num_lextree_links(ltree));
     /*
@@ -773,7 +804,6 @@ lextree_shrub_subtree_cw_leaves(lextree_node_t * ln, int32 level)
 
 
     return k;
-
 }
 
 void
@@ -951,8 +981,6 @@ lextree_utt_end(lextree_t * l, kbcore_t * kbc)
     if (!dict2pid_is_composite(kbc->dict2pid)) {
         lextree_shrub_cw_leaves(l);
     }
-
-
 }
 
 
@@ -1013,7 +1041,6 @@ lextree_dump(lextree_t * lextree, dict_t * dict, mdef_t * mdef, FILE * fp,
 {
     gnode_t *gn;
     lextree_node_t *ln;
-    int32 i;
 
     if (fmt > 2) {
         fmt = GRAPH_RAVIFMT;
@@ -1025,6 +1052,7 @@ lextree_dump(lextree_t * lextree, dict_t * dict, mdef_t * mdef, FILE * fp,
         }
 
         if (lextree->n_lc > 0) {
+            int32 i;
             for (i = 0; i < lextree->n_lc; i++) {
                 fprintf(fp, "lcroot %d\n", lextree->lcroot[i].lc);
                 for (gn = lextree->lcroot[i].root; gn; gn = gnode_next(gn)) {
@@ -1077,7 +1105,6 @@ lextree_realloc_active_list(lextree_t * lt, int32 num_active)
         E_INFO("Reallocating more memory, now has node %d\n",
                lextree_n_alloc_node(lt));
     }
-
 }
 
 
