@@ -75,9 +75,9 @@
  */
 
 #include <string.h>
-
-#include <ctxt_table.h>
 #include <ckd_alloc.h>
+
+#include "ctxt_table.h"
 
 void
 dump_xwdssidmap(xwdssid_t ** x, mdef_t * mdef)
@@ -345,7 +345,7 @@ build_xwdssid_map(ctxt_table_t * ct, dict_t * dict, mdef_t * mdef)
             if (!ct->lcssid[b])
                 ct->lcssid[b] =
                     (xwdssid_t *) ckd_calloc(mdef->n_ciphone,
-                                            sizeof(xwdssid_t));
+                                             sizeof(xwdssid_t));
             if (!ct->lcssid[b][rc].cimap)
                 build_lcssid(ct, b, rc, mdef,
                              word_end_ci, tmp_xwdssid);
@@ -357,7 +357,7 @@ build_xwdssid_map(ctxt_table_t * ct, dict_t * dict, mdef_t * mdef)
             if (!ct->lrcssid[b]) {
                 ct->lrcssid[b] =
                     (xwdssid_t *) ckd_calloc(mdef->n_ciphone,
-                                            sizeof(xwdssid_t));
+                                             sizeof(xwdssid_t));
                 build_lrcssid(ct, b, mdef,
                               word_start_ci, word_end_ci);
             }
