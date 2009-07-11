@@ -93,7 +93,6 @@
 #include <string.h>
 
 #include "dict2pid.h"
-#include "logs3.h"
 
 
 /** \file dict2pid.c
@@ -110,7 +109,7 @@
  * Return the generated glist.
  */
 static glist_t
-ldiph_comsseq(mdef_t * mdef,                /**< a model definition*/
+ldiph_comsseq(bin_mdef_t * mdef,                /**< a model definition*/
               int32 b,                  /**< base phone */
               int32 r                   /**< right context */
     )
@@ -119,13 +118,13 @@ ldiph_comsseq(mdef_t * mdef,                /**< a model definition*/
     glist_t g;
 
     g = NULL;
-    for (l = 0; l < mdef_n_ciphone(mdef); l++) {
-        p = mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
+    for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
+        p = bin_mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
                           (s3cipid_t) r, WORD_POSN_BEGIN);
 
         if (IS_S3PID(p)) {
             gnode_t *gn;
-            ssid = mdef_pid2ssid(mdef, p);
+            ssid = bin_mdef_pid2ssid(mdef, p);
             for (gn = g; gn; gn = gnode_next(gn))
                 if (gnode_int32(gn) == ssid)
                     break;
@@ -134,7 +133,7 @@ ldiph_comsseq(mdef_t * mdef,                /**< a model definition*/
         }
     }
     if (!g)
-        g = glist_add_int32(g, mdef_pid2ssid(mdef, b));
+        g = glist_add_int32(g, bin_mdef_pid2ssid(mdef, b));
 
     return g;
 }
@@ -146,19 +145,19 @@ ldiph_comsseq(mdef_t * mdef,                /**< a model definition*/
  * Return the generated glist.
  */
 static glist_t
-rdiph_comsseq(mdef_t * mdef, int32 b, int32 l)
+rdiph_comsseq(bin_mdef_t * mdef, int32 b, int32 l)
 {
     int32 r, p, ssid;
     glist_t g;
 
     g = NULL;
-    for (r = 0; r < mdef_n_ciphone(mdef); r++) {
-        p = mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
+    for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
+        p = bin_mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
                           (s3cipid_t) r, WORD_POSN_END);
 
         if (IS_S3PID(p)) {
             gnode_t *gn;
-            ssid = mdef_pid2ssid(mdef, p);
+            ssid = bin_mdef_pid2ssid(mdef, p);
             for (gn = g; gn; gn = gnode_next(gn))
                 if (gnode_int32(gn) == ssid)
                     break;
@@ -167,7 +166,7 @@ rdiph_comsseq(mdef_t * mdef, int32 b, int32 l)
         }
     }
     if (!g)
-        g = glist_add_int32(g, mdef_pid2ssid(mdef, b));
+        g = glist_add_int32(g, bin_mdef_pid2ssid(mdef, b));
 
     return g;
 }
@@ -179,20 +178,20 @@ rdiph_comsseq(mdef_t * mdef, int32 b, int32 l)
  * Return the generated glist.
  */
 static glist_t
-single_comsseq(mdef_t * mdef, int32 b)
+single_comsseq(bin_mdef_t * mdef, int32 b)
 {
     int32 l, r, p, ssid;
     glist_t g;
 
     g = NULL;
-    for (l = 0; l < mdef_n_ciphone(mdef); l++) {
-        for (r = 0; r < mdef_n_ciphone(mdef); r++) {
-            p = mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
+    for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
+        for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
+            p = bin_mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
                               (s3cipid_t) r, WORD_POSN_SINGLE);
 
             if (IS_S3PID(p)) {
                 gnode_t *gn;
-                ssid = mdef_pid2ssid(mdef, p);
+                ssid = bin_mdef_pid2ssid(mdef, p);
                 for (gn = g; gn; gn = gnode_next(gn))
                     if (gnode_int32(gn) == ssid)
                         break;
@@ -202,7 +201,7 @@ single_comsseq(mdef_t * mdef, int32 b)
         }
     }
     if (!g)
-        g = glist_add_int32(g, mdef_pid2ssid(mdef, b));
+        g = glist_add_int32(g, bin_mdef_pid2ssid(mdef, b));
 
     return g;
 }
@@ -214,19 +213,19 @@ single_comsseq(mdef_t * mdef, int32 b)
  * for basephone b.  Return the generated glist.
  */
 static glist_t
-single_lc_comsseq(mdef_t * mdef, int32 b, int32 l)
+single_lc_comsseq(bin_mdef_t * mdef, int32 b, int32 l)
 {
     int32 r, p, ssid;
     glist_t g;
 
     g = NULL;
-    for (r = 0; r < mdef_n_ciphone(mdef); r++) {
-        p = mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
+    for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
+        p = bin_mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
                           (s3cipid_t) r, WORD_POSN_SINGLE);
 
         if (IS_S3PID(p)) {
             gnode_t *gn;
-            ssid = mdef_pid2ssid(mdef, p);
+            ssid = bin_mdef_pid2ssid(mdef, p);
             for (gn = g; gn; gn = gnode_next(gn))
                 if (gnode_int32(gn) == ssid)
                     break;
@@ -235,7 +234,7 @@ single_lc_comsseq(mdef_t * mdef, int32 b, int32 l)
         }
     }
     if (!g)
-        g = glist_add_int32(g, mdef_pid2ssid(mdef, b));
+        g = glist_add_int32(g, bin_mdef_pid2ssid(mdef, b));
 
     return g;
 }
@@ -250,19 +249,19 @@ single_lc_comsseq(mdef_t * mdef, int32 b, int32 l)
  */
 
 static glist_t
-single_rc_comsseq(mdef_t * mdef, int32 b, int32 r)
+single_rc_comsseq(bin_mdef_t * mdef, int32 b, int32 r)
 {
     int32 l, p, ssid;
     glist_t g;
 
     g = NULL;
-    for (l = 0; l < mdef_n_ciphone(mdef); l++) {
-        p = mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
+    for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
+        p = bin_mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
                           (s3cipid_t) r, WORD_POSN_SINGLE);
 
         if (IS_S3PID(p)) {
             gnode_t *gn;
-            ssid = mdef_pid2ssid(mdef, p);
+            ssid = bin_mdef_pid2ssid(mdef, p);
             for (gn = g; gn; gn = gnode_next(gn))
                 if (gnode_int32(gn) == ssid)
                     break;
@@ -271,7 +270,7 @@ single_rc_comsseq(mdef_t * mdef, int32 b, int32 r)
         }
     }
     if (!g)
-        g = glist_add_int32(g, mdef_pid2ssid(mdef, b));
+        g = glist_add_int32(g, bin_mdef_pid2ssid(mdef, b));
 
     return g;
 }
@@ -282,7 +281,7 @@ single_rc_comsseq(mdef_t * mdef, int32 b, int32 r)
  * Convert the glist of ssids to a composite sseq id.  Return the composite ID.
  */
 static s3ssid_t
-ssidlist2comsseq(glist_t g, mdef_t * mdef, dict2pid_t * dict2pid,
+ssidlist2comsseq(glist_t g, bin_mdef_t * mdef, dict2pid_t * dict2pid,
                  hash_table_t * hs, /* For composite states */
                  hash_table_t * hp) /* For composite senone seq */
 {                
@@ -297,15 +296,15 @@ ssidlist2comsseq(glist_t g, mdef_t * mdef, dict2pid_t * dict2pid,
 
     /* Space for list of senones for each state, derived from the given glist */
     sen =
-        (s3senid_t **) ckd_calloc(mdef_n_emit_state(mdef),
+        (s3senid_t **) ckd_calloc(bin_mdef_n_emit_state(mdef),
                                   sizeof(s3senid_t *));
-    for (i = 0; i < mdef_n_emit_state(mdef); i++) {
+    for (i = 0; i < bin_mdef_n_emit_state(mdef); i++) {
         sen[i] = (s3senid_t *) ckd_calloc(n + 1, sizeof(s3senid_t));
         sen[i][0] = BAD_S3SENID;        /* Sentinel */
     }
     /* Space for composite senone ID for each state position */
     comsenid =
-        (s3senid_t *) ckd_calloc(mdef_n_emit_state(mdef),
+        (s3senid_t *) ckd_calloc(bin_mdef_n_emit_state(mdef),
                                  sizeof(s3senid_t));
 
     /* Expand g into an array of arrays of unique senone IDs, one for
@@ -314,7 +313,7 @@ ssidlist2comsseq(glist_t g, mdef_t * mdef, dict2pid_t * dict2pid,
         ssid = gnode_int32(gn);
 
         /* Expand ssid into individual states (senones); insert in sen[][] if not present */
-        for (i = 0; i < mdef_n_emit_state(mdef); i++) {
+        for (i = 0; i < bin_mdef_n_emit_state(mdef); i++) {
             s = mdef->sseq[ssid][i];
 
             for (j = 0; (IS_S3SENID(sen[i][j])) && (sen[i][j] != s); j++);
@@ -326,7 +325,7 @@ ssidlist2comsseq(glist_t g, mdef_t * mdef, dict2pid_t * dict2pid,
     }
 
     /* Convert senones list for each state position into composite state */
-    for (i = 0; i < mdef_n_emit_state(mdef); i++) {
+    for (i = 0; i < bin_mdef_n_emit_state(mdef); i++) {
         /* Count number of unique senones for this state. */
         for (j = 0; IS_S3SENID(sen[i][j]); j++);
         assert(j > 0);
@@ -397,7 +396,7 @@ compress_table(s3ssid_t * uncomp_tab, s3ssid_t * com_tab,
 
 
 static void
-compress_right_context_tree(mdef_t * mdef, dict2pid_t * d2p)
+compress_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p)
 {
     int32 n_ci;
     int32 b, l, r;
@@ -455,7 +454,7 @@ compress_right_context_tree(mdef_t * mdef, dict2pid_t * d2p)
 }
 
 static void
-compress_left_right_context_tree(mdef_t * mdef, dict2pid_t * d2p)
+compress_left_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p)
 {
     int32 n_ci;
     int32 b, l, r;
@@ -516,7 +515,7 @@ compress_left_right_context_tree(mdef_t * mdef, dict2pid_t * d2p)
    because the compressed map has not been checked. 
 */
 int32
-get_rc_nssid(dict2pid_t * d2p, s3wid_t w, dict_t * dict)
+get_rc_nssid(dict2pid_t * d2p, s3wid_t w, s3dict_t * dict)
 {
     int32 pronlen;
     s3cipid_t b, lc;
@@ -540,7 +539,7 @@ get_rc_nssid(dict2pid_t * d2p, s3wid_t w, dict_t * dict)
 }
 
 s3cipid_t *
-dict2pid_get_rcmap(dict2pid_t * d2p, s3wid_t w, dict_t * dict)
+dict2pid_get_rcmap(dict2pid_t * d2p, s3wid_t w, s3dict_t * dict)
 {
     int32 pronlen;
     s3cipid_t b, lc;
@@ -583,7 +582,7 @@ free_compress_map(xwdssid_t ** tree, int32 n_ci)
 
 /* RAH 4.16.01 This code has several leaks that must be fixed */
 dict2pid_t *
-dict2pid_build(mdef_t * mdef, dict_t * dict, int32 is_composite, logmath_t *logmath)
+dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t *logmath)
 {
     dict2pid_t *dict2pid;
     s3ssid_t *internal, **ldiph, **rdiph, *single;
@@ -603,9 +602,9 @@ dict2pid_build(mdef_t * mdef, dict_t * dict, int32 is_composite, logmath_t *logm
 
     dict2pid = (dict2pid_t *) ckd_calloc(1, sizeof(dict2pid_t));
 
-    dict2pid->n_dictsize = dict_size(dict);
+    dict2pid->n_dictsize = s3dict_size(dict);
     dict2pid->internal =
-        (s3ssid_t **) ckd_calloc(dict_size(dict), sizeof(s3ssid_t *));
+        (s3ssid_t **) ckd_calloc(s3dict_size(dict), sizeof(s3ssid_t *));
     dict2pid->ldiph_lc =
         (s3ssid_t ***) ckd_calloc_3d(mdef->n_ciphone, mdef->n_ciphone,
                                      mdef->n_ciphone, sizeof(s3ssid_t));
@@ -649,11 +648,11 @@ dict2pid_build(mdef_t * mdef, dict_t * dict, int32 is_composite, logmath_t *logm
 			HASH_CASE_YES);
     hp = hash_table_new(mdef->n_ciphone * mdef->n_ciphone, HASH_CASE_YES);
 
-    for (w = 0, n = 0; w < dict_size(dict); w++) {
-        pronlen = dict_pronlen(dict, w);
+    for (w = 0, n = 0; w < s3dict_size(dict); w++) {
+        pronlen = s3dict_pronlen(dict, w);
         if (pronlen < 0)
             E_FATAL("Pronunciation-length(%s)= %d\n",
-                    dict_wordstr(dict, w), pronlen);
+                    s3dict_wordstr(dict, w), pronlen);
         n += pronlen;
     }
 
@@ -686,9 +685,9 @@ dict2pid_build(mdef_t * mdef, dict_t * dict, int32 is_composite, logmath_t *logm
         single[b] = BAD_S3SSID;
     }
 
-    for (w = 0; w < dict_size(dict); w++) {
+    for (w = 0; w < s3dict_size(dict); w++) {
         dict2pid->internal[w] = internal;
-        pronlen = dict_pronlen(dict, w);
+        pronlen = s3dict_pronlen(dict, w);
 
         if (pronlen >= 2) {
 
@@ -697,8 +696,8 @@ dict2pid_build(mdef_t * mdef, dict_t * dict, int32 is_composite, logmath_t *logm
 	    */
 
             /* Find or create a composite senone sequence for b(?,r) */
-            b = dict_pron(dict, w, 0);
-            r = dict_pron(dict, w, 1);
+            b = s3dict_pron(dict, w, 0);
+            r = s3dict_pron(dict, w, 1);
             if (NOT_S3SSID(ldiph[b][r])) {
 
                 if (dict2pid->is_composite) {
@@ -711,11 +710,11 @@ dict2pid_build(mdef_t * mdef, dict_t * dict, int32 is_composite, logmath_t *logm
                 }
 
                 /* Record all possible ssids for b(?,r) */
-                for (l = 0; l < mdef_n_ciphone(mdef); l++) {
-                    p = mdef_phone_id_nearest(mdef, (s3cipid_t) b,
+                for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
+                    p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
                                               (s3cipid_t) l, (s3cipid_t) r,
                                               WORD_POSN_BEGIN);
-                    dict2pid->ldiph_lc[b][r][l] = mdef_pid2ssid(mdef, p);
+                    dict2pid->ldiph_lc[b][r][l] = bin_mdef_pid2ssid(mdef, p);
                 }
             }
 
@@ -730,12 +729,12 @@ dict2pid_build(mdef_t * mdef, dict_t * dict, int32 is_composite, logmath_t *logm
             for (i = 1; i < pronlen - 1; i++) {
                 l = b;
                 b = r;
-                r = dict_pron(dict, w, i + 1);
+                r = s3dict_pron(dict, w, i + 1);
 
-                p = mdef_phone_id_nearest(mdef, (s3cipid_t) b,
+                p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
                                           (s3cipid_t) l, (s3cipid_t) r,
                                           WORD_POSN_INTERNAL);
-                internal[i] = mdef_pid2ssid(mdef, p);
+                internal[i] = bin_mdef_pid2ssid(mdef, p);
             }
 
             /** This part will take care of the initialization of 
@@ -753,11 +752,11 @@ dict2pid_build(mdef_t * mdef, dict_t * dict, int32 is_composite, logmath_t *logm
                     glist_free(g);
                 }
 
-                for (r = 0; r < mdef_n_ciphone(mdef); r++) {
-                    p = mdef_phone_id_nearest(mdef, (s3cipid_t) b,
+                for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
+                    p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
                                               (s3cipid_t) l, (s3cipid_t) r,
                                               WORD_POSN_BEGIN);
-                    dict2pid->rdiph_rc[b][l][r] = mdef_pid2ssid(mdef, p);
+                    dict2pid->rdiph_rc[b][l][r] = bin_mdef_pid2ssid(mdef, p);
                 }
             }
 
@@ -769,7 +768,7 @@ dict2pid_build(mdef_t * mdef, dict_t * dict, int32 is_composite, logmath_t *logm
         }
         else if (pronlen == 1) {
 
-            b = dict_pron(dict, w, 0);
+            b = s3dict_pron(dict, w, 0);
 
             if (dict2pid->is_composite) {
                 assert(dict2pid->single_lc);
@@ -783,7 +782,7 @@ dict2pid_build(mdef_t * mdef, dict_t * dict, int32 is_composite, logmath_t *logm
                     glist_free(g);
 
                     /* Record all possible *composite* ssids for b(?,?) */
-                    for (l = 0; l < mdef_n_ciphone(mdef); l++) {
+                    for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
                         g = single_lc_comsseq(mdef, b, l);
                         dict2pid->single_lc[b][l] =
                             ssidlist2comsseq(g, mdef, dict2pid, hs, hp);
@@ -795,14 +794,14 @@ dict2pid_build(mdef_t * mdef, dict_t * dict, int32 is_composite, logmath_t *logm
             else {
                 /* Don't compress but build table directly */
                 if (NOT_S3SSID(single[b])) {
-                    for (l = 0; l < mdef_n_ciphone(mdef); l++) {
-                        for (r = 0; r < mdef_n_ciphone(mdef); r++) {
-                            p = mdef_phone_id_nearest(mdef, (s3cipid_t) b,
+                    for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
+                        for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
+                            p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
                                                       (s3cipid_t) l,
                                                       (s3cipid_t) r,
                                                       WORD_POSN_SINGLE);
                             dict2pid->lrdiph_rc[b][l][r] =
-                                mdef_pid2ssid(mdef, p);
+                                bin_mdef_pid2ssid(mdef, p);
                         }
                     }
                 }
@@ -910,13 +909,8 @@ dict2pid_build(mdef_t * mdef, dict_t * dict, int32 is_composite, logmath_t *logm
             sen = dict2pid->comstate[i];
 
             for (j = 0; IS_S3SENID(sen[j]); j++);
-#if 0
-            /* if comstate i has N states, its weight= (1/N^2) (Major Hack!!) */
-            dict2pid->comwt[i] = -(logs3(logmath, (float64) j) << 1);
-#else
             /* if comstate i has N states, its weight= 1/N */
-            dict2pid->comwt[i] = -logs3(logmath, (float64) j);
-#endif
+            dict2pid->comwt[i] = -logmath_log(logmath, (float64) j);
         }
     }
 
@@ -1051,7 +1045,7 @@ dict2pid_comsenscr(dict2pid_t * d2p, int32 * senscr, int32 * comsenscr)
  * Mark senones active based on a set of active composite senones.
  */
 void
-dict2pid_comsseq2sen_active(dict2pid_t * d2p, mdef_t * mdef,
+dict2pid_comsseq2sen_active(dict2pid_t * d2p, bin_mdef_t * mdef,
                             uint8 * comssid, uint8 * sen)
 {
     int32 ss, cs, i, j;
@@ -1061,7 +1055,7 @@ dict2pid_comsseq2sen_active(dict2pid_t * d2p, mdef_t * mdef,
         if (comssid[ss]) {
             csp = d2p->comsseq[ss];
 
-            for (i = 0; i < mdef_n_emit_state(mdef); i++) {
+            for (i = 0; i < bin_mdef_n_emit_state(mdef); i++) {
                 cs = csp[i];
                 sp = d2p->comstate[cs];
 
@@ -1074,16 +1068,16 @@ dict2pid_comsseq2sen_active(dict2pid_t * d2p, mdef_t * mdef,
 
 
 void
-dict2pid_dump(FILE * fp, dict2pid_t * d2p, mdef_t * mdef, dict_t * dict)
+dict2pid_dump(FILE * fp, dict2pid_t * d2p, bin_mdef_t * mdef, s3dict_t * dict)
 {
     int32 w, p, pronlen;
     int32 i, j, b, l, r;
 
     fprintf(fp, "# INTERNAL (wd comssid ssid ssid ... ssid comssid)\n");
-    for (w = 0; w < dict_size(dict); w++) {
-        fprintf(fp, "%30s ", dict_wordstr(dict, w));
+    for (w = 0; w < s3dict_size(dict); w++) {
+        fprintf(fp, "%30s ", s3dict_wordstr(dict, w));
 
-        pronlen = dict_pronlen(dict, w);
+        pronlen = s3dict_pronlen(dict, w);
         for (p = 0; p < pronlen; p++)
             fprintf(fp, " %5d", d2p->internal[w][p]);
         fprintf(fp, "\n");
@@ -1091,21 +1085,21 @@ dict2pid_dump(FILE * fp, dict2pid_t * d2p, mdef_t * mdef, dict_t * dict)
     fprintf(fp, "#\n");
 
     fprintf(fp, "# LDIPH_LC (b r l ssid)\n");
-    for (b = 0; b < mdef_n_ciphone(mdef); b++) {
-        for (r = 0; r < mdef_n_ciphone(mdef); r++) {
-            for (l = 0; l < mdef_n_ciphone(mdef); l++) {
+    for (b = 0; b < bin_mdef_n_ciphone(mdef); b++) {
+        for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
+            for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
                 if (IS_S3SSID(d2p->ldiph_lc[b][r][l]))
-                    fprintf(fp, "%6s %6s %6s %5d\n", mdef_ciphone_str(mdef, (s3cipid_t) b), mdef_ciphone_str(mdef, (s3cipid_t) r), mdef_ciphone_str(mdef, (s3cipid_t) l), d2p->ldiph_lc[b][r][l]);      /* RAH, ldiph_lc is returning an int32, %d expects an int16 */
+                    fprintf(fp, "%6s %6s %6s %5d\n", bin_mdef_ciphone_str(mdef, (s3cipid_t) b), bin_mdef_ciphone_str(mdef, (s3cipid_t) r), bin_mdef_ciphone_str(mdef, (s3cipid_t) l), d2p->ldiph_lc[b][r][l]);      /* RAH, ldiph_lc is returning an int32, %d expects an int16 */
             }
         }
     }
     fprintf(fp, "#\n");
 
     fprintf(fp, "# SINGLE_LC (b l comssid)\n");
-    for (b = 0; b < mdef_n_ciphone(mdef); b++) {
-        for (l = 0; l < mdef_n_ciphone(mdef); l++) {
+    for (b = 0; b < bin_mdef_n_ciphone(mdef); b++) {
+        for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
             if (IS_S3SSID(d2p->single_lc[b][l]))
-                fprintf(fp, "%6s %6s %5d\n", mdef_ciphone_str(mdef, (s3cipid_t) b), mdef_ciphone_str(mdef, (s3cipid_t) l), d2p->single_lc[b][l]);       /* RAH, single_lc is returning an int32, %d expects an int16 */
+                fprintf(fp, "%6s %6s %5d\n", bin_mdef_ciphone_str(mdef, (s3cipid_t) b), bin_mdef_ciphone_str(mdef, (s3cipid_t) l), d2p->single_lc[b][l]);       /* RAH, single_lc is returning an int32, %d expects an int16 */
         }
     }
     fprintf(fp, "#\n");
@@ -1113,7 +1107,7 @@ dict2pid_dump(FILE * fp, dict2pid_t * d2p, mdef_t * mdef, dict_t * dict)
     fprintf(fp, "# SSEQ %d (senid senid ...)\n", mdef->n_sseq);
     for (i = 0; i < mdef->n_sseq; i++) {
         fprintf(fp, "%5d ", i);
-        for (j = 0; j < mdef_n_emit_state(mdef); j++)
+        for (j = 0; j < bin_mdef_n_emit_state(mdef); j++)
             fprintf(fp, " %5d", mdef->sseq[i][j]);
         fprintf(fp, "\n");
     }
@@ -1122,7 +1116,7 @@ dict2pid_dump(FILE * fp, dict2pid_t * d2p, mdef_t * mdef, dict_t * dict)
     fprintf(fp, "# COMSSEQ %d (comstate comstate ...)\n", d2p->n_comsseq);
     for (i = 0; i < d2p->n_comsseq; i++) {
         fprintf(fp, "%5d ", i);
-        for (j = 0; j < mdef_n_emit_state(mdef); j++)
+        for (j = 0; j < bin_mdef_n_emit_state(mdef); j++)
             fprintf(fp, " %5d", d2p->comsseq[i][j]);
         fprintf(fp, "\n");
     }

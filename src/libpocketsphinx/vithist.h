@@ -133,7 +133,7 @@
 
 #include "s3types.h"
 #include "s3_dict.h"
-#include "ctxt_table.h"
+#include "dict2pid.h"
 
 /** \file vithist.h 
  *
@@ -289,7 +289,8 @@ typedef struct {
  * @return An initialized vithist_t
  */
 
-vithist_t *vithist_init(kbcore_t *kbc,  /**< Core search data structure */
+vithist_t *vithist_init(int32 nword,    /**< Maximum number of words */
+                        int32 n_ci,     /**< Number of CI phones */
                         int32 wbeam,    /**< Word exit beam width */
                         int32 bghist,   /**< If only bigram history is used */
                         int32 report    /**< Whether to report the progress  */
@@ -300,8 +301,8 @@ vithist_t *vithist_init(kbcore_t *kbc,  /**< Core search data structure */
  * Invoked at the beginning of each utterance; vithist initialized with a root <s> entry.
  * @return Vithist ID of the root <s> entry.
  */
-int32 vithist_utt_begin(vithist_t *vh, /**< In: a Viterbi history data structure*/
-                        kbcore_t *kbc  /**< In: a KBcore */
+int32 vithist_utt_begin(vithist_t *vh, /**< In: a Viterbi history data structure */
+                        int32 startwid /**< In: ID of start word */
     );
 
 
@@ -311,7 +312,9 @@ int32 vithist_utt_begin(vithist_t *vh, /**< In: a Viterbi history data structure
  * Return the ID of the appended entry if successful, -ve if error (empty utterance).
  */
 int32 vithist_utt_end(vithist_t *vh, /**< In: a Viterbi history data structure*/
-                      kbcore_t *kbc  /**< In: a KBcore */
+                      ngram_model_t *lm,
+                      s3dict_t *dict,
+                      dict2pid_t *dict2pid
     );
 
 
@@ -320,7 +323,8 @@ int32 vithist_utt_end(vithist_t *vh, /**< In: a Viterbi history data structure*/
  * Returns viterbi histories of partial decodes
  */
 int32 vithist_partialutt_end(vithist_t *vh, /**< In: a Viterbi history data structure*/
-                             kbcore_t *kbc  /**< In: a KBcore */
+                             ngram_model_t *lm,
+                             s3dict_t *dict
     );
 
 /* Invoked at the end of each utterance to clear up and deallocate space */
@@ -334,7 +338,7 @@ void vithist_utt_reset(vithist_t *vh  /**< In: a Viterbi history data structure*
  */
 glist_t vithist_backtrace(vithist_t *vh,       /**< In: a Viterbi history data structure*/
                           int32 id,		/**< ID from which to begin backtrace */
-                          dict_t *dict         /**< a dictionary for look up the ci phone of a word*/
+                          s3dict_t *dict         /**< a dictionary for look up the ci phone of a word*/
     );
 
 
@@ -343,9 +347,11 @@ glist_t vithist_backtrace(vithist_t *vh,       /**< In: a Viterbi history data s
  * entry having the same LM state will be replaced with the one given.
  */
 void vithist_enter(vithist_t * vh,              /**< The history table */
-                   kbcore_t * kbc,              /**< a KB core */
+                   s3dict_t *dict,              /**< Dictionary */
+                   dict2pid_t *dict2pid,        /**< Context table mapping thing */
                    vithist_entry_t * tve,       /**< an input vithist element */
-                   int32 comp_rc                /**< a compressed rc. If it is the actual rc, it won't work. FIXME: WHAT DOES THIS MEAN?!!?!? */
+                   int32 comp_rc                /**< a compressed rc. If it is the actual rc,
+                                                   it won't work. FIXME: WHAT DOES THIS MEAN?!!?!? */
     );
 
 /**
@@ -356,7 +362,9 @@ void vithist_enter(vithist_t * vh,              /**< The history table */
  * ARCHAN: Precisely speaking, it is a full trigram rescoring. 
  */
 void vithist_rescore(vithist_t *vh,    /**< In: a Viterbi history data structure*/
-                     kbcore_t *kbc,    /**< In: a kb core. */
+                     ngram_model_t *lm,  /**< In: Language model */
+                     s3dict_t *dict,     /**< In: Dictionary */
+                     dict2pid_t *dict2pid,        /**< Context table mapping thing */
                      s3wid_t wid,      /**< In: a word ID */
                      int32 ef,		/**< In: End frame for this word instance */
                      int32 score,	/**< In: Does not include LM score for this entry */
@@ -371,8 +379,8 @@ void vithist_frame_windup(vithist_t *vh,	/**< In/Out: Vithist module to be updat
                           int32 frm,		/**< In: Frame in which being invoked */
                           FILE *fp,		/**< In: If not NULL, dump vithist entries
 						   this frame to the file (for debugging) */
-                          kbcore_t *kbc	/**< In: Used only for dumping to fp, for
-                                           debugging */
+                          ngram_model_t *lm,  /**< In: Language model */
+                          s3dict_t *dict      /**< In: Dictionary */
     );
 
 /**
@@ -380,7 +388,7 @@ void vithist_frame_windup(vithist_t *vh,	/**< In/Out: Vithist module to be updat
  * and the remaining as invalid.
  */
 void vithist_prune(vithist_t *vh,      /**< In: a Viterbi history data structure*/
-                   dict_t *dict,	/**< In: Dictionary, for distinguishing filler words */
+                   s3dict_t *dict,	/**< In: Dictionary, for distinguishing filler words */
                    int32 frm,		/**< In: Frame in which being invoked */
                    int32 maxwpf,	/**< In: Max unique words per frame to be kept valid */
                    int32 maxhist,	/**< In: Max histories to maintain per frame */
@@ -390,18 +398,21 @@ void vithist_prune(vithist_t *vh,      /**< In: a Viterbi history data structure
 /**
  * Dump the Viterbi history data to the given file (for debugging/diagnostics).
  */
-void vithist_dump(vithist_t *vh,     /**< In: a Viterbi history data structure */
-                  int32 frm,		/**< In: If >= 0, print only entries made in this frame,
-					   otherwise print all entries */
-                  kbcore_t *kbc,       /**< In: a KBcore */
-                  FILE *fp             /**< Out: File to be written */
+void vithist_dump(vithist_t *vh,      /**< In: a Viterbi history data structure */
+                  int32 frm,	      /**< In: If >= 0, print only entries made in this frame,
+                                         otherwise print all entries */
+                  ngram_model_t *lm,  /**< In: Language model */
+                  s3dict_t *dict,     /**< In: Dictionary */
+                  FILE *fp            /**< Out: File to be written */
     );
 
+#if 0
 /**
  * Build a word graph (DAG) from Viterbi history.
  */
-dag_t *vithist_dag_build(vithist_t * vh, glist_t hyp, dict_t * dict, int32 endid,
+dag_t *vithist_dag_build(vithist_t * vh, glist_t hyp, s3dict_t * dict, int32 endid,
                          cmd_ln_t *config, logmath_t *logmath);
+#endif
 
 /** 
  * Free a Viterbi history data structure 
@@ -423,14 +434,14 @@ void vithist_report(vithist_t *vh       /**< In: a Viterbi history data structur
  */
 
 void vh_lmstate_display(vh_lmstate_t *vhl, /**< In: An lmstate data structure */
-			dict_t *dict /**< In: If specified, the word string of lm IDs would also be translated */
+			s3dict_t *dict /**< In: If specified, the word string of lm IDs would also be translated */
     );
 
 /**
  * Display the vithist_entry structure. 
  */
 void vithist_entry_display(vithist_entry_t *ve, /**< In: An entry of vithist */
-			   dict_t* dict  /**< In: If specified, the word string of lm IDs would also be translated */
+			   s3dict_t* dict  /**< In: If specified, the word string of lm IDs would also be translated */
     );
 
 #if 0

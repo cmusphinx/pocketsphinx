@@ -129,10 +129,9 @@
 #include <heap.h>
 
 #include "vithist.h"
-#include "lextree.h"
 
 void
-vh_lmstate_display(vh_lmstate_t * vhl, dict_t * dict)
+vh_lmstate_display(vh_lmstate_t * vhl, s3dict_t * dict)
 {
     /* TODO: Also translate wid to string if dict is not NULL */
     E_INFO("lwid[0] %d\n", vhl->lm3g.lwid[0]);
@@ -141,7 +140,7 @@ vh_lmstate_display(vh_lmstate_t * vhl, dict_t * dict)
 }
 
 void
-vithist_entry_display(vithist_entry_t * ve, dict_t * dict)
+vithist_entry_display(vithist_entry_t * ve, s3dict_t * dict)
 {
     E_INFO("Word ID %d \n", ve->wid);
     E_INFO("Sf %d Ef %d \n", ve->sf, ve->ef);
@@ -154,16 +153,9 @@ vithist_entry_display(vithist_entry_t * ve, dict_t * dict)
 
 
 vithist_t *
-vithist_init(kbcore_t * kbc, int32 wbeam, int32 bghist, int32 report)
+vithist_init(int32 nword, int32 n_ci, int32 wbeam, int32 bghist, int32 report)
 {
     vithist_t *vh;
-#ifdef OLD_LM_API
-    lmset_t *lmset;
-    int i;
-#else
-    ngram_model_t *lmset;
-#endif
-    dict_t *dict;
 
     int max = -1;
 
@@ -187,23 +179,10 @@ vithist_init(kbcore_t * kbc, int32 wbeam, int32 bghist, int32 report)
     vh->wbeam = wbeam;
     vh->bghist = bghist;
 
-    lmset = kbcore_lmset(kbc);
-    dict = kbcore_dict(kbc);
-
-#ifdef OLD_LM_API
-    for (i = 0; i < kbc->lmset->n_lm; i++) {
-        if (lm_n_ug(lmset->lmarray[i]) > max) {
-            max = lm_n_ug(lmset->lmarray[i]);
-        }
-    }
-#else
-    max = ngram_model_get_counts(lmset)[0];
-#endif
-
     E_INFO("Allocation for Viterbi history, lmset-final size: %d\n", max);
     vh->lms2vh_root =
-        (vh_lms2vh_t **) ckd_calloc(max, sizeof(vh_lms2vh_t *));
-    vh->n_ci = mdef_n_ciphone(kbc->mdef);
+        (vh_lms2vh_t **) ckd_calloc(nword, sizeof(vh_lms2vh_t *));
+    vh->n_ci = n_ci;
 
     vh->lwidlist = NULL;
 
@@ -303,16 +282,9 @@ vithist_entry_alloc(vithist_t * vh)
 
 
 int32
-vithist_utt_begin(vithist_t * vh, kbcore_t * kbc)
+vithist_utt_begin(vithist_t * vh, int32 startwid)
 {
     vithist_entry_t *ve;
-    dict_t *dict;
-#ifdef OLD_LM_API
-    lm_t *lm;
-
-    lm = kbcore_lm(kbc);
-#endif
-    dict = kbcore_dict(kbc);
 
     assert(vh->n_entry == 0);
     assert(vh->entry[0] == NULL);
@@ -321,7 +293,7 @@ vithist_utt_begin(vithist_t * vh, kbcore_t * kbc)
     /* Create an initial dummy <s> entry.  This is the root for the utterance */
     ve = vithist_entry_alloc(vh);
 
-    ve->wid = dict_startwid(dict);
+    ve->wid = startwid;
     ve->sf = -1;
     ve->ef = -1;
     ve->ascr = 0;
@@ -330,13 +302,8 @@ vithist_utt_begin(vithist_t * vh, kbcore_t * kbc)
     ve->path.pred = -1;
     ve->type = 0;
     ve->valid = 1;
-#ifdef OLD_LM_API
-    ve->lmstate.lm3g.lwid[0] = lm_startwid(lm);
-    ve->lmstate.lm3g.lwid[1] = BAD_LMWID(lm);
-#else
-    ve->lmstate.lm3g.lwid[0] = ngram_wid(kbcore_lm(kbc), S3_START_WORD);
+    ve->lmstate.lm3g.lwid[0] = startwid;
     ve->lmstate.lm3g.lwid[1] = NGRAM_INVALID_WID;
-#endif
     vh->n_frm = 0;
     vh->frame_start[0] = 1;
     vh->bestscore[0] = MAX_NEG_INT32;
@@ -408,7 +375,8 @@ vithist_lmstate_enter(vithist_t * vh, int32 vhid, vithist_entry_t * ve)
  */
 void
 vithist_enter(vithist_t * vh,              /**< The history table */
-              kbcore_t * kbc,              /**< a KB core */
+              s3dict_t *dict,              /**< Dictionary */
+              dict2pid_t *dict2pid,        /**< Context table mapping thing */
               vithist_entry_t * tve,       /**< an input vithist element */
               int32 comp_rc                /**< a compressed rc. If it is the actual rc, it won't work. */
     )
@@ -416,11 +384,9 @@ vithist_enter(vithist_t * vh,              /**< The history table */
     vithist_entry_t *ve;
     int32 vhid;
     int32 n_ci;
-    dict_t *d;
     int32 n_rc_info;
     int32 old_n_rc_info;
 
-    d = kbc->dict;
     n_ci = vh->n_ci;
     /* Check if an entry with this LM state already exists in current frame */
     vhid = vh_lmstate_find(vh, &(tve->lmstate));
@@ -443,7 +409,7 @@ vithist_enter(vithist_t * vh,              /**< The history table */
         if (comp_rc != -1) {
             if (ve->rc == NULL) {
                 ve->n_rc =
-                    get_rc_nssid(kbc->dict2pid, ve->wid, kbc->dict);
+                    get_rc_nssid(dict2pid, ve->wid, dict);
                 /* Always allocate n_ci for rc_info */
                 ve->rc = ckd_calloc(vh->n_ci, sizeof(*ve->rc));
                 clean_up_rc_info(ve->rc, ve->n_rc);
@@ -502,16 +468,13 @@ vithist_enter(vithist_t * vh,              /**< The history table */
 
 
 void
-vithist_rescore(vithist_t * vh, kbcore_t * kbc,
+vithist_rescore(vithist_t * vh, ngram_model_t *lm,
+                s3dict_t *dict, dict2pid_t *dict2pid,
                 s3wid_t wid, int32 ef, int32 score,
                 int32 pred, int32 type, int32 rc)
 {
     vithist_entry_t *pve, tve;
-#ifdef OLD_LM_API
-    s3lmwid32_t lwid;
-#else
     int32 lwid;
-#endif
     int32 se, fe;
     int32 i;
 
@@ -540,21 +503,18 @@ vithist_rescore(vithist_t * vh, kbcore_t * kbc,
     tve.n_rc = 0;
 
 
-    if (dict_filler_word(kbcore_dict(kbc), wid)) {
+    if (s3dict_filler_word(dict, wid)) {
 
         tve.path.score = score;
-        tve.lscr = fillpen(kbcore_fillpen(kbc), wid);
+        /* FIXME: not sure what to do about filler penalty thing yet. */
+        /*tve.lscr = fillpen(kbcore_fillpen(kbc), wid); */
         tve.path.score += tve.lscr;
 
         tve.path.pred = pred;
         tve.lmstate.lm3g = pve->lmstate.lm3g;
-        vithist_enter(vh, kbc, &tve, rc);
+        vithist_enter(vh, dict, dict2pid, &tve, rc);
     }
     else {
-#ifndef OLD_LM_API
-        int32 n_used;
-#endif
-
         if (pred == 0) {            /* Special case for the initial <s> entry */
             se = 0;
             fe = 1;
@@ -568,11 +528,8 @@ vithist_rescore(vithist_t * vh, kbcore_t * kbc,
            So  pve becomes the w_{n-2}. 
          */
 
-#ifdef OLD_LM_API
-        lwid = kbc->lmset->cur_lm->dict2lmwid[wid];
-#else
-        lwid = ngram_wid(kbcore_lm(kbc), dict_wordstr(kbcore_dict(kbc), dict_basewid(kbcore_dict(kbc), wid)));
-#endif
+        lwid = ngram_wid(lm, s3dict_wordstr(dict,
+                                            s3dict_basewid(dict, wid)));
 
         tve.lmstate.lm3g.lwid[0] = lwid;
 
@@ -580,21 +537,16 @@ vithist_rescore(vithist_t * vh, kbcore_t * kbc,
             pve = vithist_id2entry(vh, i);
 
             if (pve->valid) {
+                int n_used;
                 tve.path.score = pve->path.score + tve.ascr;
-#ifdef OLD_LM_API
-                tve.lscr = lm_tg_score(kbcore_lm(kbc),
-                                       pve->lmstate.lm3g.lwid[1],
-                                       pve->lmstate.lm3g.lwid[0],
-                                       lwid, wid);
-#else
-                tve.lscr = ngram_tg_score(kbcore_lm(kbc), lwid, pve->lmstate.lm3g.lwid[0], pve->lmstate.lm3g.lwid[1], &n_used);
-#endif
+                tve.lscr = ngram_tg_score(lm, lwid, pve->lmstate.lm3g.lwid[0],
+                                          pve->lmstate.lm3g.lwid[1], &n_used);
                 tve.path.score += tve.lscr;
                 if ((tve.path.score - vh->wbeam) >= vh->bestscore[vh->n_frm]) {
                     tve.path.pred = i;
                     tve.lmstate.lm3g.lwid[1] = pve->lmstate.lm3g.lwid[0];
 
-                    vithist_enter(vh, kbc, &tve, rc);
+                    vithist_enter(vh, dict, dict2pid, &tve, rc);
                 }
             }
         }
@@ -673,7 +625,7 @@ vithist_frame_gc(vithist_t * vh, int32 frm)
 
 
 void
-vithist_prune(vithist_t * vh, dict_t * dict, int32 frm,
+vithist_prune(vithist_t * vh, s3dict_t * dict, int32 frm,
               int32 maxwpf, int32 maxhist, int32 beam)
 {
     int32 se, fe, filler_done, th;
@@ -705,7 +657,7 @@ vithist_prune(vithist_t * vh, dict_t * dict, int32 frm,
            && ve->path.score >= th /* the score (or the cw scores) is above threshold */
            && maxhist > 0)        /* Number of history is larger than 0 */
     {
-        if (dict_filler_word(dict, ve->wid)) {
+        if (s3dict_filler_word(dict, ve->wid)) {
             /* Major HACK!!  Keep only one best filler word entry per frame */
             if (filler_done)
                 continue;
@@ -768,7 +720,8 @@ vithist_lmstate_reset(vithist_t * vh)
 
 
 void
-vithist_frame_windup(vithist_t * vh, int32 frm, FILE * fp, kbcore_t * kbc)
+vithist_frame_windup(vithist_t * vh, int32 frm, FILE * fp,
+                     ngram_model_t *lm, s3dict_t *dict)
 {
     assert(vh->n_frm == frm);
 
@@ -776,7 +729,7 @@ vithist_frame_windup(vithist_t * vh, int32 frm, FILE * fp, kbcore_t * kbc)
     vh->frame_start[vh->n_frm] = vh->n_entry;
 
     if (fp)
-        vithist_dump(vh, frm, kbc, fp);
+        vithist_dump(vh, frm, lm, dict, fp);
 
     vithist_lmstate_reset(vh);
 
@@ -786,19 +739,12 @@ vithist_frame_windup(vithist_t * vh, int32 frm, FILE * fp, kbcore_t * kbc)
 
 
 int32
-vithist_utt_end(vithist_t * vh, kbcore_t * kbc)
+vithist_utt_end(vithist_t * vh, ngram_model_t *lm, s3dict_t *dict, dict2pid_t *dict2pid)
 {
     int32 f, i;
     int32 sv, nsv, scr, bestscore, bestvh, vhid;
     vithist_entry_t *ve, *bestve = 0;
-#ifdef OLD_LM_API
-    s3lmwid32_t endwid = BAD_S3LMWID32;
-    lm_t *lm;
-#else
     int32 endwid = NGRAM_INVALID_WID;
-    ngram_model_t *lm;
-#endif
-    dict_t *dict;
 
     bestscore = MAX_NEG_INT32;
     bestvh = -1;
@@ -821,30 +767,14 @@ vithist_utt_end(vithist_t * vh, kbcore_t * kbc)
                vh->n_frm - 1, f);
 
     /* Terminate in a final </s> node (make this optional?) */
-    lm = kbcore_lm(kbc);
-    dict = kbcore_dict(kbc);
-
-#ifdef OLD_LM_API
-    endwid = lm_finishwid(lm);
-#else
     endwid = ngram_wid(lm, S3_FINISH_WORD);
-#endif
 
     for (i = sv; i < nsv; i++) {
-#ifndef OLD_LM_API
-        int32 n_used;
-#endif
+        int n_used;
         ve = vithist_id2entry(vh, i);
         scr = ve->path.score;
-#ifdef OLD_LM_API
-        scr +=
-            lm_tg_score(lm, ve->lmstate.lm3g.lwid[1],
-                        ve->lmstate.lm3g.lwid[0], endwid,
-                        dict_finishwid(dict));
-#else
-        scr += ngram_tg_score(lm, endwid, ve->lmstate.lm3g.lwid[0], ve->lmstate.lm3g.lwid[1], &n_used);
-#endif
-
+        scr += ngram_tg_score(lm, endwid, ve->lmstate.lm3g.lwid[0],
+                              ve->lmstate.lm3g.lwid[1], &n_used);
         if (bestscore < scr) {
             bestscore = scr;
             bestvh = i;
@@ -862,19 +792,20 @@ vithist_utt_end(vithist_t * vh, kbcore_t * kbc)
         assert(vh->frame_start[vh->n_frm - 1] ==
                vh->frame_start[vh->n_frm]);
         vh->n_frm -= 1;
-        vithist_rescore(vh, kbc, dict_silwid(dict), vh->n_frm,
+        vithist_rescore(vh, lm, dict, dict2pid,
+                        s3dict_silwid(dict), vh->n_frm,
                         bestve->path.score, bestvh, -1, -1);
         vh->n_frm += 1;
         vh->frame_start[vh->n_frm] = vh->n_entry;
 
-        return vithist_utt_end(vh, kbc);
+        return vithist_utt_end(vh, lm, dict, dict2pid);
     }
 
     /*    vithist_dump(vh,-1,kbc,stdout); */
     /* Create an </s> entry */
     ve = vithist_entry_alloc(vh);
 
-    ve->wid = dict_finishwid(dict);
+    ve->wid = s3dict_finishwid(dict);
     ve->sf = (bestve->ef == BAD_S3FRMID) ? 0 : bestve->ef + 1;
     ve->ef = vh->n_frm;
     ve->ascr = 0;
@@ -897,19 +828,12 @@ vithist_utt_end(vithist_t * vh, kbcore_t * kbc)
 
 
 int32
-vithist_partialutt_end(vithist_t * vh, kbcore_t * kbc)
+vithist_partialutt_end(vithist_t * vh, ngram_model_t *lm, s3dict_t *dict)
 {
     int32 f, i;
     int32 sv, nsv, scr, bestscore, bestvh;
     vithist_entry_t *ve, *bestve;
-#ifdef OLD_LM_API
-    s3lmwid32_t endwid;
-    lm_t *lm;
-#else
-    ngram_model_t *lm;
     int32 endwid;
-#endif
-    dict_t *dict;
 
     /* Find last frame with entries in vithist table */
     for (f = vh->n_frm - 1; f >= 0; --f) {
@@ -929,33 +853,18 @@ vithist_partialutt_end(vithist_t * vh, kbcore_t * kbc)
     }
 
     /* Terminate in a final </s> node (make this optional?) */
-    lm = kbcore_lm(kbc);
-    dict = kbcore_dict(kbc);
-
-#ifdef OLD_LM_API
-    endwid = lm_finishwid(lm);
-#else
     endwid = ngram_wid(lm, S3_FINISH_WORD);
-#endif
 
     bestscore = MAX_NEG_INT32;
     bestvh = -1;
 
     for (i = sv; i < nsv; i++) {
-#ifndef OLD_LM_API
-        int32 n_used;
-#endif
+        int n_used;
         ve = vithist_id2entry(vh, i);
 
         scr = ve->path.score;
-#ifdef OLD_LM_API
-        scr +=
-            lm_tg_score(lm, ve->lmstate.lm3g.lwid[1],
-                        ve->lmstate.lm3g.lwid[0], endwid,
-                        dict_finishwid(dict));
-#else
-        scr += ngram_tg_score(lm, endwid, ve->lmstate.lm3g.lwid[0], ve->lmstate.lm3g.lwid[1], &n_used);
-#endif
+        scr += ngram_tg_score(lm, endwid, ve->lmstate.lm3g.lwid[0],
+                              ve->lmstate.lm3g.lwid[1], &n_used);
 
         if (bestscore < scr) {
             bestscore = scr;
@@ -992,103 +901,12 @@ vithist_utt_reset(vithist_t * vh)
     vh->bestvh[0] = -1;
 }
 
-
-#if 0
-static void
-vithist_lmstate_subtree_dump(vithist_t * vh, kbcore_t * kbc,
-                             vh_lmstate2vithist_t * lms2vh, int32 level,
-                             FILE * fp)
-{
-    gnode_t *gn;
-    vh_lmstate2vithist_t *child;
-    int32 i;
-#ifdef OLD_LM_API
-    lm_t *lm;
-#else
-    ngram_model_t *lm;
-#endif
-
-    lm = kbcore_lm(kbc);
-
-    for (gn = lms2vh->children; gn; gn = gnode_next(gn)) {
-        child = (vh_lmstate2vithist_t *) gnode_ptr(gn);
-
-        for (i = 0; i < level; i++)
-            fprintf(fp, "\t");
-#ifdef OLD_LM_API
-        fprintf(fp, "\t%s -> %d\n", lm_wordstr(lm, child->state),
-                child->vhid);
-#else
-        fprintf(fp, "\t%s -> %d\n", ngram_word(lm, child->state),
-                child->vhid);
-#endif
-
-        vithist_lmstate_subtree_dump(vh, kbc, child, level + 1, fp);
-    }
-}
-
-
-static void
-vithist_lmstate_dump(vithist_t * vh, kbcore_t * kbc, FILE * fp)
-{
-    glist_t gl;
-    gnode_t *lgn, *gn;
-    int32 i;
-    vh_lmstate2vithist_t *lms2vh;
-    mdef_t *mdef;
-#ifdef OLD_LM_API
-    lm_t *lm;
-#else
-    ngram_model_t *lm;
-#endif
-
-    mdef = kbcore_mdef(kbc);
-    lm = kbcore_lm(kbc);
-
-    fprintf(fp, "LMSTATE\n");
-    for (lgn = vh->lwidlist; lgn; lgn = gnode_next(lgn)) {
-        i = (int32) gnode_int32(lgn);
-
-        gl = vh->lmstate_root[i];
-        assert(gl);
-
-        for (gn = gl; gn; gn = gnode_next(gn)) {
-            lms2vh = (vh_lmstate2vithist_t *) gnode_ptr(gn);
-
-            fprintf(fp, "\t%s.%s -> %d\n",
-#ifdef OLD_LM_API
-                    lm_wordstr(lm, i), mdef_ciphone_str(mdef,
-#else
-                    ngram_word(lm, i), mdef_ciphone_str(mdef,
-#endif
-                                                        lms2vh->state),
-                    lms2vh->vhid);
-            vithist_lmstate_subtree_dump(vh, kbc, lms2vh, 1, fp);
-        }
-    }
-    fprintf(fp, "END_LMSTATE\n");
-    fflush(fp);
-}
-#endif
-
-
 void
-vithist_dump(vithist_t * vh, int32 frm, kbcore_t * kbc, FILE * fp)
+vithist_dump(vithist_t * vh, int32 frm, ngram_model_t *lm, s3dict_t *dict, FILE * fp)
 {
     int32 i, j;
-    dict_t *dict;
     vithist_entry_t *ve;
-#ifdef OLD_LM_API
-    lm_t *lm;
-    s3lmwid32_t lwid;
-#else
-    ngram_model_t *lm;
-    int32 lwid;
-#endif
     int32 sf, ef;
-
-    dict = kbcore_dict(kbc);
-    lm = kbcore_lm(kbc);
 
     if (frm >= 0) {
         sf = frm;
@@ -1113,23 +931,17 @@ vithist_dump(vithist_t * vh, int32 frm, kbcore_t * kbc, FILE * fp)
                 vh->bestvh[i]);
 
         for (j = vh->frame_start[i]; j < vh->frame_start[i + 1]; j++) {
+            int32 lwid;
             ve = vithist_id2entry(vh, j);
 
             fprintf(fp, "\t%c%6d %5d %5d %11d %9d %8d %7d %4d %s",
                     (ve->valid ? ' ' : '*'), j,
                     ve->sf, ve->ef, ve->path.score, ve->ascr, ve->lscr,
-                    ve->path.pred, ve->type, dict_wordstr(dict, ve->wid));
+                    ve->path.pred, ve->type, s3dict_wordstr(dict, ve->wid));
 
-#ifdef OLD_LM_API
-            fprintf(fp, " (%s", lm_wordstr(lm, ve->lmstate.lm3g.lwid[0]));
-            lwid = ve->lmstate.lm3g.lwid[1];
-            if (IS_LMWID(lm, lwid))
-                fprintf(fp, ", %s", lm_wordstr(lm, lwid));
-#else
             fprintf(fp, " (%s", ngram_word(lm, ve->lmstate.lm3g.lwid[0]));
             lwid = ve->lmstate.lm3g.lwid[1];
             fprintf(fp, ", %s", ngram_word(lm, lwid));
-#endif
             fprintf(fp, ")\n");
         }
 
@@ -1137,17 +949,14 @@ vithist_dump(vithist_t * vh, int32 frm, kbcore_t * kbc, FILE * fp)
             fprintf(fp, "\n");
     }
 
-#if 0
-    if (vh->lwidlist)
-        vithist_lmstate_dump(vh, kbc, fp);
-#endif
-
     fprintf(fp, "END_VITHIST\n");
     fflush(fp);
 }
 
+/* These functions are quite Sphinx3-specific so disable them for now. */
+#if 0
 glist_t
-vithist_backtrace(vithist_t * vh, int32 id, dict_t * dict)
+vithist_backtrace(vithist_t * vh, int32 id, s3dict_t * dict)
 {
     vithist_entry_t *ve;
     glist_t hyp;
@@ -1182,7 +991,7 @@ vithist_backtrace(vithist_t * vh, int32 id, dict_t * dict)
 }
 
 dag_t *
-vithist_dag_build(vithist_t * vh, glist_t hyp, dict_t * dict, int32 endid, cmd_ln_t *config, logmath_t *logmath)
+vithist_dag_build(vithist_t * vh, glist_t hyp, s3dict_t * dict, int32 endid, cmd_ln_t *config, logmath_t *logmath)
 {
     glist_t *sfwid;             /* To maintain <start-frame, word-id> pair dagnodes */
     vithist_entry_t *ve, *ve2;
@@ -1295,7 +1104,7 @@ vithist_dag_build(vithist_t * vh, glist_t hyp, dict_t * dict, int32 endid, cmd_l
 
     /* Validate startwid and finishwid nodes */
     dn = (dagnode_t *) gnode_ptr(sfwid[0]);
-    assert(dn->wid == dict_startwid(dict));
+    assert(dn->wid == s3dict_startwid(dict));
     dn->seqid = 0;
     dag->root = dn;
     dag->entry.node = dn;
@@ -1305,7 +1114,7 @@ vithist_dag_build(vithist_t * vh, glist_t hyp, dict_t * dict, int32 endid, cmd_l
     dag->entry.bypass = NULL;
 
     dn = (dagnode_t *) gnode_ptr(sfwid[vh->n_frm]);
-    assert(dn->wid == dict_finishwid(dict));
+    assert(dn->wid == s3dict_finishwid(dict));
     dn->seqid = 0;
     /* If for some reason the final node is not the same as the end
      * node, make sure it exists and is also marked valid. */
@@ -1391,6 +1200,7 @@ vithist_dag_build(vithist_t * vh, glist_t hyp, dict_t * dict, int32 endid, cmd_l
 
     return dag;
 }
+#endif
 
 
 /* 
