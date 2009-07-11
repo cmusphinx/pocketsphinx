@@ -126,30 +126,22 @@
 
 #include <stdio.h>
 
-#include <s3types.h>
+#include <ngram_model.h>
 #include <cmd_ln.h>
 #include <logmath.h>
 #include <glist.h>
-#include "kbcore.h"
-#include "search.h"
-#include "dict.h"
-#ifdef OLD_LM_API
-#include "lm.h"
-#else
-#include <ngram_model.h>
-#endif
-#include "fillpen.h"
 
-#include "dag.h"  
+#include "s3types.h"
+#include "s3_dict.h"
 #include "ctxt_table.h"
 
 /** \file vithist.h 
-
-\brief Viterbi history structures.  Mainly vithist_t, also its
-slightly older brother latticehist_t. They are respectively used
-by decode (mode 4 and 5) and decode_anytopo (mode 3).  The curent
-arrangement is temporary. 
-*/
+ *
+ * \brief Viterbi history structures.  Mainly vithist_t, also its
+ * slightly older brother latticehist_t. They are respectively used by
+ * decode (mode 4 and 5) and decode_anytopo (mode 3).  The curent
+ * arrangement is temporary.
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -443,239 +435,6 @@ void vh_lmstate_display(vh_lmstate_t *vhl, /**< In: An lmstate data structure */
  */
 void vithist_entry_display(vithist_entry_t *ve, /**< In: An entry of vithist */
 			   dict_t* dict  /**< In: If specified, the word string of lm IDs would also be translated */
-    );
-
-
-/**
- * \struct lattice_t 
- * Word lattice for recording decoded hypotheses.
- * 
- * lattice[i] = entry for a word ending at a particular frame.  There can be at most one
- * entry for a word in a given frame.
- * NOTE: lattice array allocated statically.  Need a more graceful way to grow without
- * such an arbitrary internal limit.
- */
-typedef struct lattice_s {
-    s3wid_t   wid;	/**< Decoded word */
-    s3frmid_t frm;	/**< End frame for this entry */
-    s3latid_t history;	/**< Index of predecessor lattice_t entry */
-
-    int32 ascr;         /**< Acoustic score for this node */
-    int32 lscr;         /**< Language score for this node */
-
-    int32     score;	/**< Best path score upto the end of this entry */
-    int32    *rcscore;	/**< Individual path scores for different right context ciphones */
-    dagnode_t *dagnode;	/**< DAG node representing this entry */
-} lattice_t;
-
-
-#define LAT_ALLOC_INCR		32768
-
-#define LATID2SF(hist,l)	(IS_S3LATID(hist->lattice[l].history) ? \
-			 hist->lattice[hist->lattice[l].history].frm + 1 : 0)
-
-/** 
- * \struct latticehist_t 
- *
- * Encapsulation of all memory management of the lattice structure.
- * The name of lattice_t and latticehist_t is slighly confusing.
- * lattice_t is actually just one entry. One should also
- * differentiate the term "lattice" as a general graph-like
- * structure which either represent the search graph or as a
- * constraint of a search graph
- */
-
-/* FIXME, 1, Either replace all latticehist_t by vithist_t or 
-   2, there is no need to always put dict_t, ctxt_table_t , lm_t and fillpen_t as arguments 
-*/
-
-typedef struct {
-
-    lattice_t *lattice;  /**< An array of lattice entries. frm_lat_start[f] represnet the first entry for the frame f */
-    s3latid_t *frm_latstart;	/**< frm_latstart[f] = first lattice entry in frame f */
-
-    int32 lat_alloc;     /**< Number of allocated entries */
-    int32 n_lat_entry;   /**< Number of lattice entries */
-    int32 n_cand;        /**< If number of candidate is larger than
-                            zero, The then decoder is workin in
-                            "lattice-mode", which means using the
-                            candidate in the lattice to constrain the
-                            search? */
-    int32 n_frms_alloc;  /**< Number of frames allocated in frm_latstart */
-    int32 n_frm;         /**< Number of frames searched */
-
-} latticehist_t;
-
-
-#define latticehist_n_cand(hist)		((hist)->n_cand)
-#define latticehist_lat_alloc(hist)		((hist)->lat_alloc)
-#define latticehist_n_lat_entry(hist)		((hist)->n_lat_entry)
-
-  
-/**
- * Initialization of lattice history table 
- */
-  
-latticehist_t *latticehist_init(int32 init_alloc_size, /**<Initial allocation size */
-				int32 num_frames       /**<Number of frames in represented in the lattice*/
-    );
-
-/**
-   Free lattice history table 
-*/
-void latticehist_free(latticehist_t *lat /**< The latticie history table */
-    );
-
-/*
- * Reset a lattice history table 
- */
-   
-void latticehist_reset(latticehist_t *lat /**< The lattice history table*/
-    );
-
-/**
- * Dump the lattice history table
- */
-void latticehist_dump (latticehist_t *lathist,  /**< A table of lattice entries */
-		       FILE *fp,                /**< File pointer where one would want to dump the lattice */
-		       dict_t *dict,            /**< The dictionary*/
-		       ctxt_table_t *ct,        /**< Context table */
-		       int32 dumpRC             /**< Whether we whould dump all the scores and histories for right context */
-    );
-
-/**
- * Enter a entry into lattice 
- */
-void lattice_entry (latticehist_t *lathist, /**< A table of lattice entries */
-		    s3wid_t w,              /**< Word ID to enter. */
-		    int32 f,                /**< current frame number */
-		    int32 score,            /**< The score to enter, usually it is the score of the final state of hmm */
-		    s3latid_t history,      /**< The last lattice entry to enter, usually the entry of the final state of hmm is used. */
-		    int32 rc,                /**< Right context of the HMM*/ 
-		    ctxt_table_t *ct,       /**< A context table */
-		    dict_t *dict            /**< A dictionary */
-    );
-
-
-void two_word_history (latticehist_t *lathist, 
-		       s3latid_t l, s3wid_t *w0, s3wid_t *w1, dict_t *dict);
-
-/**
- * Find path score for lattice entry l for the given right context word.
- * If context word is BAD_S3WID it's a wild card; return the best path score.
- */
-
-int32 lat_pscr_rc (latticehist_t *lathist, /**< A table of lattice entries */
-		   s3latid_t l,            /**< lattice ID */
-		   s3wid_t w_rc,           /**< The right context word */
-		   ctxt_table_t *ct,       /**< Context table */
-		   dict_t *dict            /**< The dictionary */
-    );
-
-/**
- * Find path history for lattice entry l for the given right context word.
- * If context word is BAD_S3WID it's a wild card; return the phone history.
- */
-s3latid_t lat_pscr_rc_history (latticehist_t *lathist, /**< A table of lattice entries */
-			       s3latid_t l,  /**< lattice ID */
-			       s3wid_t w_rc,  /**< The right context word */
-			       ctxt_table_t *ct,  /**< Context table */
-			       dict_t *dict     /** The dictionary */
-    );
-
-int32 lat_seg_lscr (latticehist_t *lathist,
-		    s3latid_t l,
-#ifdef OLD_LM_API
-		    lm_t *lm,
-#else
-		    ngram_model_t *lm,
-#endif
-		    dict_t *dict,
-		    ctxt_table_t *ct,
-		    fillpen_t *fillpen,
-		    int32 isCand);
-
-
-/**
- * Find LM score for transition into lattice entry l.
- */
-
-void lat_seg_ascr_lscr (latticehist_t *lathist, /**< A table of lattice entries */
-			s3latid_t l,  /**< lattice ID */
-			s3wid_t w_rc, /**< The right context word */
-			int32 *ascr,  /**< Out: Acoustic score */
-			int32 *lscr,  /**< Out: language score */
-#ifdef OLD_LM_API
-			lm_t *lm,     /**< LM */
-#else
-			ngram_model_t *lm,
-#endif
-			dict_t *dict,  /**< Dictionary */
-			ctxt_table_t *ct,  /** Context table */
-			fillpen_t *fillpen /**< filler penalty */
-    );
-
-
-/**
-   Get the final entry of the lattice
-*/
-s3latid_t lat_final_entry ( latticehist_t* lathist, /**< A table of lattice entries */
-			    dict_t* dict, /** The dictioanry */
-			    int32 curfrm, /**< The current  frame */
-			    char* uttid /** Utterance ID */
-    );
-			      
-/**
- * Backtrace the lattice and get back a search hypothesis. 
- */
-srch_hyp_t *lattice_backtrace (latticehist_t *lathist, /**< A table of lattice entries */
-			       s3latid_t l,   /**< The lattice ID */
-			       s3wid_t w_rc,   /**< The word on the right */
-			       srch_hyp_t **hyp, /**< Output: final hypothesis */ 
-#ifdef OLD_LM_API
-			       lm_t *lm,       /**< LM */
-#else
-			       ngram_model_t *lm,
-#endif
-			       dict_t *dict,   /**< Dictionary */
-			       ctxt_table_t *ct,  /**< Context table */
-			       fillpen_t *fillpen /**< filler penalty struct */
-    );
-
-/**
- * Build a DAG from the lattice: each unique <word-id,start-frame> is a node, i.e. with
- * a single start time but it can represent several end times.  Links are created
- * whenever nodes are adjacent in time.
- * dagnodes_list = linear list of DAG nodes allocated, ordered such that nodes earlier
- * in the list can follow nodes later in the list, but not vice versa:  Let two DAG
- * nodes d1 and d2 have start times sf1 and sf2, and end time ranges [fef1..lef1] and
- * [fef2..lef2] respectively.  If d1 appears later than d2 in dag.list, then
- * fef2 >= fef1, because d2 showed up later in the word lattice.  If there is a DAG
- * edge from d1 to d2, then sf1 > fef2.  But fef2 >= fef1, so sf1 > fef1.  Reductio ad
- * absurdum.
- */
-dag_t * latticehist_dag_build(latticehist_t * vh, glist_t hyp, dict_t * dict,
-#ifdef OLD_LM_API
-                              lm_t *lm, ctxt_table_t *ctxt, fillpen_t *fpen,
-#else
-                              ngram_model_t *lm, ctxt_table_t *ctxt, fillpen_t *fpen,
-#endif
-                              int32 endid, cmd_ln_t *config, logmath_t *logmath);
-
-/** 
- * Write a dag from latticehist_t
- */
-int32 latticehist_dag_write (latticehist_t *lathist,  /**< A table off lattice entries */
-                             const char *filename,
-			     dag_t *dag,
-#ifdef OLD_LM_API
-			     lm_t *lm,
-#else
-			     ngram_model_t *lm,
-#endif
-			     dict_t *dict, 
-			     ctxt_table_t *ct, 
-			     fillpen_t *fillpen
     );
 
 #if 0
