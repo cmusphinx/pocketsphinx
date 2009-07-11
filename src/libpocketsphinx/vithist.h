@@ -157,11 +157,7 @@ extern "C" {
  */
 typedef union vh_lmstate_u {
     struct {
-#ifdef OLD_LM_API
-        s3lmwid32_t lwid[2];	/**< 2-word history; [0] is most recent */
-#else
         int32 lwid[2];		/**< 2-word history; [0] is most recent */
-#endif
     } lm3g;
 } vh_lmstate_t;
 
@@ -291,12 +287,12 @@ typedef struct {
  * One-time intialization: Allocate and return an initially empty
  * vithist module 
  * @return An initialized vithist_t
-*/
+ */
 
-vithist_t *vithist_init (kbcore_t *kbc,  /**< Core search data structure */
-			 int32 wbeam,    /**< Word exit beam width */
-			 int32 bghist,   /**< If only bigram history is used */
-			 int32 report    /**< Whether to report the progress  */
+vithist_t *vithist_init(kbcore_t *kbc,  /**< Core search data structure */
+                        int32 wbeam,    /**< Word exit beam width */
+                        int32 bghist,   /**< If only bigram history is used */
+                        int32 report    /**< Whether to report the progress  */
     );
 
 
@@ -304,8 +300,8 @@ vithist_t *vithist_init (kbcore_t *kbc,  /**< Core search data structure */
  * Invoked at the beginning of each utterance; vithist initialized with a root <s> entry.
  * @return Vithist ID of the root <s> entry.
  */
-int32 vithist_utt_begin (vithist_t *vh, /**< In: a Viterbi history data structure*/
-			 kbcore_t *kbc  /**< In: a KBcore */
+int32 vithist_utt_begin(vithist_t *vh, /**< In: a Viterbi history data structure*/
+                        kbcore_t *kbc  /**< In: a KBcore */
     );
 
 
@@ -314,8 +310,8 @@ int32 vithist_utt_begin (vithist_t *vh, /**< In: a Viterbi history data structur
  * path score (i.e., LM including LM transition to </s>).
  * Return the ID of the appended entry if successful, -ve if error (empty utterance).
  */
-int32 vithist_utt_end (vithist_t *vh, /**< In: a Viterbi history data structure*/
-		       kbcore_t *kbc  /**< In: a KBcore */
+int32 vithist_utt_end(vithist_t *vh, /**< In: a Viterbi history data structure*/
+                      kbcore_t *kbc  /**< In: a KBcore */
     );
 
 
@@ -323,12 +319,12 @@ int32 vithist_utt_end (vithist_t *vh, /**< In: a Viterbi history data structure*
  * Invoked at the end of each block of a live decode.
  * Returns viterbi histories of partial decodes
  */
-int32 vithist_partialutt_end (vithist_t *vh, /**< In: a Viterbi history data structure*/
-			      kbcore_t *kbc  /**< In: a KBcore */
+int32 vithist_partialutt_end(vithist_t *vh, /**< In: a Viterbi history data structure*/
+                             kbcore_t *kbc  /**< In: a KBcore */
     );
 
 /* Invoked at the end of each utterance to clear up and deallocate space */
-void vithist_utt_reset (vithist_t *vh  /**< In: a Viterbi history data structure*/
+void vithist_utt_reset(vithist_t *vh  /**< In: a Viterbi history data structure*/
     );
 
 
@@ -336,9 +332,9 @@ void vithist_utt_reset (vithist_t *vh  /**< In: a Viterbi history data structure
  * Viterbi backtrace.  Return value: List of hyp_t pointer entries for the individual word
  * segments.  Caller responsible for freeing the list.
  */
-glist_t vithist_backtrace (vithist_t *vh,       /**< In: a Viterbi history data structure*/
-			   int32 id,		/**< ID from which to begin backtrace */
-			   dict_t *dict         /**< a dictionary for look up the ci phone of a word*/
+glist_t vithist_backtrace(vithist_t *vh,       /**< In: a Viterbi history data structure*/
+                          int32 id,		/**< ID from which to begin backtrace */
+                          dict_t *dict         /**< a dictionary for look up the ci phone of a word*/
     );
 
 
@@ -359,46 +355,46 @@ void vithist_enter(vithist_t * vh,              /**< The history table */
  * 
  * ARCHAN: Precisely speaking, it is a full trigram rescoring. 
  */
-void vithist_rescore (vithist_t *vh,    /**< In: a Viterbi history data structure*/
-		      kbcore_t *kbc,    /**< In: a kb core. */
-		      s3wid_t wid,      /**< In: a word ID */
-		      int32 ef,		/**< In: End frame for this word instance */
-		      int32 score,	/**< In: Does not include LM score for this entry */
-		      int32 pred,	/**< In: Tentative predecessor */
-		      int32 type,       /**< In: Type of lexical tree */
-		      int32 rc          /**< In: The compressed rc. So if you use the actual rc, it doesn't work.  */
+void vithist_rescore(vithist_t *vh,    /**< In: a Viterbi history data structure*/
+                     kbcore_t *kbc,    /**< In: a kb core. */
+                     s3wid_t wid,      /**< In: a word ID */
+                     int32 ef,		/**< In: End frame for this word instance */
+                     int32 score,	/**< In: Does not include LM score for this entry */
+                     int32 pred,	/**< In: Tentative predecessor */
+                     int32 type,       /**< In: Type of lexical tree */
+                     int32 rc          /**< In: The compressed rc. So if you use the actual rc, it doesn't work.  */
     );
 
 
 /** Invoked at the end of each frame */
-void vithist_frame_windup (vithist_t *vh,	/**< In/Out: Vithist module to be updated */
-			   int32 frm,		/**< In: Frame in which being invoked */
-			   FILE *fp,		/**< In: If not NULL, dump vithist entries
+void vithist_frame_windup(vithist_t *vh,	/**< In/Out: Vithist module to be updated */
+                          int32 frm,		/**< In: Frame in which being invoked */
+                          FILE *fp,		/**< In: If not NULL, dump vithist entries
 						   this frame to the file (for debugging) */
-			   kbcore_t *kbc	/**< In: Used only for dumping to fp, for
-						   debugging */
+                          kbcore_t *kbc	/**< In: Used only for dumping to fp, for
+                                           debugging */
     );
 
 /**
  * Mark up to maxwpf best words, and variants within beam of best frame score as valid,
  * and the remaining as invalid.
  */
-void vithist_prune (vithist_t *vh,      /**< In: a Viterbi history data structure*/
-		    dict_t *dict,	/**< In: Dictionary, for distinguishing filler words */
-		    int32 frm,		/**< In: Frame in which being invoked */
-		    int32 maxwpf,	/**< In: Max unique words per frame to be kept valid */
-		    int32 maxhist,	/**< In: Max histories to maintain per frame */
-		    int32 beam	/**< In: Entry score must be >= frame bestscore+beam */
+void vithist_prune(vithist_t *vh,      /**< In: a Viterbi history data structure*/
+                   dict_t *dict,	/**< In: Dictionary, for distinguishing filler words */
+                   int32 frm,		/**< In: Frame in which being invoked */
+                   int32 maxwpf,	/**< In: Max unique words per frame to be kept valid */
+                   int32 maxhist,	/**< In: Max histories to maintain per frame */
+                   int32 beam	/**< In: Entry score must be >= frame bestscore+beam */
     );
 
 /**
  * Dump the Viterbi history data to the given file (for debugging/diagnostics).
  */
-void vithist_dump (vithist_t *vh,     /**< In: a Viterbi history data structure */
-		   int32 frm,		/**< In: If >= 0, print only entries made in this frame,
+void vithist_dump(vithist_t *vh,     /**< In: a Viterbi history data structure */
+                  int32 frm,		/**< In: If >= 0, print only entries made in this frame,
 					   otherwise print all entries */
-		   kbcore_t *kbc,       /**< In: a KBcore */
-		   FILE *fp             /**< Out: File to be written */
+                  kbcore_t *kbc,       /**< In: a KBcore */
+                  FILE *fp             /**< Out: File to be written */
     );
 
 /**
