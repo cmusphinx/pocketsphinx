@@ -11,11 +11,13 @@ libpocketsphinx_la_SOURCES =			\
 	ctxt_table.c				\
 	dict.c					\
 	dict2pid.c				\
+	fillpen.c				\
 	fsg_history.c				\
 	fsg_lextree.c				\
 	fsg_search.c				\
 	hmm.c					\
 	kdtree.c				\
+	lextree.c				\
 	lts.c					\
 	cmu6_lts_rules.c			\
 	mdef.c					\
@@ -45,11 +47,13 @@ noinst_HEADERS =				\
 	ctxt_table.h				\
 	dict.h					\
 	dict2pid.h				\
+	fillpen.h				\
 	fsg_history.h				\
 	fsg_lextree.h				\
 	fsg_search_internal.h			\
 	hmm.h					\
 	kdtree.h				\
+	lextree.h				\
 	lts.h					\
 	cmu6_lts_rules.h			\
 	mdef.h					\

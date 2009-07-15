@@ -174,8 +174,8 @@ typedef int16   	s3frmid_t;	/** Frame id (must be SIGNED integer) */
 #define IS_S3FRMID(f)	((f)>=0)
 #define MAX_S3FRMID	((int32)0x7ffe)
 
-typedef int16   	s3senid_t;	/** Senone id */
-#define BAD_S3SENID	((s3senid_t) -1)
+typedef uint16   	s3senid_t;	/** Senone id */
+#define BAD_S3SENID	((s3senid_t) 0xffff)
 #define NOT_S3SENID(s)	((s)<0)
 #define IS_S3SENID(s)	((s)>=0)
 #define MAX_S3SENID	((int16)0x7ffe)

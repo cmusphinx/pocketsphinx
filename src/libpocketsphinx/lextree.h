@@ -119,11 +119,12 @@
 
 #include "s3types.h"
 #include "hmm.h"
+#include "tmat.h"
 #include "vithist.h"
-#include "dict.h"
-#include "mdef.h"
+#include "s3_dict.h"
+#include "bin_mdef.h"
+#include "fillpen.h"
 
-#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -171,6 +172,7 @@ extern "C" {
  * expanded, the code loop for all CI index. This is because dict2pid,
  * unlike ctxt_table, doesn't provide a list of triphones 
  * 2, for all active node, the code has iterate two times. Rather than once, because of separation 
+
  * of prop_non_leaves and prop_leaves. 
  */
 
@@ -240,6 +242,12 @@ typedef struct {
     int32 n_alloc_node;   /**< Total No. of nodes in this lextree which is allocated dynamically */
     int32 n_alloc_blk_sz;   /**< Block size of each allocation */
 
+    bin_mdef_t *mdef;     /**< Model definition (not owned by this structure) */
+    s3dict_t *dict;     /**< Dictionary (not owned by this structure) */
+    dict2pid_t *dict2pid;     /**< Dictionary mapping (not owned by this structure) */
+    ngram_model_t *lm;  /**< Language model */
+    tmat_t *tmat;       /**< Transition matrices */
+
     hmm_context_t *ctx;     /**< HMM context for non-composite triphones. */
     hmm_context_t *comctx; /**< HMM context for composite triphones. */
 
@@ -272,7 +280,10 @@ typedef struct {
  * unigram look-ahead is supported. 
  */
 lextree_t* lextree_init(
-    kbcore_t *kbcore, /**< In: Initialized kbcore */
+    bin_mdef_t *mdef,
+    tmat_t *tmat,
+    s3dict_t *dict,
+    dict2pid_t *dict2pid,
     ngram_model_t* lm,
     const char *lmname,     /**< In: LM name */
     int32 istreeUgProb, /**< In: Decide whether LM factoring is used or not */
@@ -282,9 +293,8 @@ lextree_t* lextree_init(
 
 /** Initialize a filler tree.
  */
-lextree_t* fillertree_init(
-    kbcore_t *kbcore /**< In: Initialized kbcore */
-    );
+lextree_t* fillertree_init(bin_mdef_t *mdef, tmat_t *tmat, s3dict_t *dict,
+                           dict2pid_t *dict2pid, fillpen_t *fillpen);
 
 
 /** Report the lextree data structure. 
@@ -293,30 +303,22 @@ void lextree_report(
     lextree_t *ltree /**< In: Report a lexical tree*/
     );
 
-/**
- * Build a lexical tree for the set of words specified in wordprob[] (with their
- * associated LM probabilities).  wordprob[] must contain EXACTLY the set of words for
- * which the lextree is to be built, i.e, including alternatives and excluding OOVs.
- * Return value: Pointer to lextree_t structure representing entire lextree.
- */
-lextree_t *
-lextree_build (kbcore_t *kbc,		/**< In: All the necessary knowledge bases */
-	       wordprob_t *wordprob,	/**< In: Words in the tree and their (LM) probabilities */
-	       int32 n_word,		/**< In: Size of the wordprob[] array */
-	       s3cipid_t *lc,		/**< In: BAD_S3CIPID terminated array of left context
-					   CIphones, or NULL if no specific left context */
-               int32 type              /**< In: Type of lextree */
-    );
+/** \struct wordprob_t
+    \brief Generic structure that could be used at any n-gram level 
+*/
+typedef struct {
+    s3wid_t wid;	/**< NOTE: dictionary wid; may be BAD_S3WID if not available */
+    int32 prob;         /**< The probability */
+} wordprob_t;
 
-/* Free a lextree that was created by lextree_build */
+/* Free a lextree that was created by lextree_init */
 void lextree_free (lextree_t *lextree);
-
 
 /**
  * Reset the entire lextree (to the inactive state).  I.e., mark each HMM node as inactive,
  * (with lextree_node_t.frame = -1), and the active list size to 0.
  */
-void lextree_utt_end (lextree_t *l, kbcore_t *kbc);
+void lextree_utt_end (lextree_t *l);
 
 
 /**
@@ -327,9 +329,8 @@ void lextree_enter (lextree_t *lextree,	/**< In/Out: Lextree being entered */
 		    int32 frame,	/**< In: Frame from which being activated (for the next) */
 		    int32 inscore,	/**< In: Incoming score */
 		    int32 inhist,	/**< In: Incoming history */
-		    int32 thresh,	/**< In: Pruning threshold; incoming scores below this
+		    int32 thresh	/**< In: Pruning threshold; incoming scores below this
 					   threshold will not enter successfully */
-		    kbcore_t *kbc       /**< In: a kbcore, that provided stuffs such as dict and dict2pid */
     );
 
 /**
@@ -362,12 +363,12 @@ void lextree_ci_active (lextree_t *lextree,	/**< In: Lextree being traversed */
 /**
  * Evaluate the active HMMs in the given lextree, using the current frame senone scores.
  * Return value: The best HMM state score as a result.
- * Note that the current
  */
 int32 lextree_hmm_eval (lextree_t *lextree,	/**< In/Out: Lextree with HMMs to be evaluated */
-			kbcore_t *kbc,	/**< In: */
-			ascr_t *ascr,	/**< In: Senone scores (primary and composite) */
-			int32 f,	/**< In: Frame in which being invoked */
+
+                        int16 *senscr,  /**< In: Primary senone scores */
+                        int16 *comsen,  /**< In: Composite senone scores */
+                        int32 f,	/**< In: Frame in which being invoked */
 			FILE *fp	/**< In: If not-NULL, dump HMM state (for debugging) */
     );
 
@@ -403,12 +404,10 @@ int32 lextree_hmm_eval (lextree_t *lextree,	/**< In/Out: Lextree with HMMs to be
  */
 int32 lextree_hmm_propagate_non_leaves (lextree_t *lextree,	/**< In/Out: Propagate scores across HMMs in
 								   this lextree */
-					kbcore_t *kbc,	/**< In: Core knowledge bases */
 					int32 cf,		/**< In: Current frame index. */
 					int32 th,		/**< In: General (HMM survival) pruning thresh */
 					int32 pth,		/**< In: Phone transition pruning threshold */
-					int32 wth,		/**< In: Word exit pruning threshold */
-					pl_t* pl            /**< In: Phoneme lookahead struct*/
+					int32 wth		/**< In: Word exit pruning threshold */
     ); 
 
 
@@ -424,7 +423,6 @@ int32 lextree_hmm_propagate_non_leaves (lextree_t *lextree,	/**< In/Out: Propaga
 
 int32 lextree_hmm_propagate_leaves (lextree_t *lextree,	/**< In/Out: Propagate scores across HMMs in
 							   this lextree */
-				    kbcore_t *kbc,	/**< In: Core knowledge bases */
 				    vithist_t *vh,	/**< In/Out: Viterbi history structure to be
 							   updated with word exits */
 				    int32 cf,            /**< In: Current frame index */
@@ -448,8 +446,6 @@ void lextree_hmm_histbin (lextree_t *lextree,	/**< In: Its active HMM bestscores
 
 /** For debugging, dump the whole lexical tree*/
 void lextree_dump (lextree_t *lextree,  /**< In: A lexical tree*/
-		   dict_t *dict,       /**< In: a dictionary */
-		   mdef_t *mdef,       /**< In: a model definition */
 		   FILE *fp,           /**< A file pointer */
 		   int32 fmt           /**< fmt=1, Ravi's format, fmt=2, Dot's format*/ 
     );
