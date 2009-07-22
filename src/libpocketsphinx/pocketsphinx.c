@@ -51,6 +51,7 @@
 #include "ps_lattice_internal.h"
 #include "fsg_search_internal.h"
 #include "phone_loop_search.h"
+#include "tst_search.h"
 #include "ngram_search.h"
 #include "ngram_search_fwdtree.h"
 #include "ngram_search_fwdflat.h"

@@ -239,7 +239,15 @@
 { "-fillprob",										\
       ARG_FLOAT32,									\
       "1e-8",										\
-      "Filler word transition probability" }
+        "Filler word transition probability" }, \
+{ "-bghist",   \
+      ARG_BOOLEAN, \
+      "no", \
+      "Bigram-mode: If TRUE only one BP entry/frame; else one per LM state" }, \
+{ "-lextreedump", \
+      ARG_INT32, \
+      "0", \
+      "Whether to dump the lextree structure to stderr (for debugging), 1 for Ravi's format, 2 for Dot format, Larger than 2 will be treated as Ravi's format" }
 
 /** Command-line options for dictionaries. */
 #define POCKETSPHINX_DICT_OPTIONS \

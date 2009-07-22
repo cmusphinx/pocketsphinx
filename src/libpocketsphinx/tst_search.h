@@ -37,6 +37,7 @@
 
 /**
  * @file tst_search.h Time-conditioned lexicon tree search ("S3")
+ * @author David Huggins-Daines and Krisztian Loki
  */
 
 #ifndef __TST_SEARCH_H__
@@ -51,13 +52,58 @@
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"
-/* #include "lextree.h" */
+#include "lextree.h"
+#include "vithist.h"
 #include "hmm.h"
 
-/* Forward-declare these for the time being so things will compile. */
-typedef struct lextree_s lextree_t;
-typedef struct vithist_s vithist_t;
-typedef struct histprune_s histprune_t;
+/**
+ *  \struct histprune_t 
+ * \brief Structure containing various histogram pruning parameters and internal storage  All in integers.
+ * 
+ */
+
+typedef struct {
+    int32 maxwpf;          /**< Max words per frame*/
+    int32 maxhistpf;       /**< Max histories per frame*/
+    int32 maxhmmpf;        /**< Max active HMMs per frame*/
+    int32 hmm_hist_binsize;/**< Hmm histogram bin size */
+    int32 hmm_hist_bins;   /**< Number of histogram bins*/
+    int32 *hmm_hist;	   /**< Histogram: #frames in which a given no. of HMMs are active */
+} histprune_t;
+
+/** 
+ *  \struct beam_t fast_algo_struct.h "fast_algo_struct.h"
+ *  \brief Structure that contains all beam parameters for beam pruning in Viterbi algorithm. 
+ *  
+ *  This function include the definition of beam in multiple level of pruning in Viterbi
+ *  algorithm.  That includes hmm (state-level), ptrans (phone-level), word (word-level). 
+ *  ptranskip is used to specify how often in the Viterbi algorithm that phoneme level word 
+ *  beam will be replaced by a word-level beam. 
+ */
+
+/**
+ * Structure containing various beamwidth parameters.  All logs3 values; -infinite is widest,
+ * 0 is narrowest.
+ */
+
+typedef struct {
+    int32 hmm;		   /**< For selecting active HMMs, relative to best */
+    int32 ptrans;	   /**< For determining which HMMs transition to their successors */
+    int32 word;		   /**< For selecting words exited, relative to best HMM score */
+    int32 ptranskip;       /**< Intervals at which wbeam is used for phone transitions */
+    int32 wordend;         /**< For selecting the number of word ends  */
+    int32 n_ciphone;       /**< No. of ci phone used to initialized the word best and exits list*/
+    
+    int32 bestscore;	   /**< Temporary variable: Best HMM state score in current frame */
+    int32 bestwordscore;   /**< Temporary variable: Best wordexit HMM state score in current frame. */
+    int32 thres;           /**< Temporary variable: The current frame general threshold */
+    int32 phone_thres;     /**< Temporary variable: The current frame phone threshold */
+    int32 word_thres;      /**< Temporary variable: The current frame phone threshold */
+
+    int32 *wordbestscores; /**< The word best score list */
+    int32 *wordbestexits;  /**< The word best exits list */
+
+} beam_t;
 
 /**
  * Time-switch tree search module structure.
@@ -65,7 +111,9 @@ typedef struct histprune_s histprune_t;
 struct tst_search_s {
     ps_search_t base;
     ngram_model_t *lmset;  /**< Set of language models. */
-    hmm_context_t *hmmctx; /**< HMM context. */
+    s3dict_t *dict;        /**< Sphinx3 dictionary. */
+    dict2pid_t *dict2pid;  /**< Sphinx3 cross-word phone mapping. */
+    fillpen_t *fillpen;    /**< Sphinx3 filler penalty structure. */
 
     /**
      * There can be several unigram lextrees.  If we're at the end of frame f, we can only
@@ -76,13 +124,15 @@ struct tst_search_s {
     int32 n_lextree;        /**< Number of lexical tree for time switching: n_lextree */
     lextree_t **curugtree;  /**< The current unigram tree that used in the search for this utterance. */
 
-    lextree_t **ugtree;     /**< The pool of trees that stores all word trees. */
+    hash_table_t *ugtree;  /**< The pool of trees that stores all word trees. */
     lextree_t **fillertree; /**< The pool of trees that stores all filler trees. */
     int32 n_lextrans;	    /**< #Transitions to lextree (root) made so far */
     int32 epl;              /**< The number of entry per lexical tree */
 
-    histprune_t *histprune; /**< Structure that wraps up parameters related to  */
-  
+    int32 isLMLA;  /**< Is LM lookahead used?*/
+
+    histprune_t *histprune; /**< Structure that wraps up parameters related to absolute pruning. */
+    beam_t *beam;           /**< Structure that wraps up beam pruning parameters. */
     vithist_t *vithist;     /**< Viterbi history (backpointer) table */
 };
 typedef struct tst_search_s tst_search_t;
@@ -97,7 +147,7 @@ ps_search_t *tst_search_init(cmd_ln_t *config,
 /**
  * Finalize the N-Gram search module.
  */
-void tst_search_free(ps_search_t *ngs);
+void tst_search_free(ps_search_t *search);
 
 
 #endif /* __TST_SEARCH_H__ */
