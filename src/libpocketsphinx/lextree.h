@@ -347,9 +347,9 @@ void lextree_active_swap (lextree_t *lextree /**< The lexical tree*/
  * and comssid[].  Caller also responsible for clearing them before calling this function.
  */
 void lextree_ssid_active (lextree_t *lextree,	/**< In: lextree->active is scanned */
-			  uint8 *ssid,		/**< In/Out: ssid[s] is set to non-0 if senone
+			  bitvec_t *ssid,	/**< In/Out: ssid[s] is set to non-0 if senone
 						   sequence ID s is active */
-			  uint8 *comssid	/**< In/Out: comssid[s] is set to non-0 if
+			  bitvec_t *comssid	/**< In/Out: comssid[s] is set to non-0 if
 						   composite senone sequence ID s is active */
     );
 

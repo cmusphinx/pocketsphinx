@@ -134,6 +134,12 @@ struct tst_search_s {
     histprune_t *histprune; /**< Structure that wraps up parameters related to absolute pruning. */
     beam_t *beam;           /**< Structure that wraps up beam pruning parameters. */
     vithist_t *vithist;     /**< Viterbi history (backpointer) table */
+
+    bitvec_t *ssid_active;    /**< Bitvector of active senone sequences. */
+    bitvec_t *comssid_active; /**< Bitvector of active composite senone sequences. */
+    int16 *composite_senone_scores; /**< Composite senone scores. */
+
+    FILE *hmmdumpfp; /**< File for dumping HMM debugging information. */
 };
 typedef struct tst_search_s tst_search_t;
 

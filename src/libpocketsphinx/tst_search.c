@@ -274,6 +274,23 @@ create_lextree(tst_search_t *tstg, const char *lmname, ptmr_t *tm_build)
     return lextree;
 }
 
+static void
+tst_search_update_widmap(tst_search_t *tstg)
+{
+    const char **words;
+    int32 i, n_words;
+
+    /* It's okay to include fillers since they won't be in the LM */
+    n_words = s3dict_size(tstg->dict);
+    words = ckd_calloc(n_words, sizeof(*words));
+    /* This will include alternates, again, that's okay since they aren't in the LM */
+    for (i = 0; i < n_words; ++i)
+        words[i] = (const char *)s3dict_wordstr(tstg->dict, i);
+    ngram_model_set_map_words(tstg->lmset, words, n_words);
+    ckd_free(words);
+}
+
+
 ps_search_t *
 tst_search_init(cmd_ln_t *config,
                 acmod_t *acmod,
@@ -313,6 +330,11 @@ tst_search_init(cmd_ln_t *config,
                            acmod->lmath);
     beam_report(tstg->beam);
 
+    tstg->ssid_active = bitvec_alloc(bin_mdef_n_sseq(acmod->mdef));
+    tstg->comssid_active = bitvec_alloc(dict2pid_n_comsseq(tstg->dict2pid));
+    tstg->composite_senone_scores = ckd_calloc(bin_mdef_n_sen(acmod->mdef),
+                                               sizeof(*tstg->composite_senone_scores));
+
     ptmr_init(&(tm_build));
 
     tstg->epl = cmd_ln_int32_r(config, "-epl");
@@ -350,6 +372,7 @@ tst_search_init(cmd_ln_t *config,
             goto error_out;
         }
     }
+    tst_search_update_widmap(tstg);
 
     /* Unlink silences (FIXME: wtf) */
 #if 0
@@ -447,54 +470,538 @@ error_out:
 void
 tst_search_free(ps_search_t *search)
 {
-    ckd_free(search);
+    tst_search_t *tstg = (tst_search_t *)search;
+
+    if (tstg == NULL)
+        return;
+
+    if (tstg->ugtree) {
+        hash_iter_t *hiter = hash_table_iter(tstg->ugtree);
+        if (hiter)
+            do {
+                lextree_t **lextree = (lextree_t**)hash_entry_val(hiter->ent);
+                if (lextree) {
+                    int j;
+                    for (j = 0; j < tstg->n_lextree; ++j)
+                        lextree_free(lextree[j]);
+                }
+            } while ((hiter = hash_table_iter_next(hiter)));
+        hash_table_free(tstg->ugtree);
+    }
+
+    ckd_free(tstg->curugtree);
+    if (tstg->fillertree) {
+        int32 j;
+        for (j = 0; j < tstg->n_lextree; ++j)
+            lextree_free(tstg->fillertree[j]);
+        ckd_free(tstg->fillertree);
+    }
+
+    if (tstg->vithist)
+        vithist_free(tstg->vithist);
+    if (tstg->histprune)
+        histprune_free(tstg->histprune);
+    if (tstg->dict)
+        s3dict_free(tstg->dict);
+    if (tstg->dict2pid)
+        dict2pid_free(tstg->dict2pid);
+    if (tstg->fillpen)
+        fillpen_free(tstg->fillpen);
+    if (tstg->beam)
+        beam_free(tstg->beam);
+    bitvec_free(tstg->ssid_active);
+    bitvec_free(tstg->comssid_active);
+    ckd_free(tstg->composite_senone_scores);
+
+    ckd_free(tstg);
 }
 
 static int
 tst_search_start(ps_search_t *search)
 {
+    tst_search_t *tstg = (tst_search_t *)search;
+    int32 n, pred;
+    int32 i;
 
+    /* Clean up any previous viterbi history */
+    vithist_utt_reset(tstg->vithist);
+    histprune_zero_histbin(tstg->histprune);
+
+    /* Insert initial <s> into vithist structure */
+    pred = vithist_utt_begin(tstg->vithist, s3dict_startwid(tstg->dict));
+    assert(pred == 0);          /* Vithist entry ID for <s> */
+
+    /* Need to reinitialize GMMs, things like that? */
+
+    /* Enter into unigram lextree[0] */
+    n = lextree_n_next_active(tstg->curugtree[0]);
+    assert(n == 0);
+    lextree_enter(tstg->curugtree[0], bin_mdef_silphone(ps_search_acmod(tstg)->mdef),
+                  -1, 0, pred, tstg->beam->hmm);
+
+    /* Enter into filler lextree */
+    n = lextree_n_next_active(tstg->fillertree[0]);
+    assert(n == 0);
+    lextree_enter(tstg->fillertree[0], BAD_S3CIPID, -1, 0, pred, tstg->beam->hmm);
+
+    tstg->n_lextrans = 1;
+
+    for (i = 0; i < tstg->n_lextree; i++) {
+        lextree_active_swap(tstg->curugtree[i]);
+        lextree_active_swap(tstg->fillertree[i]);
+    }
+
+    return 0;
+}
+
+static int
+tst_search_finish(ps_search_t *search)
+{
+    tst_search_t *tstg = (tst_search_t *)search;
+    int32 i, exit_id;
+
+    /* Find the exit word and wrap up Viterbi history (but don't reset
+     * it yet!) */
+    exit_id = vithist_utt_end(tstg->vithist,
+                              tstg->lmset, tstg->dict, tstg->dict2pid);
+
+    /* Statistics update/report */
+    /* st->utt_wd_exit = vithist_n_entry(tstg->vithist); */
+    /* Not sure hwo to get the uttid. */
+    /* histprune_showhistbin(tstg->histprune, st->nfr, s->uttid); */
+
+    for (i = 0; i < tstg->n_lextree; i++) {
+        lextree_utt_end(tstg->curugtree[i]);
+        lextree_utt_end(tstg->fillertree[i]);
+    }
+
+    if (exit_id >= 0)
+        return 0;
+    else
+        return -1;
+}
+
+static int
+srch_TST_hmm_compute_lv2(tst_search_t *tstg, int32 frmno)
+{
+    /* This is local to this codebase */
+
+    int32 i, j;
+    lextree_t *lextree;
+    beam_t *bm;
+    histprune_t *hp;
+
+    int32 besthmmscr, bestwordscr;
+    int32 frm_nhmm, hb, pb, wb;
+    int32 n_ltree;              /* Local version of number of lexical trees used */
+    int32 maxwpf;               /* Local version of Max words per frame, don't expect it to change */
+    int32 maxhistpf;            /* Local version of Max histories per frame, don't expect it to change */
+    int32 maxhmmpf;             /* Local version of Max active HMMs per frame, don't expect it to change  */
+    int32 histbinsize;          /* Local version of histogram bin size, don't expect it to change */
+    int32 numhistbins;          /* Local version of number of histogram bins, don't expect it to change */
+    int32 hmmbeam;              /* Local version of hmm beam, don't expect it to change. */
+    int32 pbeam;                /* Local version of phone beam, don't expect it to change. */
+    int32 wbeam;                /* Local version of word beam , don't expect it to change */
+    int32 *hmm_hist;            /* local version of histogram bins. */
+
+    n_ltree = tstg->n_lextree;
+    hp = tstg->histprune;
+    bm = tstg->beam;
+    hmm_hist = hp->hmm_hist;
+
+    maxwpf = hp->maxwpf;
+    maxhistpf = hp->maxhistpf;
+    maxhmmpf = hp->maxhmmpf;
+    histbinsize = hp->hmm_hist_binsize;
+    numhistbins = hp->hmm_hist_bins;
+
+    hmmbeam = bm->hmm;
+    pbeam = bm->ptrans;
+    wbeam = bm->word;
+
+    /* Evaluate active HMMs in each lextree; note best HMM state score */
+    besthmmscr = MAX_NEG_INT32;
+    bestwordscr = MAX_NEG_INT32;
+    frm_nhmm = 0;
+
+    for (i = 0; i < (n_ltree << 1); i++) {
+        lextree =
+            (i < n_ltree) ? tstg->curugtree[i] : tstg->fillertree[i - n_ltree];
+        if (tstg->hmmdumpfp != NULL)
+            fprintf(tstg->hmmdumpfp, "Fr %d Lextree %d #HMM %d\n", frmno, i,
+                    lextree->n_active);
+        lextree_hmm_eval(lextree,
+                         ps_search_acmod(tstg)->senone_scores,
+                         tstg->composite_senone_scores,
+                         frmno, tstg->hmmdumpfp);
+
+        if (besthmmscr < lextree->best)
+            besthmmscr = lextree->best;
+        if (bestwordscr < lextree->wbest)
+            bestwordscr = lextree->wbest;
+
+        /* st->utt_hmm_eval += lextree->n_active; */
+        frm_nhmm += lextree->n_active;
+    }
+    if (besthmmscr > 0) {
+        E_ERROR
+            ("***ERROR*** Fr %d, best HMM score > 0 (%d); int32 wraparound?\n",
+             frmno, besthmmscr);
+    }
+
+
+    /* Hack! similar to the one in mode 5. The reason though is because
+       dynamic allocation of node cause the histroyt array need to be
+       allocated too.  I skipped this step by just making simple
+       assumption here.
+     */
+    if (frm_nhmm / histbinsize > hp->hmm_hist_bins - 1)
+        hmm_hist[hp->hmm_hist_bins - 1]++;
+    else
+        hmm_hist[frm_nhmm / histbinsize]++;
+
+    /* Set pruning threshold depending on whether number of active HMMs 
+     * is within limit 
+     */
+    /* ARCHAN: MAGIC */
+    if (frm_nhmm > (maxhmmpf + (maxhmmpf >> 1))) {
+        int32 *bin, nbin, bw;
+
+        /* Use histogram pruning */
+        nbin = 1000;
+        bw = -(hmmbeam) / nbin;
+        bin = (int32 *) ckd_calloc(nbin, sizeof(int32));
+
+        for (i = 0; i < (n_ltree << 1); i++) {
+            lextree = (i < n_ltree) ?
+                tstg->curugtree[i] : tstg->fillertree[i - n_ltree];
+
+            lextree_hmm_histbin(lextree, besthmmscr, bin, nbin, bw);
+        }
+
+        for (i = 0, j = 0; (i < nbin) && (j < maxhmmpf); i++, j += bin[i]);
+        ckd_free((void *) bin);
+
+        /* Determine hmm, phone, word beams */
+        hb = -(i * bw);
+        pb = (hb > pbeam) ? hb : pbeam;
+        wb = (hb > wbeam) ? hb : wbeam;
+    }
+    else {
+        hb = hmmbeam;
+        pb = pbeam;
+        wb = wbeam;
+    }
+
+    bm->bestscore = besthmmscr;
+    bm->bestwordscore = bestwordscr;
+
+    bm->thres = bm->bestscore + hb;     /* HMM survival threshold */
+    bm->phone_thres = bm->bestscore + pb;       /* Cross-HMM transition threshold */
+    bm->word_thres = bm->bestwordscore + wb;    /* Word exit threshold */
+
+    return 0;
+}
+
+static int
+srch_TST_propagate_graph_ph_lv2(tst_search_t *tstg, int32 frmno)
+{
+    int32 i;
+    int32 n_ltree;              /* Local version of number of lexical trees used */
+
+    lextree_t *lextree;
+
+    n_ltree = tstg->n_lextree;
+
+    for (i = 0; i < (n_ltree << 1); i++) {
+        lextree =
+            (i <
+             n_ltree) ? tstg->curugtree[i] : tstg->fillertree[i -
+                                                              tstg->
+                                                              n_lextree];
+
+        if (lextree_hmm_propagate_non_leaves(lextree, frmno,
+                                             tstg->beam->thres,
+                                             tstg->beam->phone_thres,
+                                             tstg->beam->word_thres)
+            != LEXTREE_OPERATION_SUCCESS) {
+            E_ERROR
+                ("Propagation Failed for lextree_hmm_propagate_non_leave at tree %d\n",
+                 i);
+            lextree_utt_end(lextree);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static void
+mdef_sseq2sen_active(bin_mdef_t * mdef, bitvec_t * sseq, bitvec_t * sen)
+{
+    int32 ss, i;
+    s3senid_t *sp;
+
+    for (ss = 0; ss < bin_mdef_n_sseq(mdef); ss++) {
+        if (bitvec_is_set(sseq,ss)) {
+            sp = mdef->sseq[ss];
+            for (i = 0; i < mdef_n_emit_state(mdef); i++)
+                bitvec_set(sen, sp[i]);
+        }
+    }
+}
+
+static int
+srch_TST_select_active_gmm(tst_search_t *tstg)
+{
+    int32 n_ltree;              /* Local version of number of lexical trees used */
+    dict2pid_t *d2p;
+    bin_mdef_t *mdef;
+    lextree_t *lextree;
+    int32 i;
+
+    n_ltree = tstg->n_lextree;
+    mdef = ps_search_acmod(tstg)->mdef;
+    d2p = tstg->dict2pid;
+
+    /* Find active senone-sequence IDs (including composite ones) */
+    for (i = 0; i < (n_ltree << 1); i++) {
+        lextree = (i < n_ltree) ? tstg->curugtree[i] :
+            tstg->fillertree[i - n_ltree];
+        lextree_ssid_active(lextree, tstg->ssid_active,
+                            tstg->comssid_active);
+    }
+
+    /* Find active senones from active senone-sequences */
+    acmod_clear_active(ps_search_acmod(tstg));
+    memset(tstg->composite_senone_scores, 0,
+           bin_mdef_n_sen(mdef) * sizeof(*tstg->composite_senone_scores));
+
+    mdef_sseq2sen_active(mdef, tstg->ssid_active,
+                         ps_search_acmod(tstg)->senone_active_vec);
+
+    /* Add in senones needed for active composite senone-sequences */
+    dict2pid_comsseq2sen_active(d2p, mdef, tstg->comssid_active,
+                                ps_search_acmod(tstg)->senone_active_vec);
+
+    return 0;
+}
+
+static int
+srch_TST_rescoring(tst_search_t *tstg, int32 frmno)
+{
+    int32 i;
+    int32 n_ltree;              /* Local version of number of lexical trees used */
+    lextree_t *lextree;
+    vithist_t *vh;
+
+    vh = tstg->vithist;
+
+    n_ltree = tstg->n_lextree;
+
+    for (i = 0; i < (n_ltree << 1); i++) {
+        lextree = (i < n_ltree)
+            ? tstg->curugtree[i]
+            : tstg->fillertree[i - tstg->n_lextree];
+        if (lextree_hmm_propagate_leaves
+            (lextree, vh, frmno,
+             tstg->beam->word_thres) != LEXTREE_OPERATION_SUCCESS) {
+            E_ERROR
+                ("Propagation Failed for lextree_hmm_propagate_leave at tree %d\n",
+                 i);
+            lextree_utt_end(lextree);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static void
+srch_utt_word_trans(tst_search_t * tstg, int32 cf)
+{
+    int32 k, th;
+    vithist_t *vh;
+    vithist_entry_t *ve;
+    int32 vhid, le, n_ci, score;
+    int32 maxpscore;
+    int32 *bs = NULL, *bv = NULL, epl;
+    beam_t *bm;
+    s3wid_t wid;
+    int32 p;
+    s3dict_t *dict;
+    bin_mdef_t *mdef;
+
+    /* Call the rescoring routines at all word end */
+    maxpscore = MAX_NEG_INT32;
+    bm = tstg->beam;
+    vh = tstg->vithist;
+    th = bm->bestscore + bm->hmm;       /* Pruning threshold */
+
+    if (vh->bestvh[cf] < 0)
+        return;
+
+    dict = tstg->dict;
+    mdef = ps_search_acmod(tstg)->mdef;
+    n_ci = bin_mdef_n_ciphone(mdef);
+
+    /* Initialize best exit for each distinct word-final CI phone to NONE */
+
+    bs = bm->wordbestscores;
+    bv = bm->wordbestexits;
+    epl = tstg->epl;
+
+    for (p = 0; p < n_ci; p++) {
+        bs[p] = MAX_NEG_INT32;
+        bv[p] = -1;
+    }
+
+    /* Find best word exit in this frame for each distinct word-final CI phone */
+    vhid = vithist_first_entry(vh, cf);
+    le = vithist_n_entry(vh) - 1;
+    for (; vhid <= le; vhid++) {
+        ve = vithist_id2entry(vh, vhid);
+        if (!vithist_entry_valid(ve))
+            continue;
+
+        wid = vithist_entry_wid(ve);
+        p = s3dict_last_phone(dict, wid);
+        if (bin_mdef_is_fillerphone(mdef, p))
+            p = bin_mdef_silphone(mdef);
+
+        score = vithist_entry_score(ve);
+        if (score > bs[p]) {
+            bs[p] = score;
+            bv[p] = vhid;
+            if (maxpscore < score) {
+                maxpscore = score;
+                /*    E_INFO("maxscore = %d\n", maxpscore); */
+            }
+        }
+    }
+
+    /* Find lextree instance to be entered */
+    k = tstg->n_lextrans++;
+    k = (k % (tstg->n_lextree * epl)) / epl;
+
+    /* Transition to unigram lextrees */
+    for (p = 0; p < n_ci; p++) {
+        if (bv[p] >= 0) {
+            if (tstg->beam->wordend == 0
+                || bs[p] > tstg->beam->wordend + maxpscore) {
+                /* RAH, typecast p to (s3cipid_t) to make compiler happy */
+                lextree_enter(tstg->curugtree[k], (s3cipid_t) p, cf, bs[p],
+                              bv[p], th);
+            }
+        }
+
+    }
+
+    /* Transition to filler lextrees */
+    lextree_enter(tstg->fillertree[k], BAD_S3CIPID, cf, vh->bestscore[cf],
+                  vh->bestvh[cf], th);
+}
+
+static int
+srch_TST_propagate_graph_wd_lv2(tst_search_t *tstg, int32 frmno)
+{
+    s3dict_t *dict;
+    vithist_t *vh;
+    histprune_t *hp;
+    int32 maxwpf;               /* Local version of Max words per frame, don't expect it to change */
+    int32 maxhistpf;            /* Local version of Max histories per frame, don't expect it to change */
+    int32 maxhmmpf;             /* Local version of Max active HMMs per frame, don't expect it to change  */
+
+
+    hp = tstg->histprune;
+    vh = tstg->vithist;
+    dict = tstg->dict;
+
+    maxwpf = hp->maxwpf;
+    maxhistpf = hp->maxhistpf;
+    maxhmmpf = hp->maxhmmpf;
+
+    srch_TST_rescoring(tstg, frmno);
+
+    vithist_prune(vh, dict, frmno, maxwpf, maxhistpf,
+                  tstg->beam->word_thres - tstg->beam->bestwordscore);
+
+    srch_utt_word_trans(tstg, frmno);
+
+    return 0;
+}
+
+
+static int
+srch_TST_frame_windup(tst_search_t *tstg, int32 frmno)
+{
+    vithist_t *vh;
+    int32 i;
+
+    vh = tstg->vithist;
+
+    /* Wind up this frame */
+    vithist_frame_windup(vh, frmno, NULL, tstg->lmset, tstg->dict);
+
+    for (i = 0; i < tstg->n_lextree; i++) {
+        lextree_active_swap(tstg->curugtree[i]);
+        lextree_active_swap(tstg->fillertree[i]);
+    }
     return 0;
 }
 
 static int
 tst_search_step(ps_search_t *search, int frame_idx)
 {
-    return -1;
-}
+    tst_search_t *tstg = (tst_search_t *)search;
+    
+    srch_TST_select_active_gmm(tstg);
+    srch_TST_hmm_compute_lv2(tstg, frame_idx);
+    srch_TST_propagate_graph_ph_lv2(tstg, frame_idx);
+    srch_TST_rescoring(tstg, frame_idx);
+    srch_TST_propagate_graph_wd_lv2(tstg, frame_idx);
+    srch_TST_frame_windup(tstg, frame_idx);
 
-static int
-tst_search_finish(ps_search_t *search)
-{
-    return -1;
+    return 0;
 }
 
 static int
 tst_search_reinit(ps_search_t *search)
 {
+    tst_search_t *tstg = (tst_search_t *)search;
+
+    /* set_lm() code goes here. */
     return -1;
 }
 
 static ps_lattice_t *
 tst_search_lattice(ps_search_t *search)
 {
+    tst_search_t *tstg = (tst_search_t *)search;
+
     return NULL;
 }
 
 static char const *
 tst_search_hyp(ps_search_t *search, int32 *out_score)
 {
+    tst_search_t *tstg = (tst_search_t *)search;
+
     return NULL;
 }
 
 static int32
 tst_search_prob(ps_search_t *search)
 {
+    tst_search_t *tstg = (tst_search_t *)search;
+
     return 1;
 }
 
 static ps_seg_t *
 tst_search_seg_iter(ps_search_t *search, int32 *out_score)
 {
+    tst_search_t *tstg = (tst_search_t *)search;
+
     return NULL;
 }

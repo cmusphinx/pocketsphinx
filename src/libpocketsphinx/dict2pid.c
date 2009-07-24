@@ -1046,13 +1046,13 @@ dict2pid_comsenscr(dict2pid_t * d2p, int32 * senscr, int32 * comsenscr)
  */
 void
 dict2pid_comsseq2sen_active(dict2pid_t * d2p, bin_mdef_t * mdef,
-                            uint8 * comssid, uint8 * sen)
+                            bitvec_t * comssid, bitvec_t * sen)
 {
     int32 ss, cs, i, j;
     s3senid_t *csp, *sp;        /* Composite state pointer */
 
     for (ss = 0; ss < d2p->n_comsseq; ss++) {
-        if (comssid[ss]) {
+        if (bitvec_is_set(comssid,ss)) {
             csp = d2p->comsseq[ss];
 
             for (i = 0; i < bin_mdef_n_emit_state(mdef); i++) {
@@ -1060,7 +1060,7 @@ dict2pid_comsseq2sen_active(dict2pid_t * d2p, bin_mdef_t * mdef,
                 sp = d2p->comstate[cs];
 
                 for (j = 0; IS_S3SENID(sp[j]); j++)
-                    sen[sp[j]] = 1;
+                    bitvec_set(sen, sp[j]);
             }
         }
     }

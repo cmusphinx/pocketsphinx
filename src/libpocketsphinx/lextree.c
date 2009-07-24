@@ -903,7 +903,7 @@ lextree_ci_active(lextree_t * lextree, bitvec_t *ci_active)
 
 
 void
-lextree_ssid_active(lextree_t * lextree, uint8 * ssid, uint8 * comssid)
+lextree_ssid_active(lextree_t * lextree, bitvec_t * ssid, bitvec_t * comssid)
 {
     lextree_node_t **list, *ln;
     int32 i;
@@ -921,9 +921,9 @@ lextree_ssid_active(lextree_t * lextree, uint8 * ssid, uint8 * comssid)
            } */
 
         if (ln->composite)
-            comssid[ln->ssid] = 1;
+            bitvec_set(comssid, ln->ssid);
         else
-            ssid[ln->ssid] = 1;
+            bitvec_set(ssid, ln->ssid);
     }
 }
 
