@@ -468,6 +468,7 @@ tst_search_init(cmd_ln_t *config,
                                  tstg->beam->word,
                                  cmd_ln_int32_r(config, "-bghist"), TRUE);
 
+    tstg->hmmdumpfp = stdout;
     return (ps_search_t *)tstg;
 
 error_out:
@@ -568,7 +569,7 @@ static int
 tst_search_finish(ps_search_t *search)
 {
     tst_search_t *tstg = (tst_search_t *)search;
-    int32 i, exit_id;
+    int32 i;
 
     /* Find the exit word and wrap up Viterbi history (but don't reset
      * it yet!) */
@@ -785,9 +786,6 @@ srch_TST_select_active_gmm(tst_search_t *tstg)
 
     /* Find active senones from active senone-sequences */
     acmod_clear_active(ps_search_acmod(tstg));
-    memset(tstg->composite_senone_scores, 0,
-           bin_mdef_n_sen(mdef) * sizeof(*tstg->composite_senone_scores));
-
     mdef_sseq2sen_active(mdef, tstg->ssid_active,
                          ps_search_acmod(tstg)->senone_active_vec);
 
@@ -965,15 +963,31 @@ static int
 tst_search_step(ps_search_t *search, int frame_idx)
 {
     tst_search_t *tstg = (tst_search_t *)search;
-    
+    int16 const *senscr;
+
+    /* Select active senones for the current frame. */
     srch_TST_select_active_gmm(tstg);
+
+    /* Compute GMM scores for the current frame. */
+    if ((senscr = acmod_score(ps_search_acmod(search), &frame_idx)) == NULL)
+        return 0;
+    /* Evaluate composite senone scores from senone scores */
+    memset(tstg->composite_senone_scores, 0,
+           bin_mdef_n_sen(ps_search_acmod(search)->mdef)
+           * sizeof(*tstg->composite_senone_scores));
+    dict2pid_comsenscr(tstg->dict2pid, senscr, tstg->composite_senone_scores);
+
+    /* Compute HMMs, propagate phone and word exits, etc, etc. */
     srch_TST_hmm_compute_lv2(tstg, frame_idx);
     srch_TST_propagate_graph_ph_lv2(tstg, frame_idx);
     srch_TST_rescoring(tstg, frame_idx);
     srch_TST_propagate_graph_wd_lv2(tstg, frame_idx);
     srch_TST_frame_windup(tstg, frame_idx);
 
-    return 0;
+    /* FIXME: Renormalization? */
+
+    /* Return the number of frames processed. */
+    return 1;
 }
 
 static ps_lattice_t *
@@ -1029,6 +1043,8 @@ tst_search_hyp(ps_search_t *base, int32 *out_score)
             *c = ' ';
         }
     }
+
+    return base->hyp_str;
 }
 
 static int32

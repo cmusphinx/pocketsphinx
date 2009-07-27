@@ -93,6 +93,7 @@
 #include <string.h>
 
 #include "dict2pid.h"
+#include "hmm.h"
 
 
 /** \file dict2pid.c
@@ -912,13 +913,14 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
          * combined into a single composite score, the less relevant
          * that score will be. */
         dict2pid->comwt =
-            (int32 *) ckd_calloc(dict2pid->n_comstate, sizeof(int32));
+            (int16 *) ckd_calloc(dict2pid->n_comstate, sizeof(int16));
         for (i = 0; i < dict2pid->n_comstate; i++) {
             sen = dict2pid->comstate[i];
 
             for (j = 0; IS_S3SENID(sen[j]); j++);
             /* if comstate i has N states, its weight= 1/N */
-            dict2pid->comwt[i] = -logmath_log(logmath, (float64) j);
+            /* NOTE: scaled/negated. */
+            dict2pid->comwt[i] = -(-logmath_log(logmath, (float64) j)) >> SENSCR_SHIFT;
         }
     }
 
@@ -1027,7 +1029,7 @@ dict2pid_report(dict2pid_t * d2p)
  * scores, scaled down by the number of component senones.
  */
 void
-dict2pid_comsenscr(dict2pid_t * d2p, int32 * senscr, int32 * comsenscr)
+dict2pid_comsenscr(dict2pid_t * d2p, int16 const * senscr, int16 * comsenscr)
 {
     int32 i, j;
     int32 best;
@@ -1041,7 +1043,7 @@ dict2pid_comsenscr(dict2pid_t * d2p, int32 * senscr, int32 * comsenscr)
             k = comstate[j];
             if (NOT_S3SENID(k))
                 break;
-            if (best < senscr[k])
+            if (best > senscr[k]) /* NOTE: greater than, because these are still scaled/negated. */
                 best = senscr[k];
         }
 

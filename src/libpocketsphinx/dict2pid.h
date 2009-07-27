@@ -221,8 +221,11 @@ typedef struct {
 				   the i-th composite state */
     s3senid_t **comsseq;	/**< comsseq[i] = sequence of composite state IDs in i-th
 				   composite phone (composite sseq). */
-    int32 *comwt;		/**< Weight associated with each composite state (logs3 value).
-				   Final composite state score weighted by this amount */
+    int16 *comwt;		/**< Weight associated with each
+				   composite state (scaled, negated
+				   logs3 value).  Final composite
+				   state score weighted by this
+				   amount */
     int32 n_comstate;		/**< #Composite states */
     int32 n_comsseq;		/**< #Composite senone sequences */
     int32 n_ci;   /**< Number of CI phone in */
@@ -254,8 +257,8 @@ void dict2pid_free(dict2pid_t *d2p /**< In: the d2p */
  * Compute composite senone scores from ordinary senone scores (max of component senones)
  */
 void dict2pid_comsenscr(dict2pid_t *d2p,        /**< In: a dict2pid_t structure */
-                        int32 *senscr,		/**< In: Ordinary senone scores */
-                        int32 *comsenscr	/**< Out: Composite senone scores */
+                        int16 const *senscr,	/**< In: Ordinary senone scores */
+                        int16 *comsenscr	/**< Out: Composite senone scores */
     );
 
 /** 
