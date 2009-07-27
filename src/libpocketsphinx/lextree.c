@@ -307,6 +307,10 @@ fillertree_init(bin_mdef_t *mdef, tmat_t *tmat, s3dict_t *dict,
     }
 
     ltree = lextree_build(mdef, tmat, dict, dict2pid, wp, n, NULL, LEXTREE_TYPE_FILLER);
+    ltree->mdef = mdef;
+    ltree->tmat = tmat;
+    ltree->dict = dict;
+    ltree->dict2pid = dict2pid;
 
     ckd_free(wp);
     return ltree;

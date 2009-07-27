@@ -290,6 +290,14 @@ tst_search_update_widmap(tst_search_t *tstg)
     ckd_free(words);
 }
 
+static int
+tst_search_reinit(ps_search_t *search)
+{
+    tst_search_t *tstg = (tst_search_t *)search;
+
+    /* set_lm() code goes here. */
+    return -1;
+}
 
 ps_search_t *
 tst_search_init(cmd_ln_t *config,
@@ -317,10 +325,10 @@ tst_search_init(cmd_ln_t *config,
                                     tstg->dict, TRUE,
                                     acmod->lmath);
     tstg->fillpen = fillpen_init(tstg->dict, NULL,
-                                 cmd_ln_float32("-silprob"),
-                                 cmd_ln_float32("-fillprob"),
-                                 cmd_ln_float32("-lw"),
-                                 cmd_ln_float32("-wip"),
+                                 cmd_ln_float32_r(config, "-silprob"),
+                                 cmd_ln_float32_r(config, "-fillprob"),
+                                 cmd_ln_float32_r(config, "-lw"),
+                                 cmd_ln_float32_r(config, "-wip"),
                                  acmod->lmath);
     tstg->beam = beam_init(cmd_ln_float64_r(config, "-beam"),
                            cmd_ln_float64_r(config, "-pbeam"),
@@ -546,6 +554,8 @@ tst_search_start(ps_search_t *search)
 
     tstg->n_lextrans = 1;
 
+    tstg->exit_id = -1;
+
     for (i = 0; i < tstg->n_lextree; i++) {
         lextree_active_swap(tstg->curugtree[i]);
         lextree_active_swap(tstg->fillertree[i]);
@@ -562,8 +572,9 @@ tst_search_finish(ps_search_t *search)
 
     /* Find the exit word and wrap up Viterbi history (but don't reset
      * it yet!) */
-    exit_id = vithist_utt_end(tstg->vithist,
-                              tstg->lmset, tstg->dict, tstg->dict2pid);
+    tstg->exit_id = vithist_utt_end(tstg->vithist,
+                                    tstg->lmset, tstg->dict,
+                                    tstg->dict2pid);
 
     /* Statistics update/report */
     /* st->utt_wd_exit = vithist_n_entry(tstg->vithist); */
@@ -575,7 +586,7 @@ tst_search_finish(ps_search_t *search)
         lextree_utt_end(tstg->fillertree[i]);
     }
 
-    if (exit_id >= 0)
+    if (tstg->exit_id >= 0)
         return 0;
     else
         return -1;
@@ -965,15 +976,6 @@ tst_search_step(ps_search_t *search, int frame_idx)
     return 0;
 }
 
-static int
-tst_search_reinit(ps_search_t *search)
-{
-    tst_search_t *tstg = (tst_search_t *)search;
-
-    /* set_lm() code goes here. */
-    return -1;
-}
-
 static ps_lattice_t *
 tst_search_lattice(ps_search_t *search)
 {
@@ -983,11 +985,50 @@ tst_search_lattice(ps_search_t *search)
 }
 
 static char const *
-tst_search_hyp(ps_search_t *search, int32 *out_score)
+tst_search_hyp(ps_search_t *base, int32 *out_score)
 {
-    tst_search_t *tstg = (tst_search_t *)search;
+    tst_search_t *tstg = (tst_search_t *)base;
+    vithist_entry_t *ve;
+    char *c;
+    size_t len;
+    int32 exit_id, id;
 
-    return NULL;
+    if (tstg->exit_id == -1) /* Search not finished */
+	exit_id = vithist_partialutt_end(tstg->vithist, tstg->lmset, tstg->dict);
+    else
+        exit_id = tstg->exit_id;
+
+    if (exit_id < 0) {
+        E_WARN("Failed to retrieve viterbi history.\n");
+        return NULL;
+    }
+
+    id = exit_id;
+    len = 0;
+    while (id >= 0) {
+        ve = vithist_id2entry(tstg->vithist, id);
+        assert(ve);
+        len += strlen(s3dict_wordstr(tstg->dict,
+                                     s3dict_basewid(tstg->dict, vithist_entry_wid(ve)))) + 1;
+    }
+
+    ckd_free(base->hyp_str);
+    base->hyp_str = ckd_calloc(1, len);
+    id = exit_id;
+    c = base->hyp_str + len - 1;
+    while (id >= 0) {
+        ve = vithist_id2entry(tstg->vithist, id);
+        assert(ve);
+        len = strlen(s3dict_wordstr(tstg->dict,
+                                    s3dict_basewid(tstg->dict, vithist_entry_wid(ve))));
+        c -= len;
+        memcpy(c, s3dict_wordstr(tstg->dict,
+                                 s3dict_basewid(tstg->dict, vithist_entry_wid(ve))), len);
+        if (c > base->hyp_str) {
+            --c;
+            *c = ' ';
+        }
+    }
 }
 
 static int32

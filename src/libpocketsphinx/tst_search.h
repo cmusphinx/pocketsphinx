@@ -140,6 +140,8 @@ struct tst_search_s {
     int16 *composite_senone_scores; /**< Composite senone scores. */
 
     FILE *hmmdumpfp; /**< File for dumping HMM debugging information. */
+
+    int exit_id;  /**< History ID of exit word (or -1 if not done). */
 };
 typedef struct tst_search_s tst_search_t;
 

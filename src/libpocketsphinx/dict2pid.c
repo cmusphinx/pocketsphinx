@@ -118,6 +118,9 @@ ldiph_comsseq(bin_mdef_t * mdef,                /**< a model definition*/
     glist_t g;
 
     g = NULL;
+    printf("%s(%s,?):",
+           bin_mdef_ciphone_str(mdef, b),
+           bin_mdef_ciphone_str(mdef, r));
     for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
         p = bin_mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
                           (s3cipid_t) r, WORD_POSN_BEGIN);
@@ -128,12 +131,17 @@ ldiph_comsseq(bin_mdef_t * mdef,                /**< a model definition*/
             for (gn = g; gn; gn = gnode_next(gn))
                 if (gnode_int32(gn) == ssid)
                     break;
-            if (gn == NULL)
+            if (gn == NULL) {
                 g = glist_add_int32(g, ssid);
+                printf(" %d", ssid);
+            }
         }
     }
-    if (!g)
+    if (g == NULL) {
         g = glist_add_int32(g, bin_mdef_pid2ssid(mdef, b));
+        printf(" %d", bin_mdef_pid2ssid(mdef, b));
+    }
+    printf("\n");
 
     return g;
 }
@@ -314,7 +322,7 @@ ssidlist2comsseq(glist_t g, bin_mdef_t * mdef, dict2pid_t * dict2pid,
 
         /* Expand ssid into individual states (senones); insert in sen[][] if not present */
         for (i = 0; i < bin_mdef_n_emit_state(mdef); i++) {
-            s = mdef->sseq[ssid][i];
+            s = bin_mdef_sseq2sen(mdef, ssid, i);
 
             for (j = 0; (IS_S3SENID(sen[i][j])) && (sen[i][j] != s); j++);
             if (NOT_S3SENID(sen[i][j])) {

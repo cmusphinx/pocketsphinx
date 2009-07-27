@@ -212,6 +212,14 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         ps->searches = glist_add_ptr(ps->searches, fsgs);
         ps->search = fsgs;
     }
+    else if (cmd_ln_str_r(ps->config, "-tst")) {
+        ps_search_t *tstg;
+
+        if ((tstg = tst_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
+            return -1;
+        ps->searches = glist_add_ptr(ps->searches, tstg);
+        ps->search = tstg;
+    }
     else if ((lmfile = cmd_ln_str_r(ps->config, "-lm"))
              || (lmctl = cmd_ln_str_r(ps->config, "-lmctl"))) {
         ps_search_t *ngs;

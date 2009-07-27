@@ -122,6 +122,26 @@
       ARG_BOOLEAN,                                                                              \
       "no",                                                                                     \
       "Compute all senone scores in every frame (can be faster when there are many senones)" }, \
+{ "-tst",                                                                                       \
+      ARG_BOOLEAN,                                                                              \
+      "no",                                                                                     \
+      "Run time-switch tree search (a.k.a. Sphinx3 search)" },                                  \
+{ "-Nlextree", \
+      ARG_INT32, \
+      "3", \
+      "(tst only) No. of lextrees to be instantiated; entries into them staggered in time" }, \
+{ "-epl", \
+      ARG_INT32, \
+      "3", \
+      "(tst only) Entries Per Lextree; #successive entries into one lextree before lextree-entries shifted to the next" }, \
+{ "-maxhistpf", \
+      ARG_INT32, \
+      "100", \
+      "(tst only) Max no. of histories to maintain at each frame" }, \
+{ "-hmmhistbinsize", \
+      ARG_INT32, \
+      "5000", \
+      "(tst only) Performance histogram: #frames vs #HMMs active; #HMMs/bin in this histogram" }, \
 { "-fwdtree",                                                                                   \
       ARG_BOOLEAN,                                                                              \
       "yes",                                                                                    \
@@ -150,10 +170,6 @@
       ARG_INT32,                                                                                \
       "-1",                                                                                     \
       "Maximum number of active HMMs to maintain at each frame (or -1 for no pruning)" },       \
-{ "-maxhistpf",                                                                                 \
-      ARG_INT32,                                                                                \
-      "100",                                                                                    \
-      "Max no. of histories to maintain at each frame (UNUSED)" },                              \
 { "-fwdflatefwid",                                                                              \
       ARG_INT32,                                                                                \
       "4",                                                                     	                \
