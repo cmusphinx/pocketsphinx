@@ -768,6 +768,9 @@ srch_TST_select_active_gmm(tst_search_t *tstg)
     mdef = ps_search_acmod(tstg)->mdef;
     d2p = tstg->dict2pid;
 
+    bitvec_clear_all(tstg->ssid_active, bin_mdef_n_sseq(mdef));
+    bitvec_clear_all(tstg->comssid_active, dict2pid_n_comsseq(d2p));
+
     /* Find active senone-sequence IDs (including composite ones) */
     for (i = 0; i < (n_ltree << 1); i++) {
         lextree = (i < n_ltree) ? tstg->curugtree[i] :
