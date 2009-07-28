@@ -106,6 +106,14 @@ typedef struct {
 } beam_t;
 
 /**
+ * Various statistics for profiling.
+ */
+typedef struct tst_stats_s {
+    int32 n_hmm_eval;
+    int32 n_senone_active_utt;
+} tst_stats_t;
+
+/**
  * Time-switch tree search module structure.
  */
 struct tst_search_s {
@@ -142,6 +150,7 @@ struct tst_search_s {
     FILE *hmmdumpfp; /**< File for dumping HMM debugging information. */
 
     int exit_id;  /**< History ID of exit word (or -1 if not done). */
+    tst_stats_t st; /**< Statistics. */
 };
 typedef struct tst_search_s tst_search_t;
 

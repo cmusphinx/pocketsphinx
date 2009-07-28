@@ -116,23 +116,6 @@ histprune_zero_histbin(histprune_t * h)
 
 }
 
-
-static void
-histprune_update_histbinsize(histprune_t * h,
-                             int32 hmmhistbinsize, int32 numNodes)
-{
-    int32 n;
-    h->hmm_hist_binsize = hmmhistbinsize;
-    n = numNodes;
-    n /= h->hmm_hist_binsize;
-
-    h->hmm_hist_bins = n + 1;
-
-    h->hmm_hist =
-        (int32 *) ckd_realloc(h->hmm_hist,
-                              h->hmm_hist_bins * sizeof(int32));
-}
-
 static void
 histprune_free(histprune_t * h)
 {
@@ -273,22 +256,6 @@ create_lextree(tst_search_t *tstg, const char *lmname, ptmr_t *tm_build)
     lextree_report(lextree[0]);
 
     return lextree;
-}
-
-static void
-tst_search_update_widmap(tst_search_t *tstg)
-{
-    const char **words;
-    int32 i, n_words;
-
-    /* It's okay to include fillers since they won't be in the LM */
-    n_words = s3dict_size(tstg->dict);
-    words = ckd_calloc(n_words, sizeof(*words));
-    /* This will include alternates, again, that's okay since they aren't in the LM */
-    for (i = 0; i < n_words; ++i)
-        words[i] = (const char *)s3dict_wordstr(tstg->dict, i);
-    ngram_model_set_map_words(tstg->lmset, words, n_words);
-    ckd_free(words);
 }
 
 static int
@@ -452,6 +419,7 @@ tst_search_init(cmd_ln_t *config,
                                      cmd_ln_int32_r(config, "-hmmhistbinsize"),
                                      (tstg->curugtree[0]->n_node + tstg->fillertree[0]->n_node) *
                                      tstg->n_lextree);
+    histprune_report(tstg->histprune);
 
     /* Viterbi history structure */
     tstg->vithist = vithist_init(ngram_model_get_counts(tstg->lmset)[0],
@@ -527,6 +495,9 @@ tst_search_start(ps_search_t *search)
     vithist_utt_reset(tstg->vithist);
     histprune_zero_histbin(tstg->histprune);
 
+    /* Reset statistics */
+    memset(&tstg->st, 0, sizeof(tstg->st));
+
     /* Insert initial <s> into vithist structure */
     pred = vithist_utt_begin(tstg->vithist,
                              s3dict_startwid(tstg->dict),
@@ -563,7 +534,10 @@ static int
 tst_search_finish(ps_search_t *search)
 {
     tst_search_t *tstg = (tst_search_t *)search;
-    int32 i;
+    int32 i, cf;
+
+    /* This is the number of frames processed. */
+    cf = ps_search_acmod(search)->output_frame;
 
     /* Find the exit word and wrap up Viterbi history (but don't reset
      * it yet!) */
@@ -571,14 +545,23 @@ tst_search_finish(ps_search_t *search)
                                     tstg->lmset, tstg->dict,
                                     tstg->dict2pid, tstg->fillpen);
 
-    /* Statistics update/report */
-    /* st->utt_wd_exit = vithist_n_entry(tstg->vithist); */
     /* Not sure hwo to get the uttid. */
-    /* histprune_showhistbin(tstg->histprune, st->nfr, s->uttid); */
+    histprune_showhistbin(tstg->histprune, cf, "histbin");
 
     for (i = 0; i < tstg->n_lextree; i++) {
         lextree_utt_end(tstg->curugtree[i]);
         lextree_utt_end(tstg->fillertree[i]);
+    }
+
+    /* Print out some statistics. */
+    if (cf > 0) {
+        E_INFO("%8d words recognized (%d/fr)\n",
+               vithist_n_entry(tstg->vithist),
+               (vithist_n_entry(tstg->vithist) + (cf >> 1)) / (cf + 1));
+        E_INFO("%8d senones evaluated (%d/fr)\n", tstg->st.n_senone_active_utt,
+               (tstg->st.n_senone_active_utt + (cf >> 1)) / (cf + 1));
+        E_INFO("%8d channels searched (%d/fr)\n",
+               tstg->st.n_hmm_eval, tstg->st.n_hmm_eval / (cf + 1));
     }
 
     if (tstg->exit_id >= 0)
@@ -646,7 +629,7 @@ srch_TST_hmm_compute_lv2(tst_search_t *tstg, int32 frmno)
         if (bestwordscr < lextree->wbest)
             bestwordscr = lextree->wbest;
 
-        /* st->utt_hmm_eval += lextree->n_active; */
+        tstg->st.n_hmm_eval += lextree->n_active;
         frm_nhmm += lextree->n_active;
     }
     if (besthmmscr > 0) {
@@ -966,6 +949,8 @@ tst_search_step(ps_search_t *search, int frame_idx)
     /* Compute GMM scores for the current frame. */
     if ((senscr = acmod_score(ps_search_acmod(search), &frame_idx)) == NULL)
         return 0;
+    tstg->st.n_senone_active_utt += ps_search_acmod(search)->n_senone_active;
+
     /* Evaluate composite senone scores from senone scores */
     memset(tstg->composite_senone_scores, 0,
            bin_mdef_n_sen(ps_search_acmod(search)->mdef)

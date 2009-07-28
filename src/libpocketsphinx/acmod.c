@@ -954,5 +954,7 @@ acmod_flags2list(acmod_t *acmod)
     }
 
     acmod->n_senone_active = n;
+    E_DEBUG(1, ("acmod_flags2list: %d active in frame %d\n",
+                acmod->n_senone_active, acmod->output_frame));
     return n;
 }
