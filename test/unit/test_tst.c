@@ -22,7 +22,8 @@ main(int argc, char *argv[])
 				"-lm", MODELDIR "/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP",
 				"-dict", MODELDIR "/lm/cmudict.0.6d",
 				"-tst", "yes",
-				"-debug", "5",
+				"-maxwpf", "40", "-maxhistpf", "100",
+				"-maxhmmpf", "10000",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = ps_init(config));

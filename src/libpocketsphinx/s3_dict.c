@@ -290,7 +290,6 @@ s3dict_init(bin_mdef_t * mdef, const char *dictfile, const char *fillerfile,
 {
     FILE *fp, *fp2;
     int32 n;
-    int proper = 1;
     char line[1024];
     s3dict_t *d;
     s3cipid_t i, sil;
@@ -376,14 +375,6 @@ s3dict_init(bin_mdef_t * mdef, const char *dictfile, const char *fillerfile,
                 s3dict_add_word(d, line, &i, 1);
                 ++n;
             }
-            /*
-             * Add as a pure filler phone for the allphone decoder
-             */
-            if (s3dict_wordid(d, bin_mdef_ciphone_str(mdef, i)) == BAD_S3WID) {
-                E_INFO("Adding filler phone: %s\n", bin_mdef_ciphone_str(mdef, i));
-                s3dict_add_word(d, (char*)bin_mdef_ciphone_str(mdef, i), &i, 1);
-                ++n;
-            }
         }
     }
     E_INFO("Added %d fillers from mdef file\n", n);
@@ -403,26 +394,6 @@ s3dict_init(bin_mdef_t * mdef, const char *dictfile, const char *fillerfile,
     d->startwid = s3dict_wordid(d, S3_START_WORD);
     d->finishwid = s3dict_wordid(d, S3_FINISH_WORD);
     d->silwid = s3dict_wordid(d, S3_SILENCE_WORD);
-
-
-    /* This imposes the constraints of <s> </s> <sil> for the dictionary and filler dictionary */
-    /* HACK!! Make sure SILENCE_WORD, START_WORD and FINISH_WORD are in dictionary */
-    if (NOT_S3WID(d->startwid)) {
-        E_ERROR("%s not in dictionary\n", S3_START_WORD);
-        proper = 0;
-    }
-    if (NOT_S3WID(d->finishwid)) {
-        E_ERROR("%s not in dictionary\n", S3_FINISH_WORD);
-        proper = 0;
-    }
-    if (NOT_S3WID(d->silwid)) {
-        E_ERROR("%s not in dictionary\n", S3_SILENCE_WORD);
-        proper = 0;
-    }
-
-    if (! proper)
-        E_FATAL("%s, %s, or %s missing from dictionary\n", S3_SILENCE_WORD,
-                S3_START_WORD, S3_FINISH_WORD);
 
     if ((d->filler_start > d->filler_end)
         || (!s3dict_filler_word(d, d->silwid)))

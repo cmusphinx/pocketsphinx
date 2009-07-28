@@ -381,16 +381,6 @@ tst_search_init(cmd_ln_t *config,
             goto error_out;
         }
     }
-    /* tst_search_update_widmap(tstg); */
-
-    /* Unlink silences (FIXME: wtf) */
-#if 0
-    for (lmset_iter = ngram_model_set_iter(kbcore_lmset(kbc)); lmset_iter; lmset_iter = ngram_model_set_iter_next(lmset_iter)) {
-        const char *model_name;
-        unlinksilences(ngram_model_set_iter_model(lmset_iter, &model_name), kbc, kbc->dict);
-    }
-#endif
-
 
     /* STRUCTURE and REPORT: Initialize lexical tree. Filler tree's
        initialization is followed.  */
