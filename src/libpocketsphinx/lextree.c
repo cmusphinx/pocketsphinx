@@ -189,6 +189,58 @@ lextree_node_free(lextree_node_t * ln)
     }
 }
 
+/* This create a mapping from either the unigram or words in a class*/
+static int32
+lextree_ug_wordprob(ngram_model_t * lm, s3dict_t * dict,
+                    int32 th, wordprob_t * wp)
+{
+    int32 i, j, n;
+    int32 unk;
+
+    n = s3dict_size(dict);
+    unk = ngram_unknown_wid(lm);
+
+    /* Iterate over dictionary words rather than LM words since we
+     * don't have a reverse mapping.  (FIXME: might change this
+     * totally in the near future to take advantage of ngram_model_t
+     * word mapping) */
+    for (i = 0, j = 0; i < n; i++) {
+        int32 lmwid, nbo;
+
+        if (s3dict_basewid(dict, i) != i)
+            continue;
+        lmwid = ngram_wid(lm, s3dict_wordstr(dict, s3dict_basewid(dict, i)));
+        if (lmwid == unk)
+            continue;
+        wp[j].prob = ngram_ng_score(lm, lmwid, NULL, 0, &nbo);
+        wp[j].wid = i;
+        ++j;
+    }
+
+    return j;
+}
+
+
+static int32
+wid_wordprob2alt(s3dict_t * dict, wordprob_t * wp, int32 n)
+{
+    int32 i, j;
+    s3wid_t w;
+
+    for (i = 0, j = n; i < n; i++) {
+        w = wp[i].wid;
+        for (w = s3dict_nextalt(dict, w); IS_S3WID(w);
+             w = s3dict_nextalt(dict, w)) {
+            /*      E_INFO("i %d, j %d n %d\n",i,j,n); */
+            wp[j].wid = w;
+            wp[j].prob = wp[i].prob;
+            j++;
+        }
+    }
+
+    return j;
+}
+
 lextree_t *
 lextree_init(bin_mdef_t *mdef, tmat_t *tmat, s3dict_t *dict, dict2pid_t *dict2pid,
              fillpen_t *fp, ngram_model_t * lm, const char *lmname, int32 istreeUgProb,
@@ -234,35 +286,19 @@ lextree_init(bin_mdef_t *mdef, tmat_t *tmat, s3dict_t *dict, dict2pid_t *dict2pi
         wp[j].wid = -1;
         wp[j].prob = -1;
     }
-    j = s3dict_size(dict);
-    for (i = 0, n = 0; i < j; ++i) {
-        int32 lmwid;
-        if (s3dict_basewid(dict, i) != i || s3dict_startwid(dict) == i
-            || s3dict_finishwid(dict) == i)
-            continue;
-        if (lm == NULL
-            || ((lmwid = ngram_wid(lm, s3dict_wordstr(dict, s3dict_basewid(dict, i))))
-                == NGRAM_INVALID_WID)) {
-            continue;
-        }
-        wp[n].prob = ngram_ng_score(lm, lmwid, NULL, 0, &n_lc);
-        wp[n].wid = i;
-        ++n;
-    }
-    for (i = 0; i < j; ++i) {
-        int32 lmwid;
-        if (s3dict_basewid(dict, i) == i || s3dict_startwid(dict) == i
-            || s3dict_finishwid(dict) == i)
-            continue;
-        if (lm == NULL
-            || ((lmwid = ngram_wid(lm, s3dict_wordstr(dict, s3dict_basewid(dict, i))))
-                == NGRAM_INVALID_WID)) {
-            continue;
-        }
-        wp[n].prob = ngram_ng_score(lm, lmwid, NULL, 0, &n_lc);
-        wp[n].wid = i;
-        ++n;
-    }
+    n = lextree_ug_wordprob(lm, dict, MAX_NEG_INT32, wp);
+
+    if (bReport)
+        E_INFO("Size of word table after unigram + words in class: %d.\n",
+               n);
+    if (n < 1)
+        E_FATAL("%d active words in %s\n", n, lmname);
+
+    n = wid_wordprob2alt(dict, wp, n);
+
+    if (bReport)
+        E_INFO("Size of word table after adding alternative prons: %d.\n",
+               n);
     if (istreeUgProb == 0) {
         for (i = 0; i < n; i++) {
             wp[i].prob = -1;    /* Flatten all initial probabilities */
