@@ -245,6 +245,7 @@ create_lextree(tst_search_t *tstg, const char *lmname, ptmr_t *tm_build)
                                   ps_search_acmod(tstg)->tmat,
                                   tstg->dict,
                                   tstg->dict2pid,
+                                  tstg->fillpen,
                                   tstg->lmset,
                                   lmname,
                                   TRUE, TRUE,
@@ -380,7 +381,7 @@ tst_search_init(cmd_ln_t *config,
             goto error_out;
         }
     }
-    tst_search_update_widmap(tstg);
+    /* tst_search_update_widmap(tstg); */
 
     /* Unlink silences (FIXME: wtf) */
 #if 0
@@ -468,7 +469,7 @@ tst_search_init(cmd_ln_t *config,
                                  tstg->beam->word,
                                  cmd_ln_int32_r(config, "-bghist"), TRUE);
 
-    tstg->hmmdumpfp = stdout;
+
     return (ps_search_t *)tstg;
 
 error_out:
@@ -537,7 +538,9 @@ tst_search_start(ps_search_t *search)
     histprune_zero_histbin(tstg->histprune);
 
     /* Insert initial <s> into vithist structure */
-    pred = vithist_utt_begin(tstg->vithist, s3dict_startwid(tstg->dict));
+    pred = vithist_utt_begin(tstg->vithist,
+                             s3dict_startwid(tstg->dict),
+                             ngram_wid(tstg->lmset, "<s>"));
     assert(pred == 0);          /* Vithist entry ID for <s> */
 
     /* Need to reinitialize GMMs, things like that? */
@@ -545,7 +548,8 @@ tst_search_start(ps_search_t *search)
     /* Enter into unigram lextree[0] */
     n = lextree_n_next_active(tstg->curugtree[0]);
     assert(n == 0);
-    lextree_enter(tstg->curugtree[0], bin_mdef_silphone(ps_search_acmod(tstg)->mdef),
+    lextree_enter(tstg->curugtree[0],
+                  bin_mdef_silphone(ps_search_acmod(tstg)->mdef),
                   -1, 0, pred, tstg->beam->hmm);
 
     /* Enter into filler lextree */
@@ -575,7 +579,7 @@ tst_search_finish(ps_search_t *search)
      * it yet!) */
     tstg->exit_id = vithist_utt_end(tstg->vithist,
                                     tstg->lmset, tstg->dict,
-                                    tstg->dict2pid);
+                                    tstg->dict2pid, tstg->fillpen);
 
     /* Statistics update/report */
     /* st->utt_wd_exit = vithist_n_entry(tstg->vithist); */
@@ -676,7 +680,7 @@ srch_TST_hmm_compute_lv2(tst_search_t *tstg, int32 frmno)
      * is within limit 
      */
     /* ARCHAN: MAGIC */
-    if (frm_nhmm > (maxhmmpf + (maxhmmpf >> 1))) {
+    if (maxhmmpf != -1 && frm_nhmm > (maxhmmpf + (maxhmmpf >> 1))) {
         int32 *bin, nbin, bw;
 
         /* Use histogram pruning */
@@ -726,11 +730,9 @@ srch_TST_propagate_graph_ph_lv2(tst_search_t *tstg, int32 frmno)
     n_ltree = tstg->n_lextree;
 
     for (i = 0; i < (n_ltree << 1); i++) {
-        lextree =
-            (i <
-             n_ltree) ? tstg->curugtree[i] : tstg->fillertree[i -
-                                                              tstg->
-                                                              n_lextree];
+        lextree = (i < n_ltree)
+            ? tstg->curugtree[i]
+            : tstg->fillertree[i - tstg-> n_lextree];
 
         if (lextree_hmm_propagate_non_leaves(lextree, frmno,
                                              tstg->beam->thres,
@@ -1024,6 +1026,7 @@ tst_search_hyp(ps_search_t *base, int32 *out_score)
         assert(ve);
         len += strlen(s3dict_wordstr(tstg->dict,
                                      s3dict_basewid(tstg->dict, vithist_entry_wid(ve)))) + 1;
+        id = ve->path.pred;
     }
 
     ckd_free(base->hyp_str);
@@ -1042,6 +1045,7 @@ tst_search_hyp(ps_search_t *base, int32 *out_score)
             --c;
             *c = ' ';
         }
+        id = ve->path.pred;
     }
 
     return base->hyp_str;

@@ -168,7 +168,6 @@ lextree_node_alloc(lextree_t *lextree, int32 wid, int32 prob,
     lextree_node_t *ln;
 
     ln = (lextree_node_t *) ckd_calloc(1, sizeof(lextree_node_t));
-    ln->ctx = (comp ? lextree->comctx : lextree->ctx);
     ln->children = NULL;
     ln->wid = wid;
     ln->prob = prob;
@@ -176,7 +175,7 @@ lextree_node_alloc(lextree_t *lextree, int32 wid, int32 prob,
     ln->ci = (s3cipid_t) ci;
     ln->rc = rc;
     ln->composite = comp;
-    hmm_init(ln->ctx, (hmm_t *)ln, FALSE, ssid, tmat);
+    hmm_init((comp ? lextree->comctx : lextree->ctx), (hmm_t *)ln, FALSE, ssid, tmat);
 
     return ln;
 }
@@ -192,7 +191,7 @@ lextree_node_free(lextree_node_t * ln)
 
 lextree_t *
 lextree_init(bin_mdef_t *mdef, tmat_t *tmat, s3dict_t *dict, dict2pid_t *dict2pid,
-             ngram_model_t * lm, const char *lmname, int32 istreeUgProb,
+             fillpen_t *fp, ngram_model_t * lm, const char *lmname, int32 istreeUgProb,
              int32 bReport, int32 type)
 {
     s3cipid_t *lc;
@@ -275,6 +274,7 @@ lextree_init(bin_mdef_t *mdef, tmat_t *tmat, s3dict_t *dict, dict2pid_t *dict2pi
     ltree->mdef = mdef;
     ltree->tmat = tmat;
     ltree->dict2pid = dict2pid;
+    ltree->fp = fp;
     ltree->lm = ngram_model_retain(lm);
 
     ckd_free((void *) wp);
@@ -310,6 +310,7 @@ fillertree_init(bin_mdef_t *mdef, tmat_t *tmat, s3dict_t *dict,
     ltree->mdef = mdef;
     ltree->tmat = tmat;
     ltree->dict = dict;
+    ltree->fp = fp;
     ltree->dict2pid = dict2pid;
 
     ckd_free(wp);
@@ -1522,7 +1523,7 @@ lextree_hmm_propagate_leaves(lextree_t * lextree,
 
             if (dict2pid_is_composite(lextree->dict2pid)) {
                 vithist_rescore(vh, lextree->lm, lextree->dict,
-                                lextree->dict2pid, ln->wid, cf,
+                                lextree->dict2pid, lextree->fp, ln->wid, cf,
                                 hmm_out_score(&ln->hmm) - ln->prob,
                                 hmm_out_history(&ln->hmm), lextree->type, -1);
             }
@@ -1532,7 +1533,7 @@ lextree_hmm_propagate_leaves(lextree_t * lextree,
                 assert(ln->rc != BAD_S3CIPID);
 
                 vithist_rescore(vh, lextree->lm, lextree->dict,
-                                lextree->dict2pid, ln->wid, cf,
+                                lextree->dict2pid, lextree->fp, ln->wid, cf,
                                 hmm_out_score(&ln->hmm) - ln->prob,
                                 hmm_out_history(&ln->hmm), lextree->type, ln->rc);
 

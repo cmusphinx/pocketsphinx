@@ -183,7 +183,6 @@ extern "C" {
  */
 typedef struct {
     hmm_t hmm;		/**< HMM states */
-    hmm_context_t *ctx; /**< HMM context pointer (not owned by this structure) */
 
     glist_t children;	/**< Its data.ptr are children (lextree_node_t *)
 
@@ -199,7 +198,7 @@ typedef struct {
 
                         */
 
-    int32 wid;		/**< Dictionary word-ID if a leaf node; BAD_S3WID otherwise */
+    int32 wid;		/**< <em>Dictionary</em> word-ID if a leaf node; BAD_S3WID otherwise */
     int32 prob;		/**< LM probability of this node (of all words leading from this node) */
     int32 ssid;		/**< Senone-sequence ID (or composite state-seq ID if composite) */
     s3cipid_t rc;        /**< The (compressed) right context for this node. Preferably compressed.
@@ -245,6 +244,7 @@ typedef struct {
     bin_mdef_t *mdef;     /**< Model definition (not owned by this structure) */
     s3dict_t *dict;     /**< Dictionary (not owned by this structure) */
     dict2pid_t *dict2pid;     /**< Dictionary mapping (not owned by this structure) */
+    fillpen_t *fp;      /**< Filler penalties (not owned by this structure) */
     ngram_model_t *lm;  /**< Language model */
     tmat_t *tmat;       /**< Transition matrices */
 
@@ -284,6 +284,7 @@ lextree_t* lextree_init(
     tmat_t *tmat,
     s3dict_t *dict,
     dict2pid_t *dict2pid,
+    fillpen_t *fp,
     ngram_model_t* lm,
     const char *lmname,     /**< In: LM name */
     int32 istreeUgProb, /**< In: Decide whether LM factoring is used or not */
@@ -307,7 +308,7 @@ void lextree_report(
     \brief Generic structure that could be used at any n-gram level 
 */
 typedef struct {
-    s3wid_t wid;	/**< NOTE: dictionary wid; may be BAD_S3WID if not available */
+    s3wid_t wid;	/**< NOTE: <em>dictionary</em> wid; may be BAD_S3WID if not available */
     int32 prob;         /**< The probability */
 } wordprob_t;
 

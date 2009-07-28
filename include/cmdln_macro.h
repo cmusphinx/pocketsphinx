@@ -63,6 +63,11 @@
             NULL,                                       \
             "File to write log messages in"             \
      },                                                 \
+    { "-debug",                                         \
+            ARG_INT32,                                  \
+            NULL,                                       \
+            "Verbosity level for debugging messages"    \
+     },                                                 \
      { "-mfclogdir",                                    \
              ARG_STRING,                                \
              NULL,                                      \
@@ -136,7 +141,7 @@
       "(tst only) Entries Per Lextree; #successive entries into one lextree before lextree-entries shifted to the next" }, \
 { "-maxhistpf", \
       ARG_INT32, \
-      "100", \
+      "-1", \
       "(tst only) Max no. of histories to maintain at each frame" }, \
 { "-hmmhistbinsize", \
       ARG_INT32, \

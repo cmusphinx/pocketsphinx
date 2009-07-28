@@ -119,9 +119,9 @@ ldiph_comsseq(bin_mdef_t * mdef,                /**< a model definition*/
     glist_t g;
 
     g = NULL;
-    printf("%s(%s,?):",
-           bin_mdef_ciphone_str(mdef, b),
-           bin_mdef_ciphone_str(mdef, r));
+    E_DEBUG(2,("%s(%s,?):",
+               bin_mdef_ciphone_str(mdef, b),
+               bin_mdef_ciphone_str(mdef, r)));
     for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
         p = bin_mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
                           (s3cipid_t) r, WORD_POSN_BEGIN);
@@ -134,15 +134,15 @@ ldiph_comsseq(bin_mdef_t * mdef,                /**< a model definition*/
                     break;
             if (gn == NULL) {
                 g = glist_add_int32(g, ssid);
-                printf(" %d", ssid);
+                E_DEBUGCONT(2,(" %d", ssid));
             }
         }
     }
     if (g == NULL) {
         g = glist_add_int32(g, bin_mdef_pid2ssid(mdef, b));
-        printf(" %d", bin_mdef_pid2ssid(mdef, b));
+        E_DEBUGCONT(2,(" %d", bin_mdef_pid2ssid(mdef, b)));
     }
-    printf("\n");
+    E_DEBUGCONT(2,("\n"));
 
     return g;
 }

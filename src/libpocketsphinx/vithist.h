@@ -132,6 +132,7 @@
 #include <glist.h>
 
 #include "s3types.h"
+#include "fillpen.h"
 #include "s3_dict.h"
 #include "dict2pid.h"
 
@@ -157,7 +158,11 @@ extern "C" {
  */
 typedef union vh_lmstate_u {
     struct {
-        int32 lwid[2];		/**< 2-word history; [0] is most recent */
+        /**
+         * LANGUAGE MODEL word IDs.  lwid[0] is the current word,
+         * lwid[1] is the previous word.
+         */
+        int32 lwid[2];
     } lm3g;
 } vh_lmstate_t;
 
@@ -173,7 +178,7 @@ typedef struct backpointer_s {
 typedef struct {
     backpointer_t path;         /**< Predecessor word and best path score including it */
     vh_lmstate_t lmstate;	/**< LM state */
-    s3wid_t wid;		/**< Dictionary word ID; exact word that just exited */
+    s3wid_t wid;		/**< <em>dictionary</em> word ID; exact word that just exited */
     s3frmid_t sf, ef;		/**< Start and end frames for this entry */
     int32 ascr;			/**< Acoustic score for this node */
     int32 lscr;			/**< LM score for this node, given its Viterbi history */
@@ -289,7 +294,7 @@ typedef struct {
  * @return An initialized vithist_t
  */
 
-vithist_t *vithist_init(int32 nword,    /**< Maximum number of words */
+vithist_t *vithist_init(int32 lm_nword, /**< Number of words in <em>language model</em> */
                         int32 n_ci,     /**< Number of CI phones */
                         int32 wbeam,    /**< Word exit beam width */
                         int32 bghist,   /**< If only bigram history is used */
@@ -301,8 +306,9 @@ vithist_t *vithist_init(int32 nword,    /**< Maximum number of words */
  * Invoked at the beginning of each utterance; vithist initialized with a root <s> entry.
  * @return Vithist ID of the root <s> entry.
  */
-int32 vithist_utt_begin(vithist_t *vh, /**< In: a Viterbi history data structure */
-                        int32 startwid /**< In: ID of start word */
+int32 vithist_utt_begin(vithist_t *vh,  /**< In: a Viterbi history data structure */
+                        int32 wid,   /**< In: <em>dictionary</em> ID of start word */
+                        int32 lwid   /**< In: <em>language model</em> ID of start word */
     );
 
 
@@ -314,7 +320,8 @@ int32 vithist_utt_begin(vithist_t *vh, /**< In: a Viterbi history data structure
 int32 vithist_utt_end(vithist_t *vh, /**< In: a Viterbi history data structure*/
                       ngram_model_t *lm,
                       s3dict_t *dict,
-                      dict2pid_t *dict2pid
+                      dict2pid_t *dict2pid,
+                      fillpen_t *fp
     );
 
 
@@ -336,9 +343,9 @@ void vithist_utt_reset(vithist_t *vh  /**< In: a Viterbi history data structure*
  * Viterbi backtrace.  Return value: List of hyp_t pointer entries for the individual word
  * segments.  Caller responsible for freeing the list.
  */
-glist_t vithist_backtrace(vithist_t *vh,       /**< In: a Viterbi history data structure*/
+glist_t vithist_backtrace(vithist_t *vh,        /**< In: a Viterbi history data structure*/
                           int32 id,		/**< ID from which to begin backtrace */
-                          s3dict_t *dict         /**< a dictionary for look up the ci phone of a word*/
+                          s3dict_t *dict        /**< a dictionary for look up the ci phone of a word*/
     );
 
 
@@ -364,8 +371,9 @@ void vithist_enter(vithist_t * vh,              /**< The history table */
 void vithist_rescore(vithist_t *vh,    /**< In: a Viterbi history data structure*/
                      ngram_model_t *lm,  /**< In: Language model */
                      s3dict_t *dict,     /**< In: Dictionary */
-                     dict2pid_t *dict2pid,        /**< Context table mapping thing */
-                     s3wid_t wid,      /**< In: a word ID */
+                     dict2pid_t *dict2pid,/**< Context table mapping thing */
+                     fillpen_t *fp,    /**< In: Filler penalty list */
+                     s3wid_t wid,      /**< In: a <em>dictionary</em> word ID */
                      int32 ef,		/**< In: End frame for this word instance */
                      int32 score,	/**< In: Does not include LM score for this entry */
                      int32 pred,	/**< In: Tentative predecessor */

@@ -149,6 +149,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     if (cmd_ln_str_r(ps->config, "-logfn"))
         err_set_logfile(cmd_ln_str_r(ps->config, "-logfn"));
 #endif
+    err_set_debug_level(cmd_ln_int32_r(ps->config, "-debug"));
     ps->mfclogdir = cmd_ln_str_r(ps->config, "-mfclogdir");
     ps->rawlogdir = cmd_ln_str_r(ps->config, "-rawlogdir");
 

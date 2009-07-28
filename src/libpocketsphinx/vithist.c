@@ -153,11 +153,9 @@ vithist_entry_display(vithist_entry_t * ve, s3dict_t * dict)
 
 
 vithist_t *
-vithist_init(int32 nword, int32 n_ci, int32 wbeam, int32 bghist, int32 report)
+vithist_init(int32 max, int32 n_ci, int32 wbeam, int32 bghist, int32 report)
 {
     vithist_t *vh;
-
-    int max = -1;
 
     if (report)
         E_INFO("Initializing Viterbi-history module\n");
@@ -181,7 +179,7 @@ vithist_init(int32 nword, int32 n_ci, int32 wbeam, int32 bghist, int32 report)
 
     E_INFO("Allocation for Viterbi history, lmset-final size: %d\n", max);
     vh->lms2vh_root =
-        (vh_lms2vh_t **) ckd_calloc(nword, sizeof(vh_lms2vh_t *));
+        (vh_lms2vh_t **) ckd_calloc(max, sizeof(vh_lms2vh_t *));
     vh->n_ci = n_ci;
 
     vh->lwidlist = NULL;
@@ -282,7 +280,7 @@ vithist_entry_alloc(vithist_t * vh)
 
 
 int32
-vithist_utt_begin(vithist_t * vh, int32 startwid)
+vithist_utt_begin(vithist_t * vh, int32 startwid, int32 lwid)
 {
     vithist_entry_t *ve;
 
@@ -302,7 +300,7 @@ vithist_utt_begin(vithist_t * vh, int32 startwid)
     ve->path.pred = -1;
     ve->type = 0;
     ve->valid = 1;
-    ve->lmstate.lm3g.lwid[0] = startwid;
+    ve->lmstate.lm3g.lwid[0] = lwid;
     ve->lmstate.lm3g.lwid[1] = NGRAM_INVALID_WID;
     vh->n_frm = 0;
     vh->frame_start[0] = 1;
@@ -470,6 +468,7 @@ vithist_enter(vithist_t * vh,              /**< The history table */
 void
 vithist_rescore(vithist_t * vh, ngram_model_t *lm,
                 s3dict_t *dict, dict2pid_t *dict2pid,
+                fillpen_t *fp,
                 s3wid_t wid, int32 ef, int32 score,
                 int32 pred, int32 type, int32 rc)
 {
@@ -506,8 +505,7 @@ vithist_rescore(vithist_t * vh, ngram_model_t *lm,
     if (s3dict_filler_word(dict, wid)) {
 
         tve.path.score = score;
-        /* FIXME: not sure what to do about filler penalty thing yet. */
-        /*tve.lscr = fillpen(kbcore_fillpen(kbc), wid); */
+        tve.lscr = fillpen(fp, wid);
         tve.path.score += tve.lscr;
 
         tve.path.pred = pred;
@@ -573,9 +571,12 @@ vithist_frame_gc(vithist_t * vh, int32 frm)
 
     bs = MAX_NEG_INT32;
     bv = -1;
+    E_DEBUG(1,("GC in frame %d, scanning vithist entries from %d to %d\n",
+               frm, se, fe));
     for (i = se; i <= fe; i++) {
         ve = vithist_id2entry(vh, i);
         if (ve->valid) {
+            E_DEBUG(2,("Valid entry %d score %d\n", i, ve->path.score));
             if (i != te) {      /* Move i to te */
                 tve = vithist_id2entry(vh, te);
                 /**tve = *ve;*/
@@ -591,8 +592,7 @@ vithist_frame_gc(vithist_t * vh, int32 frm)
         }
     }
 
-
-    /*    E_INFO("frm %d, bs %d vh->bestscore[frm] %d\n",frm, bs, vh->bestscore[frm]); */
+    E_DEBUG(1,("frm %d, bs %d vh->bestscore[frm] %d\n",frm, bs, vh->bestscore[frm]));
 
     /* Can't assert this any more because history pruning could actually make the 
        best token go away 
@@ -631,8 +631,12 @@ vithist_prune(vithist_t * vh, s3dict_t * dict, int32 frm,
     int32 se, fe, filler_done, th;
     vithist_entry_t *ve;
     heap_t h;
-    s3wid_t *wid;
-    int32 i;
+    s3wid_t *wid = NULL;
+    int32 i, nwf, nhf;
+
+    if (maxwpf == -1 && maxhist == -1)
+        return;
+    nwf = nhf = 0;
 
     assert(frm >= 0);
 
@@ -642,8 +646,10 @@ vithist_prune(vithist_t * vh, s3dict_t * dict, int32 frm,
     th = vh->bestscore[frm] + beam;
 
     h = heap_new();
-    wid = (s3wid_t *) ckd_calloc(maxwpf + 1, sizeof(s3wid_t));
-    wid[0] = BAD_S3WID;
+    if (maxwpf > 0) {
+        wid = (s3wid_t *) ckd_calloc(maxwpf + 1, sizeof(s3wid_t));
+        wid[0] = BAD_S3WID;
+    }
 
     for (i = se; i <= fe; i++) {
         ve = vithist_id2entry(vh, i);
@@ -655,7 +661,7 @@ vithist_prune(vithist_t * vh, s3dict_t * dict, int32 frm,
     filler_done = 0;
     while ((heap_pop(h, (void **) (&ve), &i) > 0)
            && ve->path.score >= th /* the score (or the cw scores) is above threshold */
-           && maxhist > 0)        /* Number of history is larger than 0 */
+           && (nhf < maxhist || maxhist == -1))
     {
         if (s3dict_filler_word(dict, ve->wid)) {
             /* Major HACK!!  Keep only one best filler word entry per frame */
@@ -664,22 +670,23 @@ vithist_prune(vithist_t * vh, s3dict_t * dict, int32 frm,
             filler_done = 1;
         }
 
-        /*      E_INFO("ve->wid survived, maxwpf %d, maxhistpf %d\n",maxwpf,maxhist); */
         /* Check if this word already valid (e.g., under a different history) */
-        for (i = 0; IS_S3WID(wid[i]) && (wid[i] != ve->wid); i++);
-        if (NOT_S3WID(wid[i])) {
+        for (i = 0; wid && IS_S3WID(wid[i]) && (wid[i] != ve->wid); i++);
+        if (wid == NULL || NOT_S3WID(wid[i])) {
             /* New word; keep only if <maxwpf words already entered, even if >= thresh */
-            if (maxwpf > 0) {
-                wid[i] = ve->wid;
-                wid[i + 1] = BAD_S3WID;
+            if (nwf < maxwpf || maxwpf == -1) {
+                if (wid) {
+                    wid[i] = ve->wid;
+                    wid[i + 1] = BAD_S3WID;
+                }
 
-                --maxwpf;
-                --maxhist;
+                ++nwf;
+                ++nhf;
                 ve->valid = 1;
             }
         }
         else if (!vh->bghist) {
-            --maxhist;
+            ++nhf;
             ve->valid = 1;
         }
     }
@@ -739,7 +746,8 @@ vithist_frame_windup(vithist_t * vh, int32 frm, FILE * fp,
 
 
 int32
-vithist_utt_end(vithist_t * vh, ngram_model_t *lm, s3dict_t *dict, dict2pid_t *dict2pid)
+vithist_utt_end(vithist_t * vh, ngram_model_t *lm, s3dict_t *dict,
+                dict2pid_t *dict2pid, fillpen_t *fp)
 {
     int32 f, i;
     int32 sv, nsv, scr, bestscore, bestvh, vhid;
@@ -792,13 +800,13 @@ vithist_utt_end(vithist_t * vh, ngram_model_t *lm, s3dict_t *dict, dict2pid_t *d
         assert(vh->frame_start[vh->n_frm - 1] ==
                vh->frame_start[vh->n_frm]);
         vh->n_frm -= 1;
-        vithist_rescore(vh, lm, dict, dict2pid,
+        vithist_rescore(vh, lm, dict, dict2pid, fp,
                         s3dict_silwid(dict), vh->n_frm,
                         bestve->path.score, bestvh, -1, -1);
         vh->n_frm += 1;
         vh->frame_start[vh->n_frm] = vh->n_entry;
 
-        return vithist_utt_end(vh, lm, dict, dict2pid);
+        return vithist_utt_end(vh, lm, dict, dict2pid, fp);
     }
 
     /*    vithist_dump(vh,-1,kbc,stdout); */
