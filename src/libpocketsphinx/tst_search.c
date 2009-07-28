@@ -1012,11 +1012,16 @@ tst_search_hyp(ps_search_t *base, int32 *out_score)
     id = exit_id;
     len = 0;
     while (id >= 0) {
+        s3wid_t wid;
         ve = vithist_id2entry(tstg->vithist, id);
         assert(ve);
-        len += strlen(s3dict_wordstr(tstg->dict,
-                                     s3dict_basewid(tstg->dict, vithist_entry_wid(ve)))) + 1;
+        wid = vithist_entry_wid(ve);
         id = ve->path.pred;
+        if (s3dict_filler_word(tstg->dict, wid)
+            || wid == s3dict_startwid(tstg->dict)
+            || wid == s3dict_finishwid(tstg->dict))
+            continue;
+        len += strlen(s3dict_wordstr(tstg->dict, s3dict_basewid(tstg->dict, wid))) + 1;
     }
 
     ckd_free(base->hyp_str);
@@ -1024,18 +1029,22 @@ tst_search_hyp(ps_search_t *base, int32 *out_score)
     id = exit_id;
     c = base->hyp_str + len - 1;
     while (id >= 0) {
+        s3wid_t wid;
         ve = vithist_id2entry(tstg->vithist, id);
         assert(ve);
-        len = strlen(s3dict_wordstr(tstg->dict,
-                                    s3dict_basewid(tstg->dict, vithist_entry_wid(ve))));
+        wid = vithist_entry_wid(ve);
+        id = ve->path.pred;
+        if (s3dict_filler_word(tstg->dict, wid)
+            || wid == s3dict_startwid(tstg->dict)
+            || wid == s3dict_finishwid(tstg->dict))
+            continue;
+        len = strlen(s3dict_wordstr(tstg->dict, s3dict_basewid(tstg->dict, wid)));
         c -= len;
-        memcpy(c, s3dict_wordstr(tstg->dict,
-                                 s3dict_basewid(tstg->dict, vithist_entry_wid(ve))), len);
+        memcpy(c, s3dict_wordstr(tstg->dict, s3dict_basewid(tstg->dict, wid)), len);
         if (c > base->hyp_str) {
             --c;
             *c = ' ';
         }
-        id = ve->path.pred;
     }
 
     return base->hyp_str;
@@ -1046,13 +1055,114 @@ tst_search_prob(ps_search_t *search)
 {
     tst_search_t *tstg = (tst_search_t *)search;
 
+    /* Bogus out-of-band value for now. */
     return 1;
 }
+
+/**
+ * Segmentation "iterator" for vithist results.
+ */
+typedef struct tst_seg_s {
+    ps_seg_t base;  /**< Base structure. */
+    int32 *bpidx;   /**< Sequence of backpointer IDs. */
+    int16 n_bpidx;  /**< Number of backpointer IDs. */
+    int16 cur;      /**< Current position in bpidx. */
+} tst_seg_t;
+
+static void
+tst_search_bp2itor(ps_seg_t *seg, int id)
+{
+    tst_search_t *tstg = (tst_search_t *)seg->search;
+    vithist_entry_t *ve;
+
+    ve = vithist_id2entry(tstg->vithist, id);
+    assert(ve);
+    seg->word = s3dict_wordstr(tstg->dict, vithist_entry_wid(ve));
+    seg->ef = vithist_entry_ef(ve);
+    seg->sf = vithist_entry_sf(ve);
+    seg->prob = 0; /* Bogus value... */
+    seg->ascr = vithist_entry_ascr(ve);
+    seg->lscr = vithist_entry_lscr(ve);
+    seg->lback = 0; /* FIXME: Compute this somewhere... */
+}
+
+static void
+tst_seg_free(ps_seg_t *seg)
+{
+    tst_seg_t *itor = (tst_seg_t *)seg;
+    
+    ckd_free(itor->bpidx);
+    ckd_free(itor);
+}
+
+static ps_seg_t *
+tst_seg_next(ps_seg_t *seg)
+{
+    tst_seg_t *itor = (tst_seg_t *)seg;
+
+    if (++itor->cur == itor->n_bpidx) {
+        tst_seg_free(seg);
+        return NULL;
+    }
+
+    tst_search_bp2itor(seg, itor->bpidx[itor->cur]);
+    return seg;
+}
+
+static ps_segfuncs_t tst_segfuncs = {
+    /* seg_next */ tst_seg_next,
+    /* seg_free */ tst_seg_free
+};
 
 static ps_seg_t *
 tst_search_seg_iter(ps_search_t *search, int32 *out_score)
 {
     tst_search_t *tstg = (tst_search_t *)search;
+    tst_seg_t *itor;
+    int exit_id, id, cur;
 
-    return NULL;
+    if (tstg->exit_id == -1) /* Search not finished */
+	exit_id = vithist_partialutt_end(tstg->vithist, tstg->lmset, tstg->dict);
+    else
+        exit_id = tstg->exit_id;
+    if (exit_id < 0) {
+        E_WARN("Failed to retrieve viterbi history.\n");
+        return NULL;
+    }
+
+    /* Calling this an "iterator" is a bit of a misnomer since we have
+     * to get the entire backtrace in order to produce it.  On the
+     * other hand, all we actually need is the vithist IDs, and we can
+     * allocate a fixed-size array of them. */
+    itor = ckd_calloc(1, sizeof(*itor));
+    itor->base.vt = &tst_segfuncs;
+    itor->base.search = search;
+    itor->base.lwf = 1.0;
+    itor->n_bpidx = 0;
+    id = exit_id;
+    while (id >= 0) {
+        vithist_entry_t *ve = vithist_id2entry(tstg->vithist, id);
+        assert(ve);
+        id = vithist_entry_pred(ve);
+        ++itor->n_bpidx;
+    }
+    if (itor->n_bpidx == 0) {
+        ckd_free(itor);
+        return NULL;
+    }
+    itor->bpidx = ckd_calloc(itor->n_bpidx, sizeof(*itor->bpidx));
+    cur = itor->n_bpidx - 1;
+    id = exit_id;
+    while (id >= 0) {
+        vithist_entry_t *ve = vithist_id2entry(tstg->vithist, id);
+        assert(ve);
+        itor->bpidx[cur] = id;
+        id = vithist_entry_pred(ve);
+        --cur;
+    }
+
+    /* Fill in relevant fields for first element. */
+    tst_search_bp2itor((ps_seg_t *)itor, itor->bpidx[0]);
+
+    return (ps_seg_t *)itor;
 }
