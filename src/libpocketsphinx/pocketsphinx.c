@@ -190,10 +190,6 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         && cmd_ln_boolean_r(ps->config, "-fwdtree"))
         acmod_set_grow(ps->acmod, TRUE);
 
-    /* Dictionary and triphone mappings (depends on acmod). */
-    if ((ps->dict = dict_init(ps->config, ps->acmod->mdef)) == NULL)
-        return -1;
-
     if ((ps->pl_window = cmd_ln_int32_r(ps->config, "-pl_window"))) {
         /* Initialize an auxiliary phone loop search, which will run in
          * "parallel" with FSG or N-Gram search. */
@@ -207,6 +203,10 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     if (cmd_ln_str_r(ps->config, "-fsg") || cmd_ln_str_r(ps->config, "-jsgf")) {
         ps_search_t *fsgs;
 
+        /* Dictionary and triphone mappings (depends on acmod). */
+        if ((ps->dict = dict_init(ps->config, ps->acmod->mdef)) == NULL)
+            return -1;
+
         if ((fsgs = fsg_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
             return -1;
         fsgs->pls = ps->phone_loop;
@@ -216,6 +216,8 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     else if (cmd_ln_str_r(ps->config, "-tst")) {
         ps_search_t *tstg;
 
+        /* No dict_t for TST search... */
+
         if ((tstg = tst_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
             return -1;
         ps->searches = glist_add_ptr(ps->searches, tstg);
@@ -224,6 +226,10 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     else if ((lmfile = cmd_ln_str_r(ps->config, "-lm"))
              || (lmctl = cmd_ln_str_r(ps->config, "-lmctl"))) {
         ps_search_t *ngs;
+
+        /* Dictionary and triphone mappings (depends on acmod). */
+        if ((ps->dict = dict_init(ps->config, ps->acmod->mdef)) == NULL)
+            return -1;
 
         if ((ngs = ngram_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
             return -1;

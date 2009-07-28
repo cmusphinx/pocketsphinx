@@ -526,8 +526,8 @@ vithist_rescore(vithist_t * vh, ngram_model_t *lm,
            So  pve becomes the w_{n-2}. 
          */
 
-        lwid = ngram_wid(lm, s3dict_wordstr(dict,
-                                            s3dict_basewid(dict, wid)));
+        /* FIXME: SLOW */
+        lwid = ngram_wid(lm, s3dict_wordstr(dict, s3dict_basewid(dict, wid)));
 
         tve.lmstate.lm3g.lwid[0] = lwid;
 
@@ -571,7 +571,7 @@ vithist_frame_gc(vithist_t * vh, int32 frm)
 
     bs = MAX_NEG_INT32;
     bv = -1;
-    E_DEBUG(1,("GC in frame %d, scanning vithist entries from %d to %d\n",
+    E_DEBUG(2,("GC in frame %d, scanning vithist entries from %d to %d\n",
                frm, se, fe));
     for (i = se; i <= fe; i++) {
         ve = vithist_id2entry(vh, i);
@@ -591,8 +591,7 @@ vithist_frame_gc(vithist_t * vh, int32 frm)
             te++;
         }
     }
-
-    E_DEBUG(1,("frm %d, bs %d vh->bestscore[frm] %d\n",frm, bs, vh->bestscore[frm]));
+    E_DEBUG(2,("GC bs %d vh->bestscore[frm] %d\n", bs, vh->bestscore[frm]));
 
     /* Can't assert this any more because history pruning could actually make the 
        best token go away 
@@ -631,7 +630,7 @@ vithist_prune(vithist_t * vh, s3dict_t * dict, int32 frm,
     int32 se, fe, filler_done, th;
     vithist_entry_t *ve;
     heap_t h;
-    s3wid_t *wid = NULL;
+    s3wid_t *wid;
     int32 i, nwf, nhf;
 
     if (maxwpf == -1 && maxhist == -1)
@@ -646,11 +645,10 @@ vithist_prune(vithist_t * vh, s3dict_t * dict, int32 frm,
     th = vh->bestscore[frm] + beam;
 
     h = heap_new();
-    if (maxwpf > 0) {
-        wid = (s3wid_t *) ckd_calloc(maxwpf + 1, sizeof(s3wid_t));
-        wid[0] = BAD_S3WID;
-    }
+    wid = (s3wid_t *) ckd_calloc(maxwpf + 1, sizeof(s3wid_t));
+    wid[0] = BAD_S3WID;
 
+    E_DEBUG(1, ("vithist_prune frame %d has %d entries\n", frm, fe-se+1));
     for (i = se; i <= fe; i++) {
         ve = vithist_id2entry(vh, i);
         heap_insert(h, (void *) ve, -(ve->path.score));
@@ -671,8 +669,8 @@ vithist_prune(vithist_t * vh, s3dict_t * dict, int32 frm,
         }
 
         /* Check if this word already valid (e.g., under a different history) */
-        for (i = 0; wid && IS_S3WID(wid[i]) && (wid[i] != ve->wid); i++);
-        if (wid == NULL || NOT_S3WID(wid[i])) {
+        for (i = 0; IS_S3WID(wid[i]) && (wid[i] != ve->wid); i++);
+        if (NOT_S3WID(wid[i])) {
             /* New word; keep only if <maxwpf words already entered, even if >= thresh */
             if (nwf < maxwpf || maxwpf == -1) {
                 if (wid) {
@@ -694,6 +692,7 @@ vithist_prune(vithist_t * vh, s3dict_t * dict, int32 frm,
     ckd_free((void *) wid);
     heap_destroy(h);
 
+    E_DEBUG(1, ("vithist_prune frame %d retained %d entries\n", frm, nhf));
     /* Garbage collect invalid entries */
     vithist_frame_gc(vh, frm);
 }

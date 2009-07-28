@@ -195,10 +195,12 @@ lextree_ug_wordprob(ngram_model_t * lm, s3dict_t * dict,
                     int32 th, wordprob_t * wp)
 {
     int32 i, j, n;
-    int32 unk;
+    int32 unk, startwid, endwid;
 
     n = s3dict_size(dict);
     unk = ngram_unknown_wid(lm);
+    startwid = ngram_wid(lm, S3_START_WORD);
+    endwid = ngram_wid(lm, S3_FINISH_WORD);
 
     /* Iterate over dictionary words rather than LM words since we
      * don't have a reverse mapping.  (FIXME: might change this
@@ -210,7 +212,7 @@ lextree_ug_wordprob(ngram_model_t * lm, s3dict_t * dict,
         if (s3dict_basewid(dict, i) != i)
             continue;
         lmwid = ngram_wid(lm, s3dict_wordstr(dict, s3dict_basewid(dict, i)));
-        if (lmwid == unk)
+        if (lmwid == unk || lmwid == startwid || lmwid == endwid)
             continue;
         wp[j].prob = ngram_ng_score(lm, lmwid, NULL, 0, &nbo);
         wp[j].wid = i;
@@ -336,6 +338,8 @@ fillertree_init(bin_mdef_t *mdef, tmat_t *tmat, s3dict_t *dict,
 
     for (i = s3dict_filler_start(dict); i <= s3dict_filler_end(dict); i++) {
         if (s3dict_filler_word(dict, i)) {
+            E_DEBUG(1,("Filler word %s prob %d\n",
+                       s3dict_wordstr(dict, i), fillpen(fp, i)));
             wp[n].wid = i;
             wp[n].prob = fillpen(fp, i);
             n++;
@@ -1556,7 +1560,9 @@ lextree_hmm_propagate_leaves(lextree_t * lextree,
 
 
             /* Rescore the LM prob for this word wrt all possible predecessors */
-
+            E_DEBUG(1,("Rescoring exit %s with score %d\n",
+                       s3dict_wordstr(lextree->dict, ln->wid),
+                       hmm_out_score(&ln->hmm) - ln->prob));
             if (dict2pid_is_composite(lextree->dict2pid)) {
                 vithist_rescore(vh, lextree->lm, lextree->dict,
                                 lextree->dict2pid, lextree->fp, ln->wid, cf,
