@@ -308,7 +308,7 @@ tst_search_init(cmd_ln_t *config,
 
     tstg->ssid_active = bitvec_alloc(bin_mdef_n_sseq(acmod->mdef));
     tstg->comssid_active = bitvec_alloc(dict2pid_n_comsseq(tstg->dict2pid));
-    tstg->composite_senone_scores = ckd_calloc(bin_mdef_n_sen(acmod->mdef),
+    tstg->composite_senone_scores = ckd_calloc(dict2pid_n_comstate(tstg->dict2pid),
                                                sizeof(*tstg->composite_senone_scores));
 
     ptmr_init(&(tm_build));
@@ -955,8 +955,7 @@ tst_search_step(ps_search_t *search, int frame_idx)
 
     /* Evaluate composite senone scores from senone scores */
     memset(tstg->composite_senone_scores, 0,
-           bin_mdef_n_sen(ps_search_acmod(search)->mdef)
-           * sizeof(*tstg->composite_senone_scores));
+           dict2pid_n_comstate(tstg->dict2pid) * sizeof(*tstg->composite_senone_scores));
     dict2pid_comsenscr(tstg->dict2pid, senscr, tstg->composite_senone_scores);
 
     /* Compute HMMs, propagate phone and word exits, etc, etc. */
