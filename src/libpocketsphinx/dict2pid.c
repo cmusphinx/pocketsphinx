@@ -1064,14 +1064,16 @@ dict2pid_comsseq2sen_active(dict2pid_t * d2p, bin_mdef_t * mdef,
     for (ss = 0; ss < d2p->n_comsseq; ss++) {
         if (bitvec_is_set(comssid,ss)) {
             csp = d2p->comsseq[ss];
-
+            E_DEBUG(4,("comssid[%d] is active:",ss));
             for (i = 0; i < bin_mdef_n_emit_state(mdef); i++) {
                 cs = csp[i];
                 sp = d2p->comstate[cs];
+                E_DEBUGCONT(4,(" %d",cs));
 
                 for (j = 0; IS_S3SENID(sp[j]); j++)
                     bitvec_set(sen, sp[j]);
             }
+            E_DEBUGCONT(4,("\n"));
         }
     }
 }

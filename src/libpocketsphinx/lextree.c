@@ -191,8 +191,7 @@ lextree_node_free(lextree_node_t * ln)
 
 /* This create a mapping from either the unigram or words in a class*/
 static int32
-lextree_ug_wordprob(ngram_model_t * lm, s3dict_t * dict,
-                    int32 th, wordprob_t * wp)
+lextree_ug_wordprob(ngram_model_t * lm, s3dict_t * dict, wordprob_t * wp)
 {
     int32 i, j, n;
     int32 unk, startwid, endwid;
@@ -288,7 +287,7 @@ lextree_init(bin_mdef_t *mdef, tmat_t *tmat, s3dict_t *dict, dict2pid_t *dict2pi
         wp[j].wid = -1;
         wp[j].prob = -1;
     }
-    n = lextree_ug_wordprob(lm, dict, MAX_NEG_INT32, wp);
+    n = lextree_ug_wordprob(lm, dict, wp);
 
     if (bReport)
         E_INFO("Size of word table after unigram + words in class: %d.\n",
@@ -513,6 +512,8 @@ lextree_build(bin_mdef_t *mdef, tmat_t *tmat,
     for (i = 0; i < n_word; i++) {
         wid = wordprob[i].wid;
         prob = wordprob[i].prob;
+        E_DEBUG(2,("%s wid %d prob %d\n",
+                   s3dict_wordstr(dict, wid), wid, prob));
 
         pronlen = s3dict_pronlen(dict, wid);
 
@@ -1185,6 +1186,8 @@ lextree_enter(lextree_t * lextree, s3cipid_t lc, int32 cf,
             ) {
             scr = inscore + ln->prob;
             if ((scr >= thresh) && (hmm_in_score(&ln->hmm) < scr)) {
+                E_DEBUG(4,("entering non-leaf root node with %d + %d >= (thresh %d score %d)\n",
+                           inscore, ln->prob, thresh, hmm_in_score(&ln->hmm)));
                 hmm_in_score(&ln->hmm) = scr;
                 hmm_in_history(&ln->hmm) = inhist;
 
@@ -1416,27 +1419,29 @@ lextree_hmm_propagate_non_leaves(lextree_t * lextree,
     E_DEBUG(1, ("lextree_hmm_propagate_non_leaves: cf %d th %d pth %d wth %d\n",
                 cf, th, pth, wth)); 
     n = lextree->n_next_active;
-    E_DEBUG(1,("next active lextree: %d\n",n));
     assert(n == 0);
 
     E_DEBUG(1,("No. of active node within the lexical tree: %d\n",lextree->n_active));
 
     for (i = 0; i < lextree->n_active; i++) {
-        E_DEBUG(2,("%d, %d\n", i,  lextree->n_alloc_node));
+        E_DEBUG(3,("Looking at node %d of %d\n", i,  lextree->n_alloc_node));
         ln = list[i];
 
         if (IS_S3WID(ln->wid)) {
-            E_DEBUG(2,("Is WID %d, ln->rc %d, ln->ssid %d\n",ln->wid, ln->rc, ln->ssid));
+            E_DEBUG(3,("Is WID %d = %s, ln->rc %d, ln->ssid %d\n",
+                       ln->wid, s3dict_wordstr(dict, ln->wid), ln->rc, ln->ssid));
             assert(ln->ssid != BAD_S3SSID);
         }
 
         /* This if will activate nodes */
         if (hmm_frame(&ln->hmm) < nf) {
             if (hmm_bestscore(&ln->hmm) >= th) { /* Active in next frm */
+                E_DEBUG(4,("Activating (%d >= %d)\n", hmm_bestscore(&ln->hmm), th));
                 hmm_frame(&ln->hmm) = nf;
                 lextree->next_active[n++] = ln;
             }
             else {              /* Deactivate */
+                E_DEBUG(4,("Deactivating (%d < %d)\n", hmm_bestscore(&ln->hmm), th));
                 hmm_clear((hmm_t *)ln);
             }
         }
@@ -1444,6 +1449,7 @@ lextree_hmm_propagate_non_leaves(lextree_t * lextree,
         if (NOT_S3WID(ln->wid)) {       /* Not a leaf node */
             if (hmm_out_score(&ln->hmm) < pth)
                 continue;       /* HMM exit score not good enough */
+            E_DEBUG(4,("Propagating (%d >= %d)\n", hmm_out_score(&ln->hmm), pth));
             /* Transition to each child */
             for (gn = ln->children; gn; gn = gnode_next(gn)) {
 
@@ -1460,6 +1466,8 @@ lextree_hmm_propagate_non_leaves(lextree_t * lextree,
                     */
                     newscore = hmm_out_score(&ln->hmm) + (ln2->prob - ln->prob);
 
+                    E_DEBUG(4,("  newscore %d + %d - %d = %d\n",
+                               hmm_out_score(&ln->hmm), ln2->prob, ln->prob, newscore));
                     if ((newscore >= th) &&     /*If the score is smaller than the
                                                    phone score, prune away */
                         (hmm_in_score(&ln2->hmm) < newscore)) {
@@ -1467,6 +1475,7 @@ lextree_hmm_propagate_non_leaves(lextree_t * lextree,
                         hmm_in_history(&ln2->hmm) = hmm_out_history(&ln->hmm);
 
                         if (hmm_frame(&ln2->hmm) != nf) {
+                            E_DEBUG(4,("  entering this node\n"));
                             hmm_frame(&ln2->hmm) = nf;
                             /*                  lextree_realloc_active_list(lextree,n+1); */
                             lextree->next_active[n++] = ln2;
@@ -1487,13 +1496,11 @@ lextree_hmm_propagate_non_leaves(lextree_t * lextree,
                         assert(ln2->ssid == BAD_S3SSID);        /*First timer of being expanded */
                         n_ci = bin_mdef_n_ciphone(mdef);
 
-#if 0
-                        E_INFO
+
+                        E_DEBUG(3,
                             ("Tree %d, Cross word expansion is carried out at cf %d for wid %d, wstr %s, ln->children %d\n",
-                             lextree, cf, ln2->wid, dict_wordstr(kbc->dict,
-                                                                 ln2->wid),
-                             ln2->children);
-#endif
+                             lextree, cf, ln2->wid, s3dict_wordstr(lextree->dict, ln2->wid),
+                             ln2->children));
 
                         rmap = d2p->rssid[ln2->ci][ln->ci].ssid;
                         n_rc =
@@ -1550,16 +1557,16 @@ lextree_hmm_propagate_non_leaves(lextree_t * lextree,
     }
 
     lextree->n_next_active = n;
-#if 0
-    E_INFO("Debugging.\n");
+#ifdef SPHINX_DEBUG
+    E_DEBUG(3,("Debugging.\n"));
     for (i = 0; i < lextree->n_next_active; i++) {
         ln = lextree->next_active[i];
 
-        E_INFO(" ln->wid %d, str %s, ln->ssid %d, ln->rc %d,\n", ln->wid,
-               dict_wordstr(dict, ln->wid), ln->ssid, ln->rc);
+        E_DEBUG(3,(" ln->wid %d, str %s, ln->ssid %d, ln->rc %d,\n", ln->wid,
+                   s3dict_wordstr(dict, ln->wid), ln->ssid, ln->rc));
     }
 #endif
-    /*    E_INFO("lextree->n_next_active %d\n",    lextree->n_next_active); */
+    E_DEBUG(1,("lextree->n_next_active %d\n",    lextree->n_next_active));
     return LEXTREE_OPERATION_SUCCESS;
 }
 
