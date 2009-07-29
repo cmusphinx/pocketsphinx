@@ -803,6 +803,13 @@ lextree_shrub_subtree_cw_leaves(lextree_node_t * ln, int32 level)
         /* If it is a node with WID and have bad senone sequence */
 
         if (ln->children != NULL) {
+
+#if 0
+            E_INFO
+                ("Free Cross word is carried out  for wid %d, ln->children %d\n",
+                 ln->wid, ln->children);
+#endif
+
             for (gn = ln->children; gn; gn = gnode_next(gn)) {
                 ln2 = (lextree_node_t *) gnode_ptr(gn);
                 /*      E_INFO("I am freeing something! WID, %d, rc %d\n",ln->wid,ln2->rc); */
@@ -852,6 +859,12 @@ lextree_shrub_cw_leaves(lextree_t * lextree)
 
                     if (IS_S3WID(ln->wid) && ln->children != NULL) {
 
+#if 0
+                        E_INFO
+                            ("Tree %d, lc %d, Free Cross word is carried out  for wid %d, ln->children %d\n",
+                             lextree, lextree->lcroot[i].lc, ln->wid,
+                             ln->children);
+#endif
                         for (cwgn = ln->children; cwgn;
                              cwgn = gnode_next(cwgn)) {
                             cwln = (lextree_node_t *) gnode_ptr(cwgn);
@@ -1400,21 +1413,22 @@ lextree_hmm_propagate_non_leaves(lextree_t * lextree,
 
     list = lextree->active;
 
+    E_DEBUG(1, ("lextree_hmm_propagate_non_leaves: cf %d th %d pth %d wth %d\n",
+                cf, th, pth, wth)); 
     n = lextree->n_next_active;
-    /*    E_INFO("The size of n: %d\n",n); */
+    E_DEBUG(1,("next active lextree: %d\n",n));
     assert(n == 0);
 
-    /*    E_INFO("No. of active node within the lexical tree: %d\n",lextree->n_active); */
+    E_DEBUG(1,("No. of active node within the lexical tree: %d\n",lextree->n_active));
 
     for (i = 0; i < lextree->n_active; i++) {
-        /*      E_INFO("%d, %d\n", i,  lextree->n_alloc_node); */
+        E_DEBUG(2,("%d, %d\n", i,  lextree->n_alloc_node));
         ln = list[i];
 
         if (IS_S3WID(ln->wid)) {
-            /*      E_INFO("Is WID %d, ln->rc %d, ln->ssid %d\n",ln->wid, ln->rc, ln->ssid); */
+            E_DEBUG(2,("Is WID %d, ln->rc %d, ln->ssid %d\n",ln->wid, ln->rc, ln->ssid));
             assert(ln->ssid != BAD_S3SSID);
         }
-
 
         /* This if will activate nodes */
         if (hmm_frame(&ln->hmm) < nf) {
@@ -1473,6 +1487,14 @@ lextree_hmm_propagate_non_leaves(lextree_t * lextree,
                         assert(ln2->ssid == BAD_S3SSID);        /*First timer of being expanded */
                         n_ci = bin_mdef_n_ciphone(mdef);
 
+#if 0
+                        E_INFO
+                            ("Tree %d, Cross word expansion is carried out at cf %d for wid %d, wstr %s, ln->children %d\n",
+                             lextree, cf, ln2->wid, dict_wordstr(kbc->dict,
+                                                                 ln2->wid),
+                             ln2->children);
+#endif
+
                         rmap = d2p->rssid[ln2->ci][ln->ci].ssid;
                         n_rc =
                             d2p->rssid[ln2->ci][ln->ci].n_ssid;
@@ -1528,6 +1550,16 @@ lextree_hmm_propagate_non_leaves(lextree_t * lextree,
     }
 
     lextree->n_next_active = n;
+#if 0
+    E_INFO("Debugging.\n");
+    for (i = 0; i < lextree->n_next_active; i++) {
+        ln = lextree->next_active[i];
+
+        E_INFO(" ln->wid %d, str %s, ln->ssid %d, ln->rc %d,\n", ln->wid,
+               dict_wordstr(dict, ln->wid), ln->ssid, ln->rc);
+    }
+#endif
+    /*    E_INFO("lextree->n_next_active %d\n",    lextree->n_next_active); */
     return LEXTREE_OPERATION_SUCCESS;
 }
 
@@ -1542,6 +1574,7 @@ lextree_hmm_propagate_leaves(lextree_t * lextree,
     /* Code for heursitic score */
     list = lextree->active;
 
+    E_DEBUG(1, ("lextree_hmm_propagate_leaves: cf %d wth %d\n", cf, wth)); 
     for (i = 0; i < lextree->n_active; i++) {
         ln = list[i];
 
@@ -1580,6 +1613,14 @@ lextree_hmm_propagate_leaves(lextree_t * lextree,
                                 hmm_out_history(&ln->hmm), lextree->type, ln->rc);
 
             }
+
+
+#if 0
+            active_word_end++;
+
+            /*      E_INFO("What is the hmm_out_score(ln) %d wth %d\n", hmm_out_score(ln),wth);
+               E_INFO("\nActive word end id %d, word end %s\n", ln->wid, dict_wordstr(kbc->dict,dict_basewid(kbc->dict,ln->wid))); */
+#endif
         }
     }
 
