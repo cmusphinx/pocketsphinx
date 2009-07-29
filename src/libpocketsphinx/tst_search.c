@@ -786,10 +786,12 @@ srch_TST_rescoring(tst_search_t *tstg, int32 frmno)
 
     n_ltree = tstg->n_lextree;
 
-    for (i = 0; i < (n_ltree << 1); i++) {
+    for (i = 0; i < (n_ltree * 2); i++) {
         lextree = (i < n_ltree)
             ? tstg->curugtree[i]
             : tstg->fillertree[i - tstg->n_lextree];
+
+        E_DEBUG(1,("Propagating words from lextree %d\n", i));
         if (lextree_hmm_propagate_leaves
             (lextree, vh, frmno,
              tstg->beam->word_thres) != LEXTREE_OPERATION_SUCCESS) {
@@ -960,7 +962,6 @@ tst_search_step(ps_search_t *search, int frame_idx)
     /* Compute HMMs, propagate phone and word exits, etc, etc. */
     srch_TST_hmm_compute_lv2(tstg, frame_idx);
     srch_TST_propagate_graph_ph_lv2(tstg, frame_idx);
-    srch_TST_rescoring(tstg, frame_idx);
     srch_TST_propagate_graph_wd_lv2(tstg, frame_idx);
     srch_TST_frame_windup(tstg, frame_idx);
 
