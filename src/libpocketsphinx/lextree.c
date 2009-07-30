@@ -1576,6 +1576,9 @@ lextree_hmm_propagate_leaves(lextree_t * lextree,
 {
 
     lextree_node_t **list, *ln;
+#ifdef SPHINX_DEBUG
+    int32 n_active_word_end;
+#endif
     int32 i;
 
     /* Code for heursitic score */
@@ -1600,7 +1603,7 @@ lextree_hmm_propagate_leaves(lextree_t * lextree,
 
 
             /* Rescore the LM prob for this word wrt all possible predecessors */
-            E_DEBUG(1,("Rescoring exit %s with score %d\n",
+            E_DEBUG(2,("Rescoring exit %s with score %d\n",
                        s3dict_wordstr(lextree->dict, ln->wid),
                        hmm_out_score(&ln->hmm) - ln->prob));
             if (dict2pid_is_composite(lextree->dict2pid)) {
@@ -1622,15 +1625,12 @@ lextree_hmm_propagate_leaves(lextree_t * lextree,
             }
 
 
-#if 0
-            active_word_end++;
-
-            /*      E_INFO("What is the hmm_out_score(ln) %d wth %d\n", hmm_out_score(ln),wth);
-               E_INFO("\nActive word end id %d, word end %s\n", ln->wid, dict_wordstr(kbc->dict,dict_basewid(kbc->dict,ln->wid))); */
+#ifdef SPHINX_DEBUG
+            n_active_word_end++;
 #endif
         }
     }
 
-    /*    E_INFO("No of active word end %d\n\n",active_word_end); */
+    E_DEBUG(1,("number of active leaf nodes %d\n",n_active_word_end));
     return LEXTREE_OPERATION_SUCCESS;
 }

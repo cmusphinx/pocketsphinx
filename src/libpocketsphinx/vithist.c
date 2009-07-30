@@ -501,16 +501,20 @@ vithist_rescore(vithist_t * vh, ngram_model_t *lm,
     tve.rc = NULL;
     tve.n_rc = 0;
 
-
+    /* Filler words only have unigram language model scores, so not
+     * much special needs to be done for them.  vithist_prune() is
+     * going to prune out most of these later on, anyway. */
     if (s3dict_filler_word(dict, wid)) {
-
         tve.path.score = score;
         tve.lscr = fillpen(fp, wid);
         tve.path.score += tve.lscr;
-
-        tve.path.pred = pred;
-        tve.lmstate.lm3g = pve->lmstate.lm3g;
-        vithist_enter(vh, dict, dict2pid, &tve, rc);
+        if ((tve.path.score - vh->wbeam) >= vh->bestscore[vh->n_frm]) {
+            tve.path.pred = pred;
+            /* Note that they just propagate the same LM state since
+             * they are not in the LM. */
+            tve.lmstate.lm3g = pve->lmstate.lm3g;
+            vithist_enter(vh, dict, dict2pid, &tve, rc);
+        }
     }
     else {
         if (pred == 0) {            /* Special case for the initial <s> entry */
@@ -526,20 +530,45 @@ vithist_rescore(vithist_t * vh, ngram_model_t *lm,
            So  pve becomes the w_{n-2}. 
          */
 
-        /* FIXME: SLOW */
         lwid = ngram_wid(lm, s3dict_wordstr(dict, s3dict_basewid(dict, wid)));
 
         tve.lmstate.lm3g.lwid[0] = lwid;
 
+        /* FIXME: This loop is completely awful.  For each entry in
+         * this frame, we scan every entry in the previous frame,
+         * potentially creating a new history entry.  This means that
+         * without pruning, the size of the vithist table (and thus
+         * the time taken here) is exponential in the number of
+         * frames! */
         for (i = se; i < fe; i++) {
             pve = vithist_id2entry(vh, i);
 
             if (pve->valid) {
                 int n_used;
                 tve.path.score = pve->path.score + tve.ascr;
+                /* Try at all costs to avoid calling ngram_tg_score()
+                 * because it is the main time consuming part here
+                 * (but as noted above... ugh...) See below as well. */
+                if ((tve.path.score - vh->wbeam) < vh->bestscore[vh->n_frm])
+                    continue;
+                /* The trigram cache is supposed to make this fast,
+                 * but due to the crazy number of times this could be
+                 * called, it's still slow compared to a hash
+                 * table. */
                 tve.lscr = ngram_tg_score(lm, lwid, pve->lmstate.lm3g.lwid[0],
                                           pve->lmstate.lm3g.lwid[1], &n_used);
                 tve.path.score += tve.lscr;
+                /* A secret second word exit threshold - we would have
+                 * to be inside the general word beam in order to get
+                 * here, now we apply a second word beam to the
+                 * *vithist entries* in this frame.  There can be an
+                 * ungodly number of them for reasons that aren't
+                 * entirely clear to me, so this is kind of a
+                 * pre-pruning.  NOTE: the "backwards" math here is
+                 * because vh->bestscore is frequently MAX_NEG_INT32.
+                 * ALSO NOTE: We can't precompute the threshold since
+                 * the best score will be updated by
+                 * vithist_enter(). */
                 if ((tve.path.score - vh->wbeam) >= vh->bestscore[vh->n_frm]) {
                     tve.path.pred = i;
                     tve.lmstate.lm3g.lwid[1] = pve->lmstate.lm3g.lwid[0];
