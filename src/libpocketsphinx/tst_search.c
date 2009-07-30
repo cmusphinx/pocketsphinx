@@ -301,7 +301,7 @@ tst_search_init(cmd_ln_t *config,
     tstg->beam = beam_init(cmd_ln_float64_r(config, "-beam"),
                            cmd_ln_float64_r(config, "-pbeam"),
                            cmd_ln_float64_r(config, "-wbeam"),
-                           cmd_ln_float64_r(config, "-lpbeam"),
+                           cmd_ln_float64_r(config, "-wend_beam"),
                            0, bin_mdef_n_ciphone(acmod->mdef),
                            acmod->lmath);
     beam_report(tstg->beam);
@@ -424,7 +424,7 @@ tst_search_init(cmd_ln_t *config,
     /* Viterbi history structure */
     tstg->vithist = vithist_init(ngram_model_get_counts(tstg->lmset)[0],
                                  bin_mdef_n_ciphone(acmod->mdef),
-                                 tstg->beam->word,
+                                 logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-vhbeam")),
                                  cmd_ln_int32_r(config, "-bghist"), TRUE);
 
 

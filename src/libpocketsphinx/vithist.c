@@ -184,6 +184,7 @@ vithist_init(int32 max, int32 n_ci, int32 wbeam, int32 bghist, int32 report)
 
     vh->lwidlist = NULL;
 
+    vithist_report(vh);
     return vh;
 }
 
@@ -558,17 +559,16 @@ vithist_rescore(vithist_t * vh, ngram_model_t *lm,
                 tve.lscr = ngram_tg_score(lm, lwid, pve->lmstate.lm3g.lwid[0],
                                           pve->lmstate.lm3g.lwid[1], &n_used);
                 tve.path.score += tve.lscr;
-                /* A secret second word exit threshold - we would have
-                 * to be inside the general word beam in order to get
-                 * here, now we apply a second word beam to the
-                 * *vithist entries* in this frame.  There can be an
-                 * ungodly number of them for reasons that aren't
-                 * entirely clear to me, so this is kind of a
-                 * pre-pruning.  NOTE: the "backwards" math here is
-                 * because vh->bestscore is frequently MAX_NEG_INT32.
-                 * ALSO NOTE: We can't precompute the threshold since
-                 * the best score will be updated by
-                 * vithist_enter(). */
+                /* A different word exit threshold - we would have to
+                 * be inside the general word beam in order to get
+                 * here, now we apply a second beam to the *vithist
+                 * entries* in this frame.  There can be an ungodly
+                 * number of them for reasons that aren't entirely
+                 * clear to me, so this is kind of a pre-pruning.
+                 * NOTE: the "backwards" math here is because
+                 * vh->bestscore is frequently MAX_NEG_INT32.  ALSO
+                 * NOTE: We can't precompute the threshold since the
+                 * best score will be updated by vithist_enter(). */
                 if ((tve.path.score - vh->wbeam) >= vh->bestscore[vh->n_frm]) {
                     tve.path.pred = i;
                     tve.lmstate.lm3g.lwid[1] = pve->lmstate.lm3g.lwid[0];

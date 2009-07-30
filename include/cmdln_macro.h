@@ -100,6 +100,14 @@
       ARG_FLOAT64,                                                      \
       "7e-29",                                                          \
       "Beam width applied to last phone in single-phone words" },       \
+{ "-wend_beam", \
+      ARG_FLOAT64, \
+      "7e-29", \
+      "(tst only) Beam selecting word-final HMMs exiting in each frame [0(widest) .. 1(narrowest)]" }, \
+{ "-vhbeam", \
+      ARG_FLOAT64, \
+      "7e-29", \
+      "(tst only) Beam width applied to Viterbi history entries (before -maxhistpf)" }, \
 { "-fwdflatbeam",                                                       \
       ARG_FLOAT64,                                                      \
       "1e-64",                                                          \
