@@ -141,7 +141,7 @@
       "(tst only) Entries Per Lextree; #successive entries into one lextree before lextree-entries shifted to the next" }, \
 { "-maxhistpf", \
       ARG_INT32, \
-      "-1", \
+      "100", \
       "(tst only) Max no. of histories to maintain at each frame" }, \
 { "-hmmhistbinsize", \
       ARG_INT32, \
