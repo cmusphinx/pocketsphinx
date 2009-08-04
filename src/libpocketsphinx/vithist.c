@@ -659,7 +659,7 @@ vithist_prune(vithist_t * vh, s3dict_t * dict, int32 frm,
     int32 se, fe, filler_done, th;
     vithist_entry_t *ve;
     heap_t h;
-    s3wid_t *wid;
+    s3wid_t *wid = NULL;
     int32 i, nwf, nhf;
 
     if (maxwpf == -1 && maxhist == -1)
@@ -674,8 +674,10 @@ vithist_prune(vithist_t * vh, s3dict_t * dict, int32 frm,
     th = vh->bestscore[frm] + beam;
 
     h = heap_new();
-    wid = (s3wid_t *) ckd_calloc(maxwpf + 1, sizeof(s3wid_t));
-    wid[0] = BAD_S3WID;
+    if (maxwpf > 0) {
+        wid = (s3wid_t *) ckd_calloc(maxwpf + 1, sizeof(s3wid_t));
+        wid[0] = BAD_S3WID;
+    }
 
     E_DEBUG(1, ("vithist_prune frame %d has %d entries\n", frm, fe-se+1));
     for (i = se; i <= fe; i++) {
@@ -686,10 +688,9 @@ vithist_prune(vithist_t * vh, s3dict_t * dict, int32 frm,
 
     /* Mark invalid entries: beyond maxwpf words and below threshold */
     filler_done = 0;
-    while ((heap_pop(h, (void **) (&ve), &i) > 0)
+    while (heap_pop(h, (void **) (&ve), &i)
            && ve->path.score >= th /* the score (or the cw scores) is above threshold */
-           && (nhf < maxhist || maxhist == -1))
-    {
+           && (nhf < maxhist || maxhist == -1)) {
         if (s3dict_filler_word(dict, ve->wid)) {
             /* Major HACK!!  Keep only one best filler word entry per frame */
             if (filler_done)
@@ -698,8 +699,9 @@ vithist_prune(vithist_t * vh, s3dict_t * dict, int32 frm,
         }
 
         /* Check if this word already valid (e.g., under a different history) */
-        for (i = 0; IS_S3WID(wid[i]) && (wid[i] != ve->wid); i++);
-        if (NOT_S3WID(wid[i])) {
+        if (wid)
+            for (i = 0; IS_S3WID(wid[i]) && (wid[i] != ve->wid); i++);
+        if (wid && NOT_S3WID(wid[i])) {
             /* New word; keep only if <maxwpf words already entered, even if >= thresh */
             if (nwf < maxwpf || maxwpf == -1) {
                 if (wid) {
