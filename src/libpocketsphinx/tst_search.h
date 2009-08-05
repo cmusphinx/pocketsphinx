@@ -149,6 +149,8 @@ struct tst_search_s {
 
     FILE *hmmdumpfp; /**< File for dumping HMM debugging information. */
 
+    int n_frame;  /**< Number of frames searched so far. */
+
     int exit_id;  /**< History ID of exit word (or -1 if not done). */
     tst_stats_t st; /**< Statistics. */
 };

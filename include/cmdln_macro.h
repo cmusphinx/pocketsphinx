@@ -147,6 +147,10 @@
       ARG_INT32, \
       "3", \
       "(tst only) Entries Per Lextree; #successive entries into one lextree before lextree-entries shifted to the next" }, \
+{ "-min_endfr", \
+      ARG_INT32, \
+      "3", \
+      "(tst only) Nodes ignored during lattice generation if they persist for fewer than so many end frames" }, \
 { "-maxhistpf", \
       ARG_INT32, \
       "100", \
