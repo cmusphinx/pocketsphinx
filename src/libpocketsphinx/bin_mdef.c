@@ -89,6 +89,7 @@ bin_mdef_read_text(cmd_ln_t *config, const char *filename)
 
 
     bmdef = ckd_calloc(1, sizeof(*bmdef));
+    bmdef->refcnt = 1;
 
     /* Easy stuff.  The mdef.c code has done the heavy lifting for us. */
     bmdef->n_ciphone = mdef->n_ciphone;
@@ -254,9 +255,21 @@ bin_mdef_read_text(cmd_ln_t *config, const char *filename)
     return bmdef;
 }
 
-void
+bin_mdef_t *
+bin_mdef_retain(bin_mdef_t *m)
+{
+    ++m->refcnt;
+    return m;
+}
+
+int
 bin_mdef_free(bin_mdef_t * m)
 {
+    if (m == NULL)
+        return 0;
+    if (--m->refcnt > 0)
+        return m->refcnt;
+
     switch (m->alloc_mode) {
     case BIN_MDEF_FROM_TEXT:
         ckd_free(m->ciname[0]);
@@ -277,6 +290,7 @@ bin_mdef_free(bin_mdef_t * m)
     ckd_free(m->ciname);
     ckd_free(m->sseq);
     ckd_free(m);
+    return 0;
 }
 
 static const char format_desc[] =
@@ -317,16 +331,22 @@ bin_mdef_read(cmd_ln_t *config, const char *filename)
     if ((fh = fopen(filename, "rb")) == NULL)
         return NULL;
 
-    if (fread(&val, 4, 1, fh) != 1)
-        E_FATAL_SYSTEM("Failed to read byte-order marker from %s\n",
+    if (fread(&val, 4, 1, fh) != 1) {
+        fclose(fh);
+        E_ERROR_SYSTEM("Failed to read byte-order marker from %s\n",
                        filename);
+        return NULL;
+    }
     swap = 0;
     if (val == BIN_MDEF_OTHER_ENDIAN) {
         swap = 1;
         E_INFO("Must byte-swap %s\n", filename);
     }
-    if (fread(&val, 4, 1, fh) != 1)
-        E_FATAL_SYSTEM("Failed to read version from %s\n", filename);
+    if (fread(&val, 4, 1, fh) != 1) {
+        fclose(fh);
+        E_ERROR_SYSTEM("Failed to read version from %s\n", filename);
+        return NULL;
+    }
     if (swap)
         SWAP_INT32(&val);
     if (val > BIN_MDEF_FORMAT_VERSION) {
@@ -335,8 +355,11 @@ bin_mdef_read(cmd_ln_t *config, const char *filename)
         fclose(fh);
         return NULL;
     }
-    if (fread(&val, 4, 1, fh) != 1)
-        E_FATAL_SYSTEM("Failed to read header length from %s\n", filename);
+    if (fread(&val, 4, 1, fh) != 1) {
+        fclose(fh);
+        E_ERROR_SYSTEM("Failed to read header length from %s\n", filename);
+        return NULL;
+    }
     if (swap)
         SWAP_INT32(&val);
     /* Skip format descriptor. */
@@ -344,38 +367,28 @@ bin_mdef_read(cmd_ln_t *config, const char *filename)
 
     /* Finally allocate it. */
     m = ckd_calloc(1, sizeof(*m));
+    m->refcnt = 1;
 
-    /* Don't bother to check each one, since they will all fail if one failed. */
-    fread(&m->n_ciphone, 4, 1, fh);
-    if (swap)
-        SWAP_INT32(&m->n_ciphone);
-    fread(&m->n_phone, 4, 1, fh);
-    if (swap)
-        SWAP_INT32(&m->n_phone);
-    fread(&m->n_emit_state, 4, 1, fh);
-    if (swap)
-        SWAP_INT32(&m->n_emit_state);
-    fread(&m->n_ci_sen, 4, 1, fh);
-    if (swap)
-        SWAP_INT32(&m->n_ci_sen);
-    fread(&m->n_sen, 4, 1, fh);
-    if (swap)
-        SWAP_INT32(&m->n_sen);
-    fread(&m->n_tmat, 4, 1, fh);
-    if (swap)
-        SWAP_INT32(&m->n_tmat);
-    fread(&m->n_sseq, 4, 1, fh);
-    if (swap)
-        SWAP_INT32(&m->n_sseq);
-    fread(&m->n_ctx, 4, 1, fh);
-    if (swap)
-        SWAP_INT32(&m->n_ctx);
-    fread(&m->n_cd_tree, 4, 1, fh);
-    if (swap)
-        SWAP_INT32(&m->n_cd_tree);
-    if (fread(&val, 4, 1, fh) != 1)
-        E_FATAL_SYSTEM("Failed to read header from %s\n", filename);
-    m->sil = val;
+    /* Check these, to make gcc/glibc shut up. */
+#define FREAD_SWAP32_CHK(dest)                                          \
+    if (fread((dest), 4, 1, fh) != 1) {                                 \
+        fclose(fh);                                                     \
+        ckd_free(m);                                                    \
+        E_ERROR_SYSTEM("Failed to read %s from %s\n", #dest, filename); \
+        return NULL;                                                    \
+    }                                                                   \
+    if (swap) SWAP_INT32(dest);
+    
+    FREAD_SWAP32_CHK(&m->n_ciphone);
+    FREAD_SWAP32_CHK(&m->n_phone);
+    FREAD_SWAP32_CHK(&m->n_emit_state);
+    FREAD_SWAP32_CHK(&m->n_ci_sen);
+    FREAD_SWAP32_CHK(&m->n_sen);
+    FREAD_SWAP32_CHK(&m->n_tmat);
+    FREAD_SWAP32_CHK(&m->n_sseq);
+    FREAD_SWAP32_CHK(&m->n_ctx);
+    FREAD_SWAP32_CHK(&m->n_cd_tree);
+    FREAD_SWAP32_CHK(&m->sil);
 
     /* CI names are first in the file. */
     m->ciname = ckd_calloc(m->n_ciphone, sizeof(*m->ciname));
@@ -797,6 +810,8 @@ bin_mdef_phone_id_nearest(bin_mdef_t * m, int32 b, int32 l, int32 r, int32 pos)
 {
     int p, tmppos;
 
+
+
     /* In the future, we might back off when context is not available,
      * but for now we'll just return the CI phone. */
     if (l < 0 || r < 0)
@@ -816,10 +831,15 @@ bin_mdef_phone_id_nearest(bin_mdef_t * m, int32 b, int32 l, int32 r, int32 pos)
     }
 
     /* Nothing yet; backoff to silence phone if non-silence filler context */
+    /* In addition, backoff to silence phone on left/right if in beginning/end position */
     if (m->sil >= 0) {
-        int newl, newr;
-        newl = m->phone[(int)l].info.ci.filler ? m->sil : l;
-        newr = m->phone[(int)r].info.ci.filler ? m->sil : r;
+        int newl = l, newr = r;
+        if (m->phone[(int)l].info.ci.filler
+            || pos == WORD_POSN_BEGIN || pos == WORD_POSN_SINGLE)
+            newl = m->sil;
+        if (m->phone[(int)r].info.ci.filler
+            || pos == WORD_POSN_END || pos == WORD_POSN_SINGLE)
+            newr = m->sil;
         if ((newl != l) || (newr != r)) {
             p = bin_mdef_phone_id(m, b, newl, newr, pos);
             if (p >= 0)

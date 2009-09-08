@@ -21,5 +21,5 @@ main(int argc, char *argv[])
 				"-bestpath", "no",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
-	return ps_decoder_test(config, "FWDTREE", "GO FORWARD TEN READERS");
+	return ps_decoder_test(config, "FWDTREE", "GO FORWARD TEN YEARS");
 }

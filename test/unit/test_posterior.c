@@ -123,7 +123,7 @@ test_decode(ps_decoder_t *ps)
 	/* Print posterior probabilities for each link in best path. */
 	while (link) {
 		printf("P(%s,%d) = %d = %f\n",
-		       dict_word_str(ps->search->dict, link->from->wid),
+		       s3dict_wordstr(ps->search->dict, link->from->wid),
 		       link->ef,
 		       link->alpha + link->beta - dag->norm,
 		       logmath_exp(acmod->lmath, link->alpha + link->beta - dag->norm));

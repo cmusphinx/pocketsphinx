@@ -103,7 +103,7 @@
 #include <string.h>
 
 #include "strfuncs.h"
-#include "s3_dict.h"
+#include "s3dict.h"
 
 
 #define DELIM	" \t\n"         /* Set of field separator characters */
@@ -292,7 +292,7 @@ s3dict_init(bin_mdef_t * mdef, const char *dictfile, const char *fillerfile,
     int32 n;
     char line[1024];
     s3dict_t *d;
-    s3cipid_t i, sil;
+    s3cipid_t sil;
 
     if (!dictfile)
         E_FATAL("No dictionary file\n");
@@ -328,6 +328,7 @@ s3dict_init(bin_mdef_t * mdef, const char *dictfile, const char *fillerfile,
      * Also check for type size restrictions.
      */
     d = (s3dict_t *) ckd_calloc(1, sizeof(s3dict_t));       /* freed in s3dict_free() */
+    d->refcnt = 1;
     d->max_words =
         (n + S3DICT_INC_SZ < MAX_S3WID) ? n + S3DICT_INC_SZ : MAX_S3WID;
     if (n >= MAX_S3WID)
@@ -336,7 +337,7 @@ s3dict_init(bin_mdef_t * mdef, const char *dictfile, const char *fillerfile,
 
     d->word = (dictword_t *) ckd_calloc(d->max_words, sizeof(dictword_t));      /* freed in s3dict_free() */
     d->n_word = 0;
-    d->mdef = mdef;
+    d->mdef = bin_mdef_retain(mdef);
 
     /* Create new hash table for word strings; case-insensitive word strings */
     d->ht = hash_table_new(d->max_words, 1 /* no-case */ );
@@ -361,23 +362,6 @@ s3dict_init(bin_mdef_t * mdef, const char *dictfile, const char *fillerfile,
         E_INFO("%d words read\n", d->n_word - d->filler_start);
     }
     sil = bin_mdef_silphone(mdef);
-    for (n = i = 0; i < mdef->n_ciphone; ++i) {
-        /*
-         * SIL is disguised as <sil>
-         */
-        if (i != sil && bin_mdef_is_fillerphone(mdef, i)) {
-            /*
-             * Add as a filler word, like ++NOISE++
-             */
-            snprintf(line, sizeof(line), "+%s+", bin_mdef_ciphone_str(mdef, i));
-            if (s3dict_wordid(d, line) == BAD_S3WID) {
-                E_INFO("Adding filler word: %s\n", line);
-                s3dict_add_word(d, line, &i, 1);
-                ++n;
-            }
-        }
-    }
-    E_INFO("Added %d fillers from mdef file\n", n);
     if (s3dict_wordid(d, S3_START_WORD) == BAD_S3WID) {
         s3dict_add_word(d, S3_START_WORD, &sil, 1);
     }
@@ -450,7 +434,7 @@ _s3dict_nextalt(s3dict_t * d, s3wid_t wid)
 }
 
 
-int32
+int
 s3dict_filler_word(s3dict_t * d, s3wid_t w)
 {
     assert(d);
@@ -462,6 +446,20 @@ s3dict_filler_word(s3dict_t * d, s3wid_t w)
     if ((w >= d->filler_start) && (w <= d->filler_end))
         return 1;
     return 0;
+}
+
+int
+s3dict_real_word(s3dict_t * d, s3wid_t w)
+{
+    assert(d);
+    assert((w >= 0) && (w < d->n_word));
+
+    w = s3dict_basewid(d, w);
+    if ((w == d->startwid) || (w == d->finishwid))
+        return 0;
+    if ((w >= d->filler_start) && (w <= d->filler_end))
+        return 0;
+    return 1;
 }
 
 
@@ -484,32 +482,41 @@ s3dict_word2basestr(char *word)
     return -1;
 }
 
-/* RAH 4.19.01, try to free memory allocated by the calls above.
-   All testing I've done shows that this gets all the memory, however I've 
-   likely not tested all cases. 
-*/
-void
+s3dict_t *
+s3dict_retain(s3dict_t *d)
+{
+    ++d->refcnt;
+    return d;
+}
+
+int
 s3dict_free(s3dict_t * d)
 {
     int i;
     dictword_t *word;
 
-    if (d) {                    /* Clean up the dictionary stuff */
-        /* First Step, free all memory allocated for each word */
-        for (i = 0; i < d->n_word; i++) {
-            word = (dictword_t *) & (d->word[i]);
-            if (word->word)
-                ckd_free((void *) word->word);
-            if (word->ciphone)
-                ckd_free((void *) word->ciphone);
-        }
+    if (d == NULL)
+        return 0;
+    if (--d->refcnt > 0)
+        return d->refcnt;
 
-        if (d->word)
-            ckd_free((void *) d->word);
-        if (d->ht)
-            hash_table_free(d->ht);
-        ckd_free((void *) d);
+    /* First Step, free all memory allocated for each word */
+    for (i = 0; i < d->n_word; i++) {
+        word = (dictword_t *) & (d->word[i]);
+        if (word->word)
+            ckd_free((void *) word->word);
+        if (word->ciphone)
+            ckd_free((void *) word->ciphone);
     }
+
+    if (d->word)
+        ckd_free((void *) d->word);
+    if (d->ht)
+        hash_table_free(d->ht);
+    bin_mdef_free(d->mdef);
+    ckd_free((void *) d);
+
+    return 0;
 }
 
 void

@@ -80,7 +80,7 @@
 #include <logmath.h>
 
 #include "s3types.h"
-#include "s3_dict.h"
+#include "s3dict.h"
 
 
 /** \file fillpen.h

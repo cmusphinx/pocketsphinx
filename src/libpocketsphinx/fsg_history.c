@@ -65,7 +65,7 @@
 
 
 fsg_history_t *
-fsg_history_init(fsg_model_t * fsg, dict_t *dict)
+fsg_history_init(fsg_model_t * fsg, s3dict_t *dict)
 {
     fsg_history_t *h;
 
@@ -114,7 +114,7 @@ fsg_history_free(fsg_history_t *h)
 
 
 void
-fsg_history_set_fsg(fsg_history_t *h, fsg_model_t *fsg, dict_t *dict)
+fsg_history_set_fsg(fsg_history_t *h, fsg_model_t *fsg, s3dict_t *dict)
 {
     if (blkarray_list_n_valid(h->entries) != 0) {
         E_WARN("Switching FSG while history not empty; history cleared\n");

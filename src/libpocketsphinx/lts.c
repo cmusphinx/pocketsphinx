@@ -128,14 +128,14 @@ lts_apply(const char *in_word, const char *feats,
     if (r->letter_table) {
         for (i = 0; i < 8; i++)
             zeros[i] = 2;
-        sprintf(full_buff, "%.*s%c%s%c%.*s",
+        sprintf((char *)full_buff, "%.*s%c%s%c%.*s",
                 r->context_window_size - 1, zeros,
                 1, word, 1, r->context_window_size - 1, zeros);
         hash = 1;
     }
     else {
         /* Assumes l_letter is a char and context < 8 */
-        sprintf(full_buff, "%.*s#%s#%.*s",
+        sprintf((char *)full_buff, "%.*s#%s#%.*s",
                 r->context_window_size - 1, "00000000",
                 word, r->context_window_size - 1, "00000000");
         hash = '#';
@@ -144,7 +144,7 @@ lts_apply(const char *in_word, const char *feats,
     /* Do the prediction forwards (begone, foul LISP!) */
     for (pos = r->context_window_size; full_buff[pos] != hash; ++pos) {
         /* Fill the features buffer for the predictor */
-        sprintf(fval_buff, "%.*s%.*s%s",
+        sprintf((char *)fval_buff, "%.*s%.*s%s",
                 r->context_window_size,
                 full_buff + pos - r->context_window_size,
                 r->context_window_size, full_buff + pos + 1, feats);

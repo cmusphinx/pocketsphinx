@@ -61,7 +61,7 @@ main(int argc, char *argv[])
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
-	TEST_EQUAL(0, strcmp("GO FORWARD TEN READERS",
+	TEST_EQUAL(0, strcmp("GO FORWARD TEN YEARS",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
 	c = clock() - c;
 	printf("5 * fwdtree search in %.2f sec\n",

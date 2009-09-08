@@ -49,8 +49,8 @@
 #include "cmdln_macro.h"
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
-#include "fsg_search_internal.h"
 #include "phone_loop_search.h"
+#include "fsg_search_internal.h"
 #include "tst_search.h"
 #include "ngram_search.h"
 #include "ngram_search_fwdtree.h"
@@ -160,15 +160,13 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     ps_free_searches(ps);
 
     /* Free old acmod. */
-    if (ps->acmod) {
-        acmod_free(ps->acmod);
-        ps->acmod = NULL;
-    }
+    acmod_free(ps->acmod);
+    ps->acmod = NULL;
+
     /* Free old dictionary (must be done after the two things above) */
-    if (ps->dict) {
-        dict_free(ps->dict);
-        ps->dict = NULL;
-    }
+    s3dict_free(ps->dict);
+    ps->dict = NULL;
+
 
     /* Logmath computation (used in acmod and search) */
     if (ps->lmath == NULL
@@ -199,15 +197,21 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         ps->searches = glist_add_ptr(ps->searches, ps->phone_loop);
     }
 
+    /* Dictionary and triphone mappings (depends on acmod). */
+    /* FIXME: pass config, change arguments, implement LTS, etc. */
+    if ((ps->dict = s3dict_init(ps->acmod->mdef,
+                                cmd_ln_str_r(ps->config, "-dict"),
+                                cmd_ln_str_r(ps->config, "-fdict"),
+                                FALSE, TRUE)) == NULL)
+        return -1;
+
     /* Determine whether we are starting out in FSG or N-Gram search mode. */
     if (cmd_ln_str_r(ps->config, "-fsg") || cmd_ln_str_r(ps->config, "-jsgf")) {
         ps_search_t *fsgs;
 
-        /* Dictionary and triphone mappings (depends on acmod). */
-        if ((ps->dict = dict_init(ps->config, ps->acmod->mdef)) == NULL)
+        if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict, FALSE, ps->lmath)) == NULL)
             return -1;
-
-        if ((fsgs = fsg_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
+        if ((fsgs = fsg_search_init(ps->config, ps->acmod, ps->dict, ps->d2p)) == NULL)
             return -1;
         fsgs->pls = ps->phone_loop;
         ps->searches = glist_add_ptr(ps->searches, fsgs);
@@ -216,10 +220,11 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     else if (cmd_ln_str_r(ps->config, "-tst")) {
         ps_search_t *tstg;
 
-        /* No dict_t for TST search... */
-
-        if ((tstg = tst_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
+        if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict, TRUE, ps->lmath)) == NULL)
             return -1;
+        if ((tstg = tst_search_init(ps->config, ps->acmod, ps->dict, ps->d2p)) == NULL)
+            return -1;
+        /* FIXME: add phoneme lookahead */
         ps->searches = glist_add_ptr(ps->searches, tstg);
         ps->search = tstg;
     }
@@ -227,11 +232,9 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
              || (lmctl = cmd_ln_str_r(ps->config, "-lmctl"))) {
         ps_search_t *ngs;
 
-        /* Dictionary and triphone mappings (depends on acmod). */
-        if ((ps->dict = dict_init(ps->config, ps->acmod->mdef)) == NULL)
+        if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict, FALSE, ps->lmath)) == NULL)
             return -1;
-
-        if ((ngs = ngram_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
+        if ((ngs = ngram_search_init(ps->config, ps->acmod, ps->dict, ps->d2p)) == NULL)
             return -1;
         ngs->pls = ps->phone_loop;
         ps->searches = glist_add_ptr(ps->searches, ngs);
@@ -239,6 +242,12 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     }
     /* Otherwise, we will initialize the search whenever the user
      * decides to load an FSG or a language model. */
+    else {
+        /* Major hack, we just assume that composite triphones (which
+         * actually are not that useful) and hence TST won't be used. */
+        if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict, FALSE, ps->lmath)) == NULL)
+            return -1;
+    }
 
     /* Initialize performance timer. */
     ps->perf.name = "decode";
@@ -286,7 +295,7 @@ ps_free(ps_decoder_t *ps)
     for (gn = ps->searches; gn; gn = gnode_next(gn))
         ps_search_free(gnode_ptr(gn));
     glist_free(ps->searches);
-    dict_free(ps->dict);
+    s3dict_free(ps->dict);
     acmod_free(ps->acmod);
     logmath_free(ps->lmath);
     cmd_ln_free_r(ps->config);
@@ -350,8 +359,7 @@ ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset)
     search = ps_find_search(ps, "ngram");
     if (search == NULL) {
         /* Initialize N-Gram search. */
-        search = ngram_search_init(ps->config,
-                                   ps->acmod, ps->dict);
+        search = ngram_search_init(ps->config, ps->acmod, ps->dict, ps->d2p);
         if (search == NULL)
             return NULL;
         search->pls = ps->phone_loop;
@@ -391,7 +399,7 @@ ps_update_fsgset(ps_decoder_t *ps)
     if (search == NULL) {
         /* Initialize FSG search. */
         search = fsg_search_init(ps->config,
-                                 ps->acmod, ps->dict);
+                                 ps->acmod, ps->dict, ps->d2p);
         search->pls = ps->phone_loop;
         ps->searches = glist_add_ptr(ps->searches, search);
     }
@@ -416,7 +424,8 @@ ps_add_word(ps_decoder_t *ps,
     int rv;
 
     pron = ckd_salloc(phones);
-    if ((wid = dict_add_word(ps->dict, word, pron)) == -1) {
+    /* FIXME: This no longer works. */
+    if ((wid = s3dict_add_word(ps->dict, word, pron, strlen(pron))) == -1) {
         ckd_free(pron);
         return -1;
     }
@@ -799,8 +808,8 @@ ps_nbest(ps_decoder_t *ps, int sf, int ef,
         lwf = ((ngram_search_t *)ps->search)->bestpath_fwdtree_lw_ratio;
     }
 
-    w1 = ctx1 ? dict_to_id(ps_search_dict(ps->search), ctx1) : -1;
-    w2 = ctx2 ? dict_to_id(ps_search_dict(ps->search), ctx2) : -1;
+    w1 = ctx1 ? s3dict_wordid(ps_search_dict(ps->search), ctx1) : -1;
+    w2 = ctx2 ? s3dict_wordid(ps_search_dict(ps->search), ctx2) : -1;
     nbest = ps_astar_start(dag, lmset, lwf, sf, ef, w1, w2);
 
     return (ps_nbest_t *)nbest;
@@ -875,16 +884,19 @@ ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
 
 void
 ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
-               cmd_ln_t *config, acmod_t *acmod, dict_t *dict)
+               cmd_ln_t *config, acmod_t *acmod, s3dict_t *dict,
+               dict2pid_t *d2p)
 {
     search->vt = vt;
     search->config = config;
     search->acmod = acmod;
     search->dict = dict;
+    search->d2p = d2p;
     if (dict) {
-        search->start_wid = dict_to_id(dict, "<s>");
-        search->finish_wid = dict_to_id(dict, "</s>");
-        search->silence_wid = dict_to_id(dict, "<sil>");
+        /* FIXME: redundant? */
+        search->start_wid = s3dict_startwid(dict);
+        search->finish_wid = s3dict_finishwid(dict);
+        search->silence_wid = s3dict_silwid(dict);
     }
     else {
         search->start_wid = search->finish_wid = search->silence_wid = -1;

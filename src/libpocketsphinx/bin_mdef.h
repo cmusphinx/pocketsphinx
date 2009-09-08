@@ -117,6 +117,7 @@ struct cd_tree_s {
  */
 typedef struct bin_mdef_s bin_mdef_t;
 struct bin_mdef_s {
+	int refcnt;
 	int32 n_ciphone;    /**< Number of base (CI) phones */
 	int32 n_phone;	    /**< Number of base (CI) phones + (CD) triphones */
 	int32 n_emit_state; /**< Number of emitting states per phone (0 for heterogeneous) */
@@ -162,42 +163,55 @@ struct bin_mdef_s {
 #define bin_mdef_pid2ci(m,p)		(((p) < (m)->n_ciphone) ? (p) \
                                          : (m)->phone[p].info.cd.ctx[0])
 
-/** Read a binary mdef from a file. */
+/**
+ * Read a binary mdef from a file.
+ */
 bin_mdef_t *bin_mdef_read(cmd_ln_t *config, const char *filename);
-/** Read a text mdef from a file (creating an in-memory binary mdef). */
+/**
+ * Read a text mdef from a file (creating an in-memory binary mdef).
+ */
 bin_mdef_t *bin_mdef_read_text(cmd_ln_t *config, const char *filename);
-/** Write a binary mdef to a file. */
+/**
+ * Write a binary mdef to a file.
+ */
 int bin_mdef_write(bin_mdef_t *m, const char *filename);
-/** Write a binary mdef to a text file. */
+/**
+ * Write a binary mdef to a text file.
+ */
 int bin_mdef_write_text(bin_mdef_t *m, const char *filename);
-
-/** Free a binary mdef. */
-void bin_mdef_free(bin_mdef_t *m);
+/**
+ * Retain a pointer to a bin_mdef_t.
+ */
+bin_mdef_t *bin_mdef_retain(bin_mdef_t *m);
+/**
+ * Release a pointer to a binary mdef.
+ */
+int bin_mdef_free(bin_mdef_t *m);
 
 /**
  * Context-independent phone lookup.
  * @return phone id for ciphone.
  */
-int bin_mdef_ciphone_id (bin_mdef_t *m,	       /* In: Model structure being queried */
-			 const char *ciphone); /* In: ciphone for which id wanted */
+int bin_mdef_ciphone_id(bin_mdef_t *m,	       /**< In: Model structure being queried */
+			const char *ciphone);  /**< In: ciphone for which id wanted */
 
 /**
  * Case-insensitive context-independent phone lookup.
  * @return phone id for ciphone.
  */
-int bin_mdef_ciphone_id_nocase(bin_mdef_t *m,	     /* In: Model structure being queried */
-			       const char *ciphone); /* In: ciphone for which id wanted */
+int bin_mdef_ciphone_id_nocase(bin_mdef_t *m,	     /**< In: Model structure being queried */
+			       const char *ciphone); /**< In: ciphone for which id wanted */
 
 /* Return value: READ-ONLY ciphone string name for the given ciphone id */
-const char *bin_mdef_ciphone_str(bin_mdef_t *m,	/* In: Model structure being queried */
-				 int32 ci);	/* In: ciphone id for which name wanted */
+const char *bin_mdef_ciphone_str(bin_mdef_t *m,	/**< In: Model structure being queried */
+				 int32 ci);	/**< In: ciphone id for which name wanted */
 
 /* Return value: phone id for the given constituents if found, else -1 */
-int bin_mdef_phone_id(bin_mdef_t *m,	/* In: Model structure being queried */
-		      int32 b,		/* In: base ciphone id */
-		      int32 l,		/* In: left context ciphone id */
-		      int32 r,		/* In: right context ciphone id */
-		      int32 pos);	/* In: Word position */
+int bin_mdef_phone_id(bin_mdef_t *m,	/**< In: Model structure being queried */
+		      int32 b,		/**< In: base ciphone id */
+		      int32 l,		/**< In: left context ciphone id */
+		      int32 r,		/**< In: right context ciphone id */
+		      int32 pos);	/**< In: Word position */
 
 /* Look up a phone id, backing off to other word positions. */
 int bin_mdef_phone_id_nearest(bin_mdef_t * m, int32 b,
@@ -208,9 +222,9 @@ int bin_mdef_phone_id_nearest(bin_mdef_t * m, int32 b,
  *
  * @return 0 if successful, -1 if error.
  */
-int bin_mdef_phone_str(bin_mdef_t *m,	/* In: Model structure being queried */
-		       int pid,		/* In: phone id being queried */
-		       char *buf);	/* Out: On return, buf has the string */
+int bin_mdef_phone_str(bin_mdef_t *m,	/**< In: Model structure being queried */
+		       int pid,		/**< In: phone id being queried */
+		       char *buf);	/**< Out: On return, buf has the string */
 
 #ifdef __cplusplus
 }; /* extern "C" */

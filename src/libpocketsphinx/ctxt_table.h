@@ -83,7 +83,7 @@
 
 #include "s3types.h"
 #include "bin_mdef.h"
-#include "s3_dict.h"
+#include "s3dict.h"
 
 
 #ifdef __cplusplus

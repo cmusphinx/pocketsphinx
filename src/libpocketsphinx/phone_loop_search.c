@@ -106,14 +106,14 @@ phone_loop_search_reinit(ps_search_t *search)
 ps_search_t *
 phone_loop_search_init(cmd_ln_t *config,
 		       acmod_t *acmod,
-		       dict_t *dict)
+		       s3dict_t *dict)
 {
     phone_loop_search_t *pls;
 
     /* Allocate and initialize. */
     pls = ckd_calloc(1, sizeof(*pls));
     ps_search_init(ps_search_base(pls), &phone_loop_search_funcs,
-                   config, acmod, dict);
+                   config, acmod, dict, NULL);
     phone_loop_search_reinit(ps_search_base(pls));
 
     return ps_search_base(pls);

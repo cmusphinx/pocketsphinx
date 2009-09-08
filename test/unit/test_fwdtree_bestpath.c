@@ -77,7 +77,7 @@ main(int argc, char *argv[])
 		printf("BESTPATH: %s\n",
 		       ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset, 1.461538, 15.0)));
 	}
-	TEST_EQUAL(0, strcmp("GO FORWARD TEN READERS",
+	TEST_EQUAL(0, strcmp("GO FORWARD TEN YEARS",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
 	TEST_EQUAL(0, strcmp("GO FORWARD TEN YEARS",
 			     ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset,

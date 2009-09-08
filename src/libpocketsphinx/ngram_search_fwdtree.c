@@ -52,19 +52,6 @@
 #include "ngram_search_fwdtree.h"
 #include "phone_loop_search.h"
 
-/*
- * NOTE: this module assumes that the dictionary is organized as follows:
- *     Main, real dictionary words
- *     </s>
- *     <s>... (possibly more than one of these)
- *     <sil>
- *     noise-words...
- * In particular, note that </s> comes before <s> since </s> occurs in the LM, but
- * not <s> (well, there's no transition to <s> in the LM).
- *
- * This should probably be fixed at some point.
- */
-
 /* Turn this on to dump channels for debugging */
 #define __CHAN_DUMP__		0
 #if __CHAN_DUMP__
@@ -80,42 +67,49 @@
 static void
 init_search_tree(ngram_search_t *ngs)
 {
-    int32 w, mpx, max_ph0, i, n_words, n_main_words;
-    dict_entry_t *de;
+    int32 w, ndiph, i, n_words, n_ci;
+    s3dict_t *dict = ps_search_dict(ngs);
+    bitvec_t *dimap;
 
     n_words = ps_search_n_words(ngs);
-    n_main_words = dict_get_num_main_words(ps_search_dict(ngs));
-    ngs->homophone_set = ckd_calloc(n_main_words, sizeof(*ngs->homophone_set));
+    ngs->homophone_set = ckd_calloc(n_words, sizeof(*ngs->homophone_set));
 
     /* Find #single phone words, and #unique first diphones (#root channels) in dict. */
-    max_ph0 = -1;
+    ndiph = 0;
     ngs->n_1ph_words = 0;
-    mpx = ps_search_dict(ngs)->dict_list[0]->mpx;
-    for (w = 0; w < n_main_words; w++) {
-        de = ps_search_dict(ngs)->dict_list[w];
-
-        /* Paranoia Central; this check can probably be removed (RKM) */
-        if (de->mpx != mpx)
-            E_FATAL("HMM tree words not all mpx or all non-mpx\n");
-
-        if (de->len == 1)
-            ngs->n_1ph_words++;
+    n_ci = bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef);
+    /* Allocate a bitvector with flags for each possible diphone. */
+    dimap = bitvec_alloc(n_ci * n_ci);
+    for (w = 0; w < n_words; w++) {
+        if (!s3dict_real_word(dict, w))
+            continue;
+        if (s3dict_pronlen(dict, w) == 1)
+            ++ngs->n_1ph_words;
         else {
-            if (max_ph0 < de->phone_ids[0])
-                max_ph0 = de->phone_ids[0];
+            int ph0, ph1;
+            ph0 = s3dict_pron(dict, w, 0);
+            ph1 = s3dict_pron(dict, w, 1);
+            /* Increment ndiph the first time we see a diphone. */
+            if (bitvec_is_clear(dimap, ph0 * n_ci + ph1)) {
+                bitvec_set(dimap, ph0 * n_ci + ph1);
+                ++ndiph;
+            }
         }
     }
+    E_INFO("%d unique initial diphones\n", ndiph);
+    bitvec_free(dimap);
 
     /* Add remaining dict words (</s>, <s>, <sil>, noise words) to single-phone words */
-    ngs->n_1ph_words += (n_words - n_main_words);
-    ngs->n_root_chan_alloc = max_ph0 + 1;
-    /* Verify that these are *actually* single-phone words, otherwise
-     * really bad things will happen to us. */
-    for (w = n_main_words; w < n_words; ++w) {
-        de = ps_search_dict(ngs)->dict_list[w];
-        if (de->len != 1) {
+    ngs->n_1ph_words += s3dict_num_fillers(dict) + 2;
+    ngs->n_root_chan_alloc = ndiph + 1;
+    /* Verify that these are all *actually* single-phone words,
+     * otherwise really bad things will happen to us. */
+    for (w = 0; w < n_words; ++w) {
+        if (s3dict_real_word(dict, w))
+            continue;
+        if (s3dict_pronlen(dict, w) != 1) {
             E_WARN("Filler word %d = %s has more than one phone, ignoring it.\n",
-                   w, de->word);
+                   w, s3dict_wordstr(dict, w));
             --ngs->n_1ph_words;
         }
     }
@@ -124,29 +118,24 @@ init_search_tree(ngram_search_t *ngs)
     ngs->root_chan =
         ckd_calloc(ngs->n_root_chan_alloc, sizeof(*ngs->root_chan));
     for (i = 0; i < ngs->n_root_chan_alloc; i++) {
-        hmm_init(ngs->hmmctx, &ngs->root_chan[i].hmm, mpx, -1, -1);
+        hmm_init(ngs->hmmctx, &ngs->root_chan[i].hmm, TRUE, -1, -1);
         ngs->root_chan[i].penult_phn_wid = -1;
         ngs->root_chan[i].next = NULL;
     }
 
-    /* Allocate space for left-diphone -> root-chan map */
-    ngs->first_phone_rchan_map =
-        ckd_calloc(ngs->n_root_chan_alloc,
-                   sizeof(*ngs->first_phone_rchan_map));
-
-    /* Permanently allocate channels for single-phone words (1/word) */
+    /* Permanently allocate and initialize channels for single-phone
+     * words (1/word). */
     ngs->rhmm_1ph = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->rhmm_1ph));
     i = 0;
-    /* Don't allocate channels for placeholders!! */
-    for (w = ps_search_dict(ngs)->last_dummy + 1; w < n_words; w++) {
-        de = ps_search_dict(ngs)->dict_list[w];
-        if (de->len != 1)
+    for (w = 0; w < n_words; w++) {
+        if (s3dict_pronlen(dict, w) != 1)
             continue;
-
-        ngs->rhmm_1ph[i].diphone = de->phone_ids[0];
-        ngs->rhmm_1ph[i].ciphone = de->ci_phone_ids[0];
-        hmm_init(ngs->hmmctx, &ngs->rhmm_1ph[i].hmm, de->mpx,
-                 de->phone_ids[0], de->ci_phone_ids[0]);
+        /* Use SIL as right context for these. */
+        ngs->rhmm_1ph[i].ci2phone = bin_mdef_silphone(ps_search_acmod(ngs)->mdef);
+        ngs->rhmm_1ph[i].ciphone = s3dict_first_phone(dict, w);
+        hmm_init(ngs->hmmctx, &ngs->rhmm_1ph[i].hmm, TRUE,
+                 bin_mdef_pid2ssid(ps_search_acmod(ngs)->mdef, ngs->rhmm_1ph[i].ciphone),
+                 ngs->rhmm_1ph[i].ciphone);
         ngs->rhmm_1ph[i].next = NULL;
 
         ngs->word_chan[w] = (chan_t *) &(ngs->rhmm_1ph[i]);
@@ -185,62 +174,67 @@ init_nonroot_chan(ngram_search_t *ngs, chan_t * hmm, int32 ph, int32 ci)
 static void
 create_search_tree(ngram_search_t *ngs)
 {
-    dict_entry_t *de;
     chan_t *hmm;
     root_chan_t *rhmm;
     int32 w, i, j, p, ph;
-    int32 n_words, n_main_words;
+    int32 n_words;
+    s3dict_t *dict = ps_search_dict(ngs);
+    dict2pid_t *d2p = ps_search_dict2pid(ngs);
 
     n_words = ps_search_n_words(ngs);
-    n_main_words = dict_get_num_main_words(ps_search_dict(ngs));
 
     E_INFO("Creating search tree\n");
 
-    for (w = 0; w < n_main_words; w++)
+    for (w = 0; w < n_words; w++)
         ngs->homophone_set[w] = -1;
 
-    for (i = 0; i < ngs->n_root_chan_alloc; i++)
-        ngs->first_phone_rchan_map[i] = -1;
-
-    E_INFO("%d root, %d non-root channels, %d single-phone words\n",
+    E_INFO("before: %d root, %d non-root channels, %d single-phone words\n",
            ngs->n_root_chan, ngs->n_nonroot_chan, ngs->n_1ph_words);
 
     ngs->n_1ph_LMwords = 0;
     ngs->n_root_chan = 0;
     ngs->n_nonroot_chan = 0;
 
-    for (w = 0; w < n_main_words; w++) {
-        de = ps_search_dict(ngs)->dict_list[w];
+    for (w = 0; w < n_words; w++) {
+        int ciphone, ci2phone;
 
         /* Ignore dictionary words not in LM */
-        if (!ngram_model_set_known_wid(ngs->lmset, de->wid))
+        if (!ngram_model_set_known_wid(ngs->lmset, s3dict_basewid(dict, w)))
             continue;
 
         /* Handle single-phone words individually; not in channel tree */
-        if (de->len == 1) {
+        if (s3dict_pronlen(dict, w) == 1) {
+            E_DEBUG(1,("single_phone_wid[%d] = %s\n",
+                       ngs->n_1ph_LMwords, s3dict_wordstr(dict, w)));
             ngs->single_phone_wid[ngs->n_1ph_LMwords++] = w;
             continue;
         }
 
-        /* Insert w into channel tree; first find or allocate root channel */
-        if (ngs->first_phone_rchan_map[de->phone_ids[0]] < 0) {
-            ngs->first_phone_rchan_map[de->phone_ids[0]] = ngs->n_root_chan;
+        /* Find a root channel matching the initial diphone, or
+         * allocate one if not found. */
+        ciphone = s3dict_pron(dict, w, 0);
+        ci2phone = s3dict_pron(dict, w, 1);
+        for (i = 0; i < ngs->n_root_chan; ++i) {
+            if (ngs->root_chan[i].ciphone == ciphone
+                && ngs->root_chan[i].ci2phone == ci2phone)
+                break;
+        }
+        if (i == ngs->n_root_chan) {
             rhmm = &(ngs->root_chan[ngs->n_root_chan]);
-            if (hmm_is_mpx(&rhmm->hmm))
-                hmm_mpx_ssid(&rhmm->hmm, 0) = de->phone_ids[0];
-            else
-                hmm_nonmpx_ssid(&rhmm->hmm) = de->phone_ids[0];
-            rhmm->hmm.tmatid = de->ci_phone_ids[0];
-            rhmm->diphone = de->phone_ids[0];
-            rhmm->ciphone = de->ci_phone_ids[0];
-
+            rhmm->hmm.tmatid = ciphone;
+            /* Begin with CI phone?  Not sure this makes a difference... */
+            hmm_mpx_ssid(&rhmm->hmm, 0) =
+                bin_mdef_pid2ssid(ps_search_acmod(ngs)->mdef, ciphone);
+            rhmm->ciphone = ciphone;
+            rhmm->ci2phone = ci2phone;
             ngs->n_root_chan++;
         }
         else
-            rhmm = &(ngs->root_chan[ngs->first_phone_rchan_map[de->phone_ids[0]]]);
+            rhmm = &(ngs->root_chan[i]);
 
+        E_DEBUG(2, ("word %s rhmm %d\n", s3dict_wordstr(dict, w), rhmm - ngs->root_chan));
         /* Now, rhmm = root channel for w.  Go on to remaining phones */
-        if (de->len == 2) {
+        if (s3dict_pronlen(dict, w) == 2) {
             /* Next phone is the last; not kept in tree; add w to penult_phn_wid set */
             if ((j = rhmm->penult_phn_wid) < 0)
                 rhmm->penult_phn_wid = w;
@@ -251,11 +245,11 @@ create_search_tree(ngram_search_t *ngs)
         }
         else {
             /* Add remaining phones, except the last, to tree */
-            ph = de->phone_ids[1];
+            ph = dict2pid_internal(d2p, w, 1);
             hmm = rhmm->next;
             if (hmm == NULL) {
                 rhmm->next = hmm = listelem_malloc(ngs->chan_alloc);
-                init_nonroot_chan(ngs, hmm, ph, de->ci_phone_ids[1]);
+                init_nonroot_chan(ngs, hmm, ph, s3dict_pron(dict, w, 1));
                 ngs->n_nonroot_chan++;
             }
             else {
@@ -265,18 +259,20 @@ create_search_tree(ngram_search_t *ngs)
                     prev_hmm = hmm;
                 if (!hmm) {     /* thanks, rkm! */
                     prev_hmm->alt = hmm = listelem_malloc(ngs->chan_alloc);
-                    init_nonroot_chan(ngs, hmm, ph, de->ci_phone_ids[1]);
+                    init_nonroot_chan(ngs, hmm, ph, s3dict_pron(dict, w, 1));
                     ngs->n_nonroot_chan++;
                 }
             }
-            /* de->phone_ids[1] now in tree; pointed to by hmm */
+            E_DEBUG(3,("phone %s = %d\n",
+                       bin_mdef_ciphone_str(ps_search_acmod(ngs)->mdef,
+                                            s3dict_pron(dict, w, 1)), ph));
 
-            for (p = 2; p < de->len - 1; p++) {
-                ph = de->phone_ids[p];
+            for (p = 2; p < s3dict_pronlen(dict, w) - 1; p++) {
+                ph = dict2pid_internal(d2p, w, p);
                 if (!hmm->next) {
                     hmm->next = listelem_malloc(ngs->chan_alloc);
                     hmm = hmm->next;
-                    init_nonroot_chan(ngs, hmm, ph, de->ci_phone_ids[p]);
+                    init_nonroot_chan(ngs, hmm, ph, s3dict_pron(dict, w, p));
                     ngs->n_nonroot_chan++;
                 }
                 else {
@@ -287,10 +283,13 @@ create_search_tree(ngram_search_t *ngs)
                         prev_hmm = hmm;
                     if (!hmm) { /* thanks, rkm! */
                         prev_hmm->alt = hmm = listelem_malloc(ngs->chan_alloc);
-                        init_nonroot_chan(ngs, hmm, ph, de->ci_phone_ids[p]);
+                        init_nonroot_chan(ngs, hmm, ph, s3dict_pron(dict, w, p));
                         ngs->n_nonroot_chan++;
                     }
                 }
+                E_DEBUG(3,("phone %s = %d\n",
+                           bin_mdef_ciphone_str(ps_search_acmod(ngs)->mdef,
+                                                s3dict_pron(dict, w, p)), ph));
             }
 
             /* All but last phone of w in tree; add w to hmm->info.penult_phn_wid set */
@@ -303,28 +302,27 @@ create_search_tree(ngram_search_t *ngs)
         }
     }
 
-    /* FIXME: This depends on the ordering of the dictionary and is
-     * thus rather fragile... */
     ngs->n_1ph_words = ngs->n_1ph_LMwords;
-    ngs->n_1ph_LMwords++;            /* including </s> */
 
-    for (w = n_main_words; w < n_words; ++w) {
-        de = ps_search_dict(ngs)->dict_list[w];
+    /* Add filler words to the array of 1ph words. */
+    for (w = 0; w < n_words; ++w) {
         /* Skip anything that doesn't actually have a single phone. */
-        if (de->len != 1)
+        if (s3dict_pronlen(dict, w) != 1)
             continue;
-        /* If something isn't a filler word (which is very unlikely),
-         * then skip it if it isn't in the language model. */
-        if ((!ISA_FILLER_WORD(ngs, w))
-            && (!ngram_model_set_known_wid(ngs->lmset, de->wid)))
+        /* Also skip "real words" and things that are in the LM. */
+        if (s3dict_real_word(dict, w))
             continue;
+        if (ngram_model_set_known_wid(ngs->lmset, s3dict_basewid(dict, w)))
+            continue;
+        E_DEBUG(1,("single_phone_wid[%d] = %s\n",
+                   ngs->n_1ph_words, s3dict_wordstr(dict, w)));
         ngs->single_phone_wid[ngs->n_1ph_words++] = w;
     }
 
     if (ngs->n_nonroot_chan >= ngs->max_nonroot_chan) {
         /* Give some room for channels for new words added dynamically at run time */
         ngs->max_nonroot_chan = ngs->n_nonroot_chan + 128;
-        E_INFO("max nonroot chan increased to %d\n", ngs->max_nonroot_chan);
+        E_INFO("after: max nonroot chan increased to %d\n", ngs->max_nonroot_chan);
 
         /* Free old active channel list array if any and allocate new one */
         if (ngs->active_chan_list)
@@ -333,7 +331,7 @@ create_search_tree(ngram_search_t *ngs)
                                               sizeof(**ngs->active_chan_list));
     }
 
-    E_INFO("%d root, %d non-root channels, %d single-phone words\n",
+    E_INFO("after: %d root, %d non-root channels, %d single-phone words\n",
            ngs->n_root_chan, ngs->n_nonroot_chan, ngs->n_1ph_words);
 }
 
@@ -405,7 +403,7 @@ ngram_fwdtree_deinit(ngram_search_t *ngs)
     }
     if (ngs->rhmm_1ph) {
         for (i = w = 0; w < n_words; ++w) {
-            if (ps_search_dict(ngs)->dict_list[w]->len != 1)
+            if (s3dict_pronlen(ps_search_dict(ngs), w) != 1)
                 continue;
             hmm_deinit(&ngs->rhmm_1ph[i].hmm);
             ++i;
@@ -413,7 +411,6 @@ ngram_fwdtree_deinit(ngram_search_t *ngs)
         ckd_free(ngs->rhmm_1ph);
     }
     ngs->n_nonroot_chan = 0;
-    ckd_free(ngs->first_phone_rchan_map);
     ckd_free(ngs->root_chan);
     ckd_free(ngs->homophone_set);
     ckd_free(ngs->single_phone_wid);
@@ -478,7 +475,7 @@ ngram_fwdtree_start(ngram_search_t *ngs)
     }
 
     /* Start search with <s>; word_chan[<s>] is permanently allocated */
-    rhmm = (root_chan_t *) ngs->word_chan[dict_to_id(ps_search_dict(ngs), "<s>")];
+    rhmm = (root_chan_t *) ngs->word_chan[s3dict_startwid(ps_search_dict(ngs))];
     hmm_clear(&rhmm->hmm);
     hmm_enter(&rhmm->hmm, 0, NO_BP, 0);
 }
@@ -702,13 +699,15 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
     pls = (phone_loop_search_t *)ps_search_lookahead(ngs);
 
     for (i = 0, rhmm = ngs->root_chan; i < ngs->n_root_chan; i++, rhmm++) {
+        E_DEBUG(3,("Root channel %d frame %d score %d thresh %d\n",
+                   i, hmm_frame(&rhmm->hmm), hmm_bestscore(&rhmm->hmm), thresh));
         /* First check if this channel was active in current frame */
         if (hmm_frame(&rhmm->hmm) < frame_idx)
             continue;
 
         if (hmm_bestscore(&rhmm->hmm) BETTER_THAN thresh) {
             hmm_frame(&rhmm->hmm) = nf;  /* rhmm will be active in next frame */
-
+            E_DEBUG(3, ("Preserving root channel %d score %d\n", i, hmm_bestscore(&rhmm->hmm)));
             /* transitions out of this root channel */
             /* transition to all next-level channels in the HMM tree */
             for (hmm = rhmm->next; hmm; hmm = hmm->alt) {
@@ -731,9 +730,10 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
              */
             for (w = rhmm->penult_phn_wid; w >= 0;
                  w = ngs->homophone_set[w]) {
-                dict_entry_t *de = ps_search_dict(ngs)->dict_list[w];
                 newphone_score = hmm_out_score(&rhmm->hmm) + ngs->pip
-                    + phone_loop_search_score(pls, de->ci_phone_ids[de->len - 1]);
+                    + phone_loop_search_score(pls, s3dict_last_phone(ps_search_dict(ngs),w));
+                E_DEBUG(3, ("wid %d newphone_score %d\n", w, newphone_score));
+                E_DEBUG(3, ("wid %d newphone_score %d\n", w, newphone_score));
                 if (newphone_score BETTER_THAN lastphn_thresh) {
                     candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
                     ngs->n_lastphn_cand++;
@@ -760,7 +760,6 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
     int32 thresh, newphone_thresh, lastphn_thresh, newphone_score;
     chan_t **acl, **nacl;       /* active list, next active list */
     lastphn_cand_t *candp;
-    dict_entry_t *de;
     phone_loop_search_t *pls;
 
     nf = frame_idx + 1;
@@ -808,9 +807,8 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
              */
             for (w = hmm->info.penult_phn_wid; w >= 0;
                  w = ngs->homophone_set[w]) {
-                de = ps_search_dict(ngs)->dict_list[w];
                 newphone_score = hmm_out_score(&hmm->hmm) + ngs->pip
-                    + phone_loop_search_score(pls, de->ci_phone_ids[de->len - 1]);
+                    + phone_loop_search_score(pls, s3dict_last_phone(ps_search_dict(ngs),w));
                 if (newphone_score BETTER_THAN lastphn_thresh) {
                     candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
                     ngs->n_lastphn_cand++;
@@ -840,9 +838,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
     lastphn_cand_t *candp;
     int32 *nawl;
     int32 thresh;
-    uint16 *rcpermtab, ciph0;
     int32 bestscore, dscr;
-    dict_entry_t *de;
     chan_t *hmm;
     bptbl_t *bpe;
     int32 n_cand_sf = 0;
@@ -853,19 +849,17 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
 
     /* For each candidate word (entering its last phone) */
     /* If best LM score and bp for candidate known use it, else sort cands by startfrm */
+    E_DEBUG(3, ("n_lastphn_cand %d\n", ngs->n_lastphn_cand));
     for (i = 0, candp = ngs->lastphn_cand; i < ngs->n_lastphn_cand; i++, candp++) {
         /* Backpointer entry for it. */
         bpe = &(ngs->bp_table[candp->bp]);
-        /* Right context phone table. */
-        rcpermtab =
-            (bpe->r_diph >= 0)
-            ? ps_search_dict(ngs)->rcFwdPermTable[bpe->r_diph]
-            : ngs->zeroPermTab;
 
         /* Subtract starting score for candidate, leave it with only word score */
-        de = ps_search_dict(ngs)->dict_list[candp->wid];
-        ciph0 = de->ci_phone_ids[0];
-        candp->score -= ngs->bscore_stack[bpe->s_idx + rcpermtab[ciph0]];
+        candp->score -=
+            ngram_search_exit_score
+            (ngs, bpe, s3dict_first_phone(ps_search_dict(ngs), candp->wid));
+        E_DEBUG(4, ("candp->score %d\n", candp->score));
+        E_DEBUG(4, ("candp->score %d\n", candp->score));
 
         /*
          * If this candidate not occurred in an earlier frame, prepare for finding
@@ -924,20 +918,16 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
         for (bpe = &(ngs->bp_table[bp]); bp <= bplast; bp++, bpe++) {
             if (!bpe->valid)
                 continue;
-
-            /* For each bp entry in the i-th end frame... */
-            rcpermtab = (bpe->r_diph >= 0) ?
-                ps_search_dict(ngs)->rcFwdPermTable[bpe->r_diph] : ngs->zeroPermTab;
-
             /* For each candidate at the start frame find bp->cand transition-score */
             for (j = ngs->cand_sf[i].cand; j >= 0; j = candp->next) {
                 int32 n_used;
                 candp = &(ngs->lastphn_cand[j]);
-                de = ps_search_dict(ngs)->dict_list[candp->wid];
-                ciph0 = de->ci_phone_ids[0];
-
-                dscr = ngs->bscore_stack[bpe->s_idx + rcpermtab[ciph0]];
-                dscr += ngram_tg_score(ngs->lmset, de->wid, bpe->real_wid,
+                dscr = 
+                    ngram_search_exit_score
+                    (ngs, bpe, s3dict_first_phone(ps_search_dict(ngs), candp->wid));
+                dscr += ngram_tg_score(ngs->lmset,
+                                       s3dict_basewid(ps_search_dict(ngs), candp->wid),
+                                       bpe->real_wid,
                                        bpe->prev_real_wid, &n_used);
 
                 if (dscr BETTER_THAN ngs->last_ltrans[candp->wid].dscr) {
@@ -979,7 +969,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
             }
             if (k > 0) {
                 assert(bitvec_is_clear(ngs->word_active, w));
-                assert(ps_search_dict(ngs)->dict_list[w]->len > 1);
+                assert(s3dict_pronlen(ps_search_dict(ngs), w) > 1);
                 *(nawl++) = w;
                 bitvec_set(ngs->word_active, w);
             }
@@ -1043,7 +1033,7 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
             }
         }
         if ((k > 0) && (bitvec_is_clear(ngs->word_active, w))) {
-            assert(ps_search_dict(ngs)->dict_list[w]->len > 1);
+            assert(s3dict_pronlen(ps_search_dict(ngs), w) > 1);
             *(nawl++) = w;
             bitvec_set(ngs->word_active, w);
         }
@@ -1057,6 +1047,10 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
     for (i = 0; i < ngs->n_1ph_words; i++) {
         w = ngs->single_phone_wid[i];
         rhmm = (root_chan_t *) ngs->word_chan[w];
+        E_DEBUG(3,("Single phone word %s frame %d score %d thresh %d outscore %d nwthresh %d\n",
+                   s3dict_wordstr(ps_search_dict(ngs),w),
+                   hmm_frame(&rhmm->hmm), hmm_bestscore(&rhmm->hmm),
+                   lastphn_thresh, hmm_out_score(&rhmm->hmm), newword_thresh));
         if (hmm_frame(&rhmm->hmm) < frame_idx)
             continue;
         if (hmm_bestscore(&rhmm->hmm) BETTER_THAN lastphn_thresh) {
@@ -1064,6 +1058,10 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
 
             /* Could if ((! skip_alt_frm) || (frame_idx & 0x1)) the following */
             if (hmm_out_score(&rhmm->hmm) BETTER_THAN newword_thresh) {
+                E_DEBUG(4,("Exiting single phone word %s with %d > %d, %d\n",
+                           s3dict_wordstr(ps_search_dict(ngs),w),
+                           hmm_out_score(&rhmm->hmm),
+                           lastphn_thresh, newword_thresh));
                 ngram_search_save_bp(ngs, frame_idx, w,
                              hmm_out_score(&rhmm->hmm),
                              hmm_out_history(&rhmm->hmm), 0);
@@ -1147,8 +1145,7 @@ bptable_maxwpf(ngram_search_t *ngs, int frame_idx)
     n = 0;
     for (bp = ngs->bp_table_idx[frame_idx]; bp < ngs->bpidx; bp++) {
         bpe = &(ngs->bp_table[bp]);
-        /* FIXME: Not the ideal way to tell if this is a filler word. */
-        if (ISA_FILLER_WORD(ngs, bpe->wid)) {
+        if (s3dict_filler_word(ps_search_dict(ngs), bpe->wid)) {
             if (bpe->score BETTER_THAN bestscr) {
                 bestscr = bpe->score;
                 bestbpe = bpe;
@@ -1190,15 +1187,13 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     int32 i, k, bp, w, nf;
     int32 rc;
     int32 *rcss;                /* right context score stack */
-    uint16 *rcpermtab;
     int32 thresh, newscore;
     bptbl_t *bpe;
-    dict_entry_t *pde, *de;     /* previous dict entry, dict entry */
     root_chan_t *rhmm;
     struct bestbp_rc_s *bestbp_rc_ptr;
-    int32 last_ciph;
-    int32 ssid;
     phone_loop_search_t *pls;
+    s3dict_t *dict = ps_search_dict(ngs);
+    dict2pid_t *d2p = ps_search_dict2pid(ngs);
 
     /*
      * Transition to start of new word instances (HMM tree roots); but only if words
@@ -1219,28 +1214,32 @@ word_transition(ngram_search_t *ngs, int frame_idx)
             continue;
         k++;
 
-        de = ps_search_dict(ngs)->dict_list[bpe->wid];
-        /* Get the mapping of right context phones to score stack
-         * entries for the final phone in this word.  bpe->r_diph is a
-         * pseudo-phone ID which is actually an index into the first
-         * level of the right context tables. */
-        rcpermtab =
-            (bpe->r_diph >= 0)
-            ? ps_search_dict(ngs)->rcFwdPermTable[bpe->r_diph]
-            : ngs->zeroPermTab;
-        /* This is the context-independent phone ID. */
-        last_ciph = de->ci_phone_ids[de->len - 1];
-
-        /* And this is the array of HMM scores corresponding to all
-         * the possible right context expansions of the final phone.
-         * It's likely that a lot of these are going to be missing,
-         * actually. */
+        /* DICT2PID */
+        /* Array of HMM scores corresponding to all the possible right
+         * context expansions of the final phone.  It's likely that a
+         * lot of these are going to be missing, actually. */
         rcss = &(ngs->bscore_stack[bpe->s_idx]);
-        for (rc = bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef) - 1; rc >= 0; --rc) {
-            if (rcss[rcpermtab[rc]] BETTER_THAN ngs->bestbp_rc[rc].score) {
-                ngs->bestbp_rc[rc].score = rcss[rcpermtab[rc]];
-                ngs->bestbp_rc[rc].path = bp;
-                ngs->bestbp_rc[rc].lc = last_ciph;
+        if (bpe->last2_phone == -1) {
+            /* No right context expansion. */
+            for (rc = 0; rc < bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef); ++rc) {
+                if (rcss[0] BETTER_THAN ngs->bestbp_rc[rc].score) {
+                    E_DEBUG(4,("bestbp_rc[0] = %d lc %d\n", rcss[0], bpe->last_phone));
+                    ngs->bestbp_rc[rc].score = rcss[0];
+                    ngs->bestbp_rc[rc].path = bp;
+                    ngs->bestbp_rc[rc].lc = bpe->last_phone;
+                }
+            }
+        }
+        else {
+            xwdssid_t *rssid = dict2pid_rssid(d2p, bpe->last_phone, bpe->last2_phone);
+            for (rc = 0; rc < bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef); ++rc) {
+                if (rcss[rssid->cimap[rc]] BETTER_THAN ngs->bestbp_rc[rc].score) {
+                    E_DEBUG(4,("bestbp_rc[%d] = %d lc %d\n",
+                               rc, rcss[rssid->cimap[rc]], bpe->last_phone));
+                    ngs->bestbp_rc[rc].score = rcss[rssid->cimap[rc]];
+                    ngs->bestbp_rc[rc].path = bp;
+                    ngs->bestbp_rc[rc].lc = bpe->last_phone;
+                }
             }
         }
     }
@@ -1261,13 +1260,13 @@ word_transition(ngram_search_t *ngs, int frame_idx)
         if (newscore BETTER_THAN thresh) {
             if ((hmm_frame(&rhmm->hmm) < frame_idx)
                 || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
-                ssid =
-                    ps_search_dict(ngs)->lcFwdTable[rhmm->diphone][bestbp_rc_ptr->lc];
                 hmm_enter(&rhmm->hmm, newscore,
                           bestbp_rc_ptr->path, nf);
-                if (hmm_is_mpx(&rhmm->hmm)) {
-                    hmm_mpx_ssid(&rhmm->hmm, 0) = ssid;
-                }
+                /* DICT2PID: Another place where mpx ssids are entered. */
+                /* Look up the ssid to use when entering this mpx triphone. */
+                hmm_mpx_ssid(&rhmm->hmm, 0) =
+                    d2p->ldiph_lc[rhmm->ciphone][rhmm->ci2phone][bestbp_rc_ptr->lc];
+                assert(hmm_mpx_ssid(&rhmm->hmm, 0) != BAD_SSID);
             }
         }
     }
@@ -1285,18 +1284,16 @@ word_transition(ngram_search_t *ngs, int frame_idx)
         if (!bpe->valid)
             continue;
 
-        rcpermtab =
-            (bpe->r_diph >=
-             0) ? ps_search_dict(ngs)->rcFwdPermTable[bpe->r_diph] : ngs->zeroPermTab;
-        rcss = ngs->bscore_stack + bpe->s_idx;
-
         for (i = 0; i < ngs->n_1ph_LMwords; i++) {
             int32 n_used;
             w = ngs->single_phone_wid[i];
-            de = ps_search_dict(ngs)->dict_list[w];
-
-            newscore = rcss[rcpermtab[de->ci_phone_ids[0]]];
-            newscore += ngram_tg_score(ngs->lmset, de->wid, bpe->real_wid,
+            newscore = ngram_search_exit_score
+                (ngs, bpe, s3dict_first_phone(dict, w));
+            E_DEBUG(4, ("initial newscore for %s: %d\n",
+                        s3dict_wordstr(dict, w), newscore));
+            newscore += ngram_tg_score(ngs->lmset,
+                                       s3dict_basewid(dict, w),
+                                       bpe->real_wid,
                                        bpe->prev_real_wid, &n_used);
 
             if (newscore BETTER_THAN ngs->last_ltrans[w].dscr) {
@@ -1314,16 +1311,16 @@ word_transition(ngram_search_t *ngs, int frame_idx)
             + phone_loop_search_score(pls, rhmm->ciphone);
         if (newscore BETTER_THAN thresh) {
             bpe = ngs->bp_table + ngs->last_ltrans[w].bp;
-            pde = ps_search_dict(ngs)->dict_list[bpe->wid];
-
             if ((hmm_frame(&rhmm->hmm) < frame_idx)
                 || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
                 hmm_enter(&rhmm->hmm,
                           newscore, ngs->last_ltrans[w].bp, nf);
-                if (hmm_is_mpx(&rhmm->hmm)) {
-                    hmm_mpx_ssid(&rhmm->hmm, 0) =
-                        ps_search_dict(ngs)->lcFwdTable[rhmm->diphone][pde->ci_phone_ids[pde->len - 1]];
-                }
+                /* DICT2PID: another place where mpx ssids are entered. */
+                /* Look up the ssid to use when entering this mpx triphone. */
+                hmm_mpx_ssid(&rhmm->hmm, 0) =
+                    d2p->ldiph_lc[rhmm->ciphone][rhmm->ci2phone]
+                    [s3dict_last_phone(dict, bpe->wid)];
+                assert(hmm_mpx_ssid(&rhmm->hmm, 0) != BAD_SSID);
             }
         }
     }
@@ -1341,9 +1338,9 @@ word_transition(ngram_search_t *ngs, int frame_idx)
                       newscore, bestbp_rc_ptr->path, nf);
         }
     }
-    /* FIXME FIXME: This depends on having the noise words
-     * immediately following silence in the dictionary... */
-    for (w = ps_search_silence_wid(ngs) + 1; w < ps_search_n_words(ngs); w++) {
+    for (w = s3dict_filler_start(dict); w <= s3dict_filler_end(dict); w++) {
+        if (w == ps_search_silence_wid(ngs))
+            continue;
         rhmm = (root_chan_t *) ngs->word_chan[w];
         /* If this was not actually a single-phone word, rhmm will be NULL. */
         if (rhmm == NULL)
@@ -1452,7 +1449,7 @@ ngram_fwdtree_finish(ngram_search_t *ngs)
     awl = ngs->active_word_list[cf & 0x1];
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
         /* Don't accidentally free single-phone words! */
-        if (ps_search_dict(ngs)->dict_list[w]->len == 1)
+        if (s3dict_pronlen(ps_search_dict(ngs), w) == 1)
             continue;
         bitvec_clear(ngs->word_active, w);
         if (ngs->word_chan[w] == NULL)

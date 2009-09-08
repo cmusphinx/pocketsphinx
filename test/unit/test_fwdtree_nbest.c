@@ -95,7 +95,7 @@ main(int argc, char *argv[])
 		ps_astar_finish(nbest);
 		ckd_free(besthyp);
 	}
-	TEST_EQUAL(0, strcmp("GO FORWARD TEN READERS",
+	TEST_EQUAL(0, strcmp("GO FORWARD TEN YEARS",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
 	c = clock() - c;
 	printf("5 * fwdtree + bestpath + N-best search in %.2f sec\n",

@@ -97,10 +97,10 @@ typedef struct root_chan_s {
     int32  this_phn_wid;	/**< list of words consisting of this single phone;
 				   actually the first of the list, like penult_phn_wid;
 				   -1 if none */
-    int16    diphone;		/**< first diphone of this node; all words rooted at this
-				   node begin with this diphone */
     int16    ciphone;		/**< first ciphone of this node; all words rooted at this
 				   node begin with this ciphone */
+    int16    ci2phone;		/**< second ciphone of this node; one root HMM for each
+                                   unique right context */
 } root_chan_t;
 
 /**
@@ -116,7 +116,8 @@ typedef struct bptbl_s {
     int32    s_idx;		/**< Start of BScoreStack for various right contexts*/
     int32    real_wid;		/**< wid of this or latest predecessor real word */
     int32    prev_real_wid;	/**< real word predecessor of real_wid */
-    int32    r_diph;		/**< rightmost diphone of this word */
+    int16    last_phone;        /**< last phone of this word */
+    int16    last2_phone;       /**< next-to-last phone of this word */
 } bptbl_t;
 
 /**
@@ -232,7 +233,6 @@ struct ngram_search_s {
     int32 n_root_chan;       /**< Number of valid root_chan */
     int32 n_nonroot_chan;    /**< Number of valid non-root channels */
     int32 max_nonroot_chan;  /**< Maximum possible number of non-root channels */
-    int32 *first_phone_rchan_map;    /* map 1st (left) diphone to root-chan index */
     root_chan_t *rhmm_1ph;   /**< Root HMMs for single-phone words */
 
     /**
@@ -361,7 +361,8 @@ typedef struct ngram_search_s ngram_search_t;
  */
 ps_search_t *ngram_search_init(cmd_ln_t *config,
                                acmod_t *acmod,
-                               dict_t *dict);
+                               s3dict_t *dict,
+                               dict2pid_t *d2p);
 
 /**
  * Finalize the N-Gram search module.
@@ -414,5 +415,10 @@ void ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf);
  * Construct a word lattice from the current hypothesis.
  */
 ps_lattice_t *ngram_search_lattice(ps_search_t *search);
+
+/**
+ * Get the exit score for a backpointer entry with a given right context.
+ */
+int32 ngram_search_exit_score(ngram_search_t *ngs, bptbl_t *pbe, int rcphone);
 
 #endif /* __NGRAM_SEARCH_H__ */

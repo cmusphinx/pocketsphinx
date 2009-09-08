@@ -173,7 +173,12 @@ read_mfc_file(FILE *infh, int sf, int ef, int *out_nfr, int ceplen)
     nfr = ef - sf;
     mfcs = ckd_calloc_2d(nfr, ceplen, sizeof(**mfcs));
     floats = (float32 *)mfcs[0];
-    fread(floats, 4, nfr * ceplen, infh);
+    if (fread(floats, 4, nfr * ceplen, infh) != nfr * ceplen) {
+        E_ERROR_SYSTEM("Failed to read %d items from mfcfile");
+        fclose(infh);
+        ckd_free_2d(mfcs);
+        return NULL;
+    }
     if (swap) {
         for (i = 0; i < nfr * ceplen; ++i)
             SWAP_FLOAT32(&floats[i]);
@@ -230,6 +235,11 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
     char const *cepdir, *cepext;
     char *infile;
 
+    if (ef != -1 && ef < sf) {
+        E_ERROR("End frame %d is < start frame %d\n", ef, sf);
+        return -1;
+    }
+    
     cepdir = cmd_ln_str_r(config, "-cepdir");
     cepext = cmd_ln_str_r(config, "-cepext");
 
@@ -245,18 +255,18 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
         return -1;
     }
     if (cmd_ln_boolean_r(config, "-adcin")) {
-        fseek(infh, cmd_ln_int32_r(config, "-adchdr"), SEEK_SET);
+        
         if (ef != -1) {
             ef = (int32)((ef - sf)
                          * (cmd_ln_float32_r(config, "-samprate")
                             / cmd_ln_int32_r(config, "-frate"))
                          + (cmd_ln_float32_r(config, "-samprate")
-                            * cmd_ln_int32_r(config, "-wlen")));
+                            * cmd_ln_float32_r(config, "-wlen")));
         }
         sf = (int32)(sf
                      * (cmd_ln_float32_r(config, "-samprate")
                         / cmd_ln_int32_r(config, "-frate")));
-        fseek(infh, sf * sizeof(int16), SEEK_CUR);
+        fseek(infh, cmd_ln_int32_r(config, "-adchdr") + sf * sizeof(int16), SEEK_SET);
         ps_decode_raw(ps, infh, uttid, ef);
     }
     else {

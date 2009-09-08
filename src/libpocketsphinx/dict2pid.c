@@ -409,7 +409,7 @@ compress_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p)
 {
     int32 n_ci;
     int32 b, l, r;
-    int32 *rmap;
+    s3ssid_t *rmap;
     s3ssid_t *tmpssid;
     s3cipid_t *tmpcimap;
 
@@ -467,7 +467,7 @@ compress_left_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p)
 {
     int32 n_ci;
     int32 b, l, r;
-    int32 *rmap;
+    s3ssid_t *rmap;
     s3ssid_t *tmpssid;
     s3cipid_t *tmpcimap;
 
@@ -708,7 +708,6 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
             b = s3dict_pron(dict, w, 0);
             r = s3dict_pron(dict, w, 1);
             if (NOT_S3SSID(ldiph[b][r])) {
-
                 if (dict2pid->is_composite) {
                     /* Get all ssids for b(?,r) */
                     g = ldiph_comsseq(mdef, b, r);
@@ -716,6 +715,10 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
                     ldiph[b][r] =
                         ssidlist2comsseq(g, mdef, dict2pid, hs, hp);
                     glist_free(g);
+                }
+                else {
+                    /* Mark this as done (we will ignore the actual value) */
+                    ldiph[b][r] = 0;
                 }
 
                 /* Record all possible ssids for b(?,r) */
@@ -760,11 +763,15 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
                         ssidlist2comsseq(g, mdef, dict2pid, hs, hp);
                     glist_free(g);
                 }
+                else {
+                    /* Mark this as done (we will ignore the actual value) */
+                    rdiph[b][l] = 0;
+                }
 
                 for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
                     p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
                                               (s3cipid_t) l, (s3cipid_t) r,
-                                              WORD_POSN_BEGIN);
+                                              WORD_POSN_END);
                     dict2pid->rdiph_rc[b][l][r] = bin_mdef_pid2ssid(mdef, p);
                 }
             }
@@ -776,15 +783,14 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
 
         }
         else if (pronlen == 1) {
-
             b = s3dict_pron(dict, w, 0);
-
+            E_DEBUG(1,("Building tables for single phone word %s phone %d = %s\n",
+                       s3dict_wordstr(dict, w), b, bin_mdef_ciphone_str(mdef, b)));
             if (dict2pid->is_composite) {
                 assert(dict2pid->single_lc);
 
                 /* Find or build composite senone sequence for b(?,?) */
                 if (NOT_S3SSID(single[b])) {
-
                     g = single_comsseq(mdef, b);
                     single[b] =
                         ssidlist2comsseq(g, mdef, dict2pid, hs, hp);
@@ -809,10 +815,25 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
                                                       (s3cipid_t) l,
                                                       (s3cipid_t) r,
                                                       WORD_POSN_SINGLE);
-                            dict2pid->lrdiph_rc[b][l][r] =
-                                bin_mdef_pid2ssid(mdef, p);
+                            dict2pid->lrdiph_rc[b][l][r]
+                                = bin_mdef_pid2ssid(mdef, p);
+                            if (r == bin_mdef_silphone(mdef))
+                                dict2pid->ldiph_lc[b][r][l]
+                                    = bin_mdef_pid2ssid(mdef, p);
+                            if (l == bin_mdef_silphone(mdef))
+                                dict2pid->rdiph_rc[b][l][r]
+                                    = bin_mdef_pid2ssid(mdef, p);
+                            assert(IS_S3SSID(bin_mdef_pid2ssid(mdef, p)));
+                            E_DEBUG(2,("%s(%s,%s) => %d / %d\n",
+                                       bin_mdef_ciphone_str(mdef, b),
+                                       bin_mdef_ciphone_str(mdef, l),
+                                       bin_mdef_ciphone_str(mdef, r),
+                                       p, bin_mdef_pid2ssid(mdef, p)));
                         }
                     }
+                    single[b] = dict2pid->lrdiph_rc[b]
+                        [bin_mdef_silphone(mdef)][bin_mdef_silphone(mdef)];
+                    assert(IS_S3SSID(single[b]));
                 }
                 internal[pronlen - 1] = BAD_S3SSID;
             }
@@ -948,6 +969,7 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
     hash_table_free(hs);
     hash_table_free(hp);
 
+    dict2pid_report(dict2pid);
     return dict2pid;
 }
 

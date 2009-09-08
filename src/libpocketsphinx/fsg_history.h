@@ -82,7 +82,7 @@
 /* Local headers. */
 #include "blkarray_list.h"
 #include "fsg_lextree.h"
-#include "dict.h"
+#include "s3dict.h"
 
 /*
  * The Viterbi history structure.  This is a tree, with the root at the
@@ -153,7 +153,7 @@ typedef struct fsg_history_s {
  * One-time intialization: Allocate and return an initially empty history
  * module.
  */
-fsg_history_t *fsg_history_init(fsg_model_t *fsg, dict_t *dict);
+fsg_history_t *fsg_history_init(fsg_model_t *fsg, s3dict_t *dict);
 
 void fsg_history_utt_start(fsg_history_t *h);
 
@@ -204,7 +204,7 @@ fsg_hist_entry_t *fsg_history_entry_get(fsg_history_t *h, int32 id);
  * Switch the FSG associated with the given history module.  Should be done
  * when the history list is empty.  If not empty, the list is cleared.
  */
-void fsg_history_set_fsg (fsg_history_t *h, fsg_model_t *fsg, dict_t *dict);
+void fsg_history_set_fsg (fsg_history_t *h, fsg_model_t *fsg, s3dict_t *dict);
 
 /* Free the given Viterbi search history object */
 void fsg_history_free (fsg_history_t *h);

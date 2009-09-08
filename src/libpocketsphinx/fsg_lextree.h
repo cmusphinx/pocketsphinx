@@ -83,7 +83,8 @@
 
 /* Local headers. */
 #include "hmm.h"
-#include "dict.h"
+#include "s3dict.h"
+#include "dict2pid.h"
 
 /*
  * **HACK-ALERT**!!  Compile-time constant determining the size of the
@@ -189,7 +190,8 @@ typedef struct fsg_pnode_s {
 typedef struct fsg_lextree_s {
     fsg_model_t *fsg;	/**< The fsg for which this lextree is built. */
     hmm_context_t *ctx; /**< HMM context structure. */
-    dict_t *dict;       /**< Pronunciation dictionary for this FSG. */
+    s3dict_t *dict;     /**< Pronunciation dictionary for this FSG. */
+    dict2pid_t *d2p;    /**< Context-dependent phone mappings for this FSG. */
     bin_mdef_t *mdef;   /**< Model definition (triphone mappings). */
 
     /*
@@ -230,7 +232,8 @@ typedef struct fsg_lextree_s {
 /**
  * Create, initialize, and return a new phonetic lextree for the given FSG.
  */
-fsg_lextree_t *fsg_lextree_init(fsg_model_t *fsg, dict_t *dict,
+fsg_lextree_t *fsg_lextree_init(fsg_model_t *fsg, s3dict_t *dict,
+                                dict2pid_t *d2p,
 				bin_mdef_t *mdef, hmm_context_t *ctx,
 				int32 wip, int32 pip);
 

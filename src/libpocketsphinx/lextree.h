@@ -121,7 +121,7 @@
 #include "hmm.h"
 #include "tmat.h"
 #include "vithist.h"
-#include "s3_dict.h"
+#include "s3dict.h"
 #include "bin_mdef.h"
 #include "fillpen.h"
 

@@ -133,7 +133,7 @@
 
 #include "s3types.h"
 #include "fillpen.h"
-#include "s3_dict.h"
+#include "s3dict.h"
 #include "dict2pid.h"
 
 /** \file vithist.h 

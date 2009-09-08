@@ -114,7 +114,8 @@ typedef struct fsg_search_s {
  */
 ps_search_t *fsg_search_init(cmd_ln_t *config,
                              acmod_t *acmod,
-                             dict_t *dict);
+                             s3dict_t *dict,
+                             dict2pid_t *d2p);
 
 /**
  * Deallocate search structure.

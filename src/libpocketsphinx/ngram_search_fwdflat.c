@@ -65,18 +65,26 @@ ngram_fwdflat_expand_all(ngram_search_t *ngs)
 {
     int n_words, i;
 
+    /* For all "real words" (not fillers or <s>/</s>) in the dictionary,
+     *
+     * 1) Add the ones which are in the LM to the fwdflat wordlist
+     * 2) And to the expansion list (since we are expanding all)
+     */
     ngs->n_expand_words = 0;
     n_words = ps_search_n_words(ngs);
     bitvec_clear_all(ngs->expand_word_flag, ps_search_n_words(ngs));
-    for (i = 0; i < ps_search_start_wid(ngs); i++) {
-        if (ngram_model_set_known_wid(ngs->lmset,
-                                      ps_search_dict(ngs)->dict_list[i]->wid)) {
-            ngs->fwdflat_wordlist[ngs->n_expand_words] = i;
-            ngs->expand_word_list[ngs->n_expand_words] = i;
-            bitvec_set(ngs->expand_word_flag, i);
-            ngs->n_expand_words++;
-        }
+    for (i = 0; i < n_words; ++i) {
+        if (!s3dict_real_word(ps_search_dict(ngs), i))
+            continue;
+        if (!ngram_model_set_known_wid(ngs->lmset,
+                                       s3dict_basewid(ps_search_dict(ngs),i)))
+            continue;
+        ngs->fwdflat_wordlist[ngs->n_expand_words] = i;
+        ngs->expand_word_list[ngs->n_expand_words] = i;
+        bitvec_set(ngs->expand_word_flag, i);
+        ngs->n_expand_words++;
     }
+    E_INFO("Utterance vocabulary contains %d words\n", ngs->n_expand_words);
     ngs->expand_word_list[ngs->n_expand_words] = -1;
     ngs->fwdflat_wordlist[ngs->n_expand_words] = -1;
 }
@@ -98,6 +106,7 @@ ngram_fwdflat_init(ngram_search_t *ngs)
 
     /* No tree-search; pre-build the expansion list, including all LM words. */
     if (!ngs->fwdtree) {
+        s3dict_t *dict = ps_search_dict(ngs);
         int w;
 
         /* Build full expansion list from LM words. */
@@ -107,21 +116,22 @@ ngram_fwdflat_init(ngram_search_t *ngs)
          * been allocated for us by fwdtree initialization. */
         ngs->n_1ph_words = 0;
         for (w = 0; w < n_words; w++) {
-            dict_entry_t *de = ps_search_dict(ngs)->dict_list[w];
-            if (de->len == 1)
+            if (s3dict_pronlen(dict, w) == 1)
                 ++ngs->n_1ph_words;
         }
         ngs->rhmm_1ph = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->rhmm_1ph));
         i = 0;
         for (w = 0; w < n_words; w++) {
-            dict_entry_t *de = ps_search_dict(ngs)->dict_list[w];
-            if (de->len != 1)
+            if (s3dict_pronlen(dict, w) != 1)
                 continue;
 
-            ngs->rhmm_1ph[i].diphone = de->phone_ids[0];
-            ngs->rhmm_1ph[i].ciphone = de->ci_phone_ids[0];
-            hmm_init(ngs->hmmctx, &ngs->rhmm_1ph[i].hmm, de->mpx,
-                     de->phone_ids[0], de->ci_phone_ids[0]);
+            /* DICT2PID location */
+            ngs->rhmm_1ph[i].ciphone = s3dict_first_phone(dict, w);
+            ngs->rhmm_1ph[i].ci2phone = bin_mdef_silphone(ps_search_acmod(ngs)->mdef);
+            hmm_init(ngs->hmmctx, &ngs->rhmm_1ph[i].hmm, TRUE,
+                     /* ssid */ bin_mdef_pid2ssid(ps_search_acmod(ngs)->mdef,
+                                                  ngs->rhmm_1ph[i].ciphone),
+                     /* tmatid */ ngs->rhmm_1ph[i].ciphone);
             ngs->rhmm_1ph[i].next = NULL;
             ngs->word_chan[w] = (chan_t *) &(ngs->rhmm_1ph[i]);
             i++;
@@ -162,13 +172,15 @@ static void
 build_fwdflat_wordlist(ngram_search_t *ngs)
 {
     int32 i, f, sf, ef, wid, nwd;
+    s3dict_t *dict;
     bptbl_t *bp;
     ps_latnode_t *node, *prevnode, *nextnode;
-    dict_entry_t *de;
 
     /* No tree-search, use statically allocated wordlist. */
     if (!ngs->fwdtree)
         return;
+
+    dict = ps_search_dict(ngs);
 
     memset(ngs->frm_wordlist, 0, ngs->n_frame_alloc * sizeof(*ngs->frm_wordlist));
 
@@ -185,11 +197,10 @@ build_fwdflat_wordlist(ngram_search_t *ngs)
          * transition can be made in the LM.
          */
         /* Ignore silence and <s> */
-        if (ISA_FILLER_WORD(ngs, wid) || (wid == ps_search_start_wid(ngs)))
+        if (s3dict_filler_word(dict, wid) || (wid == s3dict_startwid(dict)))
             continue;
 
         /* Look for it in the wordlist. */
-        de = ps_search_dict(ngs)->dict_list[wid];
         for (node = ngs->frm_wordlist[sf]; node && (node->wid != wid);
              node = node->next);
 
@@ -239,6 +250,7 @@ build_fwdflat_wordlist(ngram_search_t *ngs)
         }
     }
     ngs->fwdflat_wordlist[nwd] = -1;
+    E_INFO("Utterance vocabulary contains %d words\n", nwd);
 }
 
 /**
@@ -248,38 +260,44 @@ static void
 build_fwdflat_chan(ngram_search_t *ngs)
 {
     int32 i, wid, p;
-    dict_entry_t *de;
     root_chan_t *rhmm;
     chan_t *hmm, *prevhmm;
+    s3dict_t *dict;
+    dict2pid_t *d2p;
+
+    dict = ps_search_dict(ngs);
+    d2p = ps_search_dict2pid(ngs);
 
     /* Build word HMMs for each word in the lattice. */
     for (i = 0; ngs->fwdflat_wordlist[i] >= 0; i++) {
         wid = ngs->fwdflat_wordlist[i];
-        de = ps_search_dict(ngs)->dict_list[wid];
 
         /* Omit single-phone words as they are permanently allocated */
-        if (de->len == 1)
+        if (s3dict_pronlen(dict, wid) == 1)
             continue;
 
-        assert(de->mpx);
         assert(ngs->word_chan[wid] == NULL);
 
         /* Multiplex root HMM for first phone (one root per word, flat
-         * lexicon) */
+         * lexicon).  diphone is irrelevant here, for the time being,
+         * at least. */
         rhmm = listelem_malloc(ngs->root_chan_alloc);
-        rhmm->diphone = de->phone_ids[0];
-        rhmm->ciphone = de->ci_phone_ids[0];
+        rhmm->ci2phone = s3dict_pron(dict, wid, 1);
+        rhmm->ciphone = s3dict_first_phone(dict, wid);
         rhmm->next = NULL;
-        hmm_init(ngs->hmmctx, &rhmm->hmm, TRUE, rhmm->diphone, rhmm->ciphone);
+        hmm_init(ngs->hmmctx, &rhmm->hmm, TRUE,
+                 bin_mdef_pid2ssid(ps_search_acmod(ngs)->mdef, rhmm->ciphone),
+                 rhmm->ciphone);
 
         /* HMMs for word-internal phones */
         prevhmm = NULL;
-        for (p = 1; p < de->len - 1; p++) {
+        for (p = 1; p < s3dict_pronlen(dict, wid) - 1; p++) {
             hmm = listelem_malloc(ngs->chan_alloc);
-            hmm->ciphone = de->ci_phone_ids[p];
-            hmm->info.rc_id = p + 1 - de->len;
+            hmm->ciphone = s3dict_pron(dict, wid, p);
+            hmm->info.rc_id = (p == s3dict_pronlen(dict, wid) - 1) ? 0 : -1;
             hmm->next = NULL;
-            hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, de->phone_ids[p], hmm->ciphone);
+            hmm_init(ngs->hmmctx, &hmm->hmm, FALSE,
+                     dict2pid_internal(d2p,wid,p), hmm->ciphone);
 
             if (prevhmm)
                 prevhmm->next = hmm;
@@ -408,7 +426,6 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
     int32 *awl;
     root_chan_t *rhmm;
     chan_t *hmm, *nexthmm;
-    dict_entry_t *de;
 
     cf = frame_idx;
     nf = cf + 1;
@@ -419,11 +436,10 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
     thresh = ngs->best_score + ngs->fwdflatbeam;
     wordthresh = ngs->best_score + ngs->fwdflatwbeam;
     pip = ngs->pip;
+    E_DEBUG(3,("frame %d thresh %d wordthresh %d\n", frame_idx, thresh, wordthresh));
 
     /* Scan all active words. */
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
-        de = ps_search_dict(ngs)->dict_list[w];
-
         rhmm = (root_chan_t *) ngs->word_chan[w];
         /* Propagate active root channels */
         if (hmm_frame(&rhmm->hmm) == cf
@@ -434,7 +450,7 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
             /* Transitions out of root channel */
             newscore = hmm_out_score(&rhmm->hmm);
             if (rhmm->next) {
-                assert(de->len > 1);
+                assert(s3dict_pronlen(ps_search_dict(ngs), w) > 1);
 
                 newscore += pip;
                 if (newscore BETTER_THAN thresh) {
@@ -460,7 +476,7 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
                 }
             }
             else {
-                assert(de->len == 1);
+                assert(s3dict_pronlen(ps_search_dict(ngs), w) == 1);
 
                 /* Word exit for single-phone words (where did their
                  * whmms come from?) */
@@ -487,7 +503,7 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
                             nexthmm = hmm->next;
                             /* Enter all right-context phones. */
                             if (nexthmm->info.rc_id >= 0) {
-                                for (; nexthmm; nexthmm = nexthmm->next) {
+                                 for (; nexthmm; nexthmm = nexthmm->next) {
                                     if ((hmm_frame(&nexthmm->hmm) < cf)
                                         || (newscore BETTER_THAN
                                             hmm_in_score(&nexthmm->hmm))) {
@@ -566,12 +582,12 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
     int32 cf, nf, b, thresh, pip, i, w, newscore;
     int32 best_silrc_score = 0, best_silrc_bp = 0;      /* FIXME: good defaults? */
     bptbl_t *bp;
-    dict_entry_t *de, *newde;
-    uint16 *rcpermtab;
     int32 *rcss;
     root_chan_t *rhmm;
     int32 *awl;
     float32 lwf;
+    s3dict_t *dict = ps_search_dict(ngs);
+    dict2pid_t *d2p = ps_search_dict2pid(ngs);
 
     cf = frame_idx;
     nf = cf + 1;
@@ -586,29 +602,43 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
 
     /* Scan words exited in current frame */
     for (b = ngs->bp_table_idx[cf]; b < ngs->bpidx; b++) {
+        xwdssid_t *rssid;
+        int32 silscore;
+
         bp = ngs->bp_table + b;
         ngs->word_lat_idx[bp->wid] = NO_BP;
 
         if (bp->wid == ps_search_finish_wid(ngs))
             continue;
 
-        de = ps_search_dict(ngs)->dict_list[bp->wid];
-        rcpermtab =
-            (bp->r_diph >=
-             0) ? ps_search_dict(ngs)->rcFwdPermTable[bp->r_diph] : ngs->zeroPermTab;
+        /* DICT2PID location */
+        /* Get the mapping from right context phone ID to index in the
+         * right context table and the bscore_stack. */
         rcss = ngs->bscore_stack + bp->s_idx;
+        if (bp->last2_phone == -1)
+            rssid = NULL;
+        else
+            rssid = dict2pid_rssid(d2p, bp->last_phone, bp->last2_phone);
 
         /* Transition to all successor words. */
         for (i = 0; ngs->expand_word_list[i] >= 0; i++) {
             int32 n_used;
+
             w = ngs->expand_word_list[i];
-            newde = ps_search_dict(ngs)->dict_list[w];
+
             /* Get the exit score we recorded in save_bwd_ptr(), or
              * something approximating it. */
-            newscore = rcss[rcpermtab[newde->ci_phone_ids[0]]];
+            if (rssid)
+                newscore = rcss[rssid->cimap[s3dict_first_phone(dict, w)]];
+            else
+                newscore = rcss[0];
+            if (newscore == WORST_SCORE)
+                continue;
             /* FIXME: Floating point... */
             newscore += lwf
-                * ngram_tg_score(ngs->lmset, newde->wid, bp->real_wid,
+                * ngram_tg_score(ngs->lmset,
+                                 s3dict_basewid(dict, w),
+                                 bp->real_wid,
                                  bp->prev_real_wid, &n_used);
             newscore += pip;
 
@@ -618,20 +648,27 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
                 if ((hmm_frame(&rhmm->hmm) < cf)
                     || (newscore BETTER_THAN hmm_in_score(&rhmm->hmm))) {
                     hmm_enter(&rhmm->hmm, newscore, b, nf);
-                    if (hmm_is_mpx(&rhmm->hmm)) {
-                        hmm_mpx_ssid(&rhmm->hmm, 0) =
-                            ps_search_dict(ngs)->lcFwdTable[rhmm->diphone]
-                            [de->ci_phone_ids[de->len-1]];
-                    }
-
+                    /* DICT2PID: This is where mpx ssids get introduced. */
+                    /* Look up the ssid to use when entering this mpx triphone. */
+                    hmm_mpx_ssid(&rhmm->hmm, 0) =
+                        d2p->ldiph_lc[rhmm->ciphone][rhmm->ci2phone]
+                        [s3dict_last_phone(dict, bp->wid)];
+                    assert(IS_S3SSID(hmm_mpx_ssid(&rhmm->hmm, 0)));
+                    E_DEBUG(6,("ssid %d(%d,%d) = %d\n",
+                               rhmm->ciphone, s3dict_last_phone(dict, bp->wid), rhmm->ci2phone,
+                               hmm_mpx_ssid(&rhmm->hmm, 0)));
                     bitvec_set(ngs->word_active, w);
                 }
             }
         }
 
         /* Get the best exit into silence. */
-        if (rcss[rcpermtab[ps_search_acmod(ngs)->mdef->sil]] BETTER_THAN best_silrc_score) {
-            best_silrc_score = rcss[rcpermtab[ps_search_acmod(ngs)->mdef->sil]];
+        if (rssid)
+            silscore = rcss[rssid->cimap[ps_search_acmod(ngs)->mdef->sil]];
+        else
+            silscore = rcss[0];
+        if (silscore BETTER_THAN best_silrc_score) {
+            best_silrc_score = silscore;
             best_silrc_bp = b;
         }
     }
@@ -788,18 +825,13 @@ static void
 destroy_fwdflat_chan(ngram_search_t *ngs)
 {
     int32 i, wid;
-    dict_entry_t *de;
 
     for (i = 0; ngs->fwdflat_wordlist[i] >= 0; i++) {
         root_chan_t *rhmm;
         chan_t *thmm;
         wid = ngs->fwdflat_wordlist[i];
-        de = ps_search_dict(ngs)->dict_list[wid];
-
-        if (de->len == 1)
+        if (s3dict_pronlen(ps_search_dict(ngs),wid) == 1)
             continue;
-
-        assert(de->mpx);
         assert(ngs->word_chan[wid] != NULL);
 
         /* The first HMM in ngs->word_chan[wid] was allocated with

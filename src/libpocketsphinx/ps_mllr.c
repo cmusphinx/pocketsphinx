@@ -56,6 +56,7 @@ ps_mllr_read(char const *regmatfile)
     int n, i, m, j, k;
 
     mllr = ckd_calloc(1, sizeof(*mllr));
+    mllr->refcnt = 1;
 
     if ((fp = fopen(regmatfile, "r")) == NULL) {
         E_ERROR_SYSTEM("fopen(%s,r) failed", regmatfile);

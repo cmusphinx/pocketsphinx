@@ -119,8 +119,6 @@ typedef struct tst_stats_s {
 struct tst_search_s {
     ps_search_t base;
     ngram_model_t *lmset;  /**< Set of language models. */
-    s3dict_t *dict;        /**< Sphinx3 dictionary. */
-    dict2pid_t *dict2pid;  /**< Sphinx3 cross-word phone mapping. */
     fillpen_t *fillpen;    /**< Sphinx3 filler penalty structure. */
 
     /**
@@ -161,7 +159,8 @@ typedef struct tst_search_s tst_search_t;
  */
 ps_search_t *tst_search_init(cmd_ln_t *config,
                              acmod_t *acmod,
-                             dict_t *dict);
+                             s3dict_t *dict,
+                             dict2pid_t *d2p);
 
 /**
  * Finalize the N-Gram search module.

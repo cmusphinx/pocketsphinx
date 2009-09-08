@@ -663,7 +663,10 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
 
     E_INFO("Loading senones from dump file %s\n", file);
     /* Read title size, title */
-    fread(&n, sizeof(int32), 1, fp);
+    if (fread(&n, sizeof(int32), 1, fp) != 1) {
+        /* FIXME: Should NOT be E_FATAL! */
+        E_FATAL_SYSTEM("Failed to read title size from %s", file);
+    }
     /* This is extremely bogus */
     do_swap = 0;
     if (n < 1 || n > 999) {
@@ -680,7 +683,10 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
     E_INFO("%s\n", line);
 
     /* Read header size, header */
-    fread(&n, 1, sizeof(n), fp);
+    if (fread(&n, sizeof(n), 1, fp) != 1) {
+        /* FIXME: Should NOT be E_FATAL! */
+        E_FATAL_SYSTEM("Failed to read header size from %s", file);
+    }
     if (do_swap) SWAP_INT32(&n);
     if (fread(line, sizeof(char), n, fp) != n)
         E_FATAL("Cannot read header\n");
@@ -689,7 +695,10 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
 
     /* Read other header strings until string length = 0 */
     for (;;) {
-        fread(&n, 1, sizeof(n), fp);
+        if (fread(&n, sizeof(n), 1, fp) != 1) {
+            /* FIXME: Should NOT be E_FATAL! */
+            E_FATAL_SYSTEM("Failed to read header string size from %s", file);
+        }
         if (do_swap) SWAP_INT32(&n);
         if (n == 0)
             break;
@@ -702,9 +711,15 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
     }
 
     /* Read #codewords, #pdfs */
-    fread(&r, 1, sizeof(r), fp);
+    if (fread(&r, sizeof(r), 1, fp) != 1) {
+        /* FIXME: Should NOT be E_FATAL! */
+        E_FATAL_SYSTEM("Failed to read #codewords from %s", file);
+    }
     if (do_swap) SWAP_INT32(&r);
-    fread(&c, 1, sizeof(c), fp);
+    if (fread(&c, sizeof(c), 1, fp) != 1) {
+        /* FIXME: Should NOT be E_FATAL! */
+        E_FATAL_SYSTEM("Failed to read #pdfs from %s", file);
+    }
     if (do_swap) SWAP_INT32(&c);
     E_INFO("Rows: %d, Columns: %d\n", r, c);
 

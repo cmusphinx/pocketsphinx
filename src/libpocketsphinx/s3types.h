@@ -120,11 +120,11 @@ typedef int32		s3pid_t;	/** Phone id (triphone or ciphone) */
 #define IS_S3PID(p)	((p)>=0)
 #define MAX_S3PID	((int32)0x7ffffffe)
 
-typedef s3pid_t		s3ssid_t;	/** Senone sequence id (triphone or ciphone) */
-#define BAD_S3SSID	((s3ssid_t) -1)
-#define NOT_S3SSID(p)	((p)<0)
-#define IS_S3SSID(p)	((p)>=0)
-#define MAX_S3SSID	((int32)0x7ffffffe)
+typedef uint16		s3ssid_t;	/** Senone sequence id (triphone or ciphone) */
+#define BAD_S3SSID	((s3ssid_t) 0xffff)
+#define NOT_S3SSID(p)	((p) == BAD_S3SSID)
+#define IS_S3SSID(p)	((p) != BAD_S3SSID)
+#define MAX_S3SSID	((s3ssid_t)0xfffe)
 
 typedef int32		s3tmatid_t;	/** Transition matrix id; there can be as many as pids */
 #define BAD_S3TMATID	((s3tmatid_t) -1)

@@ -54,7 +54,8 @@
 /* Local headers. */
 #include "pocketsphinx.h"
 #include "acmod.h"
-#include "dict.h"
+#include "s3dict.h"
+#include "dict2pid.h"
 
 /**
  * Search algorithm structure.
@@ -87,7 +88,8 @@ struct ps_search_s {
     ps_search_t *pls;      /**< Phoneme loop for lookahead. */
     cmd_ln_t *config;      /**< Configuration. */
     acmod_t *acmod;        /**< Acoustic model. */
-    dict_t *dict;          /**< Pronunciation dictionary. */
+    s3dict_t *dict;        /**< Pronunciation dictionary. */
+    dict2pid_t *d2p;       /**< Dictionary to senone mappings. */
     char *hyp_str;         /**< Current hypothesis string. */
     ps_lattice_t *dag;	   /**< Current hypothesis word graph. */
     ps_latlink_t *last_link; /**< Final link in best path. */
@@ -103,6 +105,7 @@ struct ps_search_s {
 #define ps_search_config(s) ps_search_base(s)->config
 #define ps_search_acmod(s) ps_search_base(s)->acmod
 #define ps_search_dict(s) ps_search_base(s)->dict
+#define ps_search_dict2pid(s) ps_search_base(s)->d2p
 #define ps_search_dag(s) ps_search_base(s)->dag
 #define ps_search_last_link(s) ps_search_base(s)->last_link
 #define ps_search_post(s) ps_search_base(s)->post
@@ -120,21 +123,17 @@ struct ps_search_s {
 #define ps_search_seg_iter(s,sc) (*(ps_search_base(s)->vt->seg_iter))(s,sc)
 
 /* For convenience... */
-#define ps_search_n_words(s) dict_n_words(ps_search_dict(s))
+#define ps_search_n_words(s) s3dict_size(ps_search_dict(s))
 #define ps_search_silence_wid(s) ps_search_base(s)->silence_wid
 #define ps_search_start_wid(s) ps_search_base(s)->start_wid
 #define ps_search_finish_wid(s) ps_search_base(s)->finish_wid
-
-/* FIXME: This code makes some irritating assumptions about the
- * ordering of the dictionary. */
-#define ISA_FILLER_WORD(s,x)	((x) ? (x) >= ps_search_silence_wid(s) : FALSE)
-#define ISA_REAL_WORD(s,x)	((x) ? (x) < ps_search_finish_wid(s) : TRUE)
 
 /**
  * Initialize base structure.
  */
 void ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
-                    cmd_ln_t *config, acmod_t *acmod, dict_t *dict);
+                    cmd_ln_t *config, acmod_t *acmod, s3dict_t *dict,
+                    dict2pid_t *d2p);
 
 /**
  * De-initialize base structure.
@@ -179,7 +178,8 @@ struct ps_decoder_s {
 
     /* Basic units of computation. */
     acmod_t *acmod;    /**< Acoustic model. */
-    dict_t *dict;      /**< Pronunciation dictionary. */
+    s3dict_t *dict;    /**< Pronunciation dictionary. */
+    dict2pid_t *d2p;   /**< Dictionary to senone mapping. */
     logmath_t *lmath;  /**< Log math computation. */
 
     /* Search modules. */

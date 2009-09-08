@@ -544,7 +544,7 @@ lextree_build(bin_mdef_t *mdef, tmat_t *tmat,
                         ssid = d2p->single_lc[ci][(int) lc[j]]; /* This is a composite triphone */
                     }
                     else {      /* Use approximation to get the SSID */
-                        ssid = d2p->lrdiph_rc[ci][(int) lc[j]][bin_mdef_ciphone_id(mdef, "sil")];   /* HACK, always assume right context is silence */
+                        ssid = d2p->lrdiph_rc[ci][(int) lc[j]][bin_mdef_silphone(mdef)];   /* HACK, always assume right context is silence */
                     }
 
                     /* Check if this ssid already allocated for another lc */

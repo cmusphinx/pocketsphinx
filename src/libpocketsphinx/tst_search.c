@@ -226,8 +226,8 @@ create_lextree(tst_search_t *tstg, const char *lmname, ptmr_t *tm_build)
 
         lextree[j] = lextree_init(ps_search_acmod(tstg)->mdef,
                                   ps_search_acmod(tstg)->tmat,
-                                  tstg->dict,
-                                  tstg->dict2pid,
+                                  ps_search_dict(tstg),
+                                  ps_search_dict2pid(tstg),
                                   tstg->fillpen,
                                   tstg->lmset,
                                   lmname,
@@ -261,8 +261,6 @@ create_lextree(tst_search_t *tstg, const char *lmname, ptmr_t *tm_build)
 static int
 tst_search_reinit(ps_search_t *search)
 {
-    tst_search_t *tstg = (tst_search_t *)search;
-
     /* set_lm() code goes here. */
     return -1;
 }
@@ -270,7 +268,8 @@ tst_search_reinit(ps_search_t *search)
 ps_search_t *
 tst_search_init(cmd_ln_t *config,
                 acmod_t *acmod,
-                dict_t *dict)
+                s3dict_t *dict,
+                dict2pid_t *d2p)
 {
     tst_search_t *tstg;
     char const *path;
@@ -281,18 +280,9 @@ tst_search_init(cmd_ln_t *config,
     lextree_t **lextree = NULL;
 
     tstg = ckd_calloc(1, sizeof(*tstg));
-    ps_search_init(&tstg->base, &tst_funcs, config, acmod, dict);
+    ps_search_init(&tstg->base, &tst_funcs, config, acmod, dict, d2p);
 
-    /* Need to build a Sphinx3 dictionary, fillpen_t, beam_t, and
-     * dict2pid (for the time being) */
-    tstg->dict = s3dict_init(acmod->mdef,
-                             cmd_ln_str_r(config, "-dict"),
-                             cmd_ln_str_r(config, "-fdict"),
-                             FALSE, TRUE);
-    tstg->dict2pid = dict2pid_build(acmod->mdef,
-                                    tstg->dict, TRUE,
-                                    acmod->lmath);
-    tstg->fillpen = fillpen_init(tstg->dict, NULL,
+    tstg->fillpen = fillpen_init(ps_search_dict(tstg), NULL,
                                  cmd_ln_float32_r(config, "-silprob"),
                                  cmd_ln_float32_r(config, "-fillprob"),
                                  cmd_ln_float32_r(config, "-lw"),
@@ -307,8 +297,8 @@ tst_search_init(cmd_ln_t *config,
     beam_report(tstg->beam);
 
     tstg->ssid_active = bitvec_alloc(bin_mdef_n_sseq(acmod->mdef));
-    tstg->comssid_active = bitvec_alloc(dict2pid_n_comsseq(tstg->dict2pid));
-    tstg->composite_senone_scores = ckd_calloc(dict2pid_n_comstate(tstg->dict2pid),
+    tstg->comssid_active = bitvec_alloc(dict2pid_n_comsseq(ps_search_dict2pid(tstg)));
+    tstg->composite_senone_scores = ckd_calloc(dict2pid_n_comstate(ps_search_dict2pid(tstg)),
                                                sizeof(*tstg->composite_senone_scores));
 
     ptmr_init(&(tm_build));
@@ -383,7 +373,7 @@ tst_search_init(cmd_ln_t *config,
 
     for (i = 0; i < n_ltree; i++) {
         if ((tstg->fillertree[i] = fillertree_init(acmod->mdef, acmod->tmat,
-                                                   tstg->dict, tstg->dict2pid,
+                                                   ps_search_dict(tstg), ps_search_dict2pid(tstg),
                                                    tstg->fillpen)) == NULL) {
             E_INFO("Fail to allocate filler tree  %d\n", i);
             goto error_out;
@@ -469,10 +459,6 @@ tst_search_free(ps_search_t *search)
         vithist_free(tstg->vithist);
     if (tstg->histprune)
         histprune_free(tstg->histprune);
-    if (tstg->dict)
-        s3dict_free(tstg->dict);
-    if (tstg->dict2pid)
-        dict2pid_free(tstg->dict2pid);
     if (tstg->fillpen)
         fillpen_free(tstg->fillpen);
     if (tstg->beam)
@@ -480,7 +466,7 @@ tst_search_free(ps_search_t *search)
     bitvec_free(tstg->ssid_active);
     bitvec_free(tstg->comssid_active);
     ckd_free(tstg->composite_senone_scores);
-
+    ps_search_deinit(search);
     ckd_free(tstg);
 }
 
@@ -501,7 +487,7 @@ tst_search_start(ps_search_t *search)
 
     /* Insert initial <s> into vithist structure */
     pred = vithist_utt_begin(tstg->vithist,
-                             s3dict_startwid(tstg->dict),
+                             s3dict_startwid(ps_search_dict(tstg)),
                              ngram_wid(tstg->lmset, "<s>"));
     assert(pred == 0);          /* Vithist entry ID for <s> */
 
@@ -543,8 +529,8 @@ tst_search_finish(ps_search_t *search)
     /* Find the exit word and wrap up Viterbi history (but don't reset
      * it yet!) */
     tstg->exit_id = vithist_utt_end(tstg->vithist,
-                                    tstg->lmset, tstg->dict,
-                                    tstg->dict2pid, tstg->fillpen);
+                                    tstg->lmset, ps_search_dict(tstg),
+                                    ps_search_dict2pid(tstg), tstg->fillpen);
 
     /* Not sure hwo to get the uttid. */
     histprune_showhistbin(tstg->histprune, cf, "histbin");
@@ -750,7 +736,7 @@ srch_TST_select_active_gmm(tst_search_t *tstg)
 
     n_ltree = tstg->n_lextree;
     mdef = ps_search_acmod(tstg)->mdef;
-    d2p = tstg->dict2pid;
+    d2p = ps_search_dict2pid(tstg);
 
     bitvec_clear_all(tstg->ssid_active, bin_mdef_n_sseq(mdef));
     bitvec_clear_all(tstg->comssid_active, dict2pid_n_comsseq(d2p));
@@ -831,7 +817,7 @@ srch_utt_word_trans(tst_search_t * tstg, int32 cf)
     if (vh->bestvh[cf] < 0)
         return;
 
-    dict = tstg->dict;
+    dict = ps_search_dict(tstg);
     mdef = ps_search_acmod(tstg)->mdef;
     n_ci = bin_mdef_n_ciphone(mdef);
 
@@ -905,7 +891,7 @@ srch_TST_propagate_graph_wd_lv2(tst_search_t *tstg, int32 frmno)
 
     hp = tstg->histprune;
     vh = tstg->vithist;
-    dict = tstg->dict;
+    dict = ps_search_dict(tstg);
 
     maxwpf = hp->maxwpf;
     maxhistpf = hp->maxhistpf;
@@ -931,7 +917,7 @@ srch_TST_frame_windup(tst_search_t *tstg, int32 frmno)
     vh = tstg->vithist;
 
     /* Wind up this frame */
-    vithist_frame_windup(vh, frmno, NULL, tstg->lmset, tstg->dict);
+    vithist_frame_windup(vh, frmno, NULL, tstg->lmset, ps_search_dict(tstg));
 
     for (i = 0; i < tstg->n_lextree; i++) {
         lextree_active_swap(tstg->curugtree[i]);
@@ -956,8 +942,8 @@ tst_search_step(ps_search_t *search, int frame_idx)
 
     /* Evaluate composite senone scores from senone scores */
     memset(tstg->composite_senone_scores, 0,
-           dict2pid_n_comstate(tstg->dict2pid) * sizeof(*tstg->composite_senone_scores));
-    dict2pid_comsenscr(tstg->dict2pid, senscr, tstg->composite_senone_scores);
+           dict2pid_n_comstate(ps_search_dict2pid(tstg)) * sizeof(*tstg->composite_senone_scores));
+    dict2pid_comsenscr(ps_search_dict2pid(tstg), senscr, tstg->composite_senone_scores);
 
     /* Compute HMMs, propagate phone and word exits, etc, etc. */
     srch_TST_hmm_compute_lv2(tstg, frame_idx);
@@ -988,7 +974,7 @@ tst_search_lattice(ps_search_t *search)
 
     vh = tstg->vithist;
     if (tstg->exit_id == -1) /* Search not finished */
-	exit_id = vithist_partialutt_end(vh, tstg->lmset, tstg->dict);
+	exit_id = vithist_partialutt_end(vh, tstg->lmset, ps_search_dict(tstg));
     else
         exit_id = tstg->exit_id;
 
@@ -1110,12 +1096,12 @@ tst_search_lattice(ps_search_t *search)
 
     /* Validate startwid and finishwid nodes */
     dn = (ps_latnode_t *) gnode_ptr(sfwid[0]);
-    assert(dn->wid == s3dict_startwid(tstg->dict));
+    assert(dn->wid == s3dict_startwid(ps_search_dict(tstg)));
     dn->id = 0;
     dag->start = dn;
 
     dn = (ps_latnode_t *) gnode_ptr(sfwid[vh->n_frm]);
-    assert(dn->wid == s3dict_finishwid(tstg->dict));
+    assert(dn->wid == s3dict_finishwid(ps_search_dict(tstg)));
     dn->id = 0;
     /* If for some reason the final node is not the same as the end
      * node, make sure it exists and is also marked valid. */
@@ -1203,7 +1189,7 @@ tst_search_hyp(ps_search_t *base, int32 *out_score)
     int32 exit_id, id;
 
     if (tstg->exit_id == -1) /* Search not finished */
-	exit_id = vithist_partialutt_end(tstg->vithist, tstg->lmset, tstg->dict);
+	exit_id = vithist_partialutt_end(tstg->vithist, tstg->lmset, ps_search_dict(tstg));
     else
         exit_id = tstg->exit_id;
 
@@ -1223,11 +1209,11 @@ tst_search_hyp(ps_search_t *base, int32 *out_score)
         assert(ve);
         wid = vithist_entry_wid(ve);
         id = ve->path.pred;
-        if (s3dict_filler_word(tstg->dict, wid)
-            || wid == s3dict_startwid(tstg->dict)
-            || wid == s3dict_finishwid(tstg->dict))
+        if (s3dict_filler_word(ps_search_dict(tstg), wid)
+            || wid == s3dict_startwid(ps_search_dict(tstg))
+            || wid == s3dict_finishwid(ps_search_dict(tstg)))
             continue;
-        len += strlen(s3dict_wordstr(tstg->dict, s3dict_basewid(tstg->dict, wid))) + 1;
+        len += strlen(s3dict_wordstr(ps_search_dict(tstg), s3dict_basewid(ps_search_dict(tstg), wid))) + 1;
     }
 
     ckd_free(base->hyp_str);
@@ -1240,13 +1226,13 @@ tst_search_hyp(ps_search_t *base, int32 *out_score)
         assert(ve);
         wid = vithist_entry_wid(ve);
         id = ve->path.pred;
-        if (s3dict_filler_word(tstg->dict, wid)
-            || wid == s3dict_startwid(tstg->dict)
-            || wid == s3dict_finishwid(tstg->dict))
+        if (s3dict_filler_word(ps_search_dict(tstg), wid)
+            || wid == s3dict_startwid(ps_search_dict(tstg))
+            || wid == s3dict_finishwid(ps_search_dict(tstg)))
             continue;
-        len = strlen(s3dict_wordstr(tstg->dict, s3dict_basewid(tstg->dict, wid)));
+        len = strlen(s3dict_wordstr(ps_search_dict(tstg), s3dict_basewid(ps_search_dict(tstg), wid)));
         c -= len;
-        memcpy(c, s3dict_wordstr(tstg->dict, s3dict_basewid(tstg->dict, wid)), len);
+        memcpy(c, s3dict_wordstr(ps_search_dict(tstg), s3dict_basewid(ps_search_dict(tstg), wid)), len);
         if (c > base->hyp_str) {
             --c;
             *c = ' ';
@@ -1259,8 +1245,6 @@ tst_search_hyp(ps_search_t *base, int32 *out_score)
 static int32
 tst_search_prob(ps_search_t *search)
 {
-    tst_search_t *tstg = (tst_search_t *)search;
-
     /* Bogus out-of-band value for now. */
     return 1;
 }
@@ -1283,7 +1267,7 @@ tst_search_bp2itor(ps_seg_t *seg, int id)
 
     ve = vithist_id2entry(tstg->vithist, id);
     assert(ve);
-    seg->word = s3dict_wordstr(tstg->dict, vithist_entry_wid(ve));
+    seg->word = s3dict_wordstr(ps_search_dict(tstg), vithist_entry_wid(ve));
     seg->ef = vithist_entry_ef(ve);
     seg->sf = vithist_entry_sf(ve);
     seg->prob = 0; /* Bogus value... */
@@ -1328,7 +1312,7 @@ tst_search_seg_iter(ps_search_t *search, int32 *out_score)
     int exit_id, id, cur;
 
     if (tstg->exit_id == -1) /* Search not finished */
-	exit_id = vithist_partialutt_end(tstg->vithist, tstg->lmset, tstg->dict);
+	exit_id = vithist_partialutt_end(tstg->vithist, tstg->lmset, ps_search_dict(tstg));
     else
         exit_id = tstg->exit_id;
     if (exit_id < 0) {

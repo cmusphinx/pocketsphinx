@@ -4,7 +4,7 @@
 #include <pocketsphinx.h>
 #include <bin_mdef.h>
 
-#include "s3_dict.h"
+#include "s3dict.h"
 #include "test_macros.h"
 
 int

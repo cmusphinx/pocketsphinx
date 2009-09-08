@@ -141,6 +141,7 @@ typedef struct {
 */
 
 typedef struct {
+    int refcnt;
     bin_mdef_t *mdef;	/**< Model definition used for phone IDs; NULL if none used */
     dictword_t *word;	/**< Array of entries in dictionary */
     hash_table_t *ht;	/**< Hash table for mapping word strings to word ids */
@@ -161,46 +162,62 @@ typedef struct {
  * (but external modules might impose their own requirements).
  * Return ptr to s3dict_t if successful, NULL otherwise.
  */
-s3dict_t *s3dict_init (bin_mdef_t *mdef,	/**< For looking up CI phone IDs */
-                       const char *dictfile,	/**< Main dictionary file */
-                       const char *fillerfile,	/**< Filler dictionary file */
-                       int useLTS,          /**< Whether to use letter-to-sound rules */
-                       int breport          /**< Whether we should report the progress */
+s3dict_t *s3dict_init(bin_mdef_t *mdef,	/**< For looking up CI phone IDs */
+                      const char *dictfile,	/**< Main dictionary file */
+                      const char *fillerfile,	/**< Filler dictionary file */
+                      int useLTS,          /**< Whether to use letter-to-sound rules */
+                      int breport          /**< Whether we should report the progress */
     );
 
 /** Return word id for given word string if present.  Otherwise return BAD_S3WID */
-s3wid_t s3dict_wordid (s3dict_t *d, const char *word);
+s3wid_t s3dict_wordid(s3dict_t *d, const char *word);
 
 /**
  * Return 1 if w is a filler word, 0 if not.  A filler word is one that was read in from the
  * filler dictionary; however, sentence START and FINISH words are not filler words.
  */
-int32 s3dict_filler_word (s3dict_t *d,  /**< The dictionary structure */
-                          s3wid_t w     /**< The The word */
+int s3dict_filler_word(s3dict_t *d,  /**< The dictionary structure */
+                       s3wid_t w     /**< The word ID */
+    );
+
+/**
+ * Test if w is a "real" word, i.e. neither a filler word nor START/FINISH.
+ */
+int s3dict_real_word(s3dict_t *d,  /**< The dictionary structure */
+                     s3wid_t w     /**< The word ID */
     );
 
 /**
  * Add a word with the given ciphone pronunciation list to the dictionary.
  * Return value: Result word id if successful, BAD_S3WID otherwise
  */
-s3wid_t s3dict_add_word (s3dict_t *d,  /**< The dictionary structure */
-                         char *word, /**< The word */
-                         s3cipid_t *p, 
-                         int32 np
+s3wid_t s3dict_add_word(s3dict_t *d,  /**< The dictionary structure */
+                        char *word, /**< The word */
+                        s3cipid_t *p, 
+                        int32 np
     );
 
 /**
  * Return value: CI phone string for the given word, phone position.
  */
-const char *s3dict_ciphone_str (s3dict_t *d,	/**< In: Dictionary to look up */
-                                s3wid_t wid,	/**< In: Component word being looked up */
-                                int32 pos   	/**< In: Pronunciation phone position */
+const char *s3dict_ciphone_str(s3dict_t *d,	/**< In: Dictionary to look up */
+                               s3wid_t wid,	/**< In: Component word being looked up */
+                               int32 pos   	/**< In: Pronunciation phone position */
     );
 
 /** Packaged macro access to dictionary members */
 #define s3dict_size(d)		((d)->n_word)
+#define s3dict_num_fillers(d)   (s3dict_filler_end(d) - s3dict_filler_start(d))
+/**
+ * Number of "real words" in the dictionary.
+ *
+ * This is the number of words that are not fillers, <s>, or </s>.
+ */
+#define s3dict_num_real_words(d) \
+    (s3dict_size(d) - (s3dict_filler_end(d) - s3dict_filler_start(d)) - 2)
 #define s3dict_basewid(d,w)	((d)->word[w].basewid)
 #define s3dict_wordstr(d,w)	((d)->word[w].word)
+#define s3dict_basestr(d,w)	((d)->word[s3dict_basewid(d,w)].word)
 #define s3dict_nextalt(d,w)	((d)->word[w].alt)
 #define s3dict_pronlen(d,w)	((d)->word[w].pronlen) 
 #define s3dict_pron(d,w,p)	((d)->word[w].ciphone[p]) /**< The CI phones of the word w at position p */
@@ -224,18 +241,18 @@ const char *s3dict_ciphone_str (s3dict_t *d,	/**< In: Dictionary to look up */
 /**
  * Return base word id for given word id w (which may be itself).  w must be valid.
  */
-s3wid_t _s3dict_basewid (s3dict_t *d, s3wid_t w);
+s3wid_t _s3dict_basewid(s3dict_t *d, s3wid_t w);
 
 /**
  * Return word string for given word id, which must be valid.
  */
-char *_s3dict_wordstr (s3dict_t *d, s3wid_t wid);
+char *_s3dict_wordstr(s3dict_t *d, s3wid_t wid);
 
 /**
  * Return the next alternative word id for the given word id, which must be valid.
  * The returned id may be BAD_S3WID if there is none.
  */
-s3wid_t _s3dict_nextalt (s3dict_t *d, s3wid_t wid);
+s3wid_t _s3dict_nextalt(s3dict_t *d, s3wid_t wid);
 
 /**
  * If the given word contains a trailing "(....)" (i.e., a Sphinx-II style alternative
@@ -244,13 +261,19 @@ s3wid_t _s3dict_nextalt (s3dict_t *d, s3wid_t wid);
  * Return value: If string was modified, the character position at which the original string
  * was truncated; otherwise -1.
  */
-int32 s3dict_word2basestr (char *word);
+int32 s3dict_word2basestr(char *word);
 
-/* RAH, free memory allocated for the dictionary */
-/** Free memory allocated for the dictionary */
-void s3dict_free (s3dict_t *d);
+/**
+ * Retain a pointer to an s3dict_t.
+ */
+s3dict_t *s3dict_retain(s3dict_t *d);
 
-/** Report a diciontary structure */
+/**
+ * Release a pointer to a dictionary.
+ */
+int s3dict_free(s3dict_t *d);
+
+/** Report a dictionary structure */
 void s3dict_report(s3dict_t *d /**< A dictionary structure */
     );
 
