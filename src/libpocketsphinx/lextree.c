@@ -364,6 +364,7 @@ lextree_report(lextree_t * ltree)
     E_INFO_NOFN("Type of the tree %d (0:unigram, 1: 2g, 2: 3g etc.)\n",
                 ltree->type);
     E_INFO_NOFN("Number of left contexts %d \n", ltree->n_lc);
+    E_INFO_NOFN("Number of root nodes %d\n", glist_count(ltree->root));
     E_INFO_NOFN("Number of nodes %d \n", ltree->n_node);
     E_INFO_NOFN("Number of links in the tree %d\n",
                 num_lextree_links(ltree));
