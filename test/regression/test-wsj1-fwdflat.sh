@@ -9,7 +9,7 @@ run_program pocketsphinx_batch \
     -hmm $model/hmm/wsj1 \
     -lm $model/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP \
     -dict $model/lm/cmudict.0.6d \
-    -ctl $data/wsj/test5k.s1.ctl \
+    -ctl $data/wsj/test5k.s1.ctl -ctlcount 3 \
     -cepdir $data/wsj \
     -cepext .mfc \
     -hyp $bn.match \
