@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import sphinx.s3mixw
 import numpy
 import struct
 
@@ -124,10 +123,11 @@ fmtdesc = \
 <string> (including trailing 0)
 ... preceding 2 items repeated any number of times
 (int32) 0 (length(string)=0 terminates the header)
-(int32) <#codewords>
-(int32) <#pdfs>
-#pdf (unsigned char) quantized pdfs for codebook-0 codeword-0
-preceding 3 items repeated for all codebooks.
+(int32) <#components>
+(int32) <#gmms>
+#gmms (unsigned char) quantized mixture weights for feature-0 gmm-0
+preceding 2 items repeated feature_count times.
+preceding 4 items repeated codebook_count times.
 END FILE FORMAT DESCRIPTION
 cluster_count 0
 logbase 1.0001
@@ -155,14 +155,25 @@ def write_sendump(mixw, outfile, floor=1e-7):
     fh.write(struct.pack('>I', n_gau))
     fh.write(struct.pack('>I', aligned_n_sen))
     # Write them out transposed and quantized (could be much faster)
-    qmixw = (-numpy.log(norm_floor_mixw(mixw, floor))
-              / numpy.log(1.0001)).astype('i') >> 10
+    if floor == 0.0:
+        # Assume they are already normalized and floored
+        qmixw = (-numpy.log(mixw) / numpy.log(1.0001)).astype('i') >> 10
+    else:
+        qmixw = (-numpy.log(norm_floor_mixw(mixw, floor))
+                 / numpy.log(1.0001)).astype('i') >> 10
     qmixw = qmixw.clip(0, 159).astype('uint8')
     for f in range(0, n_feat):
         for d in range(0, n_gau):
             qmixw[:,f,d].tofile(fh)
-            # Align it to 4 byte boundary
+            # Align it to 4 byte boundary (why?)
             if aligned_n_sen > n_sen:
                 fh.write('\0' * (aligned_n_sen - n_sen))
     fh.close()
-            
+
+if __name__ == '__main__':
+    ifn, ofn, tmw, mmw = sys.argv[1:]
+    tmw = int(tmw)
+    mmw = int(mmw)
+    mixw = norm_floor_mixw(s3mixw.open(ifn).getall())
+    prune_mixw_entropy_min(mixw, tmw, mmw)
+    write_sendump(mixw, ofn)

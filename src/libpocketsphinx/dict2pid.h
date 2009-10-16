@@ -186,6 +186,8 @@ typedef struct {
 */
 
 typedef struct {
+    int refcount;
+
     s3ssid_t **internal;	/**< For internal phone positions (not first, not last), the
 				   ssid; for first and last positions, the composite ssid.
 				   ([word][phone-position]) 
@@ -260,9 +262,11 @@ dict2pid_t *dict2pid_build(bin_mdef_t *mdef,   /**< A  model definition*/
                            logmath_t *logmath
     );
 
-  
+/** Retain a pointer to dict2pid */
+dict2pid_t *dict2pid_retain(dict2pid_t *d2p);  
+
 /** Free the memory dict2pid structure */
-void dict2pid_free(dict2pid_t *d2p /**< In: the d2p */
+int dict2pid_free(dict2pid_t *d2p /**< In: the d2p */
     );
 /**
  * Compute composite senone scores from ordinary senone scores (max of component senones)

@@ -973,56 +973,66 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
     return dict2pid;
 }
 
-void
+dict2pid_t *
+dict2pid_retain(dict2pid_t *d2p)
+{
+    ++d2p->refcount;
+    return d2p;
+}
+
+int
 dict2pid_free(dict2pid_t * d2p)
 {
     int32 i;
 
-    if (d2p) {
-        if (d2p->comwt)
-            ckd_free((void *) d2p->comwt);
-        if (d2p->comsseq) {
+    if (d2p == NULL)
+        return 0;
+    if (--d2p->refcount > 0)
+        return d2p->refcount;
 
-            for (i = 0; i < d2p->n_comsseq; i++) {
-                if (d2p->comsseq[i] != NULL) {
-                    ckd_free((void *) d2p->comsseq[i]);
-                }
+    if (d2p->comwt)
+        ckd_free((void *) d2p->comwt);
+    if (d2p->comsseq) {
+
+        for (i = 0; i < d2p->n_comsseq; i++) {
+            if (d2p->comsseq[i] != NULL) {
+                ckd_free((void *) d2p->comsseq[i]);
             }
-            ckd_free((void *) d2p->comsseq);
         }
-
-        if (d2p->comstate) {
-            ckd_free((void **) d2p->comstate[0]);
-            ckd_free((void **) d2p->comstate);
-        }
-
-        if (d2p->single_lc)
-            ckd_free_2d((void *) d2p->single_lc);
-
-        if (d2p->ldiph_lc)
-            ckd_free_3d((void ***) d2p->ldiph_lc);
-
-
-        if (d2p->rdiph_rc)
-            ckd_free_3d((void ***) d2p->rdiph_rc);
-
-        if (d2p->lrdiph_rc)
-            ckd_free_3d((void ***) d2p->lrdiph_rc);
-
-        if (d2p->internal) {
-            ckd_free((void *) d2p->internal[0]);
-            ckd_free((void **) d2p->internal);
-        }
-
-        if (d2p->rssid)
-            free_compress_map(d2p->rssid, d2p->n_ci);
-
-        if (d2p->lrssid)
-            free_compress_map(d2p->lrssid, d2p->n_ci);
-
-        ckd_free(d2p);
+        ckd_free((void *) d2p->comsseq);
     }
 
+    if (d2p->comstate) {
+        ckd_free((void **) d2p->comstate[0]);
+        ckd_free((void **) d2p->comstate);
+    }
+
+    if (d2p->single_lc)
+        ckd_free_2d((void *) d2p->single_lc);
+
+    if (d2p->ldiph_lc)
+        ckd_free_3d((void ***) d2p->ldiph_lc);
+
+
+    if (d2p->rdiph_rc)
+        ckd_free_3d((void ***) d2p->rdiph_rc);
+
+    if (d2p->lrdiph_rc)
+        ckd_free_3d((void ***) d2p->lrdiph_rc);
+
+    if (d2p->internal) {
+        ckd_free((void *) d2p->internal[0]);
+        ckd_free((void **) d2p->internal);
+    }
+
+    if (d2p->rssid)
+        free_compress_map(d2p->rssid, d2p->n_ci);
+
+    if (d2p->lrssid)
+        free_compress_map(d2p->lrssid, d2p->n_ci);
+
+    ckd_free(d2p);
+    return 0;
 }
 
 

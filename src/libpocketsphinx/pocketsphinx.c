@@ -296,6 +296,7 @@ ps_free(ps_decoder_t *ps)
         ps_search_free(gnode_ptr(gn));
     glist_free(ps->searches);
     s3dict_free(ps->dict);
+    dict2pid_free(ps->d2p);
     acmod_free(ps->acmod);
     logmath_free(ps->lmath);
     cmd_ln_free_r(ps->config);
