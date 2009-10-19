@@ -1119,11 +1119,20 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
         }
     }
 
-    /* Read #codewords, #pdfs, but only if there is no cluster_count */
+    /* Defaults for #rows, #columns in mixw array. */
+    c = n_sen;
+    r = n_density;
     if (n_clust == 0) {
-        fread(&r, 1, sizeof(r), fp);
+        /* Older mixw files have them here, and they might be padded. */
+        if (fread(&r, sizeof(r), 1, fp) != 1) {
+            E_ERROR_SYSTEM("Cannot read #rows");
+            goto error_out;
+        }
         if (do_swap) SWAP_INT32(&r);
-        fread(&c, 1, sizeof(c), fp);
+        if (fread(&c, sizeof(c), 1, fp) != 1) {
+            E_ERROR_SYSTEM("Cannot read #columns");
+            goto error_out;
+        }
         if (do_swap) SWAP_INT32(&c);
         E_INFO("Rows: %d, Columns: %d\n", r, c);
     }
@@ -1188,10 +1197,10 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
     if (s->sendump_mmap) {
         s->mixw = ckd_calloc_2d(s->n_feat, n_density, sizeof(*s->mixw));
         for (n = 0; n < n_feat; n++) {
-            int step = n_sen;
+            int step = c;
             if (n_bits == 4)
                 step = (step + 1) / 2;
-            for (i = 0; i < n_density; i++) {
+            for (i = 0; i < r; i++) {
                 s->mixw[n][i] = ((uint8 *) mmio_file_ptr(s->sendump_mmap)) + offset;
                 offset += step;
             }
@@ -1201,10 +1210,10 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
         s->mixw = ckd_calloc_3d(n_feat, n_density, n_sen, sizeof(***s->mixw));
         /* Read pdf values and ids */
         for (n = 0; n < n_feat; n++) {
-            int step = n_sen;
+            int step = c;
             if (n_bits == 4)
                 step = (step + 1) / 2;
-            for (i = 0; i < n_density; i++) {
+            for (i = 0; i < r; i++) {
                 if (fread(s->mixw[n][i], sizeof(***s->mixw), step, fp)
                     != (size_t) step) {
                     E_ERROR("Failed to read %d bytes from sendump\n", step);
@@ -1573,11 +1582,19 @@ s2_semi_mgau_init(acmod_t *acmod)
     s3_precomp(s, s->lmath, cmd_ln_float32_r(s->config, "-varfloor"));
 
     /* Read mixture weights */
-    if ((sendump_path = cmd_ln_str_r(s->config, "-sendump")))
-        read_sendump(s, acmod->mdef, sendump_path);
-    else
-        read_mixw(s, cmd_ln_str_r(s->config, "-mixw"),
-                  cmd_ln_float32_r(s->config, "-mixwfloor"));
+    if ((sendump_path = cmd_ln_str_r(s->config, "-sendump"))) {
+        if (read_sendump(s, acmod->mdef, sendump_path) < 0) {
+            s2_semi_mgau_free(ps_mgau_base(s));
+            return NULL;
+        }
+    }
+    else {
+        if (read_mixw(s, cmd_ln_str_r(s->config, "-mixw"),
+                      cmd_ln_float32_r(s->config, "-mixwfloor")) < 0) {
+            s2_semi_mgau_free(ps_mgau_base(s));
+            return NULL;
+        }
+    }
     s->ds_ratio = cmd_ln_int32_r(s->config, "-ds");
 
     /* Determine top-N for each feature */
