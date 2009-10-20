@@ -62,7 +62,7 @@ hmm_context_init(int32 n_emit_state,
 
     assert(n_emit_state > 0);
     if (n_emit_state > HMM_MAX_NSTATE) {
-        E_ERROR("Number of emitting states must be <= 5\n");
+        E_ERROR("Number of emitting states must be <= %d\n", HMM_MAX_NSTATE);
         return NULL;
     }
 
@@ -79,6 +79,8 @@ hmm_context_init(int32 n_emit_state,
 void
 hmm_context_free(hmm_context_t *ctx)
 {
+    if (ctx == NULL)
+        return;
     ckd_free(ctx->st_sen_scr);
     ckd_free(ctx);
 }

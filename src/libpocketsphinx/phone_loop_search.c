@@ -78,6 +78,8 @@ phone_loop_search_reinit(ps_search_t *search)
         hmm_context_free(pls->hmmctx);
     pls->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
                                    acmod->tmat->tp, NULL, acmod->mdef->sseq);
+    if (pls->hmmctx == NULL)
+        return -1;
 
     /* Initialize phone HMMs. */
     if (pls->phones) {

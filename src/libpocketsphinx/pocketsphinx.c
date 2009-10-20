@@ -425,19 +425,17 @@ ps_add_word(ps_decoder_t *ps,
     int rv;
 
     pron = ckd_salloc(phones);
-    /* FIXME: This no longer works. */
+    /* Add it to the dictionary. */
     if ((wid = s3dict_add_word(ps->dict, word, pron, strlen(pron))) == -1) {
         ckd_free(pron);
         return -1;
     }
+    /* Now we also have to add it to dict2pid, oh fun. */
+
+    /* No longer needed. */
     ckd_free(pron);
 
     if ((lmset = ps_get_lmset(ps)) != NULL) {
-        /* FIXME: There is a way more efficient way to do this, since all
-         * we did was replace a placeholder string with the new word
-         * string - therefore what we ought to do is add it directly to
-         * the current LM, then update the mapping without reallocating
-         * everything. */
         /* Add it to the LM set (meaning, the current LM).  In a perfect
          * world, this would result in the same WID, but because of the
          * weird way that word IDs are handled, it doesn't. */

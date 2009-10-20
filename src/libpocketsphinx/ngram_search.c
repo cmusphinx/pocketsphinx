@@ -148,6 +148,10 @@ ngram_search_init(cmd_ln_t *config,
     ps_search_init(&ngs->base, &ngram_funcs, config, acmod, dict, d2p);
     ngs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
                                    acmod->tmat->tp, NULL, acmod->mdef->sseq);
+    if (ngs->hmmctx == NULL) {
+        ps_search_free(ps_search_base(ngs));
+        return NULL;
+    }
     ngs->chan_alloc = listelem_alloc_init(sizeof(chan_t));
     ngs->root_chan_alloc = listelem_alloc_init(sizeof(root_chan_t));
     ngs->latnode_alloc = listelem_alloc_init(sizeof(ps_latnode_t));
@@ -290,7 +294,8 @@ ngram_search_free(ps_search_t *search)
     bitvec_free(ngs->word_active);
     ckd_free(ngs->bp_table);
     ckd_free(ngs->bscore_stack);
-    ckd_free(ngs->bp_table_idx - 1);
+    if (ngs->bp_table_idx != NULL)
+        ckd_free(ngs->bp_table_idx - 1);
     ckd_free_2d(ngs->active_word_list);
     ckd_free(ngs->last_ltrans);
     ckd_free(ngs);

@@ -101,6 +101,10 @@ fsg_search_init(cmd_ln_t *config,
     /* Initialize HMM context. */
     fsgs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
                                     acmod->tmat->tp, NULL, acmod->mdef->sseq);
+    if (fsgs->hmmctx == NULL) {
+        ps_search_free(ps_search_base(fsgs));
+        return NULL;
+    }
 
     /* Intialize the search history object */
     fsgs->history = fsg_history_init(NULL, dict);
