@@ -47,6 +47,9 @@
 /* PocketSphinx headers. */
 #include <pocketsphinx.h>
 
+/* S3kr3t headerz. */
+#include "pocketsphinx_internal.h"
+
 /* Silvio Moioli: setbuf doesn't exist in Windows CE */
 #if defined(_WIN32_WCE)
 	void setbuf(FILE* file, char* buf){
@@ -110,14 +113,14 @@ static const arg_t ps_args_def[] = {
       ARG_STRING,
       NULL,
       "Recognition output file name" },
-    { "-hypconf",
-      ARG_STRING,
-      NULL,
-      "Recognition output with confidence file name" },
     { "-hypseg",
       ARG_STRING,
       NULL,
       "Recognition output with segmentation file name" },
+    { "-ctm",
+      ARG_STRING,
+      NULL,
+      "Recognition output in CTM file format (may require post-sorting)" },
     { "-outlatdir",
       ARG_STRING,
       NULL,
@@ -346,18 +349,51 @@ write_hypseg(FILE *fh, ps_decoder_t *ps, char const *uttid)
 }
 
 static int
-write_hypconf(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int32 score)
+write_ctm(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int32 frate)
 {
     logmath_t *lmath = ps_get_logmath(ps);
+    char *dupid, *show, *channel, *c;
+
+    /* We have semi-standardized on comma-separated uttids which
+     * correspond to the fields of the STM file.  So if there's a
+     * comma in the uttid, take the first two fields as show and
+     * channel. */
+    show = dupid = ckd_salloc(uttid);
+    if ((c = strchr(dupid, ',')) != NULL) {
+        *c++ = '\0';
+        channel = c;
+        if ((c = strchr(c, ',')) != NULL) {
+            *c = '\0';
+        }
+    }
+    else {
+        channel = NULL;
+    }
 
     while (itor) {
-        char const *w = ps_seg_word(itor);
-        int32 prob = ps_seg_prob(itor, NULL, NULL, NULL);
+        int32 prob, sf, ef, wid;
+        char const *w;
 
-        fprintf(fh, "%s(%.2f) ", w, logmath_log_to_ln(lmath, prob));
+        /* Skip things that aren't "real words" (FIXME: currently
+         * requires s3kr3t h34d3rz...) */
+        w = ps_seg_word(itor);
+        wid = s3dict_wordid(ps->dict, w);
+        if (s3dict_real_word(ps->dict, wid)) {
+            prob = ps_seg_prob(itor, NULL, NULL, NULL);
+            ps_seg_frames(itor, &sf, &ef);
+        
+            fprintf(fh, "%s %s %.2f %.2f %s %.3f\n",
+                    show,
+                    channel ? channel : "1",
+                    (double)sf / frate,
+                    (double)(ef - sf) / frate,
+                    /* FIXME: More s3kr3tz */
+                    s3dict_basestr(ps->dict, wid),
+                    logmath_exp(lmath, prob));
+        }
         itor = ps_seg_next(itor);
     }
-    fprintf(fh, "(%s %.2f)\n", uttid, logmath_log_to_ln(lmath, ps_get_prob(ps, NULL)));
+    ckd_free(dupid);
 
     return 0;
 }
@@ -369,18 +405,20 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     int32 i;
     char *line;
     size_t len;
-    FILE *hypfh = NULL, *hypsegfh = NULL, *hypconffh = NULL;
+    FILE *hypfh = NULL, *hypsegfh = NULL, *ctmfh = NULL;
     FILE *mllrfh = NULL;
     double n_speech, n_cpu, n_wall;
     char const *outlatdir;
     char const *nbestdir;
     char const *str;
+    int frate;
 
     ctloffset = cmd_ln_int32_r(config, "-ctloffset");
     ctlcount = cmd_ln_int32_r(config, "-ctlcount");
     ctlincr = cmd_ln_int32_r(config, "-ctlincr");
     outlatdir = cmd_ln_str_r(config, "-outlatdir");
     nbestdir = cmd_ln_str_r(config, "-nbestdir");
+    frate = cmd_ln_int32_r(config, "-frate");
 
     if ((str = cmd_ln_str_r(config, "-mllrctl"))) {
         mllrfh = fopen(str, "r");
@@ -405,13 +443,13 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
         }
         setbuf(hypsegfh, NULL);
     }
-    if ((str = cmd_ln_str_r(config, "-hypconf"))) {
-        hypconffh = fopen(str, "w");
-        if (hypconffh == NULL) {
+    if ((str = cmd_ln_str_r(config, "-ctm"))) {
+        ctmfh = fopen(str, "w");
+        if (ctmfh == NULL) {
             E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing", str);
             goto done;
         }
-        setbuf(hypconffh, NULL);
+        setbuf(ctmfh, NULL);
     }
 
     i = 0;
@@ -476,9 +514,9 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             if (hypsegfh) {
                 write_hypseg(hypsegfh, ps, uttid);
             }
-            if (hypconffh) {
+            if (ctmfh) {
                 ps_seg_t *itor = ps_seg_iter(ps, &score);
-                write_hypconf(hypconffh, ps, itor, uttid, score);
+                write_ctm(ctmfh, ps, itor, uttid, frate);
             }
             if (outlatdir) {
                 write_lattice(ps, outlatdir, uttid);
@@ -507,8 +545,8 @@ done:
         fclose(hypfh);
     if (hypsegfh)
         fclose(hypsegfh);
-    if (hypconffh)
-        fclose(hypconffh);
+    if (ctmfh)
+        fclose(ctmfh);
 }
 
 int
