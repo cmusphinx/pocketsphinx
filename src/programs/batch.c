@@ -353,17 +353,21 @@ write_ctm(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int32 f
 {
     logmath_t *lmath = ps_get_logmath(ps);
     char *dupid, *show, *channel, *c;
+    double ustart = 0.0;
 
     /* We have semi-standardized on comma-separated uttids which
      * correspond to the fields of the STM file.  So if there's a
      * comma in the uttid, take the first two fields as show and
-     * channel. */
+     * channel, and also try to find the start time. */
     show = dupid = ckd_salloc(uttid);
     if ((c = strchr(dupid, ',')) != NULL) {
         *c++ = '\0';
         channel = c;
         if ((c = strchr(c, ',')) != NULL) {
-            *c = '\0';
+            *c++ = '\0';
+            if ((c = strchr(c, ',')) != NULL) {
+                ustart = atof_c(c + 1);
+            }
         }
     }
     else {
@@ -385,7 +389,7 @@ write_ctm(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int32 f
             fprintf(fh, "%s %s %.2f %.2f %s %.3f\n",
                     show,
                     channel ? channel : "1",
-                    (double)sf / frate,
+                    ustart + (double)sf / frate,
                     (double)(ef - sf) / frate,
                     /* FIXME: More s3kr3tz */
                     s3dict_basestr(ps->dict, wid),
