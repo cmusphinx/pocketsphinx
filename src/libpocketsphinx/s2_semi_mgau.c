@@ -1707,8 +1707,10 @@ s2_semi_mgau_free(ps_mgau_t *ps)
         ckd_free_3d(s->mixw);
     }
     for (i = 0; i < s->n_feat; ++i) {
-        ckd_free(s->means[i]);
-        ckd_free(s->vars[i]);
+	if (s->means)
+            ckd_free(s->means[i]);
+        if (s->vars)
+            ckd_free(s->vars[i]);
     }
     for (i = 0; i < s->n_kdtrees; ++i)
         free_kd_tree(s->kdtrees[i]);
