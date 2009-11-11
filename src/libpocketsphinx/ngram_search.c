@@ -332,11 +332,12 @@ cache_bptable_paths(ngram_search_t *ngs, int32 bp)
     be = &(ngs->bp_table[bp]);
     prev_bp = bp;
     w = be->wid;
-    /* FIXME: This isn't the ideal way to tell if it's a filler. */
-    while (w >= ps_search_silence_wid(ngs)) {
+
+    while (s3dict_filler_word(ps_search_dict(ngs), w)) {
         prev_bp = ngs->bp_table[prev_bp].bp;
         w = ngs->bp_table[prev_bp].wid;
     }
+
     be->real_wid = s3dict_basewid(ps_search_dict(ngs), w);
 
     prev_bp = ngs->bp_table[prev_bp].bp;
