@@ -1,7 +1,7 @@
 import pocketsphinx as ps
 
 decoder = ps.Decoder(hmm="../model/hmm/wsj1",
-                     lm="../test/data/wsj/wlist5o.nvp.lm.DMP",
+                     lm="../model/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP",
                      dict="../model/lm/cmudict.0.6d",
                      fwdtree="yes",
                      fwdflat="yes",
@@ -21,7 +21,7 @@ prob = dag.posterior(lmset, 1.0/15)
 print "P(S|O) = %e" % prob
 
 for n in dag.nodes(50, 150):
-    if n.prob > 0.0001:
+    if n.prob > -100:
         print "%s %s %d -> (%d,%d) %f" % (n.word, n.baseword,
                                           n.sf, n.fef, n.lef, n.prob)
         if n.baseword == 'FORWARD':
