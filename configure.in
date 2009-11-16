@@ -67,6 +67,7 @@ else
    # A python was given, assume it is in the user's PATH or is fully qualified
    use_python=true
    PYTHON="$withval"
+   PYTHON_CONFIG="$withval"-config
 fi
 ])
 if test "x$use_python" = xtrue -a "x$PYTHON" = xpython; then
