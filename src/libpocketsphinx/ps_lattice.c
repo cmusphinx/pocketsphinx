@@ -747,7 +747,7 @@ ps_lattice_hyp(ps_lattice_t *dag, ps_latlink_t *link)
 
     /* Backtrace again to construct hypothesis string. */
     ckd_free(dag->hyp_str);
-    dag->hyp_str = ckd_calloc(1, len);
+    dag->hyp_str = ckd_calloc(1, len+1); /* extra one incase the hyp is empty */
     c = dag->hyp_str + len - 1;
     if (s3dict_real_word(ps_search_dict(dag->search), link->to->basewid)) {
         len = strlen(s3dict_wordstr(ps_search_dict(dag->search), link->to->basewid));
