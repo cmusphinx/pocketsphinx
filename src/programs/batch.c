@@ -550,7 +550,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             
             /* Write out results and such. */
             if (hypfh) {
-                fprintf(hypfh, "%s (%s %d)\n", hyp, uttid, score);
+                fprintf(hypfh, "%s (%s %d)\n", hyp ? hyp : "", uttid, score);
             }
             if (hypsegfh) {
                 write_hypseg(hypsegfh, ps, uttid);
