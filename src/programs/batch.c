@@ -89,6 +89,10 @@ static const arg_t ps_args_def[] = {
       ARG_STRING,
       NULL,
       "Base directory for MLLR transforms" },
+    { "-lmnamectl",
+      ARG_STRING,
+      NULL,
+      "Control file listing LM name to use for each file" },
 
     /* Input file types and locations. */
     { "-adcin",
@@ -227,6 +231,19 @@ process_mllrctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
     }
 
     ckd_free(infile);
+    return 0;
+}
+
+static int
+process_lmnamectl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *lmname)
+{
+    ngram_model_t *lmset = ps_get_lmset(ps);
+
+    if (ngram_model_set_select(lmset, lmname) == NULL) {
+        E_ERROR("No such language model: %s\n", lmname);
+        return -1;
+    }
+    ps_update_lmset(ps, lmset);
     return 0;
 }
 
@@ -410,7 +427,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     char *line;
     size_t len;
     FILE *hypfh = NULL, *hypsegfh = NULL, *ctmfh = NULL;
-    FILE *mllrfh = NULL;
+    FILE *mllrfh = NULL, *lmfh = NULL;
     double n_speech, n_cpu, n_wall;
     char const *outlatdir;
     char const *nbestdir;
@@ -428,6 +445,13 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
         mllrfh = fopen(str, "r");
         if (mllrfh == NULL) {
             E_ERROR_SYSTEM("Failed to open MLLR control file file %s", str);
+            goto done;
+        }
+    }
+    if ((str = cmd_ln_str_r(config, "-lmnamectl"))) {
+        lmfh = fopen(str, "r");
+        if (lmfh == NULL) {
+            E_ERROR_SYSTEM("Failed to open LM name control file file %s", str);
             goto done;
         }
     }
@@ -460,7 +484,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     while ((line = fread_line(ctlfh, &len))) {
         char *wptr[4];
         int32 nf, sf, ef;
-        char *mllrline = NULL, *mllrfile = NULL;
+        char *mllrline = NULL, *lmname = NULL, *mllrfile = NULL;
 
         if (mllrfh) {
             mllrline = fread_line(mllrfh, &len);
@@ -472,15 +496,27 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             }
             mllrfile = string_trim(mllrline, STRING_BOTH);
         }
+        if (lmfh) {
+            lmname = fread_line(lmfh, &len);
+            if (lmname == NULL) {
+                E_ERROR("File size mismatch between control and LM control\n");
+                ckd_free(line);
+                ckd_free(lmname);
+                goto done;
+            }
+            lmname = string_trim(lmname, STRING_BOTH);
+        }
 
         if (i < ctloffset) {
             i += ctlincr;
             ckd_free(mllrline);
+            ckd_free(lmname);
             ckd_free(line);
             continue;
         }
         if (ctlcount != -1 && i >= ctloffset + ctlcount) {
             ckd_free(mllrline);
+            ckd_free(lmname);
             ckd_free(line);
             break;
         }
@@ -508,6 +544,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                 uttid = wptr[3];
             /* Do actual decoding. */
             process_mllrctl_line(ps, config, mllrfile);
+            process_lmnamectl_line(ps, config, lmname);
             process_ctl_line(ps, config, file, uttid, sf, ef);
             hyp = ps_get_hyp(ps, &score, &uttid);
             
@@ -534,6 +571,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                    uttid, n_cpu / n_speech, n_wall / n_speech);
         }
         ckd_free(mllrline);
+        ckd_free(lmname);
         ckd_free(line);
         i += ctlincr;
     }
