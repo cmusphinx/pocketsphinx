@@ -239,6 +239,8 @@ process_lmnamectl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *lmname)
 {
     ngram_model_t *lmset = ps_get_lmset(ps);
 
+    if (lmname == NULL)
+        return;
     if (ngram_model_set_select(lmset, lmname) == NULL) {
         E_ERROR("No such language model: %s\n", lmname);
         return -1;
