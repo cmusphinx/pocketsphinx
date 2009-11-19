@@ -1049,6 +1049,10 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
             bestbp = bp;
         }
     }
+    if (bestbp == NO_BP) {
+        E_ERROR("No word exits found in last frame, assuming no recognition\n");
+        return NULL;
+    }
     E_WARN("</s> not found in last frame, using %s instead\n",
            s3dict_basestr(ps_search_dict(ngs), ngs->bp_table[bestbp].wid));
 
