@@ -28,7 +28,7 @@ pymod-build-stamp: $(srcdir)/pocketsphinx.c
 	touch $@
 endif
 
-if BUILD_PYREX
+if BUILD_CYTHON
 $(srcdir)/pocketsphinx.c: $(srcdir)/pocketsphinx.pyx $(srcdir)/pocketsphinx.pxd
-	pyrexc -o $@ $< $(CPPFLAGS) -I$(sphinxbase)/python
+	cython -o $@ $< $(CPPFLAGS) -I$(sphinxbase)/python
 endif

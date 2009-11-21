@@ -89,12 +89,12 @@ AM_CONDITIONAL(BUILD_PYTHON, test "x$use_python" = "xtrue")
 AC_SUBST(PYTHON)
 
 dnl
-dnl Check for Pyrex, and rebuild python module if present
+dnl Check for Cython, and rebuild python module if present
 dnl
 if test "x$PYTHON" != "xbogus"; then
-   AC_CHECK_PROG(HAVE_PYREX, pyrexc, yes, no)
+   AC_CHECK_PROG(HAVE_CYTHON, cython, yes, no)
 fi
-AM_CONDITIONAL(BUILD_PYREX, test "x$HAVE_PYREX" = "xyes")
+AM_CONDITIONAL(BUILD_CYTHON, test "x$HAVE_CYTHON" = "xyes")
 
 dnl
 dnl Now check for GStreamer, and build the plugin if it's available

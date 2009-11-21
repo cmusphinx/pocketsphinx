@@ -141,6 +141,7 @@ if (open (SYSDESC, "< $SPHINX_DECODER_DIR/config.status")) {
 
 my @dir_candidates = ();
 push @dir_candidates, "$SPHINX_DECODER_DIR/src/programs";
+push @dir_candidates, "$SPHINX_DECODER_DIR/amd64-linux/src/programs";
 push @dir_candidates, "$SPHINX_DECODER_DIR/bin/Release";
 push @dir_candidates, "$SPHINX_DECODER_DIR/bin/Debug";
 push @dir_candidates, "$SPHINX_DECODER_DIR/bin";
