@@ -64,6 +64,7 @@ noinst_HEADERS =				\
 	posixwin32.h				\
 	s2_semi_mgau.h				\
 	s3dict.h				\
+	s3types.h				\
 	tmat.h					\
 	tst_search.h				\
 	vector.h				\
