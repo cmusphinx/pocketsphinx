@@ -630,9 +630,9 @@ fsg_search_pnode_exit(fsg_search_t *fsgs, fsg_pnode_t * pnode)
      */
     if (fsg_model_is_filler(fsgs->fsg, wid)
         /* FIXME: This might be slow due to repeated calls to dict_to_id(). */
-        || (s3dict_pronlen(ps_search_dict(fsgs),
-                           s3dict_wordid(ps_search_dict(fsgs),
-                                         fsg_model_word_str(fsgs->fsg, wid))) == 1)) {
+        || (s3dict_is_single_phone(ps_search_dict(fsgs),
+                                   s3dict_wordid(ps_search_dict(fsgs),
+                                                 fsg_model_word_str(fsgs->fsg, wid))))) {
         /* Create a dummy context structure that applies to all right contexts */
         fsg_pnode_add_all_ctxt(&ctxt);
 

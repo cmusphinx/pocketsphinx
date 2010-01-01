@@ -21,6 +21,7 @@ main(int argc, char *argv[])
 				"-hmm", MODELDIR "/hmm/wsj1",
 				"-lm", MODELDIR "/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP",
 				"-dict", DATADIR "/defective.dic",
+				"-dictcase", "yes",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = ps_init(config));

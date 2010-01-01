@@ -116,13 +116,13 @@ ngram_fwdflat_init(ngram_search_t *ngs)
          * been allocated for us by fwdtree initialization. */
         ngs->n_1ph_words = 0;
         for (w = 0; w < n_words; w++) {
-            if (s3dict_pronlen(dict, w) == 1)
+            if (s3dict_is_single_phone(dict, w))
                 ++ngs->n_1ph_words;
         }
         ngs->rhmm_1ph = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->rhmm_1ph));
         i = 0;
         for (w = 0; w < n_words; w++) {
-            if (s3dict_pronlen(dict, w) != 1)
+            if (!s3dict_is_single_phone(dict, w))
                 continue;
 
             /* DICT2PID location */
@@ -273,7 +273,7 @@ build_fwdflat_chan(ngram_search_t *ngs)
         wid = ngs->fwdflat_wordlist[i];
 
         /* Omit single-phone words as they are permanently allocated */
-        if (s3dict_pronlen(dict, wid) == 1)
+        if (s3dict_is_single_phone(dict, wid))
             continue;
 
         assert(ngs->word_chan[wid] == NULL);
@@ -282,7 +282,7 @@ build_fwdflat_chan(ngram_search_t *ngs)
          * lexicon).  diphone is irrelevant here, for the time being,
          * at least. */
         rhmm = listelem_malloc(ngs->root_chan_alloc);
-        rhmm->ci2phone = s3dict_pron(dict, wid, 1);
+        rhmm->ci2phone = s3dict_second_phone(dict, wid);
         rhmm->ciphone = s3dict_first_phone(dict, wid);
         rhmm->next = NULL;
         hmm_init(ngs->hmmctx, &rhmm->hmm, TRUE,
@@ -450,7 +450,7 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
             /* Transitions out of root channel */
             newscore = hmm_out_score(&rhmm->hmm);
             if (rhmm->next) {
-                assert(s3dict_pronlen(ps_search_dict(ngs), w) > 1);
+                assert(!s3dict_is_single_phone(ps_search_dict(ngs), w));
 
                 newscore += pip;
                 if (newscore BETTER_THAN thresh) {
@@ -476,7 +476,7 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
                 }
             }
             else {
-                assert(s3dict_pronlen(ps_search_dict(ngs), w) == 1);
+                assert(s3dict_is_single_phone(ps_search_dict(ngs), w));
 
                 /* Word exit for single-phone words (where did their
                  * whmms come from?) */
@@ -830,7 +830,7 @@ destroy_fwdflat_chan(ngram_search_t *ngs)
         root_chan_t *rhmm;
         chan_t *thmm;
         wid = ngs->fwdflat_wordlist[i];
-        if (s3dict_pronlen(ps_search_dict(ngs),wid) == 1)
+        if (s3dict_is_single_phone(ps_search_dict(ngs),wid))
             continue;
         assert(ngs->word_chan[wid] != NULL);
 

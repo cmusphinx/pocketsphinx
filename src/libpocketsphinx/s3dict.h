@@ -152,6 +152,7 @@ typedef struct {
     s3wid_t startwid;	/**< FOR INTERNAL-USE ONLY */
     s3wid_t finishwid;	/**< FOR INTERNAL-USE ONLY */
     s3wid_t silwid;	/**< FOR INTERNAL-USE ONLY */
+    int nocase;
   
     lts_t *lts_rules;     /**< The LTS rules */
 } s3dict_t;
@@ -162,11 +163,8 @@ typedef struct {
  * (but external modules might impose their own requirements).
  * Return ptr to s3dict_t if successful, NULL otherwise.
  */
-s3dict_t *s3dict_init(bin_mdef_t *mdef,	/**< For looking up CI phone IDs */
-                      const char *dictfile,	/**< Main dictionary file */
-                      const char *fillerfile,	/**< Filler dictionary file */
-                      int useLTS,          /**< Whether to use letter-to-sound rules */
-                      int breport          /**< Whether we should report the progress */
+s3dict_t *s3dict_init(cmd_ln_t *config, /**< Must contain -dict, -fdict, -dictcase */
+                      bin_mdef_t *mdef	/**< For looking up CI phone IDs */
     );
 
 /** Return word id for given word string if present.  Otherwise return BAD_S3WID */
@@ -226,7 +224,9 @@ const char *s3dict_ciphone_str(s3dict_t *d,	/**< In: Dictionary to look up */
 #define s3dict_startwid(d)	((d)->startwid)
 #define s3dict_finishwid(d)	((d)->finishwid)
 #define s3dict_silwid(d)		((d)->silwid)
+#define s3dict_is_single_phone(d,w)	((d)->word[w].pronlen == 1)
 #define s3dict_first_phone(d,w)	((d)->word[w].ciphone[0])
+#define s3dict_second_phone(d,w)	((d)->word[w].ciphone[1])
 #define s3dict_second_last_phone(d,w)	((d)->word[w].ciphone[(d)->word[w].pronlen - 2])
 #define s3dict_last_phone(d,w)	((d)->word[w].ciphone[(d)->word[w].pronlen - 1])
 

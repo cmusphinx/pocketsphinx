@@ -34,71 +34,6 @@
  * ====================================================================
  *
  */
-/*
- * dict.c -- Pronunciation dictionary.
- *
- * **********************************************
- * CMU ARPA Speech Project
- *
- * Copyright (c) 1997 Carnegie Mellon University.
- * ALL RIGHTS RESERVED.
- * **********************************************
- * 
- * HISTORY
- * $Log: dict.c,v $
- * Revision 1.7  2006/02/28  02:06:46  egouvea
- * Updated MS Visual C++ 6.0 support files. Fixed things that didn't
- * compile in Visual C++ (declarations didn't match, etc). There are
- * still some warnings, so this is not final. Also, sorted files in
- * several Makefile.am.
- * 
- * Revision 1.6  2006/02/22 20:55:06  arthchan2003
- * Merged from branch SPHINX3_5_2_RCI_IRII_BRANCH:
- *
- * 1, Added Letter-to-sound LTS rule, dict_init will only specify
- * d->lts_rules to be true if the useLTS is specified.  Only if
- * d->lts_rules is specified, the LTS logic will be used. The code safe
- * guarded the case when a phone in mdef doesn't appear in LTS, in that
- * case, the code will force exit.
- *
- * 2, The LTS logic is only used as a reserved measure.  By default, it
- * is not turned on.  See also the comment in kbcore.c and the default
- * parameters in revision 1.3 cmdln_macro.h . We added it because we have
- * this functionality in SphinxTrain.
- *
- * Revision 1.5.4.2  2006/01/16 19:53:17  arthchan2003
- * Changed the option name from -ltsoov to -lts_mismatch
- *
- * Revision 1.5.4.1  2005/09/25 19:12:09  arthchan2003
- * Added optional LTS support for the dictionary.
- *
- * Revision 1.5  2005/06/21 21:04:36  arthchan2003
- * 1, Introduced a reporting routine. 2, Fixed doyxgen documentation, 3, Added  keyword.
- *
- * Revision 1.5  2005/06/19 03:58:16  archan
- * 1, Move checking of Silence wid, start wid, finish wid to dict_init. This unify the checking and remove several segments of redundant code. 2, Remove all startwid, silwid and finishwid.  They are artefacts of 3.0/3.x merging. This is already implemented in dict.  (In align, startwid, endwid, finishwid occured in several places.  Checking is also done multiple times.) 3, Making corresponding changes to all files which has variable startwid, silwid and finishwid.  Should make use of the marco more.
- *
- * Revision 1.4  2005/04/21 23:50:26  archan
- * Some more refactoring on the how reporting of structures inside kbcore_t is done, it is now 50% nice. Also added class-based LM test case into test-decode.sh.in.  At this moment, everything in search mode 5 is already done.  It is time to test the idea whether the search can really be used.
- *
- * Revision 1.3  2005/03/30 01:22:46  archan
- * Fixed mistakes in last updates. Add
- *
- * 19-Apr-01    Ricky Houghton, added code for freeing memory that is allocated internally.
- * 
- * 23-Apr-98	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Made usage of mdef optional.  If no mdef is specified while loading
- *		a dictionary, it maintains the needed CI phone information internally.
- * 		Added dict_ciphone_str().
- * 
- * 02-Jul-97	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added startwid, finishwid, silwid to dict_t.  Modified dict_filler_word
- * 		to check for start and finishwid.
- * 
- * 07-Feb-97	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Created from previous Sphinx-3 version.
- */
-
 
 #include <string.h>
 
@@ -118,7 +53,10 @@ extern const char *const cmu6_lts_phone_table[];
 static s3cipid_t
 s3dict_ciphone_id(s3dict_t * d, const char *str)
 {
-    return bin_mdef_ciphone_id(d->mdef, str);
+    if (d->nocase)
+        return bin_mdef_ciphone_id_nocase(d->mdef, str);
+    else
+        return bin_mdef_ciphone_id(d->mdef, str);
 }
 
 
@@ -285,17 +223,15 @@ s3dict_read(FILE * fp, s3dict_t * d)
 }
 
 s3dict_t *
-s3dict_init(bin_mdef_t * mdef, const char *dictfile, const char *fillerfile,
-            int useLTS, int breport)
+s3dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
 {
     FILE *fp, *fp2;
     int32 n;
     char line[1024];
     s3dict_t *d;
     s3cipid_t sil;
-
-    if (!dictfile)
-        E_FATAL("No dictionary file\n");
+    char const *dictfile = cmd_ln_str_r(config, "-dict");
+    char const *fillerfile = cmd_ln_str_r(config, "-fdict");
 
     /*
      * First obtain #words in dictionary (for hash table allocation).
@@ -340,12 +276,8 @@ s3dict_init(bin_mdef_t * mdef, const char *dictfile, const char *fillerfile,
     d->mdef = bin_mdef_retain(mdef);
 
     /* Create new hash table for word strings; case-insensitive word strings */
-    d->ht = hash_table_new(d->max_words, 1 /* no-case */ );
-
-    d->lts_rules = NULL;
-    if (useLTS)
-        d->lts_rules = (lts_t *) & (cmu6_lts_rules);
-
+    d->nocase = cmd_ln_boolean_r(config, "-dictcase");
+    d->ht = hash_table_new(d->max_words, d->nocase);
 
     /* Digest main dictionary file */
     E_INFO("Reading main dictionary: %s\n", dictfile);

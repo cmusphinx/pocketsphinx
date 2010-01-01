@@ -199,10 +199,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     /* Dictionary and triphone mappings (depends on acmod). */
     /* FIXME: pass config, change arguments, implement LTS, etc. */
-    if ((ps->dict = s3dict_init(ps->acmod->mdef,
-                                cmd_ln_str_r(ps->config, "-dict"),
-                                cmd_ln_str_r(ps->config, "-fdict"),
-                                FALSE, TRUE)) == NULL)
+    if ((ps->dict = s3dict_init(ps->config, ps->acmod->mdef)) == NULL)
         return -1;
 
     /* Determine whether we are starting out in FSG or N-Gram search mode. */

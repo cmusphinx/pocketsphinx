@@ -401,14 +401,14 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
         /* DICT2PID */
         /* Get diphone ID for final phone and number of ssids corresponding to it. */
         be->last_phone = s3dict_last_phone(ps_search_dict(ngs),w);
-        if (s3dict_pronlen(ps_search_dict(ngs), w) != 1) {
+        if (s3dict_is_single_phone(ps_search_dict(ngs), w)) {
+            be->last2_phone = -1;
+            rcsize = 1;
+        }
+        else {
             be->last2_phone = s3dict_second_last_phone(ps_search_dict(ngs),w);
             rcsize = dict2pid_rssid(ps_search_dict2pid(ngs),
                                     be->last_phone, be->last2_phone)->n_ssid;
-        }
-        else {
-            be->last2_phone = -1;
-            rcsize = 1;
         }
         /* Allocate some space on the bscore_stack for all of these triphones. */
         for (i = rcsize, bss = ngs->bscore_stack + ngs->bss_head; i > 0; --i, bss++)
@@ -515,7 +515,7 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
 
     /* DICT2PID */
     /* Get pointer to array of triphones for final diphone. */
-    assert(s3dict_pronlen(ps_search_dict(ngs), w) > 1);
+    assert(!s3dict_is_single_phone(ps_search_dict(ngs), w));
     rssid = dict2pid_rssid(ps_search_dict2pid(ngs),
                            s3dict_last_phone(ps_search_dict(ngs),w),
                            s3dict_second_last_phone(ps_search_dict(ngs),w));

@@ -83,12 +83,12 @@ init_search_tree(ngram_search_t *ngs)
     for (w = 0; w < n_words; w++) {
         if (!s3dict_real_word(dict, w))
             continue;
-        if (s3dict_pronlen(dict, w) == 1)
+        if (s3dict_is_single_phone(dict, w))
             ++ngs->n_1ph_words;
         else {
             int ph0, ph1;
-            ph0 = s3dict_pron(dict, w, 0);
-            ph1 = s3dict_pron(dict, w, 1);
+            ph0 = s3dict_first_phone(dict, w);
+            ph1 = s3dict_second_phone(dict, w);
             /* Increment ndiph the first time we see a diphone. */
             if (bitvec_is_clear(dimap, ph0 * n_ci + ph1)) {
                 bitvec_set(dimap, ph0 * n_ci + ph1);
@@ -107,7 +107,7 @@ init_search_tree(ngram_search_t *ngs)
     for (w = 0; w < n_words; ++w) {
         if (s3dict_real_word(dict, w))
             continue;
-        if (s3dict_pronlen(dict, w) != 1) {
+        if (!s3dict_is_single_phone(dict, w)) {
             E_WARN("Filler word %d = %s has more than one phone, ignoring it.\n",
                    w, s3dict_wordstr(dict, w));
             --ngs->n_1ph_words;
@@ -128,7 +128,7 @@ init_search_tree(ngram_search_t *ngs)
     ngs->rhmm_1ph = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->rhmm_1ph));
     i = 0;
     for (w = 0; w < n_words; w++) {
-        if (s3dict_pronlen(dict, w) != 1)
+        if (!s3dict_is_single_phone(dict, w))
             continue;
         /* Use SIL as right context for these. */
         ngs->rhmm_1ph[i].ci2phone = bin_mdef_silphone(ps_search_acmod(ngs)->mdef);
@@ -203,7 +203,7 @@ create_search_tree(ngram_search_t *ngs)
             continue;
 
         /* Handle single-phone words individually; not in channel tree */
-        if (s3dict_pronlen(dict, w) == 1) {
+        if (s3dict_is_single_phone(dict, w)) {
             E_DEBUG(1,("single_phone_wid[%d] = %s\n",
                        ngs->n_1ph_LMwords, s3dict_wordstr(dict, w)));
             ngs->single_phone_wid[ngs->n_1ph_LMwords++] = w;
@@ -212,8 +212,8 @@ create_search_tree(ngram_search_t *ngs)
 
         /* Find a root channel matching the initial diphone, or
          * allocate one if not found. */
-        ciphone = s3dict_pron(dict, w, 0);
-        ci2phone = s3dict_pron(dict, w, 1);
+        ciphone = s3dict_first_phone(dict, w);
+        ci2phone = s3dict_second_phone(dict, w);
         for (i = 0; i < ngs->n_root_chan; ++i) {
             if (ngs->root_chan[i].ciphone == ciphone
                 && ngs->root_chan[i].ci2phone == ci2phone)
@@ -265,8 +265,7 @@ create_search_tree(ngram_search_t *ngs)
             }
             E_DEBUG(3,("phone %s = %d\n",
                        bin_mdef_ciphone_str(ps_search_acmod(ngs)->mdef,
-                                            s3dict_pron(dict, w, 1)), ph));
-
+                                            s3dict_second_phone(dict, w)), ph));
             for (p = 2; p < s3dict_pronlen(dict, w) - 1; p++) {
                 ph = dict2pid_internal(d2p, w, p);
                 if (!hmm->next) {
@@ -307,7 +306,7 @@ create_search_tree(ngram_search_t *ngs)
     /* Add filler words to the array of 1ph words. */
     for (w = 0; w < n_words; ++w) {
         /* Skip anything that doesn't actually have a single phone. */
-        if (s3dict_pronlen(dict, w) != 1)
+        if (!s3dict_is_single_phone(dict, w))
             continue;
         /* Also skip "real words" and things that are in the LM. */
         if (s3dict_real_word(dict, w))
@@ -1033,7 +1032,7 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
             }
         }
         if ((k > 0) && (bitvec_is_clear(ngs->word_active, w))) {
-            assert(s3dict_pronlen(ps_search_dict(ngs), w) > 1);
+            assert(!s3dict_is_single_phone(ps_search_dict(ngs), w));
             *(nawl++) = w;
             bitvec_set(ngs->word_active, w);
         }
@@ -1449,7 +1448,7 @@ ngram_fwdtree_finish(ngram_search_t *ngs)
     awl = ngs->active_word_list[cf & 0x1];
     for (w = *(awl++); i > 0; --i, w = *(awl++)) {
         /* Don't accidentally free single-phone words! */
-        if (s3dict_pronlen(ps_search_dict(ngs), w) == 1)
+        if (s3dict_is_single_phone(ps_search_dict(ngs), w))
             continue;
         bitvec_clear(ngs->word_active, w);
         if (ngs->word_chan[w] == NULL)
