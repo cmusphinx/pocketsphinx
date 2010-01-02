@@ -108,7 +108,7 @@ phone_loop_search_reinit(ps_search_t *search)
 ps_search_t *
 phone_loop_search_init(cmd_ln_t *config,
 		       acmod_t *acmod,
-		       s3dict_t *dict)
+		       dict_t *dict)
 {
     phone_loop_search_t *pls;
 

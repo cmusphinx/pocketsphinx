@@ -163,7 +163,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     ps->acmod = NULL;
 
     /* Free old dictionary (must be done after the two things above) */
-    s3dict_free(ps->dict);
+    dict_free(ps->dict);
     ps->dict = NULL;
 
 
@@ -199,7 +199,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     /* Dictionary and triphone mappings (depends on acmod). */
     /* FIXME: pass config, change arguments, implement LTS, etc. */
-    if ((ps->dict = s3dict_init(ps->config, ps->acmod->mdef)) == NULL)
+    if ((ps->dict = dict_init(ps->config, ps->acmod->mdef)) == NULL)
         return -1;
 
     /* Determine whether we are starting out in FSG or N-Gram search mode. */
@@ -279,7 +279,7 @@ ps_free(ps_decoder_t *ps)
     for (gn = ps->searches; gn; gn = gnode_next(gn))
         ps_search_free(gnode_ptr(gn));
     glist_free(ps->searches);
-    s3dict_free(ps->dict);
+    dict_free(ps->dict);
     dict2pid_free(ps->d2p);
     acmod_free(ps->acmod);
     logmath_free(ps->lmath);
@@ -410,7 +410,7 @@ ps_add_word(ps_decoder_t *ps,
 
     pron = ckd_salloc(phones);
     /* Add it to the dictionary. */
-    if ((wid = s3dict_add_word(ps->dict, word, pron, strlen(pron))) == -1) {
+    if ((wid = dict_add_word(ps->dict, word, pron, strlen(pron))) == -1) {
         ckd_free(pron);
         return -1;
     }
@@ -791,8 +791,8 @@ ps_nbest(ps_decoder_t *ps, int sf, int ef,
         lwf = ((ngram_search_t *)ps->search)->bestpath_fwdtree_lw_ratio;
     }
 
-    w1 = ctx1 ? s3dict_wordid(ps_search_dict(ps->search), ctx1) : -1;
-    w2 = ctx2 ? s3dict_wordid(ps_search_dict(ps->search), ctx2) : -1;
+    w1 = ctx1 ? dict_wordid(ps_search_dict(ps->search), ctx1) : -1;
+    w2 = ctx2 ? dict_wordid(ps_search_dict(ps->search), ctx2) : -1;
     nbest = ps_astar_start(dag, lmset, lwf, sf, ef, w1, w2);
 
     return (ps_nbest_t *)nbest;
@@ -867,7 +867,7 @@ ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
 
 void
 ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
-               cmd_ln_t *config, acmod_t *acmod, s3dict_t *dict,
+               cmd_ln_t *config, acmod_t *acmod, dict_t *dict,
                dict2pid_t *d2p)
 {
     search->vt = vt;
@@ -877,9 +877,9 @@ ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
     search->d2p = d2p;
     if (dict) {
         /* FIXME: redundant? */
-        search->start_wid = s3dict_startwid(dict);
-        search->finish_wid = s3dict_finishwid(dict);
-        search->silence_wid = s3dict_silwid(dict);
+        search->start_wid = dict_startwid(dict);
+        search->finish_wid = dict_finishwid(dict);
+        search->silence_wid = dict_silwid(dict);
     }
     else {
         search->start_wid = search->finish_wid = search->silence_wid = -1;

@@ -55,7 +55,7 @@
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
 #include "ngram_search.h"
-#include "s3dict.h"
+#include "dict.h"
 
 /*
  * Create a directed link between "from" and "to" nodes, but if a link already exists,
@@ -110,7 +110,7 @@ ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
     /* Bypass filler nodes */
     for (node = dag->nodes; node; node = node->next) {
         latlink_list_t *revlink;
-        if (node == dag->end || !s3dict_filler_word(ps_search_dict(dag->search), node->basewid))
+        if (node == dag->end || !dict_filler_word(ps_search_dict(dag->search), node->basewid))
             continue;
 
         /* Replace each link entering filler node with links to all its successors */
@@ -127,7 +127,7 @@ ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
              */
             for (forlink = node->exits; forlink; forlink = forlink->next) {
                 ps_latlink_t *flink = forlink->link;
-                if (!s3dict_filler_word(ps_search_dict(dag->search), flink->to->basewid)) {
+                if (!dict_filler_word(ps_search_dict(dag->search), flink->to->basewid)) {
                     ps_lattice_link(dag, rlink->from, flink->to,
                                     score + flink->ascr, flink->ef);
                 }
@@ -256,7 +256,7 @@ ps_lattice_write(ps_lattice_t *dag, char const *filename)
     for (i = 0, d = dag->nodes; d; d = d->next, i++) {
         d->id = i;
         fprintf(fp, "%d %s %d %d %d\n",
-                i, s3dict_wordstr(ps_search_dict(dag->search), d->wid),
+                i, dict_wordstr(ps_search_dict(dag->search), d->wid),
                 d->sf, d->fef, d->lef);
     }
     fprintf(fp, "#\n");
@@ -414,7 +414,7 @@ ps_lattice_read(ps_decoder_t *ps,
             goto load_error;
         }
 
-        w = s3dict_wordid(ps->dict, wd);
+        w = dict_wordid(ps->dict, wd);
         if (w < 0) {
             E_ERROR("Unknown word in line: %s\n", line->buf);
             goto load_error;
@@ -428,7 +428,7 @@ ps_lattice_read(ps_decoder_t *ps,
         d = listelem_malloc(dag->latnode_alloc);
         darray[i] = d;
         d->wid = w;
-        d->basewid = s3dict_basewid(ps->dict, w);
+        d->basewid = dict_basewid(ps->dict, w);
         d->id = seqid;
         d->sf = sf;
         d->fef = fef;
@@ -507,7 +507,7 @@ ps_lattice_read(ps_decoder_t *ps,
     /* Minor hack: If the final node is a filler word and not </s>,
      * then set its base word ID to </s>, so that the language model
      * scores won't be screwed up. */
-    if (s3dict_filler_word(ps_search_dict(dag->search), dag->end->wid))
+    if (dict_filler_word(ps_search_dict(dag->search), dag->end->wid))
         dag->end->basewid = ps_search_finish_wid(dag->search);
 
     /* Mark reachable from dag->end */
@@ -621,13 +621,13 @@ ps_latnode_times(ps_latnode_t *node, int16 *out_fef, int16 *out_lef)
 char const *
 ps_latnode_word(ps_lattice_t *dag, ps_latnode_t *node)
 {
-    return s3dict_wordstr(ps_search_dict(dag->search), node->wid);
+    return dict_wordstr(ps_search_dict(dag->search), node->wid);
 }
 
 char const *
 ps_latnode_baseword(ps_lattice_t *dag, ps_latnode_t *node)
 {
-    return s3dict_wordstr(ps_search_dict(dag->search), node->basewid);
+    return dict_wordstr(ps_search_dict(dag->search), node->basewid);
 }
 
 int32
@@ -703,7 +703,7 @@ ps_latlink_word(ps_lattice_t *dag, ps_latlink_t *link)
 {
     if (link->from == NULL)
         return NULL;
-    return s3dict_wordstr(ps_search_dict(dag->search), link->from->wid);
+    return dict_wordstr(ps_search_dict(dag->search), link->from->wid);
 }
 
 char const *
@@ -711,7 +711,7 @@ ps_latlink_baseword(ps_lattice_t *dag, ps_latlink_t *link)
 {
     if (link->from == NULL)
         return NULL;
-    return s3dict_wordstr(ps_search_dict(dag->search), link->from->basewid);
+    return dict_wordstr(ps_search_dict(dag->search), link->from->basewid);
 }
 
 ps_latlink_t *
@@ -738,31 +738,31 @@ ps_lattice_hyp(ps_lattice_t *dag, ps_latlink_t *link)
     /* Backtrace once to get hypothesis length. */
     len = 0;
     /* FIXME: There may not be a search, but actually there should be a dict. */
-    if (s3dict_real_word(ps_search_dict(dag->search), link->to->basewid))
-        len += strlen(s3dict_wordstr(ps_search_dict(dag->search), link->to->basewid)) + 1;
+    if (dict_real_word(ps_search_dict(dag->search), link->to->basewid))
+        len += strlen(dict_wordstr(ps_search_dict(dag->search), link->to->basewid)) + 1;
     for (l = link; l; l = l->best_prev) {
-        if (s3dict_real_word(ps_search_dict(dag->search), l->from->basewid))
-            len += strlen(s3dict_wordstr(ps_search_dict(dag->search), l->from->basewid)) + 1;
+        if (dict_real_word(ps_search_dict(dag->search), l->from->basewid))
+            len += strlen(dict_wordstr(ps_search_dict(dag->search), l->from->basewid)) + 1;
     }
 
     /* Backtrace again to construct hypothesis string. */
     ckd_free(dag->hyp_str);
     dag->hyp_str = ckd_calloc(1, len+1); /* extra one incase the hyp is empty */
     c = dag->hyp_str + len - 1;
-    if (s3dict_real_word(ps_search_dict(dag->search), link->to->basewid)) {
-        len = strlen(s3dict_wordstr(ps_search_dict(dag->search), link->to->basewid));
+    if (dict_real_word(ps_search_dict(dag->search), link->to->basewid)) {
+        len = strlen(dict_wordstr(ps_search_dict(dag->search), link->to->basewid));
         c -= len;
-        memcpy(c, s3dict_wordstr(ps_search_dict(dag->search), link->to->basewid), len);
+        memcpy(c, dict_wordstr(ps_search_dict(dag->search), link->to->basewid), len);
         if (c > dag->hyp_str) {
             --c;
             *c = ' ';
         }
     }
     for (l = link; l; l = l->best_prev) {
-        if (s3dict_real_word(ps_search_dict(dag->search), l->from->basewid)) {
-            len = strlen(s3dict_wordstr(ps_search_dict(dag->search), l->from->basewid));
+        if (dict_real_word(ps_search_dict(dag->search), l->from->basewid)) {
+            len = strlen(dict_wordstr(ps_search_dict(dag->search), l->from->basewid));
             c -= len;
-            memcpy(c, s3dict_wordstr(ps_search_dict(dag->search), l->from->basewid), len);
+            memcpy(c, dict_wordstr(ps_search_dict(dag->search), l->from->basewid), len);
             if (c > dag->hyp_str) {
                 --c;
                 *c = ' ';
@@ -849,7 +849,7 @@ ps_lattice_link2itor(ps_seg_t *seg, ps_latlink_t *link, int to)
             }
         }
     }
-    seg->word = s3dict_wordstr(ps_search_dict(seg->search), node->wid);
+    seg->word = dict_wordstr(ps_search_dict(seg->search), node->wid);
     seg->sf = node->sf;
     seg->ascr = link->ascr;
     /* Compute language model score from best predecessors. */
@@ -1128,7 +1128,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
         int32 n_used;
 
         /* Ignore filler words. */
-        if (s3dict_filler_word(ps_search_dict(search), x->link->to->basewid)
+        if (dict_filler_word(ps_search_dict(search), x->link->to->basewid)
             && x->link->to != dag->end)
             continue;
 
@@ -1150,9 +1150,9 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
         int32 bprob, n_used;
 
         /* Skip filler nodes in traversal. */
-        if (s3dict_filler_word(ps_search_dict(search), link->from->basewid) && link->from != dag->start)
+        if (dict_filler_word(ps_search_dict(search), link->from->basewid) && link->from != dag->start)
             continue;
-        if (s3dict_filler_word(ps_search_dict(search), link->to->basewid) && link->to != dag->end)
+        if (dict_filler_word(ps_search_dict(search), link->to->basewid) && link->to != dag->end)
             continue;
 
         /* Sanity check, we should not be traversing edges that
@@ -1175,7 +1175,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
             int32 tscore, score;
 
             /* Skip links to filler words in update. */
-            if (s3dict_filler_word(ps_search_dict(search), x->link->to->basewid)
+            if (dict_filler_word(ps_search_dict(search), x->link->to->basewid)
                 && x->link->to != dag->end)
                 continue;
 
@@ -1208,7 +1208,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
     for (x = dag->end->entries; x; x = x->next) {
         int32 bprob, n_used;
 
-        if (s3dict_filler_word(ps_search_dict(search), x->link->from->basewid))
+        if (dict_filler_word(ps_search_dict(search), x->link->from->basewid))
             continue;
         if (lmset)
             bprob = ngram_ng_prob(lmset,
@@ -1226,7 +1226,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
     dag->norm += (int32)dag->final_node_ascr * ascale;
 
     E_INFO("Normalizer P(O) = alpha(%s:%d:%d) = %d\n",
-           s3dict_wordstr(dag->search->dict, dag->end->wid),
+           dict_wordstr(dag->search->dict, dag->end->wid),
            dag->end->sf, dag->end->lef,
            dag->norm);
     return bestend;
@@ -1297,9 +1297,9 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
         int32 bprob, n_used;
 
         /* Skip filler nodes in traversal. */
-        if (s3dict_filler_word(ps_search_dict(search), link->from->basewid) && link->from != dag->start)
+        if (dict_filler_word(ps_search_dict(search), link->from->basewid) && link->from != dag->start)
             continue;
-        if (s3dict_filler_word(ps_search_dict(search), link->to->basewid) && link->to != dag->end)
+        if (dict_filler_word(ps_search_dict(search), link->to->basewid) && link->to != dag->end)
             continue;
 
         /* Calculate LM probability. */
@@ -1323,7 +1323,7 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
         else {
             /* Update beta from all outgoing betas. */
             for (x = link->to->exits; x; x = x->next) {
-                if (s3dict_filler_word(ps_search_dict(search), x->link->to->basewid) && x->link->to != dag->end)
+                if (dict_filler_word(ps_search_dict(search), x->link->to->basewid) && x->link->to != dag->end)
                     continue;
                 link->beta = logmath_add(lmath, link->beta,
                                          x->link->beta + bprob + x->link->ascr * ascale);
@@ -1588,18 +1588,18 @@ ps_astar_hyp(ps_astar_t *nbest, ps_latpath_t *path)
     /* Backtrace once to get hypothesis length. */
     len = 0;
     for (p = path; p; p = p->parent) {
-        if (s3dict_real_word(ps_search_dict(search), p->node->basewid))
-            len += strlen(s3dict_wordstr(ps_search_dict(search), p->node->basewid)) + 1;
+        if (dict_real_word(ps_search_dict(search), p->node->basewid))
+            len += strlen(dict_wordstr(ps_search_dict(search), p->node->basewid)) + 1;
     }
 
     /* Backtrace again to construct hypothesis string. */
     hyp = ckd_calloc(1, len);
     c = hyp + len - 1;
     for (p = path; p; p = p->parent) {
-        if (s3dict_real_word(ps_search_dict(search), p->node->basewid)) {
-            len = strlen(s3dict_wordstr(ps_search_dict(search), p->node->basewid));
+        if (dict_real_word(ps_search_dict(search), p->node->basewid)) {
+            len = strlen(dict_wordstr(ps_search_dict(search), p->node->basewid));
             c -= len;
-            memcpy(c, s3dict_wordstr(ps_search_dict(search), p->node->basewid), len);
+            memcpy(c, dict_wordstr(ps_search_dict(search), p->node->basewid), len);
             if (c > hyp) {
                 --c;
                 *c = ' ';
@@ -1623,7 +1623,7 @@ ps_astar_node2itor(astar_seg_t *itor)
         seg->ef = node->lef;
     else
         seg->ef = itor->nodes[itor->cur + 1]->sf - 1;
-    seg->word = s3dict_wordstr(ps_search_dict(seg->search), node->wid);
+    seg->word = dict_wordstr(ps_search_dict(seg->search), node->wid);
     seg->sf = node->sf;
     seg->prob = 0; /* FIXME: implement forward-backward */
 }

@@ -245,7 +245,7 @@ build_lrcssid(ctxt_table_t * ct, s3cipid_t b, bin_mdef_t * mdef,
  */
 
 void
-build_wwssid(ctxt_table_t * ct, s3dict_t * dict, bin_mdef_t * mdef)
+build_wwssid(ctxt_table_t * ct, dict_t * dict, bin_mdef_t * mdef)
 {
     s3wid_t w;
     s3ssid_t p;
@@ -293,7 +293,7 @@ build_wwssid(ctxt_table_t * ct, s3dict_t * dict, bin_mdef_t * mdef)
  * Build cross-word triphones map for the entire dictionary.
  */
 void
-build_xwdssid_map(ctxt_table_t * ct, s3dict_t * dict, bin_mdef_t * mdef)
+build_xwdssid_map(ctxt_table_t * ct, dict_t * dict, bin_mdef_t * mdef)
 {
     s3wid_t w;
     int32 pronlen;
@@ -383,7 +383,7 @@ build_xwdssid_map(ctxt_table_t * ct, s3dict_t * dict, bin_mdef_t * mdef)
 }
 
 ctxt_table_t *
-ctxt_table_init(s3dict_t * dict, bin_mdef_t * mdef)
+ctxt_table_init(dict_t * dict, bin_mdef_t * mdef)
 {
     ctxt_table_t *ct;
     ct = (ctxt_table_t *) ckd_calloc(1, sizeof(ctxt_table_t));
@@ -433,7 +433,7 @@ ctxt_table_free(ctxt_table_t * ct)
 }
 
 s3cipid_t *
-get_rc_cimap(ctxt_table_t * ct, s3wid_t w, s3dict_t * dict)
+get_rc_cimap(ctxt_table_t * ct, s3wid_t w, dict_t * dict)
 {
     int32 pronlen;
     s3cipid_t b, lc;
@@ -451,7 +451,7 @@ get_rc_cimap(ctxt_table_t * ct, s3wid_t w, s3dict_t * dict)
 }
 
 s3cipid_t *
-get_lc_cimap(ctxt_table_t * ct, s3wid_t w, s3dict_t * dict)
+get_lc_cimap(ctxt_table_t * ct, s3wid_t w, dict_t * dict)
 {
     int32 pronlen;
     s3cipid_t b, rc;
@@ -471,7 +471,7 @@ get_lc_cimap(ctxt_table_t * ct, s3wid_t w, s3dict_t * dict)
 
 void
 get_rcssid(ctxt_table_t * ct, s3wid_t w, s3ssid_t ** ssid, int32 * nssid,
-           s3dict_t * dict)
+           dict_t * dict)
 {
     int32 pronlen;
     s3cipid_t b, lc;
@@ -488,7 +488,7 @@ get_rcssid(ctxt_table_t * ct, s3wid_t w, s3ssid_t ** ssid, int32 * nssid,
 
 void
 get_lcssid(ctxt_table_t * ct, s3wid_t w, s3ssid_t ** ssid, int32 * nssid,
-           s3dict_t * dict)
+           dict_t * dict)
 {
     int32 pronlen;
     s3cipid_t b, rc;
@@ -504,7 +504,7 @@ get_lcssid(ctxt_table_t * ct, s3wid_t w, s3ssid_t ** ssid, int32 * nssid,
 }
 
 int32
-ct_get_rc_nssid(ctxt_table_t * ct, s3wid_t w, s3dict_t * dict)
+ct_get_rc_nssid(ctxt_table_t * ct, s3wid_t w, dict_t * dict)
 {
     int32 pronlen;
     s3cipid_t b, lc;

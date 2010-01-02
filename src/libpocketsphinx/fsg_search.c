@@ -89,7 +89,7 @@ static ps_searchfuncs_t fsg_funcs = {
 ps_search_t *
 fsg_search_init(cmd_ln_t *config,
                 acmod_t *acmod,
-                s3dict_t *dict,
+                dict_t *dict,
                 dict2pid_t *d2p)
 {
     fsg_search_t *fsgs;
@@ -261,7 +261,7 @@ fsg_search_reinit(ps_search_t *search)
 static int
 fsg_search_add_silences(fsg_search_t *fsgs, fsg_model_t *fsg)
 {
-    s3dict_t *dict;
+    dict_t *dict;
     int32 wid;
     int n_sil;
 
@@ -283,9 +283,9 @@ fsg_search_add_silences(fsg_search_t *fsgs, fsg_model_t *fsg)
                           cmd_ln_float32_r(ps_search_config(fsgs), "-silprob"));
     n_sil = 0;
     /* Add self-loops for all other fillers. */
-    for (wid = s3dict_filler_start(dict); wid < s3dict_filler_end(dict); ++wid) {
-        char const *word = s3dict_wordstr(dict, wid);
-        if (wid == s3dict_startwid(dict) || wid == s3dict_finishwid(dict))
+    for (wid = dict_filler_start(dict); wid < dict_filler_end(dict); ++wid) {
+        char const *word = dict_wordstr(dict, wid);
+        if (wid == dict_startwid(dict) || wid == dict_finishwid(dict))
             continue;
         fsg_model_add_silence(fsg, word, -1,
                               cmd_ln_float32_r(ps_search_config(fsgs), "-fillprob"));
@@ -299,7 +299,7 @@ fsg_search_add_silences(fsg_search_t *fsgs, fsg_model_t *fsg)
 static int
 fsg_search_check_dict(fsg_search_t *fsgs, fsg_model_t *fsg)
 {
-    s3dict_t *dict;
+    dict_t *dict;
     int i;
 
     dict = ps_search_dict(fsgs);
@@ -308,7 +308,7 @@ fsg_search_check_dict(fsg_search_t *fsgs, fsg_model_t *fsg)
         int32 wid;
 
         word = fsg_model_word_str(fsg, i);
-        wid = s3dict_wordid(dict, word);
+        wid = dict_wordid(dict, word);
         if (wid == BAD_S3WID) {
     	    E_ERROR("The word '%s' is missing in the dictionary\n", word);
     	    return FALSE;
@@ -321,7 +321,7 @@ fsg_search_check_dict(fsg_search_t *fsgs, fsg_model_t *fsg)
 static int
 fsg_search_add_altpron(fsg_search_t *fsgs, fsg_model_t *fsg)
 {
-    s3dict_t *dict;
+    dict_t *dict;
     int n_alt;
     int i;
 
@@ -333,10 +333,10 @@ fsg_search_add_altpron(fsg_search_t *fsgs, fsg_model_t *fsg)
         int32 wid;
 
         word = fsg_model_word_str(fsg, i);
-        wid = s3dict_wordid(dict, word);
+        wid = dict_wordid(dict, word);
         if (wid != BAD_S3WID) {
-            while ((wid = s3dict_nextalt(dict, wid)) != BAD_S3WID) {
-	        fsg_model_add_alt(fsg, word, s3dict_wordstr(dict, wid));
+            while ((wid = dict_nextalt(dict, wid)) != BAD_S3WID) {
+	        fsg_model_add_alt(fsg, word, dict_wordstr(dict, wid));
     	        ++n_alt;
     	    }
     	}
@@ -630,8 +630,8 @@ fsg_search_pnode_exit(fsg_search_t *fsgs, fsg_pnode_t * pnode)
      */
     if (fsg_model_is_filler(fsgs->fsg, wid)
         /* FIXME: This might be slow due to repeated calls to dict_to_id(). */
-        || (s3dict_is_single_phone(ps_search_dict(fsgs),
-                                   s3dict_wordid(ps_search_dict(fsgs),
+        || (dict_is_single_phone(ps_search_dict(fsgs),
+                                   dict_wordid(ps_search_dict(fsgs),
                                                  fsg_model_word_str(fsgs->fsg, wid))))) {
         /* Create a dummy context structure that applies to all right contexts */
         fsg_pnode_add_all_ctxt(&ctxt);
@@ -1632,9 +1632,9 @@ fsg_search_lattice(ps_search_t *search)
      * Convert word IDs from FSG to dictionary.
      */
     for (node = dag->nodes; node; node = node->next) {
-        node->wid = s3dict_wordid(dag->search->dict,
+        node->wid = dict_wordid(dag->search->dict,
                                   fsg_model_word_str(fsg, node->wid));
-        node->basewid = s3dict_basewid(dag->search->dict, node->wid);
+        node->basewid = dict_basewid(dag->search->dict, node->wid);
     }
 
     /*

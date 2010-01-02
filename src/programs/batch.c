@@ -400,8 +400,8 @@ write_ctm(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int32 f
         /* Skip things that aren't "real words" (FIXME: currently
          * requires s3kr3t h34d3rz...) */
         w = ps_seg_word(itor);
-        wid = s3dict_wordid(ps->dict, w);
-        if (s3dict_real_word(ps->dict, wid)) {
+        wid = dict_wordid(ps->dict, w);
+        if (dict_real_word(ps->dict, wid)) {
             prob = ps_seg_prob(itor, NULL, NULL, NULL);
             ps_seg_frames(itor, &sf, &ef);
         
@@ -411,7 +411,7 @@ write_ctm(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int32 f
                     ustart + (double)sf / frate,
                     (double)(ef - sf) / frate,
                     /* FIXME: More s3kr3tz */
-                    s3dict_basestr(ps->dict, wid),
+                    dict_basestr(ps->dict, wid),
                     logmath_exp(lmath, prob));
         }
         itor = ps_seg_next(itor);

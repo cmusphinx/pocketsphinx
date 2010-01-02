@@ -54,7 +54,7 @@
 /* Local headers. */
 #include "pocketsphinx.h"
 #include "acmod.h"
-#include "s3dict.h"
+#include "dict.h"
 #include "dict2pid.h"
 
 /**
@@ -88,7 +88,7 @@ struct ps_search_s {
     ps_search_t *pls;      /**< Phoneme loop for lookahead. */
     cmd_ln_t *config;      /**< Configuration. */
     acmod_t *acmod;        /**< Acoustic model. */
-    s3dict_t *dict;        /**< Pronunciation dictionary. */
+    dict_t *dict;        /**< Pronunciation dictionary. */
     dict2pid_t *d2p;       /**< Dictionary to senone mappings. */
     char *hyp_str;         /**< Current hypothesis string. */
     ps_lattice_t *dag;	   /**< Current hypothesis word graph. */
@@ -123,7 +123,7 @@ struct ps_search_s {
 #define ps_search_seg_iter(s,sc) (*(ps_search_base(s)->vt->seg_iter))(s,sc)
 
 /* For convenience... */
-#define ps_search_n_words(s) s3dict_size(ps_search_dict(s))
+#define ps_search_n_words(s) dict_size(ps_search_dict(s))
 #define ps_search_silence_wid(s) ps_search_base(s)->silence_wid
 #define ps_search_start_wid(s) ps_search_base(s)->start_wid
 #define ps_search_finish_wid(s) ps_search_base(s)->finish_wid
@@ -132,7 +132,7 @@ struct ps_search_s {
  * Initialize base structure.
  */
 void ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
-                    cmd_ln_t *config, acmod_t *acmod, s3dict_t *dict,
+                    cmd_ln_t *config, acmod_t *acmod, dict_t *dict,
                     dict2pid_t *d2p);
 
 /**
@@ -178,7 +178,7 @@ struct ps_decoder_s {
 
     /* Basic units of computation. */
     acmod_t *acmod;    /**< Acoustic model. */
-    s3dict_t *dict;    /**< Pronunciation dictionary. */
+    dict_t *dict;    /**< Pronunciation dictionary. */
     dict2pid_t *d2p;   /**< Dictionary to senone mapping. */
     logmath_t *lmath;  /**< Log math computation. */
 

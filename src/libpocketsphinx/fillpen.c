@@ -77,7 +77,7 @@
 #include "fillpen.h"
 
 fillpen_t *
-fillpen_init(s3dict_t * dict, const char *file, float64 silprob, float64 fillprob,
+fillpen_init(dict_t * dict, const char *file, float64 silprob, float64 fillprob,
              float64 lw, float64 wip, logmath_t *logmath)
 {
     s3wid_t w, bw;
@@ -108,7 +108,7 @@ fillpen_init(s3dict_t * dict, const char *file, float64 silprob, float64 fillpro
         (int32) ((logmath_log(logmath, prob) * lw + logmath_log(logmath, wip)));
 
     /* Overwrite silence penalty (HACK!! backward compatibility) */
-    w = s3dict_wordid(dict, S3_SILENCE_WORD);
+    w = dict_wordid(dict, S3_SILENCE_WORD);
     if (NOT_S3WID(w) || (w < dict->filler_start) || (w > dict->filler_end))
         E_FATAL("%s not a filler word in the given dictionary\n",
                 S3_SILENCE_WORD);
@@ -130,7 +130,7 @@ fillpen_init(s3dict_t * dict, const char *file, float64 silprob, float64 fillpro
         k = sscanf(line, "%s %lf", wd, &prob);
         if ((k != 0) && (k != 2))
             E_FATAL("Bad input line: %s\n", line);
-        w = s3dict_wordid(dict, wd);
+        w = dict_wordid(dict, wd);
         if (NOT_S3WID(w) || (w < dict->filler_start)
             || (w > dict->filler_end))
             E_FATAL("%s not a filler word in the given dictionary\n",
@@ -143,7 +143,7 @@ fillpen_init(s3dict_t * dict, const char *file, float64 silprob, float64 fillpro
 
     /* Replicate fillpen values for alternative pronunciations */
     for (w = dict->filler_start; w <= dict->filler_end; w++) {
-        bw = s3dict_basewid(dict, w);
+        bw = dict_basewid(dict, w);
         if (bw != w)
             _fillpen->prob[w - dict->filler_start] =
                 _fillpen->prob[bw - dict->filler_start];

@@ -38,7 +38,7 @@
 #include <string.h>
 
 #include "strfuncs.h"
-#include "s3dict.h"
+#include "dict.h"
 
 
 #define DELIM	" \t\n"         /* Set of field separator characters */
@@ -51,7 +51,7 @@
 extern const char *const cmu6_lts_phone_table[];
 
 static s3cipid_t
-s3dict_ciphone_id(s3dict_t * d, const char *str)
+dict_ciphone_id(dict_t * d, const char *str)
 {
     if (d->nocase)
         return bin_mdef_ciphone_id_nocase(d->mdef, str);
@@ -61,7 +61,7 @@ s3dict_ciphone_id(s3dict_t * d, const char *str)
 
 
 const char *
-s3dict_ciphone_str(s3dict_t * d, s3wid_t wid, int32 pos)
+dict_ciphone_str(dict_t * d, s3wid_t wid, int32 pos)
 {
     assert(d != NULL);
     assert((wid >= 0) && (wid < d->n_word));
@@ -72,7 +72,7 @@ s3dict_ciphone_str(s3dict_t * d, s3wid_t wid, int32 pos)
 
 
 s3wid_t
-s3dict_add_word(s3dict_t * d, char *word, s3cipid_t * p, int32 np)
+dict_add_word(dict_t * d, char *word, s3cipid_t * p, int32 np)
 {
     int32 len;
     dictword_t *wordp;
@@ -92,7 +92,7 @@ s3dict_add_word(s3dict_t * d, char *word, s3cipid_t * p, int32 np)
     }
 
     wordp = d->word + d->n_word;
-    wordp->word = (char *) ckd_salloc(word);    /* Freed in s3dict_free */
+    wordp->word = (char *) ckd_salloc(word);    /* Freed in dict_free */
 
     /* Associate word string with d->n_word in hash table */
     if (hash_table_enter_int32(d->ht, wordp->word, d->n_word) != d->n_word) {
@@ -102,7 +102,7 @@ s3dict_add_word(s3dict_t * d, char *word, s3cipid_t * p, int32 np)
 
     /* Fill in word entry, and set defaults */
     if (p && (np > 0)) {
-        wordp->ciphone = (s3cipid_t *) ckd_malloc(np * sizeof(s3cipid_t));      /* Freed in s3dict_free */
+        wordp->ciphone = (s3cipid_t *) ckd_malloc(np * sizeof(s3cipid_t));      /* Freed in dict_free */
         memcpy(wordp->ciphone, p, np * sizeof(s3cipid_t));
         wordp->pronlen = np;
     }
@@ -114,7 +114,7 @@ s3dict_add_word(s3dict_t * d, char *word, s3cipid_t * p, int32 np)
     wordp->basewid = d->n_word;
 
     /* Determine base/alt wids */
-    if ((len = s3dict_word2basestr(word)) > 0) {
+    if ((len = dict_word2basestr(word)) > 0) {
 	int32 w;
 
         /* Truncated to a baseword string; find its ID */
@@ -138,7 +138,7 @@ s3dict_add_word(s3dict_t * d, char *word, s3cipid_t * p, int32 np)
 
 
 static int32
-s3dict_read(FILE * fp, s3dict_t * d)
+dict_read(FILE * fp, dict_t * d)
 {
     char line[16384], **wptr;
     s3cipid_t p[4096];
@@ -170,7 +170,7 @@ s3dict_read(FILE * fp, s3dict_t * d)
 
         /* Convert pronunciation string to CI-phone-ids */
         for (i = 1; i < nwd; i++) {
-            p[i - 1] = s3dict_ciphone_id(d, wptr[i]);
+            p[i - 1] = dict_ciphone_id(d, wptr[i]);
             if (NOT_S3CIPID(p[i - 1])) {
                 E_ERROR("Line %d: Bad ciphone: %s; word %s ignored\n",
                         lineno, wptr[i], wptr[0]);
@@ -179,10 +179,10 @@ s3dict_read(FILE * fp, s3dict_t * d)
         }
 
         if (i == nwd) {         /* All CI-phones successfully converted to IDs */
-            w = s3dict_add_word(d, wptr[0], p, nwd - 1);
+            w = dict_add_word(d, wptr[0], p, nwd - 1);
             if (NOT_S3WID(w))
                 E_ERROR
-                    ("Line %d: s3dict_add_word (%s) failed (duplicate?); ignored\n",
+                    ("Line %d: dict_add_word (%s) failed (duplicate?); ignored\n",
                      lineno, wptr[0]);
         }
     }
@@ -191,13 +191,13 @@ s3dict_read(FILE * fp, s3dict_t * d)
     return 0;
 }
 
-s3dict_t *
-s3dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
+dict_t *
+dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
 {
     FILE *fp, *fp2;
     int32 n;
     char line[1024];
-    s3dict_t *d;
+    dict_t *d;
     s3cipid_t sil;
     char const *dictfile = cmd_ln_str_r(config, "-dict");
     char const *fillerfile = cmd_ln_str_r(config, "-fdict");
@@ -232,7 +232,7 @@ s3dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
      * Allocate dict entries.  HACK!!  Allow some extra entries for words not in file.
      * Also check for type size restrictions.
      */
-    d = (s3dict_t *) ckd_calloc(1, sizeof(s3dict_t));       /* freed in s3dict_free() */
+    d = (dict_t *) ckd_calloc(1, sizeof(dict_t));       /* freed in dict_free() */
     d->refcnt = 1;
     d->max_words =
         (n + S3DICT_INC_SZ < MAX_S3WID) ? n + S3DICT_INC_SZ : MAX_S3WID;
@@ -240,7 +240,7 @@ s3dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
         E_FATAL("#Words in dictionaries (%d) exceeds limit (%d)\n", n,
                 MAX_S3WID);
 
-    d->word = (dictword_t *) ckd_calloc(d->max_words, sizeof(dictword_t));      /* freed in s3dict_free() */
+    d->word = (dictword_t *) ckd_calloc(d->max_words, sizeof(dictword_t));      /* freed in dict_free() */
     d->n_word = 0;
     d->mdef = bin_mdef_retain(mdef);
 
@@ -250,7 +250,7 @@ s3dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
 
     /* Digest main dictionary file */
     E_INFO("Reading main dictionary: %s\n", dictfile);
-    s3dict_read(fp, d);
+    dict_read(fp, d);
     fclose(fp);
     E_INFO("%d words read\n", d->n_word);
 
@@ -258,30 +258,30 @@ s3dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
     d->filler_start = d->n_word;
     if (fillerfile) {
         E_INFO("Reading filler dictionary: %s\n", fillerfile);
-        s3dict_read(fp2, d);
+        dict_read(fp2, d);
         fclose(fp2);
         E_INFO("%d words read\n", d->n_word - d->filler_start);
     }
     sil = bin_mdef_silphone(mdef);
-    if (s3dict_wordid(d, S3_START_WORD) == BAD_S3WID) {
-        s3dict_add_word(d, S3_START_WORD, &sil, 1);
+    if (dict_wordid(d, S3_START_WORD) == BAD_S3WID) {
+        dict_add_word(d, S3_START_WORD, &sil, 1);
     }
-    if (s3dict_wordid(d, S3_FINISH_WORD) == BAD_S3WID) {
-        s3dict_add_word(d, S3_FINISH_WORD, &sil, 1);
+    if (dict_wordid(d, S3_FINISH_WORD) == BAD_S3WID) {
+        dict_add_word(d, S3_FINISH_WORD, &sil, 1);
     }
-    if (s3dict_wordid(d, S3_SILENCE_WORD) == BAD_S3WID) {
-        s3dict_add_word(d, S3_SILENCE_WORD, &sil, 1);
+    if (dict_wordid(d, S3_SILENCE_WORD) == BAD_S3WID) {
+        dict_add_word(d, S3_SILENCE_WORD, &sil, 1);
     }
 
     d->filler_end = d->n_word - 1;
 
     /* Initialize distinguished word-ids */
-    d->startwid = s3dict_wordid(d, S3_START_WORD);
-    d->finishwid = s3dict_wordid(d, S3_FINISH_WORD);
-    d->silwid = s3dict_wordid(d, S3_SILENCE_WORD);
+    d->startwid = dict_wordid(d, S3_START_WORD);
+    d->finishwid = dict_wordid(d, S3_FINISH_WORD);
+    d->silwid = dict_wordid(d, S3_SILENCE_WORD);
 
     if ((d->filler_start > d->filler_end)
-        || (!s3dict_filler_word(d, d->silwid)))
+        || (!dict_filler_word(d, d->silwid)))
         E_FATAL("%s must occur (only) in filler dictionary\n",
                 S3_SILENCE_WORD);
 
@@ -292,7 +292,7 @@ s3dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
 
 
 s3wid_t
-s3dict_wordid(s3dict_t * d, const char *word)
+dict_wordid(dict_t * d, const char *word)
 {
     int32 w;
 
@@ -306,7 +306,7 @@ s3dict_wordid(s3dict_t * d, const char *word)
 
 
 s3wid_t
-_s3dict_basewid(s3dict_t * d, s3wid_t w)
+_dict_basewid(dict_t * d, s3wid_t w)
 {
     assert(d);
     assert((w >= 0) && (w < d->n_word));
@@ -316,7 +316,7 @@ _s3dict_basewid(s3dict_t * d, s3wid_t w)
 
 
 char *
-_s3dict_wordstr(s3dict_t * d, s3wid_t wid)
+_dict_wordstr(dict_t * d, s3wid_t wid)
 {
     assert(d);
     assert(IS_S3WID(wid) && (wid < d->n_word));
@@ -326,7 +326,7 @@ _s3dict_wordstr(s3dict_t * d, s3wid_t wid)
 
 
 s3wid_t
-_s3dict_nextalt(s3dict_t * d, s3wid_t wid)
+_dict_nextalt(dict_t * d, s3wid_t wid)
 {
     assert(d);
     assert(IS_S3WID(wid) && (wid < d->n_word));
@@ -336,12 +336,12 @@ _s3dict_nextalt(s3dict_t * d, s3wid_t wid)
 
 
 int
-s3dict_filler_word(s3dict_t * d, s3wid_t w)
+dict_filler_word(dict_t * d, s3wid_t w)
 {
     assert(d);
     assert((w >= 0) && (w < d->n_word));
 
-    w = s3dict_basewid(d, w);
+    w = dict_basewid(d, w);
     if ((w == d->startwid) || (w == d->finishwid))
         return 0;
     if ((w >= d->filler_start) && (w <= d->filler_end))
@@ -350,12 +350,12 @@ s3dict_filler_word(s3dict_t * d, s3wid_t w)
 }
 
 int
-s3dict_real_word(s3dict_t * d, s3wid_t w)
+dict_real_word(dict_t * d, s3wid_t w)
 {
     assert(d);
     assert((w >= 0) && (w < d->n_word));
 
-    w = s3dict_basewid(d, w);
+    w = dict_basewid(d, w);
     if ((w == d->startwid) || (w == d->finishwid))
         return 0;
     if ((w >= d->filler_start) && (w <= d->filler_end))
@@ -365,7 +365,7 @@ s3dict_real_word(s3dict_t * d, s3wid_t w)
 
 
 int32
-s3dict_word2basestr(char *word)
+dict_word2basestr(char *word)
 {
     int32 i, len;
 
@@ -383,15 +383,15 @@ s3dict_word2basestr(char *word)
     return -1;
 }
 
-s3dict_t *
-s3dict_retain(s3dict_t *d)
+dict_t *
+dict_retain(dict_t *d)
 {
     ++d->refcnt;
     return d;
 }
 
 int
-s3dict_free(s3dict_t * d)
+dict_free(dict_t * d)
 {
     int i;
     dictword_t *word;
@@ -421,9 +421,9 @@ s3dict_free(s3dict_t * d)
 }
 
 void
-s3dict_report(s3dict_t * d)
+dict_report(dict_t * d)
 {
-    E_INFO_NOFN("Initialization of s3dict_t, report:\n");
+    E_INFO_NOFN("Initialization of dict_t, report:\n");
     E_INFO_NOFN("Max word: %d\n", d->max_words);
     E_INFO_NOFN("No of word: %d\n", d->n_word);
     E_INFO_NOFN("\n");

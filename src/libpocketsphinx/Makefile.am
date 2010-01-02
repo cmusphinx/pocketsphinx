@@ -8,6 +8,7 @@ libpocketsphinx_la_SOURCES =			\
 	acmod.c					\
 	bin_mdef.c				\
 	blkarray_list.c				\
+	dict.c					\
 	dict2pid.c				\
 	fsg_history.c				\
 	fsg_lextree.c				\
@@ -25,7 +26,6 @@ libpocketsphinx_la_SOURCES =			\
 	ps_lattice.c				\
 	ps_mllr.c				\
 	s2_semi_mgau.c				\
-	s3dict.c				\
 	tmat.c					\
 	vector.c				\
 	pocketsphinx.c
@@ -36,6 +36,7 @@ noinst_HEADERS =				\
 	ngram_search.h				\
 	bin_mdef.h				\
 	blkarray_list.h				\
+	dict.h					\
 	dict2pid.h				\
 	fsg_history.h				\
 	fsg_lextree.h				\
@@ -53,7 +54,6 @@ noinst_HEADERS =				\
 	ps_lattice_internal.h			\
 	posixwin32.h				\
 	s2_semi_mgau.h				\
-	s3dict.h				\
 	s3types.h				\
 	tmat.h					\
 	vector.h

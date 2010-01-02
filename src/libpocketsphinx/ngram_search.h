@@ -361,7 +361,7 @@ typedef struct ngram_search_s ngram_search_t;
  */
 ps_search_t *ngram_search_init(cmd_ln_t *config,
                                acmod_t *acmod,
-                               s3dict_t *dict,
+                               dict_t *dict,
                                dict2pid_t *d2p);
 
 /**

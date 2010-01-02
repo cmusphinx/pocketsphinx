@@ -87,7 +87,7 @@ ngram_search_update_widmap(ngram_search_t *ngs)
     words = ckd_calloc(n_words, sizeof(*words));
     /* This will include alternates, again, that's okay since they aren't in the LM */
     for (i = 0; i < n_words; ++i)
-        words[i] = (const char *)s3dict_wordstr(ps_search_dict(ngs), i);
+        words[i] = (const char *)dict_wordstr(ps_search_dict(ngs), i);
     ngram_model_set_map_words(ngs->lmset, words, n_words);
     ckd_free(words);
 }
@@ -138,7 +138,7 @@ ngram_search_calc_beams(ngram_search_t *ngs)
 ps_search_t *
 ngram_search_init(cmd_ln_t *config,
 		  acmod_t *acmod,
-		  s3dict_t *dict,
+		  dict_t *dict,
                   dict2pid_t *d2p)
 {
     ngram_search_t *ngs;
@@ -160,14 +160,14 @@ ngram_search_init(cmd_ln_t *config,
     ngram_search_calc_beams(ngs);
 
     /* Allocate a billion different tables for stuff. */
-    ngs->word_chan = ckd_calloc(s3dict_size(dict),
+    ngs->word_chan = ckd_calloc(dict_size(dict),
                                 sizeof(*ngs->word_chan));
-    ngs->word_lat_idx = ckd_calloc(s3dict_size(dict),
+    ngs->word_lat_idx = ckd_calloc(dict_size(dict),
                                    sizeof(*ngs->word_lat_idx));
     ngs->zeroPermTab = ckd_calloc(bin_mdef_n_ciphone(acmod->mdef),
                                   sizeof(*ngs->zeroPermTab));
-    ngs->word_active = bitvec_alloc(s3dict_size(dict));
-    ngs->last_ltrans = ckd_calloc(s3dict_size(dict),
+    ngs->word_active = bitvec_alloc(dict_size(dict));
+    ngs->last_ltrans = ckd_calloc(dict_size(dict),
                                   sizeof(*ngs->last_ltrans));
 
     /* FIXME: All these structures need to be made dynamic with
@@ -185,7 +185,7 @@ ngram_search_init(cmd_ln_t *config,
     ++ngs->bp_table_idx; /* Make bptableidx[-1] valid */
 
     /* Allocate active word list array */
-    ngs->active_word_list = ckd_calloc_2d(2, s3dict_size(dict),
+    ngs->active_word_list = ckd_calloc_2d(2, dict_size(dict),
                                           sizeof(**ngs->active_word_list));
 
     /* Load language model(s) */
@@ -333,12 +333,12 @@ cache_bptable_paths(ngram_search_t *ngs, int32 bp)
     prev_bp = bp;
     w = be->wid;
 
-    while (s3dict_filler_word(ps_search_dict(ngs), w)) {
+    while (dict_filler_word(ps_search_dict(ngs), w)) {
         prev_bp = ngs->bp_table[prev_bp].bp;
         w = ngs->bp_table[prev_bp].wid;
     }
 
-    be->real_wid = s3dict_basewid(ps_search_dict(ngs), w);
+    be->real_wid = dict_basewid(ps_search_dict(ngs), w);
 
     prev_bp = ngs->bp_table[prev_bp].bp;
     be->prev_real_wid =
@@ -400,13 +400,13 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
 
         /* DICT2PID */
         /* Get diphone ID for final phone and number of ssids corresponding to it. */
-        be->last_phone = s3dict_last_phone(ps_search_dict(ngs),w);
-        if (s3dict_is_single_phone(ps_search_dict(ngs), w)) {
+        be->last_phone = dict_last_phone(ps_search_dict(ngs),w);
+        if (dict_is_single_phone(ps_search_dict(ngs), w)) {
             be->last2_phone = -1;
             rcsize = 1;
         }
         else {
-            be->last2_phone = s3dict_second_last_phone(ps_search_dict(ngs),w);
+            be->last2_phone = dict_second_last_phone(ps_search_dict(ngs),w);
             rcsize = dict2pid_rssid(ps_search_dict2pid(ngs),
                                     be->last_phone, be->last2_phone)->n_ssid;
         }
@@ -479,8 +479,8 @@ ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx)
     while (bp != NO_BP) {
         bptbl_t *be = &ngs->bp_table[bp];
         bp = be->bp;
-        if (s3dict_real_word(ps_search_dict(ngs), be->wid))
-            len += strlen(s3dict_basestr(ps_search_dict(ngs), be->wid)) + 1;
+        if (dict_real_word(ps_search_dict(ngs), be->wid))
+            len += strlen(dict_basestr(ps_search_dict(ngs), be->wid)) + 1;
     }
 
     ckd_free(base->hyp_str);
@@ -492,10 +492,10 @@ ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx)
         size_t len;
 
         bp = be->bp;
-        if (s3dict_real_word(ps_search_dict(ngs), be->wid)) {
-            len = strlen(s3dict_basestr(ps_search_dict(ngs), be->wid));
+        if (dict_real_word(ps_search_dict(ngs), be->wid)) {
+            len = strlen(dict_basestr(ps_search_dict(ngs), be->wid));
             c -= len;
-            memcpy(c, s3dict_basestr(ps_search_dict(ngs), be->wid), len);
+            memcpy(c, dict_basestr(ps_search_dict(ngs), be->wid), len);
             if (c > base->hyp_str) {
                 --c;
                 *c = ' ';
@@ -515,10 +515,10 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
 
     /* DICT2PID */
     /* Get pointer to array of triphones for final diphone. */
-    assert(!s3dict_is_single_phone(ps_search_dict(ngs), w));
+    assert(!dict_is_single_phone(ps_search_dict(ngs), w));
     rssid = dict2pid_rssid(ps_search_dict2pid(ngs),
-                           s3dict_last_phone(ps_search_dict(ngs),w),
-                           s3dict_second_last_phone(ps_search_dict(ngs),w));
+                           dict_last_phone(ps_search_dict(ngs),w),
+                           dict_second_last_phone(ps_search_dict(ngs),w));
     hmm = ngs->word_chan[w];
     if ((hmm == NULL) || (hmm_nonmpx_ssid(&hmm->hmm) != rssid->ssid[0])) {
         hmm = listelem_malloc(ngs->chan_alloc);
@@ -526,12 +526,12 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
         ngs->word_chan[w] = hmm;
 
         hmm->info.rc_id = 0;
-        hmm->ciphone = s3dict_last_phone(ps_search_dict(ngs),w);
+        hmm->ciphone = dict_last_phone(ps_search_dict(ngs),w);
         hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, rssid->ssid[0], hmm->ciphone);
         E_DEBUG(3,("allocated rc_id 0 ssid %d ciphone %d lc %d word %s\n",
                    rssid->ssid[0], hmm->ciphone,
-                   s3dict_second_last_phone(ps_search_dict(ngs),w),
-                   s3dict_wordstr(ps_search_dict(ngs),w)));
+                   dict_second_last_phone(ps_search_dict(ngs),w),
+                   dict_wordstr(ps_search_dict(ngs),w)));
     }
     for (i = 1; i < rssid->n_ssid; ++i) {
         if ((hmm->next == NULL) || (hmm_nonmpx_ssid(&hmm->next->hmm) != rssid->ssid[i])) {
@@ -541,12 +541,12 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
             hmm = thmm;
 
             hmm->info.rc_id = i;
-            hmm->ciphone = s3dict_last_phone(ps_search_dict(ngs),w);
+            hmm->ciphone = dict_last_phone(ps_search_dict(ngs),w);
             hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, rssid->ssid[i], hmm->ciphone);
             E_DEBUG(3,("allocated rc_id %d ssid %d ciphone %d lc %d word %s\n",
                        i, rssid->ssid[i], hmm->ciphone,
-                       s3dict_second_last_phone(ps_search_dict(ngs),w),
-                       s3dict_wordstr(ps_search_dict(ngs),w)));
+                       dict_second_last_phone(ps_search_dict(ngs),w),
+                       dict_wordstr(ps_search_dict(ngs),w)));
         }
         else
             hmm = hmm->next;
@@ -606,7 +606,7 @@ ngram_compute_seg_score(ngram_search_t *ngs, bptbl_t *be, float32 lwf,
     /* Otherwise, calculate lscr and ascr. */
     pbe = ngs->bp_table + be->bp;
     start_score = ngram_search_exit_score(ngs, pbe,
-                                 s3dict_first_phone(ps_search_dict(ngs),be->wid));
+                                 dict_first_phone(ps_search_dict(ngs),be->wid));
 
     /* FIXME: WORST_SCORE shouldn't propagate, but sometimes it
        does.  We cannot allow it to go any further because that
@@ -622,7 +622,7 @@ ngram_compute_seg_score(ngram_search_t *ngs, bptbl_t *be, float32 lwf,
     if (be->wid == ps_search_silence_wid(ngs)) {
         *out_lscr = ngs->silpen;
     }
-    else if (s3dict_filler_word(ps_search_dict(ngs), be->wid)) {
+    else if (dict_filler_word(ps_search_dict(ngs), be->wid)) {
         *out_lscr = ngs->fillpen;
     }
     else {
@@ -672,7 +672,7 @@ dump_bptable(ngram_search_t *ngs)
     E_INFO("Backpointer table (%d entries):\n", ngs->bpidx);
     for (i = 0; i < ngs->bpidx; ++i) {
         E_INFO_NOFN("%-5d %-10s start %-3d end %-3d score %-8d bp\n", /* %-3d history %08x\n", */
-                    i, s3dict_wordstr(ps_search_dict(ngs), ngs->bp_table[i].wid),
+                    i, dict_wordstr(ps_search_dict(ngs), ngs->bp_table[i].wid),
                     ngs->bp_table[i].bp == -1 ? 0 : 
                     ngs->bp_table[ngs->bp_table[i].bp].frame + 1,
                     ngs->bp_table[i].frame,
@@ -779,7 +779,7 @@ ngram_search_bp2itor(ps_seg_t *seg, int bp)
 
     be = &ngs->bp_table[bp];
     pbe = be->bp == -1 ? NULL : &ngs->bp_table[be->bp];
-    seg->word = s3dict_wordstr(ps_search_dict(ngs), be->wid);
+    seg->word = dict_wordstr(ps_search_dict(ngs), be->wid);
     seg->ef = be->frame;
     seg->sf = pbe ? pbe->frame + 1 : 0;
     seg->prob = 0; /* Bogus value... */
@@ -794,11 +794,11 @@ ngram_search_bp2itor(ps_seg_t *seg, int bp)
 
         /* Find ending path score of previous word. */
         start_score = ngram_search_exit_score(ngs, pbe,
-                                     s3dict_first_phone(ps_search_dict(ngs), be->wid));
+                                     dict_first_phone(ps_search_dict(ngs), be->wid));
         if (be->wid == ps_search_silence_wid(ngs)) {
             seg->lscr = ngs->silpen;
         }
-        else if (s3dict_filler_word(ps_search_dict(ngs), be->wid)) {
+        else if (dict_filler_word(ps_search_dict(ngs), be->wid)) {
             seg->lscr = ngs->fillpen;
         }
         else {
@@ -958,9 +958,9 @@ create_dag_nodes(ngram_search_t *ngs, ps_lattice_t *dag)
             continue;
 
         /* Skip if word not in LM */
-        if ((!s3dict_filler_word(ps_search_dict(ngs), wid))
+        if ((!dict_filler_word(ps_search_dict(ngs), wid))
             && (!ngram_model_set_known_wid(ngs->lmset,
-                                           s3dict_basewid(ps_search_dict(ngs), wid))))
+                                           dict_basewid(ps_search_dict(ngs), wid))))
             continue;
 
         /* See if bptbl entry <wid,sf> already in lattice */
@@ -1054,7 +1054,7 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
         return NULL;
     }
     E_WARN("</s> not found in last frame, using %s instead\n",
-           s3dict_basestr(ps_search_dict(ngs), ngs->bp_table[bestbp].wid));
+           dict_basestr(ps_search_dict(ngs), ngs->bp_table[bestbp].wid));
 
     /* Now find the node that corresponds to it. */
     for (node = dag->nodes; node; node = node->next) {
@@ -1064,7 +1064,7 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
 
     /* FIXME: This seems to happen a lot! */
     E_ERROR("Failed to find DAG node corresponding to %s\n",
-           s3dict_basestr(ps_search_dict(ngs), ngs->bp_table[bestbp].wid));
+           dict_basestr(ps_search_dict(ngs), ngs->bp_table[bestbp].wid));
     return NULL;
 }
 
@@ -1099,8 +1099,8 @@ ngram_search_lattice(ps_search_t *search)
     if ((dag->end = find_end_node(ngs, dag, ngs->bestpath_fwdtree_lw_ratio)) == NULL)
         goto error_out;
     E_INFO("lattice start node %s.%d end node %s.%d\n",
-           s3dict_wordstr(search->dict, dag->start->wid), dag->start->sf,
-           s3dict_wordstr(search->dict, dag->end->wid), dag->end->sf);
+           dict_wordstr(search->dict, dag->start->wid), dag->start->sf,
+           dict_wordstr(search->dict, dag->end->wid), dag->end->sf);
 
     ngram_compute_seg_score(ngs, ngs->bp_table + dag->end->lef, lwf,
                             &dag->final_node_ascr, &lscr);
@@ -1146,7 +1146,7 @@ ngram_search_lattice(ps_search_t *search)
                                     &ascr, &lscr);
             /* Remove context score calculated above (FIXME: just don't calculate it...) */
             score = (ngram_search_exit_score(ngs, bp_ptr,
-                                    s3dict_first_phone(ps_search_dict(ngs), to->wid))
+                                    dict_first_phone(ps_search_dict(ngs), to->wid))
                      - bp_ptr->score + ascr);
             if (score BETTER_THAN 0) {
                 /* Scores must be negative, or Bad Things will happen.
@@ -1175,7 +1175,7 @@ ngram_search_lattice(ps_search_t *search)
         node->fef = ngs->bp_table[node->fef].frame;
         node->lef = ngs->bp_table[node->lef].frame;
         /* Find base wid for nodes. */
-        node->basewid = s3dict_basewid(search->dict, node->wid);
+        node->basewid = dict_basewid(search->dict, node->wid);
     }
 
     /* Link nodes with alternate pronunciations at the same timepoint. */
@@ -1194,7 +1194,7 @@ ngram_search_lattice(ps_search_t *search)
     /* Minor hack: If the final node is a filler word and not </s>,
      * then set its base word ID to </s>, so that the language model
      * scores won't be screwed up. */
-    if (s3dict_filler_word(ps_search_dict(ngs), dag->end->wid))
+    if (dict_filler_word(ps_search_dict(ngs), dag->end->wid))
         dag->end->basewid = ps_search_finish_wid(ngs);
 
     /* Free nodes unreachable from dag->end and their links */

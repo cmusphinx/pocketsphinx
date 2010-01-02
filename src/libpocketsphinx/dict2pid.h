@@ -107,7 +107,7 @@
 
 #include "s3types.h"
 #include "bin_mdef.h"
-#include "s3dict.h"
+#include "dict.h"
 
 /** \file dict2pid.h
  * \brief Building triphones for a dictionary. 
@@ -187,7 +187,7 @@ typedef struct {
 
 /** Build the dict2pid structure for the given model/dictionary */
 dict2pid_t *dict2pid_build(bin_mdef_t *mdef,   /**< A  model definition*/
-                           s3dict_t *dict,       /**< An initialized dictionary */
+                           dict_t *dict,       /**< An initialized dictionary */
                            logmath_t *logmath
     );
 
@@ -202,7 +202,7 @@ int dict2pid_free(dict2pid_t *d2p /**< In: the d2p */
 void dict2pid_dump(FILE *fp,        /**< In: a file pointer */
                    dict2pid_t *d2p, /**< In: a dict2pid_t structure */
                    bin_mdef_t *mdef,    /**< In: a bin_mdef_t structure*/
-                   s3dict_t *dict     /**< In: a dictionary structure */
+                   dict_t *dict     /**< In: a dictionary structure */
     );
 
 /** Report a dict2pid data structure */
@@ -214,7 +214,7 @@ void dict2pid_report(dict2pid_t *d2p /**< In: a dict2pid_t structure */
 */
 int32 get_rc_nssid(dict2pid_t *d2p,  /**< In: a dict2pid */
 		   s3wid_t w,        /**< In: a wid */
-		   s3dict_t *dict      /**< In: a dictionary */
+		   dict_t *dict      /**< In: a dictionary */
     );
 
 /**
@@ -222,7 +222,7 @@ int32 get_rc_nssid(dict2pid_t *d2p,  /**< In: a dict2pid */
 */
 s3cipid_t* dict2pid_get_rcmap(dict2pid_t *d2p,  /**< In: a dict2pid */
 			      s3wid_t w,        /**< In: a wid */
-			      s3dict_t *dict      /**< In: a dictionary */
+			      dict_t *dict      /**< In: a dictionary */
     );
 
 #if 0

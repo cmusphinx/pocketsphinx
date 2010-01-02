@@ -80,7 +80,7 @@
 #include <logmath.h>
 
 #include "s3types.h"
-#include "s3dict.h"
+#include "dict.h"
 
 
 /** \file fillpen.h
@@ -96,7 +96,7 @@ extern "C" {
 
 
 typedef struct {
-    s3dict_t *dict;	/** Reference dictionary for which the filler word probabilities
+    dict_t *dict;	/** Reference dictionary for which the filler word probabilities
 			    are maintained in this structure */
     int32 *prob;	/** Filler word probability (in logs3 space, after
 			    langwt and inspen application) */
@@ -120,7 +120,7 @@ typedef struct {
  * filler words get fillprob.  As with the trigram LM, the resulting log-probabilities are
  * multiplied by a language weight and finally a word insertion penalty is tacked on.
  */
-fillpen_t *fillpen_init (s3dict_t *dict,	/**< In: Dictionary containing filler words */
+fillpen_t *fillpen_init (dict_t *dict,	/**< In: Dictionary containing filler words */
 			 const char *file,	/**< In: Filler word probabilities file, if any */
 			 float64 silprob,	/**< In: Default probability for silence word */
 			 float64 fillprob,	/**< In: Default probability for non-silence filler

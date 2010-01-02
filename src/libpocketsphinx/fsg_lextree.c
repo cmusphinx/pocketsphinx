@@ -146,7 +146,7 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
 
                 l = (fsg_link_t *) gnode_ptr(gn);
                 assert(l->wid >= 0);
-                dictwid = s3dict_wordid(lextree->dict,
+                dictwid = dict_wordid(lextree->dict,
                                         fsg_model_word_str(lextree->fsg, l->wid));
 
                 /*
@@ -162,9 +162,9 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
                     lextree->lc[d][silcipid] = 1;
                 }
                 else {
-                    len = s3dict_pronlen(lextree->dict, dictwid);
-                    lextree->rc[s][s3dict_pron(lextree->dict, dictwid, 0)] = 1;
-                    lextree->lc[d][s3dict_pron(lextree->dict, dictwid, len - 1)] = 1;
+                    len = dict_pronlen(lextree->dict, dictwid);
+                    lextree->rc[s][dict_pron(lextree->dict, dictwid, 0)] = 1;
+                    lextree->lc[d][dict_pron(lextree->dict, dictwid, len - 1)] = 1;
                 }
             }
         }
@@ -232,7 +232,7 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
  * For now, allocate the entire lextree statically.
  */
 fsg_lextree_t *
-fsg_lextree_init(fsg_model_t * fsg, s3dict_t *dict, dict2pid_t *d2p,
+fsg_lextree_init(fsg_model_t * fsg, dict_t *dict, dict2pid_t *d2p,
                  bin_mdef_t *mdef, hmm_context_t *ctx,
                  int32 wip, int32 pip)
 {
@@ -369,9 +369,9 @@ psubtree_add_trans(fsg_lextree_t *lextree,
 
     wid = fsg_link_wid(fsglink);
     assert(wid >= 0);           /* Cannot be a null transition */
-    dictwid = s3dict_wordid(lextree->dict,
+    dictwid = dict_wordid(lextree->dict,
                             fsg_model_word_str(lextree->fsg, wid));
-    pronlen = s3dict_pronlen(lextree->dict, dictwid);
+    pronlen = dict_pronlen(lextree->dict, dictwid);
     assert(pronlen >= 1);
 
     assert(lclist[0] >= 0);     /* At least one phonetic context provided */
@@ -381,9 +381,9 @@ psubtree_add_trans(fsg_lextree_t *lextree,
     pred = NULL;
 
     if (pronlen == 1) {         /* Single-phone word */
-        int ci = s3dict_first_phone(lextree->dict, dictwid);
+        int ci = dict_first_phone(lextree->dict, dictwid);
         /* Only non-filler words are mpx */
-        if (s3dict_filler_word(lextree->dict, dictwid)) {
+        if (dict_filler_word(lextree->dict, dictwid)) {
             /*
              * Left diphone ID for single-phone words already assumes SIL is right
              * context; only left contexts need to be handled.
@@ -411,7 +411,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                     pnode->next.fsglink = fsglink;
                     pnode->logs2prob =
                         fsg_link_logs2prob(fsglink) + lextree->wip + lextree->pip;
-                    pnode->ci_ext = s3dict_first_phone(lextree->dict, dictwid);
+                    pnode->ci_ext = dict_first_phone(lextree->dict, dictwid);
                     pnode->ppos = 0;
                     pnode->leaf = TRUE;
                     pnode->sibling = root;      /* All root nodes linked together */
@@ -456,9 +456,9 @@ psubtree_add_trans(fsg_lextree_t *lextree,
         rc_pnodelist = NULL;
 
         for (p = 0; p < pronlen; p++) {
-            int ci = s3dict_pron(lextree->dict, dictwid, p);
+            int ci = dict_pron(lextree->dict, dictwid, p);
             if (p == 0) {       /* Root phone, handle required left contexts */
-                rc = s3dict_pron(lextree->dict, dictwid, 1);
+                rc = dict_pron(lextree->dict, dictwid, 1);
                 for (i = 0; lclist[i] >= 0; i++) {
                     lc = lclist[i];
                     ssid = lextree->d2p->ldiph_lc[ci][rc][lc];
@@ -480,7 +480,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                         pnode->ctx = lextree->ctx;
                         pnode->logs2prob =
                             fsg_link_logs2prob(fsglink) + lextree->wip + lextree->pip;
-                        pnode->ci_ext = s3dict_first_phone(lextree->dict, dictwid);
+                        pnode->ci_ext = dict_first_phone(lextree->dict, dictwid);
                         pnode->ppos = 0;
                         pnode->leaf = FALSE;
                         pnode->sibling = root;  /* All root nodes linked together */
@@ -502,7 +502,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                 pnode = (fsg_pnode_t *) ckd_calloc(1, sizeof(fsg_pnode_t));
                 pnode->ctx = lextree->ctx;
                 pnode->logs2prob = lextree->pip;
-                pnode->ci_ext = s3dict_pron(lextree->dict, dictwid, p);
+                pnode->ci_ext = dict_pron(lextree->dict, dictwid, p);
                 pnode->ppos = p;
                 pnode->leaf = FALSE;
                 pnode->sibling = NULL;
@@ -526,7 +526,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                 xwdssid_t *rssid;
                 memset((void *) ssid_pnode_map, 0,
                        n_ci * sizeof(fsg_pnode_t *));
-                lc = s3dict_pron(lextree->dict, dictwid, p-1);
+                lc = dict_pron(lextree->dict, dictwid, p-1);
                 rssid = dict2pid_rssid(lextree->d2p, ci, lc);
 
                 for (i = 0; rclist[i] >= 0; i++) {
@@ -543,7 +543,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                                                        (fsg_pnode_t));
                         pnode->ctx = lextree->ctx;
                         pnode->logs2prob = lextree->pip;
-                        pnode->ci_ext = s3dict_pron(lextree->dict, dictwid, p);
+                        pnode->ci_ext = dict_pron(lextree->dict, dictwid, p);
                         pnode->ppos = p;
                         pnode->leaf = TRUE;
                         pnode->sibling = rc_pnodelist ?
