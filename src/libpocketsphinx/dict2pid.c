@@ -34,61 +34,6 @@
  * ====================================================================
  *
  */
-/*
- * dict2pid.c -- Triphones for dictionary
- * 
- * **********************************************
- * CMU ARPA Speech Project
- *
- * Copyright (c) 1999 Carnegie Mellon University.
- * ALL RIGHTS RESERVED.
- * **********************************************
- * 
- * HISTORY
- * $Log$
- * Revision 1.7  2006/02/22  21:05:16  arthchan2003
- * Merged from branch SPHINX3_5_2_RCI_IRII_BRANCH:
- * 
- * 1, Added logic to handle bothe composite and non composite left
- * triphone.  Composite left triphone's logic (the original one) is
- * tested thoroughly. The non-composite triphone (or full triphone) is
- * found to have bugs.  The latter is fended off from the users in the
- * library level.
- * 
- * 2, Fixed dox-doc.
- * 
- * Revision 1.6.4.5  2005/11/17 06:13:49  arthchan2003
- * Use compressed right context in expansion in triphones.
- *
- * Revision 1.6.4.4  2005/10/17 04:48:45  arthchan2003
- * Free resource correctly in dict2pid.
- *
- * Revision 1.6.4.3  2005/10/07 19:03:38  arthchan2003
- * Added xwdssid_t structure.  Also added compression routines.
- *
- * Revision 1.6.4.2  2005/09/25 19:13:31  arthchan2003
- * Added optional full triphone expansion support when building context phone mapping.
- *
- * Revision 1.6.4.1  2005/07/17 05:21:28  arthchan2003
- * Add panic signal to the code, also commentted ldiph_comsseq.
- *
- * Revision 1.6  2005/06/21 21:03:49  arthchan2003
- * 1, Introduced a reporting routine. 2, Fixed doyxgen documentation, 3, Added  keyword.
- *
- * Revision 1.4  2005/04/21 23:50:26  archan
- * Some more refactoring on the how reporting of structures inside kbcore_t is done, it is now 50% nice. Also added class-based LM test case into test-decode.sh.in.  At this moment, everything in search mode 5 is already done.  It is time to test the idea whether the search can really be used.
- *
- * Revision 1.3  2005/03/30 01:22:46  archan
- * Fixed mistakes in last updates. Add
- *
- * 
- * 14-Sep-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Added dict2pid_comsseq2sen_active().
- * 
- * 04-May-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Started.
- */
-
 
 #include <string.h>
 
@@ -96,8 +41,8 @@
 #include "hmm.h"
 
 
-/** \file dict2pid.c
- * \brief Implementation of dict2pid
+/**
+ * @file dict2pid.c - dictionary word to senone sequence mappings
  */
 
 void
@@ -316,15 +261,13 @@ free_compress_map(xwdssid_t ** tree, int32 n_ci)
     ckd_free(tree);
 }
 
-
-/* RAH 4.16.01 This code has several leaks that must be fixed */
 dict2pid_t *
 dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
 {
     dict2pid_t *dict2pid;
-    s3ssid_t *internal, **ldiph, **rdiph, *single;
+    s3ssid_t *internal;
+    bitvec_t *ldiph, *rdiph, *single;
     int32 pronlen;
-    hash_table_t *hs, *hp;
     int32 i, b, l, r, w, n, p;
 
     E_INFO("Building PID tables for dictionary\n");
@@ -350,11 +293,6 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
                                                        sizeof
                                                        (s3ssid_t));
 
-    /* FIXME: I think this should use dict->nocase */
-    hs = hash_table_new(mdef->n_ciphone * mdef->n_ciphone * mdef->n_emit_state,
-			HASH_CASE_YES);
-    hp = hash_table_new(mdef->n_ciphone * mdef->n_ciphone, HASH_CASE_YES);
-
     for (w = 0, n = 0; w < dict_size(dict); w++) {
         pronlen = dict_pronlen(dict, w);
         if (pronlen < 0)
@@ -365,39 +303,21 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
 
     internal = (s3ssid_t *) ckd_calloc(n, sizeof(s3ssid_t));
 
-    /* Temporary.  FIXME: Replace these with bitvectors. */
-    ldiph =
-        (s3ssid_t **) ckd_calloc_2d(mdef->n_ciphone, mdef->n_ciphone,
-                                    sizeof(s3ssid_t));
-    rdiph =
-        (s3ssid_t **) ckd_calloc_2d(mdef->n_ciphone, mdef->n_ciphone,
-                                    sizeof(s3ssid_t));
-    single = (s3ssid_t *) ckd_calloc(mdef->n_ciphone, sizeof(s3ssid_t));
-    for (b = 0; b < mdef->n_ciphone; b++) {
-        for (l = 0; l < mdef->n_ciphone; l++) {
-            for (r = 0; r < mdef->n_ciphone; r++) {
-                dict2pid->ldiph_lc[b][r][l] = BAD_S3SSID;
-                dict2pid->rdiph_rc[b][l][r] = BAD_S3SSID;
-            }
-            ldiph[b][l] = BAD_S3SSID;
-            rdiph[b][l] = BAD_S3SSID;
-        }
-        single[b] = BAD_S3SSID;
-    }
+    /* Track which diphones / ciphones have been seen. */
+    ldiph = bitvec_alloc(mdef->n_ciphone * mdef->n_ciphone);
+    rdiph = bitvec_alloc(mdef->n_ciphone * mdef->n_ciphone);
+    single = bitvec_alloc(mdef->n_ciphone);
 
     for (w = 0; w < dict_size(dict); w++) {
         dict2pid->internal[w] = internal;
         pronlen = dict_pronlen(dict, w);
 
         if (pronlen >= 2) {
-            /** This segments of code take care of the initialization of 
-                internal[0] and ldiph[b][r][l]
-	    */
             b = dict_pron(dict, w, 0);
             r = dict_pron(dict, w, 1);
-            if (NOT_S3SSID(ldiph[b][r])) {
-                /* Mark this as done (we will ignore the actual value) */
-                ldiph[b][r] = 0; /* see FIXME */
+            if (bitvec_is_clear(ldiph, b * mdef->n_ciphone + r)) {
+                /* Mark this as done */
+                bitvec_set(ldiph, b * mdef->n_ciphone + r);
 
                 /* Record all possible ssids for b(?,r) */
                 for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
@@ -430,9 +350,9 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
             */
             l = b;
             b = r;
-            if (NOT_S3SSID(rdiph[b][l])) {
-                /* Mark this as done (we will ignore the actual value) */
-                rdiph[b][l] = 0; /* See FIXME above */
+            if (bitvec_is_clear(rdiph, b * mdef->n_ciphone + l)) {
+                /* Mark this as done */
+                bitvec_set(rdiph, b * mdef->n_ciphone + l);
 
                 for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
                     p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
@@ -450,7 +370,7 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
             E_DEBUG(1,("Building tables for single phone word %s phone %d = %s\n",
                        dict_wordstr(dict, w), b, bin_mdef_ciphone_str(mdef, b)));
             /* Don't compress but build table directly */
-            if (NOT_S3SSID(single[b])) {
+            if (bitvec_is_clear(single, b)) {
                 for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
                     for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
                         p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
@@ -473,9 +393,7 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
                                    p, bin_mdef_pid2ssid(mdef, p)));
                     }
                 }
-                single[b] = dict2pid->lrdiph_rc[b]
-                    [bin_mdef_silphone(mdef)][bin_mdef_silphone(mdef)];
-                assert(IS_S3SSID(single[b]));
+                bitvec_set(single, b);
             }
             /* ssid goes into single, not internal... */
             internal[pronlen - 1] = BAD_S3SSID;
@@ -491,16 +409,13 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
         internal += pronlen;
     }
 
-    ckd_free_2d((void **) ldiph);
-    ckd_free_2d((void **) rdiph);
-    ckd_free((void *) single);
+    bitvec_free(ldiph);
+    bitvec_free(rdiph);
+    bitvec_free(single);
 
     /* Try to compress rdiph_rc into rdiph_rc_compressed */
     compress_right_context_tree(mdef, dict2pid);
     compress_left_right_context_tree(mdef, dict2pid);
-
-    hash_table_free(hs);
-    hash_table_free(hp);
 
     dict2pid_report(dict2pid);
     return dict2pid;
