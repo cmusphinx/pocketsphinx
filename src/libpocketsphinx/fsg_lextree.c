@@ -498,7 +498,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                 }
             }
             else if (p != pronlen - 1) {        /* Word internal phone */
-                ssid = lextree->d2p->internal[dictwid][p];
+                ssid = dict2pid_internal(lextree->d2p, dictwid, p);
                 pnode = (fsg_pnode_t *) ckd_calloc(1, sizeof(fsg_pnode_t));
                 pnode->ctx = lextree->ctx;
                 pnode->logs2prob = lextree->pip;

@@ -293,12 +293,13 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
                                                        sizeof
                                                        (s3ssid_t));
 
+    /* Count number of word-internal phones. */
     for (w = 0, n = 0; w < dict_size(dict); w++) {
         pronlen = dict_pronlen(dict, w);
         if (pronlen < 0)
             E_FATAL("Pronunciation-length(%s)= %d\n",
                     dict_wordstr(dict, w), pronlen);
-        n += pronlen;
+        n += (pronlen == 1 ? 0 : pronlen - 2);
     }
 
     internal = (s3ssid_t *) ckd_calloc(n, sizeof(s3ssid_t));
@@ -315,8 +316,9 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
         if (pronlen >= 2) {
             b = dict_pron(dict, w, 0);
             r = dict_pron(dict, w, 1);
+            /* Populate ldiph_lc */
             if (bitvec_is_clear(ldiph, b * mdef->n_ciphone + r)) {
-                /* Mark this as done */
+                /* Mark this diphone as done */
                 bitvec_set(ldiph, b * mdef->n_ciphone + r);
 
                 /* Record all possible ssids for b(?,r) */
@@ -328,9 +330,6 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
                 }
             }
 
-            /* Not used (FIXME: do not bother allocating it then!) */
-            internal[0] = BAD_S3SSID;
-
             /* Now find ssids for all the word internal triphones and
              * place them in internal[i].  */
             for (i = 1; i < pronlen - 1; i++) {
@@ -341,17 +340,14 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
                 p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
                                           (s3cipid_t) l, (s3cipid_t) r,
                                           WORD_POSN_INTERNAL);
-                internal[i] = bin_mdef_pid2ssid(mdef, p);
+                internal[i-1] = bin_mdef_pid2ssid(mdef, p);
             }
 
-            /** This part will take care of the initialization of 
-		internal[pronlen-1] and rdiph[b][l][r]. Notice that this 
-		is symmetric to the first part of the code. 
-            */
+            /* Populate rdiph_rc */
             l = b;
             b = r;
             if (bitvec_is_clear(rdiph, b * mdef->n_ciphone + l)) {
-                /* Mark this as done */
+                /* Mark this diphone as done */
                 bitvec_set(rdiph, b * mdef->n_ciphone + l);
 
                 for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
@@ -361,15 +357,12 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
                     dict2pid->rdiph_rc[b][l][r] = bin_mdef_pid2ssid(mdef, p);
                 }
             }
-
-            /* Also not used, see above FIXME */
-            internal[pronlen - 1] = BAD_S3SSID;
         }
         else if (pronlen == 1) {
             b = dict_pron(dict, w, 0);
             E_DEBUG(1,("Building tables for single phone word %s phone %d = %s\n",
                        dict_wordstr(dict, w), b, bin_mdef_ciphone_str(mdef, b)));
-            /* Don't compress but build table directly */
+            /* Populate lrdiph_rc (and also ldiph_lc, rdiph_rc if needed) */
             if (bitvec_is_clear(single, b)) {
                 for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
                     for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
@@ -395,18 +388,8 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
                 }
                 bitvec_set(single, b);
             }
-            /* ssid goes into single, not internal... */
-            internal[pronlen - 1] = BAD_S3SSID;
         }
-        else {
-            E_FATAL("panic: pronlen=0, what's going on?\n");
-        }
-
-        /*      E_INFO("internal[0] %d, internal[pronlen-1] %d\n", internal[0],internal[pronlen-1]); */
-        assert(internal[0] == BAD_S3SSID
-               && internal[pronlen - 1] == BAD_S3SSID);
-
-        internal += pronlen;
+        internal += (pronlen == 1 ? 0 : pronlen - 2);
     }
 
     bitvec_free(ldiph);

@@ -182,8 +182,11 @@ typedef struct {
 } dict2pid_t;
 
 /** Access macros; not designed for arbitrary use */
-#define dict2pid_internal(d,w,p)	((d)->internal[w][p]) /**< return internal dict2pid*/
-#define dict2pid_rssid(d,ci,lc) (&(d)->rssid[ci][lc])
+#define dict2pid_internal(d,w,p) ((d)->internal[w][p-1]) /**< return internal dict2pid */
+#define dict2pid_rssid(d,ci,lc)  (&(d)->rssid[ci][lc])
+#define dict2pid_ldiph_lc(d,b,r,l) ((d)->ldiph_lc[b][r][l])
+#define dict2pid_rdiph_rc(d,b,l,r) ((d)->rdiph_rc[b][l][r])
+#define dict2pid_lrdiph_rc(d,b,l,r) ((d)->lrdiph_rc[b][l][r])
 
 /** Build the dict2pid structure for the given model/dictionary */
 dict2pid_t *dict2pid_build(bin_mdef_t *mdef,   /**< A  model definition*/
