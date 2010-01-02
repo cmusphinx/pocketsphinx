@@ -651,8 +651,8 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
                     /* DICT2PID: This is where mpx ssids get introduced. */
                     /* Look up the ssid to use when entering this mpx triphone. */
                     hmm_mpx_ssid(&rhmm->hmm, 0) =
-                        d2p->ldiph_lc[rhmm->ciphone][rhmm->ci2phone]
-                        [dict_last_phone(dict, bp->wid)];
+                        dict2pid_ldiph_lc(d2p, rhmm->ciphone, rhmm->ci2phone,
+                                          dict_last_phone(dict, bp->wid));
                     assert(IS_S3SSID(hmm_mpx_ssid(&rhmm->hmm, 0)));
                     E_DEBUG(6,("ssid %d(%d,%d) = %d\n",
                                rhmm->ciphone, dict_last_phone(dict, bp->wid), rhmm->ci2phone,

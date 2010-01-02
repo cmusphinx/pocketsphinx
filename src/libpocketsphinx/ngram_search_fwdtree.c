@@ -1264,7 +1264,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
                 /* DICT2PID: Another place where mpx ssids are entered. */
                 /* Look up the ssid to use when entering this mpx triphone. */
                 hmm_mpx_ssid(&rhmm->hmm, 0) =
-                    d2p->ldiph_lc[rhmm->ciphone][rhmm->ci2phone][bestbp_rc_ptr->lc];
+                    dict2pid_ldiph_lc(d2p, rhmm->ciphone, rhmm->ci2phone, bestbp_rc_ptr->lc);
                 assert(hmm_mpx_ssid(&rhmm->hmm, 0) != BAD_SSID);
             }
         }
@@ -1317,8 +1317,8 @@ word_transition(ngram_search_t *ngs, int frame_idx)
                 /* DICT2PID: another place where mpx ssids are entered. */
                 /* Look up the ssid to use when entering this mpx triphone. */
                 hmm_mpx_ssid(&rhmm->hmm, 0) =
-                    d2p->ldiph_lc[rhmm->ciphone][rhmm->ci2phone]
-                    [dict_last_phone(dict, bpe->wid)];
+                    dict2pid_ldiph_lc(d2p, rhmm->ciphone, rhmm->ci2phone,
+                                      dict_last_phone(dict, bpe->wid));
                 assert(hmm_mpx_ssid(&rhmm->hmm, 0) != BAD_SSID);
             }
         }

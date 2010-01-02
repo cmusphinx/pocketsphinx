@@ -159,9 +159,6 @@ typedef struct {
 				   word-initial base x rc combinations in current vocabulary */
 
 
-    s3ssid_t ***rdiph_rc;	/**< For multi-phone words, [base][lc][rc] -> ssid; filled out for
-				   word-final base x lc combinations in current vocabulary */
-
     xwdssid_t **rssid;          /**< Right context state sequence id table 
                                    First dimension: base phone,
                                    Second dimension: left context. 
@@ -185,7 +182,6 @@ typedef struct {
 #define dict2pid_internal(d,w,p) ((d)->internal[w][p-1]) /**< return internal dict2pid */
 #define dict2pid_rssid(d,ci,lc)  (&(d)->rssid[ci][lc])
 #define dict2pid_ldiph_lc(d,b,r,l) ((d)->ldiph_lc[b][r][l])
-#define dict2pid_rdiph_rc(d,b,l,r) ((d)->rdiph_rc[b][l][r])
 #define dict2pid_lrdiph_rc(d,b,l,r) ((d)->lrdiph_rc[b][l][r])
 
 /** Build the dict2pid structure for the given model/dictionary */

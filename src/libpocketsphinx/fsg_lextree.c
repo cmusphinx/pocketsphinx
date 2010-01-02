@@ -392,7 +392,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
 
             for (i = 0; lclist[i] >= 0; i++) {
                 lc = lclist[i];
-                ssid = lextree->d2p->lrdiph_rc[ci][lc][silcipid];
+                ssid = dict2pid_lrdiph_rc(lextree->d2p, ci, lc, silcipid);
                 /* Check if this ssid already allocated for some other context */
                 for (gn = lc_pnodelist; gn; gn = gnode_next(gn)) {
                     pnode = (fsg_pnode_t *) gnode_ptr(gn);

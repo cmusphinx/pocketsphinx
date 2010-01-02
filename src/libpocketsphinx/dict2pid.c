@@ -78,7 +78,8 @@ compress_table(s3ssid_t * uncomp_tab, s3ssid_t * com_tab,
 
 
 static void
-compress_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p)
+compress_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p,
+                            s3ssid_t ***rdiph_rc)
 {
     int32 n_ci;
     int32 b, l, r;
@@ -91,7 +92,6 @@ compress_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p)
     tmpssid = ckd_calloc(n_ci, sizeof(s3ssid_t));
     tmpcimap = ckd_calloc(n_ci, sizeof(s3cipid_t));
 
-    assert(d2p->rdiph_rc);
     d2p->rssid =
         (xwdssid_t **) ckd_calloc(mdef->n_ciphone, sizeof(xwdssid_t *));
 
@@ -102,7 +102,7 @@ compress_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p)
 
         for (l = 0; l < n_ci; l++) {
 
-            rmap = d2p->rdiph_rc[b][l];
+            rmap = rdiph_rc[b][l];
 
             compress_table(rmap, tmpssid, tmpcimap, mdef->n_ciphone);
 
@@ -128,11 +128,8 @@ compress_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p)
         }
     }
 
-    /* Try to compress lrdiph_rc into lrdiph_rc_compressed */
     ckd_free(tmpssid);
     ckd_free(tmpcimap);
-
-
 }
 
 static void
@@ -265,7 +262,7 @@ dict2pid_t *
 dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
 {
     dict2pid_t *dict2pid;
-    s3ssid_t *internal;
+    s3ssid_t *internal, ***rdiph_rc;
     bitvec_t *ldiph, *rdiph, *single;
     int32 pronlen;
     int32 i, b, l, r, w, n, p;
@@ -282,7 +279,8 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
     dict2pid->ldiph_lc =
         (s3ssid_t ***) ckd_calloc_3d(mdef->n_ciphone, mdef->n_ciphone,
                                      mdef->n_ciphone, sizeof(s3ssid_t));
-    dict2pid->rdiph_rc =
+    /* Only used internally to generate rssid */
+    rdiph_rc =
         (s3ssid_t ***) ckd_calloc_3d(mdef->n_ciphone, mdef->n_ciphone,
                                      mdef->n_ciphone, sizeof(s3ssid_t));
 
@@ -354,7 +352,7 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
                     p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
                                               (s3cipid_t) l, (s3cipid_t) r,
                                               WORD_POSN_END);
-                    dict2pid->rdiph_rc[b][l][r] = bin_mdef_pid2ssid(mdef, p);
+                    rdiph_rc[b][l][r] = bin_mdef_pid2ssid(mdef, p);
                 }
             }
         }
@@ -376,7 +374,7 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
                             dict2pid->ldiph_lc[b][r][l]
                                 = bin_mdef_pid2ssid(mdef, p);
                         if (l == bin_mdef_silphone(mdef))
-                            dict2pid->rdiph_rc[b][l][r]
+                            rdiph_rc[b][l][r]
                                 = bin_mdef_pid2ssid(mdef, p);
                         assert(IS_S3SSID(bin_mdef_pid2ssid(mdef, p)));
                         E_DEBUG(2,("%s(%s,%s) => %d / %d\n",
@@ -397,8 +395,10 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
     bitvec_free(single);
 
     /* Try to compress rdiph_rc into rdiph_rc_compressed */
-    compress_right_context_tree(mdef, dict2pid);
+    compress_right_context_tree(mdef, dict2pid, rdiph_rc);
     compress_left_right_context_tree(mdef, dict2pid);
+
+    ckd_free_3d(rdiph_rc);
 
     dict2pid_report(dict2pid);
     return dict2pid;
@@ -421,10 +421,6 @@ dict2pid_free(dict2pid_t * d2p)
 
     if (d2p->ldiph_lc)
         ckd_free_3d((void ***) d2p->ldiph_lc);
-
-
-    if (d2p->rdiph_rc)
-        ckd_free_3d((void ***) d2p->rdiph_rc);
 
     if (d2p->lrdiph_rc)
         ckd_free_3d((void ***) d2p->lrdiph_rc);
