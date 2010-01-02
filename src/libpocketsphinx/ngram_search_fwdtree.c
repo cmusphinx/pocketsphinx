@@ -402,7 +402,7 @@ ngram_fwdtree_deinit(ngram_search_t *ngs)
     }
     if (ngs->rhmm_1ph) {
         for (i = w = 0; w < n_words; ++w) {
-            if (s3dict_pronlen(ps_search_dict(ngs), w) != 1)
+            if (!s3dict_is_single_phone(ps_search_dict(ngs), w))
                 continue;
             hmm_deinit(&ngs->rhmm_1ph[i].hmm);
             ++i;
@@ -968,7 +968,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
             }
             if (k > 0) {
                 assert(bitvec_is_clear(ngs->word_active, w));
-                assert(s3dict_pronlen(ps_search_dict(ngs), w) > 1);
+                assert(!s3dict_is_single_phone(ps_search_dict(ngs), w));
                 *(nawl++) = w;
                 bitvec_set(ngs->word_active, w);
             }
