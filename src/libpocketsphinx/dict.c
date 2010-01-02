@@ -305,36 +305,6 @@ dict_wordid(dict_t * d, const char *word)
 }
 
 
-s3wid_t
-_dict_basewid(dict_t * d, s3wid_t w)
-{
-    assert(d);
-    assert((w >= 0) && (w < d->n_word));
-
-    return (d->word[w].basewid);
-}
-
-
-char *
-_dict_wordstr(dict_t * d, s3wid_t wid)
-{
-    assert(d);
-    assert(IS_S3WID(wid) && (wid < d->n_word));
-
-    return (d->word[wid].word);
-}
-
-
-s3wid_t
-_dict_nextalt(dict_t * d, s3wid_t wid)
-{
-    assert(d);
-    assert(IS_S3WID(wid) && (wid < d->n_word));
-
-    return (d->word[wid].alt);
-}
-
-
 int
 dict_filler_word(dict_t * d, s3wid_t w)
 {

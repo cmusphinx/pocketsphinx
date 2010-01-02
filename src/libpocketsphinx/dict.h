@@ -166,24 +166,6 @@ const char *dict_ciphone_str(dict_t *d,	/**< In: Dictionary to look up */
 #define S3_SILENCE_WORD		"<sil>"
 #define S3_UNKNOWN_WORD		"<UNK>"
 
-/* Function versions of some of the above macros; note the leading underscore. */
-
-/**
- * Return base word id for given word id w (which may be itself).  w must be valid.
- */
-s3wid_t _dict_basewid(dict_t *d, s3wid_t w);
-
-/**
- * Return word string for given word id, which must be valid.
- */
-char *_dict_wordstr(dict_t *d, s3wid_t wid);
-
-/**
- * Return the next alternative word id for the given word id, which must be valid.
- * The returned id may be BAD_S3WID if there is none.
- */
-s3wid_t _dict_nextalt(dict_t *d, s3wid_t wid);
-
 /**
  * If the given word contains a trailing "(....)" (i.e., a Sphinx-II style alternative
  * pronunciation specification), strip that trailing portion from it.  Note that the given
