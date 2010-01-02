@@ -98,193 +98,7 @@
 
 /** \file dict2pid.c
  * \brief Implementation of dict2pid
- * 
- * A general remark, notice "comsseq" sometimes means compressed
- * sequence.  It should be understood as differnet thing as
- * composite in the source code.
  */
-
-/**
- * Build a glist of triphone senone-sequence IDs (ssids) derivable from [b][r] at the word
- * begin position.  If no triphone found in mdef, include the ssid for basephone b.
- * Return the generated glist.
- */
-static glist_t
-ldiph_comsseq(bin_mdef_t * mdef,                /**< a model definition*/
-              int32 b,                  /**< base phone */
-              int32 r                   /**< right context */
-    )
-{
-    int32 l, p, ssid;
-    glist_t g;
-
-    g = NULL;
-    E_DEBUG(2,("%s(%s,?):",
-               bin_mdef_ciphone_str(mdef, b),
-               bin_mdef_ciphone_str(mdef, r)));
-    for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
-        p = bin_mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
-                          (s3cipid_t) r, WORD_POSN_BEGIN);
-
-        if (IS_S3PID(p)) {
-            gnode_t *gn;
-            ssid = bin_mdef_pid2ssid(mdef, p);
-            for (gn = g; gn; gn = gnode_next(gn))
-                if (gnode_int32(gn) == ssid)
-                    break;
-            if (gn == NULL) {
-                g = glist_add_int32(g, ssid);
-                E_DEBUGCONT(2,(" %d", ssid));
-            }
-        }
-    }
-    if (g == NULL) {
-        g = glist_add_int32(g, bin_mdef_pid2ssid(mdef, b));
-        E_DEBUGCONT(2,(" %d", bin_mdef_pid2ssid(mdef, b)));
-    }
-    E_DEBUGCONT(2,("\n"));
-
-    return g;
-}
-
-
-/**
- * Build a glist of triphone senone-sequence IDs (ssids) derivable from [r][b] at the word
- * end position.  If no triphone found in mdef, include the ssid for basephone b.
- * Return the generated glist.
- */
-static glist_t
-rdiph_comsseq(bin_mdef_t * mdef, int32 b, int32 l)
-{
-    int32 r, p, ssid;
-    glist_t g;
-
-    g = NULL;
-    for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
-        p = bin_mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
-                          (s3cipid_t) r, WORD_POSN_END);
-
-        if (IS_S3PID(p)) {
-            gnode_t *gn;
-            ssid = bin_mdef_pid2ssid(mdef, p);
-            for (gn = g; gn; gn = gnode_next(gn))
-                if (gnode_int32(gn) == ssid)
-                    break;
-            if (gn == NULL)
-                g = glist_add_int32(g, ssid);
-        }
-    }
-    if (!g)
-        g = glist_add_int32(g, bin_mdef_pid2ssid(mdef, b));
-
-    return g;
-}
-
-
-/**
- * Build a glist of triphone senone-sequence IDs (ssids) derivable from [b] as a single
- * phone word.  If no triphone found in mdef, include the ssid for basephone b.
- * Return the generated glist.
- */
-static glist_t
-single_comsseq(bin_mdef_t * mdef, int32 b)
-{
-    int32 l, r, p, ssid;
-    glist_t g;
-
-    g = NULL;
-    for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
-        for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
-            p = bin_mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
-                              (s3cipid_t) r, WORD_POSN_SINGLE);
-
-            if (IS_S3PID(p)) {
-                gnode_t *gn;
-                ssid = bin_mdef_pid2ssid(mdef, p);
-                for (gn = g; gn; gn = gnode_next(gn))
-                    if (gnode_int32(gn) == ssid)
-                        break;
-                if (gn == NULL)
-                    g = glist_add_int32(g, ssid);
-            }
-        }
-    }
-    if (!g)
-        g = glist_add_int32(g, bin_mdef_pid2ssid(mdef, b));
-
-    return g;
-}
-
-
-/**
- * Build a glist of triphone senone-sequence IDs (ssids) derivable from [b] as a single
- * phone word, with a given left context l.  If no triphone found in mdef, include the ssid
- * for basephone b.  Return the generated glist.
- */
-static glist_t
-single_lc_comsseq(bin_mdef_t * mdef, int32 b, int32 l)
-{
-    int32 r, p, ssid;
-    glist_t g;
-
-    g = NULL;
-    for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
-        p = bin_mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
-                          (s3cipid_t) r, WORD_POSN_SINGLE);
-
-        if (IS_S3PID(p)) {
-            gnode_t *gn;
-            ssid = bin_mdef_pid2ssid(mdef, p);
-            for (gn = g; gn; gn = gnode_next(gn))
-                if (gnode_int32(gn) == ssid)
-                    break;
-            if (gn == NULL)
-                g = glist_add_int32(g, ssid);
-        }
-    }
-    if (!g)
-        g = glist_add_int32(g, bin_mdef_pid2ssid(mdef, b));
-
-    return g;
-}
-
-#if 0
-/*Comment to make compiler happy.  Though, please make sure it is in-sync with single_lc_comsseq*/
-/**
- * Build a glist of triphone senone-sequence IDs (ssids) derivable
- * from [b] as a single phone word, with a given right context r.  If
- * no triphone found in mdef, include the ssid for basephone b.
- * Return the generated glist.
- */
-
-static glist_t
-single_rc_comsseq(bin_mdef_t * mdef, int32 b, int32 r)
-{
-    int32 l, p, ssid;
-    glist_t g;
-
-    g = NULL;
-    for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
-        p = bin_mdef_phone_id(mdef, (s3cipid_t) b, (s3cipid_t) l,
-                          (s3cipid_t) r, WORD_POSN_SINGLE);
-
-        if (IS_S3PID(p)) {
-            gnode_t *gn;
-            ssid = bin_mdef_pid2ssid(mdef, p);
-            for (gn = g; gn; gn = gnode_next(gn))
-                if (gnode_int32(gn) == ssid)
-                    break;
-            if (gn == NULL)
-                g = glist_add_int32(g, ssid);
-        }
-    }
-    if (!g)
-        g = glist_add_int32(g, bin_mdef_pid2ssid(mdef, b));
-
-    return g;
-}
-#endif
-
 
 void
 compress_table(s3ssid_t * uncomp_tab, s3ssid_t * com_tab,
@@ -511,12 +325,7 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, logmath_t *logmath)
     s3ssid_t *internal, **ldiph, **rdiph, *single;
     int32 pronlen;
     hash_table_t *hs, *hp;
-    glist_t g;
-    gnode_t *gn;
-    s3senid_t *sen;
-    hash_entry_t *he;
-    int32 *cslen;
-    int32 i, j, b, l, r, w, n, p;
+    int32 i, b, l, r, w, n, p;
 
     E_INFO("Building PID tables for dictionary\n");
     assert(mdef);
@@ -707,8 +516,6 @@ dict2pid_retain(dict2pid_t *d2p)
 int
 dict2pid_free(dict2pid_t * d2p)
 {
-    int32 i;
-
     if (d2p == NULL)
         return 0;
     if (--d2p->refcount > 0)

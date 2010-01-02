@@ -145,8 +145,6 @@ s3dict_read(FILE * fp, s3dict_t * d)
     int32 lineno, nwd;
     s3wid_t w;
     int32 i, maxwd;
-    s3cipid_t ci;
-    int32 ph;
 
     maxwd = 4092;
     wptr = (char **) ckd_calloc(maxwd, sizeof(char *)); /* Freed below */
@@ -187,35 +185,6 @@ s3dict_read(FILE * fp, s3dict_t * d)
                     ("Line %d: s3dict_add_word (%s) failed (duplicate?); ignored\n",
                      lineno, wptr[0]);
         }
-    }
-
-
-    if (d->lts_rules) {
-
-#if 1                           /* Until we allow user to put in a mapping of the phoneset from LTS to the phoneset from mdef, 
-                                   The checking will intrusively stop the recognizer.  */
-
-        for (ci = 0; ci < bin_mdef_n_ciphone(d->mdef); ci++) {
-
-            if (!bin_mdef_is_fillerphone(d->mdef, ci)) {
-                for (ph = 0; cmu6_lts_phone_table[ph] != NULL; ph++) {
-
-                    /*        E_INFO("%s %s\n",cmu6_lts_phone_table[ph],mdef_ciphone_str(d->mdef,ci)); */
-                    if (!strcmp
-                        (cmu6_lts_phone_table[ph],
-                         bin_mdef_ciphone_str(d->mdef, ci)))
-                        break;
-                }
-                if (cmu6_lts_phone_table[ph] == NULL) {
-                    E_FATAL
-                        ("A phone in the model definition doesn't appear in the letter to sound ",
-                         "rules. \n This is case we don't recommend user to ",
-                         "use the built-in LTS. \n Please kindly turn off ",
-                         "-lts_mismatch\n");
-                }
-            }
-        }
-#endif
     }
     ckd_free(wptr);
 

@@ -34,73 +34,6 @@
  * ====================================================================
  *
  */
-/*
- * dict.h -- Pronunciation dictionary structures
- *
- * **********************************************
- * CMU ARPA Speech Project
- *
- * Copyright (c) 1997 Carnegie Mellon University.
- * ALL RIGHTS RESERVED.
- * **********************************************
- * 
- * HISTORY
- * $Log$
- * Revision 1.1  2006/04/05  20:27:30  dhdfu
- * A Great Reorganzation of header files and executables
- * 
- * Revision 1.10  2006/02/22 20:55:06  arthchan2003
- * Merged from branch SPHINX3_5_2_RCI_IRII_BRANCH:
- *
- * 1, Added Letter-to-sound LTS rule, dict_init will only specify
- * d->lts_rules to be true if the useLTS is specified.  Only if
- * d->lts_rules is specified, the LTS logic will be used. The code safe
- * guarded the case when a phone in mdef doesn't appear in LTS, in that
- * case, the code will force exit.
- *
- * 2, The LTS logic is only used as a reserved measure.  By default, it
- * is not turned on.  See also the comment in kbcore.c and the default
- * parameters in revision 1.3 cmdln_macro.h . We added it because we have
- * this functionality in SphinxTrain.
- *
- * Revision 1.9.4.4  2005/10/07 18:58:04  arthchan2003
- * Added macro for getting second last phone for a word.
- *
- * Revision 1.9.4.3  2005/09/25 19:12:09  arthchan2003
- * Added optional LTS support for the dictionary.
- *
- * Revision 1.9.4.2  2005/09/18 01:15:45  arthchan2003
- * Add one doxy-doc in dict.h
- *
- * Revision 1.9.4.1  2005/07/05 06:55:26  arthchan2003
- * Fixed dox-doc.
- *
- * Revision 1.9  2005/06/21 21:04:36  arthchan2003
- * 1, Introduced a reporting routine. 2, Fixed doyxgen documentation, 3, Added  keyword.
- *
- * Revision 1.5  2005/06/13 04:02:57  archan
- * Fixed most doxygen-style documentation under libs3decoder.
- *
- * Revision 1.4  2005/04/21 23:50:26  archan
- * Some more refactoring on the how reporting of structures inside kbcore_t is done, it is now 50% nice. Also added class-based LM test case into test-decode.sh.in.  At this moment, everything in search mode 5 is already done.  It is time to test the idea whether the search can really be used.
- *
- * Revision 1.3  2005/03/30 01:22:46  archan
- * Fixed mistakes in last updates. Add
- *
- * 19-Apr-01    Ricky Houghton, added code for freeing memory that is allocated internally.
- * 
- * 23-Apr-98	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Made usage of mdef optional.  If no mdef is specified while loading
- *		a dictionary, it maintains the needed CI phone information internally.
- * 		Added dict_ciphone_str().
- * 
- * 02-Jul-97	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added startwid, finishwid, silwid to dict_t structure.
- * 
- * 07-Feb-97	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Created from previous Sphinx-3 version.
- */
-
 
 #ifndef _S3_DICT_H_
 #define _S3_DICT_H_
@@ -112,7 +45,6 @@
 #include <s3types.h>
 
 #include "bin_mdef.h"
-#include "lts.h" 
 
 #define S3DICT_INC_SZ 4096
 
@@ -153,8 +85,6 @@ typedef struct {
     s3wid_t finishwid;	/**< FOR INTERNAL-USE ONLY */
     s3wid_t silwid;	/**< FOR INTERNAL-USE ONLY */
     int nocase;
-  
-    lts_t *lts_rules;     /**< The LTS rules */
 } s3dict_t;
 
 

@@ -14,8 +14,6 @@ libpocketsphinx_la_SOURCES =			\
 	fsg_search.c				\
 	hmm.c					\
 	kdtree.c				\
-	lts.c					\
-	cmu6_lts_rules.c			\
 	mdef.c					\
 	ms_gauden.c				\
 	ms_mgau.c				\
@@ -44,8 +42,6 @@ noinst_HEADERS =				\
 	fsg_search_internal.h			\
 	hmm.h					\
 	kdtree.h				\
-	lts.h					\
-	cmu6_lts_rules.h			\
 	mdef.h					\
 	ms_gauden.h				\
 	ms_mgau.h				\
