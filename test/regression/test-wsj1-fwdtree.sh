@@ -6,7 +6,7 @@ bn=`basename $0 .sh`
 
 echo "Test: $bn"
 run_program pocketsphinx_batch \
-    -hmm $model/hmm/wsj3 \
+    -hmm $model/hmm/wsj1 \
     -lm $model/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP \
     -dict $model/lm/cmudict.0.6d \
     -ctl $data/wsj/test5k.s1.ctl \
