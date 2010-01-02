@@ -14,9 +14,11 @@ main(int argc, char *argv[])
 	s3dict_t *dict;
 
 	TEST_ASSERT(mdef = bin_mdef_read(NULL, MODELDIR "/hmm/wsj1/mdef"));
-	TEST_ASSERT(dict = s3dict_init(mdef, MODELDIR "/lm/cmudict.0.6d",
-				       MODELDIR "/hmm/wsj1/noisedict",
-				       TRUE, TRUE));
+	TEST_ASSERT(dict = s3dict_init(cmd_ln_init(NULL, NULL, FALSE,
+						   "-dict", MODELDIR "/lm/cmudict.0.6d",
+						   "-fdict", MODELDIR "/hmm/wsj1/noisedict",
+						   "-dictcase", "no", NULL),
+				       mdef));
 
 	printf("Word ID (CARNEGIE) = %d\n",
 	       s3dict_wordid(dict, "CARNEGIE"));

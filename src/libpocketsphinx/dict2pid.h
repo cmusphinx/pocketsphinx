@@ -117,49 +117,7 @@
  * get their left and right contexts, respectively, from other
  * words.  For single-phone words, both its contexts are from other
  * words, simultaneously.  As these words are not known beforehand,
- * life gets complicated.  In this implementation, when we do not
- * wish to distinguish between distinct contexts, we use a COMPOSITE
- * triphone (a bit like BBN's fast-match implementation), by
- * clubbing together all possible contexts.
- * 
- * There are 3 cases:
- *
- *   1. Internal phones, and boundary phones without any specific
- * context, in each word.  The boundary phones are modelled using
- * composite phones, internal ones using ordinary phones.
- *
- *   2. The first phone of a multi-phone word, for a specific
- *history (i.e., in a 2g/3g/4g...  tree) has known left and right
- *contexts.  The possible left contexts are limited to the possible
- *last phones of the history.  So it can be modelled separately,
- *efficiently, as an ordinary triphone.
- *
- *   3. The one phone in a single-phone word, for a specific history
- * (i.e., in a 2g/3g/4g...  tree) has a known left context, but
- * unknown right context.  It is modelled using a composite
- * triphone.  (Note that right contexts are always composite, left
- * contexts are composite only in the unigram tree.)
- * 
- * A composite triphone is formed as follows.  (NOTE: this assumes
- * that all CIphones/triphones have the same HMM topology,
- * specifically, no. of states.)  A composite triphone represents a
- * situation where either the left or the right context (or both)
- * for a given base phone is unknown.  That is, it represents the
- * set of all possible ordinary triphones derivable from * the
- * unkown context(s).  Let us call this set S.  It is modelled using
- * the same HMM topology * as the ordinary triphones, but with
- * COMPOSITE states.  A composite state (in a given position * in
- * the HMM state topology) is the set of states (senones) at that
- * position derived from S.
- * 
- * Actually, we generally deal with COMPOSITE SENONE-SEQUENCES
- * rather than COMPOSITE PHONES.  The former are compressed forms of
- * the latter, by virtue of state sharing among phones.  (See
- * mdef.h.)
- * 
- * In 3.6, the composite triphone will only be build when -composite
- * 1 (default) is specified.  Other than that, full triphone
- * expansion will be carried out in run-time
+ * life gets complicated.
  */
 
 #ifdef __cplusplus
@@ -216,30 +174,8 @@ typedef struct {
     xwdssid_t **lrssid;          /**< Left-Right context state sequence id table 
                                     First dimension: base phone,
                                     Second dimension: left context. 
-
                                  */
 
-
-    int32 is_composite;         /**< Whether we will build composite triphone. If yes, the 
-                                   structure will be in composite triphone mode, single_lc, 
-                                   comstate, comsseq and comwt will be initialized. Otherwise, the code
-                                   will be in normal triphone mode.  The parameters will be left NULL. 
-                                */
-
-    s3ssid_t **single_lc;	/**< For single phone words, [base][lc] -> composite ssid; filled
-				   out for single phone words in current vocabulary */
-    
-    s3senid_t **comstate;	/**< comstate[i] = BAD_S3SENID terminated set of senone IDs in
-				   the i-th composite state */
-    s3senid_t **comsseq;	/**< comsseq[i] = sequence of composite state IDs in i-th
-				   composite phone (composite sseq). */
-    int16 *comwt;		/**< Weight associated with each
-				   composite state (scaled, negated
-				   logs3 value).  Final composite
-				   state score weighted by this
-				   amount */
-    int32 n_comstate;		/**< #Composite states */
-    int32 n_comsseq;		/**< #Composite senone sequences */
     int32 n_ci;   /**< Number of CI phone in */
     int32 n_dictsize; /**< Dictionary size */
 
@@ -247,18 +183,11 @@ typedef struct {
 
 /** Access macros; not designed for arbitrary use */
 #define dict2pid_internal(d,w,p)	((d)->internal[w][p]) /**< return internal dict2pid*/
-#define dict2pid_n_comstate(d)		((d)->n_comstate)     /**< return number of composite state*/
-#define dict2pid_n_comsseq(d)		((d)->n_comsseq)      /**< return number of composite state sequence*/
-#define dict2pid_is_composite(d)	((d)->is_composite)      /**< return whether dict2pid is in composite triphone mode or not*/
 #define dict2pid_rssid(d,ci,lc) (&(d)->rssid[ci][lc])
-
-#define IS_COMPOSITE 1
-#define NOT_COMPOSITE 0
 
 /** Build the dict2pid structure for the given model/dictionary */
 dict2pid_t *dict2pid_build(bin_mdef_t *mdef,   /**< A  model definition*/
                            s3dict_t *dict,       /**< An initialized dictionary */
-                           int32 is_composite, /**< Whether composite triphones will be built */
                            logmath_t *logmath
     );
 
@@ -267,24 +196,6 @@ dict2pid_t *dict2pid_retain(dict2pid_t *d2p);
 
 /** Free the memory dict2pid structure */
 int dict2pid_free(dict2pid_t *d2p /**< In: the d2p */
-    );
-/**
- * Compute composite senone scores from ordinary senone scores (max of component senones)
- */
-void dict2pid_comsenscr(dict2pid_t *d2p,        /**< In: a dict2pid_t structure */
-                        int16 const *senscr,	/**< In: Ordinary senone scores */
-                        int16 *comsenscr	/**< Out: Composite senone scores */
-    );
-
-/** 
- * Mark active senones as indicated by the input array of composite senone-sequence active flags.
- * Caller responsible for allocating and clearing sen[] before calling this function.
- */
-void dict2pid_comsseq2sen_active(dict2pid_t *d2p,      /**< In: a dict2pid_t structure */
-                                 bin_mdef_t *mdef,         /**< In: a bin_mdef_t structure */
-                                 bitvec_t *comssid,	/**< In: Active flag for each comssid */
-                                 bitvec_t *sen		/**< In/Out: Active flags set for senones
-							   indicated by the active comssid */
     );
 
 /** For debugging */

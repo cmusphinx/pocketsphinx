@@ -9,13 +9,11 @@ libpocketsphinx_la_SOURCES =			\
 	bin_mdef.c				\
 	blkarray_list.c				\
 	dict2pid.c				\
-	fillpen.c				\
 	fsg_history.c				\
 	fsg_lextree.c				\
 	fsg_search.c				\
 	hmm.c					\
 	kdtree.c				\
-	lextree.c				\
 	lts.c					\
 	cmu6_lts_rules.c			\
 	mdef.c					\
@@ -31,9 +29,7 @@ libpocketsphinx_la_SOURCES =			\
 	s2_semi_mgau.c				\
 	s3dict.c				\
 	tmat.c					\
-	tst_search.c				\
 	vector.c				\
-	vithist.c				\
 	pocketsphinx.c
 
 noinst_HEADERS =				\
@@ -43,13 +39,11 @@ noinst_HEADERS =				\
 	bin_mdef.h				\
 	blkarray_list.h				\
 	dict2pid.h				\
-	fillpen.h				\
 	fsg_history.h				\
 	fsg_lextree.h				\
 	fsg_search_internal.h			\
 	hmm.h					\
 	kdtree.h				\
-	lextree.h				\
 	lts.h					\
 	cmu6_lts_rules.h			\
 	mdef.h					\
@@ -66,9 +60,7 @@ noinst_HEADERS =				\
 	s3dict.h				\
 	s3types.h				\
 	tmat.h					\
-	tst_search.h				\
-	vector.h				\
-	vithist.h
+	vector.h
 
 INCLUDES = -I$(top_srcdir)/include \
            -I$(top_builddir)/include 

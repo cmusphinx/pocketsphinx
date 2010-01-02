@@ -100,14 +100,6 @@
       ARG_FLOAT64,                                                      \
       "7e-29",                                                          \
       "Beam width applied to last phone in single-phone words" },       \
-{ "-wend_beam", \
-      ARG_FLOAT64, \
-      "7e-29", \
-      "(tst only) Beam selecting word-final HMMs exiting in each frame [0(widest) .. 1(narrowest)]" }, \
-{ "-vhbeam", \
-      ARG_FLOAT64, \
-      "7e-29", \
-      "(tst only) Beam width applied to Viterbi history entries (before -maxhistpf)" }, \
 { "-fwdflatbeam",                                                       \
       ARG_FLOAT64,                                                      \
       "1e-64",                                                          \
@@ -135,30 +127,6 @@
       ARG_BOOLEAN,                                                                              \
       "no",                                                                                     \
       "Compute all senone scores in every frame (can be faster when there are many senones)" }, \
-{ "-tst",                                                                                       \
-      ARG_BOOLEAN,                                                                              \
-      "no",                                                                                     \
-      "Run time-switch tree search (a.k.a. Sphinx3 search)" },                                  \
-{ "-Nlextree", \
-      ARG_INT32, \
-      "3", \
-      "(tst only) No. of lextrees to be instantiated; entries into them staggered in time" }, \
-{ "-epl", \
-      ARG_INT32, \
-      "3", \
-      "(tst only) Entries Per Lextree; #successive entries into one lextree before lextree-entries shifted to the next" }, \
-{ "-min_endfr", \
-      ARG_INT32, \
-      "3", \
-      "(tst only) Nodes ignored during lattice generation if they persist for fewer than so many end frames" }, \
-{ "-maxhistpf", \
-      ARG_INT32, \
-      "100", \
-      "(tst only) Max no. of histories to maintain at each frame" }, \
-{ "-hmmhistbinsize", \
-      ARG_INT32, \
-      "5000", \
-      "(tst only) Performance histogram: #frames vs #HMMs active; #HMMs/bin in this histogram" }, \
 { "-fwdtree",                                                                                   \
       ARG_BOOLEAN,                                                                              \
       "yes",                                                                                    \

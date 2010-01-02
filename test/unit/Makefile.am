@@ -31,7 +31,6 @@ check_PROGRAMS = \
 	test_jsgf \
 	test_lm_read \
 	test_s3dict \
-	test_tst \
 	$(gst_programs)
 
 TESTS = $(check_PROGRAMS)

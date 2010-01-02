@@ -286,92 +286,6 @@ single_rc_comsseq(bin_mdef_t * mdef, int32 b, int32 r)
 #endif
 
 
-/**
- * Convert the glist of ssids to a composite sseq id.  Return the composite ID.
- */
-static s3ssid_t
-ssidlist2comsseq(glist_t g, bin_mdef_t * mdef, dict2pid_t * dict2pid,
-                 hash_table_t * hs, /* For composite states */
-                 hash_table_t * hp) /* For composite senone seq */
-{                
-    int32 i, j, n, s, ssid;
-    s3senid_t **sen;
-    s3senid_t *comsenid;
-    gnode_t *gn;
-
-    n = glist_count(g);
-    if (n <= 0)
-        E_FATAL("Panic: length(ssidlist)= %d\n", n);
-
-    /* Space for list of senones for each state, derived from the given glist */
-    sen =
-        (s3senid_t **) ckd_calloc(bin_mdef_n_emit_state(mdef),
-                                  sizeof(s3senid_t *));
-    for (i = 0; i < bin_mdef_n_emit_state(mdef); i++) {
-        sen[i] = (s3senid_t *) ckd_calloc(n + 1, sizeof(s3senid_t));
-        sen[i][0] = BAD_S3SENID;        /* Sentinel */
-    }
-    /* Space for composite senone ID for each state position */
-    comsenid =
-        (s3senid_t *) ckd_calloc(bin_mdef_n_emit_state(mdef),
-                                 sizeof(s3senid_t));
-
-    /* Expand g into an array of arrays of unique senone IDs, one for
-     * each state in the model. */
-    for (gn = g; gn; gn = gnode_next(gn)) {
-        ssid = gnode_int32(gn);
-
-        /* Expand ssid into individual states (senones); insert in sen[][] if not present */
-        for (i = 0; i < bin_mdef_n_emit_state(mdef); i++) {
-            s = bin_mdef_sseq2sen(mdef, ssid, i);
-
-            for (j = 0; (IS_S3SENID(sen[i][j])) && (sen[i][j] != s); j++);
-            if (NOT_S3SENID(sen[i][j])) {
-                sen[i][j] = s;
-                sen[i][j + 1] = BAD_S3SENID;
-            }
-        }
-    }
-
-    /* Convert senones list for each state position into composite state */
-    for (i = 0; i < bin_mdef_n_emit_state(mdef); i++) {
-        /* Count number of unique senones for this state. */
-        for (j = 0; IS_S3SENID(sen[i][j]); j++);
-        assert(j > 0);
-
-        /* Map set of senones to composite senone ID. */
-        j = (long)hash_table_enter_bkey(hs, (char *) (sen[i]), j * sizeof(s3senid_t),
-					(void *)(long)dict2pid->n_comstate);
-        /* Did this set of senones already exist? */
-        if (j == dict2pid->n_comstate)
-            dict2pid->n_comstate++;     /* if not, it's a new composite senone */
-        else
-            ckd_free((void *) sen[i]);
-
-        /* Composite senone ID for this state. */
-        comsenid[i] = j;
-    }
-    ckd_free(sen);
-
-    /* Map sequence of composite senids (one per state) to composite sseq ID */
-    j = (long) hash_table_enter_bkey(hp, (char *) comsenid,
-				     mdef->n_emit_state * sizeof(s3senid_t),
-				     (void *)(long)dict2pid->n_comsseq);
-    /* Did it already exist? */
-    if (j == dict2pid->n_comsseq) {
-        /* if not, it's a new composite senone sequence. */
-        dict2pid->n_comsseq++;
-        if (dict2pid->n_comsseq >= MAX_S3SENID)
-            E_FATAL
-                ("#Composite sseq limit(%d) reached; increase MAX_S3SENID\n",
-                 dict2pid->n_comsseq);
-    }
-    else
-        ckd_free((void *) comsenid);
-
-    return ((s3ssid_t) j);
-}
-
 void
 compress_table(s3ssid_t * uncomp_tab, s3ssid_t * com_tab,
                s3cipid_t * ci_map, int32 n_ci)
@@ -591,7 +505,7 @@ free_compress_map(xwdssid_t ** tree, int32 n_ci)
 
 /* RAH 4.16.01 This code has several leaks that must be fixed */
 dict2pid_t *
-dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t *logmath)
+dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, logmath_t *logmath)
 {
     dict2pid_t *dict2pid;
     s3ssid_t *internal, **ldiph, **rdiph, *single;
@@ -608,7 +522,6 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
     assert(mdef);
     assert(dict);
 
-
     dict2pid = (dict2pid_t *) ckd_calloc(1, sizeof(dict2pid_t));
 
     dict2pid->n_dictsize = s3dict_size(dict);
@@ -620,39 +533,15 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
     dict2pid->rdiph_rc =
         (s3ssid_t ***) ckd_calloc_3d(mdef->n_ciphone, mdef->n_ciphone,
                                      mdef->n_ciphone, sizeof(s3ssid_t));
-    dict2pid->is_composite = is_composite;
 
     dict2pid->n_ci = mdef->n_ciphone;
-    if (dict2pid->is_composite) {
-        dict2pid->single_lc = (s3ssid_t **) ckd_calloc_2d(mdef->n_ciphone,
-                                                          mdef->n_ciphone,
-                                                          sizeof
-                                                          (s3ssid_t));
-        dict2pid->lrdiph_rc = NULL;
-        dict2pid->rssid = NULL;
-        dict2pid->lrssid = NULL;
+    dict2pid->lrdiph_rc = (s3ssid_t ***) ckd_calloc_3d(mdef->n_ciphone,
+                                                       mdef->n_ciphone,
+                                                       mdef->n_ciphone,
+                                                       sizeof
+                                                       (s3ssid_t));
 
-    }
-    else {
-
-        dict2pid->lrdiph_rc = (s3ssid_t ***) ckd_calloc_3d(mdef->n_ciphone,
-                                                           mdef->n_ciphone,
-                                                           mdef->n_ciphone,
-                                                           sizeof
-                                                           (s3ssid_t));
-        dict2pid->single_lc = NULL;
-
-
-    }
-
-    dict2pid->comstate = NULL;
-    dict2pid->comsseq = NULL;
-    dict2pid->comwt = NULL;
-
-    dict2pid->n_comstate = 0;
-    dict2pid->n_comsseq = 0;
-    dict2pid->is_composite = is_composite;
-
+    /* FIXME: I think this should use dict->nocase */
     hs = hash_table_new(mdef->n_ciphone * mdef->n_ciphone * mdef->n_emit_state,
 			HASH_CASE_YES);
     hp = hash_table_new(mdef->n_ciphone * mdef->n_ciphone, HASH_CASE_YES);
@@ -667,8 +556,7 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
 
     internal = (s3ssid_t *) ckd_calloc(n, sizeof(s3ssid_t));
 
-
-    /* Temporary */
+    /* Temporary.  FIXME: Replace these with bitvectors. */
     ldiph =
         (s3ssid_t **) ckd_calloc_2d(mdef->n_ciphone, mdef->n_ciphone,
                                     sizeof(s3ssid_t));
@@ -682,12 +570,6 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
                 dict2pid->ldiph_lc[b][r][l] = BAD_S3SSID;
                 dict2pid->rdiph_rc[b][l][r] = BAD_S3SSID;
             }
-
-            if (dict2pid->is_composite) {
-                assert(dict2pid->single_lc);
-                dict2pid->single_lc[b][l] = BAD_S3SSID;
-            }
-
             ldiph[b][l] = BAD_S3SSID;
             rdiph[b][l] = BAD_S3SSID;
         }
@@ -699,27 +581,14 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
         pronlen = s3dict_pronlen(dict, w);
 
         if (pronlen >= 2) {
-
             /** This segments of code take care of the initialization of 
                 internal[0] and ldiph[b][r][l]
 	    */
-
-            /* Find or create a composite senone sequence for b(?,r) */
             b = s3dict_pron(dict, w, 0);
             r = s3dict_pron(dict, w, 1);
             if (NOT_S3SSID(ldiph[b][r])) {
-                if (dict2pid->is_composite) {
-                    /* Get all ssids for b(?,r) */
-                    g = ldiph_comsseq(mdef, b, r);
-                    /* Build a composite sseq from those ssids */
-                    ldiph[b][r] =
-                        ssidlist2comsseq(g, mdef, dict2pid, hs, hp);
-                    glist_free(g);
-                }
-                else {
-                    /* Mark this as done (we will ignore the actual value) */
-                    ldiph[b][r] = 0;
-                }
+                /* Mark this as done (we will ignore the actual value) */
+                ldiph[b][r] = 0; /* see FIXME */
 
                 /* Record all possible ssids for b(?,r) */
                 for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
@@ -730,11 +599,8 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
                 }
             }
 
-            /* And ... only use it if we are not doing full triphones. (?!) */
-            if (dict2pid->is_composite)
-                internal[0] = ldiph[b][r];
-            else
-                internal[0] = BAD_S3SSID;
+            /* Not used (FIXME: do not bother allocating it then!) */
+            internal[0] = BAD_S3SSID;
 
             /* Now find ssids for all the word internal triphones and
              * place them in internal[i].  */
@@ -753,20 +619,11 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
 		internal[pronlen-1] and rdiph[b][l][r]. Notice that this 
 		is symmetric to the first part of the code. 
             */
-
             l = b;
             b = r;
             if (NOT_S3SSID(rdiph[b][l])) {
-                if (dict2pid->is_composite) {
-                    g = rdiph_comsseq(mdef, b, l);
-                    rdiph[b][l] =
-                        ssidlist2comsseq(g, mdef, dict2pid, hs, hp);
-                    glist_free(g);
-                }
-                else {
-                    /* Mark this as done (we will ignore the actual value) */
-                    rdiph[b][l] = 0;
-                }
+                /* Mark this as done (we will ignore the actual value) */
+                rdiph[b][l] = 0; /* See FIXME above */
 
                 for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
                     p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
@@ -776,78 +633,51 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
                 }
             }
 
-            if (dict2pid->is_composite)
-                internal[pronlen - 1] = rdiph[b][l];
-            else
-                internal[pronlen - 1] = BAD_S3SSID;
-
+            /* Also not used, see above FIXME */
+            internal[pronlen - 1] = BAD_S3SSID;
         }
         else if (pronlen == 1) {
             b = s3dict_pron(dict, w, 0);
             E_DEBUG(1,("Building tables for single phone word %s phone %d = %s\n",
                        s3dict_wordstr(dict, w), b, bin_mdef_ciphone_str(mdef, b)));
-            if (dict2pid->is_composite) {
-                assert(dict2pid->single_lc);
-
-                /* Find or build composite senone sequence for b(?,?) */
-                if (NOT_S3SSID(single[b])) {
-                    g = single_comsseq(mdef, b);
-                    single[b] =
-                        ssidlist2comsseq(g, mdef, dict2pid, hs, hp);
-                    glist_free(g);
-
-                    /* Record all possible *composite* ssids for b(?,?) */
-                    for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
-                        g = single_lc_comsseq(mdef, b, l);
-                        dict2pid->single_lc[b][l] =
-                            ssidlist2comsseq(g, mdef, dict2pid, hs, hp);
-                        glist_free(g);
-                    }
-                }
-                internal[0] = single[b];
-            }
-            else {
-                /* Don't compress but build table directly */
-                if (NOT_S3SSID(single[b])) {
-                    for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
-                        for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
-                            p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
+            /* Don't compress but build table directly */
+            if (NOT_S3SSID(single[b])) {
+                for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
+                    for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
+                        p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
                                                       (s3cipid_t) l,
                                                       (s3cipid_t) r,
                                                       WORD_POSN_SINGLE);
-                            dict2pid->lrdiph_rc[b][l][r]
+                        dict2pid->lrdiph_rc[b][l][r]
+                            = bin_mdef_pid2ssid(mdef, p);
+                        if (r == bin_mdef_silphone(mdef))
+                            dict2pid->ldiph_lc[b][r][l]
                                 = bin_mdef_pid2ssid(mdef, p);
-                            if (r == bin_mdef_silphone(mdef))
-                                dict2pid->ldiph_lc[b][r][l]
-                                    = bin_mdef_pid2ssid(mdef, p);
-                            if (l == bin_mdef_silphone(mdef))
-                                dict2pid->rdiph_rc[b][l][r]
-                                    = bin_mdef_pid2ssid(mdef, p);
-                            assert(IS_S3SSID(bin_mdef_pid2ssid(mdef, p)));
-                            E_DEBUG(2,("%s(%s,%s) => %d / %d\n",
-                                       bin_mdef_ciphone_str(mdef, b),
-                                       bin_mdef_ciphone_str(mdef, l),
-                                       bin_mdef_ciphone_str(mdef, r),
-                                       p, bin_mdef_pid2ssid(mdef, p)));
-                        }
+                        if (l == bin_mdef_silphone(mdef))
+                            dict2pid->rdiph_rc[b][l][r]
+                                = bin_mdef_pid2ssid(mdef, p);
+                        assert(IS_S3SSID(bin_mdef_pid2ssid(mdef, p)));
+                        E_DEBUG(2,("%s(%s,%s) => %d / %d\n",
+                                   bin_mdef_ciphone_str(mdef, b),
+                                   bin_mdef_ciphone_str(mdef, l),
+                                   bin_mdef_ciphone_str(mdef, r),
+                                   p, bin_mdef_pid2ssid(mdef, p)));
                     }
-                    single[b] = dict2pid->lrdiph_rc[b]
-                        [bin_mdef_silphone(mdef)][bin_mdef_silphone(mdef)];
-                    assert(IS_S3SSID(single[b]));
                 }
-                internal[pronlen - 1] = BAD_S3SSID;
+                single[b] = dict2pid->lrdiph_rc[b]
+                    [bin_mdef_silphone(mdef)][bin_mdef_silphone(mdef)];
+                assert(IS_S3SSID(single[b]));
             }
-
+            /* ssid goes into single, not internal... */
+            internal[pronlen - 1] = BAD_S3SSID;
         }
         else {
             E_FATAL("panic: pronlen=0, what's going on?\n");
         }
 
-        if (!dict2pid->is_composite) {
-            /*      E_INFO("internal[0] %d, internal[pronlen-1] %d\n", internal[0],internal[pronlen-1]); */
-            assert(internal[0] == BAD_S3SSID
-                   && internal[pronlen - 1] == BAD_S3SSID);
-        }
+        /*      E_INFO("internal[0] %d, internal[pronlen-1] %d\n", internal[0],internal[pronlen-1]); */
+        assert(internal[0] == BAD_S3SSID
+               && internal[pronlen - 1] == BAD_S3SSID);
 
         internal += pronlen;
     }
@@ -856,115 +686,9 @@ dict2pid_build(bin_mdef_t * mdef, s3dict_t * dict, int32 is_composite, logmath_t
     ckd_free_2d((void **) rdiph);
     ckd_free((void *) single);
 
-    if (dict2pid->is_composite) {
-        /* Count the length of each composite state (i.e. how many
-         * actual senones it maps to). */
-        /* n_comstate will have been set through calls to ssidlist2comsseq(). */
-        cslen = (int32 *) ckd_calloc(dict2pid->n_comstate, sizeof(int32));
-        /* as will the entries of hs. */
-        g = hash_table_tolist(hs, &n);
-        assert(n == dict2pid->n_comstate);
-        n = 0;
-        /* Iterate over entries of hs to figure out how much to allocate. */
-        for (gn = g; gn; gn = gnode_next(gn)) {
-            he = (hash_entry_t *) gnode_ptr(gn);
-            /* Key is a set of actual senone IDs. */
-            sen = (s3senid_t *) hash_entry_key(he);
-            for (i = 0; IS_S3SENID(sen[i]); i++);
-
-            /* Value is the composite state ID. */
-            cslen[(long)hash_entry_val(he)] = i + 1;  /* +1 for terminating sentinel */
-
-            n += (i + 1);
-        }
-        /* Allocate the composite state to senone list table. */
-        dict2pid->comstate =
-            (s3senid_t **) ckd_calloc(dict2pid->n_comstate,
-                                      sizeof(s3senid_t *));
-        sen = (s3senid_t *) ckd_calloc(n, sizeof(s3senid_t));
-        for (i = 0; i < dict2pid->n_comstate; i++) {
-            dict2pid->comstate[i] = sen;
-            sen += cslen[i];
-        }
-
-        /* Build the composite state to senone list table from hs. */
-        for (gn = g; gn; gn = gnode_next(gn)) {
-            he = (hash_entry_t *) gnode_ptr(gn);
-            sen = (s3senid_t *) hash_entry_key(he);
-            i = (long)hash_entry_val(he);
-
-            for (j = 0; j < cslen[i]; j++)
-                dict2pid->comstate[i][j] = sen[j];
-            assert(sen[j - 1] == BAD_S3SENID);
-
-            ckd_free((void *) sen);
-            sen = NULL;
-        }
-        ckd_free(cslen);
-        glist_free(g);
-
-        /* Allocate space for composite sseq table */
-        /* n_comsseq will have been set through calls to ssidlist2comsseq(). */
-        dict2pid->comsseq =
-            (s3senid_t **) ckd_calloc(dict2pid->n_comsseq,
-                                      sizeof(s3senid_t *));
-
-        for (i = 0; i < dict2pid->n_comsseq; i++) {
-            dict2pid->comsseq[i] = NULL;
-        }
-
-        /* as will the entries of hp. */
-        g = hash_table_tolist(hp, &n);
-        assert(n == dict2pid->n_comsseq);
-
-        /* Build composite sseq table by iterating over hp. */
-        for (gn = g; gn; gn = gnode_next(gn)) {
-            he = (hash_entry_t *) gnode_ptr(gn);
-            /* Value: composite ssid */
-            i = (long)hash_entry_val(he);
-            /* Key: array of composite state IDs. */
-            dict2pid->comsseq[i] = (s3senid_t *) hash_entry_key(he);
-        }
-        glist_free(g);
-
-        /* Weight for each composite state. */
-        /* These are weighted inversely to the number of normal
-         * senones which make them up.  I'm guessing that the
-         * reasoning behind this is that the more different senones
-         * combined into a single composite score, the less relevant
-         * that score will be. */
-        dict2pid->comwt =
-            (int16 *) ckd_calloc(dict2pid->n_comstate, sizeof(int16));
-        for (i = 0; i < dict2pid->n_comstate; i++) {
-            sen = dict2pid->comstate[i];
-
-            for (j = 0; IS_S3SENID(sen[j]); j++);
-            /* if comstate i has N states, its weight= 1/N */
-            /* NOTE: scaled/negated. */
-            dict2pid->comwt[i] = -(-logmath_log(logmath, (float64) j)) >> SENSCR_SHIFT;
-        }
-    }
-
-    if (!(dict2pid->is_composite)) {
-        assert(dict2pid->comstate == NULL);
-        assert(dict2pid->comsseq == NULL);
-        assert(dict2pid->comwt == NULL);
-        assert(dict2pid->single_lc == NULL);
-        assert(dict2pid->n_comstate == 0);
-        assert(dict2pid->n_comsseq == 0);
-
-        /* Try to compress rdiph_rc into rdiph_rc_compressed
-           This should be moved to a function.
-        */
-
-        compress_right_context_tree(mdef, dict2pid);
-        compress_left_right_context_tree(mdef, dict2pid);
-
-    }
-    else {
-        assert(dict2pid->rssid == NULL);
-        assert(dict2pid->lrssid == NULL);
-    }
+    /* Try to compress rdiph_rc into rdiph_rc_compressed */
+    compress_right_context_tree(mdef, dict2pid);
+    compress_left_right_context_tree(mdef, dict2pid);
 
     hash_table_free(hs);
     hash_table_free(hp);
@@ -989,26 +713,6 @@ dict2pid_free(dict2pid_t * d2p)
         return 0;
     if (--d2p->refcount > 0)
         return d2p->refcount;
-
-    if (d2p->comwt)
-        ckd_free((void *) d2p->comwt);
-    if (d2p->comsseq) {
-
-        for (i = 0; i < d2p->n_comsseq; i++) {
-            if (d2p->comsseq[i] != NULL) {
-                ckd_free((void *) d2p->comsseq[i]);
-            }
-        }
-        ckd_free((void *) d2p->comsseq);
-    }
-
-    if (d2p->comstate) {
-        ckd_free((void **) d2p->comstate[0]);
-        ckd_free((void **) d2p->comstate);
-    }
-
-    if (d2p->single_lc)
-        ckd_free_2d((void *) d2p->single_lc);
 
     if (d2p->ldiph_lc)
         ckd_free_3d((void ***) d2p->ldiph_lc);
@@ -1035,81 +739,10 @@ dict2pid_free(dict2pid_t * d2p)
     return 0;
 }
 
-
-
 void
 dict2pid_report(dict2pid_t * d2p)
 {
-    E_INFO_NOFN("Initialization of dict2pid_t, report:\n");
-    if (d2p->is_composite) {
-        E_INFO_NOFN("Dict2pid is in composite triphone mode\n");
-        E_INFO_NOFN("%d composite states; %d composite sseq\n",
-                    d2p->n_comstate, d2p->n_comsseq);
-    }
-    else {
-        E_INFO_NOFN("Dict2pid is in normal triphone mode\n");
-    }
-    E_INFO_NOFN("\n");
-
-
 }
-
-/**
- * Populate composite senone score array.
- *
- * The composite senone score is the maximum of its component senones'
- * scores, scaled down by the number of component senones.
- */
-void
-dict2pid_comsenscr(dict2pid_t * d2p, int16 const * senscr, int16 * comsenscr)
-{
-    int32 i, j;
-    int32 best;
-    s3senid_t *comstate, k;
-
-    for (i = 0; i < d2p->n_comstate; i++) {
-        comstate = d2p->comstate[i];
-
-        best = senscr[comstate[0]];
-        for (j = 1;; j++) {
-            k = comstate[j];
-            if (NOT_S3SENID(k))
-                break;
-            if (best > senscr[k]) /* NOTE: greater than, because these are still scaled/negated. */
-                best = senscr[k];
-        }
-
-        comsenscr[i] = best + d2p->comwt[i];
-    }
-}
-
-/**
- * Mark senones active based on a set of active composite senones.
- */
-void
-dict2pid_comsseq2sen_active(dict2pid_t * d2p, bin_mdef_t * mdef,
-                            bitvec_t * comssid, bitvec_t * sen)
-{
-    int32 ss, cs, i, j;
-    s3senid_t *csp, *sp;        /* Composite state pointer */
-
-    for (ss = 0; ss < d2p->n_comsseq; ss++) {
-        if (bitvec_is_set(comssid,ss)) {
-            csp = d2p->comsseq[ss];
-            E_DEBUG(4,("comssid[%d] is active:",ss));
-            for (i = 0; i < bin_mdef_n_emit_state(mdef); i++) {
-                cs = csp[i];
-                sp = d2p->comstate[cs];
-                E_DEBUGCONT(4,(" %d",cs));
-
-                for (j = 0; IS_S3SENID(sp[j]); j++)
-                    bitvec_set(sen, sp[j]);
-            }
-            E_DEBUGCONT(4,("\n"));
-        }
-    }
-}
-
 
 void
 dict2pid_dump(FILE * fp, dict2pid_t * d2p, bin_mdef_t * mdef, s3dict_t * dict)
@@ -1139,15 +772,6 @@ dict2pid_dump(FILE * fp, dict2pid_t * d2p, bin_mdef_t * mdef, s3dict_t * dict)
     }
     fprintf(fp, "#\n");
 
-    fprintf(fp, "# SINGLE_LC (b l comssid)\n");
-    for (b = 0; b < bin_mdef_n_ciphone(mdef); b++) {
-        for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
-            if (IS_S3SSID(d2p->single_lc[b][l]))
-                fprintf(fp, "%6s %6s %5d\n", bin_mdef_ciphone_str(mdef, (s3cipid_t) b), bin_mdef_ciphone_str(mdef, (s3cipid_t) l), d2p->single_lc[b][l]);       /* RAH, single_lc is returning an int32, %d expects an int16 */
-        }
-    }
-    fprintf(fp, "#\n");
-
     fprintf(fp, "# SSEQ %d (senid senid ...)\n", mdef->n_sseq);
     for (i = 0; i < mdef->n_sseq; i++) {
         fprintf(fp, "%5d ", i);
@@ -1156,64 +780,7 @@ dict2pid_dump(FILE * fp, dict2pid_t * d2p, bin_mdef_t * mdef, s3dict_t * dict)
         fprintf(fp, "\n");
     }
     fprintf(fp, "#\n");
-
-    fprintf(fp, "# COMSSEQ %d (comstate comstate ...)\n", d2p->n_comsseq);
-    for (i = 0; i < d2p->n_comsseq; i++) {
-        fprintf(fp, "%5d ", i);
-        for (j = 0; j < bin_mdef_n_emit_state(mdef); j++)
-            fprintf(fp, " %5d", d2p->comsseq[i][j]);
-        fprintf(fp, "\n");
-    }
-    fprintf(fp, "#\n");
-
-    fprintf(fp, "# COMSTATE %d (senid senid ...)\n", d2p->n_comstate);
-    for (i = 0; i < d2p->n_comstate; i++) {
-        fprintf(fp, "%5d ", i);
-        for (j = 0; IS_S3SENID(d2p->comstate[i][j]); j++)
-            fprintf(fp, " %5d", d2p->comstate[i][j]);
-        fprintf(fp, "\n");
-    }
-    fprintf(fp, "#\n");
     fprintf(fp, "# END\n");
 
     fflush(fp);
 }
-
-
-#if 0
-for (r = 0; r < mdef->n_ciphone; r++) {
-    printf("%d ", rmap[r]);
-}
-
-printf("\n");
-fflush(stdout);
-
-for (r = 0; r < mdef->n_ciphone; r++) {
-    printf("%d ", tmpssid[r]);
-}
-
-printf("\n");
-fflush(stdout);
-for (r = 0; r < mdef->n_ciphone; r++) {
-    printf("%d ", tmpcimap[r]);
-}
-
-printf("\n");
-fflush(stdout);
-
-for (r = 0; r < dict2pid->rssid[b][l].n_ssid; r++) {
-    printf("%d ", dict2pid->rssid[b][l].ssid[r]);
-}
-
-printf("\n");
-fflush(stdout);
-
-if (dict2pid->rssid[b][l].n_ssid > 0) {
-    for (r = 0; r < mdef->n_ciphone; r++) {
-        printf("%d ", dict2pid->rssid[b][l].cimap[r]);
-    }
-}
-printf("\n");
-
-fflush(stdout);
-#endif
