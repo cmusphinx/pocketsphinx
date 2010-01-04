@@ -37,6 +37,7 @@
 
 #include <string.h>
 
+#include "pio.h"
 #include "strfuncs.h"
 #include "dict.h"
 
@@ -79,15 +80,13 @@ dict_add_word(dict_t * d, char *word, s3cipid_t * p, int32 np)
     s3wid_t newwid;
 
     if (d->n_word >= d->max_words) {
-        E_INFO
-            ("Dictionary max size (%d) exceeded; reallocate another entries %d \n",
-             d->max_words, S3DICT_INC_SZ);
+        E_INFO("Reallocating to %d KiB for word entries\n",
+               (d->max_words + S3DICT_INC_SZ) * sizeof(dictword_t) / 1024);
         d->word =
             (dictword_t *) ckd_realloc(d->word,
                                        (d->max_words +
                                         S3DICT_INC_SZ) * sizeof(dictword_t));
         d->max_words = d->max_words + S3DICT_INC_SZ;
-
         return (BAD_S3WID);
     }
 
@@ -140,24 +139,33 @@ dict_add_word(dict_t * d, char *word, s3cipid_t * p, int32 np)
 static int32
 dict_read(FILE * fp, dict_t * d)
 {
-    char line[16384], **wptr;
-    s3cipid_t p[4096];
+    lineiter_t *li;
+    char **wptr;
+    s3cipid_t *p;
     int32 lineno, nwd;
     s3wid_t w;
     int32 i, maxwd;
+    size_t stralloc, phnalloc;
 
-    maxwd = 4092;
+    maxwd = 512;
+    p = (s3cipid_t *) ckd_calloc(maxwd + 4, sizeof(*p));
     wptr = (char **) ckd_calloc(maxwd, sizeof(char *)); /* Freed below */
 
     lineno = 0;
-    while (fgets(line, sizeof(line), fp) != NULL) {
+    stralloc = phnalloc = 0;
+    for (li = lineiter_start(fp); li; li = lineiter_next(li)) {
         lineno++;
-        if (line[0] == '#')     /* Comment line */
+        if (li->buf[0] == '#')     /* Comment line */
             continue;
 
-        if ((nwd = str2words(line, wptr, maxwd)) < 0)
-            E_FATAL("str2words(%s) failed; Increase maxwd from %d\n", line,
-                    maxwd);
+        if ((nwd = str2words(li->buf, wptr, maxwd)) < 0) {
+            /* Increase size of p, wptr. */
+            nwd = str2words(li->buf, NULL, 0);
+            assert(nwd > maxwd); /* why else would it fail? */
+            maxwd = nwd;
+            p = (s3cipid_t *) ckd_realloc(p, (maxwd + 4) * sizeof(*p));
+            wptr = (char **) ckd_realloc(wptr, maxwd * sizeof(*wptr));
+        }
 
         if (nwd == 0)           /* Empty line */
             continue;
@@ -167,6 +175,7 @@ dict_read(FILE * fp, dict_t * d)
                     lineno, wptr[0]);
             continue;
         }
+
 
         /* Convert pronunciation string to CI-phone-ids */
         for (i = 1; i < nwd; i++) {
@@ -184,8 +193,13 @@ dict_read(FILE * fp, dict_t * d)
                 E_ERROR
                     ("Line %d: dict_add_word (%s) failed (duplicate?); ignored\n",
                      lineno, wptr[0]);
+            stralloc += strlen(d->word[w].word);
+            phnalloc += d->word[w].pronlen * sizeof(s3cipid_t);
         }
     }
+    E_INFO("Allocated %d KiB for strings, %d KiB for phones\n",
+           (int)stralloc / 1024, (int)phnalloc / 1024);
+    ckd_free(p);
     ckd_free(wptr);
 
     return 0;
@@ -196,7 +210,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
 {
     FILE *fp, *fp2;
     int32 n;
-    char line[1024];
+    lineiter_t *li;
     dict_t *d;
     s3cipid_t sil;
     char const *dictfile = cmd_ln_str_r(config, "-dict");
@@ -210,8 +224,8 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
     if ((fp = fopen(dictfile, "r")) == NULL)
         E_FATAL_SYSTEM("fopen(%s,r) failed\n", dictfile);
     n = 0;
-    while (fgets(line, sizeof(line), fp) != NULL) {
-        if (line[0] != '#')
+    for (li = lineiter_start(fp); li; li = lineiter_next(li)) {
+        if (li->buf[0] != '#')
             n++;
     }
     rewind(fp);
@@ -221,8 +235,8 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
         if ((fp2 = fopen(fillerfile, "r")) == NULL)
             E_FATAL_SYSTEM("fopen(%s,r) failed\n", fillerfile);
 
-        while (fgets(line, sizeof(line), fp2) != NULL) {
-            if (line[0] != '#')
+        for (li = lineiter_start(fp2); li; li = lineiter_next(li)) {
+            if (li->buf[0] != '#')
                 n++;
         }
         rewind(fp2);
@@ -240,6 +254,9 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
         E_FATAL("#Words in dictionaries (%d) exceeds limit (%d)\n", n,
                 MAX_S3WID);
 
+    E_INFO("Allocating %d * %d bytes (%d KiB) for word entries\n",
+           d->max_words, sizeof(dictword_t),
+           d->max_words * sizeof(dictword_t) / 1024);
     d->word = (dictword_t *) ckd_calloc(d->max_words, sizeof(dictword_t));      /* freed in dict_free() */
     d->n_word = 0;
     d->mdef = bin_mdef_retain(mdef);

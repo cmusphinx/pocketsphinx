@@ -170,9 +170,9 @@ bin_mdef_read_text(cmd_ln_t *config, const char *filename)
         ++lc_idx;               /* Start of LC nodes (after CI nodes) */
         ++rc_idx;               /* STart of RC nodes (after wpos, CI, and LC nodes) */
     }
-    E_INFO
-        ("cd_tree: nodes %d wpos start 0 ci start %d lc start %d rc start %d\n",
-         nodes, ci_idx, lc_idx, rc_idx);
+    E_INFO("Allocating %d * %d bytes (%d KiB) for CD tree\n",
+           nodes, sizeof(*bmdef->cd_tree), 
+           nodes * sizeof(*bmdef->cd_tree) / 1024);
     bmdef->n_cd_tree = nodes;
     bmdef->cd_tree = ckd_calloc(nodes, sizeof(*bmdef->cd_tree));
     for (i = 0; i < N_WORD_POSN; ++i) {

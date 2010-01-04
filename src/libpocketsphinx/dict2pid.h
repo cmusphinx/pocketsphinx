@@ -154,7 +154,9 @@ typedef struct {
 				*/
 
     /*Notice the order of the arguments */
-
+    /* FIXME: This is crying out for compression - in Mandarin we have
+     * 180 context independent phones, which makes this an 11MB
+     * array. */
     s3ssid_t ***ldiph_lc;	/**< For multi-phone words, [base][rc][lc] -> ssid; filled out for
 				   word-initial base x rc combinations in current vocabulary */
 

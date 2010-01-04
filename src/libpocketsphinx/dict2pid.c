@@ -86,6 +86,7 @@ compress_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p,
     s3ssid_t *rmap;
     s3ssid_t *tmpssid;
     s3cipid_t *tmpcimap;
+    size_t alloc;
 
     n_ci = mdef->n_ciphone;
 
@@ -94,16 +95,15 @@ compress_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p,
 
     d2p->rssid =
         (xwdssid_t **) ckd_calloc(mdef->n_ciphone, sizeof(xwdssid_t *));
+    alloc = mdef->n_ciphone * sizeof(xwdssid_t *);
 
     for (b = 0; b < n_ci; b++) {
-
         d2p->rssid[b] =
             (xwdssid_t *) ckd_calloc(mdef->n_ciphone, sizeof(xwdssid_t));
+        alloc += mdef->n_ciphone * sizeof(xwdssid_t);
 
         for (l = 0; l < n_ci; l++) {
-
             rmap = rdiph_rc[b][l];
-
             compress_table(rmap, tmpssid, tmpcimap, mdef->n_ciphone);
 
             for (r = 0; r < mdef->n_ciphone && tmpssid[r] != BAD_S3SSID;
@@ -124,10 +124,11 @@ compress_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p,
                 d2p->rssid[b][l].cimap = NULL;
                 d2p->rssid[b][l].n_ssid = 0;
             }
-
         }
     }
 
+    E_INFO("Allocated %d bytes (%d KiB) for word-final triphones\n",
+           (int)alloc, (int)alloc / 1024);
     ckd_free(tmpssid);
     ckd_free(tmpcimap);
 }
@@ -140,6 +141,7 @@ compress_left_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p)
     s3ssid_t *rmap;
     s3ssid_t *tmpssid;
     s3cipid_t *tmpcimap;
+    size_t alloc;
 
     n_ci = mdef->n_ciphone;
 
@@ -150,11 +152,13 @@ compress_left_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p)
 
     d2p->lrssid =
         (xwdssid_t **) ckd_calloc(mdef->n_ciphone, sizeof(xwdssid_t *));
+    alloc = mdef->n_ciphone * sizeof(xwdssid_t *);
 
     for (b = 0; b < n_ci; b++) {
 
         d2p->lrssid[b] =
             (xwdssid_t *) ckd_calloc(mdef->n_ciphone, sizeof(xwdssid_t));
+        alloc += mdef->n_ciphone * sizeof(xwdssid_t);
 
         for (l = 0; l < n_ci; l++) {
             rmap = d2p->lrdiph_rc[b][l];
@@ -186,7 +190,8 @@ compress_left_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p)
     ckd_free(tmpssid);
     ckd_free(tmpcimap);
 
-
+    E_INFO("Allocated %d bytes (%d KiB) for single-phone word triphones\n",
+           (int)alloc, (int)alloc / 1024);
 }
 
 /**
@@ -238,11 +243,7 @@ dict2pid_get_rcmap(dict2pid_t * d2p, s3wid_t w, dict_t * dict)
         lc = dict->word[w].ciphone[pronlen - 2];
         return (d2p->rssid[b][lc].cimap);
     }
-
 }
-
-
-
 
 static void
 free_compress_map(xwdssid_t ** tree, int32 n_ci)
@@ -274,8 +275,14 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
     dict2pid = (dict2pid_t *) ckd_calloc(1, sizeof(dict2pid_t));
 
     dict2pid->n_dictsize = dict_size(dict);
+    E_INFO("Allocating %d * %d bytes (%d KiB) for word-internal arrays\n",
+           dict_size(dict), sizeof(s3ssid_t *),
+           dict_size(dict) * sizeof(s3ssid_t *) / 1024);
     dict2pid->internal =
         (s3ssid_t **) ckd_calloc(dict_size(dict), sizeof(s3ssid_t *));
+    E_INFO("Allocating %d^3 * %d bytes (%d KiB) for word-initial triphones\n",
+           mdef->n_ciphone, sizeof(s3ssid_t),
+           mdef->n_ciphone * mdef->n_ciphone * mdef->n_ciphone * sizeof(s3ssid_t) / 1024);
     dict2pid->ldiph_lc =
         (s3ssid_t ***) ckd_calloc_3d(mdef->n_ciphone, mdef->n_ciphone,
                                      mdef->n_ciphone, sizeof(s3ssid_t));
@@ -300,6 +307,8 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
         n += (pronlen == 1 ? 0 : pronlen - 2);
     }
 
+    E_INFO("Allocating %d entries of %d bytes (%d KiB) for internal ssids\n",
+           n, sizeof(s3ssid_t), n * sizeof(s3ssid_t) / 1024);
     internal = (s3ssid_t *) ckd_calloc(n, sizeof(s3ssid_t));
 
     /* Track which diphones / ciphones have been seen. */
