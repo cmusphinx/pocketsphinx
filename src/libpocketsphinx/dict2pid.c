@@ -338,7 +338,8 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict, logmath_t *logmath)
             }
 
             /* Now find ssids for all the word internal triphones and
-             * place them in internal[i].  */
+             * place them in internal[i].  FIXME: This is so totally
+             * not necessary and a big waste of memory. */
             for (i = 1; i < pronlen - 1; i++) {
                 l = b;
                 b = r;

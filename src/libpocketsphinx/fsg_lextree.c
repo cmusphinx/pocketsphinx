@@ -461,7 +461,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                 rc = dict_pron(lextree->dict, dictwid, 1);
                 for (i = 0; lclist[i] >= 0; i++) {
                     lc = lclist[i];
-                    ssid = lextree->d2p->ldiph_lc[ci][rc][lc];
+                    ssid = dict2pid_ldiph_lc(lextree->d2p, ci, rc, lc);
                     /* Compression is not done by d2p, so we do it
                      * here.  This might be slow, but it might not
                      * be... we'll see. */
