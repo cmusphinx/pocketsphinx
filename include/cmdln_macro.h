@@ -287,6 +287,10 @@
       ARG_STRING,                                                               \
       NULL,                                                                     \
       "Model definition input file" },                                          \
+{ "-senmgau", \
+      ARG_STRING,                                                               \
+      NULL,                                                                     \
+      "Senone to codebook mapping input file" },                      \
 { "-tmat",                                                                      \
       ARG_STRING,                                                               \
       NULL,                                                                     \

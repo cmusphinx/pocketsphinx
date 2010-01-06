@@ -108,17 +108,19 @@ senone_mgau_map_read(senone_t * s, char const *file_name)
 
     /* Read #gauden (if version matches) */
     if (n_gauden_present) {
+        E_INFO("Reading number of codebooks from %s\n", file_name);
         if (bio_fread
             (&(s->n_gauden), sizeof(int32), 1, fp, byteswap, &chksum) != 1)
             E_FATAL("fread(%s) (#gauden) failed\n", file_name);
     }
 
     /* Read 1d array data */
-    if (bio_fread_1d(&ptr, sizeof(int16), &(s->n_sen), fp,
+    if (bio_fread_1d(&ptr, sizeof(uint32), &(s->n_sen), fp,
 		     byteswap, &chksum) < 0) {
         E_FATAL("bio_fread_1d(%s) failed\n", file_name);
     }
     s->mgau = ptr;
+    E_INFO("Mapping %d senones to %d codebooks\n", s->n_sen, s->n_gauden);
 
     /* Infer n_gauden if not present in this version */
     if (!n_gauden_present) {
@@ -132,7 +134,7 @@ senone_mgau_map_read(senone_t * s, char const *file_name)
         bio_verify_chksum(fp, byteswap, chksum);
 
     if (fread(&eofchk, 1, 1, fp) == 1)
-        E_FATAL("More data than expected in %s\n", file_name);
+        E_FATAL("More data than expected in %s: %d\n", file_name, eofchk);
 
     fclose(fp);
 
@@ -309,7 +311,7 @@ senone_init(gauden_t *g, char const *mixwfile, char const *sen2mgau_map_file,
 
     if (strcmp(sen2mgau_map_file, ".semi.") == 0) {
         /* All-to-1 senones-codebook mapping */
-        s->mgau = (int16 *) ckd_calloc(s->n_sen, sizeof(*s->mgau));
+        s->mgau = (uint32 *) ckd_calloc(s->n_sen, sizeof(*s->mgau));
     }
     else if (strcmp(sen2mgau_map_file, ".cont.") == 0
              || strcmp(sen2mgau_map_file, ".s3cont.") == 0) {
@@ -317,7 +319,7 @@ senone_init(gauden_t *g, char const *mixwfile, char const *sen2mgau_map_file,
         if (s->n_sen <= 1)
             E_FATAL("#senone=%d; must be >1\n", s->n_sen);
 
-        s->mgau = (int16 *) ckd_calloc(s->n_sen, sizeof(*s->mgau));
+        s->mgau = (uint32 *) ckd_calloc(s->n_sen, sizeof(*s->mgau));
         for (i = 0; i < s->n_sen; i++)
             s->mgau[i] = i;
 

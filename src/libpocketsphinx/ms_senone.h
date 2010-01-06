@@ -157,8 +157,8 @@ typedef struct {
     uint32 n_cw;		/**< Number codewords per codebook,stream */
     uint32 n_gauden;		/**< Number gaussian density codebooks referred to by senones */
     float32 mixwfloor;		/**< floor applied to each PDF entry */
-    int16 *mgau;		/**< senone-id -> mgau-id mapping for senones in this set */
-    int32* featscr;              /**< The feature score for every senone, will be initialized inside senone_eval_all */
+    uint32 *mgau;		/**< senone-id -> mgau-id mapping for senones in this set */
+    int32 *featscr;              /**< The feature score for every senone, will be initialized inside senone_eval_all */
 } senone_t;
 
 

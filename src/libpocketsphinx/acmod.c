@@ -119,6 +119,8 @@ acmod_init_am(acmod_t *acmod)
         E_INFO("Falling back to general multi-stream GMM computation\n");
         acmod->mgau = ms_mgau_init(acmod->config, acmod->lmath);
     }
+    if (acmod->mgau == NULL)
+        return -1;
 
     /* If there is an MLLR transform, apply it. */
     if ((mllrfn = cmd_ln_str_r(acmod->config, "-mllr"))) {

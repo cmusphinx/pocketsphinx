@@ -106,15 +106,6 @@
 #include "ms_gauden.h"
 #include "ms_senone.h"
 
-/* Lists of senones sharing each mixture Gaussian codebook */
-/* \struct mgau2sen_t
-   \brief a mapping from gaussian to senone
-*/
-typedef struct mgau2sen_s {
-    int16 sen;			/**< Senone shared by this mixture Gaussian */
-    struct mgau2sen_s *next;	/**< Next entry in list for this mixture Gaussian */
-} mgau2sen_t;
-
 /** \struct ms_mgau_t
     \brief Multi-stream mixture gaussian. It is not necessary to be continr
 */
@@ -123,7 +114,6 @@ typedef struct {
     ps_mgau_t base;
     gauden_t* g;   /**< The codebook */
     senone_t* s;   /**< The senone */
-    mgau2sen_t **mgau2sen; /**< Senones sharing mixture Gaussian codebooks */
     int topn;      /**< Top-n gaussian will be computed */
 
     /**< Intermediate used in computation */
@@ -134,7 +124,6 @@ typedef struct {
 
 #define ms_mgau_gauden(msg) (msg->g)
 #define ms_mgau_senone(msg) (msg->s)
-#define ms_mgau_mgau2sen(msg) (msg->mgau2sen)
 #define ms_mgau_topn(msg) (msg->topn)
 
 ps_mgau_t* ms_mgau_init(cmd_ln_t *config, logmath_t *lmath);
