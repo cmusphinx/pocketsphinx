@@ -84,7 +84,7 @@ main(int argc, char *argv[])
 	ps_lattice_posterior(dag, NULL, 1.0/15.0);
 	while (link) {
 		printf("%s %d P(w|o) = %d + %d - %d = %d = %f\n",
-		       s3dict_wordstr(ps->dict, link->from->wid),
+		       dict_wordstr(ps->dict, link->from->wid),
 		       link->ef, link->alpha, link->beta, dag->norm,
 		       link->alpha + link->beta - dag->norm,
 		       logmath_exp(ps_get_logmath(ps),
