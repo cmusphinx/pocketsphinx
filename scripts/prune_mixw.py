@@ -3,6 +3,7 @@
 import sys
 import numpy
 import struct
+import s3mixw
 
 def perplexity(dist):
     return numpy.exp(-(dist * numpy.log(dist)).sum())
