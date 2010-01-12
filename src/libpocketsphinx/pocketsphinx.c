@@ -181,7 +181,6 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     /* Acoustic model (this is basically everything that
      * uttproc.c, senscr.c, and others used to do) */
-    printf("WTF %s %s\n", cmd_ln_str_r(ps->config, "-mdef"), cmd_ln_str_r(ps->config, "-hmm"));
     if ((ps->acmod = acmod_init(ps->config, ps->lmath, NULL, NULL)) == NULL)
         return -1;
     /* Make the acmod's feature buffer growable if we are doing two-pass search. */
