@@ -290,7 +290,7 @@
 { "-senmgau", \
       ARG_STRING,                                                               \
       NULL,                                                                     \
-      "Senone to codebook mapping input file" },                      \
+      "Senone to codebook mapping input file (usually not needed)" }, \
 { "-tmat",                                                                      \
       ARG_STRING,                                                               \
       NULL,                                                                     \
