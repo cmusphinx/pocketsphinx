@@ -103,6 +103,7 @@
 
 /* Local headers. */
 #include "acmod.h"
+#include "bin_mdef.h"
 #include "ms_gauden.h"
 #include "ms_senone.h"
 
@@ -126,7 +127,7 @@ typedef struct {
 #define ms_mgau_senone(msg) (msg->s)
 #define ms_mgau_topn(msg) (msg->topn)
 
-ps_mgau_t* ms_mgau_init(cmd_ln_t *config, logmath_t *lmath);
+ps_mgau_t* ms_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef);
 void ms_mgau_free(ps_mgau_t *g);
 int32 ms_cont_mgau_frame_eval(ps_mgau_t * msg,
                               int16 *senscr,

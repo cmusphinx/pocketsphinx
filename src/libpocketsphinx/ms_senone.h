@@ -118,6 +118,7 @@
 
 /* Local headers. */
 #include "ms_gauden.h"
+#include "bin_mdef.h"
 
 /** \file ms_senone.h
  *  \brief (Sphinx 3.0 specific) multiple streams senones. used with ms_gauden.h
@@ -174,7 +175,8 @@ senone_t *senone_init (gauden_t *g,             /**< In: codebooks */
 						   senone to mixture gaussian codebook.
 						   If NULL all senones map to codebook 0 */
 		       float32 mixwfloor,	/**< In: Floor value for senone weights */
-                       logmath_t *lmath         /**< In: log math computation */
+                       logmath_t *lmath,        /**< In: log math computation */
+                       bin_mdef_t *mdef         /**< In: model definition */
     );
 
 /** Release memory allocated by senone_init. */

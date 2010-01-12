@@ -117,7 +117,7 @@ acmod_init_am(acmod_t *acmod)
     }
     else {
         E_INFO("Falling back to general multi-stream GMM computation\n");
-        acmod->mgau = ms_mgau_init(acmod->config, acmod->lmath);
+        acmod->mgau = ms_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
     }
     if (acmod->mgau == NULL)
         return -1;

@@ -79,7 +79,7 @@ static ps_mgaufuncs_t ms_mgau_funcs = {
 };
 
 ps_mgau_t *
-ms_mgau_init(cmd_ln_t *config, logmath_t *lmath)
+ms_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
 {
     /* Codebooks */
     ms_mgau_model_t *msg;
@@ -99,7 +99,8 @@ ms_mgau_init(cmd_ln_t *config, logmath_t *lmath)
     msg->s = senone_init(msg->g,
 			 cmd_ln_str_r(config, "-mixw"),
                          cmd_ln_str_r(config, "-senmgau"),
-			 cmd_ln_float32_r(config, "-mixwfloor"), lmath);
+			 cmd_ln_float32_r(config, "-mixwfloor"),
+                         lmath, mdef);
 
     g = ms_mgau_gauden(msg);
     s = ms_mgau_senone(msg);

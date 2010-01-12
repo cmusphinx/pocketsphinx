@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
  * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
  * reserved.
@@ -283,7 +284,7 @@ senone_mixw_read(senone_t * s, char const *file_name, logmath_t *lmath)
 
 senone_t *
 senone_init(gauden_t *g, char const *mixwfile, char const *sen2mgau_map_file,
-	    float32 mixwfloor, logmath_t *lmath)
+	    float32 mixwfloor, logmath_t *lmath, bin_mdef_t *mdef)
 {
     senone_t *s;
     int32 n = 0, i;
@@ -295,6 +296,7 @@ senone_init(gauden_t *g, char const *mixwfile, char const *sen2mgau_map_file,
     s->n_gauden = g->n_mgau;
     if (sen2mgau_map_file) {
 	if (!(strcmp(sen2mgau_map_file, ".semi.") == 0
+	      || strcmp(sen2mgau_map_file, ".ptm.") == 0
 	      || strcmp(sen2mgau_map_file, ".cont.") == 0)) {
 	    senone_mgau_map_read(s, sen2mgau_map_file);
 	    n = s->n_sen;
@@ -303,6 +305,8 @@ senone_init(gauden_t *g, char const *mixwfile, char const *sen2mgau_map_file,
     else {
 	if (s->n_gauden == 1)
 	    sen2mgau_map_file = ".semi.";
+	else if (s->n_gauden == bin_mdef_n_ciphone(mdef))
+	    sen2mgau_map_file = ".ptm.";
 	else
 	    sen2mgau_map_file = ".cont.";
     }
@@ -311,18 +315,27 @@ senone_init(gauden_t *g, char const *mixwfile, char const *sen2mgau_map_file,
 
     if (strcmp(sen2mgau_map_file, ".semi.") == 0) {
         /* All-to-1 senones-codebook mapping */
+	E_INFO("Mapping all senones to one codebook\n");
         s->mgau = (uint32 *) ckd_calloc(s->n_sen, sizeof(*s->mgau));
+    }
+    else if (strcmp(sen2mgau_map_file, ".ptm.") == 0) {
+        /* All-to-ciphone-id senones-codebook mapping */
+	E_INFO("Mapping senones to context-independent phone codebooks\n");
+        s->mgau = (uint32 *) ckd_calloc(s->n_sen, sizeof(*s->mgau));
+        for (i = 0; i < s->n_sen; i++)
+	    s->mgau[i] = bin_mdef_sen2cimap(mdef, i);
     }
     else if (strcmp(sen2mgau_map_file, ".cont.") == 0
              || strcmp(sen2mgau_map_file, ".s3cont.") == 0) {
         /* 1-to-1 senone-codebook mapping */
+	E_INFO("Mapping senones to individual codebooks\n");
         if (s->n_sen <= 1)
             E_FATAL("#senone=%d; must be >1\n", s->n_sen);
 
         s->mgau = (uint32 *) ckd_calloc(s->n_sen, sizeof(*s->mgau));
         for (i = 0; i < s->n_sen; i++)
             s->mgau[i] = i;
-
+	/* Not sure why this is here, it probably does nothing. */
         s->n_gauden = s->n_sen;
     }
     else {
