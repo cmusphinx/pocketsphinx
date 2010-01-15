@@ -4,16 +4,15 @@ __author__ = "David Huggins-Daines <dhuggins@cs.cmu.edu>"
 
 import numpy
 import sys
-import prune_mixw as pm
 import struct
 import s3mixw
 import sphinxbase
 
-def mixw_kmeans_iter(mixw, cb):
+def mixw_kmeans_iter(lmw, cb):
     cbacc = numpy.zeros(len(cb))
     cbcnt = numpy.zeros(len(cb))
     tdist = 0
-    for m in mixw.ravel():
+    for m in lmw:
         dist = (cb - m)
         dist *= dist
         cw = dist.argmin()
@@ -22,6 +21,33 @@ def mixw_kmeans_iter(mixw, cb):
         cbcnt[cw] += 1
     cb[:] = cbacc / cbcnt
     return tdist
+
+def map_mixw_cb(mixw, cb, zero=0.0):
+    n_sen, n_feat, n_gau = mixw.shape
+    lmw = numpy.log(mixw)
+    mwmap = numpy.zeros(mixw.shape, 'uint8')
+    for s in range(0, n_sen):
+        for f in range(0, n_feat):
+            for g in range(0, n_gau):
+                x = mixw[s,f,g]
+                if x <= zero:
+                    mwmap[s,f,g] = len(cb)
+                else:
+                    dist = (cb - lmw[s,f,g])
+                    dist *= dist
+                    mwmap[s,f,g] = dist.argmin()
+    return mwmap
+
+def mixw_freq(mixwmap):
+    hist = numpy.zeros(mixwmap.max() + 1, 'i')
+    for cw in mixwmap.ravel():
+        hist[cw] += 1
+    return hist
+
+try:
+    from qmwx import mixw_kmeans_iter, map_mixw_cb, mixw_freq
+except:
+    pass
     
 def quantize_mixw_kmeans(mixw, k, zero=0.0):
     mw = mixw.ravel()
@@ -41,22 +67,6 @@ def quantize_mixw_kmeans(mixw, k, zero=0.0):
             break
         pdist = tdist
     return cb
-
-def map_mixw_cb(mixw, cb, zero=0.0):
-    n_sen, n_feat, n_gau = mixw.shape
-    lmw = numpy.log(mixw)
-    mwmap = numpy.zeros(mixw.shape, 'uint8')
-    for s in range(0, n_sen):
-        for f in range(0, n_feat):
-            for g in range(0, n_gau):
-                x = mixw[s,f,g]
-                if x <= zero:
-                    mwmap[s,f,g] = len(cb)
-                else:
-                    dist = (cb - lmw[s,f,g])
-                    dist *= dist
-                    mwmap[s,f,g] = dist.argmin()
-    return mwmap
 
 def hb_encode(mixw):
     comp = []
@@ -141,13 +151,14 @@ def write_sendump_huff(mixwmap, cb, outfile):
         fh.write('\0')
     # Terminate it with a null entry
     fh.write(struct.pack('>I', 0))
-    # Add one extra index to the end to hold the "zero" value
-    qcb = numpy.resize(-(cb / numpy.log(1.0001)).astype('i') >> 10, len(cb)+1)
-    qcb[-1] = 159
+    # If there's an extra "floor" value then add it to the codebook
+    if mixwmap.max() == len(cb):
+        qcb = numpy.resize(-(cb / numpy.log(1.0001)).astype('i') >> 10, len(cb)+1)
+        qcb[-1] = 159
+    else:
+        qcb = numpy.resize(-(cb / numpy.log(1.0001)).astype('i') >> 10, len(cb))
     # Histogram the mixture weight map and build a Huffman codebook
-    hist = numpy.zeros(len(qcb), 'i')
-    for cw in mixwmap.ravel():
-        hist[cw] += 1
+    hist = mixw_freq(mixwmap)
     # Write the codebook (we code directly to quantized mixw values)
     huff = sphinxbase.HuffCode(zip(qcb, hist))
     huff.write(fh)
@@ -195,4 +206,4 @@ if __name__ == '__main__':
     mixw = read_sendump(ifn)
     cb = quantize_mixw_kmeans(mixw, 15, 1.5e-7)
     mwmap = map_mixw_cb(mixw, cb, 1.5e-7)
-    pm.write_sendump_hb(mwmap, mixw, ofn)
+    write_sendump_hb(mwmap, mixw, ofn)
