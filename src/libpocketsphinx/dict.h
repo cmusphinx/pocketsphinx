@@ -94,7 +94,7 @@ typedef struct {
  * Return ptr to dict_t if successful, NULL otherwise.
  */
 dict_t *dict_init(cmd_ln_t *config, /**< Must contain -dict, -fdict, -dictcase */
-                      bin_mdef_t *mdef	/**< For looking up CI phone IDs */
+                  bin_mdef_t *mdef	/**< For looking up CI phone IDs */
     );
 
 /** Return word id for given word string if present.  Otherwise return BAD_S3WID */
@@ -105,14 +105,14 @@ s3wid_t dict_wordid(dict_t *d, const char *word);
  * filler dictionary; however, sentence START and FINISH words are not filler words.
  */
 int dict_filler_word(dict_t *d,  /**< The dictionary structure */
-                       s3wid_t w     /**< The word ID */
+                     s3wid_t w     /**< The word ID */
     );
 
 /**
  * Test if w is a "real" word, i.e. neither a filler word nor START/FINISH.
  */
 int dict_real_word(dict_t *d,  /**< The dictionary structure */
-                     s3wid_t w     /**< The word ID */
+                   s3wid_t w     /**< The word ID */
     );
 
 /**
@@ -120,17 +120,17 @@ int dict_real_word(dict_t *d,  /**< The dictionary structure */
  * Return value: Result word id if successful, BAD_S3WID otherwise
  */
 s3wid_t dict_add_word(dict_t *d,  /**< The dictionary structure */
-                        char *word, /**< The word */
-                        s3cipid_t *p, 
-                        int32 np
+                      char *word, /**< The word */
+                      s3cipid_t *p, 
+                      int32 np
     );
 
 /**
  * Return value: CI phone string for the given word, phone position.
  */
 const char *dict_ciphone_str(dict_t *d,	/**< In: Dictionary to look up */
-                               s3wid_t wid,	/**< In: Component word being looked up */
-                               int32 pos   	/**< In: Pronunciation phone position */
+                             s3wid_t wid,	/**< In: Component word being looked up */
+                             int32 pos   	/**< In: Pronunciation phone position */
     );
 
 /** Packaged macro access to dictionary members */
@@ -141,7 +141,7 @@ const char *dict_ciphone_str(dict_t *d,	/**< In: Dictionary to look up */
  *
  * This is the number of words that are not fillers, <s>, or </s>.
  */
-#define dict_num_real_words(d) \
+#define dict_num_real_words(d)                                          \
     (dict_size(d) - (dict_filler_end(d) - dict_filler_start(d)) - 2)
 #define dict_basewid(d,w)	((d)->word[w].basewid)
 #define dict_wordstr(d,w)	((d)->word[w].word)
