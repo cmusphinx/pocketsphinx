@@ -235,6 +235,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\dict2pid.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\fsg_history.h"
 				>
 			</File>
