@@ -57,6 +57,7 @@
 #include <sphinx_config.h>
 #include <err.h>
 #include <ckd_alloc.h>
+#include <strfuncs.h>
 
 /* Local headers. */
 #include "kdtree.h"
@@ -82,13 +83,15 @@ static int32
 read_tree_float(FILE * fp, const char *name, float32 * out, int32 optional)
 {
     char line[256];
+    char outbuf[256];
     int n;
 
-    n = fscanf(fp, "%255s %f", line, out);
+    n = fscanf(fp, "%255s %255s", line, outbuf);
     if ((optional == 0 && n != 2) || strcmp(line, name)) {
-        E_ERROR("%s not found: %d %s %f\n", name, n, line, out);
+        E_ERROR("%s not found: %d %s %s\n", name, n, line, outbuf);
         return -1;
     }
+    *out = atof_c(outbuf);
     return n;
 }
 
