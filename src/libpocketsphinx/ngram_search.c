@@ -245,12 +245,37 @@ static int
 ngram_search_reinit(ps_search_t *search)
 {
     ngram_search_t *ngs = (ngram_search_t *)search;
+    int old_n_words;
     int rv = 0;
 
     /*
      * NOTE!!! This is not a general-purpose reinit function.  It only
      * deals with updates to the language model set and beam widths.
      */
+
+    /* Update the number of words. */
+    old_n_words = search->n_words;
+    if (old_n_words != dict_size(ps_search_dict(search))) {
+        chan_t **word_chan;
+
+        search->n_words = dict_size(ps_search_dict(search));
+        /* Reallocate and copy word_chan. */
+        word_chan = ngs->word_chan;
+        ngs->word_chan = ckd_calloc(search->n_words, sizeof(*ngs->word_chan));
+        memcpy(ngs->word_chan, word_chan, old_n_words * sizeof(*ngs->word_chan));
+        ckd_free(word_chan);
+        /* Reallocate these temporary arrays. */
+        ckd_free(ngs->word_lat_idx);
+        ckd_free(ngs->word_active);
+        ckd_free(ngs->last_ltrans);
+        ckd_free_2d(ngs->active_word_list);
+        ngs->word_lat_idx = ckd_calloc(search->n_words, sizeof(*ngs->word_lat_idx));
+        ngs->word_active = bitvec_alloc(search->n_words);
+        ngs->last_ltrans = ckd_calloc(search->n_words, sizeof(*ngs->last_ltrans));
+        ngs->active_word_list
+            = ckd_calloc_2d(2, search->n_words,
+                            sizeof(**ngs->active_word_list));
+    }
 
     /* Update beam widths. */
     ngram_search_calc_beams(ngs);

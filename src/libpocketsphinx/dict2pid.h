@@ -177,7 +177,7 @@ typedef struct {
 
     int32 n_ci;   /**< Number of CI phone in */
     int32 n_dictsize; /**< Dictionary size */
-
+    int32 n_internal; /**< Number of internal ssids. */
 } dict2pid_t;
 
 /** Access macros; not designed for arbitrary use */
@@ -188,8 +188,7 @@ typedef struct {
 
 /** Build the dict2pid structure for the given model/dictionary */
 dict2pid_t *dict2pid_build(bin_mdef_t *mdef,   /**< A  model definition*/
-                           dict_t *dict,       /**< An initialized dictionary */
-                           logmath_t *logmath
+                           dict_t *dict        /**< An initialized dictionary */
     );
 
 /** Retain a pointer to dict2pid */
@@ -198,6 +197,12 @@ dict2pid_t *dict2pid_retain(dict2pid_t *d2p);
 /** Free the memory dict2pid structure */
 int dict2pid_free(dict2pid_t *d2p /**< In: the d2p */
     );
+
+/** Add a word to the dict2pid structure (after adding it to dict). */
+int dict2pid_add_word(dict2pid_t *d2p,
+                      bin_mdef_t *mdef,
+                      dict_t *dict,
+                      int32 wid);
 
 /** For debugging */
 void dict2pid_dump(FILE *fp,        /**< In: a file pointer */

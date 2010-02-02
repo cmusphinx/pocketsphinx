@@ -206,7 +206,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     if (cmd_ln_str_r(ps->config, "-fsg") || cmd_ln_str_r(ps->config, "-jsgf")) {
         ps_search_t *fsgs;
 
-        if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict, ps->lmath)) == NULL)
+        if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
             return -1;
         if ((fsgs = fsg_search_init(ps->config, ps->acmod, ps->dict, ps->d2p)) == NULL)
             return -1;
@@ -218,7 +218,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
              || (lmctl = cmd_ln_str_r(ps->config, "-lmctl"))) {
         ps_search_t *ngs;
 
-        if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict, ps->lmath)) == NULL)
+        if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
             return -1;
         if ((ngs = ngram_search_init(ps->config, ps->acmod, ps->dict, ps->d2p)) == NULL)
             return -1;
@@ -229,7 +229,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     /* Otherwise, we will initialize the search whenever the user
      * decides to load an FSG or a language model. */
     else {
-        if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict, ps->lmath)) == NULL)
+        if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
             return -1;
     }
 
@@ -405,19 +405,41 @@ ps_add_word(ps_decoder_t *ps,
 {
     int32 wid, lmwid;
     ngram_model_t *lmset;
-    char *pron;
-    int rv;
+    s3cipid_t *pron;
+    char **phonestr, *tmp;
+    int np, i, rv;
 
-    pron = ckd_salloc(phones);
+    /* Parse phones into an array of phone IDs. */
+    tmp = ckd_salloc(phones);
+    np = str2words(tmp, NULL, 0);
+    phonestr = ckd_calloc(np, sizeof(*phonestr));
+    str2words(tmp, phonestr, np);
+    pron = ckd_calloc(np, sizeof(*pron));
+    for (i = 0; i < np; ++i) {
+        pron[i] = bin_mdef_ciphone_id(ps->acmod->mdef, phonestr[i]);
+        if (pron[i] == -1) {
+            E_ERROR("Unknown phone %s in phone string %s\n",
+                    phonestr[i], tmp);
+            ckd_free(phonestr);
+            ckd_free(tmp);
+            ckd_free(pron);
+            return -1;
+        }
+    }
+    /* No longer needed. */
+    ckd_free(phonestr);
+    ckd_free(tmp);
+
     /* Add it to the dictionary. */
-    if ((wid = dict_add_word(ps->dict, word, pron, strlen(pron))) == -1) {
+    if ((wid = dict_add_word(ps->dict, word, pron, np)) == -1) {
         ckd_free(pron);
         return -1;
     }
-    /* Now we also have to add it to dict2pid, oh fun. */
-
     /* No longer needed. */
     ckd_free(pron);
+
+    /* Now we also have to add it to dict2pid. */
+    dict2pid_add_word(ps->d2p, ps->acmod->mdef, ps->dict, wid);
 
     if ((lmset = ps_get_lmset(ps)) != NULL) {
         /* Add it to the LM set (meaning, the current LM).  In a perfect
@@ -880,9 +902,11 @@ ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
         search->start_wid = dict_startwid(dict);
         search->finish_wid = dict_finishwid(dict);
         search->silence_wid = dict_silwid(dict);
+        search->n_words = dict_size(dict);
     }
     else {
         search->start_wid = search->finish_wid = search->silence_wid = -1;
+        search->n_words = 0;
     }
 }
 

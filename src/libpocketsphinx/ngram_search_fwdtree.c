@@ -387,16 +387,12 @@ ngram_fwdtree_init(ngram_search_t *ngs)
     create_search_tree(ngs);
 }
 
-void
-ngram_fwdtree_deinit(ngram_search_t *ngs)
+static void
+deinit_search_tree(ngram_search_t *ngs)
 {
     int i, w, n_words;
 
     n_words = ps_search_n_words(ngs);
-    /* Reset non-root channels. */
-    reinit_search_tree(ngs);
-
-    /* Now deallocate all the root channels too. */
     for (i = 0; i < ngs->n_root_chan_alloc; i++) {
         hmm_deinit(&ngs->root_chan[i].hmm);
     }
@@ -408,22 +404,47 @@ ngram_fwdtree_deinit(ngram_search_t *ngs)
             ++i;
         }
         ckd_free(ngs->rhmm_1ph);
+        ngs->rhmm_1ph = NULL;
     }
-    ngs->n_nonroot_chan = 0;
+    ngs->n_root_chan = 0;
+    ngs->n_root_chan_alloc = 0;
     ckd_free(ngs->root_chan);
-    ckd_free(ngs->homophone_set);
+    ngs->root_chan = NULL;
     ckd_free(ngs->single_phone_wid);
+    ngs->single_phone_wid = NULL;
+    ckd_free(ngs->homophone_set);
+    ngs->homophone_set = NULL;
+}
+
+void
+ngram_fwdtree_deinit(ngram_search_t *ngs)
+{
+    /* Reset non-root channels. */
+    reinit_search_tree(ngs);
+    /* Free the search tree. */
+    deinit_search_tree(ngs);
+    /* Free other stuff. */
     ngs->max_nonroot_chan = 0;
     ckd_free_2d(ngs->active_chan_list);
+    ngs->active_chan_list = NULL;
     ckd_free(ngs->cand_sf);
+    ngs->cand_sf = NULL;
     ckd_free(ngs->bestbp_rc);
+    ngs->bestbp_rc = NULL;
     ckd_free(ngs->lastphn_cand);
+    ngs->lastphn_cand = NULL;
 }
 
 int
 ngram_fwdtree_reinit(ngram_search_t *ngs)
 {
-    reinit_search_tree(ngs);
+    /* Reallocate things that depend on the number of words. */
+    ckd_free(ngs->lastphn_cand);
+    ngs->lastphn_cand = ckd_calloc(ps_search_n_words(ngs),
+                                   sizeof(*ngs->lastphn_cand));
+    /* Rebuild the search tree. */
+    deinit_search_tree(ngs);
+    init_search_tree(ngs);
     create_search_tree(ngs);
     return 0;
 }

@@ -119,10 +119,10 @@ int dict_real_word(dict_t *d,  /**< The dictionary structure */
  * Add a word with the given ciphone pronunciation list to the dictionary.
  * Return value: Result word id if successful, BAD_S3WID otherwise
  */
-s3wid_t dict_add_word(dict_t *d,  /**< The dictionary structure */
-                      char *word, /**< The word */
-                      s3cipid_t *p, 
-                      int32 np
+s3wid_t dict_add_word(dict_t *d,          /**< The dictionary structure. */
+                      char const *word,   /**< The word. */
+                      s3cipid_t const *p, /**< The pronunciation. */
+                      int32 np            /**< Number of phones. */
     );
 
 /**

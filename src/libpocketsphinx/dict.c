@@ -73,11 +73,12 @@ dict_ciphone_str(dict_t * d, s3wid_t wid, int32 pos)
 
 
 s3wid_t
-dict_add_word(dict_t * d, char *word, s3cipid_t * p, int32 np)
+dict_add_word(dict_t * d, char const *word, s3cipid_t const * p, int32 np)
 {
     int32 len;
     dictword_t *wordp;
     s3wid_t newwid;
+    char *wword;
 
     if (d->n_word >= d->max_words) {
         E_INFO("Reallocating to %d KiB for word entries\n",
@@ -87,7 +88,7 @@ dict_add_word(dict_t * d, char *word, s3cipid_t * p, int32 np)
                                        (d->max_words +
                                         S3DICT_INC_SZ) * sizeof(dictword_t));
         d->max_words = d->max_words + S3DICT_INC_SZ;
-        return (BAD_S3WID);
+        return BAD_S3WID;
     }
 
     wordp = d->word + d->n_word;
@@ -96,7 +97,8 @@ dict_add_word(dict_t * d, char *word, s3cipid_t * p, int32 np)
     /* Associate word string with d->n_word in hash table */
     if (hash_table_enter_int32(d->ht, wordp->word, d->n_word) != d->n_word) {
         ckd_free(wordp->word);
-        return (BAD_S3WID);
+        wordp->word = NULL;
+        return BAD_S3WID;
     }
 
     /* Fill in word entry, and set defaults */
@@ -113,22 +115,25 @@ dict_add_word(dict_t * d, char *word, s3cipid_t * p, int32 np)
     wordp->basewid = d->n_word;
 
     /* Determine base/alt wids */
-    if ((len = dict_word2basestr(word)) > 0) {
+    wword = ckd_salloc(word);
+    if ((len = dict_word2basestr(wword)) > 0) {
 	int32 w;
 
         /* Truncated to a baseword string; find its ID */
-        if (hash_table_lookup_int32(d->ht, word, &w) < 0) {
-            word[len] = '(';    /* Get back the original word */
-            E_FATAL("Missing base word for: %s\n", word);
+        if (hash_table_lookup_int32(d->ht, wword, &w) < 0) {
+            E_ERROR("Missing base word for: %s\n", word);
+            ckd_free(wword);
+            ckd_free(wordp->word);
+            wordp->word = NULL;
+            return BAD_S3WID;
         }
-        else
-            word[len] = '(';    /* Get back the original word */
 
         /* Link into alt list */
         wordp->basewid = w;
         wordp->alt = d->word[w].alt;
         d->word[w].alt = d->n_word;
     }
+    ckd_free(wword);
 
     newwid = d->n_word++;
 

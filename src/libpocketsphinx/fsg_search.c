@@ -245,6 +245,9 @@ fsg_search_reinit(ps_search_t *search)
     if (fsgs->lextree)
         fsg_lextree_free(fsgs->lextree);
 
+    /* Update the number of words (not used by this module though). */
+    search->n_words = dict_size(ps_search_dict(search));
+
     /* Allocate new lextree for the given FSG */
     fsgs->lextree = fsg_lextree_init(fsgs->fsg, ps_search_dict(fsgs),
                                      ps_search_dict2pid(fsgs),

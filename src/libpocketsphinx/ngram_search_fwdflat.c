@@ -155,6 +155,17 @@ ngram_fwdflat_deinit(ngram_search_t *ngs)
 int
 ngram_fwdflat_reinit(ngram_search_t *ngs)
 {
+    /* Reallocate things that depend on the number of words. */
+    int n_words;
+
+    ckd_free(ngs->fwdflat_wordlist);
+    ckd_free(ngs->expand_word_list);
+    bitvec_free(ngs->expand_word_flag);
+    n_words = ps_search_n_words(ngs);
+    ngs->fwdflat_wordlist = ckd_calloc(n_words + 1, sizeof(*ngs->fwdflat_wordlist));
+    ngs->expand_word_flag = bitvec_alloc(n_words);
+    ngs->expand_word_list = ckd_calloc(n_words + 1, sizeof(*ngs->expand_word_list));
+    
     /* No tree-search; re-build the expansion list from all LM words. */
     if (!ngs->fwdtree) {
         /* Rebuild full expansion list from LM words. */

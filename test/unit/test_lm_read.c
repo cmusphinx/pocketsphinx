@@ -51,6 +51,7 @@ main(int argc, char *argv[])
 	 * dictionary that we originally loaded. */
 	TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN DEGREES"));
 	/* So let's add it to the dictionary. */
+	ps_add_word(ps, "OOH", "UW", FALSE);
 	ps_add_word(ps, "METERS", "M IY T ER Z", TRUE);
 	/* And try again. */
 	clearerr(rawfh);
