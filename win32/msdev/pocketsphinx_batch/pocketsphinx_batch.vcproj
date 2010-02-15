@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="pocketsphinx_batch"
 	ProjectGUID="{CB47D94B-2F84-41BC-A3C4-A1EBDCDE922A}"
 	RootNamespace="pocketsphinx_batch"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -45,7 +46,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../../../include,../../../../sphinxbase/include,../../../../sphinxbase/include/win32"
+				AdditionalIncludeDirectories="../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;../../../src/libpocketsphinx"
 				PreprocessorDefinitions="NDEBUG;_CONSOLE;AD_BACKEND_WIN32;WIN32;HAVE_CONFIG_H;LIBPOCKETSPHINX"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -77,6 +78,8 @@
 				AdditionalLibraryDirectories="..\..\..\..\sphinxbase\lib\Release"
 				ProgramDatabaseFile=".\..\..\..\bin\Release/pocketsphinx_batch.pdb"
 				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -98,9 +101,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -136,7 +136,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../include,../../../../sphinxbase/include,../../../../sphinxbase/include/win32"
+				AdditionalIncludeDirectories="../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;../../../src/libpocketsphinx"
 				PreprocessorDefinitions="_DEBUG;_CONSOLE;AD_BACKEND_WIN32;WIN32;HAVE_CONFIG_H;LIBPOCKETSPHINX"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -170,6 +170,8 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\..\..\..\bin\Debug/pocketsphinx_batch.pdb"
 				SubSystem="1"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -191,9 +193,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"

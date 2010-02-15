@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx", "win32\msdev\pocketsphinx\pocketsphinx.vcproj", "{94001A0E-A837-445C-8004-F918F10D0226}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx_batch", "win32\msdev\pocketsphinx_batch\pocketsphinx_batch.vcproj", "{CB47D94B-2F84-41BC-A3C4-A1EBDCDE922A}"

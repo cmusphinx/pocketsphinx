@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="pocketsphinx"
 	ProjectGUID="{94001A0E-A837-445C-8004-F918F10D0226}"
 	RootNamespace="pocketsphinx"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -80,6 +81,8 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\..\sphinxbase\lib\Release"
 				ProgramDatabaseFile=".\..\..\..\bin\Release/pocketsphinx.pdb"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\..\..\..\bin\Release/pocketsphinx.lib"
 				TargetMachine="1"
 			/>
@@ -102,9 +105,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -177,6 +177,8 @@
 				AdditionalLibraryDirectories="..\..\..\..\sphinxbase\lib\Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\..\..\..\bin\Debug/pocketsphinx.pdb"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary=".\..\..\..\bin\Debug/pocketsphinx.lib"
 				TargetMachine="1"
 			/>
@@ -201,9 +203,6 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -215,79 +214,11 @@
 			Name="Header Files"
 			>
 			<File
-				RelativePath="..\..\..\src\libpocketsphinx\acmod.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\bin_mdef.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\blkarray_list.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\include\cmdln_macro.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\libpocketsphinx\dict.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\dict2pid.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\fsg_history.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\fsg_lextree.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\fsg_search_internal.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\include\fsg_set.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\hmm.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\kdtree.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\mdef.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\ms_gauden.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\ms_mgau.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\ms_senone.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\ngram_search.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\ngram_search_fwdflat.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\ngram_search_fwdtree.h"
 				>
 			</File>
 			<File
@@ -299,35 +230,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\libpocketsphinx\pocketsphinx_internal.h"
+				RelativePath="..\..\..\include\ps_lattice.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\libpocketsphinx\posixwin32.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\ps_lattice.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\ps_lattice_internal.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\s2_semi_mgau.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\sdc_mgau.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\tmat.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\libpocketsphinx\vector.h"
+				RelativePath="..\..\..\include\ps_mllr.h"
 				>
 			</File>
 		</Filter>
@@ -336,6 +243,10 @@
 			>
 			<File
 				RelativePath="..\..\..\src\libpocketsphinx\acmod.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\acmod.h"
 				>
 			</File>
 			<File
@@ -361,6 +272,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\bin_mdef.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\blkarray_list.c"
 				>
 				<FileConfiguration
@@ -381,6 +296,10 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\blkarray_list.h"
+				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\libpocketsphinx\dict.c"
@@ -405,6 +324,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\dict.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\dict2pid.c"
 				>
 				<FileConfiguration
@@ -425,6 +348,10 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\dict2pid.h"
+				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\libpocketsphinx\fsg_history.c"
@@ -449,6 +376,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\fsg_history.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\fsg_lextree.c"
 				>
 				<FileConfiguration
@@ -469,6 +400,10 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\fsg_lextree.h"
+				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\libpocketsphinx\fsg_search.c"
@@ -493,6 +428,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\fsg_search_internal.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\hmm.c"
 				>
 				<FileConfiguration
@@ -513,6 +452,10 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\hmm.h"
+				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\libpocketsphinx\kdtree.c"
@@ -537,6 +480,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\kdtree.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\mdef.c"
 				>
 				<FileConfiguration
@@ -557,6 +504,10 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\mdef.h"
+				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\libpocketsphinx\ms_gauden.c"
@@ -581,6 +532,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\ms_gauden.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\ms_mgau.c"
 				>
 				<FileConfiguration
@@ -601,6 +556,10 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\ms_mgau.h"
+				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\libpocketsphinx\ms_senone.c"
@@ -625,7 +584,15 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\ms_senone.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\ngram_search.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\ngram_search.h"
 				>
 			</File>
 			<File
@@ -633,7 +600,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\ngram_search_fwdflat.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\ngram_search_fwdtree.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\ngram_search_fwdtree.h"
 				>
 			</File>
 			<File
@@ -641,11 +616,27 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\phone_loop_search.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\pocketsphinx.c"
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\pocketsphinx_internal.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\posixwin32.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\ps_lattice.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\ps_lattice_internal.h"
 				>
 			</File>
 			<File
@@ -671,6 +662,14 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\s2_semi_mgau.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\s3types.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\tmat.c"
 				>
 				<FileConfiguration
@@ -693,6 +692,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\src\libpocketsphinx\tmat.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\libpocketsphinx\vector.c"
 				>
 				<FileConfiguration
@@ -713,6 +716,10 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\src\libpocketsphinx\vector.h"
+				>
 			</File>
 		</Filter>
 		<Filter
