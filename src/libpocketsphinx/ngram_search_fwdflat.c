@@ -769,7 +769,11 @@ ngram_fwdflat_search(ngram_search_t *ngs, int frame_idx)
     /* Mark backpointer table for current frame. */
     ngram_search_mark_bptable(ngs, frame_idx);
 
-    /* Renormalize if necessary (FIXME: Make sure to test this) */
+    /* If the best score is equal to or worse than WORST_SCORE,
+     * recognition has failed, don't bother to keep trying. */
+    if (ngs->best_score == WORST_SCORE || ngs->best_score WORSE_THAN WORST_SCORE)
+        return 0;
+    /* Renormalize if necessary */
     if (ngs->best_score + (2 * ngs->beam) WORSE_THAN WORST_SCORE) {
         E_INFO("Renormalizing Scores at frame %d, best score %d\n",
                frame_idx, ngs->best_score);

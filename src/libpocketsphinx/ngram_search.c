@@ -354,12 +354,16 @@ cache_bptable_paths(ngram_search_t *ngs, int32 bp)
     int32 w, prev_bp;
     bptbl_t *be;
 
+    assert(bp != NO_BP);
+
     be = &(ngs->bp_table[bp]);
     prev_bp = bp;
     w = be->wid;
 
     while (dict_filler_word(ps_search_dict(ngs), w)) {
         prev_bp = ngs->bp_table[prev_bp].bp;
+        if (prev_bp == NO_BP)
+            return;
         w = ngs->bp_table[prev_bp].wid;
     }
 
@@ -396,6 +400,12 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
     else {
         int32 i, rcsize, *bss;
         bptbl_t *be;
+
+        /* This might happen if recognition fails. */
+        if (ngs->bpidx == NO_BP) {
+            E_ERROR("No entries in backpointer table!");
+            return;
+        }
 
         /* Expand the backpointer tables if necessary. */
         if (ngs->bpidx >= ngs->bp_table_size) {
@@ -1106,6 +1116,11 @@ ngram_search_lattice(ps_search_t *search)
     float lwf;
 
     ngs = (ngram_search_t *)search;
+
+    /* If the best score is WORST_SCORE or worse, there is no way to
+     * make a lattice. */
+    if (ngs->best_score == WORST_SCORE || ngs->best_score WORSE_THAN WORST_SCORE)
+        return NULL;
 
     /* Check to see if a lattice has previously been created over the
      * same number of frames, and reuse it if so. */

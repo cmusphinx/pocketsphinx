@@ -871,6 +871,9 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
     /* If best LM score and bp for candidate known use it, else sort cands by startfrm */
     E_DEBUG(3, ("n_lastphn_cand %d\n", ngs->n_lastphn_cand));
     for (i = 0, candp = ngs->lastphn_cand; i < ngs->n_lastphn_cand; i++, candp++) {
+        /* This can happen if recognition fails. */
+        if (candp->bp == -1)
+            continue;
         /* Backpointer entry for it. */
         bpe = &(ngs->bp_table[candp->bp]);
 
@@ -878,7 +881,6 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
         candp->score -=
             ngram_search_exit_score
             (ngs, bpe, dict_first_phone(ps_search_dict(ngs), candp->wid));
-        E_DEBUG(4, ("candp->score %d\n", candp->score));
         E_DEBUG(4, ("candp->score %d\n", candp->score));
 
         /*
@@ -1416,7 +1418,11 @@ ngram_fwdtree_search(ngram_search_t *ngs, int frame_idx)
     /* Mark backpointer table for current frame. */
     ngram_search_mark_bptable(ngs, frame_idx);
 
-    /* Renormalize if necessary (FIXME: Make sure to test this) */
+    /* If the best score is equal to or worse than WORST_SCORE,
+     * recognition has failed, don't bother to keep trying. */
+    if (ngs->best_score == WORST_SCORE || ngs->best_score WORSE_THAN WORST_SCORE)
+        return 0;
+    /* Renormalize if necessary */
     if (ngs->best_score + (2 * ngs->beam) WORSE_THAN WORST_SCORE) {
         E_INFO("Renormalizing Scores at frame %d, best score %d\n",
                frame_idx, ngs->best_score);
