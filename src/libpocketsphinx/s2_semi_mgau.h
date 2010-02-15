@@ -50,8 +50,8 @@
 /* Local headers. */
 #include "acmod.h"
 #include "hmm.h"
-#include "kdtree.h"
 #include "bin_mdef.h"
+#include "ms_gauden.h"
 
 typedef struct vqFeature_s vqFeature_t;
 
@@ -60,9 +60,10 @@ struct s2_semi_mgau_s {
     ps_mgau_t base;     /**< base structure. */
     cmd_ln_t *config;   /* configuration parameters */
 
-    mfcc_t  **means;	/* mean vectors foreach feature */
-    mfcc_t  **vars;	/* inverse var vectors foreach feature */
-    mfcc_t  **dets;	/* det values foreach feature */
+    gauden_t *g;        /* Set of Gaussians (pointers below point in here and will go away soon) */
+    mfcc_t  ****means;	/* mean vectors foreach cb, feature, density */
+    mfcc_t  ****vars;	/* inverse var vectors foreach cb, feature, density */
+    mfcc_t  ***dets;	/* det values foreach cb, feature */
 
     uint8 ***mixw;     /* mixture weight distributions */
     mmio_file_t *sendump_mmap;/* memory map for mixw (or NULL if not mmap) */
@@ -73,17 +74,13 @@ struct s2_semi_mgau_s {
     int16 n_density;	/* Number of mixtures per codebook */
     int32 n_sen;	/* Number of senones */
     uint8 *topn_beam;   /* Beam for determining per-frame top-N densities */
-    int16 max_topn;
-    int16 ds_ratio;
+    int16 n_cb;         /* Number of codebooks */
+    uint8 max_topn;
+    uint8 ds_ratio;
 
-    kd_tree_t **kdtrees;
-    uint32 n_kdtrees;
-    uint32 kd_maxdepth;
-    int32 kd_maxbbi;
-
-    vqFeature_t ***topn_hist; /**< Top-N scores and codewords for past frames. */
-    uint8 **topn_hist_n;      /**< Variable top-N for past frames. */
-    vqFeature_t **f;          /**< Topn-N for currently scoring frame. */
+    vqFeature_t ****topn_hist; /**< Top-N scores and codewords for past frames. */
+    uint8 ***topn_hist_n;      /**< Variable top-N for past frames. */
+    vqFeature_t ***f;          /**< Topn-N for currently scoring frame (cb, stream, n). */
     int n_topn_hist;          /**< Number of past frames tracked. */
 
     /* Log-add table for compressed values. */

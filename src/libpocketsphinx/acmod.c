@@ -108,19 +108,12 @@ acmod_init_am(acmod_t *acmod)
 
     E_INFO("Attempting to use SCHMM computation module\n");
     acmod->mgau = s2_semi_mgau_init(acmod);
-    if (acmod->mgau) {
-        char const *kdtreefn = cmd_ln_str_r(acmod->config, "-kdtree");
-        if (kdtreefn)
-            s2_semi_mgau_load_kdtree(acmod->mgau, kdtreefn,
-                                     cmd_ln_int32_r(acmod->config, "-kdmaxdepth"),
-                                     cmd_ln_int32_r(acmod->config, "-kdmaxbbi"));
-    }
-    else {
+    if (acmod->mgau == NULL) {
         E_INFO("Falling back to general multi-stream GMM computation\n");
         acmod->mgau = ms_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
+        if (acmod->mgau == NULL)
+            return -1;
     }
-    if (acmod->mgau == NULL)
-        return -1;
 
     /* If there is an MLLR transform, apply it. */
     if ((mllrfn = cmd_ln_str_r(acmod->config, "-mllr"))) {

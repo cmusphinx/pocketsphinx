@@ -53,9 +53,11 @@
 /* SphinxBase headers. */
 #include <feat.h>
 #include <logmath.h>
+#include <cmd_ln.h>
 
 /* Local headers. */
 #include "vector.h"
+#include "pocketsphinx_internal.h"
 #include "hmm.h"
 
 #ifdef __cplusplus
@@ -108,6 +110,9 @@ gauden_init (char const *meanfile,/**< Input: File containing means of mixture g
 
 /** Release memory allocated by gauden_init. */
 void gauden_free(gauden_t *g); /**< In: The gauden_t to free */
+
+/** Transform Gaussians according to an MLLR matrix (or, eventually, more). */
+int32 gauden_mllr_transform(gauden_t *s, ps_mllr_t *mllr, cmd_ln_t *config);
 
 /**
  * Compute gaussian density values for the given input observation vector wrt the

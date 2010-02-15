@@ -120,7 +120,7 @@ typedef struct {
     /**< Intermediate used in computation */
     gauden_dist_t ***dist;  
     uint8 *mgau_active;
-
+    cmd_ln_t *config;
 } ms_mgau_model_t;  
 
 #define ms_mgau_gauden(msg) (msg->g)

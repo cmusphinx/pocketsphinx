@@ -545,3 +545,59 @@ gauden_dist(gauden_t * g,
 
     return 0;
 }
+
+int32
+gauden_mllr_transform(gauden_t *g, ps_mllr_t *mllr, cmd_ln_t *config)
+{
+    int32 i, m, f, d, *flen;
+    float32 ****fgau;
+
+    /* Reload means and variances (un-precomputed). */
+    fgau = NULL;
+    gauden_param_read(&fgau, &g->n_mgau, &g->n_feat, &g->n_density,
+                      &g->featlen, cmd_ln_str_r(config, "-mean"));
+    g->mean = (mfcc_t ****)fgau;
+    fgau = NULL;
+    gauden_param_read(&fgau, &m, &f, &d, &flen, cmd_ln_str_r(config, "-var"));
+    g->var = (mfcc_t ****)fgau;
+
+    /* Verify mean and variance parameter dimensions */
+    if ((m != g->n_mgau) || (f != g->n_feat) || (d != g->n_density))
+        E_FATAL
+            ("Mixture-gaussians dimensions for means and variances differ\n");
+    for (i = 0; i < g->n_feat; i++)
+        if (g->featlen[i] != flen[i])
+            E_FATAL("Feature lengths for means and variances differ\n");
+    ckd_free(flen);
+
+    /* Transform codebook for each stream s */
+    for (i = 0; i < g->n_mgau; ++i) {
+        for (f = 0; f < g->n_feat; ++f) {
+            float64 *temp;
+            temp = (float64 *) ckd_calloc(g->featlen[f], sizeof(float64));
+            /* Transform each density d in selected codebook */
+            for (d = 0; d < g->n_density; d++) {
+                int l;
+                for (l = 0; l < g->featlen[f]; l++) {
+                    temp[l] = 0.0;
+                    for (m = 0; m < g->featlen[f]; m++) {
+                        /* FIXME: For now, only one class, hence the zeros below. */
+                        temp[l] += mllr->A[f][0][l][m] * g->mean[i][f][d][m];
+                    }
+                    temp[l] += mllr->b[f][0][l];
+                }
+
+                for (l = 0; l < g->featlen[f]; l++) {
+                    g->mean[i][f][d][l] = (float32) temp[l];
+                    g->var[i][f][d][l] *= mllr->h[f][0][l];
+                }
+            }
+            ckd_free(temp);
+        }
+    }
+
+    /* Re-precompute (if we aren't adapting variances this isn't
+     * actually necessary...) */
+    gauden_dist_precompute(g, g->lmath, cmd_ln_float32_r(config, "-varfloor"));
+    return 0;
+}

@@ -88,7 +88,7 @@ ms_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     senone_t *s;
 
     msg = (ms_mgau_model_t *) ckd_calloc(1, sizeof(ms_mgau_model_t));
-    
+    msg->config = config;
     msg->g = NULL;
     msg->s = NULL;
 
@@ -156,7 +156,8 @@ int
 ms_mgau_mllr_transform(ps_mgau_t *s,
 		       ps_mllr_t *mllr)
 {
-    return -1;
+    ms_mgau_model_t *msg = (ms_mgau_model_t *)s;
+    return gauden_mllr_transform(msg->g, mllr, msg->config);
 }
 
 int32

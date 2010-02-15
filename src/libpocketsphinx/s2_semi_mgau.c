@@ -62,7 +62,6 @@
 
 /* Local headers */
 #include "s2_semi_mgau.h"
-#include "kdtree.h"
 #include "posixwin32.h"
 
 static ps_mgaufuncs_t s2_semi_mgau_funcs = {
@@ -152,12 +151,12 @@ fast_logmath_add(logmath_t *lmath, int mlx, int mly)
 }
 
 static void
-eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
+eval_topn(s2_semi_mgau_t *s, int cb, int feat, mfcc_t *z)
 {
-    int32 i, ceplen;
+    int i, ceplen;
     vqFeature_t *topn;
 
-    topn = s->f[feat];
+    topn = s->f[cb][feat];
     ceplen = s->veclen[feat];
 
     for (i = 0; i < s->max_topn; i++) {
@@ -168,9 +167,9 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
         int32 cw, j;
 
         cw = topn[i].codeword;
-        mean = s->means[feat] + cw * ceplen;
-        var = s->vars[feat] + cw * ceplen;
-        d = s->dets[feat][cw];
+        mean = s->means[cb][feat][cw];
+        var = s->vars[cb][feat][cw];
+        d = s->dets[cb][feat][cw];
         obs = z;
         for (j = 0; j < ceplen; j++) {
             diff = *obs++ - *mean++;
@@ -191,68 +190,18 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
 }
 
 static void
-eval_cb_kdtree(s2_semi_mgau_t *s, int32 feat, mfcc_t *z,
-               kd_tree_node_t *node, uint32 maxbbi)
-{
-    vqFeature_t *worst, *best, *topn;
-    int32 i, ceplen;
-
-    best = topn = s->f[feat];
-    worst = topn + (s->max_topn - 1);
-    ceplen = s->veclen[feat];
-
-    for (i = 0; i < maxbbi; ++i) {
-        mfcc_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
-        mfcc_t *var, d;
-        mfcc_t *obs;
-        vqFeature_t *cur;
-        int32 cw, j, k;
-
-        cw = node->bbi[i];
-        mean = s->means[feat] + cw * ceplen;
-        var = s->vars[feat] + cw * ceplen;
-        d = s->dets[feat][cw];
-        obs = z;
-        for (j = 0; (j < ceplen) && (d >= worst->score); j++) {
-            diff = *obs++ - *mean++;
-            sqdiff = MFCCMUL(diff, diff);
-            compl = MFCCMUL(sqdiff, *var);
-            d = GMMSUB(d, compl);
-            ++var;
-        }
-        if (j < ceplen)
-            continue;
-        if ((int32)d < worst->score)
-            continue;
-        for (k = 0; k < s->max_topn; k++) {
-            /* already there, so don't need to insert */
-            if (topn[k].codeword == cw)
-                break;
-        }
-        if (k < s->max_topn)
-            continue;       /* already there.  Don't insert */
-        /* remaining code inserts codeword and dist in correct spot */
-        for (cur = worst - 1; cur >= best && (int32)d >= cur->score; --cur)
-            memcpy(cur + 1, cur, sizeof(vqFeature_t));
-        ++cur;
-        cur->codeword = cw;
-        cur->score = (int32)d;
-    }
-}
-
-static void
-eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
+eval_cb(s2_semi_mgau_t *s, int cb, int feat, mfcc_t *z)
 {
     vqFeature_t *worst, *best, *topn;
     mfcc_t *mean;
     mfcc_t *var, *det, *detP, *detE;
     int32 i, ceplen;
 
-    best = topn = s->f[feat];
+    best = topn = s->f[cb][feat];
     worst = topn + (s->max_topn - 1);
-    mean = s->means[feat];
-    var = s->vars[feat];
-    det = s->dets[feat];
+    mean = s->means[cb][feat][0];
+    var = s->vars[cb][feat][0];
+    det = s->dets[cb][feat];
     detE = det + s->n_density;
     ceplen = s->veclen[feat];
 
@@ -298,80 +247,66 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
 }
 
 static void
-mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
+mgau_dist(s2_semi_mgau_t * s, int frame, int cb, int feat, mfcc_t * z)
 {
-    eval_topn(s, feat, z);
+    eval_topn(s, cb, feat, z);
 
     /* If this frame is skipped, do nothing else. */
     if (frame % s->ds_ratio)
         return;
 
-    /* Evaluate the rest of the codebook (or subset thereof). */
-    if (s->kdtrees) {
-        kd_tree_node_t *node;
-        uint32 maxbbi;
-
-        node =
-            eval_kd_tree(s->kdtrees[feat], z, s->kd_maxdepth);
-        maxbbi = s->kd_maxbbi == -1 ? node->n_bbi : MIN(node->n_bbi,
-                                                        s->
-                                                        kd_maxbbi);
-        eval_cb_kdtree(s, feat, z, node, maxbbi);
-    }
-    else {
-        eval_cb(s, feat, z);
-    }
+    eval_cb(s, cb, feat, z);
 }
 
 static int
-mgau_norm(s2_semi_mgau_t *s, int feat)
+mgau_norm(s2_semi_mgau_t *s, int cb, int feat)
 {
     int32 norm;
     int j;
 
     /* Compute quantized normalizing constant. */
-    norm = s->f[feat][0].score >> SENSCR_SHIFT;
+    norm = s->f[cb][feat][0].score >> SENSCR_SHIFT;
 
     /* Normalize the scores, negate them, and clamp their dynamic range. */
     for (j = 0; j < s->max_topn; ++j) {
-        s->f[feat][j].score = -((s->f[feat][j].score >> SENSCR_SHIFT) - norm);
-        if (s->f[feat][j].score > MAX_NEG_ASCR)
-            s->f[feat][j].score = MAX_NEG_ASCR;
-        if (s->topn_beam[feat] && s->f[feat][j].score > s->topn_beam[feat])
+        s->f[cb][feat][j].score = -((s->f[cb][feat][j].score >> SENSCR_SHIFT) - norm);
+        if (s->f[cb][feat][j].score > MAX_NEG_ASCR)
+            s->f[cb][feat][j].score = MAX_NEG_ASCR;
+        if (s->topn_beam[feat] && s->f[cb][feat][j].score > s->topn_beam[feat])
             break;
     }
     return j;
 }
 
 static int32
-get_scores_8b_feat_6(s2_semi_mgau_t * s, int i,
+get_scores_8b_feat_6(s2_semi_mgau_t * s, int cb, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
     int32 j, l;
     uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3, *pid_cw4, *pid_cw5;
 
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-    pid_cw3 = s->mixw[i][s->f[i][3].codeword];
-    pid_cw4 = s->mixw[i][s->f[i][4].codeword];
-    pid_cw5 = s->mixw[i][s->f[i][5].codeword];
+    pid_cw0 = s->mixw[i][s->f[cb][i][0].codeword];
+    pid_cw1 = s->mixw[i][s->f[cb][i][1].codeword];
+    pid_cw2 = s->mixw[i][s->f[cb][i][2].codeword];
+    pid_cw3 = s->mixw[i][s->f[cb][i][3].codeword];
+    pid_cw4 = s->mixw[i][s->f[cb][i][4].codeword];
+    pid_cw5 = s->mixw[i][s->f[cb][i][5].codeword];
 
     for (l = j = 0; j < n_senone_active; j++) {
         int sen = senone_active[j] + l;
-        int32 tmp = pid_cw0[sen] + s->f[i][0].score;
+        int32 tmp = pid_cw0[sen] + s->f[cb][i][0].score;
 
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw1[sen] + s->f[i][1].score);
+                               pid_cw1[sen] + s->f[cb][i][1].score);
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw2[sen] + s->f[i][2].score);
+                               pid_cw2[sen] + s->f[cb][i][2].score);
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw3[sen] + s->f[i][3].score);
+                               pid_cw3[sen] + s->f[cb][i][3].score);
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw4[sen] + s->f[i][4].score);
+                               pid_cw4[sen] + s->f[cb][i][4].score);
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw5[sen] + s->f[i][5].score);
+                               pid_cw5[sen] + s->f[cb][i][5].score);
 
         senone_scores[sen] += tmp;
         l = sen;
@@ -380,31 +315,31 @@ get_scores_8b_feat_6(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_8b_feat_5(s2_semi_mgau_t * s, int i,
+get_scores_8b_feat_5(s2_semi_mgau_t * s, int cb, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
     int32 j, l;
     uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3, *pid_cw4;
 
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-    pid_cw3 = s->mixw[i][s->f[i][3].codeword];
-    pid_cw4 = s->mixw[i][s->f[i][4].codeword];
+    pid_cw0 = s->mixw[i][s->f[cb][i][0].codeword];
+    pid_cw1 = s->mixw[i][s->f[cb][i][1].codeword];
+    pid_cw2 = s->mixw[i][s->f[cb][i][2].codeword];
+    pid_cw3 = s->mixw[i][s->f[cb][i][3].codeword];
+    pid_cw4 = s->mixw[i][s->f[cb][i][4].codeword];
 
     for (l = j = 0; j < n_senone_active; j++) {
         int sen = senone_active[j] + l;
-        int32 tmp = pid_cw0[sen] + s->f[i][0].score;
+        int32 tmp = pid_cw0[sen] + s->f[cb][i][0].score;
 
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw1[sen] + s->f[i][1].score);
+                               pid_cw1[sen] + s->f[cb][i][1].score);
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw2[sen] + s->f[i][2].score);
+                               pid_cw2[sen] + s->f[cb][i][2].score);
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw3[sen] + s->f[i][3].score);
+                               pid_cw3[sen] + s->f[cb][i][3].score);
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw4[sen] + s->f[i][4].score);
+                               pid_cw4[sen] + s->f[cb][i][4].score);
 
         senone_scores[sen] += tmp;
         l = sen;
@@ -413,28 +348,28 @@ get_scores_8b_feat_5(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_8b_feat_4(s2_semi_mgau_t * s, int i,
+get_scores_8b_feat_4(s2_semi_mgau_t * s, int cb, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
     int32 j, l;
     uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
 
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-    pid_cw3 = s->mixw[i][s->f[i][3].codeword];
+    pid_cw0 = s->mixw[i][s->f[cb][i][0].codeword];
+    pid_cw1 = s->mixw[i][s->f[cb][i][1].codeword];
+    pid_cw2 = s->mixw[i][s->f[cb][i][2].codeword];
+    pid_cw3 = s->mixw[i][s->f[cb][i][3].codeword];
 
     for (l = j = 0; j < n_senone_active; j++) {
         int sen = senone_active[j] + l;
-        int32 tmp = pid_cw0[sen] + s->f[i][0].score;
+        int32 tmp = pid_cw0[sen] + s->f[cb][i][0].score;
 
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw1[sen] + s->f[i][1].score);
+                               pid_cw1[sen] + s->f[cb][i][1].score);
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw2[sen] + s->f[i][2].score);
+                               pid_cw2[sen] + s->f[cb][i][2].score);
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw3[sen] + s->f[i][3].score);
+                               pid_cw3[sen] + s->f[cb][i][3].score);
 
         senone_scores[sen] += tmp;
         l = sen;
@@ -443,25 +378,25 @@ get_scores_8b_feat_4(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_8b_feat_3(s2_semi_mgau_t * s, int i,
+get_scores_8b_feat_3(s2_semi_mgau_t * s, int cb, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
     int32 j, l;
     uint8 *pid_cw0, *pid_cw1, *pid_cw2;
 
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
+    pid_cw0 = s->mixw[i][s->f[cb][i][0].codeword];
+    pid_cw1 = s->mixw[i][s->f[cb][i][1].codeword];
+    pid_cw2 = s->mixw[i][s->f[cb][i][2].codeword];
 
     for (l = j = 0; j < n_senone_active; j++) {
         int sen = senone_active[j] + l;
-        int32 tmp = pid_cw0[sen] + s->f[i][0].score;
+        int32 tmp = pid_cw0[sen] + s->f[cb][i][0].score;
 
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw1[sen] + s->f[i][1].score);
+                               pid_cw1[sen] + s->f[cb][i][1].score);
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw2[sen] + s->f[i][2].score);
+                               pid_cw2[sen] + s->f[cb][i][2].score);
 
         senone_scores[sen] += tmp;
         l = sen;
@@ -470,22 +405,22 @@ get_scores_8b_feat_3(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_8b_feat_2(s2_semi_mgau_t * s, int i,
+get_scores_8b_feat_2(s2_semi_mgau_t * s, int cb, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
     int32 j, l;
     uint8 *pid_cw0, *pid_cw1;
 
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
+    pid_cw0 = s->mixw[i][s->f[cb][i][0].codeword];
+    pid_cw1 = s->mixw[i][s->f[cb][i][1].codeword];
 
     for (l = j = 0; j < n_senone_active; j++) {
         int sen = senone_active[j] + l;
-        int32 tmp = pid_cw0[sen] + s->f[i][0].score;
+        int32 tmp = pid_cw0[sen] + s->f[cb][i][0].score;
 
         tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw1[sen] + s->f[i][1].score);
+                               pid_cw1[sen] + s->f[cb][i][1].score);
 
         senone_scores[sen] += tmp;
         l = sen;
@@ -494,17 +429,17 @@ get_scores_8b_feat_2(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_8b_feat_1(s2_semi_mgau_t * s, int i,
+get_scores_8b_feat_1(s2_semi_mgau_t * s, int cb, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
     int32 j, l;
     uint8 *pid_cw0;
 
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
+    pid_cw0 = s->mixw[i][s->f[cb][i][0].codeword];
     for (l = j = 0; j < n_senone_active; j++) {
         int sen = senone_active[j] + l;
-        int32 tmp = pid_cw0[sen] + s->f[i][0].score;
+        int32 tmp = pid_cw0[sen] + s->f[cb][i][0].score;
         senone_scores[sen] += tmp;
         l = sen;
     }
@@ -512,7 +447,7 @@ get_scores_8b_feat_1(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_8b_feat_any(s2_semi_mgau_t * s, int i, int topn,
+get_scores_8b_feat_any(s2_semi_mgau_t * s, int cb, int i, int topn,
                        int16 *senone_scores, uint8 *senone_active,
                        int32 n_senone_active)
 {
@@ -522,12 +457,12 @@ get_scores_8b_feat_any(s2_semi_mgau_t * s, int i, int topn,
         int sen = senone_active[j] + l;
         uint8 *pid_cw;
         int32 tmp;
-        pid_cw = s->mixw[i][s->f[i][0].codeword];
-        tmp = pid_cw[sen] + s->f[i][0].score;
+        pid_cw = s->mixw[i][s->f[cb][i][0].codeword];
+        tmp = pid_cw[sen] + s->f[cb][i][0].score;
         for (k = 1; k < topn; ++k) {
-            pid_cw = s->mixw[i][s->f[i][k].codeword];
+            pid_cw = s->mixw[i][s->f[cb][i][k].codeword];
             tmp = fast_logmath_add(s->lmath_8b, tmp,
-                                   pid_cw[sen] + s->f[i][k].score);
+                                   pid_cw[sen] + s->f[cb][i][k].score);
         }
         senone_scores[sen] += tmp;
         l = sen;
@@ -536,48 +471,49 @@ get_scores_8b_feat_any(s2_semi_mgau_t * s, int i, int topn,
 }
 
 static int32
-get_scores_8b_feat(s2_semi_mgau_t * s, int i, int topn,
+get_scores_8b_feat(s2_semi_mgau_t * s, int cb, int i, int topn,
                    int16 *senone_scores, uint8 *senone_active, int32 n_senone_active)
 {
     switch (topn) {
     case 6:
-        return get_scores_8b_feat_6(s, i, senone_scores,
+        return get_scores_8b_feat_6(s, cb, i, senone_scores,
                                     senone_active, n_senone_active);
     case 5:
-        return get_scores_8b_feat_5(s, i, senone_scores,
+        return get_scores_8b_feat_5(s, cb, i, senone_scores,
                                     senone_active, n_senone_active);
     case 4:
-        return get_scores_8b_feat_4(s, i, senone_scores,
+        return get_scores_8b_feat_4(s, cb, i, senone_scores,
                                     senone_active, n_senone_active);
     case 3:
-        return get_scores_8b_feat_3(s, i, senone_scores,
+        return get_scores_8b_feat_3(s, cb, i, senone_scores,
                                     senone_active, n_senone_active);
     case 2:
-        return get_scores_8b_feat_2(s, i, senone_scores,
+        return get_scores_8b_feat_2(s, cb, i, senone_scores,
                                     senone_active, n_senone_active);
     case 1:
-        return get_scores_8b_feat_1(s, i, senone_scores,
+        return get_scores_8b_feat_1(s, cb, i, senone_scores,
                                     senone_active, n_senone_active);
     default:
-        return get_scores_8b_feat_any(s, i, topn, senone_scores,
+        return get_scores_8b_feat_any(s, cb, i, topn, senone_scores,
                                       senone_active, n_senone_active);
     }
 }
 
 static int32
-get_scores_8b_feat_all(s2_semi_mgau_t * s, int i, int topn, int16 *senone_scores)
+get_scores_8b_feat_all(s2_semi_mgau_t * s, int cb,
+                       int i, int topn, int16 *senone_scores)
 {
     int32 j, k;
 
     for (j = 0; j < s->n_sen; j++) {
         uint8 *pid_cw;
         int32 tmp;
-        pid_cw = s->mixw[i][s->f[i][0].codeword];
-        tmp = pid_cw[j] + s->f[i][0].score;
+        pid_cw = s->mixw[i][s->f[cb][i][0].codeword];
+        tmp = pid_cw[j] + s->f[cb][i][0].score;
         for (k = 1; k < topn; ++k) {
-            pid_cw = s->mixw[i][s->f[i][k].codeword];
+            pid_cw = s->mixw[i][s->f[cb][i][k].codeword];
             tmp = fast_logmath_add(s->lmath_8b, tmp,
-                                   pid_cw[j] + s->f[i][k].score);
+                                   pid_cw[j] + s->f[cb][i][k].score);
         }
         senone_scores[j] += tmp;
     }
@@ -585,7 +521,7 @@ get_scores_8b_feat_all(s2_semi_mgau_t * s, int i, int topn, int16 *senone_scores
 }
 
 static int32
-get_scores_4b_feat_6(s2_semi_mgau_t * s, int i,
+get_scores_4b_feat_6(s2_semi_mgau_t * s, int cb, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -595,20 +531,20 @@ get_scores_4b_feat_6(s2_semi_mgau_t * s, int i,
 
     /* Precompute scaled densities. */
     for (j = 0; j < 16; ++j) {
-        w_den[0][j] = s->mixw_cb[j] + s->f[i][0].score;
-        w_den[1][j] = s->mixw_cb[j] + s->f[i][1].score;
-        w_den[2][j] = s->mixw_cb[j] + s->f[i][2].score;
-        w_den[3][j] = s->mixw_cb[j] + s->f[i][3].score;
-        w_den[4][j] = s->mixw_cb[j] + s->f[i][4].score;
-        w_den[5][j] = s->mixw_cb[j] + s->f[i][5].score;
+        w_den[0][j] = s->mixw_cb[j] + s->f[cb][i][0].score;
+        w_den[1][j] = s->mixw_cb[j] + s->f[cb][i][1].score;
+        w_den[2][j] = s->mixw_cb[j] + s->f[cb][i][2].score;
+        w_den[3][j] = s->mixw_cb[j] + s->f[cb][i][3].score;
+        w_den[4][j] = s->mixw_cb[j] + s->f[cb][i][4].score;
+        w_den[5][j] = s->mixw_cb[j] + s->f[cb][i][5].score;
     }
 
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-    pid_cw3 = s->mixw[i][s->f[i][3].codeword];
-    pid_cw4 = s->mixw[i][s->f[i][4].codeword];
-    pid_cw5 = s->mixw[i][s->f[i][5].codeword];
+    pid_cw0 = s->mixw[i][s->f[cb][i][0].codeword];
+    pid_cw1 = s->mixw[i][s->f[cb][i][1].codeword];
+    pid_cw2 = s->mixw[i][s->f[cb][i][2].codeword];
+    pid_cw3 = s->mixw[i][s->f[cb][i][3].codeword];
+    pid_cw4 = s->mixw[i][s->f[cb][i][4].codeword];
+    pid_cw5 = s->mixw[i][s->f[cb][i][5].codeword];
 
     for (l = j = 0; j < n_senone_active; j++) {
         int n = senone_active[j] + l;
@@ -649,7 +585,7 @@ get_scores_4b_feat_6(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_4b_feat_5(s2_semi_mgau_t * s, int i,
+get_scores_4b_feat_5(s2_semi_mgau_t * s, int cb, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -659,18 +595,18 @@ get_scores_4b_feat_5(s2_semi_mgau_t * s, int i,
 
     /* Precompute scaled densities. */
     for (j = 0; j < 16; ++j) {
-        w_den[0][j] = s->mixw_cb[j] + s->f[i][0].score;
-        w_den[1][j] = s->mixw_cb[j] + s->f[i][1].score;
-        w_den[2][j] = s->mixw_cb[j] + s->f[i][2].score;
-        w_den[3][j] = s->mixw_cb[j] + s->f[i][3].score;
-        w_den[4][j] = s->mixw_cb[j] + s->f[i][4].score;
+        w_den[0][j] = s->mixw_cb[j] + s->f[cb][i][0].score;
+        w_den[1][j] = s->mixw_cb[j] + s->f[cb][i][1].score;
+        w_den[2][j] = s->mixw_cb[j] + s->f[cb][i][2].score;
+        w_den[3][j] = s->mixw_cb[j] + s->f[cb][i][3].score;
+        w_den[4][j] = s->mixw_cb[j] + s->f[cb][i][4].score;
     }
 
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-    pid_cw3 = s->mixw[i][s->f[i][3].codeword];
-    pid_cw4 = s->mixw[i][s->f[i][4].codeword];
+    pid_cw0 = s->mixw[i][s->f[cb][i][0].codeword];
+    pid_cw1 = s->mixw[i][s->f[cb][i][1].codeword];
+    pid_cw2 = s->mixw[i][s->f[cb][i][2].codeword];
+    pid_cw3 = s->mixw[i][s->f[cb][i][3].codeword];
+    pid_cw4 = s->mixw[i][s->f[cb][i][4].codeword];
 
     for (l = j = 0; j < n_senone_active; j++) {
         int n = senone_active[j] + l;
@@ -707,7 +643,7 @@ get_scores_4b_feat_5(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_4b_feat_4(s2_semi_mgau_t * s, int i,
+get_scores_4b_feat_4(s2_semi_mgau_t * s, int cb, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -717,16 +653,16 @@ get_scores_4b_feat_4(s2_semi_mgau_t * s, int i,
 
     /* Precompute scaled densities. */
     for (j = 0; j < 16; ++j) {
-        w_den[0][j] = s->mixw_cb[j] + s->f[i][0].score;
-        w_den[1][j] = s->mixw_cb[j] + s->f[i][1].score;
-        w_den[2][j] = s->mixw_cb[j] + s->f[i][2].score;
-        w_den[3][j] = s->mixw_cb[j] + s->f[i][3].score;
+        w_den[0][j] = s->mixw_cb[j] + s->f[cb][i][0].score;
+        w_den[1][j] = s->mixw_cb[j] + s->f[cb][i][1].score;
+        w_den[2][j] = s->mixw_cb[j] + s->f[cb][i][2].score;
+        w_den[3][j] = s->mixw_cb[j] + s->f[cb][i][3].score;
     }
 
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-    pid_cw3 = s->mixw[i][s->f[i][3].codeword];
+    pid_cw0 = s->mixw[i][s->f[cb][i][0].codeword];
+    pid_cw1 = s->mixw[i][s->f[cb][i][1].codeword];
+    pid_cw2 = s->mixw[i][s->f[cb][i][2].codeword];
+    pid_cw3 = s->mixw[i][s->f[cb][i][3].codeword];
 
     for (l = j = 0; j < n_senone_active; j++) {
         int n = senone_active[j] + l;
@@ -759,7 +695,7 @@ get_scores_4b_feat_4(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_4b_feat_3(s2_semi_mgau_t * s, int i,
+get_scores_4b_feat_3(s2_semi_mgau_t * s, int cb, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -769,14 +705,14 @@ get_scores_4b_feat_3(s2_semi_mgau_t * s, int i,
 
     /* Precompute scaled densities. */
     for (j = 0; j < 16; ++j) {
-        w_den[0][j] = s->mixw_cb[j] + s->f[i][0].score;
-        w_den[1][j] = s->mixw_cb[j] + s->f[i][1].score;
-        w_den[2][j] = s->mixw_cb[j] + s->f[i][2].score;
+        w_den[0][j] = s->mixw_cb[j] + s->f[cb][i][0].score;
+        w_den[1][j] = s->mixw_cb[j] + s->f[cb][i][1].score;
+        w_den[2][j] = s->mixw_cb[j] + s->f[cb][i][2].score;
     }
 
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
+    pid_cw0 = s->mixw[i][s->f[cb][i][0].codeword];
+    pid_cw1 = s->mixw[i][s->f[cb][i][1].codeword];
+    pid_cw2 = s->mixw[i][s->f[cb][i][2].codeword];
 
     for (l = j = 0; j < n_senone_active; j++) {
         int n = senone_active[j] + l;
@@ -805,7 +741,7 @@ get_scores_4b_feat_3(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_4b_feat_2(s2_semi_mgau_t * s, int i,
+get_scores_4b_feat_2(s2_semi_mgau_t * s, int cb, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -815,12 +751,12 @@ get_scores_4b_feat_2(s2_semi_mgau_t * s, int i,
 
     /* Precompute scaled densities. */
     for (j = 0; j < 16; ++j) {
-        w_den[0][j] = s->mixw_cb[j] + s->f[i][0].score;
-        w_den[1][j] = s->mixw_cb[j] + s->f[i][1].score;
+        w_den[0][j] = s->mixw_cb[j] + s->f[cb][i][0].score;
+        w_den[1][j] = s->mixw_cb[j] + s->f[cb][i][1].score;
     }
 
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
+    pid_cw0 = s->mixw[i][s->f[cb][i][0].codeword];
+    pid_cw1 = s->mixw[i][s->f[cb][i][1].codeword];
 
     for (l = j = 0; j < n_senone_active; j++) {
         int n = senone_active[j] + l;
@@ -845,7 +781,7 @@ get_scores_4b_feat_2(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_4b_feat_1(s2_semi_mgau_t * s, int i,
+get_scores_4b_feat_1(s2_semi_mgau_t * s, int cb, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -855,10 +791,10 @@ get_scores_4b_feat_1(s2_semi_mgau_t * s, int i,
 
     /* Precompute scaled densities. */
     for (j = 0; j < 16; ++j) {
-        w_den[j] = s->mixw_cb[j] + s->f[i][0].score;
+        w_den[j] = s->mixw_cb[j] + s->f[cb][i][0].score;
     }
 
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
+    pid_cw0 = s->mixw[i][s->f[cb][i][0].codeword];
 
     for (l = j = 0; j < n_senone_active; j++) {
         int n = senone_active[j] + l;
@@ -879,7 +815,7 @@ get_scores_4b_feat_1(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_4b_feat_any(s2_semi_mgau_t * s, int i, int topn,
+get_scores_4b_feat_any(s2_semi_mgau_t * s, int cb, int i, int topn,
                        int16 *senone_scores, uint8 *senone_active,
                        int32 n_senone_active)
 {
@@ -890,20 +826,20 @@ get_scores_4b_feat_any(s2_semi_mgau_t * s, int i, int topn,
         int tmp, cw;
         uint8 *pid_cw;
     
-        pid_cw = s->mixw[i][s->f[i][0].codeword];
+        pid_cw = s->mixw[i][s->f[cb][i][0].codeword];
         if (n & 1)
             cw = pid_cw[n/2] >> 4;
         else
             cw = pid_cw[n/2] & 0x0f;
-        tmp = s->mixw_cb[cw] + s->f[i][0].score;
+        tmp = s->mixw_cb[cw] + s->f[cb][i][0].score;
         for (k = 1; k < topn; ++k) {
-            pid_cw = s->mixw[i][s->f[i][k].codeword];
+            pid_cw = s->mixw[i][s->f[cb][i][k].codeword];
             if (n & 1)
                 cw = pid_cw[n/2] >> 4;
             else
                 cw = pid_cw[n/2] & 0x0f;
             tmp = fast_logmath_add(s->lmath_8b, tmp,
-                                   s->mixw_cb[cw] + s->f[i][k].score);
+                                   s->mixw_cb[cw] + s->f[cb][i][k].score);
         }
         senone_scores[n] += tmp;
         l = n;
@@ -912,48 +848,48 @@ get_scores_4b_feat_any(s2_semi_mgau_t * s, int i, int topn,
 }
 
 static int32
-get_scores_4b_feat(s2_semi_mgau_t * s, int i, int topn,
+get_scores_4b_feat(s2_semi_mgau_t * s, int cb, int i, int topn,
                    int16 *senone_scores, uint8 *senone_active, int32 n_senone_active)
 {
     switch (topn) {
     case 6:
-        return get_scores_4b_feat_6(s, i, senone_scores,
+        return get_scores_4b_feat_6(s, cb, i, senone_scores,
                                     senone_active, n_senone_active);
     case 5:
-        return get_scores_4b_feat_5(s, i, senone_scores,
+        return get_scores_4b_feat_5(s, cb, i, senone_scores,
                                     senone_active, n_senone_active);
     case 4:
-        return get_scores_4b_feat_4(s, i, senone_scores,
+        return get_scores_4b_feat_4(s, cb, i, senone_scores,
                                     senone_active, n_senone_active);
     case 3:
-        return get_scores_4b_feat_3(s, i, senone_scores,
+        return get_scores_4b_feat_3(s, cb, i, senone_scores,
                                     senone_active, n_senone_active);
     case 2:
-        return get_scores_4b_feat_2(s, i, senone_scores,
+        return get_scores_4b_feat_2(s, cb, i, senone_scores,
                                     senone_active, n_senone_active);
     case 1:
-        return get_scores_4b_feat_1(s, i, senone_scores,
+        return get_scores_4b_feat_1(s, cb, i, senone_scores,
                                     senone_active, n_senone_active);
     default:
-        return get_scores_4b_feat_any(s, i, topn, senone_scores,
+        return get_scores_4b_feat_any(s, cb, i, topn, senone_scores,
                                       senone_active, n_senone_active);
     }
 }
 
 static int32
-get_scores_4b_feat_all(s2_semi_mgau_t * s, int i, int topn, int16 *senone_scores)
+get_scores_4b_feat_all(s2_semi_mgau_t * s, int cb, int i, int topn, int16 *senone_scores)
 {
     int32 j, k;
 
     for (j = 0; j < s->n_sen; j++) {
         uint8 *pid_cw;
         int32 tmp;
-        pid_cw = s->mixw[i][s->f[i][0].codeword];
-        tmp = pid_cw[j] + s->f[i][0].score;
+        pid_cw = s->mixw[i][s->f[cb][i][0].codeword];
+        tmp = pid_cw[j] + s->f[cb][i][0].score;
         for (k = 1; k < topn; ++k) {
-            pid_cw = s->mixw[i][s->f[i][k].codeword];
+            pid_cw = s->mixw[i][s->f[cb][i][k].codeword];
             tmp = fast_logmath_add(s->lmath_8b, tmp,
-                                   pid_cw[j] + s->f[i][k].score);
+                                   pid_cw[j] + s->f[cb][i][k].score);
         }
         senone_scores[j] += tmp;
     }
@@ -972,7 +908,7 @@ s2_semi_mgau_frame_eval(ps_mgau_t *ps,
 			int32 compallsen)
 {
     s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
-    int i, topn_idx;
+    int i, cb, topn_idx;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     /* No bounds checking is done here, which just means you'll get
@@ -980,50 +916,38 @@ s2_semi_mgau_frame_eval(ps_mgau_t *ps,
      * that's too far in the past. */
     topn_idx = frame % s->n_topn_hist;
     s->f = s->topn_hist[topn_idx];
-    for (i = 0; i < s->n_feat; ++i) {
-        /* For past frames this will already be computed. */
-        if (frame >= ps_mgau_base(ps)->frame_idx) {
-            vqFeature_t **lastf;
-            if (topn_idx == 0)
-                lastf = s->topn_hist[s->n_topn_hist-1];
-            else
-                lastf = s->topn_hist[topn_idx-1];
-            memcpy(s->f[i], lastf[i], sizeof(vqFeature_t) * s->max_topn);
-            mgau_dist(s, frame, i, featbuf[i]);
-            s->topn_hist_n[topn_idx][i] = mgau_norm(s, i);
-        }
-        if (s->mixw_cb) {
-            if (compallsen)
-                get_scores_4b_feat_all(s, i, s->topn_hist_n[topn_idx][i], senone_scores);
-            else
-                get_scores_4b_feat(s, i, s->topn_hist_n[topn_idx][i], senone_scores,
-                                   senone_active, n_senone_active);
-        }
-        else {
-            if (compallsen)
-                get_scores_8b_feat_all(s, i, s->topn_hist_n[topn_idx][i], senone_scores);
-            else
-                get_scores_8b_feat(s, i, s->topn_hist_n[topn_idx][i], senone_scores,
-                                   senone_active, n_senone_active);
+    for (cb = 0; cb < s->n_cb; ++cb) {
+        for (i = 0; i < s->n_feat; ++i) {
+            /* For past frames this will already be computed. */
+            if (frame >= ps_mgau_base(ps)->frame_idx) {
+                vqFeature_t ***lastf;
+                if (topn_idx == 0)
+                    lastf = s->topn_hist[s->n_topn_hist-1];
+                else
+                    lastf = s->topn_hist[topn_idx-1];
+                memcpy(s->f[cb][i], lastf[cb][i], sizeof(vqFeature_t) * s->max_topn);
+                mgau_dist(s, frame, cb, i, featbuf[i]);
+                s->topn_hist_n[topn_idx][cb][i] = mgau_norm(s, cb, i);
+            }
+            if (s->mixw_cb) {
+                if (compallsen)
+                    get_scores_4b_feat_all(s, cb, i, s->topn_hist_n[topn_idx][cb][i],
+                                           senone_scores);
+                else
+                    get_scores_4b_feat(s, cb, i, s->topn_hist_n[topn_idx][cb][i],
+                                       senone_scores, senone_active, n_senone_active);
+            }
+            else {
+                if (compallsen)
+                    get_scores_8b_feat_all(s, cb, i, s->topn_hist_n[topn_idx][cb][i],
+                                           senone_scores);
+                else
+                    get_scores_8b_feat(s, cb, i, s->topn_hist_n[topn_idx][cb][i],
+                                       senone_scores, senone_active, n_senone_active);
+            }
         }
     }
 
-    return 0;
-}
-
-int32
-s2_semi_mgau_load_kdtree(ps_mgau_t * ps, const char *kdtree_path,
-                         uint32 maxdepth, int32 maxbbi)
-{
-    s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
-    if (read_kd_trees(kdtree_path, &s->kdtrees, &s->n_kdtrees,
-                      maxdepth, maxbbi) == -1)
-        E_FATAL("Failed to read kd-trees from %s\n", kdtree_path);
-    if (s->n_kdtrees != s->n_feat)
-        E_FATAL("Number of kd-trees != %d\n", s->n_feat);
-
-    s->kd_maxdepth = maxdepth;
-    s->kd_maxbbi = maxbbi;
     return 0;
 }
 
@@ -1343,165 +1267,6 @@ read_mixw(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
 }
 
 
-/* Read a Sphinx3 mean or variance file. */
-static int32
-s3_read_mgau(s2_semi_mgau_t *s, const char *file_name, float32 ***out_cb)
-{
-    char tmp;
-    FILE *fp;
-    int32 i, blk, n;
-    int32 n_mgau;
-    int32 n_feat;
-    int32 n_density;
-    int32 *veclen;
-    int32 byteswap, chksum_present;
-    char **argname, **argval;
-    uint32 chksum;
-
-    E_INFO("Reading S3 mixture gaussian file '%s'\n", file_name);
-
-    if ((fp = fopen(file_name, "rb")) == NULL)
-        E_FATAL("fopen(%s,rb) failed\n", file_name);
-
-    /* Read header, including argument-value info and 32-bit byteorder magic */
-    if (bio_readhdr(fp, &argname, &argval, &byteswap) < 0)
-        E_FATAL("bio_readhdr(%s) failed\n", file_name);
-
-    /* Parse argument-value list */
-    chksum_present = 0;
-    for (i = 0; argname[i]; i++) {
-        if (strcmp(argname[i], "version") == 0) {
-            if (strcmp(argval[i], MGAU_PARAM_VERSION) != 0)
-                E_WARN("Version mismatch(%s): %s, expecting %s\n",
-                       file_name, argval[i], MGAU_PARAM_VERSION);
-        }
-        else if (strcmp(argname[i], "chksum0") == 0) {
-            chksum_present = 1; /* Ignore the associated value */
-        }
-    }
-    bio_hdrarg_free(argname, argval);
-    argname = argval = NULL;
-
-    chksum = 0;
-
-    /* #Codebooks */
-    if (bio_fread(&n_mgau, sizeof(int32), 1, fp, byteswap, &chksum) != 1)
-        E_FATAL("fread(%s) (#codebooks) failed\n", file_name);
-    if (n_mgau != 1) {
-        E_ERROR("%s: #codebooks (%d) != 1\n", file_name, n_mgau);
-        fclose(fp);
-        return -1;
-    }
-
-    /* #Features/codebook */
-    if (bio_fread(&n_feat, sizeof(int32), 1, fp, byteswap, &chksum) != 1)
-        E_FATAL("fread(%s) (#features) failed\n", file_name);
-    if (s->n_feat == 0)
-        s->n_feat = n_feat;
-    else if (n_feat != s->n_feat)
-        E_FATAL("#Features streams(%d) != %d\n", n_feat, s->n_feat);
-
-    /* #Gaussian densities/feature in each codebook */
-    if (bio_fread(&n_density, sizeof(int32), 1, fp,
-                  byteswap, &chksum) != 1)
-        E_FATAL("fread(%s) (#density/codebook) failed\n", file_name);
-    if (s->n_density == 0)
-        s->n_density = n_density;
-    else if (n_density != s->n_density)
-        E_FATAL("%s: Number of densities per feature(%d) != %d\n",
-                file_name, n_mgau, s->n_density);
-
-    /* Vector length of feature stream */
-    if (s->veclen == NULL)
-        s->veclen = ckd_calloc(s->n_feat, sizeof(int32));
-    veclen = ckd_calloc(s->n_feat, sizeof(int32));
-    if (bio_fread(veclen, sizeof(int32), s->n_feat,
-                  fp, byteswap, &chksum) != s->n_feat)
-        E_FATAL("fread(%s) (feature vector-length) failed\n", file_name);
-    for (i = 0, blk = 0; i < s->n_feat; ++i) {
-        if (s->veclen[i] == 0)
-            s->veclen[i] = veclen[i];
-        else if (veclen[i] != s->veclen[i])
-            E_FATAL("feature stream length %d is inconsistent (%d != %d)\n",
-                    i, veclen[i], s->veclen[i]);
-        blk += veclen[i];
-    }
-
-    /* #Floats to follow; for the ENTIRE SET of CODEBOOKS */
-    if (bio_fread(&n, sizeof(int32), 1, fp, byteswap, &chksum) != 1)
-        E_FATAL("fread(%s) (total #floats) failed\n", file_name);
-    if (n != n_mgau * n_density * blk)
-        E_FATAL
-            ("%s: #float32s(%d) doesn't match dimensions: %d x %d x %d\n",
-             file_name, n, n_mgau, n_density, blk);
-
-    *out_cb = ckd_calloc(s->n_feat, sizeof(float32 *));
-    for (i = 0; i < s->n_feat; ++i) {
-        (*out_cb)[i] =
-            (float32 *) ckd_calloc(n_density * veclen[i],
-                                   sizeof(float32));
-        if (bio_fread
-            ((*out_cb)[i], sizeof(float32),
-             n_density * veclen[i], fp,
-             byteswap, &chksum) != n_density * veclen[i])
-            E_FATAL("fread(%s, %d) of feat %d failed\n", file_name,
-                    n_density * veclen[i], i);
-    }
-    ckd_free(veclen);
-
-    if (chksum_present)
-        bio_verify_chksum(fp, byteswap, chksum);
-
-    if (fread(&tmp, 1, 1, fp) == 1)
-        E_FATAL("%s: More data than expected\n", file_name);
-
-    fclose(fp);
-
-    E_INFO("%d mixture Gaussians, %d components, %d feature streams, veclen %d\n", n_mgau,
-           n_density, n_feat, blk);
-
-    return n;
-}
-
-static int32
-s3_precomp(s2_semi_mgau_t *s, logmath_t *lmath, float32 vFloor)
-{
-    int feat;
-
-    for (feat = 0; feat < s->n_feat; ++feat) {
-        float32 *fmp;
-        mfcc_t *mp;
-        mfcc_t *vp, *dp;
-        int32 vecLen, i;
-
-        vecLen = s->veclen[feat];
-        fmp = (float32 *) s->means[feat];
-        mp = s->means[feat];
-        vp = s->vars[feat];
-        dp = s->dets[feat];
-
-        for (i = 0; i < s->n_density; ++i) {
-            mfcc_t d;
-            int32 j;
-
-            d = 0;
-            for (j = 0; j < vecLen; ++j, ++vp, ++mp, ++fmp) {
-                float64 fvar;
-
-                *mp = FLOAT2MFCC(*fmp);
-                /* Always do these pre-calculations in floating point */
-                fvar = *(float32 *) vp;
-                if (fvar < vFloor)
-                    fvar = vFloor;
-                d += (mfcc_t)logmath_log(lmath, 1 / sqrt(fvar * 2.0 * M_PI));
-                *vp = (mfcc_t)logmath_ln_to_log(lmath, 1.0 / (2.0 * fvar));
-            }
-            *dp++ = d;
-        }
-    }
-    return 0;
-}
-
 int
 split_topn(char const *str, uint8 *out, int nfeat)
 {
@@ -1538,7 +1303,6 @@ s2_semi_mgau_init(acmod_t *acmod)
     s2_semi_mgau_t *s;
     ps_mgau_t *ps;
     char const *sendump_path;
-    float32 **fgau;
     int i;
 
     s = ckd_calloc(1, sizeof(*s));
@@ -1547,52 +1311,52 @@ s2_semi_mgau_init(acmod_t *acmod)
     s->lmath = logmath_retain(acmod->lmath);
     /* Log-add table. */
     s->lmath_8b = logmath_init(logmath_get_base(acmod->lmath), SENSCR_SHIFT, TRUE);
-    if (s->lmath_8b == NULL) {
-        s2_semi_mgau_free(ps_mgau_base(s));
-        return NULL;
-    }
+    if (s->lmath_8b == NULL)
+        goto error_out;
     /* Ensure that it is only 8 bits wide so that fast_logmath_add() works. */
     if (logmath_get_width(s->lmath_8b) != 1) {
         E_ERROR("Log base %f is too small to represent add table in 8 bits\n",
                 logmath_get_base(s->lmath_8b));
-        s2_semi_mgau_free(ps_mgau_base(s));
-        return NULL;
+        goto error_out;
     }
-
-    /* Inherit stream dimensions from acmod, will be checked below. */
-    s->n_feat = feat_dimension1(acmod->fcb);
-    s->veclen = ckd_calloc(s->n_feat, sizeof(int32));
-    for (i = 0; i < s->n_feat; ++i)
-        s->veclen[i] = feat_dimension2(acmod->fcb, i);
 
     /* Read means and variances. */
-    if (s3_read_mgau(s, cmd_ln_str_r(s->config, "-mean"), &fgau) < 0) {
-        s2_semi_mgau_free(ps_mgau_base(s));
-        return NULL;
+    if ((s->g = gauden_init(cmd_ln_str_r(s->config, "-mean"),
+                            cmd_ln_str_r(s->config, "-var"),
+                            cmd_ln_float32_r(s->config, "-varfloor"),
+                            s->lmath)) == NULL)
+        goto error_out;
+    /* FIXME: maintaining pointers for convenience for now */
+    s->means = s->g->mean;
+    s->vars = s->g->var;
+    s->dets = s->g->det;
+    s->veclen = s->g->featlen;    
+    /* Verify n_feat and veclen, against acmod. */
+    s->n_feat = s->g->n_feat;
+    if (s->n_feat != feat_dimension1(acmod->fcb)) {
+        E_ERROR("Number of streams does not match: %d != %d\n",
+                s->n_feat, feat_dimension(acmod->fcb));
+        goto error_out;
     }
-    s->means = (mfcc_t **)fgau;
-    if (s3_read_mgau(s, cmd_ln_str_r(s->config, "-var"), &fgau) < 0) {
-        s2_semi_mgau_free(ps_mgau_base(s));
-        return NULL;
+    for (i = 0; i < s->n_feat; ++i) {
+        if (s->veclen[i] != feat_dimension2(acmod->fcb, i)) {
+            E_ERROR("Dimension of stream %d does not match: %d != %d\n",
+                    s->veclen[i], feat_dimension2(acmod->fcb, i));
+            goto error_out;
+        }
     }
-    s->vars = (mfcc_t **)fgau;
-
-    /* Precompute (and fixed-point-ize) means, variances, and determinants. */
-    s->dets = (mfcc_t **)ckd_calloc_2d(s->n_feat, s->n_density, sizeof(**s->dets));
-    s3_precomp(s, s->lmath, cmd_ln_float32_r(s->config, "-varfloor"));
-
+    s->n_cb = s->g->n_mgau;
+    s->n_density = s->g->n_density;
     /* Read mixture weights */
     if ((sendump_path = cmd_ln_str_r(s->config, "-sendump"))) {
         if (read_sendump(s, acmod->mdef, sendump_path) < 0) {
-            s2_semi_mgau_free(ps_mgau_base(s));
-            return NULL;
+            goto error_out;
         }
     }
     else {
         if (read_mixw(s, cmd_ln_str_r(s->config, "-mixw"),
                       cmd_ln_float32_r(s->config, "-mixwfloor")) < 0) {
-            s2_semi_mgau_free(ps_mgau_base(s));
-            return NULL;
+            goto error_out;
         }
     }
     s->ds_ratio = cmd_ln_int32_r(s->config, "-ds");
@@ -1610,25 +1374,33 @@ s2_semi_mgau_init(acmod_t *acmod)
 
     /* Top-N scores from recent frames */
     s->n_topn_hist = cmd_ln_int32_r(s->config, "-pl_window") + 2;
-    s->topn_hist = (vqFeature_t ***)
-        ckd_calloc_3d(s->n_topn_hist, s->n_feat, s->max_topn,
-                      sizeof(***s->topn_hist));
-    s->topn_hist_n = ckd_calloc_2d(s->n_topn_hist, s->n_feat,
-                                   sizeof(**s->topn_hist_n));
+    s->topn_hist = ckd_calloc(s->n_topn_hist, sizeof(*s->topn_hist));
     for (i = 0; i < s->n_topn_hist; ++i) {
-        int j;
-        for (j = 0; j < s->n_feat; ++j) {
-            int k;
-            for (k = 0; k < s->max_topn; ++k) {
-                s->topn_hist[i][j][k].score = WORST_DIST;
-                s->topn_hist[i][j][k].codeword = k;
+        s->topn_hist[i] = (vqFeature_t ***)
+            ckd_calloc_3d(s->n_cb, s->n_feat, s->max_topn,
+                          sizeof(****s->topn_hist));
+    }
+    s->topn_hist_n = ckd_calloc_3d(s->n_topn_hist, s->n_cb, s->n_feat,
+                                   sizeof(***s->topn_hist_n));
+    for (i = 0; i < s->n_topn_hist; ++i) {
+        int cb;
+        for (cb = 0; cb < s->n_cb; ++cb) {
+            int j;
+            for (j = 0; j < s->n_feat; ++j) {
+                int k;
+                for (k = 0; k < s->max_topn; ++k) {
+                    s->topn_hist[i][cb][j][k].score = WORST_DIST;
+                    s->topn_hist[i][cb][j][k].codeword = k;
+                }
             }
         }
     }
-
     ps = (ps_mgau_t *)s;
     ps->vt = &s2_semi_mgau_funcs;
     return ps;
+error_out:
+    s2_semi_mgau_free(ps_mgau_base(s));
+    return NULL;
 }
 
 int
@@ -1636,66 +1408,14 @@ s2_semi_mgau_mllr_transform(ps_mgau_t *ps,
                             ps_mllr_t *mllr)
 {
     s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
-    int32 i, d, l, m;
-    float32 **fmean, *mp, **fvar, *vp;
-    float64 *temp;
-
-    /* Reload means and variances. */
-    if (s3_read_mgau(s, cmd_ln_str_r(s->config, "-mean"), &fmean) < 0) {
-        return -1;
-    }
-    if (s3_read_mgau(s, cmd_ln_str_r(s->config, "-var"), &fvar) < 0) {
-        return -1;
-    }
-
-    /* Transform codebook for each stream s */
-    for (i = 0; i < s->n_feat; i++) {
-        temp = (float64 *) ckd_calloc(s->veclen[i], sizeof(float64));
-        mp = fmean[i];
-        vp = fvar[i];
-
-        /* Transform each density d in selected codebook */
-        for (d = 0; d < s->n_density; d++) {
-            for (l = 0; l < s->veclen[i]; l++) {
-                temp[l] = 0.0;
-                for (m = 0; m < s->veclen[i]; m++) {
-                    temp[l] += mllr->A[i][0][l][m] * mp[m];
-                }
-                temp[l] += mllr->b[i][0][l];
-            }
-
-            for (l = 0; l < s->veclen[i]; l++) {
-                mp[l] = (float32) temp[l];
-		vp[l] *= mllr->h[i][0][l];
-            }
-            mp += s->veclen[i];
-            vp += s->veclen[i];
-        }
-
-        ckd_free(temp);
-    }
-
-    for (i = 0; i < s->n_feat; ++i) {
-        if (s->means)
-            ckd_free(s->means[i]);
-        if (s->vars)
-            ckd_free(s->vars[i]);
-    }
-    ckd_free(s->means);
-    ckd_free(s->vars);
-
-    s->means = (mfcc_t **)fmean;
-    s->vars = (mfcc_t **)fvar;
-    s3_precomp(s, s->lmath, cmd_ln_float32_r(s->config, "-varfloor"));
-
-    return 0;
+    return gauden_mllr_transform(s->g, mllr, s->config);
 }
 
 void
 s2_semi_mgau_free(ps_mgau_t *ps)
 {
     s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
-    uint32 i;
+    int i;
 
     logmath_free(s->lmath);
     logmath_free(s->lmath_8b);
@@ -1706,21 +1426,12 @@ s2_semi_mgau_free(ps_mgau_t *ps)
     else {
         ckd_free_3d(s->mixw);
     }
-    for (i = 0; i < s->n_feat; ++i) {
-	if (s->means)
-            ckd_free(s->means[i]);
-        if (s->vars)
-            ckd_free(s->vars[i]);
-    }
-    for (i = 0; i < s->n_kdtrees; ++i)
-        free_kd_tree(s->kdtrees[i]);
-    ckd_free(s->kdtrees);
-    ckd_free(s->veclen);
-    ckd_free(s->means);
-    ckd_free(s->vars);
+    gauden_free(s->g);
     ckd_free(s->topn_beam);
-    ckd_free_2d(s->topn_hist_n);
-    ckd_free_3d((void **)s->topn_hist);
-    ckd_free_2d((void **)s->dets);
+    ckd_free_3d(s->topn_hist_n);
+    for (i = 0; i < s->n_topn_hist; ++i) {
+        ckd_free_3d((void **)s->topn_hist[i]);
+    }
+    ckd_free(s->topn_hist);
     ckd_free(s);
 }
