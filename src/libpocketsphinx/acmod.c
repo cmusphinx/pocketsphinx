@@ -106,13 +106,21 @@ acmod_init_am(acmod_t *acmod)
         return -1;
     }
 
-    E_INFO("Attempting to use SCHMM computation module\n");
-    acmod->mgau = s2_semi_mgau_init(acmod);
-    if (acmod->mgau == NULL) {
-        E_INFO("Falling back to general multi-stream GMM computation\n");
+    if (cmd_ln_str_r(acmod->config, "-senmgau")) {
+        E_INFO("Using general multi-stream GMM computation\n");
         acmod->mgau = ms_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
         if (acmod->mgau == NULL)
             return -1;
+    }
+    else {
+        E_INFO("Attempting to use SCHMM computation module\n");
+        acmod->mgau = s2_semi_mgau_init(acmod);
+        if (acmod->mgau == NULL) {
+            E_INFO("Falling back to general multi-stream GMM computation\n");
+            acmod->mgau = ms_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
+            if (acmod->mgau == NULL)
+                return -1;
+        }
     }
 
     /* If there is an MLLR transform, apply it. */
