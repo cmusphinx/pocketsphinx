@@ -159,7 +159,6 @@ struct bin_mdef_s {
 #define bin_mdef_pid2ssid(m,p)		((m)->phone[p].ssid)
 #define bin_mdef_pid2tmatid(m,p)	((m)->phone[p].tmat)
 #define bin_mdef_silphone(m)		((m)->sil)
-/* FIXME: Should be noted that almost nothing uses this, and it is problematic in other ways */
 #define bin_mdef_sen2cimap(m,s)		((m)->sen2cimap[s])
 #define bin_mdef_sseq2sen(m,ss,pos)	((m)->sseq[ss][pos])
 #define bin_mdef_pid2ci(m,p)		(((p) < (m)->n_ciphone) ? (p) \
