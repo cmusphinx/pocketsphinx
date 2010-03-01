@@ -100,8 +100,6 @@ int s2_semi_mgau_frame_eval(ps_mgau_t *s,
                             int32 compallsen);
 int s2_semi_mgau_mllr_transform(ps_mgau_t *s,
                                 ps_mllr_t *mllr);
-int s2_semi_mgau_load_kdtree(ps_mgau_t *s, const char *kdtree_path,
-                             uint32 maxdepth, int32 maxbbi);
 
 
 #endif /*  __S2_SEMI_MGAU_H__ */

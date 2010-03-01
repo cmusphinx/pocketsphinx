@@ -14,7 +14,6 @@ libpocketsphinx_la_SOURCES =			\
 	fsg_lextree.c				\
 	fsg_search.c				\
 	hmm.c					\
-	kdtree.c				\
 	mdef.c					\
 	ms_gauden.c				\
 	ms_mgau.c				\
