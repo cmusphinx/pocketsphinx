@@ -41,7 +41,6 @@ noinst_HEADERS =				\
 	fsg_lextree.h				\
 	fsg_search_internal.h			\
 	hmm.h					\
-	kdtree.h				\
 	mdef.h					\
 	ms_gauden.h				\
 	ms_mgau.h				\
