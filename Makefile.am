@@ -16,7 +16,10 @@ EXTRA_DIST = autogen.sh								\
 	win32/msdev/pocketsphinx_continuous/pocketsphinx_continuous.vcproj	\
 	win32/msdev/pocketsphinx_ptt/pocketsphinx.args				\
 	win32/msdev/pocketsphinx_ptt/pocketsphinx_ptt.vcproj			\
-	m4/pkg.m4
+	m4/pkg.m4								\
+	group/ABLD.BAT								\
+	group/bld.inf								\
+	group/pocketsphinx_s60.mmp
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = pocketsphinx.pc

@@ -19,4 +19,4 @@ SYSTEMINCLUDE   \epoc32\include \epoc32\include\stdapis \epoc32\include\stdapis\
 DEBUGGABLE_UDEBONLY
 #endif
 SOURCEPATH ..\src\libpocketsphinx
-SOURCE acmod.c bin_mdef.c blkarray_list.c dict.c fsg_history.c fsg_lextree.c fsg_search.c hmm.c kdtree.c mdef.c ms_gauden.c ms_mgau.c ms_senone.c ngram_search.c ngram_search_fwdflat.c ngram_search_fwdtree.c pocketsphinx.c ps_lattice.c s2_semi_mgau.c tmat.c vector.c
+SOURCE acmod.c bin_mdef.c blkarray_list.c dict2pid.c dict.c fsg_history.c fsg_lextree.c fsg_search.c hmm.c mdef.c ms_gauden.c ms_mgau.c ms_senone.c ngram_search.c ngram_search_fwdflat.c ngram_search_fwdtree.c phone_loop_search.c pocketsphinx.c ps_lattice.c ps_mllr.c s2_semi_mgau.c tmat.c vector.c
