@@ -38,11 +38,29 @@ In a unix-like environment (such as linux, solaris etc):
 % make test
 % make install
 
-In MS Windows (TM), under MS Visual C++ 6.0 (or better):
+XCode Installation (for iPhone):
 
- * compile all the projects in SphinxBase (from sphinxbase.dsw)
+Sphinxbase uses the standard unix autogen system, and there's a script
+included, 'build_for_iphone.sh' that will setup configure to create
+binaries that are XCode friendly.
 
- * load pocketsphinx.dsw (located at the top level directory)
+1) ./autogen.sh
+2) ./build_for_iphone.sh simulator
+3) ./build_for_iphone.sh device
+
+Then in XCode, open your project info, and for 'All Configurations', and
+set:
+
+'Header Search Paths' = "$(HOME)$(SDK_DIR)/include/pocketsphinx"
+'Library Search Paths' = "$(HOME)$(SDK_DIR)/lib"
+'Other Linker Flags' = "-lpocketsphinx"
+
+In MS Windows (TM), under MS Visual Studio 2008 (or newer - we test
+with Visual C++ 2008 Express):
+
+ * compile all the projects in SphinxBase (from sphinxbase.sln)
+
+ * load pocketsphinx.sln (located at the top level directory)
 
  * compile minimally the project 'pocketsphinx_continuous'
 
