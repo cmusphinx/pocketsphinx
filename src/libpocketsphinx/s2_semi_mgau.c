@@ -1323,7 +1323,7 @@ s2_semi_mgau_init(acmod_t *acmod)
                             s->lmath)) == NULL)
         goto error_out;
     /* Currently only a single codebook is supported. */
-    if (g->m_ngau != 1)
+    if (s->g->n_mgau != 1)
         goto error_out;
     /* FIXME: maintaining pointers for convenience for now */
     s->means = s->g->mean[0];
