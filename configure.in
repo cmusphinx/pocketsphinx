@@ -247,12 +247,12 @@ doc/Makefile
 doc/doxyfile
 model/Makefile
 model/hmm/Makefile
-model/hmm/wsj1/Makefile
-model/hmm/tidigits/Makefile
+model/hmm/en_US/wsj1/Makefile
+model/hmm/en/tidigits/Makefile
 model/lm/Makefile
-model/lm/wsj/Makefile
-model/lm/turtle/Makefile
-model/lm/tidigits/Makefile
+model/lm/en_US/wsj/Makefile
+model/lm/en/turtle/Makefile
+model/lm/en/tidigits/Makefile
 scripts/Makefile
 scripts/pocketsphinx_test
 scripts/pocketsphinx_wsj
