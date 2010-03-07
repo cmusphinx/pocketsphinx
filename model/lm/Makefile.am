@@ -1,6 +1,6 @@
-SUBDIRS = turtle tidigits wsj
+SUBDIRS = en/turtle en/tidigits en_US/wsj
 
 lmdir = $(prefix)/share/pocketsphinx/model/lm
 
-lm_DATA = cmudict.0.6d
-EXTRA_DIST = cmudict.0.6d
+lm_DATA = en_US/cmudict.0.6d
+EXTRA_DIST = en_US/cmudict.0.6d

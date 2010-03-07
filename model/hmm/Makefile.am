@@ -1,1 +1,1 @@
-SUBDIRS = wsj1 tidigits
+SUBDIRS = en_US/wsj1 en/tidigits
