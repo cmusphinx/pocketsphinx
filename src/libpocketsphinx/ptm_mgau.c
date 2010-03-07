@@ -62,38 +62,32 @@
 
 /* Local headers */
 #include "ptm_mgau.h"
+#include "tied_mgau_common.h"
 #include "posixwin32.h"
 
-typedef struct vqFeature_s {
-    int32 score; /* score or distance */
-    int32 codeword; /* codeword (vector index) */
-} vqFeature_t;
+typedef struct ptm_topn_s {
+    int32 cw;    /**< Codeword index. */
+    int32 score; /**< Score. */
+} ptm_topn_t;
+
+typedef struct ptm_fast_eval_s {
+    ptm_topn_t **topn;     /**< Top-N for each codebook (mgau x feature) */
+    bitvec_t *mgau_active; /**< Set of active codebooks */
+} ptm_fast_eval_t;
 
 struct ptm_mgau_s {
     ps_mgau_t base;     /**< base structure. */
     cmd_ln_t *config;   /* configuration parameters */
-
-    gauden_t *g;        /* Set of Gaussians (pointers below point in here and will go away soon) */
-    mfcc_t  ***means;	/* mean vectors foreach feature, density */
-    mfcc_t  ***vars;	/* inverse var vectors foreach feature, density */
-    mfcc_t  **dets;	/* det values foreach cb, feature */
-
+    gauden_t *g;        /* Set of Gaussians. */
     uint8 ***mixw;     /* mixture weight distributions */
     mmio_file_t *sendump_mmap;/* memory map for mixw (or NULL if not mmap) */
-
     uint8 *mixw_cb;    /* mixture weight codebook, if any (assume it contains 16 values) */
-    int32 *veclen;	/* Length of feature streams */
-    int16 n_feat;	/* Number of feature streams */
-    int16 n_density;	/* Number of mixtures per codebook */
-    int32 n_sen;	/* Number of senones */
-    uint8 *topn_beam;   /* Beam for determining per-frame top-N densities */
     int16 max_topn;
     int16 ds_ratio;
 
-    vqFeature_t ***topn_hist; /**< Top-N scores and codewords for past frames. */
-    uint8 **topn_hist_n;      /**< Variable top-N for past frames. */
-    vqFeature_t **f;          /**< Topn-N for currently scoring frame. */
-    int n_topn_hist;          /**< Number of past frames tracked. */
+    ptm_fast_eval_t *hist;   /**< Fast evaluation info for past frames. */
+    ptm_fast_eval_t *f;      /**< Fast eval info for current frame. */
+    int n_fast_hist;         /**< Number of past frames tracked. */
 
     /* Log-add table for compressed values. */
     logmath_t *lmath_8b;
@@ -107,80 +101,6 @@ static ps_mgaufuncs_t ptm_mgau_funcs = {
     &ptm_mgau_mllr_transform,  /* transform */
     &ptm_mgau_free             /* free */
 };
-
-#define MGAU_MIXW_VERSION	"1.0"   /* Sphinx-3 file format version for mixw */
-#define MGAU_PARAM_VERSION	"1.0"   /* Sphinx-3 file format version for mean/var */
-#define NONE		-1
-#define WORST_DIST	(int32)(0x80000000)
-
-/** Subtract GMM component b (assumed to be positive) and saturate */
-#ifdef FIXED_POINT
-#define GMMSUB(a,b) \
-	(((a)-(b) > a) ? (INT_MIN) : ((a)-(b)))
-/** Add GMM component b (assumed to be positive) and saturate */
-#define GMMADD(a,b) \
-	(((a)+(b) < a) ? (INT_MAX) : ((a)+(b)))
-#else
-#define GMMSUB(a,b) ((a)-(b))
-#define GMMADD(a,b) ((a)+(b))
-#endif
-
-#ifndef MIN
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-#endif
-
-
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ == 199901L)
-#define LOGMATH_INLINE inline
-#elif defined(__GNUC__)
-#define LOGMATH_INLINE static inline
-#elif defined(_MSC_VER)
-#define LOGMATH_INLINE __inline
-#else
-#define LOGMATH_INLINE static
-#endif
-
-/* Allocate 0..159 for negated quantized mixture weights and 0..96 for
- * negated normalized acoustic scores, so that the combination of the
- * two (for a single mixture) can never exceed 255. */
-#define MAX_NEG_MIXW 159 /**< Maximum negated mixture weight value. */
-#define MAX_NEG_ASCR 96  /**< Maximum negated acoustic score value. */
-
-/**
- * Quickly log-add two negated log probabilities.
- *
- * @param lmath The log-math object
- * @param mlx A negative log probability (0 < mlx < 255)
- * @param mly A negative log probability (0 < mly < 255)
- * @return -log(exp(-mlx)+exp(-mly))
- *
- * We can do some extra-fast log addition since we know that
- * mixw+ascr is always less than 256 and hence x-y is also always less
- * than 256.  This relies on some cooperation from logmath_t which
- * will never produce a logmath table smaller than 256 entries.
- *
- * Note that the parameters are *negated* log probabilities (and
- * hence, are positive numbers), as is the return value.  This is the
- * key to the "fastness" of this function.
- */
-LOGMATH_INLINE int
-fast_logmath_add(logmath_t *lmath, int mlx, int mly)
-{
-    logadd_t *t = LOGMATH_TABLE(lmath);
-    int d, r;
-
-    /* d must be positive, obviously. */
-    if (mlx > mly) {
-        d = (mlx - mly);
-        r = mly;
-    }
-    else {
-        d = (mly - mlx);
-        r = mlx;
-    }
-
-    return r - (((uint8 *)t->table)[d]);
-}
 
 static void
 eval_topn(ptm_mgau_t *s, int32 feat, mfcc_t *z)
@@ -312,174 +232,6 @@ mgau_norm(ptm_mgau_t *s, int feat)
 }
 
 static int32
-get_scores_8b_feat_6(ptm_mgau_t * s, int i,
-                     int16 *senone_scores, uint8 *senone_active,
-                     int32 n_senone_active)
-{
-    int32 j, l;
-    uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3, *pid_cw4, *pid_cw5;
-
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-    pid_cw3 = s->mixw[i][s->f[i][3].codeword];
-    pid_cw4 = s->mixw[i][s->f[i][4].codeword];
-    pid_cw5 = s->mixw[i][s->f[i][5].codeword];
-
-    for (l = j = 0; j < n_senone_active; j++) {
-        int sen = senone_active[j] + l;
-        int32 tmp = pid_cw0[sen] + s->f[i][0].score;
-
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw1[sen] + s->f[i][1].score);
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw2[sen] + s->f[i][2].score);
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw3[sen] + s->f[i][3].score);
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw4[sen] + s->f[i][4].score);
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw5[sen] + s->f[i][5].score);
-
-        senone_scores[sen] += tmp;
-        l = sen;
-    }
-    return 0;
-}
-
-static int32
-get_scores_8b_feat_5(ptm_mgau_t * s, int i,
-                     int16 *senone_scores, uint8 *senone_active,
-                     int32 n_senone_active)
-{
-    int32 j, l;
-    uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3, *pid_cw4;
-
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-    pid_cw3 = s->mixw[i][s->f[i][3].codeword];
-    pid_cw4 = s->mixw[i][s->f[i][4].codeword];
-
-    for (l = j = 0; j < n_senone_active; j++) {
-        int sen = senone_active[j] + l;
-        int32 tmp = pid_cw0[sen] + s->f[i][0].score;
-
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw1[sen] + s->f[i][1].score);
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw2[sen] + s->f[i][2].score);
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw3[sen] + s->f[i][3].score);
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw4[sen] + s->f[i][4].score);
-
-        senone_scores[sen] += tmp;
-        l = sen;
-    }
-    return 0;
-}
-
-static int32
-get_scores_8b_feat_4(ptm_mgau_t * s, int i,
-                     int16 *senone_scores, uint8 *senone_active,
-                     int32 n_senone_active)
-{
-    int32 j, l;
-    uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
-
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-    pid_cw3 = s->mixw[i][s->f[i][3].codeword];
-
-    for (l = j = 0; j < n_senone_active; j++) {
-        int sen = senone_active[j] + l;
-        int32 tmp = pid_cw0[sen] + s->f[i][0].score;
-
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw1[sen] + s->f[i][1].score);
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw2[sen] + s->f[i][2].score);
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw3[sen] + s->f[i][3].score);
-
-        senone_scores[sen] += tmp;
-        l = sen;
-    }
-    return 0;
-}
-
-static int32
-get_scores_8b_feat_3(ptm_mgau_t * s, int i,
-                     int16 *senone_scores, uint8 *senone_active,
-                     int32 n_senone_active)
-{
-    int32 j, l;
-    uint8 *pid_cw0, *pid_cw1, *pid_cw2;
-
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-
-    for (l = j = 0; j < n_senone_active; j++) {
-        int sen = senone_active[j] + l;
-        int32 tmp = pid_cw0[sen] + s->f[i][0].score;
-
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw1[sen] + s->f[i][1].score);
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw2[sen] + s->f[i][2].score);
-
-        senone_scores[sen] += tmp;
-        l = sen;
-    }
-    return 0;
-}
-
-static int32
-get_scores_8b_feat_2(ptm_mgau_t * s, int i,
-                     int16 *senone_scores, uint8 *senone_active,
-                     int32 n_senone_active)
-{
-    int32 j, l;
-    uint8 *pid_cw0, *pid_cw1;
-
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-
-    for (l = j = 0; j < n_senone_active; j++) {
-        int sen = senone_active[j] + l;
-        int32 tmp = pid_cw0[sen] + s->f[i][0].score;
-
-        tmp = fast_logmath_add(s->lmath_8b, tmp,
-                               pid_cw1[sen] + s->f[i][1].score);
-
-        senone_scores[sen] += tmp;
-        l = sen;
-    }
-    return 0;
-}
-
-static int32
-get_scores_8b_feat_1(ptm_mgau_t * s, int i,
-                     int16 *senone_scores, uint8 *senone_active,
-                     int32 n_senone_active)
-{
-    int32 j, l;
-    uint8 *pid_cw0;
-
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    for (l = j = 0; j < n_senone_active; j++) {
-        int sen = senone_active[j] + l;
-        int32 tmp = pid_cw0[sen] + s->f[i][0].score;
-        senone_scores[sen] += tmp;
-        l = sen;
-    }
-    return 0;
-}
-
-static int32
 get_scores_8b_feat_any(ptm_mgau_t * s, int i, int topn,
                        int16 *senone_scores, uint8 *senone_active,
                        int32 n_senone_active)
@@ -507,29 +259,8 @@ static int32
 get_scores_8b_feat(ptm_mgau_t * s, int i, int topn,
                    int16 *senone_scores, uint8 *senone_active, int32 n_senone_active)
 {
-    switch (topn) {
-    case 6:
-        return get_scores_8b_feat_6(s, i, senone_scores,
-                                    senone_active, n_senone_active);
-    case 5:
-        return get_scores_8b_feat_5(s, i, senone_scores,
-                                    senone_active, n_senone_active);
-    case 4:
-        return get_scores_8b_feat_4(s, i, senone_scores,
-                                    senone_active, n_senone_active);
-    case 3:
-        return get_scores_8b_feat_3(s, i, senone_scores,
-                                    senone_active, n_senone_active);
-    case 2:
-        return get_scores_8b_feat_2(s, i, senone_scores,
-                                    senone_active, n_senone_active);
-    case 1:
-        return get_scores_8b_feat_1(s, i, senone_scores,
-                                    senone_active, n_senone_active);
-    default:
-        return get_scores_8b_feat_any(s, i, topn, senone_scores,
-                                      senone_active, n_senone_active);
-    }
+    return get_scores_8b_feat_any(s, i, topn, senone_scores,
+                                  senone_active, n_senone_active);
 }
 
 static int32
@@ -548,300 +279,6 @@ get_scores_8b_feat_all(ptm_mgau_t * s, int i, int topn, int16 *senone_scores)
                                    pid_cw[j] + s->f[i][k].score);
         }
         senone_scores[j] += tmp;
-    }
-    return 0;
-}
-
-static int32
-get_scores_4b_feat_6(ptm_mgau_t * s, int i,
-                     int16 *senone_scores, uint8 *senone_active,
-                     int32 n_senone_active)
-{
-    int32 j, l;
-    uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3, *pid_cw4, *pid_cw5;
-    uint8 w_den[6][16];
-
-    /* Precompute scaled densities. */
-    for (j = 0; j < 16; ++j) {
-        w_den[0][j] = s->mixw_cb[j] + s->f[i][0].score;
-        w_den[1][j] = s->mixw_cb[j] + s->f[i][1].score;
-        w_den[2][j] = s->mixw_cb[j] + s->f[i][2].score;
-        w_den[3][j] = s->mixw_cb[j] + s->f[i][3].score;
-        w_den[4][j] = s->mixw_cb[j] + s->f[i][4].score;
-        w_den[5][j] = s->mixw_cb[j] + s->f[i][5].score;
-    }
-
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-    pid_cw3 = s->mixw[i][s->f[i][3].codeword];
-    pid_cw4 = s->mixw[i][s->f[i][4].codeword];
-    pid_cw5 = s->mixw[i][s->f[i][5].codeword];
-
-    for (l = j = 0; j < n_senone_active; j++) {
-        int n = senone_active[j] + l;
-        int tmp, cw;
-
-        if (n & 1) {
-            cw = pid_cw0[n/2] >> 4;
-            tmp = w_den[0][cw];
-            cw = pid_cw1[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[1][cw]);
-            cw = pid_cw2[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[2][cw]);
-            cw = pid_cw3[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[3][cw]);
-            cw = pid_cw4[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[4][cw]);
-            cw = pid_cw5[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[5][cw]);
-        }
-        else {
-            cw = pid_cw0[n/2] & 0x0f;
-            tmp = w_den[0][cw];
-            cw = pid_cw1[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[1][cw]);
-            cw = pid_cw2[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[2][cw]);
-            cw = pid_cw3[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[3][cw]);
-            cw = pid_cw4[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[4][cw]);
-            cw = pid_cw5[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[5][cw]);
-        }
-        senone_scores[n] += tmp;
-        l = n;
-    }
-    return 0;
-}
-
-static int32
-get_scores_4b_feat_5(ptm_mgau_t * s, int i,
-                     int16 *senone_scores, uint8 *senone_active,
-                     int32 n_senone_active)
-{
-    int32 j, l;
-    uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3, *pid_cw4;
-    uint8 w_den[5][16];
-
-    /* Precompute scaled densities. */
-    for (j = 0; j < 16; ++j) {
-        w_den[0][j] = s->mixw_cb[j] + s->f[i][0].score;
-        w_den[1][j] = s->mixw_cb[j] + s->f[i][1].score;
-        w_den[2][j] = s->mixw_cb[j] + s->f[i][2].score;
-        w_den[3][j] = s->mixw_cb[j] + s->f[i][3].score;
-        w_den[4][j] = s->mixw_cb[j] + s->f[i][4].score;
-    }
-
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-    pid_cw3 = s->mixw[i][s->f[i][3].codeword];
-    pid_cw4 = s->mixw[i][s->f[i][4].codeword];
-
-    for (l = j = 0; j < n_senone_active; j++) {
-        int n = senone_active[j] + l;
-        int tmp, cw;
-
-        if (n & 1) {
-            cw = pid_cw0[n/2] >> 4;
-            tmp = w_den[0][cw];
-            cw = pid_cw1[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[1][cw]);
-            cw = pid_cw2[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[2][cw]);
-            cw = pid_cw3[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[3][cw]);
-            cw = pid_cw4[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[4][cw]);
-        }
-        else {
-            cw = pid_cw0[n/2] & 0x0f;
-            tmp = w_den[0][cw];
-            cw = pid_cw1[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[1][cw]);
-            cw = pid_cw2[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[2][cw]);
-            cw = pid_cw3[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[3][cw]);
-            cw = pid_cw4[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[4][cw]);
-        }
-        senone_scores[n] += tmp;
-        l = n;
-    }
-    return 0;
-}
-
-static int32
-get_scores_4b_feat_4(ptm_mgau_t * s, int i,
-                     int16 *senone_scores, uint8 *senone_active,
-                     int32 n_senone_active)
-{
-    int32 j, l;
-    uint8 *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
-    uint8 w_den[4][16];
-
-    /* Precompute scaled densities. */
-    for (j = 0; j < 16; ++j) {
-        w_den[0][j] = s->mixw_cb[j] + s->f[i][0].score;
-        w_den[1][j] = s->mixw_cb[j] + s->f[i][1].score;
-        w_den[2][j] = s->mixw_cb[j] + s->f[i][2].score;
-        w_den[3][j] = s->mixw_cb[j] + s->f[i][3].score;
-    }
-
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-    pid_cw3 = s->mixw[i][s->f[i][3].codeword];
-
-    for (l = j = 0; j < n_senone_active; j++) {
-        int n = senone_active[j] + l;
-        int tmp, cw;
-
-        if (n & 1) {
-            cw = pid_cw0[n/2] >> 4;
-            tmp = w_den[0][cw];
-            cw = pid_cw1[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[1][cw]);
-            cw = pid_cw2[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[2][cw]);
-            cw = pid_cw3[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[3][cw]);
-        }
-        else {
-            cw = pid_cw0[n/2] & 0x0f;
-            tmp = w_den[0][cw];
-            cw = pid_cw1[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[1][cw]);
-            cw = pid_cw2[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[2][cw]);
-            cw = pid_cw3[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[3][cw]);
-        }
-        senone_scores[n] += tmp;
-        l = n;
-    }
-    return 0;
-}
-
-static int32
-get_scores_4b_feat_3(ptm_mgau_t * s, int i,
-                     int16 *senone_scores, uint8 *senone_active,
-                     int32 n_senone_active)
-{
-    int32 j, l;
-    uint8 *pid_cw0, *pid_cw1, *pid_cw2;
-    uint8 w_den[3][16];
-
-    /* Precompute scaled densities. */
-    for (j = 0; j < 16; ++j) {
-        w_den[0][j] = s->mixw_cb[j] + s->f[i][0].score;
-        w_den[1][j] = s->mixw_cb[j] + s->f[i][1].score;
-        w_den[2][j] = s->mixw_cb[j] + s->f[i][2].score;
-    }
-
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-    pid_cw2 = s->mixw[i][s->f[i][2].codeword];
-
-    for (l = j = 0; j < n_senone_active; j++) {
-        int n = senone_active[j] + l;
-        int tmp, cw;
-
-        if (n & 1) {
-            cw = pid_cw0[n/2] >> 4;
-            tmp = w_den[0][cw];
-            cw = pid_cw1[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[1][cw]);
-            cw = pid_cw2[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[2][cw]);
-        }
-        else {
-            cw = pid_cw0[n/2] & 0x0f;
-            tmp = w_den[0][cw];
-            cw = pid_cw1[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[1][cw]);
-            cw = pid_cw2[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[2][cw]);
-        }
-        senone_scores[n] += tmp;
-        l = n;
-    }
-    return 0;
-}
-
-static int32
-get_scores_4b_feat_2(ptm_mgau_t * s, int i,
-                     int16 *senone_scores, uint8 *senone_active,
-                     int32 n_senone_active)
-{
-    int32 j, l;
-    uint8 *pid_cw0, *pid_cw1;
-    uint8 w_den[2][16];
-
-    /* Precompute scaled densities. */
-    for (j = 0; j < 16; ++j) {
-        w_den[0][j] = s->mixw_cb[j] + s->f[i][0].score;
-        w_den[1][j] = s->mixw_cb[j] + s->f[i][1].score;
-    }
-
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-    pid_cw1 = s->mixw[i][s->f[i][1].codeword];
-
-    for (l = j = 0; j < n_senone_active; j++) {
-        int n = senone_active[j] + l;
-        int tmp, cw;
-
-        if (n & 1) {
-            cw = pid_cw0[n/2] >> 4;
-            tmp = w_den[0][cw];
-            cw = pid_cw1[n/2] >> 4;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[1][cw]);
-        }
-        else {
-            cw = pid_cw0[n/2] & 0x0f;
-            tmp = w_den[0][cw];
-            cw = pid_cw1[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp, w_den[1][cw]);
-        }
-        senone_scores[n] += tmp;
-        l = n;
-    }
-    return 0;
-}
-
-static int32
-get_scores_4b_feat_1(ptm_mgau_t * s, int i,
-                     int16 *senone_scores, uint8 *senone_active,
-                     int32 n_senone_active)
-{
-    int32 j, l;
-    uint8 *pid_cw0;
-    uint8 w_den[16];
-
-    /* Precompute scaled densities. */
-    for (j = 0; j < 16; ++j) {
-        w_den[j] = s->mixw_cb[j] + s->f[i][0].score;
-    }
-
-    pid_cw0 = s->mixw[i][s->f[i][0].codeword];
-
-    for (l = j = 0; j < n_senone_active; j++) {
-        int n = senone_active[j] + l;
-        int tmp, cw;
-
-        if (n & 1) {
-            cw = pid_cw0[n/2] >> 4;
-            tmp = w_den[cw];
-        }
-        else {
-            cw = pid_cw0[n/2] & 0x0f;
-            tmp = w_den[cw];
-        }
-        senone_scores[n] += tmp;
-        l = n;
     }
     return 0;
 }
@@ -883,29 +320,8 @@ static int32
 get_scores_4b_feat(ptm_mgau_t * s, int i, int topn,
                    int16 *senone_scores, uint8 *senone_active, int32 n_senone_active)
 {
-    switch (topn) {
-    case 6:
-        return get_scores_4b_feat_6(s, i, senone_scores,
-                                    senone_active, n_senone_active);
-    case 5:
-        return get_scores_4b_feat_5(s, i, senone_scores,
-                                    senone_active, n_senone_active);
-    case 4:
-        return get_scores_4b_feat_4(s, i, senone_scores,
-                                    senone_active, n_senone_active);
-    case 3:
-        return get_scores_4b_feat_3(s, i, senone_scores,
-                                    senone_active, n_senone_active);
-    case 2:
-        return get_scores_4b_feat_2(s, i, senone_scores,
-                                    senone_active, n_senone_active);
-    case 1:
-        return get_scores_4b_feat_1(s, i, senone_scores,
-                                    senone_active, n_senone_active);
-    default:
-        return get_scores_4b_feat_any(s, i, topn, senone_scores,
-                                      senone_active, n_senone_active);
-    }
+    return get_scores_4b_feat_any(s, i, topn, senone_scores,
+                                  senone_active, n_senone_active);
 }
 
 static int32
