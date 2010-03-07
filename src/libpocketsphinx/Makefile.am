@@ -24,6 +24,7 @@ libpocketsphinx_la_SOURCES =			\
 	phone_loop_search.c			\
 	ps_lattice.c				\
 	ps_mllr.c				\
+	ptm_mgau.c				\
 	s2_semi_mgau.c				\
 	tmat.c					\
 	vector.c				\
@@ -51,6 +52,7 @@ noinst_HEADERS =				\
 	phone_loop_search.h			\
 	ps_lattice_internal.h			\
 	posixwin32.h				\
+	ptm_mgau.h				\
 	s2_semi_mgau.h				\
 	s3types.h				\
 	tmat.h					\

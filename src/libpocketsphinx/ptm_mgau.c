@@ -1,6 +1,6 @@
 /* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
- * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
+ * Copyright (c) 1999-2010 Carnegie Mellon University.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,25 +61,57 @@
 #include <prim_type.h>
 
 /* Local headers */
-#include "s2_semi_mgau.h"
+#include "ptm_mgau.h"
 #include "posixwin32.h"
 
-static ps_mgaufuncs_t s2_semi_mgau_funcs = {
-    "s2_semi",
-    &s2_semi_mgau_frame_eval,      /* frame_eval */
-    &s2_semi_mgau_mllr_transform,  /* transform */
-    &s2_semi_mgau_free             /* free */
+typedef struct vqFeature_s {
+    int32 score; /* score or distance */
+    int32 codeword; /* codeword (vector index) */
+} vqFeature_t;
+
+struct ptm_mgau_s {
+    ps_mgau_t base;     /**< base structure. */
+    cmd_ln_t *config;   /* configuration parameters */
+
+    gauden_t *g;        /* Set of Gaussians (pointers below point in here and will go away soon) */
+    mfcc_t  ***means;	/* mean vectors foreach feature, density */
+    mfcc_t  ***vars;	/* inverse var vectors foreach feature, density */
+    mfcc_t  **dets;	/* det values foreach cb, feature */
+
+    uint8 ***mixw;     /* mixture weight distributions */
+    mmio_file_t *sendump_mmap;/* memory map for mixw (or NULL if not mmap) */
+
+    uint8 *mixw_cb;    /* mixture weight codebook, if any (assume it contains 16 values) */
+    int32 *veclen;	/* Length of feature streams */
+    int16 n_feat;	/* Number of feature streams */
+    int16 n_density;	/* Number of mixtures per codebook */
+    int32 n_sen;	/* Number of senones */
+    uint8 *topn_beam;   /* Beam for determining per-frame top-N densities */
+    int16 max_topn;
+    int16 ds_ratio;
+
+    vqFeature_t ***topn_hist; /**< Top-N scores and codewords for past frames. */
+    uint8 **topn_hist_n;      /**< Variable top-N for past frames. */
+    vqFeature_t **f;          /**< Topn-N for currently scoring frame. */
+    int n_topn_hist;          /**< Number of past frames tracked. */
+
+    /* Log-add table for compressed values. */
+    logmath_t *lmath_8b;
+    /* Log-add object for reloading means/variances. */
+    logmath_t *lmath;
+};
+
+static ps_mgaufuncs_t ptm_mgau_funcs = {
+    "ptm",
+    &ptm_mgau_frame_eval,      /* frame_eval */
+    &ptm_mgau_mllr_transform,  /* transform */
+    &ptm_mgau_free             /* free */
 };
 
 #define MGAU_MIXW_VERSION	"1.0"   /* Sphinx-3 file format version for mixw */
 #define MGAU_PARAM_VERSION	"1.0"   /* Sphinx-3 file format version for mean/var */
 #define NONE		-1
 #define WORST_DIST	(int32)(0x80000000)
-
-struct vqFeature_s {
-    int32 score; /* score or distance */
-    int32 codeword; /* codeword (vector index) */
-};
 
 /** Subtract GMM component b (assumed to be positive) and saturate */
 #ifdef FIXED_POINT
@@ -151,7 +183,7 @@ fast_logmath_add(logmath_t *lmath, int mlx, int mly)
 }
 
 static void
-eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
+eval_topn(ptm_mgau_t *s, int32 feat, mfcc_t *z)
 {
     int i, ceplen;
     vqFeature_t *topn;
@@ -190,7 +222,7 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
 }
 
 static void
-eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
+eval_cb(ptm_mgau_t *s, int32 feat, mfcc_t *z)
 {
     vqFeature_t *worst, *best, *topn;
     mfcc_t *mean;
@@ -247,7 +279,7 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
 }
 
 static void
-mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
+mgau_dist(ptm_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
 {
     eval_topn(s, feat, z);
 
@@ -260,7 +292,7 @@ mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
 }
 
 static int
-mgau_norm(s2_semi_mgau_t *s, int feat)
+mgau_norm(ptm_mgau_t *s, int feat)
 {
     int32 norm;
     int j;
@@ -280,7 +312,7 @@ mgau_norm(s2_semi_mgau_t *s, int feat)
 }
 
 static int32
-get_scores_8b_feat_6(s2_semi_mgau_t * s, int i,
+get_scores_8b_feat_6(ptm_mgau_t * s, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -316,7 +348,7 @@ get_scores_8b_feat_6(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_8b_feat_5(s2_semi_mgau_t * s, int i,
+get_scores_8b_feat_5(ptm_mgau_t * s, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -349,7 +381,7 @@ get_scores_8b_feat_5(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_8b_feat_4(s2_semi_mgau_t * s, int i,
+get_scores_8b_feat_4(ptm_mgau_t * s, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -379,7 +411,7 @@ get_scores_8b_feat_4(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_8b_feat_3(s2_semi_mgau_t * s, int i,
+get_scores_8b_feat_3(ptm_mgau_t * s, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -406,7 +438,7 @@ get_scores_8b_feat_3(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_8b_feat_2(s2_semi_mgau_t * s, int i,
+get_scores_8b_feat_2(ptm_mgau_t * s, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -430,7 +462,7 @@ get_scores_8b_feat_2(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_8b_feat_1(s2_semi_mgau_t * s, int i,
+get_scores_8b_feat_1(ptm_mgau_t * s, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -448,7 +480,7 @@ get_scores_8b_feat_1(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_8b_feat_any(s2_semi_mgau_t * s, int i, int topn,
+get_scores_8b_feat_any(ptm_mgau_t * s, int i, int topn,
                        int16 *senone_scores, uint8 *senone_active,
                        int32 n_senone_active)
 {
@@ -472,7 +504,7 @@ get_scores_8b_feat_any(s2_semi_mgau_t * s, int i, int topn,
 }
 
 static int32
-get_scores_8b_feat(s2_semi_mgau_t * s, int i, int topn,
+get_scores_8b_feat(ptm_mgau_t * s, int i, int topn,
                    int16 *senone_scores, uint8 *senone_active, int32 n_senone_active)
 {
     switch (topn) {
@@ -501,7 +533,7 @@ get_scores_8b_feat(s2_semi_mgau_t * s, int i, int topn,
 }
 
 static int32
-get_scores_8b_feat_all(s2_semi_mgau_t * s, int i, int topn, int16 *senone_scores)
+get_scores_8b_feat_all(ptm_mgau_t * s, int i, int topn, int16 *senone_scores)
 {
     int32 j, k;
 
@@ -521,7 +553,7 @@ get_scores_8b_feat_all(s2_semi_mgau_t * s, int i, int topn, int16 *senone_scores
 }
 
 static int32
-get_scores_4b_feat_6(s2_semi_mgau_t * s, int i,
+get_scores_4b_feat_6(ptm_mgau_t * s, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -585,7 +617,7 @@ get_scores_4b_feat_6(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_4b_feat_5(s2_semi_mgau_t * s, int i,
+get_scores_4b_feat_5(ptm_mgau_t * s, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -643,7 +675,7 @@ get_scores_4b_feat_5(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_4b_feat_4(s2_semi_mgau_t * s, int i,
+get_scores_4b_feat_4(ptm_mgau_t * s, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -695,7 +727,7 @@ get_scores_4b_feat_4(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_4b_feat_3(s2_semi_mgau_t * s, int i,
+get_scores_4b_feat_3(ptm_mgau_t * s, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -741,7 +773,7 @@ get_scores_4b_feat_3(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_4b_feat_2(s2_semi_mgau_t * s, int i,
+get_scores_4b_feat_2(ptm_mgau_t * s, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -781,7 +813,7 @@ get_scores_4b_feat_2(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_4b_feat_1(s2_semi_mgau_t * s, int i,
+get_scores_4b_feat_1(ptm_mgau_t * s, int i,
                      int16 *senone_scores, uint8 *senone_active,
                      int32 n_senone_active)
 {
@@ -815,7 +847,7 @@ get_scores_4b_feat_1(s2_semi_mgau_t * s, int i,
 }
 
 static int32
-get_scores_4b_feat_any(s2_semi_mgau_t * s, int i, int topn,
+get_scores_4b_feat_any(ptm_mgau_t * s, int i, int topn,
                        int16 *senone_scores, uint8 *senone_active,
                        int32 n_senone_active)
 {
@@ -848,7 +880,7 @@ get_scores_4b_feat_any(s2_semi_mgau_t * s, int i, int topn,
 }
 
 static int32
-get_scores_4b_feat(s2_semi_mgau_t * s, int i, int topn,
+get_scores_4b_feat(ptm_mgau_t * s, int i, int topn,
                    int16 *senone_scores, uint8 *senone_active, int32 n_senone_active)
 {
     switch (topn) {
@@ -877,7 +909,7 @@ get_scores_4b_feat(s2_semi_mgau_t * s, int i, int topn,
 }
 
 static int32
-get_scores_4b_feat_all(s2_semi_mgau_t * s, int i, int topn, int16 *senone_scores)
+get_scores_4b_feat_all(ptm_mgau_t * s, int i, int topn, int16 *senone_scores)
 {
     int32 j, k;
 
@@ -900,14 +932,14 @@ get_scores_4b_feat_all(s2_semi_mgau_t * s, int i, int topn, int16 *senone_scores
  * Compute senone scores for the active senones.
  */
 int32
-s2_semi_mgau_frame_eval(ps_mgau_t *ps,
+ptm_mgau_frame_eval(ps_mgau_t *ps,
                         int16 *senone_scores,
                         uint8 *senone_active,
                         int32 n_senone_active,
 			mfcc_t ** featbuf, int32 frame,
 			int32 compallsen)
 {
-    s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
+    ptm_mgau_t *s = (ptm_mgau_t *)ps;
     int i, topn_idx;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
@@ -948,7 +980,7 @@ s2_semi_mgau_frame_eval(ps_mgau_t *ps,
 }
 
 static int32
-read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
+read_sendump(ptm_mgau_t *s, bin_mdef_t *mdef, char const *file)
 {
     FILE *fp;
     char line[1000];
@@ -1151,7 +1183,7 @@ error_out:
 }
 
 static int32
-read_mixw(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
+read_mixw(ptm_mgau_t * s, char const *file_name, double SmoothMin)
 {
     char **argname, **argval;
     char eofchk;
@@ -1294,9 +1326,9 @@ split_topn(char const *str, uint8 *out, int nfeat)
 
 
 ps_mgau_t *
-s2_semi_mgau_init(acmod_t *acmod)
+ptm_mgau_init(acmod_t *acmod)
 {
-    s2_semi_mgau_t *s;
+    ptm_mgau_t *s;
     ps_mgau_t *ps;
     char const *sendump_path;
     int i;
@@ -1389,25 +1421,25 @@ s2_semi_mgau_init(acmod_t *acmod)
     }
 
     ps = (ps_mgau_t *)s;
-    ps->vt = &s2_semi_mgau_funcs;
+    ps->vt = &ptm_mgau_funcs;
     return ps;
 error_out:
-    s2_semi_mgau_free(ps_mgau_base(s));
+    ptm_mgau_free(ps_mgau_base(s));
     return NULL;
 }
 
 int
-s2_semi_mgau_mllr_transform(ps_mgau_t *ps,
+ptm_mgau_mllr_transform(ps_mgau_t *ps,
                             ps_mllr_t *mllr)
 {
-    s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
+    ptm_mgau_t *s = (ptm_mgau_t *)ps;
     return gauden_mllr_transform(s->g, mllr, s->config);
 }
 
 void
-s2_semi_mgau_free(ps_mgau_t *ps)
+ptm_mgau_free(ps_mgau_t *ps)
 {
-    s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
+    ptm_mgau_t *s = (ptm_mgau_t *)ps;
 
     logmath_free(s->lmath);
     logmath_free(s->lmath_8b);

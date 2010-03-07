@@ -57,6 +57,7 @@
 #include "cmdln_macro.h"
 #include "acmod.h"
 #include "s2_semi_mgau.h"
+#include "ptm_mgau.h"
 #include "ms_mgau.h"
 
 /* Feature and front-end parameters that may be in feat.params */
@@ -114,13 +115,15 @@ acmod_init_am(acmod_t *acmod)
     }
     else {
         E_INFO("Attempting to use SCHMM computation module\n");
-        acmod->mgau = s2_semi_mgau_init(acmod);
-        if (acmod->mgau == NULL) {
+        if ((acmod->mgau = s2_semi_mgau_init(acmod)) == NULL) {
+            /* E_INFO("Attempting to use PTHMM computation module\n");
+               if ((acmod->mgau = ptm_mgau_init(acmod)) == NULL) { */
             E_INFO("Falling back to general multi-stream GMM computation\n");
             acmod->mgau = ms_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
             if (acmod->mgau == NULL)
                 return -1;
         }
+        /* } */
     }
 
     /* If there is an MLLR transform, apply it. */
