@@ -262,18 +262,49 @@ ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
     int i, lastsen;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
+    /* FIXME: This is the non-cache-efficient way to do this.  We want
+     * to evaluate one codeword at a time but this requires us to have
+     * a reverse codebook to senone mapping, which we don't have
+     * (yet), since different codebooks have different top-N
+     * codewords. */
     for (lastsen = i = 0; i < n_senone_active; ++i) {
         int sen = senone_active[i] + lastsen;
-        int cb = s->sen2cb[sen];
+        int f, cb = s->sen2cb[sen];
+        int ascore;
+
         if (bitvec_is_clear(s->f->mgau_active, cb)) {
             /* Because senone_active is deltas we can't really "knock
              * out" senones from pruned codebooks, and in any case,
              * it wouldn't make any difference to the search code,
              * which doesn't expect senone_active to change. */
-            senone_scores[sen] = WORST_SCORE;
+            senone_scores[sen] = 0x7fff;
             continue;
         }
-        
+        /* For each feature, log-sum codeword scores + mixw to get
+         * feature density, then sum (multiply) to get ascore */
+        ascore = 0;
+        for (f = 0; f < s->g->n_feat; ++f) {
+            ptm_topn_t *topn;
+            int j, fden;
+            topn = s->f->topn[cb][f];
+            fden = WORST_SCORE;
+            for (j = 0; j < s->max_topn; ++j) {
+                int mixw;
+                /* Find mixture weight for this codeword. */
+                if (s->mixw_cb) {
+                    int dcw = s->mixw[f][topn[j].cw][sen/2];
+                    dcw = (dcw & 1) ? dcw >> 4 : dcw & 0x0f;
+                    mixw = s->mixw_cb[dcw];
+                }
+                else {
+                    mixw = s->mixw[f][topn[j].cw][sen];
+                }
+                fden = fast_logmath_add(s->lmath_8b, fden,
+                                        mixw + topn[j].score);
+            }
+            ascore += fden;
+        }
+        senone_scores[sen] = ascore;
     }
 
     return 0;
@@ -291,7 +322,7 @@ ptm_mgau_frame_eval(ps_mgau_t *ps,
                     int32 compallsen)
 {
     ptm_mgau_t *s = (ptm_mgau_t *)ps;
-    int i, fast_eval_idx;
+    int fast_eval_idx;
 
     /* Find the appropriate frame in the rotating history buffer
      * corresponding to the requested input frame.  No bounds checking

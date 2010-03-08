@@ -71,7 +71,7 @@ struct ptm_mgau_s {
     gauden_t *g;        /**< Set of Gaussians. */
     int32 n_sen;       /**< Number of senones. */
     uint8 *sen2cb;     /**< Senone to codebook mapping. */
-    uint8 ***mixw;     /**< Mixture weight distributions */
+    uint8 ***mixw;     /**< Mixture weight distributions by feature, codeword, senone */
     mmio_file_t *sendump_mmap;/* Memory map for mixw (or NULL if not mmap) */
     uint8 *mixw_cb;    /* Mixture weight codebook, if any (assume it contains 16 values) */
     int16 max_topn;
