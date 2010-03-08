@@ -239,16 +239,27 @@ ptm_mgau_codebook_eval(ptm_mgau_t *s, mfcc_t **z, int frame)
 
 static int
 ptm_mgau_calc_cb_active(ptm_mgau_t *s, uint8 *senone_active,
-                        int32 n_senone_active)
+                        int32 n_senone_active, int compallsen)
 {
     int i, lastsen;
 
+    if (compallsen) {
+        bitvec_set_all(s->f->mgau_active, s->g->n_mgau);
+        return 0;
+    }
     bitvec_clear_all(s->f->mgau_active, s->g->n_mgau);
     for (lastsen = i = 0; i < n_senone_active; ++i) {
         int sen = senone_active[i] + lastsen;
         int cb = s->sen2cb[sen];
         bitvec_set(s->f->mgau_active, cb);
     }
+    E_DEBUG(2, ("Active codebooks:"));
+    for (i = 0; i < s->g->n_mgau; ++i) {
+        if (bitvec_is_clear(s->f->mgau_active, i))
+            continue;
+        E_DEBUGCONT(2, (" %d", i));
+    }
+    E_DEBUGCONT(2, ("\n"));
     return 0;
 }
 
@@ -257,9 +268,10 @@ ptm_mgau_calc_cb_active(ptm_mgau_t *s, uint8 *senone_active,
  */
 static int
 ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
-                     uint8 *senone_active, int32 n_senone_active)
+                     uint8 *senone_active, int32 n_senone_active,
+                     int compall)
 {
-    int i, lastsen;
+    int sen, lastsen;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     /* FIXME: This is the non-cache-efficient way to do this.  We want
@@ -267,10 +279,16 @@ ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
      * a reverse codebook to senone mapping, which we don't have
      * (yet), since different codebooks have different top-N
      * codewords. */
-    for (lastsen = i = 0; i < n_senone_active; ++i) {
-        int sen = senone_active[i] + lastsen;
-        int f, cb = s->sen2cb[sen];
+    if (compall)
+        n_senone_active = s->n_sen;
+    for (lastsen = sen = 0; sen < n_senone_active; ++sen) {
+        int f, cb;
         int ascore;
+
+        if (!compall)
+            sen = senone_active[sen] + lastsen;
+        lastsen = sen;
+        cb = s->sen2cb[sen];
 
         if (bitvec_is_clear(s->f->mgau_active, cb)) {
             /* Because senone_active is deltas we can't really "knock
@@ -287,7 +305,6 @@ ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
             ptm_topn_t *topn;
             int j, fden;
             topn = s->f->topn[cb][f];
-            fden = WORST_SCORE;
             for (j = 0; j < s->max_topn; ++j) {
                 int mixw;
                 /* Find mixture weight for this codeword. */
@@ -299,8 +316,11 @@ ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
                 else {
                     mixw = s->mixw[f][topn[j].cw][sen];
                 }
-                fden = fast_logmath_add(s->lmath_8b, fden,
-                                        mixw + topn[j].score);
+                if (j == 0)
+                    fden = mixw + topn[j].score;
+                else
+                    fden = fast_logmath_add(s->lmath_8b, fden,
+                                            mixw + topn[j].score);
             }
             ascore += fden;
         }
@@ -349,12 +369,13 @@ ptm_mgau_frame_eval(ps_mgau_t *ps,
                s->g->n_mgau * s->g->n_feat * s->max_topn * sizeof(ptm_topn_t));
         /* Generate initial active codebook list (this might not be
          * necessary) */
-        ptm_mgau_calc_cb_active(s, senone_active, n_senone_active);
+        ptm_mgau_calc_cb_active(s, senone_active, n_senone_active, compallsen);
         /* Now evaluate top-N, prune, and evaluate remaining codebooks. */
         ptm_mgau_codebook_eval(s, featbuf, frame);
     }
     /* Evaluate intersection of active senones and active codebooks. */
-    ptm_mgau_senone_eval(s, senone_scores, senone_active, n_senone_active);
+    ptm_mgau_senone_eval(s, senone_scores, senone_active,
+                         n_senone_active, compallsen);
 
     return 0;
 }
@@ -737,7 +758,7 @@ ptm_mgau_init(acmod_t *acmod)
     }
     s->ds_ratio = cmd_ln_int32_r(s->config, "-ds");
     s->max_topn = cmd_ln_int32_r(s->config, "-topn");
-    E_INFO("Maximum top-N: %d ", s->max_topn);
+    E_INFO("Maximum top-N: %d\n", s->max_topn);
 
     /* Assume mapping of senones to their base phones, though this
      * will become more flexible in the future. */
