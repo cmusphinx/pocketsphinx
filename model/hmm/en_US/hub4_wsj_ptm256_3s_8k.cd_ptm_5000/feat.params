@@ -1,4 +1,3 @@
--dither yes
 -nfilt 20
 -lowerf 1
 -upperf 4000
