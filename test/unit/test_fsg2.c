@@ -22,9 +22,9 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/wsj1",
+				"-hmm", MODELDIR "/hmm/en_US/wsj1",
 				"-fsg", DATADIR "/goforward.fsg",
-				"-dict", MODELDIR "/lm/turtle/turtle.dic",
+				"-dict", MODELDIR "/lm/en/turtle/turtle.dic",
 				"-bestpath", "no",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));

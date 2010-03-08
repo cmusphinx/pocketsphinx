@@ -13,10 +13,10 @@ main(int argc, char *argv[])
 	bin_mdef_t *mdef;
 	dict_t *dict;
 
-	TEST_ASSERT(mdef = bin_mdef_read(NULL, MODELDIR "/hmm/wsj1/mdef"));
+	TEST_ASSERT(mdef = bin_mdef_read(NULL, MODELDIR "/hmm/en_US/wsj1/mdef"));
 	TEST_ASSERT(dict = dict_init(cmd_ln_init(NULL, NULL, FALSE,
-						   "-dict", MODELDIR "/lm/cmudict.0.6d",
-						   "-fdict", MODELDIR "/hmm/wsj1/noisedict",
+						   "-dict", MODELDIR "/lm/en_US/cmudict.0.6d",
+						   "-fdict", MODELDIR "/hmm/en_US/wsj1/noisedict",
 						   "-dictcase", "no", NULL),
 				       mdef));
 

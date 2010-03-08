@@ -18,8 +18,8 @@ main(int argc, char *argv[])
 	/* First decode it with the crappy SWB language model. */
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/wsj1",
-				"-lm", MODELDIR "/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP",
+				"-hmm", MODELDIR "/hmm/en_US/wsj1",
+				"-lm", MODELDIR "/lm/en_US/wsj/wlist5o.3e-7.vp.tg.lm.DMP",
 				"-dict", DATADIR "/defective.dic",
 				"-dictcase", "yes",
 				"-input_endian", "little",
@@ -33,7 +33,7 @@ main(int argc, char *argv[])
 
 	/* Now load the turtle language model. */
 	lm = ngram_model_read(config, 
-			      MODELDIR "/lm/turtle/turtle.lm",
+			      MODELDIR "/lm/en/turtle/turtle.lm",
 			      NGRAM_AUTO, ps_get_logmath(ps));
 	TEST_ASSERT(lm);
 	lmset = ps_get_lmset(ps);

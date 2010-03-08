@@ -39,12 +39,12 @@ main(int argc, char *argv[])
 
 	lmath = logmath_init(1.0001, 0, 0);
 	config = cmd_ln_init(NULL, ps_args(), TRUE,
-			     "-featparams", MODELDIR "/hmm/wsj1/feat.params",
-			     "-mdef", MODELDIR "/hmm/wsj1/mdef",
-			     "-mean", MODELDIR "/hmm/wsj1/means",
-			     "-var", MODELDIR "/hmm/wsj1/variances",
-			     "-tmat", MODELDIR "/hmm/wsj1/transition_matrices",
-			     "-sendump", MODELDIR "/hmm/wsj1/sendump",
+			     "-featparams", MODELDIR "/hmm/en_US/wsj1/feat.params",
+			     "-mdef", MODELDIR "/hmm/en_US/wsj1/mdef",
+			     "-mean", MODELDIR "/hmm/en_US/wsj1/means",
+			     "-var", MODELDIR "/hmm/en_US/wsj1/variances",
+			     "-tmat", MODELDIR "/hmm/en_US/wsj1/transition_matrices",
+			     "-sendump", MODELDIR "/hmm/en_US/wsj1/sendump",
 			     "-compallsen", "true",
 			     "-cmn", "prior",
 			     "-tmatfloor", "0.0001",
