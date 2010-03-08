@@ -59,41 +59,12 @@
 #include <bio.h>
 #include <err.h>
 #include <prim_type.h>
+#include <assert.h>
 
 /* Local headers */
-#include "ptm_mgau.h"
 #include "tied_mgau_common.h"
+#include "ptm_mgau.h"
 #include "posixwin32.h"
-
-typedef struct ptm_topn_s {
-    int32 cw;    /**< Codeword index. */
-    int32 score; /**< Score. */
-} ptm_topn_t;
-
-typedef struct ptm_fast_eval_s {
-    ptm_topn_t **topn;     /**< Top-N for each codebook (mgau x feature) */
-    bitvec_t *mgau_active; /**< Set of active codebooks */
-} ptm_fast_eval_t;
-
-struct ptm_mgau_s {
-    ps_mgau_t base;     /**< base structure. */
-    cmd_ln_t *config;   /* configuration parameters */
-    gauden_t *g;        /* Set of Gaussians. */
-    uint8 ***mixw;     /* mixture weight distributions */
-    mmio_file_t *sendump_mmap;/* memory map for mixw (or NULL if not mmap) */
-    uint8 *mixw_cb;    /* mixture weight codebook, if any (assume it contains 16 values) */
-    int16 max_topn;
-    int16 ds_ratio;
-
-    ptm_fast_eval_t *hist;   /**< Fast evaluation info for past frames. */
-    ptm_fast_eval_t *f;      /**< Fast eval info for current frame. */
-    int n_fast_hist;         /**< Number of past frames tracked. */
-
-    /* Log-add table for compressed values. */
-    logmath_t *lmath_8b;
-    /* Log-add object for reloading means/variances. */
-    logmath_t *lmath;
-};
 
 static ps_mgaufuncs_t ptm_mgau_funcs = {
     "ptm",
@@ -102,26 +73,26 @@ static ps_mgaufuncs_t ptm_mgau_funcs = {
     &ptm_mgau_free             /* free */
 };
 
-static void
-eval_topn(ptm_mgau_t *s, int32 feat, mfcc_t *z)
+static int
+eval_topn(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
 {
+    ptm_topn_t *topn;
     int i, ceplen;
-    vqFeature_t *topn;
 
-    topn = s->f[feat];
-    ceplen = s->veclen[feat];
+    topn = s->f->topn[cb][feat];
+    ceplen = s->g->featlen[feat];
 
     for (i = 0; i < s->max_topn; i++) {
         mfcc_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
-        vqFeature_t vtmp;
+        ptm_topn_t vtmp;
         mfcc_t *var, d;
         mfcc_t *obs;
         int32 cw, j;
 
-        cw = topn[i].codeword;
-        mean = s->means[feat][0] + cw * ceplen;
-        var = s->vars[feat][0] + cw * ceplen;
-        d = s->dets[feat][cw];
+        cw = topn[i].cw;
+        mean = s->g->mean[cb][feat][0] + cw * ceplen;
+        var = s->g->var[cb][feat][0] + cw * ceplen;
+        d = s->g->det[cb][feat][cw];
         obs = z;
         for (j = 0; j < ceplen; j++) {
             diff = *obs++ - *mean++;
@@ -139,29 +110,31 @@ eval_topn(ptm_mgau_t *s, int32 feat, mfcc_t *z)
         }
         topn[j + 1] = vtmp;
     }
+
+    return topn[0].score;
 }
 
-static void
-eval_cb(ptm_mgau_t *s, int32 feat, mfcc_t *z)
+static int
+eval_cb(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
 {
-    vqFeature_t *worst, *best, *topn;
+    ptm_topn_t *worst, *best, *topn;
     mfcc_t *mean;
     mfcc_t *var, *det, *detP, *detE;
     int32 i, ceplen;
 
-    best = topn = s->f[feat];
+    best = topn = s->f->topn[cb][feat];
     worst = topn + (s->max_topn - 1);
-    mean = s->means[feat][0];
-    var = s->vars[feat][0];
-    det = s->dets[feat];
-    detE = det + s->n_density;
-    ceplen = s->veclen[feat];
+    mean = s->g->mean[cb][feat][0];
+    var = s->g->var[cb][feat][0];
+    det = s->g->det[cb][feat];
+    detE = det + s->g->n_density;
+    ceplen = s->g->featlen[feat];
 
     for (detP = det; detP < detE; ++detP) {
         mfcc_t diff, sqdiff, compl; /* diff, diff^2, component likelihood */
         mfcc_t d;
         mfcc_t *obs;
-        vqFeature_t *cur;
+        ptm_topn_t *cur;
         int32 cw, j;
 
         d = *detP;
@@ -184,213 +157,173 @@ eval_cb(ptm_mgau_t *s, int32 feat, mfcc_t *z)
             continue;
         for (i = 0; i < s->max_topn; i++) {
             /* already there, so don't need to insert */
-            if (topn[i].codeword == cw)
+            if (topn[i].cw == cw)
                 break;
         }
         if (i < s->max_topn)
             continue;       /* already there.  Don't insert */
         /* remaining code inserts codeword and dist in correct spot */
         for (cur = worst - 1; cur >= best && (int32)d >= cur->score; --cur)
-            memcpy(cur + 1, cur, sizeof(vqFeature_t));
+            memcpy(cur + 1, cur, sizeof(*cur));
         ++cur;
-        cur->codeword = cw;
+        cur->cw = cw;
         cur->score = (int32)d;
     }
+
+    return best->score;
 }
 
-static void
-mgau_dist(ptm_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
+/**
+ * Compute top-N densities for active codebooks (and prune)
+ */
+static int
+ptm_mgau_codebook_eval(ptm_mgau_t *s, mfcc_t **z, int frame)
 {
-    eval_topn(s, feat, z);
+    int i, j, best_mgau, best_mgau_score;
 
-    /* If this frame is skipped, do nothing else. */
+    /* First evaluate top-N from previous frame. */
+    best_mgau_score = WORST_SCORE;
+    best_mgau = -1;
+    for (i = 0; i < s->g->n_mgau; ++i) {
+        int comp_score; /**< Product of best feature scores */
+        if (bitvec_is_clear(s->f->mgau_active, i))
+            continue;
+        comp_score = 0;
+        for (j = 0; j < s->g->n_feat; ++j) {
+            comp_score += eval_topn(s, i, j, z[j]);
+        }
+        if (comp_score > best_mgau_score) {
+            best_mgau = i;
+            best_mgau_score = comp_score;
+        }
+    }
+    assert(best_mgau != -1);
+
+    /* If frame downsampling is in effect, possibly do nothing else. */
     if (frame % s->ds_ratio)
-        return;
+        return 0;
 
-    /* Evaluate the rest of the codebook (or subset thereof). */
-    eval_cb(s, feat, z);
+    /* Prune codebooks according to best score obtained above. */
+    /* FIXME: do this a bit later, once everything else works. */
+
+    /* Evaluate remaining codebooks. */
+    for (i = 0; i < s->g->n_mgau; ++i) {
+        if (bitvec_is_clear(s->f->mgau_active, i))
+            continue;
+        for (j = 0; j < s->g->n_feat; ++j) {
+            eval_cb(s, i, j, z[j]);
+        }
+    }
+
+    /* Normalize densities to produce "posterior probabilities",
+     * i.e. things with a reasonable dynamic range, then scale and
+     * clamp them to the acceptable range. */
+    for (i = 0; i < s->g->n_mgau; ++i) {
+        if (bitvec_is_clear(s->f->mgau_active, i))
+            continue;
+        for (j = 0; j < s->g->n_feat; ++j) {
+            int32 k, norm = s->f->topn[i][j][0].score >> SENSCR_SHIFT;
+
+            for (k = 0; k < s->max_topn; ++k) {
+                s->f->topn[i][j][k].score >>= SENSCR_SHIFT;
+                s->f->topn[i][j][k].score -= norm;
+                s->f->topn[i][j][k].score = -s->f->topn[i][j][k].score;
+                if (s->f->topn[i][j][k].score > MAX_NEG_ASCR)
+                    s->f->topn[i][j][k].score = MAX_NEG_ASCR;
+            }
+        }
+    }
+
+    return 0;
 }
 
 static int
-mgau_norm(ptm_mgau_t *s, int feat)
+ptm_mgau_calc_cb_active(ptm_mgau_t *s, uint8 *senone_active,
+                        int32 n_senone_active)
 {
-    int32 norm;
-    int j;
+    int i, lastsen;
 
-    /* Compute quantized normalizing constant. */
-    norm = s->f[feat][0].score >> SENSCR_SHIFT;
-
-    /* Normalize the scores, negate them, and clamp their dynamic range. */
-    for (j = 0; j < s->max_topn; ++j) {
-        s->f[feat][j].score = -((s->f[feat][j].score >> SENSCR_SHIFT) - norm);
-        if (s->f[feat][j].score > MAX_NEG_ASCR)
-            s->f[feat][j].score = MAX_NEG_ASCR;
-        if (s->topn_beam[feat] && s->f[feat][j].score > s->topn_beam[feat])
-            break;
-    }
-    return j;
-}
-
-static int32
-get_scores_8b_feat_any(ptm_mgau_t * s, int i, int topn,
-                       int16 *senone_scores, uint8 *senone_active,
-                       int32 n_senone_active)
-{
-    int32 j, k, l;
-
-    for (l = j = 0; j < n_senone_active; j++) {
-        int sen = senone_active[j] + l;
-        uint8 *pid_cw;
-        int32 tmp;
-        pid_cw = s->mixw[i][s->f[i][0].codeword];
-        tmp = pid_cw[sen] + s->f[i][0].score;
-        for (k = 1; k < topn; ++k) {
-            pid_cw = s->mixw[i][s->f[i][k].codeword];
-            tmp = fast_logmath_add(s->lmath_8b, tmp,
-                                   pid_cw[sen] + s->f[i][k].score);
-        }
-        senone_scores[sen] += tmp;
-        l = sen;
+    bitvec_clear_all(s->f->mgau_active, s->g->n_mgau);
+    for (lastsen = i = 0; i < n_senone_active; ++i) {
+        int sen = senone_active[i] + lastsen;
+        int cb = s->sen2cb[sen];
+        bitvec_set(s->f->mgau_active, cb);
     }
     return 0;
 }
 
-static int32
-get_scores_8b_feat(ptm_mgau_t * s, int i, int topn,
-                   int16 *senone_scores, uint8 *senone_active, int32 n_senone_active)
+/**
+ * Compute senone scores from top-N densities for active codebooks.
+ */
+static int
+ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
+                     uint8 *senone_active, int32 n_senone_active)
 {
-    return get_scores_8b_feat_any(s, i, topn, senone_scores,
-                                  senone_active, n_senone_active);
-}
+    int i, lastsen;
 
-static int32
-get_scores_8b_feat_all(ptm_mgau_t * s, int i, int topn, int16 *senone_scores)
-{
-    int32 j, k;
-
-    for (j = 0; j < s->n_sen; j++) {
-        uint8 *pid_cw;
-        int32 tmp;
-        pid_cw = s->mixw[i][s->f[i][0].codeword];
-        tmp = pid_cw[j] + s->f[i][0].score;
-        for (k = 1; k < topn; ++k) {
-            pid_cw = s->mixw[i][s->f[i][k].codeword];
-            tmp = fast_logmath_add(s->lmath_8b, tmp,
-                                   pid_cw[j] + s->f[i][k].score);
+    memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
+    for (lastsen = i = 0; i < n_senone_active; ++i) {
+        int sen = senone_active[i] + lastsen;
+        int cb = s->sen2cb[sen];
+        if (bitvec_is_clear(s->f->mgau_active, cb)) {
+            /* Because senone_active is deltas we can't really "knock
+             * out" senones from pruned codebooks, and in any case,
+             * it wouldn't make any difference to the search code,
+             * which doesn't expect senone_active to change. */
+            senone_scores[sen] = WORST_SCORE;
+            continue;
         }
-        senone_scores[j] += tmp;
+        
     }
+
     return 0;
 }
 
-static int32
-get_scores_4b_feat_any(ptm_mgau_t * s, int i, int topn,
-                       int16 *senone_scores, uint8 *senone_active,
-                       int32 n_senone_active)
-{
-    int32 j, k, l;
-
-    for (l = j = 0; j < n_senone_active; j++) {
-        int n = senone_active[j] + l;
-        int tmp, cw;
-        uint8 *pid_cw;
-    
-        pid_cw = s->mixw[i][s->f[i][0].codeword];
-        if (n & 1)
-            cw = pid_cw[n/2] >> 4;
-        else
-            cw = pid_cw[n/2] & 0x0f;
-        tmp = s->mixw_cb[cw] + s->f[i][0].score;
-        for (k = 1; k < topn; ++k) {
-            pid_cw = s->mixw[i][s->f[i][k].codeword];
-            if (n & 1)
-                cw = pid_cw[n/2] >> 4;
-            else
-                cw = pid_cw[n/2] & 0x0f;
-            tmp = fast_logmath_add(s->lmath_8b, tmp,
-                                   s->mixw_cb[cw] + s->f[i][k].score);
-        }
-        senone_scores[n] += tmp;
-        l = n;
-    }
-    return 0;
-}
-
-static int32
-get_scores_4b_feat(ptm_mgau_t * s, int i, int topn,
-                   int16 *senone_scores, uint8 *senone_active, int32 n_senone_active)
-{
-    return get_scores_4b_feat_any(s, i, topn, senone_scores,
-                                  senone_active, n_senone_active);
-}
-
-static int32
-get_scores_4b_feat_all(ptm_mgau_t * s, int i, int topn, int16 *senone_scores)
-{
-    int32 j, k;
-
-    for (j = 0; j < s->n_sen; j++) {
-        uint8 *pid_cw;
-        int32 tmp;
-        pid_cw = s->mixw[i][s->f[i][0].codeword];
-        tmp = pid_cw[j] + s->f[i][0].score;
-        for (k = 1; k < topn; ++k) {
-            pid_cw = s->mixw[i][s->f[i][k].codeword];
-            tmp = fast_logmath_add(s->lmath_8b, tmp,
-                                   pid_cw[j] + s->f[i][k].score);
-        }
-        senone_scores[j] += tmp;
-    }
-    return 0;
-}
-
-/*
+/**
  * Compute senone scores for the active senones.
  */
 int32
 ptm_mgau_frame_eval(ps_mgau_t *ps,
-                        int16 *senone_scores,
-                        uint8 *senone_active,
-                        int32 n_senone_active,
-			mfcc_t ** featbuf, int32 frame,
-			int32 compallsen)
+                    int16 *senone_scores,
+                    uint8 *senone_active,
+                    int32 n_senone_active,
+                    mfcc_t ** featbuf, int32 frame,
+                    int32 compallsen)
 {
     ptm_mgau_t *s = (ptm_mgau_t *)ps;
-    int i, topn_idx;
+    int i, fast_eval_idx;
 
-    memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
-    /* No bounds checking is done here, which just means you'll get
-     * semi-random crap if you request a frame in the future or one
-     * that's too far in the past. */
-    topn_idx = frame % s->n_topn_hist;
-    s->f = s->topn_hist[topn_idx];
-    for (i = 0; i < s->n_feat; ++i) {
-        /* For past frames this will already be computed. */
-        if (frame >= ps_mgau_base(ps)->frame_idx) {
-            vqFeature_t **lastf;
-            if (topn_idx == 0)
-                lastf = s->topn_hist[s->n_topn_hist-1];
-            else
-                lastf = s->topn_hist[topn_idx-1];
-            memcpy(s->f[i], lastf[i], sizeof(vqFeature_t) * s->max_topn);
-            mgau_dist(s, frame, i, featbuf[i]);
-            s->topn_hist_n[topn_idx][i] = mgau_norm(s, i);
-        }
-        if (s->mixw_cb) {
-            if (compallsen)
-                get_scores_4b_feat_all(s, i, s->topn_hist_n[topn_idx][i], senone_scores);
-            else
-                get_scores_4b_feat(s, i, s->topn_hist_n[topn_idx][i], senone_scores,
-                                   senone_active, n_senone_active);
-        }
-        else {
-            if (compallsen)
-                get_scores_8b_feat_all(s, i, s->topn_hist_n[topn_idx][i], senone_scores);
-            else
-                get_scores_8b_feat(s, i, s->topn_hist_n[topn_idx][i], senone_scores,
-                                   senone_active, n_senone_active);
-        }
+    /* Find the appropriate frame in the rotating history buffer
+     * corresponding to the requested input frame.  No bounds checking
+     * is done here, which just means you'll get semi-random crap if
+     * you request a frame in the future or one that's too far in the
+     * past.  Since the history buffer is just used for fast match
+     * that might not be fatal. */
+    fast_eval_idx = frame % s->n_fast_hist;
+    s->f = s->hist + fast_eval_idx;
+    /* Compute the top-N codewords for every codebook, unless this
+     * is a past frame, in which case we already have them (we
+     * hope!) */
+    if (frame >= ps_mgau_base(ps)->frame_idx) {
+        ptm_fast_eval_t *lastf;
+        /* Get the previous frame's top-N information (on the
+         * first frame of the input this is just all WORST_DIST,
+         * no harm in that) */
+        if (fast_eval_idx == 0)
+            lastf = s->hist + s->n_fast_hist - 1;
+        else
+            lastf = s->hist + fast_eval_idx - 1;
+        /* Copy in initial top-N info */
+        memcpy(s->f->topn[0][0], lastf->topn[0][0],
+               s->g->n_mgau * s->g->n_feat * s->max_topn * sizeof(ptm_topn_t));
+        /* Generate initial active codebook list (this might not be
+         * necessary) */
+        ptm_mgau_calc_cb_active(s, senone_active, n_senone_active);
+        /* Now evaluate top-N, prune, and evaluate remaining codebooks. */
+        ptm_mgau_codebook_eval(s, featbuf, frame);
     }
+    /* Evaluate intersection of active senones and active codebooks. */
+    ptm_mgau_senone_eval(s, senone_scores, senone_active, n_senone_active);
 
     return 0;
 }
@@ -404,8 +337,8 @@ read_sendump(ptm_mgau_t *s, bin_mdef_t *mdef, char const *file)
     int32 do_swap, do_mmap;
     size_t filesize, offset;
     int n_clust = 0;
-    int n_feat = s->n_feat;
-    int n_density = s->n_density;
+    int n_feat = s->g->n_feat;
+    int n_density = s->g->n_density;
     int n_sen = bin_mdef_n_sen(mdef);
     int n_bits = 8;
 
@@ -505,14 +438,14 @@ read_sendump(ptm_mgau_t *s, bin_mdef_t *mdef, char const *file)
         E_INFO("Rows: %d, Columns: %d\n", r, c);
     }
 
-    if (n_feat != s->n_feat) {
+    if (n_feat != s->g->n_feat) {
         E_ERROR("Number of feature streams mismatch: %d != %d\n",
-                n_feat, s->n_feat);
+                n_feat, s->g->n_feat);
         goto error_out;
     }
-    if (n_density != s->n_density) {
+    if (n_density != s->g->n_density) {
         E_ERROR("Number of densities mismatch: %d != %d\n",
-                n_density, s->n_density);
+                n_density, s->g->n_density);
         goto error_out;
     }
     if (n_sen != s->n_sen) {
@@ -563,7 +496,7 @@ read_sendump(ptm_mgau_t *s, bin_mdef_t *mdef, char const *file)
 
     /* Set up pointers, or read, or whatever */
     if (s->sendump_mmap) {
-        s->mixw = ckd_calloc_2d(s->n_feat, n_density, sizeof(*s->mixw));
+        s->mixw = ckd_calloc_2d(n_feat, n_density, sizeof(*s->mixw));
         for (n = 0; n < n_feat; n++) {
             int step = c;
             if (n_bits == 4)
@@ -648,8 +581,8 @@ read_mixw(ptm_mgau_t * s, char const *file_name, double SmoothMin)
         || (bio_fread(&n, sizeof(int32), 1, fp, byteswap, &chksum) != 1)) {
         E_FATAL("bio_fread(%s) (arraysize) failed\n", file_name);
     }
-    if (n_feat != s->n_feat)
-        E_FATAL("#Features streams(%d) != %d\n", n_feat, s->n_feat);
+    if (n_feat != s->g->n_feat)
+        E_FATAL("#Features streams(%d) != %d\n", n_feat, s->g->n_feat);
     if (n != n_sen * n_feat * n_comp) {
         E_FATAL
             ("%s: #float32s(%d) doesn't match header dimensions: %d x %d x %d\n",
@@ -662,7 +595,8 @@ read_mixw(ptm_mgau_t * s, char const *file_name, double SmoothMin)
     s->n_sen = n_sen;
 
     /* Quantized mixture weight arrays. */
-    s->mixw = ckd_calloc_3d(s->n_feat, s->n_density, n_sen, sizeof(***s->mixw));
+    s->mixw = ckd_calloc_3d(s->g->n_feat, s->g->n_density,
+                            n_sen, sizeof(***s->mixw));
 
     /* Temporary structure to read in floats before conversion to (int32) logs3 */
     pdf = (float32 *) ckd_calloc(n_comp, sizeof(float32));
@@ -710,37 +644,6 @@ read_mixw(ptm_mgau_t * s, char const *file_name, double SmoothMin)
     return n_sen;
 }
 
-
-static int
-split_topn(char const *str, uint8 *out, int nfeat)
-{
-    char *topn_list = ckd_salloc(str);
-    char *c, *cc;
-    int i, maxn;
-
-    c = topn_list;
-    i = 0;
-    maxn = 0;
-    while (i < nfeat && (cc = strchr(c, ',')) != NULL) {
-        *cc = '\0';
-        out[i] = atoi(c);
-        if (out[i] > maxn) maxn = out[i];
-        c = cc + 1;
-        ++i;
-    }
-    if (i < nfeat && *c != '\0') {
-        out[i] = atoi(c);
-        if (out[i] > maxn) maxn = out[i];
-        ++i;
-    }
-    while (i < nfeat)
-        out[i++] = maxn;
-
-    ckd_free(topn_list);
-    return maxn;
-}
-
-
 ps_mgau_t *
 ptm_mgau_init(acmod_t *acmod)
 {
@@ -770,30 +673,26 @@ ptm_mgau_init(acmod_t *acmod)
                             cmd_ln_float32_r(s->config, "-varfloor"),
                             s->lmath)) == NULL)
         goto error_out;
-    /* Currently only a single codebook is supported. */
-    if (s->g->n_mgau != 1)
-        goto error_out;
-    /* FIXME: maintaining pointers for convenience for now */
-    s->means = s->g->mean[0];
-    s->vars = s->g->var[0];
-    s->dets = s->g->det[0];
-    s->veclen = s->g->featlen;    
-    /* Verify n_feat and veclen, against acmod. */
-    s->n_feat = s->g->n_feat;
-    if (s->n_feat != feat_dimension1(acmod->fcb)) {
-        E_ERROR("Number of streams does not match: %d != %d\n",
-                s->n_feat, feat_dimension(acmod->fcb));
+    /* We only support 256 codebooks or less (like 640k or 2GB, this
+     * should be enough for anyone) */
+    if (s->g->n_mgau > 256) {
+        E_ERROR("Number of codebooks exceeds 256: %d\n", s->g->n_mgau);
         goto error_out;
     }
-    for (i = 0; i < s->n_feat; ++i) {
-        if (s->veclen[i] != feat_dimension2(acmod->fcb, i)) {
+    /* Verify n_feat and veclen, against acmod. */
+    if (s->g->n_feat != feat_dimension1(acmod->fcb)) {
+        E_ERROR("Number of streams does not match: %d != %d\n",
+                s->g->n_feat, feat_dimension(acmod->fcb));
+        goto error_out;
+    }
+    for (i = 0; i < s->g->n_feat; ++i) {
+        if (s->g->featlen[i] != feat_dimension2(acmod->fcb, i)) {
             E_ERROR("Dimension of stream %d does not match: %d != %d\n",
-                    s->veclen[i], feat_dimension2(acmod->fcb, i));
+                    s->g->featlen[i], feat_dimension2(acmod->fcb, i));
             goto error_out;
         }
     }
-    s->n_density = s->g->n_density;
-    /* Read mixture weights */
+    /* Read mixture weights. */
     if ((sendump_path = cmd_ln_str_r(s->config, "-sendump"))) {
         if (read_sendump(s, acmod->mdef, sendump_path) < 0) {
             goto error_out;
@@ -806,34 +705,41 @@ ptm_mgau_init(acmod_t *acmod)
         }
     }
     s->ds_ratio = cmd_ln_int32_r(s->config, "-ds");
-
-    /* Determine top-N for each feature */
-    s->topn_beam = ckd_calloc(s->n_feat, sizeof(*s->topn_beam));
     s->max_topn = cmd_ln_int32_r(s->config, "-topn");
-    split_topn(cmd_ln_str_r(s->config, "-topn_beam"), s->topn_beam, s->n_feat);
     E_INFO("Maximum top-N: %d ", s->max_topn);
-    E_INFOCONT("Top-N beams:");
-    for (i = 0; i < s->n_feat; ++i) {
-        E_INFOCONT(" %d", s->topn_beam[i]);
-    }
-    E_INFOCONT("\n");
 
-    /* Top-N scores from recent frames */
-    s->n_topn_hist = cmd_ln_int32_r(s->config, "-pl_window") + 2;
-    s->topn_hist = (vqFeature_t ***)
-        ckd_calloc_3d(s->n_topn_hist, s->n_feat, s->max_topn,
-                      sizeof(***s->topn_hist));
-    s->topn_hist_n = ckd_calloc_2d(s->n_topn_hist, s->n_feat,
-                                   sizeof(**s->topn_hist_n));
-    for (i = 0; i < s->n_topn_hist; ++i) {
-        int j;
-        for (j = 0; j < s->n_feat; ++j) {
-            int k;
-            for (k = 0; k < s->max_topn; ++k) {
-                s->topn_hist[i][j][k].score = WORST_DIST;
-                s->topn_hist[i][j][k].codeword = k;
+    /* Assume mapping of senones to their base phones, though this
+     * will become more flexible in the future. */
+    s->sen2cb = ckd_calloc(s->n_sen, sizeof(*s->sen2cb));
+    for (i = 0; i < s->n_sen; ++i)
+        s->sen2cb[i] = bin_mdef_sen2cimap(acmod->mdef, i);
+
+    /* Allocate fast-match history buffers.  We need enough for the
+     * phoneme lookahead window, plus the current frame, plus one for
+     * good measure? (FIXME: I don't remember why) */
+    s->n_fast_hist = cmd_ln_int32_r(s->config, "-pl_window") + 2;
+    s->hist = ckd_calloc(s->n_fast_hist, sizeof(*s->hist));
+    /* s->f will be a rotating pointer into s->hist. */
+    s->f = s->hist;
+    for (i = 0; i < s->n_fast_hist; ++i) {
+        int j, k, m;
+        /* Top-N codewords for every codebook and feature. */
+        s->hist[i].topn = ckd_calloc_3d(s->g->n_mgau, s->g->n_feat,
+                                        s->max_topn, sizeof(ptm_topn_t));
+        /* Initialize them to sane (yet arbitrary) defaults. */
+        for (j = 0; j < s->g->n_mgau; ++j) {
+            for (k = 0; k < s->g->n_feat; ++k) {
+                for (m = 0; m < s->max_topn; ++m) {
+                    s->hist[i].topn[j][k][m].cw = m;
+                    s->hist[i].topn[j][k][m].score = WORST_DIST;
+                }
             }
         }
+        /* Active codebook mapping (just codebook, not features,
+           at least not yet) */
+        s->hist[i].mgau_active = bitvec_alloc(s->g->n_mgau);
+        /* Start with them all on, prune them later. */
+        bitvec_set_all(s->hist[i].mgau_active, s->g->n_mgau);
     }
 
     ps = (ps_mgau_t *)s;
@@ -866,9 +772,7 @@ ptm_mgau_free(ps_mgau_t *ps)
     else {
         ckd_free_3d(s->mixw);
     }
+    ckd_free(s->sen2cb);
     gauden_free(s->g);
-    ckd_free(s->topn_beam);
-    ckd_free_2d(s->topn_hist_n);
-    ckd_free_3d((void **)s->topn_hist);
     ckd_free(s);
 }

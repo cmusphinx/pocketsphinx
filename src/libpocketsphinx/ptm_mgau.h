@@ -55,6 +55,38 @@
 
 typedef struct ptm_mgau_s ptm_mgau_t;
 
+typedef struct ptm_topn_s {
+    int32 cw;    /**< Codeword index. */
+    int32 score; /**< Score. */
+} ptm_topn_t;
+
+typedef struct ptm_fast_eval_s {
+    ptm_topn_t ***topn;     /**< Top-N for each codebook (mgau x feature x topn) */
+    bitvec_t *mgau_active; /**< Set of active codebooks */
+} ptm_fast_eval_t;
+
+struct ptm_mgau_s {
+    ps_mgau_t base;     /**< base structure. */
+    cmd_ln_t *config;   /**< Configuration parameters */
+    gauden_t *g;        /**< Set of Gaussians. */
+    int32 n_sen;       /**< Number of senones. */
+    uint8 *sen2cb;     /**< Senone to codebook mapping. */
+    uint8 ***mixw;     /**< Mixture weight distributions */
+    mmio_file_t *sendump_mmap;/* Memory map for mixw (or NULL if not mmap) */
+    uint8 *mixw_cb;    /* Mixture weight codebook, if any (assume it contains 16 values) */
+    int16 max_topn;
+    int16 ds_ratio;
+
+    ptm_fast_eval_t *hist;   /**< Fast evaluation info for past frames. */
+    ptm_fast_eval_t *f;      /**< Fast eval info for current frame. */
+    int n_fast_hist;         /**< Number of past frames tracked. */
+
+    /* Log-add table for compressed values. */
+    logmath_t *lmath_8b;
+    /* Log-add object for reloading means/variances. */
+    logmath_t *lmath;
+};
+
 ps_mgau_t *ptm_mgau_init(acmod_t *acmod);
 void ptm_mgau_free(ps_mgau_t *s);
 int ptm_mgau_frame_eval(ps_mgau_t *s,
