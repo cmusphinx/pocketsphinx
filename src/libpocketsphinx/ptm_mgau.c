@@ -132,33 +132,35 @@ eval_cb(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
 
     for (detP = det; detP < detE; ++detP) {
         mfcc_t diff[4], sqdiff[4], compl[4]; /* diff, diff^2, component likelihood */
-        mfcc_t d;
+        mfcc_t d, thresh;
         mfcc_t *obs;
         ptm_topn_t *cur;
-        int32 cw, j;
+        int32 cw, j, intd;
 
         d = *detP;
+        thresh = (mfcc_t) worst->score; /* avoid float-to-int conversions */
         obs = z;
         cw = detP - det;
 
         /* Unroll the loop starting with the first dimension(s).  In
          * theory this might be a bit faster if this Gaussian gets
          * "knocked out" by C0. In practice not. */
-        for (j = 0; (j < ceplen % 4) && (d >= worst->score); ++j) {
+        for (j = 0; (j < ceplen % 4) && (d >= thresh); ++j) {
             diff[0] = *obs++ - *mean++;
             sqdiff[0] = MFCCMUL(diff[0], diff[0]);
             compl[0] = MFCCMUL(sqdiff[0], *var++);
             d = GMMSUB(d, compl[0]);
         }
         /* Now do 4 dimensions at a time.  You'd think that GCC would
-         * vectorize this?  Apparently not. */
+         * vectorize this?  Apparently not.  And it's right, because
+         * that won't make this any faster, at least on x86-64. */
 #define COMPUTE_GMM_MAP(_idx)                                   \
             diff[_idx] = obs[_idx] - mean[_idx];                \
             sqdiff[_idx] = MFCCMUL(diff[_idx], diff[_idx]);     \
             compl[_idx] = MFCCMUL(sqdiff[_idx], var[_idx]);
 #define COMPUTE_GMM_REDUCE(_idx)                \
             d = GMMSUB(d, compl[_idx]);
-        for (; (j < ceplen - 3) && (d >= worst->score); j += 4) {
+        for (; (j < ceplen - 3) && (d >= thresh); j += 4) {
             COMPUTE_GMM_MAP(0);
             COMPUTE_GMM_MAP(1);
             COMPUTE_GMM_MAP(2);
@@ -177,7 +179,7 @@ eval_cb(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
             var += (ceplen - j);
             continue;
         }
-        if ((int32)d < worst->score)
+        if (d < thresh)
             continue;
         for (i = 0; i < s->max_topn; i++) {
             /* already there, so don't need to insert */
@@ -187,11 +189,12 @@ eval_cb(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
         if (i < s->max_topn)
             continue;       /* already there.  Don't insert */
         /* remaining code inserts codeword and dist in correct spot */
-        for (cur = worst - 1; cur >= best && (int32)d >= cur->score; --cur)
+        intd = (int32)d; /* Avoid repeated float to int conversions. */
+        for (cur = worst - 1; cur >= best && intd >= cur->score; --cur)
             memcpy(cur + 1, cur, sizeof(*cur));
         ++cur;
         cur->cw = cw;
-        cur->score = (int32)d;
+        cur->score = intd;
     }
 
     return best->score;
