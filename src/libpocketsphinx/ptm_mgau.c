@@ -179,32 +179,16 @@ eval_cb(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
 static int
 ptm_mgau_codebook_eval(ptm_mgau_t *s, mfcc_t **z, int frame)
 {
-    int i, j, best_mgau, best_mgau_score;
+    int i, j;
 
     /* First evaluate top-N from previous frame. */
-    best_mgau_score = WORST_SCORE;
-    best_mgau = -1;
-    for (i = 0; i < s->g->n_mgau; ++i) {
-        int comp_score; /**< Product of best feature scores */
-        if (bitvec_is_clear(s->f->mgau_active, i))
-            /*continue*/;
-        comp_score = 0;
-        for (j = 0; j < s->g->n_feat; ++j) {
-            comp_score += eval_topn(s, i, j, z[j]);
-        }
-        if (comp_score > best_mgau_score) {
-            best_mgau = i;
-            best_mgau_score = comp_score;
-        }
-    }
-    assert(best_mgau != -1);
+    for (i = 0; i < s->g->n_mgau; ++i)
+        for (j = 0; j < s->g->n_feat; ++j)
+            eval_topn(s, i, j, z[j]);
 
     /* If frame downsampling is in effect, possibly do nothing else. */
     if (frame % s->ds_ratio)
         return 0;
-
-    /* Prune codebooks according to best score obtained above. */
-    /* FIXME: do this a bit later, once everything else works. */
 
     /* Evaluate remaining codebooks. */
     for (i = 0; i < s->g->n_mgau; ++i) {
@@ -266,13 +250,13 @@ ptm_mgau_calc_cb_active(ptm_mgau_t *s, uint8 *senone_active,
         bitvec_set(s->f->mgau_active, cb);
         lastsen = sen;
     }
-    E_DEBUG(2, ("Active codebooks:"));
+    E_DEBUG(1, ("Active codebooks:"));
     for (i = 0; i < s->g->n_mgau; ++i) {
         if (bitvec_is_clear(s->f->mgau_active, i))
             continue;
-        E_DEBUGCONT(2, (" %d", i));
+        E_DEBUGCONT(1, (" %d", i));
     }
-    E_DEBUGCONT(2, ("\n"));
+    E_DEBUGCONT(1, ("\n"));
     return 0;
 }
 
@@ -307,19 +291,23 @@ ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
         cb = s->sen2cb[sen];
 
         if (bitvec_is_clear(s->f->mgau_active, cb)) {
+            int j;
             /* Because senone_active is deltas we can't really "knock
              * out" senones from pruned codebooks, and in any case,
              * it wouldn't make any difference to the search code,
              * which doesn't expect senone_active to change. */
-            senone_scores[sen] = 0x7fff;
-            continue;
+            for (f = 0; f < s->g->n_feat; ++f) {
+                for (j = 0; j < s->max_topn; ++j) {
+                    s->f->topn[cb][f][j].score = MAX_NEG_ASCR;
+                }
+            }
         }
         /* For each feature, log-sum codeword scores + mixw to get
          * feature density, then sum (multiply) to get ascore */
         ascore = 0;
         for (f = 0; f < s->g->n_feat; ++f) {
             ptm_topn_t *topn;
-            int j, fden;
+            int j, fden = 0;
             topn = s->f->topn[cb][f];
             for (j = 0; j < s->max_topn; ++j) {
                 int mixw;
