@@ -6,7 +6,7 @@ bn=`basename $0 .sh`
 
 echo "Test: $bn"
 run_program pocketsphinx_batch \
-    -hmm $model/hmm/en_US/wsj1 \
+    -hmm $model/hmm/en_US/hub4_wsj_ptm256_3s_8k.cd_ptm_5000 \
     -lm $model/lm/en_US/wsj/wlist5o.3e-7.vp.tg.lm.DMP \
     -dict $model/lm/en_US/cmudict.0.6d \
     -ctl $data/wsj/test5k.s1.ctl \
@@ -14,7 +14,6 @@ run_program pocketsphinx_batch \
     -cepext .mfc \
     -hyp $bn.match \
     -backtrace yes \
-    -pl_window 10 -pl_beam 1e-20 -pl_pbeam 1e-10 \
     > $bn.log 2>&1
 
 # Test whether it actually completed

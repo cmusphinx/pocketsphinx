@@ -5,16 +5,16 @@
 bn=`basename $0 .sh`
 
 echo "Test: $bn"
-run_program pocketsphinx_batch \
-    -hmm $model/hmm/wsj1 \
-    -lm $model/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP \
-    -dict $model/lm/cmudict.0.6d \
+debug_program pocketsphinx_batch \
+    -hmm $model/hmm/en_US/wsj1 \
+    -lm $model/lm/en_US/wsj/wlist5o.3e-7.vp.tg.lm.DMP \
+    -dict $model/lm/en_US/cmudict.0.6d \
     -ctl $data/wsj/test5k.s1.ctl \
     -cepdir $data/wsj \
     -cepext .mfc \
     -hyp $bn.match \
     -backtrace yes \
-    > $bn.log 2>&1
+#    > $bn.log 2>&1
 
 # Test whether it actually completed
 if [ $? = 0 ]; then
