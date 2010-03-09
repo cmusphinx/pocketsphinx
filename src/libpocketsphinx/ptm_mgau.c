@@ -80,6 +80,22 @@ static ps_mgaufuncs_t ptm_mgau_funcs = {
 #define COMPUTE_GMM_REDUCE(_idx)                \
     d = GMMSUB(d, compl[_idx]);
 
+static void
+insertion_sort_topn(ptm_topn_t *topn, int i, int32 d)
+{
+    ptm_topn_t vtmp;
+    int j;
+
+    topn[i].score = d;
+    if (i == 0)
+        return;
+    vtmp = topn[i];
+    for (j = i - 1; j >= 0 && d > topn[j].score; j--) {
+        topn[j + 1] = topn[j];
+    }
+    topn[j + 1] = vtmp;
+}
+
 static int
 eval_topn(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
 {
@@ -91,7 +107,6 @@ eval_topn(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
 
     for (i = 0; i < s->max_topn; i++) {
         mfcc_t *mean, diff[4], sqdiff[4], compl[4]; /* diff, diff^2, component likelihood */
-        ptm_topn_t vtmp;
         mfcc_t *var, d;
         mfcc_t *obs;
         int32 cw, j;
@@ -123,17 +138,23 @@ eval_topn(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
             obs += 4;
             mean += 4;
         }
-        topn[i].score = (int32)d;
-        if (i == 0)
-            continue;
-        vtmp = topn[i];
-        for (j = i - 1; j >= 0 && (int32)d > topn[j].score; j--) {
-            topn[j + 1] = topn[j];
-        }
-        topn[j + 1] = vtmp;
+        insertion_sort_topn(topn, i, (int32)d);
     }
 
     return topn[0].score;
+}
+
+/* This looks bad, but it actually isn't.  Less than 1% of eval_cb's
+ * time is spent doing this. */
+static void
+insertion_sort_cb(ptm_topn_t **cur, ptm_topn_t *worst, ptm_topn_t *best,
+                  int cw, int32 intd)
+{
+    for (*cur = worst - 1; *cur >= best && intd >= (*cur)->score; --*cur)
+        memcpy(*cur + 1, *cur, sizeof(**cur));
+    ++*cur;
+    (*cur)->cw = cw;
+    (*cur)->score = intd;
 }
 
 static int
@@ -157,7 +178,7 @@ eval_cb(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
         mfcc_t d, thresh;
         mfcc_t *obs;
         ptm_topn_t *cur;
-        int32 cw, j, intd;
+        int32 cw, j;
 
         d = *detP;
         thresh = (mfcc_t) worst->score; /* Avoid int-to-float conversions */
@@ -204,13 +225,7 @@ eval_cb(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
         }
         if (i < s->max_topn)
             continue;       /* already there.  Don't insert */
-        /* remaining code inserts codeword and dist in correct spot */
-        intd = (int32)d; /* Avoid repeated float to int conversions. */
-        for (cur = worst - 1; cur >= best && intd >= cur->score; --cur)
-            memcpy(cur + 1, cur, sizeof(*cur));
-        ++cur;
-        cur->cw = cw;
-        cur->score = intd;
+        insertion_sort_cb(&cur, worst, best, cw, (int32)d);
     }
 
     return best->score;
