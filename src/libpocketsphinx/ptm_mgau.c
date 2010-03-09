@@ -217,15 +217,25 @@ ptm_mgau_codebook_eval(ptm_mgau_t *s, mfcc_t **z, int frame)
 
     /* Normalize densities to produce "posterior probabilities",
      * i.e. things with a reasonable dynamic range, then scale and
-     * clamp them to the acceptable range. */
-    for (i = 0; i < s->g->n_mgau; ++i) {
-        if (bitvec_is_clear(s->f->mgau_active, i))
-            continue;
-        for (j = 0; j < s->g->n_feat; ++j) {
-            int32 k, norm = s->f->topn[i][j][0].score >> SENSCR_SHIFT;
-
-            E_DEBUG(3, ("Top CW(%d,%d) = %d %d\n", i, j,
-                        s->f->topn[i][j][0].cw, norm));
+     * clamp them to the acceptable range.  This is actually done
+     * solely to ensure that we can use fast_logmath_add().  Note that
+     * unless we share the same normalizer across all codebooks for
+     * each feature stream we get defective scores (that's why these
+     * loops are inside out - doing it per-feature should give us
+     * greater precision). */
+    for (j = 0; j < s->g->n_feat; ++j) {
+        int32 norm = 0x7fffffff;
+        for (i = 0; i < s->g->n_mgau; ++i) {
+            if (bitvec_is_clear(s->f->mgau_active, i))
+                continue;
+            if (norm > s->f->topn[i][j][0].score >> SENSCR_SHIFT)
+                norm = s->f->topn[i][j][0].score >> SENSCR_SHIFT;
+        }
+        assert(norm != 0x7fffffff);
+        for (i = 0; i < s->g->n_mgau; ++i) {
+            int32 k;
+            if (bitvec_is_clear(s->f->mgau_active, i))
+                continue;
             for (k = 0; k < s->max_topn; ++k) {
                 s->f->topn[i][j][k].score >>= SENSCR_SHIFT;
                 s->f->topn[i][j][k].score -= norm;
@@ -256,13 +266,13 @@ ptm_mgau_calc_cb_active(ptm_mgau_t *s, uint8 *senone_active,
         bitvec_set(s->f->mgau_active, cb);
         lastsen = sen;
     }
-    E_DEBUG(1, ("Active codebooks:"));
+    E_DEBUG(2, ("Active codebooks:"));
     for (i = 0; i < s->g->n_mgau; ++i) {
         if (bitvec_is_clear(s->f->mgau_active, i))
             continue;
-        E_DEBUGCONT(1, (" %d", i));
+        E_DEBUGCONT(2, (" %d", i));
     }
-    E_DEBUGCONT(1, ("\n"));
+    E_DEBUGCONT(2, ("\n"));
     return 0;
 }
 
@@ -274,7 +284,7 @@ ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
                      uint8 *senone_active, int32 n_senone_active,
                      int compall)
 {
-    int i, lastsen;
+    int i, lastsen, bestscore;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     /* FIXME: This is the non-cache-efficient way to do this.  We want
@@ -284,6 +294,7 @@ ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
      * codewords. */
     if (compall)
         n_senone_active = s->n_sen;
+    bestscore = 0x7fffffff;
     for (lastsen = i = 0; i < n_senone_active; ++i) {
         int sen, f, cb;
         int ascore;
@@ -325,13 +336,19 @@ ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
                     fden = mixw + topn[j].score;
                 else
                     fden = fast_logmath_add(s->lmath_8b, fden,
-                                            mixw + topn[j].score);
-                E_DEBUG(1, ("fden[%d][%d] l+= %d + %d = %d\n",
+                                       mixw + topn[j].score);
+                E_DEBUG(3, ("fden[%d][%d] l+= %d + %d = %d\n",
                             sen, f, mixw, topn[j].score, fden));
             }
             ascore += fden;
         }
+        if (ascore < bestscore) bestscore = ascore;
         senone_scores[sen] = ascore;
+    }
+    /* Normalize the scores again (finishing the job we started above
+     * in ptm_mgau_codebook_eval...) */
+    for (i = 0; i < s->n_sen; ++i) {
+        senone_scores[i] -= bestscore;
     }
 
     return 0;
