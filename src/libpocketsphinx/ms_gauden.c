@@ -541,6 +541,8 @@ gauden_dist(gauden_t * g,
                      obs[f], g->featlen[f],
                      g->mean[mgau][f], g->var[mgau][f], g->det[mgau][f],
                      g->n_density);
+        E_DEBUG(3, ("Top CW(%d,%d) = %d %d\n", mgau, f, out_dist[f][0].id,
+                    (int)out_dist[f][0].dist >> SENSCR_SHIFT));
     }
 
     return 0;

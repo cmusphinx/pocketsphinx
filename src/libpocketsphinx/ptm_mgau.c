@@ -187,7 +187,7 @@ ptm_mgau_codebook_eval(ptm_mgau_t *s, mfcc_t **z, int frame)
     for (i = 0; i < s->g->n_mgau; ++i) {
         int comp_score; /**< Product of best feature scores */
         if (bitvec_is_clear(s->f->mgau_active, i))
-            continue;
+            /*continue*/;
         comp_score = 0;
         for (j = 0; j < s->g->n_feat; ++j) {
             comp_score += eval_topn(s, i, j, z[j]);
@@ -224,11 +224,13 @@ ptm_mgau_codebook_eval(ptm_mgau_t *s, mfcc_t **z, int frame)
         for (j = 0; j < s->g->n_feat; ++j) {
             int32 k, norm = s->f->topn[i][j][0].score >> SENSCR_SHIFT;
 
+            E_DEBUG(3, ("Top CW(%d,%d) = %d %d\n", i, j,
+                        s->f->topn[i][j][0].cw, norm));
             for (k = 0; k < s->max_topn; ++k) {
                 s->f->topn[i][j][k].score >>= SENSCR_SHIFT;
                 s->f->topn[i][j][k].score -= norm;
                 s->f->topn[i][j][k].score = -s->f->topn[i][j][k].score;
-                if (s->f->topn[i][j][k].score > MAX_NEG_ASCR)
+                if (s->f->topn[i][j][k].score > MAX_NEG_ASCR) 
                     s->f->topn[i][j][k].score = MAX_NEG_ASCR;
             }
         }
@@ -252,14 +254,15 @@ ptm_mgau_calc_cb_active(ptm_mgau_t *s, uint8 *senone_active,
         int sen = senone_active[i] + lastsen;
         int cb = s->sen2cb[sen];
         bitvec_set(s->f->mgau_active, cb);
+        lastsen = sen;
     }
-    E_DEBUG(2, ("Active codebooks:"));
+    E_DEBUG(1, ("Active codebooks:"));
     for (i = 0; i < s->g->n_mgau; ++i) {
         if (bitvec_is_clear(s->f->mgau_active, i))
             continue;
-        E_DEBUGCONT(2, (" %d", i));
+        E_DEBUGCONT(1, (" %d", i));
     }
-    E_DEBUGCONT(2, ("\n"));
+    E_DEBUGCONT(1, ("\n"));
     return 0;
 }
 
@@ -271,7 +274,7 @@ ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
                      uint8 *senone_active, int32 n_senone_active,
                      int compall)
 {
-    int sen, lastsen;
+    int i, lastsen;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     /* FIXME: This is the non-cache-efficient way to do this.  We want
@@ -281,12 +284,14 @@ ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
      * codewords. */
     if (compall)
         n_senone_active = s->n_sen;
-    for (lastsen = sen = 0; sen < n_senone_active; ++sen) {
-        int f, cb;
+    for (lastsen = i = 0; i < n_senone_active; ++i) {
+        int sen, f, cb;
         int ascore;
 
-        if (!compall)
-            sen = senone_active[sen] + lastsen;
+        if (compall)
+            sen = i;
+        else
+            sen = senone_active[i] + lastsen;
         lastsen = sen;
         cb = s->sen2cb[sen];
 
@@ -321,6 +326,8 @@ ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
                 else
                     fden = fast_logmath_add(s->lmath_8b, fden,
                                             mixw + topn[j].score);
+                E_DEBUG(1, ("fden[%d][%d] l+= %d + %d = %d\n",
+                            sen, f, mixw, topn[j].score, fden));
             }
             ascore += fden;
         }
