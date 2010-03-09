@@ -131,7 +131,7 @@ eval_cb(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
     ceplen = s->g->featlen[feat];
 
     for (detP = det; detP < detE; ++detP) {
-        mfcc_t diff, sqdiff, compl; /* diff, diff^2, component likelihood */
+        mfcc_t diff[4], sqdiff[4], compl[4]; /* diff, diff^2, component likelihood */
         mfcc_t d;
         mfcc_t *obs;
         ptm_topn_t *cur;
@@ -140,12 +140,36 @@ eval_cb(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
         d = *detP;
         obs = z;
         cw = detP - det;
-        for (j = 0; (j < ceplen) && (d >= worst->score); ++j) {
-            diff = *obs++ - *mean++;
-            sqdiff = MFCCMUL(diff, diff);
-            compl = MFCCMUL(sqdiff, *var);
-            d = GMMSUB(d, compl);
-            ++var;
+
+        /* Unroll the loop starting with the first dimension(s).  In
+         * theory this might be a bit faster if this Gaussian gets
+         * "knocked out" by C0. In practice not. */
+        for (j = 0; (j < ceplen % 4) && (d >= worst->score); ++j) {
+            diff[0] = *obs++ - *mean++;
+            sqdiff[0] = MFCCMUL(diff[0], diff[0]);
+            compl[0] = MFCCMUL(sqdiff[0], *var++);
+            d = GMMSUB(d, compl[0]);
+        }
+        /* Now do 4 dimensions at a time.  You'd think that GCC would
+         * vectorize this?  Apparently not. */
+#define COMPUTE_GMM_MAP(_idx)                                   \
+            diff[_idx] = obs[_idx] - mean[_idx];                \
+            sqdiff[_idx] = MFCCMUL(diff[_idx], diff[_idx]);     \
+            compl[_idx] = MFCCMUL(sqdiff[_idx], var[_idx]);
+#define COMPUTE_GMM_REDUCE(_idx)                \
+            d = GMMSUB(d, compl[_idx]);
+        for (; (j < ceplen - 3) && (d >= worst->score); j += 4) {
+            COMPUTE_GMM_MAP(0);
+            COMPUTE_GMM_MAP(1);
+            COMPUTE_GMM_MAP(2);
+            COMPUTE_GMM_MAP(3);
+            COMPUTE_GMM_REDUCE(0);
+            COMPUTE_GMM_REDUCE(1);
+            COMPUTE_GMM_REDUCE(2);
+            COMPUTE_GMM_REDUCE(3);
+            var += 4;
+            obs += 4;
+            mean += 4;
         }
         if (j < ceplen) {
             /* terminated early, so not in topn */
