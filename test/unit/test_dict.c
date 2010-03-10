@@ -25,6 +25,9 @@ main(int argc, char *argv[])
 	printf("Word ID (ASDFASFASSD) = %d\n",
 	       dict_wordid(dict, "ASDFASFASSD"));
 
+	TEST_EQUAL(0, dict_write(dict, "_cmudict.0.6d", NULL));
+	TEST_EQUAL(0, system("diff -uw " MODELDIR "/lm/en_US/cmudict.0.6d _cmudict.0.6d"));
+
 	dict_free(dict);
 	bin_mdef_free(mdef);
 

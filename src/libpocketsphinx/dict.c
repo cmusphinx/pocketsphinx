@@ -160,7 +160,8 @@ dict_read(FILE * fp, dict_t * d)
     stralloc = phnalloc = 0;
     for (li = lineiter_start(fp); li; li = lineiter_next(li)) {
         lineno++;
-        if (li->buf[0] == '#')     /* Comment line */
+        if (0 == strncmp(li->buf, "##", 2)
+            || 0 == strncmp(li->buf, ";;", 2))
             continue;
 
         if ((nwd = str2words(li->buf, wptr, maxwd)) < 0) {
@@ -209,6 +210,37 @@ dict_read(FILE * fp, dict_t * d)
 
     return 0;
 }
+
+int
+dict_write(dict_t *dict, char const *filename, char const *format)
+{
+    FILE *fh;
+    int i;
+
+    if ((fh = fopen(filename, "w")) == NULL) {
+        E_ERROR_SYSTEM("Failed to open %s", filename);
+        return -1;
+    }
+    for (i = 0; i < dict->n_word; ++i) {
+        char *phones;
+        int j, phlen;
+        if (!dict_real_word(dict, i))
+            continue;
+        for (phlen = j = 0; j < dict_pronlen(dict, i); ++j)
+            phlen += strlen(dict_ciphone_str(dict, i, j)) + 1;
+        phones = ckd_calloc(1, phlen);
+        for (j = 0; j < dict_pronlen(dict, i); ++j) {
+            strcat(phones, dict_ciphone_str(dict, i, j));
+            if (j != dict_pronlen(dict, i) - 1)
+                strcat(phones, " ");
+        }
+        fprintf(fh, "%-30s %s\n", dict_wordstr(dict, i), phones);
+        ckd_free(phones);
+    }
+    fclose(fh);
+    return 0;
+}
+
 
 dict_t *
 dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
