@@ -99,6 +99,9 @@ cdef extern from "pocketsphinx.h":
     ngram_model_t *ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset)
     fsg_set_t *ps_get_fsgset(ps_decoder_t *ps)
     fsg_set_t *ps_update_fsgset(ps_decoder_t *ps)
+    int ps_load_dict(ps_decoder_t *ps, char *dictfile,
+                     char *fdictfile, char *format)
+    int ps_save_dict(ps_decoder_t *ps, char *dictfile, char *format)
     int ps_add_word(ps_decoder_t *ps, char *word, char *phones, int update)
     int ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
                       char *uttid, size_t maxsamps)

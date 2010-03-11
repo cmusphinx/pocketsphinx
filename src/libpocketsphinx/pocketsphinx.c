@@ -357,7 +357,7 @@ ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset)
             ngram_model_free(ngs->lmset);
         ngs->lmset = lmset;
         /* Tell N-Gram search to update its view of the world. */
-        if (ps_search_reinit(search) < 0)
+        if (ps_search_reinit(search, ps->dict, ps->d2p) < 0)
             return NULL;
     }
     ps->search = search;
@@ -389,11 +389,73 @@ ps_update_fsgset(ps_decoder_t *ps)
     }
     else {
         /* Tell FSG search to update its view of the world. */
-        if (ps_search_reinit(search) < 0)
+        if (ps_search_reinit(search, ps->dict, ps->d2p) < 0)
             return NULL;
     }
     ps->search = search;
     return (fsg_set_t *)search;
+}
+
+int
+ps_load_dict(ps_decoder_t *ps, char const *dictfile,
+             char const *fdictfile, char const *format)
+{
+    cmd_ln_t *newconfig;
+    dict2pid_t *d2p;
+    dict_t *dict;
+    gnode_t *gn;
+    int rv;
+
+    /* Create a new scratch config to load this dict (so existing one
+     * won't be affected if it fails) */
+    newconfig = cmd_ln_init(NULL, ps_args(), TRUE, NULL);
+    cmd_ln_set_boolean_r(newconfig, "-dictcase",
+                         cmd_ln_boolean_r(ps->config, "-dictcase"));
+    cmd_ln_set_str_r(newconfig, "-dict", dictfile);
+    if (fdictfile)
+        cmd_ln_set_str_r(newconfig, "-fdict", fdictfile);
+    else
+        cmd_ln_set_str_r(newconfig, "-fdict",
+                         cmd_ln_str_r(ps->config, "-fdict"));
+
+    /* Try to load it. */
+    if ((dict = dict_init(newconfig, ps->acmod->mdef)) == NULL) {
+        cmd_ln_free_r(newconfig);
+        return -1;
+    }
+
+    /* Reinit the dict2pid. */
+    if ((d2p = dict2pid_build(ps->acmod->mdef, dict)) == NULL) {
+        cmd_ln_free_r(newconfig);
+        return -1;
+    }
+
+    /* Success!  Update the existing config to reflect new dicts and
+     * drop everything into place. */
+    cmd_ln_free_r(newconfig);
+    cmd_ln_set_str_r(ps->config, "-dict", dictfile);
+    if (fdictfile)
+        cmd_ln_set_str_r(ps->config, "-fdict", fdictfile);
+    dict_free(ps->dict);
+    ps->dict = dict;
+    dict2pid_free(ps->d2p);
+    ps->d2p = d2p;
+
+    /* And tell all searches to reconfigure themselves. */
+    for (gn = ps->searches; gn; gn = gnode_next(gn)) {
+        ps_search_t *search = gnode_ptr(gn);
+        if ((rv = ps_search_reinit(search, dict, d2p)) < 0)
+            return rv;
+    }
+
+    return 0;
+}
+
+int
+ps_save_dict(ps_decoder_t *ps, char const *dictfile,
+             char const *format)
+{
+    return dict_write(ps->dict, dictfile, format);
 }
 
 int
@@ -451,7 +513,7 @@ ps_add_word(ps_decoder_t *ps,
  
     /* Rebuild the widmap and search tree if requested. */
     if (update) {
-        if ((rv = ps_search_reinit(ps->search) < 0))
+        if ((rv = ps_search_reinit(ps->search, ps->dict, ps->d2p) < 0))
             return rv;
     }
     return wid;
@@ -894,26 +956,57 @@ ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
     search->vt = vt;
     search->config = config;
     search->acmod = acmod;
-    search->dict = dict;
-    search->d2p = d2p;
+    if (d2p)
+        search->d2p = dict2pid_retain(d2p);
+    else
+        search->d2p = NULL;
     if (dict) {
-        /* FIXME: redundant? */
+        search->dict = dict_retain(dict);
         search->start_wid = dict_startwid(dict);
         search->finish_wid = dict_finishwid(dict);
         search->silence_wid = dict_silwid(dict);
         search->n_words = dict_size(dict);
     }
     else {
+        search->dict = NULL;
         search->start_wid = search->finish_wid = search->silence_wid = -1;
         search->n_words = 0;
     }
 }
 
 void
+ps_search_base_reinit(ps_search_t *search, dict_t *dict,
+                      dict2pid_t *d2p)
+{
+    dict_free(search->dict);
+    dict2pid_free(search->d2p);
+    /* FIXME: _retain() should just return NULL if passed NULL. */
+    if (dict) {
+        search->dict = dict_retain(dict);
+        search->start_wid = dict_startwid(dict);
+        search->finish_wid = dict_finishwid(dict);
+        search->silence_wid = dict_silwid(dict);
+        search->n_words = dict_size(dict);
+    }
+    else {
+        search->dict = NULL;
+        search->start_wid = search->finish_wid = search->silence_wid = -1;
+        search->n_words = 0;
+    }
+    if (d2p)
+        search->d2p = dict2pid_retain(d2p);
+    else
+        search->d2p = NULL;
+}
+
+
+void
 ps_search_deinit(ps_search_t *search)
 {
     /* FIXME: We will have refcounting on acmod, config, etc, at which
      * point we will free them here too. */
+    dict_free(search->dict);
+    dict2pid_free(search->d2p);
     ckd_free(search->hyp_str);
     ps_lattice_free(search->dag);
 }

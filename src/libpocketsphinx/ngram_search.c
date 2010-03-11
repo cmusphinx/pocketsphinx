@@ -58,7 +58,7 @@
 static int ngram_search_start(ps_search_t *search);
 static int ngram_search_step(ps_search_t *search, int frame_idx);
 static int ngram_search_finish(ps_search_t *search);
-static int ngram_search_reinit(ps_search_t *search);
+static int ngram_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p);
 static char const *ngram_search_hyp(ps_search_t *search, int32 *out_score);
 static int32 ngram_search_prob(ps_search_t *search);
 static ps_seg_t *ngram_search_seg_iter(ps_search_t *search, int32 *out_score);
@@ -242,28 +242,16 @@ error_out:
 }
 
 static int
-ngram_search_reinit(ps_search_t *search)
+ngram_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
 {
     ngram_search_t *ngs = (ngram_search_t *)search;
     int old_n_words;
     int rv = 0;
 
-    /*
-     * NOTE!!! This is not a general-purpose reinit function.  It only
-     * deals with updates to the language model set and beam widths.
-     */
-
     /* Update the number of words. */
     old_n_words = search->n_words;
-    if (old_n_words != dict_size(ps_search_dict(search))) {
-        chan_t **word_chan;
-
-        search->n_words = dict_size(ps_search_dict(search));
-        /* Reallocate and copy word_chan. */
-        word_chan = ngs->word_chan;
-        ngs->word_chan = ckd_calloc(search->n_words, sizeof(*ngs->word_chan));
-        memcpy(ngs->word_chan, word_chan, old_n_words * sizeof(*ngs->word_chan));
-        ckd_free(word_chan);
+    if (old_n_words != dict_size(dict)) {
+        search->n_words = dict_size(dict);
         /* Reallocate these temporary arrays. */
         ckd_free(ngs->word_lat_idx);
         ckd_free(ngs->word_active);
@@ -277,13 +265,16 @@ ngram_search_reinit(ps_search_t *search)
                             sizeof(**ngs->active_word_list));
     }
 
+    /* Free old dict2pid, dict */
+    ps_search_base_reinit(search, dict, d2p);
+
     /* Update beam widths. */
     ngram_search_calc_beams(ngs);
 
     /* Update word mappings. */
     ngram_search_update_widmap(ngs);
 
-    /* Now rebuild lextrees or what have you. */
+    /* Now rebuild lextrees. */
     if (ngs->fwdtree) {
         if ((rv = ngram_fwdtree_reinit(ngs)) < 0)
             return rv;

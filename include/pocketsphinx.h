@@ -262,6 +262,36 @@ POCKETSPHINX_EXPORT
 fsg_set_t *ps_update_fsgset(ps_decoder_t *ps);
 
 /**
+ * Reload the pronunciation dictionary from a file.
+ *
+ * This function replaces the current pronunciation dictionary with
+ * the one stored in dictfile.  This also causes the active search
+ * module(s) to be reinitialized, in the same manner as calling
+ * ps_add_word() with update=TRUE.
+ *
+ * @param dictfile Path to dictionary file to load.
+ * @param fdictfile Path to filler dictionary to load, or NULL to keep
+ *                  the existing filler dictionary.
+ * @param format Format of the dictionary file, or NULL to determine
+ *               automatically (currently unused,should be NULL)
+ */
+POCKETSPHINX_EXPORT
+int ps_load_dict(ps_decoder_t *ps, char const *dictfile,
+                 char const *fdictfile, char const *format);
+
+/**
+ * Dump the current pronunciation dictionary to a file.
+ *
+ * This function dumps the current pronunciation dictionary to a tex
+ *
+ * @param dictfile Path to file where dictionary will be written.
+ * @param format Format of the dictionary file, or NULL for the
+ *               default (text) format (currently unused, should be NULL)
+ */
+POCKETSPHINX_EXPORT
+int ps_save_dict(ps_decoder_t *ps, char const *dictfile, char const *format);
+
+/**
  * Add a word to the pronunciation dictionary.
  *
  * This function adds a word to the pronunciation dictionary and the

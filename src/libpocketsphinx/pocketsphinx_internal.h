@@ -71,7 +71,7 @@ typedef struct ps_searchfuncs_s {
     int (*start)(ps_search_t *search);
     int (*step)(ps_search_t *search, int frame_idx);
     int (*finish)(ps_search_t *search);
-    int (*reinit)(ps_search_t *search);
+    int (*reinit)(ps_search_t *search, dict_t *dict, dict2pid_t *d2p);
     void (*free)(ps_search_t *search);
 
     ps_lattice_t *(*lattice)(ps_search_t *search);
@@ -118,7 +118,7 @@ struct ps_search_s {
 #define ps_search_start(s) (*(ps_search_base(s)->vt->start))(s)
 #define ps_search_step(s,i) (*(ps_search_base(s)->vt->step))(s,i)
 #define ps_search_finish(s) (*(ps_search_base(s)->vt->finish))(s)
-#define ps_search_reinit(s) (*(ps_search_base(s)->vt->reinit))(s)
+#define ps_search_reinit(s,d,d2p) (*(ps_search_base(s)->vt->reinit))(s,d,d2p)
 #define ps_search_free(s) (*(ps_search_base(s)->vt->free))(s)
 #define ps_search_lattice(s) (*(ps_search_base(s)->vt->lattice))(s)
 #define ps_search_hyp(s,sc) (*(ps_search_base(s)->vt->hyp))(s,sc)
@@ -136,6 +136,12 @@ struct ps_search_s {
 void ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
                     cmd_ln_t *config, acmod_t *acmod, dict_t *dict,
                     dict2pid_t *d2p);
+
+/**
+ * Re-initialize base structure with new dictionary.
+ */
+void ps_search_base_reinit(ps_search_t *search, dict_t *dict,
+                           dict2pid_t *d2p);
 
 /**
  * De-initialize base structure.

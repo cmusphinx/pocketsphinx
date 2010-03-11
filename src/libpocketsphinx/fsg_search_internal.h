@@ -125,7 +125,7 @@ void fsg_search_free(ps_search_t *search);
 /**
  * Update FSG search module for new or updated FSGs.
  */
-int fsg_search_reinit(ps_search_t *fsgs);
+int fsg_search_reinit(ps_search_t *fsgs, dict_t *dict, dict2pid_t *d2p);
 
 /**
  * Prepare the FSG search structure for beginning decoding of the next

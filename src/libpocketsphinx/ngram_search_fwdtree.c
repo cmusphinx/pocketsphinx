@@ -438,12 +438,18 @@ ngram_fwdtree_deinit(ngram_search_t *ngs)
 int
 ngram_fwdtree_reinit(ngram_search_t *ngs)
 {
+    /* Reset non-root channels. */
+    reinit_search_tree(ngs);
+    /* Free the search tree. */
+    deinit_search_tree(ngs);
     /* Reallocate things that depend on the number of words. */
     ckd_free(ngs->lastphn_cand);
     ngs->lastphn_cand = ckd_calloc(ps_search_n_words(ngs),
                                    sizeof(*ngs->lastphn_cand));
+    ckd_free(ngs->word_chan);
+    ngs->word_chan = ckd_calloc(ps_search_n_words(ngs),
+                                sizeof(*ngs->word_chan));
     /* Rebuild the search tree. */
-    deinit_search_tree(ngs);
     init_search_tree(ngs);
     create_search_tree(ngs);
     return 0;

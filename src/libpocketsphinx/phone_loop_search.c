@@ -46,7 +46,7 @@
 static int phone_loop_search_start(ps_search_t *search);
 static int phone_loop_search_step(ps_search_t *search, int frame_idx);
 static int phone_loop_search_finish(ps_search_t *search);
-static int phone_loop_search_reinit(ps_search_t *search);
+static int phone_loop_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p);
 static void phone_loop_search_free(ps_search_t *search);
 static char const *phone_loop_search_hyp(ps_search_t *search, int32 *out_score);
 static int32 phone_loop_search_prob(ps_search_t *search);
@@ -66,12 +66,15 @@ static ps_searchfuncs_t phone_loop_search_funcs = {
 };
 
 static int
-phone_loop_search_reinit(ps_search_t *search)
+phone_loop_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
 {
     phone_loop_search_t *pls = (phone_loop_search_t *)search;
     cmd_ln_t *config = ps_search_config(search);
     acmod_t *acmod = ps_search_acmod(search);
     int i;
+
+    /* Free old dict2pid, dict, if necessary. */
+    ps_search_base_reinit(search, dict, d2p);
 
     /* Initialize HMM context. */
     if (pls->hmmctx)
@@ -116,7 +119,8 @@ phone_loop_search_init(cmd_ln_t *config,
     pls = ckd_calloc(1, sizeof(*pls));
     ps_search_init(ps_search_base(pls), &phone_loop_search_funcs,
                    config, acmod, dict, NULL);
-    phone_loop_search_reinit(ps_search_base(pls));
+    phone_loop_search_reinit(ps_search_base(pls), ps_search_dict(pls),
+                             ps_search_dict2pid(pls));
 
     return ps_search_base(pls);
 }

@@ -152,7 +152,9 @@ fsg_search_init(cmd_ln_t *config,
         }
         if (fsg_set_select(fsgs, fsg_model_name(fsg)) == NULL)
             goto error_out;
-        if (fsg_search_reinit(ps_search_base(fsgs)) < 0)
+        if (fsg_search_reinit(ps_search_base(fsgs),
+                              ps_search_dict(fsgs),
+                              ps_search_dict2pid(fsgs)) < 0)
             goto error_out;
     }
     /* Or load a JSGF grammar */
@@ -202,7 +204,9 @@ fsg_search_init(cmd_ln_t *config,
         }
         if (fsg_set_select(fsgs, fsg_model_name(fsg)) == NULL)
             goto error_out;
-        if (fsg_search_reinit(ps_search_base(fsgs)) < 0)
+        if (fsg_search_reinit(ps_search_base(fsgs),
+                              ps_search_dict(fsgs),
+                              ps_search_dict2pid(fsgs)) < 0)
             goto error_out;
     }
 
@@ -237,7 +241,7 @@ fsg_search_free(ps_search_t *search)
 }
 
 int
-fsg_search_reinit(ps_search_t *search)
+fsg_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
 {
     fsg_search_t *fsgs = (fsg_search_t *)search;
 
@@ -245,17 +249,19 @@ fsg_search_reinit(ps_search_t *search)
     if (fsgs->lextree)
         fsg_lextree_free(fsgs->lextree);
 
+    /* Free old dict2pid, dict */
+    ps_search_base_reinit(search, dict, d2p);
+
     /* Update the number of words (not used by this module though). */
-    search->n_words = dict_size(ps_search_dict(search));
+    search->n_words = dict_size(dict);
 
     /* Allocate new lextree for the given FSG */
-    fsgs->lextree = fsg_lextree_init(fsgs->fsg, ps_search_dict(fsgs),
-                                     ps_search_dict2pid(fsgs),
+    fsgs->lextree = fsg_lextree_init(fsgs->fsg, dict, d2p,
                                      ps_search_acmod(fsgs)->mdef,
                                      fsgs->hmmctx, fsgs->wip, fsgs->pip);
 
     /* Inform the history module of the new fsg */
-    fsg_history_set_fsg(fsgs->history, fsgs->fsg, ps_search_dict(fsgs));
+    fsg_history_set_fsg(fsgs->history, fsgs->fsg, dict);
 
     return 0;
 }

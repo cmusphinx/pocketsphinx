@@ -89,10 +89,59 @@ ngram_fwdflat_expand_all(ngram_search_t *ngs)
     ngs->fwdflat_wordlist[ngs->n_expand_words] = -1;
 }
 
+static void
+ngram_fwdflat_allocate_1ph(ngram_search_t *ngs)
+{
+    dict_t *dict = ps_search_dict(ngs);
+    int n_words = ps_search_n_words(ngs);
+    int i, w;
+
+    /* Allocate single-phone words, since they won't have
+     * been allocated for us by fwdtree initialization. */
+    ngs->n_1ph_words = 0;
+    for (w = 0; w < n_words; w++) {
+        if (dict_is_single_phone(dict, w))
+            ++ngs->n_1ph_words;
+    }
+    ngs->rhmm_1ph = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->rhmm_1ph));
+    i = 0;
+    for (w = 0; w < n_words; w++) {
+        if (!dict_is_single_phone(dict, w))
+            continue;
+
+        /* DICT2PID location */
+        ngs->rhmm_1ph[i].ciphone = dict_first_phone(dict, w);
+        ngs->rhmm_1ph[i].ci2phone = bin_mdef_silphone(ps_search_acmod(ngs)->mdef);
+        hmm_init(ngs->hmmctx, &ngs->rhmm_1ph[i].hmm, TRUE,
+                 /* ssid */ bin_mdef_pid2ssid(ps_search_acmod(ngs)->mdef,
+                                              ngs->rhmm_1ph[i].ciphone),
+                 /* tmatid */ ngs->rhmm_1ph[i].ciphone);
+        ngs->rhmm_1ph[i].next = NULL;
+        ngs->word_chan[w] = (chan_t *) &(ngs->rhmm_1ph[i]);
+        i++;
+    }
+}
+
+static void
+ngram_fwdflat_free_1ph(ngram_search_t *ngs)
+{
+    int i, w;
+    int n_words = ps_search_n_words(ngs);
+
+    for (i = w = 0; w < n_words; ++w) {
+        if (!dict_is_single_phone(ps_search_dict(ngs), w))
+            continue;
+        hmm_deinit(&ngs->rhmm_1ph[i].hmm);
+        ++i;
+    }
+    ckd_free(ngs->rhmm_1ph);
+    ngs->rhmm_1ph = NULL;
+}
+
 void
 ngram_fwdflat_init(ngram_search_t *ngs)
 {
-    int n_words, i;
+    int n_words;
 
     n_words = ps_search_n_words(ngs);
     ngs->fwdflat_wordlist = ckd_calloc(n_words + 1, sizeof(*ngs->fwdflat_wordlist));
@@ -106,36 +155,10 @@ ngram_fwdflat_init(ngram_search_t *ngs)
 
     /* No tree-search; pre-build the expansion list, including all LM words. */
     if (!ngs->fwdtree) {
-        dict_t *dict = ps_search_dict(ngs);
-        int w;
-
         /* Build full expansion list from LM words. */
         ngram_fwdflat_expand_all(ngs);
-
-        /* Allocate single-phone words, since they won't have
-         * been allocated for us by fwdtree initialization. */
-        ngs->n_1ph_words = 0;
-        for (w = 0; w < n_words; w++) {
-            if (dict_is_single_phone(dict, w))
-                ++ngs->n_1ph_words;
-        }
-        ngs->rhmm_1ph = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->rhmm_1ph));
-        i = 0;
-        for (w = 0; w < n_words; w++) {
-            if (!dict_is_single_phone(dict, w))
-                continue;
-
-            /* DICT2PID location */
-            ngs->rhmm_1ph[i].ciphone = dict_first_phone(dict, w);
-            ngs->rhmm_1ph[i].ci2phone = bin_mdef_silphone(ps_search_acmod(ngs)->mdef);
-            hmm_init(ngs->hmmctx, &ngs->rhmm_1ph[i].hmm, TRUE,
-                     /* ssid */ bin_mdef_pid2ssid(ps_search_acmod(ngs)->mdef,
-                                                  ngs->rhmm_1ph[i].ciphone),
-                     /* tmatid */ ngs->rhmm_1ph[i].ciphone);
-            ngs->rhmm_1ph[i].next = NULL;
-            ngs->word_chan[w] = (chan_t *) &(ngs->rhmm_1ph[i]);
-            i++;
-        }
+        /* Allocate single phone words. */
+        ngram_fwdflat_allocate_1ph(ngs);
     }
 }
 
@@ -144,7 +167,7 @@ ngram_fwdflat_deinit(ngram_search_t *ngs)
 {
     /* Free single-phone words if we allocated them. */
     if (!ngs->fwdtree) {
-        ckd_free(ngs->rhmm_1ph);
+        ngram_fwdflat_free_1ph(ngs);
     }
     ckd_free(ngs->fwdflat_wordlist);
     bitvec_free(ngs->expand_word_flag);
@@ -166,10 +189,18 @@ ngram_fwdflat_reinit(ngram_search_t *ngs)
     ngs->expand_word_flag = bitvec_alloc(n_words);
     ngs->expand_word_list = ckd_calloc(n_words + 1, sizeof(*ngs->expand_word_list));
     
-    /* No tree-search; re-build the expansion list from all LM words. */
+    /* No tree-search; take care of the expansion list and single phone words. */
     if (!ngs->fwdtree) {
+        /* Free single-phone words. */
+        ngram_fwdflat_free_1ph(ngs);
+        /* Reallocate word_chan. */
+        ckd_free(ngs->word_chan);
+        ngs->word_chan = ckd_calloc(dict_size(ps_search_dict(ngs)),
+                                    sizeof(*ngs->word_chan));
         /* Rebuild full expansion list from LM words. */
         ngram_fwdflat_expand_all(ngs);
+        /* Allocate single phone words. */
+        ngram_fwdflat_allocate_1ph(ngs);
     }
     /* Otherwise there is nothing to do since the wordlist is
      * generated anew every utterance. */

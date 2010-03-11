@@ -342,3 +342,12 @@ cdef class Decoder:
         lm.wip = sb.cmd_ln_float32_r(config, "-wip")
         lm.uw = sb.cmd_ln_float32_r(config, "-uw")
         return lm
+
+    def add_word(self, word, phones, update=True):
+        return ps_add_word(self.ps, word, phones, update)
+
+    def load_dict(self, dictfile, fdictfile=None, format=None):
+        return ps_load_dict(self.ps, dictfile, fdictfile, format)
+
+    def save_dict(self, dictfile, format=None):
+        return ps_save_dict(self.ps, dictfile, format)

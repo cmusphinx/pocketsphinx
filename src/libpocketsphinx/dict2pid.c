@@ -404,7 +404,7 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict)
     assert(dict);
 
     dict2pid = (dict2pid_t *) ckd_calloc(1, sizeof(dict2pid_t));
-
+    dict2pid->refcount = 1;
     dict2pid->n_dictsize = dict_size(dict);
     E_INFO("Allocating %d * %d bytes (%d KiB) for word-internal arrays\n",
            dict2pid->n_dictsize, sizeof(s3ssid_t *),

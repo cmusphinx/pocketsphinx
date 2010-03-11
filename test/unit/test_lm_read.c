@@ -60,8 +60,28 @@ main(int argc, char *argv[])
 	hyp = ps_get_hyp(ps, &score, &uttid);
 	printf("%s: %s (%d)\n", uttid, hyp, score);
 	/* Bingo! */
-	/* TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN METERS")); */
-	/* Actually, no, WTF. */
+	TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN METERS"));
+
+	/* Now let's test dictionary switching. */
+	TEST_EQUAL(0, ps_load_dict(ps, MODELDIR "/lm/en/turtle/turtle.dic",
+				   NULL, NULL));
+	/* And try again. */
+	clearerr(rawfh);
+	fseek(rawfh, 0, SEEK_SET);
+	TEST_ASSERT(ps_decode_raw(ps, rawfh, "goforward", -1));
+	hyp = ps_get_hyp(ps, &score, &uttid);
+	printf("%s: %s (%d)\n", uttid, hyp, score);
+	TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN METERS"));
+
+	/* Try switching back again just to make sure. */
+	TEST_EQUAL(0, ps_load_dict(ps, DATADIR "/defective.dic",
+				   NULL, NULL));
+	clearerr(rawfh);
+	fseek(rawfh, 0, SEEK_SET);
+	TEST_ASSERT(ps_decode_raw(ps, rawfh, "goforward", -1));
+	hyp = ps_get_hyp(ps, &score, &uttid);
+	printf("%s: %s (%d)\n", uttid, hyp, score);
+	TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN DEGREES"));
 
 	fclose(rawfh);
 	ps_free(ps);
