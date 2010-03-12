@@ -5,7 +5,7 @@
 bn=`basename $0 .sh`
 
 echo "Test: $bn"
-debug_program pocketsphinx_batch \
+run_program pocketsphinx_batch \
     -hmm $model/hmm/en_US/hub4wsj_sc_8k \
     -lm $model/lm/en_US/wsj0vp.5000.DMP \
     -dict $model/lm/en_US/cmu07a.dic \
