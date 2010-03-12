@@ -1,0 +1,7 @@
+-lowerf 1
+-upperf 4000
+-nfilt 20
+-transform dct
+-round_filters no
+-remove_dc yes
+-feat s2_4x

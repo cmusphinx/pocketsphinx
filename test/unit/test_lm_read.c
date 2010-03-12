@@ -18,8 +18,8 @@ main(int argc, char *argv[])
 	/* First decode it with the crappy SWB language model. */
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/en_US/wsj1",
-				"-lm", MODELDIR "/lm/en_US/wsj/wlist5o.3e-7.vp.tg.lm.DMP",
+				"-hmm", MODELDIR "/hmm/en_US/wsj_sc_8k",
+				"-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
 				"-dict", DATADIR "/defective.dic",
 				"-dictcase", "yes",
 				"-input_endian", "little",
@@ -29,11 +29,11 @@ main(int argc, char *argv[])
 	ps_decode_raw(ps, rawfh, "goforward", -1);
 	hyp = ps_get_hyp(ps, &score, &uttid);
 	printf("%s: %s (%d)\n", uttid, hyp, score);
-	TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN YEARS"));
+	TEST_EQUAL(0, strcmp(hyp, "go forward ten years"));
 
 	/* Now load the turtle language model. */
 	lm = ngram_model_read(config, 
-			      MODELDIR "/lm/en/turtle/turtle.lm",
+			      MODELDIR "/lm/en/turtle.DMP",
 			      NGRAM_AUTO, ps_get_logmath(ps));
 	TEST_ASSERT(lm);
 	lmset = ps_get_lmset(ps);
@@ -49,10 +49,10 @@ main(int argc, char *argv[])
 
 	/* Oops!  It's still not correct, because METERS isn't in the
 	 * dictionary that we originally loaded. */
-	TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN DEGREES"));
+	TEST_EQUAL(0, strcmp(hyp, "go forward ten degrees"));
 	/* So let's add it to the dictionary. */
-	ps_add_word(ps, "OOH", "UW", FALSE);
-	ps_add_word(ps, "METERS", "M IY T ER Z", TRUE);
+	ps_add_word(ps, "ooh", "UW", FALSE);
+	ps_add_word(ps, "meters", "M IY T ER Z", TRUE);
 	/* And try again. */
 	clearerr(rawfh);
 	fseek(rawfh, 0, SEEK_SET);
@@ -60,10 +60,10 @@ main(int argc, char *argv[])
 	hyp = ps_get_hyp(ps, &score, &uttid);
 	printf("%s: %s (%d)\n", uttid, hyp, score);
 	/* Bingo! */
-	TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN METERS"));
+	TEST_EQUAL(0, strcmp(hyp, "go forward ten meters"));
 
 	/* Now let's test dictionary switching. */
-	TEST_EQUAL(0, ps_load_dict(ps, MODELDIR "/lm/en/turtle/turtle.dic",
+	TEST_EQUAL(0, ps_load_dict(ps, MODELDIR "/lm/en/turtle.dic",
 				   NULL, NULL));
 	/* And try again. */
 	clearerr(rawfh);
@@ -71,7 +71,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(ps_decode_raw(ps, rawfh, "goforward", -1));
 	hyp = ps_get_hyp(ps, &score, &uttid);
 	printf("%s: %s (%d)\n", uttid, hyp, score);
-	TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN METERS"));
+	TEST_EQUAL(0, strcmp(hyp, "go forward ten meters"));
 
 	/* Try switching back again just to make sure. */
 	TEST_EQUAL(0, ps_load_dict(ps, DATADIR "/defective.dic",
@@ -81,7 +81,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(ps_decode_raw(ps, rawfh, "goforward", -1));
 	hyp = ps_get_hyp(ps, &score, &uttid);
 	printf("%s: %s (%d)\n", uttid, hyp, score);
-	TEST_EQUAL(0, strcmp(hyp, "GO FORWARD TEN DEGREES"));
+	TEST_EQUAL(0, strcmp(hyp, "go forward ten degrees"));
 
 	fclose(rawfh);
 	ps_free(ps);

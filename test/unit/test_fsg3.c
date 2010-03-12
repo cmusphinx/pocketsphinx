@@ -22,8 +22,8 @@ main(int argc, char *argv[])
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/hmm/en/tidigits",
-				"-fsg", MODELDIR "/lm/en/tidigits/test.digits.fsg",
-				"-dict", MODELDIR "/lm/en/tidigits/tidigits.dic",
+				"-fsg", MODELDIR "/lm/en/tidigits.fsg",
+				"-dict", MODELDIR "/lm/en/tidigits.dic",
 				"-bestpath", "no",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));

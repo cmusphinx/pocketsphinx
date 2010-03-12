@@ -1,9 +1,8 @@
 #!/bin/sh
 S2CONTINUOUS=@prefix@/bin/pocketsphinx_continuous
-HMM=@prefix@/share/pocketsphinx/model/hmm/tidigits
-LM=@prefix@/share/pocketsphinx/model/lm/tidigits
-LMFILE=@prefix@/share/pocketsphinx/model/lm/tidigits/tidigits.lm
-DICT=@prefix@/share/pocketsphinx/model/lm/tidigits/tidigits.dic
+HMM=@prefix@/share/pocketsphinx/model/hmm/en/tidigits
+LMFILE=@prefix@/share/pocketsphinx/model/lm/en/tidigits.DMP
+DICT=@prefix@/share/pocketsphinx/model/lm/en/tidigits.dic
 
 echo " "
 echo "pocketsphinx_tidigits:"

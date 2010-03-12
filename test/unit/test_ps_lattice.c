@@ -28,7 +28,7 @@ test_nodes_and_stuff(ps_lattice_t *dag)
 			       ps_latnode_baseword(dag, node),
 			       ps_latnode_word(dag, node),
 			       sf, fef, lef, post);
-		if (0 == strcmp(ps_latnode_baseword(dag, node), "FORWARD"))
+		if (0 == strcmp(ps_latnode_baseword(dag, node), "forward"))
 			forward = node;
 	}
 	TEST_ASSERT(forward);
@@ -81,9 +81,9 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/en_US/wsj1",
-				"-lm", MODELDIR "/lm/en_US/wsj/wlist5o.3e-7.vp.tg.lm.DMP",
-				"-dict", MODELDIR "/lm/en_US/cmudict.0.6d",
+				"-hmm", MODELDIR "/hmm/en_US/wsj_sc_8k",
+				"-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
+				"-dict", MODELDIR "/lm/en_US/cmu07a.dic",
 				"-fwdtree", "yes",
 				"-fwdflat", "yes",
 				"-bestpath", "no",

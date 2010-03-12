@@ -18,7 +18,6 @@ check_PROGRAMS = \
 	test_ps_lattice \
 	test_acmod \
 	test_acmod_grow \
-	test_ptm_mgau \
 	test_fwdtree \
 	test_fwdflat \
 	test_fwdtree_fwdflat \
@@ -54,4 +53,4 @@ LDADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la \
 	-lsphinxbase
 
-CLEANFILES = *.log *.out *.lat *.mfc *.raw _cmudict.0.6d
+CLEANFILES = *.log *.out *.lat *.mfc *.raw *.dic

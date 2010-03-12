@@ -21,9 +21,9 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/en_US/wsj1",
+				"-hmm", MODELDIR "/hmm/en_US/wsj_sc_8k",
 				"-fsg", DATADIR "/goforward.fsg",
-				"-dict", MODELDIR "/lm/en/turtle/turtle.dic",
+				"-dict", MODELDIR "/lm/en/turtle.dic",
 				"-bestpath", "no",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
@@ -62,7 +62,7 @@ main(int argc, char *argv[])
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
-	TEST_EQUAL(0, strcmp("GO FORWARD TEN METERS",
+	TEST_EQUAL(0, strcmp("go forward ten meters",
 			     fsg_search_hyp(ps_search_base(fsgs), &score)));
 	for (seg = ps_seg_iter(ps, &score); seg;
 	     seg = ps_seg_next(seg)) {

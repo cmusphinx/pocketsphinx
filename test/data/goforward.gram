@@ -6,10 +6,10 @@
 
 grammar goforward;
 
-public <move> = GO FORWARD TEN METERS;
+public <move> = go forward ten meters;
 
-public <move2> = GO <direction> <distance> [METER | METERS];
+public <move2> = go <direction> <distance> [meter | meters];
 
-<direction> = FORWARD | BACKWARD;
+<direction> = forward | backward;
 
-<distance> = ONE | TWO | THREE | FOUR | FIVE | SIX | SEVEN | EIGHT | NINE | TEN;
+<distance> = one | two | three | four | five | six | seven | eight | nine | ten;

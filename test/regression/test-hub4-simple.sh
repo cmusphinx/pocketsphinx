@@ -5,10 +5,10 @@
 bn=`basename $0 .sh`
 
 echo "Test: $bn"
-run_program pocketsphinx_batch \
-    -hmm $model/hmm/en_US/hub4_wsj_ptm256_3s_8k.cd_ptm_5000 \
-    -lm $model/lm/en_US/wsj/wlist5o.3e-7.vp.tg.lm.DMP \
-    -dict $model/lm/en_US/cmudict.0.6d \
+debug_program pocketsphinx_batch \
+    -hmm $model/hmm/en_US/hub4wsj_sc_8k \
+    -lm $model/lm/en_US/wsj0vp.5000.DMP \
+    -dict $model/lm/en_US/cmu07a.dic \
     -ctl $data/wsj/test5k.s1.ctl \
     -cepdir $data/wsj \
     -cepext .mfc \

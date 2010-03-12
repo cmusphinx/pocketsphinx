@@ -247,14 +247,8 @@ doc/Makefile
 doc/doxyfile
 model/Makefile
 model/hmm/Makefile
-model/hmm/en_US/wsj1/Makefile
-model/hmm/en/tidigits/Makefile
 model/lm/Makefile
-model/lm/en_US/wsj/Makefile
-model/lm/en/turtle/Makefile
-model/lm/en/tidigits/Makefile
 scripts/Makefile
-scripts/pocketsphinx_test
 scripts/pocketsphinx_wsj
 scripts/pocketsphinx_tidigits
 test/Makefile
@@ -262,5 +256,3 @@ test/testfuncs.sh
 test/unit/Makefile
 test/regression/Makefile
 ])
-
-chmod +x scripts/pocketsphinx_test

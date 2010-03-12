@@ -1,9 +1,8 @@
 #!/bin/sh
 S2CONTINUOUS=@prefix@/bin/pocketsphinx_continuous
-HMM=@prefix@/share/pocketsphinx/model/hmm/wsj1
-LM=@prefix@/share/pocketsphinx/model/lm/wsj
-LMFILE=@prefix@/share/pocketsphinx/model/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP
-DICT=@prefix@/share/pocketsphinx/model/lm/wsj/wlist5o.dic
+HMM=@prefix@/share/pocketsphinx/model/hmm/en_US/wsj_sc_8k
+LMFILE=@prefix@/share/pocketsphinx/model/lm/en_US/wsj0vp.5000.DMP
+DICT=@prefix@/share/pocketsphinx/model/lm/en_US/cmu07a.dic
 
 echo " "
 echo "pocketsphinx_wsj:"

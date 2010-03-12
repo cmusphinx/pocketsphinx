@@ -28,8 +28,8 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/en_US/wsj1",
-				"-dict", MODELDIR "/lm/en/turtle/turtle.dic",
+				"-hmm", MODELDIR "/hmm/en_US/wsj_sc_8k",
+				"-dict", MODELDIR "/lm/en/turtle.dic",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = ps_init(config));
