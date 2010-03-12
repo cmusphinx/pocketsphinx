@@ -65,8 +65,8 @@ main(int argc, char *argv[])
 	g_object_set(G_OBJECT(vader), "auto_threshold", TRUE, NULL);
 	filter = gst_element_factory_make("pocketsphinx", "asr");
 	g_object_set(G_OBJECT(filter), "hmm", MODELDIR "/hmm/en_US/wsj_sc_8k", NULL);
-	g_object_set(G_OBJECT(filter), "lm", MODELDIR "/lm/en/turtle/turtle.lm.DMP", NULL);
-	g_object_set(G_OBJECT(filter), "dict", MODELDIR "/lm/en/turtle/turtle.dic", NULL);
+	g_object_set(G_OBJECT(filter), "lm", MODELDIR "/lm/en/turtle.DMP", NULL);
+	g_object_set(G_OBJECT(filter), "dict", MODELDIR "/lm/en/turtle.dic", NULL);
 	g_object_set(G_OBJECT(filter), "latdir", ".", NULL);
 	sink = gst_element_factory_make("filesink", "sink");
 	g_object_set(G_OBJECT(sink), "location", "test_gst.out", NULL);

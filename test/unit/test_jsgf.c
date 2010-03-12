@@ -78,7 +78,7 @@ main(int argc, char *argv[])
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
-	TEST_EQUAL(0, strcmp("GO FORWARD TEN METERS",
+	TEST_EQUAL(0, strcmp("go forward ten meters",
 			     fsg_search_hyp(ps_search_base(fsgs), &score)));
 	ps->search = fsgs;
 	for (seg = ps_seg_iter(ps, &score); seg;
