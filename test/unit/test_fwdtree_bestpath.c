@@ -21,7 +21,7 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/en_US/wsj_sc_8k",
+				"-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
 				"-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
 				"-dict", MODELDIR "/lm/en_US/cmu07a.dic",
 				"-fwdtree", "yes",
@@ -77,9 +77,12 @@ main(int argc, char *argv[])
 		printf("BESTPATH: %s\n",
 		       ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset, 1.461538, 15.0)));
 	}
+	printf("%s\n", ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
 	TEST_EQUAL(0, strcmp("go forward ten years",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
-	TEST_EQUAL(0, strcmp("go forward ten years",
+	printf("%s\n", ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset,
+							       1.461538, 15.0)));
+	TEST_EQUAL(0, strcmp("go forward ten readers",
 			     ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset,
 								     1.461538, 15.0))));
 	c = clock() - c;

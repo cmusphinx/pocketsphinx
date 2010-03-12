@@ -13,7 +13,7 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/en_US/wsj_sc_8k",
+				"-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
 				"-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
 				"-dict", MODELDIR "/lm/en_US/cmu07a.dic",
 				"-fwdtree", "yes",
@@ -23,5 +23,5 @@ main(int argc, char *argv[])
 				"-rawlogdir", ".",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
-	return ps_decoder_test(config, "BESTPATH", "go forward ten years");
+	return ps_decoder_test(config, "BESTPATH", "go forward and users");
 }

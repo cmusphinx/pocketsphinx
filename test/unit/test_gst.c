@@ -64,7 +64,7 @@ main(int argc, char *argv[])
 	vader = gst_element_factory_make("vader", "vad");
 	g_object_set(G_OBJECT(vader), "auto_threshold", TRUE, NULL);
 	filter = gst_element_factory_make("pocketsphinx", "asr");
-	g_object_set(G_OBJECT(filter), "hmm", MODELDIR "/hmm/en_US/wsj_sc_8k", NULL);
+	g_object_set(G_OBJECT(filter), "hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k", NULL);
 	g_object_set(G_OBJECT(filter), "lm", MODELDIR "/lm/en/turtle.DMP", NULL);
 	g_object_set(G_OBJECT(filter), "dict", MODELDIR "/lm/en/turtle.dic", NULL);
 	g_object_set(G_OBJECT(filter), "latdir", ".", NULL);

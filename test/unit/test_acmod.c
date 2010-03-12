@@ -39,12 +39,12 @@ main(int argc, char *argv[])
 
 	lmath = logmath_init(1.0001, 0, 0);
 	config = cmd_ln_init(NULL, ps_args(), TRUE,
-			     "-featparams", MODELDIR "/hmm/en_US/wsj_sc_8k/feat.params",
-			     "-mdef", MODELDIR "/hmm/en_US/wsj_sc_8k/mdef",
-			     "-mean", MODELDIR "/hmm/en_US/wsj_sc_8k/means",
-			     "-var", MODELDIR "/hmm/en_US/wsj_sc_8k/variances",
-			     "-tmat", MODELDIR "/hmm/en_US/wsj_sc_8k/transition_matrices",
-			     "-sendump", MODELDIR "/hmm/en_US/wsj_sc_8k/sendump",
+			     "-featparams", MODELDIR "/hmm/en_US/hub4wsj_sc_8k/feat.params",
+			     "-mdef", MODELDIR "/hmm/en_US/hub4wsj_sc_8k/mdef",
+			     "-mean", MODELDIR "/hmm/en_US/hub4wsj_sc_8k/means",
+			     "-var", MODELDIR "/hmm/en_US/hub4wsj_sc_8k/variances",
+			     "-tmat", MODELDIR "/hmm/en_US/hub4wsj_sc_8k/transition_matrices",
+			     "-sendump", MODELDIR "/hmm/en_US/hub4wsj_sc_8k/sendump",
 			     "-compallsen", "true",
 			     "-cmn", "prior",
 			     "-tmatfloor", "0.0001",
@@ -64,7 +64,7 @@ main(int argc, char *argv[])
 	buf = ckd_calloc(nsamps, sizeof(*buf));
 	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
 	TEST_EQUAL(0, acmod_start_utt(acmod));
-	printf("Incremental(2048):\n");
+	E_INFO("Incremental(2048):\n");
 	while (!feof(rawfh)) {
 		nread = fread(buf, sizeof(*buf), nsamps, rawfh);
 		bptr = buf;
@@ -76,11 +76,11 @@ main(int argc, char *argv[])
 				senscr = acmod_score(acmod, &frame_idx);
 				acmod_advance(acmod);
 				best_score = acmod_best_score(acmod, &best_senid);
-				printf("Frame %d best senone %d score %d\n",
+				E_INFO("Frame %d best senone %d score %d\n",
 				       frame_idx, best_senid, best_score);
 				TEST_EQUAL(frame_counter, frame_idx);
 				if (frame_counter < 270)
-					bestsen1[frame_counter] = best_senid;
+					bestsen1[frame_counter] = best_score;
 				++frame_counter;
 				frame_idx = -1;
 			}
@@ -96,10 +96,10 @@ main(int argc, char *argv[])
 			senscr = acmod_score(acmod, &frame_idx);
 			acmod_advance(acmod);
 			best_score = acmod_best_score(acmod, &best_senid);
-			printf("Frame %d best senone %d score %d\n",
+			E_INFO("Frame %d best senone %d score %d\n",
 			       frame_idx, best_senid, best_score);
 			if (frame_counter < 270)
-				bestsen1[frame_counter] = best_senid;
+				bestsen1[frame_counter] = best_score;
 			TEST_EQUAL(frame_counter, frame_idx);
 			++frame_counter;
 			frame_idx = -1;
@@ -107,7 +107,7 @@ main(int argc, char *argv[])
 	}
 
 	/* Now try to process the whole thing at once. */
-	printf("\nWhole utterance:\n");
+	E_INFO("Whole utterance:\n");
 	cmn_prior_set(acmod->fcb->cmn_struct, prior);
 	nsamps = ftell(rawfh) / sizeof(*buf);
 	clearerr(rawfh);
@@ -127,10 +127,10 @@ main(int argc, char *argv[])
 			senscr = acmod_score(acmod, &frame_idx);
 			acmod_advance(acmod);
 			best_score = acmod_best_score(acmod, &best_senid);
-			printf("Frame %d best senone %d score %d\n",
+			E_INFO("Frame %d best senone %d score %d\n",
 			   frame_idx, best_senid, best_score);
 			if (frame_counter < 270)
-				TEST_EQUAL(best_senid, bestsen1[frame_counter]);
+				TEST_EQUAL_LOG(best_score, bestsen1[frame_counter]);
 			TEST_EQUAL(frame_counter, frame_idx);
 			++frame_counter;
 			frame_idx = -1;
@@ -148,7 +148,7 @@ main(int argc, char *argv[])
 	fe_process_frames(acmod->fe, &bptr, &nsamps, cepbuf, &nfr);
 	fe_end_utt(acmod->fe, cepbuf[frame_counter-1], &nfr);
 
-	printf("\nIncremental(MFCC):\n");
+	E_INFO("Incremental(MFCC):\n");
 	cmn_prior_set(acmod->fcb->cmn_struct, prior);
 	TEST_EQUAL(0, acmod_start_utt(acmod));
 	cptr = cepbuf;
@@ -162,11 +162,11 @@ main(int argc, char *argv[])
 			senscr = acmod_score(acmod, &frame_idx);
 			acmod_advance(acmod);
 			best_score = acmod_best_score(acmod, &best_senid);
-			printf("Frame %d best senone %d score %d\n",
+			E_INFO("Frame %d best senone %d score %d\n",
 			       frame_idx, best_senid, best_score);
 			TEST_EQUAL(frame_counter, frame_idx);
 			if (frame_counter < 270)
-				TEST_EQUAL(best_senid, bestsen1[frame_counter]);
+				TEST_EQUAL_LOG(best_score, bestsen1[frame_counter]);
 			++frame_counter;
 			frame_idx = -1;
 		}
@@ -182,11 +182,11 @@ main(int argc, char *argv[])
 			senscr = acmod_score(acmod, &frame_idx);
 			acmod_advance(acmod);
 			best_score = acmod_best_score(acmod, &best_senid);
-			printf("Frame %d best senone %d score %d\n",
+			E_INFO("Frame %d best senone %d score %d\n",
 			       frame_idx, best_senid, best_score);
 			TEST_EQUAL(frame_counter, frame_idx);
 			if (frame_counter < 270)
-				TEST_EQUAL(best_senid, bestsen1[frame_counter]);
+				TEST_EQUAL_LOG(best_score, bestsen1[frame_counter]);
 			++frame_counter;
 			frame_idx = -1;
 		}
@@ -201,7 +201,7 @@ main(int argc, char *argv[])
 	fe_process_frames(acmod->fe, &bptr, &nsamps, cepbuf, &nfr);
 	fe_end_utt(acmod->fe, cepbuf[frame_counter-1], &nfr);
 
-	printf("\nWhole utterance (MFCC):\n");
+	E_INFO("Whole utterance (MFCC):\n");
 	cmn_prior_set(acmod->fcb->cmn_struct, prior);
 	TEST_EQUAL(0, acmod_start_utt(acmod));
 	cptr = cepbuf;
@@ -217,17 +217,17 @@ main(int argc, char *argv[])
 			senscr = acmod_score(acmod, &frame_idx);
 			acmod_advance(acmod);
 			best_score = acmod_best_score(acmod, &best_senid);
-			printf("Frame %d best senone %d score %d\n",
+			E_INFO("Frame %d best senone %d score %d\n",
 			       frame_idx, best_senid, best_score);
 			if (frame_counter < 270)
-				TEST_EQUAL(best_senid, bestsen1[frame_counter]);
+				TEST_EQUAL_LOG(best_score, bestsen1[frame_counter]);
 			TEST_EQUAL(frame_counter, frame_idx);
 			++frame_counter;
 			frame_idx = -1;
 		}
 	}
 
-	printf("Rewound (MFCC):\n");
+	E_INFO("Rewound (MFCC):\n");
 	TEST_EQUAL(0, acmod_rewind(acmod));
 	{
 		int16 const *senscr;
@@ -238,10 +238,10 @@ main(int argc, char *argv[])
 			senscr = acmod_score(acmod, &frame_idx);
 			acmod_advance(acmod);
 			best_score = acmod_best_score(acmod, &best_senid);
-			printf("Frame %d best senone %d score %d\n",
+			E_INFO("Frame %d best senone %d score %d\n",
 			       frame_idx, best_senid, best_score);
 			if (frame_counter < 270)
-				TEST_EQUAL(best_senid, bestsen1[frame_counter]);
+				TEST_EQUAL_LOG(best_score, bestsen1[frame_counter]);
 			TEST_EQUAL(frame_counter, frame_idx);
 			++frame_counter;
 			frame_idx = -1;

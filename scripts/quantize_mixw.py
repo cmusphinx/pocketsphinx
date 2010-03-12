@@ -4,6 +4,7 @@ __author__ = "David Huggins-Daines <dhuggins@cs.cmu.edu>"
 
 import numpy
 import sys
+import os
 import struct
 import s3mixw
 import sphinxbase
@@ -189,13 +190,15 @@ def read_sendump(infile, n_cb=4):
 
     # Number of codewords and pdfs
     r, c = struct.unpack('II', sendump.read(8))
+    print r,c
 
     # Now read the stuff
-    opdf_8b = numpy.empty((c,4,r))
+    opdf_8b = numpy.empty((670,n_cb,r))
     for i in range(0,n_cb):
         for j in range(0,r):
             # Read bytes, expand to ints, shift them up
-            mixw = numpy.fromfile(sendump, dtype='int8', count=c).astype('i') << 10
+            mixw = numpy.fromfile(sendump, dtype='int8', count=670).astype('i') << 10
+            sendump.read(2)
             # Negate, exponentiate, and untranspose
             opdf_8b[:,i,j] = numpy.power(1.0001, -mixw)
 
@@ -206,7 +209,10 @@ def norm_floor_mixw(mixw, floor=1e-7):
 
 if __name__ == '__main__':
     ifn, ofn = sys.argv[1:]
-    mixw = norm_floor_mixw(s3mixw.open(sys.argv[1]).getall(), 1e-7)
+    if os.path.basename(ifn).startswith('sendump'):
+        mixw = read_sendump(ifn)
+    else:
+        mixw = norm_floor_mixw(s3mixw.open(ifn).getall(), 1e-7)
     cb = quantize_mixw_kmeans(mixw, 15, 1e-7)
     print cb
     mwmap = map_mixw_cb(mixw, cb, 1e-7)

@@ -18,7 +18,7 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/en_US/wsj_sc_8k",
+				"-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
 				"-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
 				"-dict", MODELDIR "/lm/en_US/cmu07a.dic",
 				"-fwdtree", "no",
@@ -60,7 +60,7 @@ main(int argc, char *argv[])
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
-	TEST_EQUAL(0, strcmp("go forward ten years to",
+	TEST_EQUAL(0, strcmp("so far weren't any major step",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
 	c = clock() - c;
 	printf("2 * fwdflat search in %.2f sec\n",
