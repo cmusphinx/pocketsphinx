@@ -129,6 +129,10 @@ static const arg_t ps_args_def[] = {
       ARG_STRING,
       NULL,
       "Directory for dumping word lattices" },
+    { "-build_outdirs",
+      ARG_BOOLEAN,
+      "yes",
+      "Create missing subdirectories in output directory" },
     { "-nbestdir",
       ARG_STRING,
       NULL,
@@ -322,6 +326,14 @@ write_lattice(ps_decoder_t *ps, char const *latdir, char const *uttid)
         return -1;
     }
     outfile = string_join(latdir, "/", uttid, ".lat", NULL);
+    /* Build output directory structure if possible/requested (it is
+     * by default). */
+    if (cmd_ln_boolean_r(ps_get_config(ps), "-build_outdirs")) {
+        char *dirname = ckd_salloc(outfile);
+        path2dirname(outfile, dirname);
+        build_directory(dirname);
+        ckd_free(dirname);
+    }
     if (ps_lattice_write(lat, outfile) < 0) {
         E_ERROR("Failed to write lattice to %s\n", outfile);
         return -1;
@@ -606,7 +618,7 @@ main(int32 argc, char *argv[])
         config = cmd_ln_parse_file_r(NULL, ps_args_def, argv[1], TRUE);
     }
     else {
-        config = cmd_ln_parse_r(NULL, ps_args_def, argc, argv, FALSE);
+        config = cmd_ln_parse_r(NULL, ps_args_def, argc, argv, TRUE);
     }
     /* Handle argument file as -argfile. */
     if (config && (ctl = cmd_ln_str_r(config, "-argfile")) != NULL) {
