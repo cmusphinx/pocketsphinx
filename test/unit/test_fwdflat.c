@@ -60,7 +60,7 @@ main(int argc, char *argv[])
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
-	TEST_EQUAL(0, strcmp("so far weren't any major step",
+	TEST_EQUAL(0, strcmp("go forward ten years",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
 	c = clock() - c;
 	printf("2 * fwdflat search in %.2f sec\n",

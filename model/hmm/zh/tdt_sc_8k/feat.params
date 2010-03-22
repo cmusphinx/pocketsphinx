@@ -9,4 +9,5 @@
 -svspec 0-12/13-25/26-38
 -agc none
 -cmn current
+-cmninit 54,-1,2
 -varnorm no

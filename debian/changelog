@@ -1,3 +1,10 @@
+pocketsphinx (0.6-0svn1) unstable; urgency=low
+
+  * Update to new release version.  NOTE: This is the upstream generic
+    package, your distributor should provide an official version.
+
+ -- David Huggins-Daines <dhuggins@cs.cmu.edu>  Thu, 18 Mar 2010 15:22:12 -0400
+
 pocketsphinx (0.5-0svn1) unstable; urgency=low
 
   * Snapshot version!

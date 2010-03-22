@@ -1,0 +1,3 @@
+This package uses dpatch for modifications done against upstream's source.
+Please see /usr/share/doc/dpatch/README.source.gz for more details on how
+to work with dpatch.

@@ -242,7 +242,7 @@ main(int argc, char *argv[])
         config = cmd_ln_parse_file_r(NULL, cont_args_def, argv[1], TRUE);
     }
     else {
-        config = cmd_ln_parse_r(NULL, cont_args_def, argc, argv, TRUE);
+        config = cmd_ln_parse_r(NULL, cont_args_def, argc, argv, FALSE);
     }
     /* Handle argument file as -argfile. */
     if (config && (cfg = cmd_ln_str_r(config, "-argfile")) != NULL) {

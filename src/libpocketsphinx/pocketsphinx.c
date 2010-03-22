@@ -71,6 +71,18 @@ file_exists(const char *path)
     return (tmp != NULL);
 }
 
+static int
+hmmdir_exists(const char *path)
+{
+    FILE *tmp;
+    char *mdef = string_join(path, "/mdef", NULL);
+
+    tmp = fopen(mdef, "rb");
+    if (tmp) fclose(tmp);
+    ckd_free(mdef);
+    return (tmp != NULL);
+}
+
 static void
 ps_add_file(ps_decoder_t *ps, const char *arg,
             const char *hmmdir, const char *file)
@@ -85,13 +97,52 @@ ps_add_file(ps_decoder_t *ps, const char *arg,
 static void
 ps_init_defaults(ps_decoder_t *ps)
 {
-    char const *hmmdir;
+    char const *hmmdir, *lmfile, *dictfile;
 
     /* Disable memory mapping on Blackfin (FIXME: should be uClinux in general). */
 #ifdef __ADSPBLACKFIN__
     E_INFO("Will not use mmap() on uClinux/Blackfin.");
     cmd_ln_set_boolean_r(ps->config, "-mmap", FALSE);
 #endif
+
+#ifdef MODELDIR
+    /* Set default acoustic and language models. */
+    hmmdir = cmd_ln_str_r(ps->config, "-hmm");
+    lmfile = cmd_ln_str_r(ps->config, "-lm");
+    dictfile = cmd_ln_str_r(ps->config, "-dict");
+    if (hmmdir == NULL && hmmdir_exists(MODELDIR "/hmm/en_US/hub4wsj_sc_8k")) {
+        hmmdir = MODELDIR "/hmm/en_US/hub4wsj_sc_8k";
+        cmd_ln_set_str_r(ps->config, "-hmm", hmmdir);
+    }
+    if (lmfile == NULL && !cmd_ln_str_r(ps->config, "-fsg")
+        && !cmd_ln_str_r(ps->config, "-jsgf")
+        && file_exists(MODELDIR "/lm/en_US/hub4.5000.DMP")) {
+        lmfile = MODELDIR "/lm/en_US/hub4.5000.DMP";
+        cmd_ln_set_str_r(ps->config, "-lm", lmfile);
+    }
+    if (dictfile == NULL && file_exists(MODELDIR "/lm/en_US/cmu07a.dic")) {
+        dictfile = MODELDIR "/lm/en_US/cmu07a.dic";
+        cmd_ln_set_str_r(ps->config, "-dict", dictfile);
+    }
+
+    /* Expand acoustic and language model filenames relative to installation path. */
+    if (hmmdir && !path_is_absolute(hmmdir) && !hmmdir_exists(hmmdir)) {
+        char *tmphmm = string_join(MODELDIR "/hmm/", hmmdir, NULL);
+        cmd_ln_set_str_r(ps->config, "-hmm", tmphmm);
+        ckd_free(tmphmm);
+    }
+    if (lmfile && !path_is_absolute(lmfile) && !file_exists(lmfile)) {
+        char *tmplm = string_join(MODELDIR "/lm/", lmfile, NULL);
+        cmd_ln_set_str_r(ps->config, "-lm", tmplm);
+        ckd_free(tmplm);
+    }
+    if (dictfile && !path_is_absolute(dictfile) && !file_exists(dictfile)) {
+        char *tmpdict = string_join(MODELDIR "/lm/", dictfile, NULL);
+        cmd_ln_set_str_r(ps->config, "-dict", tmpdict);
+        ckd_free(tmpdict);
+    }
+#endif
+
     /* Get acoustic model filenames and add them to the command-line */
     if ((hmmdir = cmd_ln_str_r(ps->config, "-hmm")) != NULL) {
         ps_add_file(ps, "-mdef", hmmdir, "mdef");

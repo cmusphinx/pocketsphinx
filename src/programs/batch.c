@@ -606,7 +606,7 @@ main(int32 argc, char *argv[])
         config = cmd_ln_parse_file_r(NULL, ps_args_def, argv[1], TRUE);
     }
     else {
-        config = cmd_ln_parse_r(NULL, ps_args_def, argc, argv, TRUE);
+        config = cmd_ln_parse_r(NULL, ps_args_def, argc, argv, FALSE);
     }
     /* Handle argument file as -argfile. */
     if (config && (ctl = cmd_ln_str_r(config, "-argfile")) != NULL) {

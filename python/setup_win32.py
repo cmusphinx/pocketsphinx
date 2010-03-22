@@ -9,7 +9,7 @@ sb_includes = ['../../sphinxbase/include', '../../sphinxbase/win32/include']
 sb_libdirs = ['../../sphinxbase/lib/debug']
 
 setup(name = 'PocketSphinx',
-      version = '0.5.1',
+      version = '0.6',
       author = 'David Huggins-Daines',
       author_email = 'dhuggins@cs.cmu.edu',
       description = 'Python interface to CMU PocketSphinx speech recognition',

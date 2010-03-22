@@ -1,14 +1,11 @@
 #!/usr/bin/make -f
 
-# Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
-
+include /usr/share/dpatch/dpatch.make
 
 # These are used for cross-compiling and for saving the configure script
 # from having to guess our platform (since we know it already)
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
-
 
 CFLAGS = -Wall -g
 
@@ -18,44 +15,59 @@ else
 	CFLAGS += -O2
 endif
 
+PYTHON=$(shell pyversions -d)
+PYVERS=$(shell pyversions -r)
+
 config.status: configure
 	dh_testdir
-	# Add here commands to configure the package.
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		--prefix=/usr --mandir=\$${prefix}/share/man \
 		--infodir=\$${prefix}/share/info \
-		--with-sphinxbase=auto CFLAGS="$(CFLAGS)" \
-		--with-python=python2.5
+		--with-sphinxbase=auto CFLAGS="$(CFLAGS)"
 
 build: build-stamp
-build-stamp:  config.status
+build-stamp: patch-stamp config.status
 	dh_testdir
 	$(MAKE)
+	$(RM) -r python/build
+	set -e; \
+	for PYTHON in $(PYVERS); do \
+		(cd python && $$PYTHON setup.py build); \
+	done
+	set -e; \
+	for PYTHON in $(PYVERS); do \
+		(cd python && $$PYTHON-dbg setup.py build); \
+	done
 	touch $@
 
-clean:
+clean: clean1 unpatch
+clean1:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp 
-
-	# Add here commands to clean up after the build process.
 	[ ! -f Makefile ] || $(MAKE) distclean
-ifneq "$(wildcard /usr/share/misc/config.sub)" ""
-	cp -f /usr/share/misc/config.sub config.sub
-endif
-ifneq "$(wildcard /usr/share/misc/config.guess)" ""
-	cp -f /usr/share/misc/config.guess config.guess
-endif
-	dh_clean 
+	dh_clean
+	$(RM) -r python/build
 
 install: build
 	dh_testdir
 	dh_testroot
 	dh_clean -k 
 	dh_installdirs
-
-	# Add here commands to install the package into debian/tmp
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	set -e; \
+	for PYTHON in $(PYVERS); do \
+	    (cd python && $$PYTHON setup.py install --root=$(CURDIR)/debian/python-pocketsphinx --install-layout=deb) ; \
+	done
+	set -e; \
+	for PYTHON in $(PYVERS); do \
+	    (cd python && $$PYTHON-dbg setup.py install --root=$(CURDIR)/debian/python-pocketsphinx-dbg --install-layout=deb) ; \
+	done
+	mkdir -p debian/python-pocketsphinx/usr/share/doc/python-pocketsphinx
+	dh_installexamples -p python-pocketsphinx python/ps_test.py
+	find debian/python-*-dbg ! -type d ! -name '*.so' | xargs rm -f
+	find debian/python-*-dbg -depth -empty -exec rmdir {} \;
+	find debian -name '*.py[co]' | xargs rm -f
 
 # Build architecture-independent files here.
 binary-indep: build install
@@ -71,9 +83,13 @@ binary-arch: build install
 	dh_install --sourcedir=debian/tmp
 	dh_installman
 	dh_link
-	dh_strip
+	dh_strip --exclude=_d.so
+	rm -rf debian/python-pocketsphinx-dbg/usr/share/doc/python-pocketsphinx-dbg
+	ln -s python-pocketsphinx \
+		debian/python-pocketsphinx-dbg/usr/share/doc/python-pocketsphinx-dbg
 	dh_compress -X.py
 	dh_fixperms
+	dh_pysupport
 	dh_makeshlibs
 	dh_installdeb
 	dh_shlibdeps
@@ -82,4 +98,4 @@ binary-arch: build install
 	dh_builddeb
 
 binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install 
+.PHONY: build clean clean1 binary-indep binary-arch binary install 

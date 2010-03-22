@@ -8,6 +8,7 @@ enlm_DATA = en/tidigits.dic			\
 enuslmdir = $(prefix)/share/pocketsphinx/model/lm/en_US
 enuslm_DATA = \
 	en_US/cmu07a.dic			\
+	en_US/hub4.5000.DMP			\
 	en_US/wsj0vp.5000.DMP
 
 zhcnlmdir = $(prefix)/share/pocketsphinx/model/lm/zh_CN

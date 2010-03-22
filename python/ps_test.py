@@ -1,11 +1,6 @@
 import pocketsphinx as ps
 
-decoder = ps.Decoder(hmm="../model/hmm/wsj1",
-                     lm="../model/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP",
-                     dict="../model/lm/cmudict.0.6d",
-                     fwdtree="yes",
-                     fwdflat="yes",
-                     bestpath="no")
+decoder = ps.Decoder()
 fh = open("../test/data/goforward.raw", "rb")
 nsamp = decoder.decode_raw(fh)
 print "Decoded %d samples" % nsamp
@@ -13,7 +8,7 @@ hyp, uttid, score = decoder.get_hyp()
 print "%s (%s %d)" % (hyp, uttid, score)
 
 lmset = decoder.get_lmset()
-print "P(FORWARD|GO) = %f, %d" % lmset.prob('FORWARD', 'GO')
+print "P(forward|go) = %f, %d" % lmset.prob('forward', 'go')
 
 dag = decoder.get_lattice()
 dag.bestpath(lmset, 1.0, 1.0/15)
@@ -24,15 +19,15 @@ for n in dag.nodes(50, 150):
     if n.prob > -100:
         print "%s %s %d -> (%d,%d) %f" % (n.word, n.baseword,
                                           n.sf, n.fef, n.lef, n.prob)
-        if n.baseword == 'FORWARD':
+        if n.baseword == 'forward':
             forward = n
 
-print "FORWARD is:", forward.word, forward.sf, forward.fef, forward.lef, forward.prob
-print "FORWARD entries:"
+print "forward is:", forward.word, forward.sf, forward.fef, forward.lef, forward.prob
+print "forward entries:"
 for x in forward.entries():
     if x.prob > 0.0001:
         print "%s %d -> %d prob %f" % (x.baseword, x.sf, x.ef, x.prob)
-print "FORWARD exits:"
+print "forward exits:"
 for x in forward.exits():
     if x.prob > 0.0001:
         print "%d -> %d prob %f" % (x.sf, x.ef, x.prob)
@@ -47,15 +42,15 @@ for n in dag.nodes(50, 150):
     if n.prob > 0.0001:
         print "%s %s %d -> (%d,%d) %f" % (n.word, n.baseword,
                                           n.sf, n.fef, n.lef, n.prob)
-        if n.baseword == 'FORWARD':
+        if n.baseword == 'forward':
             forward = n
 
-print "FORWARD is:", forward.word, forward.sf, forward.fef, forward.lef, forward.prob
-print "FORWARD entries:"
+print "forward is:", forward.word, forward.sf, forward.fef, forward.lef, forward.prob
+print "forward entries:"
 for x in forward.entries():
     if x.prob > 0.0001:
         print "%s %d -> %d prob %f" % (x.baseword, x.sf, x.ef, x.prob)
-print "FORWARD exits:"
+print "forward exits:"
 for x in forward.exits():
     if x.prob > 0.0001:
         print "%d -> %d prob %f" % (x.sf, x.ef, x.prob)

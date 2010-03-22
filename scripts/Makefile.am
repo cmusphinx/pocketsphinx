@@ -1,10 +1,4 @@
-bin_SCRIPTS = \
-	pocketsphinx_wsj \
-	pocketsphinx_tidigits
-
 EXTRA_DIST =  \
-	pocketsphinx_wsj.in \
-	pocketsphinx_tidigits.in \
 	pocketsphinx.cfg \
 	psdecode.pl \
 	setup_sphinx.pl \

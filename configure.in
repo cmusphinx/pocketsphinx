@@ -1,8 +1,8 @@
 dnl Welcome to the Sphinx automated build system.
 dnl try not to hurt yourself ;)
 
-AC_INIT(pocketsphinx, 0.5.99)
-AM_INIT_AUTOMAKE([no-define dist-bzip2 dist-zip])
+AC_INIT(pocketsphinx, 0.6.99)
+AM_INIT_AUTOMAKE([no-define])
 AC_SUBST(ACLOCAL_AMFLAGS, "-I m4")
 
 CFLAGS=${CFLAGS:--g -O2 -Wall}
@@ -30,7 +30,6 @@ case $host in
 esac     
 
 AC_PROG_CC
-AC_PROG_CXX
 AM_PROG_LIBTOOL
 AC_WORDS_BIGENDIAN
 AC_CHECK_TYPES(long long)
@@ -249,8 +248,6 @@ model/Makefile
 model/hmm/Makefile
 model/lm/Makefile
 scripts/Makefile
-scripts/pocketsphinx_wsj
-scripts/pocketsphinx_tidigits
 test/Makefile
 test/testfuncs.sh
 test/unit/Makefile

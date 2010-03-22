@@ -104,7 +104,7 @@ cdef extern from "pocketsphinx.h":
     int ps_save_dict(ps_decoder_t *ps, char *dictfile, char *format)
     int ps_add_word(ps_decoder_t *ps, char *word, char *phones, int update)
     int ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
-                      char *uttid, size_t maxsamps)
+                      char *uttid, long maxsamps)
     int ps_start_utt(ps_decoder_t *ps, char *uttid)
     int ps_process_raw(ps_decoder_t *ps, char *data, size_t n_samples,
                        int no_search, int full_utt)

@@ -9,17 +9,15 @@ SUBDIRS = src \
 EXTRA_DIST = autogen.sh								\
 	pocketsphinx.sln							\
 	pocketsphinx.pc.in							\
-	win32/msdev/pocketsphinx/pocketsphinx.vcproj				\
-	win32/msdev/pocketsphinx_batch/pocketsphinx.args			\
-	win32/msdev/pocketsphinx_batch/pocketsphinx_batch.vcproj		\
-	win32/msdev/pocketsphinx_continuous/pocketsphinx.args			\
-	win32/msdev/pocketsphinx_continuous/pocketsphinx_continuous.vcproj	\
-	win32/msdev/pocketsphinx_ptt/pocketsphinx.args				\
-	win32/msdev/pocketsphinx_ptt/pocketsphinx_ptt.vcproj			\
+	win32/pocketsphinx/pocketsphinx.vcproj				\
+	win32/pocketsphinx_batch/pocketsphinx.args			\
+	win32/pocketsphinx_batch/pocketsphinx_batch.vcproj		\
+	win32/pocketsphinx_continuous/pocketsphinx.args			\
+	win32/pocketsphinx_continuous/pocketsphinx_continuous.vcproj	\
 	m4/pkg.m4								\
 	group/ABLD.BAT								\
 	group/bld.inf								\
-	group/pocketsphinx_s60.mmp
+	group/pocketsphinx.mmp
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = pocketsphinx.pc

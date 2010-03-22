@@ -99,11 +99,6 @@ enum
 /* Default command line. (will go away soon and be constructed using properties) */
 static char *default_argv[] = {
     "gst-pocketsphinx",
-#ifdef MODELDIR
-    "-hmm", MODELDIR "/hmm/wsj1",
-    "-lm", MODELDIR "/lm/wsj/wlist5o.3e-7.vp.tg.lm.DMP",
-    "-dict", MODELDIR "/lm/wsj/wlist5o.dic",
-#endif
     "-samprate", "8000",
     "-cmn", "prior",
     "-nfft", "256",

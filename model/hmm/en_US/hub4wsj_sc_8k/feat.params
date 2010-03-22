@@ -9,4 +9,5 @@
 -feat 1s_c_d_dd
 -agc none
 -cmn current
+-cmninit 56,-3,1
 -varnorm no

@@ -9,4 +9,5 @@
 -feat s2_4x
 -agc none
 -cmn current
+-cmninit 63,-1,1
 -varnorm no

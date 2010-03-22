@@ -1,15 +1,18 @@
 Source: pocketsphinx
 Priority: optional
-Maintainer: David Huggins-Daines <dhuggins@cs.cmu.edu>
-Build-Depends: debhelper (>= 4), autotools-dev, libsphinxbase-dev, libgstreamer0.10-dev, python2.5-dev
-Standards-Version: 3.7.2
-Section: libs
+Maintainer: Ubuntu MOTU Developers <ubuntu-motu@lists.ubuntu.com>
+Build-Depends: debhelper (>= 5), dpatch, autotools-dev, libsphinxbase-dev,
+ libgstreamer0.10-dev, libgstreamer-plugins-base0.10-dev, libasound2-dev,
+ python-all-dev, python-all-dbg, python-support (>= 0.3)
+Standards-Version: 3.8.3
+XS-Python-Version: all
+Section: sound
 
 Package: libpocketsphinx-dev
 Section: libdevel
 Architecture: any
-Depends: ${shlibs:Depends}, libpocketsphinx1 (= ${Source-Version})
-Description: Lightweight speech recognition - development files
+Depends: ${shlibs:Depends}, libpocketsphinx1 (= ${binary:Version})
+Description: lightweight speech recognition - development files
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
  .
@@ -19,7 +22,7 @@ Package: libpocketsphinx1
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Lightweight speech recognition - library
+Description: lightweight speech recognition - library
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
  .
@@ -29,43 +32,70 @@ Package: gstreamer0.10-pocketsphinx
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: pocketsphinx-hmm-wsj1, pocketsphinx-lm-wsj
-Description: Lightweight speech recognition - GStreamer plugin
+Recommends: pocketsphinx-hmm-en-hub4wsj, pocketsphinx-lm-en-hub4
+Description: lightweight speech recognition - GStreamer plugin
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
  .
  This package contains the GStreamer plugin for PocketSphinx.
 
-Package: pocketsphinx-hmm-wsj1
-Section: sound
+Package: pocketsphinx-hmm-en-hub4wsj
 Architecture: all
-Depends: pocketsphinx-utils
-Description: Lightweight speech recognition - WSJ1 acoustic model
+Description: lightweight speech recognition - English acoustic model
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
  .
- This package contains the default acoustic model for PocketSphinx.
- It was trained from 180 hours of speech, recorded on a close-talking
- microphone and downsampled to 8kHz.
+ This package contains the default US English acoustic model for
+ PocketSphinx.  It was trained from 330 hours of broadcast news and
+ close-talking microphone speech downsampled to 8kHz.
 
-Package: pocketsphinx-lm-wsj
-Section: sound
+Package: pocketsphinx-lm-en-hub4
 Architecture: all
-Depends: pocketsphinx-utils
-Description: Lightweight speech recognition - WSJ language model
+Recommends: pocketsphinx-utils
+Description: lightweight speech recognition - HUB4 language model
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
  .
  This package contains the default language model for PocketSphinx.
- It was trained from approximately 270 million words of newspaper text
- from the CSR-1 corpus, and has a vocabulary of 5000 word types.
- Verbalized punctuation is included.
+ It was trained from approximately 160 million words of broadcast news
+ text from the HUB4 corpus, and has a vocabulary of 5000 word types.
 
-Package: pocketsphinx-hmm-tidigits
-Section: sound
+Package: pocketsphinx-hmm-zh-tdt
 Architecture: all
-Depends: pocketsphinx-utils
-Description: Lightweight speech recognition - TIDIGITS models
+Description: lightweight speech recognition - Mandarin acoustic model
+ PocketSphinx is a lightweight, cross-platform, speaker-independent,
+ large-vocabulary continuous speech recognition engine.
+ .
+ This package contains the default Mandarin acoustic model for
+ PocketSphinx.  It was trained from 50 hours of broadcast news and
+ conversation speech downsampled to 8kHz.
+
+Package: pocketsphinx-lm-zh-hans-gigatdt
+Architecture: all
+Recommends: pocketsphinx-utils
+Description: lightweight speech recognition - Simplified Chinese language model
+ PocketSphinx is a lightweight, cross-platform, speaker-independent,
+ large-vocabulary continuous speech recognition engine.
+ .
+ This package contains the default Simplified Chinese language model
+ for PocketSphinx.  It was trained from Gigaword-2 and TDT4 news
+ corpora, and has a vocabulary of 5000 word types.
+
+Package: pocketsphinx-lm-zh-hant-gigatdt
+Architecture: all
+Recommends: pocketsphinx-utils
+Description: lightweight speech recognition - Traditional Chinese language model
+ PocketSphinx is a lightweight, cross-platform, speaker-independent,
+ large-vocabulary continuous speech recognition engine.
+ .
+ This package contains the default Traditional Chinese language model
+ for PocketSphinx.  It was trained from Gigaword-2 and TDT4 news
+ corpora, and has a vocabulary of 5000 word types.
+
+Package: pocketsphinx-hmm-en-tidigits
+Architecture: all
+Recommends: pocketsphinx-utils
+Description: lightweight speech recognition - TIDIGITS models
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
  .
@@ -75,21 +105,40 @@ Description: Lightweight speech recognition - TIDIGITS models
  close-talking microphone and downsampled to 8kHz.
 
 Package: pocketsphinx-utils
-Section: sound
 Architecture: any
-Depends: ${shlibs:Depends}, libpocketsphinx1 (= ${Source-Version})
-Description: Lightweight speech recognition - command-line tools
+Depends: ${shlibs:Depends}, libpocketsphinx1 (= ${binary:Version})
+Description: lightweight speech recognition - command-line tools
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
  .
  This package contains command-line utilities for the PocketSphinx
  recognition engine.
 
-Package: python2.5-pocketsphinx
+Package: python-pocketsphinx
 Section: python
 Architecture: any
-Depends: ${python:Depends}, ${shlibs:Depends}
+Depends: ${python:Depends}, ${shlibs:Depends}, python-sphinxbase
 Provides: ${python:Provides}
-Description: Lightweight speech recognition - Python module
+XB-Python-Version: ${python:Versions}
+Description: lightweight speech recognition - Python module
+ PocketSphinx is a lightweight, cross-platform, speaker-independent,
+ large-vocabulary continuous speech recognition engine.
+ .
  This package contains a Python module which provides access to most
  of the PocketSphinx API.
+
+Package: python-pocketsphinx-dbg
+Section: debug
+Architecture: any
+Priority: extra
+Depends: ${python:Depends}, ${shlibs:Depends}, python-pocketsphinx, python-dbg
+Provides: ${python:Provides}
+XB-Python-Version: ${python:Versions}
+Description: lightweight speech recognition - Python module (debug version)
+ PocketSphinx is a lightweight, cross-platform, speaker-independent,
+ large-vocabulary continuous speech recognition engine.
+ .
+ This package contains a Python module which provides access to most
+ of the PocketSphinx API.
+ .
+ This package contains the extension built for the Python debug interpreter.

@@ -1,0 +1,7 @@
+-hmm ../../../model/hmm/wsj1
+-lm ../../../model/lm/turtle/turtle.lm.DMP
+-dict ../../../model/lm/turtle/turtle.dic
+-ctl ../../../model/lm/turtle/turtle.ctl
+-cepdir ../../../model/lm/turtle
+-cepext .16k
+-adcin TRUE
