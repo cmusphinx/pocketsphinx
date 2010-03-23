@@ -42,6 +42,7 @@
 #include <pio.h>
 #include <err.h>
 #include <strfuncs.h>
+#include <filename.h>
 #include <byteorder.h>
 
 /* PocketSphinx headers. */
