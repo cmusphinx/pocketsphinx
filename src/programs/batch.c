@@ -391,7 +391,7 @@ write_ctm(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int32 f
      * correspond to the fields of the STM file.  So if there's a
      * comma in the uttid, take the first two fields as show and
      * channel, and also try to find the start time. */
-    show = dupid = ckd_salloc(uttid);
+    show = dupid = ckd_salloc(uttid ? uttid : "(null)");
     if ((c = strchr(dupid, ',')) != NULL) {
         *c++ = '\0';
         channel = c;
