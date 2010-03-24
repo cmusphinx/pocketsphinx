@@ -586,12 +586,10 @@ acmod_process_raw(acmod_t *acmod,
     if (full_utt)
         return acmod_process_full_raw(acmod, inout_raw, inout_n_samps);
 
-    /* Write to logging file if any. */
-    if (acmod->rawfh)
-        fwrite(*inout_raw, 2, *inout_n_samps, acmod->rawfh);
     /* Append MFCCs to the end of any that are previously in there
      * (in practice, there will probably be none) */
     if (inout_n_samps && *inout_n_samps) {
+        int16 const *prev_audio_inptr = *inout_raw;
         int inptr;
 
         /* Total number of frames available. */
@@ -605,6 +603,13 @@ acmod_process_raw(acmod_t *acmod,
             if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                                   acmod->mfc_buf + inptr, &ncep1) < 0)
                 return -1;
+            /* Write to logging file if any. */
+            if (acmod->rawfh) {
+                fwrite(prev_audio_inptr, 2,
+                       *inout_raw - prev_audio_inptr,
+                       acmod->rawfh);
+                prev_audio_inptr = *inout_raw;
+            }
             /* ncep1 now contains the number of frames actually
              * processed.  This is a good thing, but it means we
              * actually still might have some room left at the end of
@@ -623,6 +628,12 @@ acmod_process_raw(acmod_t *acmod,
         if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                               acmod->mfc_buf + inptr, &ncep) < 0)
             return -1;
+        /* Write to logging file if any. */
+        if (acmod->rawfh) {
+            fwrite(prev_audio_inptr, 2,
+                   *inout_raw - prev_audio_inptr, acmod->rawfh);
+            prev_audio_inptr = *inout_raw;
+        }
         acmod->n_mfc_frame += ncep;
     alldone:
         ;
