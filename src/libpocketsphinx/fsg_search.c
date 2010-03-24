@@ -56,6 +56,7 @@
 /* SphinxBase headers. */
 #include <err.h>
 #include <ckd_alloc.h>
+#include <strfuncs.h>
 #include <cmd_ln.h>
 
 /* Local headers. */
@@ -170,11 +171,7 @@ fsg_search_init(cmd_ln_t *config,
         /* Take the -toprule if specified. */
         if ((toprule = cmd_ln_str_r(config, "-toprule"))) {
             char *anglerule;
-
-            anglerule = ckd_calloc(1, strlen(toprule) + 3);
-            anglerule[0] = '<';
-            strcat(anglerule, toprule);
-            strcat(anglerule, ">");
+            anglerule = string_join("<", toprule, ">", NULL);
             rule = jsgf_get_rule(fsgs->jsgf, anglerule);
             ckd_free(anglerule);
             if (rule == NULL) {
@@ -331,13 +328,14 @@ static int
 fsg_search_add_altpron(fsg_search_t *fsgs, fsg_model_t *fsg)
 {
     dict_t *dict;
-    int n_alt;
+    int n_alt, n_word;
     int i;
 
     dict = ps_search_dict(fsgs);
     /* Scan FSG's vocabulary for words that have alternate pronunciations. */
     n_alt = 0;
-    for (i = 0; i < fsg_model_n_word(fsg); ++i) {
+    n_word = fsg_model_n_word(fsg);
+    for (i = 0; i < n_word; ++i) {
         char const *word;
         int32 wid;
 

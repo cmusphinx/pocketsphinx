@@ -22,7 +22,9 @@ main(int argc, char *argv[])
 	fsg_model_t *fsg;
 	ps_seg_t *seg;
 	ps_lattice_t *dag;
-	int32 score;
+	FILE *rawfh;
+	char const *hyp, *uttid;
+	int32 score, prob;
 	clock_t c;
 	int i;
 
@@ -50,11 +52,9 @@ main(int argc, char *argv[])
 	setbuf(stdout, NULL);
 	c = clock();
 	for (i = 0; i < 5; ++i) {
-		FILE *rawfh;
 		int16 buf[2048];
 		size_t nread;
 		int16 const *bptr;
-		char const *hyp;
 		int nfr;
 
 		TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
@@ -80,7 +80,7 @@ main(int argc, char *argv[])
 	}
 	TEST_EQUAL(0, strcmp("go forward ten meters",
 			     fsg_search_hyp(ps_search_base(fsgs), &score)));
-	ps->search = fsgs;
+	ps->search = (ps_search_t *)fsgs;
 	for (seg = ps_seg_iter(ps, &score); seg;
 	     seg = ps_seg_next(seg)) {
 		char const *word;
@@ -98,6 +98,39 @@ main(int argc, char *argv[])
 	ps_free(ps);
 	jsgf_grammar_free(jsgf);
 	fsg_search_free(ps_search_base(fsgs));
+
+	TEST_ASSERT(config =
+		    cmd_ln_init(NULL, ps_args(), TRUE,
+				"-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
+				"-dict", MODELDIR "/lm/en/turtle.dic",
+				"-jsgf", DATADIR "/goforward.gram",
+				"-input_endian", "little",
+				"-samprate", "16000", NULL));
+	TEST_ASSERT(ps = ps_init(config));
+	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
+	ps_decode_raw(ps, rawfh, "goforward", -1);
+	hyp = ps_get_hyp(ps, &score, &uttid);
+	prob = ps_get_prob(ps, &uttid);
+	printf("%s: %s (%d, %d)\n", uttid, hyp, score, prob);
+	TEST_EQUAL(0, strcmp("go forward ten meters", hyp));
+	ps_free(ps);
+
+	TEST_ASSERT(config =
+		    cmd_ln_init(NULL, ps_args(), TRUE,
+				"-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
+				"-dict", MODELDIR "/lm/en/turtle.dic",
+				"-jsgf", DATADIR "/goforward.gram",
+				"-toprule", "goforward.move2",
+				"-input_endian", "little",
+				"-samprate", "16000", NULL));
+	TEST_ASSERT(ps = ps_init(config));
+	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
+	ps_decode_raw(ps, rawfh, "goforward", -1);
+	hyp = ps_get_hyp(ps, &score, &uttid);
+	prob = ps_get_prob(ps, &uttid);
+	printf("%s: %s (%d, %d)\n", uttid, hyp, score, prob);
+	TEST_EQUAL(0, strcmp("go forward ten meters", hyp));
+	ps_free(ps);
 
 	return 0;
 }
