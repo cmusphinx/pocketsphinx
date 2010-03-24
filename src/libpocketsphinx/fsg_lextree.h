@@ -184,6 +184,30 @@ typedef struct fsg_pnode_s {
 
 #define fsg_pnode_add_ctxt(p,c)	((p)->ctxt.bv[(c)>>5] |= (1 << ((c)&0x001f)))
 
+/*
+ * The following is macroized because its called very frequently
+ * ::: uint32 fsg_pnode_ctxt_sub (fsg_pnode_ctxt_t *src, fsg_pnode_ctxt_t *sub);
+ */
+/*
+ * Subtract bitvector sub from bitvector src (src updated with the result).
+ * Return 0 if result is all 0, non-zero otherwise.
+ */
+
+#if (FSG_PNODE_CTXT_BVSZ == 1)
+    #define FSG_PNODE_CTXT_SUB(src,sub) \
+    ((src)->bv[0] = (~((sub)->bv[0]) & (src)->bv[0]))
+#elif (FSG_PNODE_CTXT_BVSZ == 2)
+    #define FSG_PNODE_CTXT_SUB(src,sub) \
+    (((src)->bv[0] = (~((sub)->bv[0]) & (src)->bv[0])) | \
+     ((src)->bv[1] = (~((sub)->bv[1]) & (src)->bv[1])))
+#elif (FSG_PNODE_CTXT_BVSZ == 4)
+    #define FSG_PNODE_CTXT_SUB(src,sub) \
+    (((src)->bv[0] = (~((sub)->bv[0]) & (src)->bv[0]))  | \
+     ((src)->bv[1] = (~((sub)->bv[1]) & (src)->bv[1]))  | \
+     ((src)->bv[2] = (~((sub)->bv[2]) & (src)->bv[2]))  | \
+     ((src)->bv[3] = (~((sub)->bv[3]) & (src)->bv[3])))
+#endif
+
 /**
  * Collection of lextrees for an FSG.
  */
@@ -251,12 +275,6 @@ void fsg_lextree_dump(fsg_lextree_t *fsg, FILE *fh);
  * Mark the given pnode as inactive (for search).
  */
 void fsg_psubtree_pnode_deactivate(fsg_pnode_t *pnode);
-
-/**
- * Subtract bitvector sub from bitvector src (src updated with the result).
- * @return 0 if result is all 0, non-zero otherwise.
- */
-uint32 fsg_pnode_ctxt_sub(fsg_pnode_ctxt_t * src, fsg_pnode_ctxt_t * sub);
 
 /**
  *  Set all flags on in the given context bitvector.

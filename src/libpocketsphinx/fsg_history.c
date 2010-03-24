@@ -173,7 +173,7 @@ fsg_history_entry_add(fsg_history_t * h,
             break;              /* Found where to insert new entry */
 
         /* Existing entry score not worse than new score */
-        if (fsg_pnode_ctxt_sub(&rc, &(entry->rc)) == 0)
+        if (FSG_PNODE_CTXT_SUB(&rc, &(entry->rc)) == 0)
             return;             /* rc set reduced to 0; new entry can be ignored */
 
         prev_gn = gn;
@@ -204,7 +204,7 @@ fsg_history_entry_add(fsg_history_t * h,
     while (gn) {
         entry = (fsg_hist_entry_t *) gnode_ptr(gn);
 
-        if (fsg_pnode_ctxt_sub(&(entry->rc), &rc) == 0) {
+        if (FSG_PNODE_CTXT_SUB(&(entry->rc), &rc) == 0) {
             /* rc set of entry reduced to 0; can prune this entry */
             ckd_free((void *) entry);
             gn = gnode_free(gn, prev_gn);

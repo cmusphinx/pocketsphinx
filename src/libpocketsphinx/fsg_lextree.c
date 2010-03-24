@@ -1,6 +1,6 @@
 /* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
- * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
+ * Copyright (c) 1999-2010 Carnegie Mellon University.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,49 +31,11 @@
  * ====================================================================
  *
  */
-/*
- * fsg_lextree.c -- The collection of all the lextrees for the entire FSM.
- * 
- * **********************************************
- * CMU ARPA Speech Project
- *
- * Copyright (c) 2004 Carnegie Mellon University.
- * ALL RIGHTS RESERVED.
- * **********************************************
- * 
- * HISTORY
- * 
- * $Log: fsg_lextree.c,v $
- * Revision 1.1.1.1  2006/05/23 18:44:59  dhuggins
- * re-importation
- *
- * Revision 1.1  2004/07/16 00:57:11  egouvea
- * Added Ravi's implementation of FSG support.
- *
- * Revision 1.3  2004/06/23 20:32:16  rkm
- * *** empty log message ***
- *
- * Revision 1.2  2004/05/27 14:22:57  rkm
- * FSG cross-word triphones completed (but for single-phone words)
- *
- * Revision 1.1.1.1  2004/03/01 14:30:30  rkm
- *
- *
- * Revision 1.2  2004/02/27 15:05:21  rkm
- * *** empty log message ***
- *
- * Revision 1.1  2004/02/23 15:53:45  rkm
- * Renamed from fst to fsg
- *
- * Revision 1.2  2004/02/19 21:16:54  rkm
- * Added fsg_search.{c,h}
- *
- * Revision 1.1  2004/02/18 15:02:34  rkm
- * Added fsg_lextree.{c,h}
- *
- * 
- * 18-Feb-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
- * 		Started.
+/**
+ * @file fsg_lextree.c
+ * @brief The collection of all the lextrees for the entire FSM.
+ * @author M K Ravishankar <rkm@cs.cmu.edu>
+ * @author Bhiksha Raj <bhiksha@cs.cmu.edu>
  */
 
 /* System headers. */
@@ -89,6 +51,13 @@
 #include "fsg_lextree.h"
 
 #define __FSG_DBG__		0
+
+/* A linklist structure that is actually used to build local lextrees at grammar nodes */
+typedef struct fsg_glist_linklist_t {
+    int32    ci, rc, lc;
+    glist_t  glist;
+    struct   fsg_glist_linklist_t *next;
+} fsg_glist_linklist_t;
 
 /**
  * Build the phone lextree for all transitions out of state from_state.
@@ -127,7 +96,7 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
     int32 silcipid;
     int32 len;
 
-    silcipid = bin_mdef_ciphone_id(lextree->mdef, "SIL");
+    silcipid = bin_mdef_silphone(lextree->mdef);
     assert(silcipid >= 0);
     n_ci = bin_mdef_n_ciphone(lextree->mdef);
 
@@ -138,6 +107,9 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
      */
     lextree->lc = ckd_calloc_2d(fsg->n_state, n_ci + 1, sizeof(**lextree->lc));
     lextree->rc = ckd_calloc_2d(fsg->n_state, n_ci + 1, sizeof(**lextree->rc));
+    E_INFO("Allocated %d bytes (%d KiB) for left and right context phones\n",
+           fsg->n_state * (n_ci + 1) * 2,
+           fsg->n_state * (n_ci + 1) * 2 / 1024);
 
     for (s = 0; s < fsg->n_state; s++) {
         for (d = 0; d < fsg->n_state; d++) {
@@ -256,7 +228,10 @@ fsg_lextree_init(fsg_model_t * fsg, dict_t *dict, dict2pid_t *d2p,
     /* Compute lc and rc for fsg. */
     fsg_lextree_lc_rc(lextree);
 
-    /* Create lextree for each state */
+    /* Create lextree for each state, i.e. an HMM network that
+     * represents words for all arcs exiting that state.  Note that
+     * for a dense grammar such as an N-gram model, this will
+     * rapidly exhaust all available memory. */
     lextree->n_pnode = 0;
     for (s = 0; s < fsg_model_n_state(fsg); s++) {
         lextree->root[s] =
@@ -266,6 +241,9 @@ fsg_lextree_init(fsg_model_t * fsg, dict_t *dict, dict2pid_t *d2p,
             lextree->n_pnode++;
     }
     E_INFO("%d HMM nodes in lextree\n", lextree->n_pnode);
+    E_INFO("Allocated %d bytes (%d KiB) for lextree nodes\n",
+           lextree->n_pnode * sizeof(fsg_pnode_t),
+           lextree->n_pnode * sizeof(fsg_pnode_t) / 1024);
 
 #if __FSG_DBG__
     fsg_lextree_dump(lextree, stdout);
@@ -307,6 +285,29 @@ fsg_lextree_free(fsg_lextree_t * lextree)
     ckd_free(lextree);
 }
 
+/******************************
+ * psubtree stuff starts here *
+ ******************************/
+
+void fsg_glist_linklist_free(fsg_glist_linklist_t *glist)
+{
+    if (glist) {
+        fsg_glist_linklist_t *nxtglist;
+        if (glist->glist)
+            glist_free(glist->glist);
+        nxtglist = glist->next;
+        while (nxtglist) {
+            ckd_free(glist);
+            glist = nxtglist;
+            if (glist->glist)
+                glist_free(glist->glist);
+            nxtglist = glist->next;
+        }
+        ckd_free(glist);
+    }
+    return;
+}
+
 void
 fsg_pnode_add_all_ctxt(fsg_pnode_ctxt_t * ctxt)
 {
@@ -317,21 +318,11 @@ fsg_pnode_add_all_ctxt(fsg_pnode_ctxt_t * ctxt)
 }
 
 
-uint32
-fsg_pnode_ctxt_sub(fsg_pnode_ctxt_t * src, fsg_pnode_ctxt_t * sub)
-{
-    int32 i;
-    uint32 non_zero;
-
-    non_zero = 0;
-
-    for (i = 0; i < FSG_PNODE_CTXT_BVSZ; i++) {
-        src->bv[i] = ~(sub->bv[i]) & src->bv[i];
-        non_zero |= src->bv[i];
-    }
-
-    return non_zero;
-}
+/*
+ * fsg_pnode_ctxt_sub(fsg_pnode_ctxt_t * src, fsg_pnode_ctxt_t * sub)
+ * This has been moved into a macro in fsg_psubtree.h 
+ * because it is called so frequently!
+ */
 
 
 /*
@@ -342,12 +333,11 @@ fsg_pnode_ctxt_sub(fsg_pnode_ctxt_t * src, fsg_pnode_ctxt_t * sub)
  * lclist, rclist: sets of left and right context phones for this link.
  * alloc_head: head of a linear list of all allocated pnodes for the parent
  * FSG state, kept elsewhere and updated by this routine.
- * 
- * NOTE: No lextree structure for now; using a flat representation.
  */
 static fsg_pnode_t *
 psubtree_add_trans(fsg_lextree_t *lextree, 
                    fsg_pnode_t * root,
+                   fsg_glist_linklist_t **curglist,
                    fsg_link_t * fsglink,
                    int16 *lclist, int16 *rclist,
                    fsg_pnode_t ** alloc_head)
@@ -458,7 +448,37 @@ psubtree_add_trans(fsg_lextree_t *lextree,
         for (p = 0; p < pronlen; p++) {
             int ci = dict_pron(lextree->dict, dictwid, p);
             if (p == 0) {       /* Root phone, handle required left contexts */
+                /* Find if we already have an lc_pnodelist for the first phone of this word */
+		fsg_glist_linklist_t *predglist=*curglist;
+		fsg_glist_linklist_t *glist=*curglist;
+
                 rc = dict_pron(lextree->dict, dictwid, 1);
+		while (glist && glist->glist && glist->ci != ci && glist->rc != rc){
+		    glist = glist->next;
+		}
+		if (glist && glist->ci == ci && glist->rc == rc && glist->glist) {
+		    /* We've found a valid glist. Hook to it and move to next phoneme */
+		    lc_pnodelist = glist->glist;
+                    /* Set the predecessor node for the future tree first */
+		    pred = (fsg_pnode_t *) gnode_ptr(lc_pnodelist);
+		    continue;
+		}
+		else {
+		    /* Two cases that can bring us here
+		     * a. glist == NULL, i.e. end of current list. Create new entry.
+		     * b. glist->glist == NULL, i.e. first entry into list.
+		     */
+		    if (!glist) { /* Case a; reduce it to case b by allocing glist */
+		        glist = (fsg_glist_linklist_t*) ckd_calloc(1, sizeof(fsg_glist_linklist_t));
+			glist->next = predglist;
+                        *curglist = glist;
+		    }
+		    glist->ci = ci;
+                    glist->rc = rc;
+                    glist->lc = -1;
+		    lc_pnodelist = glist->glist = NULL; /* Gets created below */
+		}
+
                 for (i = 0; lclist[i] >= 0; i++) {
                     lc = lclist[i];
                     ssid = dict2pid_ldiph_lc(lextree->d2p, ci, rc, lc);
@@ -478,8 +498,10 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                                                        sizeof
                                                        (fsg_pnode_t));
                         pnode->ctx = lextree->ctx;
-                        pnode->logs2prob =
-                            fsg_link_logs2prob(fsglink) + lextree->wip + lextree->pip;
+	                /* This bit is tricky! For now we'll put the prob in the final link only */
+                        /* pnode->logs2prob = fsg_link_logs2prob(fsglink)
+                           + lextree->wip + lextree->pip; */
+                        pnode->logs2prob = lextree->wip + lextree->pip;
                         pnode->ci_ext = dict_first_phone(lextree->dict, dictwid);
                         pnode->ppos = 0;
                         pnode->leaf = FALSE;
@@ -496,16 +518,36 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                     }
                     fsg_pnode_add_ctxt(pnode, lc);
                 }
+		/* Put the lc_pnodelist back into glist */
+		glist->glist = lc_pnodelist;
+
+                /* The predecessor node for the future tree is the root */
+		pred = root;
             }
             else if (p != pronlen - 1) {        /* Word internal phone */
+                fsg_pnode_t    *pnodeyoungest;
+
                 ssid = dict2pid_internal(lextree->d2p, dictwid, p);
+	        /* First check if we already have this ssid in our tree */
+		pnode = pred->next.succ;
+		pnodeyoungest = pnode; /* The youngest sibling */
+		while (pnode && (hmm_nonmpx_ssid(&pnode->hmm) != ssid || pnode->leaf)) {
+		    pnode = pnode->sibling;
+		}
+		if (pnode && (hmm_nonmpx_ssid(&pnode->hmm) == ssid && !pnode->leaf)) {
+		    /* Found the ssid; go to next phoneme */
+		    pred = pnode;
+		    continue;
+		}
+
+		/* pnode not found, allocate it */
                 pnode = (fsg_pnode_t *) ckd_calloc(1, sizeof(fsg_pnode_t));
                 pnode->ctx = lextree->ctx;
                 pnode->logs2prob = lextree->pip;
                 pnode->ci_ext = dict_pron(lextree->dict, dictwid, p);
                 pnode->ppos = p;
                 pnode->leaf = FALSE;
-                pnode->sibling = NULL;
+                pnode->sibling = pnodeyoungest; /* May be NULL */
                 if (p == 1) {   /* Predecessor = set of root nodes for left ctxts */
                     for (gn = lc_pnodelist; gn; gn = gnode_next(gn)) {
                         pred = (fsg_pnode_t *) gnode_ptr(gn);
@@ -523,6 +565,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                 pred = pnode;
             }
             else {              /* Leaf phone, handle required right contexts */
+	        /* Note, leaf phones are not part of the tree */
                 xwdssid_t *rssid;
                 memset((void *) ssid_pnode_map, 0,
                        n_ci * sizeof(fsg_pnode_t *));
@@ -542,7 +585,9 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                                                        sizeof
                                                        (fsg_pnode_t));
                         pnode->ctx = lextree->ctx;
-                        pnode->logs2prob = lextree->pip;
+			/* We are plugging the word prob here. Ugly */
+                        /* pnode->logs2prob = lextree->pip; */
+                        pnode->logs2prob = fsg_link_logs2prob(fsglink) + lextree->pip;
                         pnode->ci_ext = dict_pron(lextree->dict, dictwid, p);
                         pnode->ppos = p;
                         pnode->leaf = TRUE;
@@ -567,19 +612,34 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                 if (p == 1) {   /* Predecessor = set of root nodes for left ctxts */
                     for (gn = lc_pnodelist; gn; gn = gnode_next(gn)) {
                         pred = (fsg_pnode_t *) gnode_ptr(gn);
-                        pred->next.succ =
-                            (fsg_pnode_t *) gnode_ptr(rc_pnodelist);
+                        if (!pred->next.succ)
+                            pred->next.succ = (fsg_pnode_t *) gnode_ptr(rc_pnodelist);
+                        else {
+                            /* Link to the end of the sibling chain */
+                            fsg_pnode_t *succ = pred->next.succ;
+                            while (succ->sibling) succ = succ->sibling;
+                            succ->sibling = (fsg_pnode_t*) gnode_ptr(rc_pnodelist);
+                            /* Since all entries of lc_pnodelist point
+                               to the same array, sufficient to update it once */
+                            break; 
+                        }
                     }
                 }
                 else {          /* Predecessor = word internal node */
-                    pred->next.succ =
-                        (fsg_pnode_t *) gnode_ptr(rc_pnodelist);
+                    if (!pred->next.succ)
+                        pred->next.succ = (fsg_pnode_t *) gnode_ptr(rc_pnodelist);
+                    else {
+                        /* Link to the end of the sibling chain */
+                        fsg_pnode_t *succ = pred->next.succ;
+                        while (succ->sibling) succ = succ->sibling;
+                        succ->sibling = (fsg_pnode_t *) gnode_ptr(rc_pnodelist);
+                    }
                 }
             }
         }
 
         ckd_free((void *) ssid_pnode_map);
-        glist_free(lc_pnodelist);
+        /* glist_free(lc_pnodelist);  Nope; this gets freed outside */
         glist_free(rc_pnodelist);
     }
 
@@ -589,9 +649,6 @@ psubtree_add_trans(fsg_lextree_t *lextree,
 }
 
 
-/*
- * For now, this "tree" will be "flat"
- */
 static fsg_pnode_t *
 fsg_psubtree_init(fsg_lextree_t *lextree,
                   fsg_model_t * fsg, int32 from_state,
@@ -602,6 +659,7 @@ fsg_psubtree_init(fsg_lextree_t *lextree,
     fsg_link_t *fsglink;
     fsg_pnode_t *root;
     int32 n_ci;
+    fsg_glist_linklist_t *glist = NULL;
 
     root = NULL;
     assert(*alloc_head == NULL);
@@ -621,12 +679,14 @@ fsg_psubtree_init(fsg_lextree_t *lextree,
 
             assert(fsg_link_wid(fsglink) >= 0);     /* Cannot be a null trans */
 
-            root = psubtree_add_trans(lextree, root, fsglink,
+            root = psubtree_add_trans(lextree, root, &glist, fsglink,
                                       lextree->lc[from_state],
                                       lextree->rc[dst],
                                       alloc_head);
         }
     }
+
+    fsg_glist_linklist_free(glist);
 
     return root;
 }
@@ -645,43 +705,76 @@ fsg_psubtree_free(fsg_pnode_t * head)
     }
 }
 
-static void
-fsg_psubtree_dump(fsg_lextree_t *tree, fsg_pnode_t * head, FILE * fp)
-{
+void fsg_psubtree_dump_node(fsg_lextree_t *tree, fsg_pnode_t *node, FILE *fp)
+{    
     int32 i;
     fsg_link_t *tl;
 
-    for (; head; head = head->alloc_next) {
-        /* Indentation */
-        for (i = 0; i <= head->ppos; i++)
-            fprintf(fp, "  ");
+    /* Indentation */
+    for (i = 0; i <= node->ppos; i++)
+        fprintf(fp, "  ");
 
-        fprintf(fp, "%p.@", head);    /* Pointer used as node ID */
-        fprintf(fp, " %5d.SS", hmm_nonmpx_ssid(&head->hmm));
-        fprintf(fp, " %10d.LP", head->logs2prob);
-        fprintf(fp, " %p.SIB", head->sibling);
-        fprintf(fp, " %s.%d", bin_mdef_ciphone_str(tree->mdef, head->ci_ext), head->ppos);
-        if ((head->ppos == 0) || head->leaf) {
-            fprintf(fp, " [");
-            for (i = 0; i < FSG_PNODE_CTXT_BVSZ; i++)
-                fprintf(fp, "%08x", head->ctxt.bv[i]);
-            fprintf(fp, "]");
-        }
-        if (head->leaf) {
-            tl = head->next.fsglink;
-            fprintf(fp, " {%s[%d->%d](%d)}",
-                    fsg_model_word_str(tree->fsg, tl->wid),
-                    tl->from_state, tl->to_state, tl->logs2prob);
-        }
-        else {
-            fprintf(fp, " %p.NXT", head->next.succ);
-        }
-        fprintf(fp, "\n");
+    fprintf(fp, "%p.@", node);    /* Pointer used as node
+                         * ID */
+    fprintf(fp, " %5d.SS", hmm_nonmpx_ssid(&node->hmm));
+    fprintf(fp, " %10d.LP", node->logs2prob);
+    fprintf(fp, " %p.SIB", node->sibling);
+    fprintf(fp, " %s.%d", bin_mdef_ciphone_str(tree->mdef, node->ci_ext), node->ppos);
+    if ((node->ppos == 0) || node->leaf) {
+        fprintf(fp, " [");
+        for (i = 0; i < FSG_PNODE_CTXT_BVSZ; i++)
+            fprintf(fp, "%08x", node->ctxt.bv[i]);
+        fprintf(fp, "]");
     }
+    if (node->leaf) {
+        tl = node->next.fsglink;
+        fprintf(fp, " {%s[%d->%d](%d)}",
+                fsg_model_word_str(tree->fsg, tl->wid),
+                tl->from_state, tl->to_state, tl->logs2prob);
+    } else {
+        fprintf(fp, " %p.NXT", node->next.succ);
+    }
+    fprintf(fp, "\n");
 
-    fflush(fp);
+    return;
 }
 
+void 
+fsg_psubtree_dump(fsg_lextree_t *tree, fsg_pnode_t *root, FILE * fp)
+{
+    fsg_pnode_t *succ;
+
+    if (root == NULL) return;
+    if (root->ppos == 0) {
+        while(root->sibling && root->sibling->next.succ == root->next.succ) {
+            fsg_psubtree_dump_node(tree, root, fp);
+            root = root->sibling;
+        }
+        fflush(fp);
+    }
+    
+    fsg_psubtree_dump_node(tree, root, fp);
+
+    if (root->leaf) {
+        if (root->ppos == 0 && root->sibling) { // For single-phone words
+            fsg_psubtree_dump(tree, root->sibling,fp);
+        }
+        return;
+    }
+
+    succ = root->next.succ;
+    while(succ) {
+        fsg_psubtree_dump(tree, succ,fp);
+        succ = succ->sibling;
+    }
+
+    if (root->ppos == 0) {
+        fsg_psubtree_dump(tree, root->sibling,fp);
+        fflush(fp);
+    }
+
+    return;
+}
 
 void
 fsg_psubtree_pnode_deactivate(fsg_pnode_t * pnode)
