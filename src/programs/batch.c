@@ -85,15 +85,31 @@ static const arg_t ps_args_def[] = {
     { "-mllrctl",
       ARG_STRING,
       NULL,
-      "Control file listing MLLR transforms to use for each file" },
+      "Control file listing MLLR transforms to use for each utterance" },
     { "-mllrdir",
       ARG_STRING,
       NULL,
       "Base directory for MLLR transforms" },
+    { "-mllrext",
+      ARG_STRING,
+      NULL,
+      "File extension for MLLR transforms (including leading dot)" },
     { "-lmnamectl",
       ARG_STRING,
       NULL,
-      "Control file listing LM name to use for each file" },
+      "Control file listing LM name to use for each utterance" },
+    { "-fsgctl",
+      ARG_STRING,
+      NULL,
+      "Control file listing FSG file to use for each utterance" },
+    { "-fsgdir",
+      ARG_STRING,
+      NULL,
+      "Base directory for FSG files" },
+    { "-fsgext",
+      ARG_STRING,
+      NULL,
+      "File extension for FSG files (including leading dot)" },
 
     /* Input file types and locations. */
     { "-adcin",
@@ -206,7 +222,7 @@ read_mfc_file(FILE *infh, int sf, int ef, int *out_nfr, int ceplen)
 static int
 process_mllrctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
 {
-    char const *mllrdir;
+    char const *mllrdir, *mllrext;
     char *infile = NULL;
     ps_mllr_t *mllr;
     static char *lastfile;
@@ -220,8 +236,12 @@ process_mllrctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
     ckd_free(lastfile);
     lastfile = ckd_salloc(file);
 
+    mllrext = cmd_ln_str_r(config, "-mllrext");
     if ((mllrdir = cmd_ln_str_r(config, "-mllrdir")))
-        infile = string_join(mllrdir, "/", file, NULL);
+        infile = string_join(mllrdir, "/", file, 
+                             mllrext ? mllrext : "", NULL);
+    else if (mllrext)
+        infile = string_join(file, mllrext, NULL);
     else
         infile = ckd_salloc(file);
 
@@ -235,6 +255,51 @@ process_mllrctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
         return -1;
     }
 
+    ckd_free(infile);
+    return 0;
+}
+
+static int
+process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
+{
+    fsg_set_t *fsgset = ps_get_fsgset(ps);
+    fsg_model_t *fsg;
+    char const *fsgdir, *fsgext;
+    char *infile = NULL;
+    static char *lastfile;
+
+    if (file == NULL)
+        return 0;
+
+    if (lastfile && 0 == strcmp(file, lastfile))
+        return 0;
+
+    fsgext = cmd_ln_str_r(config, "-fsgext");
+    if ((fsgdir = cmd_ln_str_r(config, "-fsgdir")))
+        infile = string_join(fsgdir, "/", file,
+                             fsgext ? fsgext : "", NULL);
+    else if (fsgext)
+        infile = string_join(file, fsgext, NULL);
+    else
+        infile = ckd_salloc(file);
+
+    if ((fsg = fsg_model_readfile(infile, ps_get_logmath(ps),
+                                  cmd_ln_float32_r(config, "-lw"))) == NULL)
+        goto error_out;
+
+    if (fsgset == NULL)
+        fsgset = ps_update_fsgset(ps);
+    if (lastfile)
+        fsg_set_remove_byname(fsgset, lastfile);
+
+    ckd_free(lastfile);
+    lastfile = ckd_salloc(file);
+
+    fsg_set_add(fsgset, lastfile, fsg);
+    fsg_set_select(fsgset, lastfile);
+
+    ps_update_fsgset(ps);
+error_out:
     ckd_free(infile);
     return 0;
 }
@@ -442,7 +507,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     char *line;
     size_t len;
     FILE *hypfh = NULL, *hypsegfh = NULL, *ctmfh = NULL;
-    FILE *mllrfh = NULL, *lmfh = NULL;
+    FILE *mllrfh = NULL, *lmfh = NULL, *fsgfh = NULL;
     double n_speech, n_cpu, n_wall;
     char const *outlatdir;
     char const *nbestdir;
@@ -460,6 +525,13 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
         mllrfh = fopen(str, "r");
         if (mllrfh == NULL) {
             E_ERROR_SYSTEM("Failed to open MLLR control file file %s", str);
+            goto done;
+        }
+    }
+    if ((str = cmd_ln_str_r(config, "-fsgctl"))) {
+        fsgfh = fopen(str, "r");
+        if (fsgfh == NULL) {
+            E_ERROR_SYSTEM("Failed to open FSG control file file %s", str);
             goto done;
         }
     }
@@ -499,7 +571,8 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     while ((line = fread_line(ctlfh, &len))) {
         char *wptr[4];
         int32 nf, sf, ef;
-        char *mllrline = NULL, *lmname = NULL, *mllrfile = NULL;
+        char *mllrline = NULL, *lmline = NULL, *fsgline = NULL;
+        char *fsgfile = NULL, *lmname = NULL, *mllrfile = NULL;
 
         if (mllrfh) {
             mllrline = fread_line(mllrfh, &len);
@@ -512,28 +585,32 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             mllrfile = string_trim(mllrline, STRING_BOTH);
         }
         if (lmfh) {
-            lmname = fread_line(lmfh, &len);
-            if (lmname == NULL) {
+            lmline = fread_line(lmfh, &len);
+            if (lmline == NULL) {
                 E_ERROR("File size mismatch between control and LM control\n");
                 ckd_free(line);
-                ckd_free(lmname);
+                ckd_free(lmline);
                 goto done;
             }
             lmname = string_trim(lmname, STRING_BOTH);
         }
+        if (fsgfh) {
+            fsgline = fread_line(fsgfh, &len);
+            if (fsgline == NULL) {
+                E_ERROR("File size mismatch between control and FSG control\n");
+                ckd_free(line);
+                ckd_free(fsgline);
+                goto done;
+            }
+            fsgfile = string_trim(fsgline, STRING_BOTH);
+        }
 
         if (i < ctloffset) {
             i += ctlincr;
-            ckd_free(mllrline);
-            ckd_free(lmname);
-            ckd_free(line);
-            continue;
+            goto nextline;
         }
         if (ctlcount != -1 && i >= ctloffset + ctlcount) {
-            ckd_free(mllrline);
-            ckd_free(lmname);
-            ckd_free(line);
-            break;
+            goto nextline;
         }
 
         sf = 0;
@@ -560,6 +637,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             /* Do actual decoding. */
             process_mllrctl_line(ps, config, mllrfile);
             process_lmnamectl_line(ps, config, lmname);
+            process_fsgctl_line(ps, config, fsgfile);
             process_ctl_line(ps, config, file, uttid, sf, ef);
             hyp = ps_get_hyp(ps, &score, &uttid);
             
@@ -585,10 +663,12 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             E_INFO("%s: %.2f xRT (CPU), %.2f xRT (elapsed)\n",
                    uttid, n_cpu / n_speech, n_wall / n_speech);
         }
-        ckd_free(mllrline);
-        ckd_free(lmname);
-        ckd_free(line);
         i += ctlincr;
+    nextline:
+        ckd_free(mllrline);
+        ckd_free(fsgline);
+        ckd_free(lmline);
+        ckd_free(line);
     }
 
     ps_get_all_time(ps, &n_speech, &n_cpu, &n_wall);
