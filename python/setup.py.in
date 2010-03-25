@@ -66,7 +66,7 @@ setup(name = 'PocketSphinx',
       author_email = 'dhuggins@cs.cmu.edu',
       description = 'Python interface to CMU PocketSphinx speech recognition',
       license = 'BSD',
-      url = 'http://cmusphinx.org',
+      url = 'http://cmusphinx.sourceforge.net',
       ext_modules = [
         Extension('pocketsphinx',
                    sources=['pocketsphinx.c'],

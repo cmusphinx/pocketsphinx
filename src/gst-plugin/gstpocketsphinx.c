@@ -731,4 +731,4 @@ GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
                   "pocketsphinx",
                   "PocketSphinx plugin",
                   plugin_init, VERSION,
-                  "BSD", "PocketSphinx", "http://pocketsphinx.org/")
+                  "BSD", "PocketSphinx", "http://cmusphinx.sourceforge.net/")

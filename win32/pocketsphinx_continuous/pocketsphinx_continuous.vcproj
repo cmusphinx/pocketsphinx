@@ -71,11 +71,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="sphinxbase.lib winmm.lib"
+				AdditionalDependencies="sphinxbase.lib winmm.lib pocketsphinx.lib"
 				OutputFile="..\..\bin\Debug\pocketsphinx_continuous.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\..\sphinxbase\bin\Debug"
+				AdditionalLibraryDirectories="..\..\..\sphinxbase\bin\Debug;..\..\bin\Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\..\bin\Debug/pocketsphinx_continuous.pdb"
 				SubSystem="1"

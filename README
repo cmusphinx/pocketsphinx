@@ -13,11 +13,11 @@ response to the needs and patches provided.
 To compile:
 
 First, you *must* have SphinxBase, which you can download from
-http://cmusphinx.org/.  You should download and unpack it to the same
-parent directory as PocketSphinx, so that the configure script and
-project files can find it.  On Windows, you will need to rename
-'sphinxbase-X.Y' (where X.Y is the SphinxBase version number) to
-simply 'sphinxbase' for this to work.
+http://cmusphinx.sourceforge.net/.  You should download and unpack it to
+the same parent directory as PocketSphinx, so that the configure script
+and project files can find it. On Windows, you will need to rename
+'sphinxbase-X.Y' (where X.Y is the SphinxBase version number) to simply
+'sphinxbase' for this to work.
 
 In a unix-like environment (such as linux, solaris etc):
 
@@ -58,11 +58,13 @@ set:
 In MS Windows (TM), under MS Visual Studio 2008 (or newer - we test
 with Visual C++ 2008 Express):
 
+ * load sphinxbase.sln located in sphinxbase directory
+
  * compile all the projects in SphinxBase (from sphinxbase.sln)
 
- * load pocketsphinx.sln (located at the top level directory)
+ * load pocketsphinx.sln in pocketsphinx directory
 
- * compile minimally the project 'pocketsphinx_continuous'
+ * compile all the projects in PocketSphinx
 
 MS Visual Studio will build the executables under .\bin\Release or
 .\bin\Debug (depending on the version you choose on MS Visual Studio),
@@ -70,5 +72,5 @@ and the libraries under .\lib\Release or .\lib\Build.
 
 Test scripts are forthcoming for Windows.
 
-For up-to-date information, see http://www.pocketsphinx.org/
+For up-to-date information, see http://cmusphinx.sourceforge.net/
 

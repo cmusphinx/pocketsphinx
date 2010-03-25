@@ -9,7 +9,7 @@ modeldir=@datadir@/@PACKAGE@/model
 Name: PocketSphinx
 Description: Lightweight speech recognition system
 Version: @VERSION@
-URL: http://www.cmusphinx.org/
+URL: http://cmusphinx.sourceforge.net/
 Requires: sphinxbase >= 0.4
 Libs: -L${libdir} -lpocketsphinx
 Libs.private: ${libs}
