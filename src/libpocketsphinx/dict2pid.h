@@ -171,9 +171,6 @@ typedef struct {
                                     First dimension: base phone,
                                     Second dimension: left context. 
                                  */
-
-    int32 n_ci;   /**< Number of CI phone in */
-    int32 n_dictsize; /**< Dictionary size */
 } dict2pid_t;
 
 /** Access macros; not designed for arbitrary use */

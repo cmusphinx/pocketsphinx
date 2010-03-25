@@ -401,7 +401,6 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict)
     dict2pid->refcount = 1;
     dict2pid->mdef = bin_mdef_retain(mdef);
     dict2pid->dict = dict_retain(dict);
-    dict2pid->n_dictsize = dict_size(dict);
     E_INFO("Allocating %d^3 * %d bytes (%d KiB) for word-initial triphones\n",
            mdef->n_ciphone, sizeof(s3ssid_t),
            mdef->n_ciphone * mdef->n_ciphone * mdef->n_ciphone * sizeof(s3ssid_t) / 1024);
@@ -413,7 +412,6 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict)
         (s3ssid_t ***) ckd_calloc_3d(mdef->n_ciphone, mdef->n_ciphone,
                                      mdef->n_ciphone, sizeof(s3ssid_t));
 
-    dict2pid->n_ci = mdef->n_ciphone;
     dict2pid->lrdiph_rc = (s3ssid_t ***) ckd_calloc_3d(mdef->n_ciphone,
                                                        mdef->n_ciphone,
                                                        mdef->n_ciphone,
@@ -436,7 +434,7 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict)
     rdiph = bitvec_alloc(mdef->n_ciphone * mdef->n_ciphone);
     single = bitvec_alloc(mdef->n_ciphone);
 
-    for (w = 0; w < dict2pid->n_dictsize; w++) {
+    for (w = 0; w < dict_size(dict2pid->dict); w++) {
         pronlen = dict_pronlen(dict, w);
 
         if (pronlen >= 2) {
@@ -520,10 +518,10 @@ dict2pid_free(dict2pid_t * d2p)
         ckd_free_3d((void ***) d2p->lrdiph_rc);
 
     if (d2p->rssid)
-        free_compress_map(d2p->rssid, d2p->n_ci);
+        free_compress_map(d2p->rssid, bin_mdef_n_ciphone(d2p->mdef));
 
     if (d2p->lrssid)
-        free_compress_map(d2p->lrssid, d2p->n_ci);
+        free_compress_map(d2p->lrssid, bin_mdef_n_ciphone(d2p->mdef));
 
     bin_mdef_free(d2p->mdef);
     dict_free(d2p->dict);
@@ -545,7 +543,7 @@ dict2pid_dump(FILE * fp, dict2pid_t * d2p)
     dict_t *dict = d2p->dict;
 
     fprintf(fp, "# INTERNAL (wd comssid ssid ssid ... ssid comssid)\n");
-    for (w = 0; w < d2p->n_dictsize; w++) {
+    for (w = 0; w < dict_size(dict); w++) {
         fprintf(fp, "%30s ", dict_wordstr(dict, w));
 
         pronlen = dict_pronlen(dict, w);
