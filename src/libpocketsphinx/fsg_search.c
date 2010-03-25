@@ -343,12 +343,12 @@ fsg_search_add_altpron(fsg_search_t *fsgs, fsg_model_t *fsg)
         wid = dict_wordid(dict, word);
         if (wid != BAD_S3WID) {
             while ((wid = dict_nextalt(dict, wid)) != BAD_S3WID) {
-	        fsg_model_add_alt(fsg, word, dict_wordstr(dict, wid));
-    	        ++n_alt;
+	        n_alt += fsg_model_add_alt(fsg, word, dict_wordstr(dict, wid));
     	    }
     	}
     }
 
+    E_INFO("Added %d alternate word transitions\n", n_alt);
     return n_alt;
 }
 
@@ -1018,7 +1018,7 @@ fsg_search_finish(ps_search_t *search)
          (fsgs->frame > 0) ? fsgs->n_sen_eval / fsgs->frame : 0,
          n_hist, (fsgs->frame > 0) ? n_hist / fsgs->frame : 0);
 
-    /* Sanity check */
+    /* Sanity check which is BOGUS because of integer overflows */
     if (fsgs->n_hmm_eval >
         fsg_lextree_n_pnode(fsgs->lextree) * fsgs->frame) {
         E_ERROR

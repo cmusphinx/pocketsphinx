@@ -94,12 +94,12 @@
  */
 typedef struct fsg_hist_entry_s {
     fsg_link_t *fsglink;		/* Link taken result in this entry */
-    int32 frame;			/* Ending frame for this entry */
     int32 score;			/* Total path score at the end of this
                                            transition */
     int32 pred; 			/* Predecessor entry; -1 if none */
-    int32 lc;			/* Left context provided by this entry to
-				   succeeding words */
+    int16 frame;			/* Ending frame for this entry */
+    int16 lc;			        /* Left context provided by this entry to
+				           succeeding words */
     fsg_pnode_ctxt_t rc;		/* Possible right contexts to which this entry
                                            applies */
 } fsg_hist_entry_t;
