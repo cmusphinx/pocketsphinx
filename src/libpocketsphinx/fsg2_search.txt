@@ -1,0 +1,20 @@
+Rewritten FSG search
+--------------------
+
+Basic token passing algorithm:
+
+ * Propagate a null token to the start state:
+   * For each outgoing FSG arc:
+     * Generate a token marked with this arc
+     * Enter the appropriate lextree root with this token
+ * For each frame of data
+   * Evaluate active HMMs in the lextree
+   * For all internal nodes with final states reached:
+     * For all children of these nodes:
+       * Generate a new token with a backpointer to the exiting token
+       * Enter the child nodes (in the usual Viterbi fashion)
+   * For all leaf nodes with final states reached:
+     * Propagate tokens to target states:
+       * For each FSG arc whose first phone matches the right context:
+         * Generate a new token with a backpointer to the exiting token
+	 * Enter the appropriate lextree roots (matching left diphone)
