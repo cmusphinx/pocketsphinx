@@ -551,7 +551,7 @@ ps_add_word(ps_decoder_t *ps,
     ckd_free(pron);
 
     /* Now we also have to add it to dict2pid. */
-    dict2pid_add_word(ps->d2p, ps->acmod->mdef, ps->dict, wid);
+    dict2pid_add_word(ps->d2p, wid);
 
     if ((lmset = ps_get_lmset(ps)) != NULL) {
         /* Add it to the LM set (meaning, the current LM).  In a perfect

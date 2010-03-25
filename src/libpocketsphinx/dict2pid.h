@@ -146,12 +146,9 @@ typedef struct {
 typedef struct {
     int refcount;
 
-    s3ssid_t **internal;	/**< For internal phone positions (not first, not last), the
-				   ssid; for first and last positions, the composite ssid.
-				   ([word][phone-position]) 
-				   if -composite is 0, then internal[0] and internal[pronlen-1] will
-				   equal to BAD_SSID;
-				*/
+    bin_mdef_t *mdef;           /**< Model definition, used to generate
+                                   internal ssids on the fly. */
+    dict_t *dict;               /**< Dictionary this table refers to. */
 
     /*Notice the order of the arguments */
     /* FIXME: This is crying out for compression - in Mandarin we have
@@ -177,38 +174,49 @@ typedef struct {
 
     int32 n_ci;   /**< Number of CI phone in */
     int32 n_dictsize; /**< Dictionary size */
-    int32 n_internal; /**< Number of internal ssids. */
 } dict2pid_t;
 
 /** Access macros; not designed for arbitrary use */
-#define dict2pid_internal(d,w,p) ((d)->internal[w][p-1]) /**< return internal dict2pid */
 #define dict2pid_rssid(d,ci,lc)  (&(d)->rssid[ci][lc])
 #define dict2pid_ldiph_lc(d,b,r,l) ((d)->ldiph_lc[b][r][l])
 #define dict2pid_lrdiph_rc(d,b,l,r) ((d)->lrdiph_rc[b][l][r])
 
-/** Build the dict2pid structure for the given model/dictionary */
+/**
+ * Build the dict2pid structure for the given model/dictionary
+ */
 dict2pid_t *dict2pid_build(bin_mdef_t *mdef,   /**< A  model definition*/
                            dict_t *dict        /**< An initialized dictionary */
     );
 
-/** Retain a pointer to dict2pid */
+/**
+ * Retain a pointer to dict2pid
+ */
 dict2pid_t *dict2pid_retain(dict2pid_t *d2p);  
 
-/** Free the memory dict2pid structure */
+/**
+ * Free the memory dict2pid structure
+ */
 int dict2pid_free(dict2pid_t *d2p /**< In: the d2p */
     );
 
-/** Add a word to the dict2pid structure (after adding it to dict). */
+/**
+ * Return the senone sequence ID for the given word position.
+ */
+s3ssid_t dict2pid_internal(dict2pid_t *d2p,
+                           int32 wid,
+                           int pos);
+
+/**
+ * Add a word to the dict2pid structure (after adding it to dict).
+ */
 int dict2pid_add_word(dict2pid_t *d2p,
-                      bin_mdef_t *mdef,
-                      dict_t *dict,
                       int32 wid);
 
-/** For debugging */
+/**
+ * For debugging
+ */
 void dict2pid_dump(FILE *fp,        /**< In: a file pointer */
-                   dict2pid_t *d2p, /**< In: a dict2pid_t structure */
-                   bin_mdef_t *mdef,    /**< In: a bin_mdef_t structure*/
-                   dict_t *dict     /**< In: a dictionary structure */
+                   dict2pid_t *d2p /**< In: a dict2pid_t structure */
     );
 
 /** Report a dict2pid data structure */
@@ -216,19 +224,17 @@ void dict2pid_report(dict2pid_t *d2p /**< In: a dict2pid_t structure */
     );
 
 /**
-   Get number of rc 
-*/
+ * Get number of rc 
+ */
 int32 get_rc_nssid(dict2pid_t *d2p,  /**< In: a dict2pid */
-		   s3wid_t w,        /**< In: a wid */
-		   dict_t *dict      /**< In: a dictionary */
+		   s3wid_t w         /**< In: a wid */
     );
 
 /**
-   Get RC map 
-*/
+ * Get RC map 
+ */
 s3cipid_t* dict2pid_get_rcmap(dict2pid_t *d2p,  /**< In: a dict2pid */
-			      s3wid_t w,        /**< In: a wid */
-			      dict_t *dict      /**< In: a dictionary */
+			      s3wid_t w        /**< In: a wid */
     );
 
 #if 0

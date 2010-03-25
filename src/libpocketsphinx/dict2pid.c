@@ -78,7 +78,7 @@ compress_table(s3ssid_t * uncomp_tab, s3ssid_t * com_tab,
 
 
 static void
-compress_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p,
+compress_right_context_tree(dict2pid_t * d2p,
                             s3ssid_t ***rdiph_rc)
 {
     int32 n_ci;
@@ -86,6 +86,7 @@ compress_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p,
     s3ssid_t *rmap;
     s3ssid_t *tmpssid;
     s3cipid_t *tmpcimap;
+    bin_mdef_t *mdef = d2p->mdef;
     size_t alloc;
 
     n_ci = mdef->n_ciphone;
@@ -134,13 +135,14 @@ compress_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p,
 }
 
 static void
-compress_left_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p)
+compress_left_right_context_tree(dict2pid_t * d2p)
 {
     int32 n_ci;
     int32 b, l, r;
     s3ssid_t *rmap;
     s3ssid_t *tmpssid;
     s3cipid_t *tmpcimap;
+    bin_mdef_t *mdef = d2p->mdef;
     size_t alloc;
 
     n_ci = mdef->n_ciphone;
@@ -199,10 +201,11 @@ compress_left_right_context_tree(bin_mdef_t * mdef, dict2pid_t * d2p)
    because the compressed map has not been checked. 
 */
 int32
-get_rc_nssid(dict2pid_t * d2p, s3wid_t w, dict_t * dict)
+get_rc_nssid(dict2pid_t * d2p, s3wid_t w)
 {
     int32 pronlen;
     s3cipid_t b, lc;
+    dict_t *dict = d2p->dict;
 
     pronlen = dict->word[w].pronlen;
     b = dict->word[w].ciphone[pronlen - 1];
@@ -223,10 +226,11 @@ get_rc_nssid(dict2pid_t * d2p, s3wid_t w, dict_t * dict)
 }
 
 s3cipid_t *
-dict2pid_get_rcmap(dict2pid_t * d2p, s3wid_t w, dict_t * dict)
+dict2pid_get_rcmap(dict2pid_t * d2p, s3wid_t w)
 {
     int32 pronlen;
     s3cipid_t b, lc;
+    dict_t *dict = d2p->dict;
 
     pronlen = dict->word[w].pronlen;
     b = dict->word[w].ciphone[pronlen - 1];
@@ -260,8 +264,9 @@ free_compress_map(xwdssid_t ** tree, int32 n_ci)
 }
 
 static void
-populate_lrdiph(dict2pid_t *d2p, bin_mdef_t *mdef, s3ssid_t ***rdiph_rc, s3cipid_t b)
+populate_lrdiph(dict2pid_t *d2p, s3ssid_t ***rdiph_rc, s3cipid_t b)
 {
+    bin_mdef_t *mdef = d2p->mdef;
     s3cipid_t l, r;
 
     for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
@@ -291,43 +296,11 @@ populate_lrdiph(dict2pid_t *d2p, bin_mdef_t *mdef, s3ssid_t ***rdiph_rc, s3cipid
 
 int
 dict2pid_add_word(dict2pid_t *d2p,
-                  bin_mdef_t *mdef,
-                  dict_t *d,
                   int32 wid)
 {
-    if (dict_pronlen(d,wid) > 2) {
-        /* Calculate and store internal ssids (FIXME: actually the
-         * internal array should go away). */
-        if (wid >= d2p->n_dictsize) {
-            s3ssid_t *tmp = d2p->internal[0];
-            int i;
+    bin_mdef_t *mdef = d2p->mdef;
+    dict_t *d = d2p->dict;
 
-            /* Expand internal phone array (FIXME... need to something about it) */
-            d2p->n_dictsize = wid+1;
-            d2p->internal = ckd_realloc(d2p->internal,
-                                        d2p->n_dictsize
-                                        * sizeof(*d2p->internal));
-            /* Calculate offset from old to new data array. */
-            tmp = d2p->internal[0];
-            /* Reallocate and adjust pointers in internal array. */
-            d2p->internal[0] = ckd_realloc(d2p->internal[0],
-                                           (d2p->n_internal + dict_pronlen(d, wid) - 2)
-                                           * sizeof(*d2p->internal[0]));
-            for (i = 1; i < d2p->n_dictsize; ++i) {
-                d2p->internal[i] += (d2p->internal[0] - tmp);
-            }
-            d2p->internal[wid] = d2p->internal[0] + d2p->n_internal;
-            d2p->n_internal += (dict_pronlen(d, wid) - 2);
-            for (i = 1; i < dict_pronlen(d, wid) - 1; ++i) {
-                int32 p = bin_mdef_phone_id_nearest(mdef,
-                                                    dict_pron(d, wid, i),
-                                                    dict_pron(d, wid, i-1),
-                                                    dict_pron(d, wid, i+1),
-                                                    WORD_POSN_INTERNAL);
-                d2p->internal[wid][i-1] = bin_mdef_pid2ssid(mdef, p);
-            }
-        }
-    }
     if (dict_pronlen(d, wid) > 1) {
         s3cipid_t l;
         /* Make sure we have left and right context diphones for this
@@ -383,21 +356,42 @@ dict2pid_add_word(dict2pid_t *d2p,
         E_INFO("Filling in context triphones for %s(?,?)\n",
                bin_mdef_ciphone_str(mdef, dict_first_phone(d, wid)));
         if (d2p->lrdiph_rc[dict_first_phone(d, wid)][0][0] == BAD_S3SSID) {
-            populate_lrdiph(d2p, mdef, NULL, dict_first_phone(d, wid));
+            populate_lrdiph(d2p, NULL, dict_first_phone(d, wid));
         }
     }
 
     return 0;
 }
 
+s3ssid_t
+dict2pid_internal(dict2pid_t *d2p,
+                  int32 wid,
+                  int pos)
+{
+    int b, l, r, p;
+    dict_t *dict = d2p->dict;
+    bin_mdef_t *mdef = d2p->mdef;
+
+    if (pos == 0 || pos == dict_pronlen(dict, wid))
+        return BAD_S3SSID;
+
+    b = dict_pron(dict, wid, pos);
+    l = dict_pron(dict, wid, pos - 1);
+    r = dict_pron(dict, wid, pos + 1);
+    p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
+                                  (s3cipid_t) l, (s3cipid_t) r,
+                                  WORD_POSN_INTERNAL);
+    return bin_mdef_pid2ssid(mdef, p);
+}
+
 dict2pid_t *
 dict2pid_build(bin_mdef_t * mdef, dict_t * dict)
 {
     dict2pid_t *dict2pid;
-    s3ssid_t *internal, ***rdiph_rc;
+    s3ssid_t ***rdiph_rc;
     bitvec_t *ldiph, *rdiph, *single;
     int32 pronlen;
-    int32 i, b, l, r, w, p;
+    int32 b, l, r, w, p;
 
     E_INFO("Building PID tables for dictionary\n");
     assert(mdef);
@@ -405,12 +399,9 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict)
 
     dict2pid = (dict2pid_t *) ckd_calloc(1, sizeof(dict2pid_t));
     dict2pid->refcount = 1;
+    dict2pid->mdef = bin_mdef_retain(mdef);
+    dict2pid->dict = dict_retain(dict);
     dict2pid->n_dictsize = dict_size(dict);
-    E_INFO("Allocating %d * %d bytes (%d KiB) for word-internal arrays\n",
-           dict2pid->n_dictsize, sizeof(s3ssid_t *),
-           dict2pid->n_dictsize * sizeof(s3ssid_t *) / 1024);
-    dict2pid->internal =
-        (s3ssid_t **) ckd_calloc(dict2pid->n_dictsize, sizeof(s3ssid_t *));
     E_INFO("Allocating %d^3 * %d bytes (%d KiB) for word-initial triphones\n",
            mdef->n_ciphone, sizeof(s3ssid_t),
            mdef->n_ciphone * mdef->n_ciphone * mdef->n_ciphone * sizeof(s3ssid_t) / 1024);
@@ -440,33 +431,17 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict)
         }
     }
 
-    /* Count number of word-internal phones. */
-    dict2pid->n_internal = 0;
-    for (w = 0; w < dict2pid->n_dictsize; w++) {
-        pronlen = dict_pronlen(dict, w);
-        if (pronlen < 0)
-            E_FATAL("Pronunciation-length(%s)= %d\n",
-                    dict_wordstr(dict, w), pronlen);
-        dict2pid->n_internal += (pronlen == 1 ? 0 : pronlen - 2);
-    }
-
-    E_INFO("Allocating %d entries of %d bytes (%d KiB) for internal ssids\n",
-           dict2pid->n_internal, sizeof(s3ssid_t),
-           dict2pid->n_internal * sizeof(s3ssid_t) / 1024);
-    internal = (s3ssid_t *) ckd_calloc(dict2pid->n_internal, sizeof(s3ssid_t));
-
     /* Track which diphones / ciphones have been seen. */
     ldiph = bitvec_alloc(mdef->n_ciphone * mdef->n_ciphone);
     rdiph = bitvec_alloc(mdef->n_ciphone * mdef->n_ciphone);
     single = bitvec_alloc(mdef->n_ciphone);
 
     for (w = 0; w < dict2pid->n_dictsize; w++) {
-        dict2pid->internal[w] = internal;
         pronlen = dict_pronlen(dict, w);
 
         if (pronlen >= 2) {
-            b = dict_pron(dict, w, 0);
-            r = dict_pron(dict, w, 1);
+            b = dict_first_phone(dict, w);
+            r = dict_second_phone(dict, w);
             /* Populate ldiph_lc */
             if (bitvec_is_clear(ldiph, b * mdef->n_ciphone + r)) {
                 /* Mark this diphone as done */
@@ -481,23 +456,10 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict)
                 }
             }
 
-            /* Now find ssids for all the word internal triphones and
-             * place them in internal[i].  FIXME: This is so totally
-             * not necessary and a big waste of memory. */
-            for (i = 1; i < pronlen - 1; i++) {
-                l = b;
-                b = r;
-                r = dict_pron(dict, w, i + 1);
-
-                p = bin_mdef_phone_id_nearest(mdef, (s3cipid_t) b,
-                                          (s3cipid_t) l, (s3cipid_t) r,
-                                          WORD_POSN_INTERNAL);
-                internal[i-1] = bin_mdef_pid2ssid(mdef, p);
-            }
 
             /* Populate rdiph_rc */
-            l = b;
-            b = r;
+            l = dict_second_last_phone(dict, w);
+            b = dict_last_phone(dict, w);
             if (bitvec_is_clear(rdiph, b * mdef->n_ciphone + l)) {
                 /* Mark this diphone as done */
                 bitvec_set(rdiph, b * mdef->n_ciphone + l);
@@ -516,11 +478,10 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict)
                        dict_wordstr(dict, w), b, bin_mdef_ciphone_str(mdef, b)));
             /* Populate lrdiph_rc (and also ldiph_lc, rdiph_rc if needed) */
             if (bitvec_is_clear(single, b)) {
-                populate_lrdiph(dict2pid, mdef, rdiph_rc, b);
+                populate_lrdiph(dict2pid, rdiph_rc, b);
                 bitvec_set(single, b);
             }
         }
-        internal += (pronlen == 1 ? 0 : pronlen - 2);
     }
 
     bitvec_free(ldiph);
@@ -528,8 +489,8 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict)
     bitvec_free(single);
 
     /* Try to compress rdiph_rc into rdiph_rc_compressed */
-    compress_right_context_tree(mdef, dict2pid, rdiph_rc);
-    compress_left_right_context_tree(mdef, dict2pid);
+    compress_right_context_tree(dict2pid, rdiph_rc);
+    compress_left_right_context_tree(dict2pid);
 
     ckd_free_3d(rdiph_rc);
 
@@ -558,17 +519,14 @@ dict2pid_free(dict2pid_t * d2p)
     if (d2p->lrdiph_rc)
         ckd_free_3d((void ***) d2p->lrdiph_rc);
 
-    if (d2p->internal) {
-        ckd_free((void *) d2p->internal[0]);
-        ckd_free((void **) d2p->internal);
-    }
-
     if (d2p->rssid)
         free_compress_map(d2p->rssid, d2p->n_ci);
 
     if (d2p->lrssid)
         free_compress_map(d2p->lrssid, d2p->n_ci);
 
+    bin_mdef_free(d2p->mdef);
+    dict_free(d2p->dict);
     ckd_free(d2p);
     return 0;
 }
@@ -579,10 +537,12 @@ dict2pid_report(dict2pid_t * d2p)
 }
 
 void
-dict2pid_dump(FILE * fp, dict2pid_t * d2p, bin_mdef_t * mdef, dict_t * dict)
+dict2pid_dump(FILE * fp, dict2pid_t * d2p)
 {
     int32 w, p, pronlen;
     int32 i, j, b, l, r;
+    bin_mdef_t *mdef = d2p->mdef;
+    dict_t *dict = d2p->dict;
 
     fprintf(fp, "# INTERNAL (wd comssid ssid ssid ... ssid comssid)\n");
     for (w = 0; w < d2p->n_dictsize; w++) {
@@ -590,7 +550,7 @@ dict2pid_dump(FILE * fp, dict2pid_t * d2p, bin_mdef_t * mdef, dict_t * dict)
 
         pronlen = dict_pronlen(dict, w);
         for (p = 0; p < pronlen; p++)
-            fprintf(fp, " %5d", d2p->internal[w][p]);
+            fprintf(fp, " %5d", dict2pid_internal(d2p, w, p));
         fprintf(fp, "\n");
     }
     fprintf(fp, "#\n");
