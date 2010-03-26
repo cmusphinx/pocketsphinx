@@ -40,6 +40,8 @@
 
 #include "glextree.h"
 
+static int nlexroot;
+
 glexroot_t *
 glexroot_add_child(glextree_t *tree, glexroot_t *root, int32 phone)
 {
@@ -49,11 +51,11 @@ glexroot_add_child(glextree_t *tree, glexroot_t *root, int32 phone)
     newroot->phone = phone;
     newroot->n_down = 0;
     newroot->down.kids = NULL;
-    if (root) {
-        newroot->sibs = root->down.kids;
-        root->down.kids = newroot;
-        ++root->n_down;
-    }
+    newroot->sibs = root->down.kids;
+    root->down.kids = newroot;
+    ++root->n_down;
+
+    ++nlexroot;
     return newroot;
 }
 
@@ -160,6 +162,10 @@ glextree_add_multi_phone_word(glextree_t *tree, glexroot_t *ciroot, int lc, int3
     cur = &rcroot->down.node;
     node = internal_node(tree, cur, ssid, ciroot->phone);
 
+    /* Internal phones have no left context dependency, so we will
+     * "pinch" all the trees together at this point - we look for an existing 
+     */
+
     /* Step to the next level... */
     cur = &node->kids;
     /* Now walk down to the penultimate phone, building new nodes as
@@ -240,12 +246,14 @@ glextree_build(hmm_context_t *ctx, dict_t *dict, dict2pid_t *d2p,
      * very much to cover them all just in case (FIXME: actually it
      * might but we will worry about that later...) */
     for (p = 0; p < bin_mdef_n_ciphone(d2p->mdef); ++p) {
+        E_INFO("Adding left context root for %s\n", bin_mdef_ciphone_str(d2p->mdef, p));
         glexroot_add_child(tree, &tree->root, p);
     }
     /* Now build a tree of first and second phones under the newly allocated roots. */
     for (w = 0; w < dict_size(dict); ++w) {
         if (filter && !(*filter)(tree, w, udata))
             continue;
+        E_INFO("Adding %s - %d lex roots\n", dict_wordstr(dict, w), nlexroot);
         glextree_add_word(tree, w);
     }
 
