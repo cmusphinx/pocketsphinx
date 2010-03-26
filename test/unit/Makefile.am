@@ -31,6 +31,9 @@ check_PROGRAMS = \
 	test_jsgf \
 	test_lm_read \
 	test_dict \
+	test_dict2pid \
+	test_glextree \
+	test_fsg2_search \
 	$(gst_programs)
 
 TESTS = $(check_PROGRAMS)

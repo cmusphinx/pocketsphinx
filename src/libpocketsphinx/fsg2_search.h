@@ -53,7 +53,7 @@
 #include "tokentree.h"
 
 /**
- * Implementation of FSG search (and "FSG set") structure.
+ * Implementation of updated FSG search
  */
 typedef struct fsg2_search_s {
     ps_search_t base;
@@ -70,7 +70,7 @@ typedef struct fsg2_search_s {
     uint8 final;		/**< Decoding is finished for this utterance. */
     uint8 bestpath;		/**< Whether to run bestpath search
                                    and confidence annotation at end. */
-} fsg_search_t;
+} fsg2_search_t;
 
 
 /**

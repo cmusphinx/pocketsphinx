@@ -38,53 +38,47 @@
  * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
  */
 
-#ifndef __TOKENTREE_H__
-#define __TOKENTREE_H__
+#include <ckd_alloc.h>
 
-/* System includes. */
+#include "tokentree.h"
 
-/* SphinxBase includes. */
-#include <listelem_alloc.h>
+tokentree_t *
+tokentree_init(void)
+{
+    tokentree_t *ttree = ckd_calloc(1, sizeof(*ttree));
+    ttree->token_alloc = listelem_alloc_init(sizeof(token_t));
+    return ttree;
+}
 
-/* Local includes. */
+tokentree_t *
+tokentree_retain(tokentree_t *tree)
+{
+    if (tree == NULL)
+        return tree;
+    --tree->refcount;
+    return tree;
+}
 
-/**
- * Token, which represents a particular path through the decoding graph.
- */
-typedef struct token_s token_t;
-struct token_s {
-	int32 pathscore;  /**< Score of the path ending with this token. */
-	int32 arcid;      /**< Head arc (or word) represented by this token. */
-	token_t *prev;    /**< Previous token in this path. */
-};
+int
+tokentree_free(tokentree_t *tree)
+{
+    if (tree == NULL)
+        return 0;
+    if (--tree->refcount > 0)
+        return tree->refcount;
+    listelem_alloc_free(tree->token_alloc);
+    ckd_free(tree);
+    return 0;
+}
 
-/**
- * Tree (lattice) of tokens, representing all paths explored so far.
- */
-typedef struct tokentree_s tokentree_t;
-struct tokentree_s {
-	int refcount;
-	listelem_alloc_t *token_alloc;  /**< Allocator for tokens. */
-};
+token_t *
+tokentree_add(tokentree_t *tree, int32 pathscore, int32 arcid, token_t *prev)
+{
+    token_t *token = listelem_malloc(tree->token_alloc);
+    token->pathscore = pathscore;
+    token->arcid = arcid;
+    token->prev = prev;
 
-/**
- * Create a new token tree.
- */
-tokentree_t *tokentree_init(void);
+    return token;
+}
 
-/**
- * Retain a pointer to a token tree.
- */
-tokentree_t *tokentree_retain(tokentree_t *tree);
-
-/**
- * Release a pointer to a token tree.
- */
-int tokentree_free(tokentree_t *tree);
-
-/**
- * Create a new token and add it to the tree.
- */
-token_t *tokentree_add(tokentree_t *tree, int32 pathscore, int32 arcid, token_t *prev);
-
-#endif /* __TOKENTREE_H__ */
