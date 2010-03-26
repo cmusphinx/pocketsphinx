@@ -140,6 +140,31 @@ internal_node(glextree_t *tree, glexnode_t **cur, s3ssid_t ssid, int ci)
     return node;
 }
 
+/**
+ * Find a first non-root (i.e. second phone) node corresponding to ssid.
+ */
+static glexnode_t *
+find_first_internal_node(glextree_t *tree, s3ssid_t ssid)
+{
+    glexroot_t *lcroot;
+
+    /* FIXME: Obviously, this is very slow. */
+    for (lcroot = tree->root.down.kids; lcroot; lcroot = lcroot->sibs) {
+        glexroot_t *ciroot;
+        for (ciroot = lcroot->down.kids; ciroot; ciroot = ciroot->sibs) {
+            glexroot_t *rcroot;
+            for (rcroot = ciroot->down.kids; rcroot; rcroot = rcroot->sibs) {
+                glexnode_t *node;
+                for (node = rcroot->down.node->kids; node; node = node->sibs) {
+                    if (hmm_nonmpx_ssid(&node->hmm) == ssid)
+                        return node;
+                }
+            }
+        }
+    }
+    return NULL;
+}
+
 static void
 glextree_add_multi_phone_word(glextree_t *tree, glexroot_t *ciroot, int lc, int32 w)
 {
@@ -163,17 +188,32 @@ glextree_add_multi_phone_word(glextree_t *tree, glexroot_t *ciroot, int lc, int3
     node = internal_node(tree, cur, ssid, ciroot->phone);
 
     /* Internal phones have no left context dependency, so we will
-     * "pinch" all the trees together at this point - we look for an existing 
+     * "pinch" all the trees together at this point - we look for an
+     * existing internal node corresponding to the next phone's SSID.
+     * This works a bit differently for >2 phone words as it does for
+     * 2-phone words as in the latter case we need to hook into a list
+     * of leafnodes.
      */
-
-    /* Step to the next level... */
-    cur = &node->kids;
-    /* Now walk down to the penultimate phone, building new nodes as
-     * necessary. */
-    for (pos = 1; pos < dict_pronlen(tree->dict, w) - 1; ++pos) {
-        ssid = dict2pid_internal(tree->d2p, w, pos);
-        node = internal_node(tree, cur, ssid, dict_pron(tree->dict, w, pos));
-        cur = &node->kids;
+    cur = &node->kids; /* Default - create new node. */
+    if (dict_pronlen(tree->dict, w) > 2) {
+        glexnode_t *node2;
+        ssid = dict2pid_internal(tree->d2p, w, 1);
+        if ((node2 = find_first_internal_node(tree, ssid)) != NULL)
+            cur = &node2->kids; /* Found an existing one. */
+        else {
+            /* Create a new node under cur and move down a level. */
+            node2 = internal_node(tree, cur, ssid, dict_pron(tree->dict, w, pos));
+            cur = &node->kids;
+        }
+        ++pos;
+        /* Now walk down to the penultimate phone, building new nodes as
+         * necessary. */
+        while (pos < dict_pronlen(tree->dict, w) - 1) {
+            ssid = dict2pid_internal(tree->d2p, w, pos);
+            node = internal_node(tree, cur, ssid, dict_pron(tree->dict, w, pos));
+            cur = &node->kids;
+            ++pos;
+        }
     }
 
     /* Now node is the penultimate phone and cur points to its
@@ -203,6 +243,7 @@ glextree_add_word(glextree_t *tree, int32 w)
 {
     glexroot_t *lcroot;
 
+    E_INFO("Adding %s - %d lex roots\n", dict_wordstr(tree->dict, w), nlexroot);
     /* Find or create root nodes for this word for all left contexts. */
     for (lcroot = tree->root.down.kids; lcroot; lcroot = lcroot->sibs) {
         glexroot_t *ciroot;
@@ -210,9 +251,13 @@ glextree_add_word(glextree_t *tree, int32 w)
         /* Is this a possible lc-ci combination?  FIXME: Actually
          * there's no way to find out! */
         if ((ciroot = glexroot_find_child
-             (lcroot, dict_first_phone(tree->dict, w))) == NULL)
+             (lcroot, dict_first_phone(tree->dict, w))) == NULL) {
             ciroot = glexroot_add_child(tree, lcroot,
                                         dict_first_phone(tree->dict, w));
+            E_INFO("Created ciroot (%s,%s)\n",
+                   bin_mdef_ciphone_str(tree->d2p->mdef, lcroot->phone),
+                   bin_mdef_ciphone_str(tree->d2p->mdef, ciroot->phone));
+        }
         /* If it is a single phone word, then create root-leaf nodes
          * for every possible right context. */
         if (dict_pronlen(tree->dict, w) == 1) {
@@ -253,7 +298,6 @@ glextree_build(hmm_context_t *ctx, dict_t *dict, dict2pid_t *d2p,
     for (w = 0; w < dict_size(dict); ++w) {
         if (filter && !(*filter)(tree, w, udata))
             continue;
-        E_INFO("Adding %s - %d lex roots\n", dict_wordstr(dict, w), nlexroot);
         glextree_add_word(tree, w);
     }
 

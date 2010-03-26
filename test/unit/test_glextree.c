@@ -20,8 +20,7 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(mdef = bin_mdef_read(NULL, MODELDIR "/hmm/en_US/hub4wsj_sc_8k/mdef"));
 	TEST_ASSERT(dict = dict_init(cmd_ln_init(NULL, NULL, FALSE,
-						 "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
-						 "-fdict", MODELDIR "/hmm/en_US/hub4wsj_sc_8k/noisedict",
+						 "-dict", DATADIR "/turtle.dic",
 						 "-dictcase", "no", NULL),
 				       mdef));
 	TEST_ASSERT(d2p = dict2pid_build(mdef, dict));
