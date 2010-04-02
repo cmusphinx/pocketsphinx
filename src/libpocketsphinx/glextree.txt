@@ -1,0 +1,33 @@
+Issues in implementing new lextrees
+-----------------------------------
+
+Indexing lextree roots:
+
+ - Full left context expansion is pretty important
+ - The problem is that adding new words to the lextree may create new
+   left contexts, but on the other hand we simply can't preallocate
+   all possible left contexts for every initial phone.
+ - We want to index lextree roots by left context, but we also want to
+   be able to quickly traverse their successors when building the tree
+   and when adding words generically.
+ - We'd like all root nodes with the same left context to be
+   contiguous in memory for cache friendliness.
+
+Handling leaf nodes:
+
+ - Sphinx3 seems to create these lazily, which probably makes sense.
+ - But it's not really so good for embedded systems
+
+Lextree operations:
+
+ - Enter(left context, initial phone)
+   * Enters all roots corresponding to the given left context and initial phone
+
+ - Evaluate(senones)
+   * One step of Viterbi
+
+ - Propagate()
+   * Follow epsilon transitions within the lextree
+
+ - Exits()
+   * Get epsilon transitions out of the lextree for higher level processing
