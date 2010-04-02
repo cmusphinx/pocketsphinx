@@ -57,7 +57,6 @@
 typedef struct glexnode_s glexnode_t;
 struct glexnode_s {
     hmm_t hmm;         /**< Base HMM structure. */
-
     glexnode_t *sibs;  /**< Siblings of this node. */
     glexnode_t *kids;  /**< Children of this node, NULL for leaves. */
     int32 rc;          /**< Right context information (for leaf nodes). */

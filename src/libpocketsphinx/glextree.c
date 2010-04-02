@@ -41,6 +41,8 @@
 #include "glextree.h"
 
 static int nlexroot;
+static int nlexnode;
+static int nlexleaf;
 
 glexroot_t *
 glexroot_add_child(glextree_t *tree, glexroot_t *root, int32 phone)
@@ -116,6 +118,7 @@ glextree_add_single_phone_word(glextree_t *tree, glexroot_t *ciroot, int lc, int
             node->sibs = rcroot->down.node;
             node->rc = rc;
             rcroot->down.node = node;
+            ++nlexleaf;
         }
     }
 }
@@ -135,6 +138,7 @@ internal_node(glextree_t *tree, glexnode_t **cur, s3ssid_t ssid, int ci)
         node->sibs = *cur;
         node->rc = -1;
         *cur = node;
+        ++nlexnode;
     }
 
     return node;
@@ -234,6 +238,7 @@ glextree_add_multi_phone_word(glextree_t *tree, glexroot_t *ciroot, int lc, int3
             node->sibs = *cur;
             node->rc = rc;
             *cur = node;
+            ++nlexleaf;
         }
     }
 }
@@ -243,7 +248,6 @@ glextree_add_word(glextree_t *tree, int32 w)
 {
     glexroot_t *lcroot;
 
-    E_INFO("Adding %s - %d lex roots\n", dict_wordstr(tree->dict, w), nlexroot);
     /* Find or create root nodes for this word for all left contexts. */
     for (lcroot = tree->root.down.kids; lcroot; lcroot = lcroot->sibs) {
         glexroot_t *ciroot;
@@ -268,6 +272,8 @@ glextree_add_word(glextree_t *tree, int32 w)
             glextree_add_multi_phone_word(tree, ciroot, lcroot->phone, w);
         }
     }
+    E_INFO("Added %s - %d lex roots, %d nodes, %d leaves\n",
+           dict_wordstr(tree->dict, w), nlexroot, nlexnode, nlexleaf);
 }
 
 glextree_t *
