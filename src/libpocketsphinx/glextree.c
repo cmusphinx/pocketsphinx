@@ -40,10 +40,6 @@
 
 #include "glextree.h"
 
-static int nlexroot;
-static int nlexnode;
-static int nlexleaf;
-
 glexroot_t *
 glexroot_add_child(glextree_t *tree, glexroot_t *root, int32 phone)
 {
@@ -56,8 +52,7 @@ glexroot_add_child(glextree_t *tree, glexroot_t *root, int32 phone)
     newroot->sibs = root->down.kids;
     root->down.kids = newroot;
     ++root->n_down;
-
-    ++nlexroot;
+    ++tree->nlexroot;
     return newroot;
 }
 
@@ -83,13 +78,15 @@ glextree_find_roots(glextree_t *tree, int lc, int ci)
     return glexroot_find_child(lcroot, ci);
 }
 
-glexnode_t *
-glextree_add_node(glextree_t *tree, s3ssid_t ssid, int pid)
+static glexnode_t *
+glextree_add_node(glextree_t *tree, int pid, int nhmm)
 {
     glexnode_t *node = listelem_malloc(tree->node_alloc);
-    hmm_init(tree->ctx, &node->hmm, FALSE, ssid, pid);
+    node->hmms = ckd_calloc(nhmm, sizeof(*node->hmms));
     node->sibs = node->kids = NULL;
-    node->rc = -1;
+    node->wid = -1;
+    tree->nlexhmm += nhmm;
+    ++tree->nlexnode;
     return node;
 }
 
@@ -114,11 +111,11 @@ glextree_add_single_phone_word(glextree_t *tree, glexroot_t *ciroot, int lc, int
             if (node->kids == NULL)
                 break;
         if (node == NULL) {
-            node = glextree_add_node(tree, ssid, ci);
+            node = glextree_add_node(tree, ci, 1);
+            hmm_init(tree->ctx, node->hmms, FALSE, ssid, ci);
             node->sibs = rcroot->down.node;
-            node->rc = rc;
+            node->wid = w;
             rcroot->down.node = node;
-            ++nlexleaf;
         }
     }
 }
@@ -130,15 +127,14 @@ internal_node(glextree_t *tree, glexnode_t **cur, s3ssid_t ssid, int ci)
 
     /* Look for a node with the same ssid which is not a leaf node. */
     for (node = *cur; node; node = node->sibs)
-        if (hmm_nonmpx_ssid(&node->hmm) == ssid && node->rc == -1)
+        if (hmm_nonmpx_ssid(node->hmms) == ssid && node->wid == -1)
             break;
     /* Create it if not... */
     if (node == NULL) {
-        node = glextree_add_node(tree, ssid, ci);
+        node = glextree_add_node(tree, ci, 1);
+        hmm_init(tree->ctx, node->hmms, FALSE, ssid, ci);
         node->sibs = *cur;
-        node->rc = -1;
         *cur = node;
-        ++nlexnode;
     }
 
     return node;
@@ -150,23 +146,120 @@ internal_node(glextree_t *tree, glexnode_t **cur, s3ssid_t ssid, int ci)
 static glexnode_t *
 find_first_internal_node(glextree_t *tree, s3ssid_t ssid)
 {
-    glexroot_t *lcroot;
+    void *val;
 
-    /* FIXME: Obviously, this is very slow. */
-    for (lcroot = tree->root.down.kids; lcroot; lcroot = lcroot->sibs) {
-        glexroot_t *ciroot;
-        for (ciroot = lcroot->down.kids; ciroot; ciroot = ciroot->sibs) {
-            glexroot_t *rcroot;
-            for (rcroot = ciroot->down.kids; rcroot; rcroot = rcroot->sibs) {
-                glexnode_t *node;
-                for (node = rcroot->down.node->kids; node; node = node->sibs) {
-                    if (hmm_nonmpx_ssid(&node->hmm) == ssid)
-                        return node;
-                }
-            }
-        }
+    if (hash_table_lookup_bkey(tree->internal, (char const *)&ssid,
+                               sizeof(ssid), &val) < 0)
+        return NULL;
+
+    return (glexnode_t *)val;
+}
+
+static void
+build_subtree_over_2phones(glextree_t *tree, glexnode_t **cur, int32 w)
+{
+    glexnode_t *node;
+    xwdssid_t *rssid;
+    s3ssid_t ssid;
+    int pos = 1;
+
+    ssid = dict2pid_internal(tree->d2p, w, 1);
+    /* Try to find an existing first internal node. */
+    if ((node = find_first_internal_node(tree, ssid)) != NULL) {
+        /* Link into the root nodes. */
+        /* FIXME: how? yikes. */
+        cur = &node->kids;
     }
-    return NULL;
+    else {
+        /* Create a new node under cur and move down a level. */
+        node = internal_node(tree, cur, ssid, dict_pron(tree->dict, w, pos));
+        cur = &node->kids;
+        /* Enter node2 in the internal hash table.  NOTE:
+         * SphinxBase hash tables are a real pain and require
+         * their keys to be externally allocated, so we
+         * pre-allocate all ssids in a big array and index into
+         * that. */
+        hash_table_enter_bkey(tree->internal,
+                              (char const *)(tree->ssidbuf + ssid),
+                              sizeof(ssid), node);
+    }
+    ++pos;
+    /* Now walk down to the penultimate phone, building new nodes as
+     * necessary. */
+    while (pos < dict_pronlen(tree->dict, w) - 1) {
+        ssid = dict2pid_internal(tree->d2p, w, pos);
+        node = internal_node(tree, cur, ssid, dict_pron(tree->dict, w, pos));
+        cur = &node->kids;
+        ++pos;
+    }
+
+    /* Now node is the penultimate phone and cur points to its
+     * children.  There is probably an existing leaf node. */
+    rssid = dict2pid_rssid(tree->d2p,
+                           dict_last_phone(tree->dict, w),
+                           dict_second_last_phone(tree->dict, w));
+    for (node = *cur; node; node = node->sibs)
+        if (node->wid == w)
+            break;
+    if (node == NULL) {
+        int rc;
+
+        E_INFO("Allocating leaf node for %s - %d HMMs\n",
+               dict_wordstr(tree->dict, w), rssid->n_ssid);
+        node = glextree_add_node(tree,
+                                 dict_last_phone(tree->dict, w),
+                                 rssid->n_ssid);
+        for (rc = 0; rc < rssid->n_ssid; ++rc) {
+            hmm_init(tree->ctx, node->hmms + rc, FALSE, rssid->ssid[rc],
+                     dict_last_phone(tree->dict, w));
+        }
+        node->wid = w;
+        node->sibs = *cur;
+        *cur = node;
+    }
+}
+
+static void
+build_subtree_2phones(glextree_t *tree, glexnode_t **cur, int32 w)
+{
+    xwdssid_t *rssid;
+    glexnode_t *node;
+    void *val;
+    int rc;
+
+    /* Every two-phone word gets a unique leaf node, for obvious
+       reasons.  However, at least for triphones, there should be only
+       one of them.  So look it up. */
+    if (hash_table_lookup_bkey(tree->internal_leaf, (char const *)&w,
+                               sizeof(w), &val) == 0) {
+        /* Found one, link it into the root node (fan-in) */
+        /* FIXME: how? yikes. */
+        /* Nothing else to do. */
+        E_INFO("Reusing leaf node for %s\n", dict_wordstr(tree->dict, w));
+        return;
+    }
+
+    /* Create a new one. */
+    rssid = dict2pid_rssid(tree->d2p,
+                           dict_last_phone(tree->dict, w),
+                           dict_second_last_phone(tree->dict, w));
+    E_INFO("Allocating leaf node for %s - %d HMMs\n",
+           dict_wordstr(tree->dict, w), rssid->n_ssid);
+    node = glextree_add_node(tree,
+                             dict_last_phone(tree->dict, w),
+                             rssid->n_ssid);
+    /* Enter it into the hash table and associated list. */
+    tree->internal_leaf_wids = glist_add_int32(tree->internal_leaf_wids, w);
+    hash_table_enter_bkey(tree->internal_leaf,
+                          (char const *)&gnode_int32(tree->internal_leaf_wids),
+                          sizeof(int32), node);
+    for (rc = 0; rc < rssid->n_ssid; ++rc) {
+        hmm_init(tree->ctx, node->hmms + rc, FALSE, rssid->ssid[rc],
+                 dict_last_phone(tree->dict, w));
+    }
+    node->wid = w;
+    node->sibs = *cur;
+    *cur = node;
 }
 
 static void
@@ -174,73 +267,29 @@ glextree_add_multi_phone_word(glextree_t *tree, glexroot_t *ciroot, int lc, int3
 {
     glexroot_t *rcroot;
     glexnode_t **cur, *node;
-    xwdssid_t *rssid;
     s3ssid_t ssid;
-    int pos, rc;
+    int rc;
 
     /* Find leaf corresponding to root node. */
     rc = dict_second_phone(tree->dict, w);
-    if ((rcroot = glexroot_find_child (ciroot, rc)) == NULL)
+    if ((rcroot = glexroot_find_child(ciroot, rc)) == NULL)
         rcroot = glexroot_add_child(tree, ciroot, rc);
 
     /* Find or create a root node for the initial triphone. */
     ssid = dict2pid_ldiph_lc(tree->d2p, ciroot->phone, rc, lc);
-    assert(ssid != BAD_S3SSID); /* Should never happen. */
+    assert(ssid != BAD_S3SSID); /* Should never happen (which is a problem). */
     /* This is essentially the same as the loop below except for how
      * we got ssid. */
     cur = &rcroot->down.node;
+    /* This is the first phone's node.  It may have siblings which are
+     * single-phone words (but should have none for multi-phones). */
     node = internal_node(tree, cur, ssid, ciroot->phone);
 
-    /* Internal phones have no left context dependency, so we will
-     * "pinch" all the trees together at this point - we look for an
-     * existing internal node corresponding to the next phone's SSID.
-     * This works a bit differently for >2 phone words as it does for
-     * 2-phone words as in the latter case we need to hook into a list
-     * of leafnodes.
-     */
-    cur = &node->kids; /* Default - create new node. */
-    if (dict_pronlen(tree->dict, w) > 2) {
-        glexnode_t *node2;
-        ssid = dict2pid_internal(tree->d2p, w, 1);
-        if ((node2 = find_first_internal_node(tree, ssid)) != NULL)
-            cur = &node2->kids; /* Found an existing one. */
-        else {
-            /* Create a new node under cur and move down a level. */
-            node2 = internal_node(tree, cur, ssid, dict_pron(tree->dict, w, pos));
-            cur = &node->kids;
-        }
-        ++pos;
-        /* Now walk down to the penultimate phone, building new nodes as
-         * necessary. */
-        while (pos < dict_pronlen(tree->dict, w) - 1) {
-            ssid = dict2pid_internal(tree->d2p, w, pos);
-            node = internal_node(tree, cur, ssid, dict_pron(tree->dict, w, pos));
-            cur = &node->kids;
-            ++pos;
-        }
-    }
-
-    /* Now node is the penultimate phone and cur points to its
-     * children.  We will now create leaf nodes for all contexts.
-     * This looks quite a lot like glextree_add_single_phone_word()
-     * except that we have a compressed right context list. */
-    rssid = dict2pid_rssid(tree->d2p,
-                           dict_last_phone(tree->dict, w),
-                           dict_second_last_phone(tree->dict, w));
-    for (rc = 0; rc < rssid->n_ssid; ++rc) {
-        ssid = rssid->ssid[rc];
-        for (node = *cur; node; node = node->sibs)
-            if (hmm_nonmpx_ssid(&node->hmm) == ssid && node->rc != -1)
-                break;
-        if (node == NULL) {
-            node = glextree_add_node(tree, ssid,
-                                     dict_last_phone(tree->dict, w));
-            node->sibs = *cur;
-            node->rc = rc;
-            *cur = node;
-            ++nlexleaf;
-        }
-    }
+    /* For triphones we just need to treat 2-phone words separately. */
+    if (dict_pronlen(tree->dict, w) == 2)
+        build_subtree_2phones(tree, &node->kids, w);
+    else
+        build_subtree_over_2phones(tree, &node->kids, w);
 }
 
 void
@@ -258,9 +307,6 @@ glextree_add_word(glextree_t *tree, int32 w)
              (lcroot, dict_first_phone(tree->dict, w))) == NULL) {
             ciroot = glexroot_add_child(tree, lcroot,
                                         dict_first_phone(tree->dict, w));
-            E_INFO("Created ciroot (%s,%s)\n",
-                   bin_mdef_ciphone_str(tree->d2p->mdef, lcroot->phone),
-                   bin_mdef_ciphone_str(tree->d2p->mdef, ciroot->phone));
         }
         /* If it is a single phone word, then create root-leaf nodes
          * for every possible right context. */
@@ -272,8 +318,8 @@ glextree_add_word(glextree_t *tree, int32 w)
             glextree_add_multi_phone_word(tree, ciroot, lcroot->phone, w);
         }
     }
-    E_INFO("Added %s - %d lex roots, %d nodes, %d leaves\n",
-           dict_wordstr(tree->dict, w), nlexroot, nlexnode, nlexleaf);
+    E_INFO("Added %s - %d lex roots, %d nodes, %d hmms\n",
+           dict_wordstr(tree->dict, w), tree->nlexroot, tree->nlexnode, tree->nlexhmm);
 }
 
 glextree_t *
@@ -281,6 +327,7 @@ glextree_build(hmm_context_t *ctx, dict_t *dict, dict2pid_t *d2p,
                glextree_wfilter_t filter, void *udata)
 {
     glextree_t *tree;
+    glexroot_t *lcroot;
     int32 w, p;
 
     tree = ckd_calloc(1, sizeof(*tree));
@@ -291,21 +338,47 @@ glextree_build(hmm_context_t *ctx, dict_t *dict, dict2pid_t *d2p,
     tree->root_alloc = listelem_alloc_init(sizeof(glexroot_t));
     tree->node_alloc = listelem_alloc_init(sizeof(glexnode_t));
 
+    tree->internal = hash_table_new(bin_mdef_n_sseq(d2p->mdef), HASH_CASE_YES);
+    tree->internal_leaf = hash_table_new(dict_size(tree->dict) / 10, HASH_CASE_YES);
+    /* Externally allocate ssid keys for the above hashtable. */
+    tree->ssidbuf = ckd_calloc(sizeof(s3ssid_t), bin_mdef_n_sseq(d2p->mdef));
+    for (p = 0; p < bin_mdef_n_sseq(d2p->mdef); ++p)
+        tree->ssidbuf[p] = p;
+
     E_INFO("Building lexicon tree:\n");
     /* First, build a root node for every possible left-context phone.
      * These can't be easily added at runtime, and it doesn't cost
      * very much to cover them all just in case (FIXME: actually it
      * might but we will worry about that later...) */
     for (p = 0; p < bin_mdef_n_ciphone(d2p->mdef); ++p) {
-        E_INFO("Adding left context root for %s\n", bin_mdef_ciphone_str(d2p->mdef, p));
         glexroot_add_child(tree, &tree->root, p);
     }
+    E_INFO("\t%d left context roots\n", bin_mdef_n_ciphone(d2p->mdef));
     /* Now build a tree of first and second phones under the newly allocated roots. */
     for (w = 0; w < dict_size(dict); ++w) {
         if (filter && !(*filter)(tree, w, udata))
             continue;
         glextree_add_word(tree, w);
     }
+    /* Dump some tree statistics. */
+    for (lcroot = tree->root.down.kids; lcroot; lcroot = lcroot->sibs) {
+        glexroot_t *ciroot;
+        int n_ci = 0, n_rc = 0;
+        for (ciroot = lcroot->down.kids; ciroot; ciroot = ciroot->sibs) {
+            glexroot_t *rcroot;
+            ++n_ci;
+            for (rcroot = ciroot->down.kids; rcroot; rcroot = rcroot->sibs) {
+                ++n_rc;
+            }
+        }
+        E_INFO("         %s has %d ci roots, %d rc roots\n",
+               bin_mdef_ciphone_str(d2p->mdef, lcroot->phone), n_ci, n_rc);
+    }
+    E_INFO("Tree has %d lex roots (%d KiB)\n",
+           tree->nlexroot, tree->nlexroot * sizeof(glexroot_t) / 1024);
+    E_INFO("         %d nodes (%d KiB), %d HMMs (%d KiB)\n",
+           tree->nlexnode, tree->nlexnode * sizeof(glexnode_t) / 1024,
+           tree->nlexhmm, tree->nlexhmm * sizeof(hmm_t) / 1024);
 
     return tree;
 }
@@ -328,6 +401,10 @@ glextree_free(glextree_t *tree)
         return tree->refcount;
     listelem_alloc_free(tree->root_alloc);
     listelem_alloc_free(tree->node_alloc);
+    ckd_free(tree->ssidbuf);
+    hash_table_free(tree->internal);
+    hash_table_free(tree->internal_leaf);
+    glist_free(tree->internal_leaf_wids);
     ckd_free(tree->d2p);
     ckd_free(tree->dict);
     ckd_free(tree);

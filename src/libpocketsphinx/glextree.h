@@ -56,24 +56,26 @@
  */
 typedef struct glexnode_s glexnode_t;
 struct glexnode_s {
-    hmm_t hmm;         /**< Base HMM structure. */
+    hmm_t *hmms;       /**< One or more HMMs (leaves have more, exact
+                            number comes from dict2pid) */
     glexnode_t *sibs;  /**< Siblings of this node. */
     glexnode_t *kids;  /**< Children of this node, NULL for leaves. */
-    int32 rc;          /**< Right context information (for leaf nodes). */
+    int32 wid;         /**< Word/arc information or miscellaneous data. */
 };
+
 
 /**
  * Lexicon tree root node structure.
  *
  * Root nodes are organized by right context and base phone, with all
  * roots sharing the same (lc, ci) pair contiguous.  To make it easier
- * to dynamically add words, they are stored in a trie.  Although the
+ * to dynamically add words, they are stored in a tree.  Although the
  * code currently assumes three levels, extending this to 5-phones or
  * 7-phones or some more exotic configuration shouldn't be difficult.
  */
 typedef struct glexroot_s glexroot_t;
 struct glexroot_s {
-    int16 phone;      /**< Phone for this level of the trie (lc, ci, rc). */
+    int16 phone;      /**< Phone for this level of the tree (lc, ci, rc). */
     int16 n_down;     /**< Number of children (0 for a leafnode). */
     glexroot_t *sibs; /**< Next tree entry at this level. */
     union {
@@ -91,9 +93,25 @@ struct glextree_s {
     dict_t *dict;        /**< Dictionary used to build this tree. */
     dict2pid_t *d2p;     /**< Context-dependent mappings used. */
     int refcount;        /**< Reference count. */
-    glexroot_t root;     /**< Root of trie holding root nodes. */
-    listelem_alloc_t *root_alloc;
-    listelem_alloc_t *node_alloc;
+    glexroot_t root;     /**< Root of tree holding root nodes. */
+    /**
+     * Hash table indexing ssids to first internal nodes, used to
+     * handle fan-in from root nodes. */
+    hash_table_t *internal;
+    s3ssid_t *ssidbuf;   /**< Externally allocated keys for @a internal. */
+    /**
+     * Hash table indexing word IDs to second-phone leaf nodes, also
+     * used for fan-in.
+     */
+    hash_table_t *internal_leaf;
+    glist_t internal_leaf_wids;    /**< Storage for keys in @a internal_leaf. */
+    listelem_alloc_t *root_alloc;  /**< Allocator for root tree nodes. */
+    listelem_alloc_t *node_alloc;  /**< Allocator for tree nodes. */
+
+    /* Counters. */
+    int nlexroot;
+    int nlexnode;
+    int nlexhmm;
 };
 
 /**
