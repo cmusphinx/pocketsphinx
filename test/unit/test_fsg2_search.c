@@ -19,7 +19,8 @@ main(int argc, char *argv[])
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
-				"-dict", MODELDIR "/lm/en/turtle.dic",
+				"-fsg", DATADIR "/goforward.fsg",
+				"-dict", MODELDIR "/lm/en_US/cmu07a.dic",
 				"-bestpath", "no",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));

@@ -62,6 +62,7 @@ typedef struct fsg2_search_s {
 
     fsg_model_t *fsg;		/**< Currently active FSG */
     jsgf_t *jsgf;               /**< Active JSGF grammar file. */
+    hash_table_t *vocab;        /**< Set of active vocabulary words. */
 
     glextree_t *lextree;        /**< Tree lexicon for search */
     tokentree_t *toktree;       /**< Token tree (lattice/history) */

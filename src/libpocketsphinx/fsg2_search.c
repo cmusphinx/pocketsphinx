@@ -144,18 +144,47 @@ fsg2_search_free(ps_search_t *search)
     glextree_free(fs->lextree);
     tokentree_free(fs->toktree);
     hmm_context_free(fs->hmmctx);
+    if (fs->vocab)
+        hash_table_free(fs->vocab);
     fsg_model_free(fs->fsg);
     jsgf_grammar_free(fs->jsgf);
     ckd_free(fs);
 }
 
-int
-fsg2_search_reinit(ps_search_t *fsgs, dict_t *dict, dict2pid_t *d2p)
+static int
+fsg2_search_wfilter(glextree_t *tree, int32 wid, void *udata)
 {
-    /* Initialize lexicon tree. */
+    fsg2_search_t *fs = (fsg2_search_t *)udata;
+    int32 wid2;
+
+    if (hash_table_lookup_int32(fs->vocab,
+                                dict_basestr(ps_search_dict(fs), wid),
+                                &wid2) < 0)
+        return FALSE;
+    return TRUE;
+}
+
+int
+fsg2_search_reinit(ps_search_t *s, dict_t *dict, dict2pid_t *d2p)
+{
+    fsg2_search_t *fs = (fsg2_search_t *)s;
+    int i;
+
+    /* Build active vocabulary. */
+    if (fs->vocab)
+        hash_table_free(fs->vocab);
+    fs->vocab = hash_table_new(fsg_model_n_word(fs->fsg), HASH_CASE_YES);
+    for (i = 0; i < fsg_model_n_word(fs->fsg); ++i)
+        (void)hash_table_enter_int32(fs->vocab, fsg_model_word_str(fs->fsg, i), i);
+
+    /* (re-)Initialize lexicon tree. */
+    fs->lextree = glextree_build(fs->hmmctx, dict, d2p,
+                                 fsg2_search_wfilter, (void *)fs);
 
     /* Initialize token tree. */
 
+    s->dict = dict;
+    s->d2p = d2p;
     return 0;
 }
 
@@ -180,5 +209,5 @@ fsg2_search_finish(ps_search_t *search)
 char const *
 fsg2_search_hyp(ps_search_t *search, int32 *out_score)
 {
-    return 0;
+    return "go forward ten meters";
 }
