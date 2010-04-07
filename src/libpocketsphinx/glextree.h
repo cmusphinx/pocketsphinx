@@ -51,16 +51,26 @@
 #include "dict2pid.h"
 #include "dict.h"
 
+typedef struct glexlink_s glexlink_t;
+typedef struct glexnode_s glexnode_t;
+
+/**
+ * Link in a lexicon tree.
+ */
+struct glexlink_s {
+    glexnode_t *dest;
+    glexlink_t *next;
+    /* LM lookahead weights might go here, eventually. */
+};
+
 /**
  * Generic lexicon tree node structure.
  */
-typedef struct glexnode_s glexnode_t;
 struct glexnode_s {
     hmm_t *hmms;       /**< One or more HMMs (leaves have more, exact
                             number comes from dict2pid) */
-    glexnode_t *sibs;  /**< Siblings of this node. */
-    glexnode_t *kids;  /**< Children of this node, NULL for leaves. */
-    int32 wid;         /**< Word/arc information or miscellaneous data. */
+    glexlink_t *kids;  /**< Outgoing links from this node, NULL for leaves. */
+    int32 wid;         /**< Word information or miscellaneous data. */
 };
 
 
@@ -79,8 +89,8 @@ struct glexroot_s {
     int16 n_down;     /**< Number of children (0 for a leafnode). */
     glexroot_t *sibs; /**< Next tree entry at this level. */
     union {
-        glexroot_t *kids; /**< First tree entry at the next level. */
-        glexnode_t *node; /**< Actual root node. */
+        glexroot_t *kids;  /**< First tree entry at the next level. */
+        glexlink_t *nodes; /**< Actual root nodes (single phone words get their own). */
     } down;
 };
 
@@ -107,6 +117,7 @@ struct glextree_s {
     glist_t internal_leaf_wids;    /**< Storage for keys in @a internal_leaf. */
     listelem_alloc_t *root_alloc;  /**< Allocator for root tree nodes. */
     listelem_alloc_t *node_alloc;  /**< Allocator for tree nodes. */
+    listelem_alloc_t *link_alloc;   /**< Allocator for tree links. */
 
     /* Counters. */
     int nlexroot;
@@ -139,6 +150,11 @@ glextree_t *glextree_build(hmm_context_t *ctx, dict_t *dict, dict2pid_t *d2p,
  * dict2pid.
  */
 void glextree_add_word(glextree_t *tree, int32 wid);
+
+/**
+ * Verify that a word exists in the lexicon tree.
+ */
+int glextree_has_word(glextree_t *tree, int32 wid);
 
 /**
  * Retain a pointer to a lexicon tree.

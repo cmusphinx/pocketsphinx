@@ -13,10 +13,26 @@ Indexing lextree roots:
  - We'd like all root nodes with the same left context to be
    contiguous in memory for cache friendliness.
 
+ - In fact it turns out that doing full left context expansion is not
+   such a big deal.  For any reasonably sized dictionary the right
+   contexts dominate memory usage.
+
 Handling leaf nodes:
 
- - Sphinx3 seems to create these lazily, which probably makes sense.
- - But it's not really so good for embedded systems
+ - As in fwdtree it makes a lot of sense not to allocate full-fledged
+   lextree nodes for right contexts.  We just allocate an array of
+   hmm_t, which is implicitly indexed by the right context ID.
+
+ - Not sure if there is any way to do this dynamically in an efficient
+   way.  I need to collect some statistics about right context
+   coverage.  It's likely that there is a "typical set" of right
+   contexts that get used all the time which could be statically
+   allocated, then we could just keep a fixed-size pool of hmm_t to
+   use for the less frequently accessed ones.
+
+ - Sphinx3 creates them all lazily (as does fwdtree), but this is less
+   than optimal for embedded systems.  However, listelem_malloc() does
+   a reasonable job with them.
 
 Lextree operations:
 

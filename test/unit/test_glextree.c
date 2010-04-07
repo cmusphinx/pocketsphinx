@@ -17,6 +17,7 @@ main(int argc, char *argv[])
 	hmm_context_t *ctx;
 	logmath_t *lmath;
 	tmat_t *tmat;
+	int i;
 
 	TEST_ASSERT(mdef = bin_mdef_read(NULL, MODELDIR "/hmm/en_US/hub4wsj_sc_8k/mdef"));
 	TEST_ASSERT(dict = dict_init(cmd_ln_init(NULL, NULL, FALSE,
@@ -29,6 +30,10 @@ main(int argc, char *argv[])
 			 lmath, 1e-5, TRUE);
 	ctx = hmm_context_init(bin_mdef_n_emit_state(mdef), tmat->tp, NULL, mdef->sseq);
 	TEST_ASSERT(tree = glextree_build(ctx, dict, d2p, NULL, NULL));
+
+	/* Check that a path exists for all dictionary words. */
+	for (i = 0; i < dict_size(dict); ++i)
+		TEST_ASSERT(glextree_has_word(tree, i));
 
 	dict_free(dict);
 	dict2pid_free(d2p);
