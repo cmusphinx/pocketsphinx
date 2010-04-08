@@ -45,6 +45,7 @@
 
 /* SphinxBase includes. */
 #include <listelem_alloc.h>
+#include <heap.h>
 
 /* Local includes. */
 
@@ -53,9 +54,11 @@
  */
 typedef struct token_s token_t;
 struct token_s {
-	int32 pathscore;  /**< Score of the path ending with this token. */
-	int32 arcid;      /**< Head arc (or word) represented by this token. */
-	token_t *prev;    /**< Previous token in this path. */
+    int32 pathscore;  /**< Score of the path ending with this token. */
+    int32 arcid;      /**< Head arc (or word) represented by this token. */
+    int16 frame;      /**< Last frame in which this token was active. */
+    int16 misc;       /**< Miscellaneous data. */
+    token_t *prev;    /**< Previous token in this path. */
 };
 
 /**
@@ -63,8 +66,9 @@ struct token_s {
  */
 typedef struct tokentree_s tokentree_t;
 struct tokentree_s {
-	int refcount;
-	listelem_alloc_t *token_alloc;  /**< Allocator for tokens. */
+    int refcount;
+    heap_t *leaves;                 /**< Leaves (active tokens). */
+    listelem_alloc_t *token_alloc;  /**< Allocator for tokens. */
 };
 
 /**
@@ -83,8 +87,21 @@ tokentree_t *tokentree_retain(tokentree_t *tree);
 int tokentree_free(tokentree_t *tree);
 
 /**
- * Create a new token and add it to the tree.
+ * Create a new token and add it to the tree as a leaf.
+ *
+ * This has the side effect of removing prev from the set of leaves.
  */
-token_t *tokentree_add(tokentree_t *tree, int32 pathscore, int32 arcid, token_t *prev);
+token_t *tokentree_add(tokentree_t *tree, int32 pathscore,
+                       int32 arcid, token_t *prev);
+
+/**
+ * Prune leaves from the tree scoring worse than a minimum.
+ */
+int tokentree_prune(tokentree_t *tree, int32 minscore);
+
+/**
+ * Prune leaves from the tree leaving only the top N.
+ */
+int tokentree_prune_topn(tokentree_t *tree, int32 n);
 
 #endif /* __TOKENTREE_H__ */

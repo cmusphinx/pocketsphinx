@@ -81,4 +81,3 @@ tokentree_add(tokentree_t *tree, int32 pathscore, int32 arcid, token_t *prev)
 
     return token;
 }
-
