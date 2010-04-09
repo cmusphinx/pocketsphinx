@@ -47,6 +47,7 @@ tokentree_init(void)
 {
     tokentree_t *ttree = ckd_calloc(1, sizeof(*ttree));
     ttree->token_alloc = listelem_alloc_init(sizeof(token_t));
+    ttree->leaves = heap_new();
     return ttree;
 }
 
@@ -72,12 +73,53 @@ tokentree_free(tokentree_t *tree)
 }
 
 token_t *
-tokentree_add(tokentree_t *tree, int32 pathscore, int32 arcid, token_t *prev)
+tokentree_add(tokentree_t *tree, int32 pathcost, int32 arcid, token_t *prev)
 {
     token_t *token = listelem_malloc(tree->token_alloc);
-    token->pathscore = pathscore;
+
+    token->pathcost = pathcost;
     token->arcid = arcid;
     token->prev = prev;
 
+    if (prev != NULL) {
+        heap_remove(tree->leaves, prev);
+    }
+    heap_insert(tree->leaves, token, pathcost);
+
     return token;
+}
+
+int
+tokentree_prune(tokentree_t *tree, int32 maxcost)
+{
+    heap_t *newheap = heap_new();
+    void *data;
+    int32 val;
+
+    while (heap_pop(tree->leaves, &data, &val)) {
+        if (val < maxcost)
+            heap_insert(newheap, data, val);
+    }
+    heap_destroy(tree->leaves);
+    tree->leaves = newheap;
+    return 0;
+}
+
+int
+tokentree_prune_topn(tokentree_t *tree, int32 n)
+{
+    heap_t *newheap = heap_new();
+    void *data;
+    int32 val, i;
+
+    i = 0;
+    while (heap_pop(tree->leaves, &data, &val)) {
+        if (i == n)
+            break;
+        heap_insert(newheap, data, val);
+        ++i;
+    }
+    heap_destroy(tree->leaves);
+    tree->leaves = newheap;
+    return 0;
 }

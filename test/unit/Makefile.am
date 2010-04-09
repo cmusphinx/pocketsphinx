@@ -34,6 +34,7 @@ check_PROGRAMS = \
 	test_dict2pid \
 	test_glextree \
 	test_fsg2_search \
+	test_tokentree \
 	$(gst_programs)
 
 TESTS = $(check_PROGRAMS)

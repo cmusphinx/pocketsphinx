@@ -54,7 +54,7 @@
  */
 typedef struct token_s token_t;
 struct token_s {
-    int32 pathscore;  /**< Score of the path ending with this token. */
+    int32 pathcost ;  /**< Cost (-score) of the path ending with this token. */
     int32 arcid;      /**< Head arc (or word) represented by this token. */
     int16 frame;      /**< Last frame in which this token was active. */
     int16 misc;       /**< Miscellaneous data. */
@@ -91,13 +91,13 @@ int tokentree_free(tokentree_t *tree);
  *
  * This has the side effect of removing prev from the set of leaves.
  */
-token_t *tokentree_add(tokentree_t *tree, int32 pathscore,
+token_t *tokentree_add(tokentree_t *tree, int32 pathcost,
                        int32 arcid, token_t *prev);
 
 /**
- * Prune leaves from the tree scoring worse than a minimum.
+ * Prune leaves from the tree with costs greather than maximum.
  */
-int tokentree_prune(tokentree_t *tree, int32 minscore);
+int tokentree_prune(tokentree_t *tree, int32 maxcost);
 
 /**
  * Prune leaves from the tree leaving only the top N.
