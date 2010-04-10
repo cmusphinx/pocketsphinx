@@ -1217,7 +1217,12 @@ tst_search_hyp(ps_search_t *base, int32 *out_score)
     }
 
     ckd_free(base->hyp_str);
+    if (len == 0) {
+	base->hyp_str = NULL;
+	return base->hyp_str;
+    }
     base->hyp_str = ckd_calloc(1, len);
+
     id = exit_id;
     c = base->hyp_str + len - 1;
     while (id >= 0) {

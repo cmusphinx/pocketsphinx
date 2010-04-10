@@ -1156,9 +1156,14 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score)
             continue;
         len += strlen(fsg_model_word_str(fsgs->fsg, wid)) + 1;
     }
-
+    
     ckd_free(search->hyp_str);
+    if (len == 0) {
+	search->hyp_str = NULL;
+	return search->hyp_str;
+    }
     search->hyp_str = ckd_calloc(1, len);
+
     bp = bpidx;
     c = search->hyp_str + len - 1;
     while (bp > 0) {

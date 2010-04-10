@@ -1592,6 +1592,10 @@ ps_astar_hyp(ps_astar_t *nbest, ps_latpath_t *path)
             len += strlen(dict_wordstr(ps_search_dict(search), p->node->basewid)) + 1;
     }
 
+    if (len == 0) {
+	return NULL;
+    }
+
     /* Backtrace again to construct hypothesis string. */
     hyp = ckd_calloc(1, len);
     c = hyp + len - 1;

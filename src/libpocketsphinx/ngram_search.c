@@ -510,7 +510,12 @@ ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx)
     }
 
     ckd_free(base->hyp_str);
+    if (len == 0) {
+	base->hyp_str = NULL;
+	return base->hyp_str;
+    }
     base->hyp_str = ckd_calloc(1, len);
+
     bp = bpidx;
     c = base->hyp_str + len - 1;
     while (bp != NO_BP) {
