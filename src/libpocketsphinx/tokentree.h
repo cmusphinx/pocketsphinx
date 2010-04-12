@@ -104,4 +104,9 @@ int tokentree_prune(tokentree_t *tree, int32 maxcost);
  */
 int tokentree_prune_topn(tokentree_t *tree, int32 n);
 
+/**
+ * Reset tokentree, removing all history.
+ */
+int tokentree_clear(tokentree_t *tree);
+
 #endif /* __TOKENTREE_H__ */

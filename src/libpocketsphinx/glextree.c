@@ -83,7 +83,7 @@ glextree_add_node(glextree_t *tree, int pid, int nhmm)
 {
     glexnode_t *node = listelem_malloc(tree->node_alloc);
     node->hmms = ckd_calloc(nhmm, sizeof(*node->hmms));
-    node->kids = NULL;
+    node->down.kids = NULL;
     node->wid = -1;
     tree->nlexhmm += nhmm;
     ++tree->nlexnode;
@@ -113,6 +113,7 @@ glextree_add_single_phone_word(glextree_t *tree, glexroot_t *ciroot, int lc, int
         node = glextree_add_node(tree, ci, 1);
         hmm_init(tree->ctx, node->hmms, FALSE, ssid, ci);
         node->wid = w;
+        node->down.n_leaves = 1;
         /* Link it in. */
         link = listelem_malloc(tree->link_alloc);
         link->dest = node;
@@ -182,13 +183,13 @@ build_subtree_over_2phones(glextree_t *tree, glexlink_t **cur, int32 w)
         link->next = *cur;
         *cur = link;
         /* Now move down a level. */
-        cur = &node->kids;
+        cur = &node->down.kids;
     }
     else {
         /* Create a new node under cur and move down a level. */
         node = internal_node(tree, cur, ssid, dict_pron(tree->dict, w, pos));
         /* E_INFO("Created internal node %p for ssid %d\n", node, ssid); */
-        cur = &node->kids;
+        cur = &node->down.kids;
         /* Enter node in the internal hash table.  NOTE:
          * SphinxBase hash tables are a real pain and require
          * their keys to be externally allocated, so we
@@ -204,7 +205,7 @@ build_subtree_over_2phones(glextree_t *tree, glexlink_t **cur, int32 w)
     while (pos < dict_pronlen(tree->dict, w) - 1) {
         ssid = dict2pid_internal(tree->d2p, w, pos);
         node = internal_node(tree, cur, ssid, dict_pron(tree->dict, w, pos));
-        cur = &node->kids;
+        cur = &node->down.kids;
         ++pos;
     }
 
@@ -228,6 +229,7 @@ build_subtree_over_2phones(glextree_t *tree, glexlink_t **cur, int32 w)
                      dict_last_phone(tree->dict, w));
         }
         node->wid = w;
+        node->down.n_leaves = rssid->n_ssid;
         link = listelem_malloc(tree->link_alloc);
         link->dest = node;
         link->next = *cur;
@@ -278,6 +280,7 @@ build_subtree_2phones(glextree_t *tree, glexlink_t **cur, int32 w)
                  dict_last_phone(tree->dict, w));
     }
     node->wid = w;
+    node->down.n_leaves = rssid->n_ssid;
     link = listelem_malloc(tree->link_alloc);
     link->dest = node;
     link->next = *cur;
@@ -306,9 +309,9 @@ glextree_add_multi_phone_word(glextree_t *tree, glexroot_t *ciroot, int lc, int3
 
     /* For triphones we just need to treat 2-phone words separately. */
     if (dict_pronlen(tree->dict, w) == 2)
-        build_subtree_2phones(tree, &node->kids, w);
+        build_subtree_2phones(tree, &node->down.kids, w);
     else
-        build_subtree_over_2phones(tree, &node->kids, w);
+        build_subtree_over_2phones(tree, &node->down.kids, w);
 }
 
 void
@@ -442,7 +445,7 @@ glextree_has_word(glextree_t *tree, int32 wid)
         /* Now do second through penultimate phones. */
         node = link->dest;
         for (pos = 1; pos < dict_pronlen(tree->dict, wid) - 1; ++pos) {
-            for (link = node->kids; link; link = link->next) {
+            for (link = node->down.kids; link; link = link->next) {
                 if (hmm_nonmpx_ssid(link->dest->hmms)
                     == dict2pid_internal(tree->d2p, wid, pos)
                     && link->dest->wid == -1)
@@ -453,7 +456,7 @@ glextree_has_word(glextree_t *tree, int32 wid)
             node = link->dest;
         }
         /* Leaf node will have wid attached to it. */
-        for (link = node->kids; link; link = link->next)
+        for (link = node->down.kids; link; link = link->next)
             if (link->dest->wid == wid)
                 return TRUE;
         return FALSE;
@@ -486,5 +489,38 @@ glextree_free(glextree_t *tree)
     ckd_free(tree->d2p);
     ckd_free(tree->dict);
     ckd_free(tree);
+    return 0;
+}
+
+static void
+glexnode_clear(glexnode_t *node)
+{
+    if (node->wid != -1) {
+        long i;
+        for (i = 0; i < node->down.n_leaves; ++i)
+            hmm_clear(node->hmms + i);
+    }
+    else
+            hmm_clear(node->hmms);
+}
+
+int
+glextree_clear(glextree_t *tree)
+{
+    glexroot_t *lcroot, *ciroot, *rcroot;
+
+    /* Reset all root nodes (probably we want to keep them in a list
+     * to make this easier, or make this unnecessary in some way) */
+    for (lcroot = tree->root.down.kids; lcroot; lcroot = lcroot->sibs) {
+        for (ciroot = lcroot->down.kids; ciroot; ciroot = ciroot->sibs) {
+            for (rcroot = ciroot->down.kids; rcroot; rcroot = rcroot->sibs) {
+                glexlink_t *ptr;
+                for (ptr = rcroot->down.nodes; ptr; ptr = ptr->next) {
+                    glexnode_clear(ptr->dest);
+                }
+            }
+        }
+    }
+    /* Reset subtrees rooted at each first internal node. */
     return 0;
 }

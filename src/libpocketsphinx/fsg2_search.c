@@ -182,6 +182,8 @@ fsg2_search_reinit(ps_search_t *s, dict_t *dict, dict2pid_t *d2p)
                                  fsg2_search_wfilter, (void *)fs);
 
     /* Initialize token tree. */
+    tokentree_free(fs->toktree);
+    fs->toktree = tokentree_init();
 
     s->dict = dict;
     s->d2p = d2p;
@@ -189,8 +191,19 @@ fsg2_search_reinit(ps_search_t *s, dict_t *dict, dict2pid_t *d2p)
 }
 
 int
-fsg2_search_start(ps_search_t *search)
+fsg2_search_start(ps_search_t *s)
 {
+    fsg2_search_t *fs = (fsg2_search_t *)s;
+
+    /* Reset HMMs and tokens. */
+    glextree_clear(fs->lextree);
+    tokentree_clear(fs->toktree);
+
+    /* Reset score renormalization information. */
+
+    /* Follow epsilon transitions out of start state to populate
+     * initial active state list. */
+
     return 0;
 }
 

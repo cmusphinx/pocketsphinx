@@ -69,8 +69,11 @@ struct glexlink_s {
 struct glexnode_s {
     hmm_t *hmms;       /**< One or more HMMs (leaves have more, exact
                             number comes from dict2pid) */
-    glexlink_t *kids;  /**< Outgoing links from this node, NULL for leaves. */
-    int32 wid;         /**< Word information or miscellaneous data. */
+    union {
+        glexlink_t *kids;  /**< Outgoing links from this node. */
+        long n_leaves;     /**< Number of HMMs for leaf nodes. &*/
+    } down;
+    int32 wid;         /**< Word ID, -1 for non-leaf nodes. */
 };
 
 
@@ -165,5 +168,10 @@ glextree_t *glextree_retain(glextree_t *tree);
  * Release a pointer to a lexicon tree.
  */
 int glextree_free(glextree_t *tree);
+
+/**
+ * Reset scores and histories for lexicon tree
+ */
+int glextree_clear(glextree_t *tree);
 
 #endif /* __GLEXTREE_H__ */

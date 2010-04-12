@@ -68,6 +68,7 @@ tokentree_free(tokentree_t *tree)
     if (--tree->refcount > 0)
         return tree->refcount;
     listelem_alloc_free(tree->token_alloc);
+    heap_destroy(tree->leaves);
     ckd_free(tree);
     return 0;
 }
@@ -121,5 +122,15 @@ tokentree_prune_topn(tokentree_t *tree, int32 n)
     }
     heap_destroy(tree->leaves);
     tree->leaves = newheap;
+    return 0;
+}
+
+int
+tokentree_clear(tokentree_t *tree)
+{
+    listelem_alloc_free(tree->token_alloc);
+    heap_destroy(tree->leaves);
+    tree->token_alloc = listelem_alloc_init(sizeof(token_t));
+    tree->leaves = heap_new();
     return 0;
 }
