@@ -504,10 +504,24 @@ glexnode_clear(glexnode_t *node)
             hmm_clear(node->hmms);
 }
 
+static void
+glexnode_clear_subtree(glexnode_t *node)
+{
+    glexlink_t *link;
+
+    glexnode_clear(node);
+
+    if (node->wid != -1) /* leaf node. */
+        return;
+    for (link = node->down.kids; link; link = link->next)
+        glexnode_clear_subtree(link->dest);
+}
+
 int
 glextree_clear(glextree_t *tree)
 {
     glexroot_t *lcroot, *ciroot, *rcroot;
+    hash_iter_t *itor;
 
     /* Reset all root nodes (probably we want to keep them in a list
      * to make this easier, or make this unnecessary in some way) */
@@ -521,6 +535,17 @@ glextree_clear(glextree_t *tree)
             }
         }
     }
+
+    /* Reset internal leaf nodes. */
+    for (itor = hash_table_iter(tree->internal_leaf); itor;
+         itor = hash_table_iter_next(itor)) {
+        glexnode_clear((glexnode_t *)hash_entry_val(itor->ent));
+    }
+
     /* Reset subtrees rooted at each first internal node. */
+    for (itor = hash_table_iter(tree->internal); itor;
+         itor = hash_table_iter_next(itor)) {
+        glexnode_clear_subtree((glexnode_t *)hash_entry_val(itor->ent));
+    }
     return 0;
 }
