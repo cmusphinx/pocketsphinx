@@ -53,7 +53,7 @@ dnl
 use_python=true
 PYTHON=python
 AC_ARG_WITH(python,
-	AC_HELP_STRING([--without-python],
+	AS_HELP_STRING([--without-python],
 		       [Disable Python extension]),[
 if test x$withval = xno; then
    use_python=false
