@@ -479,7 +479,7 @@ write_ctm(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int32 f
          * requires s3kr3t h34d3rz...) */
         w = ps_seg_word(itor);
         wid = dict_wordid(ps->dict, w);
-        if (dict_real_word(ps->dict, wid)) {
+        if (wid >= 0 && dict_real_word(ps->dict, wid)) {
             prob = ps_seg_prob(itor, NULL, NULL, NULL);
             ps_seg_frames(itor, &sf, &ef);
         

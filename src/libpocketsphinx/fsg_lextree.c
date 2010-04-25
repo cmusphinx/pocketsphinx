@@ -369,7 +369,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
     wid = fsg_link_wid(fsglink);
     assert(wid >= 0);           /* Cannot be a null transition */
     dictwid = dict_wordid(lextree->dict,
-                            fsg_model_word_str(lextree->fsg, wid));
+                          fsg_model_word_str(lextree->fsg, wid));
     pronlen = dict_pronlen(lextree->dict, dictwid);
     assert(pronlen >= 1);
 

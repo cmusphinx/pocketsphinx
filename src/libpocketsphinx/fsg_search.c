@@ -639,7 +639,7 @@ fsg_search_pnode_exit(fsg_search_t *fsgs, fsg_pnode_t * pnode)
         /* FIXME: This might be slow due to repeated calls to dict_to_id(). */
         || (dict_is_single_phone(ps_search_dict(fsgs),
                                    dict_wordid(ps_search_dict(fsgs),
-                                                 fsg_model_word_str(fsgs->fsg, wid))))) {
+                                               fsg_model_word_str(fsgs->fsg, wid))))) {
         /* Create a dummy context structure that applies to all right contexts */
         fsg_pnode_add_all_ctxt(&ctxt);
 
@@ -1121,6 +1121,7 @@ char const *
 fsg_search_hyp(ps_search_t *search, int32 *out_score)
 {
     fsg_search_t *fsgs = (fsg_search_t *)search;
+    dict_t *dict = ps_search_dict(search);
     char *c;
     size_t len;
     int bp, bpidx;
@@ -1148,13 +1149,17 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score)
     while (bp > 0) {
         fsg_hist_entry_t *hist_entry = fsg_history_entry_get(fsgs->history, bp);
         fsg_link_t *fl = fsg_hist_entry_fsglink(hist_entry);
+        char const *baseword;
         int32 wid;
 
         bp = fsg_hist_entry_pred(hist_entry);
         wid = fsg_link_wid(fl);
         if (wid < 0 || fsg_model_is_filler(fsgs->fsg, wid))
             continue;
-        len += strlen(fsg_model_word_str(fsgs->fsg, wid)) + 1;
+        baseword = dict_basestr(dict,
+                                dict_wordid(dict,
+                                            fsg_model_word_str(fsgs->fsg, wid)));
+        len += strlen(baseword) + 1;
     }
     
     ckd_free(search->hyp_str);
@@ -1169,15 +1174,19 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score)
     while (bp > 0) {
         fsg_hist_entry_t *hist_entry = fsg_history_entry_get(fsgs->history, bp);
         fsg_link_t *fl = fsg_hist_entry_fsglink(hist_entry);
+        char const *baseword;
         int32 wid;
 
         bp = fsg_hist_entry_pred(hist_entry);
         wid = fsg_link_wid(fl);
         if (wid < 0 || fsg_model_is_filler(fsgs->fsg, wid))
             continue;
-        len = strlen(fsg_model_word_str(fsgs->fsg, wid));
+        baseword = dict_basestr(dict,
+                                dict_wordid(dict,
+                                            fsg_model_word_str(fsgs->fsg, wid)));
+        len = strlen(baseword);
         c -= len;
-        memcpy(c, fsg_model_word_str(fsgs->fsg, wid), len);
+        memcpy(c, baseword, len);
         if (c > search->hyp_str) {
             --c;
             *c = ' ';
@@ -1645,7 +1654,7 @@ fsg_search_lattice(ps_search_t *search)
      */
     for (node = dag->nodes; node; node = node->next) {
         node->wid = dict_wordid(dag->search->dict,
-                                  fsg_model_word_str(fsg, node->wid));
+                                fsg_model_word_str(fsg, node->wid));
         node->basewid = dict_basewid(dag->search->dict, node->wid);
     }
 
