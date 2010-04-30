@@ -199,8 +199,10 @@ dict_read(FILE * fp, dict_t * d)
                 E_ERROR
                     ("Line %d: dict_add_word (%s) failed (duplicate?); ignored\n",
                      lineno, wptr[0]);
-            stralloc += strlen(d->word[w].word);
-            phnalloc += d->word[w].pronlen * sizeof(s3cipid_t);
+            else {
+                stralloc += strlen(d->word[w].word);
+                phnalloc += d->word[w].pronlen * sizeof(s3cipid_t);
+            }
         }
     }
     E_INFO("Allocated %d KiB for strings, %d KiB for phones\n",
