@@ -255,6 +255,7 @@ process_mllrctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
         return -1;
     }
 
+    E_INFO("Using MLLR: %s\n", file);
     ckd_free(infile);
     return 0;
 }
@@ -295,6 +296,7 @@ process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
     ckd_free(lastfile);
     lastfile = ckd_salloc(file);
 
+    E_INFO("Using FSG: %s\n", lastfile);
     fsg_set_add(fsgset, lastfile, fsg);
     fsg_set_select(fsgset, lastfile);
 
@@ -311,6 +313,7 @@ process_lmnamectl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *lmname)
 
     if (lmname == NULL)
         return 0;
+    E_INFO("Using language model: %s\n", lmname);
     if (ngram_model_set_select(lmset, lmname) == NULL) {
         E_ERROR("No such language model: %s\n", lmname);
         return -1;

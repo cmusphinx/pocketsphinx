@@ -1363,6 +1363,7 @@ new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid, int32 a
 
         node->next = dag->nodes;
         dag->nodes = node;
+        ++dag->n_nodes;
     }
 
     return node;

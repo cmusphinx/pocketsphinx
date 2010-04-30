@@ -999,7 +999,6 @@ tst_search_lattice(ps_search_t *search)
     /* Min. endframes value that a node must persist for it to be not ignored */
     min_ef_range = cmd_ln_int32_r(ps_search_config(search), "-min_endfr");
 
-    n_node = 0;
     sf = 0;
     for (i = 0; i < vh->n_entry; i++) { /* This range includes the dummy <s> and </s> entries */
         ps_latnode_t *dn;
@@ -1044,7 +1043,7 @@ tst_search_lattice(ps_search_t *search)
             dn->fef = ef;
             dn->lef = ef;
             dn->id = -1;     /* Initially all invalid, selected ones validated below */
-            ++n_node;
+            ++dag->n_nodes;
 
             sfwid[sf] = glist_add_ptr(sfwid[sf], (void *) dn);
         }
@@ -1157,8 +1156,10 @@ tst_search_lattice(ps_search_t *search)
             ps_latnode_t *dn = (ps_latnode_t *) gnode_ptr(gn);
             glist_free((glist_t) dn->info.velist);
             dn->info.velist = NULL;
-            if (dn->id == -1) /* If pruned, free the node too */
+            if (dn->id == -1) { /* If pruned, free the node too */
                 listelem_free(dag->latnode_alloc, dn);
+                --dag->n_nodes;
+            }
         }
         glist_free(sfwid[f]);
     }
