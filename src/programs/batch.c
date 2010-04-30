@@ -592,7 +592,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                 ckd_free(lmline);
                 goto done;
             }
-            lmname = string_trim(lmname, STRING_BOTH);
+            lmname = string_trim(lmline, STRING_BOTH);
         }
         if (fsgfh) {
             fsgline = fread_line(fsgfh, &len);
