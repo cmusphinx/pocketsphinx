@@ -1015,6 +1015,7 @@ create_dag_nodes(ngram_search_t *ngs, ps_lattice_t *dag)
 
             node->next = dag->nodes;
             dag->nodes = node;
+            ++dag->n_nodes;
         }
     }
 }
@@ -1109,9 +1110,11 @@ ngram_search_lattice(ps_search_t *search)
     ps_latnode_t *node, *from, *to;
     ngram_search_t *ngs;
     ps_lattice_t *dag;
+    int min_endfr;
     float lwf;
 
     ngs = (ngram_search_t *)search;
+    min_endfr = cmd_ln_int32_r(ps_search_config(search), "-min_endfr");
 
     /* If the best score is WORST_SCORE or worse, there is no way to
      * make a lattice. */
@@ -1162,6 +1165,11 @@ ngram_search_lattice(ps_search_t *search)
             lef = ngs->bp_table[from->lef].frame;
 
             if ((to->sf <= ef) || (to->sf > lef + 1))
+                continue;
+
+            /* Prune nodes with too few endpoints - heuristic
+               borrowed from Sphinx3 */
+            if (lef - ef < min_endfr)
                 continue;
 
             /* Find bptable entry for "from" that exactly precedes "to" */
