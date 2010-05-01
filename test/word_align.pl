@@ -130,7 +130,7 @@ sub s3_magic_norm{
     my ($word)=@_;
 
     # Remove line endings
-    chomp  $word;
+    $word =~ s/\s+$//;
     # Normalize case
     $word = uc $word;   
     # Remove filler words and context cues
