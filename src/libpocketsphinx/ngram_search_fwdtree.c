@@ -877,6 +877,8 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
     /* If best LM score and bp for candidate known use it, else sort cands by startfrm */
     E_DEBUG(3, ("n_lastphn_cand %d\n", ngs->n_lastphn_cand));
     for (i = 0, candp = ngs->lastphn_cand; i < ngs->n_lastphn_cand; i++, candp++) {
+        int32 start_score;
+
         /* This can happen if recognition fails. */
         if (candp->bp == -1)
             continue;
@@ -884,9 +886,10 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
         bpe = &(ngs->bp_table[candp->bp]);
 
         /* Subtract starting score for candidate, leave it with only word score */
-        candp->score -=
-            ngram_search_exit_score
+        start_score = ngram_search_exit_score
             (ngs, bpe, dict_first_phone(ps_search_dict(ngs), candp->wid));
+        assert(start_score BETTER_THAN WORST_SCORE);
+        candp->score -= start_score;
         E_DEBUG(4, ("candp->score %d\n", candp->score));
 
         /*
@@ -953,10 +956,11 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
                 dscr = 
                     ngram_search_exit_score
                     (ngs, bpe, dict_first_phone(ps_search_dict(ngs), candp->wid));
-                dscr += ngram_tg_score(ngs->lmset,
-                                       dict_basewid(ps_search_dict(ngs), candp->wid),
-                                       bpe->real_wid,
-                                       bpe->prev_real_wid, &n_used);
+                if (dscr != WORST_SCORE)
+                    dscr += ngram_tg_score(ngs->lmset,
+                                           dict_basewid(ps_search_dict(ngs), candp->wid),
+                                           bpe->real_wid,
+                                           bpe->prev_real_wid, &n_used);
 
                 if (dscr BETTER_THAN ngs->last_ltrans[candp->wid].dscr) {
                     ngs->last_ltrans[candp->wid].dscr = dscr;
@@ -1319,11 +1323,14 @@ word_transition(ngram_search_t *ngs, int frame_idx)
                 (ngs, bpe, dict_first_phone(dict, w));
             E_DEBUG(4, ("initial newscore for %s: %d\n",
                         dict_wordstr(dict, w), newscore));
-            newscore += ngram_tg_score(ngs->lmset,
-                                       dict_basewid(dict, w),
-                                       bpe->real_wid,
-                                       bpe->prev_real_wid, &n_used);
+            if (newscore != WORST_SCORE)
+                newscore += ngram_tg_score(ngs->lmset,
+                                           dict_basewid(dict, w),
+                                           bpe->real_wid,
+                                           bpe->prev_real_wid, &n_used);
 
+            /* FIXME: Not sure how WORST_SCORE could be better, but it
+             * apparently happens. */
             if (newscore BETTER_THAN ngs->last_ltrans[w].dscr) {
                 ngs->last_ltrans[w].dscr = newscore;
                 ngs->last_ltrans[w].bp = bp;
