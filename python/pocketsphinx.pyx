@@ -252,6 +252,7 @@ cdef class Lattice:
         if ps and latfile:
             decoder = ps
             self.dag = ps_lattice_read(decoder.ps, latfile)
+            self.n_frames = ps_lattice_n_frames(self.dag)
             if self.dag == NULL:
                 raise RuntimeError, "Failed to read lattice from %s" % latfile
         if boxed: self.set_boxed(boxed)
