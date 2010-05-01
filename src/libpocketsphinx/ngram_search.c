@@ -1197,7 +1197,7 @@ ngram_search_lattice(ps_search_t *search)
                 score = ascr;
             /* Adjust the arc score to match the correct triphone. */
             else
-                score = score - from_bpe->score + ascr;
+                score = ascr + (score - from_bpe->score);
             if (score BETTER_THAN 0) {
                 /* Scores must be negative, or Bad Things will happen.
                    In general, they are, except in corner cases
