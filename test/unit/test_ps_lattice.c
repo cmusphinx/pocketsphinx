@@ -85,7 +85,7 @@ main(int argc, char *argv[])
 				"-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
 				"-dict", MODELDIR "/lm/en_US/cmu07a.dic",
 				"-fwdtree", "yes",
-				"-fwdflat", "yes",
+				"-fwdflat", "no",
 				"-bestpath", "no",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
@@ -109,7 +109,14 @@ main(int argc, char *argv[])
 	score = ps_lattice_posterior(dag, ps_get_lmset(ps), 1.0/15.0);
 	printf("P(S|O) = %d\n", score);
 	test_nodes_and_stuff(dag);
-
+	ps_lattice_free(dag);
 	ps_free(ps);
+
+	/* Now test standalone lattices. */
+	dag = ps_lattice_read(NULL, "goforward.lat");
+	TEST_ASSERT(dag);
+	test_nodes_and_stuff(dag);
+	ps_lattice_free(dag);
+	
 	return 0;
 }

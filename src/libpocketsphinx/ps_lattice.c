@@ -110,7 +110,7 @@ ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
     /* Bypass filler nodes */
     for (node = dag->nodes; node; node = node->next) {
         latlink_list_t *revlink;
-        if (node == dag->end || !dict_filler_word(ps_search_dict(dag->search), node->basewid))
+        if (node == dag->end || !dict_filler_word(dag->dict, node->basewid))
             continue;
 
         /* Replace each link entering filler node with links to all its successors */
@@ -118,7 +118,7 @@ ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
             latlink_list_t *forlink;
             ps_latlink_t *rlink = revlink->link;
 
-            score = (node->basewid == ps_search_silence_wid(dag->search)) ? silpen : fillpen;
+            score = (node->basewid == dag->silence) ? silpen : fillpen;
             score += rlink->ascr;
             /*
              * Make links from predecessor of filler (from) to successors of filler.
@@ -128,7 +128,7 @@ ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
             for (forlink = node->exits; forlink; forlink = forlink->next) {
                 ps_latlink_t *flink = forlink->link;
                 if (flink->to && rlink->from &&
-                    !dict_filler_word(ps_search_dict(dag->search), flink->to->basewid)) {
+                    !dict_filler_word(dag->dict, flink->to->basewid)) {
                     ps_lattice_link(dag, rlink->from, flink->to,
                                     score + flink->ascr, flink->ef);
                 }
@@ -259,7 +259,7 @@ ps_lattice_write(ps_lattice_t *dag, char const *filename)
     for (i = 0, d = dag->nodes; d; d = d->next, i++) {
         d->id = i;
         fprintf(fp, "%d %s %d %d %d\n",
-                i, dict_wordstr(ps_search_dict(dag->search), d->wid),
+                i, dict_wordstr(dag->dict, d->wid),
                 d->sf, d->fef, d->lef);
     }
     fprintf(fp, "#\n");
@@ -275,9 +275,12 @@ ps_lattice_write(ps_lattice_t *dag, char const *filename)
     fprintf(fp, "Edges (FROM-NODEID TO-NODEID ASCORE)\n");
     for (d = dag->nodes; d; d = d->next) {
         latlink_list_t *l;
-        for (l = d->exits; l; l = l->next)
+        for (l = d->exits; l; l = l->next) {
+            if (l->link->ascr WORSE_THAN WORST_SCORE || l->link->ascr BETTER_THAN 0)
+                continue;
             fprintf(fp, "%d %d %d\n",
                     d->id, l->link->to->id, l->link->ascr);
+        }
     }
     fprintf(fp, "End\n");
     fclose(fp);
@@ -309,6 +312,8 @@ ps_lattice_write_htk(ps_lattice_t *dag, char const *filename)
         for (l = d->exits; l; l = l->next) {
             if (l->link->to == NULL || !l->link->to->reachable)
                 continue;
+            if (l->link->ascr WORSE_THAN WORST_SCORE || l->link->ascr BETTER_THAN 0)
+                continue;
             ++n_links;
         }
         ++n_nodes;
@@ -327,8 +332,8 @@ ps_lattice_write_htk(ps_lattice_t *dag, char const *filename)
         if (!d->reachable)
             continue;
         fprintf(fp, "I=%d\tt=%.2f\tW=%s\n",
-                d->id, (double)d->sf / cmd_ln_int32_r(dag->search->config, "-frate"),
-                dict_wordstr(ps_search_dict(dag->search), d->wid));
+                d->id, (double)d->sf / dag->frate,
+                dict_wordstr(dag->dict, d->wid));
     }
     fprintf(fp, "#\n# Link definitions\n#\n");
     for (j = 0, d = dag->nodes; d; d = d->next) {
@@ -337,6 +342,8 @@ ps_lattice_write_htk(ps_lattice_t *dag, char const *filename)
             continue;
         for (l = d->exits; l; l = l->next) {
             if (l->link->to == NULL || !l->link->to->reachable)
+                continue;
+            if (l->link->ascr WORSE_THAN WORST_SCORE || l->link->ascr BETTER_THAN 0)
                 continue;
             fprintf(fp, "J=%d\tS=%d\tE=%d\ta=%f\tp=%g\n", j++,
                     d->id, l->link->to->id,
@@ -403,8 +410,19 @@ ps_lattice_read(ps_decoder_t *ps,
     int32 pip, silpen, fillpen;
 
     dag = ckd_calloc(1, sizeof(*dag));
-    dag->search = ps->search;
-    dag->lmath = logmath_retain(ps->lmath);
+
+    if (ps) {
+        dag->search = ps->search;
+        dag->dict = dict_retain(ps->dict);
+        dag->lmath = logmath_retain(ps->lmath);
+        dag->frate = cmd_ln_int32_r(dag->search->config, "-frate");
+    }
+    else {
+        dag->dict = dict_init(NULL, NULL);
+        dag->lmath = logmath_init(1.0001, 0, FALSE);
+        dag->frate = 100;
+    }
+    dag->silence = dict_silwid(dag->dict);
     dag->latnode_alloc = listelem_alloc_init(sizeof(ps_latnode_t));
     dag->latlink_alloc = listelem_alloc_init(sizeof(ps_latlink_t));
     dag->latlink_list_alloc = listelem_alloc_init(sizeof(latlink_list_t));
@@ -482,10 +500,21 @@ ps_lattice_read(ps_decoder_t *ps,
             goto load_error;
         }
 
-        w = dict_wordid(ps->dict, wd);
+        w = dict_wordid(dag->dict, wd);
         if (w < 0) {
-            E_ERROR("Unknown word in line: %s\n", line->buf);
-            goto load_error;
+            if (dag->search == NULL) {
+                char *ww = ckd_salloc(wd);
+                if (dict_word2basestr(ww) != -1) {
+                    if (dict_wordid(dag->dict, ww) == BAD_S3WID)
+                        dict_add_word(dag->dict, ww, NULL, 0);
+                }
+                ckd_free(ww);
+                w = dict_add_word(dag->dict, wd, NULL, 0);
+            }
+            if (w < 0) {
+                E_ERROR("Unknown word in line: %s\n", line->buf);
+                goto load_error;
+            }
         }
 
         if (seqid != i) {
@@ -496,7 +525,7 @@ ps_lattice_read(ps_decoder_t *ps,
         d = listelem_malloc(dag->latnode_alloc);
         darray[i] = d;
         d->wid = w;
-        d->basewid = dict_basewid(ps->dict, w);
+        d->basewid = dict_basewid(dag->dict, w);
         d->id = seqid;
         d->sf = sf;
         d->fef = fef;
@@ -558,6 +587,8 @@ ps_lattice_read(ps_decoder_t *ps,
 
         if (sscanf(line->buf, "%d %d %d", &from, &to, &ascr) != 3)
             break;
+        if (ascr WORSE_THAN WORST_SCORE)
+            continue;
         pd = darray[from];
         d = darray[to];
         if (logratio != 1.0f)
@@ -575,8 +606,10 @@ ps_lattice_read(ps_decoder_t *ps,
     /* Minor hack: If the final node is a filler word and not </s>,
      * then set its base word ID to </s>, so that the language model
      * scores won't be screwed up. */
-    if (dict_filler_word(ps_search_dict(dag->search), dag->end->wid))
-        dag->end->basewid = ps_search_finish_wid(dag->search);
+    if (dict_filler_word(dag->dict, dag->end->wid))
+        dag->end->basewid = dag->search
+            ? ps_search_finish_wid(dag->search)
+            : dict_wordid(dag->dict, S3_FINISH_WORD);
 
     /* Mark reachable from dag->end */
     dag_mark_reachable(dag->end);
@@ -584,14 +617,18 @@ ps_lattice_read(ps_decoder_t *ps,
     /* Free nodes unreachable from dag->end and their links */
     ps_lattice_delete_unreachable(dag);
 
-    /* Build links around silence and filler words, since they do not
-     * exist in the language model. */
-    pip = logmath_log(dag->lmath, cmd_ln_float32_r(ps->config, "-pip"));
-    silpen = pip + logmath_log(dag->lmath,
-                               cmd_ln_float32_r(ps->config, "-silprob"));
-    fillpen = pip + logmath_log(dag->lmath,
-                                cmd_ln_float32_r(ps->config, "-fillprob"));
-    ps_lattice_bypass_fillers(dag, silpen, fillpen);
+    if (ps) {
+        /* Build links around silence and filler words, since they do
+         * not exist in the language model.  FIXME: This is
+         * potentially buggy, as we already do this before outputing
+         * lattices. */
+        pip = logmath_log(dag->lmath, cmd_ln_float32_r(ps->config, "-pip"));
+        silpen = pip + logmath_log(dag->lmath,
+                                   cmd_ln_float32_r(ps->config, "-silprob"));
+        fillpen = pip + logmath_log(dag->lmath,
+                                    cmd_ln_float32_r(ps->config, "-fillprob"));
+        ps_lattice_bypass_fillers(dag, silpen, fillpen);
+    }
 
     return dag;
 
@@ -616,7 +653,10 @@ ps_lattice_init_search(ps_search_t *search, int n_frame)
 
     dag = ckd_calloc(1, sizeof(*dag));
     dag->search = search;
+    dag->dict = dict_retain(search->dict);
     dag->lmath = logmath_retain(search->acmod->lmath);
+    dag->frate = cmd_ln_int32_r(dag->search->config, "-frate");
+    dag->silence = dict_silwid(dag->dict);
     dag->n_frames = n_frame;
     dag->latnode_alloc = listelem_alloc_init(sizeof(ps_latnode_t));
     dag->latlink_alloc = listelem_alloc_init(sizeof(ps_latlink_t));
@@ -689,13 +729,13 @@ ps_latnode_times(ps_latnode_t *node, int16 *out_fef, int16 *out_lef)
 char const *
 ps_latnode_word(ps_lattice_t *dag, ps_latnode_t *node)
 {
-    return dict_wordstr(ps_search_dict(dag->search), node->wid);
+    return dict_wordstr(dag->dict, node->wid);
 }
 
 char const *
 ps_latnode_baseword(ps_lattice_t *dag, ps_latnode_t *node)
 {
-    return dict_wordstr(ps_search_dict(dag->search), node->basewid);
+    return dict_wordstr(dag->dict, node->basewid);
 }
 
 int32
@@ -771,7 +811,7 @@ ps_latlink_word(ps_lattice_t *dag, ps_latlink_t *link)
 {
     if (link->from == NULL)
         return NULL;
-    return dict_wordstr(ps_search_dict(dag->search), link->from->wid);
+    return dict_wordstr(dag->dict, link->from->wid);
 }
 
 char const *
@@ -779,7 +819,7 @@ ps_latlink_baseword(ps_lattice_t *dag, ps_latlink_t *link)
 {
     if (link->from == NULL)
         return NULL;
-    return dict_wordstr(ps_search_dict(dag->search), link->from->basewid);
+    return dict_wordstr(dag->dict, link->from->basewid);
 }
 
 ps_latlink_t *
@@ -806,31 +846,31 @@ ps_lattice_hyp(ps_lattice_t *dag, ps_latlink_t *link)
     /* Backtrace once to get hypothesis length. */
     len = 0;
     /* FIXME: There may not be a search, but actually there should be a dict. */
-    if (dict_real_word(ps_search_dict(dag->search), link->to->basewid))
-        len += strlen(dict_wordstr(ps_search_dict(dag->search), link->to->basewid)) + 1;
+    if (dict_real_word(dag->dict, link->to->basewid))
+        len += strlen(dict_wordstr(dag->dict, link->to->basewid)) + 1;
     for (l = link; l; l = l->best_prev) {
-        if (dict_real_word(ps_search_dict(dag->search), l->from->basewid))
-            len += strlen(dict_wordstr(ps_search_dict(dag->search), l->from->basewid)) + 1;
+        if (dict_real_word(dag->dict, l->from->basewid))
+            len += strlen(dict_wordstr(dag->dict, l->from->basewid)) + 1;
     }
 
     /* Backtrace again to construct hypothesis string. */
     ckd_free(dag->hyp_str);
     dag->hyp_str = ckd_calloc(1, len+1); /* extra one incase the hyp is empty */
     c = dag->hyp_str + len - 1;
-    if (dict_real_word(ps_search_dict(dag->search), link->to->basewid)) {
-        len = strlen(dict_wordstr(ps_search_dict(dag->search), link->to->basewid));
+    if (dict_real_word(dag->dict, link->to->basewid)) {
+        len = strlen(dict_wordstr(dag->dict, link->to->basewid));
         c -= len;
-        memcpy(c, dict_wordstr(ps_search_dict(dag->search), link->to->basewid), len);
+        memcpy(c, dict_wordstr(dag->dict, link->to->basewid), len);
         if (c > dag->hyp_str) {
             --c;
             *c = ' ';
         }
     }
     for (l = link; l; l = l->best_prev) {
-        if (dict_real_word(ps_search_dict(dag->search), l->from->basewid)) {
-            len = strlen(dict_wordstr(ps_search_dict(dag->search), l->from->basewid));
+        if (dict_real_word(dag->dict, l->from->basewid)) {
+            len = strlen(dict_wordstr(dag->dict, l->from->basewid));
             c -= len;
-            memcpy(c, dict_wordstr(ps_search_dict(dag->search), l->from->basewid), len);
+            memcpy(c, dict_wordstr(dag->dict, l->from->basewid), len);
             if (c > dag->hyp_str) {
                 --c;
                 *c = ' ';

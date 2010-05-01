@@ -90,12 +90,18 @@ typedef struct {
 
 
 /**
- * Initialize with given main and filler dictionary files.  fillerfile can be NULL
- * (but external modules might impose their own requirements).
+ * Initialize a new dictionary.
+ *
+ * If config and mdef are supplied, then the dictionary will be read
+ * from the files specified by the -dict and -fdict options in config,
+ * with case sensitivity determined by the -dictcase option.
+ *
+ * Otherwise an empty case-sensitive dictionary will be created.
+ *
  * Return ptr to dict_t if successful, NULL otherwise.
  */
-dict_t *dict_init(cmd_ln_t *config, /**< Must contain -dict, -fdict, -dictcase */
-                  bin_mdef_t *mdef	/**< For looking up CI phone IDs */
+dict_t *dict_init(cmd_ln_t *config, /**< Configuration (-dict, -fdict, -dictcase) or NULL */
+                  bin_mdef_t *mdef  /**< For looking up CI phone IDs (or NULL) */
     );
 
 /**

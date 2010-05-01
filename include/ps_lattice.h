@@ -86,7 +86,7 @@ struct ps_decoder_s;
 /**
  * Read a lattice from a file on disk.
  *
- * @param ps Decoder to use for processing this lattice.
+ * @param ps Decoder to use for processing this lattice, or NULL.
  * @param file Path to lattice file.
  * @return Newly created lattice, or NULL for failure.
  */
