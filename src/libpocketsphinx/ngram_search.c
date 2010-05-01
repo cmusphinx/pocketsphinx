@@ -605,15 +605,29 @@ ngram_search_exit_score(ngram_search_t *ngs, bptbl_t *pbe, int rcphone)
      * right context table and the bscore_stack. */
     if (pbe->last2_phone == -1) {
         /* No right context for single phone predecessor words. */
+        assert(ngs->bscore_stack[pbe->s_idx] != WORST_SCORE);
         return ngs->bscore_stack[pbe->s_idx];
     }
     else {
         xwdssid_t *rssid;
+        int32 xscore;
+
         /* Find the index for the last diphone of the previous word +
          * the first phone of the current word. */
         rssid = dict2pid_rssid(ps_search_dict2pid(ngs),
                                pbe->last_phone, pbe->last2_phone);
-        return ngs->bscore_stack[pbe->s_idx + rssid->cimap[rcphone]];
+        /* This may be WORST_SCORE, which means that there was no exit
+         * with rcphone as right context.  In that case, pick the best
+         * one (but, in fact, when building lattices, this really
+         * means that no arc should be created). */
+        xscore = ngs->bscore_stack[pbe->s_idx + rssid->cimap[rcphone]];
+        if (xscore == WORST_SCORE) {
+            int i;
+            for (i = 0; i < rssid->n_ssid; ++i)
+                if (ngs->bscore_stack[pbe->s_idx + i] BETTER_THAN xscore)
+                    xscore = ngs->bscore_stack[pbe->s_idx + i];
+        }
+        return xscore;
     }
 }
 
@@ -638,13 +652,7 @@ ngram_compute_seg_score(ngram_search_t *ngs, bptbl_t *be, float32 lwf,
     pbe = ngs->bp_table + be->bp;
     start_score = ngram_search_exit_score(ngs, pbe,
                                  dict_first_phone(ps_search_dict(ngs),be->wid));
-
-    /* FIXME: WORST_SCORE shouldn't propagate, but sometimes it
-       does.  We cannot allow it to go any further because that
-       will result in positive acoustic scores.  Tracing the
-       source of this may be a bit involved. */
-    if (start_score == WORST_SCORE)
-        start_score = 0;
+    assert(start_score != WORST_SCORE);
 
     /* FIXME: These result in positive acoustic scores when filler
        words have non-filler pronunciations.  That whole business
@@ -1189,9 +1197,9 @@ ngram_search_lattice(ps_search_t *search)
             ngram_compute_seg_score(ngs, bp_ptr, lwf,
                                     &ascr, &lscr);
             /* Remove context score calculated above (FIXME: just don't calculate it...) */
-            score = (ngram_search_exit_score(ngs, bp_ptr,
-                                    dict_first_phone(ps_search_dict(ngs), to->wid))
-                     - bp_ptr->score + ascr);
+            score = ngram_search_exit_score(ngs, bp_ptr,
+                                            dict_first_phone(ps_search_dict(ngs), to->wid));
+            score = score - bp_ptr->score + ascr;
             if (score BETTER_THAN 0) {
                 /* Scores must be negative, or Bad Things will happen.
                    In general, they are, except in corner cases
