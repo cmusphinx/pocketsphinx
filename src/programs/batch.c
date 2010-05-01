@@ -146,6 +146,14 @@ static const arg_t ps_args_def[] = {
       ARG_STRING,
       NULL,
       "Directory for dumping word lattices" },
+    { "-outlatfmt",
+      ARG_STRING,
+      "s3",
+      "Format for dumping word lattices (s3 or htk)" },
+    { "-outlatext",
+      ARG_STRING,
+      ".lat",
+      "Filename extension for dumping word lattices" },
     { "-build_outdirs",
       ARG_BOOLEAN,
       "yes",
@@ -394,7 +402,8 @@ write_lattice(ps_decoder_t *ps, char const *latdir, char const *uttid)
         E_ERROR("Failed to obtain word lattice for utterance %s\n", uttid);
         return -1;
     }
-    outfile = string_join(latdir, "/", uttid, ".lat", NULL);
+    outfile = string_join(latdir, "/", uttid,
+                          cmd_ln_str_r(ps_get_config(ps), "-outlatext"), NULL);
     /* Build output directory structure if possible/requested (it is
      * by default). */
     if (cmd_ln_boolean_r(ps_get_config(ps), "-build_outdirs")) {
@@ -403,9 +412,17 @@ write_lattice(ps_decoder_t *ps, char const *latdir, char const *uttid)
         build_directory(dirname);
         ckd_free(dirname);
     }
-    if (ps_lattice_write(lat, outfile) < 0) {
-        E_ERROR("Failed to write lattice to %s\n", outfile);
-        return -1;
+    if (0 == strcmp("htk", cmd_ln_str_r(ps_get_config(ps), "-outlatfmt"))) {
+        if (ps_lattice_write_htk(lat, outfile) < 0) {
+            E_ERROR("Failed to write lattice to %s\n", outfile);
+            return -1;
+        }
+    }
+    else {
+        if (ps_lattice_write(lat, outfile) < 0) {
+            E_ERROR("Failed to write lattice to %s\n", outfile);
+            return -1;
+        }
     }
     return 0;
 }

@@ -123,6 +123,14 @@ POCKETSPHINX_EXPORT
 int ps_lattice_write(ps_lattice_t *dag, char const *filename);
 
 /**
+ * Write a lattice to disk in HTK format
+ *
+ * @return 0 for success, <0 on failure.
+ */
+POCKETSPHINX_EXPORT
+int ps_lattice_write_htk(ps_lattice_t *dag, char const *filename);
+
+/**
  * Get the log-math computation object for this lattice
  *
  * @return The log-math object for this lattice.  The lattice retains
