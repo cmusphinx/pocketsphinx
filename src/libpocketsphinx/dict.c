@@ -308,7 +308,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
         d->mdef = bin_mdef_retain(mdef);
 
     /* Create new hash table for word strings; case-insensitive word strings */
-    if (config && cmd_ln_exists(config, "-dictcase"))
+    if (config && cmd_ln_exists_r(config, "-dictcase"))
         d->nocase = cmd_ln_boolean_r(config, "-dictcase");
     d->ht = hash_table_new(d->max_words, d->nocase);
 
