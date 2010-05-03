@@ -1341,6 +1341,10 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     /* Now transition to in-LM single phone words */
     for (i = 0; i < ngs->n_1ph_LMwords; i++) {
         w = ngs->single_phone_wid[i];
+        /* Never transition into the start word (for one thing, it is
+           a non-event in the language model.) */
+        if (w == dict_startwid(ps_search_dict(ngs)))
+            continue;
         rhmm = (root_chan_t *) ngs->word_chan[w];
         newscore = ngs->last_ltrans[w].dscr + ngs->pip
             + phone_loop_search_score(pls, rhmm->ciphone);
@@ -1375,6 +1379,10 @@ word_transition(ngram_search_t *ngs, int frame_idx)
     }
     for (w = dict_filler_start(dict); w <= dict_filler_end(dict); w++) {
         if (w == ps_search_silence_wid(ngs))
+            continue;
+        /* Never transition into the start word (for one thing, it is
+           a non-event in the language model.) */
+        if (w == dict_startwid(ps_search_dict(ngs)))
             continue;
         rhmm = (root_chan_t *) ngs->word_chan[w];
         /* If this was not actually a single-phone word, rhmm will be NULL. */
