@@ -336,10 +336,16 @@ ps_lattice_write_htk(ps_lattice_t *dag, char const *filename)
             continue;
         if (c)
             altpron = atoi(c + 1);
+        word = dict_basestr(dag->dict, d->wid);
+        if (d->wid == dict_startwid(dag->dict))
+            word = "!SENT_START";
+        else if (d->wid == dict_finishwid(dag->dict))
+            word = "!SENT_END";
+        else if (dict_filler_word(dag->dict, d->wid))
+            word = "!NULL";
         fprintf(fp, "I=%d\tt=%.2f\tW=%s\tv=%d\n",
                 d->id, (double)d->sf / dag->frate,
-                dict_basestr(dag->dict, d->wid),
-                altpron);
+                word, altpron);
     }
     fprintf(fp, "#\n# Link definitions\n#\n");
     for (j = 0, d = dag->nodes; d; d = d->next) {
