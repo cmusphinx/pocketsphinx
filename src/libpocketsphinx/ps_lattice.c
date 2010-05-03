@@ -351,7 +351,6 @@ ps_lattice_write_htk(ps_lattice_t *dag, char const *filename)
                     logmath_exp(dag->lmath, l->link->alpha + l->link->beta - dag->norm));
         }
     }
-    fprintf(fp, "End\n");
     fclose(fp);
 
     return 0;
