@@ -136,6 +136,7 @@ cdef class Decoder:
 
 cdef class Lattice:
     cdef ps_lattice_t *dag
+    cdef read_dag(Lattice self, Decoder ps, latfile)
     cdef set_dag(Lattice self, ps_lattice_t *dag)
     cdef set_boxed(Lattice self, box)
     cdef readonly n_frames
