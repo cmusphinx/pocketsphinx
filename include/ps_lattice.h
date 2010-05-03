@@ -409,6 +409,31 @@ int32 ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
                            float32 ascale);
 
 /**
+ * Prune all links (and associated nodes) below a certain posterior probability.
+ *
+ * This function assumes that ps_lattice_posterior() has already been called.
+ *
+ * @param beam Minimum posterior probability for links. This is
+ *         expressed in the log-base used in the decoder.  To convert
+ *         from linear floating-point, use
+ *         logmath_log(ps_lattice_get_logmath(), prob).
+ * @return number of arcs removed.
+ */
+POCKETSPHINX_EXPORT
+int32 ps_lattice_posterior_prune(ps_lattice_t *dag, int32 beam);
+
+#ifdef NOT_IMPLEMENTED_YET
+/**
+ * Expand lattice using an N-gram language model.
+ *
+ * This function expands the lattice such that each node represents a
+ * unique N-gram history, and adds language model scores to the links.
+ */
+POCKETSPHINX_EXPORT
+int32 ps_lattice_ngram_expand(ps_lattice_t *dag, ngram_model_t *lm);
+#endif
+
+/**
  * Get the number of frames in the lattice.
  *
  * @param dag The lattice in question.

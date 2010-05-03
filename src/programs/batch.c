@@ -154,6 +154,10 @@ static const arg_t ps_args_def[] = {
       ARG_STRING,
       ".lat",
       "Filename extension for dumping word lattices" },
+    { "-outlatbeam",
+      ARG_FLOAT64,
+      "1e-5",
+      "Minimum posterior probability for output lattice nodes" },
     { "-build_outdirs",
       ARG_BOOLEAN,
       "yes",
@@ -396,23 +400,31 @@ static int
 write_lattice(ps_decoder_t *ps, char const *latdir, char const *uttid)
 {
     ps_lattice_t *lat;
+    logmath_t *lmath;
+    cmd_ln_t *config;
     char *outfile;
+    int32 beam;
 
     if ((lat = ps_get_lattice(ps)) == NULL) {
         E_ERROR("Failed to obtain word lattice for utterance %s\n", uttid);
         return -1;
     }
+    config = ps_get_config(ps);
     outfile = string_join(latdir, "/", uttid,
-                          cmd_ln_str_r(ps_get_config(ps), "-outlatext"), NULL);
+                          cmd_ln_str_r(config, "-outlatext"), NULL);
     /* Build output directory structure if possible/requested (it is
      * by default). */
-    if (cmd_ln_boolean_r(ps_get_config(ps), "-build_outdirs")) {
+    if (cmd_ln_boolean_r(config, "-build_outdirs")) {
         char *dirname = ckd_salloc(outfile);
         path2dirname(outfile, dirname);
         build_directory(dirname);
         ckd_free(dirname);
     }
-    if (0 == strcmp("htk", cmd_ln_str_r(ps_get_config(ps), "-outlatfmt"))) {
+    /* Prune lattice. */
+    lmath = ps_get_logmath(ps);
+    beam = logmath_log(lmath, cmd_ln_float64_r(config, "-outlatbeam"));
+    ps_lattice_posterior_prune(lat, beam);
+    if (0 == strcmp("htk", cmd_ln_str_r(config, "-outlatfmt"))) {
         if (ps_lattice_write_htk(lat, outfile) < 0) {
             E_ERROR("Failed to write lattice to %s\n", outfile);
             return -1;

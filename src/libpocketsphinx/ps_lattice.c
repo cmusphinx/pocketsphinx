@@ -1454,6 +1454,49 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
     return ps_lattice_joint(dag, bestend, ascale) - dag->norm;
 }
 
+int32
+ps_lattice_posterior_prune(ps_lattice_t *dag, int32 beam)
+{
+    ps_latlink_t *link;
+    int npruned = 0;
+
+    for (link = ps_lattice_traverse_edges(dag, dag->start, dag->end);
+         link; link = ps_lattice_traverse_next(dag, dag->end)) {
+        if (link->alpha + link->beta - dag->norm < beam) {
+            latlink_list_t *x, *tmp, *next;
+            tmp = NULL;
+            for (x = link->from->exits; x; x = next) {
+                next = x->next;
+                if (x->link == link) {
+                    listelem_free(dag->latlink_list_alloc, x);
+                }
+                else {
+                    x->next = tmp;
+                    tmp = x;
+                }
+            }
+            link->from->exits = tmp;
+            tmp = NULL;
+            for (x = link->to->entries; x; x = next) {
+                next = x->next;
+                if (x->link == link) {
+                    listelem_free(dag->latlink_list_alloc, x);
+                }
+                else {
+                    x->next = tmp;
+                    tmp = x;
+                }
+            }
+            link->to->entries = tmp;
+            listelem_free(dag->latlink_alloc, link);
+            ++npruned;
+        }
+    }
+    dag_mark_reachable(dag->end);
+    ps_lattice_delete_unreachable(dag);
+    return npruned;
+}
+
 
 /* Parameters to prune n-best alternatives search */
 #define MAX_PATHS	500     /* Max allowed active paths at any time */

@@ -100,6 +100,8 @@ main(int argc, char *argv[])
 	score = ps_lattice_posterior(dag, ps_get_lmset(ps), 1.0/15.0);
 	printf("P(S|O) = %d\n", score);
 	test_nodes_and_stuff(dag);
+	ps_lattice_posterior_prune(dag, logmath_log(ps_lattice_get_logmath(dag), 1e-2)); 
+	test_nodes_and_stuff(dag);
 
 	TEST_EQUAL(0, ps_lattice_write(dag, "goforward.lat"));
 
