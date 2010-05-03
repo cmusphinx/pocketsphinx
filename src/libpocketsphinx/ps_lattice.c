@@ -329,11 +329,17 @@ ps_lattice_write_htk(ps_lattice_t *dag, char const *filename)
     fprintf(fp, "N=%d\tL=%d\n", n_nodes, n_links);
     fprintf(fp, "#\n# Node definitions\n#\n");
     for (i = 0, d = dag->nodes; d; d = d->next) {
+        char const *word = dict_wordstr(dag->dict, d->wid);
+        char const *c = strrchr(word, '(');
+        int altpron = 1;
         if (!d->reachable)
             continue;
-        fprintf(fp, "I=%d\tt=%.2f\tW=%s\n",
+        if (c)
+            altpron = atoi(c + 1);
+        fprintf(fp, "I=%d\tt=%.2f\tW=%s\tv=%d\n",
                 d->id, (double)d->sf / dag->frate,
-                dict_wordstr(dag->dict, d->wid));
+                dict_basestr(dag->dict, d->wid),
+                altpron);
     }
     fprintf(fp, "#\n# Link definitions\n#\n");
     for (j = 0, d = dag->nodes; d; d = d->next) {
