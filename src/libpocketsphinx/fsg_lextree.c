@@ -113,7 +113,7 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
 
     for (s = 0; s < fsg->n_state; s++) {
         for (d = 0; d < fsg->n_state; d++) {
-            for (gn = fsg->trans[s][d]; gn; gn = gnode_next(gn)) {
+            for (gn = fsg_model_trans(fsg, s, d); gn; gn = gnode_next(gn)) {
                 int32 dictwid; /**< Dictionary (not FSG) word ID!! */
 
                 l = (fsg_link_t *) gnode_ptr(gn);
@@ -159,7 +159,7 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
      */
     for (s = 0; s < fsg->n_state; s++) {
         for (d = 0; d < fsg->n_state; d++) {
-            l = fsg->null_trans[s][d];
+            l = fsg_model_null_trans(fsg, s, d);
             if (l) {
                 /*
                  * lclist(d) |= lclist(s), because all the words ending up at s, can
