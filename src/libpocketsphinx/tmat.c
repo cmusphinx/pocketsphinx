@@ -209,7 +209,7 @@ tmat_init(char const *file_name, logmath_t *lmath, float64 tpfloor, int32 brepor
     t = (tmat_t *) ckd_calloc(1, sizeof(tmat_t));
 
     if ((fp = fopen(file_name, "rb")) == NULL)
-        E_FATAL_SYSTEM("Failed to open transition file '%s' for reading: %s\n", file_name, strerror(errno));
+        E_FATAL_SYSTEM("Failed to open transition file '%s' for reading", file_name);
 
     /* Read header, including argument-value info and 32-bit byteorder magic */
     if (bio_readhdr(fp, &argname, &argval, &byteswap) < 0)

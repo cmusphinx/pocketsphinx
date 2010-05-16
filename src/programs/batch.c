@@ -745,7 +745,7 @@ main(int32 argc, char *argv[])
         E_FATAL("-ctl argument not present, nothing to do in batch mode!\n");
     }
     if ((ctlfh = fopen(ctl, "r")) == NULL) {
-        E_FATAL_SYSTEM("Failed to open control file %s", ctl);
+        E_FATAL_SYSTEM("Failed to open control file '%s'", ctl);
     }
     ps = ps_init(config);
     if (ps == NULL) {

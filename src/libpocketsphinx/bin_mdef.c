@@ -420,8 +420,7 @@ bin_mdef_read(cmd_ln_t *config, const char *filename)
         fseek(fh, pos, SEEK_SET);
         m->ciname[0] = ckd_malloc(end - pos);
         if (fread(m->ciname[0], 1, end - pos, fh) != end - pos)
-            E_FATAL_SYSTEM("Failed to read %d bytes of data from %s\n",
-                           end - pos, filename);
+            E_FATAL("Failed to read %d bytes of data from %s\n", end - pos, filename);
     }
 
     for (i = 1; i < m->n_ciphone; ++i)

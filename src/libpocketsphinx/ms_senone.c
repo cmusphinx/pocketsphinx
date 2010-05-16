@@ -75,7 +75,7 @@ senone_mgau_map_read(senone_t * s, char const *file_name)
     E_INFO("Reading senone gauden-codebook map file: %s\n", file_name);
 
     if ((fp = fopen(file_name, "rb")) == NULL)
-        E_FATAL_SYSTEM("Failed to open map file '%s' for reading: %s\n", file_name, strerror(errno));
+        E_FATAL_SYSTEM("Failed to open map file '%s' for reading", file_name);
 
     /* Read header, including argument-value info and 32-bit byteorder magic */
     if (bio_readhdr(fp, &argname, &argval, &byteswap) < 0)
@@ -160,7 +160,7 @@ senone_mixw_read(senone_t * s, char const *file_name, logmath_t *lmath)
     E_INFO("Reading senone mixture weights: %s\n", file_name);
 
     if ((fp = fopen(file_name, "rb")) == NULL)
-        E_FATAL_SYSTEM("Failed to open mixture weights file '%s' for reading: %s\n", file_name, strerror(errno));
+        E_FATAL_SYSTEM("Failed to open mixture weights file '%s' for reading", file_name);
 
     /* Read header, including argument-value info and 32-bit byteorder magic */
     if (bio_readhdr(fp, &argname, &argval, &byteswap) < 0)
