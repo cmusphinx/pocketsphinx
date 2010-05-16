@@ -59,7 +59,7 @@ ps_mllr_read(char const *regmatfile)
     mllr->refcnt = 1;
 
     if ((fp = fopen(regmatfile, "r")) == NULL) {
-        E_ERROR_SYSTEM("fopen(%s,r) failed", regmatfile);
+        E_ERROR_SYSTEM("Failed to open MLLR file '%s' for reading: %s\n", regmatfile, strerror(errno));
         goto error_out;
     }
     else

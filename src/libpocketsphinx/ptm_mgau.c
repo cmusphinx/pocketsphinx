@@ -671,11 +671,11 @@ read_mixw(ptm_mgau_t * s, char const *file_name, double SmoothMin)
     E_INFO("Reading mixture weights file '%s'\n", file_name);
 
     if ((fp = fopen(file_name, "rb")) == NULL)
-        E_FATAL("fopen(%s,rb) failed\n", file_name);
+        E_FATAL("Failed to open mixture file '%s' for reading: %s\n", file_name, sterror(errno));
 
     /* Read header, including argument-value info and 32-bit byteorder magic */
     if (bio_readhdr(fp, &argname, &argval, &byteswap) < 0)
-        E_FATAL("bio_readhdr(%s) failed\n", file_name);
+        E_FATAL("Failed to read header from '%s'\n", file_name);
 
     /* Parse argument-value list */
     chksum_present = 0;

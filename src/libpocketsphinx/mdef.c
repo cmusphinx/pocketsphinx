@@ -522,7 +522,7 @@ mdef_init(char *mdeffile, int32 breport)
     m = (mdef_t *) ckd_calloc(1, sizeof(mdef_t));       /* freed in mdef_free */
 
     if ((fp = fopen(mdeffile, "r")) == NULL)
-        E_FATAL_SYSTEM("fopen(%s,r) failed\n", mdeffile);
+        E_FATAL_SYSTEM("Failed to open mdef file '%s' for reading: %s\n", mdeffile, strerror(errno));
 
     if (noncomment_line(buf, sizeof(buf), fp) < 0)
         E_FATAL("Empty file: %s\n", mdeffile);
