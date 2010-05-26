@@ -10,10 +10,20 @@ if BUILD_PYTHON
 all-local: pymod-build-stamp
 
 install-exec-local: pymod-build-stamp
-	$(PYTHON) setup.py install --prefix $(DESTDIR)$(prefix)
+# This is dumb, but setuptools screws everything up if you try to use --prefix
+	if [ "$(DESTDIR)" ]; then \
+		$(PYTHON) setup.py install --root $(DESTDIR); \
+	else \
+		$(PYTHON) setup.py install --root /; \
+	fi
 
 uninstall-local:
-	$(PYTHON) setup.py bogus_uninstall --prefix $(DESTDIR)$(prefix)
+# This is dumb, but setuptools screws everything up if you try to use --prefix
+	if [ "$(DESTDIR)" ]; then \
+		$(PYTHON) setup.py bogus_uninstall --root $(DESTDIR); \
+	else \
+		$(PYTHON) setup.py bogus_uninstall --root /; \
+	fi
 
 clean-local:
 	$(PYTHON) setup.py clean --all

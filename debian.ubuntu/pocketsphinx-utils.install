@@ -1,0 +1,6 @@
+usr/bin/pocketsphinx_batch
+usr/bin/pocketsphinx_continuous
+usr/bin/pocketsphinx_mdef_convert
+usr/share/man/man1/pocketsphinx_batch.1
+usr/share/man/man1/pocketsphinx_continuous.1
+usr/share/man/man1/pocketsphinx_mdef_convert.1

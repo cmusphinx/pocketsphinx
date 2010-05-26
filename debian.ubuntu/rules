@@ -1,7 +1,5 @@
 #!/usr/bin/make -f
 
-include /usr/share/dpatch/dpatch.make
-
 # These are used for cross-compiling and for saving the configure script
 # from having to guess our platform (since we know it already)
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
@@ -26,7 +24,7 @@ config.status: configure
 		--with-sphinxbase=auto CFLAGS="$(CFLAGS)"
 
 build: build-stamp
-build-stamp: patch-stamp config.status
+build-stamp: config.status
 	dh_testdir
 	$(MAKE)
 	$(RM) -r python/build
@@ -40,8 +38,7 @@ build-stamp: patch-stamp config.status
 	done
 	touch $@
 
-clean: clean1 unpatch
-clean1:
+clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp 

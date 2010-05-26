@@ -731,4 +731,9 @@ GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
                   "pocketsphinx",
                   "PocketSphinx plugin",
                   plugin_init, VERSION,
-                  "BSD", "PocketSphinx", "http://cmusphinx.sourceforge.net/")
+#if (GST_VERSION_MINOR == 10 && GST_VERSION_MICRO < 15) /* Nokia's bogus old GStreamer */
+                  "LGPL",
+#else
+                  "BSD",
+#endif
+                  "PocketSphinx", "http://cmusphinx.sourceforge.net/")
