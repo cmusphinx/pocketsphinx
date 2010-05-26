@@ -88,11 +88,9 @@ static void fsg_psubtree_dump(fsg_lextree_t *tree, fsg_pnode_t *alloc_head, FILE
 static void
 fsg_lextree_lc_rc(fsg_lextree_t *lextree)
 {
-    int32 s, d, i, j;
+    int32 s, i, j;
     int32 n_ci;
-    gnode_t *gn;
     fsg_model_t *fsg;
-    fsg_link_t *l;
     int32 silcipid;
     int32 len;
 
@@ -112,14 +110,36 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
            fsg->n_state * (n_ci + 1) * 2 / 1024);
 
     for (s = 0; s < fsg->n_state; s++) {
-        for (d = 0; d < fsg->n_state; d++) {
-            for (gn = fsg_model_trans(fsg, s, d); gn; gn = gnode_next(gn)) {
-                int32 dictwid; /**< Dictionary (not FSG) word ID!! */
-
-                l = (fsg_link_t *) gnode_ptr(gn);
-                assert(l->wid >= 0);
+        fsg_arciter_t *itor;
+        for (itor = fsg_model_arcs(fsg, s); itor; itor = fsg_arciter_next(itor)) {
+            fsg_link_t *l = fsg_arciter_get(itor);
+            int32 dictwid; /**< Dictionary (not FSG) word ID!! */
+            /*
+             * Propagate lc and rc lists past null transitions.  (Since FSG contains
+             * null transitions closure, no need to worry about a chain of successive
+             * null transitions.  Right??)
+             */
+            /* FIXME: Need to figure out what to do about tag transitions. */
+            if (fsg_link_wid(l) < 0) {
+                /*
+                 * lclist(d) |= lclist(s), because all the words ending up at s, can
+                 * now also end at d, becoming the left context for words leaving d.
+                 */
+                for (i = 0; i < n_ci; i++)
+                    lextree->lc[fsg_link_to_state(l)][i]
+                        |= lextree->lc[fsg_link_from_state(l)][i];
+                /*
+                 * Similarly, rclist(s) |= rclist(d), because all the words leaving d
+                 * can equivalently leave s, becoming the right context for words
+                 * ending up at s.
+                 */
+                for (i = 0; i < n_ci; i++)
+                    lextree->rc[fsg_link_from_state(l)][i]
+                        |= lextree->rc[fsg_link_to_state(l)][i];
+            }
+            else {
                 dictwid = dict_wordid(lextree->dict,
-                                        fsg_model_word_str(lextree->fsg, l->wid));
+                                      fsg_model_word_str(lextree->fsg, l->wid));
 
                 /*
                  * Add the first CIphone of l->wid to the rclist of state s, and
@@ -128,53 +148,27 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
                  * marking of a filler phone; but only filler words are supposed to
                  * use such phones, so we use that fact.  HACK!!  FRAGILE!!)
                  */
-                if (fsg_model_is_filler(fsg, l->wid)) {
+                if (fsg_model_is_filler(fsg, fsg_link_wid(l))) {
                     /* Filler phone; use silence phone as context */
-                    lextree->rc[s][silcipid] = 1;
-                    lextree->lc[d][silcipid] = 1;
+                    lextree->rc[fsg_link_from_state(l)][silcipid] = 1;
+                    lextree->lc[fsg_link_to_state(l)][silcipid] = 1;
                 }
                 else {
                     len = dict_pronlen(lextree->dict, dictwid);
-                    lextree->rc[s][dict_pron(lextree->dict, dictwid, 0)] = 1;
-                    lextree->lc[d][dict_pron(lextree->dict, dictwid, len - 1)] = 1;
+                    lextree->rc[fsg_link_from_state(l)][dict_pron(lextree->dict, dictwid, 0)] = 1;
+                    lextree->lc[fsg_link_to_state(l)][dict_pron(lextree->dict, dictwid, len - 1)] = 1;
                 }
             }
-        }
 
-        /*
-         * Add SIL phone to the lclist and rclist of each state.  Strictly
-         * speaking, only needed at start and final states, respectively, but
-         * all states considered since the user may change the start and final
-         * states.  In any case, most applications would have a silence self
-         * loop at each state, hence these would be needed anyway.
-         */
-        lextree->lc[s][silcipid] = 1;
-        lextree->rc[s][silcipid] = 1;
-    }
-
-    /*
-     * Propagate lc and rc lists past null transitions.  (Since FSG contains
-     * null transitions closure, no need to worry about a chain of successive
-     * null transitions.  Right??)
-     */
-    for (s = 0; s < fsg->n_state; s++) {
-        for (d = 0; d < fsg->n_state; d++) {
-            l = fsg_model_null_trans(fsg, s, d);
-            if (l) {
-                /*
-                 * lclist(d) |= lclist(s), because all the words ending up at s, can
-                 * now also end at d, becoming the left context for words leaving d.
-                 */
-                for (i = 0; i < n_ci; i++)
-                    lextree->lc[d][i] |= lextree->lc[s][i];
-                /*
-                 * Similarly, rclist(s) |= rclist(d), because all the words leaving d
-                 * can equivalently leave s, becoming the right context for words
-                 * ending up at s.
-                 */
-                for (i = 0; i < n_ci; i++)
-                    lextree->rc[s][i] |= lextree->rc[d][i];
-            }
+            /*
+             * Add SIL phone to the lclist and rclist of each state.  Strictly
+             * speaking, only needed at start and final states, respectively, but
+             * all states considered since the user may change the start and final
+             * states.  In any case, most applications would have a silence self
+             * loop at each state, hence these would be needed anyway.
+             */
+            lextree->lc[fsg_link_from_state(l)][silcipid] = 1;
+            lextree->rc[fsg_link_from_state(l)][silcipid] = 1;
         }
     }
 
