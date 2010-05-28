@@ -1622,7 +1622,7 @@ fsg_search_lattice(ps_search_t *search)
                 fsg_arciter_t *itor2;
 
                 /* Add all non-null links out of j. */
-                for (itor2 = fsg_model_arcs(fsg, fsg_link_to_state(fh->fsglink));
+                for (itor2 = fsg_model_arcs(fsg, fsg_link_to_state(link));
                      itor2; itor2 = fsg_arciter_next(itor2)) {
                     fsg_link_t *link = fsg_arciter_get(itor2);
                     if (link->wid == -1)
