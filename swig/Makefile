@@ -1,8 +1,10 @@
 CFLAGS := -g -Wall -DPIC -fPIC
-CPPFLAGS := -I../include -I../../sphinxbase/include -I/usr/lib/jvm/default-java/include
+CPPFLAGS := -I/usr/lib/jvm/default-java/include `pkg-config --cflags sphinxbase pocketsphinx`
+
+all: libpocketsphinx_jni.so
 
 libpocketsphinx_jni.so: pocketsphinx_wrap.o
-	$(CC) -shared -o $@ pocketsphinx_wrap.o
+	$(CC) -shared -o $@ pocketsphinx_wrap.o `pkg-config --libs sphinxbase pocketsphinx`
 
 pocketsphinx_wrap.c: pocketsphinx.i
 	mkdir -p edu/cmu/pocketsphinx
