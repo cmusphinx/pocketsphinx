@@ -12,12 +12,5 @@ pocketsphinx_wrap.c: pocketsphinx.i
 		-java -package edu.cmu.pocketsphinx \
 		-outdir edu/cmu/pocketsphinx pocketsphinx.i
 
-libtest.so: test_wrap.o
-	$(CC) -shared -o $@ test_wrap.o
-
-test_wrap.c: test.i
-	mkdir -p edu/cmu/pocketsphinx
-	swig -java -package edu.cmu.pocketsphinx -outdir edu/cmu/pocketsphinx test.i
-
 clean:
-	$(RM) -rf edu *.so *_wrap.c *_wrap.o *.class
+	$(RM) *.so *_wrap.c *_wrap.o *.class edu/cmu/pocketsphinx/*.class

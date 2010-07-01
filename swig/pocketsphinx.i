@@ -1,6 +1,4 @@
 %module pocketsphinx
-%include "arrays_java.i"
-
 %{
 #include <pocketsphinx.h>
 
@@ -13,6 +11,19 @@ typedef int bool;
 #define false 0
 #define true 1
 %}
+
+/* Special typemap for arrays of audio. */
+%typemap(in) (short const *SDATA, size_t NSAMP) {
+	$1 = (short const *) JCALL2(GetShortArrayElements, jenv, $input, NULL);
+	$2 = JCALL1(GetArrayLength, jenv, $input);
+};
+%typemap(freearg) (short const *SDATA, size_t NSAMP) {
+	JCALL3(ReleaseShortArrayElements, jenv, $input, $1, 0);
+};
+%typemap(jni) (short const *SDATA, size_t NSAMP) "jshortArray"
+%typemap(jtype) (short const *SDATA, size_t NSAMP) "short[]"
+%typemap(jstype) (short const *SDATA, size_t NSAMP) "short[]"
+%typemap(javain) (short const *SDATA, size_t NSAMP) "$javainput"
 
 /* These are opaque types but we have to "define" them for SWIG. */
 typedef struct cmd_ln_s {
@@ -101,9 +112,8 @@ typedef struct ps_decoder_s {
 	int endUtt() {
 		return ps_end_utt($self);
 	}
-	int processRaw(short const data[], size_t n_samples, bool no_search, bool full_utt) {
-		return ps_process_raw($self, data, n_samples,
-				      no_search, full_utt);
+	int processRaw(short const *SDATA, size_t NSAMP, bool no_search, bool full_utt) {
+		return ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
 	}
 	~Decoder() {
 		ps_free($self);
