@@ -1,6 +1,7 @@
 %module pocketsphinx
 %{
 #include <pocketsphinx.h>
+#include <err.h>
 
 /* Typedefs to make Java-esque class names. */
 typedef struct cmd_ln_s Config;
@@ -158,3 +159,11 @@ typedef struct ps_decoder_s {
 		ps_free($self);
 	}
 };
+
+%inline {
+	/* Static method to set the logging file. */
+	void setLogfile(char const *path) {
+		err_set_logfile(path);
+	}
+};
+
