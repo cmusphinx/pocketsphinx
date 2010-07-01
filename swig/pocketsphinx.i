@@ -10,6 +10,13 @@ typedef struct ps_decoder_s Decoder;
 typedef int bool;
 #define false 0
 #define true 1
+
+/* Auxiliary objects used to return multiple values. */
+typedef struct hyp_s {
+	char *hypstr;
+	char *uttid;
+	int best_score;
+} Hypothesis;
 %}
 
 /* Special typemap for arrays of audio. */
@@ -25,6 +32,13 @@ typedef int bool;
 %typemap(jstype) (short const *SDATA, size_t NSAMP) "short[]"
 %typemap(javain) (short const *SDATA, size_t NSAMP) "$javainput"
 
+/* Auxiliary types for returning multiple values. */
+typedef struct hyp_s {
+	char *hypstr;
+	char *uttid;
+	int best_score;
+} Hypothesis;
+
 /* These are opaque types but we have to "define" them for SWIG. */
 typedef struct cmd_ln_s {
 } Config;
@@ -34,6 +48,25 @@ typedef struct ps_lattice_s {
 } Lattice;
 typedef struct ps_decoder_s {
 } Decoder;
+
+
+%extend Hypothesis {
+	Hypothesis(char const *hypstr, char const *uttid, int best_score) {
+		Hypothesis *h = ckd_calloc(1, sizeof(*h));
+		if (hypstr)
+			h->hypstr = ckd_salloc(hypstr);
+		if (uttid)
+			h->uttid = ckd_salloc(uttid);
+		h->best_score = best_score;
+		return h;
+		
+	}
+	~Hypothesis() {
+		ckd_free($self->hypstr);
+		ckd_free($self->uttid);
+		ckd_free($self);
+	}
+}
 
 %extend Config {
 	Config() {
@@ -114,6 +147,12 @@ typedef struct ps_decoder_s {
 	}
 	int processRaw(short const *SDATA, size_t NSAMP, bool no_search, bool full_utt) {
 		return ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
+	}
+	Hypothesis *getHyp() {
+		char const *hyp, *uttid;
+		int32 best_score;
+		hyp = ps_get_hyp($self, &best_score, &uttid);
+		return new_Hypothesis(hyp, uttid, best_score);
 	}
 	~Decoder() {
 		ps_free($self);

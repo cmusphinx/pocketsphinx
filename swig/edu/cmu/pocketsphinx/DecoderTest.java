@@ -6,11 +6,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URL;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.sound.sampled.AudioFormat.Encoding;
+import javax.sound.sampled.*;
+import java.nio.*;
 
 
 public class DecoderTest {
@@ -49,8 +46,9 @@ public class DecoderTest {
 			URL testwav = getClass().getResource("goforward.wav");
 			AudioInputStream tmp = AudioSystem.getAudioInputStream(testwav);
 			/* Convert it to the desired audio format for PocketSphinx. */
-			AudioFormat targetAudioFormat = new AudioFormat(c.getInt("-samprate"),
-														16, 1, true, true);
+			AudioFormat targetAudioFormat =
+					new AudioFormat((float)c.getFloat("-samprate"),
+									16, 1, true, true);
 			ais = AudioSystem.getAudioInputStream(targetAudioFormat, tmp);
 		}
 		catch (IOException e) {
@@ -59,15 +57,21 @@ public class DecoderTest {
 		catch (UnsupportedAudioFileException e) {
 			fail("Unsupported file type of goforward.wav" + e.getMessage());
 		}
+		d.startUtt();
 		byte[] b = new byte[4096];
-		
 		try {
 			int nbytes;
 			while ((nbytes = ais.read(b)) >= 0) {
+				ByteBuffer bb = ByteBuffer.wrap(b, 0, nbytes);
+				short[] s = new short[nbytes/2];
+				bb.asShortBuffer().get(s);
+				d.processRaw(s, false, false);
+				System.out.println(d.getHyp().getHypstr());
 			}
 		}
 		catch (IOException e) {
 			fail("Error when reading goforward.wav" + e.getMessage());
 		}
+		d.endUtt();
 	}
 }
