@@ -1,4 +1,5 @@
 %module pocketsphinx
+%include "arrays_java.i"
 
 %{
 #include <pocketsphinx.h>
@@ -11,7 +12,6 @@ typedef struct ps_decoder_s Decoder;
 typedef int bool;
 #define false 0
 #define true 1
-
 %}
 
 /* These are opaque types but we have to "define" them for SWIG. */
@@ -100,6 +100,10 @@ typedef struct ps_decoder_s {
 	}
 	int endUtt() {
 		return ps_end_utt($self);
+	}
+	int processRaw(short const data[], size_t n_samples, bool no_search, bool full_utt) {
+		return ps_process_raw($self, data, n_samples,
+				      no_search, full_utt);
 	}
 	~Decoder() {
 		ps_free($self);
