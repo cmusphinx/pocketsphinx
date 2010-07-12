@@ -1,7 +1,8 @@
 %module pocketsphinx
+%include <arrays_java.i>
 %{
 #include <pocketsphinx.h>
-#include <err.h>
+#include <sphinxbase/err.h>
 
 /* Typedefs to make Java-esque class names. */
 typedef struct cmd_ln_s Config;
@@ -148,6 +149,9 @@ typedef struct ps_decoder_s {
 	}
 	int processRaw(short const *SDATA, size_t NSAMP, bool no_search, bool full_utt) {
 		return ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
+	}
+	int processRaw(short const shorts[], size_t nshorts, bool no_search, bool full_utt) {
+		return ps_process_raw($self, shorts, nshorts, no_search, full_utt);
 	}
 	Hypothesis *getHyp() {
 		char const *hyp, *uttid;
