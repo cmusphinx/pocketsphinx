@@ -38,7 +38,7 @@
  * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
  */
 
-#include <ckd_alloc.h>
+#include <sphinxbase/ckd_alloc.h>
 
 #include "tokentree.h"
 

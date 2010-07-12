@@ -96,14 +96,14 @@
 #include <string.h>
 
 /* SphinxBase headers. */
-#include <logmath.h>
-#include <err.h>
-#include <ckd_alloc.h>
+#include <sphinxbase/logmath.h>
+#include <sphinxbase/err.h>
+#include <sphinxbase/ckd_alloc.h>
+#include <sphinxbase/bio.h>
 
 /* Local headers. */
 #include "tmat.h"
 #include "hmm.h"
-#include "bio.h"
 #include "vector.h"
 
 #define TMAT_PARAM_VERSION		"1.0"

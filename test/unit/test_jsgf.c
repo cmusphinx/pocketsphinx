@@ -3,8 +3,8 @@
 #include <string.h>
 #include <time.h>
 
-#include <jsgf.h>
-#include <fsg_model.h>
+#include <sphinxbase/jsgf.h>
+#include <sphinxbase/fsg_model.h>
 
 #include "pocketsphinx_internal.h"
 #include "fsg_search_internal.h"

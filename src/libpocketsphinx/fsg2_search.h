@@ -44,7 +44,7 @@
 
 
 /* SphinxBase headers. */
-#include <fsg_model.h>
+#include <sphinxbase/fsg_model.h>
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"

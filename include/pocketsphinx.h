@@ -49,11 +49,11 @@ extern "C" {
 #include <stdio.h>
 
 /* SphinxBase headers we need. */
-#include <cmd_ln.h>
-#include <logmath.h>
-#include <fe.h>
-#include <feat.h>
-#include <ngram_model.h>
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/logmath.h>
+#include <sphinxbase/fe.h>
+#include <sphinxbase/feat.h>
+#include <sphinxbase/ngram_model.h>
 
 /* PocketSphinx headers (not many of them!) */
 #include <pocketsphinx_export.h>

@@ -37,7 +37,7 @@
  * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
  */
 
-#include <strfuncs.h>
+#include <sphinxbase/strfuncs.h>
 
 #include "fsg2_search.h"
 

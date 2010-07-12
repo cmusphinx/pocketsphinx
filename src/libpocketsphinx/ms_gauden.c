@@ -119,9 +119,9 @@
 #include <float.h>
 
 /* SphinxBase headers. */
-#include <bio.h>
-#include <err.h>
-#include <ckd_alloc.h>
+#include <sphinxbase/bio.h>
+#include <sphinxbase/err.h>
+#include <sphinxbase/ckd_alloc.h>
 
 /* Local headesr. */
 #include "ms_gauden.h"

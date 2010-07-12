@@ -99,12 +99,14 @@
 #ifndef _S3_DICT2PID_H_
 #define _S3_DICT2PID_H_
 
-
+/* System headers. */
 #include <stdio.h>
 
-#include <logmath.h>
-#include <bitvec.h>
+/* SphinxBase headers. */
+#include <sphinxbase/logmath.h>
+#include <sphinxbase/bitvec.h>
 
+/* Local headers. */
 #include "s3types.h"
 #include "bin_mdef.h"
 #include "dict.h"

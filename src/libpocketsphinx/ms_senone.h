@@ -111,10 +111,10 @@
 
 
 /* SphinxBase headers. */
-#include <err.h>
-#include <ckd_alloc.h>
-#include <cmd_ln.h>
-#include <logmath.h>
+#include <sphinxbase/err.h>
+#include <sphinxbase/ckd_alloc.h>
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/logmath.h>
 
 /* Local headers. */
 #include "ms_gauden.h"
@@ -160,6 +160,7 @@ typedef struct {
     float32 mixwfloor;		/**< floor applied to each PDF entry */
     uint32 *mgau;		/**< senone-id -> mgau-id mapping for senones in this set */
     int32 *featscr;              /**< The feature score for every senone, will be initialized inside senone_eval_all */
+    int32 aw;			/**< Inverse acoustic weight */
 } senone_t;
 
 

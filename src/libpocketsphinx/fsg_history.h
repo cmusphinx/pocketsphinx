@@ -76,8 +76,8 @@
 
 
 /* SphinxBase headers. */
-#include <prim_type.h>
-#include <fsg_model.h>
+#include <sphinxbase/prim_type.h>
+#include <sphinxbase/fsg_model.h>
 
 /* Local headers. */
 #include "blkarray_list.h"

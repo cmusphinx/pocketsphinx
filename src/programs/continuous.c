@@ -58,14 +58,9 @@
  *   - Uses fbs8 audio library; can be replaced with an equivalent custom library.
  */
 
+/* System headers. */
 #include <stdio.h>
 #include <string.h>
-
-#include "pocketsphinx.h"
-#include "err.h"
-#include "ad.h"
-#include "cont_ad.h"
-
 #if !defined(_WIN32_WCE)
 #include <signal.h>
 #include <setjmp.h>
@@ -76,6 +71,14 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #endif
+
+/* SphinxBase headers. */
+#include <sphinxbase/err.h>
+#include <sphinxbase/ad.h>
+#include <sphinxbase/cont_ad.h>
+
+/* Local headers. */
+#include "pocketsphinx.h"
 
 static const arg_t cont_args_def[] = {
     POCKETSPHINX_OPTIONS,

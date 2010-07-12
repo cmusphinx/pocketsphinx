@@ -53,8 +53,8 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* SphinxBase headers. */
-#include <mmio.h>
-#include <cmd_ln.h>
+#include <sphinxbase/mmio.h>
+#include <sphinxbase/cmd_ln.h>
 
 #include "mdef.h"
 

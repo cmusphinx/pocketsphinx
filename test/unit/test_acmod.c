@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <pocketsphinx.h>
-#include <logmath.h>
+
+#include <sphinxbase/logmath.h>
 
 #include "acmod.h"
 #include "test_macros.h"

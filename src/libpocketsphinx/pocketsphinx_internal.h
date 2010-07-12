@@ -45,11 +45,11 @@
 #define __POCKETSPHINX_INTERNAL_H__
 
 /* SphinxBase headers. */
-#include <cmd_ln.h>
-#include <logmath.h>
-#include <fe.h>
-#include <feat.h>
-#include <profile.h>
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/logmath.h>
+#include <sphinxbase/fe.h>
+#include <sphinxbase/feat.h>
+#include <sphinxbase/profile.h>
 
 /* Local headers. */
 #include "pocketsphinx.h"

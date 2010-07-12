@@ -44,8 +44,8 @@
 #include <assert.h>
 
 /* SphinxBase headers. */
-#include <ckd_alloc.h>
-#include <err.h>
+#include <sphinxbase/ckd_alloc.h>
+#include <sphinxbase/err.h>
 
 /* Local headers. */
 #include "fsg_lextree.h"

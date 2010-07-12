@@ -126,10 +126,10 @@
 
 #include <stdio.h>
 
-#include <ngram_model.h>
-#include <cmd_ln.h>
-#include <logmath.h>
-#include <glist.h>
+#include <sphinxbase/ngram_model.h>
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/logmath.h>
+#include <sphinxbase/glist.h>
 
 #include "s3types.h"
 #include "fillpen.h"

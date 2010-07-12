@@ -35,10 +35,14 @@
  *
  */
 
+/* System headers. */
 #include <string.h>
 
-#include "pio.h"
-#include "strfuncs.h"
+/* SphinxBase headers. */
+#include <sphinxbase/pio.h>
+#include <sphinxbase/strfuncs.h>
+
+/* Local headers. */
 #include "dict.h"
 
 

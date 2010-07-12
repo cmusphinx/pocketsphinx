@@ -44,8 +44,8 @@
 /* System includes. */
 
 /* SphinxBase includes. */
-#include <listelem_alloc.h>
-#include <heap.h>
+#include <sphinxbase/listelem_alloc.h>
+#include <sphinxbase/heap.h>
 
 /* Local includes. */
 

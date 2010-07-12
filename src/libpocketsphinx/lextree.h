@@ -113,9 +113,9 @@
 
 #include <stdio.h>
 
-#include <bitvec.h>
-#include <ngram_model.h>
-#include <glist.h>
+#include <sphinxbase/bitvec.h>
+#include <sphinxbase/ngram_model.h>
+#include <sphinxbase/glist.h>
 
 #include "s3types.h"
 #include "hmm.h"

@@ -43,15 +43,15 @@
 
 /* System headers. */
 #include <assert.h>
+#include <string.h>
 
 /* SphinxBase headers. */
-#include <prim_type.h>
-#include <err.h>
-#include <cmd_ln.h>
-#include <strfuncs.h>
-#include <string.h>
-#include <byteorder.h>
-#include <feat.h>
+#include <sphinxbase/prim_type.h>
+#include <sphinxbase/err.h>
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/strfuncs.h>
+#include <sphinxbase/byteorder.h>
+#include <sphinxbase/feat.h>
 
 /* Local headers. */
 #include "cmdln_macro.h"

@@ -92,18 +92,17 @@ ms_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     msg->g = NULL;
     msg->s = NULL;
 
-    msg->g = gauden_init(cmd_ln_str_r(config, "-mean"),
-			 cmd_ln_str_r(config, "-var"),
-			 cmd_ln_float32_r(config, "-varfloor"),
-			 lmath);
-    msg->s = senone_init(msg->g,
-			 cmd_ln_str_r(config, "-mixw"),
-                         cmd_ln_str_r(config, "-senmgau"),
-			 cmd_ln_float32_r(config, "-mixwfloor"),
-                         lmath, mdef);
+    g = msg->g = gauden_init(cmd_ln_str_r(config, "-mean"),
+                             cmd_ln_str_r(config, "-var"),
+                             cmd_ln_float32_r(config, "-varfloor"),
+                             lmath);
+    s = msg->s = senone_init(msg->g,
+                             cmd_ln_str_r(config, "-mixw"),
+                             cmd_ln_str_r(config, "-senmgau"),
+                             cmd_ln_float32_r(config, "-mixwfloor"),
+                             lmath, mdef);
 
-    g = ms_mgau_gauden(msg);
-    s = ms_mgau_senone(msg);
+    s->aw = cmd_ln_int32_r(config, "-ms_aw");
 
     /* Verify senone parameters against gauden parameters */
     if (s->n_feat != g->n_feat)

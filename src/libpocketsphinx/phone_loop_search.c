@@ -39,7 +39,7 @@
  * @file phone_loop_search.h Fast and rough context-independent phoneme loop search.
  */
 
-#include <err.h>
+#include <sphinxbase/err.h>
 
 #include "phone_loop_search.h"
 

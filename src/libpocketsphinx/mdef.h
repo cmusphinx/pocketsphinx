@@ -55,7 +55,7 @@
 #include <stdio.h>
 
 /* SphinxBase headers. */
-#include <hash_table.h>
+#include <sphinxbase/hash_table.h>
 
 #ifdef __cplusplus
 extern "C" {

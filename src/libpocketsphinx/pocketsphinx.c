@@ -40,10 +40,10 @@
 #include <assert.h>
 
 /* SphinxBase headers. */
-#include <err.h>
-#include <strfuncs.h>
-#include <filename.h>
-#include <pio.h>
+#include <sphinxbase/err.h>
+#include <sphinxbase/strfuncs.h>
+#include <sphinxbase/filename.h>
+#include <sphinxbase/pio.h>
 
 /* Local headers. */
 #include "cmdln_macro.h"

@@ -41,7 +41,7 @@
 #include <assert.h>
 
 /* SphinxBase headers. */
-#include <bio.h>
+#include <sphinxbase/bio.h>
 
 /* Local headers. */
 #include "ms_senone.h"
@@ -409,6 +409,8 @@ senone_eval(senone_t * s, int id, gauden_dist_t ** dist, int32 n_top)
 	 * we have to negate the stuff we calculated above. */
         scr -= fscr;
     }
+    /* Downscale scores. */
+    scr /= s->aw;
 
     /* Avoid overflowing int16 */
     if (scr > 32767)

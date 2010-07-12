@@ -53,13 +53,12 @@
 
 /* SphinxBase headers */
 #include <sphinx_config.h>
-#include <cmd_ln.h>
-#include <fixpoint.h>
-#include <ckd_alloc.h>
-#include <bio.h>
-#include <err.h>
-#include <prim_type.h>
-#include <assert.h>
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/fixpoint.h>
+#include <sphinxbase/ckd_alloc.h>
+#include <sphinxbase/bio.h>
+#include <sphinxbase/err.h>
+#include <sphinxbase/prim_type.h>
 
 /* Local headers */
 #include "tied_mgau_common.h"

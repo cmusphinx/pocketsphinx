@@ -41,9 +41,12 @@
 /** \file dict.h
  * \brief Operations on dictionary. 
  */
-#include <hash_table.h>
-#include <s3types.h>
 
+/* SphinxBase headers. */
+#include <sphinxbase/hash_table.h>
+
+/* Local headers. */
+#include "s3types.h"
 #include "bin_mdef.h"
 #include "pocketsphinx_export.h"
 

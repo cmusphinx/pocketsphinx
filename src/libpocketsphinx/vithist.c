@@ -124,9 +124,9 @@
  * 		Started.
  */
 
-#include <listelem_alloc.h>
-#include <pio.h>
-#include <heap.h>
+#include <sphinxbase/listelem_alloc.h>
+#include <sphinxbase/pio.h>
+#include <sphinxbase/heap.h>
 
 #include "vithist.h"
 

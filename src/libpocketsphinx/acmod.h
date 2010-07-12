@@ -47,12 +47,12 @@
 #include <stdio.h>
 
 /* SphinxBase headers. */
-#include <cmd_ln.h>
-#include <logmath.h>
-#include <fe.h>
-#include <feat.h>
-#include <bitvec.h>
-#include <err.h>
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/logmath.h>
+#include <sphinxbase/fe.h>
+#include <sphinxbase/feat.h>
+#include <sphinxbase/bitvec.h>
+#include <sphinxbase/err.h>
 
 /* Local headers. */
 #include "ps_mllr.h"

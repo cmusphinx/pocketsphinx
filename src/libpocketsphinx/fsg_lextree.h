@@ -78,8 +78,8 @@
 #define __S2_FSG_LEXTREE_H__
 
 /* SphinxBase headers. */
-#include <cmd_ln.h>
-#include <fsg_model.h>
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/fsg_model.h>
 
 /* Local headers. */
 #include "hmm.h"

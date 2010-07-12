@@ -43,8 +43,8 @@
 #define __PS_MLLR_H__
 
 /* SphinxBase headers. */
-#include <prim_type.h>
-#include <ngram_model.h>
+#include <sphinxbase/prim_type.h>
+#include <sphinxbase/ngram_model.h>
 
 /* PocketSphinx headers. */
 #include <pocketsphinx_export.h>

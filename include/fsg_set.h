@@ -46,9 +46,9 @@ extern "C" {
 #endif
 
 /* SphinxBase headers we need. */
-#include <fsg_model.h>
-#include <hash_table.h>
-#include <jsgf.h>
+#include <sphinxbase/fsg_model.h>
+#include <sphinxbase/hash_table.h>
+#include <sphinxbase/jsgf.h>
 
 /* PocketSphinx headers. */
 #include <pocketsphinx_export.h>

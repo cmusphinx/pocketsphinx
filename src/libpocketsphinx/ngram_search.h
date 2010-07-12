@@ -43,11 +43,11 @@
 #define __NGRAM_SEARCH_H__
 
 /* SphinxBase headers. */
-#include <cmd_ln.h>
-#include <logmath.h>
-#include <ngram_model.h>
-#include <listelem_alloc.h>
-#include <err.h>
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/logmath.h>
+#include <sphinxbase/ngram_model.h>
+#include <sphinxbase/listelem_alloc.h>
+#include <sphinxbase/err.h>
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"

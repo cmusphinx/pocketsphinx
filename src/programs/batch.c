@@ -39,11 +39,11 @@
 #include <stdio.h>
 
 /* SphinxBase headers. */
-#include <pio.h>
-#include <err.h>
-#include <strfuncs.h>
-#include <filename.h>
-#include <byteorder.h>
+#include <sphinxbase/pio.h>
+#include <sphinxbase/err.h>
+#include <sphinxbase/strfuncs.h>
+#include <sphinxbase/filename.h>
+#include <sphinxbase/byteorder.h>
 
 /* PocketSphinx headers. */
 #include <pocketsphinx.h>
