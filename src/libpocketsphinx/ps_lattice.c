@@ -1462,6 +1462,7 @@ ps_lattice_posterior_prune(ps_lattice_t *dag, int32 beam)
 
     for (link = ps_lattice_traverse_edges(dag, dag->start, dag->end);
          link; link = ps_lattice_traverse_next(dag, dag->end)) {
+        link->from->reachable = FALSE;
         if (link->alpha + link->beta - dag->norm < beam) {
             latlink_list_t *x, *tmp, *next;
             tmp = NULL;

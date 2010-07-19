@@ -218,6 +218,11 @@ ngram_search_init(cmd_ln_t *config,
             goto error_out;
         }
     }
+    if (ngs->lmset != NULL
+        && ngram_wid(ngs->lmset, S3_FINISH_WORD) == ngram_unknown_wid(ngs->lmset)) {
+        E_ERROR("Language model/set does not contain </s>, recognition will fail\n");
+        goto error_out;
+    }
 
     /* Create word mappings. */
     ngram_search_update_widmap(ngs);
@@ -706,7 +711,6 @@ dump_bptable(ngram_search_t *ngs)
                     ngs->bp_table[i].frame,
                     ngs->bp_table[i].score,
                     ngs->bp_table[i].bp);
-        /* ngs->bp_table[i].hist_hash); */
     }
 }
 
@@ -1067,20 +1071,19 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
     bestscore = WORST_SCORE;
     bestbp = NO_BP;
     for (bp = ngs->bp_table_idx[ef]; bp < ngs->bp_table_idx[ef + 1]; ++bp) {
-        int32 n_used, l_scr;
-        l_scr = ngram_tg_score(ngs->lmset, ps_search_finish_wid(ngs),
-                               ngs->bp_table[bp].real_wid,
-                               ngs->bp_table[bp].prev_real_wid,
-                               &n_used);
+        int32 n_used, l_scr, wid, prev_wid;
+        
+        wid = ngs->bp_table[bp].real_wid;
+        prev_wid = ngs->bp_table[bp].prev_real_wid;
+        l_scr = ngram_tg_score(ngs->lmset, ps_search_finish_wid(ngs), wid, prev_wid, &n_used);
         l_scr = l_scr * lwf;
-
         if (ngs->bp_table[bp].score + l_scr BETTER_THAN bestscore) {
             bestscore = ngs->bp_table[bp].score + l_scr;
             bestbp = bp;
         }
     }
     if (bestbp == NO_BP) {
-        E_ERROR("No word exits found in last frame, assuming no recognition\n");
+        E_ERROR("No word exits found in last frame (%d), assuming no recognition\n", ef);
         return NULL;
     }
     E_WARN("</s> not found in last frame, using %s instead\n",
