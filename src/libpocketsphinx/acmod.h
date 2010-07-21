@@ -168,12 +168,15 @@ struct acmod_s {
     mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */
     FILE *rawfh;        /**< File for writing raw audio data. */
     FILE *mfcfh;        /**< File for writing acoustic feature data. */
+    FILE *senfh;        /**< File for writing senone score data. */
+    FILE *insenfh;	/**< Input senone score file. */
+    long *framepos;     /**< File positions of recent frames in senone file. */
 
     /* A whole bunch of flags and counters: */
     uint8 state;        /**< State of utterance processing. */
     uint8 compallsen;   /**< Compute all senones? */
     uint8 grow_feat;    /**< Whether to grow feat_buf. */
-    uint8 reserved;
+    uint8 insen_swap;   /**< Whether to swap input senone score. */
     int16 output_frame; /**< Index of next frame of dynamic features. */
     int16 n_mfc_alloc;  /**< Number of frames allocated in mfc_buf */
     int16 n_mfc_frame;  /**< Number of frames active in mfc_buf */
@@ -214,6 +217,15 @@ acmod_t *acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb);
  *         NULL on failure.
  */
 ps_mllr_t *acmod_update_mllr(acmod_t *acmod, ps_mllr_t *mllr);
+
+/**
+ * Start logging senone scores to a filehandle.
+ *
+ * @param acmod Acoustic model object.
+ * @param logfh Filehandle to log to.
+ * @return 0 for success, <0 on error.
+ */
+int acmod_set_senfh(acmod_t *acmod, FILE *senfh);
 
 /**
  * Start logging MFCCs to a filehandle.
@@ -337,6 +349,16 @@ int acmod_process_cep(acmod_t *acmod,
  */
 int acmod_process_feat(acmod_t *acmod,
                        mfcc_t **feat);
+
+/**
+ * Start reading a senone score dump file for scoring.
+ *
+ * @param insenfh File handle of dump file
+ * @return 0 for success, <0 for failure
+ */
+int acmod_set_insenfh(acmod_t *acmod, FILE *insenfh);
+
+int acmod_read_scores(acmod_t *acmod);
 
 /**
  * Score one frame of data.

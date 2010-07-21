@@ -52,6 +52,7 @@
 #include <sphinxbase/strfuncs.h>
 #include <sphinxbase/byteorder.h>
 #include <sphinxbase/feat.h>
+#include <sphinxbase/bio.h>
 
 /* Local headers. */
 #include "cmdln_macro.h"
@@ -280,6 +281,7 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
     /* Feature buffer has to be at least as large as MFCC buffer. */
     acmod->n_feat_alloc = acmod->n_mfc_alloc + cmd_ln_int32_r(config, "-pl_window");
     acmod->feat_buf = feat_array_alloc(acmod->fcb, acmod->n_feat_alloc);
+    acmod->framepos = ckd_calloc(acmod->n_feat_alloc, sizeof(*acmod->framepos));
 
     /* Senone computation stuff. */
     acmod->senone_scores = ckd_calloc(bin_mdef_n_sen(acmod->mdef),
@@ -314,6 +316,8 @@ acmod_free(acmod_t *acmod)
         fclose(acmod->mfcfh);
     if (acmod->rawfh)
         fclose(acmod->rawfh);
+    if (acmod->senfh)
+        fclose(acmod->senfh);
 
     ckd_free(acmod->senone_scores);
     ckd_free(acmod->senone_active_vec);
@@ -340,6 +344,25 @@ acmod_update_mllr(acmod_t *acmod, ps_mllr_t *mllr)
     ps_mgau_transform(acmod->mgau, mllr);
 
     return mllr;
+}
+
+int
+acmod_set_senfh(acmod_t *acmod, FILE *logfh)
+{
+    char nsenstr[64], logbasestr[64];
+
+    if (acmod->senfh)
+        fclose(acmod->senfh);
+    acmod->senfh = logfh;
+    if (logfh == NULL)
+        return 0;
+    sprintf(nsenstr, "%d", bin_mdef_n_sen(acmod->mdef));
+    sprintf(logbasestr, "%f", logmath_get_base(acmod->lmath));
+    return bio_writehdr(logfh,
+                        "version", "0.1",
+                        "mdef_file", cmd_ln_str_r(acmod->config, "-mdef"),
+                        "n_sen", nsenstr,
+                        "logbase", logbasestr, NULL);
 }
 
 int
@@ -376,6 +399,8 @@ acmod_grow_feat_buf(acmod_t *acmod, int nfr)
                 * sizeof(***acmod->feat_buf)));
     }
     feat_array_free(acmod->feat_buf);
+    acmod->framepos = ckd_realloc(acmod->framepos,
+                                  nfr * sizeof(*acmod->framepos));
     acmod->feat_buf = new_feat_buf;
     acmod->n_feat_alloc = nfr;
 }
@@ -441,6 +466,11 @@ acmod_end_utt(acmod_t *acmod)
     if (acmod->rawfh) {
         fclose(acmod->rawfh);
         acmod->rawfh = NULL;
+    }
+
+    if (acmod->senfh) {
+        fclose(acmod->senfh);
+        acmod->senfh = NULL;
     }
 
     return nfr;
@@ -758,9 +788,70 @@ acmod_process_feat(acmod_t *acmod,
     return 1;
 }
 
+static int
+acmod_read_senfh_header(acmod_t *acmod)
+{
+    char **name, **val;
+    int32 swap;
+    int i;
+
+    if (bio_readhdr(acmod->insenfh, &name, &val, &swap) < 0)
+        goto error_out;
+    for (i = 0; name[i] != NULL; ++i) {
+        if (!strcmp(name[i], "n_sen")) {
+            if (atoi(val[i]) != bin_mdef_n_sen(acmod->mdef)) {
+                E_ERROR("Number of senones in senone file (%d) does not match mdef (%d)\n",
+                        atoi(val[i]), bin_mdef_n_sen(acmod->mdef));
+                goto error_out;
+            }
+        }
+        if (!strcmp(name[i], "logbase")) {
+            if (abs(atof(val[i]) - logmath_get_base(acmod->lmath)) > 0.001) {
+                E_ERROR("Logbase in senone file (%f) does not match acmod (%f)\n",
+                        atof(val[i]), logmath_get_base(acmod->lmath));
+                goto error_out;
+            }
+        }
+    }
+    acmod->insen_swap = swap;
+    bio_hdrarg_free(name, val);
+    return 0;
+error_out:
+    bio_hdrarg_free(name, val);
+    return -1;
+}
+
+int
+acmod_set_insenfh(acmod_t *acmod, FILE *senfh)
+{
+    if (acmod->insenfh)
+        fclose(acmod->insenfh);
+    acmod->insenfh = senfh;
+    if (senfh == NULL) {
+        acmod->n_feat_frame = 0;
+        return 0;
+    }
+    return acmod_read_senfh_header(acmod);
+}
+
+static int
+acmod_rewind_senfh(acmod_t *acmod)
+{
+    if (fseek(acmod->insenfh, 0, SEEK_SET) < 0) {
+        E_ERROR_SYSTEM("Failed to rewind input senone file");
+        return -1;
+    }
+    return acmod_read_senfh_header(acmod);
+}
+
 int
 acmod_rewind(acmod_t *acmod)
 {
+    /* If we are reading from a senone file, rewind it and
+       re-read the header. */
+    if (acmod->insenfh)
+        return acmod_rewind_senfh(acmod);
+
     /* If the feature buffer is circular, this is not possible. */
     if (acmod->output_frame > acmod->n_feat_alloc)
         return -1;
@@ -773,6 +864,7 @@ acmod_rewind(acmod_t *acmod)
     acmod->output_frame = 0;
     acmod->senscr_frame = -1;
     acmod->mgau->frame_idx = 0;
+
 
     return 0;
 }
@@ -789,9 +881,125 @@ acmod_advance(acmod_t *acmod)
     return ++acmod->output_frame;
 }
 
+int
+acmod_write_scores(acmod_t *acmod, FILE *senfh)
+{
+    int16 n_active;
+
+    /* Uncompressed frame format:
+     *
+     * (2 bytes) n_active: Number of active senones
+     * If all senones active:
+     * (n_active * 2 bytes) scores of active senones
+     *
+     * Otherwise:
+     * (2 bytes) n_active: Number of active senones
+     * (n_active bytes) deltas to active senones
+     * (n_active * 2 bytes) scores of active senones
+     */
+    n_active = acmod->n_senone_active;
+    if (fwrite(&n_active, 2, 1, senfh) != 1)
+        goto error_out;
+    if (acmod->n_senone_active == bin_mdef_n_sen(acmod->mdef)) {
+        if (fwrite(acmod->senone_scores, 2,
+                   acmod->n_senone_active, senfh)
+            != acmod->n_senone_active)
+            goto error_out;
+    }
+    else {
+        int i, n;
+        if (fwrite(acmod->senone_active, 1, acmod->n_senone_active, senfh)
+            != acmod->n_senone_active)
+            goto error_out;
+        for (i = n = 0; i < acmod->n_senone_active; ++i) {
+            n += acmod->senone_active[i];
+            if (fwrite(acmod->senone_scores + n, 2, 1, senfh) != 1)
+                goto error_out;
+        }
+    }
+    return 0;
+error_out:
+    E_ERROR_SYSTEM("Failed to write frame to senone file");
+    return -1;
+}
+
+/**
+ * Internal version, used for reading previous frames in acmod_score()
+ */
+static int
+acmod_read_scores_internal(acmod_t *acmod)
+{
+    FILE *senfh = acmod->insenfh;
+    int16 n_active;
+    int rv;
+
+    if (acmod->n_feat_frame == acmod->n_feat_alloc) {
+        if (acmod->grow_feat)
+            acmod_grow_feat_buf(acmod, acmod->n_feat_alloc * 2);
+        else
+            return 0;
+    }
+
+    if (senfh == NULL)
+        return -1;
+    if ((rv = fread(&n_active, 2, 1, senfh)) < 0)
+        goto error_out;
+    else if (rv == 0)
+        return 0;
+
+    acmod->n_senone_active = n_active;
+    if (acmod->n_senone_active == bin_mdef_n_sen(acmod->mdef)) {
+        if ((rv = fread(acmod->senone_scores, 2,
+                        acmod->n_senone_active, senfh)) < 0)
+            goto error_out;
+        else if (rv != acmod->n_senone_active)
+            return 0;
+    }
+    else {
+        int i, n;
+        if ((rv = fread(acmod->senone_active, 1,
+                        acmod->n_senone_active, senfh)) < 0)
+            goto error_out;
+        else if (rv != acmod->n_senone_active)
+            return 0;
+        for (i = n = 0; i < acmod->n_senone_active; ++i) {
+            n += acmod->senone_active[i];
+            if ((rv = fread(acmod->senone_scores + n, 2, 1, senfh)) < 0)
+                goto error_out;
+            else if (rv == 0)
+                return 0;
+        }
+    }
+    return 1;
+error_out:
+    E_ERROR_SYSTEM("Failed to read frame from senone file");
+    return -1;
+}
+
+int
+acmod_read_scores(acmod_t *acmod)
+{
+    int inptr, rv;
+
+    if ((rv = acmod_read_scores_internal(acmod)) != 1)
+        return rv;
+
+    /* Set acmod->senscr_frame appropriately so that these scores
+       get reused below in acmod_score(). */
+    acmod->senscr_frame = acmod->output_frame + acmod->n_feat_frame;
+
+    /* Increment the "feature frame counter" and record the file
+     * position for the relevant frame in the (possibly circular)
+     * buffer. */
+    ++acmod->n_feat_frame;
+    inptr = (acmod->feat_outidx + acmod->n_feat_frame) % acmod->n_feat_alloc;
+    acmod->framepos[inptr] = ftell(acmod->insenfh);
+
+    return 1;
+}
+
 int16 const *
-acmod_score(acmod_t *acmod,
-	    int *inout_frame_idx)
+acmod_score(acmod_t *acmod, int *inout_frame_idx)
 {
     int frame_idx, feat_idx, n_backfr;
 
@@ -803,6 +1011,15 @@ acmod_score(acmod_t *acmod,
     else
         frame_idx = *inout_frame_idx;
 
+    /* If all senones are being computed, or we are using a senone file,
+       then we can reuse existing scores. */
+    if ((acmod->compallsen || acmod->insenfh)
+        && frame_idx == acmod->senscr_frame) {
+        if (inout_frame_idx)
+            *inout_frame_idx = frame_idx;
+        return acmod->senone_scores;
+    }
+
     /* Check to make sure features are available for the requested frame index. */
     n_backfr = acmod->n_feat_alloc - acmod->n_feat_frame;
     if (frame_idx < 0 || acmod->output_frame - frame_idx > n_backfr) {
@@ -812,30 +1029,40 @@ acmod_score(acmod_t *acmod,
         return NULL;
     }
 
-    /* If all senones are being computed then we can reuse existing scores. */
-    if (acmod->compallsen && frame_idx == acmod->senscr_frame)
-        return acmod->senone_scores;
-
-    /* Build active senone list. */
-    acmod_flags2list(acmod);
-
-    /* Get the index in feat_buf of the frame to be scored. */
+    /* Get the index in feat_buf/framepos of the frame to be scored. */
     feat_idx = ((acmod->feat_outidx + frame_idx - acmod->output_frame)
                 % acmod->n_feat_alloc);
     if (feat_idx < 0) feat_idx += acmod->n_feat_alloc;
 
-    /* Generate scores for the next available frame */
-    ps_mgau_frame_eval(acmod->mgau,
-                       acmod->senone_scores,
-                       acmod->senone_active,
-                       acmod->n_senone_active,
-                       acmod->feat_buf[feat_idx],
-                       frame_idx,
-                       acmod->compallsen);
+    /* If there is an input senone file locate the appropriate frame and read it. */
+    if (acmod->insenfh) {
+        fseek(acmod->insenfh, acmod->framepos[feat_idx], SEEK_SET);
+        if (acmod_read_scores_internal(acmod) < 0)
+            return NULL;
+    }
+    else {
+        /* Build active senone list. */
+        acmod_flags2list(acmod);
+
+        /* Generate scores for the next available frame */
+        ps_mgau_frame_eval(acmod->mgau,
+                           acmod->senone_scores,
+                           acmod->senone_active,
+                           acmod->n_senone_active,
+                           acmod->feat_buf[feat_idx],
+                           frame_idx,
+                           acmod->compallsen);
+    }
 
     if (inout_frame_idx)
         *inout_frame_idx = frame_idx;
     acmod->senscr_frame = frame_idx;
+
+    /* Dump scores to the senone dump file if one exists. */
+    if (acmod->senfh) {
+        if (acmod_write_scores(acmod, acmod->senfh) < 0)
+            return NULL;
+    }
 
     return acmod->senone_scores;
 }
