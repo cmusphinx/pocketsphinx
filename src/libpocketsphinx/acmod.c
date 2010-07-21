@@ -1099,6 +1099,8 @@ acmod_best_score(acmod_t *acmod, int *out_best_senid)
 void
 acmod_clear_active(acmod_t *acmod)
 {
+    if (acmod->insenfh)
+        return;
     bitvec_clear_all(acmod->senone_active_vec, bin_mdef_n_sen(acmod->mdef));
     acmod->n_senone_active = 0;
 }
