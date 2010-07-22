@@ -76,7 +76,12 @@
     { "-rawlogdir",                                     \
             ARG_STRING,                                 \
             NULL,                                       \
-            "Directory to log raw audio files to" }
+            "Directory to log raw audio files to" },    \
+     { "-senlogdir",                                    \
+             ARG_STRING,                                \
+             NULL,                                      \
+             "Directory to log senone score files to"   \
+             }
 
 /** Options defining beam width parameters for tuning the search. */
 #define POCKETSPHINX_BEAM_OPTIONS                                       \
