@@ -335,6 +335,34 @@ process_lmnamectl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *lmname)
 }
 
 static int
+build_outdir_one(cmd_ln_t *config, char const *arg, char const *uttpath)
+{
+    char const *dir;
+
+    if ((dir = cmd_ln_str_r(config, arg)) != NULL) {
+        char *dirname = string_join(dir, "/", uttpath, NULL);
+        build_directory(dirname);
+        ckd_free(dirname);
+    }
+    return 0;
+}
+
+static int
+build_outdirs(cmd_ln_t *config, char const *uttid)
+{
+    char *uttpath = ckd_salloc(uttid);
+
+    path2dirname(uttid, uttpath);
+    build_outdir_one(config, "-outlatdir", uttpath);
+    build_outdir_one(config, "-mfclogdir", uttpath);
+    build_outdir_one(config, "-rawlogdir", uttpath);
+    build_outdir_one(config, "-senlogdir", uttpath);
+    ckd_free(uttpath);
+
+    return 0;
+}
+
+static int
 process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
                  char const *file, char const *uttid, int32 sf, int32 ef)
 {
@@ -361,6 +389,10 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
         ckd_free(infile);
         return -1;
     }
+    /* Build output directories. */
+    if (cmd_ln_boolean_r(config, "-build_outdirs"))
+        build_outdirs(config, uttid);
+
     if (cmd_ln_boolean_r(config, "-adcin")) {
         
         if (ef != -1) {
@@ -412,14 +444,6 @@ write_lattice(ps_decoder_t *ps, char const *latdir, char const *uttid)
     config = ps_get_config(ps);
     outfile = string_join(latdir, "/", uttid,
                           cmd_ln_str_r(config, "-outlatext"), NULL);
-    /* Build output directory structure if possible/requested (it is
-     * by default). */
-    if (cmd_ln_boolean_r(config, "-build_outdirs")) {
-        char *dirname = ckd_salloc(outfile);
-        path2dirname(outfile, dirname);
-        build_directory(dirname);
-        ckd_free(dirname);
-    }
     /* Prune lattice. */
     lmath = ps_get_logmath(ps);
     beam = logmath_log(lmath, cmd_ln_float64_r(config, "-outlatbeam"));

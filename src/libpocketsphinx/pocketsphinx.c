@@ -680,7 +680,7 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
         FILE *senfh;
         E_INFO("Writing senone score log file: %s\n", logfn);
         if ((senfh = fopen(logfn, "wb")) == NULL) {
-            E_ERROR_SYSTEM("Failed to open raw audio log file %s", logfn);
+            E_ERROR_SYSTEM("Failed to open senone score log file %s", logfn);
             ckd_free(logfn);
             return -1;
         }
