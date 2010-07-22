@@ -718,6 +718,28 @@ ps_search_forward(ps_decoder_t *ps)
 }
 
 int
+ps_decode_senscr(ps_decoder_t *ps, FILE *senfh,
+                 char const *uttid)
+{
+    int nfr, n_searchfr;
+
+    ps_start_utt(ps, uttid);
+    n_searchfr = 0;
+    acmod_set_insenfh(ps->acmod, senfh);
+    while ((nfr = acmod_read_scores(ps->acmod)) > 0) {
+        if ((nfr = ps_search_forward(ps)) < 0) {
+            ps_end_utt(ps);
+            return nfr;
+        }
+        n_searchfr += nfr;
+    }
+    ps_end_utt(ps);
+    acmod_set_insenfh(ps->acmod, NULL);
+
+    return n_searchfr;
+}
+
+int
 ps_process_raw(ps_decoder_t *ps,
                int16 const *data,
                size_t n_samples,

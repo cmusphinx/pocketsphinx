@@ -336,6 +336,18 @@ int ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
                   char const *uttid, long maxsamps);
 
 /**
+ * Decode a senone score dump file.
+ *
+ * @param ps Decoder
+ * @param fh Previously opened file handle positioned at start of file.
+ * @param uttid Utterance ID (or NULL to generate automatically).
+ * @return Number of frames read.
+ */
+POCKETSPHINX_EXPORT
+int ps_decode_senscr(ps_decoder_t *ps, FILE *senfh,
+                     char const *uttid);
+
+/**
  * Start utterance processing.
  *
  * This function should be called before any utterance data is passed
