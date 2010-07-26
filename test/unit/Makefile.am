@@ -36,6 +36,7 @@ check_PROGRAMS = \
 	test_fsg2_search \
 	test_tokentree \
 	test_senfh \
+	test_alignment \
 	$(gst_programs)
 
 TESTS = $(check_PROGRAMS)

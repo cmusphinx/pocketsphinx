@@ -51,6 +51,8 @@
 #include "dict2pid.h"
 #include "hmm.h"
 
+#define ALIGNMENT_NONE ((uint16)0xffff)
+
 struct alignment_entry_s {
     union {
         int32 wid;
@@ -62,23 +64,29 @@ struct alignment_entry_s {
     } id;
     int16 start;
     int16 duration;
+    uint16 parent;
+    uint16 child;
 };
 typedef struct alignment_entry_s alignment_entry_t;
 
+struct alignment_vector_s {
+    alignment_entry_t *seq;
+    uint16 n_ent, n_alloc;
+};
+typedef struct alignment_vector_s alignment_vector_t;
+
 struct alignment_s {
     dict2pid_t *d2p;
-    alignment_entry_t *word;
-    uint16 n_word, n_word_alloc;
-    alignment_entry_t *sseq;
-    uint16 n_sseq, n_sseq_alloc;
-    alignment_entry_t *state;
-    uint16 n_state, n_state_alloc;
+    alignment_vector_t word;
+    alignment_vector_t sseq;
+    alignment_vector_t state;
 };
 typedef struct alignment_s alignment_t;
 
 struct alignment_iter_s {
     alignment_t *al;
-    uint16 ent, parent, child;
+    alignment_vector_t *vec;
+    int pos;
 };
 typedef struct alignment_iter_s alignment_iter_t;
 
@@ -123,9 +131,16 @@ alignment_iter_t *alignment_phones(alignment_t *al);
  */
 alignment_iter_t *alignment_states(alignment_t *al);
 
+/**
+ * Get the alignment entry pointed to by an iterator.
+ */
+alignment_entry_t *alignment_iter_get(alignment_iter_t *itor);
+
 alignment_iter_t *alignment_iter_next(alignment_iter_t *itor);
 alignment_iter_t *alignment_iter_prev(alignment_iter_t *itor);
 alignment_iter_t *alignment_iter_up(alignment_iter_t *itor);
 alignment_iter_t *alignment_iter_down(alignment_iter_t *itor);
+
+int alignment_iter_free(alignment_iter_t *itor);
 
 #endif /* __ALIGNMENT_H__ */
