@@ -6,6 +6,7 @@ libpocketsphinx_la_LDFLAGS = -version-info 2:0:1
 
 libpocketsphinx_la_SOURCES =			\
 	acmod.c					\
+	alignment.c				\
 	bin_mdef.c				\
 	blkarray_list.c				\
 	dict.c					\
@@ -36,6 +37,7 @@ libpocketsphinx_la_SOURCES =			\
 noinst_HEADERS =				\
 	pocketsphinx_internal.h			\
 	acmod.h					\
+	alignment.h				\
 	ngram_search.h				\
 	bin_mdef.h				\
 	blkarray_list.h				\
