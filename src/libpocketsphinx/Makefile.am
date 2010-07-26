@@ -6,7 +6,6 @@ libpocketsphinx_la_LDFLAGS = -version-info 2:0:1
 
 libpocketsphinx_la_SOURCES =			\
 	acmod.c					\
-	alignment.c				\
 	bin_mdef.c				\
 	blkarray_list.c				\
 	dict.c					\
@@ -26,6 +25,7 @@ libpocketsphinx_la_SOURCES =			\
 	ngram_search_fwdtree.c			\
 	ngram_search_fwdflat.c			\
 	phone_loop_search.c			\
+	ps_alignment.c				\
 	ps_lattice.c				\
 	ps_mllr.c				\
 	ptm_mgau.c				\
@@ -37,7 +37,6 @@ libpocketsphinx_la_SOURCES =			\
 noinst_HEADERS =				\
 	pocketsphinx_internal.h			\
 	acmod.h					\
-	alignment.h				\
 	ngram_search.h				\
 	bin_mdef.h				\
 	blkarray_list.h				\
@@ -58,6 +57,7 @@ noinst_HEADERS =				\
 	ngram_search_fwdtree.h			\
 	ngram_search_fwdflat.h			\
 	phone_loop_search.h			\
+	ps_alignment.h				\
 	ps_lattice_internal.h			\
 	posixwin32.h				\
 	ptm_mgau.h				\

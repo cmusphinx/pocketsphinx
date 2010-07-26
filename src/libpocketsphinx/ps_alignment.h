@@ -36,11 +36,11 @@
  */
 
 /**
- * @file alignment.h Multi-level alignment structure
+ * @file ps_alignment.h Multi-level alignment structure
  */
 
-#ifndef __ALIGNMENT_H__
-#define __ALIGNMENT_H__
+#ifndef __PS_ALIGNMENT_H__
+#define __PS_ALIGNMENT_H__
 
 /* System headers. */
 
@@ -51,9 +51,9 @@
 #include "dict2pid.h"
 #include "hmm.h"
 
-#define ALIGNMENT_NONE ((uint16)0xffff)
+#define PS_ALIGNMENT_NONE ((uint16)0xffff)
 
-struct alignment_entry_s {
+struct ps_alignment_entry_s {
     union {
         int32 wid;
         struct {
@@ -67,80 +67,97 @@ struct alignment_entry_s {
     uint16 parent;
     uint16 child;
 };
-typedef struct alignment_entry_s alignment_entry_t;
+typedef struct ps_alignment_entry_s ps_alignment_entry_t;
 
-struct alignment_vector_s {
-    alignment_entry_t *seq;
+struct ps_alignment_vector_s {
+    ps_alignment_entry_t *seq;
     uint16 n_ent, n_alloc;
 };
-typedef struct alignment_vector_s alignment_vector_t;
+typedef struct ps_alignment_vector_s ps_alignment_vector_t;
 
-struct alignment_s {
+struct ps_alignment_s {
     dict2pid_t *d2p;
-    alignment_vector_t word;
-    alignment_vector_t sseq;
-    alignment_vector_t state;
+    ps_alignment_vector_t word;
+    ps_alignment_vector_t sseq;
+    ps_alignment_vector_t state;
 };
-typedef struct alignment_s alignment_t;
+typedef struct ps_alignment_s ps_alignment_t;
 
-struct alignment_iter_s {
-    alignment_t *al;
-    alignment_vector_t *vec;
+struct ps_alignment_iter_s {
+    ps_alignment_t *al;
+    ps_alignment_vector_t *vec;
     int pos;
 };
-typedef struct alignment_iter_s alignment_iter_t;
+typedef struct ps_alignment_iter_s ps_alignment_iter_t;
 
 /**
  * Create a new, empty alignment.
  */
-alignment_t *alignment_init(dict2pid_t *d2p);
+ps_alignment_t *ps_alignment_init(dict2pid_t *d2p);
 
 /**
  * Release an alignment
  */
-int alignment_free(alignment_t *al);
+int ps_alignment_free(ps_alignment_t *al);
 
 /**
  * Append a word.
  */
-int alignment_add_word(alignment_t *al,
-                       int32 wid, int duration);
+int ps_alignment_add_word(ps_alignment_t *al,
+                          int32 wid, int duration);
 
 /**
  * Populate lower layers using available word information.
  */
-int alignment_populate(alignment_t *al);
+int ps_alignment_populate(ps_alignment_t *al);
 
 /**
  * Propagate timing information up from state sequence.
  */
-int alignment_propagate(alignment_t *al);
+int ps_alignment_propagate(ps_alignment_t *al);
 
 /**
  * Iterate over the alignment starting at the first word.
  */
-alignment_iter_t *alignment_words(alignment_t *al);
+ps_alignment_iter_t *ps_alignment_words(ps_alignment_t *al);
 
 /**
  * Iterate over the alignment starting at the first phone.
  */
-alignment_iter_t *alignment_phones(alignment_t *al);
+ps_alignment_iter_t *ps_alignment_phones(ps_alignment_t *al);
 
 /**
  * Iterate over the alignment starting at the first state.
  */
-alignment_iter_t *alignment_states(alignment_t *al);
+ps_alignment_iter_t *ps_alignment_states(ps_alignment_t *al);
 
 /**
  * Get the alignment entry pointed to by an iterator.
  */
-alignment_entry_t *alignment_iter_get(alignment_iter_t *itor);
+ps_alignment_entry_t *ps_alignment_iter_get(ps_alignment_iter_t *itor);
 
-alignment_iter_t *alignment_iter_next(alignment_iter_t *itor);
-alignment_iter_t *alignment_iter_prev(alignment_iter_t *itor);
-alignment_iter_t *alignment_iter_up(alignment_iter_t *itor);
-alignment_iter_t *alignment_iter_down(alignment_iter_t *itor);
+/**
+ * Move an alignment iterator forward.
+ */
+ps_alignment_iter_t *ps_alignment_iter_next(ps_alignment_iter_t *itor);
 
-int alignment_iter_free(alignment_iter_t *itor);
+/**
+ * Move an alignment iterator back.
+ */
+ps_alignment_iter_t *ps_alignment_iter_prev(ps_alignment_iter_t *itor);
 
-#endif /* __ALIGNMENT_H__ */
+/**
+ * Get a new iterator starting at the parent of the current node.
+ */
+ps_alignment_iter_t *ps_alignment_iter_up(ps_alignment_iter_t *itor);
+/**
+ * Get a new iterator starting at the first child of the current node.
+ */
+ps_alignment_iter_t *ps_alignment_iter_down(ps_alignment_iter_t *itor);
+
+/**
+ * Release an iterator before completing all iterations.
+ */
+int ps_alignment_iter_free(ps_alignment_iter_t *itor);
+
+#endif /* __PS_ALIGNMENT_H__ */

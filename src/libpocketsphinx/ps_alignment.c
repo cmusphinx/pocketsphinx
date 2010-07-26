@@ -36,7 +36,7 @@
  */
 
 /**
- * @file alignment.c Multi-level alignment structure
+ * @file ps_alignment.c Multi-level alignment structure
  */
 
 /* System headers. */
@@ -45,18 +45,18 @@
 #include <sphinxbase/ckd_alloc.h>
 
 /* Local headers. */
-#include "alignment.h"
+#include "ps_alignment.h"
 
-alignment_t *
-alignment_init(dict2pid_t *d2p)
+ps_alignment_t *
+ps_alignment_init(dict2pid_t *d2p)
 {
-    alignment_t *al = ckd_calloc(1, sizeof(*al));
+    ps_alignment_t *al = ckd_calloc(1, sizeof(*al));
     al->d2p = dict2pid_retain(d2p);
     return al;
 }
 
 int
-alignment_free(alignment_t *al)
+ps_alignment_free(ps_alignment_t *al)
 {
     if (al == NULL)
         return 0;
@@ -86,8 +86,8 @@ vector_grow_one(void *ptr, uint16 *n_alloc, uint16 *n, size_t item_size)
     return ptr;
 }
 
-static alignment_entry_t *
-alignment_vector_grow_one(alignment_vector_t *vec)
+static ps_alignment_entry_t *
+ps_alignment_vector_grow_one(ps_alignment_vector_t *vec)
 {
     void *ptr;
     ptr = vector_grow_one(vec->seq, &vec->n_alloc,
@@ -99,18 +99,18 @@ alignment_vector_grow_one(alignment_vector_t *vec)
 }
 
 static void
-alignment_vector_empty(alignment_vector_t *vec)
+ps_alignment_vector_empty(ps_alignment_vector_t *vec)
 {
     vec->n_ent = 0;
 }
 
 int
-alignment_add_word(alignment_t *al,
-		   int32 wid, int duration)
+ps_alignment_add_word(ps_alignment_t *al,
+                      int32 wid, int duration)
 {
-    alignment_entry_t *ent;
+    ps_alignment_entry_t *ent;
 
-    if ((ent = alignment_vector_grow_one(&al->word)) == NULL)
+    if ((ent = ps_alignment_vector_grow_one(&al->word)) == NULL)
         return 0;
     ent->id.wid = wid;
     if (al->word.n_ent > 1)
@@ -118,14 +118,14 @@ alignment_add_word(alignment_t *al,
     else
         ent->start = 0;
     ent->duration = duration;
-    ent->parent = ALIGNMENT_NONE;
-    ent->child = ALIGNMENT_NONE;
+    ent->parent = PS_ALIGNMENT_NONE;
+    ent->child = PS_ALIGNMENT_NONE;
 
     return al->word.n_ent;
 }
 
 int
-alignment_populate(alignment_t *al)
+ps_alignment_populate(ps_alignment_t *al)
 {
     dict2pid_t *d2p;
     dict_t *dict;
@@ -133,8 +133,8 @@ alignment_populate(alignment_t *al)
     int i, lc;
 
     /* Clear phone and state sequences. */
-    alignment_vector_empty(&al->sseq);
-    alignment_vector_empty(&al->state);
+    ps_alignment_vector_empty(&al->sseq);
+    ps_alignment_vector_empty(&al->state);
 
     /* For each word, expand to phones/senone sequences. */
     d2p = al->d2p;
@@ -142,8 +142,8 @@ alignment_populate(alignment_t *al)
     mdef = d2p->mdef;
     lc = bin_mdef_silphone(mdef);
     for (i = 0; i < al->word.n_ent; ++i) {
-        alignment_entry_t *went = al->word.seq + i;
-        alignment_entry_t *sent;
+        ps_alignment_entry_t *went = al->word.seq + i;
+        ps_alignment_entry_t *sent;
         int wid = went->id.wid;
         int len = dict_pronlen(dict, wid);
         int j, rc;
@@ -154,7 +154,7 @@ alignment_populate(alignment_t *al)
             rc = bin_mdef_silphone(mdef);
 
         /* First phone. */
-        if ((sent = alignment_vector_grow_one(&al->sseq)) == NULL) {
+        if ((sent = ps_alignment_vector_grow_one(&al->sseq)) == NULL) {
             E_ERROR("Failed to add phone entry!\n");
             return -1;
         }
@@ -174,7 +174,7 @@ alignment_populate(alignment_t *al)
 
         /* Internal phones. */
         for (j = 1; j < len - 1; ++j) {
-            if ((sent = alignment_vector_grow_one(&al->sseq)) == NULL) {
+            if ((sent = ps_alignment_vector_grow_one(&al->sseq)) == NULL) {
                 E_ERROR("Failed to add phone entry!\n");
                 return -1;
             }
@@ -190,7 +190,7 @@ alignment_populate(alignment_t *al)
         if (j < len) {
             xwdssid_t *rssid;
             assert(j == len - 1);
-            if ((sent = alignment_vector_grow_one(&al->sseq)) == NULL) {
+            if ((sent = ps_alignment_vector_grow_one(&al->sseq)) == NULL) {
                 E_ERROR("Failed to add phone entry!\n");
                 return -1;
             }
@@ -212,12 +212,12 @@ alignment_populate(alignment_t *al)
      * nested above but this makes it more clear and easier to
      * refactor) */
     for (i = 0; i < al->sseq.n_ent; ++i) {
-        alignment_entry_t *pent = al->sseq.seq + i;
-        alignment_entry_t *sent;
+        ps_alignment_entry_t *pent = al->sseq.seq + i;
+        ps_alignment_entry_t *sent;
         int j;
 
         for (j = 0; j < bin_mdef_n_emit_state(mdef); ++j) {
-            if ((sent = alignment_vector_grow_one(&al->state)) == NULL) {
+            if ((sent = ps_alignment_vector_grow_one(&al->state)) == NULL) {
                 E_ERROR("Failed to add state entry!\n");
                 return -1;
             }
@@ -235,15 +235,15 @@ alignment_populate(alignment_t *al)
 }
 
 int
-alignment_propagate(alignment_t *al)
+ps_alignment_propagate(ps_alignment_t *al)
 {
-    alignment_entry_t *last_ent = NULL;
+    ps_alignment_entry_t *last_ent = NULL;
     int i;
 
     /* Propagate duration up from states to phones. */
     for (i = 0; i < al->state.n_ent; ++i) {
-        alignment_entry_t *sent = al->state.seq + i;
-        alignment_entry_t *pent = al->sseq.seq + sent->parent;
+        ps_alignment_entry_t *sent = al->state.seq + i;
+        ps_alignment_entry_t *pent = al->sseq.seq + sent->parent;
         if (pent != last_ent) {
             pent->start = sent->start;
             pent->duration = 0;
@@ -255,8 +255,8 @@ alignment_propagate(alignment_t *al)
     /* Propagate duration up from phones to words. */
     last_ent = NULL;
     for (i = 0; i < al->sseq.n_ent; ++i) {
-        alignment_entry_t *pent = al->sseq.seq + i;
-        alignment_entry_t *went = al->word.seq + pent->parent;
+        ps_alignment_entry_t *pent = al->sseq.seq + i;
+        ps_alignment_entry_t *went = al->word.seq + pent->parent;
         if (went != last_ent) {
             went->start = pent->start;
             went->duration = 0;
@@ -268,10 +268,10 @@ alignment_propagate(alignment_t *al)
     return 0;
 }
 
-alignment_iter_t *
-alignment_words(alignment_t *al)
+ps_alignment_iter_t *
+ps_alignment_words(ps_alignment_t *al)
 {
-    alignment_iter_t *itor;
+    ps_alignment_iter_t *itor;
 
     if (al->word.n_ent == 0)
         return NULL;
@@ -282,10 +282,10 @@ alignment_words(alignment_t *al)
     return itor;
 }
 
-alignment_iter_t *
-alignment_phones(alignment_t *al)
+ps_alignment_iter_t *
+ps_alignment_phones(ps_alignment_t *al)
 {
-    alignment_iter_t *itor;
+    ps_alignment_iter_t *itor;
 
     if (al->sseq.n_ent == 0)
         return NULL;
@@ -296,10 +296,10 @@ alignment_phones(alignment_t *al)
     return itor;
 }
 
-alignment_iter_t *
-alignment_states(alignment_t *al)
+ps_alignment_iter_t *
+ps_alignment_states(ps_alignment_t *al)
 {
-    alignment_iter_t *itor;
+    ps_alignment_iter_t *itor;
 
     if (al->state.n_ent == 0)
         return NULL;
@@ -310,79 +310,79 @@ alignment_states(alignment_t *al)
     return itor;
 }
 
-alignment_entry_t *
-alignment_iter_get(alignment_iter_t *itor)
+ps_alignment_entry_t *
+ps_alignment_iter_get(ps_alignment_iter_t *itor)
 {
     return itor->vec->seq + itor->pos;
 }
 
 int
-alignment_iter_free(alignment_iter_t *itor)
+ps_alignment_iter_free(ps_alignment_iter_t *itor)
 {
     ckd_free(itor);
     return 0;
 }
 
-alignment_iter_t *
-alignment_iter_next(alignment_iter_t *itor)
+ps_alignment_iter_t *
+ps_alignment_iter_next(ps_alignment_iter_t *itor)
 {
     if (itor == NULL)
         return NULL;
     if (++itor->pos >= itor->vec->n_ent) {
-        alignment_iter_free(itor);
+        ps_alignment_iter_free(itor);
         return NULL;
     }
     return itor;
 }
 
-alignment_iter_t *
-alignment_iter_prev(alignment_iter_t *itor)
+ps_alignment_iter_t *
+ps_alignment_iter_prev(ps_alignment_iter_t *itor)
 {
     if (itor == NULL)
         return NULL;
     if (--itor->pos < 0) {
-        alignment_iter_free(itor);
+        ps_alignment_iter_free(itor);
         return NULL;
     }
     return itor;
 }
 
-alignment_iter_t *
-alignment_iter_up(alignment_iter_t *itor)
+ps_alignment_iter_t *
+ps_alignment_iter_up(ps_alignment_iter_t *itor)
 {
+    ps_alignment_iter_t *itor2;
     if (itor == NULL)
         return NULL;
     if (itor->vec == &itor->al->word)
-        goto stop_iter;
-    itor->pos = itor->vec->seq[itor->pos].parent;
-    if (itor->pos == ALIGNMENT_NONE)
-        goto stop_iter;
+        return NULL;
+    if (itor->vec->seq[itor->pos].parent == PS_ALIGNMENT_NONE)
+        return NULL;
+    itor2 = ckd_calloc(1, sizeof(*itor2));
+    itor2->al = itor->al;
+    itor2->pos = itor->vec->seq[itor->pos].parent;
     if (itor->vec == &itor->al->sseq)
-        itor->vec = &itor->al->word;
+        itor2->vec = &itor->al->word;
     else
-        itor->vec = &itor->al->sseq;
-    return itor;
-stop_iter:
-    alignment_iter_free(itor);
-    return NULL;
+        itor2->vec = &itor->al->sseq;
+    return itor2;
 }
 
-alignment_iter_t *
-alignment_iter_down(alignment_iter_t *itor)
+ps_alignment_iter_t *
+ps_alignment_iter_down(ps_alignment_iter_t *itor)
 {
+    ps_alignment_iter_t *itor2;
     if (itor == NULL)
         return NULL;
     if (itor->vec == &itor->al->state)
-        goto stop_iter;
-    itor->pos = itor->vec->seq[itor->pos].child;
-    if (itor->pos == ALIGNMENT_NONE)
-        goto stop_iter;
+        return NULL;
+    if (itor->vec->seq[itor->pos].child == PS_ALIGNMENT_NONE)
+        return NULL;
+    itor2 = ckd_calloc(1, sizeof(*itor2));
+    itor2->al = itor->al;
+    itor2->pos = itor->vec->seq[itor->pos].child;
     if (itor->vec == &itor->al->word)
-        itor->vec = &itor->al->sseq;
+        itor2->vec = &itor->al->sseq;
     else
-        itor->vec = &itor->al->state;
-    return itor;
-stop_iter:
-    alignment_iter_free(itor);
-    return NULL;
+        itor2->vec = &itor->al->state;
+    return itor2;
 }
