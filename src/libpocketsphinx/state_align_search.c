@@ -84,7 +84,7 @@ evaluate_hmms(state_align_search_t *sas, int16 const *senscr, int frame_idx)
 
         if (hmm_frame(hmm) < frame_idx)
             continue;
-        score = hmm_vit_eval(hmm, stdout);
+        score = hmm_vit_eval(hmm);
         if (score BETTER_THAN bs) {
             bs = score;
             bi = i;
