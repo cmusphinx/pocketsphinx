@@ -40,3 +40,94 @@
  */
 
 #include "state_align_search.h"
+
+static int
+state_align_search_start(ps_search_t *search)
+{
+    state_align_search_t *sas = (state_align_search_t *)search;
+    /* Create the initial token. */
+    /* Activate the initial state. */
+    return 0;
+}
+
+static int
+state_align_search_step(ps_search_t *search, int frame_idx)
+{
+    state_align_search_t *sas = (state_align_search_t *)search;
+
+    /* Calculate senone scores. */
+    /* Viterbi step. */
+    /* Transition out of non-emitting states. */
+    /* Generate new tokens from best path results. */
+    return 0;
+}
+
+static int
+state_align_search_finish(ps_search_t *search)
+{
+    state_align_search_t *sas = (state_align_search_t *)search;
+    /* Nothing to do here? */
+    return 0;
+}
+
+static int
+state_align_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
+{
+    /* This does nothing. */
+    return 0;
+}
+
+static void
+state_align_search_free(ps_search_t *search)
+{
+    state_align_search_t *sas = (state_align_search_t *)search;
+    ps_search_deinit(search);
+    ckd_free(sas->hmms);
+    hmm_context_free(sas->hmmctx);
+    ckd_free(sas);
+}
+
+static ps_searchfuncs_t state_align_search_funcs = {
+    /* name: */   "state_align",
+    /* start: */  state_align_search_start,
+    /* step: */   state_align_search_step,
+    /* finish: */ state_align_search_finish,
+    /* reinit: */ state_align_search_reinit,
+    /* free: */   state_align_search_free,
+    /* lattice: */  NULL,
+    /* hyp: */      NULL,
+    /* prob: */     NULL,
+    /* seg_iter: */ NULL,
+};
+
+ps_search_t *
+state_align_search_init(cmd_ln_t *config,
+                        acmod_t *acmod,
+                        ps_alignment_t *al)
+{
+    state_align_search_t *sas;
+    ps_alignment_iter_t *itor;
+    hmm_t *hmm;
+
+    sas = ckd_calloc(1, sizeof(*sas));
+    ps_search_init(ps_search_base(sas), &state_align_search_funcs,
+                   config, acmod, al->d2p->dict, al->d2p);
+    sas->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
+                                   acmod->tmat->tp, NULL, acmod->mdef->sseq);
+    if (sas->hmmctx == NULL) {
+        ckd_free(sas);
+        return NULL;
+    }
+    sas->al = al;
+
+    /* Generate HMM vector from phone level of alignment. */
+    sas->hmms = ckd_calloc(ps_alignment_n_phones(al), sizeof(*sas->hmms));
+    for (hmm = sas->hmms, itor = ps_alignment_phones(al); itor;
+         ++hmm, itor = ps_alignment_iter_next(itor)) {
+        ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
+        hmm_init(sas->hmmctx, hmm, FALSE,
+                 ent->id.pid.ssid, ent->id.pid.cipid);
+    }
+    return ps_search_base(sas);
+}
+

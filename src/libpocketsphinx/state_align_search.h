@@ -67,8 +67,7 @@ struct state_align_search_s {
     hmm_context_t *hmmctx;  /**< HMM context structure. */
     ps_alignment_t *al;     /**< Alignment structure being operated on. */
     hmm_t *hmms;            /**< Vector of HMMs corresponding to phone level. */
-    uint16 *tokens;         /**< Tokens (backpointers) for state alignment. 
-                               An upper triangular matrix so we can do it compactly. */
+    uint16 *tokens;         /**< Tokens (backpointers) for state alignment. */
     int n_fr_alloc;         /**< Number of frames of tokens allocated. */
     int frame;              /**< Current frame being processed. */
     glist_t renorm;         /**< List of renormalizations. */
@@ -76,6 +75,7 @@ struct state_align_search_s {
 typedef struct state_align_search_s state_align_search_t;
 
 ps_search_t *state_align_search_init(cmd_ln_t *config,
+                                     acmod_t *acmod,
                                      ps_alignment_t *al);
 
 #endif /* __STATE_ALIGN_SEARCH_H__ */

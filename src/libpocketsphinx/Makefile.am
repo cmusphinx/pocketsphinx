@@ -30,6 +30,7 @@ libpocketsphinx_la_SOURCES =			\
 	ps_mllr.c				\
 	ptm_mgau.c				\
 	s2_semi_mgau.c				\
+	state_align_search.c			\
 	tmat.c					\
 	vector.c				\
 	pocketsphinx.c

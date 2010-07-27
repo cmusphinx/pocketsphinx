@@ -117,6 +117,21 @@ int ps_alignment_populate(ps_alignment_t *al);
 int ps_alignment_propagate(ps_alignment_t *al);
 
 /**
+ * Number of words.
+ */
+int ps_alignment_n_words(ps_alignment_t *al);
+
+/**
+ * Number of phones.
+ */
+int ps_alignment_n_phones(ps_alignment_t *al);
+
+/**
+ * Number of states.
+ */
+int ps_alignment_n_states(ps_alignment_t *al);
+
+/**
  * Iterate over the alignment starting at the first word.
  */
 ps_alignment_iter_t *ps_alignment_words(ps_alignment_t *al);

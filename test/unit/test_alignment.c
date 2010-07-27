@@ -42,7 +42,9 @@ main(int argc, char *argv[])
 	TEST_EQUAL(itor, NULL);
 
 	printf("%d words %d phones %d states\n",
-	       al->word.n_ent, al->sseq.n_ent, al->state.n_ent);
+	       ps_alignment_n_words(al),
+	       ps_alignment_n_phones(al),
+	       ps_alignment_n_states(al));
 
 	ps_alignment_free(al);
 	dict_free(dict);

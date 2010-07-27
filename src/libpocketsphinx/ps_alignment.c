@@ -268,6 +268,24 @@ ps_alignment_propagate(ps_alignment_t *al)
     return 0;
 }
 
+int
+ps_alignment_n_words(ps_alignment_t *al)
+{
+    return (int)al->word.n_ent;
+}
+
+int
+ps_alignment_n_phones(ps_alignment_t *al)
+{
+    return (int)al->sseq.n_ent;
+}
+
+int
+ps_alignment_n_states(ps_alignment_t *al)
+{
+    return (int)al->state.n_ent;
+}
+
 ps_alignment_iter_t *
 ps_alignment_words(ps_alignment_t *al)
 {
