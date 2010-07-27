@@ -51,15 +51,6 @@
 #include "hmm.h"
 
 /**
- * Renormalization event.
- */
-struct state_align_renorm_s {
-    int frame_idx;  /**< Frame of renormalization. */
-    int32 norm;     /**< Normalization constant. */
-};
-typedef struct state_align_renorm_s state_align_renorm_t;
-
-/**
  * Phone loop search structure.
  */
 struct state_align_search_s {
@@ -68,11 +59,13 @@ struct state_align_search_s {
     ps_alignment_t *al;     /**< Alignment structure being operated on. */
     hmm_t *hmms;            /**< Vector of HMMs corresponding to phone level. */
     int n_phones;	    /**< Number of HMMs (phones). */
-    uint16 *tokens;         /**< Tokens (backpointers) for state alignment. */
-    int n_fr_alloc;         /**< Number of frames of tokens allocated. */
+
     int frame;              /**< Current frame being processed. */
     int32 best_score;       /**< Best score in current frame. */
-    glist_t renorm;         /**< List of renormalizations. */
+
+    int n_emit_state;       /**< Number of emitting states (tokens per frame) */
+    uint16 *tokens;         /**< Tokens (backpointers) for state alignment. */
+    int n_fr_alloc;         /**< Number of frames of tokens allocated. */
 };
 typedef struct state_align_search_s state_align_search_t;
 

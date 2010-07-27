@@ -342,6 +342,19 @@ ps_alignment_iter_free(ps_alignment_iter_t *itor)
 }
 
 ps_alignment_iter_t *
+ps_alignment_iter_goto(ps_alignment_iter_t *itor, int pos)
+{
+    if (itor == NULL)
+        return NULL;
+    if (pos >= itor->vec->n_ent) {
+        ps_alignment_iter_free(itor);
+        return NULL;
+    }
+    itor->pos = pos;
+    return itor;
+}
+
+ps_alignment_iter_t *
 ps_alignment_iter_next(ps_alignment_iter_t *itor)
 {
     if (itor == NULL)

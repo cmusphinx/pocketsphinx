@@ -69,7 +69,6 @@ main(int argc, char *argv[])
 		fclose(rawfh);
 	}
 
-	TEST_EQUAL(0, ps_alignment_propagate(al));
 	for (itor = ps_alignment_words(al); itor;
 	     itor = ps_alignment_iter_next(itor)) {
 		ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
@@ -77,6 +76,7 @@ main(int argc, char *argv[])
 		       ent->id.wid, ent->start, ent->duration);
 	}
 
+	ps_search_free(search);
 	ps_alignment_free(al);
 	ps_free(ps);
 	return 0;

@@ -152,6 +152,11 @@ ps_alignment_iter_t *ps_alignment_states(ps_alignment_t *al);
 ps_alignment_entry_t *ps_alignment_iter_get(ps_alignment_iter_t *itor);
 
 /**
+ * Move alignment iterator to given index.
+ */
+ps_alignment_iter_t *ps_alignment_iter_goto(ps_alignment_iter_t *itor, int pos);
+
+/**
  * Move an alignment iterator forward.
  */
 ps_alignment_iter_t *ps_alignment_iter_next(ps_alignment_iter_t *itor);
