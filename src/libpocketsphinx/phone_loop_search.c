@@ -205,15 +205,6 @@ evaluate_hmms(phone_loop_search_t *pls, int16 const *senscr, int frame_idx)
         }
     }
     pls->best_score = bs;
-
-    for (i = 0; i < pls->n_phones; ++i) {
-        hmm_t *hmm = (hmm_t *)&pls->phones[i];
-        if (hmm_frame(hmm) < frame_idx)
-            continue;
-        if (hmm_bestscore(hmm) < bs + pls->beam)
-            continue;
-    }
-
     return bs;
 }
 
