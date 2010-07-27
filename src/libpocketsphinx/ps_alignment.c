@@ -234,6 +234,70 @@ ps_alignment_populate(ps_alignment_t *al)
     return 0;
 }
 
+/* FIXME: Somewhat the same as the above function, needs refactoring */
+int
+ps_alignment_populate_ci(ps_alignment_t *al)
+{
+    dict2pid_t *d2p;
+    dict_t *dict;
+    bin_mdef_t *mdef;
+    int i;
+
+    /* Clear phone and state sequences. */
+    ps_alignment_vector_empty(&al->sseq);
+    ps_alignment_vector_empty(&al->state);
+
+    /* For each word, expand to phones/senone sequences. */
+    d2p = al->d2p;
+    dict = d2p->dict;
+    mdef = d2p->mdef;
+    for (i = 0; i < al->word.n_ent; ++i) {
+        ps_alignment_entry_t *went = al->word.seq + i;
+        ps_alignment_entry_t *sent;
+        int wid = went->id.wid;
+        int len = dict_pronlen(dict, wid);
+        int j;
+
+        for (j = 0; j < len; ++j) {
+            if ((sent = ps_alignment_vector_grow_one(&al->sseq)) == NULL) {
+                E_ERROR("Failed to add phone entry!\n");
+                return -1;
+            }
+            sent->id.pid.cipid = dict_pron(dict, wid, j);
+            sent->id.pid.ssid = bin_mdef_pid2ssid(mdef, sent->id.pid.cipid);
+            assert(sent->id.pid.ssid != BAD_SSID);
+            sent->start = went->start;
+            sent->duration = went->duration;
+            sent->parent = i;
+        }
+    }
+
+    /* For each senone sequence, expand to senones.  (we could do this
+     * nested above but this makes it more clear and easier to
+     * refactor) */
+    for (i = 0; i < al->sseq.n_ent; ++i) {
+        ps_alignment_entry_t *pent = al->sseq.seq + i;
+        ps_alignment_entry_t *sent;
+        int j;
+
+        for (j = 0; j < bin_mdef_n_emit_state(mdef); ++j) {
+            if ((sent = ps_alignment_vector_grow_one(&al->state)) == NULL) {
+                E_ERROR("Failed to add state entry!\n");
+                return -1;
+            }
+            sent->id.senid = bin_mdef_sseq2sen(mdef, pent->id.pid.ssid, j);
+            assert(sent->id.senid != BAD_SENID);
+            sent->start = pent->start;
+            sent->duration = pent->duration;
+            sent->parent = i;
+            if (j == 0)
+                pent->child = (uint16)(sent - al->state.seq);
+        }
+    }
+
+    return 0;
+}
+
 int
 ps_alignment_propagate(ps_alignment_t *al)
 {

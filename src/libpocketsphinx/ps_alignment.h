@@ -112,6 +112,11 @@ int ps_alignment_add_word(ps_alignment_t *al,
 int ps_alignment_populate(ps_alignment_t *al);
 
 /**
+ * Populate lower layers using context-independent phones.
+ */
+int ps_alignment_populate_ci(ps_alignment_t *al);
+
+/**
  * Propagate timing information up from state sequence.
  */
 int ps_alignment_propagate(ps_alignment_t *al);

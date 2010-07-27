@@ -46,8 +46,6 @@ state_align_search_start(ps_search_t *search)
 {
     state_align_search_t *sas = (state_align_search_t *)search;
 
-    /* Create the initial token. */
-    
     /* Activate the initial state. */
     hmm_enter(sas->hmms, 0, 0, 0);
 
