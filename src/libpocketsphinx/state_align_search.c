@@ -45,20 +45,125 @@ static int
 state_align_search_start(ps_search_t *search)
 {
     state_align_search_t *sas = (state_align_search_t *)search;
+
     /* Create the initial token. */
+    
     /* Activate the initial state. */
+    hmm_enter(sas->hmms, 0, 0, 0);
+
     return 0;
+}
+
+static void
+renormalize_hmms(state_align_search_t *sas, int frame_idx, int32 norm)
+{
+    state_align_renorm_t *rn = ckd_calloc(1, sizeof(*rn));
+    int i;
+
+    sas->renorm = glist_add_ptr(sas->renorm, rn);
+    rn->frame_idx = frame_idx;
+    rn->norm = norm;
+
+    for (i = 0; i < sas->n_phones; ++i) {
+        hmm_normalize(sas->hmms + i, norm);
+    }
+}
+
+static int32
+evaluate_hmms(state_align_search_t *sas, int16 const *senscr, int frame_idx)
+{
+    int32 bs = WORST_SCORE;
+    int i, bi;
+
+    hmm_context_set_senscore(sas->hmmctx, senscr);
+
+    bi = 0;
+    for (i = 0; i < sas->n_phones; ++i) {
+        hmm_t *hmm = sas->hmms + i;
+        int32 score;
+
+        if (hmm_frame(hmm) < frame_idx)
+            continue;
+        score = hmm_vit_eval(hmm, stdout);
+        if (score BETTER_THAN bs) {
+            bs = score;
+            bi = i;
+        }
+    }
+    return bs;
+}
+
+static void
+prune_hmms(state_align_search_t *sas, int frame_idx)
+{
+    int nf = frame_idx + 1;
+    int i;
+
+    /* Check all phones to see if they remain active in the next frame. */
+    for (i = 0; i < sas->n_phones; ++i) {
+        hmm_t *hmm = sas->hmms + i;
+        if (hmm_frame(hmm) < frame_idx)
+            continue;
+        hmm_frame(hmm) = nf;
+    }
+}
+
+static void
+phone_transition(state_align_search_t *sas, int frame_idx)
+{
+    int nf = frame_idx + 1;
+    int i;
+
+    for (i = 0; i < sas->n_phones; ++i) {
+        hmm_t *hmm = sas->hmms + i;
+        int32 newphone_score;
+        int j;
+
+        if (hmm_frame(hmm) != nf)
+            continue;
+
+        newphone_score = hmm_out_score(hmm);
+        /* Transition into all phones using the usual Viterbi rule. */
+        for (j = 0; j < sas->n_phones; ++j) {
+            hmm_t *nhmm = sas->hmms + j;
+
+            if (hmm_frame(nhmm) < frame_idx
+                || newphone_score BETTER_THAN hmm_in_score(nhmm)) {
+                hmm_enter(nhmm, newphone_score, hmm_out_history(hmm), nf);
+            }
+        }
+    }
 }
 
 static int
 state_align_search_step(ps_search_t *search, int frame_idx)
 {
     state_align_search_t *sas = (state_align_search_t *)search;
+    acmod_t *acmod = ps_search_acmod(search);
+    int16 const *senscr;
+    int i;
 
     /* Calculate senone scores. */
+    for (i = 0; i < sas->n_phones; ++i)
+        acmod_activate_hmm(acmod, sas->hmms + i);
+    senscr = acmod_score(acmod, &frame_idx);
+
+    /* Renormalize here if needed. */
+    if ((sas->best_score - 0x300000) WORSE_THAN WORST_SCORE) {
+        E_INFO("Renormalizing Scores at frame %d, best score %d\n",
+               frame_idx, sas->best_score);
+        renormalize_hmms(sas, frame_idx, sas->best_score);
+    }
+    
     /* Viterbi step. */
+    sas->best_score = evaluate_hmms(sas, senscr, frame_idx);
+    prune_hmms(sas, frame_idx);
+
     /* Transition out of non-emitting states. */
+    phone_transition(sas, frame_idx);
+
     /* Generate new tokens from best path results. */
+
     return 0;
 }
 
@@ -121,7 +226,8 @@ state_align_search_init(cmd_ln_t *config,
     sas->al = al;
 
     /* Generate HMM vector from phone level of alignment. */
-    sas->hmms = ckd_calloc(ps_alignment_n_phones(al), sizeof(*sas->hmms));
+    sas->n_phones = ps_alignment_n_phones(al);
+    sas->hmms = ckd_calloc(sas->n_phones, sizeof(*sas->hmms));
     for (hmm = sas->hmms, itor = ps_alignment_phones(al); itor;
          ++hmm, itor = ps_alignment_iter_next(itor)) {
         ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
