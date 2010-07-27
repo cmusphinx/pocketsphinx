@@ -6,6 +6,34 @@
 
 #include "test_macros.h"
 
+static void
+do_search(ps_search_t *search, acmod_t *acmod)
+{
+	FILE *rawfh;
+	int16 buf[2048];
+	size_t nread;
+	int16 const *bptr;
+	int nfr;
+
+	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
+	TEST_EQUAL(0, acmod_start_utt(acmod));
+	ps_search_start(search);
+	while (!feof(rawfh)) {
+		nread = fread(buf, sizeof(*buf), 2048, rawfh);
+		bptr = buf;
+		while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
+			while (acmod->n_feat_frame > 0) {
+				ps_search_step(search, acmod->output_frame);
+				acmod_advance(acmod);
+			}
+		}
+	}
+	ps_search_finish(search);
+	TEST_ASSERT(acmod_end_utt(acmod) >= 0);
+	fclose(rawfh);
+}
+
+
 int
 main(int argc, char *argv[])
 {
@@ -19,6 +47,7 @@ main(int argc, char *argv[])
 	ps_search_t *search;
 	state_align_search_t *sas;
 	cmd_ln_t *config;
+	int i;
 
 	config = cmd_ln_init(NULL, ps_args(), FALSE,
 			     "-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
@@ -44,37 +73,29 @@ main(int argc, char *argv[])
 	TEST_ASSERT(search = state_align_search_init(config, acmod, al));
 	sas = (state_align_search_t *)search;
 
-	{
-		FILE *rawfh;
-		int16 buf[2048];
-		size_t nread;
-		int16 const *bptr;
-		int nfr;
+	for (i = 0; i < 5; ++i)
+		do_search(search, acmod);
 
-		TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
-		TEST_EQUAL(0, acmod_start_utt(acmod));
-		ps_search_start(search);
-		while (!feof(rawfh)) {
-			nread = fread(buf, sizeof(*buf), 2048, rawfh);
-			bptr = buf;
-			while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
-				while (acmod->n_feat_frame > 0) {
-					ps_search_step(search, acmod->output_frame);
-					acmod_advance(acmod);
-				}
-			}
-		}
-		ps_search_finish(search);
-		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
-		fclose(rawfh);
-	}
-
-	for (itor = ps_alignment_words(al); itor;
-	     itor = ps_alignment_iter_next(itor)) {
-		ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
-		printf("word %d start %d dur %d\n",
-		       ent->id.wid, ent->start, ent->duration);
-	}
+	itor = ps_alignment_words(al);
+	TEST_EQUAL(ps_alignment_iter_get(itor)->start, 0);
+	TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 46);
+	itor = ps_alignment_iter_next(itor);
+	TEST_EQUAL(ps_alignment_iter_get(itor)->start, 46);
+	TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 18);
+	itor = ps_alignment_iter_next(itor);
+	TEST_EQUAL(ps_alignment_iter_get(itor)->start, 64);
+	TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 53);
+	itor = ps_alignment_iter_next(itor);
+	TEST_EQUAL(ps_alignment_iter_get(itor)->start, 117);
+	TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 29);
+	itor = ps_alignment_iter_next(itor);
+	TEST_EQUAL(ps_alignment_iter_get(itor)->start, 146);
+	TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 67);
+	itor = ps_alignment_iter_next(itor);
+	TEST_EQUAL(ps_alignment_iter_get(itor)->start, 213);
+	TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 61);
+	itor = ps_alignment_iter_next(itor);
+	TEST_EQUAL(itor, NULL);
 
 	ps_search_free(search);
 	ps_alignment_free(al);
