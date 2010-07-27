@@ -319,6 +319,7 @@ acmod_free(acmod_t *acmod)
     if (acmod->senfh)
         fclose(acmod->senfh);
 
+    ckd_free(acmod->framepos);
     ckd_free(acmod->senone_scores);
     ckd_free(acmod->senone_active_vec);
     ckd_free(acmod->senone_active);
