@@ -351,19 +351,35 @@ int acmod_process_feat(acmod_t *acmod,
                        mfcc_t **feat);
 
 /**
- * Start reading a senone score dump file for scoring.
+ * Set up a senone score dump file for input.
  *
  * @param insenfh File handle of dump file
  * @return 0 for success, <0 for failure
  */
 int acmod_set_insenfh(acmod_t *acmod, FILE *insenfh);
 
+/**
+ * Read one frame of scores from senone score dump file.
+ *
+ * @return Number of frames read or <0 on error.
+ */
 int acmod_read_scores(acmod_t *acmod);
+
+/**
+ * Get a frame of dynamic feature data.
+ *
+ * @param inout_frame_idx Input: frame index to get, or NULL
+ *                        to obtain features for the most recent frame.
+ *                        Output: frame index corresponding to this
+ *                        set of features.
+ * @return Feature array, or NULL if requested frame is not available.
+ */
+mfcc_t **acmod_get_frame(acmod_t *acmod, int *inout_frame_idx);
 
 /**
  * Score one frame of data.
  *
- * @param inout_frame_idx Input: frame index to score, or -1 or NULL
+ * @param inout_frame_idx Input: frame index to score, or NULL
  *                        to obtain scores for the most recent frame.
  *                        Output: frame index corresponding to this
  *                        set of scores.

@@ -999,10 +999,10 @@ acmod_read_scores(acmod_t *acmod)
     return 1;
 }
 
-int16 const *
-acmod_score(acmod_t *acmod, int *inout_frame_idx)
+static int
+calc_frame_idx(acmod_t *acmod, int *inout_frame_idx)
 {
-    int frame_idx, feat_idx, n_backfr;
+    int frame_idx;
 
     /* Calculate the absolute frame index to be scored. */
     if (inout_frame_idx == NULL)
@@ -1011,6 +1011,56 @@ acmod_score(acmod_t *acmod, int *inout_frame_idx)
         frame_idx = acmod->output_frame + 1 + *inout_frame_idx;
     else
         frame_idx = *inout_frame_idx;
+
+    return frame_idx;
+}
+
+static int
+calc_feat_idx(acmod_t *acmod, int frame_idx)
+{
+    int n_backfr, feat_idx;
+
+    n_backfr = acmod->n_feat_alloc - acmod->n_feat_frame;
+    if (frame_idx < 0 || acmod->output_frame - frame_idx > n_backfr) {
+        E_ERROR("Frame %d outside queue of %d frames, %d alloc (%d > %d), cannot score\n",
+                frame_idx, acmod->n_feat_frame, acmod->n_feat_alloc,
+                acmod->output_frame - frame_idx, n_backfr);
+        return -1;
+    }
+
+    /* Get the index in feat_buf/framepos of the frame to be scored. */
+    feat_idx = ((acmod->feat_outidx + frame_idx - acmod->output_frame)
+                % acmod->n_feat_alloc);
+    if (feat_idx < 0) feat_idx += acmod->n_feat_alloc;
+
+    return feat_idx;
+}
+
+mfcc_t **
+acmod_get_frame(acmod_t *acmod, int *inout_frame_idx)
+{
+    int frame_idx, feat_idx;
+
+    /* Calculate the absolute frame index requested. */
+    frame_idx = calc_frame_idx(acmod, inout_frame_idx);
+
+    /* Calculate position of requested frame in circular buffer. */
+    if ((feat_idx = calc_feat_idx(acmod, frame_idx)) < 0)
+        return NULL;
+
+    if (inout_frame_idx)
+        *inout_frame_idx = frame_idx;
+
+    return acmod->feat_buf[feat_idx];
+}
+
+int16 const *
+acmod_score(acmod_t *acmod, int *inout_frame_idx)
+{
+    int frame_idx, feat_idx;
+
+    /* Calculate the absolute frame index to be scored. */
+    frame_idx = calc_frame_idx(acmod, inout_frame_idx);
 
     /* If all senones are being computed, or we are using a senone file,
        then we can reuse existing scores. */
@@ -1021,19 +1071,9 @@ acmod_score(acmod_t *acmod, int *inout_frame_idx)
         return acmod->senone_scores;
     }
 
-    /* Check to make sure features are available for the requested frame index. */
-    n_backfr = acmod->n_feat_alloc - acmod->n_feat_frame;
-    if (frame_idx < 0 || acmod->output_frame - frame_idx > n_backfr) {
-        E_ERROR("Frame %d outside queue of %d frames, %d alloc (%d > %d), cannot score\n",
-                frame_idx, acmod->n_feat_frame, acmod->n_feat_alloc,
-                acmod->output_frame - frame_idx, n_backfr);
+    /* Calculate position of requested frame in circular buffer. */
+    if ((feat_idx = calc_feat_idx(acmod, frame_idx)) < 0)
         return NULL;
-    }
-
-    /* Get the index in feat_buf/framepos of the frame to be scored. */
-    feat_idx = ((acmod->feat_outidx + frame_idx - acmod->output_frame)
-                % acmod->n_feat_alloc);
-    if (feat_idx < 0) feat_idx += acmod->n_feat_alloc;
 
     /* If there is an input senone file locate the appropriate frame and read it. */
     if (acmod->insenfh) {
