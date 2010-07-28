@@ -968,12 +968,20 @@ acmod_read_scores_internal(acmod_t *acmod)
         else if (rv != acmod->n_senone_active)
             return 0;
         for (i = n = 0; i < acmod->n_senone_active; ++i) {
-            n += acmod->senone_active[i];
+            int sen = n + acmod->senone_active[i];
+            n += 1;
+            while (n < sen) {
+                acmod->senone_scores[n] = SENSCR_DUMMY;
+                ++n;
+            }
             if ((rv = fread(acmod->senone_scores + n, 2, 1, senfh)) < 0)
                 goto error_out;
             else if (rv == 0)
                 return 0;
         }
+        n += 1;
+        while (n < bin_mdef_n_sen(acmod->mdef))
+            acmod->senone_scores[n++] = SENSCR_DUMMY;
     }
     return 1;
 error_out:

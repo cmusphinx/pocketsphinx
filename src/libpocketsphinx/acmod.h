@@ -71,6 +71,11 @@ typedef enum acmod_state_e {
 } acmod_state_t;
 
 /**
+ * Dummy senone score value for unintentionally active states.
+ */
+#define SENSCR_DUMMY 0x7fff
+
+/**
  * Feature space linear transform structure.
  */
 struct ps_mllr_s {
