@@ -393,6 +393,18 @@ int16 const *acmod_score(acmod_t *acmod,
                          int *inout_frame_idx);
 
 /**
+ * Write senone dump file header.
+ */
+int acmod_write_senfh_header(acmod_t *acmod, FILE *logfh);
+
+/**
+ * Write a frame of senone scores to a dump file.
+ */
+int acmod_write_scores(acmod_t *acmod, int n_active, uint8 const *active,
+                       int16 const *senscr, FILE *senfh);
+
+
+/**
  * Get best score and senone index for current frame.
  */
 int acmod_best_score(acmod_t *acmod, int *out_best_senid);

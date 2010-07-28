@@ -348,15 +348,10 @@ acmod_update_mllr(acmod_t *acmod, ps_mllr_t *mllr)
 }
 
 int
-acmod_set_senfh(acmod_t *acmod, FILE *logfh)
+acmod_write_senfh_header(acmod_t *acmod, FILE *logfh)
 {
     char nsenstr[64], logbasestr[64];
 
-    if (acmod->senfh)
-        fclose(acmod->senfh);
-    acmod->senfh = logfh;
-    if (logfh == NULL)
-        return 0;
     sprintf(nsenstr, "%d", bin_mdef_n_sen(acmod->mdef));
     sprintf(logbasestr, "%f", logmath_get_base(acmod->lmath));
     return bio_writehdr(logfh,
@@ -364,6 +359,17 @@ acmod_set_senfh(acmod_t *acmod, FILE *logfh)
                         "mdef_file", cmd_ln_str_r(acmod->config, "-mdef"),
                         "n_sen", nsenstr,
                         "logbase", logbasestr, NULL);
+}
+
+int
+acmod_set_senfh(acmod_t *acmod, FILE *logfh)
+{
+    if (acmod->senfh)
+        fclose(acmod->senfh);
+    acmod->senfh = logfh;
+    if (logfh == NULL)
+        return 0;
+    return acmod_write_senfh_header(acmod, logfh);
 }
 
 int
@@ -883,9 +889,10 @@ acmod_advance(acmod_t *acmod)
 }
 
 int
-acmod_write_scores(acmod_t *acmod, FILE *senfh)
+acmod_write_scores(acmod_t *acmod, int n_active, uint8 const *active,
+                   int16 const *senscr, FILE *senfh)
 {
-    int16 n_active;
+    int16 n_active2;
 
     /* Uncompressed frame format:
      *
@@ -898,23 +905,20 @@ acmod_write_scores(acmod_t *acmod, FILE *senfh)
      * (n_active bytes) deltas to active senones
      * (n_active * 2 bytes) scores of active senones
      */
-    n_active = acmod->n_senone_active;
-    if (fwrite(&n_active, 2, 1, senfh) != 1)
+    n_active2 = n_active;
+    if (fwrite(&n_active2, 2, 1, senfh) != 1)
         goto error_out;
-    if (acmod->n_senone_active == bin_mdef_n_sen(acmod->mdef)) {
-        if (fwrite(acmod->senone_scores, 2,
-                   acmod->n_senone_active, senfh)
-            != acmod->n_senone_active)
+    if (n_active == bin_mdef_n_sen(acmod->mdef)) {
+        if (fwrite(senscr, 2, n_active, senfh) != n_active)
             goto error_out;
     }
     else {
         int i, n;
-        if (fwrite(acmod->senone_active, 1, acmod->n_senone_active, senfh)
-            != acmod->n_senone_active)
+        if (fwrite(active, 1, n_active, senfh) != n_active)
             goto error_out;
-        for (i = n = 0; i < acmod->n_senone_active; ++i) {
-            n += acmod->senone_active[i];
-            if (fwrite(acmod->senone_scores + n, 2, 1, senfh) != 1)
+        for (i = n = 0; i < n_active; ++i) {
+            n += active[i];
+            if (fwrite(senscr + n, 2, 1, senfh) != 1)
                 goto error_out;
         }
     }
@@ -1101,7 +1105,10 @@ acmod_score(acmod_t *acmod, int *inout_frame_idx)
 
     /* Dump scores to the senone dump file if one exists. */
     if (acmod->senfh) {
-        if (acmod_write_scores(acmod, acmod->senfh) < 0)
+        if (acmod_write_scores(acmod, acmod->n_senone_active,
+                               acmod->senone_active,
+                               acmod->senone_scores,
+                               acmod->senfh) < 0)
             return NULL;
     }
 
