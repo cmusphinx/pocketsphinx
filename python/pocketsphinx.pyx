@@ -461,6 +461,25 @@ cdef class Decoder:
             cuttid = uttid
         return ps_decode_raw(self.ps, cfh, cuttid, maxsamps)
 
+    def decode_senscr(self, fh, uttid=None):
+        """
+        Decode senone scores from a file.
+
+        @param fh: Filehandle to read senone scores from.
+        @type fh: file
+        @param uttid: Identifier to give to this utterance.
+        @type uttid: str
+        """
+        cdef FILE *cfh
+        cdef char *cuttid
+
+        cfh = PyFile_AsFile(fh)
+        if uttid == None:
+            cuttid = NULL
+        else:
+            cuttid = uttid
+        return ps_decode_senscr(self.ps, cfh, cuttid)
+
     def start_utt(self, uttid=None):
         """
         Prepare the decoder to recognize an utterance.
