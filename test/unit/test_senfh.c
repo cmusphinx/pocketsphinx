@@ -4,7 +4,7 @@
 #include <time.h>
 
 #include "pocketsphinx_internal.h"
-#include "ngram_search_fwdtree.h"
+#include "ngram_search_fwdflat.h"
 #include "test_macros.h"
 
 int
@@ -22,8 +22,8 @@ main(int argc, char *argv[])
 				"-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
 				"-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
 				"-dict", MODELDIR "/lm/en_US/cmu07a.dic",
-				"-fwdtree", "yes",
-				"-fwdflat", "no",
+				"-fwdtree", "no",
+				"-fwdflat", "yes",
 				"-bestpath", "no",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
@@ -44,24 +44,24 @@ main(int argc, char *argv[])
 		TEST_EQUAL(0, acmod_start_utt(acmod));
 		TEST_ASSERT(senfh = fopen("goforward.sen", "wb"));
 		TEST_EQUAL(0, acmod_set_senfh(acmod, senfh));
-		ngram_fwdtree_start(ngs);
+		ngram_fwdflat_start(ngs);
 		while (!feof(rawfh)) {
 			nread = fread(buf, sizeof(*buf), 2048, rawfh);
 			bptr = buf;
 			while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
 				while (acmod->n_feat_frame > 0) {
-					ngram_fwdtree_search(ngs, acmod->output_frame);
+					ngram_fwdflat_search(ngs, acmod->output_frame);
 					acmod_advance(acmod);
 				}
 			}
 		}
-		ngram_fwdtree_finish(ngs);
+		ngram_fwdflat_finish(ngs);
 		printf("%s\n",
 		       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
 
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
-		TEST_EQUAL(0, strcmp("go forward ten leaders",
+		TEST_EQUAL(0, strcmp("go forward ten years",
 				     ngram_search_bp_hyp(ngs,
 							 ngram_search_find_exit(ngs, -1, NULL))));
 
@@ -69,19 +69,19 @@ main(int argc, char *argv[])
 		TEST_EQUAL(0, acmod_start_utt(acmod));
 		TEST_ASSERT(senfh = fopen("goforward.sen", "rb"));
 		TEST_EQUAL(0, acmod_set_insenfh(acmod, senfh));
-		ngram_fwdtree_start(ngs);
+		ngram_fwdflat_start(ngs);
 		while ((nfr = acmod_read_scores(acmod)) > 0) {
 			while (acmod->n_feat_frame > 0) {
-				ngram_fwdtree_search(ngs, acmod->output_frame);
+				ngram_fwdflat_search(ngs, acmod->output_frame);
 				acmod_advance(acmod);
 			}
 		}
-		ngram_fwdtree_finish(ngs);
+		ngram_fwdflat_finish(ngs);
 		printf("%s\n",
 		       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
 
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
-		TEST_EQUAL(0, strcmp("go forward ten leaders",
+		TEST_EQUAL(0, strcmp("go forward ten years",
 				     ngram_search_bp_hyp(ngs,
 							 ngram_search_find_exit(ngs, -1, NULL))));
 	}
