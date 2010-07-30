@@ -831,8 +831,6 @@ error_out:
 int
 acmod_set_insenfh(acmod_t *acmod, FILE *senfh)
 {
-    if (acmod->insenfh)
-        fclose(acmod->insenfh);
     acmod->insenfh = senfh;
     if (senfh == NULL) {
         acmod->n_feat_frame = 0;

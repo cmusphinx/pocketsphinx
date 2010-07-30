@@ -120,6 +120,10 @@ static const arg_t ps_args_def[] = {
       ARG_INT32,
       "0",
       "Size of audio file header in bytes (headers are ignored)" },
+    { "-senin",
+      ARG_BOOLEAN,
+      "no",
+      "Input is senone score dump files" },
     { "-cepdir",
       ARG_STRING,
       NULL,
@@ -393,7 +397,11 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
     if (cmd_ln_boolean_r(config, "-build_outdirs"))
         build_outdirs(config, uttid);
 
-    if (cmd_ln_boolean_r(config, "-adcin")) {
+    if (cmd_ln_boolean_r(config, "-senin")) {
+        /* start and end frames not supported. */
+        ps_decode_senscr(ps, infh, uttid);
+    }
+    else if (cmd_ln_boolean_r(config, "-adcin")) {
         
         if (ef != -1) {
             ef = (int32)((ef - sf)
