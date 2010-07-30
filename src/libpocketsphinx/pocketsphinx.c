@@ -685,7 +685,7 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
             return -1;
         }
         ckd_free(logfn);
-        acmod_set_rawfh(ps->acmod, senfh);
+        acmod_set_senfh(ps->acmod, senfh);
     }
 
     /* Start auxiliary phone loop search. */
