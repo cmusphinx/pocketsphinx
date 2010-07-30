@@ -806,19 +806,30 @@ get_scores_4b_feat(s2_semi_mgau_t * s, int i, int topn,
 static int32
 get_scores_4b_feat_all(s2_semi_mgau_t * s, int i, int topn, int16 *senone_scores)
 {
-    int32 j, k;
+    int j, last_sen;
 
-    for (j = 0; j < s->n_sen; j++) {
+    j = 0;
+    /* Number of senones is always even, but don't overrun if it isn't. */
+    last_sen = s->n_sen & ~1;
+    while (j < last_sen) {
         uint8 *pid_cw;
-        int32 tmp;
+        int32 tmp0, tmp1;
+        int k;
+
         pid_cw = s->mixw[i][s->f[i][0].codeword];
-        tmp = pid_cw[j] + s->f[i][0].score;
+        tmp0 = s->mixw_cb[pid_cw[j/2] & 0x0f] + s->f[i][0].score;
+        tmp1 = s->mixw_cb[pid_cw[j/2] >> 4] + s->f[i][0].score;
         for (k = 1; k < topn; ++k) {
+            int32 w_den0, w_den1;
+
             pid_cw = s->mixw[i][s->f[i][k].codeword];
-            tmp = fast_logmath_add(s->lmath_8b, tmp,
-                                   pid_cw[j] + s->f[i][k].score);
+            w_den0 = s->mixw_cb[pid_cw[j/2] & 0x0f] + s->f[i][k].score;
+            w_den1 = s->mixw_cb[pid_cw[j/2] >> 4] + s->f[i][k].score;
+            tmp0 = fast_logmath_add(s->lmath_8b, tmp0, w_den0);
+            tmp1 = fast_logmath_add(s->lmath_8b, tmp1, w_den1);
         }
-        senone_scores[j] += tmp;
+        senone_scores[j++] += tmp0;
+        senone_scores[j++] += tmp1;
     }
     return 0;
 }
