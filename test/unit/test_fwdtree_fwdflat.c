@@ -56,13 +56,23 @@ main(int argc, char *argv[])
 				}
 			}
 		}
+
+		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
+		while (acmod->n_feat_frame > 0) {
+			ngram_fwdtree_search(ngs, acmod->output_frame);
+			acmod_advance(acmod);
+		}
 		ngram_fwdtree_finish(ngs);
 		printf("FWDTREE: %s\n",
 		       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
-
-		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 
+		E_INFO("grow_feat %d output_frame %d n_mfc_alloc %d n_mfc_frame %d\n",
+		       acmod->grow_feat, acmod->output_frame, acmod->n_mfc_alloc,
+		       acmod->n_mfc_frame);
+		E_INFO("mfc_outidx %d n_feat_alloc %d n_feat_frame %d feat_outidx %d\n",
+		       acmod->mfc_outidx, acmod->n_feat_alloc, acmod->n_feat_frame,
+		       acmod->feat_outidx);
 		TEST_EQUAL(0, acmod_rewind(acmod));
 		ngram_fwdflat_start(ngs);
 		while (acmod->n_feat_frame > 0) {
