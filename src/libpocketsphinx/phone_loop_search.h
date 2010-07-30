@@ -101,6 +101,8 @@ ps_search_t *phone_loop_search_init(cmd_ln_t *config,
 /**
  * Return lookahead heuristic score for a specific phone.
  */
-int32 phone_loop_search_score(phone_loop_search_t *pls, int ciphone);
+#define phone_loop_search_score(pls,ci) \
+    ((pls == NULL) ? 0                                          \
+     : (hmm_bestscore(&pls->phones[ci].hmm) - (pls)->best_score))
 
 #endif /* __PHONE_LOOP_SEARCH_H__ */

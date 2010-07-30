@@ -736,15 +736,18 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
             E_DEBUG(3, ("Preserving root channel %d score %d\n", i, hmm_bestscore(&rhmm->hmm)));
             /* transitions out of this root channel */
             /* transition to all next-level channels in the HMM tree */
-            for (hmm = rhmm->next; hmm; hmm = hmm->alt) {
-                newphone_score = hmm_out_score(&rhmm->hmm) + ngs->pip
-                    + phone_loop_search_score(pls, hmm->ciphone);
-                if (newphone_score BETTER_THAN newphone_thresh) {
-                    if ((hmm_frame(&hmm->hmm) < frame_idx)
-                        || (newphone_score BETTER_THAN hmm_in_score(&hmm->hmm))) {
-                        hmm_enter(&hmm->hmm, newphone_score,
-                                  hmm_out_history(&rhmm->hmm), nf);
-                        *(nacl++) = hmm;
+            newphone_score = hmm_out_score(&rhmm->hmm) + ngs->pip;
+            if (pls != NULL || newphone_score BETTER_THAN newphone_thresh) {
+                for (hmm = rhmm->next; hmm; hmm = hmm->alt) {
+                    int32 pl_newphone_score = newphone_score
+                        + phone_loop_search_score(pls, hmm->ciphone);
+                    if (pl_newphone_score BETTER_THAN newphone_thresh) {
+                        if ((hmm_frame(&hmm->hmm) < frame_idx)
+                            || (pl_newphone_score BETTER_THAN hmm_in_score(&hmm->hmm))) {
+                            hmm_enter(&hmm->hmm, pl_newphone_score,
+                                      hmm_out_history(&rhmm->hmm), nf);
+                            *(nacl++) = hmm;
+                        }
                     }
                 }
             }
@@ -754,19 +757,21 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
              * penultimate phone (the last phones may need multiple right contexts).
              * Remember to remove the temporary newword_penalty.
              */
-            for (w = rhmm->penult_phn_wid; w >= 0;
-                 w = ngs->homophone_set[w]) {
-                newphone_score = hmm_out_score(&rhmm->hmm) + ngs->pip
-                    + phone_loop_search_score(pls, dict_last_phone(ps_search_dict(ngs),w));
-                E_DEBUG(3, ("wid %d newphone_score %d\n", w, newphone_score));
-                E_DEBUG(3, ("wid %d newphone_score %d\n", w, newphone_score));
-                if (newphone_score BETTER_THAN lastphn_thresh) {
-                    candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
-                    ngs->n_lastphn_cand++;
-                    candp->wid = w;
-                    candp->score =
-                        newphone_score - ngs->nwpen;
-                    candp->bp = hmm_out_history(&rhmm->hmm);
+            if (pls != NULL || newphone_score BETTER_THAN lastphn_thresh) {
+                for (w = rhmm->penult_phn_wid; w >= 0;
+                     w = ngs->homophone_set[w]) {
+                    int32 pl_newphone_score = newphone_score
+                        + phone_loop_search_score
+                        (pls, dict_last_phone(ps_search_dict(ngs),w));
+                    E_DEBUG(3, ("wid %d newphone_score %d\n", w, pl_newphone_score));
+                    if (pl_newphone_score BETTER_THAN lastphn_thresh) {
+                        candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
+                        ngs->n_lastphn_cand++;
+                        candp->wid = w;
+                        candp->score =
+                            pl_newphone_score - ngs->nwpen;
+                        candp->bp = hmm_out_history(&rhmm->hmm);
+                    }
                 }
             }
         }
@@ -810,19 +815,22 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
             }
 
             /* transition to all next-level channel in the HMM tree */
-            for (nexthmm = hmm->next; nexthmm; nexthmm = nexthmm->alt) {
-                newphone_score = hmm_out_score(&hmm->hmm) + ngs->pip
-                    + phone_loop_search_score(pls, nexthmm->ciphone);
-                if ((newphone_score BETTER_THAN newphone_thresh)
-                    && ((hmm_frame(&nexthmm->hmm) < frame_idx)
-                        || (newphone_score
-                            BETTER_THAN hmm_in_score(&nexthmm->hmm)))) {
-                    if (hmm_frame(&nexthmm->hmm) != nf) {
-                        /* Keep this HMM on the active list */
-                        *(nacl++) = nexthmm;
+            newphone_score = hmm_out_score(&hmm->hmm) + ngs->pip;
+            if (pls != NULL || newphone_score BETTER_THAN newphone_thresh) {
+                for (nexthmm = hmm->next; nexthmm; nexthmm = nexthmm->alt) {
+                    int32 pl_newphone_score = newphone_score
+                        + phone_loop_search_score(pls, nexthmm->ciphone);
+                    if ((pl_newphone_score BETTER_THAN newphone_thresh)
+                        && ((hmm_frame(&nexthmm->hmm) < frame_idx)
+                            || (pl_newphone_score
+                                BETTER_THAN hmm_in_score(&nexthmm->hmm)))) {
+                        if (hmm_frame(&nexthmm->hmm) != nf) {
+                            /* Keep this HMM on the active list */
+                            *(nacl++) = nexthmm;
+                        }
+                        hmm_enter(&nexthmm->hmm, pl_newphone_score,
+                                  hmm_out_history(&hmm->hmm), nf);
                     }
-                    hmm_enter(&nexthmm->hmm, newphone_score,
-                              hmm_out_history(&hmm->hmm), nf);
                 }
             }
 
@@ -831,17 +839,20 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
              * penultimate phone (the last phones may need multiple right contexts).
              * Remember to remove the temporary newword_penalty.
              */
-            for (w = hmm->info.penult_phn_wid; w >= 0;
-                 w = ngs->homophone_set[w]) {
-                newphone_score = hmm_out_score(&hmm->hmm) + ngs->pip
-                    + phone_loop_search_score(pls, dict_last_phone(ps_search_dict(ngs),w));
-                if (newphone_score BETTER_THAN lastphn_thresh) {
-                    candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
-                    ngs->n_lastphn_cand++;
-                    candp->wid = w;
-                    candp->score =
-                        newphone_score - ngs->nwpen;
-                    candp->bp = hmm_out_history(&hmm->hmm);
+            if (pls != NULL || newphone_score BETTER_THAN lastphn_thresh) {
+                for (w = hmm->info.penult_phn_wid; w >= 0;
+                     w = ngs->homophone_set[w]) {
+                    int32 pl_newphone_score = newphone_score
+                        + phone_loop_search_score
+                        (pls, dict_last_phone(ps_search_dict(ngs),w));
+                    if (pl_newphone_score BETTER_THAN lastphn_thresh) {
+                        candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
+                        ngs->n_lastphn_cand++;
+                        candp->wid = w;
+                        candp->score =
+                            pl_newphone_score - ngs->nwpen;
+                        candp->bp = hmm_out_history(&hmm->hmm);
+                    }
                 }
             }
         }

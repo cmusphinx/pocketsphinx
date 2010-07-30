@@ -297,18 +297,6 @@ phone_loop_search_step(ps_search_t *search, int frame_idx)
     return 0;
 }
 
-int32
-phone_loop_search_score(phone_loop_search_t *pls, int ciphone)
-{
-    hmm_t *hmm;
-
-    if (pls == NULL)
-        return 0;
-
-    hmm = (hmm_t *)&pls->phones[ciphone];
-    return hmm_bestscore(hmm) - pls->best_score;
-}
-
 static int
 phone_loop_search_finish(ps_search_t *search)
 {
