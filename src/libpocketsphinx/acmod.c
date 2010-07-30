@@ -720,7 +720,7 @@ acmod_process_cep(acmod_t *acmod,
     if (acmod->grow_feat) {
         /* Grow to avoid wraparound if grow_feat == TRUE. */
         inptr = acmod->feat_outidx + acmod->n_feat_frame;
-        while (inptr + nfeat > acmod->n_feat_alloc)
+        while (inptr + nfeat >= acmod->n_feat_alloc)
             acmod_grow_feat_buf(acmod, acmod->n_feat_alloc * 2);
     }
     else {
@@ -785,7 +785,15 @@ acmod_process_feat(acmod_t *acmod,
             return 0;
     }
 
-    inptr = (acmod->feat_outidx + acmod->n_feat_frame) % acmod->n_feat_alloc;
+    if (acmod->grow_feat) {
+        /* Grow to avoid wraparound if grow_feat == TRUE. */
+        inptr = acmod->feat_outidx + acmod->n_feat_frame;
+        while (inptr + 1 >= acmod->n_feat_alloc)
+            acmod_grow_feat_buf(acmod, acmod->n_feat_alloc * 2);
+    }
+    else {
+        inptr = (acmod->feat_outidx + acmod->n_feat_frame) % acmod->n_feat_alloc;
+    }
     for (i = 0; i < feat_dimension1(acmod->fcb); ++i)
         memcpy(acmod->feat_buf[inptr][i],
                feat[i], feat_dimension2(acmod->fcb, i) * sizeof(**feat));
@@ -834,8 +842,10 @@ acmod_set_insenfh(acmod_t *acmod, FILE *senfh)
     acmod->insenfh = senfh;
     if (senfh == NULL) {
         acmod->n_feat_frame = 0;
+        acmod->compallsen = cmd_ln_boolean_r(acmod->config, "-compallsen");
         return 0;
     }
+    acmod->compallsen = TRUE;
     return acmod_read_senfh_header(acmod);
 }
 
@@ -852,14 +862,12 @@ acmod_rewind_senfh(acmod_t *acmod)
 int
 acmod_rewind(acmod_t *acmod)
 {
-    /* If we are reading from a senone file, rewind it and
-       re-read the header. */
-    if (acmod->insenfh)
-        return acmod_rewind_senfh(acmod);
-
     /* If the feature buffer is circular, this is not possible. */
-    if (acmod->output_frame > acmod->n_feat_alloc)
+    if (acmod->output_frame > acmod->n_feat_alloc) {
+        E_ERROR("Circular feature buffer cannot be rewound (output frame %d, alloc %d)\n",
+               acmod->output_frame, acmod->n_feat_alloc);
         return -1;
+    }
 
     /* Frames consumed + frames available */
     acmod->n_feat_frame = acmod->output_frame + acmod->n_feat_frame;
@@ -869,7 +877,6 @@ acmod_rewind(acmod_t *acmod)
     acmod->output_frame = 0;
     acmod->senscr_frame = -1;
     acmod->mgau->frame_idx = 0;
-
 
     return 0;
 }
@@ -992,6 +999,18 @@ acmod_read_scores(acmod_t *acmod)
 {
     int inptr, rv;
 
+    if (acmod->grow_feat) {
+        /* Grow to avoid wraparound if grow_feat == TRUE. */
+        inptr = acmod->feat_outidx + acmod->n_feat_frame;
+        /* Has to be +1, otherwise, next time acmod_advance() is
+         * called, this will wrap around. */
+        while (inptr + 1 >= acmod->n_feat_alloc)
+            acmod_grow_feat_buf(acmod, acmod->n_feat_alloc * 2);
+    }
+    else {
+        inptr = (acmod->feat_outidx + acmod->n_feat_frame) % acmod->n_feat_alloc;
+    }
+
     if ((rv = acmod_read_scores_internal(acmod)) != 1)
         return rv;
 
@@ -1003,7 +1022,6 @@ acmod_read_scores(acmod_t *acmod)
      * position for the relevant frame in the (possibly circular)
      * buffer. */
     ++acmod->n_feat_frame;
-    inptr = (acmod->feat_outidx + acmod->n_feat_frame) % acmod->n_feat_alloc;
     acmod->framepos[inptr] = ftell(acmod->insenfh);
 
     return 1;
@@ -1078,6 +1096,11 @@ acmod_score(acmod_t *acmod, int *inout_frame_idx)
         && frame_idx == acmod->senscr_frame) {
         if (inout_frame_idx)
             *inout_frame_idx = frame_idx;
+        int best, worst, range;
+        range = acmod_score_range(acmod, &best, &worst);
+        E_DEBUG(1,("Frame %d active %d best score %d worst score %d range %d\n",
+                   frame_idx, acmod->n_senone_active,
+                   best, worst, range));
         return acmod->senone_scores;
     }
 
@@ -1117,22 +1140,28 @@ acmod_score(acmod_t *acmod, int *inout_frame_idx)
                                acmod->senfh) < 0)
             return NULL;
     }
+    int best, worst, range;
+    range = acmod_score_range(acmod, &best, &worst);
+    E_DEBUG(1,("Frame %d active %d best score %d worst score %d range %d\n",
+               frame_idx, acmod->n_senone_active,
+               best, worst, range));
 
     return acmod->senone_scores;
 }
 
 int
-acmod_best_score(acmod_t *acmod, int *out_best_senid)
+acmod_score_range(acmod_t *acmod, int *best, int *worst)
 {
-    int i, best;
+    int i, b, w;
 
-    best = WORST_SCORE;
+    b = SENSCR_DUMMY;
+    w = -SENSCR_DUMMY;
     if (acmod->compallsen) {
         for (i = 0; i < bin_mdef_n_sen(acmod->mdef); ++i) {
-            if (acmod->senone_scores[i] BETTER_THAN best) {
-                best = acmod->senone_scores[i];
-                *out_best_senid = i;
-            }
+            if (acmod->senone_scores[i] < b)
+                b = acmod->senone_scores[i];
+            if (acmod->senone_scores[i] > w)
+                w = acmod->senone_scores[i];
         }
     }
     else {
@@ -1140,20 +1169,22 @@ acmod_best_score(acmod_t *acmod, int *out_best_senid)
         senscr = acmod->senone_scores;
         for (i = 0; i < acmod->n_senone_active; ++i) {
             senscr += acmod->senone_active[i];
-            if (*senscr BETTER_THAN best) {
-                best = *senscr;
-                *out_best_senid = i;
-            }
+            if (*senscr < b)
+                b = *senscr;
+            if (*senscr > w)
+                w = *senscr;
         }
     }
-    return best;
+    if (best) *best = b;
+    if (worst) *worst = w;
+    return w - b;
 }
 
 
 void
 acmod_clear_active(acmod_t *acmod)
 {
-    if (acmod->insenfh)
+    if (acmod->compallsen)
         return;
     bitvec_clear_all(acmod->senone_active_vec, bin_mdef_n_sen(acmod->mdef));
     acmod->n_senone_active = 0;
@@ -1171,6 +1202,8 @@ acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm)
 {
     int i;
 
+    if (acmod->compallsen)
+        return;
     if (hmm_is_mpx(hmm)) {
         switch (hmm_n_emit_state(hmm)) {
         case 5:

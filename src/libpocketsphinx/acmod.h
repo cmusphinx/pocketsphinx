@@ -412,7 +412,7 @@ int acmod_write_scores(acmod_t *acmod, int n_active, uint8 const *active,
 /**
  * Get best score and senone index for current frame.
  */
-int acmod_best_score(acmod_t *acmod, int *out_best_senid);
+int acmod_score_range(acmod_t *acmod, int *best, int *worst);
 
 /**
  * Clear set of active senones.
