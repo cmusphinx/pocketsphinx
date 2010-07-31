@@ -1096,11 +1096,6 @@ acmod_score(acmod_t *acmod, int *inout_frame_idx)
         && frame_idx == acmod->senscr_frame) {
         if (inout_frame_idx)
             *inout_frame_idx = frame_idx;
-        int best, worst, range;
-        range = acmod_score_range(acmod, &best, &worst);
-        E_DEBUG(1,("Frame %d active %d best score %d worst score %d range %d\n",
-                   frame_idx, acmod->n_senone_active,
-                   best, worst, range));
         return acmod->senone_scores;
     }
 
@@ -1140,28 +1135,22 @@ acmod_score(acmod_t *acmod, int *inout_frame_idx)
                                acmod->senfh) < 0)
             return NULL;
     }
-    int best, worst, range;
-    range = acmod_score_range(acmod, &best, &worst);
-    E_DEBUG(1,("Frame %d active %d best score %d worst score %d range %d\n",
-               frame_idx, acmod->n_senone_active,
-               best, worst, range));
 
     return acmod->senone_scores;
 }
 
 int
-acmod_score_range(acmod_t *acmod, int *best, int *worst)
+acmod_best_score(acmod_t *acmod, int *out_best_senid)
 {
-    int i, b, w;
+    int i, best;
 
-    b = SENSCR_DUMMY;
-    w = -SENSCR_DUMMY;
+    best = SENSCR_DUMMY;
     if (acmod->compallsen) {
         for (i = 0; i < bin_mdef_n_sen(acmod->mdef); ++i) {
-            if (acmod->senone_scores[i] < b)
-                b = acmod->senone_scores[i];
-            if (acmod->senone_scores[i] > w)
-                w = acmod->senone_scores[i];
+            if (acmod->senone_scores[i] < best) {
+                best = acmod->senone_scores[i];
+                *out_best_senid = i;
+            }
         }
     }
     else {
@@ -1169,15 +1158,13 @@ acmod_score_range(acmod_t *acmod, int *best, int *worst)
         senscr = acmod->senone_scores;
         for (i = 0; i < acmod->n_senone_active; ++i) {
             senscr += acmod->senone_active[i];
-            if (*senscr < b)
-                b = *senscr;
-            if (*senscr > w)
-                w = *senscr;
+            if (*senscr < best) {
+                best = *senscr;
+                *out_best_senid = i;
+            }
         }
     }
-    if (best) *best = b;
-    if (worst) *worst = w;
-    return w - b;
+    return best;
 }
 
 
