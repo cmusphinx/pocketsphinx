@@ -849,16 +849,6 @@ acmod_set_insenfh(acmod_t *acmod, FILE *senfh)
     return acmod_read_senfh_header(acmod);
 }
 
-static int
-acmod_rewind_senfh(acmod_t *acmod)
-{
-    if (fseek(acmod->insenfh, 0, SEEK_SET) < 0) {
-        E_ERROR_SYSTEM("Failed to rewind input senone file");
-        return -1;
-    }
-    return acmod_read_senfh_header(acmod);
-}
-
 int
 acmod_rewind(acmod_t *acmod)
 {
@@ -972,19 +962,17 @@ acmod_read_scores_internal(acmod_t *acmod)
             goto error_out;
         else if (rv != acmod->n_senone_active)
             return 0;
-        for (i = n = 0; i < acmod->n_senone_active; ++i) {
-            int sen = n + acmod->senone_active[i];
-            n += 1;
-            while (n < sen) {
-                acmod->senone_scores[n] = SENSCR_DUMMY;
-                ++n;
-            }
-            if ((rv = fread(acmod->senone_scores + n, 2, 1, senfh)) < 0)
+        for (i = 0, n = 0; i < acmod->n_senone_active; ++i) {
+            int j, sen = n + acmod->senone_active[i];
+            for (j = n + 1; j < sen; ++j)
+                acmod->senone_scores[j] = SENSCR_DUMMY;
+            if ((rv = fread(acmod->senone_scores + sen, 2, 1, senfh)) < 0)
                 goto error_out;
             else if (rv == 0)
                 return 0;
+            n = sen;
         }
-        n += 1;
+        ++n;
         while (n < bin_mdef_n_sen(acmod->mdef))
             acmod->senone_scores[n++] = SENSCR_DUMMY;
     }
@@ -1017,6 +1005,9 @@ acmod_read_scores(acmod_t *acmod)
     /* Set acmod->senscr_frame appropriately so that these scores
        get reused below in acmod_score(). */
     acmod->senscr_frame = acmod->output_frame + acmod->n_feat_frame;
+
+    E_DEBUG(1,("Frame %d has %d active states\n",
+               acmod->senscr_frame, acmod->n_senone_active));
 
     /* Increment the "feature frame counter" and record the file
      * position for the relevant frame in the (possibly circular)
@@ -1134,6 +1125,7 @@ acmod_score(acmod_t *acmod, int *inout_frame_idx)
                                acmod->senone_scores,
                                acmod->senfh) < 0)
             return NULL;
+        E_DEBUG(1,("Frame %d has %d active states\n", frame_idx, acmod->n_senone_active));
     }
 
     return acmod->senone_scores;
