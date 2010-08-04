@@ -424,4 +424,14 @@ void acmod_clear_active(acmod_t *acmod);
  */
 void acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm);
 
+/**
+ * Activate a single senone.
+ */
+#define acmod_activate_sen(acmod, sen) bitvec_set((acmod)->senone_active_vec, sen)
+
+/**
+ * Build active list from 
+ */
+int32 acmod_flags2list(acmod_t *acmod);
+
 #endif /* __ACMOD_H__ */

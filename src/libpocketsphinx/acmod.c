@@ -72,7 +72,6 @@ static const arg_t feat_defn[] = {
 #define WORDS_BIGENDIAN 1
 #endif
 
-static int32 acmod_flags2list(acmod_t *acmod);
 static int32 acmod_process_mfcbuf(acmod_t *acmod);
 
 static int
@@ -1217,7 +1216,7 @@ acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm)
     }
 }
 
-static int32
+int32
 acmod_flags2list(acmod_t *acmod)
 {
     int32 w, l, n, b, total_dists, total_words, extra_bits;
