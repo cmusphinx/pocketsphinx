@@ -102,7 +102,7 @@ ms_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
                              cmd_ln_float32_r(config, "-mixwfloor"),
                              lmath, mdef);
 
-    s->aw = cmd_ln_int32_r(config, "-ms_aw");
+    s->aw = cmd_ln_int32_r(config, "-aw");
 
     /* Verify senone parameters against gauden parameters */
     if (s->n_feat != g->n_feat)
