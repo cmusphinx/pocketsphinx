@@ -218,8 +218,8 @@ hmm_normalize(hmm_t *h, int32 bestscr)
         hmm_out_score(h) -= bestscr;
 }
 
-#define hmm_tprob_5st(i, j) (-tp[(i)*6+(j)] << SENSCR_SHIFT)
-#define nonmpx_senscr(i) (-senscore[sseq[i]] << SENSCR_SHIFT)
+#define hmm_tprob_5st(i, j) (-tp[(i)*6+(j)])
+#define nonmpx_senscr(i) (-senscore[sseq[i]])
 
 static int32
 hmm_vit_eval_5st_lr(hmm_t * hmm)
@@ -352,7 +352,7 @@ hmm_vit_eval_5st_lr(hmm_t * hmm)
 }
 
 #define mpx_senid(st) sseq[ssid[st]][st]
-#define mpx_senscr(st) (-senscore[mpx_senid(st)] << SENSCR_SHIFT)
+#define mpx_senscr(st) (-senscore[mpx_senid(st)])
 
 static int32
 hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
@@ -526,7 +526,7 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
     return bestScore;
 }
 
-#define hmm_tprob_3st(i, j) (-tp[(i)*4+(j)] << SENSCR_SHIFT)
+#define hmm_tprob_3st(i, j) (-tp[(i)*4+(j)])
 
 static int32
 hmm_vit_eval_3st_lr(hmm_t * hmm)

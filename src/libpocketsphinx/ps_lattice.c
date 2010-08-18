@@ -910,7 +910,8 @@ ps_lattice_compute_lscr(ps_seg_t *seg, ps_latlink_t *link, int to)
     if (link->best_prev == NULL) {
         if (to) /* Sentence has only two words. */
             seg->lscr = ngram_bg_score(lmset, link->to->basewid,
-                                       link->from->basewid, &seg->lback);
+                                       link->from->basewid, &seg->lback)
+                >> SENSCR_SHIFT;
         else {/* This is the start symbol, its lscr is always 0. */
             seg->lscr = 0;
             seg->lback = 1;
@@ -922,18 +923,18 @@ ps_lattice_compute_lscr(ps_seg_t *seg, ps_latlink_t *link, int to)
             seg->lscr = ngram_tg_score(lmset, link->to->basewid,
                                        link->from->basewid,
                                        link->best_prev->from->basewid,
-                                       &seg->lback);
+                                       &seg->lback) >> SENSCR_SHIFT;
         }
         else {
             if (link->best_prev->best_prev)
                 seg->lscr = ngram_tg_score(lmset, link->from->basewid,
                                            link->best_prev->from->basewid,
                                            link->best_prev->best_prev->from->basewid,
-                                           &seg->lback);
+                                           &seg->lback) >> SENSCR_SHIFT;
             else
                 seg->lscr = ngram_bg_score(lmset, link->from->basewid,
                                            link->best_prev->from->basewid,
-                                           &seg->lback);
+                                           &seg->lback) >> SENSCR_SHIFT;
         }
     }
 }
@@ -1254,8 +1255,10 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
         /* Best path points to dag->start, obviously. */
         if (lmset)
             x->link->path_scr = x->link->ascr +
-                ngram_bg_score(lmset, x->link->to->basewid,
-                               ps_search_start_wid(search), &n_used) * lwf;
+                (ngram_bg_score(lmset, x->link->to->basewid,
+                                ps_search_start_wid(search), &n_used) 
+                 >> SENSCR_SHIFT)
+                 * lwf;
         else
             x->link->path_scr = x->link->ascr;
         x->link->best_prev = NULL;
@@ -1287,7 +1290,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
             bprob = 0;
         /* Add in this link's acoustic score, which was a constant
            factor in previous computations (if any). */
-        link->alpha += link->ascr * ascale;
+        link->alpha += (link->ascr << SENSCR_SHIFT) * ascale;
 
         /* Update scores for all paths exiting link->to. */
         for (x = link->to->exits; x; x = x->next) {
@@ -1302,9 +1305,10 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
             x->link->alpha = logmath_add(lmath, x->link->alpha, link->alpha + bprob);
             /* Calculate trigram score for bestpath. */
             if (lmset)
-                tscore = ngram_tg_score(lmset, x->link->to->basewid,
+                tscore = (ngram_tg_score(lmset, x->link->to->basewid,
                                         link->to->basewid,
-                                        link->from->basewid, &n_used) * lwf;
+                                        link->from->basewid, &n_used) >> SENSCR_SHIFT)
+                    * lwf;
             else
                 tscore = 0;
             /* Update link score with maximum link score. */
@@ -1342,7 +1346,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
         }
     }
     /* FIXME: floating point... */
-    dag->norm += (int32)dag->final_node_ascr * ascale;
+    dag->norm += (int32)(dag->final_node_ascr << SENSCR_SHIFT) * ascale;
 
     E_INFO("Normalizer P(O) = alpha(%s:%d:%d) = %d\n",
            dict_wordstr(dag->search->dict, dag->end->wid),
@@ -1437,7 +1441,7 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
                 bestend = link;
             }
             /* Imaginary exit link from final node has beta = 1.0 */
-            link->beta = bprob + dag->final_node_ascr * ascale;
+            link->beta = bprob + (dag->final_node_ascr << SENSCR_SHIFT) * ascale;
         }
         else {
             /* Update beta from all outgoing betas. */
@@ -1445,7 +1449,8 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
                 if (dict_filler_word(ps_search_dict(search), x->link->to->basewid) && x->link->to != dag->end)
                     continue;
                 link->beta = logmath_add(lmath, link->beta,
-                                         x->link->beta + bprob + x->link->ascr * ascale);
+                                         x->link->beta + bprob
+                                         + (x->link->ascr << SENSCR_SHIFT) * ascale);
             }
         }
     }
@@ -1528,8 +1533,9 @@ best_rem_score(ps_astar_t *nbest, ps_latnode_t * from)
         score = best_rem_score(nbest, x->link->to);
         score += x->link->ascr;
         if (nbest->lmset)
-            score += ngram_bg_score(nbest->lmset, x->link->to->basewid,
-                                    from->basewid, &n_used) * nbest->lwf;
+            score += (ngram_bg_score(nbest->lmset, x->link->to->basewid,
+                                     from->basewid, &n_used) >> SENSCR_SHIFT)
+                      * nbest->lwf;
         if (score BETTER_THAN bestscore)
             bestscore = score;
     }
@@ -1616,14 +1622,16 @@ path_extend(ps_astar_t *nbest, ps_latpath_t * path)
         if (nbest->lmset) {
             if (path->parent) {
                 newpath->score += nbest->lwf
-                    * ngram_tg_score(nbest->lmset, newpath->node->basewid,
-                                     path->node->basewid,
-                                     path->parent->node->basewid, &n_used);
+                    * (ngram_tg_score(nbest->lmset, newpath->node->basewid,
+                                      path->node->basewid,
+                                      path->parent->node->basewid, &n_used)
+                       >> SENSCR_SHIFT);
             }
             else 
                 newpath->score += nbest->lwf
-                    * ngram_bg_score(nbest->lmset, newpath->node->basewid,
-                                     path->node->basewid, &n_used);
+                    * (ngram_bg_score(nbest->lmset, newpath->node->basewid,
+                                      path->node->basewid, &n_used)
+                       >> SENSCR_SHIFT);
         }
 
         /* Insert new partial path hypothesis into sorted path_list */
@@ -1697,6 +1705,7 @@ ps_astar_start(ps_lattice_t *dag,
                     : ngram_tg_score(nbest->lmset, node->basewid, w2, w1, &n_used);
             else
                 path->score = 0;
+            path->score >>= SENSCR_SHIFT;
             path_insert(nbest, path, path->score + node->info.rem_score);
         }
     }

@@ -102,26 +102,26 @@ ngram_search_calc_beams(ngram_search_t *ngs)
     acmod = ps_search_acmod(ngs);
 
     /* Log beam widths. */
-    ngs->beam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam"));
-    ngs->wbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-wbeam"));
-    ngs->pbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pbeam"));
-    ngs->lpbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-lpbeam"));
-    ngs->lponlybeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-lponlybeam"));
-    ngs->fwdflatbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatbeam"));
-    ngs->fwdflatwbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatwbeam"));
+    ngs->beam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam"))>>SENSCR_SHIFT;
+    ngs->wbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-wbeam"))>>SENSCR_SHIFT;
+    ngs->pbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pbeam"))>>SENSCR_SHIFT;
+    ngs->lpbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-lpbeam"))>>SENSCR_SHIFT;
+    ngs->lponlybeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-lponlybeam"))>>SENSCR_SHIFT;
+    ngs->fwdflatbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatbeam"))>>SENSCR_SHIFT;
+    ngs->fwdflatwbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatwbeam"))>>SENSCR_SHIFT;
 
     /* Absolute pruning parameters. */
     ngs->maxwpf = cmd_ln_int32_r(config, "-maxwpf");
     ngs->maxhmmpf = cmd_ln_int32_r(config, "-maxhmmpf");
 
     /* Various penalties which may or may not be useful. */
-    ngs->wip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-wip"));
-    ngs->nwpen = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-nwpen"));
-    ngs->pip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-pip"));
+    ngs->wip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-wip")) >>SENSCR_SHIFT;
+    ngs->nwpen = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-nwpen")) >>SENSCR_SHIFT;
+    ngs->pip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-pip")) >>SENSCR_SHIFT;
     ngs->silpen = ngs->pip
-        + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-silprob"));
+        + (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-silprob"))>>SENSCR_SHIFT);
     ngs->fillpen = ngs->pip
-        + logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-fillprob"));
+        + (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-fillprob"))>>SENSCR_SHIFT);
 
     /* Language weight ratios for fwdflat and bestpath search. */
     ngs->fwdflat_fwdtree_lw_ratio =
@@ -663,7 +663,7 @@ ngram_compute_seg_score(ngram_search_t *ngs, bptbl_t *be, float32 lwf,
         *out_lscr = ngram_tg_score(ngs->lmset,
                                    be->real_wid,
                                    pbe->real_wid,
-                                   pbe->prev_real_wid, &n_used);
+                                   pbe->prev_real_wid, &n_used)>>SENSCR_SHIFT;
         *out_lscr = *out_lscr * lwf;
     }
     *out_ascr = be->score - start_score - *out_lscr;
@@ -838,7 +838,7 @@ ngram_search_bp2itor(ps_seg_t *seg, int bp)
             seg->lscr = ngram_tg_score(ngs->lmset,
                                        be->real_wid,
                                        pbe->real_wid,
-                                       pbe->prev_real_wid, &seg->lback);
+                                       pbe->prev_real_wid, &seg->lback)>>SENSCR_SHIFT;
             seg->lscr = (int32)(seg->lscr * seg->lwf);
         }
         seg->ascr = be->score - start_score - seg->lscr;
@@ -1075,7 +1075,8 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
         
         wid = ngs->bp_table[bp].real_wid;
         prev_wid = ngs->bp_table[bp].prev_real_wid;
-        l_scr = ngram_tg_score(ngs->lmset, ps_search_finish_wid(ngs), wid, prev_wid, &n_used);
+        l_scr = ngram_tg_score(ngs->lmset, ps_search_finish_wid(ngs),
+                               wid, prev_wid, &n_used) >>SENSCR_SHIFT;
         l_scr = l_scr * lwf;
         if (ngs->bp_table[bp].score + l_scr BETTER_THAN bestscore) {
             bestscore = ngs->bp_table[bp].score + l_scr;

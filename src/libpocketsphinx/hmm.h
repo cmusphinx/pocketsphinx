@@ -77,7 +77,7 @@ extern "C" {
  * Watch out, though!  Transition matrix entries that are supposed to
  * be "zero" don't actually get that small due to quantization.
  */
-#define TMAT_WORST_SCORE	(-255 << SENSCR_SHIFT)
+#define TMAT_WORST_SCORE	(-255)
 
 /**
  * Is one score better than another?
@@ -197,9 +197,9 @@ typedef struct hmm_s {
                          ? hmm_mpx_senid(h,st) : hmm_nonmpx_senid(h,st))
 #define hmm_senscr(h,st) (hmm_senid(h,st) == BAD_SENID                  \
                           ? WORST_SCORE                                 \
-                          : -(h)->ctx->senscore[hmm_senid(h,st)] << SENSCR_SHIFT)
+                          : -(h)->ctx->senscore[hmm_senid(h,st)])
 #define hmm_tmatid(h) (h)->tmatid
-#define hmm_tprob(h,i,j) (-(h)->ctx->tp[hmm_tmatid(h)][i][j] << SENSCR_SHIFT)
+#define hmm_tprob(h,i,j) (-(h)->ctx->tp[hmm_tmatid(h)][i][j])
 #define hmm_n_emit_state(h) ((h)->n_emit_state)
 #define hmm_n_state(h) ((h)->n_emit_state + 1)
 

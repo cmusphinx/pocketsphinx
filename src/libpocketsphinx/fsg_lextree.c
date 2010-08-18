@@ -403,7 +403,8 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                     pnode->ctx = lextree->ctx;
                     pnode->next.fsglink = fsglink;
                     pnode->logs2prob =
-                        fsg_link_logs2prob(fsglink) + lextree->wip + lextree->pip;
+                        (fsg_link_logs2prob(fsglink) >> SENSCR_SHIFT)
+                        + lextree->wip + lextree->pip;
                     pnode->ci_ext = dict_first_phone(lextree->dict, dictwid);
                     pnode->ppos = 0;
                     pnode->leaf = TRUE;
@@ -429,7 +430,8 @@ psubtree_add_trans(fsg_lextree_t *lextree,
             pnode = (fsg_pnode_t *) ckd_calloc(1, sizeof(fsg_pnode_t));
             pnode->ctx = lextree->ctx;
             pnode->next.fsglink = fsglink;
-            pnode->logs2prob = fsg_link_logs2prob(fsglink) + lextree->wip + lextree->pip;
+            pnode->logs2prob = (fsg_link_logs2prob(fsglink) >> SENSCR_SHIFT)
+                + lextree->wip + lextree->pip;
             pnode->ci_ext = silcipid;   /* Presents SIL as context to neighbors */
             pnode->ppos = 0;
             pnode->leaf = TRUE;
@@ -504,7 +506,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                                                        (fsg_pnode_t));
                         pnode->ctx = lextree->ctx;
 	                /* This bit is tricky! For now we'll put the prob in the final link only */
-                        /* pnode->logs2prob = fsg_link_logs2prob(fsglink)
+                        /* pnode->logs2prob = (fsg_link_logs2prob(fsglink) >> SENSCR_SHIFT)
                            + lextree->wip + lextree->pip; */
                         pnode->logs2prob = lextree->wip + lextree->pip;
                         pnode->ci_ext = dict_first_phone(lextree->dict, dictwid);
@@ -595,7 +597,8 @@ psubtree_add_trans(fsg_lextree_t *lextree,
                         pnode->ctx = lextree->ctx;
 			/* We are plugging the word prob here. Ugly */
                         /* pnode->logs2prob = lextree->pip; */
-                        pnode->logs2prob = fsg_link_logs2prob(fsglink) + lextree->pip;
+                        pnode->logs2prob = (fsg_link_logs2prob(fsglink) >> SENSCR_SHIFT)
+                            + lextree->pip;
                         pnode->ci_ext = dict_pron(lextree->dict, dictwid, p);
                         pnode->ppos = p;
                         pnode->leaf = TRUE;

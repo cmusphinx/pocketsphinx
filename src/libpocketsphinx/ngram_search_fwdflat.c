@@ -678,11 +678,11 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
                 continue;
             /* FIXME: Floating point... */
             newscore += lwf
-                * ngram_tg_score(ngs->lmset,
+                * (ngram_tg_score(ngs->lmset,
                                  dict_basewid(dict, w),
                                  bp->real_wid,
-                                 bp->prev_real_wid, &n_used);
-            newscore += pip;
+                                  bp->prev_real_wid, &n_used) >> SENSCR_SHIFT);
+            newscore += pip >> SENSCR_SHIFT;
 
             /* Enter the next word */
             if (newscore BETTER_THAN thresh) {
