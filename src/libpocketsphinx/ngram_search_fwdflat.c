@@ -103,6 +103,8 @@ ngram_fwdflat_allocate_1ph(ngram_search_t *ngs)
         if (dict_is_single_phone(dict, w))
             ++ngs->n_1ph_words;
     }
+    ngs->single_phone_wid = ckd_calloc(ngs->n_1ph_words,
+                                       sizeof(*ngs->single_phone_wid));
     ngs->rhmm_1ph = ckd_calloc(ngs->n_1ph_words, sizeof(*ngs->rhmm_1ph));
     i = 0;
     for (w = 0; w < n_words; w++) {
@@ -118,6 +120,7 @@ ngram_fwdflat_allocate_1ph(ngram_search_t *ngs)
                  /* tmatid */ ngs->rhmm_1ph[i].ciphone);
         ngs->rhmm_1ph[i].next = NULL;
         ngs->word_chan[w] = (chan_t *) &(ngs->rhmm_1ph[i]);
+        ngs->single_phone_wid[i] = w;
         i++;
     }
 }
@@ -136,6 +139,7 @@ ngram_fwdflat_free_1ph(ngram_search_t *ngs)
     }
     ckd_free(ngs->rhmm_1ph);
     ngs->rhmm_1ph = NULL;
+    ckd_free(ngs->single_phone_wid);
 }
 
 void
@@ -314,7 +318,7 @@ build_fwdflat_chan(ngram_search_t *ngs)
     for (i = 0; ngs->fwdflat_wordlist[i] >= 0; i++) {
         wid = ngs->fwdflat_wordlist[i];
 
-        /* Omit single-phone words as they are permanently allocated */
+        /* Single-phone words are permanently allocated */
         if (dict_is_single_phone(dict, wid))
             continue;
 
@@ -359,6 +363,7 @@ build_fwdflat_chan(ngram_search_t *ngs)
             rhmm->next = ngs->word_chan[wid];
         ngs->word_chan[wid] = (chan_t *) rhmm;
     }
+
 }
 
 void
@@ -375,6 +380,14 @@ ngram_fwdflat_start(ngram_search_t *ngs)
 
     for (i = 0; i < ps_search_n_words(ngs); i++)
         ngs->word_lat_idx[i] = NO_BP;
+
+    /* Reset the permanently allocated single-phone words, since they
+     * may have junk left over in them from previous searches. */
+    for (i = 0; i < ngs->n_1ph_words; i++) {
+        int32 w = ngs->single_phone_wid[i];
+        rhmm = (root_chan_t *) ngs->word_chan[w];
+        hmm_clear(&rhmm->hmm);
+    }
 
     /* Start search with <s>; word_chan[<s>] is permanently allocated */
     rhmm = (root_chan_t *) ngs->word_chan[ps_search_start_wid(ngs)];
@@ -521,7 +534,9 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
                 assert(dict_is_single_phone(ps_search_dict(ngs), w));
 
                 /* Word exit for single-phone words (where did their
-                 * whmms come from?) */
+                 * whmms come from?) (either from
+                 * ngram_search_fwdtree, or from
+                 * ngram_fwdflat_allocate_1ph(), that's where) */
                 if (newscore BETTER_THAN wordthresh) {
                     ngram_search_save_bp(ngs, cf, w, newscore,
                                          hmm_out_history(&rhmm->hmm), 0);

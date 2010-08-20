@@ -357,6 +357,7 @@ cache_bptable_paths(ngram_search_t *ngs, int32 bp)
     w = be->wid;
 
     while (dict_filler_word(ps_search_dict(ngs), w)) {
+        assert(ngs->bp_table[prev_bp].bp != prev_bp);
         prev_bp = ngs->bp_table[prev_bp].bp;
         if (prev_bp == NO_BP)
             return;
@@ -365,6 +366,7 @@ cache_bptable_paths(ngram_search_t *ngs, int32 bp)
 
     be->real_wid = dict_basewid(ps_search_dict(ngs), w);
 
+    assert(ngs->bp_table[prev_bp].bp != prev_bp);
     prev_bp = ngs->bp_table[prev_bp].bp;
     be->prev_real_wid =
         (prev_bp != NO_BP) ? ngs->bp_table[prev_bp].real_wid : -1;
@@ -374,24 +376,25 @@ void
 ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
                      int32 w, int32 score, int32 path, int32 rc)
 {
-    int32 _bp_;
+    int32 bp;
 
     /* Look for an existing exit for this word in this frame. */
-    _bp_ = ngs->word_lat_idx[w];
-    if (_bp_ != NO_BP) {
+    bp = ngs->word_lat_idx[w];
+    if (bp != NO_BP) {
         /* Keep only the best scoring one (this is a potential source
          * of search errors...) */
-        if (ngs->bp_table[_bp_].score WORSE_THAN score) {
-            if (ngs->bp_table[_bp_].bp != path) {
-                ngs->bp_table[_bp_].bp = path;
-                cache_bptable_paths(ngs, _bp_);
+        if (ngs->bp_table[bp].score WORSE_THAN score) {
+            assert(path != bp);
+            if (ngs->bp_table[bp].bp != path) {
+                ngs->bp_table[bp].bp = path;
+                cache_bptable_paths(ngs, bp);
             }
-            ngs->bp_table[_bp_].score = score;
+            ngs->bp_table[bp].score = score;
         }
         /* But do keep track of scores for all right contexts, since
          * we need them to determine the starting path scores for any
          * successors of this word exit. */
-        ngs->bscore_stack[ngs->bp_table[_bp_].s_idx + rc] = score;
+        ngs->bscore_stack[ngs->bp_table[bp].s_idx + rc] = score;
     }
     else {
         int32 i, rcsize, *bss;
@@ -428,6 +431,7 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
         be->score = score;
         be->s_idx = ngs->bss_head;
         be->valid = TRUE;
+        assert(path != ngs->bpidx);
 
         /* DICT2PID */
         /* Get diphone ID for final phone and number of ssids corresponding to it. */
@@ -698,13 +702,13 @@ ngram_search_step(ps_search_t *search, int frame_idx)
         return -1;
 }
 
-static void
+void
 dump_bptable(ngram_search_t *ngs)
 {
     int i;
     E_INFO("Backpointer table (%d entries):\n", ngs->bpidx);
     for (i = 0; i < ngs->bpidx; ++i) {
-        E_INFO_NOFN("%-5d %-10s start %-3d end %-3d score %-8d bp\n", /* %-3d history %08x\n", */
+        E_INFO_NOFN("%-5d %-10s start %-3d end %-3d score %-8d bp %-3d\n",
                     i, dict_wordstr(ps_search_dict(ngs), ngs->bp_table[i].wid),
                     ngs->bp_table[i].bp == -1 ? 0 : 
                     ngs->bp_table[ngs->bp_table[i].bp].frame + 1,
