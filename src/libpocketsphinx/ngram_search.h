@@ -310,9 +310,6 @@ struct ngram_search_s {
     int32 *word_lat_idx; /* BPTable index for any word in current frame;
                             cleared before each frame */
 
-    uint16 *zeroPermTab; /**< Null right context table, just an array of
-                            n_ciphone zeros (!!) */
-
     /*
      * Flat lexicon (2nd pass) search stuff.
      */

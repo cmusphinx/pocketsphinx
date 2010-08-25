@@ -164,8 +164,6 @@ ngram_search_init(cmd_ln_t *config,
                                 sizeof(*ngs->word_chan));
     ngs->word_lat_idx = ckd_calloc(dict_size(dict),
                                    sizeof(*ngs->word_lat_idx));
-    ngs->zeroPermTab = ckd_calloc(bin_mdef_n_ciphone(acmod->mdef),
-                                  sizeof(*ngs->zeroPermTab));
     ngs->word_active = bitvec_alloc(dict_size(dict));
     ngs->last_ltrans = ckd_calloc(dict_size(dict),
                                   sizeof(*ngs->last_ltrans));
@@ -311,7 +309,6 @@ ngram_search_free(ps_search_t *search)
 
     ckd_free(ngs->word_chan);
     ckd_free(ngs->word_lat_idx);
-    ckd_free(ngs->zeroPermTab);
     bitvec_free(ngs->word_active);
     ckd_free(ngs->bp_table);
     ckd_free(ngs->bscore_stack);
