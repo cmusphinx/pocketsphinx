@@ -548,14 +548,16 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
 {
     chan_t *hmm, *thmm;
     xwdssid_t *rssid;
-    int32 i;
+    int32 i, tmatid, ciphone;
 
     /* DICT2PID */
     /* Get pointer to array of triphones for final diphone. */
     assert(!dict_is_single_phone(ps_search_dict(ngs), w));
+    ciphone = dict_last_phone(ps_search_dict(ngs),w);
     rssid = dict2pid_rssid(ps_search_dict2pid(ngs),
-                           dict_last_phone(ps_search_dict(ngs),w),
+                           ciphone,
                            dict_second_last_phone(ps_search_dict(ngs),w));
+    tmatid = bin_mdef_pid2tmatid(ps_search_acmod(ngs)->mdef, ciphone);
     hmm = ngs->word_chan[w];
     if ((hmm == NULL) || (hmm_nonmpx_ssid(&hmm->hmm) != rssid->ssid[0])) {
         hmm = listelem_malloc(ngs->chan_alloc);
@@ -563,8 +565,8 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
         ngs->word_chan[w] = hmm;
 
         hmm->info.rc_id = 0;
-        hmm->ciphone = dict_last_phone(ps_search_dict(ngs),w);
-        hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, rssid->ssid[0], hmm->ciphone);
+        hmm->ciphone = ciphone;
+        hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, rssid->ssid[0], tmatid);
         E_DEBUG(3,("allocated rc_id 0 ssid %d ciphone %d lc %d word %s\n",
                    rssid->ssid[0], hmm->ciphone,
                    dict_second_last_phone(ps_search_dict(ngs),w),
@@ -578,8 +580,8 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
             hmm = thmm;
 
             hmm->info.rc_id = i;
-            hmm->ciphone = dict_last_phone(ps_search_dict(ngs),w);
-            hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, rssid->ssid[i], hmm->ciphone);
+            hmm->ciphone = ciphone;
+            hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, rssid->ssid[i], tmatid);
             E_DEBUG(3,("allocated rc_id %d ssid %d ciphone %d lc %d word %s\n",
                        i, rssid->ssid[i], hmm->ciphone,
                        dict_second_last_phone(ps_search_dict(ngs),w),

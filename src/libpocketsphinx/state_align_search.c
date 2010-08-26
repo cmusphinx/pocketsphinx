@@ -306,7 +306,7 @@ state_align_search_init(cmd_ln_t *config,
          ++hmm, itor = ps_alignment_iter_next(itor)) {
         ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
         hmm_init(sas->hmmctx, hmm, FALSE,
-                 ent->id.pid.ssid, ent->id.pid.cipid);
+                 ent->id.pid.ssid, ent->id.pid.tmatid);
     }
     return ps_search_base(sas);
 }

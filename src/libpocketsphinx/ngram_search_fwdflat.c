@@ -117,7 +117,8 @@ ngram_fwdflat_allocate_1ph(ngram_search_t *ngs)
         hmm_init(ngs->hmmctx, &ngs->rhmm_1ph[i].hmm, TRUE,
                  /* ssid */ bin_mdef_pid2ssid(ps_search_acmod(ngs)->mdef,
                                               ngs->rhmm_1ph[i].ciphone),
-                 /* tmatid */ ngs->rhmm_1ph[i].ciphone);
+                 /* tmatid */ bin_mdef_pid2tmatid(ps_search_acmod(ngs)->mdef,
+    						  ngs->rhmm_1ph[i].ciphone));
         ngs->rhmm_1ph[i].next = NULL;
         ngs->word_chan[w] = (chan_t *) &(ngs->rhmm_1ph[i]);
         ngs->single_phone_wid[i] = w;
@@ -333,7 +334,7 @@ build_fwdflat_chan(ngram_search_t *ngs)
         rhmm->next = NULL;
         hmm_init(ngs->hmmctx, &rhmm->hmm, TRUE,
                  bin_mdef_pid2ssid(ps_search_acmod(ngs)->mdef, rhmm->ciphone),
-                 rhmm->ciphone);
+                 bin_mdef_pid2tmatid(ps_search_acmod(ngs)->mdef, rhmm->ciphone));
 
         /* HMMs for word-internal phones */
         prevhmm = NULL;
@@ -343,7 +344,8 @@ build_fwdflat_chan(ngram_search_t *ngs)
             hmm->info.rc_id = (p == dict_pronlen(dict, wid) - 1) ? 0 : -1;
             hmm->next = NULL;
             hmm_init(ngs->hmmctx, &hmm->hmm, FALSE,
-                     dict2pid_internal(d2p,wid,p), hmm->ciphone);
+                     dict2pid_internal(d2p,wid,p), 
+		     bin_mdef_pid2tmatid(ps_search_acmod(ngs)->mdef, hmm->ciphone));
 
             if (prevhmm)
                 prevhmm->next = hmm;

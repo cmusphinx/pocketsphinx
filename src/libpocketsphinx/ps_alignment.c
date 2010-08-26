@@ -159,6 +159,7 @@ ps_alignment_populate(ps_alignment_t *al)
             return -1;
         }
         sent->id.pid.cipid = dict_first_phone(dict, wid);
+        sent->id.pid.tmatid = bin_mdef_pid2tmatid(mdef, sent->id.pid.cipid);
         sent->start = went->start;
         sent->duration = went->duration;
         sent->parent = i;
@@ -179,6 +180,7 @@ ps_alignment_populate(ps_alignment_t *al)
                 return -1;
             }
             sent->id.pid.cipid = dict_pron(dict, wid, j);
+            sent->id.pid.tmatid = bin_mdef_pid2tmatid(mdef, sent->id.pid.cipid);
             sent->id.pid.ssid = dict2pid_internal(d2p, wid, j);
             assert(sent->id.pid.ssid != BAD_SSID);
             sent->start = went->start;
@@ -195,6 +197,7 @@ ps_alignment_populate(ps_alignment_t *al)
                 return -1;
             }
             sent->id.pid.cipid = dict_last_phone(dict, wid);
+            sent->id.pid.tmatid = bin_mdef_pid2tmatid(mdef, sent->id.pid.cipid);
             rssid = dict2pid_rssid(d2p, sent->id.pid.cipid,
                                    dict_second_last_phone(dict, wid));
             sent->id.pid.ssid = rssid->ssid[rssid->cimap[rc]];
@@ -264,6 +267,7 @@ ps_alignment_populate_ci(ps_alignment_t *al)
                 return -1;
             }
             sent->id.pid.cipid = dict_pron(dict, wid, j);
+            sent->id.pid.tmatid = bin_mdef_pid2tmatid(mdef, sent->id.pid.cipid);
             sent->id.pid.ssid = bin_mdef_pid2ssid(mdef, sent->id.pid.cipid);
             assert(sent->id.pid.ssid != BAD_SSID);
             sent->start = went->start;

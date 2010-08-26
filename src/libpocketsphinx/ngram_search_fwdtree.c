@@ -135,7 +135,7 @@ init_search_tree(ngram_search_t *ngs)
         ngs->rhmm_1ph[i].ciphone = dict_first_phone(dict, w);
         hmm_init(ngs->hmmctx, &ngs->rhmm_1ph[i].hmm, TRUE,
                  bin_mdef_pid2ssid(ps_search_acmod(ngs)->mdef, ngs->rhmm_1ph[i].ciphone),
-                 ngs->rhmm_1ph[i].ciphone);
+                 bin_mdef_pid2tmatid(ps_search_acmod(ngs)->mdef, ngs->rhmm_1ph[i].ciphone));
         ngs->rhmm_1ph[i].next = NULL;
 
         ngs->word_chan[w] = (chan_t *) &(ngs->rhmm_1ph[i]);
@@ -152,13 +152,13 @@ init_search_tree(ngram_search_t *ngs)
  * One-time initialization of internal channels in HMM tree.
  */
 static void
-init_nonroot_chan(ngram_search_t *ngs, chan_t * hmm, int32 ph, int32 ci)
+init_nonroot_chan(ngram_search_t *ngs, chan_t * hmm, int32 ph, int32 ci, int32 tmatid)
 {
     hmm->next = NULL;
     hmm->alt = NULL;
     hmm->info.penult_phn_wid = -1;
     hmm->ciphone = ci;
-    hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, ph, ci);
+    hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, ph, tmatid);
 }
 
 /*
@@ -176,7 +176,7 @@ create_search_tree(ngram_search_t *ngs)
 {
     chan_t *hmm;
     root_chan_t *rhmm;
-    int32 w, i, j, p, ph;
+    int32 w, i, j, p, ph, tmatid;
     int32 n_words;
     dict_t *dict = ps_search_dict(ngs);
     dict2pid_t *d2p = ps_search_dict2pid(ngs);
@@ -221,7 +221,7 @@ create_search_tree(ngram_search_t *ngs)
         }
         if (i == ngs->n_root_chan) {
             rhmm = &(ngs->root_chan[ngs->n_root_chan]);
-            rhmm->hmm.tmatid = ciphone;
+            rhmm->hmm.tmatid = bin_mdef_pid2tmatid(ps_search_acmod(ngs)->mdef, ciphone);
             /* Begin with CI phone?  Not sure this makes a difference... */
             hmm_mpx_ssid(&rhmm->hmm, 0) =
                 bin_mdef_pid2ssid(ps_search_acmod(ngs)->mdef, ciphone);
@@ -246,10 +246,11 @@ create_search_tree(ngram_search_t *ngs)
         else {
             /* Add remaining phones, except the last, to tree */
             ph = dict2pid_internal(d2p, w, 1);
+            tmatid = bin_mdef_pid2tmatid(ps_search_acmod(ngs)->mdef, dict_pron(dict, w, 1));
             hmm = rhmm->next;
             if (hmm == NULL) {
                 rhmm->next = hmm = listelem_malloc(ngs->chan_alloc);
-                init_nonroot_chan(ngs, hmm, ph, dict_pron(dict, w, 1));
+                init_nonroot_chan(ngs, hmm, ph, dict_pron(dict, w, 1), tmatid);
                 ngs->n_nonroot_chan++;
             }
             else {
@@ -259,7 +260,7 @@ create_search_tree(ngram_search_t *ngs)
                     prev_hmm = hmm;
                 if (!hmm) {     /* thanks, rkm! */
                     prev_hmm->alt = hmm = listelem_malloc(ngs->chan_alloc);
-                    init_nonroot_chan(ngs, hmm, ph, dict_pron(dict, w, 1));
+                    init_nonroot_chan(ngs, hmm, ph, dict_pron(dict, w, 1), tmatid);
                     ngs->n_nonroot_chan++;
                 }
             }
@@ -268,10 +269,11 @@ create_search_tree(ngram_search_t *ngs)
                                             dict_second_phone(dict, w)), ph));
             for (p = 2; p < dict_pronlen(dict, w) - 1; p++) {
                 ph = dict2pid_internal(d2p, w, p);
+                tmatid = bin_mdef_pid2tmatid(ps_search_acmod(ngs)->mdef, dict_pron(dict, w, p));
                 if (!hmm->next) {
                     hmm->next = listelem_malloc(ngs->chan_alloc);
                     hmm = hmm->next;
-                    init_nonroot_chan(ngs, hmm, ph, dict_pron(dict, w, p));
+                    init_nonroot_chan(ngs, hmm, ph, dict_pron(dict, w, p), tmatid);
                     ngs->n_nonroot_chan++;
                 }
                 else {
@@ -282,7 +284,7 @@ create_search_tree(ngram_search_t *ngs)
                         prev_hmm = hmm;
                     if (!hmm) { /* thanks, rkm! */
                         prev_hmm->alt = hmm = listelem_malloc(ngs->chan_alloc);
-                        init_nonroot_chan(ngs, hmm, ph, dict_pron(dict, w, p));
+                        init_nonroot_chan(ngs, hmm, ph, dict_pron(dict, w, p), tmatid);
                         ngs->n_nonroot_chan++;
                     }
                 }

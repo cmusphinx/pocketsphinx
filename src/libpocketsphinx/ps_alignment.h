@@ -59,6 +59,7 @@ struct ps_alignment_entry_s {
         struct {
             uint16 ssid;
             uint16 cipid;
+            uint16 tmatid;
         } pid;
         uint16 senid;
     } id;
