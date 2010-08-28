@@ -13,4 +13,4 @@ URL: http://cmusphinx.sourceforge.net/
 Requires: sphinxbase >= 0.6
 Libs: -L${libdir} -lpocketsphinx
 Libs.private: ${libs}
-Cflags: -I${includedir} -I${includedir}/pocketsphinx
+Cflags: -I${includedir} -I${includedir}/sphinxbase -I${includedir}/pocketsphinx
