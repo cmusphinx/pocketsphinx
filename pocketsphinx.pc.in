@@ -10,7 +10,7 @@ Name: PocketSphinx
 Description: Lightweight speech recognition system
 Version: @VERSION@
 URL: http://cmusphinx.sourceforge.net/
-Requires: sphinxbase >= 0.4
+Requires: sphinxbase >= 0.6
 Libs: -L${libdir} -lpocketsphinx
 Libs.private: ${libs}
-Cflags: -I${includedir}/sphinxbase -I${includedir}/pocketsphinx
+Cflags: -I${includedir} -I${includedir}/pocketsphinx
