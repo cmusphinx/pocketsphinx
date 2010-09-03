@@ -115,10 +115,12 @@ typedef struct bptbl_s {
     int32    score;		/**< Score (best among all right contexts) */
     int32    s_idx;		/**< Start of BScoreStack for various right contexts*/
     int32    real_wid;		/**< wid of this or latest predecessor real word */
-    int32    prev_real_wid;	/**< real word predecessor of real_wid */
     int16    last_phone;        /**< last phone of this word */
     int16    last2_phone;       /**< next-to-last phone of this word */
 } bptbl_t;
+
+#define prev_real_wid(bptbl, bpe) \
+    (((bpe)->bp == NO_BP) ? -1 : ((bptbl)[(bpe)->bp].real_wid))
 
 /**
  * Segmentation "iterator" for backpointer table results.

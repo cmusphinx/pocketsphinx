@@ -345,18 +345,14 @@ set_real_wid(ngram_search_t *ngs, int32 bp)
 
     assert(bp != NO_BP);
     prev_bp = ngs->bp_table[bp].bp;
-    /* Propagate lm state for fillers, rotate it for words. */
+    /* Propagate lm state for fillers, update it for words. */
     if (dict_filler_word(ps_search_dict(ngs), ngs->bp_table[bp].wid)) {
-        if (prev_bp != NO_BP) {
+        if (prev_bp != NO_BP)
             ngs->bp_table[bp].real_wid = ngs->bp_table[prev_bp].real_wid;
-            ngs->bp_table[bp].prev_real_wid = ngs->bp_table[prev_bp].prev_real_wid;
-        }
     }
     else {
         ngs->bp_table[bp].real_wid = dict_basewid(ps_search_dict(ngs),
                                                   ngs->bp_table[bp].wid);
-        if (prev_bp != NO_BP)
-            ngs->bp_table[bp].prev_real_wid = ngs->bp_table[prev_bp].real_wid;
     }
 }
 
@@ -657,7 +653,8 @@ ngram_compute_seg_score(ngram_search_t *ngs, bptbl_t *be, float32 lwf,
         *out_lscr = ngram_tg_score(ngs->lmset,
                                    be->real_wid,
                                    pbe->real_wid,
-                                   pbe->prev_real_wid, &n_used)>>SENSCR_SHIFT;
+                                   prev_real_wid(ngs->bp_table, pbe),
+                                   &n_used)>>SENSCR_SHIFT;
         *out_lscr = *out_lscr * lwf;
     }
     *out_ascr = be->score - start_score - *out_lscr;
@@ -832,7 +829,8 @@ ngram_search_bp2itor(ps_seg_t *seg, int bp)
             seg->lscr = ngram_tg_score(ngs->lmset,
                                        be->real_wid,
                                        pbe->real_wid,
-                                       pbe->prev_real_wid, &seg->lback)>>SENSCR_SHIFT;
+                                       prev_real_wid(ngs->bp_table, pbe),
+                                       &seg->lback)>>SENSCR_SHIFT;
             seg->lscr = (int32)(seg->lscr * seg->lwf);
         }
         seg->ascr = be->score - start_score - seg->lscr;
@@ -1066,9 +1064,8 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
     bestbp = NO_BP;
     for (bp = ngs->bp_table_idx[ef]; bp < ngs->bp_table_idx[ef + 1]; ++bp) {
         int32 n_used, l_scr, wid, prev_wid;
-        
         wid = ngs->bp_table[bp].real_wid;
-        prev_wid = ngs->bp_table[bp].prev_real_wid;
+        prev_wid = prev_real_wid(ngs->bp_table, ngs->bp_table + bp);
         l_scr = ngram_tg_score(ngs->lmset, ps_search_finish_wid(ngs),
                                wid, prev_wid, &n_used) >>SENSCR_SHIFT;
         l_scr = l_scr * lwf;

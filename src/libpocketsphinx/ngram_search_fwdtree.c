@@ -969,11 +969,14 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
                 dscr = 
                     ngram_search_exit_score
                     (ngs, bpe, dict_first_phone(ps_search_dict(ngs), candp->wid));
-                if (dscr != WORST_SCORE)
+                if (dscr != WORST_SCORE) {
+                    assert(!dict_filler_word(ps_search_dict(ngs), candp->wid));
                     dscr += ngram_tg_score(ngs->lmset,
                                            dict_basewid(ps_search_dict(ngs), candp->wid),
                                            bpe->real_wid,
-                                           bpe->prev_real_wid, &n_used)>>SENSCR_SHIFT;
+                                           prev_real_wid(ngs->bp_table, bpe),
+                                           &n_used)>>SENSCR_SHIFT;
+                }
 
                 if (dscr BETTER_THAN ngs->last_ltrans[candp->wid].dscr) {
                     ngs->last_ltrans[candp->wid].dscr = dscr;
@@ -1340,7 +1343,8 @@ word_transition(ngram_search_t *ngs, int frame_idx)
                 newscore += ngram_tg_score(ngs->lmset,
                                            dict_basewid(dict, w),
                                            bpe->real_wid,
-                                           bpe->prev_real_wid, &n_used)>>SENSCR_SHIFT;
+                                           prev_real_wid(ngs->bp_table, bpe),
+                                           &n_used)>>SENSCR_SHIFT;
 
             /* FIXME: Not sure how WORST_SCORE could be better, but it
              * apparently happens. */
