@@ -338,35 +338,26 @@ ngram_search_mark_bptable(ngram_search_t *ngs, int frame_idx)
     return ngs->bpidx;
 }
 
-/**
- * Find trigram predecessors for a backpointer table entry.
- */
 static void
-cache_bptable_paths(ngram_search_t *ngs, int32 bp)
+set_real_wid(ngram_search_t *ngs, int32 bp)
 {
-    int32 w, prev_bp;
-    bptbl_t *be;
+    int32 prev_bp;
 
     assert(bp != NO_BP);
-
-    be = &(ngs->bp_table[bp]);
-    prev_bp = bp;
-    w = be->wid;
-
-    while (dict_filler_word(ps_search_dict(ngs), w)) {
-        assert(ngs->bp_table[prev_bp].bp != prev_bp);
-        prev_bp = ngs->bp_table[prev_bp].bp;
-        if (prev_bp == NO_BP)
-            return;
-        w = ngs->bp_table[prev_bp].wid;
+    prev_bp = ngs->bp_table[bp].bp;
+    /* Propagate lm state for fillers, rotate it for words. */
+    if (dict_filler_word(ps_search_dict(ngs), ngs->bp_table[bp].wid)) {
+        if (prev_bp != NO_BP) {
+            ngs->bp_table[bp].real_wid = ngs->bp_table[prev_bp].real_wid;
+            ngs->bp_table[bp].prev_real_wid = ngs->bp_table[prev_bp].prev_real_wid;
+        }
     }
-
-    be->real_wid = dict_basewid(ps_search_dict(ngs), w);
-
-    assert(ngs->bp_table[prev_bp].bp != prev_bp);
-    prev_bp = ngs->bp_table[prev_bp].bp;
-    be->prev_real_wid =
-        (prev_bp != NO_BP) ? ngs->bp_table[prev_bp].real_wid : -1;
+    else {
+        ngs->bp_table[bp].real_wid = dict_basewid(ps_search_dict(ngs),
+                                                  ngs->bp_table[bp].wid);
+        if (prev_bp != NO_BP)
+            ngs->bp_table[bp].prev_real_wid = ngs->bp_table[prev_bp].real_wid;
+    }
 }
 
 void
@@ -384,7 +375,7 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
             assert(path != bp);
             if (ngs->bp_table[bp].bp != path) {
                 ngs->bp_table[bp].bp = path;
-                cache_bptable_paths(ngs, bp);
+                set_real_wid(ngs, bp);
             }
             ngs->bp_table[bp].score = score;
         }
@@ -446,7 +437,7 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
         for (i = rcsize, bss = ngs->bscore_stack + ngs->bss_head; i > 0; --i, bss++)
             *bss = WORST_SCORE;
         ngs->bscore_stack[ngs->bss_head + rc] = score;
-        cache_bptable_paths(ngs, ngs->bpidx);
+        set_real_wid(ngs, ngs->bpidx);
 
         ngs->bpidx++;
         ngs->bss_head += rcsize;
