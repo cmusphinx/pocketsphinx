@@ -74,8 +74,6 @@ ngram_fwdflat_expand_all(ngram_search_t *ngs)
     n_words = ps_search_n_words(ngs);
     bitvec_clear_all(ngs->expand_word_flag, ps_search_n_words(ngs));
     for (i = 0; i < n_words; ++i) {
-        if (!dict_real_word(ps_search_dict(ngs), i))
-            continue;
         if (!ngram_model_set_known_wid(ngs->lmset,
                                        dict_basewid(ps_search_dict(ngs),i)))
             continue;
@@ -238,13 +236,10 @@ build_fwdflat_wordlist(ngram_search_t *ngs)
         ef = bp->frame;
         wid = bp->wid;
 
-        /*
-         * NOTE: fwdflat_wordlist excludes <s>, <sil> and noise words;
-         * it includes </s>.  That is, it includes anything to which a
-         * transition can be made in the LM.
-         */
-        /* Ignore silence and <s> */
-        if (dict_filler_word(dict, wid) || (wid == dict_startwid(dict)))
+        /* Anything that can be transitioned to in the LM can go in
+         * the word list. */
+        if (!ngram_model_set_known_wid(ngs->lmset,
+                                       dict_basewid(ps_search_dict(ngs), wid)))
             continue;
 
         /* Look for it in the wordlist. */
@@ -700,7 +695,7 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
                                   bp->real_wid,
                                   prev_real_wid(ngs->bp_table, bp),
                                   &n_used) >> SENSCR_SHIFT);
-            newscore += pip >> SENSCR_SHIFT;
+            newscore += pip;
 
             /* Enter the next word */
             if (newscore BETTER_THAN thresh) {
