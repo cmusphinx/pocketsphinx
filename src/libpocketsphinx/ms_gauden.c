@@ -289,10 +289,10 @@ gauden_param_read(float32 ***** out_param,      /* Alloc space iff *out_param ==
 
     *out_param = out;
 
-    E_INFO("%d codebook, %d feature, size\n", n_mgau, n_feat);
+    E_INFO("%d codebook, %d feature, size: ", n_mgau, n_feat);
     for (i = 0; i < n_feat; i++)
-        printf(" %dx%d", n_density, veclen[i]);
-    printf("\n");
+        E_INFO(" %dx%d", n_density, veclen[i]);
+    E_INFO("\n");
     fflush(stdout);
 
     return 0;
