@@ -1,6 +1,6 @@
 /* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1999-2010 Carnegie Mellon University.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,32 +35,25 @@
  *
  */
 /*
- * demo.c -- An example SphinxII program using continuous listening/silence filtering
- * 		to segment speech into utterances that are then decoded.
- * 
- * HISTORY
- *
- * 15-Jun-99    Kevin A. Lenzo (lenzo@cs.cmu.edu) at Carnegie Mellon University
- *              Added i386_linux and used ad_open_sps instead of ad_open
- * 
- * 14-Jun-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Created.
+ * continuous.c - Simple pocketsphinx command-line application to test
+ *                both continuous listening/silence filtering from microphone
+ *                and continuous file transcription.
  */
 
 /*
- * This is a simple, tty-based example of a SphinxII client that uses continuous listening
+ * This is a simple example of pocketsphinx application that uses continuous listening
  * with silence filtering to automatically segment a continuous stream of audio input
  * into utterances that are then decoded.
  * 
  * Remarks:
  *   - Each utterance is ended when a silence segment of at least 1 sec is recognized.
  *   - Single-threaded implementation for portability.
- *   - Uses fbs8 audio library; can be replaced with an equivalent custom library.
+ *   - Uses audio library; can be replaced with an equivalent custom library.
  */
 
-/* System headers. */
 #include <stdio.h>
 #include <string.h>
+
 #if !defined(_WIN32_WCE)
 #include <signal.h>
 #include <setjmp.h>
@@ -72,12 +65,10 @@
 #include <sys/time.h>
 #endif
 
-/* SphinxBase headers. */
 #include <sphinxbase/err.h>
 #include <sphinxbase/ad.h>
 #include <sphinxbase/cont_ad.h>
 
-/* Local headers. */
 #include "pocketsphinx.h"
 
 static const arg_t cont_args_def[] = {
@@ -87,12 +78,128 @@ static const arg_t cont_args_def[] = {
       ARG_STRING,
       NULL,
       "Argument file giving extra arguments." },
-    { "-adcdev", ARG_STRING, NULL, "Name of audio device to use for input." },
+    { "-adcdev", 
+      ARG_STRING, 
+      NULL, 
+      "Name of audio device to use for input." },
+    { "-infile", 
+      ARG_STRING, 
+      NULL, 
+      "Audio file to transcribe." },
+    { "-time", 
+      ARG_BOOLEAN, 
+      "no", 
+      "Print word times in file transcription." },
     CMDLN_EMPTY_OPTION
 };
 
-static ad_rec_t *ad;
 static ps_decoder_t *ps;
+static cmd_ln_t *config;
+static FILE* rawfd;
+
+static int32
+ad_file_read(ad_rec_t * ad, int16 * buf, int32 max)
+{
+    size_t nread;
+    
+    nread = fread(buf, sizeof(int16), max, rawfd);
+    
+    return (nread > 0 ? nread : -1);
+}
+
+static void
+print_word_times(int32 start)
+{
+	ps_seg_t *iter = ps_seg_iter(ps, NULL);
+	while (iter != NULL) {
+		int32 sf, ef, pprob;
+		float conf;
+		
+		ps_seg_frames (iter, &sf, &ef);
+		pprob = ps_seg_prob (iter, NULL, NULL, NULL);
+		conf = logmath_exp(ps_get_logmath(ps), pprob);
+		printf ("%s %f %f %f\n", ps_seg_word (iter), (sf + start) / 100.0, (ef + start) / 100.0, conf);
+		iter = ps_seg_next (iter);
+	}
+}
+
+/*
+ * Continuous recognition from a file
+ */
+static void
+recognize_from_file() {
+    cont_ad_t *cont;
+    ad_rec_t file_ad = {0};
+    int16 adbuf[4096];
+    const char* hyp;
+    const char* uttid;
+    int32 k, ts, start;
+
+    char waveheader[44];
+    rawfd = fopen(cmd_ln_str_r(config, "-infile"), "rb");
+    fread(waveheader, 1, 44, rawfd);
+
+    file_ad.sps = (int32)cmd_ln_float32_r(config, "-samprate");
+    file_ad.bps = sizeof(int16);
+
+    if ((cont = cont_ad_init(&file_ad, ad_file_read)) == NULL) {
+        E_FATAL("Failed to initialize voice activity detection");
+    }
+    if (cont_ad_calib(cont) < 0)
+        E_FATAL("Failed to calibrate voice activity detection\n");
+    rewind (rawfd);
+
+    for (;;) {
+
+	while ((k = cont_ad_read(cont, adbuf, 4096)) == 0);
+	
+        if (k < 0) {
+    	    break;
+    	}
+
+        if (ps_start_utt(ps, NULL) < 0)
+            E_FATAL("ps_start_utt() failed\n");
+
+        ps_process_raw(ps, adbuf, k, FALSE, FALSE);
+        
+        ts = cont->read_ts;
+        start = (ts - k) / file_ad.sps * 100;
+        
+        for (;;) {
+            if ((k = cont_ad_read(cont, adbuf, 4096)) < 0)
+            	break;
+
+            if (k == 0) {
+                /*
+                 * No speech data available; check current timestamp with most recent
+                 * speech to see if more than 1 sec elapsed.  If so, end of utterance.
+                 */
+                if ((cont->read_ts - ts) > DEFAULT_SAMPLES_PER_SEC)
+                    break;
+            }
+            else {
+                /* New speech data received; note current timestamp */
+                ts = cont->read_ts;
+            }
+
+
+            ps_process_raw(ps, adbuf, k, FALSE, FALSE);
+        }
+
+        ps_end_utt(ps);
+        
+        if (cmd_ln_boolean_r(config, "-time")) {
+	    print_word_times(start);
+	} else {
+	    hyp = ps_get_hyp(ps, NULL, &uttid);
+            printf("%s: %s\n", uttid, hyp);
+        }
+        fflush(stdout);	
+    }
+
+    cont_ad_close(cont);
+    fclose(rawfd);
+}
 
 /* Sleep for specified msec */
 static void
@@ -120,22 +227,27 @@ sleep_msec(int32 ms)
  *     }
  */
 static void
-utterance_loop()
+recognize_from_microphone()
 {
+    ad_rec_t *ad;
     int16 adbuf[4096];
-    int32 k, ts, rem, score;
+    int32 k, ts, rem;
     char const *hyp;
     char const *uttid;
     cont_ad_t *cont;
     char word[256];
 
+    if ((ad = ad_open_dev(cmd_ln_str_r(config, "-adcdev"),
+                          (int)cmd_ln_float32_r(config, "-samprate"))) == NULL)
+        E_FATAL("Failed top open audio device\n");
+
     /* Initialize continuous listening module */
     if ((cont = cont_ad_init(ad, ad_read)) == NULL)
-        E_FATAL("cont_ad_init failed\n");
+        E_FATAL("Failed to initialize voice activity detection\n");
     if (ad_start_rec(ad) < 0)
-        E_FATAL("ad_start_rec failed\n");
+        E_FATAL("Failed to start recording\n");
     if (cont_ad_calib(cont) < 0)
-        E_FATAL("cont_ad_calib failed\n");
+        E_FATAL("Failed to calibrate voice activity detection\n");
 
     for (;;) {
         /* Indicate listening for next utterance */
@@ -143,19 +255,19 @@ utterance_loop()
         fflush(stdout);
         fflush(stderr);
 
-        /* Await data for next utterance */
+        /* Wait data for next utterance */
         while ((k = cont_ad_read(cont, adbuf, 4096)) == 0)
             sleep_msec(100);
 
         if (k < 0)
-            E_FATAL("cont_ad_read failed\n");
+            E_FATAL("Failed to read audio\n");
 
         /*
          * Non-zero amount of data received; start recognition of new utterance.
          * NULL argument to uttproc_begin_utt => automatic generation of utterance-id.
          */
         if (ps_start_utt(ps, NULL) < 0)
-            E_FATAL("ps_start_utt() failed\n");
+            E_FATAL("Failed to start utterance\n");
         ps_process_raw(ps, adbuf, k, FALSE, FALSE);
         printf("Listening...\n");
         fflush(stdout);
@@ -167,7 +279,7 @@ utterance_loop()
         for (;;) {
             /* Read non-silence audio data, if any, from continuous listening module */
             if ((k = cont_ad_read(cont, adbuf, 4096)) < 0)
-                E_FATAL("cont_ad_read failed\n");
+                E_FATAL("Failed to read audio\n");
             if (k == 0) {
                 /*
                  * No speech data available; check current timestamp with most recent
@@ -203,8 +315,8 @@ utterance_loop()
         fflush(stdout);
         /* Finish decoding, obtain and print result */
         ps_end_utt(ps);
-        hyp = ps_get_hyp(ps, &score, &uttid);
-        printf("%s: %s (%d)\n", uttid, hyp, score);
+        hyp = ps_get_hyp(ps, NULL, &uttid);
+        printf("%s: %s\n", uttid, hyp);
         fflush(stdout);
 
         /* Exit if the first word spoken was GOODBYE */
@@ -216,10 +328,11 @@ utterance_loop()
 
         /* Resume A/D recording for next utterance */
         if (ad_start_rec(ad) < 0)
-            E_FATAL("ad_start_rec failed\n");
+            E_FATAL("Failed to start recording\n");
     }
 
     cont_ad_close(cont);
+    ad_close(ad);
 }
 
 static jmp_buf jbuf;
@@ -232,7 +345,6 @@ sighandler(int signo)
 int
 main(int argc, char *argv[])
 {
-    cmd_ln_t *config;
     char const *cfg;
 
     /* Make sure we exit cleanly (needed for profiling among other things) */
@@ -253,23 +365,22 @@ main(int argc, char *argv[])
     }
     if (config == NULL)
         return 1;
+
     ps = ps_init(config);
     if (ps == NULL)
         return 1;
 
-    if ((ad = ad_open_dev(cmd_ln_str_r(config, "-adcdev"),
-                          (int)cmd_ln_float32_r(config, "-samprate"))) == NULL)
-        E_FATAL("ad_open_dev failed\n");
-
     E_INFO("%s COMPILED ON: %s, AT: %s\n\n", argv[0], __DATE__, __TIME__);
 
-    if (setjmp(jbuf) == 0) {
-        utterance_loop();
+    if (cmd_ln_str_r(config, "-infile") != NULL) {
+	recognize_from_file();
+    } else {
+        if (setjmp(jbuf) == 0) {
+	    recognize_from_microphone();
+	}
     }
 
     ps_free(ps);
-    ad_close(ad);
-
     return 0;
 }
 
