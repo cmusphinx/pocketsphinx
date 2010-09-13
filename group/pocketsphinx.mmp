@@ -8,10 +8,11 @@
 */
 
 TARGET		  pocketsphinx.dll
-TARGETTYPE	  dll
-UID 0x1000008d 0xe000acd3
+TARGETTYPE	  STDDLL
+UID 0x20004C45 0xe000acd3
+EPOCALLOWDLLDATA
 
-USERINCLUDE	 ..\include ..\..\sphinxbase\include ..\..\sphinxbase\include\s60
+USERINCLUDE	 ..\include ..\..\sphinxbase\include\s60 ..\..\sphinxbase\include\sphinxbase ..\..\sphinxbase\include
 SYSTEMINCLUDE   \epoc32\include \epoc32\include\stdapis \epoc32\include\stdapis\sys
 
 
@@ -20,3 +21,6 @@ DEBUGGABLE_UDEBONLY
 #endif
 SOURCEPATH ..\src\libpocketsphinx
 SOURCE acmod.c bin_mdef.c blkarray_list.c dict2pid.c dict.c fsg_history.c fsg_lextree.c fsg_search.c hmm.c mdef.c ms_gauden.c ms_mgau.c ms_senone.c ngram_search.c ngram_search_fwdflat.c ngram_search_fwdtree.c phone_loop_search.c pocketsphinx.c ps_lattice.c ps_mllr.c ptm_mgau.c s2_semi_mgau.c tmat.c vector.c
+
+LIBRARY sphinxbase.lib libm.lib 
+CAPABILITY UserEnvironment

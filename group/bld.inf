@@ -12,4 +12,4 @@ PRJ_PLATFORMS
 DEFAULT
 
 PRJ_MMPFILES
-pocketsphinx_s60.mmp
+pocketsphinx.mmp
