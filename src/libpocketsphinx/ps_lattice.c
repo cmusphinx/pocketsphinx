@@ -1367,7 +1367,7 @@ ps_lattice_joint(ps_lattice_t *dag, ps_latlink_t *link, float32 ascale)
     else
         lmset = NULL;
 
-    jprob = dag->final_node_ascr * ascale;
+    jprob = (dag->final_node_ascr << SENSCR_SHIFT) * ascale;
     while (link) {
         if (lmset) {
             int lback;
@@ -1382,7 +1382,7 @@ ps_lattice_joint(ps_lattice_t *dag, ps_latlink_t *link, float32 ascale)
         /* If there is no language model, we assume that the language
            model probability (such as it is) has been included in the
            link score. */
-        jprob += link->ascr * ascale;
+        jprob += (link->ascr << SENSCR_SHIFT) * ascale;
         link = link->best_prev;
     }
 
