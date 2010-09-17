@@ -47,6 +47,7 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
 	prob = ps_get_prob(ps, &uttid);
 	printf("%s (%s): %s (%d, %d)\n", sname, uttid, hyp, score, prob);
 	TEST_EQUAL(0, strcmp(hyp, expected));
+	TEST_ASSERT(prob <= 0);
 	ps_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
 	printf("%.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
 	       n_speech, n_cpu, n_wall);
@@ -105,6 +106,7 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
 	printf("%s (%s): %s (%d, %d)\n", sname, uttid, hyp, score, prob);
 	TEST_EQUAL(0, strcmp(uttid, "000000001"));
 	TEST_EQUAL(0, strcmp(hyp, expected));
+	TEST_ASSERT(prob <= 0);
 	for (seg = ps_seg_iter(ps, &score); seg;
 	     seg = ps_seg_next(seg)) {
 		char const *word;
@@ -116,6 +118,7 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
 		post = ps_seg_prob(seg, &ascr, &lscr, &lback);
 		printf("%s (%d:%d) P(w|o) = %f ascr = %d lscr = %d lback = %d\n", word, sf, ef,
 		       logmath_exp(ps_get_logmath(ps), post), ascr, lscr, lback);
+		TEST_ASSERT(post <= 0);
 	}
 
 	ps_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
