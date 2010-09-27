@@ -332,6 +332,9 @@ create_search_tree(ngram_search_t *ngs)
                                               sizeof(**ngs->active_chan_list));
     }
 
+    if (!ngs->n_root_chan)
+	E_ERROR("No word from the language model has pronunciation in the dictionary\n");
+
     E_INFO("after: %d root, %d non-root channels, %d single-phone words\n",
            ngs->n_root_chan, ngs->n_nonroot_chan, ngs->n_1ph_words);
 }

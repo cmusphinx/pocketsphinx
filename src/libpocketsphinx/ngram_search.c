@@ -1078,7 +1078,7 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
         E_ERROR("No word exits found in last frame (%d), assuming no recognition\n", ef);
         return NULL;
     }
-    E_WARN("</s> not found in last frame, using %s instead\n",
+    E_INFO("</s> not found in last frame, using %s instead\n",
            dict_basestr(ps_search_dict(ngs), ngs->bp_table[bestbp].wid));
 
     /* Now find the node that corresponds to it. */
