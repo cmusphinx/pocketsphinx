@@ -13,3 +13,5 @@ DEFAULT
 
 PRJ_MMPFILES
 pocketsphinx.mmp
+continuous.mmp
+batch.mmp
