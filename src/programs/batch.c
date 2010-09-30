@@ -361,6 +361,7 @@ build_outdirs(cmd_ln_t *config, char const *uttid)
     build_outdir_one(config, "-mfclogdir", uttpath);
     build_outdir_one(config, "-rawlogdir", uttpath);
     build_outdir_one(config, "-senlogdir", uttpath);
+    build_outdir_one(config, "-nbestdir", uttpath);
     ckd_free(uttpath);
 
     return 0;
@@ -486,6 +487,10 @@ write_nbest(ps_decoder_t *ps, char const *nbestdir, char const *uttid)
                           cmd_ln_str_r(config, "-nbestext"), NULL);
     n = cmd_ln_int32_r(config, "-nbest");
     fh = fopen(outfile, "w");
+    if (fh == NULL) {
+        E_ERROR_SYSTEM("Failed to write a lattice to file %s\n", outfile);
+        return -1;
+    }
     nbest = ps_nbest(ps, 0, -1, NULL, NULL);
     for (i = 0; i < n; i++) {
         ps_nbest_next(nbest);
