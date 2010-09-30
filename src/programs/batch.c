@@ -472,6 +472,33 @@ write_lattice(ps_decoder_t *ps, char const *latdir, char const *uttid)
 }
 
 static int
+write_nbest(ps_decoder_t *ps, char const *nbestdir, char const *uttid)
+{
+    cmd_ln_t *config;
+    char *outfile;
+    FILE *fh;
+    ps_nbest_t *nbest;
+    int32 i, n, score;
+    const char* hyp;
+
+    config = ps_get_config(ps);
+    outfile = string_join(nbestdir, "/", uttid,
+                          cmd_ln_str_r(config, "-nbestext"), NULL);
+    n = cmd_ln_int32_r(config, "-nbest");
+    fh = fopen(outfile, "w");
+    nbest = ps_nbest(ps, 0, -1, NULL, NULL);
+    for (i = 0; i < n; i++) {
+        ps_nbest_next(nbest);
+        hyp = ps_nbest_hyp(nbest, &score);
+        fprintf(fh, "%s %d\n", hyp, score);
+    }
+    ps_nbest_free(nbest);
+    fclose(fh);
+
+    return 0;
+}
+
+static int
 write_hypseg(FILE *fh, ps_decoder_t *ps, char const *uttid)
 {
     int32 score, lscr, sf, ef;
@@ -720,6 +747,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                 write_lattice(ps, outlatdir, uttid);
             }
             if (nbestdir) {
+                write_nbest(ps, nbestdir, uttid);
             }
             ps_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
             E_INFO("%s: %.2f seconds speech, %.2f seconds CPU, %.2f seconds wall\n",
