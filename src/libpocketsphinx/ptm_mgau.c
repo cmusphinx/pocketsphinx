@@ -797,7 +797,7 @@ ptm_mgau_init(acmod_t *acmod)
     /* We only support 256 codebooks or less (like 640k or 2GB, this
      * should be enough for anyone) */
     if (s->g->n_mgau > 256) {
-        E_ERROR("Number of codebooks exceeds 256: %d\n", s->g->n_mgau);
+        E_INFO("Number of codebooks exceeds 256: %d\n", s->g->n_mgau);
         goto error_out;
     }
     /* Verify n_feat and veclen, against acmod. */

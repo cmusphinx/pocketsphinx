@@ -196,7 +196,6 @@ read_mfc_file(FILE *infh, int sf, int ef, int *out_nfr, int ceplen)
     fseek(infh, 0, SEEK_SET);
     if (fread(&nmfc, 4, 1, infh) != 1) {
         E_ERROR_SYSTEM("Failed to read 4 bytes from MFCC file");
-        fclose(infh);
         return NULL;
     }
     swap = 0;
@@ -204,9 +203,8 @@ read_mfc_file(FILE *infh, int sf, int ef, int *out_nfr, int ceplen)
         SWAP_INT32(&nmfc);
         swap = 1;
         if (nmfc != flen / 4 - 1) {
-            E_ERROR("File length mismatch: 0x%x != 0x%x\n",
+            E_ERROR("File length mismatch: 0x%x != 0x%x, maybe it's not MFCC file\n",
                     nmfc, flen / 4 - 1);
-            fclose(infh);
             return NULL;
         }
     }
@@ -219,7 +217,6 @@ read_mfc_file(FILE *infh, int sf, int ef, int *out_nfr, int ceplen)
     floats = (float32 *)mfcs[0];
     if (fread(floats, 4, nfr * ceplen, infh) != nfr * ceplen) {
         E_ERROR_SYSTEM("Failed to read %d items from mfcfile");
-        fclose(infh);
         ckd_free_2d(mfcs);
         return NULL;
     }
@@ -423,6 +420,7 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
 
         if (NULL == (mfcs = read_mfc_file(infh, sf, ef, &nfr,
                                           cmd_ln_int32_r(config, "-ceplen")))) {
+            E_ERROR("Failed to read MFCC from the file '%s'\n", infile);
             fclose(infh);
             ckd_free(infile);
             return -1;
@@ -731,10 +729,14 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             if (nf > 3)
                 uttid = wptr[3];
             /* Do actual decoding. */
-            process_mllrctl_line(ps, config, mllrfile);
-            process_lmnamectl_line(ps, config, lmname);
-            process_fsgctl_line(ps, config, fsgfile);
-            process_ctl_line(ps, config, file, uttid, sf, ef);
+            if(process_mllrctl_line(ps, config, mllrfile) < 0)
+                continue;
+            if(process_lmnamectl_line(ps, config, lmname) < 0)
+                continue;
+            if(process_fsgctl_line(ps, config, fsgfile) < 0)
+                continue;
+            if(process_ctl_line(ps, config, file, uttid, sf, ef) < 0)
+                continue;
             hyp = ps_get_hyp(ps, &score, &uttid);
             
             /* Write out results and such. */
