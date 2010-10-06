@@ -32,9 +32,6 @@ check_PROGRAMS = \
 	test_lm_read \
 	test_dict \
 	test_dict2pid \
-	test_glextree \
-	test_fsg2_search \
-	test_tokentree \
 	test_senfh \
 	test_alignment \
 	test_state_align \
