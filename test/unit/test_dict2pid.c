@@ -19,7 +19,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(dict = dict_init(cmd_ln_init(NULL, NULL, FALSE,
 						   "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
 						   "-fdict", MODELDIR "/hmm/en_US/hub4wsj_sc_8k/noisedict",
-						   "-dictcase", "no", NULL),
+						   NULL),
 				       mdef));
 	TEST_ASSERT(d2p = dict2pid_build(mdef, dict));
 

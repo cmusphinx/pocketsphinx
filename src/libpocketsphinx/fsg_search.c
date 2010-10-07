@@ -112,7 +112,7 @@ fsg_search_init(cmd_ln_t *config,
     fsgs->frame = -1;
 
     /* Initialize FSG table. */
-    fsgs->fsgs = hash_table_new(5, FALSE);
+    fsgs->fsgs = hash_table_new(5, HASH_CASE_NO);
 
     /* Get search pruning parameters */
     fsgs->beam_factor = 1.0f;

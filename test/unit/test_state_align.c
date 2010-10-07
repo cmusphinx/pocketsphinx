@@ -52,7 +52,6 @@ main(int argc, char *argv[])
 	config = cmd_ln_init(NULL, ps_args(), FALSE,
 			     "-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
 			     "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
-			     "-dictcase", "no",
 			     "-input_endian", "little",
 			     "-samprate", "16000", NULL);
 	TEST_ASSERT(ps = ps_init(config));

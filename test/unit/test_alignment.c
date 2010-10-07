@@ -18,7 +18,7 @@ main(int argc, char *argv[])
 	config = cmd_ln_init(NULL, NULL, FALSE,
 			     "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
 			     "-fdict", MODELDIR "/hmm/en_US/hub4wsj_sc_8k/noisedict",
-			     "-dictcase", "no", NULL);
+			     NULL);
 	mdef = bin_mdef_read(NULL, MODELDIR "/hmm/en_US/hub4wsj_sc_8k/mdef");
 	dict = dict_init(config, mdef);
 	d2p = dict2pid_build(mdef, dict);

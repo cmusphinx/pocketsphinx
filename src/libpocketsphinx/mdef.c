@@ -453,7 +453,7 @@ sseq_compress(mdef_t * m)
 
     k = m->n_emit_state * sizeof(int16);
 
-    h = hash_table_new(m->n_phone, HASH_CASE_YES);
+    h = hash_table_new(m->n_phone, HASH_CASE_NO);
     n_sseq = 0;
 
     /* Identify unique senone-sequence IDs.  BUG: tmat-id not being considered!! */
@@ -595,7 +595,7 @@ mdef_init(char *mdeffile, int32 breport)
 
     /* Initialize ciphone info */
     m->n_ciphone = n_ci;
-    m->ciphone_ht = hash_table_new(n_ci, 1);  /* With case-insensitive string names *//* freed in mdef_free */
+    m->ciphone_ht = hash_table_new(n_ci, HASH_CASE_NO);  /* With case-insensitive string names *//* freed in mdef_free */
     m->ciphone = (ciphone_t *) ckd_calloc(n_ci, sizeof(ciphone_t));     /* freed in mdef_free */
 
     /* Initialize phones info (ciphones + triphones) */
