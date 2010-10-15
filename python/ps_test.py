@@ -6,6 +6,7 @@ nsamp = decoder.decode_raw(fh)
 print "Decoded %d samples" % nsamp
 hyp, uttid, score = decoder.get_hyp()
 print "%s (%s %d)" % (hyp, uttid, score)
+print "P(S|O) = %e" % decoder.get_prob()
 
 lmset = decoder.get_lmset()
 print "P(forward|go) = %f, %d" % lmset.prob('forward', 'go')

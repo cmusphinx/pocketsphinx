@@ -16,6 +16,13 @@ from sphinxbase cimport NGramModel
 # Finally, import this for SphinxBase functions (since there are too many to list)
 cimport sphinxbase as sb
 
+cdef extern from *:
+    ctypedef char** const_char_ptr_ptr "const char**"
+    ctypedef char* const_char_ptr "const char*"
+    ctypedef int size_t
+    ctypedef int int32
+    ctypedef char* raw_data_ptr "int16 *"
+
 # System and Python headers we need
 cdef extern from "stdio.h":
     ctypedef struct FILE # oh dear...
@@ -85,8 +92,6 @@ cdef extern from "pocketsphinx.h":
     ctypedef struct ps_decoder_t
     ctypedef struct ps_nbest_t
     ctypedef struct ps_seg_t
-    ctypedef int size_t
-    ctypedef int int32
 
     ps_decoder_t *ps_init(cmd_ln_t *config)
     int ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
@@ -107,10 +112,11 @@ cdef extern from "pocketsphinx.h":
                       char *uttid, long maxsamps)
     int ps_decode_senscr(ps_decoder_t *ps, FILE *senfh, char *uttid)
     int ps_start_utt(ps_decoder_t *ps, char *uttid)
-    int ps_process_raw(ps_decoder_t *ps, char *data, size_t n_samples,
+    int ps_process_raw(ps_decoder_t *ps, raw_data_ptr data, size_t n_samples,
                        int no_search, int full_utt)
     int ps_end_utt(ps_decoder_t *ps)
-    char *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score, char **out_uttid)
+    const_char_ptr ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score, const_char_ptr_ptr out_uttid)
+    int32 ps_get_prob(ps_decoder_t *ps, const_char_ptr_ptr out_uttid)
     ps_lattice_t *ps_get_lattice(ps_decoder_t *ps)
     ps_seg_t *ps_seg_iter(ps_decoder_t *ps, int32 *out_best_score)
     ps_seg_t *ps_seg_next(ps_seg_t *seg)

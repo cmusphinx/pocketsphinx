@@ -514,9 +514,11 @@ cdef class Decoder:
         @type full_utt: bool
         """
         cdef Py_ssize_t len
-        cdef char *cdata
+        cdef char* strdata
+        cdef raw_data_ptr cdata
         
-        PyString_AsStringAndSize(data, &cdata, &len)
+        PyString_AsStringAndSize(data, &strdata, &len)
+        cdata = strdata
         if ps_process_raw(self.ps, cdata, len, no_search, full_utt) < 0:
             raise RuntimeError, "Failed to process %d samples of audio data" % len
 
@@ -538,11 +540,26 @@ cdef class Decoder:
         @return: Hypothesis string, utterance ID, recognition score
         @rtype: (str, str, int)
         """
-        cdef char *hyp, *uttid
+        cdef const_char_ptr hyp
+        cdef const_char_ptr uttid
         cdef int score
 
         hyp = ps_get_hyp(self.ps, &score, &uttid)
         return hyp, uttid, score
+
+    def get_prob(self):
+        """
+	Get a posterior probability.
+	
+	Returns the posterior in linear scale.
+	
+	@return: posterior probability of the result
+	@rtype: float
+	"""
+        cdef logmath_t *lmath
+        cdef const_char_ptr uttid
+        lmath = ps_get_logmath(self.ps)
+        return sb.logmath_exp(lmath, ps_get_prob(self.ps, &uttid))
 
     def get_lattice(self):
         """
@@ -578,7 +595,6 @@ cdef class Decoder:
         cdef logmath_t *lmath
         cdef cmd_ln_t *config
         cdef NGramModel lm
-        cdef int wip, uw
 
         clm = ps_get_lmset(self.ps)
         lm = NGramModel()
