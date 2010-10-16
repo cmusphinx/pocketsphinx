@@ -545,6 +545,11 @@ cdef class Decoder:
         cdef int score
 
         hyp = ps_get_hyp(self.ps, &score, &uttid)
+
+        # No result
+        if hyp == NULL:
+             return None, uttid, 0
+
         return hyp, uttid, score
 
     def get_prob(self):
