@@ -349,7 +349,7 @@ main(int argc, char *argv[])
 
     /* Make sure we exit cleanly (needed for profiling among other things) */
     /* Signals seem to be broken in arm-wince-pe. */
-#if !defined(GNUWINCE) && !defined(_WIN32_WCE)
+#if !defined(GNUWINCE) && !defined(_WIN32_WCE) && !defined(__SYMBIAN32__)
     signal(SIGINT, &sighandler);
 #endif
 
