@@ -1139,10 +1139,14 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score)
         ps_lattice_t *dag;
         ps_latlink_t *link;
 
-        if ((dag = fsg_search_lattice(search)) == NULL)
+        if ((dag = fsg_search_lattice(search)) == NULL) {
+    	    E_WARN("Failed to obtain the lattice while bestpath enabled\n");
             return NULL;
-        if ((link = fsg_search_bestpath(search, out_score, FALSE)) == NULL)
+        }
+        if ((link = fsg_search_bestpath(search, out_score, FALSE)) == NULL) {
+    	    E_WARN("Failed to bestpath in a lattice\n");
             return NULL;
+        }
         return ps_lattice_hyp(dag, link);
     }
 
