@@ -229,15 +229,19 @@ fsg_search_free(ps_search_t *search)
     if (fsgs->jsgf)
         jsgf_grammar_free(fsgs->jsgf);
     fsg_lextree_free(fsgs->lextree);
-    fsg_history_reset(fsgs->history);
-    fsg_history_set_fsg(fsgs->history, NULL, NULL);
-    for (itor = hash_table_iter(fsgs->fsgs);
-         itor; itor = hash_table_iter_next(itor)) {
-        fsg_model_t *fsg = (fsg_model_t *) hash_entry_val(itor->ent);
-        fsg_model_free(fsg);
+    if (fsgs->history) {
+        fsg_history_reset(fsgs->history);
+        fsg_history_set_fsg(fsgs->history, NULL, NULL);
+        fsg_history_free(fsgs->history);
     }
-    hash_table_free(fsgs->fsgs);
-    fsg_history_free(fsgs->history);
+    if (fsgs->fsgs) {
+        for (itor = hash_table_iter(fsgs->fsgs);
+             itor; itor = hash_table_iter_next(itor)) {
+            fsg_model_t *fsg = (fsg_model_t *) hash_entry_val(itor->ent);
+            fsg_model_free(fsg);
+        }
+        hash_table_free(fsgs->fsgs);
+    }
     hmm_context_free(fsgs->hmmctx);
     ckd_free(fsgs);
 }
