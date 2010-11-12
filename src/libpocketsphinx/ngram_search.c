@@ -349,6 +349,9 @@ set_real_wid(ngram_search_t *ngs, int32 bp)
     if (dict_filler_word(ps_search_dict(ngs), ngs->bp_table[bp].wid)) {
         if (prev_bp != NO_BP)
             ngs->bp_table[bp].real_wid = ngs->bp_table[prev_bp].real_wid;
+        else
+            ngs->bp_table[bp].real_wid = dict_basewid(ps_search_dict(ngs),
+                                                      ngs->bp_table[bp].wid);
     }
     else {
         ngs->bp_table[bp].real_wid = dict_basewid(ps_search_dict(ngs),
@@ -695,13 +698,15 @@ dump_bptable(ngram_search_t *ngs)
     int i;
     E_INFO("Backpointer table (%d entries):\n", ngs->bpidx);
     for (i = 0; i < ngs->bpidx; ++i) {
-        E_INFO_NOFN("%-5d %-10s start %-3d end %-3d score %-8d bp %-3d\n",
+        E_INFO_NOFN("%-5d %-10s start %-3d end %-3d score %-8d bp %-3d real_wid %-5d prev_real_wid %-5d\n",
                     i, dict_wordstr(ps_search_dict(ngs), ngs->bp_table[i].wid),
                     ngs->bp_table[i].bp == -1 ? 0 : 
                     ngs->bp_table[ngs->bp_table[i].bp].frame + 1,
                     ngs->bp_table[i].frame,
                     ngs->bp_table[i].score,
-                    ngs->bp_table[i].bp);
+                    ngs->bp_table[i].bp,
+                    ngs->bp_table[i].real_wid,
+                    prev_real_wid(ngs->bp_table, &ngs->bp_table[i]));
     }
 }
 

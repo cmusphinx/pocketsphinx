@@ -862,7 +862,7 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
             }
         }
         else if (hmm_frame(&hmm->hmm) != nf) {
-            hmm_clear_scores(&hmm->hmm);
+            hmm_clear(&hmm->hmm);
         }
     }
     ngs->n_active_chan[nf & 0x1] = nacl - ngs->active_chan_list[nf & 0x1];
@@ -876,7 +876,7 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
 static void
 last_phone_transition(ngram_search_t *ngs, int frame_idx)
 {
-    int32 i, j, k, nf, bp, bplast, w;
+    int32 i, j, k, nf, bp, bpend, w;
     lastphn_cand_t *candp;
     int32 *nawl;
     int32 thresh;
@@ -960,9 +960,9 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
     for (i = 0; i < n_cand_sf; i++) {
         /* For the i-th unique end frame... */
         bp = ngs->bp_table_idx[ngs->cand_sf[i].bp_ef];
-        bplast = ngs->bp_table_idx[ngs->cand_sf[i].bp_ef + 1] - 1;
-
-        for (bpe = &(ngs->bp_table[bp]); bp <= bplast; bp++, bpe++) {
+        bpend = ngs->bp_table_idx[ngs->cand_sf[i].bp_ef + 1];
+        /* E_INFO_NOFN("bp_ef %d bp %d bpend %d\n", ngs->cand_sf[i].bp_ef, bp, bpend); */
+        for (bpe = &(ngs->bp_table[bp]); bp < bpend; bp++, bpe++) {
             if (!bpe->valid)
                 continue;
             /* For each candidate at the start frame find bp->cand transition-score */
@@ -972,7 +972,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
                 dscr = 
                     ngram_search_exit_score
                     (ngs, bpe, dict_first_phone(ps_search_dict(ngs), candp->wid));
-                if (dscr != WORST_SCORE) {
+                if (dscr BETTER_THAN WORST_SCORE) {
                     assert(!dict_filler_word(ps_search_dict(ngs), candp->wid));
                     dscr += ngram_tg_score(ngs->lmset,
                                            dict_basewid(ps_search_dict(ngs), candp->wid),
@@ -1429,7 +1429,7 @@ deactivate_channels(ngram_search_t *ngs, int frame_idx)
     /* Clear score[] of pruned root channels */
     for (i = ngs->n_root_chan, rhmm = ngs->root_chan; i > 0; --i, rhmm++) {
         if (hmm_frame(&rhmm->hmm) == frame_idx) {
-            hmm_clear_scores(&rhmm->hmm);
+            hmm_clear(&rhmm->hmm);
         }
     }
     /* Clear score[] of pruned single-phone channels */
@@ -1437,7 +1437,7 @@ deactivate_channels(ngram_search_t *ngs, int frame_idx)
         int32 w = ngs->single_phone_wid[i];
         rhmm = (root_chan_t *) ngs->word_chan[w];
         if (hmm_frame(&rhmm->hmm) == frame_idx) {
-            hmm_clear_scores(&rhmm->hmm);
+            hmm_clear(&rhmm->hmm);
         }
     }
 }
@@ -1548,4 +1548,5 @@ ngram_fwdtree_finish(ngram_search_t *ngs)
         E_INFO("%8d candidate words for entering last phone (%d/fr)\n",
                ngs->st.n_lastphn_cand_utt, ngs->st.n_lastphn_cand_utt / (cf + 1));
     }
+    /* dump_bptable(ngs); */
 }
