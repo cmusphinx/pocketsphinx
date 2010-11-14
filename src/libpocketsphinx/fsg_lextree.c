@@ -109,35 +109,14 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
            fsg->n_state * (n_ci + 1) * 2,
            fsg->n_state * (n_ci + 1) * 2 / 1024);
 
+
     for (s = 0; s < fsg->n_state; s++) {
         fsg_arciter_t *itor;
         for (itor = fsg_model_arcs(fsg, s); itor; itor = fsg_arciter_next(itor)) {
             fsg_link_t *l = fsg_arciter_get(itor);
             int32 dictwid; /**< Dictionary (not FSG) word ID!! */
-            /*
-             * Propagate lc and rc lists past null transitions.  (Since FSG contains
-             * null transitions closure, no need to worry about a chain of successive
-             * null transitions.  Right??)
-             */
-            /* FIXME: Need to figure out what to do about tag transitions. */
-            if (fsg_link_wid(l) < 0) {
-                /*
-                 * lclist(d) |= lclist(s), because all the words ending up at s, can
-                 * now also end at d, becoming the left context for words leaving d.
-                 */
-                for (i = 0; i < n_ci; i++)
-                    lextree->lc[fsg_link_to_state(l)][i]
-                        |= lextree->lc[fsg_link_from_state(l)][i];
-                /*
-                 * Similarly, rclist(s) |= rclist(d), because all the words leaving d
-                 * can equivalently leave s, becoming the right context for words
-                 * ending up at s.
-                 */
-                for (i = 0; i < n_ci; i++)
-                    lextree->rc[fsg_link_from_state(l)][i]
-                        |= lextree->rc[fsg_link_to_state(l)][i];
-            }
-            else {
+
+            if (fsg_link_wid(l) >= 0) {
                 dictwid = dict_wordid(lextree->dict,
                                       fsg_model_word_str(lextree->fsg, l->wid));
 
@@ -169,6 +148,37 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
              */
             lextree->lc[fsg_link_from_state(l)][silcipid] = 1;
             lextree->rc[fsg_link_from_state(l)][silcipid] = 1;
+        }
+    }
+
+    /*
+     * Propagate lc and rc lists past null transitions.  (Since FSG contains
+     * null transitions closure, no need to worry about a chain of successive
+     * null transitions.  Right??)
+     *
+     * This can't be joined with the previous loop because we first calculate 
+     * contexts and only then we can propagate them.
+     */
+    for (s = 0; s < fsg->n_state; s++) {
+        fsg_arciter_t *itor;
+        for (itor = fsg_model_arcs(fsg, s); itor; itor = fsg_arciter_next(itor)) {
+            fsg_link_t *l = fsg_arciter_get(itor);
+            if (fsg_link_wid(l) < 0) {
+
+                /*
+                 * lclist(d) |= lclist(s), because all the words ending up at s, can
+                 * now also end at d, becoming the left context for words leaving d.
+                 */
+                for (i = 0; i < n_ci; i++)
+                    lextree->lc[fsg_link_to_state(l)][i] |= lextree->lc[fsg_link_from_state(l)][i];
+                /*
+                 * Similarly, rclist(s) |= rclist(d), because all the words leaving d
+                 * can equivalently leave s, becoming the right context for words
+                 * ending up at s.
+                 */
+                for (i = 0; i < n_ci; i++)
+                    lextree->rc[fsg_link_from_state(l)][i] |= lextree->rc[fsg_link_to_state(l)][i];
+            }
         }
     }
 

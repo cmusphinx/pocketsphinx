@@ -10,6 +10,15 @@ EXTRA_DIST=compare_table.pl				\
 	data/goforward.fsg                              \
 	data/goforward.gram                             \
 	data/defective.dic                              \
+	data/cards/001.wav				\
+	data/cards/002.wav				\
+	data/cards/003.wav				\
+	data/cards/004.wav				\
+	data/cards/005.wav				\
+	data/cards/cards.fileids			\
+	data/cards/cards.gram				\
+	data/cards/cards.hyp				\
+	data/cards/cards.transcription			\
 	data/tidigits/man.ah.111a.mfc			\
 	data/tidigits/man.ah.1b.mfc			\
 	data/tidigits/man.ah.2934za.mfc			\
