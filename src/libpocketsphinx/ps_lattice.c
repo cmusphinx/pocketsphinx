@@ -62,7 +62,8 @@
  * choose one with the best ascr.
  */
 void
-ps_lattice_link(ps_lattice_t *dag, ps_latnode_t *from, ps_latnode_t *to, int32 score, int32 ef)
+ps_lattice_link(ps_lattice_t *dag, ps_latnode_t *from, ps_latnode_t *to,
+                int32 score, int32 ef)
 {
     latlink_list_t *fwdlink;
 
@@ -98,7 +99,7 @@ ps_lattice_link(ps_lattice_t *dag, ps_latnode_t *from, ps_latnode_t *to, int32 s
             fwdlink->link->ascr = score;
             fwdlink->link->ef = ef;
         }
-    }
+    }           
 }
 
 void

@@ -232,7 +232,7 @@ create_search_tree(ngram_search_t *ngs)
         else
             rhmm = &(ngs->root_chan[i]);
 
-        E_DEBUG(2, ("word %s rhmm %d\n", dict_wordstr(dict, w), rhmm - ngs->root_chan));
+        E_DEBUG(3,("word %s rhmm %d\n", dict_wordstr(dict, w), rhmm - ngs->root_chan));
         /* Now, rhmm = root channel for w.  Go on to remaining phones */
         if (dict_pronlen(dict, w) == 2) {
             /* Next phone is the last; not kept in tree; add w to penult_phn_wid set */
@@ -738,7 +738,7 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
 
         if (hmm_bestscore(&rhmm->hmm) BETTER_THAN thresh) {
             hmm_frame(&rhmm->hmm) = nf;  /* rhmm will be active in next frame */
-            E_DEBUG(3, ("Preserving root channel %d score %d\n", i, hmm_bestscore(&rhmm->hmm)));
+            E_DEBUG(3,("Preserving root channel %d score %d\n", i, hmm_bestscore(&rhmm->hmm)));
             /* transitions out of this root channel */
             /* transition to all next-level channels in the HMM tree */
             newphone_score = hmm_out_score(&rhmm->hmm) + ngs->pip;
@@ -768,7 +768,7 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
                     int32 pl_newphone_score = newphone_score
                         + phone_loop_search_score
                         (pls, dict_last_phone(ps_search_dict(ngs),w));
-                    E_DEBUG(3, ("wid %d newphone_score %d\n", w, pl_newphone_score));
+                    E_DEBUG(3,("word %s newphone_score %d\n", dict_wordstr(ps_search_dict(ngs), w), newphone_score));
                     if (pl_newphone_score BETTER_THAN lastphn_thresh) {
                         candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
                         ngs->n_lastphn_cand++;
@@ -891,7 +891,6 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
 
     /* For each candidate word (entering its last phone) */
     /* If best LM score and bp for candidate known use it, else sort cands by startfrm */
-    E_DEBUG(3, ("n_lastphn_cand %d\n", ngs->n_lastphn_cand));
     for (i = 0, candp = ngs->lastphn_cand; i < ngs->n_lastphn_cand; i++, candp++) {
         int32 start_score;
 
@@ -906,7 +905,6 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
             (ngs, bpe, dict_first_phone(ps_search_dict(ngs), candp->wid));
         assert(start_score BETTER_THAN WORST_SCORE);
         candp->score -= start_score;
-        E_DEBUG(4, ("candp->score %d\n", candp->score));
 
         /*
          * If this candidate not occurred in an earlier frame, prepare for finding
@@ -961,7 +959,6 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
         /* For the i-th unique end frame... */
         bp = ngs->bp_table_idx[ngs->cand_sf[i].bp_ef];
         bpend = ngs->bp_table_idx[ngs->cand_sf[i].bp_ef + 1];
-        /* E_INFO_NOFN("bp_ef %d bp %d bpend %d\n", ngs->cand_sf[i].bp_ef, bp, bpend); */
         for (bpe = &(ngs->bp_table[bp]); bp < bpend; bp++, bpe++) {
             if (!bpe->valid)
                 continue;
@@ -977,7 +974,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
                     dscr += ngram_tg_score(ngs->lmset,
                                            dict_basewid(ps_search_dict(ngs), candp->wid),
                                            bpe->real_wid,
-                                           prev_real_wid(ngs->bp_table, bpe),
+                                           bpe->prev_real_wid,
                                            &n_used)>>SENSCR_SHIFT;
                 }
 
@@ -1201,7 +1198,7 @@ bptable_maxwpf(ngram_search_t *ngs, int frame_idx)
                 bestscr = bpe->score;
                 bestbpe = bpe;
             }
-            bpe->valid = FALSE; /* Flag to indicate invalidation */
+            bpe->valid = FALSE;
             n++;                /* No. of filler words */
         }
     }
@@ -1228,7 +1225,7 @@ bptable_maxwpf(ngram_search_t *ngs, int frame_idx)
         /* FIXME: Don't panic! */
         if (worstbpe == NULL)
             E_FATAL("PANIC: No worst BPtable entry remaining\n");
-        worstbpe->valid = 0;
+        worstbpe->valid = FALSE;
     }
 }
 
@@ -1346,7 +1343,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
                 newscore += ngram_tg_score(ngs->lmset,
                                            dict_basewid(dict, w),
                                            bpe->real_wid,
-                                           prev_real_wid(ngs->bp_table, bpe),
+                                           bpe->prev_real_wid,
                                            &n_used)>>SENSCR_SHIFT;
 
             /* FIXME: Not sure how WORST_SCORE could be better, but it

@@ -693,7 +693,7 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
                 * (ngram_tg_score(ngs->lmset,
                                   dict_basewid(dict, w),
                                   bp->real_wid,
-                                  prev_real_wid(ngs->bp_table, bp),
+                                  bp->prev_real_wid,
                                   &n_used) >> SENSCR_SHIFT);
             newscore += pip;
 
