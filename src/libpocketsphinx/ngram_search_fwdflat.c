@@ -685,7 +685,7 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
             if (rssid)
                 newscore = rcss[rssid->cimap[dict_first_phone(dict, w)]];
             else
-                newscore = rcss[0];
+                newscore = bp->score;
             if (newscore == WORST_SCORE)
                 continue;
             /* FIXME: Floating point... */
@@ -721,7 +721,7 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
         if (rssid)
             silscore = rcss[rssid->cimap[ps_search_acmod(ngs)->mdef->sil]];
         else
-            silscore = rcss[0];
+            silscore = bp->score;
         if (silscore BETTER_THAN best_silrc_score) {
             best_silrc_score = silscore;
             best_silrc_bp = b;

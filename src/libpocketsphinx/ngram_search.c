@@ -377,26 +377,57 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
 {
     int32 bp;
 
-    /* Look for an existing exit for this word in this frame. */
+    /* Look for an existing exit for this word in this frame.  The
+     * only reason one would exist is from a different right context
+     * triphone, but of course that happens quite frequently. */
     bp = ngs->word_lat_idx[w];
     if (bp != NO_BP) {
-        /* Keep only the best scoring one (this is a potential source
-         * of search errors...) */
+        /* Keep only the best scoring one, we will reconstruct the
+         * others from the right context scores - usually the history
+         * is not lost. */
         if (ngs->bp_table[bp].score WORSE_THAN score) {
-            assert(path != bp);
+            assert(path != bp); /* Pathological. */
             if (ngs->bp_table[bp].bp != path) {
+                int32 bplh[2], newlh[2];
+                /* But, sometimes, the history *is* lost.  If we wanted to
+                 * do exact language model scoring we'd have to preserve
+                 * these alternate histories. */
+                E_DEBUG(2,("Updating path history %d => %d frame %d\n",
+                           ngs->bp_table[bp].bp, path, frame_idx));
+                bplh[0] = ngs->bp_table[bp].bp == -1
+                    ? -1 : ngs->bp_table[ngs->bp_table[bp].bp].prev_real_wid;
+                bplh[1] = ngs->bp_table[bp].bp == -1
+                    ? -1 : ngs->bp_table[ngs->bp_table[bp].bp].real_wid;
+                newlh[0] = path == -1
+                    ? -1 : ngs->bp_table[path].prev_real_wid;
+                newlh[1] = path == -1
+                    ? -1 : ngs->bp_table[path].real_wid;
+                /* Actually it's worth checking how often the actual
+                 * language model state changes. */
+                if (bplh[0] != newlh[0] || bplh[1] != newlh[1]) {
+                    /* It's fairly rare that the actual language model
+                     * state changes, but it does happen some
+                     * times. */
+                    E_DEBUG(1, ("Updating language model state %s,%s => %s,%s frame %d\n",
+                                dict_wordstr(ps_search_dict(ngs), bplh[0]),
+                                dict_wordstr(ps_search_dict(ngs), bplh[1]),
+                                dict_wordstr(ps_search_dict(ngs), newlh[0]),
+                                dict_wordstr(ps_search_dict(ngs), newlh[1]),
+                                frame_idx))
+                    set_real_wid(ngs, bp);
+                }
                 ngs->bp_table[bp].bp = path;
-                set_real_wid(ngs, bp);
             }
             ngs->bp_table[bp].score = score;
         }
         /* But do keep track of scores for all right contexts, since
          * we need them to determine the starting path scores for any
          * successors of this word exit. */
-        ngs->bscore_stack[ngs->bp_table[bp].s_idx + rc] = score;
+        if (ngs->bp_table[bp].s_idx != -1)
+            ngs->bscore_stack[ngs->bp_table[bp].s_idx + rc] = score;
     }
     else {
-        int32 i, rcsize, *bss;
+        int32 i, rcsize;
         bptbl_t *be;
 
         /* This might happen if recognition fails. */
@@ -437,7 +468,8 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
         be->last_phone = dict_last_phone(ps_search_dict(ngs),w);
         if (dict_is_single_phone(ps_search_dict(ngs), w)) {
             be->last2_phone = -1;
-            rcsize = 1;
+            be->s_idx = -1;
+            rcsize = 0;
         }
         else {
             be->last2_phone = dict_second_last_phone(ps_search_dict(ngs),w);
@@ -445,9 +477,10 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
                                     be->last_phone, be->last2_phone)->n_ssid;
         }
         /* Allocate some space on the bscore_stack for all of these triphones. */
-        for (i = rcsize, bss = ngs->bscore_stack + ngs->bss_head; i > 0; --i, bss++)
-            *bss = WORST_SCORE;
-        ngs->bscore_stack[ngs->bss_head + rc] = score;
+        for (i = 0; i < rcsize; ++i)
+            ngs->bscore_stack[ngs->bss_head + i] = WORST_SCORE;
+        if (rcsize)
+            ngs->bscore_stack[ngs->bss_head + rc] = score;
         set_real_wid(ngs, ngs->bpidx);
 
         ngs->bpidx++;
@@ -615,8 +648,7 @@ ngram_search_exit_score(ngram_search_t *ngs, bptbl_t *pbe, int rcphone)
      * right context table and the bscore_stack. */
     if (pbe->last2_phone == -1) {
         /* No right context for single phone predecessor words. */
-        assert(ngs->bscore_stack[pbe->s_idx] != WORST_SCORE);
-        return ngs->bscore_stack[pbe->s_idx];
+        return pbe->score;
     }
     else {
         xwdssid_t *rssid;
@@ -710,15 +742,28 @@ dump_bptable(ngram_search_t *ngs)
     int i;
     E_INFO("Backpointer table (%d entries):\n", ngs->bpidx);
     for (i = 0; i < ngs->bpidx; ++i) {
-        E_INFO_NOFN("%-5d %-10s start %-3d end %-3d score %-8d bp %-3d real_wid %-5d prev_real_wid %-5d\n",
-                    i, dict_wordstr(ps_search_dict(ngs), ngs->bp_table[i].wid),
-                    ngs->bp_table[i].bp == -1 ? 0 : 
-                    ngs->bp_table[ngs->bp_table[i].bp].frame + 1,
-                    ngs->bp_table[i].frame,
-                    ngs->bp_table[i].score,
-                    ngs->bp_table[i].bp,
-                    ngs->bp_table[i].real_wid,
-                    ngs->bp_table[i].prev_real_wid);
+        bptbl_t *bpe = ngs->bp_table + i;
+        int j, rcsize;
+
+        E_INFO_NOFN("%-5d %-10s start %-3d end %-3d score %-8d bp %-3d real_wid %-5d prev_real_wid %-5d",
+                    i, dict_wordstr(ps_search_dict(ngs), bpe->wid),
+                    (bpe->bp == -1
+                     ? 0 : ngs->bp_table[bpe->bp].frame + 1),
+                    bpe->frame, bpe->score, bpe->bp,
+                    bpe->real_wid, bpe->prev_real_wid);
+
+        if (bpe->last2_phone == -1)
+            rcsize = 0;
+        else
+            rcsize = dict2pid_rssid(ps_search_dict2pid(ngs),
+                                    bpe->last_phone, bpe->last2_phone)->n_ssid;
+        if (rcsize) {
+            E_INFOCONT("\tbss");
+            for (j = 0; j < rcsize; ++j)
+                if (ngs->bscore_stack[bpe->s_idx + j] != WORST_SCORE)
+                    E_INFOCONT(" %d", bpe->score - ngs->bscore_stack[bpe->s_idx + j]);
+        }
+        E_INFOCONT("\n");
     }
 }
 

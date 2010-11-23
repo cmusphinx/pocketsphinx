@@ -1234,7 +1234,6 @@ word_transition(ngram_search_t *ngs, int frame_idx)
 {
     int32 i, k, bp, w, nf;
     int32 rc;
-    int32 *rcss;                /* right context score stack */
     int32 thresh, newscore;
     bptbl_t *bpe;
     root_chan_t *rhmm;
@@ -1266,13 +1265,13 @@ word_transition(ngram_search_t *ngs, int frame_idx)
         /* Array of HMM scores corresponding to all the possible right
          * context expansions of the final phone.  It's likely that a
          * lot of these are going to be missing, actually. */
-        rcss = &(ngs->bscore_stack[bpe->s_idx]);
-        if (bpe->last2_phone == -1) {
+        if (bpe->last2_phone == -1) { /* implies s_idx == -1 */
             /* No right context expansion. */
             for (rc = 0; rc < bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef); ++rc) {
-                if (rcss[0] BETTER_THAN ngs->bestbp_rc[rc].score) {
-                    E_DEBUG(4,("bestbp_rc[0] = %d lc %d\n", rcss[0], bpe->last_phone));
-                    ngs->bestbp_rc[rc].score = rcss[0];
+                if (bpe->score BETTER_THAN ngs->bestbp_rc[rc].score) {
+                    E_DEBUG(4,("bestbp_rc[0] = %d lc %d\n",
+                               bpe->score, bpe->last_phone));
+                    ngs->bestbp_rc[rc].score = bpe->score;
                     ngs->bestbp_rc[rc].path = bp;
                     ngs->bestbp_rc[rc].lc = bpe->last_phone;
                 }
@@ -1280,6 +1279,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
         }
         else {
             xwdssid_t *rssid = dict2pid_rssid(d2p, bpe->last_phone, bpe->last2_phone);
+            int32 *rcss = &(ngs->bscore_stack[bpe->s_idx]);
             for (rc = 0; rc < bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef); ++rc) {
                 if (rcss[rssid->cimap[rc]] BETTER_THAN ngs->bestbp_rc[rc].score) {
                     E_DEBUG(4,("bestbp_rc[%d] = %d lc %d\n",
