@@ -161,7 +161,7 @@ const char *dict_ciphone_str(dict_t *d,	/**< In: Dictionary to look up */
 #define dict_num_real_words(d)                                          \
     (dict_size(d) - (dict_filler_end(d) - dict_filler_start(d)) - 2)
 #define dict_basewid(d,w)	((d)->word[w].basewid)
-#define dict_wordstr(d,w)	((d)->word[w].word)
+#define dict_wordstr(d,w)	((w) < 0 ? NULL : (d)->word[w].word)
 #define dict_basestr(d,w)	((d)->word[dict_basewid(d,w)].word)
 #define dict_nextalt(d,w)	((d)->word[w].alt)
 #define dict_pronlen(d,w)	((d)->word[w].pronlen) 
