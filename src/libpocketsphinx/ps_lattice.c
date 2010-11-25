@@ -280,7 +280,7 @@ ps_lattice_write(ps_lattice_t *dag, char const *filename)
             if (l->link->ascr WORSE_THAN WORST_SCORE || l->link->ascr BETTER_THAN 0)
                 continue;
             fprintf(fp, "%d %d %d\n",
-                    d->id, l->link->to->id, l->link->ascr);
+                    d->id, l->link->to->id, l->link->ascr << SENSCR_SHIFT);
         }
     }
     fprintf(fp, "End\n");
@@ -360,7 +360,7 @@ ps_lattice_write_htk(ps_lattice_t *dag, char const *filename)
                 continue;
             fprintf(fp, "J=%d\tS=%d\tE=%d\ta=%f\tp=%g\n", j++,
                     d->id, l->link->to->id,
-                    logmath_log_to_ln(dag->lmath, l->link->ascr),
+                    logmath_log_to_ln(dag->lmath, l->link->ascr << SENSCR_SHIFT),
                     logmath_exp(dag->lmath, l->link->alpha + l->link->beta - dag->norm));
         }
     }
@@ -844,7 +844,7 @@ int32
 ps_latlink_prob(ps_lattice_t *dag, ps_latlink_t *link, int32 *out_ascr)
 {
     int32 post = link->alpha + link->beta - dag->norm;
-    if (out_ascr) *out_ascr = link->ascr;
+    if (out_ascr) *out_ascr = link->ascr << SENSCR_SHIFT;
     return post;
 }
 
@@ -972,7 +972,7 @@ ps_lattice_link2itor(ps_seg_t *seg, ps_latlink_t *link, int to)
     }
     seg->word = dict_wordstr(ps_search_dict(seg->search), node->wid);
     seg->sf = node->sf;
-    seg->ascr = link->ascr;
+    seg->ascr = link->ascr << SENSCR_SHIFT;
     /* Compute language model score from best predecessors. */
     ps_lattice_compute_lscr(seg, link, to);
 }
