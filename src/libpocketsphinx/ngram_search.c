@@ -413,7 +413,7 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
                                 dict_wordstr(ps_search_dict(ngs), bplh[1]),
                                 dict_wordstr(ps_search_dict(ngs), newlh[0]),
                                 dict_wordstr(ps_search_dict(ngs), newlh[1]),
-                                frame_idx))
+                                frame_idx));
                     set_real_wid(ngs, bp);
                 }
                 ngs->bp_table[bp].bp = path;
