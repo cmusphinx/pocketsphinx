@@ -181,7 +181,7 @@ dict_read(FILE * fp, dict_t * d)
             continue;
         /* wptr[0] is the word-string and wptr[1..nwd-1] the pronunciation sequence */
         if (nwd == 1) {
-            E_ERROR("Line %d: No pronunciation for word %s; ignored\n",
+            E_ERROR("Line %d: No pronunciation for word '%s'; ignored\n",
                     lineno, wptr[0]);
             continue;
         }
@@ -191,7 +191,7 @@ dict_read(FILE * fp, dict_t * d)
         for (i = 1; i < nwd; i++) {
             p[i - 1] = dict_ciphone_id(d, wptr[i]);
             if (NOT_S3CIPID(p[i - 1])) {
-                E_ERROR("Line %d: Bad ciphone: %s; word %s ignored\n",
+                E_ERROR("Line %d: Phone '%s' is mising in the acoustic model; word '%s' ignored\n",
                         lineno, wptr[i], wptr[0]);
                 break;
             }
@@ -201,7 +201,7 @@ dict_read(FILE * fp, dict_t * d)
             w = dict_add_word(d, wptr[0], p, nwd - 1);
             if (NOT_S3WID(w))
                 E_ERROR
-                    ("Line %d: dict_add_word (%s) failed (duplicate?); ignored\n",
+                    ("Line %d: Failed to add the word '%s' (duplicate?); ignored\n",
                      lineno, wptr[0]);
             else {
                 stralloc += strlen(d->word[w].word);
@@ -224,7 +224,7 @@ dict_write(dict_t *dict, char const *filename, char const *format)
     int i;
 
     if ((fh = fopen(filename, "w")) == NULL) {
-        E_ERROR_SYSTEM("Failed to open %s", filename);
+        E_ERROR_SYSTEM("Failed to open '%s'", filename);
         return -1;
     }
     for (i = 0; i < dict->n_word; ++i) {
@@ -300,7 +300,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
     d->max_words =
         (n + S3DICT_INC_SZ < MAX_S3WID) ? n + S3DICT_INC_SZ : MAX_S3WID;
     if (n >= MAX_S3WID)
-        E_FATAL("#Words in dictionaries (%d) exceeds limit (%d)\n", n,
+        E_FATAL("Number of words in dictionaries (%d) exceeds limit (%d)\n", n,
                 MAX_S3WID);
 
     E_INFO("Allocating %d * %d bytes (%d KiB) for word entries\n",
@@ -355,7 +355,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
 
     if ((d->filler_start > d->filler_end)
         || (!dict_filler_word(d, d->silwid)))
-        E_FATAL("%s must occur (only) in filler dictionary\n",
+        E_FATAL("Word '%s' must occur (only) in filler dictionary\n",
                 S3_SILENCE_WORD);
 
     /* No check that alternative pronunciations for filler words are in filler range!! */
