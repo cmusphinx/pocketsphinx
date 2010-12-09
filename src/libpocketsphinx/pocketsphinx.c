@@ -128,7 +128,11 @@ ps_init_defaults(ps_decoder_t *ps)
     /* Expand acoustic and language model filenames relative to installation path. */
     if (hmmdir && !path_is_absolute(hmmdir) && !hmmdir_exists(hmmdir)) {
         char *tmphmm = string_join(MODELDIR "/hmm/", hmmdir, NULL);
-        cmd_ln_set_str_r(ps->config, "-hmm", tmphmm);
+        if (hmmdir_exists(tmphmm)) {
+    	    cmd_ln_set_str_r(ps->config, "-hmm", tmphmm);
+    	} else {
+    	    E_ERROR("Failed to find mdef file inside the model folder specified with -hmm '%s'\n", hmmdir);
+    	}
         ckd_free(tmphmm);
     }
     if (lmfile && !path_is_absolute(lmfile) && !file_exists(lmfile)) {

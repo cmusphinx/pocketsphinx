@@ -81,12 +81,12 @@ acmod_init_am(acmod_t *acmod)
 
     /* Read model definition. */
     if ((mdeffn = cmd_ln_str_r(acmod->config, "-mdef")) == NULL) {
-        E_ERROR("Must specify -mdef or -hmm\n");
+        E_ERROR("Acoustic model definition is not specified neither with -mdef option nor with -hmm\n");
         return -1;
     }
 
     if ((acmod->mdef = bin_mdef_read(acmod->config, mdeffn)) == NULL) {
-        E_ERROR("Failed to read model definition from %s\n", mdeffn);
+        E_ERROR("Failed to read acoustic model definition from %s\n", mdeffn);
         return -1;
     }
 
