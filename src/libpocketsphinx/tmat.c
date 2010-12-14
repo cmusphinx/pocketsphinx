@@ -191,7 +191,7 @@ tmat_t *
 tmat_init(char const *file_name, logmath_t *lmath, float64 tpfloor, int32 breport)
 {
     char tmp;
-    int32 n_src, n_dst;
+    int32 n_src, n_dst, n_tmat;
     FILE *fp;
     int32 byteswap, chksum_present;
     uint32 chksum;
@@ -233,26 +233,28 @@ tmat_init(char const *file_name, logmath_t *lmath, float64 tpfloor, int32 brepor
     chksum = 0;
 
     /* Read #tmat, #from-states, #to-states, arraysize */
-    if ((bio_fread(&(t->n_tmat), sizeof(int32), 1, fp, byteswap, &chksum)
+    if ((bio_fread(&n_tmat, sizeof(int32), 1, fp, byteswap, &chksum)
          != 1)
         || (bio_fread(&n_src, sizeof(int32), 1, fp, byteswap, &chksum) !=
             1)
         || (bio_fread(&n_dst, sizeof(int32), 1, fp, byteswap, &chksum) !=
             1)
         || (bio_fread(&i, sizeof(int32), 1, fp, byteswap, &chksum) != 1)) {
-        E_FATAL("bio_fread(%s) (arraysize) failed\n", file_name);
+        E_FATAL("Failed to read header from '%s'\n", file_name);
     }
-    if (t->n_tmat >= MAX_INT16) /* Comparison is always false... */
-        E_FATAL("%s: #tmat (%d) exceeds limit (%d)\n", file_name,
-                t->n_tmat, MAX_INT16);
+    if (n_tmat >= MAX_INT16)
+        E_FATAL("%s: Number of transition matrices (%d) exceeds limit (%d)\n", file_name,
+                n_tmat, MAX_INT16);
+    t->n_tmat = n_tmat;
+    
     if (n_dst != n_src + 1)
-        E_FATAL("%s: #from-states(%d) != #to-states(%d)-1\n", file_name,
+        E_FATAL("%s: Unsupported transition matrix. Number of source states (%d) != number of target states (%d)-1\n", file_name,
                 n_src, n_dst);
     t->n_state = n_src;
 
     if (i != t->n_tmat * n_src * n_dst) {
         E_FATAL
-            ("%s: #float32s(%d) doesn't match dimensions: %d x %d x %d\n",
+            ("%s: Invalid transitions. Number of coefficients (%d) doesn't match expected array dimension: %d x %d x %d\n",
              file_name, i, t->n_tmat, n_src, n_dst);
     }
 
@@ -267,13 +269,13 @@ tmat_init(char const *file_name, logmath_t *lmath, float64 tpfloor, int32 brepor
     for (i = 0; i < t->n_tmat; i++) {
         if (bio_fread(tp[0], sizeof(float32), tp_per_tmat, fp,
                       byteswap, &chksum) != tp_per_tmat) {
-            E_FATAL("fread(%s) (arraydata) failed\n", file_name);
+            E_FATAL("Failed to read transition matrix %d from '%s'\n", i, file_name);
         }
 
         /* Normalize and floor */
         for (j = 0; j < n_src; j++) {
             if (vector_sum_norm(tp[j], n_dst) == 0.0)
-                E_WARN("Normalization failed for tmat %d from state %d\n",
+                E_WARN("Normalization failed for transition matrix %d from state %d\n",
                        i, j);
             vector_nz_floor(tp[j], n_dst, tpfloor);
             vector_sum_norm(tp[j], n_dst);
