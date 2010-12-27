@@ -1283,9 +1283,9 @@ ngram_search_lattice(ps_search_t *search)
              * exist. */
             score = ngram_search_exit_score(ngs, from_bpe,
                                             dict_first_phone(ps_search_dict(ngs), to->wid));
-            /* Yup, doesn't exist, just use ascr.  Perhaps we should penalize these? */
+            /* Does not exist.  Can't create a link here. */
             if (score == WORST_SCORE)
-                score = ascr;
+                continue;
             /* Adjust the arc score to match the correct triphone. */
             else
                 score = ascr + (score - from_bpe->score);
