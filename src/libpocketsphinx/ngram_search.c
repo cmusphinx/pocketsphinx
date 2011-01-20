@@ -229,14 +229,21 @@ ngram_search_init(cmd_ln_t *config,
     if (cmd_ln_boolean_r(config, "-fwdtree")) {
         ngram_fwdtree_init(ngs);
         ngs->fwdtree = TRUE;
+        ngs->fwdtree_perf.name = "fwdtree";
+        ptmr_init(&ngs->fwdtree_perf);
     }
     if (cmd_ln_boolean_r(config, "-fwdflat")) {
         ngram_fwdflat_init(ngs);
         ngs->fwdflat = TRUE;
+        ngs->fwdflat_perf.name = "fwdflat";
+        ptmr_init(&ngs->fwdflat_perf);
     }
     if (cmd_ln_boolean_r(config, "-bestpath")) {
         ngs->bestpath = TRUE;
+        ngs->bestpath_perf.name = "bestpath";
+        ptmr_init(&ngs->bestpath_perf);
     }
+
     return (ps_search_t *)ngs;
 
 error_out:
@@ -300,6 +307,17 @@ ngram_search_free(ps_search_t *search)
         ngram_fwdtree_deinit(ngs);
     if (ngs->fwdflat)
         ngram_fwdflat_deinit(ngs);
+    if (ngs->bestpath) {
+        double n_speech = (double)ngs->n_tot_frame
+            / cmd_ln_int32_r(ps_search_config(ngs), "-frate");
+
+        E_INFO("TOTAL bestpath %.2f CPU %.3f xRT\n",
+               ngs->bestpath_perf.t_tot_cpu,
+               ngs->bestpath_perf.t_tot_cpu / n_speech);
+        E_INFO("TOTAL bestpath %.2f wall %.3f xRT\n",
+               ngs->bestpath_perf.t_tot_elapsed,
+               ngs->bestpath_perf.t_tot_elapsed / n_speech);
+    }
 
     hmm_context_free(ngs->hmmctx);
     listelem_alloc_free(ngs->chan_alloc);
@@ -772,6 +790,7 @@ ngram_search_finish(ps_search_t *search)
 {
     ngram_search_t *ngs = (ngram_search_t *)search;
 
+    ngs->n_tot_frame += ngs->n_frame;
     if (ngs->fwdtree) {
         ngram_fwdtree_finish(ngs);
         /* dump_bptable(ngs); */
@@ -837,12 +856,26 @@ ngram_search_hyp(ps_search_t *search, int32 *out_score)
     if (ngs->bestpath && ngs->done) {
         ps_lattice_t *dag;
         ps_latlink_t *link;
+        char const *hyp;
+        double n_speech;
 
+        ptmr_reset(&ngs->bestpath_perf);
+        ptmr_start(&ngs->bestpath_perf);
         if ((dag = ngram_search_lattice(search)) == NULL)
             return NULL;
         if ((link = ngram_search_bestpath(search, out_score, FALSE)) == NULL)
             return NULL;
-        return ps_lattice_hyp(dag, link);
+        hyp = ps_lattice_hyp(dag, link);
+        ptmr_stop(&ngs->bestpath_perf);
+        n_speech = (double)dag->n_frames
+            / cmd_ln_int32_r(ps_search_config(ngs), "-frate");
+        E_INFO("bestpath %.2f CPU %.3f xRT\n",
+               ngs->bestpath_perf.t_cpu,
+               ngs->bestpath_perf.t_cpu / n_speech);
+        E_INFO("bestpath %.2f wall %.3f xRT\n",
+               ngs->bestpath_perf.t_elapsed,
+               ngs->bestpath_perf.t_elapsed / n_speech);
+        return hyp;
     }
     else {
         int32 bpidx;
@@ -977,13 +1010,27 @@ ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
     if (ngs->bestpath && ngs->done) {
         ps_lattice_t *dag;
         ps_latlink_t *link;
+        double n_speech;
+        ps_seg_t *itor;
 
+        ptmr_reset(&ngs->bestpath_perf);
+        ptmr_start(&ngs->bestpath_perf);
         if ((dag = ngram_search_lattice(search)) == NULL)
             return NULL;
         if ((link = ngram_search_bestpath(search, out_score, TRUE)) == NULL)
             return NULL;
-        return ps_lattice_seg_iter(dag, link,
+        itor = ps_lattice_seg_iter(dag, link,
                                    ngs->bestpath_fwdtree_lw_ratio);
+        ptmr_stop(&ngs->bestpath_perf);
+        n_speech = (double)dag->n_frames
+            / cmd_ln_int32_r(ps_search_config(ngs), "-frate");
+        E_INFO("bestpath %.2f CPU %.3f xRT\n",
+               ngs->bestpath_perf.t_cpu,
+               ngs->bestpath_perf.t_cpu / n_speech);
+        E_INFO("bestpath %.2f wall %.3f xRT\n",
+               ngs->bestpath_perf.t_elapsed,
+               ngs->bestpath_perf.t_elapsed / n_speech);
+        return itor;
     }
     else {
         int32 bpidx;

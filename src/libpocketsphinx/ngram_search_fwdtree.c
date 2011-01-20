@@ -424,6 +424,16 @@ deinit_search_tree(ngram_search_t *ngs)
 void
 ngram_fwdtree_deinit(ngram_search_t *ngs)
 {
+    double n_speech = (double)ngs->n_tot_frame
+            / cmd_ln_int32_r(ps_search_config(ngs), "-frate");
+
+    E_INFO("TOTAL fwdtree %.2f CPU %.3f xRT\n",
+           ngs->fwdtree_perf.t_tot_cpu,
+           ngs->fwdtree_perf.t_tot_cpu / n_speech);
+    E_INFO("TOTAL fwdtree %.2f wall %.3f xRT\n",
+           ngs->fwdtree_perf.t_tot_elapsed,
+           ngs->fwdtree_perf.t_tot_elapsed / n_speech);
+
     /* Reset non-root channels. */
     reinit_search_tree(ngs);
     /* Free the search tree. */
@@ -471,6 +481,8 @@ ngram_fwdtree_start(ngram_search_t *ngs)
 
     /* Reset utterance statistics. */
     memset(&ngs->st, 0, sizeof(ngs->st));
+    ptmr_reset(&ngs->fwdtree_perf);
+    ptmr_start(&ngs->fwdtree_perf);
 
     /* Reset backpointer table. */
     ngs->bpidx = 0;
@@ -1529,8 +1541,11 @@ ngram_fwdtree_finish(ngram_search_t *ngs)
      * until somebody requests a backtrace.
      */
 
+    ptmr_stop(&ngs->fwdtree_perf);
     /* Print out some statistics. */
     if (cf > 0) {
+        double n_speech = (double)(cf + 1)
+            / cmd_ln_int32_r(ps_search_config(ngs), "-frate");
         E_INFO("%8d words recognized (%d/fr)\n",
                ngs->bpidx, (ngs->bpidx + (cf >> 1)) / (cf + 1));
         E_INFO("%8d senones evaluated (%d/fr)\n", ngs->st.n_senone_active_utt,
@@ -1544,6 +1559,12 @@ ngram_fwdtree_finish(ngram_search_t *ngs)
                ngs->st.n_word_lastchan_eval / (cf + 1));
         E_INFO("%8d candidate words for entering last phone (%d/fr)\n",
                ngs->st.n_lastphn_cand_utt, ngs->st.n_lastphn_cand_utt / (cf + 1));
+        E_INFO("fwdtree %.2f CPU %.3f xRT\n",
+               ngs->fwdtree_perf.t_cpu,
+               ngs->fwdtree_perf.t_cpu / n_speech);
+        E_INFO("fwdtree %.2f wall %.3f xRT\n",
+               ngs->fwdtree_perf.t_elapsed,
+               ngs->fwdtree_perf.t_elapsed / n_speech);
     }
     /* dump_bptable(ngs); */
 }

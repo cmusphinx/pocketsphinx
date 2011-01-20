@@ -168,6 +168,16 @@ ngram_fwdflat_init(ngram_search_t *ngs)
 void
 ngram_fwdflat_deinit(ngram_search_t *ngs)
 {
+    double n_speech = (double)ngs->n_tot_frame
+            / cmd_ln_int32_r(ps_search_config(ngs), "-frate");
+
+    E_INFO("TOTAL fwdflat %.2f CPU %.3f xRT\n",
+           ngs->fwdflat_perf.t_tot_cpu,
+           ngs->fwdflat_perf.t_tot_cpu / n_speech);
+    E_INFO("TOTAL fwdflat %.2f wall %.3f xRT\n",
+           ngs->fwdflat_perf.t_tot_elapsed,
+           ngs->fwdflat_perf.t_tot_elapsed / n_speech);
+
     /* Free single-phone words if we allocated them. */
     if (!ngs->fwdtree) {
         ngram_fwdflat_free_1ph(ngs);
@@ -369,6 +379,8 @@ ngram_fwdflat_start(ngram_search_t *ngs)
     root_chan_t *rhmm;
     int i;
 
+    ptmr_reset(&ngs->fwdflat_perf);
+    ptmr_start(&ngs->fwdflat_perf);
     build_fwdflat_wordlist(ngs);
     build_fwdflat_chan(ngs);
 
@@ -920,8 +932,11 @@ ngram_fwdflat_finish(ngram_search_t *ngs)
     /* Add a mark in the backpointer table for one past the final frame. */
     ngram_search_mark_bptable(ngs, cf);
 
+    ptmr_stop(&ngs->fwdflat_perf);
     /* Print out some statistics. */
     if (cf > 0) {
+        double n_speech = (double)(cf + 1)
+            / cmd_ln_int32_r(ps_search_config(ngs), "-frate");
         E_INFO("%8d words recognized (%d/fr)\n",
                ngs->bpidx, (ngs->bpidx + (cf >> 1)) / (cf + 1));
         E_INFO("%8d senones evaluated (%d/fr)\n", ngs->st.n_senone_active_utt,
@@ -933,5 +948,11 @@ ngram_fwdflat_finish(ngram_search_t *ngs)
         E_INFO("%8d word transitions (%d/fr)\n",
                ngs->st.n_fwdflat_word_transition,
                ngs->st.n_fwdflat_word_transition / (cf + 1));
+        E_INFO("fwdflat %.2f CPU %.3f xRT\n",
+               ngs->fwdflat_perf.t_cpu,
+               ngs->fwdflat_perf.t_cpu / n_speech);
+        E_INFO("fwdflat %.2f wall %.3f xRT\n",
+               ngs->fwdflat_perf.t_elapsed,
+               ngs->fwdflat_perf.t_elapsed / n_speech);
     }
 }
