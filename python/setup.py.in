@@ -6,6 +6,7 @@ except:
 import distutils.command.install
 import os
 import commands
+import sys
 
 class bogus_uninstall(distutils.command.install.install):
     """
@@ -70,6 +71,10 @@ else:
                    '@sphinxbase@/include']
     sb_libdirs = ['@sphinxbasebuild@/src/libsphinxbase/.libs']
 
+libraries = ['sphinxbase', 'pocketsphinx']
+if sys.platform == "cygwin":
+      libraries.append('iconv')
+
 setup(name = 'PocketSphinx',
       version = '@VERSION@',
       author = 'David Huggins-Daines',
@@ -80,7 +85,7 @@ setup(name = 'PocketSphinx',
       ext_modules = [
         Extension('pocketsphinx',
                    sources=['pocketsphinx.c'],
-                   libraries=['pocketsphinx', 'sphinxbase'],
+                   libraries=libraries,
                    include_dirs=['@top_builddir@/include',
                                  '@top_srcdir@/include',
                                  '@top_srcdir@/python',
