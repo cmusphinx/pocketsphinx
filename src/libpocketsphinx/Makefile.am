@@ -58,6 +58,7 @@ noinst_HEADERS =				\
 	ptm_mgau.h				\
 	s2_semi_mgau.h				\
 	s3types.h				\
+	state_align_search.h			\
 	tied_mgau_common.h			\
 	tmat.h					\
 	vector.h
