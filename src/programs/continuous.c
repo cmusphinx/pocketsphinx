@@ -347,12 +347,6 @@ main(int argc, char *argv[])
 {
     char const *cfg;
 
-    /* Make sure we exit cleanly (needed for profiling among other things) */
-    /* Signals seem to be broken in arm-wince-pe. */
-#if !defined(GNUWINCE) && !defined(_WIN32_WCE) && !defined(__SYMBIAN32__)
-    signal(SIGINT, &sighandler);
-#endif
-
     if (argc == 2) {
         config = cmd_ln_parse_file_r(NULL, cont_args_def, argv[1], TRUE);
     }
@@ -375,6 +369,13 @@ main(int argc, char *argv[])
     if (cmd_ln_str_r(config, "-infile") != NULL) {
 	recognize_from_file();
     } else {
+
+        /* Make sure we exit cleanly (needed for profiling among other things) */
+	/* Signals seem to be broken in arm-wince-pe. */
+#if !defined(GNUWINCE) && !defined(_WIN32_WCE) && !defined(__SYMBIAN32__)
+	signal(SIGINT, &sighandler);
+#endif
+
         if (setjmp(jbuf) == 0) {
 	    recognize_from_microphone();
 	}
