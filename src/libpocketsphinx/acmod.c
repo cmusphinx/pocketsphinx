@@ -201,8 +201,12 @@ int
 acmod_fe_mismatch(acmod_t *acmod, fe_t *fe)
 {
     /* Output vector dimension needs to be the same. */
-    if (cmd_ln_int32_r(acmod->config, "-ceplen") != fe_get_output_size(fe))
+    if (cmd_ln_int32_r(acmod->config, "-ceplen") != fe_get_output_size(fe)) {
+	E_ERROR("Configured feature length %d doesn't match feature extraction output size %d\n", 
+		cmd_ln_int32_r(acmod->config, "-ceplen"), 
+		fe_get_output_size(fe));
         return TRUE;
+    }
     /* Feature parameters need to be the same. */
     /* ... */
     return FALSE;
@@ -251,6 +255,8 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
         cmd_ln_retain(config);
         acmod->fe = fe_init_auto_r(config);
         if (acmod->fe == NULL)
+            goto error_out;
+        if (acmod_fe_mismatch(acmod, acmod->fe))
             goto error_out;
     }
     if (fcb) {
