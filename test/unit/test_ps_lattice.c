@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "pocketsphinx_internal.h"
+#include "ps_lattice_internal.h"
 #include "test_macros.h"
 #include "ps_test.c"
 
@@ -67,6 +68,29 @@ test_nodes_and_stuff(ps_lattice_t *dag)
 	return 0;
 }
 
+int
+test_remaining_nodes(ps_lattice_t *dag) {
+	ps_latnode_iter_t *itor;
+	ps_latlink_iter_t *litor;
+	int count, lcount;
+    
+	count = 0;
+	lcount = 0;
+	for (itor = ps_latnode_iter(dag); itor; itor = ps_latnode_iter_next(itor)) {
+	    ps_latnode_t* node = ps_latnode_iter_node(itor);
+	    for (litor = ps_latnode_entries(node);
+		litor; litor = ps_latlink_iter_next(litor)) {
+		lcount++;
+	    }
+	    count++;	
+	}
+	TEST_ASSERT(count == 3);
+	TEST_ASSERT(lcount == 2);
+	printf("Remaining %d nodes %d links\n", count, lcount);
+
+	return 0;    
+}
+
 
 int
 main(int argc, char *argv[])
@@ -118,6 +142,13 @@ main(int argc, char *argv[])
 	dag = ps_lattice_read(NULL, "goforward.lat");
 	TEST_ASSERT(dag);
 	test_nodes_and_stuff(dag);
+	ps_lattice_free(dag);
+
+	/* Test stripping the unreachable nodes. */
+	dag = ps_lattice_read(NULL, DATADIR "/unreachable.lat");
+	TEST_ASSERT(dag);
+	ps_lattice_delete_unreachable(dag);
+	test_remaining_nodes(dag);
 	ps_lattice_free(dag);
 	
 	return 0;

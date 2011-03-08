@@ -184,7 +184,7 @@ remove_dangling_links(ps_lattice_t *dag, ps_latnode_t *node)
             if (prev_x)
                 prev_x->next = next_x;
             else
-                node->exits = next_x;
+                node->entries = next_x;
             listelem_free(dag->latlink_alloc, x->link);
             listelem_free(dag->latlink_list_alloc, x);
         }

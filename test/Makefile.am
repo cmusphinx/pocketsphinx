@@ -10,6 +10,7 @@ EXTRA_DIST=compare_table.pl				\
 	data/goforward.fsg                              \
 	data/goforward.gram                             \
 	data/defective.dic                              \
+	data/unreachable.lat                            \
 	data/cards/001.wav				\
 	data/cards/002.wav				\
 	data/cards/003.wav				\
