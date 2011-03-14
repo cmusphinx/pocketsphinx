@@ -1,7 +1,7 @@
 dnl Welcome to the Sphinx automated build system.
 dnl try not to hurt yourself ;)
 
-AC_INIT(pocketsphinx, 0.6.99)
+AC_INIT(pocketsphinx, 0.7)
 AM_INIT_AUTOMAKE([no-define])
 AC_SUBST(ACLOCAL_AMFLAGS, "-I m4")
 

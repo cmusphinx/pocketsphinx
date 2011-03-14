@@ -1,9 +1,34 @@
-2001-12-07 Dropped "naming" conditions from LICENSE.
+Pocketsphinx 0.7
+^^^^^^^^^^^^^^^^
 
-           Use SphinxTrain to train acoustic models:
-              http://www.speech.cs.cmu.edu/SphinxTrain
+Thanks: David Huggins-Daines, Chen Tao, creative64, Edwin Miguel, Bhiksha Raj
+
+Improvements:
+
+ * Nice performance improvements
+ * Use arc iterators to build FSG lextrees, speeds this up immensely
+ * Filler word propagation is responsible for 5% speedup
+ * Continuous decoder can decode files, not from the microphone
+ * Add senone score dumping and reloading capability
+ * Functional alignment pass
+ * Symbian support 
+ * Add the Android makefile and other JNI stuff
+ * Case sensitive names, including phone names
+ * Better error messages
+ * Report timing for individual search passes
+
+Bug fixes:
+
+ * Accuracy regression fixes
+ * Fixes the bug with reading transition matrix on big-endian platforms
+ * Fixes very important regression with NULL transitions in fsg search
+ * Proper acoustic score scaling during posterior calculation.
+ 
+And many, many, many more intersting things!
+
+Pocketsphinx pre
+^^^^^^^^^^^^^^^^
 
 2000-01-27 CMU Sphinx is going Open Source!  
-
 
 
