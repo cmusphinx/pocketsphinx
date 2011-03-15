@@ -766,7 +766,7 @@ read_mixw(ptm_mgau_t * s, char const *file_name, double SmoothMin)
 }
 
 ps_mgau_t *
-ptm_mgau_init(acmod_t *acmod)
+ptm_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
 {
     ptm_mgau_t *s;
     ps_mgau_t *ps;
@@ -798,6 +798,10 @@ ptm_mgau_init(acmod_t *acmod)
      * should be enough for anyone) */
     if (s->g->n_mgau > 256) {
         E_INFO("Number of codebooks exceeds 256: %d\n", s->g->n_mgau);
+        goto error_out;
+    }
+    if (s->g->n_mgau != bin_mdef_n_ciphone(mdef)) {
+        E_INFO("Number of codebooks doesn't match number of ciphones, doesn't look like PTM: %d %d\n", s->g->n_mgau, bin_mdef_n_ciphone(mdef));
         goto error_out;
     }
     /* Verify n_feat and veclen, against acmod. */

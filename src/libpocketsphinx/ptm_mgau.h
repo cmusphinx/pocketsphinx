@@ -87,7 +87,7 @@ struct ptm_mgau_s {
     logmath_t *lmath;
 };
 
-ps_mgau_t *ptm_mgau_init(acmod_t *acmod);
+ps_mgau_t *ptm_mgau_init(acmod_t *acmod, bin_mdef_t *mdef);
 void ptm_mgau_free(ps_mgau_t *s);
 int ptm_mgau_frame_eval(ps_mgau_t *s,
                         int16 *senone_scores,
