@@ -1,17 +1,11 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C++ Express 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx", "win32\pocketsphinx\pocketsphinx.vcproj", "{94001A0E-A837-445C-8004-F918F10D0226}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx", "win32\pocketsphinx\pocketsphinx.vcxproj", "{94001A0E-A837-445C-8004-F918F10D0226}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx_continuous", "win32\pocketsphinx_continuous\pocketsphinx_continuous.vcproj", "{1380AF76-C926-44D0-8002-06C228AC869A}"
-	ProjectSection(ProjectDependencies) = postProject
-		{94001A0E-A837-445C-8004-F918F10D0226} = {94001A0E-A837-445C-8004-F918F10D0226}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx_continuous", "win32\pocketsphinx_continuous\pocketsphinx_continuous.vcxproj", "{1380AF76-C926-44D0-8002-06C228AC869A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx_batch", "win32\pocketsphinx_batch\pocketsphinx_batch.vcproj", "{CB47D94B-2F84-41BC-A3C4-A1EBDCDE922A}"
-	ProjectSection(ProjectDependencies) = postProject
-		{94001A0E-A837-445C-8004-F918F10D0226} = {94001A0E-A837-445C-8004-F918F10D0226}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx_batch", "win32\pocketsphinx_batch\pocketsphinx_batch.vcxproj", "{CB47D94B-2F84-41BC-A3C4-A1EBDCDE922A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

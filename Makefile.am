@@ -9,11 +9,13 @@ SUBDIRS = src \
 EXTRA_DIST = autogen.sh							\
 	pocketsphinx.sln						\
 	pocketsphinx.pc.in						\
-	win32/pocketsphinx/pocketsphinx.vcproj				\
-	win32/pocketsphinx_batch/pocketsphinx.args			\
-	win32/pocketsphinx_batch/pocketsphinx_batch.vcproj		\
-	win32/pocketsphinx_continuous/pocketsphinx.args			\
-	win32/pocketsphinx_continuous/pocketsphinx_continuous.vcproj	\
+	win32/pocketsphinx/pocketsphinx.vcxproj.filters			\
+	win32/pocketsphinx/pocketsphinx.vcxproj.user			\
+	win32/pocketsphinx/pocketsphinx.vcxproj				\
+	win32/pocketsphinx_batch/pocketsphinx_batch.vcxproj.user	\
+	win32/pocketsphinx_batch/pocketsphinx_batch.vcxproj		\
+	win32/pocketsphinx_continuous/pocketsphinx_continuous.vcxproj	\
+	win32/pocketsphinx_continuous/pocketsphinx_continuous.vcxproj.user \
 	swig/Makefile							\
 	swig/Android.mk							\
 	swig/pocketsphinx.i						\

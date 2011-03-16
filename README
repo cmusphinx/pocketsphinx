@@ -55,8 +55,8 @@ set:
 'Library Search Paths' = "$(HOME)$(SDK_DIR)/lib"
 'Other Linker Flags' = "-lpocketsphinx"
 
-In MS Windows (TM), under MS Visual Studio 2008 (or newer - we test
-with Visual C++ 2008 Express):
+In MS Windows (TM), under MS Visual Studio 2010 (or newer - we test
+with Visual C++ 2010 Express):
 
  * load sphinxbase.sln located in sphinxbase directory
 
