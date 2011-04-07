@@ -16,6 +16,7 @@ check_PROGRAMS = \
 	test_ps_simple \
 	test_ps_nbest \
 	test_ps_lattice \
+	test_ps_update \
 	test_acmod \
 	test_acmod_grow \
 	test_fwdtree \
@@ -35,7 +36,6 @@ check_PROGRAMS = \
 	test_senfh \
 	test_alignment \
 	test_state_align \
-	test_reinit \
 	$(gst_programs)
 
 TESTS = $(check_PROGRAMS)
