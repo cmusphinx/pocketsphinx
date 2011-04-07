@@ -1,6 +1,6 @@
 #include <pocketsphinx.h>
 
-static void test_reinit_lm()
+static void test_reinit_fsg()
 {
        ps_decoder_t *ps;
        cmd_ln_t *config;
@@ -11,7 +11,7 @@ static void test_reinit_lm()
        ps_update_fsgset (ps);
 }
 
-static void test_reinit_fsg()
+static void test_reinit_lm()
 {
         ps_decoder_t *ps;
         cmd_ln_t *config;
