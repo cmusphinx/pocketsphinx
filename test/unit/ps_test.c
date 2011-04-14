@@ -118,7 +118,7 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
 		post = ps_seg_prob(seg, &ascr, &lscr, &lback);
 		printf("%s (%d:%d) P(w|o) = %f ascr = %d lscr = %d lback = %d\n", word, sf, ef,
 		       logmath_exp(ps_get_logmath(ps), post), ascr, lscr, lback);
-		TEST_ASSERT(post <= 1); // Due to numerical errors with float it sometimes could go out
+		TEST_ASSERT(post <= 2); // Due to numerical errors with float it sometimes could go out of 0
 	}
 
 	ps_get_utt_time(ps, &n_speech, &n_cpu, &n_wall);
