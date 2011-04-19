@@ -329,6 +329,16 @@ fsg_pnode_add_all_ctxt(fsg_pnode_ctxt_t * ctxt)
         ctxt->bv[i] = 0xffffffff;
 }
 
+uint32 fsg_pnode_ctxt_sub_generic(fsg_pnode_ctxt_t *src, fsg_pnode_ctxt_t *sub)
+{
+    int32 i;
+    uint32 res = 0;
+    
+    for (i = 0; i < FSG_PNODE_CTXT_BVSZ; i++)
+        res |= (src->bv[i] = ~(sub->bv[i]) & src->bv[i]);
+    return res;
+}
+
 
 /*
  * fsg_pnode_ctxt_sub(fsg_pnode_ctxt_t * src, fsg_pnode_ctxt_t * sub)

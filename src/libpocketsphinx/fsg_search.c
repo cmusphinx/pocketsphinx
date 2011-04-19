@@ -260,7 +260,7 @@ fsg_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
     
     /* Nothing to update */
     if (fsgs->fsg == NULL)
-	return;
+	return 0;
 
     /* Update the number of words (not used by this module though). */
     search->n_words = dict_size(dict);

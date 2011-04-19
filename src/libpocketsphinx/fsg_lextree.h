@@ -206,6 +206,8 @@ typedef struct fsg_pnode_s {
      ((src)->bv[1] = (~((sub)->bv[1]) & (src)->bv[1]))  | \
      ((src)->bv[2] = (~((sub)->bv[2]) & (src)->bv[2]))  | \
      ((src)->bv[3] = (~((sub)->bv[3]) & (src)->bv[3])))
+#else
+    #define FSG_PNODE_CTXT_SUB(src,sub) fsg_pnode_ctxt_sub_generic((src),(sub))
 #endif
 
 /**
@@ -281,6 +283,9 @@ void fsg_psubtree_pnode_deactivate(fsg_pnode_t *pnode);
  */
 void fsg_pnode_add_all_ctxt(fsg_pnode_ctxt_t *ctxt);
 
-
+/**
+ *  Generic variant for arbitrary size
+ */
+uint32 fsg_pnode_ctxt_sub_generic(fsg_pnode_ctxt_t *src, fsg_pnode_ctxt_t *sub);
 
 #endif
