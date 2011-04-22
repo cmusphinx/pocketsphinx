@@ -80,7 +80,7 @@ static void fsg_psubtree_free(fsg_pnode_t *alloc_head);
  * Dump the list of nodes in the given lextree to the given file.  alloc_head:
  * head of linear list of allocated nodes updated by fsg_psubtree_init().
  */
-static void fsg_psubtree_dump(fsg_lextree_t *tree, fsg_pnode_t *alloc_head, FILE *fp);
+static void fsg_psubtree_dump(fsg_lextree_t *tree, fsg_pnode_t *root, FILE *fp);
 
 /**
  * Compute the left and right context CIphone sets for each state.
@@ -272,7 +272,7 @@ fsg_lextree_dump(fsg_lextree_t * lextree, FILE * fp)
 
     for (s = 0; s < fsg_model_n_state(lextree->fsg); s++) {
         fprintf(fp, "State %5d root %p\n", s, lextree->root[s]);
-        fsg_psubtree_dump(lextree, lextree->alloc_head[s], fp);
+        fsg_psubtree_dump(lextree, lextree->root[s], fp);
     }
     fflush(fp);
 }
@@ -761,7 +761,7 @@ void fsg_psubtree_dump_node(fsg_lextree_t *tree, fsg_pnode_t *node, FILE *fp)
         fprintf(fp, "  ");
 
     fprintf(fp, "%p.@", node);    /* Pointer used as node
-                         * ID */
+                    		   * ID */
     fprintf(fp, " %5d.SS", hmm_nonmpx_ssid(&node->hmm));
     fprintf(fp, " %10d.LP", node->logs2prob);
     fprintf(fp, " %p.SIB", node->sibling);
