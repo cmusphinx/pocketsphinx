@@ -279,7 +279,7 @@ ngram_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
     ps_search_base_reinit(search, dict, d2p);
     
     if (ngs->lmset == NULL)
-	return;
+	return 0;
 
     /* Update beam widths. */
     ngram_search_calc_beams(ngs);

@@ -79,13 +79,13 @@ struct mdef_entry_s {
 	union {
 		/**< CI phone information - attributes (just "filler" for now) */
 		struct {
-			int8 filler;
-			int8 reserved[3];
+			uint8 filler;
+			uint8 reserved[3];
 		} ci;
 		/**< CD phone information - context info. */
 		struct {
-			int8 wpos;
-			int8 ctx[3]; /**< quintphones will require hacking */
+			uint8 wpos;
+			uint8 ctx[3]; /**< quintphones will require hacking */
 		} cd;
 	} info;
 } ATTRIBUTE_PACKED;

@@ -86,7 +86,13 @@ bin_mdef_read_text(cmd_ln_t *config, const char *filename)
         mdef_free(mdef);
         return NULL;
     }
-
+    /* We use uint8 for ciphones */
+    if (mdef->n_ciphone > 255) {
+        E_ERROR("Number of phones exceeds limit: %d > %d\n",
+                mdef->n_ciphone, 255);
+        mdef_free(mdef);
+        return NULL;
+    }
 
     bmdef = ckd_calloc(1, sizeof(*bmdef));
     bmdef->refcnt = 1;
