@@ -72,14 +72,14 @@ main(int argc, char *argv[])
 			}
 		}
 		fsg_search_finish(ps_search_base(fsgs));
-		hyp = fsg_search_hyp(ps_search_base(fsgs), &score);
+		hyp = fsg_search_hyp(ps_search_base(fsgs), &score, NULL);
 		printf("FSG: %s (%d)\n", hyp, score);
 
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
 	TEST_EQUAL(0, strcmp("go forward ten meters",
-			     fsg_search_hyp(ps_search_base(fsgs), &score)));
+			     fsg_search_hyp(ps_search_base(fsgs), &score, NULL)));
 	ps->search = (ps_search_t *)fsgs;
 	for (seg = ps_seg_iter(ps, &score); seg;
 	     seg = ps_seg_next(seg)) {

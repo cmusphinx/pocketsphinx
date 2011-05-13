@@ -863,12 +863,24 @@ ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score, char const **out_uttid)
     char const *hyp;
 
     ptmr_start(&ps->perf);
-    hyp = ps_search_hyp(ps->search, out_best_score);
+    hyp = ps_search_hyp(ps->search, out_best_score, NULL);
     if (out_uttid)
         *out_uttid = ps->uttid;
     ptmr_stop(&ps->perf);
     return hyp;
 }
+
+char const *
+ps_get_hyp_final(ps_decoder_t *ps, int32 *out_is_final)
+{
+    char const *hyp;
+
+    ptmr_start(&ps->perf);
+    hyp = ps_search_hyp(ps->search, NULL, out_is_final);
+    ptmr_stop(&ps->perf);
+    return hyp;
+}
+
 
 int32
 ps_get_prob(ps_decoder_t *ps, char const **out_uttid)

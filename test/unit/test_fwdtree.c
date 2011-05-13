@@ -56,13 +56,13 @@ main(int argc, char *argv[])
 		}
 		ngram_fwdtree_finish(ngs);
 		printf("%s\n",
-		       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
+		       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL)));
 
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
 	TEST_EQUAL(0, strcmp("go forward ten years",
-			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
+			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL))));
 	c = clock() - c;
 	printf("5 * fwdtree search in %.2f sec\n",
 	       (double)c / CLOCKS_PER_SEC);

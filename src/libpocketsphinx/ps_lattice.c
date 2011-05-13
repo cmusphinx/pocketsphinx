@@ -858,11 +858,17 @@ ps_lattice_hyp(ps_lattice_t *dag, ps_latlink_t *link)
     /* Backtrace once to get hypothesis length. */
     len = 0;
     /* FIXME: There may not be a search, but actually there should be a dict. */
-    if (dict_real_word(dag->dict, link->to->basewid))
-        len += strlen(dict_wordstr(dag->dict, link->to->basewid)) + 1;
+    if (dict_real_word(dag->dict, link->to->basewid)) {
+	char *wstr = dict_wordstr(dag->dict, link->to->basewid);
+	if (wstr != NULL)
+	    len += strlen(wstr) + 1;
+    }
     for (l = link; l; l = l->best_prev) {
-        if (dict_real_word(dag->dict, l->from->basewid))
-            len += strlen(dict_wordstr(dag->dict, l->from->basewid)) + 1;
+        if (dict_real_word(dag->dict, l->from->basewid)) {
+    	    char *wstr = dict_wordstr(dag->dict, l->from->basewid);
+            if (wstr != NULL)
+        	len += strlen(wstr) + 1;
+        }
     }
 
     /* Backtrace again to construct hypothesis string. */
@@ -870,23 +876,29 @@ ps_lattice_hyp(ps_lattice_t *dag, ps_latlink_t *link)
     dag->hyp_str = ckd_calloc(1, len+1); /* extra one incase the hyp is empty */
     c = dag->hyp_str + len - 1;
     if (dict_real_word(dag->dict, link->to->basewid)) {
-        len = strlen(dict_wordstr(dag->dict, link->to->basewid));
-        c -= len;
-        memcpy(c, dict_wordstr(dag->dict, link->to->basewid), len);
-        if (c > dag->hyp_str) {
-            --c;
-            *c = ' ';
+	char *wstr = dict_wordstr(dag->dict, link->to->basewid);
+	if (wstr != NULL) {
+    	    len = strlen(wstr);
+	    c -= len;
+    	    memcpy(c, wstr, len);
+    	    if (c > dag->hyp_str) {
+        	--c;
+        	*c = ' ';
+	    }
         }
     }
     for (l = link; l; l = l->best_prev) {
         if (dict_real_word(dag->dict, l->from->basewid)) {
-            len = strlen(dict_wordstr(dag->dict, l->from->basewid));
-            c -= len;
-            memcpy(c, dict_wordstr(dag->dict, l->from->basewid), len);
-            if (c > dag->hyp_str) {
-                --c;
-                *c = ' ';
-            }
+    	    char *wstr = dict_wordstr(dag->dict, l->from->basewid);
+    	    if (wstr != NULL) {
+	        len = strlen(wstr);            
+    		c -= len;
+    		memcpy(c, wstr, len);
+        	if (c > dag->hyp_str) {
+            	    --c;
+            	    *c = ' ';
+        	}
+    	    }
         }
     }
 
@@ -1761,8 +1773,11 @@ ps_astar_hyp(ps_astar_t *nbest, ps_latpath_t *path)
     /* Backtrace once to get hypothesis length. */
     len = 0;
     for (p = path; p; p = p->parent) {
-        if (dict_real_word(ps_search_dict(search), p->node->basewid))
-            len += strlen(dict_wordstr(ps_search_dict(search), p->node->basewid)) + 1;
+        if (dict_real_word(ps_search_dict(search), p->node->basewid)) {
+    	    char *wstr = dict_wordstr(ps_search_dict(search), p->node->basewid);
+    	    if (wstr != NULL)
+    	        len += strlen(wstr) + 1;
+        }
     }
 
     if (len == 0) {
@@ -1774,13 +1789,16 @@ ps_astar_hyp(ps_astar_t *nbest, ps_latpath_t *path)
     c = hyp + len - 1;
     for (p = path; p; p = p->parent) {
         if (dict_real_word(ps_search_dict(search), p->node->basewid)) {
-            len = strlen(dict_wordstr(ps_search_dict(search), p->node->basewid));
-            c -= len;
-            memcpy(c, dict_wordstr(ps_search_dict(search), p->node->basewid), len);
-            if (c > hyp) {
-                --c;
-                *c = ' ';
-            }
+    	    char *wstr = dict_wordstr(ps_search_dict(search), p->node->basewid);
+    	    if (wstr != NULL) {
+	        len = strlen(wstr);
+    		c -= len;
+        	memcpy(c, wstr, len);
+    		if (c > hyp) {
+            	    --c;
+        	    *c = ' ';
+    		}
+    	    }
         }
     }
 

@@ -28,7 +28,7 @@ static void test_reinit_lm()
         model = ps_update_lmset (ps, NULL);
 }
 
-int main(int argc, char argv[]) 
+int main(int argc, char* argv[]) 
 {
 	test_reinit_fsg();
 	test_reinit_lm();

@@ -14,8 +14,6 @@ main(int argc, char *argv[])
 	cmd_ln_t *config;
 	acmod_t *acmod;
 	ngram_search_t *ngs;
-	clock_t c;
-	int i;
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
@@ -57,13 +55,13 @@ main(int argc, char *argv[])
 		}
 		ngram_fwdflat_finish(ngs);
 		printf("%s\n",
-		       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
+		       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL)));
 
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 		TEST_EQUAL(0, strcmp("go forward and users",
 				     ngram_search_bp_hyp(ngs,
-							 ngram_search_find_exit(ngs, -1, NULL))));
+							 ngram_search_find_exit(ngs, -1, NULL, NULL))));
 
 		TEST_EQUAL(0, acmod_set_senfh(acmod, NULL));
 		TEST_EQUAL(0, acmod_start_utt(acmod));
@@ -78,12 +76,12 @@ main(int argc, char *argv[])
 		}
 		ngram_fwdflat_finish(ngs);
 		printf("%s\n",
-		       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
+		       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL)));
 
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		TEST_EQUAL(0, strcmp("go forward and users",
 				     ngram_search_bp_hyp(ngs,
-							 ngram_search_find_exit(ngs, -1, NULL))));
+							 ngram_search_find_exit(ngs, -1, NULL, NULL))));
 	}
 	ps_free(ps);
 
