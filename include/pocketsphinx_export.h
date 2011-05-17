@@ -2,8 +2,8 @@
 #define __POCKETSPHINX_EXPORT_H__
 
 /* Win32/WinCE DLL gunk */
-#if (defined(_WIN32) || defined(_WIN32_WCE)) && !defined(CYGWIN) && !defined(__WINSCW__)
-#ifdef POCKETSPHINX_EXPORTS
+#if (defined(_WIN32) || defined(_WIN32_WCE)) && !defined(__CYGWIN__) && !defined(__WINSCW__) && !defined(__SYMBIAN32__)
+#ifdef POCKETSPHINX_EXPORTS /* Visual Studio */
 #define POCKETSPHINX_EXPORT __declspec(dllexport)
 #else
 #define POCKETSPHINX_EXPORT __declspec(dllimport)
