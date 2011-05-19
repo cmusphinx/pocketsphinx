@@ -71,7 +71,7 @@ else:
                    '@sphinxbase@/include']
     sb_libdirs = ['@sphinxbasebuild@/src/libsphinxbase/.libs']
 
-libraries = ['sphinxbase', 'pocketsphinx']
+libraries = ['pocketsphinx', 'sphinxbase']
 if sys.platform == "cygwin":
       libraries.append('iconv')
 
