@@ -163,7 +163,7 @@ recognize_from_file() {
         ps_process_raw(ps, adbuf, k, FALSE, FALSE);
         
         ts = cont->read_ts;
-        start = (ts - k) / file_ad.sps * 100;
+        start = ((ts - k) * 100.0) / file_ad.sps;
         
         for (;;) {
             if ((k = cont_ad_read(cont, adbuf, 4096)) < 0)
