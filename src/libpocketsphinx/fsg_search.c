@@ -1158,7 +1158,7 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score, int32 *out_is_final)
             return NULL;
         }
         if ((link = fsg_search_bestpath(search, out_score, FALSE)) == NULL) {
-    	    E_WARN("Failed to bestpath in a lattice\n");
+    	    E_WARN("Failed to find the bestpath in a lattice\n");
             return NULL;
         }
         return ps_lattice_hyp(dag, link);

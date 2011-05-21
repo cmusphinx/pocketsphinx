@@ -1002,6 +1002,8 @@ ps_nbest_next(ps_nbest_t *nbest)
 char const *
 ps_nbest_hyp(ps_nbest_t *nbest, int32 *out_score)
 {
+    assert(nbest != NULL);
+    
     if (nbest->top == NULL)
         return NULL;
     if (out_score) *out_score = nbest->top->score;

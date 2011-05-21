@@ -491,11 +491,13 @@ write_nbest(ps_decoder_t *ps, char const *nbestdir, char const *uttid)
     }
     nbest = ps_nbest(ps, 0, -1, NULL, NULL);
     for (i = 0; i < n; i++) {
-        ps_nbest_next(nbest);
+        if((nbest = ps_nbest_next(nbest)) == NULL) 
+    	    break;
         hyp = ps_nbest_hyp(nbest, &score);
         fprintf(fh, "%s %d\n", hyp, score);
     }
-    ps_nbest_free(nbest);
+    if (nbest)
+	ps_nbest_free(nbest);
     fclose(fh);
 
     return 0;
