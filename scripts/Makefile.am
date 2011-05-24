@@ -4,6 +4,7 @@ EXTRA_DIST =  \
 	setup_sphinx.pl \
 	setup_tutorial.pl \
 	prune_mixw.py \
+	lat2dot.py \
 	quantize_mixw.py \
 	qmwx.pyx \
 	livedemo.py \

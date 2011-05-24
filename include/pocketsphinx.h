@@ -571,14 +571,17 @@ void ps_seg_free(ps_seg_t *seg);
 
 /**
  * Get an iterator over the best hypotheses, optionally within a
- * selected region of the utterance.
+ * selected region of the utterance. Iterator is empty now, it must
+ * be advanced with ps_nbest_next first. The function may also
+ * return a NULL which means that there is nohypothesis available for this
+ * utterance.
  *
  * @param ps Decoder.
  * @param sf Start frame for N-best search (0 for whole utterance) 
  * @param ef End frame for N-best search (-1 for whole utterance) 
  * @param ctx1 First word of trigram context (NULL for whole utterance)
  * @param ctx2 First word of trigram context (NULL for whole utterance)
- * @return Iterator over N-best hypotheses.
+ * @return Iterator over N-best hypotheses or NULL if no hypothesis is available
  */
 POCKETSPHINX_EXPORT
 ps_nbest_t *ps_nbest(ps_decoder_t *ps, int sf, int ef,

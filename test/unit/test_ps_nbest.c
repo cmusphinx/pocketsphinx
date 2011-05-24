@@ -35,7 +35,7 @@ main(int argc, char *argv[])
 	printf("BESTPATH (%s): %s (%d)\n", uttid, hyp, score);
 	TEST_ASSERT(nbest = ps_nbest(ps, 0, -1, NULL, NULL));
 	n = 1;
-	while (ps_nbest_next(nbest)) {
+	while (nbest && (nbest = ps_nbest_next(nbest))) {
 		ps_seg_t *seg;
 		hyp = ps_nbest_hyp(nbest, &score);
 		printf("NBEST %d: %s (%d)\n", n, hyp, score);
@@ -52,7 +52,8 @@ main(int argc, char *argv[])
 			break;
 		++n;
 	}
-	ps_nbest_free(nbest);
+	if (nbest)
+	    ps_nbest_free(nbest);
 	ps_free(ps);
 	return 0;
 }

@@ -208,5 +208,8 @@ void fsg_history_set_fsg (fsg_history_t *h, fsg_model_t *fsg, dict_t *dict);
 
 /* Free the given Viterbi search history object */
 void fsg_history_free (fsg_history_t *h);
+
+/* Print the entire history */
+void fsg_history_print(fsg_history_t *h, dict_t *dict);
 				     
 #endif

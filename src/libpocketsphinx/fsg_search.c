@@ -1352,13 +1352,22 @@ fsg_search_prob(ps_search_t *search)
 }
 
 static ps_latnode_t *
-new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid, int32 ascr)
+find_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int32 wid, int32 node_id)
 {
     ps_latnode_t *node;
 
     for (node = dag->nodes; node; node = node->next)
-        if (node->sf == sf && node->wid == wid)
+        if ((node->sf == sf) && (node->wid == wid) && (node->node_id == node_id))
             break;
+    return node;
+}
+
+static ps_latnode_t *
+new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid, int32 node_id, int32 ascr)
+{
+    ps_latnode_t *node;
+
+    node = find_node(dag, fsg, sf, wid, node_id);
 
     if (node) {
         /* Update end frames. */
@@ -1380,23 +1389,13 @@ new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid, int32 a
         node->entries = NULL;
         node->exits = NULL;
         node->info.best_exit = ascr;
+        node->node_id = node_id;
 
         node->next = dag->nodes;
         dag->nodes = node;
         ++dag->n_nodes;
     }
 
-    return node;
-}
-
-static ps_latnode_t *
-find_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int32 wid)
-{
-    ps_latnode_t *node;
-
-    for (node = dag->nodes; node; node = node->next)
-        if (node->sf == sf && node->wid == wid)
-            break;
     return node;
 }
 
@@ -1431,7 +1430,7 @@ find_start_node(fsg_search_t *fsgs, ps_lattice_t *dag)
         wid = fsg_model_word_add(fsgs->fsg, "<s>");
         if (fsgs->fsg->silwords)
             bitvec_set(fsgs->fsg->silwords, wid);
-        node = new_node(dag, fsgs->fsg, 0, 0, wid, 0);
+        node = new_node(dag, fsgs->fsg, 0, 0, wid, -1, 0);
         for (st = start; st; st = gnode_next(st))
             ps_lattice_link(dag, node, gnode_ptr(st), 0, 0);
     }
@@ -1484,11 +1483,10 @@ find_end_node(fsg_search_t *fsgs, ps_lattice_t *dag)
          * out of all of them. */
         gnode_t *st;
         int wid;
-
         wid = fsg_model_word_add(fsgs->fsg, "</s>");
         if (fsgs->fsg->silwords)
             bitvec_set(fsgs->fsg->silwords, wid);
-        node = new_node(dag, fsgs->fsg, fsgs->frame, fsgs->frame, wid, 0);
+        node = new_node(dag, fsgs->fsg, fsgs->frame, fsgs->frame, wid, -1, 0);
         /* Use the "best" (in reality it will be the only) exit link
          * score from this final node as the link score. */
         for (st = end; st; st = gnode_next(st)) {
@@ -1596,7 +1594,7 @@ fsg_search_lattice(ps_search_t *search)
          * destination node, and thus we need to preserve its score in
          * case it turns out to be utterance-final.
          */
-        node = new_node(dag, fsg, sf, fh->frame, fh->fsglink->wid, ascr);
+        node = new_node(dag, fsg, sf, fh->frame, fh->fsglink->wid, fsg_link_to_state(fh->fsglink), ascr);
     }
 
     /*
@@ -1624,21 +1622,21 @@ fsg_search_lattice(ps_search_t *search)
             ascr = fh->score;
             sf = 0;
         }
-        src = find_node(dag, fsg, sf, fh->fsglink->wid);
-    
+        src = find_node(dag, fsg, sf, fh->fsglink->wid, fsg_link_to_state(fh->fsglink));
         sf = fh->frame + 1;
+
         for (itor = fsg_model_arcs(fsg, fsg_link_to_state(fh->fsglink));
              itor; itor = fsg_arciter_next(itor)) {
             fsg_link_t *link = fsg_arciter_get(itor);
-
+            
             /* FIXME: Need to figure out what to do about tag transitions. */
             if (link->wid >= 0) {
                 /*
                  * For each non-epsilon link following this one, look for a
                  * matching node in the lattice and link to it.
                  */
-                if ((dest = find_node(dag, fsg, sf, link->wid)) != NULL)
-                    ps_lattice_link(dag, src, dest, ascr, fh->frame);
+                if ((dest = find_node(dag, fsg, sf, link->wid, fsg_link_to_state(link))) != NULL)
+            	    ps_lattice_link(dag, src, dest, ascr, fh->frame);
             }
             else {
                 /*
@@ -1646,25 +1644,35 @@ fsg_search_lattice(ps_search_t *search)
                  * just need to look one link forward from them.
                  */
                 fsg_arciter_t *itor2;
-
+                
                 /* Add all non-null links out of j. */
                 for (itor2 = fsg_model_arcs(fsg, fsg_link_to_state(link));
                      itor2; itor2 = fsg_arciter_next(itor2)) {
                     fsg_link_t *link = fsg_arciter_get(itor2);
+
                     if (link->wid == -1)
                         continue;
-                    if ((dest = find_node(dag, fsg, sf, link->wid)) != NULL)
+                    
+                    if ((dest = find_node(dag, fsg, sf, link->wid, fsg_link_to_state(link))) != NULL) {
                         ps_lattice_link(dag, src, dest, ascr, fh->frame);
+                    }
                 }
             }
         }
     }
 
+
     /* Figure out which nodes are the start and end nodes. */
-    if ((dag->start = find_start_node(fsgs, dag)) == NULL)
+    if ((dag->start = find_start_node(fsgs, dag)) == NULL) {
+	E_WARN("Failed to find the start node\n");
         goto error_out;
-    if ((dag->end = find_end_node(fsgs, dag)) == NULL)
+    }
+    if ((dag->end = find_end_node(fsgs, dag)) == NULL) {
+	E_WARN("Failed to find the end node\n");
         goto error_out;
+    }
+
+
     E_INFO("lattice start node %s.%d end node %s.%d\n",
            fsg_model_word_str(fsg, dag->start->wid), dag->start->sf,
            fsg_model_word_str(fsg, dag->end->wid), dag->end->sf);
@@ -1702,7 +1710,9 @@ fsg_search_lattice(ps_search_t *search)
         ps_lattice_bypass_fillers(dag, silpen, fillpen);
     }
     search->dag = dag;
+
     return dag;
+
 
 error_out:
     ps_lattice_free(dag);

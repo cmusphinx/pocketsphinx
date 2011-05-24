@@ -259,9 +259,9 @@ ps_lattice_write(ps_lattice_t *dag, char const *filename)
             i);
     for (i = 0, d = dag->nodes; d; d = d->next, i++) {
         d->id = i;
-        fprintf(fp, "%d %s %d %d %d\n",
+        fprintf(fp, "%d %s %d %d %d ; %d\n",
                 i, dict_wordstr(dag->dict, d->wid),
-                d->sf, d->fef, d->lef);
+                d->sf, d->fef, d->lef, d->node_id);
     }
     fprintf(fp, "#\n");
 

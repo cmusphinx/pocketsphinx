@@ -119,6 +119,7 @@ struct ps_latnode_s {
     int32 lef;			/**< Last end frame */
     int16 sf;			/**< Start frame */
     int16 reachable;		/**< From \verbatim </s> \endverbatim or \verbatim <s> \endverbatim */
+    int32 node_id;		/**< Node from fsg model, used to map lattice back to model */
     union {
         glist_t velist;         /**< List of history entries with different lmstate (tst only) */
 	int32 fanin;		/**< Number nodes with links to this node */

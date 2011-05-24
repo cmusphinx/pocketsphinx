@@ -274,7 +274,8 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
         if ((fp = fopen(dictfile, "r")) == NULL)
             E_FATAL_SYSTEM("Failed to open dictionary file '%s' for reading", dictfile);
         for (li = lineiter_start(fp); li; li = lineiter_next(li)) {
-            if (li->buf[0] != '#')
+	    if (0 != strncmp(li->buf, "##", 2)
+    	        && 0 != strncmp(li->buf, ";;", 2))
                 n++;
         }
         rewind(fp);
@@ -285,7 +286,8 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
         if ((fp2 = fopen(fillerfile, "r")) == NULL)
             E_FATAL_SYSTEM("Failed to open filler dictionary file '%s' for reading", fillerfile);
         for (li = lineiter_start(fp2); li; li = lineiter_next(li)) {
-            if (li->buf[0] != '#')
+	    if (0 != strncmp(li->buf, "##", 2)
+    	        && 0 != strncmp(li->buf, ";;", 2))
                 n++;
         }
         rewind(fp2);
