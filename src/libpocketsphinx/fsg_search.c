@@ -1078,7 +1078,10 @@ fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_sc
         if (fl == NULL)
 	    break;
 
-        if (score BETTER_THAN bestscore) {
+	/* Prefer final hypothesis */
+	if (score == bestscore && fsg_link_to_state(fl) == fsg_model_final_state(fsg)) {
+    	    besthist = bpidx;
+	} else if (score BETTER_THAN bestscore) {
             /* Only enforce the final state constraint if this is a final hypothesis. */
             if ((!final)
                 || fsg_link_to_state(fl) == fsg_model_final_state(fsg)) {
@@ -1086,7 +1089,7 @@ fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_sc
                 besthist = bpidx;
             }
         }
-
+        
         --bpidx;
         if (bpidx < 0)
             break;
