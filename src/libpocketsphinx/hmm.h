@@ -59,9 +59,11 @@ extern "C" {
 } /* Fool Emacs into not indenting things. */
 #endif
 
-/**
- * Type for frame index in batch processing. Used in HMM pointers and affects memory.
- * Make it uint16 to save memory.
+/** 
+ * Type for frame index values. Used in HMM indexes and 
+ * backpointers and affects memory required. Make it int32 to be able to 
+ * process longer utterances. Due to limitations of FSG search implementation
+ * this value needs to be unsigned.
  */
 typedef int16 frame_idx_t;
 
