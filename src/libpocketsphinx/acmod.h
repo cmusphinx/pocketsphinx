@@ -53,6 +53,7 @@
 #include <sphinxbase/feat.h>
 #include <sphinxbase/bitvec.h>
 #include <sphinxbase/err.h>
+#include <sphinxbase/prim_type.h>
 
 /* Local headers. */
 #include "ps_mllr.h"
@@ -182,13 +183,14 @@ struct acmod_s {
     uint8 compallsen;   /**< Compute all senones? */
     uint8 grow_feat;    /**< Whether to grow feat_buf. */
     uint8 insen_swap;   /**< Whether to swap input senone score. */
-    int16 output_frame; /**< Index of next frame of dynamic features. */
-    int16 n_mfc_alloc;  /**< Number of frames allocated in mfc_buf */
-    int16 n_mfc_frame;  /**< Number of frames active in mfc_buf */
-    int16 mfc_outidx;   /**< Start of active frames in mfc_buf */
-    int16 n_feat_alloc; /**< Number of frames allocated in feat_buf */
-    int16 n_feat_frame; /**< Number of frames active in feat_buf */
-    int16 feat_outidx;  /**< Start of active frames in feat_buf */
+
+    frame_idx_t output_frame; /**< Index of next frame of dynamic features. */
+    frame_idx_t n_mfc_alloc;  /**< Number of frames allocated in mfc_buf */
+    frame_idx_t n_mfc_frame;  /**< Number of frames active in mfc_buf */
+    frame_idx_t mfc_outidx;   /**< Start of active frames in mfc_buf */
+    frame_idx_t n_feat_alloc; /**< Number of frames allocated in feat_buf */
+    frame_idx_t n_feat_frame; /**< Number of frames active in feat_buf */
+    frame_idx_t feat_outidx;  /**< Start of active frames in feat_buf */
 };
 typedef struct acmod_s acmod_t;
 

@@ -107,7 +107,7 @@ typedef struct root_chan_s {
  * Back pointer table (forward pass lattice; actually a tree)
  */
 typedef struct bptbl_s {
-    int16    frame;		/**< start or end frame */
+    frame_idx_t  frame;		/**< start or end frame */
     uint8    valid;		/**< For absolute pruning */
     uint8    refcnt;            /**< Reference count (number of successors) */
     int32    wid;		/**< Word index */

@@ -59,6 +59,18 @@ extern "C" {
 } /* Fool Emacs into not indenting things. */
 #endif
 
+/**
+ * Type for frame index in batch processing. Used in HMM pointers and affects memory.
+ * Make it uint16 to save memory.
+ */
+typedef int16 frame_idx_t;
+
+/**
+ * Maximum number of frames in index, should be in sync with above.
+ */
+#define MAX_N_FRAMES MAX_INT16
+
+
 /** Shift count for senone scores. */
 #define SENSCR_SHIFT 10
 
@@ -167,7 +179,7 @@ typedef struct hmm_s {
     uint16 senid[HMM_MAX_NSTATE];  /**< Senone IDs (non-MPX) or sequence IDs (MPX) */
     int32 bestscore;	/**< Best [emitting] state score in current frame (for pruning). */
     int16 tmatid;       /**< Transition matrix ID (see hmm_context_t). */
-    int16 frame;	/**< Frame in which this HMM was last active; <0 if inactive */
+    frame_idx_t frame;  /**< Frame in which this HMM was last active; <0 if inactive */
     uint8 mpx;          /**< Is this HMM multiplex? (hoisted for speed) */
     uint8 n_emit_state; /**< Number of emitting states (hoisted for speed) */
 } hmm_t;

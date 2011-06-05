@@ -533,6 +533,11 @@ acmod_process_full_cep(acmod_t *acmod,
 
     /* Resize feat_buf to fit. */
     if (acmod->n_feat_alloc < *inout_n_frames) {
+	    
+	if (*inout_n_frames > MAX_N_FRAMES)
+	    E_FATAL("Batch processing can not process more than %d frames at once, requested %d\n", 
+		    MAX_N_FRAMES, *inout_n_frames);
+    
         feat_array_free(acmod->feat_buf);
         acmod->feat_buf = feat_array_alloc(acmod->fcb, *inout_n_frames);
         acmod->n_feat_alloc = *inout_n_frames;

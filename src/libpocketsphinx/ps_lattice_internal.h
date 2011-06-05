@@ -71,7 +71,7 @@ struct ps_lattice_s {
     ps_latnode_t *start;  /**< Starting node. */
     ps_latnode_t *end;    /**< Ending node. */
 
-    int16 n_frames;    /**< Number of frames for this utterance. */
+    frame_idx_t n_frames;    /**< Number of frames for this utterance. */
     int16 n_nodes;     /**< Number of nodes in this lattice. */
     int32 final_node_ascr; /**< Acoustic score of implicit link exiting final node. */
     int32 norm;        /**< Normalizer for posterior probabilities. */
@@ -99,7 +99,7 @@ struct ps_latlink_s {
     struct ps_latlink_s *best_prev;
     int32 ascr;			/**< Score for from->wid (from->sf to this->ef) */
     int32 path_scr;		/**< Best path score from root of DAG */
-    int32 ef;			/**< Ending frame of this word  */
+    frame_idx_t ef;			/**< Ending frame of this word  */
     int32 alpha;                /**< Forward probability of this link P(w,o_1^{ef}) */
     int32 beta;                 /**< Backward probability of this link P(w|o_{ef+1}^T) */
 };
@@ -117,7 +117,7 @@ struct ps_latnode_s {
     /* FIXME: These are (ab)used to store backpointer indices, therefore they MUST be 32 bits. */
     int32 fef;			/**< First end frame */
     int32 lef;			/**< Last end frame */
-    int16 sf;			/**< Start frame */
+    frame_idx_t sf;			/**< Start frame */
     int16 reachable;		/**< From \verbatim </s> \endverbatim or \verbatim <s> \endverbatim */
     int32 node_id;		/**< Node from fsg model, used to map lattice back to model */
     union {
@@ -165,8 +165,8 @@ typedef struct ps_astar_s {
     ngram_model_t *lmset;
     float32 lwf;
 
-    int16 sf;
-    int16 ef;
+    frame_idx_t sf;
+    frame_idx_t ef;
     int32 w1;
     int32 w2;
 

@@ -97,7 +97,7 @@ typedef struct fsg_hist_entry_s {
     int32 score;			/* Total path score at the end of this
                                            transition */
     int32 pred; 			/* Predecessor entry; -1 if none */
-    int16 frame;			/* Ending frame for this entry */
+    frame_idx_t frame;			/* Ending frame for this entry */
     int16 lc;			        /* Left context provided by this entry to
 				           succeeding words */
     fsg_pnode_ctxt_t rc;		/* Possible right contexts to which this entry
