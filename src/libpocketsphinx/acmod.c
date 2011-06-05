@@ -77,11 +77,15 @@ static int32 acmod_process_mfcbuf(acmod_t *acmod);
 static int
 acmod_init_am(acmod_t *acmod)
 {
-    char const *mdeffn, *tmatfn, *mllrfn;
+    char const *mdeffn, *tmatfn, *mllrfn, *hmmdir;
 
     /* Read model definition. */
     if ((mdeffn = cmd_ln_str_r(acmod->config, "-mdef")) == NULL) {
-        E_ERROR("Acoustic model definition is not specified neither with -mdef option nor with -hmm\n");
+	if ((hmmdir = cmd_ln_str_r(acmod->config, "-hmm")) == NULL) {
+	    E_ERROR("Acoustic model definition is not specified neither with -mdef option nor with -hmm\n");
+	} else {
+	    E_ERROR("Folder '%s' does not contain acoustic model definition 'mdef'\n", hmmdir);
+	}
         return -1;
     }
 
