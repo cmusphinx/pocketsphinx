@@ -311,7 +311,7 @@ dict2pid_add_word(dict2pid_t *d2p,
                    bin_mdef_ciphone_str(mdef, dict_first_phone(d, wid)),
                    bin_mdef_ciphone_str(mdef, dict_second_phone(d, wid)));
             for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
-                s3ssid_t p
+                int p
                     = bin_mdef_phone_id_nearest(mdef,
                                                 dict_first_phone(d, wid), l,
                                                 dict_second_phone(d, wid),
@@ -332,7 +332,7 @@ dict2pid_add_word(dict2pid_t *d2p,
                    bin_mdef_ciphone_str(mdef, dict_second_last_phone(d, wid)));
             rmap = ckd_calloc(bin_mdef_n_ciphone(mdef), sizeof(*rmap));
             for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
-                s3ssid_t p
+                int p
                     = bin_mdef_phone_id_nearest(mdef,
                                                 dict_last_phone(d, wid),
                                                 dict_second_last_phone(d, wid), r,
