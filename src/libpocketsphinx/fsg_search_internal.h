@@ -91,7 +91,7 @@ typedef struct fsg_search_s {
     int32 beam, pbeam, wbeam;	/**< Effective beams after applying beam_factor */
     int32 lw, pip, wip;         /**< Language weights */
   
-    int16 frame;		/**< Current frame. */
+    frame_idx_t frame;		/**< Current frame. */
     uint8 final;		/**< Decoding is finished for this utterance. */
     uint8 bestpath;		/**< Whether to run bestpath search
                                    and confidence annotation at end. */
