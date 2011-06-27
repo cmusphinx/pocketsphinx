@@ -160,8 +160,8 @@ struct ps_seg_s {
     ps_segfuncs_t *vt;     /**< V-table of seg methods */
     ps_search_t *search;   /**< Search object from whence this came */
     char const *word;      /**< Word string (pointer into dictionary hash) */
-    int16 sf;                /**< Start frame. */
-    int16 ef;                /**< End frame. */
+    frame_idx_t sf;        /**< Start frame. */
+    frame_idx_t ef;        /**< End frame. */
     int32 ascr;            /**< Acoustic score. */
     int32 lscr;            /**< Language model score. */
     int32 prob;            /**< Log posterior probability. */

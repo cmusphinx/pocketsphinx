@@ -234,10 +234,6 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
      * uttproc.c, senscr.c, and others used to do) */
     if ((ps->acmod = acmod_init(ps->config, ps->lmath, NULL, NULL)) == NULL)
         return -1;
-    /* Make the acmod's feature buffer growable if we are doing two-pass search. */
-    if (cmd_ln_boolean_r(ps->config, "-fwdflat")
-        && cmd_ln_boolean_r(ps->config, "-fwdtree"))
-        acmod_set_grow(ps->acmod, TRUE);
 
     if ((ps->pl_window = cmd_ln_int32_r(ps->config, "-pl_window"))) {
         /* Initialize an auxiliary phone loop search, which will run in
@@ -268,6 +264,11 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     else if ((lmfile = cmd_ln_str_r(ps->config, "-lm"))
              || (lmctl = cmd_ln_str_r(ps->config, "-lmctl"))) {
         ps_search_t *ngs;
+
+        /* Make the acmod's feature buffer growable if we are doing two-pass search. */
+	if (cmd_ln_boolean_r(ps->config, "-fwdflat")
+    	    && cmd_ln_boolean_r(ps->config, "-fwdtree"))
+    	    acmod_set_grow(ps->acmod, TRUE);
 
         if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
             return -1;
