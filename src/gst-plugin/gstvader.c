@@ -140,8 +140,10 @@ gst_vader_class_init(GstVaderClass * klass)
     g_object_class_install_property
         (G_OBJECT_CLASS(klass), PROP_THRESHOLD,
          g_param_spec_double("threshold", "Threshold",
-                             "Volume threshold for speech/silence decision",
-                             -1.0, 1.0, 256.0/32768.0, G_PARAM_READWRITE));
+                             "Volume threshold for speech/silence decision. "
+                             "Maximum value corresponds to maximum possible volume. "
+                             "Everything with volume below this threshold will be counted as silence",
+                             0.0, 1.0, 256.0/32768.0, G_PARAM_READWRITE));
     g_object_class_install_property
         (G_OBJECT_CLASS(klass), PROP_AUTO_THRESHOLD,
          g_param_spec_boolean("auto-threshold", "Automatic Threshold",
