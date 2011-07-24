@@ -19,6 +19,12 @@ typedef struct hyp_s {
 	char *uttid;
 	int best_score;
 } Hypothesis;
+
+/* Nbest iterator */
+typedef struct nbest_s {
+	ps_nbest_t *nbest;
+} Nbest;
+
 %}
 
 /* Special typemap for arrays of audio. */
@@ -41,6 +47,11 @@ typedef struct hyp_s {
 	int best_score;
 } Hypothesis;
 
+/* Nbest iterator */
+typedef struct nbest_s {
+	ps_nbest_t *nbest;
+} Nbest;
+
 /* These are opaque types but we have to "define" them for SWIG. */
 typedef struct cmd_ln_s {
 } Config;
@@ -50,7 +61,6 @@ typedef struct ps_lattice_s {
 } Lattice;
 typedef struct ps_decoder_s {
 } Decoder;
-
 
 %extend Hypothesis {
 	Hypothesis(char const *hypstr, char const *uttid, int best_score) {
@@ -123,6 +133,31 @@ typedef struct ps_decoder_s {
 	}
 };
 
+%extend Nbest {
+	Nbest(Decoder *d) {
+	    Nbest *nbest = ckd_calloc(1, sizeof(*nbest));
+	    nbest->nbest = ps_nbest(d, 0, -1, NULL, NULL);
+	    return nbest;
+	}
+	~Nbest() {
+	    if ($self->nbest)
+	        ps_nbest_free($self->nbest);
+	    ckd_free($self);
+	}
+	
+	bool next() {
+	    $self->nbest = ps_nbest_next($self->nbest);
+	    return $self->nbest == NULL;
+	}
+	
+	Hypothesis* hyp() {
+	    const char* hyp;
+	    int32 score;
+	    hyp = ps_nbest_hyp($self->nbest, &score);
+	    return new_Hypothesis(hyp, "", score);
+	}
+};
+
 %extend Decoder {
 	Decoder() {
 		Decoder *d = ps_init(cmd_ln_init(NULL, ps_args(), FALSE, NULL));
@@ -147,7 +182,7 @@ typedef struct ps_decoder_s {
 	int endUtt() {
 		return ps_end_utt($self);
 	}
-	int processRaw(short const *SDATA, size_t NSAMP, bool no_search, bool full_utt) {
+	int processRaw(const short const *SDATA, size_t NSAMP, bool no_search, bool full_utt) {
 		return ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
 	}
 	int processRaw(short const shorts[], size_t nshorts, bool no_search, bool full_utt) {
@@ -161,7 +196,7 @@ typedef struct ps_decoder_s {
 	}
 	~Decoder() {
 		ps_free($self);
-	}
+	}	
 };
 
 %inline {
