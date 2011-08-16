@@ -692,9 +692,10 @@ ps_lattice_free(ps_lattice_t *dag)
     if (--dag->refcount > 0)
         return dag->refcount;
     logmath_free(dag->lmath);
+    dict_free(dag->dict);
     listelem_alloc_free(dag->latnode_alloc);
     listelem_alloc_free(dag->latlink_alloc);
-    listelem_alloc_free(dag->latlink_list_alloc);
+    listelem_alloc_free(dag->latlink_list_alloc);    
     ckd_free(dag->hyp_str);
     ckd_free(dag);
     return 0;
