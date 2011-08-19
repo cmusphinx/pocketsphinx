@@ -1099,7 +1099,7 @@ fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_sc
 
     /* Final state not reached. */
     if (besthist == -1) {
-        E_ERROR("Final state not reached in frame %d\n", frame_idx);
+        E_ERROR("Final result does not match the grammar in frame %d\n", frame_idx);
         return -1;
     }
 
