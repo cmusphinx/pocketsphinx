@@ -1272,13 +1272,13 @@ s2_semi_mgau_init(acmod_t *acmod)
     s->n_feat = s->g->n_feat;
     if (s->n_feat != feat_dimension1(acmod->fcb)) {
         E_ERROR("Number of streams does not match: %d != %d\n",
-                s->n_feat, feat_dimension(acmod->fcb));
+                s->n_feat, feat_dimension1(acmod->fcb));
         goto error_out;
     }
     for (i = 0; i < s->n_feat; ++i) {
         if (s->veclen[i] != feat_dimension2(acmod->fcb, i)) {
             E_ERROR("Dimension of stream %d does not match: %d != %d\n",
-                    s->veclen[i], feat_dimension2(acmod->fcb, i));
+                    i, s->veclen[i], feat_dimension2(acmod->fcb, i));
             goto error_out;
         }
     }
