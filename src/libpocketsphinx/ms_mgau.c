@@ -79,23 +79,42 @@ static ps_mgaufuncs_t ms_mgau_funcs = {
 };
 
 ps_mgau_t *
-ms_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
+ms_mgau_init(acmod_t *acmod, logmath_t *lmath, bin_mdef_t *mdef)
 {
     /* Codebooks */
     ms_mgau_model_t *msg;
     ps_mgau_t *mg;
     gauden_t *g;
     senone_t *s;
+    cmd_ln_t *config;
+    int i;
+
+    config = acmod->config;
 
     msg = (ms_mgau_model_t *) ckd_calloc(1, sizeof(ms_mgau_model_t));
     msg->config = config;
     msg->g = NULL;
     msg->s = NULL;
-
+    
     g = msg->g = gauden_init(cmd_ln_str_r(config, "-mean"),
                              cmd_ln_str_r(config, "-var"),
                              cmd_ln_float32_r(config, "-varfloor"),
                              lmath);
+
+    /* Verify n_feat and veclen, against acmod. */
+    if (g->n_feat != feat_dimension1(acmod->fcb)) {
+        E_ERROR("Number of streams does not match: %d != %d\n",
+                g->n_feat, feat_dimension1(acmod->fcb));
+        goto error_out;
+    }
+    for (i = 0; i < g->n_feat; ++i) {
+        if (g->featlen[i] != feat_dimension2(acmod->fcb, i)) {
+            E_ERROR("Dimension of stream %d does not match: %d != %d\n",
+                    g->featlen[i], feat_dimension2(acmod->fcb, i));
+            goto error_out;
+        }
+    }
+
     s = msg->s = senone_init(msg->g,
                              cmd_ln_str_r(config, "-mixw"),
                              cmd_ln_str_r(config, "-senmgau"),
@@ -135,6 +154,9 @@ ms_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
     mg = (ps_mgau_t *)msg;
     mg->vt = &ms_mgau_funcs;
     return mg;
+error_out:
+    ms_mgau_free(ps_mgau_base(msg));
+    return NULL;    
 }
 
 void
@@ -144,10 +166,15 @@ ms_mgau_free(ps_mgau_t * mg)
     if (msg == NULL)
         return;
 
-    gauden_free(msg->g);
-    senone_free(msg->s);
-    ckd_free_3d((void *) msg->dist);
-    ckd_free(msg->mgau_active);
+    if (msg->g)
+	gauden_free(msg->g);
+    if (msg->s)
+        senone_free(msg->s);
+    if (msg->dist)
+        ckd_free_3d((void *) msg->dist);
+    if (msg->mgau_active)
+        ckd_free(msg->mgau_active);
+    
     ckd_free(msg);
 }
 

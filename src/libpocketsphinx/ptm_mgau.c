@@ -801,13 +801,13 @@ ptm_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
         goto error_out;
     }
     if (s->g->n_mgau != bin_mdef_n_ciphone(mdef)) {
-        E_INFO("Number of codebooks doesn't match number of ciphones, doesn't look like PTM: %d %d\n", s->g->n_mgau, bin_mdef_n_ciphone(mdef));
+        E_INFO("Number of codebooks doesn't match number of ciphones, doesn't look like PTM: %d != %d\n", s->g->n_mgau, bin_mdef_n_ciphone(mdef));
         goto error_out;
     }
     /* Verify n_feat and veclen, against acmod. */
     if (s->g->n_feat != feat_dimension1(acmod->fcb)) {
         E_ERROR("Number of streams does not match: %d != %d\n",
-                s->g->n_feat, feat_dimension(acmod->fcb));
+                s->g->n_feat, feat_dimension1(acmod->fcb));
         goto error_out;
     }
     for (i = 0; i < s->g->n_feat; ++i) {

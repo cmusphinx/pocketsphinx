@@ -113,7 +113,7 @@ acmod_init_am(acmod_t *acmod)
 
     if (cmd_ln_str_r(acmod->config, "-senmgau")) {
         E_INFO("Using general multi-stream GMM computation\n");
-        acmod->mgau = ms_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
+        acmod->mgau = ms_mgau_init(acmod, acmod->lmath, acmod->mdef);
         if (acmod->mgau == NULL)
             return -1;
     }
@@ -123,7 +123,7 @@ acmod_init_am(acmod_t *acmod)
             E_INFO("Attempting to use PTHMM computation module\n");
             if ((acmod->mgau = ptm_mgau_init(acmod, acmod->mdef)) == NULL) {
                 E_INFO("Falling back to general multi-stream GMM computation\n");
-                acmod->mgau = ms_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
+                acmod->mgau = ms_mgau_init(acmod, acmod->lmath, acmod->mdef);
                 if (acmod->mgau == NULL)
                     return -1;
             }
