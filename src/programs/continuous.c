@@ -136,7 +136,11 @@ recognize_from_file() {
     int32 k, ts, start;
 
     char waveheader[44];
-    rawfd = fopen(cmd_ln_str_r(config, "-infile"), "rb");
+    if ((rawfd = fopen(cmd_ln_str_r(config, "-infile"), "rb")) == NULL) {
+	E_FATAL_SYSTEM("Failed to open file '%s' for reading", 
+			cmd_ln_str_r(config, "-infile"));
+    }
+    
     fread(waveheader, 1, 44, rawfd);
 
     file_ad.sps = (int32)cmd_ln_float32_r(config, "-samprate");
