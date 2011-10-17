@@ -90,5 +90,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(fgets(line, sizeof(line), fh));
 	TEST_EQUAL(0, strcmp(line, "go forward ten meters\n"));
 
+	fclose(fh)
+
 	return 0;
 }

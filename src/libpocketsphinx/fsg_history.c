@@ -73,9 +73,8 @@ fsg_history_init(fsg_model_t * fsg, dict_t *dict)
     h->fsg = fsg;
     h->entries = blkarray_list_init();
 
-    if (fsg) {
-        if (dict)
-            h->n_ciphone = bin_mdef_n_ciphone(dict->mdef);
+    if (fsg && dict) {
+        h->n_ciphone = bin_mdef_n_ciphone(dict->mdef);
         h->frame_entries =
             (glist_t **) ckd_calloc_2d(fsg_model_n_state(fsg),
                                        bin_mdef_n_ciphone(dict->mdef),
@@ -126,9 +125,8 @@ fsg_history_set_fsg(fsg_history_t *h, fsg_model_t *fsg, dict_t *dict)
     h->frame_entries = NULL;
     h->fsg = fsg;
 
-    if (fsg) {
-        if (dict)
-            h->n_ciphone = bin_mdef_n_ciphone(dict->mdef);
+    if (fsg && dict) {
+        h->n_ciphone = bin_mdef_n_ciphone(dict->mdef);
         h->frame_entries =
             (glist_t **) ckd_calloc_2d(fsg_model_n_state(fsg),
                                        bin_mdef_n_ciphone(dict->mdef),
