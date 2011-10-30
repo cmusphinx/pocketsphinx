@@ -109,7 +109,7 @@ ms_mgau_init(acmod_t *acmod, logmath_t *lmath, bin_mdef_t *mdef)
     }
     for (i = 0; i < g->n_feat; ++i) {
         if (g->featlen[i] != feat_dimension2(acmod->fcb, i)) {
-            E_ERROR("Dimension of stream %d does not match: %d != %d\n",
+            E_ERROR("Dimension of stream %d does not match: %d != %d\n", i,
                     g->featlen[i], feat_dimension2(acmod->fcb, i));
             goto error_out;
         }
