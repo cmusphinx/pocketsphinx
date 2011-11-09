@@ -606,29 +606,6 @@ mdef_init(char *mdeffile, int32 breport)
     senmap = ckd_calloc_2d(m->n_phone, m->n_emit_state, sizeof(**senmap));      /* freed in mdef_free */
     m->sseq = senmap;           /* TEMPORARY; until it is compressed into just the unique ones */
 
-
-    /**CODE DUPLICATION!*****************************************************************************************************/
-    /* Flat decoder-specific */
-    /* Allocate space for state->senone map for each phone */
-
-    /* ARCHAN 20040820, this sacrifice readability and may cause pointer
-       problems in future. However, this is a less evil than
-       duplication of code.  This is trick point all the state mapping
-       to the global mapping and avoid duplicated memory.  
-     */
-
-    /* S3 xwdpid_compress will compress the below list phone list. 
-     */
-
-    /* ARCHAN, this part should not be used when one of the recognizer is used. */
-    m->st2senmap =
-        (int16 *) ckd_calloc(m->n_phone * m->n_emit_state,
-                                 sizeof(*m->st2senmap));
-    for (p = 0; p < m->n_phone; p++)
-        m->phone[p].state = m->st2senmap + (p * m->n_emit_state);
-    /******************************************************************************************************/
-
-
     /* Allocate initial space for <ci,lc,rc,wpos> -> pid mapping */
     m->wpos_ci_lclist = (ph_lc_t ***) ckd_calloc_2d(N_WORD_POSN, m->n_ciphone, sizeof(ph_lc_t *));      /* freed in mdef_free */
 
@@ -785,9 +762,6 @@ mdef_free(mdef_t * m)
 
         if (m->ciphone)
             ckd_free((void *) m->ciphone);
-
-        if (m->st2senmap)
-            ckd_free((void *) m->st2senmap);
 
         ckd_free((void *) m);
     }

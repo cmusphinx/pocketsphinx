@@ -163,12 +163,6 @@ typedef struct {
                                    <wpos,ci,lc>.  Only entries for the known triphones
                                    are created to conserve space.
                                    (NOTE: FOR INTERNAL USE ONLY.) */
-  
-    int16 *st2senmap;	 /**< A mapping from State to senone. Only used
-                             in sphinx 3.0 HACK!, In general, there is
-                             only need for either one of st2senmap or
-                             sseq. 
-                          */
 } mdef_t;
 
 /** Access macros; not meant for arbitrary use */
