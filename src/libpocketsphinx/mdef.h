@@ -104,7 +104,6 @@ typedef struct {
     int32 tmat;			/**< Transition matrix id */
     int16 ci, lc, rc;		/**< Base, left, right context ciphones */
     word_posn_t wpos;		/**< Word position */
-    int16 *state;               /**< State->senone mappings */
     
 } phone_t;
 

@@ -292,9 +292,6 @@ parse_tmat_senmap(mdef_t * m, char *line, int32 off, int p)
             E_FATAL("Missing or bad state[%d]->senone mapping: %s\n", n,
                     line);
 
-        /*20040821 ARCHAN, This line is added to allow 3.x/3.0 compatability. */
-        m->phone[p].state[n] = s;
-
         if ((p < m->n_ciphone) && (m->n_ci_sen <= s))
             E_FATAL("CI-senone-id(%d) > #CI-senones(%d): %s\n", s,
                     m->n_ci_sen, line);
