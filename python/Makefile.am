@@ -2,6 +2,7 @@ EXTRA_DIST = pocketsphinx.c \
 	pocketsphinx.pyx \
 	pocketsphinx.pxd \
 	ps_test.py \
+	ps_test_lm.py \
 	setup_win32.py
 
 pkginclude_HEADERS = pocketsphinx.pxd

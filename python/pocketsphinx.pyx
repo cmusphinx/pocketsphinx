@@ -613,6 +613,23 @@ cdef class Decoder:
         lm.uw = sb.cmd_ln_float32_r(config, "-uw")
         return lm
 
+
+    def update_lmset(self, NGramModel lmset):
+        """
+        Notifies the decoder that the LMset has been modified.  Primarily used
+        after adding/removing LMs or after switching to particular
+        LM within the set
+
+        @param lmset: the modified lmset
+        @type lmset: sphinxbase.NGramModel
+
+        @return: the lmset or None on error
+        @rtype: sphinxbase.NGramModel
+        """
+        retVal = ps_update_lmset(self.ps, lmset.lm)
+        return self if retVal else None
+
+
     def add_word(self, word, phones, update=True):
         """
         Add a word to the dictionary and current language model.
