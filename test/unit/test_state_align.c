@@ -99,5 +99,6 @@ main(int argc, char *argv[])
 	ps_search_free(search);
 	ps_alignment_free(al);
 	ps_free(ps);
+	cmd_ln_free_r(config);
 	return 0;
 }

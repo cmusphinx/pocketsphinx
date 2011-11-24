@@ -23,6 +23,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(ps = ps_init(config));
 
 	ps_free(ps);
+	cmd_ln_free_r(config);
 
 	return 0;
 }

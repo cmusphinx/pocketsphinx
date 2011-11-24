@@ -241,7 +241,7 @@ ps_lattice_write(ps_lattice_t *dag, char const *filename)
 
     E_INFO("Writing lattice file: %s\n", filename);
     if ((fp = fopen(filename, "w")) == NULL) {
-        E_ERROR("Failed to open lattice file '%s' for writing: %s\n", filename, strerror(errno));
+        E_ERROR_SYSTEM("Failed to open lattice file '%s' for writing", filename);
         return -1;
     }
 
@@ -301,7 +301,7 @@ ps_lattice_write_htk(ps_lattice_t *dag, char const *filename)
 
     E_INFO("Writing lattice file: %s\n", filename);
     if ((fp = fopen(filename, "w")) == NULL) {
-        E_ERROR("Failed to open lattice file '%s' for writing: %s\n", filename, strerror(errno));
+        E_ERROR_SYSTEM("Failed to open lattice file '%s' for writing", filename);
         return -1;
     }
 
@@ -445,7 +445,7 @@ ps_lattice_read(ps_decoder_t *ps,
 
     E_INFO("Reading DAG file: %s\n", file);
     if ((fp = fopen_compchk(file, &ispipe)) == NULL) {
-        E_ERROR("Failed to open DAG file '%s': %s\n", file, strerror(errno));
+        E_ERROR_SYSTEM("Failed to open DAG file '%s' for reading", file);
         return NULL;
     }
     line = lineiter_start(fp);

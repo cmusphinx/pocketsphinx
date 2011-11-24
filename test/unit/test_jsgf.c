@@ -135,6 +135,7 @@ main(int argc, char *argv[])
 	printf("%s: %s (%d, %d)\n", uttid, hyp, score, prob);
 	TEST_EQUAL(0, strcmp("go forward ten meters", hyp));
 	ps_free(ps);
+	cmd_ln_free_r(config);
 
 	return 0;
 }

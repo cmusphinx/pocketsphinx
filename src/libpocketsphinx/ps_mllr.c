@@ -59,11 +59,11 @@ ps_mllr_read(char const *regmatfile)
     mllr->refcnt = 1;
 
     if ((fp = fopen(regmatfile, "r")) == NULL) {
-        E_ERROR_SYSTEM("Failed to open MLLR file '%s' for reading: %s\n", regmatfile, strerror(errno));
+        E_ERROR_SYSTEM("Failed to open MLLR file '%s' for reading", regmatfile);
         goto error_out;
     }
     else
-        E_INFO("Reading MLLR transformation file %s\n", regmatfile);
+        E_INFO("Reading MLLR transformation file '%s'\n", regmatfile);
 
     if ((fscanf(fp, "%d", &n) != 1) || (n < 1)) {
         E_ERROR("Failed to read number of MLLR classes\n");

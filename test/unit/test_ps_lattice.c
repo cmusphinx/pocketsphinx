@@ -137,6 +137,7 @@ main(int argc, char *argv[])
 	test_nodes_and_stuff(dag);
 	ps_lattice_free(dag);
 	ps_free(ps);
+	cmd_ln_free_r(config);
 
 	/* Now test standalone lattices. */
 	dag = ps_lattice_read(NULL, "goforward.lat");

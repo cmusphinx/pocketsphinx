@@ -55,5 +55,6 @@ main(int argc, char *argv[])
 	if (nbest)
 	    ps_nbest_free(nbest);
 	ps_free(ps);
+	cmd_ln_free_r(config);
 	return 0;
 }

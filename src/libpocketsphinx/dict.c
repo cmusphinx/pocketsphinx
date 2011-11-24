@@ -271,8 +271,10 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
     fp = NULL;
     n = 0;
     if (dictfile) {
-        if ((fp = fopen(dictfile, "r")) == NULL)
-            E_FATAL_SYSTEM("Failed to open dictionary file '%s' for reading", dictfile);
+        if ((fp = fopen(dictfile, "r")) == NULL) {
+            E_ERROR_SYSTEM("Failed to open dictionary file '%s' for reading", dictfile);
+    	    return NULL;
+        }
         for (li = lineiter_start(fp); li; li = lineiter_next(li)) {
 	    if (0 != strncmp(li->buf, "##", 2)
     	        && 0 != strncmp(li->buf, ";;", 2))
@@ -283,8 +285,11 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
 
     fp2 = NULL;
     if (fillerfile) {
-        if ((fp2 = fopen(fillerfile, "r")) == NULL)
-            E_FATAL_SYSTEM("Failed to open filler dictionary file '%s' for reading", fillerfile);
+        if ((fp2 = fopen(fillerfile, "r")) == NULL) {
+            E_ERROR_SYSTEM("Failed to open filler dictionary file '%s' for reading", fillerfile);
+            fclose(fp);
+            return NULL;
+	}
         for (li = lineiter_start(fp2); li; li = lineiter_next(li)) {
 	    if (0 != strncmp(li->buf, "##", 2)
     	        && 0 != strncmp(li->buf, ";;", 2))
@@ -301,9 +306,14 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
     d->refcnt = 1;
     d->max_words =
         (n + S3DICT_INC_SZ < MAX_S3WID) ? n + S3DICT_INC_SZ : MAX_S3WID;
-    if (n >= MAX_S3WID)
-        E_FATAL("Number of words in dictionaries (%d) exceeds limit (%d)\n", n,
+    if (n >= MAX_S3WID) {
+        E_ERROR("Number of words in dictionaries (%d) exceeds limit (%d)\n", n,
                 MAX_S3WID);
+        fclose(fp);
+        fclose(fp2);
+        ckd_free(d);
+        return NULL;
+    }
 
     E_INFO("Allocating %d * %d bytes (%d KiB) for word entries\n",
            d->max_words, sizeof(dictword_t),
@@ -356,9 +366,12 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
     d->silwid = dict_wordid(d, S3_SILENCE_WORD);
 
     if ((d->filler_start > d->filler_end)
-        || (!dict_filler_word(d, d->silwid)))
-        E_FATAL("Word '%s' must occur (only) in filler dictionary\n",
+        || (!dict_filler_word(d, d->silwid))) {
+        E_ERROR("Word '%s' must occur (only) in filler dictionary\n",
                 S3_SILENCE_WORD);
+        dict_free(d);
+        return NULL;
+    }
 
     /* No check that alternative pronunciations for filler words are in filler range!! */
 

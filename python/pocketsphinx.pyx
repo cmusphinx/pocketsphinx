@@ -623,11 +623,11 @@ cdef class Decoder:
         @param lmset: the modified lmset
         @type lmset: sphinxbase.NGramModel
 
-        @return: the lmset or None on error
+        @return: the lmset
         @rtype: sphinxbase.NGramModel
         """
-        retVal = ps_update_lmset(self.ps, lmset.lm)
-        return self if retVal else None
+        ps_update_lmset(self.ps, lmset.lm)
+        return self
 
 
     def add_word(self, word, phones, update=True):

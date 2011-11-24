@@ -1106,7 +1106,7 @@ read_mixw(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
     E_INFO("Reading mixture weights file '%s'\n", file_name);
 
     if ((fp = fopen(file_name, "rb")) == NULL)
-        E_FATAL("Failed to open mixture weights file '%s' for reading: %s\n", file_name, strerror(errno));
+        E_FATAL_SYSTEM("Failed to open mixture weights file '%s' for reading", file_name);
 
     /* Read header, including argument-value info and 32-bit byteorder magic */
     if (bio_readhdr(fp, &argname, &argval, &byteswap) < 0)

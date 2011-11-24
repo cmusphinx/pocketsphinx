@@ -68,8 +68,13 @@ main(int argc, char *argv[])
 	TEST_EQUAL(0, strcmp(hyp, "go forward ten meters"));
 
 	/* Now let's test dictionary switching. */
+	TEST_EQUAL(-1, ps_load_dict(ps, MODELDIR "/lm/en/turtle_missing_file.dic",
+				   NULL, NULL));
+
+	/* Now let's test dictionary switching. */
 	TEST_EQUAL(0, ps_load_dict(ps, MODELDIR "/lm/en/turtle.dic",
 				   NULL, NULL));
+
 	/* And try again. */
 	clearerr(rawfh);
 	fseek(rawfh, 0, SEEK_SET);
@@ -90,6 +95,7 @@ main(int argc, char *argv[])
 
 	fclose(rawfh);
 	ps_free(ps);
+	cmd_ln_free_r(config);
 
 	return 0;
 }
