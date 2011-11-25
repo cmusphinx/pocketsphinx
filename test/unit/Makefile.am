@@ -61,5 +61,6 @@ LDADD = \
 CLEANFILES = *.log *.out *.lat *.mfc *.raw *.dic *.sen
 
 valgrind-check:
-	for testf in .libs/*; do valgrind --leak-check=full $$testf; done >& valgrind.log
+	for testf in .libs/lt-*; do valgrind --leak-check=full --show-reachable=yes \
+	    $$testf; done >& valgrind.log
 

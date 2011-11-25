@@ -82,6 +82,7 @@ main(int argc, char *argv[])
 		TEST_EQUAL(0, strcmp("go forward and users",
 				     ngram_search_bp_hyp(ngs,
 							 ngram_search_find_exit(ngs, -1, NULL, NULL))));
+		fclose(senfh);
 	}
 	ps_free(ps);
 	cmd_ln_free_r(config);
