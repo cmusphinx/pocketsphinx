@@ -236,7 +236,7 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
     char const *featparams;
 
     acmod = ckd_calloc(1, sizeof(*acmod));
-    acmod->config = config;
+    acmod->config = cmd_ln_retain(config);
     acmod->lmath = lmath;
     acmod->state = ACMOD_IDLE;
 
@@ -256,7 +256,6 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
     }
     else {
         /* Initialize a new front end. */
-        cmd_ln_retain(config);
         acmod->fe = fe_init_auto_r(config);
         if (acmod->fe == NULL)
             goto error_out;
@@ -315,6 +314,7 @@ acmod_free(acmod_t *acmod)
 
     feat_free(acmod->fcb);
     fe_free(acmod->fe);
+    cmd_ln_free_r(acmod->config);
 
     if (acmod->mfc_buf)
         ckd_free_2d((void **)acmod->mfc_buf);

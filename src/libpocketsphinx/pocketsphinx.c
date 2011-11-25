@@ -196,7 +196,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     if (config && config != ps->config) {
         cmd_ln_free_r(ps->config);
-        ps->config = config;
+        ps->config = cmd_ln_retain(config);
     }
 
     err_set_debug_level(cmd_ln_int32_r(ps->config, "-debug"));

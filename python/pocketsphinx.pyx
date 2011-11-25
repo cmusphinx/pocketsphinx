@@ -420,6 +420,7 @@ cdef class Decoder:
         if config == NULL:
             raise RuntimeError, "Failed to parse argument list"
         self.ps = ps_init(config)
+        sb.cmd_ln_free_r(config)
         if self.ps == NULL:
             raise RuntimeError, "Failed to initialize PocketSphinx"
 
@@ -601,18 +602,18 @@ cdef class Decoder:
         cdef cmd_ln_t *config
         cdef NGramModel lm
 
-        clm = ps_get_lmset(self.ps)
         lm = NGramModel()
+        clm = sb.ngram_model_retain(ps_get_lmset(self.ps))
         lm.set_lm(clm)
         lmath = sb.logmath_retain(ps_get_logmath(self.ps))
         lm.set_lmath(lmath)
         config = ps_get_config(self.ps)
+
         # This is not necessarily true but it will have to do
         lm.lw = sb.cmd_ln_float32_r(config, "-lw")
         lm.wip = sb.cmd_ln_float32_r(config, "-wip")
         lm.uw = sb.cmd_ln_float32_r(config, "-uw")
         return lm
-
 
     def update_lmset(self, NGramModel lmset):
         """
@@ -626,9 +627,8 @@ cdef class Decoder:
         @return: the lmset
         @rtype: sphinxbase.NGramModel
         """
-        ps_update_lmset(self.ps, lmset.lm)
+        ps_update_lmset(self.ps, sb.ngram_model_retain(lmset.lm))
         return self
-
 
     def add_word(self, word, phones, update=True):
         """
