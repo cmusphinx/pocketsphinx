@@ -99,9 +99,10 @@ main(int argc, char *argv[])
 
 	dag = ps_get_lattice(ps);
 	ps_lattice_write(dag, "test_jsgf.lat");
-	ps_free(ps);
 	jsgf_grammar_free(jsgf);
 	fsg_search_free(ps_search_base(fsgs));
+	ps_free(ps);
+	cmd_ln_free_r(config);
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
@@ -118,6 +119,7 @@ main(int argc, char *argv[])
 	printf("%s: %s (%d, %d)\n", uttid, hyp, score, prob);
 	TEST_EQUAL(0, strcmp("go forward ten meters", hyp));
 	ps_free(ps);
+	cmd_ln_free_r(config);
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,

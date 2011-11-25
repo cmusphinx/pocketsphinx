@@ -217,7 +217,10 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     /* Free old dictionary (must be done after the two things above) */
     dict_free(ps->dict);
     ps->dict = NULL;
-
+    
+    /* Free d2p */
+    dict2pid_free(ps->d2p);
+    ps->d2p = NULL;
 
     /* Logmath computation (used in acmod and search) */
     if (ps->lmath == NULL
@@ -322,15 +325,11 @@ ps_retain(ps_decoder_t *ps)
 int
 ps_free(ps_decoder_t *ps)
 {
-    gnode_t *gn;
-
     if (ps == NULL)
         return 0;
     if (--ps->refcount > 0)
         return ps->refcount;
-    for (gn = ps->searches; gn; gn = gnode_next(gn))
-        ps_search_free(gnode_ptr(gn));
-    glist_free(ps->searches);
+    ps_free_searches(ps);
     dict_free(ps->dict);
     dict2pid_free(ps->d2p);
     acmod_free(ps->acmod);

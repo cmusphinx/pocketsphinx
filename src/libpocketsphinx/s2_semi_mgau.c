@@ -1355,6 +1355,8 @@ s2_semi_mgau_free(ps_mgau_t *ps)
     }
     else {
         ckd_free_3d(s->mixw);
+        if (s->mixw_cb)
+            ckd_free(s->mixw_cb);
     }
     gauden_free(s->g);
     ckd_free(s->topn_beam);

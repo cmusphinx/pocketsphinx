@@ -59,3 +59,7 @@ LDADD = \
 	-lsphinxbase
 
 CLEANFILES = *.log *.out *.lat *.mfc *.raw *.dic *.sen
+
+valgrind-check:
+	for testf in .libs/*; do valgrind --leak-check=full $$testf; done >& valgrind.log
+
