@@ -191,8 +191,10 @@ fsg_search_init(cmd_ln_t *config,
             for (itor = jsgf_rule_iter(fsgs->jsgf); itor;
                  itor = jsgf_rule_iter_next(itor)) {
                 rule = jsgf_rule_iter_rule(itor);
-                if (jsgf_rule_public(rule))
+                if (jsgf_rule_public(rule)) {
+            	    jsgf_rule_iter_free(itor);
                     break;
+                }
             }
             if (rule == NULL) {
                 E_ERROR("No public rules found in %s\n", path);

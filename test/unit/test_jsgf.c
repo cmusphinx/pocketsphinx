@@ -119,6 +119,7 @@ main(int argc, char *argv[])
 	printf("%s: %s (%d, %d)\n", uttid, hyp, score, prob);
 	TEST_EQUAL(0, strcmp("go forward ten meters", hyp));
 	ps_free(ps);
+	fclose(rawfh);
 	cmd_ln_free_r(config);
 
 	TEST_ASSERT(config =
@@ -138,6 +139,7 @@ main(int argc, char *argv[])
 	TEST_EQUAL(0, strcmp("go forward ten meters", hyp));
 	ps_free(ps);
 	cmd_ln_free_r(config);
+	fclose(rawfh);
 
 	return 0;
 }
