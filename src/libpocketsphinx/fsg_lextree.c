@@ -483,10 +483,13 @@ psubtree_add_trans(fsg_lextree_t *lextree,
 
                 rc = dict_pron(lextree->dict, dictwid, 1);
 		for (glist = *curglist;
-                     glist && glist->glist && glist->ci != ci && glist->rc != rc;
-                     glist = glist->next)
-                    ;
-		if (glist && glist->ci == ci && glist->rc == rc && glist->glist) {
+                     glist && glist->glist;
+                     glist = glist->next) {
+		    if (glist->ci == ci && glist->rc == rc)
+			break;
+		}
+		if (glist && glist->glist) {
+		    assert(glist->ci == ci && glist->rc == rc);
 		    /* We've found a valid glist. Hook to it and move to next phoneme */
                     E_DEBUG(2,("Found match for (%d,%d)\n", ci, rc));
 		    lc_pnodelist = glist->glist;
