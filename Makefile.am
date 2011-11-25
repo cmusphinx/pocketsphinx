@@ -61,3 +61,5 @@ test-debug:
 		-dict $(top_srcdir)/model/lm/turtle/turtle.dic \
 		-hmm $(top_srcdir)/model/hmm/wsj0 \
 		-mmap TRUE
+
+ACLOCAL_AMFLAGS = -I m4
