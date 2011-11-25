@@ -84,6 +84,7 @@ main(int argc, char *argv[])
 							 ngram_search_find_exit(ngs, -1, NULL, NULL))));
 	}
 	ps_free(ps);
+	cmd_ln_free_r(config);
 
 	return 0;
 }

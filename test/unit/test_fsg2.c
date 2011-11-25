@@ -92,6 +92,7 @@ main(int argc, char *argv[])
 		link = link->best_prev;
 	}
 	ps_free(ps);
+	cmd_ln_free_r(config);
 
 	return 0;
 }

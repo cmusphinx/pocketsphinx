@@ -12,6 +12,7 @@ static void test_reinit_fsg()
        ps = ps_init(config);
        ps_update_fsgset (ps);
        ps_update_fsgset (ps);
+       cmd_ln_free_r(config);
 }
 
 static void test_reinit_lm()
@@ -26,6 +27,7 @@ static void test_reinit_lm()
                              NULL);
         ps = ps_init(config);
         model = ps_update_lmset (ps, NULL);
+        cmd_ln_free_r(config);
 }
 
 int main(int argc, char* argv[]) 

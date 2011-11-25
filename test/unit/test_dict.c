@@ -12,14 +12,17 @@ main(int argc, char *argv[])
 {
 	bin_mdef_t *mdef;
 	dict_t *dict;
+	cmd_ln_t *config;
+
+	TEST_ASSERT(config = cmd_ln_init(NULL, NULL, FALSE,
+						   "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
+						   "-fdict", MODELDIR "/hmm/en_US/hub4wsj_sc_8k/noisedict",
+						   NULL));
+
 
 	/* Test dictionary in standard fashion. */
 	TEST_ASSERT(mdef = bin_mdef_read(NULL, MODELDIR "/hmm/en_US/hub4wsj_sc_8k/mdef"));
-	TEST_ASSERT(dict = dict_init(cmd_ln_init(NULL, NULL, FALSE,
-						   "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
-						   "-fdict", MODELDIR "/hmm/en_US/hub4wsj_sc_8k/noisedict",
-						   NULL),
-				       mdef));
+	TEST_ASSERT(dict = dict_init(config, mdef));
 
 	printf("Word ID (CARNEGIE) = %d\n",
 	       dict_wordid(dict, "CARNEGIE"));
@@ -43,6 +46,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(dict_real_word(dict, dict_wordid(dict, "BLETCH")));
 	TEST_ASSERT(!dict_real_word(dict, dict_wordid(dict, "</s>")));
 	dict_free(dict);
+	cmd_ln_free_r(config);
 
 	return 0;
 }

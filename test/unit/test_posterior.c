@@ -154,6 +154,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(ps = ps_init(config));
 	rv = test_decode(ps);
 	ps_free(ps);
+	cmd_ln_free_r(config);
 
 	return rv;
 }

@@ -66,6 +66,7 @@ main(int argc, char *argv[])
 	printf("2 * fwdflat search in %.2f sec\n",
 	       (double)c / CLOCKS_PER_SEC);
 	ps_free(ps);
+	cmd_ln_free_r(config);
 
 	return 0;
 }

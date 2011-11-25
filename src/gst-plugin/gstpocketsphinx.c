@@ -208,6 +208,7 @@ gst_pocketsphinx_finalize(GObject * gobject)
     g_hash_table_destroy(ps->arghash);
     g_free(ps->last_result);
     ps_free(ps->ps);
+    cmd_ln_free_r(ps->config);
     GST_CALL_PARENT(G_OBJECT_CLASS, finalize,(gobject));
 }
 

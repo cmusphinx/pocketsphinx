@@ -135,6 +135,7 @@ main(int argc, char *argv[])
 			 MODELDIR "/hmm/en_US/hub4_wsj_ptm256_3s_8k.cd_ptm_5000/mixture_weights");
 	TEST_ASSERT((acmod->mgau = ms_mgau_init(config, lmath, acmod->mdef)));
 	run_acmod_test(acmod);
+	cmd_ln_free_r(config);
 
 	return 0;
 }

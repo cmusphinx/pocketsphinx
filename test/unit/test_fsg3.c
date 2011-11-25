@@ -82,6 +82,7 @@ main(int argc, char *argv[])
 	       ps_lattice_hyp(dag, ps_lattice_bestpath(dag, NULL, 1.0, 15.0)));
 	ps_lattice_posterior(dag, NULL, 15.0);
 	ps_free(ps);
+	cmd_ln_free_r(config);
 
 	return 0;
 }
