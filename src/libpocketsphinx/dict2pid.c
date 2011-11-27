@@ -307,9 +307,9 @@ dict2pid_add_word(dict2pid_t *d2p,
          * word. */
         if (d2p->ldiph_lc[dict_first_phone(d, wid)][dict_second_phone(d, wid)][0]
             == BAD_S3SSID) {
-            E_INFO("Filling in left-context diphones for %s(?,%s)\n",
+            E_DEBUG(2, ("Filling in left-context diphones for %s(?,%s)\n",
                    bin_mdef_ciphone_str(mdef, dict_first_phone(d, wid)),
-                   bin_mdef_ciphone_str(mdef, dict_second_phone(d, wid)));
+                   bin_mdef_ciphone_str(mdef, dict_second_phone(d, wid))));
             for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
                 int p
                     = bin_mdef_phone_id_nearest(mdef,
@@ -327,9 +327,9 @@ dict2pid_add_word(dict2pid_t *d2p,
             s3cipid_t *tmpcimap;
             s3cipid_t r;
 
-            E_INFO("Filling in right-context diphones for %s(%s,?)\n",
+            E_DEBUG(2, ("Filling in right-context diphones for %s(%s,?)\n",
                    bin_mdef_ciphone_str(mdef, dict_last_phone(d, wid)),
-                   bin_mdef_ciphone_str(mdef, dict_second_last_phone(d, wid)));
+                   bin_mdef_ciphone_str(mdef, dict_second_last_phone(d, wid))));
             rmap = ckd_calloc(bin_mdef_n_ciphone(mdef), sizeof(*rmap));
             for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
                 int p

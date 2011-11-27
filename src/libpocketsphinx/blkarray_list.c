@@ -115,7 +115,7 @@ blkarray_list_append(blkarray_list_t * bl, void *data)
 
         /* Allocate the new row */
         assert(bl->ptr[bl->cur_row] == NULL);
-        bl->ptr[bl->cur_row] = (void **) ckd_calloc(bl->blksize,
+        bl->ptr[bl->cur_row] = (void **) ckd_malloc(bl->blksize *
                                                     sizeof(void *));
 
         bl->cur_row_free = 0;

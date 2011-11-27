@@ -138,17 +138,19 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
                     lextree->lc[fsg_link_to_state(l)][dict_pron(lextree->dict, dictwid, len - 1)] = 1;
                 }
             }
-
-            /*
-             * Add SIL phone to the lclist and rclist of each state.  Strictly
-             * speaking, only needed at start and final states, respectively, but
-             * all states considered since the user may change the start and final
-             * states.  In any case, most applications would have a silence self
-             * loop at each state, hence these would be needed anyway.
-             */
-            lextree->lc[fsg_link_from_state(l)][silcipid] = 1;
-            lextree->rc[fsg_link_from_state(l)][silcipid] = 1;
         }
+    }
+
+    for (s = 0; s < fsg->n_state; s++) {
+        /*
+         * Add SIL phone to the lclist and rclist of each state.  Strictly
+         * speaking, only needed at start and final states, respectively, but
+         * all states considered since the user may change the start and final
+         * states.  In any case, most applications would have a silence self
+         * loop at each state, hence these would be needed anyway.
+         */
+        lextree->lc[s][silcipid] = 1;
+        lextree->rc[s][silcipid] = 1;
     }
 
     /*
