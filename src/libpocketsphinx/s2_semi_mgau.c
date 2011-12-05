@@ -67,9 +67,9 @@
 
 static ps_mgaufuncs_t s2_semi_mgau_funcs = {
     "s2_semi",
-    &s2_semi_mgau_frame_eval,      /* frame_eval */
-    &s2_semi_mgau_mllr_transform,  /* transform */
-    &s2_semi_mgau_free             /* free */
+    s2_semi_mgau_frame_eval,      /* frame_eval */
+    s2_semi_mgau_mllr_transform,  /* transform */
+    s2_semi_mgau_free             /* free */
 };
 
 struct vqFeature_s {

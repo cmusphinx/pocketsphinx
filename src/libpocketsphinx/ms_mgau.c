@@ -73,9 +73,9 @@
 
 static ps_mgaufuncs_t ms_mgau_funcs = {
     "ms",
-    &ms_cont_mgau_frame_eval, /* frame_eval */
-    &ms_mgau_mllr_transform,  /* transform */
-    &ms_mgau_free             /* free */
+    ms_cont_mgau_frame_eval, /* frame_eval */
+    ms_mgau_mllr_transform,  /* transform */
+    ms_mgau_free             /* free */
 };
 
 ps_mgau_t *

@@ -67,9 +67,9 @@
 
 static ps_mgaufuncs_t ptm_mgau_funcs = {
     "ptm",
-    &ptm_mgau_frame_eval,      /* frame_eval */
-    &ptm_mgau_mllr_transform,  /* transform */
-    &ptm_mgau_free             /* free */
+    ptm_mgau_frame_eval,      /* frame_eval */
+    ptm_mgau_mllr_transform,  /* transform */
+    ptm_mgau_free             /* free */
 };
 
 #define COMPUTE_GMM_MAP(_idx)                           \
