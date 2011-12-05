@@ -92,7 +92,6 @@ dict_add_word(dict_t * d, char const *word, s3cipid_t const * p, int32 np)
                                        (d->max_words +
                                         S3DICT_INC_SZ) * sizeof(dictword_t));
         d->max_words = d->max_words + S3DICT_INC_SZ;
-        return BAD_S3WID;
     }
 
     wordp = d->word + d->n_word;

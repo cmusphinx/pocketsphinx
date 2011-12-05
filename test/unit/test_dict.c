@@ -14,11 +14,13 @@ main(int argc, char *argv[])
 	dict_t *dict;
 	cmd_ln_t *config;
 
+	int i;
+	char buf[100];
+
 	TEST_ASSERT(config = cmd_ln_init(NULL, NULL, FALSE,
 						   "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
 						   "-fdict", MODELDIR "/hmm/en_US/hub4wsj_sc_8k/noisedict",
 						   NULL));
-
 
 	/* Test dictionary in standard fashion. */
 	TEST_ASSERT(mdef = bin_mdef_read(NULL, MODELDIR "/hmm/en_US/hub4wsj_sc_8k/mdef"));
@@ -46,6 +48,15 @@ main(int argc, char *argv[])
 	TEST_ASSERT(dict_real_word(dict, dict_wordid(dict, "BLETCH")));
 	TEST_ASSERT(!dict_real_word(dict, dict_wordid(dict, "</s>")));
 	dict_free(dict);
+
+	/* Test to add 500k words. */
+	TEST_ASSERT(dict = dict_init(NULL, NULL));
+	for (i = 0; i < 500000; i++) {
+	    sprintf(buf, "word_%d", i);
+    	    TEST_ASSERT(BAD_S3WID != dict_add_word(dict, buf, NULL, 0));
+	}
+	dict_free(dict);
+
 	cmd_ln_free_r(config);
 
 	return 0;
