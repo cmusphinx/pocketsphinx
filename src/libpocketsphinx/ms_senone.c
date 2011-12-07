@@ -262,7 +262,7 @@ senone_mixw_read(senone_t * s, char const *file_name, logmath_t *lmath)
         }
     }
     if (n_err > 0)
-        E_WARN("Weight normalization failed for %d senones\n", n_err);
+        E_WARN("Weight normalization failed for %d mixture weights components\n", n_err);
 
     ckd_free(pdf);
 

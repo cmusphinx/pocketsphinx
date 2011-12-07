@@ -1184,7 +1184,7 @@ read_mixw(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
         }
     }
     if (n_err > 0)
-        E_WARN("Weight normalization failed for %d senones\n", n_err);
+        E_WARN("Weight normalization failed for %d mixture weights components\n", n_err);
 
     ckd_free(pdf);
 
