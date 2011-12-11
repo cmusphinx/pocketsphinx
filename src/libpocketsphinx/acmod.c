@@ -745,18 +745,23 @@ acmod_process_cep(acmod_t *acmod,
         inptr = (acmod->feat_outidx + acmod->n_feat_frame) % acmod->n_feat_alloc;
     }
 
+
+    /* FIXME: we can't split the last frame drop properly to be on the bounary, so just return */
+    if (inptr + nfeat > acmod->n_feat_alloc && acmod->state == ACMOD_ENDED) {
+	*inout_n_frames -= ncep;
+	*inout_cep += ncep;
+	return 0;
+    }
+
     /* Write them in two parts if there is wraparound. */
     if (inptr + nfeat > acmod->n_feat_alloc) {
         int32 ncep1 = acmod->n_feat_alloc - inptr;
-        int saved_state = acmod->state;
 
         /* Make sure we don't end the utterance here. */
-        if (acmod->state == ACMOD_ENDED)
-            acmod->state = ACMOD_PROCESSING;
         nfeat = feat_s2mfc2feat_live(acmod->fcb, *inout_cep,
                                      &ncep1,
                                      (acmod->state == ACMOD_STARTED),
-                                     (acmod->state == ACMOD_ENDED),
+                                     FALSE,
                                      acmod->feat_buf + inptr);
         if (nfeat < 0)
             return -1;
@@ -769,8 +774,6 @@ acmod_process_cep(acmod_t *acmod,
         *inout_n_frames -= ncep1;
         *inout_cep += ncep1;
         ncep -= ncep1;
-        /* Restore original state (could this really be the end) */
-        acmod->state = saved_state;
     }
 
     nfeat = feat_s2mfc2feat_live(acmod->fcb, *inout_cep,
