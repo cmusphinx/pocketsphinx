@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{1380AF76-C926-44D0-8002-06C228AC869A}</ProjectGuid>
-    <RootNamespace>pocketsphinx_continuous</RootNamespace>
+    <ProjectGuid>{AB08A7C9-D327-412E-AB38-1941949F5BE6}</ProjectGuid>
+    <RootNamespace>pocketsphinx_mdef_convert</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -48,7 +48,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
-      <TypeLibraryName>$(SolutionDir)\bin\Debug/pocketsphinx_continuous.tlb</TypeLibraryName>
+      <TypeLibraryName>$(SolutionDir)/Debug/pocketsphinx_mdef_convert.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -59,7 +59,7 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\Debug/pocketsphinx_continuous.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Debug/pocketsphinx_mdef_convert.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
       <ObjectFileName>.\Debug/</ObjectFileName>
       <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
@@ -73,11 +73,11 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>sphinxbase.lib;winmm.lib;pocketsphinx.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(SolutionDir)\bin\Debug\pocketsphinx_continuous.exe</OutputFile>
+      <OutputFile>$(SolutionDir)/bin/Debug/pocketsphinx_mdef_convert.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>..\..\..\sphinxbase\bin\Debug;..\..\bin\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(SolutionDir)\bin\Debug/pocketsphinx_continuous.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(SolutionDir)/bin/Debug/pocketsphinx_mdef_convert.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -86,12 +86,12 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>$(SolutionDir)\bin\Debug/pocketsphinx_continuous.bsc</OutputFile>
+      <OutputFile>$(SolutionDir)/bin/Debug/pocketsphinx_mdef_convert.bsc</OutputFile>
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
-      <TypeLibraryName>$(SolutionDir)\bin\Release/pocketsphinx_continuous.tlb</TypeLibraryName>
+      <TypeLibraryName>$(SolutionDir)/bin/Release/pocketsphinx_mdef_convert.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -103,7 +103,7 @@
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>.\Release/pocketsphinx_continuous.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Release/pocketsphinx_mdef_convert.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\Release/</AssemblerListingLocation>
       <ObjectFileName>.\Release/</ObjectFileName>
       <ProgramDataBaseFileName>.\Release/</ProgramDataBaseFileName>
@@ -116,10 +116,10 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>sphinxbase.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(SolutionDir)\bin\Release\pocketsphinx_continuous.exe</OutputFile>
+      <OutputFile>$(SolutionDir)/bin/Release/pocketsphinx_mdef_convert.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>..\..\..\sphinxbase\bin\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>$(SolutionDir)\bin\Release/pocketsphinx_continuous.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(SolutionDir)/bin/Release/pocketsphinx_mdef_convert.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -128,11 +128,11 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>$(SolutionDir)\bin\Release/pocketsphinx_continuous.bsc</OutputFile>
+      <OutputFile>$(SolutionDir)/bin/Release/pocketsphinx_mdef_convert.bsc</OutputFile>
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\programs\continuous.c" />
+    <ClCompile Include="..\..\src\programs\mdef_convert.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="pocketsphinx.args" />
