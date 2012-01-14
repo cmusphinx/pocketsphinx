@@ -392,11 +392,18 @@ set_real_wid(ngram_search_t *ngs, int32 bp)
     }
 }
 
+#define NGRAM_HISTORY_LONG_WORD 2000 /* 20s */
+
 void
 ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
                      int32 w, int32 score, int32 path, int32 rc)
 {
     int32 bp;
+
+    if (frame_idx - ngs->bp_table[path].frame > NGRAM_HISTORY_LONG_WORD) {
+	E_WARN("Word '%s' survived for %d frames, potential overpruning\n", dict_wordstr(ps_search_dict(ngs), w),
+	        frame_idx - ngs->bp_table[path].frame);
+    }
 
     /* Look for an existing exit for this word in this frame.  The
      * only reason one would exist is from a different right context
