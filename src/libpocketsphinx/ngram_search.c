@@ -400,16 +400,17 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
 {
     int32 bp;
 
-    if (frame_idx - ngs->bp_table[path].frame > NGRAM_HISTORY_LONG_WORD) {
-	E_WARN("Word '%s' survived for %d frames, potential overpruning\n", dict_wordstr(ps_search_dict(ngs), w),
-	        frame_idx - ngs->bp_table[path].frame);
-    }
-
     /* Look for an existing exit for this word in this frame.  The
      * only reason one would exist is from a different right context
      * triphone, but of course that happens quite frequently. */
     bp = ngs->word_lat_idx[w];
     if (bp != NO_BP) {
+
+        if (frame_idx - ngs->bp_table[path].frame > NGRAM_HISTORY_LONG_WORD) {
+    	    E_WARN("Word '%s' survived for %d frames, potential overpruning\n", dict_wordstr(ps_search_dict(ngs), w),
+	    	    frame_idx - ngs->bp_table[path].frame);
+	}
+
         /* Keep only the best scoring one, we will reconstruct the
          * others from the right context scores - usually the history
          * is not lost. */
