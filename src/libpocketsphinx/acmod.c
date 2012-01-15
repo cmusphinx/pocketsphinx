@@ -405,23 +405,13 @@ acmod_set_rawfh(acmod_t *acmod, FILE *logfh)
 void
 acmod_grow_feat_buf(acmod_t *acmod, int nfr)
 {
-    mfcc_t ***new_feat_buf;
-
     if (nfr > MAX_N_FRAMES)
         E_FATAL("Decoder can not process more than %d frames at once, requested %d\n", 
                 MAX_N_FRAMES, nfr);
 
-    new_feat_buf = feat_array_alloc(acmod->fcb, nfr);
-    if (acmod->n_feat_frame || acmod->grow_feat) {
-        memcpy(new_feat_buf[0][0], acmod->feat_buf[0][0],
-               (acmod->n_feat_alloc
-                * feat_dimension(acmod->fcb)
-                * sizeof(***acmod->feat_buf)));
-    }
-    feat_array_free(acmod->feat_buf);
+    acmod->feat_buf = feat_array_realloc(acmod->fcb, acmod->feat_buf, acmod->n_feat_alloc, nfr);
     acmod->framepos = ckd_realloc(acmod->framepos,
                                   nfr * sizeof(*acmod->framepos));
-    acmod->feat_buf = new_feat_buf;
     acmod->n_feat_alloc = nfr;
 }
 
