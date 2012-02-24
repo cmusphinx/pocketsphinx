@@ -368,6 +368,57 @@ cdef class Lattice:
         if rv < 0:
             raise RuntimeError, "Failed to write lattice to %s" % outfile
 
+
+cdef class Segment:
+
+    def __init__(self):
+        self.seg = NULL
+
+    cdef set_seg(self, ps_seg_t *seg):
+        self.seg = seg
+    
+    def word(self):
+        return ps_seg_word(self.seg)
+        
+    def frames(self):
+        cdef int sf, ef
+        ps_seg_frames(self.seg, &sf, &ef) 
+        return(sf, ef)
+
+    def prob(self):
+        cdef int32 ascr, lscr, lback
+        ps_seg_prob(self.seg, &ascr, &lscr, &lback)
+        return (ascr, lscr, lback)
+    
+cdef class SegmentIterator:
+    """
+    Iterator for best hypothesis word segments of best hypothesis
+    """
+    def __init__(self):
+        self.itor = NULL
+        self.first_seg = False
+
+    cdef set_iter(self, ps_seg_t *seg):
+        self.itor = seg
+        self.first_seg = True
+
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        cdef Segment seg
+        if self.first_seg:
+            self.first_seg = False
+        else:
+            self.itor = ps_seg_next(self.itor)
+        if NULL == self.itor:
+            raise StopIteration
+        else:
+            seg = Segment()
+            seg.set_seg(self.itor)
+        return seg
+
+
 cdef class Decoder:
     """
     PocketSphinx speech decoder.
@@ -668,3 +719,15 @@ cdef class Decoder:
         @type format: str
         """
         return ps_save_dict(self.ps, dictfile, format)
+
+    def segments(self):
+        cdef int32 score
+        cdef ps_seg_t *first_seg
+        cdef SegmentIterator itor
+        first_seg = ps_seg_iter(self.ps, &score)
+        if first_seg == NULL:
+            raise RuntimeError, "Failed to create best path word segment iterator"
+        itor = SegmentIterator()
+        itor.set_iter(first_seg)
+        return (itor, score)
+

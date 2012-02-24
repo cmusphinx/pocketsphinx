@@ -175,3 +175,13 @@ cdef class LatNodeIterator:
     cdef ps_latnode_iter_t *itor
     cdef int first_node
     cdef int start, end
+
+cdef class SegmentIterator:
+    cdef ps_seg_t *itor
+    cdef int first_seg
+    cdef set_iter(SegmentIterator self, ps_seg_t *seg)
+
+cdef class Segment:
+    cdef ps_seg_t *seg
+    cdef set_seg(Segment self, ps_seg_t *seg)
+
