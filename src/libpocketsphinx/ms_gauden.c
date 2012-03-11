@@ -403,7 +403,7 @@ gauden_free(gauden_t * g)
     if (g->mean)
         gauden_param_free(g->mean);
     if (g->var)
-        gauden_param_free((mfcc_t ****)g->var);
+        gauden_param_free(g->var);
     if (g->det)
         ckd_free_3d(g->det);
     if (g->featlen)
@@ -551,6 +551,20 @@ gauden_mllr_transform(gauden_t *g, ps_mllr_t *mllr, cmd_ln_t *config)
 {
     int32 i, m, f, d, *flen;
     float32 ****fgau;
+
+    /* Free data if already here */
+    if (g->mean)
+        gauden_param_free(g->mean);
+    if (g->var)
+        gauden_param_free(g->var);
+    if (g->det)
+        ckd_free_3d(g->det);
+    if (g->featlen)
+        ckd_free(g->featlen);
+    g->mean = NULL;
+    g->var = NULL;
+    g->det = NULL;
+    g->featlen = NULL;
 
     /* Reload means and variances (un-precomputed). */
     fgau = NULL;
