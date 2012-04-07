@@ -243,7 +243,7 @@ recognize_from_microphone()
 
     if ((ad = ad_open_dev(cmd_ln_str_r(config, "-adcdev"),
                           (int)cmd_ln_float32_r(config, "-samprate"))) == NULL)
-        E_FATAL("Failed top open audio device\n");
+        E_FATAL("Failed to open audio device\n");
 
     /* Initialize continuous listening module */
     if ((cont = cont_ad_init(ad, ad_read)) == NULL)
