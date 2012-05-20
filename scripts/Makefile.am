@@ -1,8 +1,4 @@
 EXTRA_DIST =  \
-	pocketsphinx.cfg \
-	psdecode.pl \
-	setup_sphinx.pl \
-	setup_tutorial.pl \
 	prune_mixw.py \
 	lat2dot.py \
 	quantize_mixw.py \
