@@ -2,9 +2,8 @@ SUBDIRS = src \
 	  doc \
 	  model \
 	  include \
-	  scripts \
 	  test \
-	python
+	  python
 
 EXTRA_DIST = autogen.sh							\
 	pocketsphinx.sln						\

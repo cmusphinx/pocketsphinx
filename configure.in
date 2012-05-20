@@ -248,7 +248,6 @@ doc/doxyfile
 model/Makefile
 model/hmm/Makefile
 model/lm/Makefile
-scripts/Makefile
 test/Makefile
 test/testfuncs.sh
 test/unit/Makefile
