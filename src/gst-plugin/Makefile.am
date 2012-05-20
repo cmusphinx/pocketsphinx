@@ -20,7 +20,7 @@ noinst_HEADERS = gstpocketsphinx.h gstvader.h $(my_headers)
 INCLUDES = -I$(top_srcdir)/include \
 	-I$(top_builddir)/include
 
-EXTRA_DIST = psmarshal.list
+EXTRA_DIST = psmarshal.list livedemo.py fixsqrt.py
 BUILT_SOURCES = $(my_files)
 CLEANFILES = $(my_filse)
 

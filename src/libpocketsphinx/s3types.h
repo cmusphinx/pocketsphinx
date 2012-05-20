@@ -190,9 +190,6 @@ typedef int16   	s3mgauid_t;	/** Mixture-gaussian codebook id */
 #define S3_LOGPROB_ZERO		((int32) 0xc8000000)	/** Integer version of log of zero Approx -infinity!! */
 #define S3_LOGPROB_ZERO_F	((float32) -1e30)	/** Float version of log of zero Approx -infinity!! */
 
-/* RAH, I believe this is unreasonably large and not feasible */ /* Frame = 10msec */
-#define S3_MAX_FRAMES		15000   /* Frame = 10msec */  
-
 #define RENORM_THRESH     ((int32) ((S3_LOGPROB_ZERO)>>1))       /** Bestscore getting close to 0 */
 
 #define S3_SUCCESS      0
