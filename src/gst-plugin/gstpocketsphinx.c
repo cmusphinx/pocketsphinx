@@ -454,11 +454,17 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     case PROP_FSG_MODEL:
     {
         fsg_set_t *fsgs = ps_get_fsgset(ps->ps);
-        fsg_model_t *fsg = g_value_get_pointer(value);
+        
+        if (fsgs == NULL)
+    	    fsgs = ps_update_fsgset(ps->ps);
+        
+        if (fsgs) {
+	    fsg_model_t *fsg = g_value_get_pointer(value);
 
-        fsg_set_remove_byname(fsgs, fsg_model_name(fsg));
-        fsg_set_add(fsgs, fsg_model_name(fsg), fsg);
-        fsg_set_select(fsgs, fsg_model_name(fsg));
+    	    fsg_set_remove_byname(fsgs, fsg_model_name(fsg));
+    	    fsg_set_add(fsgs, fsg_model_name(fsg), fsg);
+    	    fsg_set_select(fsgs, fsg_model_name(fsg));
+    	}
         break;
     }
     case PROP_FSG_FILE:
@@ -468,13 +474,17 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
 
         if (ps->ps) {
             /* Switch to this new FSG. */
-            fsg_set_t *fsgs = ps_get_fsgset(ps->ps);
             fsg_model_t *fsg;
+            fsg_set_t *fsgs = ps_get_fsgset(ps->ps);
+
+            if (fsgs == NULL)
+    		fsgs = ps_update_fsgset(ps->ps);
 
             fsg = fsg_model_readfile(g_value_get_string(value),
                                      ps_get_logmath(ps->ps),
                                      cmd_ln_float32_r(ps->config, "-lw"));
-            if (fsg) {
+
+            if (fsgs && fsg) {
                 fsg_set_add(fsgs, fsg_model_name(fsg), fsg);
                 fsg_set_select(fsgs, fsg_model_name(fsg));
             }
