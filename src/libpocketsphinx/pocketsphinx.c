@@ -434,8 +434,10 @@ ps_update_fsgset(ps_decoder_t *ps)
     search = ps_find_search(ps, "fsg");
     if (search == NULL) {
         /* Initialize FSG search. */
-        search = fsg_search_init(ps->config,
-                                 ps->acmod, ps->dict, ps->d2p);
+        if ((search = fsg_search_init(ps->config,
+                                 ps->acmod, ps->dict, ps->d2p)) == NULL) {
+            return NULL;
+        }
         search->pls = ps->phone_loop;
         ps->searches = glist_add_ptr(ps->searches, search);
     }

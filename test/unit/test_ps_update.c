@@ -16,6 +16,21 @@ static void test_reinit_fsg()
        cmd_ln_free_r(config);
 }
 
+static void test_reinit_fsg_missing()
+{
+       ps_decoder_t *ps;
+       cmd_ln_t *config;
+       config = cmd_ln_init(NULL, ps_args(), TRUE,
+			    "-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
+			    "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
+                            NULL);
+       ps = ps_init(config);
+       cmd_ln_set_str_r(config, "-fsg", "/some/fsg");
+       ps_update_fsgset (ps);
+       ps_free(ps);
+       cmd_ln_free_r(config);
+}
+
 static void test_reinit_lm()
 {
         ps_decoder_t *ps;
@@ -35,6 +50,7 @@ static void test_reinit_lm()
 int main(int argc, char* argv[]) 
 {
 	test_reinit_fsg();
+	test_reinit_fsg_missing();
 	test_reinit_lm();
 	return 0;
 }
