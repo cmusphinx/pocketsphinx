@@ -244,6 +244,14 @@ gst_vader_finalize(GObject *gobject)
         fclose(vader->dumpfile);
     if (vader->dumpdir)
         g_free(vader->dumpdir);
+    if (vader->pre_buffer) {
+      while (g_list_length (vader->pre_buffer) > 0) {
+        GstBuffer *prebuf;
+        prebuf = (g_list_first (vader->pre_buffer))->data;
+        vader->pre_buffer = g_list_remove (vader->pre_buffer, prebuf);
+        gst_buffer_unref (prebuf);
+      }
+    }
     GST_CALL_PARENT(G_OBJECT_CLASS, finalize, (gobject));
 }
 
