@@ -647,6 +647,7 @@ gst_pocketsphinx_chain(GstPad * pad, GstBuffer * buffer)
             }
         }
     }
+    gst_buffer_unref(buffer);
     return GST_FLOW_OK;
 }
 
