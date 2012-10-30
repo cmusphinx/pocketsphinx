@@ -402,7 +402,7 @@ ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset)
         ps->searches = glist_add_ptr(ps->searches, search);
         ngs = (ngram_search_t *)search;
     }
-    else {
+    else if (lmset != NULL) {
         ngs = (ngram_search_t *)search;
         /* Free any previous lmset if this is a new one. */
         if (ngs->lmset != NULL && ngs->lmset != lmset)
@@ -411,6 +411,9 @@ ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset)
         /* Tell N-Gram search to update its view of the world. */
         if (ps_search_reinit(search, ps->dict, ps->d2p) < 0)
             return NULL;
+    } else {
+	/* Just activate the existing search */
+	ngs = (ngram_search_t *)search;
     }
     ps->search = search;
     return ngs->lmset;
