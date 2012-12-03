@@ -46,19 +46,8 @@
 /* Local headers. */
 #include "ms_senone.h"
 
-
 #define MIXW_PARAM_VERSION	"1.0"
 #define SPDEF_PARAM_VERSION	"1.2"
-
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ == 199901L)
-#define LOGMATH_INLINE inline
-#elif defined(__GNUC__)
-#define LOGMATH_INLINE static inline
-#elif defined(_MSC_VER)
-#define LOGMATH_INLINE __inline
-#else
-#define LOGMATH_INLINE static
-#endif
 
 static int32
 senone_mgau_map_read(senone_t * s, char const *file_name)
