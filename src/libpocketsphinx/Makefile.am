@@ -54,7 +54,6 @@ noinst_HEADERS =				\
 	phone_loop_search.h			\
 	ps_alignment.h				\
 	ps_lattice_internal.h			\
-	posixwin32.h				\
 	ptm_mgau.h				\
 	s2_semi_mgau.h				\
 	s3types.h				\

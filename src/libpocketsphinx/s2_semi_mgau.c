@@ -47,10 +47,6 @@
 #include <sys/types.h>
 #endif
 
-#ifndef M_PI 
-#define M_PI 3.14159265358979323846 
-#endif
-
 /* SphinxBase headers */
 #include <sphinx_config.h>
 #include <sphinxbase/cmd_ln.h>
@@ -63,7 +59,6 @@
 /* Local headers */
 #include "s2_semi_mgau.h"
 #include "tied_mgau_common.h"
-#include "posixwin32.h"
 
 static ps_mgaufuncs_t s2_semi_mgau_funcs = {
     "s2_semi",

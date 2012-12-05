@@ -164,7 +164,6 @@
     <ClInclude Include="..\..\src\libpocketsphinx\ngram_search_fwdtree.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\phone_loop_search.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\pocketsphinx_internal.h" />
-    <ClInclude Include="..\..\src\libpocketsphinx\posixwin32.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\ps_lattice_internal.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\ptm_mgau.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\s2_semi_mgau.h" />

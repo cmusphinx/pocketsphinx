@@ -81,9 +81,6 @@
     <ClInclude Include="..\..\src\libpocketsphinx\pocketsphinx_internal.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\libpocketsphinx\posixwin32.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\libpocketsphinx\ps_lattice_internal.h">
       <Filter>Source Files</Filter>
     </ClInclude>
