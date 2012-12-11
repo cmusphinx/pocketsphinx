@@ -1714,9 +1714,9 @@ ps_astar_start(ps_lattice_t *dag,
             path->parent = NULL;
             if (nbest->lmset)
                 path->score = nbest->lwf *
-                    (w1 < 0)
+                    ((w1 < 0)
                     ? ngram_bg_score(nbest->lmset, node->basewid, w2, &n_used)
-                    : ngram_tg_score(nbest->lmset, node->basewid, w2, w1, &n_used);
+                    : ngram_tg_score(nbest->lmset, node->basewid, w2, w1, &n_used));
             else
                 path->score = 0;
             path->score >>= SENSCR_SHIFT;
