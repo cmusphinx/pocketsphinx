@@ -64,11 +64,10 @@ static int32
 evaluate_hmms(state_align_search_t *sas, int16 const *senscr, int frame_idx)
 {
     int32 bs = WORST_SCORE;
-    int i, bi;
+    int i;
 
     hmm_context_set_senscore(sas->hmmctx, senscr);
 
-    bi = 0;
     for (i = 0; i < sas->n_phones; ++i) {
         hmm_t *hmm = sas->hmms + i;
         int32 score;
@@ -78,7 +77,6 @@ evaluate_hmms(state_align_search_t *sas, int16 const *senscr, int frame_idx)
         score = hmm_vit_eval(hmm);
         if (score BETTER_THAN bs) {
             bs = score;
-            bi = i;
         }
     }
     return bs;

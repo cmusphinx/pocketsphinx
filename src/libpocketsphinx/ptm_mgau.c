@@ -451,7 +451,7 @@ read_sendump(ptm_mgau_t *s, bin_mdef_t *mdef, char const *file)
     char line[1000];
     int32 i, n, r, c;
     int32 do_swap, do_mmap;
-    size_t filesize, offset;
+    size_t offset;
     int n_clust = 0;
     int n_feat = s->g->n_feat;
     int n_density = s->g->n_density;
@@ -586,9 +586,6 @@ read_sendump(ptm_mgau_t *s, bin_mdef_t *mdef, char const *file)
             E_INFO("Using memory-mapped I/O for senones\n");
     }
     offset = ftell(fp);
-    fseek(fp, 0, SEEK_END);
-    filesize = ftell(fp);
-    fseek(fp, offset, SEEK_SET);
 
     /* Allocate memory for pdfs (or memory map them) */
     if (do_mmap) {

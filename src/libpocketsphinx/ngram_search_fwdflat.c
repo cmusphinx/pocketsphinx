@@ -227,15 +227,12 @@ static void
 build_fwdflat_wordlist(ngram_search_t *ngs)
 {
     int32 i, f, sf, ef, wid, nwd;
-    dict_t *dict;
     bptbl_t *bp;
     ps_latnode_t *node, *prevnode, *nextnode;
 
     /* No tree-search, use statically allocated wordlist. */
     if (!ngs->fwdtree)
         return;
-
-    dict = ps_search_dict(ngs);
 
     memset(ngs->frm_wordlist, 0, ngs->n_frame_alloc * sizeof(*ngs->frm_wordlist));
 

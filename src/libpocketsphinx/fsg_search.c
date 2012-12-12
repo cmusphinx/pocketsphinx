@@ -1567,7 +1567,6 @@ fsg_search_lattice(ps_search_t *search)
     n = fsg_history_n_entries(fsgs->history);
     for (i = 0; i < n; ++i) {
         fsg_hist_entry_t *fh = fsg_history_entry_get(fsgs->history, i);
-        ps_latnode_t *node;
         int32 ascr;
         int sf;
 
@@ -1599,7 +1598,7 @@ fsg_search_lattice(ps_search_t *search)
          * destination node, and thus we need to preserve its score in
          * case it turns out to be utterance-final.
          */
-        node = new_node(dag, fsg, sf, fh->frame, fh->fsglink->wid, fsg_link_to_state(fh->fsglink), ascr);
+        new_node(dag, fsg, sf, fh->frame, fh->fsglink->wid, fsg_link_to_state(fh->fsglink), ascr);
     }
 
     /*

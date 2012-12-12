@@ -294,7 +294,7 @@ ps_lattice_write_htk(ps_lattice_t *dag, char const *filename)
 {
     FILE *fp;
     ps_latnode_t *d, *initial, *final;
-    int32 i, j, n_links, n_nodes;
+    int32 j, n_links, n_nodes;
 
     initial = dag->start;
     final = dag->end;
@@ -329,7 +329,7 @@ ps_lattice_write_htk(ps_lattice_t *dag, char const *filename)
 
     fprintf(fp, "N=%d\tL=%d\n", n_nodes, n_links);
     fprintf(fp, "#\n# Node definitions\n#\n");
-    for (i = 0, d = dag->nodes; d; d = d->next) {
+    for (d = dag->nodes; d; d = d->next) {
         char const *word = dict_wordstr(dag->dict, d->wid);
         char const *c = strrchr(word, '(');
         int altpron = 1;
@@ -1531,11 +1531,9 @@ ps_lattice_posterior_prune(ps_lattice_t *dag, int32 beam)
 static int32
 best_rem_score(ps_astar_t *nbest, ps_latnode_t * from)
 {
-    ps_lattice_t *dag;
     latlink_list_t *x;
     int32 bestscore, score;
 
-    dag = nbest->dag;
     if (from->info.rem_score <= 0)
         return (from->info.rem_score);
 
@@ -1566,11 +1564,9 @@ best_rem_score(ps_astar_t *nbest, ps_latnode_t * from)
 static void
 path_insert(ps_astar_t *nbest, ps_latpath_t *newpath, int32 total_score)
 {
-    ps_lattice_t *dag;
     ps_latpath_t *prev, *p;
     int32 i;
 
-    dag = nbest->dag;
     prev = NULL;
     for (i = 0, p = nbest->path_list; (i < MAX_PATHS) && p; p = p->next, i++) {
         if ((p->score + p->node->info.rem_score) < total_score)
@@ -1616,9 +1612,6 @@ path_extend(ps_astar_t *nbest, ps_latpath_t * path)
     latlink_list_t *x;
     ps_latpath_t *newpath;
     int32 total_score, tail_score;
-    ps_lattice_t *dag;
-
-    dag = nbest->dag;
 
     /* Consider all successors of path->node */
     for (x = path->node->exits; x; x = x->next) {
