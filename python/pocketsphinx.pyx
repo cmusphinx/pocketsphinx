@@ -571,10 +571,10 @@ cdef class Decoder:
         
         PyString_AsStringAndSize(data, &strdata, &len)
         cdata = strdata
-        if ps_process_raw(self.ps, cdata, len, no_search, full_utt) < 0:
-            raise RuntimeError, "Failed to process %d samples of audio data" % len
+        if ps_process_raw(self.ps, cdata, len / 2, no_search, full_utt) < 0:
+            raise RuntimeError, "Failed to process %d samples of audio data" % len / 2
 
-    def ps_end_utt(self):
+    def end_utt(self):
         """
         Finish processing an utterance.
         """
@@ -586,7 +586,7 @@ cdef class Decoder:
         Get a hypothesis string.
 
         This function returns the text which has been recognized so
-        far, or, if C{ps_end_utt()} has been called, the final
+        far, or, if C{end_utt()} has been called, the final
         recognition result.
 
         @return: Hypothesis string, utterance ID, recognition score
@@ -600,7 +600,7 @@ cdef class Decoder:
 
         # No result
         if hyp == NULL:
-             return None, uttid, 0
+             return None, None, 0
 
         return hyp, uttid, score
 

@@ -753,6 +753,11 @@ ps_process_raw(ps_decoder_t *ps,
 {
     int n_searchfr = 0;
 
+    if (ps->acmod->state == ACMOD_IDLE) {
+	E_ERROR("Failed to process data, utterance is not started. Use start_utt to start it\n");
+	return 0;
+    }
+
     if (no_search)
         acmod_set_grow(ps->acmod, TRUE);
 

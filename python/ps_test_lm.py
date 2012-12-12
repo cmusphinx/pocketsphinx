@@ -30,7 +30,7 @@ def decodeAudio(decoder, uttID, audioFile, lm):
 
   fh = open(audioFile, "r")
   decoder.decode_raw(fh, uttID)
-  decoder.ps_end_utt()
+  decoder.end_utt()
   fh.close()
 
   (txt, uttid, score) = decoder.get_hyp()
