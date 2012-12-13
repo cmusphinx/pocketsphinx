@@ -78,12 +78,16 @@ enum
     PROP_LMCTL_FILE,
     PROP_LM_NAME,
     PROP_DICT_FILE,
+    PROP_MLLR_FILE,
     PROP_FSG_FILE,
     PROP_FSG_MODEL,
     PROP_FWDFLAT,
     PROP_BESTPATH,
     PROP_MAXHMMPF,
     PROP_MAXWPF,
+    PROP_BEAM,
+    PROP_WBEAM,
+    PROP_PBEAM,
     PROP_DSRATIO,
     PROP_LATDIR,
     PROP_LATTICE,
@@ -266,7 +270,12 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                              "Dictionary File",
                              NULL,
                              G_PARAM_READWRITE));
-
+    g_object_class_install_property
+        (gobject_class, PROP_MLLR_FILE,
+         g_param_spec_string("mllr", "MLLR file",
+                             "MLLR file",
+                             NULL,
+                             G_PARAM_READWRITE));
     g_object_class_install_property
         (gobject_class, PROP_FWDFLAT,
          g_param_spec_boolean("fwdflat", "Flat Lexicon Search",
@@ -306,12 +315,29 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                           1, 100000, 10,
                           G_PARAM_READWRITE));
     g_object_class_install_property
+        (gobject_class, PROP_BEAM,
+         g_param_spec_float("beam", "Beam width applied to every frame in Viterbi search",
+                          "Beam width applied to every frame in Viterbi search",
+                          -1, 1, 1e-48,
+                          G_PARAM_READWRITE));
+    g_object_class_install_property
+        (gobject_class, PROP_PBEAM,
+         g_param_spec_float("pbeam", "Beam width applied to phone transitions",
+                          "Beam width applied to phone transitions",
+                          -1, 1, 1e-48,
+                          G_PARAM_READWRITE));
+    g_object_class_install_property
+        (gobject_class, PROP_WBEAM,
+         g_param_spec_float("wbeam", "Beam width applied to word exits",
+                          "Beam width applied to phone transitions",
+                          -1, 1, 7e-29,
+                          G_PARAM_READWRITE));
+    g_object_class_install_property
         (gobject_class, PROP_DSRATIO,
          g_param_spec_int("dsratio", "Frame downsampling ratio",
                           "Evaluate acoustic model every N frames",
                           1, 10, 1,
                           G_PARAM_READWRITE));
-
     g_object_class_install_property
         (gobject_class, PROP_DECODER,
          g_param_spec_boxed("decoder", "Decoder object",
@@ -379,6 +405,13 @@ gst_pocketsphinx_set_boolean(GstPocketSphinx *ps,
                              const gchar *key, const GValue *value)
 {
     cmd_ln_set_boolean_r(ps->config, key, g_value_get_boolean(value));
+}
+
+static void
+gst_pocketsphinx_set_float(GstPocketSphinx *ps,
+                         const gchar *key, const GValue *value)
+{
+    cmd_ln_set_float_r(ps->config, key, g_value_get_float(value));
 }
 
 static void
@@ -451,6 +484,13 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
             ps_reinit(ps->ps, NULL);
         }
         break;
+    case PROP_MLLR_FILE:
+        gst_pocketsphinx_set_string(ps, "-mllr", value);
+        if (ps->ps) {
+            /* Reinitialize the decoder with the new MLLR transform. */
+            ps_reinit(ps->ps, NULL);
+        }
+        break;
     case PROP_FSG_MODEL:
     {
         fsg_set_t *fsgs = ps_get_fsgset(ps->ps);
@@ -507,6 +547,15 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     case PROP_MAXWPF:
         gst_pocketsphinx_set_int(ps, "-maxwpf", value);
         break;
+    case PROP_BEAM:
+        gst_pocketsphinx_set_float(ps, "-beam", value);
+        break;
+    case PROP_PBEAM:
+        gst_pocketsphinx_set_float(ps, "-pbeam", value);
+        break;
+    case PROP_WBEAM:
+        gst_pocketsphinx_set_float(ps, "-wbeam", value);
+        break;
     case PROP_DSRATIO:
         gst_pocketsphinx_set_int(ps, "-ds", value);
         break;
@@ -544,6 +593,9 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
     case PROP_DICT_FILE:
         g_value_set_string(value, cmd_ln_str_r(ps->config, "-dict"));
         break;
+    case PROP_MLLR_FILE:
+        g_value_set_string(value, cmd_ln_str_r(ps->config, "-mllr"));
+        break;
     case PROP_FSG_FILE:
         g_value_set_string(value, cmd_ln_str_r(ps->config, "-fsg"));
         break;
@@ -570,6 +622,15 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
         break;
     case PROP_MAXWPF:
         g_value_set_int(value, cmd_ln_int32_r(ps->config, "-maxwpf"));
+        break;
+    case PROP_BEAM:
+        g_value_set_double(value, cmd_ln_float_r(ps->config, "-beam"));
+        break;
+    case PROP_PBEAM:
+        g_value_set_double(value, cmd_ln_float_r(ps->config, "-pbeam"));
+        break;
+    case PROP_WBEAM:
+        g_value_set_double(value, cmd_ln_float_r(ps->config, "-wbeam"));
         break;
     case PROP_DSRATIO:
         g_value_set_int(value, cmd_ln_int32_r(ps->config, "-ds"));
