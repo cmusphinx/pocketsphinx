@@ -9,12 +9,10 @@ EXTRA_DIST = autogen.sh							\
 	pocketsphinx.sln						\
 	pocketsphinx.pc.in						\
 	win32/pocketsphinx/pocketsphinx.vcxproj.filters			\
-	win32/pocketsphinx/pocketsphinx.vcxproj.user			\
 	win32/pocketsphinx/pocketsphinx.vcxproj				\
-	win32/pocketsphinx_batch/pocketsphinx_batch.vcxproj.user	\
 	win32/pocketsphinx_batch/pocketsphinx_batch.vcxproj		\
 	win32/pocketsphinx_continuous/pocketsphinx_continuous.vcxproj	\
-	win32/pocketsphinx_continuous/pocketsphinx_continuous.vcxproj.user \
+	win32/pocketsphinx_mdef_convert/pocketsphinx_mdef_convert.vcxproj	\
 	swig/Makefile							\
 	swig/Android.mk							\
 	swig/pocketsphinx.i						\
