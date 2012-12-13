@@ -91,6 +91,8 @@ enum
     PROP_DSRATIO,
     PROP_LATDIR,
     PROP_LATTICE,
+    PROP_NBEST,
+    PROP_NBEST_SIZE,
     PROP_DECODER,
     PROP_CONFIGURED
 };
@@ -104,11 +106,10 @@ static char *default_argv[] = {
     "gst-pocketsphinx",
     "-samprate", "8000",
     "-cmn", "prior",
-    "-nfft", "256",
     "-fwdflat", "no",
     "-bestpath", "no",
-    "-maxhmmpf", "1000",
-    "-maxwpf", "10"
+    "-maxhmmpf", "2000",
+    "-maxwpf", "20"
 };
 static const int default_argc = sizeof(default_argv)/sizeof(default_argv[0]);
 
@@ -301,7 +302,21 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                             "Word lattice object for most recent result",
                             PS_LATTICE_TYPE,
                             G_PARAM_READABLE));
-
+    g_object_class_install_property
+        (gobject_class, PROP_NBEST,
+         g_param_spec_value_array("nbest", "N-best results",
+                          "N-best results",
+                          g_param_spec_string("nbest-hyp", "N-best hyp",
+                            "N-best hyp",
+                            NULL,
+                            G_PARAM_READABLE),
+                          G_PARAM_READABLE));  
+    g_object_class_install_property
+        (gobject_class, PROP_NBEST_SIZE,
+         g_param_spec_int("nbest_size", "Size of N-best list",
+                          "Number of hypothesis in the N-best list",
+                          1, 1000, 10,
+                          G_PARAM_READWRITE));
     g_object_class_install_property
         (gobject_class, PROP_MAXHMMPF,
          g_param_spec_int("maxhmmpf", "Maximum HMMs per frame",
@@ -541,6 +556,9 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
             g_free(ps->latdir);
         ps->latdir = g_strdup(g_value_get_string(value));
         break;
+    case PROP_NBEST_SIZE:
+	ps->n_best_size = g_value_get_int(value);
+        break;
     case PROP_MAXHMMPF:
         gst_pocketsphinx_set_int(ps, "-maxhmmpf", value);
         break;
@@ -635,6 +653,35 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
     case PROP_DSRATIO:
         g_value_set_int(value, cmd_ln_int32_r(ps->config, "-ds"));
         break;
+    case PROP_NBEST_SIZE:
+        g_value_set_int(value, ps->n_best_size);
+        break;
+    case PROP_NBEST: {
+        int i = 0, out_score = 0;
+        GValueArray *arr;
+        if (!ps->ps) {
+            break;
+        }
+	arr = g_value_array_new(1);
+        ps_nbest_t *ps_nbest_list = ps_nbest(ps->ps, 0, -1, NULL, NULL);   
+        if (ps_nbest_list) {
+            ps_nbest_list = ps_nbest_next(ps_nbest_list);
+            while ((i < ps->n_best_size) && (ps_nbest_list != NULL)) {
+                GValue value1 = { 0 };
+                g_value_init (&value1, G_TYPE_STRING);
+                const char* hyp = ps_nbest_hyp(ps_nbest_list, &out_score);
+                g_value_set_string(&value1, hyp);
+                g_value_array_append(arr, &value1);  
+                ps_nbest_list = ps_nbest_next(ps_nbest_list);
+                i++;
+            }
+            if (ps_nbest_list) {
+                ps_nbest_free(ps_nbest_list);
+            }
+        }
+        g_value_set_boxed (value, arr);
+        break;
+    }
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -668,6 +715,9 @@ gst_pocketsphinx_init(GstPocketSphinx * ps,
     /* Initialize time. */
     ps->last_result_time = 0;
     ps->last_result = NULL;
+
+    /* Nbest size */
+    ps->n_best_size = 10;
 }
 
 static GstFlowReturn

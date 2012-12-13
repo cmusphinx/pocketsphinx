@@ -67,6 +67,7 @@ struct _GstPocketSphinx
     ps_decoder_t *ps;
     cmd_ln_t *config;
     gchar *latdir;                 /**< Output directory for word lattices. */
+    int n_best_size;               /**< Size of the returned B-best list */
 
     GHashTable *arghash;
     gboolean listening;
