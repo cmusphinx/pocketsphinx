@@ -5,6 +5,7 @@ EXTRA_DIST=compare_table.pl				\
 	data/turtle.dic					\
 	data/test.lmctl                                 \
 	data/goforward.raw                              \
+	data/mllr_matrices				\
 	data/numbers.raw                                \
 	data/something.raw                              \
 	data/goforward.fsg                              \
@@ -20,6 +21,13 @@ EXTRA_DIST=compare_table.pl				\
 	data/cards/cards.gram				\
 	data/cards/cards.hyp				\
 	data/cards/cards.transcription			\
+	data/an4_ci_cont/mixture_weights		\
+	data/an4_ci_cont/means				\
+	data/an4_ci_cont/variances			\
+	data/an4_ci_cont/mdef				\
+	data/an4_ci_cont/feat.params			\
+	data/an4_ci_cont/noisedict			\
+	data/an4_ci_cont/transition_matrices		\
 	data/tidigits/man.ah.111a.mfc			\
 	data/tidigits/man.ah.1b.mfc			\
 	data/tidigits/man.ah.2934za.mfc			\

@@ -18,10 +18,10 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/../../sphinx3/model/hmm/hub4_cd_continuous_8gau_1s_c_d_dd",
-				"-mllr", MODELDIR "/../../sphinx3/model/hmm/hub4_cd_continuous_8gau_1s_c_d_dd/mllr_matrices",
-				"-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
-				"-dict", MODELDIR "/lm/en_US/cmu07a.dic",
+				"-hmm", DATADIR "/an4_ci_cont",
+				"-lm", MODELDIR "/lm/en/turtle.DMP",
+				"-dict", MODELDIR "/lm/en/turtle.dic",
+				"-mllr", DATADIR "/mllr_matrices",
 				"-samprate", "16000", NULL));
 
 	TEST_ASSERT(ps = ps_init(config));
