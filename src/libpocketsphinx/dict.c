@@ -97,6 +97,30 @@ dict_add_word(dict_t * d, char const *word, s3cipid_t const * p, int32 np)
     wordp = d->word + d->n_word;
     wordp->word = (char *) ckd_salloc(word);    /* Freed in dict_free */
 
+    /* Determine base/alt wids */
+    wword = ckd_salloc(word);
+    if ((len = dict_word2basestr(wword)) > 0) {
+        int32 w;
+
+        /* Truncated to a baseword string; find its ID */
+        if (hash_table_lookup_int32(d->ht, wword, &w) < 0) {
+            E_ERROR("Missing base word for: %s\n", word);
+            ckd_free(wword);
+            ckd_free(wordp->word);
+            wordp->word = NULL;
+            return BAD_S3WID;
+        }
+
+        /* Link into alt list */
+        wordp->basewid = w;
+        wordp->alt = d->word[w].alt;
+        d->word[w].alt = d->n_word;
+    } else {
+        wordp->alt = BAD_S3WID;
+        wordp->basewid = d->n_word;
+    }
+    ckd_free(wword);
+
     /* Associate word string with d->n_word in hash table */
     if (hash_table_enter_int32(d->ht, wordp->word, d->n_word) != d->n_word) {
         ckd_free(wordp->word);
@@ -114,29 +138,6 @@ dict_add_word(dict_t * d, char const *word, s3cipid_t const * p, int32 np)
         wordp->ciphone = NULL;
         wordp->pronlen = 0;
     }
-    wordp->alt = BAD_S3WID;
-    wordp->basewid = d->n_word;
-
-    /* Determine base/alt wids */
-    wword = ckd_salloc(word);
-    if ((len = dict_word2basestr(wword)) > 0) {
-	int32 w;
-
-        /* Truncated to a baseword string; find its ID */
-        if (hash_table_lookup_int32(d->ht, wword, &w) < 0) {
-            E_ERROR("Missing base word for: %s\n", word);
-            ckd_free(wword);
-            ckd_free(wordp->word);
-            wordp->word = NULL;
-            return BAD_S3WID;
-        }
-
-        /* Link into alt list */
-        wordp->basewid = w;
-        wordp->alt = d->word[w].alt;
-        d->word[w].alt = d->n_word;
-    }
-    ckd_free(wword);
 
     newwid = d->n_word++;
 
@@ -272,11 +273,11 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
     if (dictfile) {
         if ((fp = fopen(dictfile, "r")) == NULL) {
             E_ERROR_SYSTEM("Failed to open dictionary file '%s' for reading", dictfile);
-    	    return NULL;
+            return NULL;
         }
         for (li = lineiter_start(fp); li; li = lineiter_next(li)) {
-	    if (0 != strncmp(li->buf, "##", 2)
-    	        && 0 != strncmp(li->buf, ";;", 2))
+            if (0 != strncmp(li->buf, "##", 2)
+                && 0 != strncmp(li->buf, ";;", 2))
                 n++;
         }
         rewind(fp);
