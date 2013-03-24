@@ -10,12 +10,14 @@
 use strict;
 use Getopt::Long;
 use Pod::Usage;
-use vars qw($Verbose $IgnoreUttID);
+use vars qw($Verbose $CER $IgnoreUttID);
+use encoding 'utf8';
 
 my ($help,%hyphash);
 GetOptions(
 	   'help|?' => \$help,
 	   'verbose|v' => \$Verbose,
+	   'cer|c' => \$CER,
 	   'ignore-uttid|i' => \$IgnoreUttID,
 	  ) or pod2usage(1);
 pod2usage(1) if $help;
@@ -40,15 +42,16 @@ use constant MATCH => 3;
 use constant SUBST => 4;
 use constant BIG_NUMBER => 1e50;
 
-my ($total_words, $total_match, $total_cost);
+my ($total_words, $total_match, $total_cost, $total_hyp);
 my ($total_ins, $total_del, $total_subst);
 while (defined(my $ref_utt = <REF>)) {
     my $hyp_utt;
     my $ref_uttid;
     my $hyp_uttid;
 
-    ($ref_utt,$ref_uttid)=s3_magic_norm($ref_utt);
+    last unless defined $ref_utt;
 
+    ($ref_utt,$ref_uttid)=s3_magic_norm($ref_utt);
 
     if(defined $IgnoreUttID){
 	$hyp_utt = <HYP>;
@@ -68,6 +71,11 @@ while (defined(my $ref_utt = <REF>)) {
     # Split the text into an array of words
     my @ref_words = split ' ', $ref_utt;
     my @hyp_words = split ' ', $hyp_utt;
+    if ($CER) {
+	# Split the text into an array of characters
+	@ref_words = map { split "" } @ref_words;
+	@hyp_words = map { split "" } @hyp_words;
+    }
 
     my (@align_matrix, @backtrace_matrix);
 
@@ -85,10 +93,21 @@ while (defined(my $ref_utt = <REF>)) {
 	my ($ref, $hyp) = @$_;
 	my $width = 0;
 
-	# Capitalize errors (they already are...), lowercase matches
-	if (defined($ref) and defined($hyp) and $ref eq $hyp) {
-	    $ref = lc $ref;
-	    $hyp = lc $hyp;
+	if (defined($ref) and defined($hyp)) {
+	    if ($CER or
+		($ref =~ /\p{InCJKUnifiedIdeographs}/ or
+		 $ref =~ /\p{Han}/ or
+		 $hyp =~ /\p{Han}/)) {
+		# Assume this is Chinese, no capitalization so put ** around errors
+		if ($ref ne $hyp) {
+		    $ref = "*$ref*";
+	    	    $hyp = "*$hyp*";
+		}
+	    } elsif ($ref eq $hyp) {
+		# Capitalize errors (they already are...), lowercase matches
+		$ref = lc $ref;
+		$hyp = lc $hyp;
+	    }
 	}
 
 	# Replace deletions with ***
@@ -102,6 +121,7 @@ while (defined(my $ref_utt = <REF>)) {
 	$ref_align .= sprintf("%-*s ", $width, $ref);
 	$hyp_align .= sprintf("%-*s ", $width, $hyp);
     }
+    $ref_uttid = "" unless defined $ref_uttid; # avoid warnings
     print "$ref_align ($ref_uttid)\n$hyp_align ($hyp_uttid)\n";
 
     # Print out the word error and accuracy rates
@@ -114,13 +134,21 @@ while (defined(my $ref_utt = <REF>)) {
     $total_cost += $cost;
     $total_match += $match;
     $total_words += @ref_words;
+    $total_hyp += @hyp_words;
     $total_ins += $ins;
     $total_del += $del;
     $total_subst += $subst;
 }
 # Print out the total word error and accuracy rates
-my $error = $total_cost/$total_words;
-my $acc = $total_match/$total_words;
+my ($error, $acc);
+if ($total_words == 0) {
+    $error = $total_cost/$total_hyp;
+    $acc = $total_match/$total_hyp;
+}
+else {
+    $error = $total_cost/$total_words;
+    $acc = $total_match/$total_words;
+}
 printf("TOTAL Words: %d Correct: %d Errors: %d\nTOTAL Percent correct = %.2f%% Error = %.2f%% Accuracy = %.2f%%\n",
        $total_words, $total_match, $total_cost, $acc*100, $error*100, 100-$error*100);
 print "TOTAL Insertions: $total_ins Deletions: $total_del Substitutions: $total_subst\n";
@@ -128,9 +156,15 @@ print "TOTAL Insertions: $total_ins Deletions: $total_del Substitutions: $total_
 # This function normalizes a line of a match file. 
 sub s3_magic_norm{
     my ($word)=@_;
+    my $uttid;
 
     # Remove line endings
-    $word =~ s/\s+$//;
+    $word =~ s/[\n\r]+$//;  # the agnostic way...
+
+    # This computes the uttid and remove it from a line.
+    $word =~ s/\(([^) ]+)[^)]*\)$// ;
+    $uttid = $1;
+
     # Normalize case
     $word = uc $word;   
     # Remove filler words and context cues
@@ -144,13 +178,10 @@ sub s3_magic_norm{
     # Remove class tags
     $word =~ s/:\S+//g;
 
-    # This compute the uttid and remove it from a line.
-    $word =~ s/\(([^) ]+)[^)]*\)$// ;
-
     # Split apart compound words and acronyms
-    $word =~ tr/_./  /;
+    $word =~ tr/-_./  /;
 
-    return ($word,$1);
+    return ($word,$uttid);
 }
 
 sub initialize {
