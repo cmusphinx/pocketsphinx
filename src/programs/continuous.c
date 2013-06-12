@@ -147,10 +147,11 @@ recognize_from_file() {
     file_ad.bps = sizeof(int16);
 
     if ((cont = cont_ad_init(&file_ad, ad_file_read)) == NULL) {
-        E_FATAL("Failed to initialize voice activity detection");
+        E_FATAL("Failed to initialize voice activity detection\n");
     }
+
     if (cont_ad_calib(cont) < 0)
-        E_FATAL("Failed to calibrate voice activity detection\n");
+        E_INFO("Using default voice activity detection\n");
     rewind (rawfd);
 
     for (;;) {
