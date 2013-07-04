@@ -65,12 +65,12 @@ extern "C" {
  * process longer utterances. Due to limitations of FSG search implementation
  * this value needs to be signed.
  */
-typedef int16 frame_idx_t;
+typedef int32 frame_idx_t;
 
 /**
  * Maximum number of frames in index, should be in sync with above.
  */
-#define MAX_N_FRAMES MAX_INT16
+#define MAX_N_FRAMES MAX_INT32
 
 
 /** Shift count for senone scores. */
