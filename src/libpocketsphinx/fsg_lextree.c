@@ -807,7 +807,7 @@ fsg_psubtree_dump(fsg_lextree_t *tree, fsg_pnode_t *root, FILE * fp)
     fsg_psubtree_dump_node(tree, root, fp);
 
     if (root->leaf) {
-        if (root->ppos == 0 && root->sibling) { // For single-phone words
+        if (root->ppos == 0 && root->sibling) { /* For single-phone words */
             fsg_psubtree_dump(tree, root->sibling,fp);
         }
         return;
