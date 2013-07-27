@@ -35,7 +35,7 @@ main(int argc, char *argv[])
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = ps_init(config));
-        fsgs = (fsg_search_t *)fsg_search_init(config, ps->acmod, ps->dict, ps->d2p);
+  fsgs = (fsg_search_t *)fsg_search_init(config, ps->acmod, ps->dict, ps->d2p);
 	acmod = ps->acmod;
 
 	jsgf = jsgf_parse_file(DATADIR "/goforward.gram", NULL);

@@ -4,10 +4,11 @@ man_MANS = \
 	pocketsphinx_mdef_convert.1
 
 EXTRA_DIST = \
+	args2man.pl \
+	doxy2swig.py \
 	pocketsphinx_batch.1 \
 	pocketsphinx_continuous.1 \
-	pocketsphinx_mdef_convert.1 \
-	args2man.pl
+	pocketsphinx_mdef_convert.1
 
 # pocketsphinx_batch.1: pocketsphinx_batch.1.in
 # 	$(srcdir)/args2man.pl $(top_builddir)/src/programs/pocketsphinx_batch \
@@ -17,8 +18,15 @@ EXTRA_DIST = \
 # 	$(srcdir)/args2man.pl $(top_builddir)/src/programs/pocketsphinx_continuous \
 # 		< $< > $@
 
+if BUILD_SWIG
+SWIG_DOC = pydoc.i
+
+pydoc.i: html/index.html
+	$(PYTHON) $(srcdir)/doxy2swig.py -n xml/index.xml pydoc.i
+endif
+
 if BUILD_DOXYGEN
-all-local: html/index.html
+all-local: html/index.html $(SWIG_DOC)
 endif
 
 headers = $(top_srcdir)/include/pocketsphinx.h \
@@ -33,8 +41,8 @@ html/index.html: doxyfile $(headers)
 	doxygen
 
 clean-local:
-	-rm -rf html latex doxytags
+	-rm -rf html xml latex doxytags $(SWIG_DOC)
 
 # Totally CMU-specific rule for uploading documentation
 upload: html/index.html
-	rsync -av html/ fife:/usr12/apache2/htdocs/sphinx/doc/doxygen/pocketsphinx/
+	rsync -av html/ file:/usr12/apache2/htdocs/sphinx/doc/doxygen/pocketsphinx/

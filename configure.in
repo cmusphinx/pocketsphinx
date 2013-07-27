@@ -47,53 +47,34 @@ dnl
 AC_CHECK_PROG(HAVE_DOXYGEN, doxygen, yes, no)
 AM_CONDITIONAL(BUILD_DOXYGEN, test "x$HAVE_DOXYGEN" = "xyes")
 
-dnl
-dnl Check for Python, and build python module if present
-dnl
-use_python=true
-PYTHON=python
-AC_ARG_WITH(python,
-	AS_HELP_STRING([--without-python],
-		       [Disable Python extension]),[
-if test x$withval = xno; then
-   use_python=false
-   PYTHON=bogus
-elif test x$withval = xyes; then
-   # No specific python binary was given, so check for it in PATH
-   use_python=true
-   PYTHON=python
-else
-   # A python was given, assume it is in the user's PATH or is fully qualified
-   use_python=true
-   PYTHON="$withval"
-   PYTHON_CONFIG="$withval"-config
-fi
-])
-if test "x$use_python" = xtrue -a "x$PYTHON" = xpython; then
-   AC_PATH_PROG(PYTHON, python, bogus)
-   AC_PATH_PROG(PYTHON_CONFIG, python-config, bogus)
-fi
-if test "x$use_python" = xtrue -a "x$PYTHON" != xbogus -a "x$PYTHON_CONFIG" != xbogus; then
-    PYTHON_INCLUDES=`"$PYTHON_CONFIG" --includes` 
-    CPPFLAGS="$CPPFLAGS $PYTHON_INCLUDES"
-    AC_CHECK_HEADER(Python.h,use_python=true,use_python=false)
-else
-    use_python=false
-    PYTHON=bogus
-fi
-if test "x$use_python" != xtrue ; then
-    AC_WARN([Disabling python since development headers were not found])
-fi
-AM_CONDITIONAL(BUILD_PYTHON, test "x$use_python" = "xtrue")
-AC_SUBST(PYTHON)
-
-dnl
-dnl Check for Cython, and rebuild python module if present
-dnl
-if test "x$PYTHON" != "xbogus"; then
-   AC_CHECK_PROG(HAVE_CYTHON, cython, yes, no)
-fi
-AM_CONDITIONAL(BUILD_CYTHON, test "x$HAVE_CYTHON" = "xyes")
+###### swig python vvvvv
+AC_ARG_WITH(swig-python,
+	AS_HELP_STRING([--without-swig-python],
+                 [Disable Python extension, built with swig]),
+  [],
+  [
+    AM_PATH_PYTHON(2.4, [], [AC_MSG_ERROR([python not found])])
+    AC_MSG_CHECKING([for python include path])
+    if test -z "$PYTHON_CPPFLAGS"; then
+      python_path=`$PYTHON -c "import distutils.sysconfig; \
+        print (distutils.sysconfig.get_python_inc ());"`
+      plat_python_path=`$PYTHON -c "import distutils.sysconfig; \
+        print (distutils.sysconfig.get_python_inc (plat_specific=1));"`
+      if test -n "${python_path}"; then
+        if test "${plat_python_path}" != "${python_path}"; then
+          python_path="-I$python_path -I$plat_python_path"
+        else
+          python_path="-I$python_path"
+        fi
+      fi
+      PYTHON_CPPFLAGS=$python_path
+    fi
+    AC_MSG_RESULT([$PYTHON_CPPFLAGS])
+    AC_SUBST([PYTHON_CPPFLAGS])
+    AX_PKG_SWIG(2.0, [], [AC_MSG_ERROR([swig not found])])
+    AM_CONDITIONAL(BUILD_SWIG, test "x$SWIG" != "x")
+  ])
+###### swig python ^^^^^^^^
 
 dnl
 dnl Now check for GStreamer, and build the plugin if it's available
@@ -130,15 +111,7 @@ AC_ARG_WITH(sphinxbase,
 	AS_HELP_STRING([--with-sphinxbase=DIRECTORY],
 			[Look for SphinxBase source files in DIRECTORY.  If this is 'auto',
 			 the system-wide installation will be used.]),
-			sphinxbase=$withval)
-
-dnl
-dnl Get SphinxBase build directory from command line if given
-dnl
-AC_ARG_WITH(sphinxbase-build,
-	AS_HELP_STRING([--with-sphinxbase-build=DIRECTORY],
-			[Look for SphinxBase object files in DIRECTORY]),
-	sphinxbasebuild=$withval)
+			 sphinxbase=$withval)
 
 
 dnl
@@ -177,69 +150,43 @@ dnl Also allow --with-sphinxbase=auto to use system one explicitly
 dnl
 if test x$sphinxbase = x || test x$sphinxbase = xauto; then
    sphinxbase=
+
    if test "x$HAVE_PKGCONFIG" = "xno"; then
-      SphinxBase_CFLAGS = "-Iusr/include/sphinxbase -I/usr/local/include/sphinxbase"
-      SphinxBase_LIBS = "-lsphinxbase"
+      SPHINXBASE_CFLAGS = "-I/usr/include/sphinxbase -I/usr/local/include/sphinxbase"
+      SPHINXBASE_LIBS = "-lsphinxbase"
+      SPHINXBASE_PREFIX="/usr/local"
    else
-      PKG_CHECK_MODULES(SphinxBase, [sphinxbase],,[
+      PKG_CHECK_MODULES(SPHINXBASE, [sphinxbase],,[
       AC_MSG_FAILURE(dnl
 [SphinxBase was not found on your system.
 Make sure that you have installed it and that the
 PKG_CONFIG_PATH environment variable is set correctly, if
 it was installed in a non-standard prefix.])])
+      SPHINXBASE_PREFIX=`pkg-config --variable=prefix sphinxbase`
    fi
-   LIBS="$LIBS $SphinxBase_LIBS"
-   CPPFLAGS="$CPPFLAGS $SphinxBase_CFLAGS"
-   AC_CHECK_HEADER(sphinx_config.h,,[
-   AC_MSG_FAILURE(dnl
-[SphinxBase was not found on your system.])])
-fi
-
-dnl
-dnl Now verify SphinxBase if defined
-dnl Sadly, this doesn't work when cross-compiling (for some dumb reason...)
-dnl
-: ${sphinxbasebuild=$sphinxbase}
-if test x$sphinxbase != x && test x$cross_compiling = xyes; then
-   CPPFLAGS="-I$sphinxbase/include -I$sphinxbasebuild/include $CPPFLAGS"
+   
+   LIBS="$LIBS $SPHINXBASE_LIBS"
+   CPPFLAGS="$CPPFLAGS $SPHINXBASE_CFLAGS"
+   SPHINXBASE_SWIG="$SPHINXBASE_PREFIX/share/sphinxbase/swig"
+   AC_CHECK_HEADER(sphinx_config.h,,[AC_MSG_FAILURE([SphinxBase was not found on your system.])])
+else
    LIBS="$LIBS -lsphinxbase"
-   # We include libsphinxbase/.libs because of stupid broken versions of libtool
-   LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxad \
-		     -L$sphinxbasebuild/src/libsphinxbase \
-		     -L$sphinxbasebuild/src/libsphinxbase/.libs"
-fi
-if test x$sphinxbase != x && test x$cross_compiling != xyes; then
-   AC_CHECK_FILE($sphinxbase/include/sphinxbase/prim_type.h,
-		 CPPFLAGS="-I$sphinxbase/include $CPPFLAGS",
-   AC_ERROR(
-[SphinxBase headers not found in $sphinxbase.  Please use the
---with-sphinxbase option to `configure' to specify the location of
-SphinxBase.  Run $0 --help for more information.]))
-fi
-# We include libsphinxbase/.libs because of stupid broken versions of libtool
-if test x$sphinxbasebuild != x && test x$cross_compiling != xyes; then
-   AC_CHECK_FILE($sphinxbasebuild/src/libsphinxbase/libsphinxbase.la,
-[CPPFLAGS="-I$sphinxbasebuild/include $CPPFLAGS"
-LIBS="$LIBS -lsphinxbase"
-LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxad \
-		  -L$sphinxbasebuild/src/libsphinxbase \
-		  -L$sphinxbasebuild/src/libsphinxbase/.libs"],
-		   AC_ERROR(
-[SphinxBase libraries were not found in $sphinxbasebuild.
-Use the --with-sphinxbase-build option to `configure' to specify
-the build directory for SphinxBase.  Run $0 --help for more information.]))
+   LDFLAGS="$LDFLAGS -L$sphinxbase/src/libsphinxad \
+		     -L$sphinxbase/src/libsphinxbase"
+   CPPFLAGS="$CPPFLAGS -I$sphinxbase/include"
+   SPHINXBASE_SWIG="$sphinxbase/swig"
 fi
 
-AC_SUBST(sphinxbase)
-AC_SUBST(sphinxbasebuild)
+AC_SUBST(SPHINXBASE_SWIG)
 
 AC_OUTPUT([
 pocketsphinx.pc
 Makefile
 include/Makefile
-python/Makefile
-python/setup.py
 src/Makefile
+swig/Makefile
+swig/python/Makefile
+swig/python/test/Makefile
 src/libpocketsphinx/Makefile
 src/programs/Makefile
 src/gst-plugin/Makefile

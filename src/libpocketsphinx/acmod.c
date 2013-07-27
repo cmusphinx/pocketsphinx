@@ -82,7 +82,7 @@ acmod_init_am(acmod_t *acmod)
     /* Read model definition. */
     if ((mdeffn = cmd_ln_str_r(acmod->config, "-mdef")) == NULL) {
 	if ((hmmdir = cmd_ln_str_r(acmod->config, "-hmm")) == NULL) {
-	    E_ERROR("Acoustic model definition is not specified neither with -mdef option nor with -hmm\n");
+	    E_ERROR("Acoustic model definition is not specified either with -mdef option or with -hmm\n");
 	} else {
 	    E_ERROR("Folder '%s' does not contain acoustic model definition 'mdef'\n", hmmdir);
 	}

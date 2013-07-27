@@ -573,7 +573,7 @@ void ps_seg_free(ps_seg_t *seg);
  * Get an iterator over the best hypotheses, optionally within a
  * selected region of the utterance. Iterator is empty now, it must
  * be advanced with ps_nbest_next first. The function may also
- * return a NULL which means that there is nohypothesis available for this
+ * return a NULL which means that there is no hypothesis available for this
  * utterance.
  *
  * @param ps Decoder.
