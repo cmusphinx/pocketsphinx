@@ -53,6 +53,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #if !defined(_WIN32_WCE)
 #include <signal.h>
