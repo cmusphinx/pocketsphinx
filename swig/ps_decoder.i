@@ -116,8 +116,7 @@
         char const *hyp, *uttid;
         int32 best_score;
         hyp = ps_get_hyp($self, &best_score, &uttid);
-
-        return new_Hypothesis(hyp, uttid, best_score);
+        return hyp ? new_Hypothesis(hyp, uttid, best_score) : NULL;
     }
 
     NBest * nbest() {
@@ -143,10 +142,7 @@
 
     NGramModelSet * update_lmset(NGramModelSet *lm_set) {
         ngram_model_t *new_lm_set = ps_update_lmset($self, lm_set);
-        if (new_lm_set)
-            return ngram_model_retain(new_lm_set);
-        else
-            return NULL;
+        return new_lm_set ? ngram_model_retain(new_lm_set) : NULL;
     }
 
     FsgSet * get_fsgset() {
