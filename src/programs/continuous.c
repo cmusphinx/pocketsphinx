@@ -305,7 +305,7 @@ recognize_from_microphone()
                  * No speech data available; check current timestamp with most recent
                  * speech to see if more than 1 sec elapsed.  If so, end of utterance.
                  */
-                if ((cont->read_ts - ts) > DEFAULT_SAMPLES_PER_SEC)
+                if ((cont->read_ts - ts) > DEFAULT_SAMPLES_PER_SEC / 4)
                     break;
             }
             else {
