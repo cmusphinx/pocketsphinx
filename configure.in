@@ -72,8 +72,8 @@ AC_ARG_WITH(swig-python,
     AC_MSG_RESULT([$PYTHON_CPPFLAGS])
     AC_SUBST([PYTHON_CPPFLAGS])
     AX_PKG_SWIG(2.0, [], [AC_MSG_ERROR([swig not found])])
-    AM_CONDITIONAL(BUILD_SWIG, test "x$SWIG" != "x")
   ])
+AM_CONDITIONAL(BUILD_SWIG, test "x$SWIG" != "x")
 ###### swig python ^^^^^^^^
 
 dnl
