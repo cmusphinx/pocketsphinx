@@ -102,13 +102,26 @@
         *errcode = ps_end_utt($self);
     }
 
-    int process_raw(const void *SDATA, size_t NSAMP, bool no_search, bool full_utt, int *errcode) {
+#ifdef SWIGJAVA
+    int
+    process_raw(const int16 *SDATA, size_t NSAMP, bool no_search, bool full_utt,
+                int *errcode) {
+#else
+    int
+    process_raw(const void *SDATA, size_t NSAMP, bool no_search, bool full_utt,
+                int *errcode) {
         NSAMP /= sizeof(int16);
+#endif
         return *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
     }
 
-    int decode_raw(FILE *f, int *errcode) {
-        *errcode = ps_decode_raw($self, f, 0, -1);
+#ifdef SWIGJAVA
+    int decode_raw(const char *fname, int *errcode) {
+      FILE *fd = fopen(fname, "r");
+#else
+    int decode_raw(FILE *fd, int *errcode) {
+#endif
+        *errcode = ps_decode_raw($self, fd, 0, -1);
         return *errcode;
     }
 
