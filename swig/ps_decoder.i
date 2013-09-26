@@ -102,26 +102,20 @@
         *errcode = ps_end_utt($self);
     }
 
-#ifdef SWIGJAVA
     int
-    process_raw(const int16 *SDATA, size_t NSAMP, bool no_search, bool full_utt,
-                int *errcode) {
-#else
-    int
+#ifdef SWIGPYTHON
     process_raw(const void *SDATA, size_t NSAMP, bool no_search, bool full_utt,
                 int *errcode) {
         NSAMP /= sizeof(int16);
+#else
+    process_raw(const int16 *SDATA, size_t NSAMP, bool no_search, bool full_utt,
+                int *errcode) {
 #endif
         return *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
     }
 
-#ifdef SWIGJAVA
-    int decode_raw(const char *fname, int *errcode) {
-      FILE *fd = fopen(fname, "r");
-#else
-    int decode_raw(FILE *fd, int *errcode) {
-#endif
-        *errcode = ps_decode_raw($self, fd, 0, -1);
+    int decode_raw(FILE *fin, int *errcode) {
+        *errcode = ps_decode_raw($self, fin, 0, -1);
         return *errcode;
     }
 
@@ -163,7 +157,7 @@
     }
 
     FsgSet * update_fsgset() {
-        ps_update_fsgset($self);
+        return ps_update_fsgset($self);
     }
 
     LogMath * get_logmath() {
