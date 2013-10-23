@@ -399,7 +399,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
     if (pronlen == 1) {         /* Single-phone word */
         int ci = dict_first_phone(lextree->dict, dictwid);
         /* Only non-filler words are mpx */
-        if (dict_filler_word(lextree->dict, dictwid)) {
+        if (!dict_filler_word(lextree->dict, dictwid)) {
             /*
              * Left diphone ID for single-phone words already assumes SIL is right
              * context; only left contexts need to be handled.
