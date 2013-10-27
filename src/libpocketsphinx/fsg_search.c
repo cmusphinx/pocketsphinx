@@ -1238,7 +1238,7 @@ fsg_seg_bp2itor(ps_seg_t *seg, fsg_hist_entry_t *hist_entry)
     seg->prob = 0; /* Bogus value... */
     /* "Language model" score = transition probability. */
     seg->lback = 1;
-    seg->lscr = hist_entry->fsglink->logs2prob;
+    seg->lscr = fsg_link_logs2prob(hist_entry->fsglink) >> SENSCR_SHIFT;
     if (ph) {
         /* FIXME: Not sure exactly how cross-word triphones are handled. */
         seg->ascr = hist_entry->score - ph->score - seg->lscr;
