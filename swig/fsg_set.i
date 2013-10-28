@@ -37,27 +37,27 @@
 
 %extend FsgSet {
 
-    FsgSet(void *ptr) {
-	return ptr;
-    }
+  FsgSet(void *ptr) {
+    return ptr;
+  }
 
-    ~FsgSet() {
-	return;
-    }
+  ~FsgSet() {
+    return;
+  }
 
-    FsgModel* add(const char *name, FsgModel *model) {
-        return fsg_set_add($self, name, model);
-    }
+  FsgModel* add(const char *name, FsgModel *model) {
+    return fsg_set_add($self, name, model);
+  }
 
-    FsgModel* get_fsg(const char *name) {
-        return fsg_set_get_fsg($self, name);
-    }
+  FsgModel* get_fsg(const char *name) {
+    return fsg_set_get_fsg($self, name);
+  }
 
-    FsgModel* select(const char *name) {
-        return fsg_set_select($self, name);
-    }
+  FsgModel* select(const char *name) {
+    return fsg_set_select($self, name);
+  }
 
-    FsgModel * remove_byname(const char *name) {
-        return fsg_set_remove_byname($self, name);
-    }
+  FsgModel * remove_byname(const char *name) {
+    return fsg_set_remove_byname($self, name);
+  }
 }
