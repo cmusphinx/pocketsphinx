@@ -176,7 +176,7 @@ typedef struct {} FsgSet;
 
     NBest * next() {
         $self->ptr = ps_nbest_next($self->ptr);
-    	return $self;
+        return $self;
     }
 #endif
   
