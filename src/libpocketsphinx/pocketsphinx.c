@@ -268,11 +268,6 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
              || (lmctl = cmd_ln_str_r(ps->config, "-lmctl"))) {
         ps_search_t *ngs;
 
-        /* Make the acmod's feature buffer growable if we are doing two-pass search. */
-	if (cmd_ln_boolean_r(ps->config, "-fwdflat")
-    	    && cmd_ln_boolean_r(ps->config, "-fwdtree"))
-    	    acmod_set_grow(ps->acmod, TRUE);
-
         if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
             return -1;
         if ((ngs = ngram_search_init(ps->config, ps->acmod, ps->dict, ps->d2p)) == NULL)

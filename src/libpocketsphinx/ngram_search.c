@@ -137,12 +137,17 @@ ngram_search_calc_beams(ngram_search_t *ngs)
 
 ps_search_t *
 ngram_search_init(cmd_ln_t *config,
-		  acmod_t *acmod,
-		  dict_t *dict,
+                  acmod_t *acmod,
+                  dict_t *dict,
                   dict2pid_t *d2p)
 {
     ngram_search_t *ngs;
     const char *path;
+
+    /* Make the acmod's feature buffer growable if we are doing two-pass
+     * search. */
+    acmod_set_grow(acmod, cmd_ln_boolean_r(config, "-fwdflat") &&
+                          cmd_ln_boolean_r(config, "-fwdtree"));
 
     ngs = ckd_calloc(1, sizeof(*ngs));
     ps_search_init(&ngs->base, &ngram_funcs, config, acmod, dict, d2p);
@@ -204,17 +209,14 @@ ngram_search_init(cmd_ln_t *config,
         ngram_model_t *lm;
 
         lm = ngram_model_read(config, path, NGRAM_AUTO, acmod->lmath);
-        if (lm == NULL) {
-            E_ERROR("Failed to read language model file: %s\n", path);
+        if (lm == NULL)
             goto error_out;
-        }
+
         ngs->lmset = ngram_model_set_init(config,
                                           &lm, (char **)&name,
                                           NULL, 1);
-        if (ngs->lmset == NULL) {
-            E_ERROR("Failed to initialize language model set\n");
+        if (ngs->lmset == NULL)
             goto error_out;
-        }
     }
     if (ngs->lmset != NULL
         && ngram_wid(ngs->lmset, S3_FINISH_WORD) == ngram_unknown_wid(ngs->lmset)) {
@@ -815,8 +817,10 @@ ngram_search_finish(ps_search_t *search)
         if (ngs->fwdflat) {
             int i;
             /* Rewind the acoustic model. */
+            E_ERROR("DEBUG ME\n");
             if (acmod_rewind(ps_search_acmod(ngs)) < 0)
                 return -1;
+            E_ERROR("DEBUG ME\n");
             /* Now redo search. */
             ngram_fwdflat_start(ngs);
             i = 0;
