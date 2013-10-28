@@ -49,12 +49,11 @@
     Decoder() {
         Decoder *d = ps_init(cmd_ln_init(NULL, ps_args(), FALSE, NULL));
         return d;
-        return NULL;
     }
 
-    Decoder(Config *c) {
-        Decoder *d = ps_init(c);
-        return d;
+    Decoder(Config *config) {
+        Decoder *decoder = ps_init(config);
+        return decoder;
     }
 
     ~Decoder() {
