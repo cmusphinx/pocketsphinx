@@ -817,10 +817,8 @@ ngram_search_finish(ps_search_t *search)
         if (ngs->fwdflat) {
             int i;
             /* Rewind the acoustic model. */
-            E_ERROR("DEBUG ME\n");
             if (acmod_rewind(ps_search_acmod(ngs)) < 0)
                 return -1;
-            E_ERROR("DEBUG ME\n");
             /* Now redo search. */
             ngram_fwdflat_start(ngs);
             i = 0;
