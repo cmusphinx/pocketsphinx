@@ -59,7 +59,7 @@ main(int argc, char *argv[])
 
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
-		TEST_EQUAL(0, strcmp("go forward and users",
+		TEST_EQUAL(0, strcmp("go forward in the shares",
 				     ngram_search_bp_hyp(ngs,
 							 ngram_search_find_exit(ngs, -1, NULL, NULL))));
 
@@ -79,7 +79,7 @@ main(int argc, char *argv[])
 		       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL)));
 
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
-		TEST_EQUAL(0, strcmp("go forward and users",
+		TEST_EQUAL(0, strcmp("go forward in the shares",
 				     ngram_search_bp_hyp(ngs,
 							 ngram_search_find_exit(ngs, -1, NULL, NULL))));
 		fclose(senfh);

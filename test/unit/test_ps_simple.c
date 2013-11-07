@@ -23,5 +23,5 @@ main(int argc, char *argv[])
 				"-rawlogdir", ".",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
-	return ps_decoder_test(config, "BESTPATH", "go forward and users");
+	return ps_decoder_test(config, "BESTPATH", "go forward and readers");
 }
