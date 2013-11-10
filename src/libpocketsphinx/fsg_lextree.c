@@ -166,7 +166,6 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
         for (itor = fsg_model_arcs(fsg, s); itor; itor = fsg_arciter_next(itor)) {
             fsg_link_t *l = fsg_arciter_get(itor);
             if (fsg_link_wid(l) < 0) {
-
                 /*
                  * lclist(d) |= lclist(s), because all the words ending up at s, can
                  * now also end at d, becoming the left context for words leaving d.
@@ -700,8 +699,7 @@ fsg_psubtree_init(fsg_lextree_t *lextree,
                   fsg_model_t * fsg, int32 from_state,
                   fsg_pnode_t ** alloc_head)
 {
-    int32 dst;
-    gnode_t *gn;
+    fsg_arciter_t *itor;
     fsg_link_t *fsglink;
     fsg_pnode_t *root;
     int32 n_ci, n_arc;
@@ -716,24 +714,24 @@ fsg_psubtree_init(fsg_lextree_t *lextree,
             ("#phones > %d; increase FSG_PNODE_CTXT_BVSZ and recompile\n",
              FSG_PNODE_CTXT_BVSZ * 32);
     }
+
     n_arc = 0;
-    for (dst = 0; dst < fsg_model_n_state(fsg); dst++) {
-        /* Add all links from from_state to dst */
-        for (gn = fsg_model_trans(fsg, from_state, dst); gn;
-             gn = gnode_next(gn)) {
-            /* Add word emitted by this transition (fsglink) to lextree */
-            fsglink = (fsg_link_t *) gnode_ptr(gn);
+    for (itor = fsg_model_arcs(fsg, from_state); itor; 
+         itor = fsg_arciter_next(itor)) {
+        int32 dst;
+        fsglink = fsg_arciter_get(itor);
+        dst = fsglink->to_state;
 
-            assert(fsg_link_wid(fsglink) >= 0);     /* Cannot be a null trans */
+        if (fsg_link_wid(fsglink) < 0)
+            continue;
 
-            E_DEBUG(2,("Building lextree for arc from %d to %d: %s\n",
-                       from_state, dst, fsg_model_word_str(fsg, fsg_link_wid(fsglink))));
-            root = psubtree_add_trans(lextree, root, &glist, fsglink,
-                                      lextree->lc[from_state],
-                                      lextree->rc[dst],
-                                      alloc_head);
-            ++n_arc;
-        }
+        E_DEBUG(2,("Building lextree for arc from %d to %d: %s\n",
+                   from_state, dst, fsg_model_word_str(fsg, fsg_link_wid(fsglink))));
+        root = psubtree_add_trans(lextree, root, &glist, fsglink,
+                                  lextree->lc[from_state],
+                                  lextree->rc[dst],
+                                  alloc_head);
+        ++n_arc;
     }
     E_DEBUG(2,("State %d has %d outgoing arcs\n", from_state, n_arc));
 
