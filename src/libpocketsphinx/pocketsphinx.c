@@ -60,27 +60,13 @@ static const arg_t ps_args_def[] = {
     CMDLN_EMPTY_OPTION
 };
 
-/* I'm not sure what the portable way to do this is. */
 static int
-file_exists(const char *path)
+dir_exists(const char *path)
 {
-    FILE *tmp;
+    struct stat sb;
 
-    tmp = fopen(path, "rb");
-    if (tmp) fclose(tmp);
-    return (tmp != NULL);
-}
-
-static int
-hmmdir_exists(const char *path)
-{
-    FILE *tmp;
-    char *mdef = string_join(path, "/mdef", NULL);
-
-    tmp = fopen(mdef, "rb");
-    if (tmp) fclose(tmp);
-    ckd_free(mdef);
-    return (tmp != NULL);
+    E_SYSCALL(stat(path, &sb), "cannot stat `%s'", path);
+    return S_ISDIR(sb.st_mode);
 }
 
 static void
@@ -89,7 +75,7 @@ ps_add_file(ps_decoder_t *ps, const char *arg,
 {
     char *tmp = string_join(hmmdir, "/", file, NULL);
 
-    if (cmd_ln_str_r(ps->config, arg) == NULL && file_exists(tmp))
+    if (cmd_ln_str_r(ps->config, arg) == NULL && !access(tmp, F_OK))
         cmd_ln_set_str_r(ps->config, arg, tmp);
     ckd_free(tmp);
 }
@@ -110,37 +96,42 @@ ps_init_defaults(ps_decoder_t *ps)
     hmmdir = cmd_ln_str_r(ps->config, "-hmm");
     lmfile = cmd_ln_str_r(ps->config, "-lm");
     dictfile = cmd_ln_str_r(ps->config, "-dict");
-    if (hmmdir == NULL && hmmdir_exists(MODELDIR "/hmm/en_US/hub4wsj_sc_8k")) {
+    if (hmmdir == NULL && dir_exists(MODELDIR "/hmm/en_US/hub4wsj_sc_8k")) {
         hmmdir = MODELDIR "/hmm/en_US/hub4wsj_sc_8k";
         cmd_ln_set_str_r(ps->config, "-hmm", hmmdir);
     }
+
     if (lmfile == NULL && !cmd_ln_str_r(ps->config, "-fsg")
         && !cmd_ln_str_r(ps->config, "-jsgf")
-        && file_exists(MODELDIR "/lm/en_US/hub4.5000.DMP")) {
+        && !access(MODELDIR "/lm/en_US/hub4.5000.DMP", F_OK))
+    {
         lmfile = MODELDIR "/lm/en_US/hub4.5000.DMP";
         cmd_ln_set_str_r(ps->config, "-lm", lmfile);
     }
-    if (dictfile == NULL && file_exists(MODELDIR "/lm/en_US/cmu07a.dic")) {
+
+    if (dictfile == NULL && !access(MODELDIR "/lm/en_US/cmu07a.dic", F_OK)) {
         dictfile = MODELDIR "/lm/en_US/cmu07a.dic";
         cmd_ln_set_str_r(ps->config, "-dict", dictfile);
     }
 
-    /* Expand acoustic and language model filenames relative to installation path. */
-    if (hmmdir && !path_is_absolute(hmmdir) && !hmmdir_exists(hmmdir)) {
+    /* Expand acoustic and language model filenames relative to installation
+     * path. */
+    if (hmmdir && !path_is_absolute(hmmdir) && !dir_exists(hmmdir)) {
         char *tmphmm = string_join(MODELDIR "/hmm/", hmmdir, NULL);
-        if (hmmdir_exists(tmphmm)) {
+        if (dir_exists(tmphmm)) {
             cmd_ln_set_str_r(ps->config, "-hmm", tmphmm);
         } else {
-            E_ERROR("Failed to find mdef file inside the model folder specified with -hmm '%s'\n", hmmdir);
+            E_ERROR("Failed to find mdef file inside the model folder "
+                    "specified with -hmm `%s'\n", hmmdir);
         }
         ckd_free(tmphmm);
     }
-    if (lmfile && !path_is_absolute(lmfile) && !file_exists(lmfile)) {
+    if (lmfile && !path_is_absolute(lmfile) && access(lmfile, F_OK)) {
         char *tmplm = string_join(MODELDIR "/lm/", lmfile, NULL);
         cmd_ln_set_str_r(ps->config, "-lm", tmplm);
         ckd_free(tmplm);
     }
-    if (dictfile && !path_is_absolute(dictfile) && !file_exists(dictfile)) {
+    if (dictfile && !path_is_absolute(dictfile) && access(dictfile, F_OK)) {
         char *tmpdict = string_join(MODELDIR "/lm/", dictfile, NULL);
         cmd_ln_set_str_r(ps->config, "-dict", tmpdict);
         ckd_free(tmpdict);
@@ -1110,3 +1101,5 @@ ps_search_deinit(ps_search_t *search)
     ckd_free(search->hyp_str);
     ps_lattice_free(search->dag);
 }
+
+/* vim: set ts=4 sw=4: */
