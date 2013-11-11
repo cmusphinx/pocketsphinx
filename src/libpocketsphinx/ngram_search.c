@@ -64,7 +64,7 @@ static int32 ngram_search_prob(ps_search_t *search);
 static ps_seg_t *ngram_search_seg_iter(ps_search_t *search, int32 *out_score);
 
 static ps_searchfuncs_t ngram_funcs = {
-    /* name: */   "ngram",
+    /* name: */   SEARCH_NGRAM,
     /* start: */  ngram_search_start,
     /* step: */   ngram_search_step,
     /* finish: */ ngram_search_finish,
@@ -1420,3 +1420,5 @@ error_out:
     ps_lattice_free(dag);
     return NULL;
 }
+
+/* vim: set ts=4 sw=4: */

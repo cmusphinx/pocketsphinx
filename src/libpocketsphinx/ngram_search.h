@@ -53,6 +53,8 @@
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
 
+#define SEARCH_NGRAM  "ngram"
+
 /**
  * Lexical tree node data type.
  *

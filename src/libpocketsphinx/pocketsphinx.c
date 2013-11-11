@@ -232,8 +232,8 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     if ((ps->pl_window = cmd_ln_int32_r(ps->config, "-pl_window"))) {
         /* Initialize an auxiliary phone loop search, which will run in
          * "parallel" with FSG or N-Gram search. */
-        if ((ps->phone_loop = phone_loop_search_init(ps->config,
-                                                     ps->acmod, ps->dict)) == NULL)
+        if ((ps->phone_loop =
+             phone_loop_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
             return -1;
         ps->searches = glist_add_ptr(ps->searches, ps->phone_loop);
     }
@@ -360,7 +360,7 @@ ngram_model_t *
 ps_get_lmset(ps_decoder_t *ps)
 {
     if (ps->search == NULL
-        || 0 != strcmp(ps_search_name(ps->search), "ngram"))
+        || 0 != strcmp(ps_search_name(ps->search), SEARCH_NGRAM))
         return NULL;
     return ((ngram_search_t *)ps->search)->lmset;
 }
@@ -372,7 +372,7 @@ ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset)
     ps_search_t *search;
 
     /* Look for N-Gram search. */
-    search = ps_find_search(ps, "ngram");
+    search = ps_find_search(ps, SEARCH_NGRAM);
     if (search == NULL) {
         /* Initialize N-Gram search. */
         search = ngram_search_init(ps->config, ps->acmod, ps->dict, ps->d2p);
@@ -403,7 +403,7 @@ fsg_set_t *
 ps_get_fsgset(ps_decoder_t *ps)
 {
     if (ps->search == NULL
-        || 0 != strcmp(ps_search_name(ps->search), "fsg"))
+        || 0 != strcmp(ps_search_name(ps->search), SEARCH_FSG))
         return NULL;
     return (fsg_set_t *)ps->search;
 }
@@ -414,7 +414,7 @@ ps_update_fsgset(ps_decoder_t *ps)
     ps_search_t *search;
 
     /* Look for FSG search. */
-    search = ps_find_search(ps, "fsg");
+    search = ps_find_search(ps, SEARCH_FSG);
     if (search == NULL) {
         /* Initialize FSG search. */
         if ((search = fsg_search_init(ps->config,
@@ -954,11 +954,10 @@ ps_nbest(ps_decoder_t *ps, int sf, int ef,
     /* FIXME: This is all quite specific to N-Gram search.  Either we
      * should make N-best a method for each search module or it needs
      * to be abstracted to work for N-Gram and FSG. */
-    if (0 != strcmp(ps_search_name(ps->search), "ngram")) {
+    if (0 != strcmp(ps_search_name(ps->search), SEARCH_NGRAM)) {
         lmset = NULL;
         lwf = 1.0f;
-    }
-    else {
+    } else {
         lmset = ((ngram_search_t *)ps->search)->lmset;
         lwf = ((ngram_search_t *)ps->search)->bestpath_fwdtree_lw_ratio;
     }
