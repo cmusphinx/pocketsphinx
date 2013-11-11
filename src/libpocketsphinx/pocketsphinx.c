@@ -8,27 +8,27 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
+ * This work was supported in part by funding from the Defense Advanced
+ * Research Projects Agency and the National Science Foundation of the
  * United States of America, and the CMU Sphinx Speech Consortium.
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
@@ -129,10 +129,10 @@ ps_init_defaults(ps_decoder_t *ps)
     if (hmmdir && !path_is_absolute(hmmdir) && !hmmdir_exists(hmmdir)) {
         char *tmphmm = string_join(MODELDIR "/hmm/", hmmdir, NULL);
         if (hmmdir_exists(tmphmm)) {
-    	    cmd_ln_set_str_r(ps->config, "-hmm", tmphmm);
-    	} else {
-    	    E_ERROR("Failed to find mdef file inside the model folder specified with -hmm '%s'\n", hmmdir);
-    	}
+            cmd_ln_set_str_r(ps->config, "-hmm", tmphmm);
+        } else {
+            E_ERROR("Failed to find mdef file inside the model folder specified with -hmm '%s'\n", hmmdir);
+        }
         ckd_free(tmphmm);
     }
     if (lmfile && !path_is_absolute(lmfile) && !file_exists(lmfile)) {
@@ -217,14 +217,14 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     /* Free old dictionary (must be done after the two things above) */
     dict_free(ps->dict);
     ps->dict = NULL;
-    
+
     /* Free d2p */
     dict2pid_free(ps->d2p);
     ps->d2p = NULL;
 
     /* Logmath computation (used in acmod and search) */
     if (ps->lmath == NULL
-        || (logmath_get_base(ps->lmath) != 
+        || (logmath_get_base(ps->lmath) !=
             (float64)cmd_ln_float32_r(ps->config, "-logbase"))) {
         if (ps->lmath)
             logmath_free(ps->lmath);
@@ -251,36 +251,30 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     /* FIXME: pass config, change arguments, implement LTS, etc. */
     if ((ps->dict = dict_init(ps->config, ps->acmod->mdef)) == NULL)
         return -1;
+    if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
+        return -1;
 
-    /* Determine whether we are starting out in FSG or N-Gram search mode. */
+    // Determine whether we are starting out in FSG or N-Gram search mode.
+    // If neither is used skip search initialization.
     if (cmd_ln_str_r(ps->config, "-fsg") || cmd_ln_str_r(ps->config, "-jsgf")) {
         ps_search_t *fsgs;
 
-        if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
-            return -1;
         if ((fsgs = fsg_search_init(ps->config, ps->acmod, ps->dict, ps->d2p)) == NULL)
             return -1;
+
         fsgs->pls = ps->phone_loop;
         ps->searches = glist_add_ptr(ps->searches, fsgs);
         ps->search = fsgs;
-    }
-    else if ((lmfile = cmd_ln_str_r(ps->config, "-lm"))
-             || (lmctl = cmd_ln_str_r(ps->config, "-lmctl"))) {
+    } else if ((lmfile = cmd_ln_str_r(ps->config, "-lm"))
+               || (lmctl = cmd_ln_str_r(ps->config, "-lmctl"))) {
         ps_search_t *ngs;
 
-        if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
-            return -1;
         if ((ngs = ngram_search_init(ps->config, ps->acmod, ps->dict, ps->d2p)) == NULL)
             return -1;
+
         ngs->pls = ps->phone_loop;
         ps->searches = glist_add_ptr(ps->searches, ngs);
         ps->search = ngs;
-    }
-    /* Otherwise, we will initialize the search whenever the user
-     * decides to load an FSG or a language model. */
-    else {
-        if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
-            return -1;
     }
 
     /* Initialize performance timer. */
@@ -407,8 +401,8 @@ ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset)
         if (ps_search_reinit(search, ps->dict, ps->d2p) < 0)
             return NULL;
     } else {
-	/* Just activate the existing search */
-	ngs = (ngram_search_t *)search;
+    /* Just activate the existing search */
+    ngs = (ngram_search_t *)search;
     }
     ps->search = search;
     return ngs->lmset;
@@ -562,7 +556,7 @@ ps_add_word(ps_decoder_t *ps,
             == NGRAM_INVALID_WID)
             return -1;
     }
- 
+
     /* Rebuild the widmap and search tree if requested. */
     if (update) {
         if ((rv = ps_search_reinit(ps->search, ps->dict, ps->d2p) < 0))
@@ -749,8 +743,8 @@ ps_process_raw(ps_decoder_t *ps,
     int n_searchfr = 0;
 
     if (ps->acmod->state == ACMOD_IDLE) {
-	E_ERROR("Failed to process data, utterance is not started. Use start_utt to start it\n");
-	return 0;
+    E_ERROR("Failed to process data, utterance is not started. Use start_utt to start it\n");
+    return 0;
     }
 
     if (no_search)
@@ -1008,7 +1002,7 @@ char const *
 ps_nbest_hyp(ps_nbest_t *nbest, int32 *out_score)
 {
     assert(nbest != NULL);
-    
+
     if (nbest->top == NULL)
         return NULL;
     if (out_score) *out_score = nbest->top->score;
