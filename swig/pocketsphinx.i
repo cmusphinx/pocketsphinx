@@ -97,6 +97,7 @@ typedef ps_lattice_t Lattice;
 
 %inline %{
 
+// TODO: make private with %immutable
 typedef struct {
     char *hypstr;
     char *uttid;
@@ -244,3 +245,6 @@ typedef struct {} FsgSet;
 
 }
 
+/* TODO: find out if it's possible to move these to Decoder */
+%constant char *SEARCH_FSG = PS_SEARCH_FSG;
+%constant char *SEARCH_NGRAM = PS_SEARCH_NGRAM;

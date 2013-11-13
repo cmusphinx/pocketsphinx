@@ -53,8 +53,6 @@
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
 
-#define SEARCH_NGRAM  "ngram"
-
 /**
  * Lexical tree node data type.
  *
@@ -423,5 +421,12 @@ ps_lattice_t *ngram_search_lattice(ps_search_t *search);
  * Get the exit score for a backpointer entry with a given right context.
  */
 int32 ngram_search_exit_score(ngram_search_t *ngs, bptbl_t *pbe, int rcphone);
+
+/**
+ * Sets the global language model.
+ *
+ * Sets the language model to use if nothing was passed in configuration
+ */
+void ngram_search_set_lm(ngram_model_t *lm);
 
 #endif /* __NGRAM_SEARCH_H__ */

@@ -146,21 +146,16 @@
         return ngram_model_retain(ps_get_lmset($self));
     }
 
-    NGramModelSet * update_lmset(NGramModelSet *lm_set) {
-        ngram_model_t *new_lm_set = ps_update_lmset($self, lm_set);
-        return new_lm_set ? ngram_model_retain(new_lm_set) : NULL;
-    }
-
     FsgSet * get_fsgset() {
         return ps_get_fsgset($self);
     }
 
-    FsgSet * update_fsgset() {
-        return ps_update_fsgset($self);
-    }
-
     LogMath * get_logmath() {
         return logmath_retain(ps_get_logmath($self));
+    }
+
+    void set_search(const char *search_name, int *errcode) {
+      *errcode = ps_set_search($self, search_name);
     }
 
     int n_frames() {

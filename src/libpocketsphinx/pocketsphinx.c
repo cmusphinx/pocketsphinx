@@ -47,6 +47,7 @@
 
 /* Local headers. */
 #include "cmdln_macro.h"
+#include "pocketsphinx.h"
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
 #include "phone_loop_search.h"
@@ -183,8 +184,6 @@ ps_find_search(ps_decoder_t *ps, char const *name)
 int
 ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 {
-    char const *lmfile, *lmctl = NULL;
-
     if (config && config != ps->config) {
         cmd_ln_free_r(ps->config);
         ps->config = cmd_ln_retain(config);
@@ -247,25 +246,17 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     // Determine whether we are starting out in FSG or N-Gram search mode.
     // If neither is used skip search initialization.
-    if (cmd_ln_str_r(ps->config, "-fsg") || cmd_ln_str_r(ps->config, "-jsgf")) {
-        ps_search_t *fsgs;
+    if ((cmd_ln_str_r(ps->config, "-fsg") || cmd_ln_str_r(ps->config, "-jsgf"))
+         && ps_set_search(ps, PS_SEARCH_FSG))
+        return -1;
 
-        if ((fsgs = fsg_search_init(ps->config, ps->acmod, ps->dict, ps->d2p)) == NULL)
+    if (cmd_ln_str_r(ps->config, "-lm") || cmd_ln_str_r(ps->config, "-lmctl")) {
+        if ((cmd_ln_str_r(ps->config, "-fsg") ||
+             cmd_ln_str_r(ps->config, "-jsgf")))
+            E_WARN("-lm or -lmctrl overwrite previously set -fsg or -jsgf\n");
+
+        if (ps_set_search(ps, PS_SEARCH_NGRAM))
             return -1;
-
-        fsgs->pls = ps->phone_loop;
-        ps->searches = glist_add_ptr(ps->searches, fsgs);
-        ps->search = fsgs;
-    } else if ((lmfile = cmd_ln_str_r(ps->config, "-lm"))
-               || (lmctl = cmd_ln_str_r(ps->config, "-lmctl"))) {
-        ps_search_t *ngs;
-
-        if ((ngs = ngram_search_init(ps->config, ps->acmod, ps->dict, ps->d2p)) == NULL)
-            return -1;
-
-        ngs->pls = ps->phone_loop;
-        ps->searches = glist_add_ptr(ps->searches, ngs);
-        ps->search = ngs;
     }
 
     /* Initialize performance timer. */
@@ -356,81 +347,43 @@ ps_update_mllr(ps_decoder_t *ps, ps_mllr_t *mllr)
     return acmod_update_mllr(ps->acmod, mllr);
 }
 
-ngram_model_t *
-ps_get_lmset(ps_decoder_t *ps)
+int
+ps_set_search(ps_decoder_t *ps, const char *name)
 {
-    if (ps->search == NULL
-        || 0 != strcmp(ps_search_name(ps->search), SEARCH_NGRAM))
-        return NULL;
-    return ((ngram_search_t *)ps->search)->lmset;
+    ps_search_t *search = ps_find_search(ps, name);
+
+    if (!strcmp(PS_SEARCH_FSG, name))
+        search = fsg_search_init(ps->config, ps->acmod, ps->dict, ps->d2p);
+    else if (!strcmp(PS_SEARCH_NGRAM, name))
+        search = ngram_search_init(ps->config, ps->acmod, ps->dict, ps->d2p);
+
+    if (search) {
+        if (search != ps->search) {
+            ps->search = search;
+            search->pls = ps->phone_loop;
+            ps->searches = glist_add_ptr(ps->searches, search);
+        }
+
+        if (ps_search_reinit(search, ps->dict, ps->d2p) < 0)
+            return -1;
+    }
+
+    return NULL == search;
 }
 
 ngram_model_t *
-ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset)
+ps_get_lmset(ps_decoder_t *ps)
 {
-    ngram_search_t *ngs;
-    ps_search_t *search;
+    ngram_search_t *search;
 
-    /* Look for N-Gram search. */
-    search = ps_find_search(ps, SEARCH_NGRAM);
-    if (search == NULL) {
-        /* Initialize N-Gram search. */
-        search = ngram_search_init(ps->config, ps->acmod, ps->dict, ps->d2p);
-        if (search == NULL)
-            return NULL;
-        search->pls = ps->phone_loop;
-        ps->searches = glist_add_ptr(ps->searches, search);
-        ngs = (ngram_search_t *)search;
-    }
-    else if (lmset != NULL) {
-        ngs = (ngram_search_t *)search;
-        /* Free any previous lmset if this is a new one. */
-        if (ngs->lmset != NULL && ngs->lmset != lmset)
-            ngram_model_free(ngs->lmset);
-        ngs->lmset = lmset;
-        /* Tell N-Gram search to update its view of the world. */
-        if (ps_search_reinit(search, ps->dict, ps->d2p) < 0)
-            return NULL;
-    } else {
-    /* Just activate the existing search */
-    ngs = (ngram_search_t *)search;
-    }
-    ps->search = search;
-    return ngs->lmset;
+    search = (ngram_search_t *) ps_find_search(ps, PS_SEARCH_NGRAM);
+    return search ? search->lmset : NULL;
 }
 
 fsg_set_t *
 ps_get_fsgset(ps_decoder_t *ps)
 {
-    if (ps->search == NULL
-        || 0 != strcmp(ps_search_name(ps->search), SEARCH_FSG))
-        return NULL;
-    return (fsg_set_t *)ps->search;
-}
-
-fsg_set_t *
-ps_update_fsgset(ps_decoder_t *ps)
-{
-    ps_search_t *search;
-
-    /* Look for FSG search. */
-    search = ps_find_search(ps, SEARCH_FSG);
-    if (search == NULL) {
-        /* Initialize FSG search. */
-        if ((search = fsg_search_init(ps->config,
-                                 ps->acmod, ps->dict, ps->d2p)) == NULL) {
-            return NULL;
-        }
-        search->pls = ps->phone_loop;
-        ps->searches = glist_add_ptr(ps->searches, search);
-    }
-    else {
-        /* Tell FSG search to update its view of the world. */
-        if (ps_search_reinit(search, ps->dict, ps->d2p) < 0)
-            return NULL;
-    }
-    ps->search = search;
-    return (fsg_set_t *)search;
+    return (fsg_set_t *) ps_find_search(ps, PS_SEARCH_FSG);
 }
 
 int
@@ -841,7 +794,8 @@ ps_end_utt(ps_decoder_t *ps)
             ps_seg_frames(seg, &sf, &ef);
             post = ps_seg_prob(seg, &ascr, &lscr, &lback);
             E_INFO_NOFN("%-20s %-5d %-5d %-1.3f %-10d %-10d %-3d\n",
-                        word, sf, ef, logmath_exp(ps_get_logmath(ps), post), ascr, lscr, lback);
+                        word, sf, ef, logmath_exp(ps_get_logmath(ps), post),
+                        ascr, lscr, lback);
         }
     }
     return rv;
@@ -954,7 +908,7 @@ ps_nbest(ps_decoder_t *ps, int sf, int ef,
     /* FIXME: This is all quite specific to N-Gram search.  Either we
      * should make N-best a method for each search module or it needs
      * to be abstracted to work for N-Gram and FSG. */
-    if (0 != strcmp(ps_search_name(ps->search), SEARCH_NGRAM)) {
+    if (0 != strcmp(ps_search_name(ps->search), PS_SEARCH_NGRAM)) {
         lmset = NULL;
         lwf = 1.0f;
     } else {

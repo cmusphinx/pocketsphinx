@@ -75,7 +75,7 @@ static ps_lattice_t *fsg_search_lattice(ps_search_t *search);
 static int fsg_search_prob(ps_search_t *search);
 
 static ps_searchfuncs_t fsg_funcs = {
-    /* name: */   SEARCH_FSG,
+    /* name: */   "fsg",
     /* start: */  fsg_search_start,
     /* step: */   fsg_search_step,
     /* finish: */ fsg_search_finish,

@@ -1,6 +1,7 @@
-#include <pocketsphinx.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <pocketsphinx.h>
 
 #include "test_macros.h"
 
@@ -43,7 +44,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(lmset);
 	ngram_model_set_add(lmset, lm, "turtle", 1.0, TRUE);
 	ngram_model_set_select(lmset, "turtle");
-	ps_update_lmset(ps, lmset);
+	ps_set_search(ps, PS_SEARCH_NGRAM);
 	clearerr(rawfh);
 	fseek(rawfh, 0, SEEK_SET);
 	TEST_ASSERT(ps_decode_raw(ps, rawfh, "goforward", -1));

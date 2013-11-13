@@ -62,6 +62,9 @@ extern "C" {
 #include <ps_mllr.h>
 #include <fsg_set.h>
 
+#define PS_SEARCH_FSG    "fsg"
+#define PS_SEARCH_NGRAM  "ngram"
+
 /**
  * PocketSphinx speech recognizer object.
  */
@@ -204,6 +207,12 @@ POCKETSPHINX_EXPORT
 ps_mllr_t *ps_update_mllr(ps_decoder_t *ps, ps_mllr_t *mllr);
 
 /**
+ * TODO: write doc
+ */
+POCKETSPHINX_EXPORT int
+ps_set_search(ps_decoder_t *ps, const char *name);
+
+/**
  * Get the language model set object for this decoder.
  *
  * If N-Gram decoding is not enabled, this will return NULL.  You will
@@ -218,25 +227,6 @@ POCKETSPHINX_EXPORT
 ngram_model_t *ps_get_lmset(ps_decoder_t *ps);
 
 /**
- * Update the language model set object for this decoder.
- *
- * This function does several things.  Most importantly, it enables
- * N-Gram decoding if not currently enabled.  It also updates internal
- * data structures to reflect any changes made to the language model
- * set (e.g. switching language models, adding words, etc).
- *
- * @param lmset The new lmset to use, or NULL to update the existing
- *              lmset.  The decoder retains ownership of this pointer,
- *              so you should not attempt to free it manually.  Use
- *              ngram_model_retain() if you wish to reuse it
- *              elsewhere.
- * @return The updated language model set object for this decoder, or
- *         NULL on failure.
- */
-POCKETSPHINX_EXPORT
-ngram_model_t *ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset);
-
-/**
  * Get the finite-state grammar set object for this decoder.
  *
  * If FSG decoding is not enabled, this returns NULL.  Call
@@ -247,19 +237,6 @@ ngram_model_t *ps_update_lmset(ps_decoder_t *ps, ngram_model_t *lmset);
  */
 POCKETSPHINX_EXPORT
 fsg_set_t *ps_get_fsgset(ps_decoder_t *ps);
-
-/**
- * Update the finite-state grammar set object for this decoder.
- *
- * This function does several things.  Most importantly, it enables
- * FSG decoding if not currently enabled.  It also updates internal
- * data structures to reflect any changes made to the FSG set.
- *
- * @return The current FSG set object for this decoder, or
- *         NULL on failure.
- */
-POCKETSPHINX_EXPORT
-fsg_set_t *ps_update_fsgset(ps_decoder_t *ps);
 
 /**
  * Reload the pronunciation dictionary from a file.

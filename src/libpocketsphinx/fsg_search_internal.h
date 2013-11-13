@@ -52,8 +52,6 @@
 #include "fsg_history.h"
 #include "fsg_lextree.h"
 
-#define SEARCH_FSG  "fsg"
-
 /**
  * Segmentation "iterator" for FSG history.
  */

@@ -276,10 +276,12 @@ process_mllrctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
 static int
 process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
 {
-    fsg_set_t *fsgset = ps_get_fsgset(ps);
+    fsg_set_t *fsgset;
     fsg_model_t *fsg;
-    char const *fsgdir, *fsgext;
+    char const *fsgdir;
+    char const **fsgext;
     char *infile = NULL;
+
     static char *lastfile;
 
     if (file == NULL)
@@ -301,8 +303,9 @@ process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
                                   cmd_ln_float32_r(config, "-lw"))) == NULL)
         goto error_out;
 
-    if (fsgset == NULL)
-        fsgset = ps_update_fsgset(ps);
+    ps_set_search(ps, PS_SEARCH_FSG);
+    fsgset = ps_get_fsgset(ps);
+
     if (lastfile)
         fsg_set_remove_byname(fsgset, lastfile);
 
@@ -313,7 +316,7 @@ process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
     fsg_set_add(fsgset, lastfile, fsg);
     fsg_set_select(fsgset, lastfile);
 
-    ps_update_fsgset(ps);
+    ps_set_search(ps, PS_SEARCH_FSG);
 error_out:
     ckd_free(infile);
     return 0;
@@ -331,7 +334,7 @@ process_lmnamectl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *lmname)
         E_ERROR("No such language model: %s\n", lmname);
         return -1;
     }
-    ps_update_lmset(ps, lmset);
+    ps_set_search(ps, PS_SEARCH_NGRAM);
     return 0;
 }
 
@@ -853,3 +856,5 @@ int wmain(int32 argc, wchar_t *wargv[]) {
     return main(argc, argv);
 }
 #endif
+
+/* vim: set ts=4 sw=4: */
