@@ -157,14 +157,11 @@ ps_init_defaults(ps_decoder_t *ps)
 static void
 ps_free_searches(ps_decoder_t *ps)
 {
-    gnode_t *gn;
+    if (ps->searches) {
+        hash_table_empty(ps->searches);
+        hash_table_free(ps->searches);
+    }
 
-    if (ps->searches == NULL)
-        return;
-
-    for (gn = ps->searches; gn; gn = gnode_next(gn))
-        ps_search_free(gnode_ptr(gn));
-    glist_free(ps->searches);
     ps->searches = NULL;
     ps->search = NULL;
 }
@@ -172,13 +169,10 @@ ps_free_searches(ps_decoder_t *ps)
 static ps_search_t *
 ps_find_search(ps_decoder_t *ps, char const *name)
 {
-    gnode_t *gn;
+    ps_search_t *search = NULL;
+    hash_table_lookup(ps->searches, name, &search);
 
-    for (gn = ps->searches; gn; gn = gnode_next(gn)) {
-        if (0 == strcmp(ps_search_name(gnode_ptr(gn)), name))
-            return (ps_search_t *)gnode_ptr(gn);
-    }
-    return NULL;
+    return search;
 }
 
 int
@@ -234,7 +228,8 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         if ((ps->phone_loop =
              phone_loop_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
             return -1;
-        ps->searches = glist_add_ptr(ps->searches, ps->phone_loop);
+        hash_table_enter(ps->search,
+                         ps_search_name(ps->phone_loop), ps->phone_loop);
     }
 
     /* Dictionary and triphone mappings (depends on acmod). */
@@ -361,7 +356,10 @@ ps_set_search(ps_decoder_t *ps, const char *name)
         if (search != ps->search) {
             ps->search = search;
             search->pls = ps->phone_loop;
-            ps->searches = glist_add_ptr(ps->searches, search);
+            if (search != hash_table_enter(ps->searches, name, search)) {
+                E_ERROR("search with name `%s' already exists", name);
+                return -1;
+            }
         }
 
         if (ps_search_reinit(search, ps->dict, ps->d2p) < 0)
@@ -393,8 +391,6 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
     cmd_ln_t *newconfig;
     dict2pid_t *d2p;
     dict_t *dict;
-    gnode_t *gn;
-    int rv;
 
     /* Create a new scratch config to load this dict (so existing one
      * won't be affected if it fails) */
@@ -432,10 +428,12 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
     ps->d2p = d2p;
 
     /* And tell all searches to reconfigure themselves. */
-    for (gn = ps->searches; gn; gn = gnode_next(gn)) {
-        ps_search_t *search = gnode_ptr(gn);
-        if ((rv = ps_search_reinit(search, dict, d2p)) < 0)
-            return rv;
+    hash_iter_t *search_it = hash_table_iter(ps->searches);
+    for (; search_it; search_it = hash_table_iter_next(search_it)) {
+        if (ps_search_reinit(hash_entry_val(search_it->ent), dict, d2p) < 0) {
+            hash_table_iter_free(search_it);
+            return -1;
+        }
     }
 
     return 0;

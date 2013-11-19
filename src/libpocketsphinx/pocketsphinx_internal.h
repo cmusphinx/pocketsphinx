@@ -52,9 +52,10 @@
 
 /* SphinxBase headers. */
 #include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/logmath.h>
 #include <sphinxbase/fe.h>
 #include <sphinxbase/feat.h>
+#include <sphinxbase/hash_table.h>
+#include <sphinxbase/logmath.h>
 #include <sphinxbase/profile.h>
 
 /* Local headers. */
@@ -209,7 +210,7 @@ struct ps_decoder_s {
     logmath_t *lmath;  /**< Log math computation. */
 
     /* Search modules. */
-    glist_t searches;        /**< List of search modules. */
+    hash_table_t *searches;        /**< Set of search modules. */
     /* TODO: Convert this to a stack of searches each with their own
      * lookahead value. */
     ps_search_t *search;     /**< Currently active search module. */
