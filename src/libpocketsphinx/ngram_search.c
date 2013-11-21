@@ -272,7 +272,6 @@ static int
 ngram_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
 {
     ngram_search_t *ngs = (ngram_search_t *)search;
-    cmd_ln_t *config = ps_search_config(search);
     int old_n_words;
     int rv = 0;
 
