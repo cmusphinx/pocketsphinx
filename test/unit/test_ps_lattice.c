@@ -120,8 +120,8 @@ main(int argc, char *argv[])
 	hyp = ps_get_hyp(ps, &score, &uttid);
 	printf("FWDFLAT (%s): %s (%d)\n", uttid, hyp, score);
 	TEST_ASSERT(dag = ps_get_lattice(ps));
-	ps_lattice_bestpath(dag, ps_get_lmset(ps), 1.0, 1.0/15.0);
-	score = ps_lattice_posterior(dag, ps_get_lmset(ps), 1.0/15.0);
+	ps_lattice_bestpath(dag, ps_get_lm(ps, PS_DEFAULT_SEARCH), 1.0, 1.0/15.0);
+	score = ps_lattice_posterior(dag, ps_get_lm(ps, PS_DEFAULT_SEARCH), 1.0/15.0);
 	printf("P(S|O) = %d\n", score);
 	test_nodes_and_stuff(dag);
 	ps_lattice_posterior_prune(dag, logmath_log(ps_lattice_get_logmath(dag), 1e-2)); 
@@ -131,8 +131,8 @@ main(int argc, char *argv[])
 
 	dag = ps_lattice_read(ps, "goforward.lat");
 	TEST_ASSERT(dag);
-	ps_lattice_bestpath(dag, ps_get_lmset(ps), 1.0, 1.0/15.0);
-	score = ps_lattice_posterior(dag, ps_get_lmset(ps), 1.0/15.0);
+	ps_lattice_bestpath(dag, ps_get_lm(ps, PS_DEFAULT_SEARCH), 1.0, 1.0/15.0);
+	score = ps_lattice_posterior(dag, ps_get_lm(ps, PS_DEFAULT_SEARCH), 1.0/15.0);
 	printf("P(S|O) = %d\n", score);
 	test_nodes_and_stuff(dag);
 	ps_lattice_free(dag);

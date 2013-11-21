@@ -1,3 +1,2 @@
-../../model/lm/swb/swb.lm.DMP swb
-../../model/lm/tidigits/tidigits.lm tidigits
-../../model/lm/turtle/turtle.lm.DMP turtle
+../../model/lm/en/tidigits.DMP tidigits
+../../model/lm/en/turtle.DMP turtle

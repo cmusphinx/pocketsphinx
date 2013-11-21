@@ -139,14 +139,13 @@ ngram_search_calc_beams(ngram_search_t *ngs)
 }
 
 ps_search_t *
-ngram_search_init(cmd_ln_t *config,
+ngram_search_init(ngram_model_t *lm,
+                  cmd_ln_t *config,
                   acmod_t *acmod,
                   dict_t *dict,
                   dict2pid_t *d2p)
 {
     ngram_search_t *ngs;
-    const char *path;
-
     /* Make the acmod's feature buffer growable if we are doing two-pass
      * search. */
     acmod_set_grow(acmod, cmd_ln_boolean_r(config, "-fwdflat") &&
@@ -194,49 +193,17 @@ ngram_search_init(cmd_ln_t *config,
     ngs->active_word_list = ckd_calloc_2d(2, dict_size(dict),
                                           sizeof(**ngs->active_word_list));
 
-    ngs->lmset = NULL;
-
-    /* Load language model(s) */
-    if ((path = cmd_ln_str_r(config, "-lmctl"))) {
-        ngs->lmset = ngram_model_set_read(config, path, acmod->lmath);
-        if (ngs->lmset == NULL) {
-            E_ERROR("Failed to read language model control file: %s\n",
-                    path);
-            goto error_out;
-        }
-        /* Set the default language model if needed. */
-        if ((path = cmd_ln_str_r(config, "-lmname"))) {
-            ngram_model_set_select(ngs->lmset, path);
-        }
-    } else if ((path = cmd_ln_str_r(config, "-lm"))) {
-        ngram_model_t *lm;
-
-        lm = ngram_model_read(config, path, NGRAM_AUTO, acmod->lmath);
-        if (lm == NULL)
-            goto error_out;
-
-        ngs->lmset = ngram_model_set_init(config, &lm,
-                                          &default_lm_name, NULL, 1);
-        if (ngs->lmset == NULL)
-            goto error_out;
-    } else if (default_lm) {
-        ngs->lmset = ngram_model_set_init(config, &default_lm,
-                                          &default_lm_name, NULL, 1);
-        if (ngs->lmset == NULL)
-            goto error_out;
-    } else {
-        E_ERROR("neither `-lm' nor `-lmctl' was specified\n");
+    static const char *lmname = "default";
+    ngs->lmset = ngram_model_set_init(config, &lm, &lmname, NULL, 1);
+    if (!ngs->lmset)
         goto error_out;
-    }
 
-    if (ngs->lmset != NULL) {
-        if (ngram_wid(ngs->lmset, S3_FINISH_WORD) ==
-            ngram_unknown_wid(ngs->lmset))
-        {
-            E_ERROR("Language model/set does not contain </s>, "
-                    "recognition will fail\n");
-            goto error_out;
-        }
+    if (ngram_wid(ngs->lmset, S3_FINISH_WORD) ==
+        ngram_unknown_wid(ngs->lmset))
+    {
+        E_ERROR("Language model/set does not contain </s>, "
+                "recognition will fail\n");
+        goto error_out;
     }
 
     /* Create word mappings. */

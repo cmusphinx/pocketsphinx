@@ -62,6 +62,8 @@ extern "C" {
 #include <ps_mllr.h>
 #include <fsg_set.h>
 
+#define PS_DEFAULT_SEARCH  "default"
+
 #define PS_SEARCH_FSG    "fsg"
 #define PS_SEARCH_NGRAM  "ngram"
 
@@ -223,8 +225,11 @@ ps_set_search(ps_decoder_t *ps, const char *name);
  *         not attempt to free it manually.  Use ngram_model_retain()
  *         if you wish to reuse it elsewhere.
  */
-POCKETSPHINX_EXPORT
-ngram_model_t *ps_get_lmset(ps_decoder_t *ps);
+POCKETSPHINX_EXPORT ngram_model_t *
+ps_get_lmset(ps_decoder_t *ps, const char *name);
+
+POCKETSPHINX_EXPORT int
+ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
 
 /**
  * Get the finite-state grammar set object for this decoder.

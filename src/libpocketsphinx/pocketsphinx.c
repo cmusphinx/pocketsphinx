@@ -169,10 +169,10 @@ ps_free_searches(ps_decoder_t *ps)
 static ps_search_t *
 ps_find_search(ps_decoder_t *ps, char const *name)
 {
-    ps_search_t *search = NULL;
+    void *search = NULL;
     hash_table_lookup(ps->searches, name, &search);
 
-    return search;
+    return (ps_search_t *) search;
 }
 
 int
@@ -193,6 +193,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     /* Free old searches (do this before other reinit) */
     ps_free_searches(ps);
+    ps->searches = hash_table_new(2, HASH_CASE_YES);
 
     /* Free old acmod. */
     acmod_free(ps->acmod);
@@ -228,7 +229,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         if ((ps->phone_loop =
              phone_loop_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
             return -1;
-        hash_table_enter(ps->search,
+        hash_table_enter(ps->searches,
                          ps_search_name(ps->phone_loop), ps->phone_loop);
     }
 
@@ -241,17 +242,51 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     // Determine whether we are starting out in FSG or N-Gram search mode.
     // If neither is used skip search initialization.
-    if ((cmd_ln_str_r(ps->config, "-fsg") || cmd_ln_str_r(ps->config, "-jsgf"))
-         && ps_set_search(ps, PS_SEARCH_FSG))
-        return -1;
-
-    if (cmd_ln_str_r(ps->config, "-lm") || cmd_ln_str_r(ps->config, "-lmctl")) {
-        if ((cmd_ln_str_r(ps->config, "-fsg") ||
-             cmd_ln_str_r(ps->config, "-jsgf")))
-            E_WARN("-lm or -lmctrl overwrite previously set -fsg or -jsgf\n");
-
-        if (ps_set_search(ps, PS_SEARCH_NGRAM))
+    const char *path;
+    if ((path = cmd_ln_str_r(ps->config, "-fsg")) ||
+        (path = cmd_ln_str_r(ps->config, "-jsgf")))
+    {
+        ps_search_t *search;
+        search = fsg_search_init(ps->config, ps->acmod, ps->dict, ps->d2p);
+        if (search)
+            hash_table_replace(ps->searches, PS_DEFAULT_SEARCH, search);
+        else
             return -1;
+        ps_set_search(ps, PS_DEFAULT_SEARCH);
+    }
+
+    if ((path = cmd_ln_str_r(ps->config, "-lm"))) {
+        ngram_model_t *lm;
+        lm = ngram_model_read(ps->config, path, NGRAM_AUTO, ps->lmath);
+        if (!lm)
+            return -1;
+
+        int err = ps_set_lm(ps, PS_DEFAULT_SEARCH, lm);
+        ngram_model_free(lm);
+        if (err)
+            return -1;
+        ps_set_search(ps, PS_DEFAULT_SEARCH);
+    }
+
+    if ((path = cmd_ln_str_r(ps->config, "-lmctl"))) {
+        ngram_model_t *lmset;
+        if (!(lmset = ngram_model_set_read(ps->config, path, ps->lmath))) {
+            E_ERROR("Failed to read language model control file: %s\n", path);
+            return -1;
+        }
+
+        ngram_model_set_iter_t *lmset_it = ngram_model_set_iter(lmset);
+        for(; lmset_it; lmset_it = ngram_model_set_iter_next(lmset_it)) {
+            const char *name;
+            ngram_model_t *lm = ngram_model_set_iter_model(lmset_it, &name);
+            E_INFO("adding search %s\n", name);
+            int err = ps_set_lm(ps, name, lm);
+            ngram_model_free(lm);
+            if (err) {
+                ngram_model_set_iter_free(lmset_it);
+                return -1;
+            }
+        }
     }
 
     /* Initialize performance timer. */
@@ -346,36 +381,32 @@ int
 ps_set_search(ps_decoder_t *ps, const char *name)
 {
     ps_search_t *search = ps_find_search(ps, name);
-
-    if (!strcmp(PS_SEARCH_FSG, name))
-        search = fsg_search_init(ps->config, ps->acmod, ps->dict, ps->d2p);
-    else if (!strcmp(PS_SEARCH_NGRAM, name))
-        search = ngram_search_init(ps->config, ps->acmod, ps->dict, ps->d2p);
-
-    if (search) {
-        if (search != ps->search) {
-            ps->search = search;
-            search->pls = ps->phone_loop;
-            if (search != hash_table_enter(ps->searches, name, search)) {
-                E_ERROR("search with name `%s' already exists", name);
-                return -1;
-            }
-        }
-
-        if (ps_search_reinit(search, ps->dict, ps->d2p) < 0)
-            return -1;
-    }
-
+    if (search)
+        ps->search = search;
     return NULL == search;
 }
 
 ngram_model_t *
-ps_get_lmset(ps_decoder_t *ps)
+ps_get_lm(ps_decoder_t *ps, const char *name)
 {
     ngram_search_t *search;
-
-    search = (ngram_search_t *) ps_find_search(ps, PS_SEARCH_NGRAM);
+    search = (ngram_search_t *) ps_find_search(ps, name);
+    if (search && strcmp(PS_SEARCH_NGRAM, ps_search_name(search)))
+        return NULL;
     return search ? search->lmset : NULL;
+}
+
+int
+ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
+{
+    ps_search_t *search;
+    lm = ngram_model_retain(lm);
+    search = ngram_search_init(lm, ps->config, ps->acmod, ps->dict, ps->d2p);
+    search->pls = ps->phone_loop;
+
+    if (search)
+        hash_table_replace(ps->searches, name, search);
+    return NULL == search;
 }
 
 fsg_set_t *
@@ -429,6 +460,7 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
 
     /* And tell all searches to reconfigure themselves. */
     hash_iter_t *search_it = hash_table_iter(ps->searches);
+    search_it = hash_table_iter_next(search_it);
     for (; search_it; search_it = hash_table_iter_next(search_it)) {
         if (ps_search_reinit(hash_entry_val(search_it->ent), dict, d2p) < 0) {
             hash_table_iter_free(search_it);
@@ -452,8 +484,7 @@ ps_add_word(ps_decoder_t *ps,
             char const *phones,
             int update)
 {
-    int32 wid, lmwid;
-    ngram_model_t *lmset;
+    int32 wid;
     s3cipid_t *pron;
     char **phonestr, *tmp;
     int np, i, rv;
@@ -490,13 +521,18 @@ ps_add_word(ps_decoder_t *ps,
     /* Now we also have to add it to dict2pid. */
     dict2pid_add_word(ps->d2p, wid);
 
-    if ((lmset = ps_get_lmset(ps)) != NULL) {
-        /* Add it to the LM set (meaning, the current LM).  In a perfect
-         * world, this would result in the same WID, but because of the
-         * weird way that word IDs are handled, it doesn't. */
-        if ((lmwid = ngram_model_add_word(lmset, word, 1.0))
-            == NGRAM_INVALID_WID)
-            return -1;
+    // TODO: we definitely need to refactor this
+    hash_iter_t *search_it = hash_table_iter(ps->searches);
+    search_it = hash_table_iter_next(search_it);
+    for (; search_it; search_it = hash_table_iter_next(search_it)) {
+        ps_search_t *search = hash_entry_val(search_it->ent);
+        if (!strcmp(PS_SEARCH_NGRAM, ps_search_name(search))) {
+            ngram_model_t *lmset = ((ngram_search_t *) search)->lmset;
+            if (ngram_model_add_word(lmset, word, 1.0) == NGRAM_INVALID_WID) {
+                hash_table_iter_free(search_it);
+                return -1;
+            }
+        }
     }
 
     /* Rebuild the widmap and search tree if requested. */

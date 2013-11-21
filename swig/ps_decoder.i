@@ -142,8 +142,8 @@
         return ps_get_feat($self);
     }
 
-    NGramModelSet * get_lmset() {
-        return ngram_model_retain(ps_get_lmset($self));
+    NGramModel * get_lm(const char *name) {
+        return ngram_model_retain(ps_get_lm($self, name));
     }
 
     FsgSet * get_fsgset() {

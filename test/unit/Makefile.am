@@ -16,7 +16,7 @@ check_PROGRAMS = \
 	test_ps_simple \
 	test_ps_nbest \
 	test_ps_lattice \
-	test_ps_update \
+	test_ps_set_search \
 	test_acmod \
 	test_acmod_grow \
 	test_fwdtree \

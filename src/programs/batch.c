@@ -279,7 +279,7 @@ process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
     fsg_set_t *fsgset;
     fsg_model_t *fsg;
     char const *fsgdir;
-    char const **fsgext;
+    char const *fsgext;
     char *infile = NULL;
 
     static char *lastfile;
@@ -325,16 +325,11 @@ error_out:
 static int
 process_lmnamectl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *lmname)
 {
-    ngram_model_t *lmset = ps_get_lmset(ps);
-
-    if (lmname == NULL)
-        return 0;
     E_INFO("Using language model: %s\n", lmname);
-    if (ngram_model_set_select(lmset, lmname) == NULL) {
+    if (ps_set_search(ps, lmname)) {
         E_ERROR("No such language model: %s\n", lmname);
         return -1;
     }
-    ps_set_search(ps, PS_SEARCH_NGRAM);
     return 0;
 }
 
@@ -509,7 +504,6 @@ write_hypseg(FILE *fh, ps_decoder_t *ps, char const *uttid)
 {
     int32 score, lscr, sf, ef;
     ps_seg_t *itor = ps_seg_iter(ps, &score);
-    ngram_model_t *lm = ps_get_lmset(ps);
 
     /* Accumulate language model scores. */
     lscr = 0;
@@ -530,11 +524,7 @@ write_hypseg(FILE *fh, ps_decoder_t *ps, char const *uttid)
 
         ps_seg_prob(itor, &ascr, &wlscr, NULL);
         ps_seg_frames(itor, &sf, &ef);
-        fprintf(fh, " %d %d %d %s",
-                sf, ascr,
-                /* FIXME: This is inconsistent with the total lm
-                   score, but that's the way it's done in S3... */
-                lm ? ngram_score_to_prob(lm, wlscr) : wlscr, w);
+        fprintf(fh, " %d %d %d %s", sf, ascr, wlscr, w);
         itor = ps_seg_next(itor);
     }
     fprintf(fh, " %d\n", ef);

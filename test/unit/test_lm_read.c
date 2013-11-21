@@ -36,15 +36,10 @@ main(int argc, char *argv[])
 	TEST_EQUAL(0, strcmp(hyp, "go forward ten years"));
 
 	/* Now load the turtle language model. */
-	lm = ngram_model_read(config, 
-			      MODELDIR "/lm/en/turtle.DMP",
-			      NGRAM_AUTO, ps_get_logmath(ps));
-	TEST_ASSERT(lm);
-	lmset = ps_get_lmset(ps);
-	TEST_ASSERT(lmset);
-	ngram_model_set_add(lmset, lm, "turtle", 1.0, TRUE);
-	ngram_model_set_select(lmset, "turtle");
-	ps_set_search(ps, PS_SEARCH_NGRAM);
+	lm = ngram_model_read(config, MODELDIR "/lm/en/turtle.DMP",
+			                  NGRAM_AUTO, ps_get_logmath(ps));
+  ps_set_lm(ps, "turtle", lm);
+	ps_set_search(ps, "turtle");
 	clearerr(rawfh);
 	fseek(rawfh, 0, SEEK_SET);
 	TEST_ASSERT(ps_decode_raw(ps, rawfh, "goforward", -1));
