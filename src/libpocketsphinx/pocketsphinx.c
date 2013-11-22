@@ -44,6 +44,7 @@
 #include <sphinxbase/strfuncs.h>
 #include <sphinxbase/filename.h>
 #include <sphinxbase/pio.h>
+#include <sphinxbase/jsgf.h>
 
 /* Local headers. */
 #include "cmdln_macro.h"
@@ -243,15 +244,60 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     // Determine whether we are starting out in FSG or N-Gram search mode.
     // If neither is used skip search initialization.
     const char *path;
-    if ((path = cmd_ln_str_r(ps->config, "-fsg")) ||
-        (path = cmd_ln_str_r(ps->config, "-jsgf")))
-    {
-        ps_search_t *search;
-        search = fsg_search_init(ps->config, ps->acmod, ps->dict, ps->d2p);
-        if (search)
-            hash_table_replace(ps->searches, PS_DEFAULT_SEARCH, search);
-        else
+    int32 lw = cmd_ln_float32_r(config, "-lw");
+    /* Load an FSG if one was specified in config */
+    if ((path = cmd_ln_str_r(config, "-fsg"))) {
+        fsg_model_t *fsg = fsg_model_readfile(path, ps->lmath, lw);
+        if (!fsg)
+            //goto error_out;
             return -1;
+        if (ps_set_fsg(ps, PS_DEFAULT_SEARCH, fsg))
+            return -1;
+        ps_set_search(ps, PS_DEFAULT_SEARCH);
+    }
+    
+    if ((path = cmd_ln_str_r(config, "-jsgf"))) {
+        /* Or load a JSGF grammar */
+        fsg_model_t *fsg;
+        jsgf_rule_t *rule;
+        char const *toprule;
+        jsgf_t *jsgf = jsgf_parse_file(path, NULL);
+
+        if (!jsgf)
+            return -1;
+
+        rule = NULL;
+        /* Take the -toprule if specified. */
+        if ((toprule = cmd_ln_str_r(config, "-toprule"))) {
+            char *ruletok;
+            ruletok = string_join("<", toprule, ">", NULL);
+            rule = jsgf_get_rule(jsgf, ruletok);
+            ckd_free(ruletok);
+            if (rule == NULL) {
+                E_ERROR("Start rule %s not found\n", toprule);
+                return -1;
+            }
+        } else {
+            /* Otherwise, take the first public rule. */
+            jsgf_rule_iter_t *itor;
+
+            for (itor = jsgf_rule_iter(jsgf); itor;
+                 itor = jsgf_rule_iter_next(itor)) {
+                rule = jsgf_rule_iter_rule(itor);
+                if (jsgf_rule_public(rule)) {
+            	    jsgf_rule_iter_free(itor);
+                    break;
+                }
+            }
+            if (rule == NULL) {
+                E_ERROR("No public rules found in %s\n", path);
+                return -1;
+            }
+        }
+
+        fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, lw);
+        ps_set_fsg(ps, PS_DEFAULT_SEARCH, fsg);
+        fsg_model_free(fsg);
         ps_set_search(ps, PS_DEFAULT_SEARCH);
     }
 
@@ -389,18 +435,16 @@ ps_set_search(ps_decoder_t *ps, const char *name)
 ngram_model_t *
 ps_get_lm(ps_decoder_t *ps, const char *name)
 {
-    ngram_search_t *search;
-    search = (ngram_search_t *) ps_find_search(ps, name);
+    ps_search_t *search =  ps_find_search(ps, name);
     if (search && strcmp(PS_SEARCH_NGRAM, ps_search_name(search)))
         return NULL;
-    return search ? search->lmset : NULL;
+    return search ? ((ngram_search_t *) search)->lmset : NULL;
 }
 
 int
 ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
 {
     ps_search_t *search;
-    lm = ngram_model_retain(lm);
     search = ngram_search_init(lm, ps->config, ps->acmod, ps->dict, ps->d2p);
     search->pls = ps->phone_loop;
 
@@ -409,10 +453,25 @@ ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
     return NULL == search;
 }
 
-fsg_set_t *
-ps_get_fsgset(ps_decoder_t *ps)
+fsg_model_t *
+ps_get_fsg(ps_decoder_t *ps, const char *name)
 {
-    return (fsg_set_t *) ps_find_search(ps, PS_SEARCH_FSG);
+    ps_search_t *search = ps_find_search(ps, name);
+    if (search && strcmp(PS_SEARCH_FSG, ps_search_name(search)))
+        return NULL;
+    return search ? ((fsg_search_t *) search)->fsg : NULL;
+}
+
+int
+ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
+{
+    ps_search_t *search;
+    search = fsg_search_init(fsg, ps->config, ps->acmod, ps->dict, ps->d2p);
+    search->pls = ps->phone_loop;
+
+    if (search)
+        hash_table_replace(ps->searches, name, search);
+    return NULL == search;
 }
 
 int
@@ -460,7 +519,6 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
 
     /* And tell all searches to reconfigure themselves. */
     hash_iter_t *search_it = hash_table_iter(ps->searches);
-    search_it = hash_table_iter_next(search_it);
     for (; search_it; search_it = hash_table_iter_next(search_it)) {
         if (ps_search_reinit(hash_entry_val(search_it->ent), dict, d2p) < 0) {
             hash_table_iter_free(search_it);
@@ -523,7 +581,6 @@ ps_add_word(ps_decoder_t *ps,
 
     // TODO: we definitely need to refactor this
     hash_iter_t *search_it = hash_table_iter(ps->searches);
-    search_it = hash_table_iter_next(search_it);
     for (; search_it; search_it = hash_table_iter_next(search_it)) {
         ps_search_t *search = hash_entry_val(search_it->ent);
         if (!strcmp(PS_SEARCH_NGRAM, ps_search_name(search))) {

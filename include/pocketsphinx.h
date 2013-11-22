@@ -53,6 +53,7 @@ extern "C" {
 #include <sphinxbase/logmath.h>
 #include <sphinxbase/fe.h>
 #include <sphinxbase/feat.h>
+#include <sphinxbase/fsg_model.h>
 #include <sphinxbase/ngram_model.h>
 
 /* PocketSphinx headers (not many of them!) */
@@ -60,7 +61,6 @@ extern "C" {
 #include <cmdln_macro.h>
 #include <ps_lattice.h>
 #include <ps_mllr.h>
-#include <fsg_set.h>
 
 #define PS_DEFAULT_SEARCH  "default"
 
@@ -226,7 +226,7 @@ ps_set_search(ps_decoder_t *ps, const char *name);
  *         if you wish to reuse it elsewhere.
  */
 POCKETSPHINX_EXPORT ngram_model_t *
-ps_get_lmset(ps_decoder_t *ps, const char *name);
+ps_get_lm(ps_decoder_t *ps, const char *name);
 
 POCKETSPHINX_EXPORT int
 ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
@@ -240,8 +240,11 @@ ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
  * @return The current FSG set object for this decoder, or
  *         NULL if none is available.
  */
-POCKETSPHINX_EXPORT
-fsg_set_t *ps_get_fsgset(ps_decoder_t *ps);
+POCKETSPHINX_EXPORT fsg_model_t *
+ps_get_fsg(ps_decoder_t *ps, const char *name);
+
+POCKETSPHINX_EXPORT int
+ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg);
 
 /**
  * Reload the pronunciation dictionary from a file.

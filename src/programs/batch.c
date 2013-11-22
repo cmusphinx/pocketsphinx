@@ -274,52 +274,43 @@ process_mllrctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
 }
 
 static int
-process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
+process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *fname)
 {
-    fsg_set_t *fsgset;
-    fsg_model_t *fsg;
-    char const *fsgdir;
-    char const *fsgext;
-    char *infile = NULL;
-
-    static char *lastfile;
-
-    if (file == NULL)
+    if (fname == NULL)
         return 0;
 
-    if (lastfile && 0 == strcmp(file, lastfile))
-        return 0;
+    const char *path = NULL;
+    const char *fsgdir = cmd_ln_str_r(config, "-fsgdir");
+    const char *fsgext = cmd_ln_str_r(config, "-fsgext");
 
-    fsgext = cmd_ln_str_r(config, "-fsgext");
-    if ((fsgdir = cmd_ln_str_r(config, "-fsgdir")))
-        infile = string_join(fsgdir, "/", file,
-                             fsgext ? fsgext : "", NULL);
+    if (fsgdir)
+        path = string_join(fsgdir, "/", fname, fsgext ? fsgext : "", NULL);
     else if (fsgext)
-        infile = string_join(file, fsgext, NULL);
+        path = string_join(fname, fsgext, NULL);
     else
-        infile = ckd_salloc(file);
+        path = ckd_salloc(fname);
 
-    if ((fsg = fsg_model_readfile(infile, ps_get_logmath(ps),
-                                  cmd_ln_float32_r(config, "-lw"))) == NULL)
+    fsg_model_t *fsg = fsg_model_readfile(path, ps_get_logmath(ps),
+                                          cmd_ln_float32_r(config, "-lw"));
+    int err = 0;
+    if (!fsg) {
+        err = -1;
         goto error_out;
+    }
+    if (ps_set_fsg(ps, fname, fsg)) {
+        err = -1;
+        goto error_out;
+    }
 
-    ps_set_search(ps, PS_SEARCH_FSG);
-    fsgset = ps_get_fsgset(ps);
+    E_INFO("Using FSG: %s\n", fname);
+    if (ps_set_search(ps, fname))
+        err = -1;
 
-    if (lastfile)
-        fsg_set_remove_byname(fsgset, lastfile);
-
-    ckd_free(lastfile);
-    lastfile = ckd_salloc(file);
-
-    E_INFO("Using FSG: %s\n", lastfile);
-    fsg_set_add(fsgset, lastfile, fsg);
-    fsg_set_select(fsgset, lastfile);
-
-    ps_set_search(ps, PS_SEARCH_FSG);
 error_out:
-    ckd_free(infile);
-    return 0;
+    fsg_model_free(fsg);
+    ckd_free(path);
+
+    return err;
 }
 
 static int

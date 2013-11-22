@@ -35,8 +35,6 @@ main(int argc, char *argv[])
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = ps_init(config));
-  fsgs = (fsg_search_t *)fsg_search_init(config, ps->acmod, ps->dict, ps->d2p);
-	acmod = ps->acmod;
 
 	jsgf = jsgf_parse_file(DATADIR "/goforward.gram", NULL);
 	TEST_ASSERT(jsgf);
@@ -45,9 +43,11 @@ main(int argc, char *argv[])
 	fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, 7.5);
 	TEST_ASSERT(fsg);
 	fsg_model_write(fsg, stdout);
-	TEST_ASSERT(fsg_set_add(fsgs, "<goforward.move2>", fsg));
-	TEST_ASSERT(fsg_set_select(fsgs, "<goforward.move2>"));
-	fsg_search_reinit(ps_search_base(fsgs), ps->dict, ps->d2p);
+  ps_set_fsg(ps, "<goforward.move2>", fsg);
+  ps_set_search(ps, "<goforward.move2>"); 
+
+	acmod = ps->acmod;
+  fsgs = (fsg_search_t *) fsg_search_init(fsg, config, acmod, ps->dict, ps->d2p);
 
 	setbuf(stdout, NULL);
 	c = clock();

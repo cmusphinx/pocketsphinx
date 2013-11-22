@@ -8,7 +8,6 @@ SWIG_DIR = $(top_srcdir)/swig
 
 SWIG_FILES = \
 	$(SWIG_DIR)/pocketsphinx.i \
-	$(SWIG_DIR)/fsg_set.i \
 	$(SWIG_DIR)/ps_decoder.i \
 	$(SWIG_DIR)/ps_lattice.i
 

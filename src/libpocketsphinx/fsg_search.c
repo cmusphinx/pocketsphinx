@@ -88,17 +88,15 @@ static ps_searchfuncs_t fsg_funcs = {
 };
 
 ps_search_t *
-fsg_search_init(cmd_ln_t *config,
+fsg_search_init(fsg_model_t *fsg,
+                cmd_ln_t *config,
                 acmod_t *acmod,
                 dict_t *dict,
                 dict2pid_t *d2p)
 {
-    fsg_search_t *fsgs;
-    char const *path;
-
-    fsgs = ckd_calloc(1, sizeof(*fsgs));
+    fsg_search_t *fsgs = ckd_calloc(1, sizeof(*fsgs));
     ps_search_init(ps_search_base(fsgs), &fsg_funcs, config, acmod, dict, d2p);
-
+    fsgs->fsg = fsg_model_retain(fsg);
     /* Initialize HMM context. */
     fsgs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
                                     acmod->tmat->tp, NULL, acmod->mdef->sseq);
@@ -110,9 +108,6 @@ fsg_search_init(cmd_ln_t *config,
     /* Intialize the search history object */
     fsgs->history = fsg_history_init(NULL, dict);
     fsgs->frame = -1;
-
-    /* Initialize FSG table. */
-    fsgs->fsgs = hash_table_new(5, HASH_CASE_YES);
 
     /* Get search pruning parameters */
     fsgs->beam_factor = 1.0f;
@@ -146,105 +141,31 @@ fsg_search_init(cmd_ln_t *config,
            fsgs->beam_orig, fsgs->pbeam_orig, fsgs->wbeam_orig,
            fsgs->wip, fsgs->pip);
 
-    /* Load an FSG if one was specified in config */
-    if ((path = cmd_ln_str_r(config, "-fsg"))) {
-        fsg_model_t *fsg;
-
-        if ((fsg = fsg_model_readfile(path, acmod->lmath, fsgs->lw)) == NULL)
-            goto error_out;
-        if (fsg_set_add(fsgs, fsg_model_name(fsg), fsg) != fsg) {
-            fsg_model_free(fsg);
-            goto error_out;
-        }
-        if (fsg_set_select(fsgs, fsg_model_name(fsg)) == NULL)
-            goto error_out;
-        if (fsg_search_reinit(ps_search_base(fsgs),
-                              ps_search_dict(fsgs),
-                              ps_search_dict2pid(fsgs)) < 0)
-            goto error_out;
+    if (fsg_search_reinit(ps_search_base(fsgs),
+                          ps_search_dict(fsgs),
+                          ps_search_dict2pid(fsgs)) < 0)
+    {
+        ps_search_free(ps_search_base(fsgs));
+        return -1;
     }
-    /* Or load a JSGF grammar */
-    else if ((path = cmd_ln_str_r(config, "-jsgf"))) {
-        fsg_model_t *fsg;
-        jsgf_rule_t *rule;
-        char const *toprule;
-
-        if ((fsgs->jsgf = jsgf_parse_file(path, NULL)) == NULL)
-            goto error_out;
-
-        rule = NULL;
-        /* Take the -toprule if specified. */
-        if ((toprule = cmd_ln_str_r(config, "-toprule"))) {
-            char *anglerule;
-            anglerule = string_join("<", toprule, ">", NULL);
-            rule = jsgf_get_rule(fsgs->jsgf, anglerule);
-            ckd_free(anglerule);
-            if (rule == NULL) {
-                E_ERROR("Start rule %s not found\n", toprule);
-                goto error_out;
-            }
-        }
-        /* Otherwise, take the first public rule. */
-        else {
-            jsgf_rule_iter_t *itor;
-
-            for (itor = jsgf_rule_iter(fsgs->jsgf); itor;
-                 itor = jsgf_rule_iter_next(itor)) {
-                rule = jsgf_rule_iter_rule(itor);
-                if (jsgf_rule_public(rule)) {
-            	    jsgf_rule_iter_free(itor);
-                    break;
-                }
-            }
-            if (rule == NULL) {
-                E_ERROR("No public rules found in %s\n", path);
-                goto error_out;
-            }
-        }
-        fsg = jsgf_build_fsg(fsgs->jsgf, rule, acmod->lmath, fsgs->lw);
-        if (fsg_set_add(fsgs, fsg_model_name(fsg), fsg) != fsg) {
-            fsg_model_free(fsg);
-            goto error_out;
-        }
-        if (fsg_set_select(fsgs, fsg_model_name(fsg)) == NULL)
-            goto error_out;
-        if (fsg_search_reinit(ps_search_base(fsgs),
-                              ps_search_dict(fsgs),
-                              ps_search_dict2pid(fsgs)) < 0)
-            goto error_out;
-    }
-
+        
     return ps_search_base(fsgs);
-
-error_out:
-    fsg_search_free(ps_search_base(fsgs));
-    return NULL;
 }
 
 void
 fsg_search_free(ps_search_t *search)
 {
     fsg_search_t *fsgs = (fsg_search_t *)search;
-    hash_iter_t *itor;
 
     ps_search_deinit(search);
-    if (fsgs->jsgf)
-        jsgf_grammar_free(fsgs->jsgf);
     fsg_lextree_free(fsgs->lextree);
     if (fsgs->history) {
         fsg_history_reset(fsgs->history);
         fsg_history_set_fsg(fsgs->history, NULL, NULL);
         fsg_history_free(fsgs->history);
     }
-    if (fsgs->fsgs) {
-        for (itor = hash_table_iter(fsgs->fsgs);
-             itor; itor = hash_table_iter_next(itor)) {
-            fsg_model_t *fsg = (fsg_model_t *) hash_entry_val(itor->ent);
-            fsg_model_free(fsg);
-        }
-        hash_table_free(fsgs->fsgs);
-    }
     hmm_context_free(fsgs->hmmctx);
+    fsg_model_free(fsgs->fsg);
     ckd_free(fsgs);
 }
 
@@ -260,10 +181,6 @@ fsg_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
     /* Free old dict2pid, dict */
     ps_search_base_reinit(search, dict, d2p);
     
-    /* Nothing to update */
-    if (fsgs->fsg == NULL)
-	return 0;
-
     /* Update the number of words (not used by this module though). */
     search->n_words = dict_size(dict);
 
@@ -365,128 +282,6 @@ fsg_search_add_altpron(fsg_search_t *fsgs, fsg_model_t *fsg)
 
     E_INFO("Added %d alternate word transitions\n", n_alt);
     return n_alt;
-}
-
-fsg_model_t *
-fsg_set_get_fsg(fsg_search_t *fsgs, const char *name)
-{
-    void *val;
-
-    if (hash_table_lookup(fsgs->fsgs, name, &val) < 0)
-        return NULL;
-    return (fsg_model_t *)val;
-}
-
-fsg_model_t *
-fsg_set_add(fsg_search_t *fsgs, char const *name, fsg_model_t *fsg)
-{
-    if (name == NULL)
-        name = fsg_model_name(fsg);
-
-    if (!fsg_search_check_dict(fsgs, fsg))
-	return NULL;
-
-    /* Add silence transitions and alternate words. */
-    if (cmd_ln_boolean_r(ps_search_config(fsgs), "-fsgusefiller")
-        && !fsg_model_has_sil(fsg))
-        fsg_search_add_silences(fsgs, fsg);
-    if (cmd_ln_boolean_r(ps_search_config(fsgs), "-fsgusealtpron")
-        && !fsg_model_has_alt(fsg))
-        fsg_search_add_altpron(fsgs, fsg);
-
-    return (fsg_model_t *)hash_table_enter(fsgs->fsgs, name, fsg);
-}
-
-
-fsg_model_t *
-fsg_set_remove_byname(fsg_search_t *fsgs, char const *key)
-{
-    fsg_model_t *oldfsg;
-    void *val;
-
-    /* Look for the matching FSG. */
-    if (hash_table_lookup(fsgs->fsgs, key, &val) < 0) {
-        E_ERROR("FSG `%s' to be deleted not found\n", key);
-        return NULL;
-    }
-    oldfsg = val;
-
-    /* Remove it from the FSG table. */
-    hash_table_delete(fsgs->fsgs, key);
-    /* If this was the currently active FSG, also delete other stuff */
-    if (fsgs->fsg == oldfsg) {
-        fsg_lextree_free(fsgs->lextree);
-        fsgs->lextree = NULL;
-        fsg_history_set_fsg(fsgs->history, NULL, NULL);
-        fsgs->fsg = NULL;
-    }
-    return oldfsg;
-}
-
-
-fsg_model_t *
-fsg_set_remove(fsg_search_t *fsgs, fsg_model_t *fsg)
-{
-    char const *key;
-    hash_iter_t *itor;
-
-    key = NULL;
-    for (itor = hash_table_iter(fsgs->fsgs);
-         itor; itor = hash_table_iter_next(itor)) {
-        fsg_model_t *oldfsg;
-
-        oldfsg = (fsg_model_t *) hash_entry_val(itor->ent);
-        if (oldfsg == fsg) {
-            key = hash_entry_key(itor->ent);
-            hash_table_iter_free(itor);
-            break;
-        }
-    }
-    if (key == NULL) {
-        E_WARN("FSG '%s' to be deleted not found\n", fsg_model_name(fsg));
-        return NULL;
-    }
-    else
-        return fsg_set_remove_byname(fsgs, key);
-}
-
-
-fsg_model_t *
-fsg_set_select(fsg_search_t *fsgs, const char *name)
-{
-    fsg_model_t *fsg;
-
-    fsg = fsg_set_get_fsg(fsgs, name);
-    if (fsg == NULL) {
-        E_ERROR("FSG '%s' not known; cannot make it current\n", name);
-        return NULL;
-    }
-    fsgs->fsg = fsg;
-    return fsg;
-}
-
-fsg_set_iter_t *
-fsg_set_iter(fsg_set_t *fsgs)
-{
-    return hash_table_iter(fsgs->fsgs);
-}
-
-fsg_set_iter_t *
-fsg_set_iter_next(fsg_set_iter_t *itor)
-{
-    return hash_table_iter_next(itor);
-}
-
-fsg_model_t *
-fsg_set_iter_fsg(fsg_set_iter_t *itor)
-{
-    return ((fsg_model_t *)itor->ent->val);
-}
-
-void
-fsg_set_iter_free(fsg_set_iter_t *itor)
-{
-    hash_table_iter_free(itor);
 }
 
 static void

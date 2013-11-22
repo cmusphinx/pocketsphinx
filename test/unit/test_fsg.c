@@ -29,7 +29,7 @@ main(int argc, char *argv[])
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = ps_init(config));
 
-	fsgs = (fsg_search_t *)ps->search;
+	fsgs = (fsg_search_t *) ps->search;
 	acmod = ps->acmod;
 
 	setbuf(stdout, NULL);

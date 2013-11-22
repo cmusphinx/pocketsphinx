@@ -141,7 +141,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\cmdln_macro.h" />
-    <ClInclude Include="..\..\include\fsg_set.h" />
     <ClInclude Include="..\..\include\pocketsphinx.h" />
     <ClInclude Include="..\..\include\pocketsphinx_export.h" />
     <ClInclude Include="..\..\include\ps_lattice.h" />

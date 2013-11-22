@@ -73,8 +73,6 @@ negative error code."
 // TODO: probably these definitions should be imported from sphinxbase
 %{
 typedef cmd_ln_t Config;
-typedef jsgf_t Jsgf;
-typedef jsgf_rule_t JsgfRule;
 typedef feat_t Feature;
 typedef fe_t FrontEnd;
 typedef fsg_model_t FsgModel;
@@ -90,7 +88,6 @@ typedef int bool;
 #define false 0
 #define true 1
 
-typedef fsg_set_t FsgSet;
 typedef ps_decoder_t Decoder;
 typedef ps_lattice_t Lattice;
 %}
@@ -121,14 +118,12 @@ typedef struct {
 
 typedef struct {} Decoder;
 typedef struct {} Lattice;
-typedef struct {} FsgSet;
 
 #ifdef HAS_DOC
 %include pydoc.i
 #endif
 %include ps_decoder.i
 %include ps_lattice.i
-%include fsg_set.i
 
 %extend Hypothesis {
     Hypothesis(char const *hypstr, char const *uttid, int best_score) {

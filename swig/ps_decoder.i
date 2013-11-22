@@ -40,8 +40,6 @@
 %extend Decoder {
     /* Following functions have no bindings:
      * ps_mllr_t *ps_update_mllr - requires 
-     * fsg_set_t *ps_get_fsgset
-     * fsg_set_t *ps_update_fsgset
      * int ps_decode_senscr
      * int ps_process_cep
      */
@@ -144,10 +142,6 @@
 
     NGramModel * get_lm(const char *name) {
         return ngram_model_retain(ps_get_lm($self, name));
-    }
-
-    FsgSet * get_fsgset() {
-        return ps_get_fsgset($self);
     }
 
     LogMath * get_logmath() {

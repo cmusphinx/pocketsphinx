@@ -12,9 +12,6 @@
     <ClInclude Include="..\..\include\cmdln_macro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\fsg_set.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\pocketsphinx.h">
       <Filter>Header Files</Filter>
     </ClInclude>

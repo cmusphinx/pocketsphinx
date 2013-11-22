@@ -70,11 +70,7 @@ typedef struct fsg_search_s {
 
     hmm_context_t *hmmctx; /**< HMM context. */
 
-    hash_table_t *fsgs;		/**< Table of all FSGs loaded */
-    fsg_model_t *fsg;		/**< Currently active FSG; NULL if none.  One
-				   must be made active before starting FSG
-				   decoding */
-    jsgf_t *jsgf;               /**< Active JSGF grammar file. */
+    fsg_model_t *fsg;		/**< FSG model */
     struct fsg_lextree_s *lextree;/**< Lextree structure for the currently
 				   active FSG */
     struct fsg_history_s *history;/**< For storing the Viterbi search history */
@@ -112,7 +108,8 @@ typedef struct fsg_search_s {
 /**
  * Create, initialize and return a search module.
  */
-ps_search_t *fsg_search_init(cmd_ln_t *config,
+ps_search_t *fsg_search_init(fsg_model_t *fsg,
+                             cmd_ln_t *config,
                              acmod_t *acmod,
                              dict_t *dict,
                              dict2pid_t *d2p);

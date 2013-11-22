@@ -126,6 +126,9 @@ fsg_lextree_lc_rc(fsg_lextree_t *lextree)
                  * (Filler phones are a pain to deal with.  There is no direct
                  * marking of a filler phone; but only filler words are supposed to
                  * use such phones, so we use that fact.  HACK!!  FRAGILE!!)
+                 *
+                 * UPD: tests carsh here if .fsg model used with wrong hmm and
+                 *      dictionary
                  */
                 if (fsg_model_is_filler(fsg, fsg_link_wid(l))) {
                     /* Filler phone; use silence phone as context */
