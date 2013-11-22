@@ -77,7 +77,6 @@ static ps_searchfuncs_t ngram_funcs = {
 };
 
 static ngram_model_t *default_lm;
-static const char *default_lm_name = "default";
 
 static void
 ngram_search_update_widmap(ngram_search_t *ngs)
