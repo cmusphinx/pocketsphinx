@@ -146,7 +146,7 @@ fsg_search_init(fsg_model_t *fsg,
                           ps_search_dict2pid(fsgs)) < 0)
     {
         ps_search_free(ps_search_base(fsgs));
-        return -1;
+        return NULL;
     }
         
     return ps_search_base(fsgs);

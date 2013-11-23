@@ -192,7 +192,7 @@ ngram_search_init(ngram_model_t *lm,
     ngs->active_word_list = ckd_calloc_2d(2, dict_size(dict),
                                           sizeof(**ngs->active_word_list));
 
-    static const char *lmname = "default";
+    static char *lmname = "default";
     ngs->lmset = ngram_model_set_init(config, &lm, &lmname, NULL, 1);
     if (!ngs->lmset)
         goto error_out;
