@@ -436,12 +436,6 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     GstPocketSphinx *ps = GST_POCKETSPHINX(object);
 
     switch (prop_id) {
-    case PROP_CONFIGURED:
-        if (ps->ps)
-            ps_reinit(ps->ps, NULL);
-        else
-            ps->ps = ps_init(ps->config);
-        break;
     case PROP_HMM_DIR:
         gst_pocketsphinx_set_string(ps, "-hmm", value);
         if (ps->ps) {
@@ -454,44 +448,17 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
         gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
         gst_pocketsphinx_set_string(ps, "-lm", value);
-        if (ps->ps) {
-            ngram_model_t *lm, *lmset;
-
-            /* Switch to this new LM. */
-            lm = ngram_model_read(ps->config,
-                                  g_value_get_string(value),
-                                  NGRAM_AUTO,
-                                  ps_get_logmath(ps->ps));
-            lmset = ps_get_lmset(ps->ps);
-            ngram_model_set_add(lmset, lm, g_value_get_string(value),
-                                1.0, TRUE);
-            ps_update_lmset(ps->ps, lmset);
-        }
         break;
     case PROP_LMCTL_FILE:
         /* FSG and LM are mutually exclusive. */
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
         gst_pocketsphinx_set_string(ps, "-lmctl", value);
         gst_pocketsphinx_set_string(ps, "-lm", NULL);
-        if (ps->ps) {
-            ngram_model_t *lmset;
-            lmset = ngram_model_set_read(ps->config,
-                                         g_value_get_string(value),
-                                         ps_get_logmath(ps->ps));
-            ps_update_lmset(ps->ps, lmset);
-        }
         break;
     case PROP_LM_NAME:
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
         gst_pocketsphinx_set_string(ps, "-lmname", value);
-        if (ps->ps) {
-            ngram_model_t *lm, *lmset;
-
-            lmset = ps_get_lmset(ps->ps);
-            lm = ngram_model_set_select(lmset, g_value_get_string(value));
-            ps_update_lmset(ps->ps, lmset);
-        }
-
+        break;
     case PROP_DICT_FILE:
         gst_pocketsphinx_set_string(ps, "-dict", value);
         if (ps->ps) {
@@ -501,49 +468,22 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         break;
     case PROP_MLLR_FILE:
         gst_pocketsphinx_set_string(ps, "-mllr", value);
-        if (ps->ps) {
-            /* Reinitialize the decoder with the new MLLR transform. */
+        /* Reinitialize the decoder with the new MLLR transform. */
+        if (ps->ps)
             ps_reinit(ps->ps, NULL);
-        }
         break;
     case PROP_FSG_MODEL:
-    {
-        fsg_set_t *fsgs = ps_get_fsgset(ps->ps);
-        
-        if (fsgs == NULL)
-    	    fsgs = ps_update_fsgset(ps->ps);
-        
-        if (fsgs) {
-	    fsg_model_t *fsg = g_value_get_pointer(value);
-
-    	    fsg_set_remove_byname(fsgs, fsg_model_name(fsg));
-    	    fsg_set_add(fsgs, fsg_model_name(fsg), fsg);
-    	    fsg_set_select(fsgs, fsg_model_name(fsg));
-    	}
+        {
+            fsg_model_t *fsg = g_value_get_pointer(value);
+            const char *name = fsg_model_name(fsg);
+            ps_set_fsg(ps->ps, name, fsg);
+            ps_set_search(ps->ps, name);
+        }
         break;
-    }
     case PROP_FSG_FILE:
         /* FSG and LM are mutually exclusive */
         gst_pocketsphinx_set_string(ps, "-lm", NULL);
         gst_pocketsphinx_set_string(ps, "-fsg", value);
-
-        if (ps->ps) {
-            /* Switch to this new FSG. */
-            fsg_model_t *fsg;
-            fsg_set_t *fsgs = ps_get_fsgset(ps->ps);
-
-            if (fsgs == NULL)
-    		fsgs = ps_update_fsgset(ps->ps);
-
-            fsg = fsg_model_readfile(g_value_get_string(value),
-                                     ps_get_logmath(ps->ps),
-                                     cmd_ln_float32_r(ps->config, "-lw"));
-
-            if (fsgs && fsg) {
-                fsg_set_add(fsgs, fsg_model_name(fsg), fsg);
-                fsg_set_select(fsgs, fsg_model_name(fsg));
-            }
-        }
         break;
     case PROP_FWDFLAT:
         gst_pocketsphinx_set_boolean(ps, "-fwdflat", value);
@@ -859,3 +799,5 @@ GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
                   "BSD",
 #endif
                   "PocketSphinx", "http://cmusphinx.sourceforge.net/")
+
+/* vim: set ts=4 sw=4: */
