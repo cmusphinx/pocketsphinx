@@ -333,6 +333,12 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
                 return -1;
             }
         }
+
+        const char *name = cmd_ln_str_r(config, "-lmname");
+        if (name)
+            ps_set_search(ps, name);
+        else
+            E_WARN("No default LM name (-lmname) for `-lmctl'\n");
     }
 
     /* Initialize performance timer. */
