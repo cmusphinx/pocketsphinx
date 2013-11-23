@@ -159,6 +159,11 @@ static void
 ps_free_searches(ps_decoder_t *ps)
 {
     if (ps->searches) {
+        /* Release keys manually as we used ckd_salloc to add them. */
+        hash_iter_t *search_it = hash_table_iter(ps->searches);
+        for (; search_it; search_it = hash_table_iter_next(search_it))
+            ckd_free((char *) hash_entry_key(search_it->ent));
+
         hash_table_empty(ps->searches);
         hash_table_free(ps->searches);
     }
@@ -231,7 +236,8 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
              phone_loop_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
             return -1;
         hash_table_enter(ps->searches,
-                         ps_search_name(ps->phone_loop), ps->phone_loop);
+                         ckd_salloc(ps_search_name(ps->phone_loop)),
+                         ps->phone_loop);
     }
 
     /* Dictionary and triphone mappings (depends on acmod). */
@@ -455,7 +461,7 @@ ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
     search->pls = ps->phone_loop;
 
     if (search)
-        hash_table_replace(ps->searches, name, search);
+        hash_table_replace(ps->searches, ckd_salloc(name), search);
     return NULL == search;
 }
 
@@ -476,7 +482,7 @@ ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
     search->pls = ps->phone_loop;
 
     if (search)
-        hash_table_replace(ps->searches, name, search);
+        hash_table_replace(ps->searches, ckd_salloc(name), search);
     return NULL == search;
 }
 
