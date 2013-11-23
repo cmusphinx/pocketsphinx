@@ -62,13 +62,8 @@ fsg = jsgf.build_fsg(rule, decoder.get_logmath(), 7.5)
 fsg.write(stdout)
 fsg.writefile('goforward.fsg')
 
-# Call update to switch to fsg search mode first
-decoder.update_fsgset()
-
-fsg_set = decoder.get_fsgset()
-fsg_set.add("current", fsg)
-fsg_set.select("current")
-decoder.update_fsgset()
+decoder.set_fsg("goforward", fsg)
+decoder.set_search("goforward")
 
 decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
 print 'Decoding with "goforward" grammar:', decoder.hyp().hypstr
