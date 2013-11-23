@@ -596,13 +596,16 @@ ps_add_word(ps_decoder_t *ps,
                 return -1;
             }
         }
+
+        if (update) {
+            if ((rv = ps_search_reinit(ps->search, ps->dict, ps->d2p) < 0)) {
+                hash_table_iter_free(search_it);
+                return rv;
+            }
+        }
     }
 
     /* Rebuild the widmap and search tree if requested. */
-    if (update) {
-        if ((rv = ps_search_reinit(ps->search, ps->dict, ps->d2p) < 0))
-            return rv;
-    }
     return wid;
 }
 
