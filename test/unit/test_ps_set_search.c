@@ -95,6 +95,7 @@ test_set_search()
 
     TEST_ASSERT(!ps_set_search(ps, "tidigits"));
     TEST_ASSERT(!ps_set_search(ps, "goforward"));
+    TEST_ASSERT(!ps_start_utt(ps, NULL));
     ps_free(ps);
     cmd_ln_free_r(config);
 }
