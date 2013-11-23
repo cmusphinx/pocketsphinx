@@ -8,27 +8,27 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
+ * This work was supported in part by funding from the Defense Advanced
+ * Research Projects Agency and the National Science Foundation of the
  * United States of America, and the CMU Sphinx Speech Consortium.
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
@@ -39,7 +39,7 @@
 // TODO: check for multiple values
 %extend Decoder {
     /* Following functions have no bindings:
-     * ps_mllr_t *ps_update_mllr - requires 
+     * ps_mllr_t *ps_update_mllr - requires
      * int ps_decode_senscr
      * int ps_process_cep
      */
@@ -56,7 +56,7 @@
 
     ~Decoder() {
         ps_free($self);
-    }  
+    }
 
     void reinit(Config *config, int *errcode) {
         *errcode = ps_reinit($self, config);
@@ -140,8 +140,20 @@
         return ps_get_feat($self);
     }
 
+    FsgModel * get_fsg(const char *name) {
+        return fsg_model_retain(ps_get_fsg($self, name));
+    }
+
+    void set_fsg(const char *name, FsgModel *fsg, int *errcode) {
+        *errcode = ps_set_fsg($self, name, fsg);
+    }
+
     NGramModel * get_lm(const char *name) {
         return ngram_model_retain(ps_get_lm($self, name));
+    }
+
+    void set_lm(const char *name, NGramModel *lm, int *errcode) {
+        *errcode = ps_set_lm($self, name, lm);
     }
 
     LogMath * get_logmath() {
@@ -156,3 +168,5 @@
         return ps_get_n_frames($self);
     }
 }
+
+/* vim: set ts=4 sw=4: */
