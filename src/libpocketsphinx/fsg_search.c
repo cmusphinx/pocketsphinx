@@ -87,115 +87,6 @@ static ps_searchfuncs_t fsg_funcs = {
     /* seg_iter: */ fsg_search_seg_iter,
 };
 
-ps_search_t *
-fsg_search_init(fsg_model_t *fsg,
-                cmd_ln_t *config,
-                acmod_t *acmod,
-                dict_t *dict,
-                dict2pid_t *d2p)
-{
-    fsg_search_t *fsgs = ckd_calloc(1, sizeof(*fsgs));
-    ps_search_init(ps_search_base(fsgs), &fsg_funcs, config, acmod, dict, d2p);
-    fsgs->fsg = fsg_model_retain(fsg);
-    /* Initialize HMM context. */
-    fsgs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
-                                    acmod->tmat->tp, NULL, acmod->mdef->sseq);
-    if (fsgs->hmmctx == NULL) {
-        ps_search_free(ps_search_base(fsgs));
-        return NULL;
-    }
-
-    /* Intialize the search history object */
-    fsgs->history = fsg_history_init(NULL, dict);
-    fsgs->frame = -1;
-
-    /* Get search pruning parameters */
-    fsgs->beam_factor = 1.0f;
-    fsgs->beam = fsgs->beam_orig
-        = (int32) logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam"))
-        >> SENSCR_SHIFT;
-    fsgs->pbeam = fsgs->pbeam_orig
-        = (int32) logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pbeam"))
-        >> SENSCR_SHIFT;
-    fsgs->wbeam = fsgs->wbeam_orig
-        = (int32) logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-wbeam"))
-        >> SENSCR_SHIFT;
-
-    /* LM related weights/penalties */
-    fsgs->lw = cmd_ln_float32_r(config, "-lw");
-    fsgs->pip = (int32) (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-pip"))
-                           * fsgs->lw)
-        >> SENSCR_SHIFT;
-    fsgs->wip = (int32) (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-wip"))
-                           * fsgs->lw)
-        >> SENSCR_SHIFT;
-
-    /* Best path search (and confidence annotation)? */
-    if (cmd_ln_boolean_r(config, "-bestpath"))
-        fsgs->bestpath = TRUE;
-
-    /* Acoustic score scale for posterior probabilities. */
-    fsgs->ascale = 1.0 / cmd_ln_float32_r(config, "-ascale");
-
-    E_INFO("FSG(beam: %d, pbeam: %d, wbeam: %d; wip: %d, pip: %d)\n",
-           fsgs->beam_orig, fsgs->pbeam_orig, fsgs->wbeam_orig,
-           fsgs->wip, fsgs->pip);
-
-    if (fsg_search_reinit(ps_search_base(fsgs),
-                          ps_search_dict(fsgs),
-                          ps_search_dict2pid(fsgs)) < 0)
-    {
-        ps_search_free(ps_search_base(fsgs));
-        return NULL;
-    }
-        
-    return ps_search_base(fsgs);
-}
-
-void
-fsg_search_free(ps_search_t *search)
-{
-    fsg_search_t *fsgs = (fsg_search_t *)search;
-
-    ps_search_deinit(search);
-    fsg_lextree_free(fsgs->lextree);
-    if (fsgs->history) {
-        fsg_history_reset(fsgs->history);
-        fsg_history_set_fsg(fsgs->history, NULL, NULL);
-        fsg_history_free(fsgs->history);
-    }
-    hmm_context_free(fsgs->hmmctx);
-    fsg_model_free(fsgs->fsg);
-    ckd_free(fsgs);
-}
-
-int
-fsg_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
-{
-    fsg_search_t *fsgs = (fsg_search_t *)search;
-
-    /* Free the old lextree */
-    if (fsgs->lextree)
-        fsg_lextree_free(fsgs->lextree);
-
-    /* Free old dict2pid, dict */
-    ps_search_base_reinit(search, dict, d2p);
-    
-    /* Update the number of words (not used by this module though). */
-    search->n_words = dict_size(dict);
-
-    /* Allocate new lextree for the given FSG */
-    fsgs->lextree = fsg_lextree_init(fsgs->fsg, dict, d2p,
-                                     ps_search_acmod(fsgs)->mdef,
-                                     fsgs->hmmctx, fsgs->wip, fsgs->pip);
-
-    /* Inform the history module of the new fsg */
-    fsg_history_set_fsg(fsgs->history, fsgs->fsg, dict);
-
-    return 0;
-}
-
-
 static int
 fsg_search_add_silences(fsg_search_t *fsgs, fsg_model_t *fsg)
 {
@@ -283,6 +174,129 @@ fsg_search_add_altpron(fsg_search_t *fsgs, fsg_model_t *fsg)
     E_INFO("Added %d alternate word transitions\n", n_alt);
     return n_alt;
 }
+
+ps_search_t *
+fsg_search_init(fsg_model_t *fsg,
+                cmd_ln_t *config,
+                acmod_t *acmod,
+                dict_t *dict,
+                dict2pid_t *d2p)
+{
+    fsg_search_t *fsgs = ckd_calloc(1, sizeof(*fsgs));
+    ps_search_init(ps_search_base(fsgs), &fsg_funcs, config, acmod, dict, d2p);
+
+    fsgs->fsg = fsg_model_retain(fsg);
+    /* Initialize HMM context. */
+    fsgs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
+                                    acmod->tmat->tp, NULL, acmod->mdef->sseq);
+    if (fsgs->hmmctx == NULL) {
+        ps_search_free(ps_search_base(fsgs));
+        return NULL;
+    }
+
+    /* Intialize the search history object */
+    fsgs->history = fsg_history_init(NULL, dict);
+    fsgs->frame = -1;
+
+    /* Get search pruning parameters */
+    fsgs->beam_factor = 1.0f;
+    fsgs->beam = fsgs->beam_orig
+        = (int32) logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam"))
+        >> SENSCR_SHIFT;
+    fsgs->pbeam = fsgs->pbeam_orig
+        = (int32) logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pbeam"))
+        >> SENSCR_SHIFT;
+    fsgs->wbeam = fsgs->wbeam_orig
+        = (int32) logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-wbeam"))
+        >> SENSCR_SHIFT;
+
+    /* LM related weights/penalties */
+    fsgs->lw = cmd_ln_float32_r(config, "-lw");
+    fsgs->pip = (int32) (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-pip"))
+                           * fsgs->lw)
+        >> SENSCR_SHIFT;
+    fsgs->wip = (int32) (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-wip"))
+                           * fsgs->lw)
+        >> SENSCR_SHIFT;
+
+    /* Best path search (and confidence annotation)? */
+    if (cmd_ln_boolean_r(config, "-bestpath"))
+        fsgs->bestpath = TRUE;
+
+    /* Acoustic score scale for posterior probabilities. */
+    fsgs->ascale = 1.0 / cmd_ln_float32_r(config, "-ascale");
+
+    E_INFO("FSG(beam: %d, pbeam: %d, wbeam: %d; wip: %d, pip: %d)\n",
+           fsgs->beam_orig, fsgs->pbeam_orig, fsgs->wbeam_orig,
+           fsgs->wip, fsgs->pip);
+
+    if (!fsg_search_check_dict(fsgs, fsg)) {
+        fsg_search_free(fsgs);
+        return NULL;
+    }
+
+    if (cmd_ln_boolean_r(config, "-fsgusefiller") &&
+        !fsg_model_has_sil(fsg))
+        fsg_search_add_silences(fsgs, fsg);
+
+    if (cmd_ln_boolean_r(config, "-fsgusealtpron") &&
+        !fsg_model_has_alt(fsg))
+        fsg_search_add_altpron(fsgs, fsg);
+
+    if (fsg_search_reinit(ps_search_base(fsgs),
+                          ps_search_dict(fsgs),
+                          ps_search_dict2pid(fsgs)) < 0)
+    {
+        ps_search_free(ps_search_base(fsgs));
+        return NULL;
+    }
+        
+    return ps_search_base(fsgs);
+}
+
+void
+fsg_search_free(ps_search_t *search)
+{
+    fsg_search_t *fsgs = (fsg_search_t *)search;
+
+    ps_search_deinit(search);
+    fsg_lextree_free(fsgs->lextree);
+    if (fsgs->history) {
+        fsg_history_reset(fsgs->history);
+        fsg_history_set_fsg(fsgs->history, NULL, NULL);
+        fsg_history_free(fsgs->history);
+    }
+    hmm_context_free(fsgs->hmmctx);
+    fsg_model_free(fsgs->fsg);
+    ckd_free(fsgs);
+}
+
+int
+fsg_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
+{
+    fsg_search_t *fsgs = (fsg_search_t *)search;
+
+    /* Free the old lextree */
+    if (fsgs->lextree)
+        fsg_lextree_free(fsgs->lextree);
+
+    /* Free old dict2pid, dict */
+    ps_search_base_reinit(search, dict, d2p);
+    
+    /* Update the number of words (not used by this module though). */
+    search->n_words = dict_size(dict);
+
+    /* Allocate new lextree for the given FSG */
+    fsgs->lextree = fsg_lextree_init(fsgs->fsg, dict, d2p,
+                                     ps_search_acmod(fsgs)->mdef,
+                                     fsgs->hmmctx, fsgs->wip, fsgs->pip);
+
+    /* Inform the history module of the new fsg */
+    fsg_history_set_fsg(fsgs->history, fsgs->fsg, dict);
+
+    return 0;
+}
+
 
 static void
 fsg_search_sen_active(fsg_search_t *fsgs)
