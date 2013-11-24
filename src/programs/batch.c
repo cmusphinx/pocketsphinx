@@ -316,6 +316,9 @@ error_out:
 static int
 process_lmnamectl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *lmname)
 {
+    if (!lmname)
+        return 0;
+
     E_INFO("Using language model: %s\n", lmname);
     if (ps_set_search(ps, lmname)) {
         E_ERROR("No such language model: %s\n", lmname);
