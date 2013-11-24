@@ -27,4 +27,4 @@ fi
 # Check the decoding results
 grep AVERAGE $bn.log
 $tests/word_align.pl -i $data/cards/cards.transcription $bn.match | grep 'TOTAL Percent'
-#compare_table "match" $data/cards/cards.hyp $bn.match 1000000
+compare_table "match" $data/cards/cards.hyp $bn.match 1000000
