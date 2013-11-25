@@ -231,7 +231,7 @@ fsg_search_init(fsg_model_t *fsg,
            fsgs->wip, fsgs->pip);
 
     if (!fsg_search_check_dict(fsgs, fsg)) {
-        fsg_search_free(fsgs);
+        fsg_search_free(ps_search_base(fsgs));
         return NULL;
     }
 

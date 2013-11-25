@@ -279,7 +279,7 @@ process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *fname)
     if (fname == NULL)
         return 0;
 
-    const char *path = NULL;
+    char *path = NULL;
     const char *fsgdir = cmd_ln_str_r(config, "-fsgdir");
     const char *fsgext = cmd_ln_str_r(config, "-fsgext");
 
