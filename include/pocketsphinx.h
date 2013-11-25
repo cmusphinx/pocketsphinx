@@ -83,6 +83,13 @@ typedef struct ps_astar_s ps_nbest_t;
 typedef struct ps_seg_s ps_seg_t;
 
 /**
+ * Sets default grammar and language model if they are not set explicitly and
+ * are present in the default search path.
+ */
+POCKETSPHINX_EXPORT void
+ps_default_search_args(cmd_ln_t *);
+
+/**
  * Initialize the decoder from a configuration object.
  *
  * @note The decoder retains ownership of the pointer

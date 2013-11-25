@@ -380,8 +380,8 @@ main(int argc, char *argv[])
     if (config == NULL)
         return 1;
 
-    ps = ps_init(config);
-    if (ps == NULL)
+    ps_default_search_args(config);
+    if (!(ps = ps_init(config)))
         return 1;
 
     E_INFO("%s COMPILED ON: %s, AT: %s\n\n", argv[0], __DATE__, __TIME__);

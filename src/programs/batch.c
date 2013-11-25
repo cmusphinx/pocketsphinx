@@ -804,10 +804,10 @@ main(int32 argc, char *argv[])
     if ((ctlfh = fopen(ctl, "r")) == NULL) {
         E_FATAL_SYSTEM("Failed to open control file '%s'", ctl);
     }
-    ps = ps_init(config);
-    if (ps == NULL) {
+
+    ps_default_search_args(config);
+    if (!(ps = ps_init(config)))
         E_FATAL("PocketSphinx decoder init failed\n");
-    }
 
     process_ctl(ps, config, ctlfh);
 
