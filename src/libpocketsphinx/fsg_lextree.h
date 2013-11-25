@@ -1,6 +1,6 @@
 /* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
- * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
+ * Copyright (c) 1999-2013 Carnegie Mellon University.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,46 +33,8 @@
  */
 /*
  * fsg_lextree.h -- The collection of all the lextrees for the entire FSM.
- * 
- * **********************************************
- * CMU ARPA Speech Project
  *
- * Copyright (c) 2004 Carnegie Mellon University.
- * ALL RIGHTS RESERVED.
- * **********************************************
- * 
- * HISTORY
- * 
- * $Log: fsg_lextree.h,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.1  2004/07/16 00:57:12  egouvea
- * Added Ravi's implementation of FSG support.
- *
- * Revision 1.3  2004/06/23 20:32:16  rkm
- * *** empty log message ***
- *
- * Revision 1.2  2004/05/27 14:22:57  rkm
- * FSG cross-word triphones completed (but for single-phone words)
- *
- * Revision 1.1.1.1  2004/03/01 14:30:31  rkm
- *
- *
- * Revision 1.1  2004/02/23 15:53:45  rkm
- * Renamed from fst to fsg
- *
- * Revision 1.2  2004/02/19 21:16:54  rkm
- * Added fsg_search.{c,h}
- *
- * Revision 1.1  2004/02/18 15:02:34  rkm
- * Added fsg_lextree.{c,h}
- *
- * 
- * 18-Feb-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
- * 		Started.
  */
-
 
 #ifndef __S2_FSG_LEXTREE_H__
 #define __S2_FSG_LEXTREE_H__
@@ -87,11 +49,13 @@
 #include "dict2pid.h"
 
 /*
- * **HACK-ALERT**!!  Compile-time constant determining the size of the
+ * Compile-time constant determining the size of the
  * bitvector fsg_pnode_t.fsg_pnode_ctxt_t.bv.  (See below.)
  * But it makes memory allocation simpler and more efficient.
+ * Make it smaller (2) to save memory if your phoneset has less than
+ * 64 phones.
  */
-#define FSG_PNODE_CTXT_BVSZ	2
+#define FSG_PNODE_CTXT_BVSZ	4
 
 typedef struct {
     uint32 bv[FSG_PNODE_CTXT_BVSZ];
