@@ -216,7 +216,13 @@ POCKETSPHINX_EXPORT
 ps_mllr_t *ps_update_mllr(ps_decoder_t *ps, ps_mllr_t *mllr);
 
 /**
- * TODO: write doc
+ * Actives search with the provided name.
+ *
+ * Activates search with the provided name. The search must be added before
+ * using either ps_set_fsg() or ps_set_lm().
+ *
+ * @see ps_set_fsg
+ * @see ps_set_fsg
  */
 POCKETSPHINX_EXPORT int
 ps_set_search(ps_decoder_t *ps, const char *name);
@@ -235,6 +241,14 @@ ps_set_search(ps_decoder_t *ps, const char *name);
 POCKETSPHINX_EXPORT ngram_model_t *
 ps_get_lm(ps_decoder_t *ps, const char *name);
 
+/**
+ * Adds new search based on N-gram language model.
+ *
+ * Associates N-gram search with the provided name. The search can be activated
+ * using ps_set_search().
+ *
+ * @see ps_set_search.
+ */ 
 POCKETSPHINX_EXPORT int
 ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
 
@@ -250,6 +264,14 @@ ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
 POCKETSPHINX_EXPORT fsg_model_t *
 ps_get_fsg(ps_decoder_t *ps, const char *name);
 
+/**
+ * Adds new search based on finite state grammar.
+ *
+ * Associates FSG search with the provided name. The search can be activated
+ * using ps_set_search().
+ *
+ * @see ps_set_search
+ */
 POCKETSPHINX_EXPORT int
 ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg);
 
