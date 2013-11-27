@@ -136,6 +136,7 @@ ps_find_search(ps_decoder_t *ps, char const *name)
 void
 ps_default_search_args(cmd_ln_t *config)
 {
+#ifdef MODELDIR
     /* Set default acoustic and language models. */
     const char *hmmdir = cmd_ln_str_r(config, "-hmm");
     if (hmmdir == NULL && dir_exists(MODELDIR "/hmm/en_US/hub4wsj_sc_8k")) {
@@ -180,6 +181,7 @@ ps_default_search_args(cmd_ln_t *config)
         cmd_ln_set_str_r(config, "-dict", tmpdict);
         ckd_free(tmpdict);
     }
+#endif
 }
 
 int
