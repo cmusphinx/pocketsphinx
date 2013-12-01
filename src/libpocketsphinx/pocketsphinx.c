@@ -115,10 +115,12 @@ static void
 ps_free_searches(ps_decoder_t *ps)
 {
     if (ps->searches) {
-        /* Release keys manually as we used ckd_salloc to add them. */
+        /* Release keys manually as we used ckd_salloc to add them, release every search too. */
         hash_iter_t *search_it = hash_table_iter(ps->searches);
-        for (; search_it; search_it = hash_table_iter_next(search_it))
+        for (; search_it; search_it = hash_table_iter_next(search_it)) {
             ckd_free((char *) hash_entry_key(search_it->ent));
+            ps_search_free(hash_entry_val(search_it->ent));
+        }
 
         hash_table_empty(ps->searches);
         hash_table_free(ps->searches);
