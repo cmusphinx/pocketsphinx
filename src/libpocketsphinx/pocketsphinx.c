@@ -39,6 +39,10 @@
 #include <stdio.h>
 #include <assert.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 /* SphinxBase headers. */
 #include <sphinxbase/err.h>
 #include <sphinxbase/strfuncs.h>
