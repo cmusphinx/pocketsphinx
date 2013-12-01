@@ -462,18 +462,6 @@ ps_get_lm(ps_decoder_t *ps, const char *name)
     return search ? ((ngram_search_t *) search)->lmset : NULL;
 }
 
-int
-ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
-{
-    ps_search_t *search;
-    search = ngram_search_init(lm, ps->config, ps->acmod, ps->dict, ps->d2p);
-    search->pls = ps->phone_loop;
-
-    if (search)
-        hash_table_replace(ps->searches, ckd_salloc(name), search);
-    return NULL == search;
-}
-
 fsg_model_t *
 ps_get_fsg(ps_decoder_t *ps, const char *name)
 {
@@ -483,16 +471,37 @@ ps_get_fsg(ps_decoder_t *ps, const char *name)
     return search ? ((fsg_search_t *) search)->fsg : NULL;
 }
 
+static int
+set_search_internal(ps_decoder_t *ps, const char *name, ps_search_t *search)
+{
+    search->pls = ps->phone_loop;
+
+    if (search) {
+        ps_search_t *old_search;
+        old_search =
+            (ps_search_t *)
+            hash_table_replace(ps->searches, ckd_salloc(name), search);
+        if (old_search != search)
+            ps_search_free(old_search);
+    }
+
+    return NULL == search;
+}
+
+int
+ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
+{
+    ps_search_t *search;
+    search = ngram_search_init(lm, ps->config, ps->acmod, ps->dict, ps->d2p);
+    return set_search_internal(ps, name, search);
+}
+
 int
 ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
 {
     ps_search_t *search;
     search = fsg_search_init(fsg, ps->config, ps->acmod, ps->dict, ps->d2p);
-    search->pls = ps->phone_loop;
-
-    if (search)
-        hash_table_replace(ps->searches, ckd_salloc(name), search);
-    return NULL == search;
+    return set_search_internal(ps, name, search);
 }
 
 int
