@@ -8,27 +8,27 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
+ * This work was supported in part by funding from the Defense Advanced
+ * Research Projects Agency and the National Science Foundation of the
  * United States of America, and the CMU Sphinx Speech Consortium.
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
@@ -81,11 +81,13 @@ acmod_init_am(acmod_t *acmod)
 
     /* Read model definition. */
     if ((mdeffn = cmd_ln_str_r(acmod->config, "-mdef")) == NULL) {
-	if ((hmmdir = cmd_ln_str_r(acmod->config, "-hmm")) == NULL) {
-	    E_ERROR("Acoustic model definition is not specified either with -mdef option or with -hmm\n");
-	} else {
-	    E_ERROR("Folder '%s' does not contain acoustic model definition 'mdef'\n", hmmdir);
-	}
+        if ((hmmdir = cmd_ln_str_r(acmod->config, "-hmm")) == NULL)
+            E_ERROR("Acoustic model definition is not specified either "
+                    "with -mdef option or with -hmm\n");
+        else
+            E_ERROR("Folder '%s' does not contain acoustic model "
+                    "definition 'mdef'\n", hmmdir);
+
         return -1;
     }
 
@@ -144,7 +146,7 @@ acmod_init_am(acmod_t *acmod)
 static int
 acmod_init_feat(acmod_t *acmod)
 {
-    acmod->fcb = 
+    acmod->fcb =
         feat_init(cmd_ln_str_r(acmod->config, "-feat"),
                   cmn_type_from_str(cmd_ln_str_r(acmod->config,"-cmn")),
                   cmd_ln_boolean_r(acmod->config, "-varnorm"),
@@ -164,7 +166,7 @@ acmod_init_feat(acmod_t *acmod)
 
     if (cmd_ln_str_r(acmod->config, "-svspec")) {
         int32 **subvecs;
-        E_INFO("Using subvector specification %s\n", 
+        E_INFO("Using subvector specification %s\n",
                cmd_ln_str_r(acmod->config, "-svspec"));
         if ((subvecs = parse_subvecs(cmd_ln_str_r(acmod->config, "-svspec"))) == NULL)
             return -1;
@@ -206,9 +208,10 @@ acmod_fe_mismatch(acmod_t *acmod, fe_t *fe)
 {
     /* Output vector dimension needs to be the same. */
     if (cmd_ln_int32_r(acmod->config, "-ceplen") != fe_get_output_size(fe)) {
-	E_ERROR("Configured feature length %d doesn't match feature extraction output size %d\n", 
-		cmd_ln_int32_r(acmod->config, "-ceplen"), 
-		fe_get_output_size(fe));
+        E_ERROR("Configured feature length %d doesn't match feature "
+                "extraction output size %d\n",
+                cmd_ln_int32_r(acmod->config, "-ceplen"),
+                fe_get_output_size(fe));
         return TRUE;
     }
     /* Feature parameters need to be the same. */
@@ -242,9 +245,10 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
 
     /* Look for feat.params in acoustic model dir. */
     if ((featparams = cmd_ln_str_r(acmod->config, "-featparams"))) {
-        if (cmd_ln_parse_file_r(acmod->config, feat_defn, featparams, FALSE) != NULL) {
-	    E_INFO("Parsed model-specific feature parameters from %s\n", featparams);
-        }
+        if (NULL !=
+            cmd_ln_parse_file_r(acmod->config, feat_defn, featparams, FALSE))
+            E_INFO("Parsed model-specific feature parameters from %s\n",
+                    featparams);
     }
 
     /* Initialize feature computation. */
@@ -341,7 +345,7 @@ acmod_free(acmod_t *acmod)
         ps_mgau_free(acmod->mgau);
     if (acmod->mllr)
         ps_mllr_free(acmod->mllr);
-    
+
     ckd_free(acmod);
 }
 
@@ -406,10 +410,11 @@ void
 acmod_grow_feat_buf(acmod_t *acmod, int nfr)
 {
     if (nfr > MAX_N_FRAMES)
-        E_FATAL("Decoder can not process more than %d frames at once, requested %d\n", 
-                MAX_N_FRAMES, nfr);
+        E_FATAL("Decoder can not process more than %d frames at once, "
+                "requested %d\n", MAX_N_FRAMES, nfr);
 
-    acmod->feat_buf = feat_array_realloc(acmod->fcb, acmod->feat_buf, acmod->n_feat_alloc, nfr);
+    acmod->feat_buf = feat_array_realloc(acmod->fcb, acmod->feat_buf,
+                                         acmod->n_feat_alloc, nfr);
     acmod->framepos = ckd_realloc(acmod->framepos,
                                   nfr * sizeof(*acmod->framepos));
     acmod->n_feat_alloc = nfr;
@@ -527,11 +532,11 @@ acmod_process_full_cep(acmod_t *acmod,
 
     /* Resize feat_buf to fit. */
     if (acmod->n_feat_alloc < *inout_n_frames) {
-	    
-	if (*inout_n_frames > MAX_N_FRAMES)
-	    E_FATAL("Batch processing can not process more than %d frames at once, requested %d\n", 
-		    MAX_N_FRAMES, *inout_n_frames);
-    
+
+        if (*inout_n_frames > MAX_N_FRAMES)
+            E_FATAL("Batch processing can not process more than %d frames "
+                    "at once, requested %d\n", MAX_N_FRAMES, *inout_n_frames);
+
         feat_array_free(acmod->feat_buf);
         acmod->feat_buf = feat_array_alloc(acmod->fcb, *inout_n_frames);
         acmod->n_feat_alloc = *inout_n_frames;
@@ -545,6 +550,7 @@ acmod_process_full_cep(acmod_t *acmod,
     assert(acmod->n_feat_frame <= acmod->n_feat_alloc);
     *inout_cep += *inout_n_frames;
     *inout_n_frames = 0;
+
     return nfr;
 }
 
@@ -621,9 +627,9 @@ acmod_process_mfcbuf(acmod_t *acmod)
 
 int
 acmod_process_raw(acmod_t *acmod,
-		  int16 const **inout_raw,
-		  size_t *inout_n_samps,
-		  int full_utt)
+                  int16 const **inout_raw,
+                  size_t *inout_n_samps,
+                  int full_utt)
 {
     int32 ncep;
 
@@ -690,9 +696,9 @@ acmod_process_raw(acmod_t *acmod,
 
 int
 acmod_process_cep(acmod_t *acmod,
-		  mfcc_t ***inout_cep,
-		  int *inout_n_frames,
-		  int full_utt)
+                  mfcc_t ***inout_cep,
+                  int *inout_n_frames,
+                  int full_utt)
 {
     int32 nfeat, ncep, inptr;
     int orig_n_frames;
@@ -736,11 +742,13 @@ acmod_process_cep(acmod_t *acmod,
     }
 
 
-    /* FIXME: we can't split the last frame drop properly to be on the bounary, so just return */
+    /* FIXME: we can't split the last frame drop properly to be on the bounary,
+     *        so just return
+     */
     if (inptr + nfeat > acmod->n_feat_alloc && acmod->state == ACMOD_ENDED) {
-	*inout_n_frames -= ncep;
-	*inout_cep += ncep;
-	return 0;
+        *inout_n_frames -= ncep;
+        *inout_cep += ncep;
+        return 0;
     }
 
     /* Write them in two parts if there is wraparound. */
@@ -785,7 +793,7 @@ acmod_process_cep(acmod_t *acmod,
 
 int
 acmod_process_feat(acmod_t *acmod,
-		   mfcc_t **feat)
+                   mfcc_t **feat)
 {
     int i, inptr;
 
@@ -826,15 +834,18 @@ acmod_read_senfh_header(acmod_t *acmod)
     for (i = 0; name[i] != NULL; ++i) {
         if (!strcmp(name[i], "n_sen")) {
             if (atoi(val[i]) != bin_mdef_n_sen(acmod->mdef)) {
-                E_ERROR("Number of senones in senone file (%d) does not match mdef (%d)\n",
-                        atoi(val[i]), bin_mdef_n_sen(acmod->mdef));
+                E_ERROR("Number of senones in senone file (%d) does not "
+                        "match mdef (%d)\n", atoi(val[i]),
+                        bin_mdef_n_sen(acmod->mdef));
                 goto error_out;
             }
         }
+
         if (!strcmp(name[i], "logbase")) {
             if (abs(atof(val[i]) - logmath_get_base(acmod->lmath)) > 0.001) {
-                E_ERROR("Logbase in senone file (%f) does not match acmod (%f)\n",
-                        atof(val[i]), logmath_get_base(acmod->lmath));
+                E_ERROR("Logbase in senone file (%f) does not match acmod "
+                        "(%f)\n", atof(val[i]),
+                        logmath_get_base(acmod->lmath));
                 goto error_out;
             }
         }
@@ -865,8 +876,8 @@ acmod_rewind(acmod_t *acmod)
 {
     /* If the feature buffer is circular, this is not possible. */
     if (acmod->output_frame > acmod->n_feat_alloc) {
-        E_ERROR("Circular feature buffer cannot be rewound (output frame %d, alloc %d)\n",
-               acmod->output_frame, acmod->n_feat_alloc);
+        E_ERROR("Circular feature buffer cannot be rewound (output frame %d, "
+                "alloc %d)\n", acmod->output_frame, acmod->n_feat_alloc);
         return -1;
     }
 
@@ -1007,7 +1018,8 @@ acmod_read_scores(acmod_t *acmod)
             acmod_grow_feat_buf(acmod, acmod->n_feat_alloc * 2);
     }
     else {
-        inptr = (acmod->feat_outidx + acmod->n_feat_frame) % acmod->n_feat_alloc;
+        inptr = (acmod->feat_outidx + acmod->n_feat_frame) %
+                acmod->n_feat_alloc;
     }
 
     if ((rv = acmod_read_scores_internal(acmod)) != 1)
@@ -1052,16 +1064,18 @@ calc_feat_idx(acmod_t *acmod, int frame_idx)
 
     n_backfr = acmod->n_feat_alloc - acmod->n_feat_frame;
     if (frame_idx < 0 || acmod->output_frame - frame_idx > n_backfr) {
-        E_ERROR("Frame %d outside queue of %d frames, %d alloc (%d > %d), cannot score\n",
-                frame_idx, acmod->n_feat_frame, acmod->n_feat_alloc,
-                acmod->output_frame - frame_idx, n_backfr);
+        E_ERROR("Frame %d outside queue of %d frames, %d alloc (%d > %d), "
+                "cannot score\n", frame_idx, acmod->n_feat_frame,
+                acmod->n_feat_alloc, acmod->output_frame - frame_idx,
+                n_backfr);
         return -1;
     }
 
     /* Get the index in feat_buf/framepos of the frame to be scored. */
-    feat_idx = ((acmod->feat_outidx + frame_idx - acmod->output_frame)
-                % acmod->n_feat_alloc);
-    if (feat_idx < 0) feat_idx += acmod->n_feat_alloc;
+    feat_idx = (acmod->feat_outidx + frame_idx - acmod->output_frame) %
+               acmod->n_feat_alloc;
+    if (feat_idx < 0)
+        feat_idx += acmod->n_feat_alloc;
 
     return feat_idx;
 }
@@ -1105,7 +1119,10 @@ acmod_score(acmod_t *acmod, int *inout_frame_idx)
     if ((feat_idx = calc_feat_idx(acmod, frame_idx)) < 0)
         return NULL;
 
-    /* If there is an input senone file locate the appropriate frame and read it. */
+    /*
+     * If there is an input senone file locate the appropriate frame and read
+     * it.
+     */
     if (acmod->insenfh) {
         fseek(acmod->insenfh, acmod->framepos[feat_idx], SEEK_SET);
         if (acmod_read_scores_internal(acmod) < 0)
@@ -1136,7 +1153,8 @@ acmod_score(acmod_t *acmod, int *inout_frame_idx)
                                acmod->senone_scores,
                                acmod->senfh) < 0)
             return NULL;
-        E_DEBUG(1,("Frame %d has %d active states\n", frame_idx, acmod->n_senone_active));
+        E_DEBUG(1,("Frame %d has %d active states\n", frame_idx,
+                   acmod->n_senone_active));
     }
 
     return acmod->senone_scores;
@@ -1281,3 +1299,5 @@ acmod_flags2list(acmod_t *acmod)
                 acmod->n_senone_active, acmod->output_frame));
     return n;
 }
+
+/* vim: set ts=4 sw=4: */
