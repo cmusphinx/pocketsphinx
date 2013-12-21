@@ -66,13 +66,27 @@ static const arg_t ps_args_def[] = {
     CMDLN_EMPTY_OPTION
 };
 
+/* I'm not sure what the portable way to do this is. */
 static int
-dir_exists(const char *path)
+file_exists(const char *path)
 {
-    struct stat sb;
+    FILE *tmp;
 
-    E_SYSCALL(stat(path, &sb), "cannot stat `%s'", path);
-    return S_ISDIR(sb.st_mode);
+    tmp = fopen(path, "rb");
+    if (tmp) fclose(tmp);
+    return (tmp != NULL);
+}
+
+static int
+hmmdir_exists(const char *path)
+{
+    FILE *tmp;
+    char *mdef = string_join(path, "/mdef", NULL);
+
+    tmp = fopen(mdef, "rb");
+    if (tmp) fclose(tmp);
+    ckd_free(mdef);
+    return (tmp != NULL);
 }
 
 static void
@@ -81,7 +95,7 @@ ps_add_file(ps_decoder_t *ps, const char *arg,
 {
     char *tmp = string_join(hmmdir, "/", file, NULL);
 
-    if (cmd_ln_str_r(ps->config, arg) == NULL && !access(tmp, F_OK))
+    if (cmd_ln_str_r(ps->config, arg) == NULL && file_exists(tmp))
         cmd_ln_set_str_r(ps->config, arg, tmp);
     ckd_free(tmp);
 }
@@ -146,7 +160,7 @@ ps_default_search_args(cmd_ln_t *config)
 #ifdef MODELDIR
     /* Set default acoustic and language models. */
     const char *hmmdir = cmd_ln_str_r(config, "-hmm");
-    if (hmmdir == NULL && dir_exists(MODELDIR "/hmm/en_US/hub4wsj_sc_8k")) {
+    if (hmmdir == NULL && hmmdir_exists(MODELDIR "/hmm/en_US/hub4wsj_sc_8k")) {
         hmmdir = MODELDIR "/hmm/en_US/hub4wsj_sc_8k";
         cmd_ln_set_str_r(config, "-hmm", hmmdir);
     }
@@ -154,23 +168,23 @@ ps_default_search_args(cmd_ln_t *config)
     const char *lmfile = cmd_ln_str_r(config, "-lm");
     if (lmfile == NULL && !cmd_ln_str_r(config, "-fsg")
         && !cmd_ln_str_r(config, "-jsgf")
-        && !access(MODELDIR "/lm/en_US/hub4.5000.DMP", F_OK))
+        && file_exists(MODELDIR "/lm/en_US/hub4.5000.DMP"))
     {
         lmfile = MODELDIR "/lm/en_US/hub4.5000.DMP";
         cmd_ln_set_str_r(config, "-lm", lmfile);
     }
 
     const char *dictfile = cmd_ln_str_r(config, "-dict");
-    if (dictfile == NULL && !access(MODELDIR "/lm/en_US/cmu07a.dic", F_OK)) {
+    if (dictfile == NULL && file_exists(MODELDIR "/lm/en_US/cmu07a.dic")) {
         dictfile = MODELDIR "/lm/en_US/cmu07a.dic";
         cmd_ln_set_str_r(config, "-dict", dictfile);
     }
 
     /* Expand acoustic and language model filenames relative to installation
      * path. */
-    if (hmmdir && !path_is_absolute(hmmdir) && !dir_exists(hmmdir)) {
+    if (hmmdir && !path_is_absolute(hmmdir) && !hmmdir_exists(hmmdir)) {
         char *tmphmm = string_join(MODELDIR "/hmm/", hmmdir, NULL);
-        if (dir_exists(tmphmm)) {
+        if (hmmdir_exists(tmphmm)) {
             cmd_ln_set_str_r(config, "-hmm", tmphmm);
         } else {
             E_ERROR("Failed to find mdef file inside the model folder "
@@ -178,12 +192,12 @@ ps_default_search_args(cmd_ln_t *config)
         }
         ckd_free(tmphmm);
     }
-    if (lmfile && !path_is_absolute(lmfile) && access(lmfile, F_OK)) {
+    if (lmfile && !path_is_absolute(lmfile) && !file_exists(lmfile)) {
         char *tmplm = string_join(MODELDIR "/lm/", lmfile, NULL);
         cmd_ln_set_str_r(config, "-lm", tmplm);
         ckd_free(tmplm);
     }
-    if (dictfile && !path_is_absolute(dictfile) && access(dictfile, F_OK)) {
+    if (dictfile && !path_is_absolute(dictfile) && !file_exists(lmfile)) {
         char *tmpdict = string_join(MODELDIR "/lm/", dictfile, NULL);
         cmd_ln_set_str_r(config, "-dict", tmpdict);
         ckd_free(tmpdict);
