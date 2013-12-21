@@ -116,8 +116,9 @@ ps_free_searches(ps_decoder_t *ps)
 {
     if (ps->searches) {
         /* Release keys manually as we used ckd_salloc to add them, release every search too. */
-        hash_iter_t *search_it = hash_table_iter(ps->searches);
-        for (; search_it; search_it = hash_table_iter_next(search_it)) {
+        hash_iter_t *search_it;
+        for (search_it = hash_table_iter(ps->searches); search_it;
+             search_it = hash_table_iter_next(search_it)) {
             ckd_free((char *) hash_entry_key(search_it->ent));
             ps_search_free(hash_entry_val(search_it->ent));
         }
@@ -193,6 +194,9 @@ ps_default_search_args(cmd_ln_t *config)
 int
 ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 {
+    const char *path;
+    int32 lw;
+
     if (config && config != ps->config) {
         cmd_ln_free_r(ps->config);
         ps->config = cmd_ln_retain(config);
@@ -256,15 +260,15 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
         return -1;
 
-    // Determine whether we are starting out in FSG or N-Gram search mode.
-    // If neither is used skip search initialization.
-    const char *path;
-    int32 lw = cmd_ln_float32_r(config, "-lw");
+    lw = cmd_ln_float32_r(config, "-lw");
+
+    /* Determine whether we are starting out in FSG or N-Gram search mode.
+     * If neither is used skip search initialization. */
+
     /* Load an FSG if one was specified in config */
     if ((path = cmd_ln_str_r(config, "-fsg"))) {
         fsg_model_t *fsg = fsg_model_readfile(path, ps->lmath, lw);
         if (!fsg)
-            //goto error_out;
             return -1;
         if (ps_set_fsg(ps, PS_DEFAULT_SEARCH, fsg))
             return -1;
@@ -318,38 +322,43 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     if ((path = cmd_ln_str_r(ps->config, "-lm"))) {
         ngram_model_t *lm;
+
         lm = ngram_model_read(ps->config, path, NGRAM_AUTO, ps->lmath);
         if (!lm)
             return -1;
 
-        int err = ps_set_lm(ps, PS_DEFAULT_SEARCH, lm);
-        ngram_model_free(lm);
-        if (err)
+        if (ps_set_lm(ps, PS_DEFAULT_SEARCH, lm)) {
+            ngram_model_free(lm);
             return -1;
+        }
+        ngram_model_free(lm);
         ps_set_search(ps, PS_DEFAULT_SEARCH);
     }
 
     if ((path = cmd_ln_str_r(ps->config, "-lmctl"))) {
+        const char *name;
         ngram_model_t *lmset;
+        ngram_model_set_iter_t *lmset_it;
+
         if (!(lmset = ngram_model_set_read(ps->config, path, ps->lmath))) {
             E_ERROR("Failed to read language model control file: %s\n", path);
             return -1;
         }
 
-        ngram_model_set_iter_t *lmset_it = ngram_model_set_iter(lmset);
-        for(; lmset_it; lmset_it = ngram_model_set_iter_next(lmset_it)) {
-            const char *name;
-            ngram_model_t *lm = ngram_model_set_iter_model(lmset_it, &name);
+        for(lmset_it = ngram_model_set_iter(lmset);
+    	    lmset_it; lmset_it = ngram_model_set_iter_next(lmset_it)) {
+            
+            ngram_model_t *lm = ngram_model_set_iter_model(lmset_it, &name);            
             E_INFO("adding search %s\n", name);
-            int err = ps_set_lm(ps, name, lm);
-            ngram_model_free(lm);
-            if (err) {
+            if (ps_set_lm(ps, name, lm)) {
+        	ngram_model_free(lm);
                 ngram_model_set_iter_free(lmset_it);
                 return -1;
             }
+	    ngram_model_free(lm);
         }
 
-        const char *name = cmd_ln_str_r(config, "-lmname");
+        name = cmd_ln_str_r(config, "-lmname");
         if (name)
             ps_set_search(ps, name);
         else
@@ -511,6 +520,7 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
     cmd_ln_t *newconfig;
     dict2pid_t *d2p;
     dict_t *dict;
+    hash_iter_t *search_it;
 
     /* Create a new scratch config to load this dict (so existing one
      * won't be affected if it fails) */
@@ -548,8 +558,8 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
     ps->d2p = d2p;
 
     /* And tell all searches to reconfigure themselves. */
-    hash_iter_t *search_it = hash_table_iter(ps->searches);
-    for (; search_it; search_it = hash_table_iter_next(search_it)) {
+    for (search_it = hash_table_iter(ps->searches); search_it;
+	search_it = hash_table_iter_next(search_it)) {
         if (ps_search_reinit(hash_entry_val(search_it->ent), dict, d2p) < 0) {
             hash_table_iter_free(search_it);
             return -1;
@@ -576,6 +586,7 @@ ps_add_word(ps_decoder_t *ps,
     s3cipid_t *pron;
     char **phonestr, *tmp;
     int np, i, rv;
+    hash_iter_t *search_it;
 
     /* Parse phones into an array of phone IDs. */
     tmp = ckd_salloc(phones);
@@ -609,9 +620,9 @@ ps_add_word(ps_decoder_t *ps,
     /* Now we also have to add it to dict2pid. */
     dict2pid_add_word(ps->d2p, wid);
 
-    // TODO: we definitely need to refactor this
-    hash_iter_t *search_it = hash_table_iter(ps->searches);
-    for (; search_it; search_it = hash_table_iter_next(search_it)) {
+    /* TODO: we definitely need to refactor this */
+    for (search_it = hash_table_iter(ps->searches); search_it;
+         search_it = hash_table_iter_next(search_it)) {
         ps_search_t *search = hash_entry_val(search_it->ent);
         if (!strcmp(PS_SEARCH_NGRAM, ps_search_name(search))) {
             ngram_model_t *lmset = ((ngram_search_t *) search)->lmset;
@@ -1167,7 +1178,6 @@ ps_search_base_reinit(ps_search_t *search, dict_t *dict,
         search->d2p = NULL;
 }
 
-
 void
 ps_search_deinit(ps_search_t *search)
 {
@@ -1178,5 +1188,3 @@ ps_search_deinit(ps_search_t *search)
     ckd_free(search->hyp_str);
     ps_lattice_free(search->dag);
 }
-
-/* vim: set ts=4 sw=4: */
