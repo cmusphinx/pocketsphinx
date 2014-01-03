@@ -64,6 +64,7 @@ extern "C" {
 
 #define PS_DEFAULT_SEARCH  "default"
 
+#define PS_SEARCH_KWS    "kws"
 #define PS_SEARCH_FSG    "fsg"
 #define PS_SEARCH_NGRAM  "ngram"
 
@@ -219,7 +220,7 @@ ps_mllr_t *ps_update_mllr(ps_decoder_t *ps, ps_mllr_t *mllr);
  * Actives search with the provided name.
  *
  * Activates search with the provided name. The search must be added before
- * using either ps_set_fsg() or ps_set_lm().
+ * using either ps_set_fsg(), ps_set_lm() or ps_set_kws().
  *
  * @see ps_set_fsg
  * @see ps_set_fsg
@@ -274,6 +275,28 @@ ps_get_fsg(ps_decoder_t *ps, const char *name);
  */
 POCKETSPHINX_EXPORT int
 ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg);
+
+/**
+ * Get the current Key phrase to spot
+ *
+ * If KWS is not enabled, this returns NULL. Call
+ * ps_update_kws() to enable it.
+ *
+ * @return The current keyphrase to spot
+ */
+POCKETSPHINX_EXPORT const char*
+ps_get_kws(ps_decoder_t *ps, const char *name);
+
+/**
+ * Adds new keyword to spot
+ *
+ * Associates KWS search with the provided name. The search can be activated
+ * using ps_set_search().
+ *
+ * @see ps_set_search
+ */
+POCKETSPHINX_EXPORT int
+ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyphrase);
 
 /**
  * Reload the pronunciation dictionary from a file.

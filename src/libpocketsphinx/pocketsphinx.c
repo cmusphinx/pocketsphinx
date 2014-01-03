@@ -56,6 +56,7 @@
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
 #include "phone_loop_search.h"
+#include "kws_search.h"
 #include "fsg_search_internal.h"
 #include "ngram_search.h"
 #include "ngram_search_fwdtree.h"
@@ -166,10 +167,11 @@ ps_default_search_args(cmd_ln_t *config)
     }
 
     const char *lmfile = cmd_ln_str_r(config, "-lm");
+
     if (lmfile == NULL && !cmd_ln_str_r(config, "-fsg")
         && !cmd_ln_str_r(config, "-jsgf")
-        && file_exists(MODELDIR "/lm/en_US/hub4.5000.DMP"))
-    {
+        && !cmd_ln_str_r(config, "-kws")
+        && file_exists(MODELDIR "/lm/en_US/hub4.5000.DMP")) {
         lmfile = MODELDIR "/lm/en_US/hub4.5000.DMP";
         cmd_ln_set_str_r(config, "-lm", lmfile);
     }
@@ -209,6 +211,7 @@ int
 ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 {
     const char *path;
+    const char *keyphrase;
     int32 lw;
 
     if (config && config != ps->config) {
@@ -226,7 +229,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     /* Free old searches (do this before other reinit) */
     ps_free_searches(ps);
-    ps->searches = hash_table_new(2, HASH_CASE_YES);
+    ps->searches = hash_table_new(3, HASH_CASE_YES);
 
     /* Free old acmod. */
     acmod_free(ps->acmod);
@@ -278,6 +281,13 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     /* Determine whether we are starting out in FSG or N-Gram search mode.
      * If neither is used skip search initialization. */
+
+    /* Load KWS if one was specified in config */
+    if ((keyphrase = cmd_ln_str_r(config, "-kws"))) {
+        if (ps_set_kws(ps, PS_DEFAULT_SEARCH, keyphrase))
+            return -1;
+        ps_set_search(ps, PS_DEFAULT_SEARCH);
+    }
 
     /* Load an FSG if one was specified in config */
     if ((path = cmd_ln_str_r(config, "-fsg"))) {
@@ -494,6 +504,15 @@ ps_get_fsg(ps_decoder_t *ps, const char *name)
     return search ? ((fsg_search_t *) search)->fsg : NULL;
 }
 
+const char*
+ps_get_kws(ps_decoder_t *ps, const char* name)
+{
+    ps_search_t *search = ps_find_search(ps, name);
+    if (search && strcmp(PS_SEARCH_KWS, ps_search_name(search)))
+        return NULL;
+    return search ? ((kws_search_t *) search)->keyphrase : NULL;
+}
+
 static int
 set_search_internal(ps_decoder_t *ps, const char *name, ps_search_t *search)
 {
@@ -516,6 +535,14 @@ ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
 {
     ps_search_t *search;
     search = ngram_search_init(lm, ps->config, ps->acmod, ps->dict, ps->d2p);
+    return set_search_internal(ps, name, search);
+}
+
+int
+ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyphrase)
+{
+    ps_search_t *search;
+    search = kws_search_init(keyphrase, ps->config, ps->acmod, ps->dict, ps->d2p);
     return set_search_internal(ps, name, search);
 }
 
@@ -598,9 +625,9 @@ ps_add_word(ps_decoder_t *ps,
 {
     int32 wid;
     s3cipid_t *pron;
+    hash_iter_t *search_it;
     char **phonestr, *tmp;
     int np, i, rv;
-    hash_iter_t *search_it;
 
     /* Parse phones into an array of phone IDs. */
     tmp = ckd_salloc(phones);

@@ -48,12 +48,13 @@
 #define POCKETSPHINX_OPTIONS \
     waveform_to_cepstral_command_line_macro(), \
     cepstral_to_feature_command_line_macro(), \
-    POCKETSPHINX_ACMOD_OPTIONS, \
+    POCKETSPHINX_ACMOD_OPTIONS,      \
         POCKETSPHINX_BEAM_OPTIONS,   \
         POCKETSPHINX_SEARCH_OPTIONS, \
-        POCKETSPHINX_DICT_OPTIONS, \
-        POCKETSPHINX_NGRAM_OPTIONS, \
-        POCKETSPHINX_FSG_OPTIONS, \
+        POCKETSPHINX_DICT_OPTIONS,   \
+        POCKETSPHINX_NGRAM_OPTIONS,  \
+        POCKETSPHINX_FSG_OPTIONS,    \
+        POCKETSPHINX_KWS_OPTIONS,    \
         POCKETSPHINX_DEBUG_OPTIONS
 
 /** Options for debugging and logging. */
@@ -172,6 +173,21 @@
       ARG_INT32,                                                                                \
       "25",                                                                    	                \
       "Window of frames in lattice to search for successor words in fwdflat search " }
+
+/** Command-line options for keyword spotting */
+#define POCKETSPHINX_KWS_OPTIONS \
+{ "-kws",                                                       \
+         ARG_STRING,                                            \
+         NULL,                                                  \
+         "Keyphrase to spot"},                                  \
+{ "-kws_plp",                                                   \
+      ARG_FLOAT64,                                              \
+      "1e-1",                                                   \
+      "Phone loop probability for keyword spotting" },          \
+{ "-kws_threshold",                                             \
+      ARG_FLOAT64,                                              \
+      "1",                                                      \
+      "Threshold for p(hyp)/p(alternatives) ratio" }
 
 /** Command-line options for finite state grammars. */
 #define POCKETSPHINX_FSG_OPTIONS \

@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C++ Express 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx", "win32\pocketsphinx\pocketsphinx.vcxproj", "{94001A0E-A837-445C-8004-F918F10D0226}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx_continuous", "win32\pocketsphinx_continuous\pocketsphinx_continuous.vcxproj", "{1380AF76-C926-44D0-8002-06C228AC869A}"
@@ -8,6 +8,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx_batch", "win32\pocketsphinx_batch\pocketsphinx_batch.vcxproj", "{CB47D94B-2F84-41BC-A3C4-A1EBDCDE922A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx_mdef_convert", "win32\pocketsphinx_mdef_convert\pocketsphinx_mdef_convert.vcxproj", "{AB08A7C9-D327-412E-AB38-1941949F5BE6}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pocketsphinx_kws", "win32\pocketsphinx_kws\pocketsphinx_kws.vcxproj", "{AEAB0D37-783D-4189-A3D2-D665764C8633}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +33,10 @@ Global
 		{AB08A7C9-D327-412E-AB38-1941949F5BE6}.Debug|Win32.Build.0 = Debug|Win32
 		{AB08A7C9-D327-412E-AB38-1941949F5BE6}.Release|Win32.ActiveCfg = Release|Win32
 		{AB08A7C9-D327-412E-AB38-1941949F5BE6}.Release|Win32.Build.0 = Release|Win32
+		{AEAB0D37-783D-4189-A3D2-D665764C8633}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AEAB0D37-783D-4189-A3D2-D665764C8633}.Debug|Win32.Build.0 = Debug|Win32
+		{AEAB0D37-783D-4189-A3D2-D665764C8633}.Release|Win32.ActiveCfg = Release|Win32
+		{AEAB0D37-783D-4189-A3D2-D665764C8633}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
