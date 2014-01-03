@@ -16,10 +16,11 @@ main(int argc, char *argv[])
 				"-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
 				"-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
 				"-dict", MODELDIR "/lm/en_US/cmu07a.dic",
+				"-fwdflatlw", "6.5",
 				"-fwdtree", "no",
 				"-fwdflat", "yes",
 				"-bestpath", "no",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
-	return ps_decoder_test(config, "FWDFLAT", "go forward to ten readers");
+	return ps_decoder_test(config, "FWDFLAT", "go forward ten readers");
 }

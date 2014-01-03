@@ -79,23 +79,25 @@ main(int argc, char *argv[])
 		}
 		besthyp = ckd_salloc
 			(ps_lattice_hyp(dag, ps_lattice_bestpath
-					(dag, ngs->lmset, 1.461538, 15.0)));
+					(dag, ngs->lmset, 6.5, 1.0)));
 		printf("BESTPATH: %s\n", besthyp);
 
-		TEST_ASSERT(nbest = ps_astar_start(dag, ngs->lmset, 1.461538, 0, -1, -1, -1));
+		TEST_ASSERT(nbest = ps_astar_start(dag, ngs->lmset, 6.5, 0, -1, -1, -1));
 		i = 0;
 		while ((path = ps_astar_next(nbest))) {
-			if (i == 0)
-				TEST_EQUAL(0,
-					   strcmp(besthyp, ps_astar_hyp(nbest, path)));
-			if (i++ < 10)
+			if (i < 10)
 				printf("NBEST %d: %s\n", i,
 				       ps_astar_hyp(nbest, path));
+			if (i == 0) {
+				TEST_EQUAL(0,
+					   strcmp(besthyp, ps_astar_hyp(nbest, path)));
+			}
+			i++;
 		}
 		ps_astar_finish(nbest);
 		ckd_free(besthyp);
 	}
-	TEST_EQUAL(0, strcmp("go forward to any leaders",
+	TEST_EQUAL(0, strcmp("go forward to any shares",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL))));
 	c = clock() - c;
 	printf("5 * fwdtree + bestpath + N-best search in %.2f sec\n",

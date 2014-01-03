@@ -83,7 +83,7 @@ main(int argc, char *argv[])
 		printf("FWDFLAT: %s\n",
 		       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL)));
 	}
-	TEST_EQUAL(0, strcmp("go forward to ten readers",
+	TEST_EQUAL(0, strcmp("go forward and readers",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL))));
 	c = clock() - c;
 	printf("5 * fwdtree + fwdflat search in %.2f sec\n",

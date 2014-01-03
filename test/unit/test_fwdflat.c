@@ -60,7 +60,7 @@ main(int argc, char *argv[])
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
-	TEST_EQUAL(0, strcmp("go forward in the shares",
+	TEST_EQUAL(0, strcmp("go forward and readers",
 			     ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL))));
 	c = clock() - c;
 	printf("2 * fwdflat search in %.2f sec\n",

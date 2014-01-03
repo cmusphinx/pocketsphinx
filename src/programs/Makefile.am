@@ -11,19 +11,14 @@ pocketsphinx_mdef_convert_LDADD = \
 pocketsphinx_batch_SOURCES = batch.c
 pocketsphinx_batch_LDADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la
-	
-pocketsphinx_kws_SOURCES = pocketsphinx_kws.c
+
+pocketsphinx_kws_SOURCES = kws.c
 pocketsphinx_kws_LDADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la
 
 pocketsphinx_continuous_SOURCES = continuous.c
 pocketsphinx_continuous_LDADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la -lsphinxad
-
-pocketsphinx_kws_SOURCES = kws.c
-pocketsphinx_kws_LDADD = \
-	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la -lsphinxad
-
 
 INCLUDES = -I$(top_srcdir)/include \
 	-I$(top_srcdir)/src/libpocketsphinx \

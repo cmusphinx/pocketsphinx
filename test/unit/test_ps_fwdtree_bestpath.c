@@ -21,5 +21,5 @@ main(int argc, char *argv[])
 				"-bestpath", "yes",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
-	return ps_decoder_test(config, "BESTPATH", "go forward ten readers");
+	return ps_decoder_test(config, "BESTPATH", "go forward to any shares");
 }
