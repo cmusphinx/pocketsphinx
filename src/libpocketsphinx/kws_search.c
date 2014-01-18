@@ -285,7 +285,7 @@ kws_search_init(const char *key_phrase,
         (int32) logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-kws_plp")) >> SENSCR_SHIFT;
 
     kwss->threshold =
-        (int32) (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-kws_threshold"))) >> SENSCR_SHIFT;
+        (int32) logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-kws_threshold")) >> SENSCR_SHIFT;
 
     E_INFO("KWS(beam: %d, plp: %d, threshold %d)\n",
            kwss->beam, kwss->plp, kwss->threshold);
