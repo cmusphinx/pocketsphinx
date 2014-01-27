@@ -26,10 +26,10 @@ main(int argc, char *argv[])
     ps_decoder_t *ps;
 
     int32 n_detect;
-    int32 score;
 
     const char *input_file_path;
     const char *cfg;
+    const char *utt_id;
     FILE *input_file;
     int16 buf[2048];
     int k;
@@ -49,27 +49,27 @@ main(int argc, char *argv[])
         return 1;
 
     if (cmd_ln_str_r(config, "-kws") == NULL) {
-	E_ERROR("Keyword is missing. Use -kws <keyphrase> to specify the phrase to look for.\n");
-	return 1;
+        E_ERROR("Keyword is missing. Use -kws <keyphrase> to specify the phrase to look for.\n");
+        return 1;
     }
 
     input_file_path = cmd_ln_str_r(config, "-infile");
     if (input_file_path == NULL) {
-	E_ERROR("Input file is missing. Use -infile <input_file> to specify the file to look in.\n");
-	return 1;
+        E_ERROR("Input file is missing. Use -infile <input_file> to specify the file to look in.\n");
+        return 1;
     }
 
     ps_default_search_args(config);
     ps = ps_init(config);
     
     if (ps == NULL) {
-	E_ERROR("Failed to create the decoder\n");
-	return 1;
+        E_ERROR("Failed to create the decoder\n");
+        return 1;
     }
     
     input_file = fopen(input_file_path, "rb");
     if (input_file == NULL) {
-	E_FATAL_SYSTEM("Failed to open input file '%s'", input_file_path);
+        E_FATAL_SYSTEM("Failed to open input file '%s'", input_file_path);
     }
     
     fread(buf, 1, 44, input_file);
@@ -79,7 +79,7 @@ main(int argc, char *argv[])
         ps_process_raw(ps, buf, k, FALSE, FALSE);
     }
     ps_end_utt(ps);
-    ps_get_hyp(ps, &n_detect, &score);
+    ps_get_hyp(ps, &n_detect, &utt_id);
     E_INFO("Detected %d times\n", n_detect);
 
     fclose(input_file);
