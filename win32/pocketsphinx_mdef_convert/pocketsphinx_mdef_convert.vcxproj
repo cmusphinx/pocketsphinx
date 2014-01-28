@@ -140,7 +140,6 @@
   <ItemGroup>
     <ProjectReference Include="..\pocketsphinx\pocketsphinx.vcxproj">
       <Project>{94001a0e-a837-445c-8004-f918f10d0226}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
