@@ -199,7 +199,7 @@ ps_default_search_args(cmd_ln_t *config)
         cmd_ln_set_str_r(config, "-lm", tmplm);
         ckd_free(tmplm);
     }
-    if (dictfile && !path_is_absolute(dictfile) && !file_exists(lmfile)) {
+    if (dictfile && !path_is_absolute(dictfile) && !file_exists(dictfile)) {
         char *tmpdict = string_join(MODELDIR "/lm/", dictfile, NULL);
         cmd_ln_set_str_r(config, "-dict", tmpdict);
         ckd_free(tmpdict);
