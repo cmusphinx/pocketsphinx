@@ -50,6 +50,7 @@
 typedef struct kws_node_s {
     hmm_t hmm;
     uint8 active;
+	frame_idx_t start_frame;
 } kws_node_t;
 
 /**
