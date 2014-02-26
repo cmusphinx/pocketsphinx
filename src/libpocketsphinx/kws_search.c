@@ -1,40 +1,40 @@
 /* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
- * Copyright (c) 2013 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
+* Copyright (c) 2013 Carnegie Mellon University.  All rights
+* reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions
+* are met:
+*
+* 1. Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer. 
+*
+* 2. Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in
+*    the documentation and/or other materials provided with the
+*    distribution.
+*
+*
+* THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
+* ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+* THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+* PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
+* NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
+* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*
+* ====================================================================
+*
+*/
 
 /*
- * kws_search.c -- Search object for key phrase spotting.
- */
+* kws_search.c -- Search object for key phrase spotting.
+*/
 
 #include <stdio.h>
 #include <string.h>
@@ -51,20 +51,20 @@
 
 /* Cap functions to meet ps_search api */
 static ps_seg_t *
-kws_search_seg_iter(ps_search_t * search, int32 * out_score)
+    kws_search_seg_iter(ps_search_t * search, int32 * out_score)
 {
     *out_score = 0;
     return NULL;
 }
 
 static ps_lattice_t *
-kws_search_lattice(ps_search_t * search)
+    kws_search_lattice(ps_search_t * search)
 {
     return NULL;
 }
 
 static int
-kws_search_prob(ps_search_t * search)
+    kws_search_prob(ps_search_t * search)
 {
     return 0;
 }
@@ -84,7 +84,7 @@ static ps_searchfuncs_t kws_funcs = {
 
 /* Scans the dictionary and check if all words are present. */
 static int
-kws_search_check_dict(kws_search_t * kwss)
+    kws_search_check_dict(kws_search_t * kwss)
 {
     dict_t *dict;
     char **wrdptr;
@@ -103,7 +103,7 @@ kws_search_check_dict(kws_search_t * kwss)
         wid = dict_wordid(dict, wrdptr[i]);
         if (wid == BAD_S3WID) {
             E_ERROR("The word '%s' is missing in the dictionary\n",
-                    wrdptr[i]);
+                wrdptr[i]);
             success = FALSE;
             break;
         }
@@ -115,7 +115,7 @@ kws_search_check_dict(kws_search_t * kwss)
 
 /* Activate senones for scoring */
 static void
-kws_search_sen_active(kws_search_t * kwss)
+    kws_search_sen_active(kws_search_t * kwss)
 {
     int i;
 
@@ -133,11 +133,11 @@ kws_search_sen_active(kws_search_t * kwss)
 }
 
 /*
- * Evaluate all the active HMMs.
- * (Executed once per frame.)
- */
+* Evaluate all the active HMMs.
+* (Executed once per frame.)
+*/
 static void
-kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
+    kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
 {
     int32 i;
     int32 bestscore = WORST_SCORE;
@@ -169,11 +169,11 @@ kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
 }
 
 /*
- * (Beam) prune the just evaluated HMMs, determine which ones remain
- * active. Executed once per frame.
- */
+* (Beam) prune the just evaluated HMMs, determine which ones remain
+* active. Executed once per frame.
+*/
 static void
-kws_search_hmm_prune(kws_search_t *kwss)
+    kws_search_hmm_prune(kws_search_t *kwss)
 {
     int32 thresh, i;
 
@@ -182,8 +182,8 @@ kws_search_hmm_prune(kws_search_t *kwss)
     for (i = 0; i < kwss->n_nodes; i++) {
         if (kwss->nodes[i].active) {
             if (hmm_bestscore(&kwss->nodes[i].hmm) < thresh) {
-            kwss->nodes[i].active = FALSE;
-            hmm_clear(&kwss->nodes[i].hmm);
+                kwss->nodes[i].active = FALSE;
+                hmm_clear(&kwss->nodes[i].hmm);
             }
         }
     }
@@ -192,10 +192,10 @@ kws_search_hmm_prune(kws_search_t *kwss)
 
 
 /**
- * Do phone transitions
- */
+* Do phone transitions
+*/
 static void
-kws_search_trans(kws_search_t * kwss)
+    kws_search_trans(kws_search_t * kwss)
 {
     hmm_t *pl_best_hmm = NULL;
     int32 best_out_score = WORST_SCORE;
@@ -208,69 +208,66 @@ kws_search_trans(kws_search_t * kwss)
             pl_best_hmm = &kwss->pl_hmms[i];
         }
 
-    /* out probs are not ready yet */
-    if (!pl_best_hmm)
-        return;
+        /* out probs are not ready yet */
+        if (!pl_best_hmm)
+            return;
 
-    /* Check whether keyword wasn't spotted yet */
-    if (kwss->nodes[kwss->n_nodes - 1].active
-        && hmm_out_score(pl_best_hmm) BETTER_THAN WORST_SCORE) {
+        /* Check whether keyword wasn't spotted yet */
+        if (kwss->nodes[kwss->n_nodes - 1].active
+            && hmm_out_score(pl_best_hmm) BETTER_THAN WORST_SCORE) {
 
-        if (hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm) -
-            hmm_out_score(pl_best_hmm) >= kwss->threshold) {
+                if (hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm) -
+                    hmm_out_score(pl_best_hmm) >= kwss->threshold) {
 
-            kwss->n_detect++;
-            E_INFO(">>>>KEYPHRASE DETECTED. FRAMES: [%d; %d]\n", kwss->nodes[kwss->n_nodes - 1].start_frame, kwss->frame);
-            pl_best_hmm = &kwss->nodes[kwss->n_nodes - 1].hmm;
+                        kwss->n_detect++;
+                        E_INFO(">>>>KEYPHRASE DETECTED. FRAMES: [%d; %d]\n", hmm_out_history(&kwss->nodes[kwss->n_nodes - 1].hmm), kwss->frame);
+                        pl_best_hmm = &kwss->nodes[kwss->n_nodes - 1].hmm;
 
-            /* set all keyword nodes inactive for next occurrence search */
-            for (i = 0; i < kwss->n_nodes; i++) {
-                kwss->nodes[i].active = FALSE;
-                hmm_clear_scores(&kwss->nodes[i].hmm);
-                kwss->nodes[i].start_frame = -1;
+                        /* set all keyword nodes inactive for next occurrence search */
+                        for (i = 0; i < kwss->n_nodes; i++) {
+                            kwss->nodes[i].active = FALSE;
+                            hmm_clear_scores(&kwss->nodes[i].hmm);
+                        }
+                }
+
+        }
+
+        /* Make transition for all phone loop hmms */
+        for (i = 0; i < kwss->n_pl; i++) {
+            if (hmm_out_score(pl_best_hmm) + kwss->plp BETTER_THAN
+                hmm_in_score(&kwss->nodes[0].hmm)) {
+                    hmm_enter(&kwss->pl_hmms[i],
+                        hmm_out_score(pl_best_hmm) + kwss->plp,
+                        hmm_out_history(pl_best_hmm), kwss->frame + 1);
             }
         }
 
-    }
-
-    /* Make transition for all phone loop hmms */
-    for (i = 0; i < kwss->n_pl; i++) {
-        if (hmm_out_score(pl_best_hmm) + kwss->plp BETTER_THAN
+        /* Activate new keyword nodes, enter their hmms */
+        for (i = kwss->n_nodes - 1; i > 0; i--) {
+            if (kwss->nodes[i - 1].active) {
+                hmm_t *pred_hmm = &kwss->nodes[i - 1].hmm;
+                if (!kwss->nodes[i].active
+                    || hmm_out_score(pred_hmm) BETTER_THAN
+                    hmm_in_score(&kwss->nodes[i].hmm)) {
+                        hmm_enter(&kwss->nodes[i].hmm, hmm_out_score(pred_hmm),
+                            hmm_out_history(pred_hmm), kwss->frame + 1);
+                        kwss->nodes[i].active = TRUE;
+                }
+            }
+        }
+        /* Enter keyword start node from phone loop */
+        if (hmm_out_score(pl_best_hmm) BETTER_THAN
             hmm_in_score(&kwss->nodes[0].hmm)) {
-                hmm_enter(&kwss->pl_hmms[i],
-                    hmm_out_score(pl_best_hmm) + kwss->plp,
-                    hmm_out_history(pl_best_hmm), kwss->frame + 1);
+                kwss->nodes[0].active = TRUE;
+                hmm_enter(&kwss->nodes[0].hmm, hmm_out_score(pl_best_hmm),
+                    kwss->frame, kwss->frame + 1);
         }
-    }
-
-    /* Activate new keyword nodes, enter their hmms */
-    for (i = kwss->n_nodes - 1; i > 0; i--) {
-        if (kwss->nodes[i - 1].active) {
-            hmm_t *pred_hmm = &kwss->nodes[i - 1].hmm;
-            if (!kwss->nodes[i].active
-                || hmm_out_score(pred_hmm) BETTER_THAN
-                hmm_in_score(&kwss->nodes[i].hmm)) {
-                    hmm_enter(&kwss->nodes[i].hmm, hmm_out_score(pred_hmm),
-                          hmm_out_history(pred_hmm), kwss->frame + 1);
-                    kwss->nodes[i].active = TRUE;
-                    kwss->nodes[i].start_frame = kwss->nodes[i - 1].start_frame;
-            }
-        }
-    }
-    /* Enter keyword start node from phone loop */
-    if (hmm_out_score(pl_best_hmm) BETTER_THAN
-        hmm_in_score(&kwss->nodes[0].hmm)) {
-        kwss->nodes[0].active = TRUE;
-        kwss->nodes[0].start_frame = kwss->frame;
-        hmm_enter(&kwss->nodes[0].hmm, hmm_out_score(pl_best_hmm),
-                  hmm_out_history(pl_best_hmm), kwss->frame + 1);
-    }
 }
 
 ps_search_t *
-kws_search_init(const char *key_phrase,
-                cmd_ln_t * config,
-                acmod_t * acmod, dict_t * dict, dict2pid_t * d2p)
+    kws_search_init(const char *key_phrase,
+    cmd_ln_t * config,
+    acmod_t * acmod, dict_t * dict, dict2pid_t * d2p)
 {
     kws_search_t *kwss = (kws_search_t *) ckd_calloc(1, sizeof(*kwss));
     ps_search_init(ps_search_base(kwss), &kws_funcs, config, acmod, dict, d2p);
@@ -285,7 +282,7 @@ kws_search_init(const char *key_phrase,
         (int32) logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-kws_threshold")) >> SENSCR_SHIFT;
 
     E_INFO("KWS(beam: %d, plp: %d, threshold %d)\n",
-           kwss->beam, kwss->plp, kwss->threshold);
+        kwss->beam, kwss->plp, kwss->threshold);
 
     kwss->keyphrase = ckd_salloc(key_phrase);
 
@@ -297,17 +294,17 @@ kws_search_init(const char *key_phrase,
 
     /* Reinit for provided keyword */
     if (kws_search_reinit(ps_search_base(kwss),
-                          ps_search_dict(kwss),
-                          ps_search_dict2pid(kwss)) < 0) {
-        ps_search_free(ps_search_base(kwss));
-        return NULL;
+        ps_search_dict(kwss),
+        ps_search_dict2pid(kwss)) < 0) {
+            ps_search_free(ps_search_base(kwss));
+            return NULL;
     }
 
     return ps_search_base(kwss);
 }
 
 void
-kws_search_free(ps_search_t * search)
+    kws_search_free(ps_search_t * search)
 {
     kws_search_t *kwss = (kws_search_t *) search;
 
@@ -321,7 +318,7 @@ kws_search_free(ps_search_t * search)
 }
 
 int
-kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
+    kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
 {
     char **wrdptr;
     char *tmp_keyphrase;
@@ -341,8 +338,8 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
         hmm_context_free(kwss->hmmctx);
     kwss->hmmctx =
         hmm_context_init(bin_mdef_n_emit_state(search->acmod->mdef),
-                         search->acmod->tmat->tp, NULL,
-                         search->acmod->mdef->sseq);
+        search->acmod->tmat->tp, NULL,
+        search->acmod->mdef->sseq);
     if (kwss->hmmctx == NULL)
         return -1;
 
@@ -357,9 +354,9 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
         (hmm_t *) ckd_calloc(kwss->n_pl, sizeof(*kwss->pl_hmms));
     for (i = 0; i < kwss->n_pl; ++i) {
         hmm_init(kwss->hmmctx, (hmm_t *) & kwss->pl_hmms[i],
-                 FALSE,
-                 bin_mdef_pid2ssid(search->acmod->mdef, i),
-                 bin_mdef_pid2tmatid(search->acmod->mdef, i));
+            FALSE,
+            bin_mdef_pid2ssid(search->acmod->mdef, i),
+            bin_mdef_pid2tmatid(search->acmod->mdef, i));
     }
 
     /* Initialize keyphrase HMMs */
@@ -408,9 +405,8 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
             }
             tmatid = bin_mdef_pid2tmatid(mdef, ci);
             hmm_init(kwss->hmmctx, &kwss->nodes[j].hmm, FALSE, ssid,
-                     tmatid);
+                tmatid);
             kwss->nodes[j].active = FALSE;
-            kwss->nodes[j].start_frame = -1;
             j++;
         }
     }
@@ -421,7 +417,7 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
 }
 
 int
-kws_search_start(ps_search_t * search)
+    kws_search_start(ps_search_t * search)
 {
     int i;
     kws_search_t *kwss = (kws_search_t *) search;
@@ -440,7 +436,7 @@ kws_search_start(ps_search_t * search)
 }
 
 int
-kws_search_step(ps_search_t * search, int frame_idx)
+    kws_search_step(ps_search_t * search, int frame_idx)
 {
     int16 const *senscr;
     kws_search_t *kwss = (kws_search_t *) search;
@@ -467,15 +463,15 @@ kws_search_step(ps_search_t * search, int frame_idx)
 }
 
 int
-kws_search_finish(ps_search_t * search)
+    kws_search_finish(ps_search_t * search)
 {
     /* Nothing here */
     return 0;
 }
 
 char const *
-kws_search_hyp(ps_search_t * search, int32 * out_score,
-               int32 * out_is_final)
+    kws_search_hyp(ps_search_t * search, int32 * out_score,
+    int32 * out_is_final)
 {
     kws_search_t *kwss = (kws_search_t *) search;
 
