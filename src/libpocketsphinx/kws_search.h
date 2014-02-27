@@ -49,8 +49,10 @@
 
 typedef struct kws_node_s {
     hmm_t hmm;
-    uint8 active;
 } kws_node_t;
+
+/** Access macros */
+#define kws_node_is_active(node) (node)->hmm.frame > 0
 
 /**
  * Implementation of KWS search structure.

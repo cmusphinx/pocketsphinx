@@ -127,7 +127,7 @@ kws_search_sen_active(kws_search_t * kwss)
 
     /* activate hmms in active nodes */
     for (i = 0; i < kwss->n_nodes; i++) {
-        if (kwss->nodes[i].active)
+        if (kws_node_is_active(&kwss->nodes[i]))
             acmod_activate_hmm(ps_search_acmod(kwss), &kwss->nodes[i].hmm);
     }
 }
@@ -155,7 +155,7 @@ kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
     }
     /* evaluate hmms for active nodes */
     for (i = 0; i < kwss->n_nodes; i++) {
-        if (kwss->nodes[i].active) {
+        if (kws_node_is_active(&kwss->nodes[i])) {
             hmm_t *hmm = &kwss->nodes[i].hmm;
             int32 score;
 
@@ -179,14 +179,10 @@ kws_search_hmm_prune(kws_search_t * kwss)
 
     thresh = kwss->bestscore + kwss->beam;
 
-    for (i = 0; i < kwss->n_nodes; i++) {
-        if (kwss->nodes[i].active) {
-            if (hmm_bestscore(&kwss->nodes[i].hmm) < thresh) {
-                kwss->nodes[i].active = FALSE;
+    for (i = 0; i < kwss->n_nodes; i++)
+        if (kws_node_is_active(&kwss->nodes[i]))
+            if (hmm_bestscore(&kwss->nodes[i].hmm) < thresh)
                 hmm_clear(&kwss->nodes[i].hmm);
-            }
-        }
-    }
     return;
 }
 
@@ -213,23 +209,21 @@ kws_search_trans(kws_search_t * kwss)
         return;
 
     /* Check whether keyword wasn't spotted yet */
-    if (kwss->nodes[kwss->n_nodes - 1].active
+    if (kws_node_is_active(&kwss->nodes[kwss->n_nodes - 1])
         && hmm_out_score(pl_best_hmm) BETTER_THAN WORST_SCORE) {
 
         if (hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm) -
             hmm_out_score(pl_best_hmm) >= kwss->threshold) {
 
             kwss->n_detect++;
-            E_INFO(">>>>KEYPHRASE DETECTED. FRAMES: [%d; %d]\n",
+            E_INFO(">>>>KEYPHRASE DETECTED. FRAMES: [%d; %d]; SCORE: [%d]\n",
                    hmm_out_history(&kwss->nodes[kwss->n_nodes - 1].hmm),
-                   kwss->frame);
+                   kwss->frame, hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm));
             pl_best_hmm = &kwss->nodes[kwss->n_nodes - 1].hmm;
 
             /* set all keyword nodes inactive for next occurrence search */
-            for (i = 0; i < kwss->n_nodes; i++) {
-                kwss->nodes[i].active = FALSE;
-                hmm_clear_scores(&kwss->nodes[i].hmm);
-            }
+            for (i = 0; i < kwss->n_nodes; i++)
+                hmm_clear(&kwss->nodes[i].hmm);
         }
 
     }
@@ -246,24 +240,21 @@ kws_search_trans(kws_search_t * kwss)
 
     /* Activate new keyword nodes, enter their hmms */
     for (i = kwss->n_nodes - 1; i > 0; i--) {
-        if (kwss->nodes[i - 1].active) {
+        if (kws_node_is_active(&kwss->nodes[i - 1])) {
             hmm_t *pred_hmm = &kwss->nodes[i - 1].hmm;
-            if (!kwss->nodes[i].active
+            if (!kws_node_is_active(&kwss->nodes[i])
                 || hmm_out_score(pred_hmm) BETTER_THAN
                 hmm_in_score(&kwss->nodes[i].hmm)) {
                 hmm_enter(&kwss->nodes[i].hmm, hmm_out_score(pred_hmm),
                           hmm_out_history(pred_hmm), kwss->frame + 1);
-                kwss->nodes[i].active = TRUE;
             }
         }
     }
     /* Enter keyword start node from phone loop */
     if (hmm_out_score(pl_best_hmm) BETTER_THAN
-        hmm_in_score(&kwss->nodes[0].hmm)) {
-        kwss->nodes[0].active = TRUE;
+        hmm_in_score(&kwss->nodes[0].hmm))
         hmm_enter(&kwss->nodes[0].hmm, hmm_out_score(pl_best_hmm),
                   kwss->frame, kwss->frame + 1);
-    }
 }
 
 ps_search_t *
@@ -416,7 +407,6 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
             tmatid = bin_mdef_pid2tmatid(mdef, ci);
             hmm_init(kwss->hmmctx, &kwss->nodes[j].hmm, FALSE, ssid,
                      tmatid);
-            kwss->nodes[j].active = FALSE;
             j++;
         }
     }
