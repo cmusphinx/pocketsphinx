@@ -49,14 +49,6 @@
 #include "kws_search.h"
 
 
-/* Cap functions to meet ps_search api */
-static ps_seg_t *
-kws_search_seg_iter(ps_search_t * search, int32 * out_score)
-{
-    *out_score = 0;
-    return NULL;
-}
-
 static ps_lattice_t *
 kws_search_lattice(ps_search_t * search)
 {
@@ -67,6 +59,64 @@ static int
 kws_search_prob(ps_search_t * search)
 {
     return 0;
+}
+
+static void
+kws_seg_free(ps_seg_t *seg)
+{
+    kws_seg_t *itor = (kws_seg_t *)seg;
+    ckd_free(itor);
+}
+
+static void
+kws_seg_fill(kws_seg_t *itor)
+{
+    kws_detection_t* detection = (kws_detection_t*)gnode_ptr(itor->detection);
+
+    itor->base.word = detection->keyphrase;
+    itor->base.sf = detection->sf;
+    itor->base.ef = detection->ef;
+    itor->base.prob = detection->prob;
+    itor->base.ascr = detection->ascr;
+    itor->base.lscr = 0;
+}
+
+static ps_seg_t *
+kws_seg_next(ps_seg_t *seg)
+{
+    kws_seg_t *itor = (kws_seg_t *)seg;
+    itor->detection = gnode_next(itor->detection);
+    if (!itor->detection) {
+        kws_seg_free(seg);
+        return NULL;
+    }
+
+    kws_seg_fill(itor);
+
+    return seg;
+}
+
+static ps_segfuncs_t kws_segfuncs = {
+    /* seg_next */ kws_seg_next,
+    /* seg_free */ kws_seg_free
+};
+
+static ps_seg_t *
+kws_search_seg_iter(ps_search_t * search, int32 * out_score)
+{
+    kws_search_t *kwss = (kws_search_t *)search;
+    kws_seg_t *itor;
+    *out_score = 0;
+
+    if (!kwss->detections->detect_list)
+        return NULL;
+    itor = (kws_seg_t *)ckd_calloc(1, sizeof(*itor));
+    itor->base.vt = &kws_segfuncs;
+    itor->base.search = search;
+    itor->base.lwf = 1.0;
+    itor->detection = kwss->detections->detect_list;
+    kws_seg_fill(itor);
+    return (ps_seg_t *)itor;
 }
 
 static ps_searchfuncs_t kws_funcs = {
@@ -214,11 +264,12 @@ kws_search_trans(kws_search_t * kwss)
 
         if (hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm) -
             hmm_out_score(pl_best_hmm) >= kwss->threshold) {
-
-            kwss->n_detect++;
-            E_INFO(">>>>KEYPHRASE DETECTED. FRAMES: [%d; %d]; SCORE: [%d]\n",
-                   hmm_out_history(&kwss->nodes[kwss->n_nodes - 1].hmm),
-                   kwss->frame, hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm));
+            int32 prob = hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm) - 
+                         hmm_out_score(pl_best_hmm) - kwss->threshold;
+            kws_detections_add(kwss->detections, kwss->keyphrase, 
+                              hmm_out_history(&kwss->nodes[kwss->n_nodes - 1].hmm), 
+                              kwss->frame, prob, 
+                              hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm));
             pl_best_hmm = &kwss->nodes[kwss->n_nodes - 1].hmm;
 
             /* set all keyword nodes inactive for next occurrence search */
@@ -266,6 +317,8 @@ kws_search_init(const char *key_phrase,
     ps_search_init(ps_search_base(kwss), &kws_funcs, config, acmod, dict,
                    d2p);
 
+    kwss->detections = (kws_detections_t *)ckd_calloc(1, sizeof(*kwss->detections));
+
     kwss->beam =
         (int32) logmath_log(acmod->lmath,
                             cmd_ln_float64_r(config,
@@ -311,6 +364,7 @@ kws_search_free(ps_search_t * search)
 
     ps_search_deinit(search);
     hmm_context_free(kwss->hmmctx);
+    kws_detections_reset(kwss->detections);
 
     ckd_free(kwss->pl_hmms);
     ckd_free(kwss->nodes);
@@ -423,8 +477,8 @@ kws_search_start(ps_search_t * search)
     kws_search_t *kwss = (kws_search_t *) search;
 
     kwss->frame = 0;
-    kwss->n_detect = 0;
     kwss->bestscore = 0;
+    kws_detections_reset(kwss->detections);
 
     /* Reset and enter all phone-loop HMMs. */
     for (i = 0; i < kwss->n_pl; ++i) {
@@ -474,15 +528,11 @@ kws_search_hyp(ps_search_t * search, int32 * out_score,
                int32 * out_is_final)
 {
     kws_search_t *kwss = (kws_search_t *) search;
+    *out_score = 0;
 
-    if (kwss->n_detect > 0) {
-        if (out_score)
-            *out_score = kwss->n_detect;
-        return kwss->keyphrase;
-    }
-    else {
-        if (out_score)
-            *out_score = 0;
-        return NULL;
-    }
+    if (search->hyp_str)
+        ckd_free(search->hyp_str);
+    kws_detections_hyp_str(kwss->detections, &search->hyp_str);
+    
+    return search->hyp_str;
 }

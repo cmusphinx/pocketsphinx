@@ -45,7 +45,16 @@
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"
+#include "kws_detections.h"
 #include "hmm.h"
+
+/**
+ * Segmentation "iterator" for KWS history.
+ */
+typedef struct kws_seg_s {
+    ps_seg_t base;       /**< Base structure. */
+    gnode_t *detection;  /**< Keyword detection correspondent to segment. */
+} kws_seg_t;
 
 typedef struct kws_node_s {
     hmm_t hmm;
@@ -60,22 +69,22 @@ typedef struct kws_node_s {
 typedef struct kws_search_s {
     ps_search_t base;
 
-    hmm_context_t *hmmctx;    /**< HMM context. */
+    hmm_context_t *hmmctx;        /**< HMM context. */
 
-    char *keyphrase;          /**< Key phrase to spot */
-    int16 n_detect;           /**< Keyphrase detections amount */
-    frame_idx_t frame;        /**< Frame index */
+    kws_detections_t *detections; /**< Keyword spotting history */
+    char *keyphrase;              /**< Key phrase to spot */
+    frame_idx_t frame;            /**< Frame index */
 
     int32 beam;
 
-    int32 plp;                /**< Phone loop probability */
-    int32 bestscore;          /**< For beam pruning */
-    int32 threshold;          /**< threshold for p(hyp)/p(altern) ratio */
+    int32 plp;                    /**< Phone loop probability */
+    int32 bestscore;              /**< For beam pruning */
+    int32 threshold;              /**< threshold for p(hyp)/p(altern) ratio */
 
-    int32 n_pl;               /**< Number of CI phones */
-    hmm_t *pl_hmms;           /**< Phone loop hmms - hmms of CI phones */
+    int32 n_pl;                   /**< Number of CI phones */
+    hmm_t *pl_hmms;               /**< Phone loop hmms - hmms of CI phones */
 
-    kws_node_t *nodes;        /**< Search nodes */
+    kws_node_t *nodes;            /**< Search nodes */
     int32 n_nodes;
 } kws_search_t;
 

@@ -154,6 +154,7 @@
     <ClInclude Include="..\..\src\libpocketsphinx\fsg_lextree.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\fsg_search_internal.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\hmm.h" />
+    <ClInclude Include="..\..\src\libpocketsphinx\kws_detections.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\kws_search.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\mdef.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\ms_gauden.h" />
@@ -182,6 +183,7 @@
     <ClCompile Include="..\..\src\libpocketsphinx\fsg_lextree.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\fsg_search.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\hmm.c" />
+    <ClCompile Include="..\..\src\libpocketsphinx\kws_detections.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\kws_search.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\mdef.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\ms_gauden.c" />

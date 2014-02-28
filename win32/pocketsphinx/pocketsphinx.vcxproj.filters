@@ -102,6 +102,9 @@
     <ClInclude Include="..\..\src\libpocketsphinx\kws_search.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\libpocketsphinx\kws_detections.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\libpocketsphinx\acmod.c">
@@ -177,6 +180,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\libpocketsphinx\kws_search.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libpocketsphinx\kws_detections.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
