@@ -30,6 +30,7 @@ main(int argc, char *argv[])
     const char *input_file_path;
     const char *cfg;
     const char *utt_id;
+    char* hyp;
     FILE *input_file;
     int16 buf[2048];
     int k;
@@ -79,8 +80,9 @@ main(int argc, char *argv[])
         ps_process_raw(ps, buf, k, FALSE, FALSE);
     }
     ps_end_utt(ps);
-    ps_get_hyp(ps, &n_detect, &utt_id);
-    E_INFO("Detected %d times\n", n_detect);
+    hyp = ps_get_hyp(ps, &n_detect, &utt_id);
+    printf("hypothesis: %s\n", hyp);
+    fflush(stdout);
 
     fclose(input_file);
     ps_free(ps);
