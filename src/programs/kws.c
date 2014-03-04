@@ -4,10 +4,20 @@
 #include <assert.h>
 
 #include "pocketsphinx.h"
+
 #include <sphinxbase/err.h>
+#include <sphinxbase/pio.h>
+#include <sphinxbase/err.h>
+#include <sphinxbase/strfuncs.h>
+#include <sphinxbase/filename.h>
+#include <sphinxbase/byteorder.h>
 
 static const arg_t cont_args_def[] = {
     POCKETSPHINX_OPTIONS,
+    {"-adcin",
+     ARG_BOOLEAN,
+     "yes",
+     "Input file is raw audio data."},
     {"-argfile",
      ARG_STRING,
      NULL,
@@ -19,18 +29,64 @@ static const arg_t cont_args_def[] = {
     CMDLN_EMPTY_OPTION
 };
 
+static mfcc_t **
+read_mfc_file(FILE *infh, int *out_nfr, int ceplen)
+{
+    long flen;
+    int32 nmfc, nfr;
+    float32 *floats;
+    mfcc_t **mfcs;
+    int swap, i;
+
+    fseek(infh, 0, SEEK_END);
+    flen = ftell(infh);
+    fseek(infh, 0, SEEK_SET);
+    if (fread(&nmfc, 4, 1, infh) != 1) {
+        E_ERROR_SYSTEM("Failed to read 4 bytes from MFCC file");
+        return NULL;
+    }
+    swap = 0;
+    if (nmfc != flen / 4 - 1) {
+        SWAP_INT32(&nmfc);
+        swap = 1;
+        if (nmfc != flen / 4 - 1) {
+            E_ERROR("File length mismatch: 0x%x != 0x%x, maybe it's not MFCC file\n",
+                    nmfc, flen / 4 - 1);
+            return NULL;
+        }
+    }
+    nfr = nmfc / ceplen;
+    mfcs = (mfcc_t **)ckd_calloc_2d(nfr, ceplen, sizeof(**mfcs));
+    floats = (float32 *)mfcs[0];
+    if (fread(floats, 4, nfr * ceplen, infh) != nfr * ceplen) {
+        E_ERROR_SYSTEM("Failed to read %d items from mfcfile");
+        ckd_free_2d(mfcs);
+        return NULL;
+    }
+    if (swap) {
+        for (i = 0; i < nfr * ceplen; ++i)
+            SWAP_FLOAT32(&floats[i]);
+    }
+#ifdef FIXED_POINT
+    for (i = 0; i < nfr * ceplen; ++i)
+        mfcs[0][i] = FLOAT2MFCC(floats[i]);
+#endif
+    *out_nfr = nfr;
+    return mfcs;
+}
+
 int
 main(int argc, char *argv[])
 {
     cmd_ln_t *config;
     ps_decoder_t *ps;
 
-    int32 n_detect;
+    int32 out_score;
 
     const char *input_file_path;
     const char *cfg;
     const char *utt_id;
-    char* hyp;
+    const char *hyp;
     FILE *input_file;
     int16 buf[2048];
     int k;
@@ -73,14 +129,27 @@ main(int argc, char *argv[])
         E_FATAL_SYSTEM("Failed to open input file '%s'", input_file_path);
     }
     
-    fread(buf, 1, 44, input_file);
-
     ps_start_utt(ps, NULL);
-    while ((k = fread(buf, sizeof(int16), 2048, input_file)) > 0) {
-        ps_process_raw(ps, buf, k, FALSE, FALSE);
+    if (cmd_ln_boolean_r(config, "-adcin")) {
+        fread(buf, 1, 44, input_file);
+        while ((k = fread(buf, sizeof(int16), 2048, input_file)) > 0) {
+            ps_process_raw(ps, buf, k, FALSE, FALSE);
+        }
+    } else {
+        mfcc_t **mfcs;
+        int nfr;
+
+        if (NULL == (mfcs = read_mfc_file(input_file, &nfr, cmd_ln_int32_r(config, "-ceplen")))) {
+            E_ERROR("Failed to read MFCC from the file '%s'\n", input_file_path);
+            fclose(input_file);
+            return -1;
+        }
+        ps_process_cep(ps, mfcs, nfr, FALSE, TRUE);
+        ckd_free_2d(mfcs);
     }
     ps_end_utt(ps);
-    hyp = ps_get_hyp(ps, &n_detect, &utt_id);
+
+    hyp = ps_get_hyp(ps, &out_score, &utt_id);
     printf("hypothesis: %s\n", hyp);
     fflush(stdout);
 
