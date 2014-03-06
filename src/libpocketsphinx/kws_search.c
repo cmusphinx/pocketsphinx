@@ -282,7 +282,7 @@ kws_search_trans(kws_search_t * kwss)
     /* Make transition for all phone loop hmms */
     for (i = 0; i < kwss->n_pl; i++) {
         if (hmm_out_score(pl_best_hmm) + kwss->plp BETTER_THAN
-            hmm_in_score(&kwss->nodes[0].hmm)) {
+            hmm_in_score(&kwss->pl_hmms[i])) {
             hmm_enter(&kwss->pl_hmms[i],
                       hmm_out_score(pl_best_hmm) + kwss->plp,
                       hmm_out_history(pl_best_hmm), kwss->frame + 1);
