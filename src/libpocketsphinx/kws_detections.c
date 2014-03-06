@@ -86,7 +86,7 @@ kws_detections_hyp_str(kws_detections_t *detections, char** hyp_str)
         return;
     }
 
-    *hyp_str = (char *)ckd_calloc(1, len);
+    *hyp_str = (char *)ckd_calloc(len, sizeof(char));
     c = *hyp_str;
     for (gn = detections->detect_list; gn; gn = gnode_next(gn)) {
         const char *word = ((kws_detection_t *)gnode_ptr(gn))->keyphrase;
