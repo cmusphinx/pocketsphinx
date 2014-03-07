@@ -56,12 +56,15 @@ typedef struct kws_seg_s {
     gnode_t *detection;  /**< Keyword detection correspondent to segment. */
 } kws_seg_t;
 
-typedef struct kws_node_s {
-    hmm_t hmm;
-} kws_node_t;
+typedef struct kws_keyword_s {
+    char* word;
+    int32 threshold;
+    hmm_t* hmms;
+    int32 n_hmms;
+} kws_keyword_t;
 
 /** Access macros */
-#define kws_node_is_active(node) ((node)->hmm.frame > 0)
+#define hmm_is_active(hmm) (hmm.frame > 0)
 
 /**
  * Implementation of KWS search structure.
@@ -72,26 +75,25 @@ typedef struct kws_search_s {
     hmm_context_t *hmmctx;        /**< HMM context. */
 
     kws_detections_t *detections; /**< Keyword spotting history */
-    char *keyphrase;              /**< Key phrase to spot */
+    kws_keyword_t* keyphrases;   /**< Keyphrases to spot */
+    int n_keyphrases;             /**< Keyphrases amount */
     frame_idx_t frame;            /**< Frame index */
 
     int32 beam;
 
     int32 plp;                    /**< Phone loop probability */
     int32 bestscore;              /**< For beam pruning */
-    int32 threshold;              /**< threshold for p(hyp)/p(altern) ratio */
+    int32 def_threshold;          /**< default threshold for p(hyp)/p(altern) ratio */
 
     int32 n_pl;                   /**< Number of CI phones */
     hmm_t *pl_hmms;               /**< Phone loop hmms - hmms of CI phones */
 
-    kws_node_t *nodes;            /**< Search nodes */
-    int32 n_nodes;
 } kws_search_t;
 
 /**
  * Create, initialize and return a search module.
  */
-ps_search_t *kws_search_init(const char *key_phrase,
+ps_search_t *kws_search_init(const char *keyword_list,
                              cmd_ln_t * config,
                              acmod_t * acmod,
                              dict_t * dict, dict2pid_t * d2p);
@@ -127,5 +129,10 @@ int kws_search_finish(ps_search_t * search);
  */
 char const *kws_search_hyp(ps_search_t * search, int32 * out_score,
                            int32 * out_is_final);
+
+/**
+ * Get active keyphrases
+ */
+char* kws_search_get_keywords(ps_search_t * search);
 
 #endif                          /* __KWS_SEARCH_H__ */

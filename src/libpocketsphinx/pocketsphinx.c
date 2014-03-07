@@ -211,7 +211,7 @@ int
 ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 {
     const char *path;
-    const char *keyphrase;
+    const char *keyword_list;
     int32 lw;
 
     if (config && config != ps->config) {
@@ -283,8 +283,8 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
      * If neither is used skip search initialization. */
 
     /* Load KWS if one was specified in config */
-    if ((keyphrase = cmd_ln_str_r(config, "-kws"))) {
-        if (ps_set_kws(ps, PS_DEFAULT_SEARCH, keyphrase))
+    if ((keyword_list = cmd_ln_str_r(config, "-kws"))) {
+        if (ps_set_kws(ps, PS_DEFAULT_SEARCH, keyword_list))
             return -1;
         ps_set_search(ps, PS_DEFAULT_SEARCH);
     }
@@ -328,7 +328,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
                  itor = jsgf_rule_iter_next(itor)) {
                 rule = jsgf_rule_iter_rule(itor);
                 if (jsgf_rule_public(rule)) {
-            	    jsgf_rule_iter_free(itor);
+                    jsgf_rule_iter_free(itor);
                     break;
                 }
             }
@@ -370,16 +370,16 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         }
 
         for(lmset_it = ngram_model_set_iter(lmset);
-    	    lmset_it; lmset_it = ngram_model_set_iter_next(lmset_it)) {
+            lmset_it; lmset_it = ngram_model_set_iter_next(lmset_it)) {
             
             ngram_model_t *lm = ngram_model_set_iter_model(lmset_it, &name);            
             E_INFO("adding search %s\n", name);
             if (ps_set_lm(ps, name, lm)) {
-        	ngram_model_free(lm);
+            ngram_model_free(lm);
                 ngram_model_set_iter_free(lmset_it);
                 return -1;
             }
-	    ngram_model_free(lm);
+        ngram_model_free(lm);
         }
 
         name = cmd_ln_str_r(config, "-lmname");
@@ -510,7 +510,7 @@ ps_get_kws(ps_decoder_t *ps, const char* name)
     ps_search_t *search = ps_find_search(ps, name);
     if (search && strcmp(PS_SEARCH_KWS, ps_search_name(search)))
         return NULL;
-    return search ? ((kws_search_t *) search)->keyphrase : NULL;
+    return search ? kws_search_get_keywords(search) : NULL;
 }
 
 static int
@@ -600,7 +600,7 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
 
     /* And tell all searches to reconfigure themselves. */
     for (search_it = hash_table_iter(ps->searches); search_it;
-	search_it = hash_table_iter_next(search_it)) {
+       search_it = hash_table_iter_next(search_it)) {
         if (ps_search_reinit(hash_entry_val(search_it->ent), dict, d2p) < 0) {
             hash_table_iter_free(search_it);
             return -1;

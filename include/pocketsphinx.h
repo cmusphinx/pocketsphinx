@@ -296,7 +296,7 @@ ps_get_kws(ps_decoder_t *ps, const char *name);
  * @see ps_set_search
  */
 POCKETSPHINX_EXPORT int
-ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyphrase);
+ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyword_list);
 
 /**
  * Reload the pronunciation dictionary from a file.
