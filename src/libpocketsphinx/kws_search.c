@@ -384,6 +384,8 @@ kws_search_read_list(kws_search_t *kwss, const char* keyword_list)
         li->buf[last_ptr + 1] = '\0';
         kwss->keyphrases[i].word = ckd_salloc(li->buf);
     }
+
+    fclose(list_file);
 }
 
 ps_search_t *
