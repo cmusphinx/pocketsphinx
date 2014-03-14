@@ -116,6 +116,7 @@
         return *errcode;
     }
 
+    %newobject hyp;
     Hypothesis * hyp() {
         char const *hyp, *uttid;
         int32 best_score;
@@ -123,10 +124,12 @@
         return hyp ? new_Hypothesis(hyp, uttid, best_score) : NULL;
     }
 
+    %newobject nbest;
     NBest * nbest() {
         return new_NBest(ps_nbest($self, 0, -1, NULL, NULL));
     }
 
+    %newobject seg;
     Segment * seg() {
         int32 best_score;
         return new_Segment(ps_seg_iter($self, &best_score));

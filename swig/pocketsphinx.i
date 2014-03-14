@@ -180,6 +180,7 @@ typedef struct {} Lattice;
     }
 #endif
   
+    %newobject hyp;
     Hypothesis * hyp() {
         int32 score;
         const char *hyp = ps_nbest_hyp($self->ptr, &score);
@@ -187,6 +188,7 @@ typedef struct {} Lattice;
         return new_Hypothesis(hyp, "", score);
     }
 
+    %newobject seg;
     Segment * seg() {
         int32 score;
         // TODO: refactor; use 'score' value
