@@ -786,21 +786,18 @@ main(int32 argc, char *argv[])
     char const *ctl;
     FILE *ctlfh;
 
-    /* Handle argument file as only argument. */
-    if (argc == 2) {
-        config = cmd_ln_parse_file_r(NULL, ps_args_def, argv[1], TRUE);
-    }
-    else {
-        config = cmd_ln_parse_r(NULL, ps_args_def, argc, argv, TRUE);
-    }
+    config = cmd_ln_parse_r(NULL, ps_args_def, argc, argv, TRUE);
+
     /* Handle argument file as -argfile. */
     if (config && (ctl = cmd_ln_str_r(config, "-argfile")) != NULL) {
         config = cmd_ln_parse_file_r(config, ps_args_def, ctl, FALSE);
     }
+    
     if (config == NULL) {
         /* This probably just means that we got no arguments. */
-        return 2;
+        return 1;
     }
+
     if ((ctl = cmd_ln_str_r(config, "-ctl")) == NULL) {
         E_FATAL("-ctl argument not present, nothing to do in batch mode!\n");
     }
