@@ -68,7 +68,6 @@
 
 #include <sphinxbase/err.h>
 #include <sphinxbase/ad.h>
-#include <sphinxbase/cont_ad.h>
 
 #include "pocketsphinx.h"
 
@@ -98,16 +97,6 @@ static ps_decoder_t *ps;
 static cmd_ln_t *config;
 static FILE *rawfd;
 
-static int32
-ad_file_read(ad_rec_t * ad, int16 * buf, int32 max)
-{
-    size_t nread;
-
-    nread = fread(buf, sizeof(int16), max, rawfd);
-
-    return (nread > 0 ? nread : -1);
-}
-
 static void
 print_word_times(int32 start)
 {
@@ -132,15 +121,13 @@ static void
 recognize_from_file()
 {
 
-    cont_ad_t *cont;
-    ad_rec_t file_ad = { 0 };
     int16 adbuf[4096];
-
 
     const char *hyp;
     const char *uttid;
 
-    int32 k, start, endsil;
+    int32 k;
+    uint8 cur_vad_state, vad_state;
 
     char waveheader[44];
     if ((rawfd = fopen(cmd_ln_str_r(config, "-infile"), "rb")) == NULL) {
@@ -148,75 +135,29 @@ recognize_from_file()
                        cmd_ln_str_r(config, "-infile"));
     }
 
+    //skip wav header
     fread(waveheader, 1, 44, rawfd);
-
-    file_ad.sps = (int32) cmd_ln_float32_r(config, "-samprate");
-    file_ad.bps = sizeof(int16);
-
-    endsil = (int32) (0.7 * file_ad.sps);       /* 0.7s for utterance end */
-
-    /* Rawmode to passthrough silence to display porper timing in the result */
-    if ((cont = cont_ad_init_rawmode(&file_ad, ad_file_read)) == NULL) {
-        E_FATAL("Failed to initialize voice activity detection\n");
+    cur_vad_state = 0;
+    ps_start_utt(ps, NULL);
+    while ((k = fread(adbuf, sizeof(int16), 4096, rawfd)) > 0) {
+        ps_process_raw(ps, adbuf, k, FALSE, FALSE);
+        vad_state = ps_get_vad_state(ps);
+        if (cur_vad_state && !vad_state) {
+            //speech->silence transition,
+            //time to end utterance and start new one
+            ps_end_utt(ps);
+            hyp = ps_get_hyp(ps, NULL, &uttid);
+            printf("%s: %s\n", uttid, hyp);
+            fflush(stdout);
+            ps_start_utt(ps, NULL);
+        }
+        cur_vad_state = vad_state;
     }
+    ps_end_utt(ps);
+    hyp = ps_get_hyp(ps, NULL, &uttid);
+    printf("%s: %s\n", uttid, hyp);
+    fflush(stdout);
 
-    if (cont_ad_calib(cont) < 0)
-        E_INFO("Using default voice activity detection\n");
-    fseek(rawfd, 44L, SEEK_SET);
-
-    start = -1;
-    for (;;) {
-
-        k = cont_ad_read(cont, adbuf, 4096);
-
-        if (k < 0) {            /* End of input audio file; end the utt and exit */
-            if (start > 0) {
-                ps_end_utt(ps);
-                if (cmd_ln_boolean_r(config, "-time")) {
-                    print_word_times(start);
-                }
-                else {
-                    hyp = ps_get_hyp(ps, NULL, &uttid);
-                    printf("%s: %s\n", uttid, hyp);
-                }
-                fflush(stdout);
-            }
-
-            break;
-        }
-
-        if (cont->state == CONT_AD_STATE_SIL) { /* Silence data got */
-            if (start >= 0) {   /* Currently in an utterance */
-                if (cont->seglen > endsil) {    /* Long enough silence detected; end the utterance */
-                    ps_end_utt(ps);
-                    if (cmd_ln_boolean_r(config, "-time")) {
-                        print_word_times(start);
-                    }
-                    else {
-                        hyp = ps_get_hyp(ps, NULL, &uttid);
-                        printf("%s: %s\n", uttid, hyp);
-                    }
-                    fflush(stdout);
-                    start = -1;
-                }
-                else {
-                    ps_process_raw(ps, adbuf, k, FALSE, FALSE);
-                }
-            }
-        }
-        else {
-            assert(cont->state == CONT_AD_STATE_SPEECH);
-
-            if (start < 0) {    /* Not in an utt; start a new one */
-                if (ps_start_utt(ps, NULL) < 0)
-                    E_FATAL("ps_start_utt() failed\n");
-                start = ((cont->read_ts - k) * 100.0) / file_ad.sps;
-            }
-            ps_process_raw(ps, adbuf, k, FALSE, FALSE);
-        }
-    }
-
-    cont_ad_close(cont);
     fclose(rawfd);
 }
 
@@ -240,8 +181,8 @@ sleep_msec(int32 ms)
 /*
  * Main utterance processing loop:
  *     for (;;) {
- * 	   wait for start of next utterance;
- * 	   decode utterance until silence of at least 1 sec observed;
+ * 	   start utterance and wait for speech to process
+ *     decoding till end-of-utterance silence will be detected
  * 	   print utterance result;
  *     }
  */
@@ -250,108 +191,56 @@ recognize_from_microphone()
 {
     ad_rec_t *ad;
     int16 adbuf[4096];
-    int32 k, ts, rem;
+    uint8 cur_vad_state, vad_state;
+    int32 k;
     char const *hyp;
     char const *uttid;
-    cont_ad_t *cont;
-    char word[256];
 
     if ((ad = ad_open_dev(cmd_ln_str_r(config, "-adcdev"),
                           (int) cmd_ln_float32_r(config,
                                                  "-samprate"))) == NULL)
         E_FATAL("Failed to open audio device\n");
-
-    /* Initialize continuous listening module */
-    if ((cont = cont_ad_init(ad, ad_read)) == NULL)
-        E_FATAL("Failed to initialize voice activity detection\n");
     if (ad_start_rec(ad) < 0)
         E_FATAL("Failed to start recording\n");
-    if (cont_ad_calib(cont) < 0)
-        E_FATAL("Failed to calibrate voice activity detection\n");
 
+    if (ps_start_utt(ps, NULL) < 0)
+        E_FATAL("Failed to start utterance\n");
+    cur_vad_state = 0;
+    /* Indicate listening for next utterance */
+    printf("READY....\n");
+    fflush(stdout);
+    fflush(stderr);
     for (;;) {
-        /* Indicate listening for next utterance */
-        printf("READY....\n");
-        fflush(stdout);
-        fflush(stderr);
-
-        /* Wait data for next utterance */
-        while ((k = cont_ad_read(cont, adbuf, 4096)) == 0)
-            sleep_msec(100);
-
-        if (k < 0)
+        if ((k = ad_read(ad, adbuf, 4096)) < 0)
             E_FATAL("Failed to read audio\n");
-
-        /*
-         * Non-zero amount of data received; start recognition of new utterance.
-         * NULL argument to uttproc_begin_utt => automatic generation of utterance-id.
-         */
-        if (ps_start_utt(ps, NULL) < 0)
-            E_FATAL("Failed to start utterance\n");
+        sleep_msec(100);
         ps_process_raw(ps, adbuf, k, FALSE, FALSE);
-        printf("Listening...\n");
-        fflush(stdout);
-
-        /* Note timestamp for this first block of data */
-        ts = cont->read_ts;
-
-        /* Decode utterance until end (marked by a "long" silence, >1sec) */
-        for (;;) {
-            /* Read non-silence audio data, if any, from continuous listening module */
-            if ((k = cont_ad_read(cont, adbuf, 4096)) < 0)
-                E_FATAL("Failed to read audio\n");
-            if (k == 0) {
-                /*
-                 * No speech data available; check current timestamp with most recent
-                 * speech to see if more than 1 sec elapsed.  If so, end of utterance.
-                 */
-                if ((cont->read_ts - ts) > DEFAULT_SAMPLES_PER_SEC / 4)
-                    break;
-            }
-            else {
-                /* New speech data received; note current timestamp */
-                ts = cont->read_ts;
-            }
-
-            /*
-             * Decode whatever data was read above.
-             */
-            rem = ps_process_raw(ps, adbuf, k, FALSE, FALSE);
-
-            /* If no work to be done, sleep a bit */
-            if ((rem == 0) && (k == 0))
-                sleep_msec(20);
+        vad_state = ps_get_vad_state(ps);
+        if (vad_state && !cur_vad_state) {
+            //silence -> speech transition,
+            // let user know that he is heard
+            printf("Listening...\n");
+            fflush(stdout);
         }
-
-        /*
-         * Utterance ended; flush any accumulated, unprocessed A/D data and stop
-         * listening until current utterance completely decoded
-         */
-        ad_stop_rec(ad);
-        while (ad_read(ad, adbuf, 4096) >= 0);
-        cont_ad_reset(cont);
-
-        printf("Stopped listening, please wait...\n");
-        fflush(stdout);
-        /* Finish decoding, obtain and print result */
-        ps_end_utt(ps);
-        hyp = ps_get_hyp(ps, NULL, &uttid);
-        printf("%s: %s\n", uttid, hyp);
-        fflush(stdout);
-
-        /* Exit if the first word spoken was GOODBYE */
-        if (hyp) {
-            sscanf(hyp, "%s", word);
-            if (strcmp(word, "goodbye") == 0)
+        if (!vad_state && cur_vad_state) {
+            //speech -> silence transition, 
+            //time to start new utterance
+            ps_end_utt(ps);
+            hyp = ps_get_hyp(ps, NULL, &uttid);
+            printf("%s: %s\n", uttid, hyp);
+            fflush(stdout);
+            //Exit if the first word spoken was GOODBYE
+            if (hyp && (strcmp(hyp, "good bye") == 0))
                 break;
+            if (ps_start_utt(ps, NULL) < 0)
+                E_FATAL("Failed to start utterance\n");
+            /* Indicate listening for next utterance */
+            printf("READY....\n");
+            fflush(stdout);
+            fflush(stderr);
         }
-
-        /* Resume A/D recording for next utterance */
-        if (ad_start_rec(ad) < 0)
-            E_FATAL("Failed to start recording\n");
+        cur_vad_state = vad_state;
     }
-
-    cont_ad_close(cont);
     ad_close(ad);
 }
 
@@ -376,8 +265,8 @@ main(int argc, char *argv[])
     if (config == NULL)
         return 1;
 
-    ps_default_search_args(config);
-    if (!(ps = ps_init(config)))
+    ps = ps_init(config);
+    if (ps == NULL)
         return 1;
 
     E_INFO("%s COMPILED ON: %s, AT: %s\n\n", argv[0], __DATE__, __TIME__);

@@ -753,7 +753,9 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                    uttid, n_speech, n_cpu, n_wall);
             E_INFO("%s: %.2f xRT (CPU), %.2f xRT (elapsed)\n",
                    uttid, n_cpu / n_speech, n_wall / n_speech);
-            E_INFO_NOFN("%s (%s %d)\n", hyp ? hyp : "", uttid, score);
+            /* help make the logfile somewhat less opaque (air) */
+            E_INFO_NOFN("%s (%s %d)\n", hyp ? hyp : "", uttid, score); 
+            E_INFO_NOFN("%s done --------------------------------------\n", uttid);
         }
         i += ctlincr;
     nextline:
@@ -829,7 +831,7 @@ int wmain(int32 argc, wchar_t *wargv[]) {
     int i;
 
     argv = malloc(argc*sizeof(char*));
-    for (i=0; i<argc; i++){
+    for (i = 0; i < argc; i++){
         wlen = lstrlenW(wargv[i]);
         len = wcstombs(NULL, wargv[i], wlen);
         argv[i] = malloc(len+1);

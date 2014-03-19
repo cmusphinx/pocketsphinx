@@ -142,6 +142,10 @@
     Feature * get_feat() {
         return ps_get_feat($self);
     }
+	
+    bool get_vad_state() {
+	return ps_get_vad_state($self);
+    }
 
     FsgModel * get_fsg(const char *name) {
         return fsg_model_retain(ps_get_fsg($self, name));
@@ -173,6 +177,10 @@
 
     void set_search(const char *search_name, int *errcode) {
       *errcode = ps_set_search($self, search_name);
+    }
+
+    const char * get_search() {
+        return ps_get_search($self);
     }
 
     int n_frames() {

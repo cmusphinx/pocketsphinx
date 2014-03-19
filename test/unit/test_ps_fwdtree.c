@@ -9,17 +9,17 @@
 int
 main(int argc, char *argv[])
 {
-	cmd_ln_t *config;
+    cmd_ln_t *config;
 
-	TEST_ASSERT(config =
-		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
-				"-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
-				"-dict", MODELDIR "/lm/en_US/cmu07a.dic",
-				"-fwdtree", "yes",
-				"-fwdflat", "no",
-				"-bestpath", "no",
-				"-input_endian", "little",
-				"-samprate", "16000", NULL));
-	return ps_decoder_test(config, "FWDTREE", "go forward to any shares");
+    TEST_ASSERT(config =
+            cmd_ln_init(NULL, ps_args(), TRUE,
+                "-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
+                "-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
+                "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
+                "-fwdtree", "yes",
+                "-fwdflat", "no",
+                "-bestpath", "no",
+                "-input_endian", "little",
+                "-samprate", "16000", NULL));
+    return ps_decoder_test(config, "FWDTREE", "go forward ten leaders");
 }

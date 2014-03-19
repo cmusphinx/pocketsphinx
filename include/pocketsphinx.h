@@ -225,8 +225,16 @@ ps_mllr_t *ps_update_mllr(ps_decoder_t *ps, ps_mllr_t *mllr);
  * @see ps_set_fsg
  * @see ps_set_fsg
  */
-POCKETSPHINX_EXPORT int
-ps_set_search(ps_decoder_t *ps, const char *name);
+POCKETSPHINX_EXPORT
+int ps_set_search(ps_decoder_t *ps, const char *name);
+
+/**
+ * Returns name of curent search in decoder
+ *
+ * @see ps_set_search
+ */
+POCKETSPHINX_EXPORT 
+const char* ps_get_search(ps_decoder_t *ps);
 
 /**
  * Get the language model set object for this decoder.
@@ -239,8 +247,8 @@ ps_set_search(ps_decoder_t *ps, const char *name);
  *         not attempt to free it manually.  Use ngram_model_retain()
  *         if you wish to reuse it elsewhere.
  */
-POCKETSPHINX_EXPORT ngram_model_t *
-ps_get_lm(ps_decoder_t *ps, const char *name);
+POCKETSPHINX_EXPORT 
+ngram_model_t *ps_get_lm(ps_decoder_t *ps, const char *name);
 
 /**
  * Adds new search based on N-gram language model.
@@ -250,8 +258,8 @@ ps_get_lm(ps_decoder_t *ps, const char *name);
  *
  * @see ps_set_search.
  */ 
-POCKETSPHINX_EXPORT int
-ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
+POCKETSPHINX_EXPORT
+int ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
 
 /**
  * Get the finite-state grammar set object for this decoder.
@@ -262,8 +270,8 @@ ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
  * @return The current FSG set object for this decoder, or
  *         NULL if none is available.
  */
-POCKETSPHINX_EXPORT fsg_model_t *
-ps_get_fsg(ps_decoder_t *ps, const char *name);
+POCKETSPHINX_EXPORT
+fsg_model_t *ps_get_fsg(ps_decoder_t *ps, const char *name);
 
 /**
  * Adds new search based on finite state grammar.
@@ -273,8 +281,8 @@ ps_get_fsg(ps_decoder_t *ps, const char *name);
  *
  * @see ps_set_search
  */
-POCKETSPHINX_EXPORT int
-ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg);
+POCKETSPHINX_EXPORT
+int ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg);
 
 /**
  * Get the current Key phrase to spot
@@ -284,8 +292,8 @@ ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg);
  *
  * @return The current keyphrase to spot
  */
-POCKETSPHINX_EXPORT const char*
-ps_get_kws(ps_decoder_t *ps, const char *name);
+POCKETSPHINX_EXPORT 
+const char* ps_get_kws(ps_decoder_t *ps, const char *name);
 
 /**
  * Adds new keyword to spot
@@ -295,8 +303,8 @@ ps_get_kws(ps_decoder_t *ps, const char *name);
  *
  * @see ps_set_search
  */
-POCKETSPHINX_EXPORT int
-ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyword_list);
+POCKETSPHINX_EXPORT 
+int ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyphrase);
 
 /**
  * Reload the pronunciation dictionary from a file.
@@ -685,6 +693,15 @@ void ps_get_utt_time(ps_decoder_t *ps, double *out_nspeech,
 POCKETSPHINX_EXPORT
 void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
                      double *out_ncpu, double *out_nwall);
+
+/**
+ * Checks if the last feed audio buffer contained speech
+ *
+ * @param ps Decoder.
+ * @return 1 if last buffer contained speech, 0 - otherwise
+ */
+POCKETSPHINX_EXPORT
+uint8 ps_get_vad_state(ps_decoder_t *ps);
 
 /**
  * @mainpage PocketSphinx API Documentation

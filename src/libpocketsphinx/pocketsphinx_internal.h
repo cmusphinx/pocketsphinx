@@ -104,6 +104,7 @@ typedef struct ps_searchfuncs_s {
  */
 struct ps_search_s {
     ps_searchfuncs_t *vt;  /**< V-table of search methods. */
+
     ps_search_t *pls;      /**< Phoneme loop for lookahead. */
     cmd_ln_t *config;      /**< Configuration. */
     acmod_t *acmod;        /**< Acoustic model. */

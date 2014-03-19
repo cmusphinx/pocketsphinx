@@ -1,10 +1,3 @@
-gst_programs =
-gst_tests =
-if BUILD_GST
-gst_programs += test_gst
-gst_tests += test_gst
-endif
-
 check_PROGRAMS = \
 	test_ps_init \
 	test_ps_reinit \
@@ -36,8 +29,7 @@ check_PROGRAMS = \
 	test_senfh \
 	test_alignment \
 	test_state_align \
-	test_mllr \
-	$(gst_programs)
+	test_mllr
 
 TESTS = $(check_PROGRAMS)
 
@@ -45,10 +37,7 @@ EXTRA_DIST = ps_test.c
 
 noinst_HEADERS = test_macros.h
 
-test_gst_LDADD = $(GST_LIBS)
-
-INCLUDES = $(GST_CFLAGS) \
-	-I$(top_srcdir)/include \
+INCLUDES = -I$(top_srcdir)/include \
 	-I$(top_srcdir)/src/libpocketsphinx \
 	-I$(top_builddir)/include \
 	-I$(srcdir) \
