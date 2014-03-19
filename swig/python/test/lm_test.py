@@ -53,6 +53,11 @@ print 'Decoding with default settings:', decoder.hyp().hypstr
 
 # Load "turtle" language model and decode again.
 lm = NGramModel(config, decoder.get_logmath(), path.join(MODELDIR, 'lm/en/turtle.DMP'))
+print lm.prob(['you'])
+print lm.prob(['are','you'])
+print lm.prob(['you', 'are', 'what'])
+print lm.prob(['lost', 'are', 'you'])
+
 decoder.set_lm('turtle', lm)
 decoder.set_search('turtle')
 decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
