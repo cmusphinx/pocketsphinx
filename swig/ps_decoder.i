@@ -87,6 +87,10 @@
         return cmd_ln_parse_r(NULL, ps_args(), 0, NULL, FALSE);
     }
 
+    static Config *file_config(char const * path) {
+        return cmd_ln_parse_file_r(NULL, ps_args(), path, FALSE);
+    }
+
     void start_utt(char const *uttid, int *errcode) {
         *errcode = ps_start_utt($self, uttid);
     }
