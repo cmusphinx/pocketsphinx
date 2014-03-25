@@ -2,7 +2,7 @@ dnl Welcome to the Sphinx automated build system.
 dnl try not to hurt yourself ;)
 
 AC_INIT(pocketsphinx, 5prealpha)
-AM_INIT_AUTOMAKE([no-define])
+AM_INIT_AUTOMAKE([no-define foreign])
 AC_CONFIG_MACRO_DIR([m4])
 
 CFLAGS=${CFLAGS:--g -O2 -Wall}
