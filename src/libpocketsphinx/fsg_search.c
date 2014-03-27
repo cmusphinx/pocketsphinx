@@ -219,10 +219,6 @@ fsg_search_init(fsg_model_t *fsg,
                            * fsgs->lw)
         >> SENSCR_SHIFT;
 
-    /* Best path search (and confidence annotation)? */
-    if (cmd_ln_boolean_r(config, "-bestpath"))
-        fsgs->bestpath = TRUE;
-
     /* Acoustic score scale for posterior probabilities. */
     fsgs->ascale = 1.0 / cmd_ln_float32_r(config, "-ascale");
 
