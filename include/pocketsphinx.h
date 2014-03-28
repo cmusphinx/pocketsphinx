@@ -262,6 +262,16 @@ POCKETSPHINX_EXPORT
 int ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
 
 /**
+ * Adds new search based on N-gram language model.
+ *
+ * Convenient method to load N-gram model and create a search.
+ * 
+ * @see ps_set_lm
+ */
+POCKETSPHINX_EXPORT
+int ps_set_ngram_search(ps_decoder_t *ps, const char *name, const char *path);
+
+/**
  * Get the finite-state grammar set object for this decoder.
  *
  * If FSG decoding is not enabled, this returns NULL.  Call
@@ -283,6 +293,16 @@ fsg_model_t *ps_get_fsg(ps_decoder_t *ps, const char *name);
  */
 POCKETSPHINX_EXPORT
 int ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg);
+
+/**
+ * Adds new search using JSGF model.
+ *
+ * Convenient method to load JSGF model and create a search.
+ *
+ * @see ps_set_fsg
+ */
+POCKETSPHINX_EXPORT
+int ps_set_gram_search(ps_decoder_t *ps, const char *name, const char *path);
 
 /**
  * Get the current Key phrase to spot

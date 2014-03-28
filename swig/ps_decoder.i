@@ -159,6 +159,10 @@
         *errcode = ps_set_fsg($self, name, fsg);
     }
 
+    void set_grammar_search(const char *name, const char *path, int *errcode) {
+        *errcode = ps_set_gram_search($self, name, path);
+    }
+
     const char * get_kws(const char *name) {
         return ps_get_kws($self, name);
     }
@@ -173,6 +177,10 @@
 
     void set_lm(const char *name, NGramModel *lm, int *errcode) {
         *errcode = ps_set_lm($self, name, lm);
+    }
+
+    void set_ngram_search(const char *name, const char *path, int *errcode) {
+        *errcode = ps_set_ngram_search($self, name, path);
     }
 
     LogMath * get_logmath() {
