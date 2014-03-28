@@ -483,7 +483,7 @@ ps_set_search(ps_decoder_t *ps, const char *name)
     ps_search_t *search = ps_find_search(ps, name);
     if (search)
         ps->search = search;
-    return NULL == search;
+    return search ? 0 : -1;
 }
 
 const char*
