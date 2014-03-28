@@ -146,9 +146,9 @@
     Feature * get_feat() {
         return ps_get_feat($self);
     }
-	
+   
     bool get_vad_state() {
-	return ps_get_vad_state($self);
+        return ps_get_vad_state($self);
     }
 
     FsgModel * get_fsg(const char *name) {
@@ -159,8 +159,8 @@
         *errcode = ps_set_fsg($self, name, fsg);
     }
 
-    void set_grammar_search(const char *name, const char *path, int *errcode) {
-        *errcode = ps_set_gram_search($self, name, path);
+    void set_jsgf_file(const char *name, const char *path, int *errcode) {
+        *errcode = ps_set_jsgf_file($self, name, path);
     }
 
     const char * get_kws(const char *name) {
@@ -179,8 +179,8 @@
         *errcode = ps_set_lm($self, name, lm);
     }
 
-    void set_ngram_search(const char *name, const char *path, int *errcode) {
-        *errcode = ps_set_ngram_search($self, name, path);
+    void set_lm_file(const char *name, const char *path, int *errcode) {
+        *errcode = ps_set_lm_file($self, name, path);
     }
 
     LogMath * get_logmath() {

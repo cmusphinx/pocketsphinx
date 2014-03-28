@@ -301,15 +301,15 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     
     /* Or load a JSGF grammar */
     if ((path = cmd_ln_str_r(config, "-jsgf"))) {
-        if (ps_set_gram_search(ps, PS_DEFAULT_SEARCH, path))
+        if (ps_set_jsgf_file(ps, PS_DEFAULT_SEARCH, path)
+            || ps_set_search(ps, PS_DEFAULT_SEARCH))
             return -1;
-        ps_set_search(ps, PS_DEFAULT_SEARCH);
     }
 
     if ((path = cmd_ln_str_r(ps->config, "-lm"))) {
-        if (ps_set_ngram_search(ps, PS_DEFAULT_SEARCH, path))
+        if (ps_set_lm_file(ps, PS_DEFAULT_SEARCH, path)
+            || ps_set_search(ps, PS_DEFAULT_SEARCH))
             return -1;
-        ps_set_search(ps, PS_DEFAULT_SEARCH);
     }
 
     if ((path = cmd_ln_str_r(ps->config, "-lmctl"))) {
@@ -507,7 +507,7 @@ ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
 }
 
 int
-ps_set_ngram_search(ps_decoder_t *ps, const char *name, const char *path)
+ps_set_lm_file(ps_decoder_t *ps, const char *name, const char *path)
 {
   ngram_model_t *lm;
 
@@ -541,7 +541,7 @@ ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
     return set_search_internal(ps, name, search);
 }
 
-int ps_set_gram_search(ps_decoder_t *ps, const char *name, const char *path)
+int ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
 {
   fsg_model_t *fsg;
   jsgf_rule_t *rule;
