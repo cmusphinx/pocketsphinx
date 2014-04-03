@@ -228,6 +228,11 @@ struct ps_decoder_s {
     char const *senlogdir; /**< Log directory for senone score files. */
 };
 
+
+struct ps_search_iter_s {
+    hash_iter_t itor;
+};
+
 #endif /* __POCKETSPHINX_INTERNAL_H__ */
 
 /* vim: set ts=4 sw=4: */

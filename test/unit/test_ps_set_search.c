@@ -80,6 +80,7 @@ test_set_search()
 {
     cmd_ln_t *config = default_config();
     ps_decoder_t *ps = ps_init(config);
+    ps_search_iter_t *itor;
 
     jsgf_t *jsgf = jsgf_parse_file(DATADIR "/goforward.gram", NULL);
     fsg_model_t *fsg = jsgf_build_fsg(jsgf,
@@ -95,6 +96,14 @@ test_set_search()
 
     TEST_ASSERT(!ps_set_search(ps, "tidigits"));
     TEST_ASSERT(!ps_set_search(ps, "goforward"));
+    
+    itor = ps_search_iter(ps);
+    TEST_EQUAL(0, strcmp("tidigits", ps_search_iter_val(itor)));
+    itor = ps_search_iter_next(itor);
+    TEST_EQUAL(0, strcmp("goforward", ps_search_iter_val(itor)));
+    itor = ps_search_iter_next(itor);
+    TEST_EQUAL(NULL, itor);
+    
     TEST_ASSERT(!ps_start_utt(ps, NULL));
     ps_free(ps);
     cmd_ln_free_r(config);

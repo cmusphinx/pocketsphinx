@@ -49,6 +49,7 @@
 #include <sphinxbase/filename.h>
 #include <sphinxbase/pio.h>
 #include <sphinxbase/jsgf.h>
+#include <sphinxbase/hash_table.h>
 
 /* Local headers. */
 #include "cmdln_macro.h"
@@ -445,13 +446,49 @@ ps_get_search(ps_decoder_t *ps)
     hash_iter_t *search_it;
     const char* name = NULL;
     for (search_it = hash_table_iter(ps->searches); search_it;
-         search_it = hash_table_iter_next(search_it)) {
+        search_it = hash_table_iter_next(search_it)) {
         if (hash_entry_val(search_it->ent) == ps->search) {
     	    name = hash_entry_key(search_it->ent);
     	    break;
         }
     }
     return name;
+}
+
+int 
+ps_unset_search(ps_decoder_t *ps, const char *name)
+{
+    ps_search_t *search = hash_table_delete(ps->searches, name);
+    if (!search)
+        return -1;
+    if (ps->search == search)
+        ps->search = NULL;
+    ps_search_free(search);
+    return 0;
+}
+
+ps_search_iter_t *
+ps_search_iter(ps_decoder_t *ps)
+{
+   return (ps_search_iter_t *)hash_table_iter(ps->searches);
+}
+
+ps_search_iter_t *
+ps_search_iter_next(ps_search_iter_t *itor)
+{
+   return (ps_search_iter_t *)hash_table_iter_next((hash_iter_t *)itor);
+}
+
+const char* 
+ps_search_iter_val(ps_search_iter_t *itor)
+{
+   return (const char*)(((hash_iter_t *)itor)->ent->key);
+}
+
+void 
+ps_search_iter_free(ps_search_iter_t *itor)
+{
+   return hash_table_iter_free((hash_iter_t *)itor);
 }
 
 ngram_model_t *

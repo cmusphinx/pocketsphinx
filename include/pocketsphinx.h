@@ -55,6 +55,7 @@ extern "C" {
 #include <sphinxbase/feat.h>
 #include <sphinxbase/fsg_model.h>
 #include <sphinxbase/ngram_model.h>
+#include <sphinxbase/hash_table.h>
 
 /* PocketSphinx headers (not many of them!) */
 #include <pocketsphinx_export.h>
@@ -72,6 +73,11 @@ extern "C" {
  * PocketSphinx speech recognizer object.
  */
 typedef struct ps_decoder_s ps_decoder_t;
+
+/**
+ * PocketSphinx search iterator.
+ */
+typedef struct ps_search_iter_s ps_search_iter_t;
 
 /**
  * PocketSphinx N-best hypothesis iterator object.
@@ -235,6 +241,64 @@ int ps_set_search(ps_decoder_t *ps, const char *name);
  */
 POCKETSPHINX_EXPORT 
 const char* ps_get_search(ps_decoder_t *ps);
+
+/**
+ * Unsets the search and releases related resources.
+ *
+ * Unsets the search previously added with
+ * using either ps_set_fsg(), ps_set_lm() or ps_set_kws().
+ *
+ * @see ps_set_fsg
+ * @see ps_set_lm
+ * @see ps_set_kws
+ */
+POCKETSPHINX_EXPORT
+int ps_unset_search(ps_decoder_t *ps, const char *name);
+
+/**
+ * Returns iterator over current searches 
+ *
+ * @see ps_set_search
+ */
+POCKETSPHINX_EXPORT
+ps_search_iter_t *ps_search_iter(ps_decoder_t *ps);
+
+/**
+ * Updates search iterator to point to the next position.
+ * 
+ * This function automatically frees the iterator object upon reaching
+ * the final entry.
+ * @see ps_set_search
+ */
+POCKETSPHINX_EXPORT
+ps_search_iter_t *ps_search_iter_next(ps_search_iter_t *itor);
+
+/**
+ * Retrieves the name of the search the iterator points to.
+ *
+ * @see ps_set_search
+ */
+POCKETSPHINX_EXPORT
+const char* ps_search_iter_val(ps_search_iter_t *itor);
+
+/**
+ * Delete an unfinished search iterator
+ *
+ * @see ps_set_search
+ */
+POCKETSPHINX_EXPORT
+void ps_search_iter_free(ps_search_iter_t *itor);
+
+/**
+ * Updates search iterator to point to the next position.
+ * 
+ * This function automatically frees the iterator object upon reaching
+ * the final entry.
+ * @see ps_set_search
+ */
+POCKETSPHINX_EXPORT
+const char* ps_search_iter_val(ps_search_iter_t *itor);
+
 
 /**
  * Get the language model set object for this decoder.
