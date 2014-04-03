@@ -265,6 +265,7 @@ main(int argc, char *argv[])
     if (config == NULL)
         return 1;
 
+    ps_default_search_args(config);
     ps = ps_init(config);
     if (ps == NULL)
         return 1;
