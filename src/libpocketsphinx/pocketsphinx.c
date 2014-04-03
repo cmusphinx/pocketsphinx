@@ -547,19 +547,15 @@ int
 ps_set_lm_file(ps_decoder_t *ps, const char *name, const char *path)
 {
   ngram_model_t *lm;
+  int result;
 
   lm = ngram_model_read(ps->config, path, NGRAM_AUTO, ps->lmath);
   if (!lm)
       return -1;
 
-  if (ps_set_lm(ps, PS_DEFAULT_SEARCH, lm)) {
-      ngram_model_free(lm);
-      return -1;
-  }
-
-  int errcode = ps_set_lm(ps, name, lm);
+  result = ps_set_lm(ps, name, lm);
   ngram_model_free(lm);
-  return errcode;
+  return result;
 }
 
 int
@@ -584,6 +580,8 @@ int ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
   jsgf_rule_t *rule;
   char const *toprule;
   jsgf_t *jsgf = jsgf_parse_file(path, NULL);
+  float lw;
+  int result;
 
   if (!jsgf)
       return -1;
@@ -617,11 +615,11 @@ int ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
       }
   }
 
-  float lw = cmd_ln_float32_r(ps->config, "-lw");
+  lw = cmd_ln_float32_r(ps->config, "-lw");
   fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, lw);
-  int errcode = ps_set_fsg(ps, name, fsg);
+  result = ps_set_fsg(ps, name, fsg);
   fsg_model_free(fsg);
-  return errcode;
+  return result;
 }
 
 int
