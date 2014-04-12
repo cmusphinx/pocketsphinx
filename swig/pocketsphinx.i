@@ -170,9 +170,11 @@ typedef struct {} Lattice;
     }
   
 #ifdef SWIGPYTHON
-    NBest * __iter__() {
-        return $self;
-    }
+
+%pythoncode %{
+    def __iter__(self):
+        return self
+%}
 
     NBest * next() {
         $self->ptr = ps_nbest_next($self->ptr);
@@ -219,18 +221,22 @@ typedef struct {} Lattice;
     }
 
     ~Segment() {
-        ps_seg_free($self->ptr);
+        if ($self->ptr)
+    	    ps_seg_free($self->ptr);
         ckd_free($self->word);
         ckd_free($self);
     }
 
 #ifdef SWIGPYTHON
-    Segment* __iter__() {
-        return $self;
-    }  
+
+%pythoncode %{
+    def __iter__(self):
+        return self
+%}
 
     Segment* next() {
         if (($self->ptr = ps_seg_next($self->ptr))) {
+            ckd_free($self->word);
             $self->word = ckd_salloc(ps_seg_word($self->ptr));
             ps_seg_prob($self->ptr, &$self->ascr, &$self->lscr, &$self->lback);
             ps_seg_frames($self->ptr, &$self->start_frame, &$self->end_frame);
