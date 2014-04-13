@@ -20,6 +20,7 @@ EXTRA_DIST = \
 	data/cards/cards.gram \
 	data/cards/cards.hyp \
 	data/cards/cards.transcription \
+	data/defective.gram \
 	data/defective.dic \
 	data/goforward.fsg \
 	data/goforward.gram \

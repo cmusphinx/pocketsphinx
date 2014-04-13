@@ -228,8 +228,7 @@ ps_mllr_t *ps_update_mllr(ps_decoder_t *ps, ps_mllr_t *mllr);
  * Activates search with the provided name. The search must be added before
  * using either ps_set_fsg(), ps_set_lm() or ps_set_kws().
  *
- * @see ps_set_fsg
- * @see ps_set_fsg
+ * @return 0 on success, 1 on failure
  */
 POCKETSPHINX_EXPORT
 int ps_set_search(ps_decoder_t *ps, const char *name);

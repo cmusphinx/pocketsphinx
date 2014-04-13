@@ -73,8 +73,8 @@ main(int argc, char *argv[])
                 }
             }
             hyp = fsg_search_hyp(ps_search_base(fsgs), &score, &is_final);
-            TEST_EQUAL (is_final, (acmod->output_frame > 100));
-            printf("FSG: %s (%d) %s\n", hyp, score, is_final ? "FINAL" : "");
+            printf("FSG: %s (%d) frame %d final %s\n", hyp, score, acmod->output_frame, is_final ? "FINAL" : "");
+            TEST_EQUAL (is_final, (acmod->output_frame > 170));
         }
         fsg_search_finish(ps_search_base(fsgs));
         hyp = fsg_search_hyp(ps_search_base(fsgs), &score, NULL);
@@ -141,6 +141,15 @@ main(int argc, char *argv[])
     ps_free(ps);
     cmd_ln_free_r(config);
     fclose(rawfh);
+
+    TEST_ASSERT(config =
+            cmd_ln_init(NULL, ps_args(), TRUE,
+                "-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
+                "-dict", MODELDIR "/lm/en/turtle.dic",
+                "-jsgf", DATADIR "/defective.gram",
+                NULL));
+    TEST_ASSERT(NULL == ps_init(config));
+    cmd_ln_free_r(config);
 
     return 0;
 }

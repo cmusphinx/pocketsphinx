@@ -521,18 +521,17 @@ ps_get_kws(ps_decoder_t *ps, const char* name)
 static int
 set_search_internal(ps_decoder_t *ps, const char *name, ps_search_t *search)
 {
+    ps_search_t *old_search;
+    
+    if (!search)
+	return 1;
+
     search->pls = ps->phone_loop;
+    old_search = (ps_search_t *) hash_table_replace(ps->searches, ckd_salloc(name), search);
+    if (old_search != search)
+        ps_search_free(old_search);
 
-    if (search) {
-        ps_search_t *old_search;
-        old_search =
-            (ps_search_t *)
-            hash_table_replace(ps->searches, ckd_salloc(name), search);
-        if (old_search != search)
-            ps_search_free(old_search);
-    }
-
-    return NULL == search;
+    return 0;
 }
 
 int
