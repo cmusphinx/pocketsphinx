@@ -12,6 +12,8 @@
 #include <sphinxbase/filename.h>
 #include <sphinxbase/byteorder.h>
 
+#define PCM_BUF_LEN 2048
+
 static const arg_t cont_args_def[] = {
     POCKETSPHINX_OPTIONS,
     {"-adcin",
@@ -88,7 +90,7 @@ main(int argc, char *argv[])
     const char *utt_id;
     const char *hyp;
     FILE *input_file;
-    int16 buf[2048];
+    int16 buf[PCM_BUF_LEN];
     int k;
 
     config = cmd_ln_parse_r(NULL, cont_args_def, argc, argv, TRUE);
@@ -127,7 +129,7 @@ main(int argc, char *argv[])
     ps_start_utt(ps, NULL);
     if (cmd_ln_boolean_r(config, "-adcin")) {
         fread(buf, 1, 44, input_file);
-        while ((k = fread(buf, sizeof(int16), 2048, input_file)) > 0) {
+        while ((k = fread(buf, sizeof(int16), PCM_BUF_LEN, input_file)) > 0) {
             ps_process_raw(ps, buf, k, FALSE, FALSE);
         }
     } else {
