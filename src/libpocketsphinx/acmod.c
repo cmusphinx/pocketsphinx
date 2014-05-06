@@ -463,8 +463,7 @@ acmod_end_utt(acmod_t *acmod)
         fe_end_utt(acmod->fe, acmod->mfc_buf[inptr], &nfr);
         acmod->n_mfc_frame += nfr;
         /* Process whatever's left, and any leadout. */
-        if (nfr)
-            nfr = acmod_process_mfcbuf(acmod);
+        nfr = acmod_process_mfcbuf(acmod);
     }
     if (acmod->mfcfh) {
         int32 outlen, rv;
