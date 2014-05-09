@@ -91,9 +91,11 @@ typedef struct kws_search_s {
 } kws_search_t;
 
 /**
- * Create, initialize and return a search module.
+ * Create, initialize and return a search module. Gets keywords either
+ * from keyphrase or from a keyphrase file.
  */
-ps_search_t *kws_search_init(const char *keyword_list,
+ps_search_t *kws_search_init(const char *keyphrase,
+			     const char *keyfile,
                              cmd_ln_t * config,
                              acmod_t * acmod,
                              dict_t * dict, dict2pid_t * d2p);
@@ -129,7 +131,6 @@ int kws_search_finish(ps_search_t * search);
  */
 char const *kws_search_hyp(ps_search_t * search, int32 * out_score,
                            int32 * out_is_final);
-
 /**
  * Get active keyphrases
  */

@@ -379,6 +379,17 @@ POCKETSPHINX_EXPORT
 const char* ps_get_kws(ps_decoder_t *ps, const char *name);
 
 /**
+ * Adds keywords from a file to spotting
+ *
+ * Associates KWS search with the provided name. The search can be activated
+ * using ps_set_search().
+ *
+ * @see ps_set_search
+ */
+POCKETSPHINX_EXPORT 
+int ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyfile);
+
+/**
  * Adds new keyword to spot
  *
  * Associates KWS search with the provided name. The search can be activated
@@ -387,7 +398,7 @@ const char* ps_get_kws(ps_decoder_t *ps, const char *name);
  * @see ps_set_search
  */
 POCKETSPHINX_EXPORT 
-int ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyphrase);
+int ps_set_keyphrase(ps_decoder_t *ps, const char *name, const char *keyphrase);
 
 /**
  * Reload the pronunciation dictionary from a file.

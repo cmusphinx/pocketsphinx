@@ -1,8 +1,7 @@
 bin_PROGRAMS = \
 	pocketsphinx_batch \
 	pocketsphinx_continuous \
-	pocketsphinx_mdef_convert \
-	pocketsphinx_kws
+	pocketsphinx_mdef_convert
 
 pocketsphinx_mdef_convert_SOURCES = mdef_convert.c
 pocketsphinx_mdef_convert_LDADD = \

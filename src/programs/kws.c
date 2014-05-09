@@ -102,8 +102,8 @@ main(int argc, char *argv[])
     if (config == NULL)
         return 1;
 
-    if (cmd_ln_str_r(config, "-kws") == NULL) {
-        E_ERROR("Keyword is missing. Use -kws <keyphrase> to specify the phrase to look for.\n");
+    if (cmd_ln_str_r(config, "-kws") == NULL && cmd_ln_str_r(config, "-keyphrase") == NULL) {
+        E_ERROR("Keyword is missing. Use -keyphrase <keyphrase> or -kws <kws_file> to specify the phrase to look for.");
         return 1;
     }
 

@@ -338,20 +338,16 @@ kws_search_trans(kws_search_t * kwss)
     } /* keywords loop */
 }
 
-static void
-kws_search_read_list(kws_search_t *kwss, const char* keyword_list)
+static int
+kws_search_read_list(kws_search_t *kwss, const char* keyfile)
 {
     FILE *list_file;
     lineiter_t *li;
     int i;
     
-    if ((list_file = fopen(keyword_list, "r")) == NULL) {
-        /* single keyword is passed */
-        kwss->n_keyphrases = 1;
-        kwss->keyphrases = (kws_keyword_t *)ckd_calloc(kwss->n_keyphrases, sizeof(*kwss->keyphrases));
-        kwss->keyphrases[0].threshold = kwss->def_threshold;
-        kwss->keyphrases[0].word = ckd_salloc(keyword_list);
-        return;
+    if ((list_file = fopen(keyfile, "r")) == NULL) {
+	E_ERROR_SYSTEM("Failed to open keyword file '%s'", keyfile);
+        return -1;
     }
 
     /* count keyphrases amount */
@@ -386,10 +382,12 @@ kws_search_read_list(kws_search_t *kwss, const char* keyword_list)
     }
 
     fclose(list_file);
+    return 0;
 }
 
 ps_search_t *
-kws_search_init(const char *keyword_list,
+kws_search_init(const char *keyphrase,
+                const char *keyfile,
                 cmd_ln_t * config,
                 acmod_t * acmod, dict_t * dict, dict2pid_t * d2p)
 {
@@ -418,7 +416,18 @@ kws_search_init(const char *keyword_list,
     E_INFO("KWS(beam: %d, plp: %d, default threshold %d)\n",
            kwss->beam, kwss->plp, kwss->def_threshold);
 
-    kws_search_read_list(kwss, keyword_list);
+    if (keyfile) {
+	if (kws_search_read_list(kwss, keyfile) < 0) {
+	    E_ERROR("Failed to create kws search\n");
+	    kws_search_free(ps_search_base(kwss));
+	    return NULL;
+	}
+    } else {
+        kwss->n_keyphrases = 1;
+        kwss->keyphrases = (kws_keyword_t *)ckd_calloc(kwss->n_keyphrases, sizeof(*kwss->keyphrases));
+        kwss->keyphrases[0].threshold = kwss->def_threshold;
+        kwss->keyphrases[0].word = ckd_salloc(keyphrase);
+    }
 
     /* Check if all words are in dictionary */
     if (!kws_search_check_dict(kwss)) {

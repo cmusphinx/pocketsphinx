@@ -172,6 +172,7 @@ ps_default_search_args(cmd_ln_t *config)
     if (lmfile == NULL && !cmd_ln_str_r(config, "-fsg")
         && !cmd_ln_str_r(config, "-jsgf")
         && !cmd_ln_str_r(config, "-kws")
+        && !cmd_ln_str_r(config, "-keyphrase")
         && file_exists(MODELDIR "/lm/en_US/hub4.5000.DMP")) {
         lmfile = MODELDIR "/lm/en_US/hub4.5000.DMP";
         cmd_ln_set_str_r(config, "-lm", lmfile);
@@ -212,7 +213,7 @@ int
 ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 {
     const char *path;
-    const char *keyword_list;
+    const char *keyphrase;
     int32 lw;
 
     if (config && config != ps->config) {
@@ -284,8 +285,14 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
      * If neither is used skip search initialization. */
 
     /* Load KWS if one was specified in config */
-    if ((keyword_list = cmd_ln_str_r(config, "-kws"))) {
-        if (ps_set_kws(ps, PS_DEFAULT_SEARCH, keyword_list))
+    if ((keyphrase = cmd_ln_str_r(config, "-keyphrase"))) {
+        if (ps_set_keyphrase(ps, PS_DEFAULT_SEARCH, keyphrase))
+            return -1;
+        ps_set_search(ps, PS_DEFAULT_SEARCH);
+    }
+
+    if ((path = cmd_ln_str_r(config, "-kws"))) {
+        if (ps_set_kws(ps, PS_DEFAULT_SEARCH, path))
             return -1;
         ps_set_search(ps, PS_DEFAULT_SEARCH);
     }
@@ -558,10 +565,18 @@ ps_set_lm_file(ps_decoder_t *ps, const char *name, const char *path)
 }
 
 int
-ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyphrase)
+ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyfile)
 {
     ps_search_t *search;
-    search = kws_search_init(keyphrase, ps->config, ps->acmod, ps->dict, ps->d2p);
+    search = kws_search_init(NULL, keyfile, ps->config, ps->acmod, ps->dict, ps->d2p);
+    return set_search_internal(ps, name, search);
+}
+
+int
+ps_set_keyphrase(ps_decoder_t *ps, const char *name, const char *keyphrase)
+{
+    ps_search_t *search;
+    search = kws_search_init(keyphrase, NULL, ps->config, ps->acmod, ps->dict, ps->d2p);
     return set_search_internal(ps, name, search);
 }
 

@@ -176,10 +176,14 @@
 
 /** Command-line options for keyword spotting */
 #define POCKETSPHINX_KWS_OPTIONS \
-{ "-kws",                                                       \
+{ "-keyphrase",                                                 \
          ARG_STRING,                                            \
          NULL,                                                  \
          "Keyphrase to spot"},                                  \
+{ "-kws",                                                       \
+         ARG_STRING,                                            \
+         NULL,                                                  \
+         "A file with keyphrases to spot, one per line"},       \
 { "-kws_plp",                                                   \
       ARG_FLOAT64,                                              \
       "1e-1",                                                   \

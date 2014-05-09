@@ -167,8 +167,12 @@
         return ps_get_kws($self, name);
     }
 
-    void set_kws(const char *name, const char *keyphrase, int *errcode) {
-        *errcode = ps_set_kws($self, name, keyphrase);
+    void set_kws(const char *name, const char *keyfile, int *errcode) {
+        *errcode = ps_set_kws($self, name, keyfile);
+    }
+
+    void set_keyphrase(const char *name, const char *keyphrase, int *errcode) {
+        *errcode = ps_set_keyphrase($self, name, keyphrase);
     }
 
     NGramModel * get_lm(const char *name) {
