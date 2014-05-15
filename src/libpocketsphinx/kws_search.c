@@ -356,7 +356,7 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
         if (li->len > 0)
             kwss->n_keyphrases++;
     kwss->keyphrases = (kws_keyword_t *)ckd_calloc(kwss->n_keyphrases, sizeof(*kwss->keyphrases));
-    rewind(list_file);
+    fseek(list_file, 0L, SEEK_SET);
 
     /* read keyphrases */
     for (li = lineiter_start(list_file), i=0; li; li = lineiter_next(li), i++) {

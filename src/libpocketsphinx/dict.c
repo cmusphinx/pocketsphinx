@@ -280,7 +280,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
                 && 0 != strncmp(li->buf, ";;", 2))
                 n++;
         }
-        rewind(fp);
+	fseek(fp, 0L, SEEK_SET);
     }
 
     fp2 = NULL;
@@ -295,7 +295,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
     	        && 0 != strncmp(li->buf, ";;", 2))
                 n++;
         }
-        rewind(fp2);
+        fseek(fp2, 0L, SEEK_SET);
     }
 
     /*
