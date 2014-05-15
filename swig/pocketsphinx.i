@@ -134,7 +134,7 @@ typedef struct {} Lattice;
             h->uttid = ckd_salloc(uttid);
         h->best_score = best_score;
         return h;  
-  }
+    }
 
     ~Hypothesis() {
         ckd_free($self->hypstr);
@@ -145,11 +145,21 @@ typedef struct {} Lattice;
 
 #ifdef SWIGPYTHON
 %exception NBest::next() {
-    $action
     if (!arg1->ptr) {
-        PyErr_SetString(PyExc_StopIteration, "");
+        SWIG_SetErrorObj(PyExc_StopIteration, SWIG_Py_Void());
         SWIG_fail;
     }
+    $action
+}
+#endif
+#ifdef SWIGJAVA
+%exception Segment::next() {
+    if (!arg1->ptr) {
+        jclass cls = (*jenv)->FindClass(jenv, "java/util/NoSuchElementException");
+        (*jenv)->ThrowNew(jenv, cls, NULL);
+        return $null;
+    }
+    $action
 }
 #endif
 
@@ -157,10 +167,8 @@ typedef struct {} Lattice;
     NBest(ps_nbest_t *ptr) {
         if (!ptr)
             return NULL;
-
         NBest *nbest = ckd_malloc(sizeof *nbest);
         nbest->ptr = ptr;
-
         return nbest;
     }
 
@@ -170,18 +178,22 @@ typedef struct {} Lattice;
     }
   
 #ifdef SWIGPYTHON
-
 %pythoncode %{
     def __iter__(self):
         return self
 %}
+#endif
+#if SWIGJAVA
+     bool hasNext() {
+	return $self->ptr != NULL;
+    }
+#endif
 
     NBest * next() {
         $self->ptr = ps_nbest_next($self->ptr);
         return $self;
     }
-#endif
-  
+
     %newobject hyp;
     Hypothesis * hyp() {
         int32 score;
@@ -202,9 +214,19 @@ typedef struct {} Lattice;
 %exception Segment::next() {
     $action
     if (!arg1->ptr) {
-        PyErr_SetString(PyExc_StopIteration, "");
+        SWIG_SetErrorObj(PyExc_StopIteration, SWIG_Py_Void());
         SWIG_fail;
     }
+}
+#endif
+#ifdef SWIGJAVA
+%exception Segment::next() {
+    if (!arg1->ptr) {
+        jclass cls = (*jenv)->FindClass(jenv, "java/util/NoSuchElementException");
+        (*jenv)->ThrowNew(jenv, cls, NULL);
+        return $null;
+    }
+    $action
 }
 #endif
 
@@ -228,11 +250,16 @@ typedef struct {} Lattice;
     }
 
 #ifdef SWIGPYTHON
-
 %pythoncode %{
     def __iter__(self):
         return self
 %}
+#endif
+#if SWIGJAVA
+     bool hasNext() {
+	return $self->ptr != NULL;
+    }
+#endif
 
     Segment* next() {
         if (($self->ptr = ps_seg_next($self->ptr))) {
@@ -244,7 +271,6 @@ typedef struct {} Lattice;
         return $self;
     }
     
-#endif
 
 }
 
