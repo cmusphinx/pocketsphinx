@@ -267,8 +267,10 @@ main(int argc, char *argv[])
 
     ps_default_search_args(config);
     ps = ps_init(config);
-    if (ps == NULL)
+    if (ps == NULL) {
+	cmd_ln_free_r(config);
         return 1;
+    }
 
     E_INFO("%s COMPILED ON: %s, AT: %s\n\n", argv[0], __DATE__, __TIME__);
 
@@ -289,6 +291,8 @@ main(int argc, char *argv[])
     }
 
     ps_free(ps);
+    cmd_ln_free_r(config);
+
     return 0;
 }
 
