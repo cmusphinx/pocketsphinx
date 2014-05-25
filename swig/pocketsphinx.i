@@ -273,7 +273,3 @@ typedef struct {} Lattice;
     
 
 }
-
-/* TODO: find out if it's possible to move these to Decoder */
-%constant char *SEARCH_FSG = PS_SEARCH_FSG;
-%constant char *SEARCH_NGRAM = PS_SEARCH_NGRAM;

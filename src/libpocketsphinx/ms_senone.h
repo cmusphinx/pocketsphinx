@@ -131,9 +131,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#if 0
-} /* Fool Emacs into not indenting things. */
-#endif
 
 typedef uint8 senprob_t;	/**< Senone logs3-probs, truncated to 8 bits */
 
@@ -195,9 +192,6 @@ int32 senone_eval (senone_t *s, int id,		/**< In: senone for which score desired
 		   int n_top		/**< In: Length of dist[f], for each f */
     );
 
-#if 0
-{ /* Stop indent from complaining */
-#endif
 #ifdef __cplusplus
 }
 #endif

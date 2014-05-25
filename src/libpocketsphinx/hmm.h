@@ -55,9 +55,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#if 0
-} /* Fool Emacs into not indenting things. */
-#endif
 
 /** 
  * Type for frame index values. Used in HMM indexes and 
@@ -303,9 +300,6 @@ void hmm_dump(hmm_t *h,  /**< In/Out: HMM being updated */
     );
 
 
-#if 0
-{ /* Stop indent from complaining */
-#endif
 #ifdef __cplusplus
 }
 #endif

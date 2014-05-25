@@ -97,9 +97,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#if 0
-} /* Fool Emacs into not indenting things. */
-#endif
 
 /**
  * \struct tmat_t
@@ -145,9 +142,6 @@ void tmat_free (tmat_t *t /**< In: transition matrix */
 void tmat_report(tmat_t *t /**< In: transition matrix*/
     );
 
-#if 0
-{ /* Stop indent from complaining */
-#endif
 #ifdef __cplusplus
 }
 #endif

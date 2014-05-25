@@ -1,6 +1,6 @@
 /* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
- * Copyright (c) 1999-2004 Carnegie Mellon University.  All rights
+ * Copyright (c) 1999-2014 Carnegie Mellon University.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,67 +34,6 @@
  * ====================================================================
  *
  */
-/*
- * dict2pid.h -- Triphones for dictionary
- * 
- * **********************************************
- * CMU ARPA Speech Project
- *
- * Copyright (c) 1999 Carnegie Mellon University.
- * ALL RIGHTS RESERVED.
- * **********************************************
- * 
- * HISTORY
- * $Log$
- * Revision 1.1  2006/04/05  20:27:30  dhdfu
- * A Great Reorganzation of header files and executables
- * 
- * Revision 1.9  2006/02/22 21:05:16  arthchan2003
- * Merged from branch SPHINX3_5_2_RCI_IRII_BRANCH:
- *
- * 1, Added logic to handle bothe composite and non composite left
- * triphone.  Composite left triphone's logic (the original one) is
- * tested thoroughly. The non-composite triphone (or full triphone) is
- * found to have bugs.  The latter is fended off from the users in the
- * library level.
- *
- * 2, Fixed dox-doc.
- *
- * Revision 1.8.4.5  2005/11/17 06:13:49  arthchan2003
- * Use compressed right context in expansion in triphones.
- *
- * Revision 1.8.4.4  2005/10/17 04:48:45  arthchan2003
- * Free resource correctly in dict2pid.
- *
- * Revision 1.8.4.3  2005/10/07 19:03:38  arthchan2003
- * Added xwdssid_t structure.  Also added compression routines.
- *
- * Revision 1.8.4.2  2005/09/25 19:13:31  arthchan2003
- * Added optional full triphone expansion support when building context phone mapping.
- *
- * Revision 1.8.4.1  2005/07/17 05:20:30  arthchan2003
- * Fixed dox-doc.
- *
- * Revision 1.8  2005/06/21 21:03:49  arthchan2003
- * 1, Introduced a reporting routine. 2, Fixed doyxgen documentation, 3, Added  keyword.
- *
- * Revision 1.5  2005/06/13 04:02:57  archan
- * Fixed most doxygen-style documentation under libs3decoder.
- *
- * Revision 1.4  2005/04/21 23:50:26  archan
- * Some more refactoring on the how reporting of structures inside kbcore_t is done, it is now 50% nice. Also added class-based LM test case into test-decode.sh.in.  At this moment, everything in search mode 5 is already done.  It is time to test the idea whether the search can really be used.
- *
- * Revision 1.3  2005/03/30 01:22:46  archan
- * Fixed mistakes in last updates. Add
- *
- * 
- * 14-Sep-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Added dict2pid_comsseq2sen_active().
- * 
- * 04-May-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Started.
- */
-
 
 #ifndef _S3_DICT2PID_H_
 #define _S3_DICT2PID_H_
@@ -124,9 +63,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-#if 0
-} /* Fool Emacs into not indenting things. */
 #endif
 
 /**
@@ -236,9 +172,6 @@ s3cipid_t* dict2pid_get_rcmap(dict2pid_t *d2p,  /**< In: a dict2pid */
 			      s3wid_t w        /**< In: a wid */
     );
 
-#if 0
-{ /* Stop indent from complaining */
-#endif
 #ifdef __cplusplus
 }
 #endif

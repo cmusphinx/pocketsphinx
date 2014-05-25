@@ -95,9 +95,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#if 0
-} /* Fool Emacs into not indenting things. */
-#endif
 
 /**
  * Size definitions for more semantially meaningful units.
@@ -223,9 +220,6 @@ typedef int16   	s3mgauid_t;	/** Mixture-gaussian codebook id */
 
 #define MEG *1024*1024
 
-#if 0
-{ /* Stop indent from complaining */
-#endif
 #ifdef __cplusplus
 }
 #endif

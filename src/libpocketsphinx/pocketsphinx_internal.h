@@ -81,6 +81,11 @@
  */
 typedef struct ps_search_s ps_search_t;
 
+#define PS_DEFAULT_SEARCH  "default"
+#define PS_SEARCH_KWS    "kws"
+#define PS_SEARCH_FSG    "fsg"
+#define PS_SEARCH_NGRAM  "ngram"
+
 /**
  * V-table for search algorithm.
  */
@@ -234,5 +239,3 @@ struct ps_search_iter_s {
 };
 
 #endif /* __POCKETSPHINX_INTERNAL_H__ */
-
-/* vim: set ts=4 sw=4: */

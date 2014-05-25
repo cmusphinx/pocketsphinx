@@ -55,9 +55,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#if 0
-} /* Fool Emacs into not indenting things. */
-#endif
 
 /** 
     \struct dictword_t
@@ -206,9 +203,6 @@ int dict_free(dict_t *d);
 void dict_report(dict_t *d /**< A dictionary structure */
     );
 
-#if 0
-{ /* Stop indent from complaining */
-#endif
 #ifdef __cplusplus
 }
 #endif

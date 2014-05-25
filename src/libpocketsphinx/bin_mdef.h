@@ -47,9 +47,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#if 0
-}; /* Fool Emacs */
-#endif
 #endif /* __cplusplus */
 
 /* SphinxBase headers. */

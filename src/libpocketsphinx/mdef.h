@@ -60,9 +60,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#if 0
-} /* Fool Emacs into not indenting things. */
-#endif
 
 /** \file mdef.h
  * \brief Model definition 
@@ -267,9 +264,6 @@ void mdef_free (mdef_t *mdef /**< In : The model definition*/
     );
 
 
-#if 0
-{ /* Stop indent from complaining */
-#endif
 #ifdef __cplusplus
 }
 #endif
