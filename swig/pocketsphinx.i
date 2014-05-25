@@ -63,14 +63,9 @@ negative error code."
 %feature("autodoc", "1");
 
 %include typemaps.i
-
+%include iterators.i
 %import sphinxbase.i
 
-// TODO: use %newobject in a couple with ckd_malloc/ckd_free
-// TODO: split SegmentIterator off Segment
-// TODO: split NBestIterator off NBest
-
-// TODO: probably these definitions should be imported from sphinxbase
 %{
 typedef cmd_ln_t Config;
 typedef feat_t Feature;
@@ -89,8 +84,11 @@ typedef int bool;
 #define true 1
 
 typedef ps_decoder_t Decoder;
+typedef ps_decoder_t SegmentList;
+typedef ps_decoder_t NBestList;
 typedef ps_lattice_t Lattice;
 %}
+
 
 %inline %{
 
@@ -102,7 +100,6 @@ typedef struct {
 } Hypothesis;
 
 typedef struct {
-    ps_seg_t *ptr;
     char *word;
     int32 ascr;
     int32 lscr;
@@ -112,18 +109,24 @@ typedef struct {
 } Segment;
 
 typedef struct {
-    ps_nbest_t *ptr;
+    ps_nbest_t *nbest;
 } NBest;
+
 %}
+
+sb_iterator(Segment, ps_seg, Segment)
+sb_iterator(NBest, ps_nbest, NBest)
+sb_iterable_java(SegmentList, Segment)
+sb_iterable_java(NBestList, NBest)
 
 typedef struct {} Decoder;
 typedef struct {} Lattice;
+typedef struct {} NBestList;
+typedef struct {} SegmentList;
 
 #ifdef HAS_DOC
 %include pydoc.i
 #endif
-%include ps_decoder.i
-%include ps_lattice.i
 
 %extend Hypothesis {
     Hypothesis(char const *hypstr, char const *uttid, int best_score) {
@@ -143,133 +146,62 @@ typedef struct {} Lattice;
     }
 }
 
-#ifdef SWIGPYTHON
-%exception NBest::next() {
-    if (!arg1->ptr) {
-        SWIG_SetErrorObj(PyExc_StopIteration, SWIG_Py_Void());
-        SWIG_fail;
+%extend Segment {
+    static Segment* fromIter(ps_seg_t *itor) {
+	Segment *seg = ckd_malloc(sizeof(Segment));
+	if (!itor)
+	    return NULL;
+	seg->word = ckd_salloc(ps_seg_word(itor));
+	ps_seg_prob(itor, &(seg->ascr), &(seg->lscr), &(seg->lback));
+	ps_seg_frames(itor, &seg->start_frame, &seg->end_frame);
+	return seg;
     }
-    $action
-}
-#endif
-#ifdef SWIGJAVA
-%exception Segment::next() {
-    if (!arg1->ptr) {
-        jclass cls = (*jenv)->FindClass(jenv, "java/util/NoSuchElementException");
-        (*jenv)->ThrowNew(jenv, cls, NULL);
-        return $null;
+    ~Segment() {
+	ckd_free($self->word);
+	ckd_free($self);
     }
-    $action
 }
-#endif
 
 %extend NBest {
-    NBest(ps_nbest_t *ptr) {
-        if (!ptr)
-            return NULL;
-        NBest *nbest = ckd_malloc(sizeof *nbest);
-        nbest->ptr = ptr;
-        return nbest;
-    }
-
-    ~NBest() {
-          ps_nbest_free($self->ptr);
-          ckd_free($self);
-    }
-  
-#ifdef SWIGPYTHON
-%pythoncode %{
-    def __iter__(self):
-        return self
-%}
-#endif
-#if SWIGJAVA
-     bool hasNext() {
-	return $self->ptr != NULL;
-    }
-#endif
-
-    NBest * next() {
-        $self->ptr = ps_nbest_next($self->ptr);
-        return $self;
-    }
-
-    %newobject hyp;
-    Hypothesis * hyp() {
-        int32 score;
-        const char *hyp = ps_nbest_hyp($self->ptr, &score);
-        // TODO: refactor; what is this empty argument?
-        return new_Hypothesis(hyp, "", score);
-    }
-
-    %newobject seg;
-    Segment * seg() {
-        int32 score;
-        // TODO: refactor; use 'score' value
-        return new_Segment(ps_nbest_seg($self->ptr, &score));
-    }
-}
-
-#ifdef SWIGPYTHON
-%exception Segment::next() {
-    $action
-    if (!arg1->ptr) {
-        SWIG_SetErrorObj(PyExc_StopIteration, SWIG_Py_Void());
-        SWIG_fail;
-    }
-}
-#endif
-#ifdef SWIGJAVA
-%exception Segment::next() {
-    if (!arg1->ptr) {
-        jclass cls = (*jenv)->FindClass(jenv, "java/util/NoSuchElementException");
-        (*jenv)->ThrowNew(jenv, cls, NULL);
-        return $null;
-    }
-    $action
-}
-#endif
-
-%extend Segment {
-    Segment(ps_seg_t *ptr) {
-        if (!ptr)
-            return NULL;
-
-        Segment *seg = ckd_malloc(sizeof *seg);
-        seg->ptr = ptr;
-        seg->word = 0;
-
-        return seg;
-    }
-
-    ~Segment() {
-        if ($self->ptr)
-    	    ps_seg_free($self->ptr);
-        ckd_free($self->word);
-        ckd_free($self);
-    }
-
-#ifdef SWIGPYTHON
-%pythoncode %{
-    def __iter__(self):
-        return self
-%}
-#endif
-#if SWIGJAVA
-     bool hasNext() {
-	return $self->ptr != NULL;
-    }
-#endif
-
-    Segment* next() {
-        if (($self->ptr = ps_seg_next($self->ptr))) {
-            ckd_free($self->word);
-            $self->word = ckd_salloc(ps_seg_word($self->ptr));
-            ps_seg_prob($self->ptr, &$self->ascr, &$self->lscr, &$self->lback);
-            ps_seg_frames($self->ptr, &$self->start_frame, &$self->end_frame);
-        }
-        return $self;
+    static NBest* fromIter(ps_nbest_t *itor) {
+	NBest *nbest = ckd_malloc(sizeof(NBest));
+	nbest->nbest = itor;
+	return nbest;
     }
     
-
+    Hypothesis* hyp (){
+        char const *hyp;
+        int32 best_score;
+        hyp = ps_nbest_hyp($self->nbest, &best_score);
+        return hyp ? new_Hypothesis(hyp, NULL, best_score) : NULL;
+    }
+    
+    ~NBest() {
+	ckd_free($self);
+    }
 }
+
+
+%extend SegmentList {
+  SegmentList(ps_decoder_t *ptr) {
+    return ptr; 
+  }
+  %newobject __iter__;
+  SegmentIterator * __iter__() {
+    int32 best_score;
+    return new_SegmentIterator(ps_seg_iter($self, &best_score));
+  }
+}
+%extend NBestList {
+  NBestList(ps_decoder_t *ptr) {
+    return ptr; 
+  }
+  %newobject __iter__;
+  NBestIterator * __iter__() {
+    return new_NBestIterator(ps_nbest($self, 0, -1, NULL, NULL));
+  }
+}
+
+
+%include ps_decoder.i
+%include ps_lattice.i

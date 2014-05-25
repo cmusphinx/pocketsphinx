@@ -13,6 +13,7 @@ import edu.cmu.pocketsphinx.Decoder;
 import edu.cmu.pocketsphinx.Config;
 import edu.cmu.pocketsphinx.Segment;
 import edu.cmu.pocketsphinx.Hypothesis;
+import edu.cmu.pocketsphinx.SegmentIterator;
 
 public class DecoderTest {
     static {
@@ -58,7 +59,7 @@ public class DecoderTest {
         d.endUtt();
         System.out.println(d.hyp().getHypstr());
         
-        for (Segment seg = d.seg(); seg.hasNext(); seg = seg.next()) {
+        for (Segment seg : d.seg()) {
     	    System.out.println(seg.getWord());
         }
     }

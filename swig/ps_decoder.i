@@ -103,17 +103,20 @@
         *errcode = ps_end_utt($self);
     }
 
-    int
 #ifdef SWIGPYTHON
+    int
     process_raw(const void *SDATA, size_t NSAMP, bool no_search, bool full_utt,
                 int *errcode) {
         NSAMP /= sizeof(int16);
-#else
-    process_raw(const int16 *SDATA, size_t NSAMP, bool no_search, bool full_utt,
-                int *errcode) {
-#endif
         return *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
     }
+#else
+    int
+    process_raw(const int16 *SDATA, size_t NSAMP, bool no_search, bool full_utt,
+                int *errcode) {
+        return *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
+    }
+#endif
 
     int decode_raw(FILE *fin, int *errcode) {
         *errcode = ps_decode_raw($self, fin, 0, -1);
@@ -126,17 +129,6 @@
         int32 best_score;
         hyp = ps_get_hyp($self, &best_score, &uttid);
         return hyp ? new_Hypothesis(hyp, uttid, best_score) : NULL;
-    }
-
-    %newobject nbest;
-    NBest * nbest() {
-        return new_NBest(ps_nbest($self, 0, -1, NULL, NULL));
-    }
-
-    %newobject seg;
-    Segment * seg() {
-        int32 best_score;
-        return new_Segment(ps_seg_iter($self, &best_score));
     }
 
     FrontEnd * get_fe() {
@@ -202,6 +194,12 @@
     int n_frames() {
         return ps_get_n_frames($self);
     }
-}
 
-/* vim: set ts=4 sw=4: */
+    SegmentList *seg() {
+	return $self;
+    }
+    
+    NBestList *nbest() {
+	return $self;
+    }
+}
