@@ -98,7 +98,7 @@ static cmd_ln_t *config;
 static FILE *rawfd;
 
 static void
-print_word_times(int32 start)
+print_word_times()
 {
     ps_seg_t *iter = ps_seg_iter(ps, NULL);
     while (iter != NULL) {
@@ -108,8 +108,8 @@ print_word_times(int32 start)
         ps_seg_frames(iter, &sf, &ef);
         pprob = ps_seg_prob(iter, NULL, NULL, NULL);
         conf = logmath_exp(ps_get_logmath(ps), pprob);
-        printf("%s %f %f %f\n", ps_seg_word(iter), (sf + start) / 100.0,
-               (ef + start) / 100.0, conf);
+        printf("%s %f %f %f\n", ps_seg_word(iter), sf / 100.0,
+               ef / 100.0, conf);
         iter = ps_seg_next(iter);
     }
 }
@@ -127,37 +127,44 @@ recognize_from_file()
     const char *uttid;
 
     int32 k;
-    uint8 cur_vad_state, vad_state;
+    uint8 utt_started, in_speech;
 
     char waveheader[44];
+    int32 print_times = cmd_ln_boolean_r(config, "-time");
+
     if ((rawfd = fopen(cmd_ln_str_r(config, "-infile"), "rb")) == NULL) {
         E_FATAL_SYSTEM("Failed to open file '%s' for reading",
                        cmd_ln_str_r(config, "-infile"));
     }
-
-    //skip wav header
     fread(waveheader, 1, 44, rawfd);
-    cur_vad_state = 0;
+    
+    utt_started = FALSE;
     ps_start_utt(ps, NULL);
     while ((k = fread(adbuf, sizeof(int16), 4096, rawfd)) > 0) {
         ps_process_raw(ps, adbuf, k, FALSE, FALSE);
-        vad_state = ps_get_vad_state(ps);
-        if (cur_vad_state && !vad_state) {
-            //speech->silence transition,
-            //time to end utterance and start new one
+        in_speech = ps_get_in_speech(ps);
+        if (in_speech && !utt_started) {
+    	    utt_started = TRUE;
+        } 
+        if (!in_speech && utt_started) {
             ps_end_utt(ps);
             hyp = ps_get_hyp(ps, NULL, &uttid);
             printf("%s: %s\n", uttid, hyp);
-            fflush(stdout);
+            if (print_times)
+        	print_word_times();
             ps_start_utt(ps, NULL);
+            utt_started = FALSE;
         }
-        cur_vad_state = vad_state;
     }
     ps_end_utt(ps);
-    hyp = ps_get_hyp(ps, NULL, &uttid);
-    printf("%s: %s\n", uttid, hyp);
-    fflush(stdout);
-
+    if (utt_started) {
+        hyp = ps_get_hyp(ps, NULL, &uttid);
+        printf("%s: %s\n", uttid, hyp);
+        if (print_times) {
+		print_word_times();
+	}
+    }
+    
     fclose(rawfd);
 }
 
@@ -191,7 +198,7 @@ recognize_from_microphone()
 {
     ad_rec_t *ad;
     int16 adbuf[4096];
-    uint8 cur_vad_state, vad_state;
+    uint8 utt_started, in_speech;
     int32 k;
     char const *hyp;
     char const *uttid;
@@ -205,41 +212,31 @@ recognize_from_microphone()
 
     if (ps_start_utt(ps, NULL) < 0)
         E_FATAL("Failed to start utterance\n");
-    cur_vad_state = 0;
+    utt_started = FALSE;
     /* Indicate listening for next utterance */
     printf("READY....\n");
-    fflush(stdout);
-    fflush(stderr);
     for (;;) {
         if ((k = ad_read(ad, adbuf, 4096)) < 0)
             E_FATAL("Failed to read audio\n");
         sleep_msec(100);
         ps_process_raw(ps, adbuf, k, FALSE, FALSE);
-        vad_state = ps_get_vad_state(ps);
-        if (vad_state && !cur_vad_state) {
-            //silence -> speech transition,
-            // let user know that he is heard
+        in_speech = ps_get_in_speech(ps);
+        if (in_speech && !utt_started) {
+    	    utt_started = TRUE;
             printf("Listening...\n");
-            fflush(stdout);
         }
-        if (!vad_state && cur_vad_state) {
+        if (!in_speech && utt_started) {
             //speech -> silence transition, 
             //time to start new utterance
             ps_end_utt(ps);
             hyp = ps_get_hyp(ps, NULL, &uttid);
             printf("%s: %s\n", uttid, hyp);
-            fflush(stdout);
-            //Exit if the first word spoken was GOODBYE
-            if (hyp && (strcmp(hyp, "good bye") == 0))
-                break;
             if (ps_start_utt(ps, NULL) < 0)
                 E_FATAL("Failed to start utterance\n");
             /* Indicate listening for next utterance */
             printf("READY....\n");
-            fflush(stdout);
-            fflush(stderr);
+            utt_started = FALSE;
         }
-        cur_vad_state = vad_state;
     }
     ad_close(ad);
 }
@@ -278,13 +275,11 @@ main(int argc, char *argv[])
         recognize_from_file();
     }
     else {
-
         /* Make sure we exit cleanly (needed for profiling among other things) */
         /* Signals seem to be broken in arm-wince-pe. */
 #if !defined(GNUWINCE) && !defined(_WIN32_WCE) && !defined(__SYMBIAN32__)
         signal(SIGINT, &sighandler);
 #endif
-
         if (setjmp(jbuf) == 0) {
             recognize_from_microphone();
         }
@@ -296,11 +291,9 @@ main(int argc, char *argv[])
     return 0;
 }
 
-/** Silvio Moioli: Windows CE/Mobile entry point added. */
 #if defined(_WIN32_WCE)
 #pragma comment(linker,"/entry:mainWCRTStartup")
 #include <windows.h>
-
 //Windows Mobile has the Unicode main only
 int
 wmain(int32 argc, wchar_t * wargv[])

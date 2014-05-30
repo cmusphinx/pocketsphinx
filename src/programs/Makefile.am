@@ -11,10 +11,6 @@ pocketsphinx_batch_SOURCES = batch.c
 pocketsphinx_batch_LDADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la
 
-pocketsphinx_kws_SOURCES = kws.c
-pocketsphinx_kws_LDADD = \
-	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la
-
 pocketsphinx_continuous_SOURCES = continuous.c
 pocketsphinx_continuous_LDADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la -lsphinxad

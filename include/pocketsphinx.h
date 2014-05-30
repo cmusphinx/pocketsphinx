@@ -606,7 +606,7 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * @return 1 if last buffer contained speech, 0 - otherwise
  */
 POCKETSPHINX_EXPORT
-uint8 ps_get_vad_state(ps_decoder_t *ps);
+uint8 ps_get_in_speech(ps_decoder_t *ps);
 
 /**
  * @mainpage PocketSphinx API Documentation

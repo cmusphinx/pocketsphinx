@@ -1250,7 +1250,7 @@ ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
 }
 
 uint8 
-ps_get_vad_state(ps_decoder_t *ps)
+ps_get_in_speech(ps_decoder_t *ps)
 {
     return fe_get_vad_state(ps->acmod->fe);
 }
