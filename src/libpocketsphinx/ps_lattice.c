@@ -1890,4 +1890,3 @@ ps_astar_finish(ps_astar_t *nbest)
     ckd_free(nbest);
 }
 
-/* vim: set ts=4 sw=4: */

@@ -297,6 +297,16 @@ int ps_decode_senscr(ps_decoder_t *ps, FILE *senfh,
                      char const *uttid);
 
 /**
+ * Start processing of the stream of speech. Channel parameters like
+ * noise-level are maintained for the stream and reused among utterances.
+ * Times returned in segment iterators are also stream-wide.
+ *
+ * @return 0 for success, <0 on error.
+ */
+POCKETSPHINX_EXPORT
+int ps_start_stream(ps_decoder_t *ps);
+
+/**
  * Start utterance processing.
  *
  * This function should be called before any utterance data is passed

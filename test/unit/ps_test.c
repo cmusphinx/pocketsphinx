@@ -84,12 +84,12 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
     fseek(rawfh, 0, SEEK_SET);
     bptr = buf = ckd_realloc(buf, nsamps * sizeof(*buf));
     TEST_EQUAL(nsamps, fread(buf, sizeof(*buf), nsamps, rawfh));
-    fe_process_frames(ps->acmod->fe, &bptr, &nsamps, NULL, &nfr);
+    fe_process_frames(ps->acmod->fe, &bptr, &nsamps, NULL, &nfr, NULL);
     cepbuf = ckd_calloc_2d(nfr + 1,
                    fe_get_output_size(ps->acmod->fe),
                    sizeof(**cepbuf));
     fe_start_utt(ps->acmod->fe);
-    fe_process_frames(ps->acmod->fe, &bptr, &nsamps, cepbuf, &nfr);
+    fe_process_frames(ps->acmod->fe, &bptr, &nsamps, cepbuf, &nfr, NULL);
     fe_end_utt(ps->acmod->fe, cepbuf[nfr], &i);
 
     /* Decode it with process_cep() */

@@ -800,4 +800,3 @@ GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
 #endif
                   "PocketSphinx", "http://cmusphinx.sourceforge.net/")
 
-/* vim: set ts=4 sw=4: */

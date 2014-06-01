@@ -808,6 +808,13 @@ ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
 }
 
 int
+ps_start_stream(ps_decoder_t *ps)
+{
+    acmod_start_stream(ps->acmod);
+    return 0;
+}
+
+int
 ps_start_utt(ps_decoder_t *ps, char const *uttid)
 {
     int rv;
@@ -1122,8 +1129,10 @@ ps_seg_word(ps_seg_t *seg)
 void
 ps_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef)
 {
-    if (out_sf) *out_sf = seg->sf;
-    if (out_ef) *out_ef = seg->ef;
+    int uf;
+    uf = acmod_stream_offset(seg->search->acmod);
+    if (out_sf) *out_sf = seg->sf + uf;
+    if (out_ef) *out_ef = seg->ef + uf;
 }
 
 int32
@@ -1317,4 +1326,3 @@ ps_search_deinit(ps_search_t *search)
     ps_lattice_free(search->dag);
 }
 
-/* vim: set ts=4 sw=4: */

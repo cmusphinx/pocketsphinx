@@ -1529,4 +1529,3 @@ error_out:
 
 }
 
-/* vim: set ts=4 sw=4: */

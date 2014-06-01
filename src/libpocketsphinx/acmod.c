@@ -295,6 +295,8 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
     acmod->feat_buf = feat_array_alloc(acmod->fcb, acmod->n_feat_alloc);
     acmod->framepos = ckd_calloc(acmod->n_feat_alloc, sizeof(*acmod->framepos));
 
+    acmod->utt_start_frame = 0;
+
     /* Senone computation stuff. */
     acmod->senone_scores = ckd_calloc(bin_mdef_n_sen(acmod->mdef),
                                                      sizeof(*acmod->senone_scores));
@@ -565,7 +567,7 @@ acmod_process_full_raw(acmod_t *acmod,
     if (acmod->rawfh)
         fwrite(*inout_raw, 2, *inout_n_samps, acmod->rawfh);
     /* Resize mfc_buf to fit. */
-    if (fe_process_frames(acmod->fe, NULL, inout_n_samps, NULL, &nfr) < 0)
+    if (fe_process_frames(acmod->fe, NULL, inout_n_samps, NULL, &nfr, NULL) < 0)
         return -1;
     if (acmod->n_mfc_alloc < nfr + 1) {
         ckd_free_2d(acmod->mfc_buf);
@@ -577,7 +579,7 @@ acmod_process_full_raw(acmod_t *acmod,
     acmod->mfc_outidx = 0;
     fe_start_utt(acmod->fe);
     if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
-                          acmod->mfc_buf, &nfr) < 0)
+                          acmod->mfc_buf, &nfr, NULL) < 0)
         return -1;
     fe_end_utt(acmod->fe, acmod->mfc_buf[nfr], &ntail);
     nfr += ntail;
@@ -631,6 +633,8 @@ acmod_process_raw(acmod_t *acmod,
                   int full_utt)
 {
     int32 ncep;
+    int32 out_frameidx;
+    int16 const *prev_audio_inptr;
 
     /* If this is a full utterance, process it all at once. */
     if (full_utt)
@@ -639,9 +643,9 @@ acmod_process_raw(acmod_t *acmod,
     /* Append MFCCs to the end of any that are previously in there
      * (in practice, there will probably be none) */
     if (inout_n_samps && *inout_n_samps) {
-        int16 const *prev_audio_inptr = *inout_raw;
         int inptr;
 
+        prev_audio_inptr = *inout_raw;
         /* Total number of frames available. */
         ncep = acmod->n_mfc_alloc - acmod->n_mfc_frame;
         /* Where to start writing them (circular buffer) */
@@ -651,15 +655,20 @@ acmod_process_raw(acmod_t *acmod,
         while (inptr + ncep > acmod->n_mfc_alloc) {
             int32 ncep1 = acmod->n_mfc_alloc - inptr;
             if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
-                                  acmod->mfc_buf + inptr, &ncep1) < 0)
+                                  acmod->mfc_buf + inptr, &ncep1, &out_frameidx) < 0)
                 return -1;
+	    
+	    if (out_frameidx > 0)
+		acmod->utt_start_frame = out_frameidx;
+
             /* Write to logging file if any. */
             if (acmod->rawfh) {
                 fwrite(prev_audio_inptr, 2,
                        *inout_raw - prev_audio_inptr,
                        acmod->rawfh);
-                prev_audio_inptr = *inout_raw;
             }
+            prev_audio_inptr = *inout_raw;
+            
             /* ncep1 now contains the number of frames actually
              * processed.  This is a good thing, but it means we
              * actually still might have some room left at the end of
@@ -672,18 +681,22 @@ acmod_process_raw(acmod_t *acmod,
             inptr += ncep1;
             inptr %= acmod->n_mfc_alloc;
             if (ncep1 == 0)
-                goto alldone;
+        	goto alldone;
         }
-        assert(inptr + ncep <= acmod->n_mfc_alloc);
+
+        assert(inptr + ncep <= acmod->n_mfc_alloc);        
         if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
-                              acmod->mfc_buf + inptr, &ncep) < 0)
+                              acmod->mfc_buf + inptr, &ncep, &out_frameidx) < 0)
             return -1;
-        /* Write to logging file if any. */
+
+	if (out_frameidx > 0)
+	    acmod->utt_start_frame = out_frameidx;
+
         if (acmod->rawfh) {
             fwrite(prev_audio_inptr, 2,
                    *inout_raw - prev_audio_inptr, acmod->rawfh);
-            prev_audio_inptr = *inout_raw;
         }
+        prev_audio_inptr = *inout_raw;
         acmod->n_mfc_frame += ncep;
     alldone:
         ;
@@ -787,6 +800,7 @@ acmod_process_cep(acmod_t *acmod,
     *inout_cep += ncep;
     if (acmod->state == ACMOD_STARTED)
         acmod->state = ACMOD_PROCESSING;
+    
     return orig_n_frames - *inout_n_frames;
 }
 
@@ -1299,4 +1313,15 @@ acmod_flags2list(acmod_t *acmod)
     return n;
 }
 
-/* vim: set ts=4 sw=4: */
+int32
+acmod_stream_offset(acmod_t *acmod)
+{
+    return acmod->utt_start_frame;
+}
+
+void
+acmod_start_stream(acmod_t *acmod)
+{
+    fe_start_stream(acmod->fe);
+    acmod->utt_start_frame = 0;
+}

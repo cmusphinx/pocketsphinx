@@ -184,6 +184,8 @@ struct acmod_s {
     uint8 grow_feat;    /**< Whether to grow feat_buf. */
     uint8 insen_swap;   /**< Whether to swap input senone score. */
 
+    frame_idx_t utt_start_frame; /**< Index of the utterance start in the stream, all timings are relative to that. */
+
     frame_idx_t output_frame; /**< Index of next frame of dynamic features. */
     frame_idx_t n_mfc_alloc;  /**< Number of frames allocated in mfc_buf */
     frame_idx_t n_mfc_frame;  /**< Number of frames active in mfc_buf */
@@ -435,5 +437,15 @@ void acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm);
  * Build active list from 
  */
 int32 acmod_flags2list(acmod_t *acmod);
+
+/**
+ * Get the offset of the utterance start of the current stream, helpful for stream-wide timing.
+ */
+int32 acmod_stream_offset(acmod_t *acmod);
+
+/**
+ * Reset the current stream
+ */
+void acmod_start_stream(acmod_t *acmod);
 
 #endif /* __ACMOD_H__ */

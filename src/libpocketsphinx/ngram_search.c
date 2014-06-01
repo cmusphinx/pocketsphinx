@@ -1408,4 +1408,3 @@ void ngram_search_set_lm(ngram_model_t *lm)
     default_lm = ngram_model_retain(lm);
 }
 
-/* vim: set ts=4 sw=4: */

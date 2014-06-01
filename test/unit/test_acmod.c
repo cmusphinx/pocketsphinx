@@ -146,7 +146,7 @@ main(int argc, char *argv[])
     nsamps = ftell(rawfh) / sizeof(*buf);
     bptr = buf;
     nfr = frame_counter;
-    fe_process_frames(acmod->fe, &bptr, &nsamps, cepbuf, &nfr);
+    fe_process_frames(acmod->fe, &bptr, &nsamps, cepbuf, &nfr, NULL);
     fe_end_utt(acmod->fe, cepbuf[frame_counter-1], &nfr);
 
     E_INFO("Incremental(MFCC):\n");
@@ -199,7 +199,7 @@ main(int argc, char *argv[])
     nsamps = ftell(rawfh) / sizeof(*buf);
     bptr = buf;
     nfr = frame_counter;
-    fe_process_frames(acmod->fe, &bptr, &nsamps, cepbuf, &nfr);
+    fe_process_frames(acmod->fe, &bptr, &nsamps, cepbuf, &nfr, NULL);
     fe_end_utt(acmod->fe, cepbuf[frame_counter-1], &nfr);
 
     E_INFO("Whole utterance (MFCC):\n");
