@@ -62,6 +62,7 @@
 #include "ngram_search.h"
 #include "ngram_search_fwdtree.h"
 #include "ngram_search_fwdflat.h"
+#include "allphone_search.h"
 
 static const arg_t ps_args_def[] = {
     POCKETSPHINX_OPTIONS,
@@ -314,7 +315,14 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
             return -1;
     }
 
-    if ((path = cmd_ln_str_r(ps->config, "-lm"))) {
+    if ((path = cmd_ln_str_r(ps->config, "-allphone"))) {
+        if (ps_set_allphone_file(ps, PS_DEFAULT_SEARCH, path)
+                || ps_set_search(ps, PS_DEFAULT_SEARCH))
+                return -1;
+    }
+
+    if ((path = cmd_ln_str_r(ps->config, "-lm")) && 
+        !cmd_ln_boolean_r(ps->config, "-allphone")) {
         if (ps_set_lm_file(ps, PS_DEFAULT_SEARCH, path)
             || ps_set_search(ps, PS_DEFAULT_SEARCH))
             return -1;
@@ -561,6 +569,29 @@ ps_set_lm_file(ps_decoder_t *ps, const char *name, const char *path)
 
   result = ps_set_lm(ps, name, lm);
   ngram_model_free(lm);
+  return result;
+}
+
+int
+ps_set_allphone(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
+{
+    ps_search_t *search;
+    search = allphone_search_init(lm, ps->config, ps->acmod, ps->dict, ps->d2p);
+    return set_search_internal(ps, name, search);
+}
+
+int
+ps_set_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
+{
+  ngram_model_t *lm;
+  int result;
+
+  lm = NULL;
+  if (path)
+    lm = ngram_model_read(ps->config, path, NGRAM_AUTO, ps->lmath);
+  result = ps_set_allphone(ps, name, lm);
+  if (lm)
+      ngram_model_free(lm);
   return result;
 }
 

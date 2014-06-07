@@ -231,6 +231,27 @@ int ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyfile);
 POCKETSPHINX_EXPORT 
 int ps_set_keyphrase(ps_decoder_t *ps, const char *name, const char *keyphrase);
 
+/**
+ * Adds new search based on phone N-gram language model.
+ *
+ * Associates N-gram search with the provided name. The search can be activated
+ * using ps_set_search().
+ *
+ * @see ps_set_search.
+ */ 
+POCKETSPHINX_EXPORT
+int ps_set_allphone(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
+
+/**
+ * Adds new search based on phone N-gram language model.
+ *
+ * Convenient method to load N-gram model and create a search.
+ * 
+ * @see ps_set_allphone
+ */
+POCKETSPHINX_EXPORT
+int ps_set_allphone_file(ps_decoder_t *ps, const char *name, const char *path);
+
 #ifdef __cplusplus
 }
 #endif

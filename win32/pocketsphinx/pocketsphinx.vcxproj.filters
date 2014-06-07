@@ -27,6 +27,7 @@
     <ClCompile Include="..\..\src\libpocketsphinx\tmat.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\vector.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\kws_detections.c" />
+    <ClCompile Include="..\..\src\libpocketsphinx\allphone_search.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\cmdln_macro.h" />
@@ -61,14 +62,9 @@
     <ClInclude Include="..\..\src\libpocketsphinx\tmat.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\vector.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\kws_detections.h" />
-    <ClInclude Include="..\..\src\libpocketsphinx\kws_detections.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
+    <ClInclude Include="..\..\src\libpocketsphinx\allphone_search.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\libpocketsphinx\fast_ptm.txt" />
-    <ClCompile Include="..\..\src\libpocketsphinx\kws_detections.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

@@ -146,6 +146,7 @@
     <ClInclude Include="..\..\include\ps_lattice.h" />
     <ClInclude Include="..\..\include\ps_mllr.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\acmod.h" />
+    <ClInclude Include="..\..\src\libpocketsphinx\allphone_search.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\bin_mdef.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\blkarray_list.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\dict.h" />
@@ -175,6 +176,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\libpocketsphinx\acmod.c" />
+    <ClCompile Include="..\..\src\libpocketsphinx\allphone_search.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\bin_mdef.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\blkarray_list.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\dict.c" />

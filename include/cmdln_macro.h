@@ -218,6 +218,10 @@
 
 /** Command-line options for statistical language models. */
 #define POCKETSPHINX_NGRAM_OPTIONS \
+{ "-allphone",										\
+      ARG_STRING,									\
+      NULL,										\
+      "Perform phoneme decoding with phonetic lm" },					\
 { "-lm",										\
       ARG_STRING,									\
       NULL,										\

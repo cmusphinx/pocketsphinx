@@ -9,6 +9,7 @@ enuslmdir = $(datadir)/@PACKAGE@/model/lm/en_US
 dist_enuslm_DATA = \
 	en_US/cmu07a.dic			\
 	en_US/hub4.5000.DMP			\
+	en_US/en-phone.lm.DMP			\
 	en_US/hub4.5000.dic			\
 	en_US/wsj0vp.5000.DMP
 
