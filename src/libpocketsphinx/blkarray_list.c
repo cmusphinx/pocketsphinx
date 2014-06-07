@@ -156,3 +156,17 @@ blkarray_list_reset(blkarray_list_t * bl)
     bl->cur_row = -1;
     bl->cur_row_free = bl->blksize;
 }
+
+void *
+blkarray_list_get(blkarray_list_t *list, int32 n)
+{
+    int32 r, c;
+
+    if (n >= blkarray_list_n_valid(list))
+        return NULL;
+
+    r = n / blkarray_list_blksize(list);
+    c = n - (r * blkarray_list_blksize(list));
+
+    return blkarray_list_ptr(list, r, c);
+}

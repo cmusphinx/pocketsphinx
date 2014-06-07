@@ -49,6 +49,7 @@
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"
+#include "blkarray_list.h"
 #include "hmm.h"
 
 /**
@@ -82,8 +83,7 @@ typedef struct history_s {
     int32 score;        /**< Path score for this path */
     int32 tscore;       /**< Transition score for this path */
     frame_idx_t ef;     /**< End frame */
-    struct history_s *hist;     /**< Previous history entry */
-    struct history_s *next;     /**< Next in allocated list */
+    int32 hist;         /**< Previous history entry */
 } history_t;
 
 /**
@@ -104,13 +104,10 @@ typedef struct allphone_search_s {
     ps_search_t base;
 
     hmm_context_t *hmmctx;    /**< HMM context. */
-    history_t **frm_hist;     /**< List of history nodes allocated in each frame */
-    history_t *besth;         /**< Exit node for search */
     ngram_model_t *lmset;     /**< Ngram model set */
     phmm_t **ci_phmm;         /**< PHMM lists (for each CI phone) */
     phseg_t *phseg;           /**< Phoneme segmentation. */
     int32 *ci2lmwid;          /**< Mapping of CI phones to LM word IDs */
-    int32 *score_scale;       /**< Score by which state scores scaled in each frame */
     int32 beam_orig;          /**< Global pruning threshold */
     int32 pbeam_orig;          /**< Pruning threshold for phone transition */
     float32 beam_factor;      /**< Dynamic/adaptive factor (<=1) applied to above
@@ -127,7 +124,10 @@ typedef struct allphone_search_s {
 
     int32 n_hmm_eval;          /**< Total HMMs evaluated this utt */
     int32 n_sen_eval;          /**< Total senones evaluated this utt */
-    int32 n_histnode;
+
+    /* Backtrace information */
+    int32 hist_start;
+    blkarray_list_t *frm_hist;     /**< List of history nodes allocated in each frame */
 
     ptmr_t perf; /**< Performance counter */
 

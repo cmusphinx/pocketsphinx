@@ -246,18 +246,7 @@ fsg_history_end_frame(fsg_history_t * h)
 fsg_hist_entry_t *
 fsg_history_entry_get(fsg_history_t * h, int32 id)
 {
-    blkarray_list_t *entries;
-    int32 r, c;
-
-    entries = h->entries;
-
-    if (id >= blkarray_list_n_valid(entries))
-        return NULL;
-
-    r = id / blkarray_list_blksize(entries);
-    c = id - (r * blkarray_list_blksize(entries));
-
-    return ((fsg_hist_entry_t *) blkarray_list_ptr(entries, r, c));
+    return ((fsg_hist_entry_t *) blkarray_list_get(h->entries, id));
 }
 
 
