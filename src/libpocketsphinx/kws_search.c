@@ -106,10 +106,13 @@ kws_search_seg_iter(ps_search_t * search, int32 * out_score)
 {
     kws_search_t *kwss = (kws_search_t *)search;
     kws_seg_t *itor;
-    *out_score = 0;
-
+    
     if (!kwss->detections->detect_list)
         return NULL;
+
+    if (out_score)
+        *out_score = 0;
+    
     itor = (kws_seg_t *)ckd_calloc(1, sizeof(*itor));
     itor->base.vt = &kws_segfuncs;
     itor->base.search = search;
