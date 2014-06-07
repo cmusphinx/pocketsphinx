@@ -341,14 +341,13 @@ phmm_exit(allphone_search_t * allphs, int32 best)
     for (ci = 0; ci < mdef->n_ciphone; ci++) {
         for (p = ci_phmm[(unsigned) ci]; p; p = p->next) {
             if (hmm_frame(&(p->hmm)) == curfrm) {
-                hmm_normalize(&(p->hmm), best);
 
                 if (hmm_bestscore(&(p->hmm)) >= th) {
 
                     /* Create lattice entry if exiting */
-                    if (hmm_out_score(&(p->hmm)) >= allphs->pbeam) {    /* pbeam, not th
-                                                                           because scores scaled */
-                        h = (history_t *) ckd_calloc(1, sizeof(*h));
+                    if (hmm_out_score(&(p->hmm)) >= th) {
+                	
+                	h = (history_t *) ckd_calloc(1, sizeof(*h));
                         h->ef = curfrm;
                         h->phmm = p;
                         h->hist = hmm_out_history(&(p->hmm));
@@ -413,7 +412,7 @@ phmm_exit(allphone_search_t * allphs, int32 best)
 }
 
 static void
-phmm_trans(allphone_search_t * allphs)
+phmm_trans(allphone_search_t * allphs, int32 best)
 {
     history_t *h;
     phmm_t *from, *to;
@@ -463,7 +462,7 @@ phmm_trans(allphone_search_t * allphs)
             }
 
             newscore = h->score + tscore;
-            if ((newscore > allphs->beam)
+            if ((newscore > best + allphs->beam)
                 && (newscore > hmm_in_score(&(to->hmm)))) {
                 hmm_enter(&(to->hmm), newscore, hist_idx, nf);
             }
@@ -677,7 +676,7 @@ allphone_search_step(ps_search_t * search, int frame_idx)
     senscr = acmod_score(search->acmod, &frame_idx);
     bestscr = phmm_eval_all(allphs, senscr);
     phmm_exit(allphs, bestscr);
-    phmm_trans(allphs);
+    phmm_trans(allphs, bestscr);
 
     allphs->frame++;
 

@@ -119,9 +119,6 @@ typedef struct allphone_search_s {
     frame_idx_t frame;          /**< Current frame. */
     float32 ascale;           /**< Acoustic score scale for posterior probabilities. */
 
-    int32 bestscore;          /**< For beam pruning */
-    int32 ascr, lscr;          /**< Total acoustic and lm score for utt */
-
     int32 n_hmm_eval;          /**< Total HMMs evaluated this utt */
     int32 n_sen_eval;          /**< Total senones evaluated this utt */
 
