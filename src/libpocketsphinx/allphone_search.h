@@ -90,6 +90,7 @@ typedef struct history_s {
  * Phone level segmentation information
  */
 typedef struct phseg_s {
+    ps_seg_t base;  		/**< Base structure. */
     s3cipid_t ci;               /* CI-phone id */
     frame_idx_t sf, ef;         /* Start and end frame for this phone occurrence */
     int32 score;                /* Acoustic score for this segment of alignment */

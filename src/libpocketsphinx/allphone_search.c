@@ -61,10 +61,57 @@ allphone_search_prob(ps_search_t * search)
     return 0;
 }
 
+static void
+allphone_clear_phseg(allphone_search_t * allphs);
+
+static phseg_t *
+allphone_backtrace(allphone_search_t * allphs, int32 f);
+
+static void
+allphone_search_seg_free(ps_seg_t *seg)
+{
+    return;
+}
+
+static ps_seg_t *
+allphone_search_seg_next(ps_seg_t *seg)
+{
+    phseg_t *phseg = (phseg_t*)seg;
+    ps_seg_t *nextseg = (ps_seg_t*)phseg->next;
+    
+    if (nextseg == NULL)
+	return NULL;
+    
+    nextseg->vt = seg->vt;
+    nextseg->search = seg->search;
+    nextseg->sf = phseg->sf;
+    nextseg->ef = phseg->ef;
+    nextseg->word = bin_mdef_ciphone_str(ps_search_acmod(seg->search)->mdef, phseg->ci);
+
+    return nextseg;
+}
+
+static ps_segfuncs_t fsg_segfuncs = {
+    /* seg_next */ allphone_search_seg_next,
+    /* seg_free */ allphone_search_seg_free
+};
+
+
 static ps_seg_t *
 allphone_search_seg_iter(ps_search_t * search, int32 * out_score)
 {
-    return NULL;
+    allphone_search_t *allphs = (allphone_search_t *)search;
+    phseg_t *phseg;
+    allphone_clear_phseg(allphs);
+    phseg = allphs->phseg = allphone_backtrace(allphs, allphs->frame - 1);
+
+    if (phseg == NULL)
+	return NULL;
+    
+    phseg->base.vt = &fsg_segfuncs;
+    phseg->base.search = search;
+    
+    return (ps_seg_t *)allphs->phseg;
 }
 
 static ps_searchfuncs_t allphone_funcs = {
@@ -344,60 +391,55 @@ phmm_exit(allphone_search_t * allphs, int32 best)
 
                 if (hmm_bestscore(&(p->hmm)) >= th) {
 
-                    /* Create lattice entry if exiting */
-                    if (hmm_out_score(&(p->hmm)) >= th) {
-                	
-                	h = (history_t *) ckd_calloc(1, sizeof(*h));
-                        h->ef = curfrm;
-                        h->phmm = p;
-                        h->hist = hmm_out_history(&(p->hmm));
-                        h->score = hmm_out_score(&(p->hmm));
+                    h = (history_t *) ckd_calloc(1, sizeof(*h));
+                    h->ef = curfrm;
+                    h->phmm = p;
+                    h->hist = hmm_out_history(&(p->hmm));
+                    h->score = hmm_out_score(&(p->hmm));
 
-                        if (!allphs->lmset) {
-                            h->tscore = allphs->inspen;
-                        }
-                        else {
-                            if (h->hist > 0) {
-                                int32 n_used;
-                                history_t *pred =
-                                    blkarray_list_get(frm_hist, h->hist);
+                    if (!allphs->lmset) {
+                        h->tscore = allphs->inspen;
+                    }
+                    else {
+                        if (h->hist > 0) {
+                            int32 n_used;
+                            history_t *pred =
+                                blkarray_list_get(frm_hist, h->hist);
 
-                                if (pred->hist > 0) {
-                                    history_t *pred_pred =
-                                        blkarray_list_get(frm_hist,
-                                                          h->hist);
-                                    h->tscore =
-                                        ngram_tg_score(allphs->lmset,
-                                                       ci2lmwid
-                                                       [pred_pred->phmm->
-                                                        ci],
-                                                       ci2lmwid[pred->
-                                                                phmm->ci],
-                                                       ci2lmwid[p->ci],
-                                                       &n_used) >>
-                                        SENSCR_SHIFT;
-                                }
-                                else {
-                                    h->tscore =
-                                        ngram_bg_score(allphs->lmset,
-                                                       ci2lmwid
-                                                       [pred->phmm->ci],
-                                                       ci2lmwid[p->ci],
-                                                       &n_used) >>
-                                        SENSCR_SHIFT;
-                                }
+                            if (pred->hist > 0) {
+                                history_t *pred_pred =
+                                    blkarray_list_get(frm_hist,
+                                                      h->hist);
+                                h->tscore =
+                                    ngram_tg_score(allphs->lmset,
+                                                   ci2lmwid
+                                                   [pred_pred->phmm->ci],
+                                                   ci2lmwid[pred->phmm->
+                                                            ci],
+                                                   ci2lmwid[p->ci],
+                                                   &n_used) >>
+                                    SENSCR_SHIFT;
                             }
                             else {
-                                /*
-                                 * This is the beginning SIL and in srch_allphone_begin()
-                                 * it's inscore is set to 0.
-                                 */
-                                h->tscore = 0;
+                                h->tscore =
+                                    ngram_bg_score(allphs->lmset,
+                                                   ci2lmwid
+                                                   [pred->phmm->ci],
+                                                   ci2lmwid[p->ci],
+                                                   &n_used) >>
+                                    SENSCR_SHIFT;
                             }
                         }
-
-                        blkarray_list_append(frm_hist, h);
+                        else {
+                            /*
+                             * This is the beginning SIL and in srch_allphone_begin()
+                             * it's inscore is set to 0.
+                             */
+                            h->tscore = 0;
+                        }
                     }
+
+                    blkarray_list_append(frm_hist, h);
 
                     /* Mark PHMM active in next frame */
                     hmm_frame(&(p->hmm)) = nf;
@@ -824,7 +866,6 @@ allphone_search_hyp(ps_search_t * search, int32 * out_score,
     allphs->phseg = allphone_backtrace(allphs, f);
 
     if (allphs->phseg == NULL) {
-        E_WARN("Failed to retrieve phone segmentation.\n");
         return NULL;
     }
 
@@ -833,7 +874,7 @@ allphone_search_hyp(ps_search_t * search, int32 * out_score,
         ckd_free(search->hyp_str);
     len = 0;
     for (p = allphs->phseg; p; p = p->next)
-        len += 10;              //maximum length of one phone with spacebar
+        len += 10; // maximum length of one phone with spacebar
     search->hyp_str = (char *) ckd_calloc(len, sizeof(*search->hyp_str));
     hyp_idx = 0;
     for (p = allphs->phseg; p; p = p->next) {
