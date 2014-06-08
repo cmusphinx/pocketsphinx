@@ -86,6 +86,8 @@ allphone_search_seg_next(ps_seg_t *seg)
     nextseg->search = seg->search;
     nextseg->sf = phseg->sf;
     nextseg->ef = phseg->ef;
+    nextseg->ascr = phseg->score;
+    nextseg->lscr = phseg->tscore;
     nextseg->word = bin_mdef_ciphone_str(ps_search_acmod(seg->search)->mdef, phseg->ci);
 
     return nextseg;
@@ -731,7 +733,7 @@ ascore(allphone_search_t * allphs, history_t * h)
     int32 score = h->score;
     int32 sf = 0;
 
-    if (h->hist >= 0) {
+    if (h->hist > 0) {
         history_t *pred = blkarray_list_get(allphs->frm_hist, h->hist);
         score -= pred->score;
         sf = pred->ef + 1;
@@ -786,7 +788,7 @@ allphone_backtrace(allphone_search_t * allphs, int32 f)
         s = (phseg_t *) ckd_calloc(1, sizeof(phseg_t));
         s->ci = h->phmm->ci;
         s->sf =
-            (h->hist >=
+            (h->hist >
              0) ? ((history_t *) blkarray_list_get(allphs->frm_hist,
                                                    h->hist))->ef + 1 : 0;
         s->ef = h->ef;
@@ -852,18 +854,13 @@ allphone_search_hyp(ps_search_t * search, int32 * out_score,
     allphone_search_t *allphs;
     phseg_t *p;
     bin_mdef_t *mdef;
-    int32 f;
     int len, hyp_idx, phone_idx;
 
     allphs = (allphone_search_t *) search;
     mdef = search->acmod->mdef;
     allphone_clear_phseg(allphs);
 
-    for (f = allphs->frame - 1;
-         (f >= 0) && (blkarray_list_get(allphs->frm_hist, f) == NULL);
-         --f);
-
-    allphs->phseg = allphone_backtrace(allphs, f);
+    allphs->phseg = allphone_backtrace(allphs, allphs->frame - 1);
 
     if (allphs->phseg == NULL) {
         return NULL;
