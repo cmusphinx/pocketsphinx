@@ -982,8 +982,8 @@ ps_process_raw(ps_decoder_t *ps,
     int n_searchfr = 0;
 
     if (ps->acmod->state == ACMOD_IDLE) {
-    E_ERROR("Failed to process data, utterance is not started. Use start_utt to start it\n");
-    return 0;
+	E_ERROR("Failed to process data, utterance is not started. Use start_utt to start it\n");
+	return 0;
     }
 
     if (no_search)
@@ -1076,21 +1076,24 @@ ps_end_utt(ps_decoder_t *ps)
         int32 score;
 
         hyp = ps_get_hyp(ps, &score, &uttid);
-        E_INFO("%s: %s (%d)\n", uttid, hyp, score);
-        E_INFO_NOFN("%-20s %-5s %-5s %-5s %-10s %-10s %-3s\n",
+        
+        if (hyp != NULL) {
+    	    E_INFO("%s: %s (%d)\n", uttid, hyp, score);
+    	    E_INFO_NOFN("%-20s %-5s %-5s %-5s %-10s %-10s %-3s\n",
                     "word", "start", "end", "pprob", "ascr", "lscr", "lback");
-        for (seg = ps_seg_iter(ps, &score); seg;
-             seg = ps_seg_next(seg)) {
-            char const *word;
-            int sf, ef;
-            int32 post, lscr, ascr, lback;
+    	    for (seg = ps_seg_iter(ps, &score); seg;
+        	 seg = ps_seg_next(seg)) {
+    	        char const *word;
+        	int sf, ef;
+        	int32 post, lscr, ascr, lback;
 
-            word = ps_seg_word(seg);
-            ps_seg_frames(seg, &sf, &ef);
-            post = ps_seg_prob(seg, &ascr, &lscr, &lback);
-            E_INFO_NOFN("%-20s %-5d %-5d %-1.3f %-10d %-10d %-3d\n",
-                        word, sf, ef, logmath_exp(ps_get_logmath(ps), post),
-                        ascr, lscr, lback);
+        	word = ps_seg_word(seg);
+        	ps_seg_frames(seg, &sf, &ef);
+        	post = ps_seg_prob(seg, &ascr, &lscr, &lback);
+        	E_INFO_NOFN("%-20s %-5d %-5d %-1.3f %-10d %-10d %-3d\n",
+                    	    word, sf, ef, logmath_exp(ps_get_logmath(ps), post),
+                    	ascr, lscr, lback);
+    	    }
         }
     }
     return rv;

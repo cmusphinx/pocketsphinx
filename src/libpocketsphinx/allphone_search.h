@@ -90,13 +90,19 @@ typedef struct history_s {
  * Phone level segmentation information
  */
 typedef struct phseg_s {
-    ps_seg_t base;  		/**< Base structure. */
     s3cipid_t ci;               /* CI-phone id */
     frame_idx_t sf, ef;         /* Start and end frame for this phone occurrence */
     int32 score;                /* Acoustic score for this segment of alignment */
     int32 tscore;               /* Transition ("LM") score for this segment */
-    struct phseg_s *next;       /* Next entry in alignment */
 } phseg_t;
+
+/**
+ * Segment iterator over list of phseg
+ */
+typedef struct phseg_iter_s {
+    ps_seg_t base;
+    glist_t seg;
+} phseg_iter_t;
 
 /**
  * Implementation of allphone search structure.
@@ -105,16 +111,11 @@ typedef struct allphone_search_s {
     ps_search_t base;
 
     hmm_context_t *hmmctx;    /**< HMM context. */
-    ngram_model_t *lmset;     /**< Ngram model set */
+    ngram_model_t *lm;        /**< Ngram model set */
     phmm_t **ci_phmm;         /**< PHMM lists (for each CI phone) */
-    phseg_t *phseg;           /**< Phoneme segmentation. */
     int32 *ci2lmwid;          /**< Mapping of CI phones to LM word IDs */
-    int32 beam_orig;          /**< Global pruning threshold */
-    int32 pbeam_orig;          /**< Pruning threshold for phone transition */
-    float32 beam_factor;      /**< Dynamic/adaptive factor (<=1) applied to above
-                                     beams to determine actual effective beams.
-                                     For implementing absolute pruning. */
-    int32 beam, pbeam;          /**< Effective beams after applying beam_factor */
+
+    int32 beam, pbeam;        /**< Effective beams after applying beam_factor */
     int32 lw, inspen;         /**< Language weights */
 
     frame_idx_t frame;          /**< Current frame. */
@@ -124,15 +125,13 @@ typedef struct allphone_search_s {
     int32 n_sen_eval;          /**< Total senones evaluated this utt */
 
     /* Backtrace information */
-    int32 hist_start;
-    blkarray_list_t *frm_hist;     /**< List of history nodes allocated in each frame */
+    blkarray_list_t *history;     /**< List of history nodes allocated in each frame */
+    /* Hypothesis DAG */
+    glist_t segments;
 
     ptmr_t perf; /**< Performance counter */
 
 } allphone_search_t;
-
-/* Access macros */
-#define allphone_search_frame(s)    ((s)->frame)
 
 /**
  * Create, initialize and return a search module.
