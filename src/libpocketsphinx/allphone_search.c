@@ -778,6 +778,7 @@ allphone_backtrace(allphone_search_t * allphs, int32 f)
             frm = last_frm = h->ef;
             break;
         }
+        hist_idx--;
     }
 
     if (hist_idx < 0)

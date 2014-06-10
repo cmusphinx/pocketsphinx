@@ -865,6 +865,7 @@ fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_sc
             frm = last_frm = fsg_hist_entry_frame(hist_entry);
             break;
         }
+        bpidx--;
     }
 
     /* No hypothesis (yet). */
