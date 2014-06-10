@@ -104,6 +104,7 @@ typedef struct {
     int32 ascr;
     int32 lscr;
     int32 lback;
+    int32 prob;
     int start_frame;
     int end_frame;
 } Segment;
@@ -152,7 +153,7 @@ typedef struct {} SegmentList;
 	if (!itor)
 	    return NULL;
 	seg->word = ckd_salloc(ps_seg_word(itor));
-	ps_seg_prob(itor, &(seg->ascr), &(seg->lscr), &(seg->lback));
+	seg->prob = ps_seg_prob(itor, &(seg->ascr), &(seg->lscr), &(seg->lback));
 	ps_seg_frames(itor, &seg->start_frame, &seg->end_frame);
 	return seg;
     }
