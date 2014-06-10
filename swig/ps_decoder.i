@@ -79,14 +79,17 @@
         return ps_lattice_retain(ps_get_lattice($self));
     }
 
+    %newobject get_config;
     Config *get_config() {
         return cmd_ln_retain(ps_get_config($self));
     }
 
+    %newobject default_config;
     static Config *default_config() {
         return cmd_ln_parse_r(NULL, ps_args(), 0, NULL, FALSE);
     }
 
+    %newobject file_config;
     static Config *file_config(char const * path) {
         return cmd_ln_parse_file_r(NULL, ps_args(), path, FALSE);
     }
