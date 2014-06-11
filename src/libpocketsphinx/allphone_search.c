@@ -574,7 +574,7 @@ allphone_search_init(ngram_model_t * lm,
     }
     else {
         E_WARN
-            ("-lm argument missing; doing unconstrained phone-loop decoding\n");
+            ("Failed to load language model specified in -allphone, doing unconstrained phone-loop decoding\n");
         allphs->inspen =
             (int32) (logmath_log
                      (acmod->lmath, cmd_ln_float32_r(config, "-pip"))
