@@ -178,7 +178,7 @@ phmm_link(allphone_search_t * allphs)
     rclist = (int32 *) ckd_calloc(mdef->n_ciphone + 1, sizeof(int32));
 
     /* Create successor links between PHMM nodes */
-    n_link = 0;
+    n_link = 0;    
     for (ci = 0; ci < mdef->n_ciphone; ci++) {
         for (p = ci_phmm[ci]; p; p = p->next) {
             /* Build rclist for p */
@@ -225,9 +225,8 @@ phmm_build(allphone_search_t * allphs)
     s3cipid_t ci;
     s3cipid_t *filler;
     int n_phmm, n_link;
-    int i;
+    int i, nphone;
 
-    E_INFO("Building PHMM net\n");
     mdef = ((ps_search_t *) allphs)->acmod->mdef;
     allphs->ci_phmm =
         (phmm_t **) ckd_calloc(bin_mdef_n_ciphone(mdef), sizeof(phmm_t *));
@@ -236,7 +235,9 @@ phmm_build(allphone_search_t * allphs)
 
     /* For each unique ciphone/triphone entry in mdef, create a PHMM node */
     n_phmm = 0;
-    for (pid = 0; pid < bin_mdef_n_phone(mdef); pid++) {
+    nphone = allphs->ci_only ? bin_mdef_n_ciphone(mdef) : bin_mdef_n_phone(mdef);
+    E_INFO("Building PHMM net of %d phones\n", nphone);
+    for (pid = 0; pid < nphone; pid++) {
         if ((p = phmm_lookup(allphs, pid)) == NULL) {
             //not found, should be created
             p = (phmm_t *) ckd_calloc(1, sizeof(*p));
@@ -283,8 +284,8 @@ phmm_build(allphone_search_t * allphs)
     filler[i] = BAD_S3CIPID;
 
 
-    /* Loop over cdphones */
-    for (pid = bin_mdef_n_ciphone(mdef); pid < bin_mdef_n_phone(mdef);
+    /* Loop over cdphones only if ci_only is not set */
+    for (pid = bin_mdef_n_ciphone(mdef); pid < nphone;
          pid++) {
         p = pid2phmm[pid];
 
@@ -544,6 +545,9 @@ allphone_search_init(ngram_model_t * lm,
         ps_search_free(ps_search_base(allphs));
         return NULL;
     }
+
+    allphs->ci_only = cmd_ln_boolean_r(config, "-allphone_ci");
+
     phmm_build(allphs);
 
     if (lm) {
@@ -581,6 +585,7 @@ allphone_search_init(ngram_model_t * lm,
                      * allphs->lw) >> SENSCR_SHIFT;
     }
 
+    allphs->n_tot_frame = 0;
     allphs->frame = -1;
     allphs->segments = NULL;
 
@@ -598,7 +603,6 @@ allphone_search_init(ngram_model_t * lm,
 
     /* LM related weights/penalties */
     allphs->lw = cmd_ln_float32_r(config, "-lw");
-
     allphs->history = blkarray_list_init();
 
     /* Acoustic score scale for posterior probabilities. */
@@ -638,6 +642,16 @@ void
 allphone_search_free(ps_search_t * search)
 {
     allphone_search_t *allphs = (allphone_search_t *) search;
+
+    double n_speech = (double)allphs->n_tot_frame
+            / cmd_ln_int32_r(ps_search_config(allphs), "-frate");
+
+    E_INFO("TOTAL fwdflat %.2f CPU %.3f xRT\n",
+           allphs->perf.t_tot_cpu,
+           allphs->perf.t_tot_cpu / n_speech);
+    E_INFO("TOTAL fwdflat %.2f wall %.3f xRT\n",
+           allphs->perf.t_tot_elapsed,
+           allphs->perf.t_tot_elapsed / n_speech);
 
     ps_search_deinit(search);
     hmm_context_free(allphs->hmmctx);
@@ -828,6 +842,7 @@ allphone_search_finish(ps_search_t * search)
 
     allphs = (allphone_search_t *) search;
 
+    allphs->n_tot_frame += allphs->frame;
     n_hist = blkarray_list_n_valid(allphs->history);
     E_INFO
         ("%d frames, %d HMMs (%d/fr), %d senones (%d/fr), %d history entries (%d/fr)\n",

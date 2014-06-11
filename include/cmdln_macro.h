@@ -222,6 +222,10 @@
       ARG_STRING,									\
       NULL,										\
       "Perform phoneme decoding with phonetic lm" },					\
+{ "-allphone_ci",									\
+      ARG_BOOLEAN,									\
+      "no",										\
+      "Perform phoneme decoding with phonetic lm and context-independent units only" }, \
 { "-lm",										\
       ARG_STRING,									\
       NULL,										\

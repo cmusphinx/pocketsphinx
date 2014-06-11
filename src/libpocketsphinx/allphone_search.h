@@ -112,6 +112,7 @@ typedef struct allphone_search_s {
 
     hmm_context_t *hmmctx;    /**< HMM context. */
     ngram_model_t *lm;        /**< Ngram model set */
+    int32 ci_only; 	      /**< Use context-independent phones for decoding */
     phmm_t **ci_phmm;         /**< PHMM lists (for each CI phone) */
     int32 *ci2lmwid;          /**< Mapping of CI phones to LM word IDs */
 
@@ -121,6 +122,7 @@ typedef struct allphone_search_s {
     frame_idx_t frame;          /**< Current frame. */
     float32 ascale;           /**< Acoustic score scale for posterior probabilities. */
 
+    int32 n_tot_frame;         /**< Total number of frames processed */
     int32 n_hmm_eval;          /**< Total HMMs evaluated this utt */
     int32 n_sen_eval;          /**< Total senones evaluated this utt */
 
