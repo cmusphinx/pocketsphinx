@@ -879,6 +879,7 @@ allphone_search_hyp(ps_search_t * search, int32 * out_score,
     allphone_search_t *allphs;
     phseg_t *p;
     gnode_t *gn;
+    const char *phone_str;
     bin_mdef_t *mdef;
     int len, hyp_idx, phone_idx;
 
@@ -901,7 +902,7 @@ allphone_search_hyp(ps_search_t * search, int32 * out_score,
     hyp_idx = 0;
     for (gn = allphs->segments; gn; gn = gn->next) {
 	p = gnode_ptr(gn);
-        char *phone_str = (char *) bin_mdef_ciphone_str(mdef, p->ci);
+        phone_str = bin_mdef_ciphone_str(mdef, p->ci);
         phone_idx = 0;
         while (phone_str[phone_idx] != '\0')
             search->hyp_str[hyp_idx++] = phone_str[phone_idx++];
