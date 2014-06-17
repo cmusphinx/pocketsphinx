@@ -86,6 +86,10 @@ static const arg_t cont_args_def[] = {
      ARG_STRING,
      NULL,
      "Audio file to transcribe."},
+    {"-inmic",
+     ARG_BOOLEAN,
+     "no",
+     "Transcribe audio from microphone."},
     {"-time",
      ARG_BOOLEAN,
      "no",
@@ -259,8 +263,12 @@ main(int argc, char *argv[])
     if (config && (cfg = cmd_ln_str_r(config, "-argfile")) != NULL) {
         config = cmd_ln_parse_file_r(config, cont_args_def, cfg, FALSE);
     }
-    if (config == NULL)
-        return 1;
+
+    if (config == NULL || (cmd_ln_str_r(config, "-infile") == NULL && cmd_ln_boolean_r(config, "-inmic") == FALSE)) {
+	E_INFO("Specify '-infile <file.wav>' to recognize from file or '-inmic yes' to recognize from microphone.");
+	cmd_ln_free_r(config);
+	return 1;
+    }
 
     ps_default_search_args(config);
     ps = ps_init(config);
@@ -273,16 +281,15 @@ main(int argc, char *argv[])
 
     if (cmd_ln_str_r(config, "-infile") != NULL) {
         recognize_from_file();
-    }
-    else {
-        /* Make sure we exit cleanly (needed for profiling among other things) */
-        /* Signals seem to be broken in arm-wince-pe. */
+    } else if (cmd_ln_boolean_r(config, "-inmic")) {
+	/* Make sure we exit cleanly (needed for profiling among other things) */
+    	/* Signals seem to be broken in arm-wince-pe. */
 #if !defined(GNUWINCE) && !defined(_WIN32_WCE) && !defined(__SYMBIAN32__)
-        signal(SIGINT, &sighandler);
+    	signal(SIGINT, &sighandler);
 #endif
         if (setjmp(jbuf) == 0) {
-            recognize_from_microphone();
-        }
+    	    recognize_from_microphone();
+    	}
     }
 
     ps_free(ps);
