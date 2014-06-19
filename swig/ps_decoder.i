@@ -74,6 +74,11 @@
     void add_word(char const *word, char const *phones, int update, int *errcode) {
         *errcode = ps_add_word($self, word, phones, update);
     }
+    
+    %newobject lookup_word;
+    char * lookup_word(const char *word) {
+	return ps_lookup_word($self, word);
+    }
 
     Lattice * get_lattice() {
         return ps_lattice_retain(ps_get_lattice($self));

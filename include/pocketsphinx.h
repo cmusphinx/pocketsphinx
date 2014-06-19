@@ -265,6 +265,21 @@ int ps_add_word(ps_decoder_t *ps,
                 char const *phones,
                 int update);
 
+/** 
+ * Lookup for the word in the dictionary and return phone transcription
+ * for it.
+ *
+ * @param ps Pocketsphinx decoder
+ * @param word Word to look for
+ *
+ * @return Whitespace-spearated phone string describing the pronunciation of the <code>word</code>
+ *         or NULL if word is not present in the dictionary. The string is
+ *         allocated and must be freed by the user.
+ */
+POCKETSPHINX_EXPORT
+char *ps_lookup_word(ps_decoder_t *ps, 
+	             const char *word);
+
 /**
  * Decode a raw audio stream.
  *

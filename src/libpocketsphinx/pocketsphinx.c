@@ -798,6 +798,29 @@ ps_add_word(ps_decoder_t *ps,
     return wid;
 }
 
+char *
+ps_lookup_word(ps_decoder_t *ps, const char *word)
+{
+    s3wid_t wid;
+    int32 phlen, j;
+    char *phones;
+    dict_t *dict = ps->dict;
+    
+    wid = dict_wordid(dict, word);
+    if (wid == BAD_S3WID)
+	return NULL;
+
+    for (phlen = j = 0; j < dict_pronlen(dict, wid); ++j)
+        phlen += strlen(dict_ciphone_str(dict, wid, j)) + 1;
+    phones = ckd_calloc(1, phlen);
+    for (j = 0; j < dict_pronlen(dict, wid); ++j) {
+        strcat(phones, dict_ciphone_str(dict, wid, j));
+        if (j != dict_pronlen(dict, wid) - 1)
+            strcat(phones, " ");
+    }
+    return phones;
+}
+
 int
 ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
               char const *uttid, long maxsamps)

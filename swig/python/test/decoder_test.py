@@ -50,6 +50,10 @@ config.set_string('-lm', path.join(MODELDIR, 'lm/en_US/hub4.5000.DMP'))
 config.set_string('-dict', path.join(MODELDIR, 'lm/en_US/hub4.5000.dic'))
 decoder = Decoder(config)
 
+
+print "Pronunciation for word 'hello' is ", decoder.lookup_word("hello");
+print "Pronunciation for word 'abcdf' is ", decoder.lookup_word("abcdf");
+
 # Decode static file.
 decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
 
