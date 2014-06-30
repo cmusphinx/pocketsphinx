@@ -81,15 +81,15 @@ static ngram_model_t *default_lm;
 static void
 ngram_search_update_widmap(ngram_search_t *ngs)
 {
-    const char **words;
+    char const **words;
     int32 i, n_words;
 
     /* It's okay to include fillers since they won't be in the LM */
     n_words = ps_search_n_words(ngs);
-    words = ckd_calloc(n_words, sizeof(*words));
+    words = (char const**)ckd_calloc(n_words, sizeof(*words));
     /* This will include alternates, again, that's okay since they aren't in the LM */
     for (i = 0; i < n_words; ++i)
-        words[i] = (const char *)dict_wordstr(ps_search_dict(ngs), i);
+        words[i] = dict_wordstr(ps_search_dict(ngs), i);
     ngram_model_set_map_words(ngs->lmset, words, n_words);
     ckd_free(words);
 }

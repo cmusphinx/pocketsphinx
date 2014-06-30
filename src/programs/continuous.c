@@ -59,7 +59,7 @@
 #include <signal.h>
 #include <setjmp.h>
 #endif
-#if defined(WIN32) && !defined(GNUWINCE)
+#if defined(_WIN32) && !defined(GNUWINCE)
 #include <time.h>
 #else
 #include <sys/types.h>
@@ -176,7 +176,7 @@ recognize_from_file()
 static void
 sleep_msec(int32 ms)
 {
-#if (defined(WIN32) && !defined(GNUWINCE)) || defined(_WIN32_WCE)
+#if (defined(_WIN32) && !defined(GNUWINCE)) || defined(_WIN32_WCE)
     Sleep(ms);
 #else
     /* ------------------- Unix ------------------ */

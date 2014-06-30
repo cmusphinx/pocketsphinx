@@ -44,6 +44,7 @@
 /* System headers. */
 #include <assert.h>
 #include <string.h>
+#include <math.h>
 
 /* SphinxBase headers. */
 #include <sphinxbase/prim_type.h>
@@ -855,7 +856,7 @@ acmod_read_senfh_header(acmod_t *acmod)
         }
 
         if (!strcmp(name[i], "logbase")) {
-            if (abs(atof(val[i]) - logmath_get_base(acmod->lmath)) > 0.001) {
+            if (fabs(atof(val[i]) - logmath_get_base(acmod->lmath)) > 0.001) {
                 E_ERROR("Logbase in senone file (%f) does not match acmod "
                         "(%f)\n", atof(val[i]),
                         logmath_get_base(acmod->lmath));

@@ -503,7 +503,7 @@ ps_search_iter_val(ps_search_iter_t *itor)
 void 
 ps_search_iter_free(ps_search_iter_t *itor)
 {
-   return hash_table_iter_free((hash_iter_t *)itor);
+    hash_table_iter_free((hash_iter_t *)itor);
 }
 
 ngram_model_t *

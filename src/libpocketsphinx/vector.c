@@ -80,7 +80,7 @@
 /* Local headers. */
 #include "vector.h"
 
-#if (WIN32)
+#if defined(_WIN32)
 #define srandom	srand
 #define random	rand
 #endif
