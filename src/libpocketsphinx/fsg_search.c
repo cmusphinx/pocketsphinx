@@ -848,7 +848,7 @@ fsg_search_finish(ps_search_t *search)
 static int
 fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_score, int32* out_is_final)
 {
-    fsg_hist_entry_t *hist_entry;
+    fsg_hist_entry_t *hist_entry = NULL;
     fsg_model_t *fsg;
     int bpidx, frm, last_frm, besthist;
     int32 bestscore;
