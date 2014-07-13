@@ -465,8 +465,12 @@ acmod_end_utt(acmod_t *acmod)
         /* nfr is always either zero or one. */
         fe_end_utt(acmod->fe, acmod->mfc_buf[inptr], &nfr);
         acmod->n_mfc_frame += nfr;
-        /* Process whatever's left, and any leadout. */
-        nfr = acmod_process_mfcbuf(acmod);
+        
+        /* Process whatever's left, and any leadout or update stats if needed. */
+        if (nfr)
+            nfr = acmod_process_mfcbuf(acmod);
+        else
+            feat_update_stats(acmod->fcb);
     }
     if (acmod->mfcfh) {
         int32 outlen, rv;
