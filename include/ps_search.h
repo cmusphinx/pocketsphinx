@@ -199,6 +199,16 @@ POCKETSPHINX_EXPORT
 int ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path);
 
 /**
+ * Adds new search using JSGF model.
+ *
+ * Convenience method to parse JSGF model from string and create a search.
+ *
+ * @see ps_set_fsg
+ */
+POCKETSPHINX_EXPORT
+int ps_set_jsgf_string(ps_decoder_t *ps, const char *name, const char *jsgf_string);
+
+/**
  * Get the current Key phrase to spot
  *
  * If KWS is not enabled, this returns NULL. Call

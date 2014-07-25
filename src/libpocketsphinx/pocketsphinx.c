@@ -619,7 +619,8 @@ ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
     return set_search_internal(ps, name, search);
 }
 
-int ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
+int 
+ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
 {
   fsg_model_t *fsg;
   jsgf_rule_t *rule;
@@ -666,6 +667,56 @@ int ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
   fsg_model_free(fsg);
   return result;
 }
+
+int 
+ps_set_jsgf_string(ps_decoder_t *ps, const char *name, const char *jsgf_string)
+{
+  fsg_model_t *fsg;
+  jsgf_rule_t *rule;
+  char const *toprule;
+  jsgf_t *jsgf = jsgf_parse_string(jsgf_string, NULL);
+  float lw;
+  int result;
+
+  if (!jsgf)
+      return -1;
+
+  rule = NULL;
+  /* Take the -toprule if specified. */
+  if ((toprule = cmd_ln_str_r(ps->config, "-toprule"))) {
+      char *ruletok;
+      ruletok = string_join("<", toprule, ">", NULL);
+      rule = jsgf_get_rule(jsgf, ruletok);
+      ckd_free(ruletok);
+      if (rule == NULL) {
+          E_ERROR("Start rule %s not found\n", toprule);
+          return -1;
+      }
+  } else {
+      /* Otherwise, take the first public rule. */
+      jsgf_rule_iter_t *itor;
+
+      for (itor = jsgf_rule_iter(jsgf); itor;
+           itor = jsgf_rule_iter_next(itor)) {
+          rule = jsgf_rule_iter_rule(itor);
+          if (jsgf_rule_public(rule)) {
+              jsgf_rule_iter_free(itor);
+              break;
+          }
+      }
+      if (rule == NULL) {
+          E_ERROR("No public rules found in input string\n");
+          return -1;
+      }
+  }
+
+  lw = cmd_ln_float32_r(ps->config, "-lw");
+  fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, lw);
+  result = ps_set_fsg(ps, name, fsg);
+  fsg_model_free(fsg);
+  return result;
+}
+
 
 int
 ps_load_dict(ps_decoder_t *ps, char const *dictfile,

@@ -137,7 +137,7 @@ check_wav_header(char *header, int expected_sr)
     }
     sr = ((header[24] & 0xFF) | ((header[25] & 0xFF) << 8) | ((header[26] & 0xFF) << 16) | ((header[27] & 0xFF) << 24));
     if (sr != expected_sr) {
-        E_ERROR("Input audio file has sample rate [%d], but the tool expects [%d]\n", sr, expected_sr);
+        E_ERROR("Input audio file has sample rate [%d], but decoder expects [%d]\n", sr, expected_sr);
         return 0;
     }
     return 1;
@@ -149,26 +149,26 @@ check_wav_header(char *header, int expected_sr)
 static void
 recognize_from_file()
 {
-
     int16 adbuf[4096];
-
+    const char *fname;
     const char *hyp;
     const char *uttid;
-
     int32 k;
     uint8 utt_started, in_speech;
-
-    char waveheader[44];
     int32 print_times = cmd_ln_boolean_r(config, "-time");
 
-    if ((rawfd = fopen(cmd_ln_str_r(config, "-infile"), "rb")) == NULL) {
+    fname = cmd_ln_str_r(config, "-infile");
+    if ((rawfd = fopen(fname, "rb")) == NULL) {
         E_FATAL_SYSTEM("Failed to open file '%s' for reading",
-                       cmd_ln_str_r(config, "-infile"));
+                       fname);
     }
-    fread(waveheader, 1, 44, rawfd);
-    if (!check_wav_header(waveheader, (int)cmd_ln_float32_r(config, "-samprate")))
-        E_FATAL_SYSTEM("Failed to process file '%s'. Wrong format",
-                       cmd_ln_str_r(config, "-infile"));
+    
+    if (strlen(fname) > 4 && strcmp(fname + strlen(fname) - 4, ".wav") == 0) {
+        char waveheader[44];
+	fread(waveheader, 1, 44, rawfd);
+	if (!check_wav_header(waveheader, (int)cmd_ln_float32_r(config, "-samprate")))
+    	    E_FATAL("Failed to process file '%s' due to format mismatch.\n", fname);
+    }
     
     utt_started = FALSE;
     ps_start_utt(ps, NULL);
