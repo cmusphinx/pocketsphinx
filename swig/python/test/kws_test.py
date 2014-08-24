@@ -33,21 +33,40 @@
 # ====================================================================
 
 
-from os import environ, path
-
+import sys, os
 from pocketsphinx import *
-from sphinxbase import *
 
-MODELDIR = "../../../model"
-DATADIR = "../../../test/data"
+
+modeldir = "../../../model"
+datadir = "../../../test/data"
 
 # Create a decoder with certain model
 config = Decoder.default_config()
-config.set_string('-hmm', path.join(MODELDIR, 'hmm/en_US/hub4wsj_sc_8k'))
-config.set_string('-lm', path.join(MODELDIR, 'lm/en_US/hub4.5000.DMP'))
-config.set_string('-dict', path.join(MODELDIR, 'lm/en_US/hub4.5000.dic'))
-decoder = Decoder(config)
+config.set_string('-hmm', os.path.join(modeldir, 'hmm/en_US/hub4wsj_sc_8k'))
+config.set_string('-dict', os.path.join(modeldir, 'lm/en_US/cmu07a.dic'))
+config.set_string('-keyphrase', 'forward')
+config.set_float('-kws_threshold', 1e-20)
 
-decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
-decoder.get_lattice().write('goforward.lat')
-decoder.get_lattice().write_htk('goforward.htk')
+
+# Open file to read the data
+stream = open(os.path.join(datadir, "goforward.raw"))
+
+# Alternatively you can read from microphone
+# import pyaudio
+# 
+# p = pyaudio.PyAudio()
+# stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=1024)
+# stream.start_stream()
+
+# Process audio chunk by chunk. On keyword detected perform action and restart search
+decoder = Decoder(config)
+decoder.start_utt('spotting')
+while True:
+    buf = stream.read(1024)
+    if not buf:
+	break
+    decoder.process_raw(buf, False, False)
+    if decoder.hyp() != None and decoder.hyp().hypstr == 'forward':
+    	print "Detected keyword, restarting search"
+	decoder.end_utt()
+	decoder.start_utt('spotting')

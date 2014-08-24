@@ -1,4 +1,3 @@
-#  *  c basic offset: 4; indent tabs mode: nil  *  */
 # ====================================================================
 # Copyright (c) 2013 Carnegie Mellon University.  All rights
 # reserved.
