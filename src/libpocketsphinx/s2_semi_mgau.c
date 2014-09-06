@@ -79,7 +79,7 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
     vqFeature_t *topn;
 
     topn = s->f[feat];
-    ceplen = s->veclen[feat];
+    ceplen = s->g->featlen[feat];
 
     for (i = 0; i < s->max_topn; i++) {
         mfcc_t *mean, diff, sqdiff, compl; /* diff, diff^2, component likelihood */
@@ -89,9 +89,9 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
         int32 cw, j;
 
         cw = topn[i].codeword;
-        mean = s->means[feat][0] + cw * ceplen;
-        var = s->vars[feat][0] + cw * ceplen;
-        d = s->dets[feat][cw];
+        mean = s->g->mean[0][feat][0] + cw * ceplen;
+        var = s->g->var[0][feat][0] + cw * ceplen;
+        d = s->g->det[0][feat][cw];
         obs = z;
         for (j = 0; j < ceplen; j++) {
             diff = *obs++ - *mean++;
@@ -121,11 +121,11 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
 
     best = topn = s->f[feat];
     worst = topn + (s->max_topn - 1);
-    mean = s->means[feat][0];
-    var = s->vars[feat][0];
-    det = s->dets[feat];
+    mean = s->g->mean[0][feat][0];
+    var = s->g->var[0][feat][0];
+    det = s->g->det[0][feat];
     detE = det + s->n_density;
-    ceplen = s->veclen[feat];
+    ceplen = s->g->featlen[feat];
 
     for (detP = det; detP < detE; ++detP) {
         mfcc_t diff, sqdiff, compl; /* diff, diff^2, component likelihood */
@@ -842,6 +842,7 @@ s2_semi_mgau_frame_eval(ps_mgau_t *ps,
 {
     s2_semi_mgau_t *s = (s2_semi_mgau_t *)ps;
     int i, topn_idx;
+    int n_feat = s->g->n_feat;
 
     memset(senone_scores, 0, s->n_sen * sizeof(*senone_scores));
     /* No bounds checking is done here, which just means you'll get
@@ -849,7 +850,7 @@ s2_semi_mgau_frame_eval(ps_mgau_t *ps,
      * that's too far in the past. */
     topn_idx = frame % s->n_topn_hist;
     s->f = s->topn_hist[topn_idx];
-    for (i = 0; i < s->n_feat; ++i) {
+    for (i = 0; i < n_feat; ++i) {
         /* For past frames this will already be computed. */
         if (frame >= ps_mgau_base(ps)->frame_idx) {
             vqFeature_t **lastf;
@@ -889,7 +890,7 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
     int32 do_swap, do_mmap;
     size_t offset;
     int n_clust = 0;
-    int n_feat = s->n_feat;
+    int n_feat = n_feat;
     int n_density = s->n_density;
     int n_sen = bin_mdef_n_sen(mdef);
     int n_bits = 8;
@@ -990,9 +991,9 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
         E_INFO("Rows: %d, Columns: %d\n", r, c);
     }
 
-    if (n_feat != s->n_feat) {
+    if (n_feat != n_feat) {
         E_ERROR("Number of feature streams mismatch: %d != %d\n",
-                n_feat, s->n_feat);
+                n_feat, n_feat);
         goto error_out;
     }
     if (n_density != s->n_density) {
@@ -1045,7 +1046,7 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
 
     /* Set up pointers, or read, or whatever */
     if (s->sendump_mmap) {
-        s->mixw = ckd_calloc_2d(s->n_feat, n_density, sizeof(*s->mixw));
+        s->mixw = ckd_calloc_2d(n_feat, n_density, sizeof(*s->mixw));
         for (n = 0; n < n_feat; n++) {
             int step = c;
             if (n_bits == 4)
@@ -1130,8 +1131,8 @@ read_mixw(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
         || (bio_fread(&n, sizeof(int32), 1, fp, byteswap, &chksum) != 1)) {
         E_FATAL("bio_fread(%s) (arraysize) failed\n", file_name);
     }
-    if (n_feat != s->n_feat)
-        E_FATAL("#Features streams(%d) != %d\n", n_feat, s->n_feat);
+    if (n_feat != n_feat)
+        E_FATAL("#Features streams(%d) != %d\n", n_feat, n_feat);
     if (n != n_sen * n_feat * n_comp) {
         E_FATAL
             ("%s: #float32s(%d) doesn't match header dimensions: %d x %d x %d\n",
@@ -1144,7 +1145,7 @@ read_mixw(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
     s->n_sen = n_sen;
 
     /* Quantized mixture weight arrays. */
-    s->mixw = ckd_calloc_3d(s->n_feat, s->n_density, n_sen, sizeof(***s->mixw));
+    s->mixw = ckd_calloc_3d(n_feat, s->n_density, n_sen, sizeof(***s->mixw));
 
     /* Temporary structure to read in floats before conversion to (int32) logs3 */
     pdf = (float32 *) ckd_calloc(n_comp, sizeof(float32));
@@ -1230,6 +1231,7 @@ s2_semi_mgau_init(acmod_t *acmod)
     ps_mgau_t *ps;
     char const *sendump_path;
     int i;
+    int n_feat;
 
     s = ckd_calloc(1, sizeof(*s));
     s->config = acmod->config;
@@ -1255,22 +1257,19 @@ s2_semi_mgau_init(acmod_t *acmod)
     /* Currently only a single codebook is supported. */
     if (s->g->n_mgau != 1)
         goto error_out;
-    /* FIXME: maintaining pointers for convenience for now */
-    s->means = s->g->mean[0];
-    s->vars = s->g->var[0];
-    s->dets = s->g->det[0];
-    s->veclen = s->g->featlen;    
+
+    n_feat = s->g->n_feat;
+
     /* Verify n_feat and veclen, against acmod. */
-    s->n_feat = s->g->n_feat;
-    if (s->n_feat != feat_dimension1(acmod->fcb)) {
+    if (n_feat != feat_dimension1(acmod->fcb)) {
         E_ERROR("Number of streams does not match: %d != %d\n",
-                s->n_feat, feat_dimension1(acmod->fcb));
+                n_feat, feat_dimension1(acmod->fcb));
         goto error_out;
     }
-    for (i = 0; i < s->n_feat; ++i) {
-        if (s->veclen[i] != feat_dimension2(acmod->fcb, i)) {
+    for (i = 0; i < n_feat; ++i) {
+        if (s->g->featlen[i] != feat_dimension2(acmod->fcb, i)) {
             E_ERROR("Dimension of stream %d does not match: %d != %d\n",
-                    i, s->veclen[i], feat_dimension2(acmod->fcb, i));
+                    i, s->g->featlen[i], feat_dimension2(acmod->fcb, i));
             goto error_out;
         }
     }
@@ -1290,12 +1289,12 @@ s2_semi_mgau_init(acmod_t *acmod)
     s->ds_ratio = cmd_ln_int32_r(s->config, "-ds");
 
     /* Determine top-N for each feature */
-    s->topn_beam = ckd_calloc(s->n_feat, sizeof(*s->topn_beam));
+    s->topn_beam = ckd_calloc(n_feat, sizeof(*s->topn_beam));
     s->max_topn = cmd_ln_int32_r(s->config, "-topn");
-    split_topn(cmd_ln_str_r(s->config, "-topn_beam"), s->topn_beam, s->n_feat);
+    split_topn(cmd_ln_str_r(s->config, "-topn_beam"), s->topn_beam, n_feat);
     E_INFO("Maximum top-N: %d ", s->max_topn);
     E_INFOCONT("Top-N beams:");
-    for (i = 0; i < s->n_feat; ++i) {
+    for (i = 0; i < n_feat; ++i) {
         E_INFOCONT(" %d", s->topn_beam[i]);
     }
     E_INFOCONT("\n");
@@ -1303,13 +1302,13 @@ s2_semi_mgau_init(acmod_t *acmod)
     /* Top-N scores from recent frames */
     s->n_topn_hist = cmd_ln_int32_r(s->config, "-pl_window") + 2;
     s->topn_hist = (vqFeature_t ***)
-        ckd_calloc_3d(s->n_topn_hist, s->n_feat, s->max_topn,
+        ckd_calloc_3d(s->n_topn_hist, n_feat, s->max_topn,
                       sizeof(***s->topn_hist));
-    s->topn_hist_n = ckd_calloc_2d(s->n_topn_hist, s->n_feat,
+    s->topn_hist_n = ckd_calloc_2d(s->n_topn_hist, n_feat,
                                    sizeof(**s->topn_hist_n));
     for (i = 0; i < s->n_topn_hist; ++i) {
         int j;
-        for (j = 0; j < s->n_feat; ++j) {
+        for (j = 0; j < n_feat; ++j) {
             int k;
             for (k = 0; k < s->max_topn; ++k) {
                 s->topn_hist[i][j][k].score = WORST_DIST;
