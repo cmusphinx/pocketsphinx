@@ -208,6 +208,11 @@ read_mfc_file(FILE *infh, int sf, int ef, int *out_nfr, int ceplen)
             return NULL;
         }
     }
+    
+    if (nmfc == 0) {
+	E_ERROR("Empty mfcc file\n");
+	return NULL;
+    }
 
     fseek(infh, sf * 4 * ceplen, SEEK_CUR);
     if (ef == -1)
