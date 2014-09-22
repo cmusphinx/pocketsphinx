@@ -124,7 +124,7 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
     mean = s->g->mean[0][feat][0];
     var = s->g->var[0][feat][0];
     det = s->g->det[0][feat];
-    detE = det + s->n_density;
+    detE = det + s->g->n_density;
     ceplen = s->g->featlen[feat];
 
     for (detP = det; detP < detE; ++detP) {
@@ -890,8 +890,8 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
     int32 do_swap, do_mmap;
     size_t offset;
     int n_clust = 0;
-    int n_feat = n_feat;
-    int n_density = s->n_density;
+    int n_feat = s->g->n_feat;
+    int n_density = s->g->n_density;
     int n_sen = bin_mdef_n_sen(mdef);
     int n_bits = 8;
 
@@ -991,14 +991,14 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
         E_INFO("Rows: %d, Columns: %d\n", r, c);
     }
 
-    if (n_feat != n_feat) {
+    if (n_feat != s->g->n_feat) {
         E_ERROR("Number of feature streams mismatch: %d != %d\n",
-                n_feat, n_feat);
+                n_feat, s->g->n_feat);
         goto error_out;
     }
-    if (n_density != s->n_density) {
+    if (n_density != s->g->n_density) {
         E_ERROR("Number of densities mismatch: %d != %d\n",
-                n_density, s->n_density);
+                n_density, s->g->n_density);
         goto error_out;
     }
     if (n_sen != s->n_sen) {
@@ -1145,7 +1145,7 @@ read_mixw(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
     s->n_sen = n_sen;
 
     /* Quantized mixture weight arrays. */
-    s->mixw = ckd_calloc_3d(n_feat, s->n_density, n_sen, sizeof(***s->mixw));
+    s->mixw = ckd_calloc_3d(n_feat, s->g->n_density, n_sen, sizeof(***s->mixw));
 
     /* Temporary structure to read in floats before conversion to (int32) logs3 */
     pdf = (float32 *) ckd_calloc(n_comp, sizeof(float32));
@@ -1273,7 +1273,6 @@ s2_semi_mgau_init(acmod_t *acmod)
             goto error_out;
         }
     }
-    s->n_density = s->g->n_density;
     /* Read mixture weights */
     if ((sendump_path = cmd_ln_str_r(s->config, "-sendump"))) {
         if (read_sendump(s, acmod->mdef, sendump_path) < 0) {

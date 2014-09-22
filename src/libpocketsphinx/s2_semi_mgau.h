@@ -66,7 +66,6 @@ struct s2_semi_mgau_s {
     mmio_file_t *sendump_mmap;/* memory map for mixw (or NULL if not mmap) */
 
     uint8 *mixw_cb;    /* mixture weight codebook, if any (assume it contains 16 values) */
-    int16 n_density;	/* Number of mixtures per codebook */
     int32 n_sen;	/* Number of senones */
     uint8 *topn_beam;   /* Beam for determining per-frame top-N densities */
     int16 max_topn;
