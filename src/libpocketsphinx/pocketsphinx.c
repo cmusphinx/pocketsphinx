@@ -876,7 +876,7 @@ int
 ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
               char const *uttid, long maxsamps)
 {
-    long total, pos;
+    long total, pos = 0;
 
     ps_start_utt(ps, uttid);
     /* If this file is seekable or maxsamps is specified, then decode
