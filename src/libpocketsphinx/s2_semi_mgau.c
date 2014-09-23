@@ -1131,8 +1131,8 @@ read_mixw(s2_semi_mgau_t * s, char const *file_name, double SmoothMin)
         || (bio_fread(&n, sizeof(int32), 1, fp, byteswap, &chksum) != 1)) {
         E_FATAL("bio_fread(%s) (arraysize) failed\n", file_name);
     }
-    if (n_feat != n_feat)
-        E_FATAL("#Features streams(%d) != %d\n", n_feat, n_feat);
+    if (n_feat != s->g->n_feat)
+        E_FATAL("#Features streams(%d) != %d\n", n_feat, s->g->n_feat);
     if (n != n_sen * n_feat * n_comp) {
         E_FATAL
             ("%s: #float32s(%d) doesn't match header dimensions: %d x %d x %d\n",
