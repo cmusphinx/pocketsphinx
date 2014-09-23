@@ -8,27 +8,6 @@ AC_CONFIG_MACRO_DIR([m4])
 CFLAGS=${CFLAGS:--g -O2 -Wall}
 
 AC_CANONICAL_HOST
-
-dnl
-dnl Set proper compiler flags and such for some platforms
-dnl
-case $host in
-     arm-wince-pe*)
-	CFLAGS=${CFLAGS:--march=armv4 -mapcs-32 -malignment-traps}
-	LIBS='-lc -lgcc -lwinsock -lcoredll'
-	CFLAGS="$CFLAGS -DNEWLIB -DSARM -DWIN32 -DGNUWINCE"
-	;;
-     *apple*)
-        LIBS="$LIBS -framework CoreAudio -framework AudioToolbox"
-        ;;
-     *uclinux*)
-	# uClinux needs special "flat" binaries
-	LDFLAGS="$LDFLAGS -Wl,-elf2flt"
-	;;
-     *)
-     ;;
-esac     
-
 AC_PROG_CC
 AM_PROG_LIBTOOL
 AC_WORDS_BIGENDIAN
