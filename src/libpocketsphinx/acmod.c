@@ -473,7 +473,8 @@ acmod_end_utt(acmod_t *acmod)
             feat_update_stats(acmod->fcb);
     }
     if (acmod->mfcfh) {
-        int32 outlen, rv;
+        long outlen;
+        int32 rv;
         outlen = (ftell(acmod->mfcfh) - 4) / 4;
         if (!WORDS_BIGENDIAN)
             SWAP_INT32(&outlen);
@@ -971,7 +972,7 @@ acmod_read_scores_internal(acmod_t *acmod)
 {
     FILE *senfh = acmod->insenfh;
     int16 n_active;
-    int rv;
+    size_t rv;
 
     if (acmod->n_feat_frame == acmod->n_feat_alloc) {
         if (acmod->grow_feat)
@@ -982,44 +983,46 @@ acmod_read_scores_internal(acmod_t *acmod)
 
     if (senfh == NULL)
         return -1;
-    if ((rv = fread(&n_active, 2, 1, senfh)) < 0)
+    
+    if ((rv = fread(&n_active, 2, 1, senfh)) != 1)
         goto error_out;
-    else if (rv == 0)
-        return 0;
 
     acmod->n_senone_active = n_active;
     if (acmod->n_senone_active == bin_mdef_n_sen(acmod->mdef)) {
         if ((rv = fread(acmod->senone_scores, 2,
-                        acmod->n_senone_active, senfh)) < 0)
+                        acmod->n_senone_active, senfh)) != acmod->n_senone_active)
             goto error_out;
-        else if (rv != acmod->n_senone_active)
-            return 0;
     }
     else {
         int i, n;
+        
         if ((rv = fread(acmod->senone_active, 1,
-                        acmod->n_senone_active, senfh)) < 0)
+                        acmod->n_senone_active, senfh)) != acmod->n_senone_active)
             goto error_out;
-        else if (rv != acmod->n_senone_active)
-            return 0;
+
         for (i = 0, n = 0; i < acmod->n_senone_active; ++i) {
             int j, sen = n + acmod->senone_active[i];
             for (j = n + 1; j < sen; ++j)
                 acmod->senone_scores[j] = SENSCR_DUMMY;
-            if ((rv = fread(acmod->senone_scores + sen, 2, 1, senfh)) < 0)
+            
+            if ((rv = fread(acmod->senone_scores + sen, 2, 1, senfh)) != 1)
                 goto error_out;
-            else if (rv == 0)
-                return 0;
+            
             n = sen;
         }
-        ++n;
+
+        n++;
         while (n < bin_mdef_n_sen(acmod->mdef))
             acmod->senone_scores[n++] = SENSCR_DUMMY;
     }
     return 1;
+
 error_out:
-    E_ERROR_SYSTEM("Failed to read frame from senone file");
-    return -1;
+    if (ferror(senfh)) {
+        E_ERROR_SYSTEM("Failed to read frame from senone file");
+        return -1;
+    }
+    return 0;
 }
 
 int
