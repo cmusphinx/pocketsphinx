@@ -349,7 +349,7 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
     int i;
     
     if ((list_file = fopen(keyfile, "r")) == NULL) {
-	E_ERROR_SYSTEM("Failed to open keyword file '%s'", keyfile);
+        E_ERROR_SYSTEM("Failed to open keyword file '%s'", keyfile);
         return -1;
     }
 
@@ -363,12 +363,12 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
 
     /* read keyphrases */
     for (li = lineiter_start(list_file), i=0; li; li = lineiter_next(li), i++) {
-        int last_ptr = li->len - 1;
+        size_t last_ptr = li->len - 1;
         kwss->keyphrases[i].threshold = kwss->def_threshold;
         while (li->buf[last_ptr] == '\n')
             last_ptr--;
         if (li->buf[last_ptr] == '/') {
-            int digit_len, start;
+            size_t digit_len, start;
             char digit[16];
             
             start = last_ptr - 1;
