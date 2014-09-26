@@ -355,7 +355,7 @@ phmm_eval_all(allphone_search_t * allphs, const int16 * senscr)
     mdef = ((ps_search_t *) allphs)->acmod->mdef;
     ci_phmm = allphs->ci_phmm;
 
-    best = logmath_get_zero(allphs->base.acmod->lmath);
+    best = WORST_SCORE;
 
     hmm_context_set_senscore(allphs->hmmctx, senscr);
     for (ci = 0; ci < mdef->n_ciphone; ci++) {
