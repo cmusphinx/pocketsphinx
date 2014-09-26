@@ -325,9 +325,9 @@ bin_mdef_read(cmd_ln_t *config, const char *filename)
     bin_mdef_t *m;
     FILE *fh;
     size_t tree_start;
-    int32 val, i, swap, pos, end;
+    int32 val, i, do_mmap, swap;
+    long pos, end;
     int32 *sseq_size;
-    int do_mmap;
 
     /* Try to read it as text first. */
     if ((m = bin_mdef_read_text(config, filename)) != NULL)
