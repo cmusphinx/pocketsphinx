@@ -6,6 +6,8 @@ PKG_NAME="the package."
 
 DIE=0
 
+# Check tools
+
 (autoconf --version) < /dev/null > /dev/null 2>&1 || {
   echo
   echo "**Error**: You must have \`autoconf' installed to."
@@ -14,46 +16,22 @@ DIE=0
   DIE=1
 }
 
-(grep "^AM_PROG_LIBTOOL" $srcdir/configure.in >/dev/null) && {
+(grep "^AC_PROG_LIBTOOL" $srcdir/configure.in >/dev/null) && {
   if libtoolize --version </dev/null >/dev/null 2>&1; then
 	LIBTOOLIZE=libtoolize
-  elif glibtoolize --version </dev/null >/dev/null 2>&1; then
-	LIBTOOLIZE=glibtoolize
   else
     echo
     echo "**Error**: You must have \`libtool' installed."
-    echo "Get ftp://ftp.gnu.org/pub/gnu/libtool-1.2d.tar.gz"
+    echo "Get ftp://ftp.gnu.org/pub/gnu/libtool/libtool-2.2.6b.tar.gz"
     echo "(or a newer version if it is available)"
     DIE=1
   fi 
 }
 
-grep "^AM_GNU_GETTEXT" $srcdir/configure.in >/dev/null && {
-  grep "sed.*POTFILES" $srcdir/configure.in >/dev/null || \
-  (gettext --version) < /dev/null > /dev/null 2>&1 || {
-    echo
-    echo "**Error**: You must have \`gettext' installed."
-    echo "Get ftp://alpha.gnu.org/gnu/gettext-0.10.35.tar.gz"
-    echo "(or a newer version if it is available)"
-    DIE=1
-  }
-}
-
-grep "^AM_GNOME_GETTEXT" $srcdir/configure.in >/dev/null && {
-  grep "sed.*POTFILES" $srcdir/configure.in >/dev/null || \
-  (gettext --version) < /dev/null > /dev/null 2>&1 || {
-    echo
-    echo "**Error**: You must have \`gettext' installed."
-    echo "Get ftp://alpha.gnu.org/gnu/gettext-0.10.35.tar.gz"
-    echo "(or a newer version if it is available)"
-    DIE=1
-  }
-}
-
 (automake --version) < /dev/null > /dev/null 2>&1 || {
   echo
   echo "**Error**: You must have \`automake' installed."
-  echo "Get ftp://ftp.gnu.org/pub/gnu/automake-1.3.tar.gz"
+  echo "Get ftp://ftp.gnu.org/pub/gnu/automake/automake-1.11.tar.gz"
   echo "(or a newer version if it is available)"
   DIE=1
   NO_AUTOMAKE=yes
@@ -65,7 +43,7 @@ test -n "$NO_AUTOMAKE" || (aclocal --version) < /dev/null > /dev/null 2>&1 || {
   echo
   echo "**Error**: Missing \`aclocal'.  The version of \`automake'"
   echo "installed doesn't appear recent enough."
-  echo "Get ftp://ftp.gnu.org/pub/gnu/automake-1.3.tar.gz"
+  echo "Get ftp://ftp.gnu.org/pub/gnu/automake/automake-1.11.tar.gz"
   echo "(or a newer version if it is available)"
   DIE=1
 }
@@ -95,7 +73,7 @@ do
     echo processing $dr
     macrodirs=`sed -n -e 's,AM_ACLOCAL_INCLUDE(\(.*\)),\1,gp' < $coin`
     ( cd $dr
-      aclocalinclude="$ACLOCAL_FLAGS -I m4"
+      aclocalinclude="$ACLOCAL_FLAGS"
       for k in $macrodirs; do
   	if test -d $k; then
           aclocalinclude="$aclocalinclude -I $k"
@@ -103,32 +81,12 @@ do
 	##  echo "**Warning**: No such directory \`$k'.  Ignored."
         fi
       done
-      if grep "^AM_GNU_GETTEXT" configure.in >/dev/null; then
-	if grep "sed.*POTFILES" configure.in >/dev/null; then
-	  : do nothing -- we still have an old unmodified configure.in
-	else
-	  echo "Creating $dr/aclocal.m4 ..."
-	  test -r $dr/aclocal.m4 || touch $dr/aclocal.m4
-	  echo "Running gettextize...  Ignore non-fatal messages."
-	  echo "no" | gettextize --force --copy
-	  echo "Making $dr/aclocal.m4 writable ..."
-	  test -r $dr/aclocal.m4 && chmod u+w $dr/aclocal.m4
-        fi
-      fi
-      if grep "^AM_GNOME_GETTEXT" configure.in >/dev/null; then
-	echo "Creating $dr/aclocal.m4 ..."
-	test -r $dr/aclocal.m4 || touch $dr/aclocal.m4
-	echo "Running gettextize...  Ignore non-fatal messages."
-	echo "no" | gettextize --force --copy
-	echo "Making $dr/aclocal.m4 writable ..."
-	test -r $dr/aclocal.m4 && chmod u+w $dr/aclocal.m4
-      fi
-      if grep "^AM_PROG_LIBTOOL" configure.in >/dev/null; then
+      if grep "^AC_PROG_LIBTOOL" configure.in >/dev/null; then
 	echo "Running $LIBTOOLIZE..."
 	$LIBTOOLIZE --force --copy
       fi
       echo "Running aclocal $aclocalinclude ..."
-      aclocal $aclocalinclude
+      aclocal -I m4 $aclocalinclude
       if grep "^AC_CONFIG_HEADER" configure.in >/dev/null; then
 	echo "Running autoheader..."
 	autoheader
