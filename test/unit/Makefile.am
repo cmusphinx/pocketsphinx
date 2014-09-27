@@ -37,7 +37,7 @@ EXTRA_DIST = ps_test.c
 
 noinst_HEADERS = test_macros.h
 
-INCLUDES = -I$(top_srcdir)/include \
+AM_CFLAGS =-I$(top_srcdir)/include \
 	-I$(top_srcdir)/src/libpocketsphinx \
 	-I$(top_builddir)/include \
 	-I$(srcdir) \

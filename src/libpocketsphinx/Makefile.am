@@ -68,7 +68,7 @@ noinst_HEADERS =				\
 	tmat.h					\
 	vector.h
 
-INCLUDES = \
+AM_CFLAGS =\
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-DMODELDIR=\"${prefix}/share/pocketsphinx/model\"

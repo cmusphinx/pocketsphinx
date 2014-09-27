@@ -15,6 +15,6 @@ pocketsphinx_continuous_SOURCES = continuous.c
 pocketsphinx_continuous_LDADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la -lsphinxad
 
-INCLUDES = -I$(top_srcdir)/include \
+AM_CFLAGS =-I$(top_srcdir)/include \
 	-I$(top_srcdir)/src/libpocketsphinx \
 	-I$(top_builddir)/include

@@ -23,7 +23,7 @@ nodist_pkgpyexec_PYTHON = pocketsphinx.py
 pkgpyexec_LTLIBRARIES = _pocketsphinx.la
 nodist__pocketsphinx_la_SOURCES = pocketsphinx_wrap.c
 
-INCLUDES = \
+AM_CFLAGS =\
 	$(PYTHON_CPPFLAGS) \
 	-I$(top_srcdir)/include \
 	-D_DATADIR=\"$(datadir)/@PACKAGE@\"

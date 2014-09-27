@@ -17,7 +17,7 @@ libgstpocketsphinx_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 
 noinst_HEADERS = gstpocketsphinx.h gstvader.h $(my_headers)
 
-INCLUDES = -I$(top_srcdir)/include \
+AM_CFLAGS =-I$(top_srcdir)/include \
 	-I$(top_builddir)/include
 
 EXTRA_DIST = psmarshal.list livedemo.py fixsqrt.py
