@@ -19,6 +19,8 @@ DIE=0
 (grep "^AC_PROG_LIBTOOL" $srcdir/configure.in >/dev/null) && {
   if libtoolize --version </dev/null >/dev/null 2>&1; then
 	LIBTOOLIZE=libtoolize
+  elif glibtoolize --version </dev/null >/dev/null 2>&1; then
+	LIBTOOLIZE=glibtoolize
   else
     echo
     echo "**Error**: You must have \`libtool' installed."
