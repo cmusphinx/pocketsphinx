@@ -172,6 +172,7 @@ ps_default_search_args(cmd_ln_t *config)
 
     if (lmfile == NULL && !cmd_ln_str_r(config, "-fsg")
         && !cmd_ln_str_r(config, "-jsgf")
+        && !cmd_ln_str_r(config, "-lmctl")
         && !cmd_ln_str_r(config, "-kws")
         && !cmd_ln_str_r(config, "-keyphrase")
         && file_exists(MODELDIR "/lm/en_US/hub4.5000.DMP")) {
@@ -344,18 +345,20 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
             ngram_model_t *lm = ngram_model_set_iter_model(lmset_it, &name);            
             E_INFO("adding search %s\n", name);
             if (ps_set_lm(ps, name, lm)) {
-            ngram_model_free(lm);
+    		ngram_model_free(lm);
                 ngram_model_set_iter_free(lmset_it);
                 return -1;
             }
-        ngram_model_free(lm);
+	    ngram_model_free(lm);
         }
 
         name = cmd_ln_str_r(config, "-lmname");
         if (name)
             ps_set_search(ps, name);
-        else
-            E_WARN("No default LM name (-lmname) for `-lmctl'\n");
+        else {
+            E_ERROR("No default LM name (-lmname) for `-lmctl'\n");
+            return -1;
+        }
     }
 
     /* Initialize performance timer. */

@@ -236,7 +236,7 @@
       "Specify a set of language model\n"},						\
 { "-lmname",										\
       ARG_STRING,									\
-      "default",									\
+      NULL,									\
       "Which language model in -lmctl to use by default"},				\
 { "-lw",										\
       ARG_FLOAT32,									\
