@@ -10,15 +10,16 @@ endif
 plugin_LTLIBRARIES = $(my_plugins)
 
 libgstpocketsphinx_la_SOURCES = gstpocketsphinx.c gstvader.c psmarshal.c
-libgstpocketsphinx_la_CFLAGS = $(GST_CFLAGS) -DMODELDIR=\"$(pkgdatadir)/model\"
 libgstpocketsphinx_la_LIBADD = $(GST_LIBS) -lgstaudio-$(GST_MAJORMINOR) \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la -lsphinxbase
 libgstpocketsphinx_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 
 noinst_HEADERS = gstpocketsphinx.h gstvader.h $(my_headers)
 
-AM_CFLAGS =-I$(top_srcdir)/include \
-	-I$(top_builddir)/include
+AM_CFLAGS = \
+	-I$(top_srcdir)/include \
+	-I$(top_builddir)/include \
+	$(GST_CFLAGS) -DMODELDIR=\"$(pkgdatadir)/model\"
 
 EXTRA_DIST = psmarshal.list livedemo.py fixsqrt.py
 BUILT_SOURCES = $(my_files)
