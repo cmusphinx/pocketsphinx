@@ -59,11 +59,11 @@
 #include <signal.h>
 #include <setjmp.h>
 #endif
-#if defined(_WIN32) && !defined(GNUWINCE)
-#include <time.h>
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <windows.h>
 #else
-#include <sys/types.h>
-#include <sys/time.h>
+#include <sys/select.h>
 #endif
 
 #include <sphinxbase/err.h>
