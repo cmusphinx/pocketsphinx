@@ -99,6 +99,10 @@
         return cmd_ln_parse_file_r(NULL, ps_args(), path, FALSE);
     }
 
+    void start_stream(int *errcode) {
+        *errcode = ps_start_stream($self);
+    }
+
     void start_utt(char const *uttid, int *errcode) {
         *errcode = ps_start_utt($self, uttid);
     }
