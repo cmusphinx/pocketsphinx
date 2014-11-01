@@ -9,11 +9,12 @@ CFLAGS=${CFLAGS:--g -O2 -Wall}
 
 AC_CANONICAL_HOST
 AC_PROG_CC
-AC_PROG_LIBTOOL
 AC_WORDS_BIGENDIAN
 AC_CHECK_TYPES(long long)
 AC_CHECK_SIZEOF(long long)
 AC_CHECK_FUNCS(dup2)
+
+LT_INIT
 
 dnl
 dnl Check for pkgconfig

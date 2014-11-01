@@ -16,7 +16,7 @@ DIE=0
   DIE=1
 }
 
-(grep "^AC_PROG_LIBTOOL" $srcdir/configure.in >/dev/null) && {
+(grep "^LT_INIT" $srcdir/configure.in >/dev/null) && {
   if libtoolize --version </dev/null >/dev/null 2>&1; then
 	LIBTOOLIZE=libtoolize
   elif glibtoolize --version </dev/null >/dev/null 2>&1; then
@@ -83,7 +83,7 @@ do
 	##  echo "**Warning**: No such directory \`$k'.  Ignored."
         fi
       done
-      if grep "^AC_PROG_LIBTOOL" configure.in >/dev/null; then
+      if grep "^LT_INIT" configure.in >/dev/null; then
 	echo "Running $LIBTOOLIZE..."
 	$LIBTOOLIZE --force --copy
       fi
