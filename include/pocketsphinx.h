@@ -296,7 +296,7 @@ char *ps_lookup_word(ps_decoder_t *ps,
  * @return Number of samples of audio.
  */
 POCKETSPHINX_EXPORT
-int ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
+long ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
                   char const *uttid, long maxsamps);
 
 /**

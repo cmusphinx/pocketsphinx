@@ -875,32 +875,34 @@ ps_lookup_word(ps_decoder_t *ps, const char *word)
     return phones;
 }
 
-int
+long
 ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
               char const *uttid, long maxsamps)
 {
-    long total, pos = 0;
+    int16 *data;
+    long total, pos, endpos;
 
     ps_start_stream(ps);
     ps_start_utt(ps, uttid);
+
     /* If this file is seekable or maxsamps is specified, then decode
      * the whole thing at once. */
-    if (maxsamps != -1 || (pos = ftell(rawfh)) >= 0) {
-        int16 *data;
-
-        if (maxsamps == -1) {
-            long endpos;
-            fseek(rawfh, 0, SEEK_END);
-            endpos = ftell(rawfh);
-            fseek(rawfh, pos, SEEK_SET);
-            maxsamps = endpos - pos;
-        }
+    if (maxsamps != -1) {
         data = ckd_calloc(maxsamps, sizeof(*data));
         total = fread(data, sizeof(*data), maxsamps, rawfh);
         ps_process_raw(ps, data, total, FALSE, TRUE);
         ckd_free(data);
-    }
-    else {
+    } else if ((pos = ftell(rawfh)) >= 0) {
+        fseek(rawfh, 0, SEEK_END);
+        endpos = ftell(rawfh);
+        fseek(rawfh, pos, SEEK_SET);
+        maxsamps = endpos - pos;
+
+        data = ckd_calloc(maxsamps, sizeof(*data));
+        total = fread(data, sizeof(*data), maxsamps, rawfh);
+        ps_process_raw(ps, data, total, FALSE, TRUE);
+        ckd_free(data);
+    } else {
         /* Otherwise decode it in a stream. */
         total = 0;
         while (!feof(rawfh)) {
