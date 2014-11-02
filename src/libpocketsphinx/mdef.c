@@ -472,7 +472,7 @@ sseq_compress(mdef_t * m)
 
     for (gn = g; gn; gn = gnode_next(gn)) {
         he = (hash_entry_t *) gnode_ptr(gn);
-        j = (int32)hash_entry_val(he);
+        j = (int32)(long)hash_entry_val(he);
         memcpy(sseq[j], hash_entry_key(he), k);
     }
     glist_free(g);
