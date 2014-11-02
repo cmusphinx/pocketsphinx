@@ -80,6 +80,7 @@ file_exists(const char *path)
     return (tmp != NULL);
 }
 
+#ifdef MODELDIR
 static int
 hmmdir_exists(const char *path)
 {
@@ -91,6 +92,7 @@ hmmdir_exists(const char *path)
     ckd_free(mdef);
     return (tmp != NULL);
 }
+#endif
 
 static void
 ps_add_file(ps_decoder_t *ps, const char *arg,
