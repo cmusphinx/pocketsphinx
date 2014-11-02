@@ -793,7 +793,7 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
             }
         }
     }
-    ngs->n_active_chan[nf & 0x1] = nacl - ngs->active_chan_list[nf & 0x1];
+    ngs->n_active_chan[nf & 0x1] = (int)(nacl - ngs->active_chan_list[nf & 0x1]);
 }
 
 /*
@@ -877,7 +877,7 @@ prune_nonroot_chan(ngram_search_t *ngs, int frame_idx)
             hmm_clear(&hmm->hmm);
         }
     }
-    ngs->n_active_chan[nf & 0x1] = nacl - ngs->active_chan_list[nf & 0x1];
+    ngs->n_active_chan[nf & 0x1] = (int)(nacl - ngs->active_chan_list[nf & 0x1]);
 }
 
 /*
@@ -1035,7 +1035,7 @@ last_phone_transition(ngram_search_t *ngs, int frame_idx)
             }
         }
     }
-    ngs->n_active_word[nf & 0x1] = nawl - ngs->active_word_list[nf & 0x1];
+    ngs->n_active_word[nf & 0x1] = (int)(nawl - ngs->active_word_list[nf & 0x1]);
 }
 
 /*
@@ -1098,7 +1098,7 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
             bitvec_set(ngs->word_active, w);
         }
     }
-    ngs->n_active_word[nf & 0x1] = nawl - ngs->active_word_list[nf & 0x1];
+    ngs->n_active_word[nf & 0x1] = (int)(nawl - ngs->active_word_list[nf & 0x1]);
 
     /*
      * Prune permanently allocated single-phone channels.

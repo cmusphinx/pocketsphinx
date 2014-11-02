@@ -177,7 +177,7 @@ eval_cb(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
         d = *detP;
         thresh = (mfcc_t) worst->score; /* Avoid int-to-float conversions */
         obs = z;
-        cw = detP - det;
+        cw = (int)(detP - det);
 
         /* Unroll the loop starting with the first dimension(s).  In
          * theory this might be a bit faster if this Gaussian gets

@@ -136,7 +136,7 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
 
         d = *detP;
         obs = z;
-        cw = detP - det;
+        cw = (int)(detP - det);
         for (j = 0; (j < ceplen) && (d >= worst->score); ++j) {
             diff = *obs++ - *mean++;
             sqdiff = MFCCMUL(diff, diff);
