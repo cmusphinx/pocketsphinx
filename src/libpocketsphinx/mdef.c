@@ -270,10 +270,11 @@ mdef_is_cisenone(mdef_t * m, int s)
 
 /* Parse tmat and state->senone mappings for phone p and fill in structure */
 static void
-parse_tmat_senmap(mdef_t * m, char *line, int32 off, int p)
+parse_tmat_senmap(mdef_t * m, char *line, long off, int p)
 {
     int32 wlen, n, s;
-    __BIGSTACKVARIABLE__ char word[1024], *lp;
+    char *lp;
+    __BIGSTACKVARIABLE__ char word[1024];
 
     lp = line + off;
 
@@ -471,7 +472,7 @@ sseq_compress(mdef_t * m)
 
     for (gn = g; gn; gn = gnode_next(gn)) {
         he = (hash_entry_t *) gnode_ptr(gn);
-        j = (long)hash_entry_val(he);
+        j = (int32)hash_entry_val(he);
         memcpy(sseq[j], hash_entry_key(he), k);
     }
     glist_free(g);
