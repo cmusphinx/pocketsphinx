@@ -260,14 +260,14 @@ ptm_mgau_codebook_eval(ptm_mgau_t *s, mfcc_t **z, int frame)
      * loops are inside out - doing it per-feature should give us
      * greater precision). */
     for (j = 0; j < s->g->n_feat; ++j) {
-        int32 norm = 0x7fffffff;
+        int32 norm = WORST_SCORE;
         for (i = 0; i < s->g->n_mgau; ++i) {
             if (bitvec_is_clear(s->f->mgau_active, i))
                 continue;
-            if (norm > s->f->topn[i][j][0].score >> SENSCR_SHIFT)
+            if (norm < s->f->topn[i][j][0].score >> SENSCR_SHIFT)
                 norm = s->f->topn[i][j][0].score >> SENSCR_SHIFT;
         }
-        assert(norm != 0x7fffffff);
+        assert(norm != WORST_SCORE);
         for (i = 0; i < s->g->n_mgau; ++i) {
             int32 k;
             if (bitvec_is_clear(s->f->mgau_active, i))
