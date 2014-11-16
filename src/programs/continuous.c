@@ -104,6 +104,7 @@ static FILE *rawfd;
 static void
 print_word_times()
 {
+    int frame_rate = cmd_ln_int32_r(config, "-frate");
     ps_seg_t *iter = ps_seg_iter(ps, NULL);
     while (iter != NULL) {
         int32 sf, ef, pprob;
@@ -112,8 +113,8 @@ print_word_times()
         ps_seg_frames(iter, &sf, &ef);
         pprob = ps_seg_prob(iter, NULL, NULL, NULL);
         conf = logmath_exp(ps_get_logmath(ps), pprob);
-        printf("%s %f %f %f\n", ps_seg_word(iter), sf / 100.0,
-               ef / 100.0, conf);
+        printf("%s %.3f %.3f %f\n", ps_seg_word(iter), ((float)sf / frame_rate),
+               ((float) ef / frame_rate), conf);
         iter = ps_seg_next(iter);
     }
 }
@@ -183,7 +184,7 @@ recognize_from_file()
             hyp = ps_get_hyp(ps, NULL, &uttid);
             printf("%s: %s\n", uttid, hyp);
             if (print_times)
-            print_word_times();
+        	print_word_times();
             ps_start_utt(ps, NULL);
             utt_started = FALSE;
         }
