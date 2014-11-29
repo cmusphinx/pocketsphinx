@@ -178,6 +178,10 @@
     void set_keyphrase(const char *name, const char *keyphrase, int *errcode) {
         *errcode = ps_set_keyphrase($self, name, keyphrase);
     }
+    
+    void set_allphone_file(const char *name, const char *lmfile, int *errcode) {
+	*errcode = ps_set_allphone_file($self, name, lmfile);
+    }
 
     NGramModel * get_lm(const char *name) {
         return ngram_model_retain(ps_get_lm($self, name));

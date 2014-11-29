@@ -376,7 +376,7 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
                 start--;
             digit_len = last_ptr - start;
             memcpy(digit, &li->buf[start+1], digit_len);
-            kwss->keyphrases[i].threshold =  (int32) logmath_log(kwss->base.acmod->lmath, atof(digit)) 
+            kwss->keyphrases[i].threshold =  (int32) logmath_log(kwss->base.acmod->lmath, atof_c(digit)) 
                                               >> SENSCR_SHIFT;
             li->buf[start-1] = '\0';
         }

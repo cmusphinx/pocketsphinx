@@ -192,12 +192,12 @@ acmod_init_feat(acmod_t *acmod)
         while (nvals < acmod->fcb->cmn_struct->veclen
                && (cc = strchr(c, ',')) != NULL) {
             *cc = '\0';
-            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof(c));
+            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof_c(c));
             c = cc + 1;
             ++nvals;
         }
         if (nvals < acmod->fcb->cmn_struct->veclen && *c != '\0') {
-            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof(c));
+            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof_c(c));
         }
         ckd_free(vallist);
     }
@@ -861,9 +861,9 @@ acmod_read_senfh_header(acmod_t *acmod)
         }
 
         if (!strcmp(name[i], "logbase")) {
-            if (fabs(atof(val[i]) - logmath_get_base(acmod->lmath)) > 0.001) {
+            if (fabs(atof_c(val[i]) - logmath_get_base(acmod->lmath)) > 0.001) {
                 E_ERROR("Logbase in senone file (%f) does not match acmod "
-                        "(%f)\n", atof(val[i]),
+                        "(%f)\n", atof_c(val[i]),
                         logmath_get_base(acmod->lmath));
                 goto error_out;
             }
