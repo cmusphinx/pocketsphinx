@@ -293,7 +293,6 @@ kws_search_trans(kws_search_t * kwss)
                                   hmm_out_history(last_hmm), 
                                   kwss->frame, prob, 
                                   hmm_out_score(last_hmm));
-                pl_best_hmm = last_hmm;
                 to_clear = TRUE;
             } /* keyword is spotted */
         } /* last hmm of keyword is active */
