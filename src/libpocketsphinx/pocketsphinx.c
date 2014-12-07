@@ -640,26 +640,13 @@ ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
   rule = NULL;
   /* Take the -toprule if specified. */
   if ((toprule = cmd_ln_str_r(ps->config, "-toprule"))) {
-      char *ruletok;
-      ruletok = string_join("<", toprule, ">", NULL);
-      rule = jsgf_get_rule(jsgf, ruletok);
-      ckd_free(ruletok);
+      rule = jsgf_get_rule(jsgf, toprule);
       if (rule == NULL) {
           E_ERROR("Start rule %s not found\n", toprule);
           return -1;
       }
   } else {
-      /* Otherwise, take the first public rule. */
-      jsgf_rule_iter_t *itor;
-
-      for (itor = jsgf_rule_iter(jsgf); itor;
-           itor = jsgf_rule_iter_next(itor)) {
-          rule = jsgf_rule_iter_rule(itor);
-          if (jsgf_rule_public(rule)) {
-              jsgf_rule_iter_free(itor);
-              break;
-          }
-      }
+      rule = jsgf_get_public_rule(jsgf);
       if (rule == NULL) {
           E_ERROR("No public rules found in %s\n", path);
           return -1;
@@ -689,26 +676,13 @@ ps_set_jsgf_string(ps_decoder_t *ps, const char *name, const char *jsgf_string)
   rule = NULL;
   /* Take the -toprule if specified. */
   if ((toprule = cmd_ln_str_r(ps->config, "-toprule"))) {
-      char *ruletok;
-      ruletok = string_join("<", toprule, ">", NULL);
-      rule = jsgf_get_rule(jsgf, ruletok);
-      ckd_free(ruletok);
+      rule = jsgf_get_rule(jsgf, toprule);
       if (rule == NULL) {
           E_ERROR("Start rule %s not found\n", toprule);
           return -1;
       }
   } else {
-      /* Otherwise, take the first public rule. */
-      jsgf_rule_iter_t *itor;
-
-      for (itor = jsgf_rule_iter(jsgf); itor;
-           itor = jsgf_rule_iter_next(itor)) {
-          rule = jsgf_rule_iter_rule(itor);
-          if (jsgf_rule_public(rule)) {
-              jsgf_rule_iter_free(itor);
-              break;
-          }
-      }
+      rule = jsgf_get_public_rule(jsgf);
       if (rule == NULL) {
           E_ERROR("No public rules found in input string\n");
           return -1;

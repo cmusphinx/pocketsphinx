@@ -84,7 +84,7 @@ test_set_search()
 
     jsgf_t *jsgf = jsgf_parse_file(DATADIR "/goforward.gram", NULL);
     fsg_model_t *fsg = jsgf_build_fsg(jsgf,
-                                      jsgf_get_rule(jsgf, "<goforward.move>"),
+                                      jsgf_get_rule(jsgf, "goforward.move"),
                                       ps->lmath, cmd_ln_int32_r(config, "-lw"));
     TEST_ASSERT(!ps_set_fsg(ps, "goforward", fsg));
     fsg_model_free(fsg);
