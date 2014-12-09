@@ -49,6 +49,10 @@
 #include "pocketsphinx_internal.h"
 #include "kws_search.h"
 
+/** Access macros */
+#define hmm_is_active(hmm) ((hmm)->frame > 0)
+#define kws_nth_hmm(keyword,n) (&((keyword)->hmms[n]))
+
 static ps_lattice_t *
 kws_search_lattice(ps_search_t * search)
 {
@@ -185,8 +189,8 @@ kws_search_sen_active(kws_search_t * kwss)
     for (keyword_iter = 0; keyword_iter < kwss->n_keyphrases; keyword_iter++) {
         kws_keyword_t *keyword = &kwss->keyphrases[keyword_iter];
         for (i = 0; i < keyword->n_hmms; i++) {
-            if (hmm_is_active(keyword->hmms[i]))
-                acmod_activate_hmm(ps_search_acmod(kwss), &keyword->hmms[i]);
+            if (hmm_is_active(kws_nth_hmm(keyword, i)))
+                acmod_activate_hmm(ps_search_acmod(kwss), kws_nth_hmm(keyword, i));
         }
     }
 }
@@ -216,10 +220,10 @@ kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
     for (keyword_iter = 0; keyword_iter < kwss->n_keyphrases; keyword_iter++) {
         kws_keyword_t *keyword = &kwss->keyphrases[keyword_iter];
         for (i = 0; i < keyword->n_hmms; i++) {
-            if (hmm_is_active(keyword->hmms[i])) {
-                hmm_t *hmm = &keyword->hmms[i];
-                int32 score;
+            hmm_t *hmm = kws_nth_hmm(keyword, i);
 
+            if (hmm_is_active(hmm)) {
+                int32 score;
                 score = hmm_vit_eval(hmm);
                 if (score BETTER_THAN bestscore)
                     bestscore = score;
@@ -243,10 +247,11 @@ kws_search_hmm_prune(kws_search_t * kwss)
 
     for (keyword_iter = 0; keyword_iter < kwss->n_keyphrases; keyword_iter++) {
         kws_keyword_t *keyword = &kwss->keyphrases[keyword_iter];
-        for (i = 0; i < keyword->n_hmms; i++)
-            if (hmm_is_active(keyword->hmms[i]))
-                if (hmm_bestscore(&keyword->hmms[i]) < thresh)
-                    hmm_clear(&keyword->hmms[i]);
+        for (i = 0; i < keyword->n_hmms; i++) {
+    	    hmm_t *hmm = kws_nth_hmm(keyword, i);
+            if (hmm_is_active(hmm) && hmm_bestscore(hmm) < thresh)
+                hmm_clear(hmm);
+        }
     }
 }
 
@@ -280,8 +285,8 @@ kws_search_trans(kws_search_t * kwss)
         hmm_t *last_hmm;
         
         keyword = &kwss->keyphrases[keyword_iter];
-        last_hmm = &keyword->hmms[keyword->n_hmms - 1];
-        if (hmm_is_active((*last_hmm))
+        last_hmm = kws_nth_hmm(keyword, keyword->n_hmms - 1);
+        if (hmm_is_active(last_hmm)
             && hmm_out_score(pl_best_hmm) BETTER_THAN WORST_SCORE) {
             
             if (hmm_out_score(last_hmm) - hmm_out_score(pl_best_hmm) 
@@ -302,7 +307,7 @@ kws_search_trans(kws_search_t * kwss)
         for (keyword_iter = 0; keyword_iter < kwss->n_keyphrases; keyword_iter++) {
             kws_keyword_t* keyword = &kwss->keyphrases[keyword_iter];
             for (i = 0; i < keyword->n_hmms; i++) {
-                hmm_clear(&keyword->hmms[i]);
+                hmm_clear(kws_nth_hmm(keyword, i));
             }
         }
     } /* clear all keywords because something was spotted */
@@ -321,21 +326,22 @@ kws_search_trans(kws_search_t * kwss)
     for (keyword_iter = 0; keyword_iter < kwss->n_keyphrases; keyword_iter++) {
         kws_keyword_t *keyword = &kwss->keyphrases[keyword_iter];
         for (i = keyword->n_hmms - 1; i > 0; i--) {
-            if (hmm_is_active(&keyword->hmms[i - 1])) {
-                hmm_t *pred_hmm = &keyword->hmms[i - 1];
-                
-                if (!hmm_is_active(&keyword->hmms[i])
+            hmm_t *pred_hmm = kws_nth_hmm(keyword, i - 1);
+	    hmm_t *hmm = kws_nth_hmm(keyword, i);
+
+            if (hmm_is_active(pred_hmm)) {    
+                if (!hmm_is_active(hmm)
                     || hmm_out_score(pred_hmm) BETTER_THAN
-                    hmm_in_score(&keyword->hmms[i]))
-                        hmm_enter(&keyword->hmms[i], hmm_out_score(pred_hmm),
+                    hmm_in_score(hmm))
+                        hmm_enter(hmm, hmm_out_score(pred_hmm),
                                   hmm_out_history(pred_hmm), kwss->frame + 1);
             }
         }
 
         /* Enter keyword start node from phone loop */
         if (hmm_out_score(pl_best_hmm) BETTER_THAN
-            hmm_in_score(&keyword->hmms[0]))
-                hmm_enter(&keyword->hmms[0], hmm_out_score(pl_best_hmm),
+            hmm_in_score(kws_nth_hmm(keyword, 0)))
+                hmm_enter(kws_nth_hmm(keyword, 0), hmm_out_score(pl_best_hmm),
                     kwss->frame, kwss->frame + 1);
     } /* keywords loop */
 }

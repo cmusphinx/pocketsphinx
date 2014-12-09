@@ -63,9 +63,6 @@ typedef struct kws_keyword_s {
     int32 n_hmms;
 } kws_keyword_t;
 
-/** Access macros */
-#define hmm_is_active(hmm) (hmm.frame > 0)
-
 /**
  * Implementation of KWS search structure.
  */
