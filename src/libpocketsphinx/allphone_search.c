@@ -784,6 +784,7 @@ allphone_backtrace(allphone_search_t * allphs, int32 f)
     /* Clear old list */
     allphone_clear_segments(allphs);
 
+    frm = last_frm = f;
     /* Find the first history entry for the requested frame */
     hist_idx = blkarray_list_n_valid(allphs->history) - 1;
     while (hist_idx > 0) {
