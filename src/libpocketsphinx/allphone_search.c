@@ -547,6 +547,7 @@ allphone_search_init(ngram_model_t * lm,
     }
 
     allphs->ci_only = cmd_ln_boolean_r(config, "-allphone_ci");
+    allphs->lw = cmd_ln_float32_r(config, "-lw");
 
     phmm_build(allphs);
 
@@ -602,7 +603,6 @@ allphone_search_init(ngram_model_t * lm,
         >> SENSCR_SHIFT;
 
     /* LM related weights/penalties */
-    allphs->lw = cmd_ln_float32_r(config, "-lw");
     allphs->history = blkarray_list_init();
 
     /* Acoustic score scale for posterior probabilities. */
