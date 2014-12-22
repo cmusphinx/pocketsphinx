@@ -573,8 +573,12 @@ acmod_process_full_raw(acmod_t *acmod,
     mfcc_t **cepptr;
 
     /* Write to logging file if any. */
+    if (*inout_n_samps + acmod->rawdata_pos < acmod->rawdata_size) {
+	memcpy(acmod->rawdata + acmod->rawdata_pos, *inout_raw, *inout_n_samps * sizeof(int16));
+	acmod->rawdata_pos += *inout_n_samps;
+    }
     if (acmod->rawfh)
-        fwrite(*inout_raw, 2, *inout_n_samps, acmod->rawfh);
+        fwrite(*inout_raw, sizeof(int16), *inout_n_samps, acmod->rawfh);
     /* Resize mfc_buf to fit. */
     if (fe_process_frames(acmod->fe, NULL, inout_n_samps, NULL, &nfr, NULL) < 0)
         return -1;
@@ -644,11 +648,6 @@ acmod_process_raw(acmod_t *acmod,
     int32 ncep;
     int32 out_frameidx;
     int16 const *prev_audio_inptr;
-
-    if (*inout_n_samps + acmod->rawdata_pos < acmod->rawdata_size) {
-	memcpy(acmod->rawdata + acmod->rawdata_pos, *inout_raw, *inout_n_samps * sizeof(int16));
-	acmod->rawdata_pos += *inout_n_samps;
-    }
     
     /* If this is a full utterance, process it all at once. */
     if (full_utt)
@@ -658,6 +657,7 @@ acmod_process_raw(acmod_t *acmod,
      * (in practice, there will probably be none) */
     if (inout_n_samps && *inout_n_samps) {
         int inptr;
+        int32 processed_samples;
 
         prev_audio_inptr = *inout_raw;
         /* Total number of frames available. */
@@ -675,10 +675,15 @@ acmod_process_raw(acmod_t *acmod,
 	    if (out_frameidx > 0)
 		acmod->utt_start_frame = out_frameidx;
 
+    	    processed_samples = *inout_raw - prev_audio_inptr;
+	    if (processed_samples + acmod->rawdata_pos < acmod->rawdata_size) {
+		memcpy(acmod->rawdata + acmod->rawdata_pos, prev_audio_inptr, processed_samples * sizeof(int16));
+		acmod->rawdata_pos += processed_samples;
+	    }
             /* Write to logging file if any. */
             if (acmod->rawfh) {
-                fwrite(prev_audio_inptr, 2,
-                       *inout_raw - prev_audio_inptr,
+                fwrite(prev_audio_inptr, sizeof(int16),
+                       processed_samples,
                        acmod->rawfh);
             }
             prev_audio_inptr = *inout_raw;
@@ -706,9 +711,15 @@ acmod_process_raw(acmod_t *acmod,
 	if (out_frameidx > 0)
 	    acmod->utt_start_frame = out_frameidx;
 
+	
+	processed_samples = *inout_raw - prev_audio_inptr;
+	if (processed_samples + acmod->rawdata_pos < acmod->rawdata_size) {
+	    memcpy(acmod->rawdata + acmod->rawdata_pos, prev_audio_inptr, processed_samples * sizeof(int16));
+	    acmod->rawdata_pos += processed_samples;
+	}
         if (acmod->rawfh) {
-            fwrite(prev_audio_inptr, 2,
-                   *inout_raw - prev_audio_inptr, acmod->rawfh);
+            fwrite(prev_audio_inptr, sizeof(int16),
+                   processed_samples, acmod->rawfh);
         }
         prev_audio_inptr = *inout_raw;
         acmod->n_mfc_frame += ncep;

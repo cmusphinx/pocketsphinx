@@ -23,6 +23,6 @@ clean:
 	$(RM) -r edu
 
 run:
-	javac -cp junit-4.8.1.jar test/*.java edu/cmu/pocketsphinx/*.java
-	java -Djava.library.path=. -cp junit-4.8.1.jar:. org.junit.runner.JUnitCore test.DecoderTest
+	javac -cp junit-4.10.jar test/*.java edu/cmu/pocketsphinx/*.java
+	java -Djava.library.path=. -cp junit-4.10.jar:. org.junit.runner.JUnitCore test.DecoderTest
 

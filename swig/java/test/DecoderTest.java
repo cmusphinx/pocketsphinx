@@ -4,6 +4,9 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import javax.sound.sampled.*;
@@ -21,29 +24,26 @@ public class DecoderTest {
     }
 
     @Test
-    public void testDecodeRaw() {
+    public void testDecodeRaw() throws IOException, UnsupportedAudioFileException {
         Config c = Decoder.defaultConfig();
-        c.setFloat("-samprate", 8000);
+//        c.setFloat("-samprate", 8000);
         c.setString("-hmm", "../../model/hmm/en_US/hub4wsj_sc_8k");
         c.setString("-lm", "../../model/lm/en_US/hub4.5000.DMP");
         c.setString("-dict", "../../model/lm/en_US/hub4.5000.dic");
         Decoder d = new Decoder(c);
         AudioInputStream ais = null;
-        try {
-            URL testwav = new URL("file:../../test/data/wsj/n800_440c0207.wav");
-            AudioInputStream tmp = AudioSystem.getAudioInputStream(testwav);
-            // Convert it to the desired audio format for PocketSphinx.
-            AudioFormat targetAudioFormat =
-                new AudioFormat((float)c.getFloat("-samprate"),
+
+//        URL testwav = new URL("file:../../test/data/wsj/n800_440c0207.wav");
+        URL testwav = new URL("file:../../test/data/goforward.wav");
+        AudioInputStream tmp = AudioSystem.getAudioInputStream(testwav);
+        // Convert it to the desired audio format for PocketSphinx.
+        AudioFormat targetAudioFormat =
+            new AudioFormat((float)c.getFloat("-samprate"),
                                 16, 1, true, true);
-            ais = AudioSystem.getAudioInputStream(targetAudioFormat, tmp);
-        } catch (IOException e) {
-            fail("Failed to open " + e.getMessage());
-        } catch (UnsupportedAudioFileException e) {
-            fail("Unsupported file type of " + e.getMessage());
-        }
+        ais = AudioSystem.getAudioInputStream(targetAudioFormat, tmp);
 
         d.startUtt("");
+        d.setRawdataSize(300000);
         byte[] b = new byte[4096];
         try {
             int nbytes;
@@ -58,7 +58,15 @@ public class DecoderTest {
         }
         d.endUtt();
         System.out.println(d.hyp().getHypstr());
-        
+
+        short[] data = d.getRawdata();
+        System.out.println("Data size: " + data.length);
+        DataOutputStream dos = new DataOutputStream(new FileOutputStream(new File("/tmp/test.raw")));
+	for (int i = 0; i < data.length; i++) {
+	    dos.writeShort(data[i]);
+	}
+	dos.close();
+
         for (Segment seg : d.seg()) {
     	    System.out.println(seg.getWord());
         }
