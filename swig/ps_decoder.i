@@ -150,7 +150,7 @@
 	    *RAWDATA_SIZE = size * sizeof(int16);
     }
 #else
-    int16 *get_rawdata(size_t *RAWDATA_SIZE) {
+    int16 *get_rawdata(int32 *RAWDATA_SIZE) {
 	int16 *result;
 	ps_get_rawdata($self, &result, RAWDATA_SIZE);
 	return result;
