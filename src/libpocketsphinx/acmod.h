@@ -178,6 +178,11 @@ struct acmod_s {
     FILE *insenfh;	/**< Input senone score file. */
     long *framepos;     /**< File positions of recent frames in senone file. */
 
+    /* Rawdata collected during decoding */
+    int16 *rawdata;
+    int32 rawdata_size;
+    int32 rawdata_pos;
+
     /* A whole bunch of flags and counters: */
     uint8 state;        /**< State of utterance processing. */
     uint8 compallsen;   /**< Compute all senones? */
@@ -447,5 +452,15 @@ int32 acmod_stream_offset(acmod_t *acmod);
  * Reset the current stream
  */
 void acmod_start_stream(acmod_t *acmod);
+
+/**
+ * Sets the limit of the raw audio data to store
+ */
+void acmod_set_rawdata_size(acmod_t *acmod, int32 size);
+
+/**
+ * Retrieves the raw data collected during utterance decoding
+ */
+void acmod_get_rawdata(acmod_t *acmod, int16 **buffer, int32 *size);
 
 #endif /* __ACMOD_H__ */

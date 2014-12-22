@@ -633,6 +633,29 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
 POCKETSPHINX_EXPORT
 uint8 ps_get_in_speech(ps_decoder_t *ps);
 
+
+/**
+ * Sets the limit of the raw audio data to store in decoder
+ * to retrieve it later on ps_get_rawdata.
+ *
+ * @param ps Decoder
+ * @param size bytes of the utterance to store
+ */
+POCKETSPHINX_EXPORT
+void ps_set_rawdata_size(ps_decoder_t *ps, int32 size);
+
+
+/**
+ * Retrieves the raw data collected during utterance decoding.
+ * 
+ * @param ps Decoder
+ * @param buffer preallocated buffer to store the data, must be within the limit
+ * set before
+ * @param size size of the data collected in samples (not bytes).
+ */
+POCKETSPHINX_EXPORT
+void ps_get_rawdata(ps_decoder_t *ps, int16 **buffer, int32 *size);
+
 /**
  * @mainpage PocketSphinx API Documentation
  * @author David Huggins-Daines <dhuggins@cs.cmu.edu>

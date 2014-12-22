@@ -135,6 +135,28 @@
         return *errcode;
     }
 
+
+    void
+    set_rawdata_size(size_t size) {
+	ps_set_rawdata_size($self, size);
+    }
+
+#ifdef SWIGPYTHON
+    %cstring_output_allocate_size(char **RAWDATA, size_t *RAWDATA_SIZE, );
+    void get_rawdata(char **RAWDATA, size_t *RAWDATA_SIZE) {
+	int32 size;
+	ps_get_rawdata($self, (int16**)RAWDATA, &size);
+	if (RAWDATA_SIZE)
+	    *RAWDATA_SIZE = size * sizeof(int16);
+    }
+#else
+    int16 *get_rawdata(size_t *RAWDATA_SIZE) {
+	int16 *result;
+	ps_get_rawdata($self, &result, RAWDATA_SIZE);
+	return result;
+    }
+#endif
+
     %newobject hyp;
     Hypothesis * hyp() {
         char const *hyp, *uttid;

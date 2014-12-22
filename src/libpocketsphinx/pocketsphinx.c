@@ -1416,3 +1416,14 @@ ps_search_deinit(ps_search_t *search)
     ps_lattice_free(search->dag);
 }
 
+void
+ps_set_rawdata_size(ps_decoder_t *ps, int32 size) 
+{
+    acmod_set_rawdata_size(ps->acmod, size);
+}
+
+void
+ps_get_rawdata(ps_decoder_t *ps, int16 **buffer, int32 *size)
+{
+    acmod_get_rawdata(ps->acmod, buffer, size);
+}

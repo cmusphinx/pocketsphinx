@@ -66,6 +66,10 @@ negative error code."
 %include iterators.i
 %import sphinxbase.i
 
+#if SWIGPYTHON
+%include cstring.i
+#endif
+
 %{
 typedef cmd_ln_t Config;
 typedef feat_t Feature;
@@ -211,7 +215,6 @@ typedef struct {} SegmentList;
     return new_NBestIterator(ps_nbest($self, 0, -1, NULL, NULL));
   }
 }
-
 
 %include ps_decoder.i
 %include ps_lattice.i

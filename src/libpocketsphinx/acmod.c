@@ -339,6 +339,7 @@ acmod_free(acmod_t *acmod)
     ckd_free(acmod->senone_scores);
     ckd_free(acmod->senone_active_vec);
     ckd_free(acmod->senone_active);
+    ckd_free(acmod->rawdata);
 
     if (acmod->mdef)
         bin_mdef_free(acmod->mdef);
@@ -449,6 +450,8 @@ acmod_start_utt(acmod_t *acmod)
     acmod->senscr_frame = -1;
     acmod->n_senone_active = 0;
     acmod->mgau->frame_idx = 0;
+    acmod->rawdata_pos = 0;
+
     return 0;
 }
 
@@ -642,6 +645,11 @@ acmod_process_raw(acmod_t *acmod,
     int32 out_frameidx;
     int16 const *prev_audio_inptr;
 
+    if (*inout_n_samps + acmod->rawdata_pos < acmod->rawdata_size) {
+	memcpy(acmod->rawdata + acmod->rawdata_pos, *inout_raw, *inout_n_samps * sizeof(int16));
+	acmod->rawdata_pos += *inout_n_samps;
+    }
+    
     /* If this is a full utterance, process it all at once. */
     if (full_utt)
         return acmod_process_full_raw(acmod, inout_raw, inout_n_samps);
@@ -1333,3 +1341,26 @@ acmod_start_stream(acmod_t *acmod)
     fe_start_stream(acmod->fe);
     acmod->utt_start_frame = 0;
 }
+
+void
+acmod_set_rawdata_size(acmod_t *acmod, int32 size)
+{	
+    assert(size >= 0);
+    acmod->rawdata_size = size;
+    if (acmod->rawdata_size > 0) {
+	ckd_free(acmod->rawdata);
+	acmod->rawdata = ckd_calloc(size, sizeof(int16));
+    }
+}
+
+void
+acmod_get_rawdata(acmod_t *acmod, int16 **buffer, int32 *size)
+{
+    if (buffer) {
+	*buffer = acmod->rawdata;
+    }
+    if (size) {
+	*size = acmod->rawdata_pos;
+    }
+}
+

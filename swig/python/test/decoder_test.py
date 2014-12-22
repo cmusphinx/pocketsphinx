@@ -70,6 +70,7 @@ for best, i in izip(decoder.nbest(), range(10)):
 # Decode streaming data.
 decoder = Decoder(config)
 decoder.start_utt('goforward')
+decoder.set_rawdata_size(100000);
 stream = open(path.join(DATADIR, 'goforward.raw'), 'rb')
 while True:
   buf = stream.read(1024)
@@ -79,3 +80,6 @@ while True:
     break
 decoder.end_utt()
 print 'Stream decoding result:', decoder.hyp().hypstr
+
+# Storing raw data
+open("/tmp/test.raw", "w").write(decoder.get_rawdata())
