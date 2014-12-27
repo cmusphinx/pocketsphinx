@@ -44,6 +44,7 @@
 #include <string.h>
 #include <gst/gst.h>
 
+#include <sphinxbase/err.h>
 #include <sphinxbase/strfuncs.h>
 
 #include "gstpocketsphinx.h"
@@ -182,6 +183,18 @@ gst_pocketsphinx_finalize(GObject * gobject)
     g_free(ps->last_result);
 
     G_OBJECT_CLASS(gst_pocketsphinx_parent_class)->finalize(gobject);
+}
+
+static void
+gst_pocketsphinx_log(void *user_data, err_lvl_t lvl, const char *fmt, ...)
+{
+    static const int gst_level[ERR_MAX] = {GST_LEVEL_DEBUG, GST_LEVEL_INFO,
+             GST_LEVEL_INFO, GST_LEVEL_WARNING, GST_LEVEL_ERROR, GST_LEVEL_ERROR};
+                 
+     va_list ap;
+     va_start(ap, fmt);
+     gst_debug_log_valist(pocketsphinx_debug, gst_level[lvl], "", "", 0, NULL, fmt, ap);
+     va_end(ap);
 }
 
 static void
@@ -537,6 +550,7 @@ gst_pocketsphinx_init(GstPocketSphinx * ps)
     ps->srcpad =
         gst_pad_new_from_static_template(&src_factory, "src");
 
+    err_set_callback(gst_pocketsphinx_log, NULL);
     /* Parse default command-line options. */
     ps->config = cmd_ln_parse_r(NULL, ps_args(), default_argc, default_argv, FALSE);
     ps_default_search_args(ps->config);
@@ -553,9 +567,6 @@ gst_pocketsphinx_init(GstPocketSphinx * ps)
     /* Initialize time. */
     ps->last_result_time = 0;
     ps->last_result = NULL;
-
-    /* Nbest size */
-    ps->n_best_size = 10;
 }
 
 static GstFlowReturn
@@ -574,6 +585,7 @@ gst_pocketsphinx_chain(GstPad * pad, GstObject *parent, GstBuffer * buffer)
         ps->utt_started = FALSE;
         ps_start_utt(ps->ps, NULL);
     }
+
     gst_buffer_map (buffer, &info, GST_MAP_READ);
     ps_process_raw(ps->ps,
                    (short*) info.data,
