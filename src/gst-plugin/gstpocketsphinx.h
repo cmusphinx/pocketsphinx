@@ -66,10 +66,11 @@ struct _GstPocketSphinx
 
     ps_decoder_t *ps;
     cmd_ln_t *config;
+
     gchar *latdir;                 /**< Output directory for word lattices. */
 
     gboolean utt_started;
-    gboolean listening;
+    gboolean listening_started;
 
     GstClockTime last_result_time; /**< Timestamp of last partial result. */
     char *last_result;             /**< String of last partial result. */
@@ -84,12 +85,6 @@ struct _GstPocketSphinxClass
 };
 
 GType gst_pocketsphinx_get_type(void);
-
-/*
- * Boxing of lattices.
- */
-#define PS_LATTICE_TYPE (ps_lattice_get_type())
-GType ps_lattice_get_type(void);
 
 /*
  * Boxing of decoder.
