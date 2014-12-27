@@ -69,7 +69,7 @@ struct _GstPocketSphinx
     gchar *latdir;                 /**< Output directory for word lattices. */
     int n_best_size;               /**< Size of the returned B-best list */
 
-    GHashTable *arghash;
+    gboolean utt_started;
     gboolean listening;
 
     GstClockTime last_result_time; /**< Timestamp of last partial result. */

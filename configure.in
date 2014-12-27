@@ -61,10 +61,10 @@ dnl swig python check
 dnl
 dnl Now check for GStreamer, and build the plugin if it's available
 dnl
-GST_MAJORMINOR=0.10
-PKG_CHECK_MODULES(GStreamer, [gstreamer-$GST_MAJORMINOR >= 0.10.0
-		       gstreamer-base-$GST_MAJORMINOR >= 0.10.0
-		       gstreamer-plugins-base-$GST_MAJORMINOR >= 0.10.0],
+GST_MAJORMINOR=1.0
+PKG_CHECK_MODULES(GStreamer, [gstreamer-$GST_MAJORMINOR >= 1.0
+		       gstreamer-base-$GST_MAJORMINOR >= 1.0
+		       gstreamer-plugins-base-$GST_MAJORMINOR >= 1.0],
                   HAVE_GST=yes, HAVE_GST=no)
 dnl Don't build GStreamer when cross-compiling
 AM_CONDITIONAL(BUILD_GST, test x$cross_compiling != xyes && test "x$HAVE_GST" = "xyes")

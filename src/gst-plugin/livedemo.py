@@ -12,7 +12,7 @@ import gtk
 
 import gobject
 import pygst
-pygst.require('0.10')
+pygst.require('1.0')
 gobject.threads_init()
 import gst
 
@@ -43,7 +43,6 @@ class DemoApp(object):
     def init_gst(self):
         """Initialize the speech components"""
         self.pipeline = gst.parse_launch('gconfaudiosrc ! audioconvert ! audioresample '
-                                         + '! vader name=vad auto-threshold=true '
                                          + '! pocketsphinx name=asr ! fakesink')
         asr = self.pipeline.get_by_name('asr')
         asr.connect('partial_result', self.asr_partial_result)
