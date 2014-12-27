@@ -751,12 +751,10 @@ static int32
 ascore(allphone_search_t * allphs, history_t * h)
 {
     int32 score = h->score;
-    int32 sf = 0;
 
     if (h->hist > 0) {
         history_t *pred = blkarray_list_get(allphs->history, h->hist);
         score -= pred->score;
-        sf = pred->ef + 1;
     }
 
     return score - h->tscore;

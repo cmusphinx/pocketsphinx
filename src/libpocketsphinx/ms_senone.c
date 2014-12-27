@@ -374,11 +374,16 @@ senone_eval(senone_t * s, int id, gauden_dist_t ** dist, int32 n_top)
     scr = 0;
 
     for (f = 0; f < s->n_feat; f++) {
+#ifdef SPHINX_DEBUG
         int top;
+#endif
         fdist = dist[f];
 
         /* Top codeword for feature f */
-	top = fden = ((int32)fdist[0].dist + ((1<<SENSCR_SHIFT) - 1)) >> SENSCR_SHIFT;
+#ifdef SPHINX_DEBUG
+	top = 
+#endif
+	fden = ((int32)fdist[0].dist + ((1<<SENSCR_SHIFT) - 1)) >> SENSCR_SHIFT;
         fscr = (s->n_gauden > 1)
 	    ? (fden + -s->pdf[id][f][fdist[0].id])  /* untransposed */
 	    : (fden + -s->pdf[f][fdist[0].id][id]); /* transposed */
