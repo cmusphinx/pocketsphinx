@@ -250,15 +250,23 @@ ptm_mgau_codebook_eval(ptm_mgau_t *s, mfcc_t **z, int frame)
             eval_cb(s, i, j, z[j]);
         }
     }
+    return 0;
+}
 
-    /* Normalize densities to produce "posterior probabilities",
-     * i.e. things with a reasonable dynamic range, then scale and
-     * clamp them to the acceptable range.  This is actually done
-     * solely to ensure that we can use fast_logmath_add().  Note that
-     * unless we share the same normalizer across all codebooks for
-     * each feature stream we get defective scores (that's why these
-     * loops are inside out - doing it per-feature should give us
-     * greater precision). */
+/**
+ * Normalize densities to produce "posterior probabilities",
+ * i.e. things with a reasonable dynamic range, then scale and
+ * clamp them to the acceptable range.  This is actually done
+ * solely to ensure that we can use fast_logmath_add().  Note that
+ * unless we share the same normalizer across all codebooks for
+ * each feature stream we get defective scores (that's why these
+ * loops are inside out - doing it per-feature should give us
+ * greater precision). */
+static int
+ptm_mgau_codebook_norm(ptm_mgau_t *s, mfcc_t **z, int frame)
+{
+    int i, j;
+
     for (j = 0; j < s->g->n_feat; ++j) {
         int32 norm = WORST_SCORE;
         for (i = 0; i < s->g->n_mgau; ++i) {
@@ -436,6 +444,7 @@ ptm_mgau_frame_eval(ps_mgau_t *ps,
         ptm_mgau_calc_cb_active(s, senone_active, n_senone_active, compallsen);
         /* Now evaluate top-N, prune, and evaluate remaining codebooks. */
         ptm_mgau_codebook_eval(s, featbuf, frame);
+        ptm_mgau_codebook_norm(s, featbuf, frame);
     }
     /* Evaluate intersection of active senones and active codebooks. */
     ptm_mgau_senone_eval(s, senone_scores, senone_active,
