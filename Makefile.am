@@ -2,9 +2,6 @@ SUBDIRS = src doc model include test swig
 
 EXTRA_DIST = \
 	autogen.sh \
-	group/ABLD.BAT \
-	group/bld.inf \
-	group/pocketsphinx.mmp \
 	m4/pkg.m4 \
 	pocketsphinx.pc.in \
 	pocketsphinx.sln \
