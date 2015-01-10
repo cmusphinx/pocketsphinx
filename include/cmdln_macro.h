@@ -167,7 +167,7 @@
       "Maximum number of distinct word exits at each frame (or -1 for no pruning)" },           \
 { "-maxhmmpf",                                                                                  \
       ARG_INT32,                                                                                \
-      "10000",                                                                                     \
+      "30000",                                                                                  \
       "Maximum number of active HMMs to maintain at each frame (or -1 for no pruning)" },       \
 { "-min_endfr",                                                                                 \
       ARG_INT32,                                                                                \
