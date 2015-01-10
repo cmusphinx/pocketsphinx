@@ -22,6 +22,12 @@ Automatic gain control for c0 ('max', 'emax', 'noise', or 'none')
 .B \-agcthresh
 Initial threshold for automatic gain control
 .TP
+.B \-allphone
+phoneme decoding with phonetic lm
+.TP
+.B \-allphone_ci
+Perform phoneme decoding with phonetic lm and context-independent units only
+.TP
 .B \-alpha
 Preemphasis parameter
 .TP
@@ -45,9 +51,6 @@ Run bestpath (Dijkstra) search over word lattice (3rd pass)
 .TP
 .B \-bestpathlw
 Language model probability weight for bestpath search
-.TP
-.B \-bghist
-Bigram-mode: If TRUE only one BP entry/frame; else one per LM state
 .TP
 .B \-ceplen
 Number of components in the input feature vector
@@ -130,20 +133,26 @@ containing acoustic model files.
 .B \-infile
 file to transcribe.
 .TP
+.B \-inmic
+Transcribe audio from microphone.
+.TP
 .B \-input_endian
 Endianness of input data, big or little, ignored if NIST or MS Wav
 .TP
 .B \-jsgf
 grammar file
 .TP
-.B \-kdmaxbbi
-Maximum number of Gaussians per leaf node in kd-Trees
+.B \-keyphrase
+to spot
 .TP
-.B \-kdmaxdepth
-Maximum depth of kd-Trees to use
+.B \-kws
+file with keyphrases to spot, one per line
 .TP
-.B \-kdtree
-file for Gaussian selection
+.B \-kws_plp
+Phone loop probability for keyword spotting
+.TP
+.B \-kws_threshold
+Threshold for p(hyp)/p(alternatives) ratio
 .TP
 .B \-latsize
 Initial backpointer table size
@@ -153,9 +162,6 @@ containing transformation matrix to be applied to features (single-stream featur
 .TP
 .B \-ldadim
 Dimensionality of output of feature transformation (0 to use entire matrix)
-.TP
-.B \-lextreedump
-Whether to dump the lextree structure to stderr (for debugging), 1 for Ravi's format, 2 for Dot format, Larger than 2 will be treated as Ravi's format
 .TP
 .B \-lifter
 Length of sin-curve for liftering, or 0 for no liftering.

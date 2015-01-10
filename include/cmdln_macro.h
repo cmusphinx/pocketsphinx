@@ -285,15 +285,7 @@
 { "-fillprob",										\
       ARG_FLOAT32,									\
       "1e-8",										\
-        "Filler word transition probability" }, \
-{ "-bghist",   \
-      ARG_BOOLEAN, \
-      "no", \
-      "Bigram-mode: If TRUE only one BP entry/frame; else one per LM state" }, \
-{ "-lextreedump", \
-      ARG_INT32, \
-      "0", \
-      "Whether to dump the lextree structure to stderr (for debugging), 1 for Ravi's format, 2 for Dot format, Larger than 2 will be treated as Ravi's format" }
+        "Filler word transition probability" } \
 
 /** Command-line options for dictionaries. */
 #define POCKETSPHINX_DICT_OPTIONS \
@@ -308,15 +300,7 @@
     { "-dictcase",						\
       ARG_BOOLEAN,						\
       "no",							\
-      "Dictionary is case sensitive (NOTE: case insensitivity applies to ASCII characters only)" },	\
-    { "-maxnewoov",						\
-      ARG_INT32,						\
-      "20",							\
-      "Maximum new OOVs that can be added at run time" },	\
-    { "-usewdphones",						\
-      ARG_BOOLEAN,						\
-      "no",							\
-      "Use within-word phones only" }
+      "Dictionary is case sensitive (NOTE: case insensitivity applies to ASCII characters only)" }	\
 
 /** Command-line options for acoustic modeling */
 #define POCKETSPHINX_ACMOD_OPTIONS \
@@ -392,18 +376,6 @@
       ARG_STRING,                                                               \
       "0",                                                                     \
       "Beam width used to determine top-N Gaussians (or a list, per-feature)" },\
-{ "-kdtree",                                                                    \
-      ARG_STRING,                                                               \
-      NULL,                                                                     \
-      "kd-Tree file for Gaussian selection" },                                  \
-{ "-kdmaxdepth",                                                                \
-      ARG_INT32,                                                                \
-      "0",                                                                      \
-      "Maximum depth of kd-Trees to use" },                                     \
-{ "-kdmaxbbi",                                                                  \
-      ARG_INT32,                                                                \
-      "-1",                                                                     \
-      "Maximum number of Gaussians per leaf node in kd-Trees" },                \
 { "-logbase",                                                                   \
       ARG_FLOAT32,                                                              \
       "1.0001",                                                                 \
