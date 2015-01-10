@@ -125,7 +125,15 @@
 { "-pl_pbeam",                                                          \
       ARG_FLOAT64,                                                      \
       "1e-5",                                                           \
-      "Beam width applied to phone loop transitions for lookahead" }
+      "Beam width applied to phone loop transitions for lookahead" },   \
+{ "-pl_pip",                                                            \
+      ARG_FLOAT32,                                                      \
+      "1.0",                                                            \
+      "Phone insertion penalty for phone loop" },                       \
+{ "-pl_weight",                                                         \
+      ARG_FLOAT64,                                                      \
+      "1.0",                                                            \
+      "Weight for phoneme lookahead penalties" }                        \
 
 /** Options defining other parameters for tuning the search. */
 #define POCKETSPHINX_SEARCH_OPTIONS \

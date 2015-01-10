@@ -58,16 +58,6 @@
 #include "hmm.h"
 
 /**
- * Phone loop structure.
- */
-struct phone_loop_s {
-    hmm_t hmm;       /**< Basic HMM structure. */
-    int16 ciphone;   /**< Context-independent phone ID. */
-    int16 frame;     /**< Last frame this phone was active. */
-};
-typedef struct phone_loop_s phone_loop_t;
-
-/**
  * Renormalization event.
  */
 struct phone_loop_renorm_s {
@@ -80,17 +70,22 @@ typedef struct phone_loop_renorm_s phone_loop_renorm_t;
  * Phone loop search structure.
  */
 struct phone_loop_search_s {
-    ps_search_t base;       /**< Base search structure. */
-    hmm_context_t *hmmctx;  /**< HMM context structure. */
-    int16 frame;            /**< Current frame being searched. */
-    int16 n_phones;         /**< Size of phone array. */
-    phone_loop_t *phones;   /**< Array of phone arcs. */
+    ps_search_t base;                  /**< Base search structure. */
+    hmm_t *hmms;                       /**< Basic HMM structures for CI phones. */
+    hmm_context_t *hmmctx;             /**< HMM context structure. */
+    int16 frame;                       /**< Current frame being searched. */
+    int16 n_phones;                    /**< Size of phone array. */
+    int32 **pen_buf;                /**< Penalty buffer */
+    int16 pen_buf_ptr;                 /**< Pointer for frame to fill in penalty buffer */
+    int32 *penalties;                  /**< Penalties for CI phones in current frame */
+    float64 penalty_weight;            /**< Weighting factor for penalties */
 
-    int32 best_score;       /**< Best Viterbi score in current frame. */
-    int32 beam;             /**< HMM pruning beam width. */
-    int32 pbeam;            /**< Phone exit pruning beam width. */
-    int32 pip;              /**< Phone insertion penalty ("language score"). */
-    glist_t renorm;         /**< List of renormalizations. */
+    int32 best_score;                  /**< Best Viterbi score in current frame. */
+    int32 beam;                        /**< HMM pruning beam width. */
+    int32 pbeam;                       /**< Phone exit pruning beam width. */
+    int32 pip;                         /**< Phone insertion penalty ("language score"). */
+    int window;                        /**< Window size for phoneme lookahead */
+    glist_t renorm;                    /**< List of renormalizations. */
 };
 typedef struct phone_loop_search_s phone_loop_search_t;
 
@@ -102,7 +97,6 @@ ps_search_t *phone_loop_search_init(cmd_ln_t *config,
  * Return lookahead heuristic score for a specific phone.
  */
 #define phone_loop_search_score(pls,ci) \
-    ((pls == NULL) ? 0                                          \
-     : (hmm_bestscore(&pls->phones[ci].hmm) - (pls)->best_score))
+    ((pls == NULL) ? 0 : (pls->penalties[ci]))
 
 #endif /* __PHONE_LOOP_SEARCH_H__ */
