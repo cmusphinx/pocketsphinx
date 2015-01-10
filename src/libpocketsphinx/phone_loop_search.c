@@ -108,8 +108,8 @@ phone_loop_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
                  bin_mdef_pid2tmatid(acmod->mdef, i));
     }
     pls->penalty_weight = cmd_ln_float64_r(config, "-pl_weight");
-    pls->beam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pl_beam"));
-    pls->pbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pl_pbeam"));
+    pls->beam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pl_beam")) >> SENSCR_SHIFT;
+    pls->pbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pl_pbeam")) >> SENSCR_SHIFT;
     pls->pip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-pl_pip")) >> SENSCR_SHIFT;
     E_INFO("State beam %d Phone exit beam %d Insertion penalty %d\n",
            pls->beam, pls->pbeam, pls->pip);
