@@ -116,7 +116,7 @@
       "Beam width applied to word exits in second-pass flat search" },  \
 { "-pl_window",                                                         \
       ARG_INT32,                                                        \
-      "0",                                                              \
+      "5",                                                              \
       "Phoneme lookahead window size, in frames" },                     \
 { "-pl_beam",                                                           \
       ARG_FLOAT64,                                                      \
@@ -124,7 +124,7 @@
       "Beam width applied to phone loop search for lookahead" },        \
 { "-pl_pbeam",                                                          \
       ARG_FLOAT64,                                                      \
-      "1e-5",                                                           \
+      "1e-10",                                                          \
       "Beam width applied to phone loop transitions for lookahead" },   \
 { "-pl_pip",                                                            \
       ARG_FLOAT32,                                                      \
@@ -132,7 +132,7 @@
       "Phone insertion penalty for phone loop" },                       \
 { "-pl_weight",                                                         \
       ARG_FLOAT64,                                                      \
-      "1.0",                                                            \
+      "3.0",                                                            \
       "Weight for phoneme lookahead penalties" }                        \
 
 /** Options defining other parameters for tuning the search. */
