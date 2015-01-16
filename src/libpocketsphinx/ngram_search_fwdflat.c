@@ -419,17 +419,18 @@ ngram_fwdflat_start(ngram_search_t *ngs)
 static void
 compute_fwdflat_sen_active(ngram_search_t *ngs, int frame_idx)
 {
-    int32 i, w;
+    int32 i, nw, w;
     int32 *awl;
     root_chan_t *rhmm;
     chan_t *hmm;
 
     acmod_clear_active(ps_search_acmod(ngs));
 
-    i = ngs->n_active_word[frame_idx & 0x1];
+    nw = ngs->n_active_word[frame_idx & 0x1];
     awl = ngs->active_word_list[frame_idx & 0x1];
 
-    for (w = *(awl++); i > 0; --i, w = *(awl++)) {
+    for (i = 0; i < nw; i++) {
+        w = *(awl++);
         rhmm = (root_chan_t *)ngs->word_chan[w];
         if (hmm_frame(&rhmm->hmm) == frame_idx) {
             acmod_activate_hmm(ps_search_acmod(ngs), &rhmm->hmm);
@@ -446,19 +447,20 @@ compute_fwdflat_sen_active(ngram_search_t *ngs, int frame_idx)
 static void
 fwdflat_eval_chan(ngram_search_t *ngs, int frame_idx)
 {
-    int32 i, w, bestscore;
+    int32 i, w, nw, bestscore;
     int32 *awl;
     root_chan_t *rhmm;
     chan_t *hmm;
 
-    i = ngs->n_active_word[frame_idx & 0x1];
+    nw = ngs->n_active_word[frame_idx & 0x1];
     awl = ngs->active_word_list[frame_idx & 0x1];
     bestscore = WORST_SCORE;
 
-    ngs->st.n_fwdflat_words += i;
+    ngs->st.n_fwdflat_words += nw;
 
     /* Scan all active words. */
-    for (w = *(awl++); i > 0; --i, w = *(awl++)) {
+    for (i = 0; i < nw; i++) {
+        w = *(awl++);
         rhmm = (root_chan_t *) ngs->word_chan[w];
         if (hmm_frame(&rhmm->hmm) == frame_idx) {
             int32 score = chan_v_eval(rhmm);
@@ -483,14 +485,14 @@ fwdflat_eval_chan(ngram_search_t *ngs, int frame_idx)
 static void
 fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
 {
-    int32 i, cf, nf, w, pip, newscore, thresh, wordthresh;
+    int32 i, nw, cf, nf, w, pip, newscore, thresh, wordthresh;
     int32 *awl;
     root_chan_t *rhmm;
     chan_t *hmm, *nexthmm;
 
     cf = frame_idx;
     nf = cf + 1;
-    i = ngs->n_active_word[cf & 0x1];
+    nw = ngs->n_active_word[cf & 0x1];
     awl = ngs->active_word_list[cf & 0x1];
     bitvec_clear_all(ngs->word_active, ps_search_n_words(ngs));
 
@@ -500,7 +502,8 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
     E_DEBUG(3,("frame %d thresh %d wordthresh %d\n", frame_idx, thresh, wordthresh));
 
     /* Scan all active words. */
-    for (w = *(awl++); i > 0; --i, w = *(awl++)) {
+    for (i = 0; i < nw; i++) {
+        w = *(awl++);
         rhmm = (root_chan_t *) ngs->word_chan[w];
         /* Propagate active root channels */
         if (hmm_frame(&rhmm->hmm) == cf
@@ -642,7 +645,7 @@ get_expand_wordlist(ngram_search_t *ngs, int32 frm, int32 win)
 static void
 fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
 {
-    int32 cf, nf, b, thresh, pip, i, w, newscore;
+    int32 cf, nf, b, thresh, pip, i, nw, w, newscore;
     int32 best_silrc_score = 0, best_silrc_bp = 0;      /* FIXME: good defaults? */
     bptbl_t *bp;
     int32 *rcss;
@@ -767,9 +770,10 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
     }
 
     /* Reset initial channels of words that have become inactive even after word trans. */
-    i = ngs->n_active_word[cf & 0x1];
+    nw = ngs->n_active_word[cf & 0x1];
     awl = ngs->active_word_list[cf & 0x1];
-    for (w = *(awl++); i > 0; --i, w = *(awl++)) {
+    for (i = 0; i < nw; i++) {
+        w = *(awl++);
         rhmm = (root_chan_t *) ngs->word_chan[w];
         if (hmm_frame(&rhmm->hmm) == cf) {
             hmm_clear_scores(&rhmm->hmm);
@@ -782,14 +786,15 @@ fwdflat_renormalize_scores(ngram_search_t *ngs, int frame_idx, int32 norm)
 {
     root_chan_t *rhmm;
     chan_t *hmm;
-    int32 i, cf, w, *awl;
+    int32 i, nw, cf, w, *awl;
 
     cf = frame_idx;
 
     /* Renormalize individual word channels */
-    i = ngs->n_active_word[cf & 0x1];
+    nw = ngs->n_active_word[cf & 0x1];
     awl = ngs->active_word_list[cf & 0x1];
-    for (w = *(awl++); i > 0; --i, w = *(awl++)) {
+    for (i = 0; i < nw; i++) {
+        w = *(awl++);
         rhmm = (root_chan_t *) ngs->word_chan[w];
         if (hmm_frame(&rhmm->hmm) == cf) {
             hmm_normalize(&rhmm->hmm, norm);
