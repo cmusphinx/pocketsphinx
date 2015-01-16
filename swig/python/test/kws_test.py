@@ -42,8 +42,8 @@ datadir = "../../../test/data"
 
 # Create a decoder with certain model
 config = Decoder.default_config()
-config.set_string('-hmm', os.path.join(modeldir, 'hmm/en_US/hub4wsj_sc_8k'))
-config.set_string('-dict', os.path.join(modeldir, 'lm/en_US/cmu07a.dic'))
+config.set_string('-hmm', os.path.join(modeldir, 'en-us/en-us'))
+config.set_string('-dict', os.path.join(modeldir, 'en-us/cmudict-en-us.dict'))
 config.set_string('-keyphrase', 'forward')
 config.set_float('-kws_threshold', 1e-20)
 

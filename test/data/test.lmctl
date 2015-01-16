@@ -1,2 +1,2 @@
-../../model/lm/en/tidigits.DMP tidigits
-../../model/lm/en/turtle.DMP turtle
+../data/tidigits/lm/tidigits.lm.dmp tidigits
+../data/turtle.lm.dmp turtle

@@ -45,9 +45,9 @@ DATADIR = "../../../test/data"
 
 # Create a decoder with certain model
 config = Decoder.default_config()
-config.set_string('-hmm', path.join(MODELDIR, 'hmm/en_US/hub4wsj_sc_8k'))
-config.set_string('-lm', path.join(MODELDIR, 'lm/en/turtle.DMP'))
-config.set_string('-dict', path.join(MODELDIR, 'lm/en/turtle.dic'))
+config.set_string('-hmm', path.join(MODELDIR, 'en-us/en-us'))
+config.set_string('-lm', path.join(DATADIR, 'turtle.lm.dmp'))
+config.set_string('-dict', path.join(DATADIR, 'turtle.dic'))
 decoder = Decoder(config)
 
 # Decode with lm
@@ -56,7 +56,7 @@ print 'Decoding with "turtle" language:', decoder.hyp().hypstr
 
 # Switch to JSGF grammar
 jsgf = Jsgf(path.join(DATADIR, 'goforward.gram'))
-rule = jsgf.get_rule('<goforward.move2>')
+rule = jsgf.get_rule('goforward.move2')
 fsg = jsgf.build_fsg(rule, decoder.get_logmath(), 7.5)
 fsg.write(stdout)
 fsg.writefile('goforward.fsg')

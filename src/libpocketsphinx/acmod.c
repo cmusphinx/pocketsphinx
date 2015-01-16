@@ -121,10 +121,10 @@ acmod_init_am(acmod_t *acmod)
             return -1;
     }
     else {
-        E_INFO("Attempting to use SCHMM computation module\n");
-        if ((acmod->mgau = s2_semi_mgau_init(acmod)) == NULL) {
-            E_INFO("Attempting to use PTHMM computation module\n");
-            if ((acmod->mgau = ptm_mgau_init(acmod, acmod->mdef)) == NULL) {
+        E_INFO("Attempting to use PTM computation module\n");
+        if ((acmod->mgau = ptm_mgau_init(acmod, acmod->mdef)) == NULL) {
+            E_INFO("Attempting to use semi-continuous computation module\n");
+            if ((acmod->mgau = s2_semi_mgau_init(acmod)) == NULL) {
                 E_INFO("Falling back to general multi-stream GMM computation\n");
                 acmod->mgau = ms_mgau_init(acmod, acmod->lmath, acmod->mdef);
                 if (acmod->mgau == NULL)

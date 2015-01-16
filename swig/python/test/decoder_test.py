@@ -44,9 +44,9 @@ DATADIR = "../../../test/data"
 
 # Create a decoder with certain model
 config = Decoder.default_config()
-config.set_string('-hmm', path.join(MODELDIR, 'hmm/en_US/hub4wsj_sc_8k'))
-config.set_string('-lm', path.join(MODELDIR, 'lm/en_US/hub4.5000.DMP'))
-config.set_string('-dict', path.join(MODELDIR, 'lm/en_US/hub4.5000.dic'))
+config.set_string('-hmm', path.join(MODELDIR, 'en-us/en-us'))
+config.set_string('-lm', path.join(MODELDIR, 'en-us/en-us.lm.dmp'))
+config.set_string('-dict', path.join(MODELDIR, 'en-us/cmudict-en-us.dict'))
 decoder = Decoder(config)
 
 

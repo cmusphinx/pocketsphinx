@@ -175,8 +175,6 @@ src/gst-plugin/Makefile
 doc/Makefile
 doc/doxyfile
 model/Makefile
-model/hmm/Makefile
-model/lm/Makefile
 test/Makefile
 test/testfuncs.sh
 test/unit/Makefile

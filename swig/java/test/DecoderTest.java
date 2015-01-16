@@ -26,14 +26,12 @@ public class DecoderTest {
     @Test
     public void testDecodeRaw() throws IOException, UnsupportedAudioFileException {
         Config c = Decoder.defaultConfig();
-//        c.setFloat("-samprate", 8000);
-        c.setString("-hmm", "../../model/hmm/en_US/hub4wsj_sc_8k");
-        c.setString("-lm", "../../model/lm/en_US/hub4.5000.DMP");
-        c.setString("-dict", "../../model/lm/en_US/hub4.5000.dic");
+        c.setString("-hmm", "../../model/en-us/en-us");
+        c.setString("-lm", "../../model/en-us/en-us.lm.dmp");
+        c.setString("-dict", "../../model/en-us/cmudict-en-us.dict");
         Decoder d = new Decoder(c);
         AudioInputStream ais = null;
 
-//        URL testwav = new URL("file:../../test/data/wsj/n800_440c0207.wav");
         URL testwav = new URL("file:../../test/data/goforward.wav");
         AudioInputStream tmp = AudioSystem.getAudioInputStream(testwav);
         // Convert it to the desired audio format for PocketSphinx.

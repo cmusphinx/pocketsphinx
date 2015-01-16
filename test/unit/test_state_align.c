@@ -50,8 +50,8 @@ main(int argc, char *argv[])
     int i;
 
     config = cmd_ln_init(NULL, ps_args(), FALSE,
-                 "-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
-                 "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
+                 "-hmm", MODELDIR "/en-us/en-us",
+                 "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
                  "-input_endian", "little",
                  "-samprate", "16000", NULL);
     TEST_ASSERT(ps = ps_init(config));
@@ -80,19 +80,19 @@ main(int argc, char *argv[])
     TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 3);
     itor = ps_alignment_iter_next(itor);
     TEST_EQUAL(ps_alignment_iter_get(itor)->start, 3);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 6);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 12);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 9);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 41);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 15);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 53);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 50);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 37);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 68);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 36);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 87);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 57);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 104);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 59);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 144);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 31);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 163);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 51);
     itor = ps_alignment_iter_next(itor);
     TEST_EQUAL(itor, NULL);
 

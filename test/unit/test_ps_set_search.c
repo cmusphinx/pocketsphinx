@@ -9,8 +9,8 @@ static cmd_ln_t *
 default_config()
 {
     return cmd_ln_init(NULL, ps_args(), TRUE,
-                       "-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
-                       "-dict", MODELDIR "/lm/en_US/cmu07a.dic", NULL);
+                       "-hmm", MODELDIR "/en-us/en-us",
+                       "-dict", MODELDIR "/en-us/cmudict-en-us.dict", NULL);
 }
 
 static void
@@ -18,7 +18,7 @@ test_no_search()
 {
     cmd_ln_t *config = default_config();
     ps_decoder_t *ps = ps_init(config);
-    TEST_ASSERT(ps_start_utt(ps, NULL));
+    TEST_ASSERT(ps_start_utt(ps, NULL) < 0);
     ps_free(ps);
     cmd_ln_free_r(config);
 }
@@ -27,9 +27,9 @@ static void
 test_default_fsg()
 {
     cmd_ln_t *config = default_config();
-    cmd_ln_set_str_r(config, "-hmm", MODELDIR "/hmm/en/tidigits");
-    cmd_ln_set_str_r(config, "-dict", MODELDIR "/lm/en/tidigits.dic");
-    cmd_ln_set_str_r(config, "-fsg", MODELDIR "/lm/en/tidigits.fsg");
+    cmd_ln_set_str_r(config, "-hmm", DATADIR "/tidigits/hmm");
+    cmd_ln_set_str_r(config, "-dict", DATADIR "/tidigits/lm/tidigits.dic");
+    cmd_ln_set_str_r(config, "-fsg", DATADIR "/tidigits/lm/tidigits.fsg");
     ps_decoder_t *ps = ps_init(config);
     TEST_ASSERT(!ps_get_lm(ps, PS_DEFAULT_SEARCH));
     TEST_ASSERT(ps_get_fsg(ps, PS_DEFAULT_SEARCH));
@@ -53,7 +53,7 @@ static void
 test_default_lm()
 {
     cmd_ln_t *config = default_config();
-    cmd_ln_set_str_r(config, "-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP");
+    cmd_ln_set_str_r(config, "-lm", MODELDIR "/en-us/en-us.lm.dmp");
     ps_decoder_t *ps = ps_init(config);
     TEST_ASSERT(!ps_get_fsg(ps, PS_DEFAULT_SEARCH));
     TEST_ASSERT(ps_get_lm(ps, PS_DEFAULT_SEARCH));
@@ -66,6 +66,7 @@ test_default_lmctl()
 {
     cmd_ln_t *config = default_config();
     cmd_ln_set_str_r(config, "-lmctl", DATADIR "/test.lmctl");
+    cmd_ln_set_str_r(config, "-lmname", "tidigits");
     ps_decoder_t *ps = ps_init(config);
     TEST_ASSERT(ps_get_lm(ps, "tidigits"));
     TEST_ASSERT(ps_get_lm(ps, "turtle"));
@@ -89,7 +90,7 @@ test_set_search()
     TEST_ASSERT(!ps_set_fsg(ps, "goforward", fsg));
     fsg_model_free(fsg);
 
-    ngram_model_t *lm = ngram_model_read(config, MODELDIR "/lm/en/tidigits.DMP",
+    ngram_model_t *lm = ngram_model_read(config, DATADIR "/tidigits/lm/tidigits.lm.dmp",
                                          NGRAM_AUTO, ps->lmath);
     TEST_ASSERT(!ps_set_lm(ps, "tidigits", lm));
     ngram_model_free(lm);
@@ -101,6 +102,8 @@ test_set_search()
     TEST_EQUAL(0, strcmp("tidigits", ps_search_iter_val(itor)));
     itor = ps_search_iter_next(itor);
     TEST_EQUAL(0, strcmp("goforward", ps_search_iter_val(itor)));
+    itor = ps_search_iter_next(itor);
+    TEST_EQUAL(0, strcmp("phone_loop", ps_search_iter_val(itor)));
     itor = ps_search_iter_next(itor);
     TEST_EQUAL(NULL, itor);
     

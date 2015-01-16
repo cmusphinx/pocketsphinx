@@ -853,6 +853,9 @@ fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_sc
     int bpidx, frm, last_frm, besthist;
     int32 bestscore;
 
+    if (out_is_final)
+	*out_is_final = FALSE;
+
     if (frame_idx == -1)
         frame_idx = fsgs->frame - 1;
     last_frm = frm = frame_idx;
@@ -869,7 +872,7 @@ fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_sc
     }
 
     /* No hypothesis (yet). */
-    if (bpidx <= 0) 
+    if (bpidx <= 0)
         return bpidx;
 
     /* Now find best word exit in this frame. */
@@ -956,8 +959,9 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score, int32 *out_is_final)
     /* Get last backpointer table index. */
     bpidx = fsg_search_find_exit(fsgs, fsgs->frame, fsgs->final, out_score, out_is_final);
     /* No hypothesis (yet). */
-    if (bpidx <= 0)
+    if (bpidx <= 0) {
         return NULL;
+    }
 
     /* If bestpath is enabled and the utterance is complete, then run it. */
     if (fsgs->bestpath && fsgs->final) {

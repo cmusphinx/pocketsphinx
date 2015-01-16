@@ -63,7 +63,7 @@ run_acmod_test(acmod_t *acmod)
 			}
 		}
 	}
-	TEST_EQUAL(1, acmod_end_utt(acmod));
+	TEST_EQUAL(0, acmod_end_utt(acmod));
 	nread = 0;
 	{
 		int16 const *senscr;
@@ -97,12 +97,12 @@ main(int argc, char *argv[])
 
 	lmath = logmath_init(1.0001, 0, 0);
 	config = cmd_ln_init(NULL, ps_args(), TRUE,
-	     "-featparams", MODELDIR "/hmm/en_US/hub4_wsj_ptm256_3s_8k.cd_ptm_5000/feat.params",
-	     "-mdef", MODELDIR "/hmm/en_US/hub4_wsj_ptm256_3s_8k.cd_ptm_5000/mdef",
-	     "-mean", MODELDIR "/hmm/en_US/hub4_wsj_ptm256_3s_8k.cd_ptm_5000/means",
-	     "-var", MODELDIR "/hmm/en_US/hub4_wsj_ptm256_3s_8k.cd_ptm_5000/variances",
-	     "-tmat", MODELDIR "/hmm/en_US/hub4_wsj_ptm256_3s_8k.cd_ptm_5000/transition_matrices",
-	     "-sendump", MODELDIR "/hmm/en_US/hub4_wsj_ptm256_3s_8k.cd_ptm_5000/sendump",
+	     "-featparams", MODELDIR "/en-us/en-us/feat.params",
+	     "-mdef", MODELDIR "/en-us/en-us/mdef",
+	     "-mean", MODELDIR "/en-us/en-us/means",
+	     "-var", MODELDIR "/en-us/en-us/variances",
+	     "-tmat", MODELDIR "/en-us/en-us/transition_matrices",
+	     "-sendump", MODELDIR "/en-us/en-us/sendump",
 	     "-compallsen", "yes",
 	     "-input_endian", "little",
 	     NULL);
@@ -128,14 +128,16 @@ main(int argc, char *argv[])
 	E_INFOCONT("-%d\n", i-1);
 	run_acmod_test(acmod);
 
+#if 0
 	/* Replace it with ms_mgau. */
 	ptm_mgau_free(ps);
 	cmd_ln_set_str_r(config,
 			 "-mixw",
-			 MODELDIR "/hmm/en_US/hub4_wsj_ptm256_3s_8k.cd_ptm_5000/mixture_weights");
-	TEST_ASSERT((acmod->mgau = ms_mgau_init(config, lmath, acmod->mdef)));
+			 MODELDIR "/en-us/en-us/mixture_weights");
+	TEST_ASSERT((acmod->mgau = ms_mgau_init(acmod, lmath, acmod->mdef)));
 	run_acmod_test(acmod);
 	cmd_ln_free_r(config);
+#endif
 
 	return 0;
 }

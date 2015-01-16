@@ -12,9 +12,9 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
-				"-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
-				"-dict", MODELDIR "/lm/en_US/cmu07a.dic",
+				"-hmm", MODELDIR "/en-us/en-us",
+				"-lm", MODELDIR "/en-us/en-us.lm.dmp",
+				"-dict", MODELDIR "/en-us/cmudict-en-us.dict",
 				"-fwdtree", "yes",
 				"-fwdflat", "yes",
 				"-bestpath", "yes",
@@ -25,9 +25,9 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/en/tidigits",
-				"-lm", MODELDIR "/lm/en/tidigits.DMP",
-				"-dict", MODELDIR "/lm/en/tidigits.dic",
+				"-hmm", DATADIR "/tidigits/hmm",
+				"-lm", DATADIR "/tidigits/lm/tidigits.lm.dmp",
+				"-dict", DATADIR "/tidigits/lm/tidigits.dic",
 				"-fwdtree", "yes",
 				"-fwdflat", "yes",
 				"-bestpath", "yes",

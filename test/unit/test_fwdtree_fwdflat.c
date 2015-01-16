@@ -20,9 +20,9 @@ main(int argc, char *argv[])
 
     TEST_ASSERT(config =
             cmd_ln_init(NULL, ps_args(), TRUE,
-                "-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
-                "-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
-                "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
+                "-hmm", MODELDIR "/en-us/en-us",
+                "-lm", MODELDIR "/en-us/en-us.lm.dmp",
+                "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
                 "-fwdtree", "yes",
                 "-fwdflat", "yes",
                 "-bestpath", "no",
@@ -83,7 +83,7 @@ main(int argc, char *argv[])
         printf("FWDFLAT: %s\n",
                ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL)));
     }
-    TEST_EQUAL(0, strcmp("a former ten new shares",
+    TEST_EQUAL(0, strcmp("go forward ten meters",
                  ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL))));
     c = clock() - c;
     printf("5 * fwdtree + fwdflat search in %.2f sec\n",

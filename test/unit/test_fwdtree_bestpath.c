@@ -21,9 +21,9 @@ main(int argc, char *argv[])
 
     TEST_ASSERT(config =
             cmd_ln_init(NULL, ps_args(), TRUE,
-                "-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
-                "-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
-                "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
+                "-hmm", MODELDIR "/en-us/en-us",
+                "-lm", MODELDIR "/en-us/en-us.lm.dmp",
+                "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
                 "-fwdtree", "yes",
                 "-fwdflat", "no",
                 "-bestpath", "yes",
@@ -78,11 +78,11 @@ main(int argc, char *argv[])
                ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset, 1.461538, 15.0)));
     }
     printf("%s\n", ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL)));
-    TEST_EQUAL(0, strcmp("a former ten new shares",
+    TEST_EQUAL(0, strcmp("go forward ten meters",
                  ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL))));
     printf("%s\n", ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset,
                                    1.461538, 15.0)));
-    TEST_EQUAL(0, strcmp("before returning teachers",
+    TEST_EQUAL(0, strcmp("go forward ten meters",
                  ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset,
                                      1.461538, 15.0))));
     c = clock() - c;

@@ -16,10 +16,10 @@ main(int argc, char *argv[])
 	cmd_ln_t *config;
 
 	config = cmd_ln_init(NULL, NULL, FALSE,
-			     "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
-			     "-fdict", MODELDIR "/hmm/en_US/hub4wsj_sc_8k/noisedict",
+			     "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
+			     "-fdict", MODELDIR "/en-us/en-us/noisedict",
 			     NULL);
-	mdef = bin_mdef_read(NULL, MODELDIR "/hmm/en_US/hub4wsj_sc_8k/mdef");
+	mdef = bin_mdef_read(NULL, MODELDIR "/en-us/en-us/mdef");
 	dict = dict_init(config, mdef);
 	d2p = dict2pid_build(mdef, dict);
 

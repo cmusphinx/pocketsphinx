@@ -19,9 +19,9 @@ main(int argc, char *argv[])
 
     TEST_ASSERT(config =
             cmd_ln_init(NULL, ps_args(), TRUE,
-                "-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
-                "-lm", MODELDIR "/lm/en_US/wsj0vp.5000.DMP",
-                "-dict", MODELDIR "/lm/en_US/cmu07a.dic",
+                "-hmm", MODELDIR "/en-us/en-us",
+                "-lm", MODELDIR "/en-us/en-us.lm.dmp",
+                "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
                 "-fwdtree", "yes",
                 "-fwdflat", "no",
                 "-bestpath", "no",
@@ -72,7 +72,7 @@ main(int argc, char *argv[])
         fclose(rawfh);
     }
     printf("%s\n", ps_search_hyp(ngs, &score, NULL));
-    TEST_EQUAL(0, strcmp("a former ten leaders", ps_search_hyp(ngs, &score, NULL)));
+    TEST_EQUAL(0, strcmp("go forward ten meters", ps_search_hyp(ngs, &score, NULL)));
     c = clock() - c;
     printf("5 * fwdtree search in %.2f sec\n",
            (double)c / CLOCKS_PER_SEC);

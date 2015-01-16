@@ -22,9 +22,9 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
+				"-hmm", MODELDIR "/en-us/en-us",
 				"-fsg", DATADIR "/goforward.fsg",
-				"-dict", MODELDIR "/lm/en/turtle.dic",
+				"-dict", DATADIR "/turtle.dic",
 				"-bestpath", "no",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
@@ -80,7 +80,8 @@ main(int argc, char *argv[])
 	dag = ps_get_lattice(ps);
 	ps_lattice_write(dag, "test_fsg2.lat");
 	link = ps_lattice_bestpath(dag, NULL, 1.0, 1.0/15.0);
-	printf("BESTPATH: %s\n", ps_lattice_hyp(dag, link));
+	if (link)
+    	    printf("BESTPATH: %s\n", ps_lattice_hyp(dag, link));
 	ps_lattice_posterior(dag, NULL, 1.0/15.0);
 	while (link) {
 		printf("%s %d P(w|o) = %d + %d - %d = %d = %f\n",

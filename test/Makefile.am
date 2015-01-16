@@ -65,7 +65,17 @@ EXTRA_DIST = \
 	data/tidigits/woman.ak.o69a.mfc \
 	data/tidigits/woman.ak.ooa.mfc \
 	data/tidigits/woman.ak.za.mfc \
+	data/tidigits/hmm/feat.params \
+	data/tidigits/hmm/variances \
+	data/tidigits/hmm/transition_matrices \
+	data/tidigits/hmm/sendump \
+	data/tidigits/hmm/mdef \
+	data/tidigits/hmm/means \
+	data/tidigits/lm/tidigits.dic \
+	data/tidigits/lm/tidigits.lm.dmp \
+	data/tidigits/lm/tidigits.fsg \
 	data/turtle.dic \
+	data/turtle.lm.dmp \
 	data/unreachable.lat \
 	data/wsj/440c0201.mfc \
 	data/wsj/441c0201.mfc \

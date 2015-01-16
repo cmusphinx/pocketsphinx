@@ -6,9 +6,9 @@ bn=`basename $0 .sh`
 
 echo "Test: $bn"
 run_program pocketsphinx_batch \
-    -hmm $model/hmm/en/tidigits \
-    -fsg $model/lm/en/tidigits.fsg \
-    -dict $model/lm/en/tidigits.dic \
+    -hmm $data/tidigits/hmm \
+    -fsg $data/tidigits/lm/tidigits.fsg \
+    -dict $data/tidigits/lm/tidigits.dic \
     -ctl $data/tidigits/tidigits.ctl \
     -cepdir $data/tidigits \
     -hyp $bn.match \

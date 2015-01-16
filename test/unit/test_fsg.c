@@ -21,9 +21,9 @@ main(int argc, char *argv[])
 
     TEST_ASSERT(config =
             cmd_ln_init(NULL, ps_args(), TRUE,
-                "-hmm", MODELDIR "/hmm/en_US/hub4wsj_sc_8k",
+                "-hmm", MODELDIR "/en-us/en-us",
                 "-fsg", DATADIR "/goforward.fsg",
-                "-dict", MODELDIR "/lm/en/turtle.dic",
+                "-dict", DATADIR "/turtle.dic",
                 "-bestpath", "no",
                 "-input_endian", "little",
                 "-samprate", "16000", NULL));
@@ -55,8 +55,8 @@ main(int argc, char *argv[])
                     acmod_advance(acmod);
                 }
                 hyp = fsg_search_hyp(ps_search_base(fsgs), &score, &is_final);
-                TEST_EQUAL (is_final, (acmod->output_frame > 105));
-                printf("FSG: %s (%d) %s\n", hyp, score, is_final ? "FINAL" : "");
+                printf("FSG: %d %s (%d) %s\n", acmod->output_frame, hyp, score, is_final ? "FINAL" : "");
+                TEST_EQUAL (is_final, acmod->output_frame > 124);
             }
         }
         fsg_search_finish(ps_search_base(fsgs));

@@ -165,8 +165,8 @@ ps_default_search_args(cmd_ln_t *config)
 #ifdef MODELDIR
     /* Set default acoustic and language models. */
     const char *hmmdir = cmd_ln_str_r(config, "-hmm");
-    if (hmmdir == NULL && hmmdir_exists(MODELDIR "/hmm/en_US/hub4wsj_sc_8k")) {
-        hmmdir = MODELDIR "/hmm/en_US/hub4wsj_sc_8k";
+    if (hmmdir == NULL && hmmdir_exists(MODELDIR "/en-us/en-us")) {
+        hmmdir = MODELDIR "/en-us/en-us";
         cmd_ln_set_str_r(config, "-hmm", hmmdir);
     }
 
@@ -177,14 +177,14 @@ ps_default_search_args(cmd_ln_t *config)
         && !cmd_ln_str_r(config, "-lmctl")
         && !cmd_ln_str_r(config, "-kws")
         && !cmd_ln_str_r(config, "-keyphrase")
-        && file_exists(MODELDIR "/lm/en_US/hub4.5000.DMP")) {
-        lmfile = MODELDIR "/lm/en_US/hub4.5000.DMP";
+        && file_exists(MODELDIR "/en-us/en-us.lm.dmp")) {
+        lmfile = MODELDIR "/en-us/en-us.lm.dmp";
         cmd_ln_set_str_r(config, "-lm", lmfile);
     }
 
     const char *dictfile = cmd_ln_str_r(config, "-dict");
-    if (dictfile == NULL && file_exists(MODELDIR "/lm/en_US/cmu07a.dic")) {
-        dictfile = MODELDIR "/lm/en_US/cmu07a.dic";
+    if (dictfile == NULL && file_exists(MODELDIR "/en-us/cmudict-en-us.dict")) {
+        dictfile = MODELDIR "/en-us/cmudict-en-us.dict";
         cmd_ln_set_str_r(config, "-dict", dictfile);
     }
 
