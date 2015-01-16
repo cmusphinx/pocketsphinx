@@ -843,15 +843,17 @@ ngram_fwdflat_search(ngram_search_t *ngs, int frame_idx)
     /* Do word transitions. */
     fwdflat_word_transition(ngs, frame_idx);
 
-    /* Create next active word list */
+    /* Create next active word list, skip fillers */
     nf = frame_idx + 1;
     nawl = ngs->active_word_list[nf & 0x1];
     for (i = 0, j = 0; ngs->fwdflat_wordlist[i] >= 0; i++) {
-        if (bitvec_is_set(ngs->word_active, ngs->fwdflat_wordlist[i])) {
-            *(nawl++) = ngs->fwdflat_wordlist[i];
+        int32 wid = ngs->fwdflat_wordlist[i];
+        if (bitvec_is_set(ngs->word_active, wid) && wid < ps_search_start_wid(ngs)) {
+            *(nawl++) = wid;
             j++;
         }
     }
+    /* Add fillers */
     for (i = ps_search_start_wid(ngs); i < ps_search_n_words(ngs); i++) {
         if (bitvec_is_set(ngs->word_active, i)) {
             *(nawl++) = i;
