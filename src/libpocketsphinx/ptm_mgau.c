@@ -887,6 +887,7 @@ ptm_mgau_mllr_transform(ps_mgau_t *ps,
 void
 ptm_mgau_free(ps_mgau_t *ps)
 {
+    int i;
     ptm_mgau_t *s = (ptm_mgau_t *)ps;
 
     logmath_free(s->lmath);
@@ -899,6 +900,13 @@ ptm_mgau_free(ps_mgau_t *ps)
         ckd_free_3d(s->mixw);
     }
     ckd_free(s->sen2cb);
+    
+    for (i = 0; i < s->n_fast_hist; i++) {
+	ckd_free_3d(s->hist[i].topn);
+	bitvec_free(s->hist[i].mgau_active);
+    }
+    ckd_free(s->hist);
+    
     gauden_free(s->g);
     ckd_free(s);
 }
