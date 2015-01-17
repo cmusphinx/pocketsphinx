@@ -1115,9 +1115,11 @@ ps_end_utt(ps_decoder_t *ps)
         }
     }
     /* Search any frames remaining in the lookahead window. */
-    for (i = ps->acmod->output_frame - ps->pl_window;
-         i < ps->acmod->output_frame; ++i)
-        ps_search_step(ps->search, i);
+    if (ps->acmod->output_frame >= ps->pl_window) {
+        for (i = ps->acmod->output_frame - ps->pl_window;
+             i < ps->acmod->output_frame; ++i)
+            ps_search_step(ps->search, i);
+    }
     /* Finish main search. */
     if ((rv = ps_search_finish(ps->search)) < 0) {
         ptmr_stop(&ps->perf);

@@ -108,6 +108,7 @@ test_set_search()
     TEST_EQUAL(NULL, itor);
     
     TEST_ASSERT(!ps_start_utt(ps, NULL));
+    TEST_ASSERT(!ps_end_utt(ps));
     ps_free(ps);
     cmd_ln_free_r(config);
 }
