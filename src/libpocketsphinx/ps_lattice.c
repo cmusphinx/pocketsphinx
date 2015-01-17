@@ -103,6 +103,20 @@ ps_lattice_link(ps_lattice_t *dag, ps_latnode_t *from, ps_latnode_t *to,
 }
 
 void
+ps_lattice_penaltize_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
+{
+    ps_latnode_t *node;
+
+    for (node = dag->nodes; node; node = node->next) {
+        latlink_list_t *linklist;
+        if (node != dag->start && node != dag->end && dict_filler_word(dag->dict, node->basewid)) {
+            for (linklist = node->entries; linklist; linklist = linklist->next)
+                linklist->link->ascr += (node->basewid == dag->silence) ? silpen : fillpen;
+        }
+    }
+}
+
+void
 ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
 {
     ps_latnode_t *node;
@@ -1260,21 +1274,15 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
     }
     for (x = dag->start->exits; x; x = x->next) {
         int32 n_used;
+        int16 to_is_fil;
 
-        /* Ignore filler words. */
-        if (dict_filler_word(ps_search_dict(search), x->link->to->basewid)
-            && x->link->to != dag->end)
-            continue;
+        to_is_fil = dict_filler_word(ps_search_dict(search), x->link->to->basewid) && x->link->to != dag->end;
 
         /* Best path points to dag->start, obviously. */
-        if (lmset)
-            x->link->path_scr = x->link->ascr +
-                (ngram_bg_score(lmset, x->link->to->basewid,
-                                ps_search_start_wid(search), &n_used) 
-                 >> SENSCR_SHIFT)
-                 * lwf;
-        else
-            x->link->path_scr = x->link->ascr;
+        x->link->path_scr = x->link->ascr;
+        if (lmset && !to_is_fil)
+            x->link->path_scr += (ngram_bg_score(lmset, x->link->to->basewid,
+                                ps_search_start_wid(search), &n_used) >> SENSCR_SHIFT) * lwf;
         x->link->best_prev = NULL;
         /* No predecessors for start links. */
         x->link->alpha = 0;
@@ -1284,49 +1292,79 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
     for (link = ps_lattice_traverse_edges(dag, NULL, NULL);
          link; link = ps_lattice_traverse_next(dag, NULL)) {
         int32 bprob, n_used;
-
-        /* Skip filler nodes in traversal. */
-        if (dict_filler_word(ps_search_dict(search), link->from->basewid) && link->from != dag->start)
-            continue;
-        if (dict_filler_word(ps_search_dict(search), link->to->basewid) && link->to != dag->end)
-            continue;
+        int32 w3_wid, w2_wid;
+        int16 w3_is_fil, w2_is_fil;
+        ps_latlink_t *prev_link;
 
         /* Sanity check, we should not be traversing edges that
          * weren't previously updated, otherwise nasty overflows will result. */
         assert(link->path_scr != MAX_NEG_INT32);
 
+        /* Find word predecessor if from-word is filler */
+        w3_wid = link->from->basewid;
+        w2_wid = link->to->basewid;
+        w3_is_fil = dict_filler_word(ps_search_dict(search), link->from->basewid) && link->from != dag->start;
+        w2_is_fil = dict_filler_word(ps_search_dict(search), w2_wid) && link->to != dag->end;
+        prev_link = link;
+
+        if (w3_is_fil) {
+            while (prev_link->best_prev != NULL) {
+                prev_link = prev_link->best_prev;
+                w3_wid = prev_link->from->basewid;
+                if (!dict_filler_word(ps_search_dict(search), w3_wid) || prev_link->from == dag->start) {
+                    w3_is_fil = FALSE;
+                    break;
+                }
+            }
+        }
+
         /* Calculate common bigram probability for all alphas. */
-        if (lmset)
-            bprob = ngram_ng_prob(lmset,
-                                  link->to->basewid,
-                                  &link->from->basewid, 1, &n_used);
+        if (lmset && !w3_is_fil && !w2_is_fil)
+            bprob = ngram_ng_prob(lmset, w2_wid, &w3_wid, 1, &n_used);
         else
             bprob = 0;
         /* Add in this link's acoustic score, which was a constant
            factor in previous computations (if any). */
         link->alpha += (link->ascr << SENSCR_SHIFT) * ascale;
 
+        if (w2_is_fil) {
+            w2_is_fil = w3_is_fil;
+            w3_is_fil = TRUE;
+            w2_wid = w3_wid;
+            while (prev_link->best_prev != NULL) {
+                prev_link = prev_link->best_prev;
+                w3_wid = prev_link->from->basewid;
+                if (!dict_filler_word(ps_search_dict(search), w3_wid) || prev_link->from == dag->start) {
+                    w3_is_fil = FALSE;
+                    break;
+                }
+            }
+        }
+
         /* Update scores for all paths exiting link->to. */
         for (x = link->to->exits; x; x = x->next) {
-            int32 tscore, score;
+            int32 score;
+            int32 w1_wid;
+            int16 w1_is_fil;
 
-            /* Skip links to filler words in update. */
-            if (dict_filler_word(ps_search_dict(search), x->link->to->basewid)
-                && x->link->to != dag->end)
-                continue;
+            w1_wid = x->link->to->basewid;
+            w1_is_fil = dict_filler_word(ps_search_dict(search), w1_wid) && x->link->to != dag->end;
 
             /* Update alpha with sum of previous alphas. */
             x->link->alpha = logmath_add(lmath, x->link->alpha, link->alpha + bprob);
-            /* Calculate trigram score for bestpath. */
-            if (lmset)
-                tscore = (ngram_tg_score(lmset, x->link->to->basewid,
-                                        link->to->basewid,
-                                        link->from->basewid, &n_used) >> SENSCR_SHIFT)
-                    * lwf;
-            else
-                tscore = 0;
+
             /* Update link score with maximum link score. */
-            score = link->path_scr + tscore + x->link->ascr;
+            score = link->path_scr + x->link->ascr;
+            /* Calculate language score for bestpath if possible */
+            if (lmset && !w1_is_fil && !w2_is_fil) {
+                if (w3_is_fil)
+                    //partial context available
+                    score += (ngram_bg_score(lmset, w1_wid, w2_wid, &n_used) >> SENSCR_SHIFT) * lwf;
+                else
+                    //full context available
+                    score += (ngram_tg_score(lmset, w1_wid, w2_wid, w3_wid, &n_used) >> SENSCR_SHIFT) * lwf;
+            }
+
             if (score BETTER_THAN x->link->path_scr) {
                 x->link->path_scr = score;
                 x->link->best_prev = link;
@@ -1344,13 +1382,27 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
     dag->norm = logmath_get_zero(lmath);
     for (x = dag->end->entries; x; x = x->next) {
         int32 bprob, n_used;
+        int32 from_wid;
+        int16 from_is_fil;
 
-        if (dict_filler_word(ps_search_dict(search), x->link->from->basewid))
-            continue;
-        if (lmset)
+        from_wid = x->link->from->basewid;
+        from_is_fil = dict_filler_word(ps_search_dict(search), from_wid) && x->link->from != dag->start;
+        if (from_is_fil) {
+            ps_latlink_t *prev_link = x->link;
+            while (prev_link->best_prev != NULL) {
+                prev_link = prev_link->best_prev;
+                from_wid = prev_link->from->basewid;
+                if (!dict_filler_word(ps_search_dict(search), from_wid) || prev_link->from == dag->start) {
+                    from_is_fil = FALSE;
+                    break;
+                }
+            }
+        }
+
+        if (lmset && !from_is_fil)
             bprob = ngram_ng_prob(lmset,
                                   x->link->to->basewid,
-                                  &x->link->from->basewid, 1, &n_used);
+                                  &from_wid, 1, &n_used);
         else
             bprob = 0;
         dag->norm = logmath_add(lmath, dag->norm, x->link->alpha + bprob);
@@ -1362,6 +1414,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
     /* FIXME: floating point... */
     dag->norm += (int32)(dag->final_node_ascr << SENSCR_SHIFT) * ascale;
 
+    E_INFO("Bestpath score: %d\n", bestescr);
     E_INFO("Normalizer P(O) = alpha(%s:%d:%d) = %d\n",
            dict_wordstr(dag->search->dict, dag->end->wid),
            dag->end->sf, dag->end->lef,
@@ -1385,13 +1438,35 @@ ps_lattice_joint(ps_lattice_t *dag, ps_latlink_t *link, float32 ascale)
     while (link) {
         if (lmset) {
             int lback;
+            int32 from_wid, to_wid;
+            int16 from_is_fil, to_is_fil;
+
+            from_wid = link->from->basewid;
+            to_wid = link->to->basewid;
+            from_is_fil = dict_filler_word(dag->dict, from_wid) && link->from != dag->start;
+            to_is_fil = dict_filler_word(dag->dict, to_wid) && link->to != dag->end;
+
+            /* Find word predecessor if from-word is filler */
+            if (!to_is_fil && from_is_fil) {
+                ps_latlink_t *prev_link = link;
+                while (prev_link->best_prev != NULL) {
+                    prev_link = prev_link->best_prev;
+                    from_wid = prev_link->from->basewid;
+                    if (!dict_filler_word(dag->dict, from_wid) || prev_link->from == dag->start) {
+                        from_is_fil = FALSE;
+                        break;
+                    }
+                }
+            }
+
             /* Compute unscaled language model probability.  Note that
                this is actually not the language model probability
                that corresponds to this link, but that is okay,
                because we are just taking the sum over all links in
                the best path. */
-            jprob += ngram_ng_prob(lmset, link->to->basewid,
-                                   &link->from->basewid, 1, &lback);
+            if (!from_is_fil && !to_is_fil)
+                jprob += ngram_ng_prob(lmset, to_wid,
+                                       &from_wid, 1, &lback);
         }
         /* If there is no language model, we assume that the language
            model probability (such as it is) has been included in the
@@ -1432,17 +1507,30 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
     for (link = ps_lattice_reverse_edges(dag, NULL, NULL);
          link; link = ps_lattice_reverse_next(dag, NULL)) {
         int32 bprob, n_used;
+        int32 from_wid, to_wid;
+        int16 from_is_fil, to_is_fil;
 
-        /* Skip filler nodes in traversal. */
-        if (dict_filler_word(ps_search_dict(search), link->from->basewid) && link->from != dag->start)
-            continue;
-        if (dict_filler_word(ps_search_dict(search), link->to->basewid) && link->to != dag->end)
-            continue;
+        from_wid = link->from->basewid;
+        to_wid = link->to->basewid;
+        from_is_fil = dict_filler_word(dag->dict, from_wid) && link->from != dag->start;
+        to_is_fil = dict_filler_word(dag->dict, to_wid) && link->to != dag->end;
+
+        /* Find word predecessor if from-word is filler */
+        if (!to_is_fil && from_is_fil) {
+            ps_latlink_t *prev_link = link;
+            while (prev_link->best_prev != NULL) {
+                prev_link = prev_link->best_prev;
+                from_wid = prev_link->from->basewid;
+                if (!dict_filler_word(dag->dict, from_wid) || prev_link->from == dag->start) {
+                    from_is_fil = FALSE;
+                    break;
+                }
+            }
+        }
 
         /* Calculate LM probability. */
-        if (lmset)
-            bprob = ngram_ng_prob(lmset, link->to->basewid,
-                                  &link->from->basewid, 1, &n_used);
+        if (lmset && !from_is_fil && !to_is_fil)
+            bprob = ngram_ng_prob(lmset, to_wid, &from_wid, 1, &n_used);
         else
             bprob = 0;
 
@@ -1460,8 +1548,6 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
         else {
             /* Update beta from all outgoing betas. */
             for (x = link->to->exits; x; x = x->next) {
-                if (dict_filler_word(ps_search_dict(search), x->link->to->basewid) && x->link->to != dag->end)
-                    continue;
                 link->beta = logmath_add(lmath, link->beta,
                                          x->link->beta + bprob
                                          + (x->link->ascr << SENSCR_SHIFT) * ascale);

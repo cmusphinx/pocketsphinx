@@ -1391,9 +1391,8 @@ ngram_search_lattice(ps_search_t *search)
     /* Free nodes unreachable from dag->end and their links */
     ps_lattice_delete_unreachable(dag);
 
-    /* Build links around silence and filler words, since they do not
-     * exist in the language model. */
-    ps_lattice_bypass_fillers(dag, ngs->silpen, ngs->fillpen);
+    /* Add silprob and fillprob to corresponding links */
+    ps_lattice_penaltize_fillers(dag, ngs->silpen, ngs->fillpen);
 
     search->dag = dag;
     return dag;
