@@ -200,14 +200,9 @@ typedef struct astar_seg_s {
 ps_lattice_t *ps_lattice_init_search(ps_search_t *search, int n_frame);
 
 /**
- * Bypass filler words.
- */
-void ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen);
-
-/**
  * Insert penalty for fillers
  */
-void ps_lattice_penaltize_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen);
+void ps_lattice_penalize_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen);
 
 /**
  * Remove nodes marked as unreachable.

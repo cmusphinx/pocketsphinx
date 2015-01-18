@@ -265,7 +265,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     if ((ps->acmod = acmod_init(ps->config, ps->lmath, NULL, NULL)) == NULL)
         return -1;
 
-    if ((ps->pl_window = cmd_ln_int32_r(ps->config, "-pl_window"))) {
+    if (cmd_ln_int32_r(ps->config, "-pl_window") > 0) {
         /* Initialize an auxiliary phone loop search, which will run in
          * "parallel" with FSG or N-Gram search. */
         if ((ps->phone_loop =
@@ -457,6 +457,14 @@ ps_set_search(ps_decoder_t *ps, const char *name)
     ps_search_t *search = ps_find_search(ps, name);
     if (search)
         ps->search = search;
+    
+    /* Set pl window depending on the search */
+    if (!strcmp(PS_SEARCH_NGRAM, ps_search_name(search))) {
+	ps->pl_window = cmd_ln_int32_r(ps->config, "-pl_window");
+    } else {
+	ps->pl_window = 0;
+    }
+    
     return search ? 0 : -1;
 }
 
@@ -992,7 +1000,7 @@ ps_search_forward(ps_decoder_t *ps)
     nfr = 0;
     while (ps->acmod->n_feat_frame > 0) {
         int k;
-        if (ps->phone_loop)
+        if (ps->pl_window > 0)
             if ((k = ps_search_step(ps->phone_loop, ps->acmod->output_frame)) < 0)
                 return k;
         if (ps->acmod->output_frame >= ps->pl_window)

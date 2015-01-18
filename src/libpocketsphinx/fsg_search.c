@@ -1521,7 +1521,8 @@ fsg_search_lattice(ps_search_t *search)
                                       cmd_ln_float32_r(ps_search_config(fsgs), "-fillprob"))
                           * fsg->lw)
             >> SENSCR_SHIFT;
-        ps_lattice_bypass_fillers(dag, silpen, fillpen);
+	
+	ps_lattice_penalize_fillers(dag, silpen, fillpen);
     }
     search->dag = dag;
 

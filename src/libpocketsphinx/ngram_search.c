@@ -1392,7 +1392,7 @@ ngram_search_lattice(ps_search_t *search)
     ps_lattice_delete_unreachable(dag);
 
     /* Add silprob and fillprob to corresponding links */
-    ps_lattice_penaltize_fillers(dag, ngs->silpen, ngs->fillpen);
+    ps_lattice_penalize_fillers(dag, ngs->silpen, ngs->fillpen);
 
     search->dag = dag;
     return dag;

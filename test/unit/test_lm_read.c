@@ -12,7 +12,7 @@ main(int argc, char *argv[])
     char const *uttid;
     ps_decoder_t *ps;
     cmd_ln_t *config;
-    ngram_model_t *lmset, *lm;
+    ngram_model_t *lm;
     FILE *rawfh;
     int32 score;
 
@@ -23,8 +23,6 @@ main(int argc, char *argv[])
                             "-lm", MODELDIR "/en-us/en-us.lm.dmp",
                             "-dict", DATADIR "/defective.dic",
                             "-dictcase", "yes",
-                            /* FIXME: fwdflat causes some problems. */
-                            "-bestpath", "no", "-fwdflat", "no",
                             "-input_endian", "little",
                             "-samprate", "16000", NULL));
     TEST_ASSERT(ps = ps_init(config));

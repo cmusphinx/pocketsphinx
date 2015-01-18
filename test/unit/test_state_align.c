@@ -38,14 +38,12 @@ int
 main(int argc, char *argv[])
 {
     ps_decoder_t *ps;
-    bin_mdef_t *mdef;
     dict_t *dict;
     dict2pid_t *d2p;
     acmod_t *acmod;
     ps_alignment_t *al;
     ps_alignment_iter_t *itor;
     ps_search_t *search;
-    state_align_search_t *sas;
     cmd_ln_t *config;
     int i;
 
@@ -58,7 +56,6 @@ main(int argc, char *argv[])
     dict = ps->dict;
     d2p = ps->d2p;
     acmod = ps->acmod;
-    mdef = d2p->mdef;
 
     al = ps_alignment_init(d2p);
     TEST_EQUAL(1, ps_alignment_add_word(al, dict_wordid(dict, "<s>"), 0));
@@ -70,7 +67,6 @@ main(int argc, char *argv[])
     TEST_EQUAL(0, ps_alignment_populate(al));
 
     TEST_ASSERT(search = state_align_search_init(config, acmod, al));
-    sas = (state_align_search_t *)search;
 
     for (i = 0; i < 5; ++i)
         do_search(search, acmod);

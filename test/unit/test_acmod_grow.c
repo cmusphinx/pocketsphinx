@@ -70,11 +70,10 @@ main(int argc, char *argv[])
         nread = fread(buf, sizeof(*buf), nsamps, rawfh);
         bptr = buf;
         while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0 || nread > 0) {
-            int16 const *senscr;
             int16 best_score;
             int frame_idx = -1, best_senid;
             while (acmod->n_feat_frame > 0) {
-                senscr = acmod_score(acmod, &frame_idx);
+                acmod_score(acmod, &frame_idx);
                 acmod_advance(acmod);
                 best_score = acmod_best_score(acmod, &best_senid);
                 printf("Frame %d best senone %d score %d\n",
@@ -91,11 +90,10 @@ main(int argc, char *argv[])
     nread = 0;
     acmod_process_raw(acmod, NULL, &nread, FALSE);
     {
-        int16 const *senscr;
         int16 best_score;
         int frame_idx = -1, best_senid;
         while (acmod->n_feat_frame > 0) {
-            senscr = acmod_score(acmod, &frame_idx);
+            acmod_score(acmod, &frame_idx);
             acmod_advance(acmod);
             best_score = acmod_best_score(acmod, &best_senid);
             printf("Frame %d best senone %d score %d\n",
@@ -111,12 +109,11 @@ main(int argc, char *argv[])
     printf("Rewound (MFCC):\n");
     TEST_EQUAL(0, acmod_rewind(acmod));
     {
-        int16 const *senscr;
         int16 best_score;
         int frame_idx = -1, best_senid;
         frame_counter = 0;
         while (acmod->n_feat_frame > 0) {
-            senscr = acmod_score(acmod, &frame_idx);
+            acmod_score(acmod, &frame_idx);
             acmod_advance(acmod);
             best_score = acmod_best_score(acmod, &best_senid);
             printf("Frame %d best senone %d score %d\n",

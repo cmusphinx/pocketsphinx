@@ -103,7 +103,7 @@ ps_lattice_link(ps_lattice_t *dag, ps_latnode_t *from, ps_latnode_t *to,
 }
 
 void
-ps_lattice_penaltize_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
+ps_lattice_penalize_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
 {
     ps_latnode_t *node;
 
@@ -113,43 +113,6 @@ ps_lattice_penaltize_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
             for (linklist = node->entries; linklist; linklist = linklist->next)
                 linklist->link->ascr += (node->basewid == dag->silence) ? silpen : fillpen;
         }
-    }
-}
-
-void
-ps_lattice_bypass_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
-{
-    ps_latnode_t *node;
-    int32 score;
-
-    /* Bypass filler nodes */
-    for (node = dag->nodes; node; node = node->next) {
-        latlink_list_t *revlink;
-        if (node == dag->end || !dict_filler_word(dag->dict, node->basewid))
-            continue;
-
-        /* Replace each link entering filler node with links to all its successors */
-        for (revlink = node->entries; revlink; revlink = revlink->next) {
-            latlink_list_t *forlink;
-            ps_latlink_t *rlink = revlink->link;
-
-            score = (node->basewid == dag->silence) ? silpen : fillpen;
-            score += rlink->ascr;
-            /*
-             * Make links from predecessor of filler (from) to successors of filler.
-             * But if successor is a filler, it has already been eliminated since it
-             * appears earlier in latnode_list (see build...).  So it can be skipped.
-             */
-            for (forlink = node->exits; forlink; forlink = forlink->next) {
-                ps_latlink_t *flink = forlink->link;
-                if (flink->to && rlink->from &&
-                    !dict_filler_word(dag->dict, flink->to->basewid)) {
-                    ps_lattice_link(dag, rlink->from, flink->to,
-                                    score + flink->ascr, flink->ef);
-                }
-            }
-        }
-        node->reachable = FALSE;
     }
 }
 
@@ -653,7 +616,7 @@ ps_lattice_read(ps_decoder_t *ps,
                                    cmd_ln_float32_r(ps->config, "-silprob"));
         fillpen = pip + logmath_log(dag->lmath,
                                     cmd_ln_float32_r(ps->config, "-fillprob"));
-        ps_lattice_bypass_fillers(dag, silpen, fillpen);
+        ps_lattice_penalize_fillers(dag, silpen, fillpen);
     }
 
     return dag;

@@ -33,7 +33,6 @@ run_acmod_test(acmod_t *acmod)
 	size_t nread, nsamps;
 	int nfr;
 	int frame_counter;
-	int bestsen1[270];
 
 	cmn_prior_set(acmod->fcb->cmn_struct, prior);
 	nsamps = 2048;
@@ -46,18 +45,15 @@ run_acmod_test(acmod_t *acmod)
 		nread = fread(buf, sizeof(*buf), nsamps, rawfh);
 		bptr = buf;
 		while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
-			int16 const *senscr;
 			int16 best_score;
 			int frame_idx = -1, best_senid;
 			while (acmod->n_feat_frame > 0) {
-				senscr = acmod_score(acmod, &frame_idx);
+				acmod_score(acmod, &frame_idx);
 				acmod_advance(acmod);
 				best_score = acmod_best_score(acmod, &best_senid);
 				printf("Frame %d best senone %d score %d\n",
 				       frame_idx, best_senid, best_score);
 				TEST_EQUAL(frame_counter, frame_idx);
-				if (frame_counter < 270)
-					bestsen1[frame_counter] = best_senid;
 				++frame_counter;
 				frame_idx = -1;
 			}
@@ -66,17 +62,14 @@ run_acmod_test(acmod_t *acmod)
 	TEST_EQUAL(0, acmod_end_utt(acmod));
 	nread = 0;
 	{
-		int16 const *senscr;
 		int16 best_score;
 		int frame_idx = -1, best_senid;
 		while (acmod->n_feat_frame > 0) {
-			senscr = acmod_score(acmod, &frame_idx);
+			acmod_score(acmod, &frame_idx);
 			acmod_advance(acmod);
 			best_score = acmod_best_score(acmod, &best_senid);
 			printf("Frame %d best senone %d score %d\n",
 			       frame_idx, best_senid, best_score);
-			if (frame_counter < 270)
-				bestsen1[frame_counter] = best_senid;
 			TEST_EQUAL(frame_counter, frame_idx);
 			++frame_counter;
 			frame_idx = -1;
