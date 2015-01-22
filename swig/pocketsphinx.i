@@ -99,8 +99,8 @@ typedef ps_lattice_t Lattice;
 // TODO: make private with %immutable
 typedef struct {
     char *hypstr;
-    char *uttid;
-    int best_score;
+    int ascore;
+    int prob;
 } Hypothesis;
 
 typedef struct {
@@ -134,25 +134,20 @@ typedef struct {} SegmentList;
 #endif
 
 %extend Hypothesis {
-    Hypothesis(char const *hypstr, char const *uttid, int best_score) {
+    Hypothesis(char const *hypstr, int ascore, int prob) {
         Hypothesis *h = ckd_malloc(sizeof *h);
         if (hypstr)
             h->hypstr = ckd_salloc(hypstr);
         else
     	    h->hypstr = NULL;
-        if (uttid)
-            h->uttid = ckd_salloc(uttid);
-        else
-    	    h->uttid = NULL;
-        h->best_score = best_score;
+        h->ascore = ascore;
+        h->prob = prob;
         return h;  
     }
 
     ~Hypothesis() {
         if ($self->hypstr)
     	    ckd_free($self->hypstr);
-    	if ($self->uttid)
-    	    ckd_free($self->uttid);
         ckd_free($self);
     }
 }
@@ -185,9 +180,9 @@ typedef struct {} SegmentList;
     %newobject hyp;
     Hypothesis* hyp (){
         char const *hyp;
-        int32 best_score;
-        hyp = ps_nbest_hyp($self->nbest, &best_score);
-        return hyp ? new_Hypothesis(hyp, NULL, best_score) : NULL;
+        int32 ascore;
+        hyp = ps_nbest_hyp($self->nbest, &ascore);
+        return hyp ? new_Hypothesis(hyp, ascore, 0) : NULL;
     }
     
     ~NBest() {
@@ -202,8 +197,8 @@ typedef struct {} SegmentList;
   }
   %newobject __iter__;
   SegmentIterator * __iter__() {
-    int32 best_score;
-    return new_SegmentIterator(ps_seg_iter($self, &best_score));
+    int32 ascore;
+    return new_SegmentIterator(ps_seg_iter($self, &ascore));
   }
 }
 %extend NBestList {

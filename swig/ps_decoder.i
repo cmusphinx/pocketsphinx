@@ -159,10 +159,12 @@
 
     %newobject hyp;
     Hypothesis * hyp() {
-        char const *hyp, *uttid;
-        int32 best_score;
-        hyp = ps_get_hyp($self, &best_score, &uttid);
-        return hyp ? new_Hypothesis(hyp, uttid, best_score) : NULL;
+        char const *hyp;
+        int32 ascore, prob;
+        hyp = ps_get_hyp($self, &ascore, NULL);
+        if (hyp)
+            prob = ps_get_prob($self, NULL);
+        return hyp ? new_Hypothesis(hyp, ascore, prob) : NULL;
     }
 
     FrontEnd * get_fe() {
