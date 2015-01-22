@@ -290,26 +290,23 @@ char *ps_lookup_word(ps_decoder_t *ps,
  *
  * @param ps Decoder.
  * @param rawfh Previously opened file stream.
- * @param uttid Utterance ID (or NULL to generate automatically).
  * @param maxsamps Maximum number of samples to read from rawfh, or -1
  *                 to read until end-of-file.
  * @return Number of samples of audio.
  */
 POCKETSPHINX_EXPORT
 long ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
-                  char const *uttid, long maxsamps);
+                   long maxsamps);
 
 /**
  * Decode a senone score dump file.
  *
  * @param ps Decoder
  * @param fh Previously opened file handle positioned at start of file.
- * @param uttid Utterance ID (or NULL to generate automatically).
  * @return Number of frames read.
  */
 POCKETSPHINX_EXPORT
-int ps_decode_senscr(ps_decoder_t *ps, FILE *senfh,
-                     char const *uttid);
+int ps_decode_senscr(ps_decoder_t *ps, FILE *senfh);
 
 /**
  * Start processing of the stream of speech. Channel parameters like
@@ -329,22 +326,10 @@ int ps_start_stream(ps_decoder_t *ps);
  * reinitializes internal data structures.
  *
  * @param ps Decoder to be started.
- * @param uttid String uniquely identifying this utterance.  If NULL,
- *              one will be created.
  * @return 0 for success, <0 on error.
  */
 POCKETSPHINX_EXPORT
-int ps_start_utt(ps_decoder_t *ps, char const *uttid);
-
-/**
- * Get current utterance ID.
- *
- * @param ps Decoder to query.
- * @return Read-only string of the current utterance ID.  This is
- * valid only until the beginning of the next utterance.
- */
-POCKETSPHINX_EXPORT
-char const *ps_get_uttid(ps_decoder_t *ps);
+int ps_start_utt(ps_decoder_t *ps);
 
 /**
  * Decode raw audio data.
@@ -416,13 +401,11 @@ int ps_end_utt(ps_decoder_t *ps);
  *
  * @param ps Decoder.
  * @param out_best_score Output: path score corresponding to returned string.
- * @param out_uttid Output: utterance ID for this utterance.
  * @return String containing best hypothesis at this point in
  *         decoding.  NULL if no hypothesis is available.
  */
 POCKETSPHINX_EXPORT
-char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score,
-                       char const **out_uttid);
+char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score);
 
 /**
  * Get hypothesis string and final flag.
@@ -446,11 +429,10 @@ char const *ps_get_hyp_final(ps_decoder_t *ps, int32 *out_is_final);
  * restrictions being lifted in future versions.
  *
  * @param ps Decoder.
- * @param out_uttid Output: utterance ID for this utterance.
  * @return Posterior probability of the best hypothesis.
  */
 POCKETSPHINX_EXPORT
-int32 ps_get_prob(ps_decoder_t *ps, char const **out_uttid);
+int32 ps_get_prob(ps_decoder_t *ps);
 
 /**
  * Get word lattice.

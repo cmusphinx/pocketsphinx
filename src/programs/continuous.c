@@ -153,7 +153,6 @@ recognize_from_file()
     int16 adbuf[4096];
     const char *fname;
     const char *hyp;
-    const char *uttid;
     int32 k;
     uint8 utt_started, in_speech;
     int32 print_times = cmd_ln_boolean_r(config, "-time");
@@ -172,7 +171,7 @@ recognize_from_file()
     }
     
     utt_started = FALSE;
-    ps_start_utt(ps, NULL);
+    ps_start_utt(ps);
     while ((k = fread(adbuf, sizeof(int16), 4096, rawfd)) > 0) {
         ps_process_raw(ps, adbuf, k, FALSE, FALSE);
         in_speech = ps_get_in_speech(ps);
@@ -181,18 +180,18 @@ recognize_from_file()
         } 
         if (!in_speech && utt_started) {
             ps_end_utt(ps);
-            hyp = ps_get_hyp(ps, NULL, &uttid);
-            printf("%s: %s\n", uttid, hyp);
+            hyp = ps_get_hyp(ps, NULL);
+            printf("%s\n", hyp);
             if (print_times)
         	print_word_times();
-            ps_start_utt(ps, NULL);
+            ps_start_utt(ps);
             utt_started = FALSE;
         }
     }
     ps_end_utt(ps);
     if (utt_started) {
-        hyp = ps_get_hyp(ps, NULL, &uttid);
-        printf("%s: %s\n", uttid, hyp);
+        hyp = ps_get_hyp(ps, NULL);
+        printf("%s\n", hyp);
         if (print_times) {
         print_word_times();
     }
@@ -234,7 +233,6 @@ recognize_from_microphone()
     uint8 utt_started, in_speech;
     int32 k;
     char const *hyp;
-    char const *uttid;
 
     if ((ad = ad_open_dev(cmd_ln_str_r(config, "-adcdev"),
                           (int) cmd_ln_float32_r(config,
@@ -243,7 +241,7 @@ recognize_from_microphone()
     if (ad_start_rec(ad) < 0)
         E_FATAL("Failed to start recording\n");
 
-    if (ps_start_utt(ps, NULL) < 0)
+    if (ps_start_utt(ps) < 0)
         E_FATAL("Failed to start utterance\n");
     utt_started = FALSE;
     /* Indicate listening for next utterance */
@@ -262,9 +260,9 @@ recognize_from_microphone()
             //speech -> silence transition, 
             //time to start new utterance
             ps_end_utt(ps);
-            hyp = ps_get_hyp(ps, NULL, &uttid);
-            printf("%s: %s\n", uttid, hyp);
-            if (ps_start_utt(ps, NULL) < 0)
+            hyp = ps_get_hyp(ps, NULL );
+            printf("%s\n", hyp);
+            if (ps_start_utt(ps) < 0)
                 E_FATAL("Failed to start utterance\n");
             /* Indicate listening for next utterance */
             printf("READY....\n");

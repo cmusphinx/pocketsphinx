@@ -58,14 +58,14 @@ decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
 
 # Retrieve hypothesis.
 hypothesis = decoder.hyp()
-print 'Best hypothesis: ', hypothesis.hypstr, " model score: ", hypothesis.ascore, " confidence: ", hypothesis.prob
+print 'Best hypothesis: ', hypothesis.hypstr, " model score: ", hypothesis.best_score, " confidence: ", hypothesis.prob
 
 print 'Best hypothesis segments: ', [seg.word for seg in decoder.seg()]
 
 # Access N best decodings.
 print 'Best 10 hypothesis: '
 for best, i in izip(decoder.nbest(), range(10)):
-	print best.hyp().ascore, best.hyp().hypstr
+	print best.hyp().best_score, best.hyp().hypstr
 
 # Decode streaming data.
 decoder = Decoder(config)

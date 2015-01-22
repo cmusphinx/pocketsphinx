@@ -23,7 +23,7 @@ main(int argc, char *argv[])
     ps_seg_t *seg;
     ps_lattice_t *dag;
     FILE *rawfh;
-    char const *hyp, *uttid;
+    char const *hyp;
     int32 score, prob;
     clock_t c;
     int i;
@@ -114,10 +114,10 @@ main(int argc, char *argv[])
                 "-samprate", "16000", NULL));
     TEST_ASSERT(ps = ps_init(config));
     TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
-    ps_decode_raw(ps, rawfh, "goforward", -1);
-    hyp = ps_get_hyp(ps, &score, &uttid);
-    prob = ps_get_prob(ps, &uttid);
-    printf("%s: %s (%d, %d)\n", uttid, hyp, score, prob);
+    ps_decode_raw(ps, rawfh, -1);
+    hyp = ps_get_hyp(ps, &score);
+    prob = ps_get_prob(ps);
+    printf("%s (%d, %d)\n", hyp, score, prob);
     TEST_EQUAL(0, strcmp("go forward ten meters", hyp));
     ps_free(ps);
     fclose(rawfh);
@@ -133,10 +133,10 @@ main(int argc, char *argv[])
                 "-samprate", "16000", NULL));
     TEST_ASSERT(ps = ps_init(config));
     TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
-    ps_decode_raw(ps, rawfh, "goforward", -1);
-    hyp = ps_get_hyp(ps, &score, &uttid);
-    prob = ps_get_prob(ps, &uttid);
-    printf("%s: %s (%d, %d)\n", uttid, hyp, score, prob);
+    ps_decode_raw(ps, rawfh, -1);
+    hyp = ps_get_hyp(ps, &score);
+    prob = ps_get_prob(ps);
+    printf("%s (%d, %d)\n", hyp, score, prob);
     TEST_EQUAL(0, strcmp("go forward ten meters", hyp));
     ps_free(ps);
     cmd_ln_free_r(config);

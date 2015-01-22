@@ -14,7 +14,6 @@ main(int argc, char *argv[])
 	cmd_ln_t *config;
 	FILE *rawfh;
 	char const *hyp;
-	char const *uttid;
 	int32 score, n;
 
 	TEST_ASSERT(config =
@@ -29,10 +28,10 @@ main(int argc, char *argv[])
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = ps_init(config));
 	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
-	ps_decode_raw(ps, rawfh, "goforward", -1);
+	ps_decode_raw(ps, rawfh, -1);
 	fclose(rawfh);
-	hyp = ps_get_hyp(ps, &score, &uttid);
-	printf("BESTPATH (%s): %s (%d)\n", uttid, hyp, score);
+	hyp = ps_get_hyp(ps, &score);
+	printf("BESTPATH: %s (%d)\n", hyp, score);
 	TEST_ASSERT(nbest = ps_nbest(ps, 0, -1, NULL, NULL));
 	n = 1;
 	while (nbest && (nbest = ps_nbest_next(nbest))) {

@@ -13,7 +13,6 @@ main(int argc, char *argv[])
 	ps_decoder_t *ps;
 	FILE *rawfh;
 	char const *hyp;
-	char const *uttid;
 	int32 score;
 
 	TEST_ASSERT(config =
@@ -26,10 +25,10 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(ps = ps_init(config));
 	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
-	ps_decode_raw(ps, rawfh, "goforward", -1);
+	ps_decode_raw(ps, rawfh, -1);
 	fclose(rawfh);
-	hyp = ps_get_hyp(ps, &score, &uttid);
-	printf("FWDFLAT (%s): %s (%d)\n", uttid, hyp, score);
+	hyp = ps_get_hyp(ps, &score);
+	printf("FWDFLAT: %s (%d)\n", hyp, score);
 	ps_free(ps);
 	cmd_ln_free_r(config);
 	return 0;

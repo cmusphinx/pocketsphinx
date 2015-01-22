@@ -18,7 +18,7 @@ test_no_search()
 {
     cmd_ln_t *config = default_config();
     ps_decoder_t *ps = ps_init(config);
-    TEST_ASSERT(ps_start_utt(ps, NULL) < 0);
+    TEST_ASSERT(ps_start_utt(ps) < 0);
     ps_free(ps);
     cmd_ln_free_r(config);
 }
@@ -107,7 +107,7 @@ test_set_search()
     itor = ps_search_iter_next(itor);
     TEST_EQUAL(NULL, itor);
     
-    TEST_ASSERT(!ps_start_utt(ps, NULL));
+    TEST_ASSERT(!ps_start_utt(ps));
     TEST_ASSERT(!ps_end_utt(ps));
     ps_free(ps);
     cmd_ln_free_r(config);

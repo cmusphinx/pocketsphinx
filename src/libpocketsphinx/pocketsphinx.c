@@ -410,15 +410,8 @@ ps_free(ps_decoder_t *ps)
     acmod_free(ps->acmod);
     logmath_free(ps->lmath);
     cmd_ln_free_r(ps->config);
-    ckd_free(ps->uttid);
     ckd_free(ps);
     return 0;
-}
-
-char const *
-ps_get_uttid(ps_decoder_t *ps)
-{
-    return ps->uttid;
 }
 
 cmd_ln_t *
@@ -861,13 +854,13 @@ ps_lookup_word(ps_decoder_t *ps, const char *word)
 
 long
 ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
-              char const *uttid, long maxsamps)
+              long maxsamps)
 {
     int16 *data;
     long total, pos, endpos;
 
     ps_start_stream(ps);
-    ps_start_utt(ps, uttid);
+    ps_start_utt(ps);
 
     /* If this file is seekable or maxsamps is specified, then decode
      * the whole thing at once. */
@@ -910,9 +903,11 @@ ps_start_stream(ps_decoder_t *ps)
 }
 
 int
-ps_start_utt(ps_decoder_t *ps, char const *uttid)
+ps_start_utt(ps_decoder_t *ps)
 {
     int rv;
+    char uttid[16];
+    
     if (ps->search == NULL) {
         E_ERROR("No search module is selected, did you forget to "
                 "specify a language model or grammar?\n");
@@ -922,17 +917,9 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
     ptmr_reset(&ps->perf);
     ptmr_start(&ps->perf);
 
-    if (uttid) {
-        ckd_free(ps->uttid);
-        ps->uttid = ckd_salloc(uttid);
-    }
-    else {
-        char nuttid[16];
-        ckd_free(ps->uttid);
-        sprintf(nuttid, "%09u", ps->uttno);
-        ps->uttid = ckd_salloc(nuttid);
-        ++ps->uttno;
-    }
+    sprintf(uttid, "%09u", ps->uttno);
+    ++ps->uttno;
+
     /* Remove any residual word lattice and hypothesis. */
     ps_lattice_free(ps->search->dag);
     ps->search->dag = NULL;
@@ -947,7 +934,7 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
     /* Start logging features and audio if requested. */
     if (ps->mfclogdir) {
         char *logfn = string_join(ps->mfclogdir, "/",
-                                  ps->uttid, ".mfc", NULL);
+                                  uttid, ".mfc", NULL);
         FILE *mfcfh;
         E_INFO("Writing MFCC log file: %s\n", logfn);
         if ((mfcfh = fopen(logfn, "wb")) == NULL) {
@@ -960,7 +947,7 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
     }
     if (ps->rawlogdir) {
         char *logfn = string_join(ps->rawlogdir, "/",
-                                  ps->uttid, ".raw", NULL);
+                                  uttid, ".raw", NULL);
         FILE *rawfh;
         E_INFO("Writing raw audio log file: %s\n", logfn);
         if ((rawfh = fopen(logfn, "wb")) == NULL) {
@@ -973,7 +960,7 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
     }
     if (ps->senlogdir) {
         char *logfn = string_join(ps->senlogdir, "/",
-                                  ps->uttid, ".sen", NULL);
+                                  uttid, ".sen", NULL);
         FILE *senfh;
         E_INFO("Writing senone score log file: %s\n", logfn);
         if ((senfh = fopen(logfn, "wb")) == NULL) {
@@ -1015,12 +1002,11 @@ ps_search_forward(ps_decoder_t *ps)
 }
 
 int
-ps_decode_senscr(ps_decoder_t *ps, FILE *senfh,
-                 char const *uttid)
+ps_decode_senscr(ps_decoder_t *ps, FILE *senfh)
 {
     int nfr, n_searchfr;
 
-    ps_start_utt(ps, uttid);
+    ps_start_utt(ps);
     n_searchfr = 0;
     acmod_set_insenfh(ps->acmod, senfh);
     while ((nfr = acmod_read_scores(ps->acmod)) > 0) {
@@ -1137,14 +1123,14 @@ ps_end_utt(ps_decoder_t *ps)
 
     /* Log a backtrace if requested. */
     if (cmd_ln_boolean_r(ps->config, "-backtrace")) {
-        char const *uttid, *hyp;
+        const char* hyp;
         ps_seg_t *seg;
         int32 score;
 
-        hyp = ps_get_hyp(ps, &score, &uttid);
+        hyp = ps_get_hyp(ps, &score);
         
         if (hyp != NULL) {
-    	    E_INFO("%s: %s (%d)\n", uttid, hyp, score);
+    	    E_INFO("%s (%d)\n", hyp, score);
     	    E_INFO_NOFN("%-20s %-5s %-5s %-5s %-10s %-10s %-3s\n",
                     "word", "start", "end", "pprob", "ascr", "lscr", "lback");
     	    for (seg = ps_seg_iter(ps, &score); seg;
@@ -1166,14 +1152,12 @@ ps_end_utt(ps_decoder_t *ps)
 }
 
 char const *
-ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score, char const **out_uttid)
+ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score)
 {
     char const *hyp;
 
     ptmr_start(&ps->perf);
     hyp = ps_search_hyp(ps->search, out_best_score, NULL);
-    if (out_uttid)
-        *out_uttid = ps->uttid;
     ptmr_stop(&ps->perf);
     return hyp;
 }
@@ -1191,14 +1175,12 @@ ps_get_hyp_final(ps_decoder_t *ps, int32 *out_is_final)
 
 
 int32
-ps_get_prob(ps_decoder_t *ps, char const **out_uttid)
+ps_get_prob(ps_decoder_t *ps)
 {
     int32 prob;
 
     ptmr_start(&ps->perf);
     prob = ps_search_prob(ps->search);
-    if (out_uttid)
-        *out_uttid = ps->uttid;
     ptmr_stop(&ps->perf);
     return prob;
 }

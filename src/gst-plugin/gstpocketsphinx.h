@@ -71,6 +71,7 @@ struct _GstPocketSphinx
 
     gboolean utt_started;
     gboolean listening_started;
+    gint uttno;
 
     GstClockTime last_result_time; /**< Timestamp of last partial result. */
     char *last_result;             /**< String of last partial result. */

@@ -103,12 +103,8 @@
         *errcode = ps_start_stream($self);
     }
 
-    void start_utt(char const *uttid, int *errcode) {
-        *errcode = ps_start_utt($self, uttid);
-    }
-
-    char const *get_uttid() {
-        return ps_get_uttid($self);
+    void start_utt(int *errcode) {
+        *errcode = ps_start_utt($self);
     }
 
     void end_utt(int *errcode) {
@@ -131,7 +127,7 @@
 #endif
 
     int decode_raw(FILE *fin, int *errcode) {
-        *errcode = ps_decode_raw($self, fin, 0, -1);
+        *errcode = ps_decode_raw($self, fin, -1);
         return *errcode;
     }
 
@@ -160,11 +156,11 @@
     %newobject hyp;
     Hypothesis * hyp() {
         char const *hyp;
-        int32 ascore, prob;
-        hyp = ps_get_hyp($self, &ascore, NULL);
+        int32 best_score, prob;
+        hyp = ps_get_hyp($self, &best_score);
         if (hyp)
-            prob = ps_get_prob($self, NULL);
-        return hyp ? new_Hypothesis(hyp, ascore, prob) : NULL;
+            prob = ps_get_prob($self);
+        return hyp ? new_Hypothesis(hyp, best_score, prob) : NULL;
     }
 
     FrontEnd * get_fe() {

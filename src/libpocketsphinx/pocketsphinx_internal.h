@@ -207,7 +207,6 @@ struct ps_decoder_s {
 
     /* Utterance-processing related stuff. */
     uint32 uttno;       /**< Utterance counter. */
-    char *uttid;        /**< Utterance ID for current utterance. */
     ptmr_t perf;        /**< Performance counter for all of decoding. */
     uint32 n_frame;     /**< Total number of frames processed. */
     char const *mfclogdir; /**< Log directory for MFCC files. */

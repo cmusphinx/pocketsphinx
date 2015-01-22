@@ -9,7 +9,6 @@ int
 main(int argc, char *argv[])
 {
     char const *hyp;
-    char const *uttid;
     ps_decoder_t *ps;
     cmd_ln_t *config;
     ngram_model_t *lm;
@@ -28,9 +27,9 @@ main(int argc, char *argv[])
     TEST_ASSERT(ps = ps_init(config));
     TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
 
-    ps_decode_raw(ps, rawfh, "goforward", -1);
-    hyp = ps_get_hyp(ps, &score, &uttid);
-    printf("%s: %s (%d)\n", uttid, hyp, score);
+    ps_decode_raw(ps, rawfh, -1);
+    hyp = ps_get_hyp(ps, &score);
+    printf("%s (%d)\n", hyp, score);
     TEST_EQUAL(0, strcmp(hyp, "go forward ten years"));
 
     /* Now load the turtle language model. */
@@ -40,9 +39,9 @@ main(int argc, char *argv[])
     ps_set_search(ps, "turtle");
     clearerr(rawfh);
     fseek(rawfh, 0, SEEK_SET);
-    TEST_ASSERT(ps_decode_raw(ps, rawfh, "goforward", -1));
-    hyp = ps_get_hyp(ps, &score, &uttid);
-    printf("%s: %s (%d)\n", uttid, hyp, score);
+    TEST_ASSERT(ps_decode_raw(ps, rawfh, -1));
+    hyp = ps_get_hyp(ps, &score);
+    printf("%s (%d)\n", hyp, score);
 
     /* Oops!  It's still not correct, because METERS isn't in the
      * dictionary that we originally loaded. */
@@ -53,10 +52,10 @@ main(int argc, char *argv[])
     /* And try again. */
     clearerr(rawfh);
     fseek(rawfh, 0, SEEK_SET);
-    TEST_ASSERT(ps_decode_raw(ps, rawfh, "goforward", -1));
-    hyp = ps_get_hyp(ps, &score, &uttid);
+    TEST_ASSERT(ps_decode_raw(ps, rawfh, -1));
+    hyp = ps_get_hyp(ps, &score);
     TEST_ASSERT(hyp);
-    printf("%s: %s (%d)\n", uttid, hyp, score);
+    printf("%s (%d)\n", hyp, score);
     ps_lattice_write(ps_get_lattice(ps), "meters.lat");
     /* Bingo! */
     TEST_EQUAL(0, strcmp(hyp, "go forward ten meters"));
@@ -73,18 +72,18 @@ main(int argc, char *argv[])
     /* And try again. */
     clearerr(rawfh);
     fseek(rawfh, 0, SEEK_SET);
-    TEST_ASSERT(ps_decode_raw(ps, rawfh, "goforward", -1));
-    hyp = ps_get_hyp(ps, &score, &uttid);
-    printf("%s: %s (%d)\n", uttid, hyp, score);
+    TEST_ASSERT(ps_decode_raw(ps, rawfh, -1));
+    hyp = ps_get_hyp(ps, &score);
+    printf("%s (%d)\n", hyp, score);
     TEST_EQUAL(0, strcmp(hyp, "go forward ten meters"));
 
     /* Try switching back again just to make sure. */
     TEST_EQUAL(0, ps_load_dict(ps, DATADIR "/defective.dic", NULL, NULL));
     clearerr(rawfh);
     fseek(rawfh, 0, SEEK_SET);
-    TEST_ASSERT(ps_decode_raw(ps, rawfh, "goforward", -1));
-    hyp = ps_get_hyp(ps, &score, &uttid);
-    printf("%s: %s (%d)\n", uttid, hyp, score);
+    TEST_ASSERT(ps_decode_raw(ps, rawfh, -1));
+    hyp = ps_get_hyp(ps, &score);
+    printf("%s (%d)\n", hyp, score);
     TEST_EQUAL(0, strcmp(hyp, "go forward ten degrees"));
 
     fclose(rawfh);

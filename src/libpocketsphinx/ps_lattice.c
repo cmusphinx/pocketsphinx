@@ -1446,7 +1446,6 @@ int32
 ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
                      float32 ascale)
 {
-    ps_search_t *search;
     logmath_t *lmath;
     ps_latnode_t *node;
     ps_latlink_t *link;
@@ -1454,7 +1453,6 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
     ps_latlink_t *bestend;
     int32 bestescr;
 
-    search = dag->search;
     lmath = dag->lmath;
 
     /* Reset all betas to zero. */

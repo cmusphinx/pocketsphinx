@@ -106,7 +106,6 @@ enum
 /* Default command line. (will go away soon and be constructed using properties) */
 static char *default_argv[] = {
     "gst-pocketsphinx",
-    "-samprate", "8000",
 };
 static const int default_argc = sizeof(default_argv)/sizeof(default_argv[0]);
 
@@ -117,7 +116,7 @@ static GstStaticPadTemplate sink_factory =
                             GST_STATIC_CAPS("audio/x-raw, "
 		            		    "format = (string) { S16LE }, "
                                             "channels = (int) 1, "
-                                            "rate = (int) 8000")
+                                            "rate = (int) 16000")
         );
 
 static GstStaticPadTemplate src_factory =
@@ -558,7 +557,7 @@ gst_pocketsphinx_chain(GstPad * pad, GstObject *parent, GstBuffer * buffer)
     if (!ps->listening_started) {
         ps->listening_started = TRUE;
         ps->utt_started = FALSE;
-        ps_start_utt(ps->ps, NULL);
+        ps_start_utt(ps->ps);
     }
 
     gst_buffer_map (buffer, &info, GST_MAP_READ);
@@ -580,9 +579,8 @@ gst_pocketsphinx_chain(GstPad * pad, GstObject *parent, GstBuffer * buffer)
         || (GST_BUFFER_TIMESTAMP(buffer) - ps->last_result_time) > 100*10*1000) {
         int32 score;
         char const *hyp;
-        char const *uttid;
 
-        hyp = ps_get_hyp(ps->ps, &score, &uttid);
+        hyp = ps_get_hyp(ps->ps, &score);
         ps->last_result_time = GST_BUFFER_TIMESTAMP(buffer);
         if (hyp && strlen(hyp) > 0) {
             if (ps->last_result == NULL || 0 != strcmp(ps->last_result, hyp)) {
@@ -590,7 +588,7 @@ gst_pocketsphinx_chain(GstPad * pad, GstObject *parent, GstBuffer * buffer)
                 ps->last_result = g_strdup(hyp);
                 /* Emit a signal for applications. */
                 g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_PARTIAL_RESULT],
-                              0, hyp, uttid);
+                              0, hyp);
             }
         }
     }
@@ -605,7 +603,6 @@ gst_pocketsphinx_finalize_utt(GstPocketSphinx *ps)
 {
     GstBuffer *buffer;
     char const *hyp;
-    char const *uttid;
     int32 score;
 
     hyp = NULL;
@@ -614,11 +611,16 @@ gst_pocketsphinx_finalize_utt(GstPocketSphinx *ps)
 	
     ps_end_utt(ps->ps);
     ps->listening_started = FALSE;
-    hyp = ps_get_hyp(ps->ps, &score, &uttid);
+    hyp = ps_get_hyp(ps->ps, &score);
 
     /* Dump the lattice if requested. */
     if (ps->latdir) {
-        char *latfile = string_join(ps->latdir, "/", uttid, ".lat", NULL);
+        char *latfile;
+        char uttid[16];
+
+	sprintf(uttid, "%09u", ps->uttno);
+	ps->uttno++;
+        latfile = string_join(ps->latdir, "/", uttid, ".lat", NULL);
         ps_lattice_t *dag;
         if ((dag = ps_get_lattice(ps->ps)))
             ps_lattice_write(dag, latfile);
@@ -626,7 +628,7 @@ gst_pocketsphinx_finalize_utt(GstPocketSphinx *ps)
     }
     if (hyp) {
         g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_RESULT],
-    		      0, hyp, uttid);
+    		      0, hyp);
         buffer = gst_buffer_new_and_alloc(strlen(hyp) + 1);
 	gst_buffer_fill(buffer, 0, hyp, strlen(hyp));
 	gst_buffer_fill(buffer, strlen(hyp), "\n", 1);

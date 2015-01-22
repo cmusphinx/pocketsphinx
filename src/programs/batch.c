@@ -396,7 +396,7 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
 
     if (cmd_ln_boolean_r(config, "-senin")) {
         /* start and end frames not supported. */
-        ps_decode_senscr(ps, infh, uttid);
+        ps_decode_senscr(ps, infh);
     }
     else if (cmd_ln_boolean_r(config, "-adcin")) {
         
@@ -411,7 +411,7 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
                      * (cmd_ln_float32_r(config, "-samprate")
                         / cmd_ln_int32_r(config, "-frate")));
         fseek(infh, cmd_ln_int32_r(config, "-adchdr") + sf * sizeof(int16), SEEK_SET);
-        ps_decode_raw(ps, infh, uttid, ef);
+        ps_decode_raw(ps, infh, ef);
     }
     else {
         mfcc_t **mfcs;
@@ -425,7 +425,7 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
             return -1;
         }
         ps_start_stream(ps);
-        ps_start_utt(ps, uttid);
+        ps_start_utt(ps);
         ps_process_cep(ps, mfcs, nfr, FALSE, TRUE);
         ps_end_utt(ps);
         ckd_free_2d(mfcs);
@@ -716,15 +716,16 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             int32 score;
 
             file = wptr[0];
-            uttid = NULL;
             if (nf > 1)
                 sf = atoi(wptr[1]);
             if (nf > 2)
                 ef = atoi(wptr[2]);
             if (nf > 3)
                 uttid = wptr[3];
+            else
+        	uttid = file;
 
-            E_INFO("Decoding '%s'\n", uttid ? uttid : file);
+            E_INFO("Decoding '%s'\n", uttid);
 
             /* Do actual decoding. */
             if(process_mllrctl_line(ps, config, mllrfile) < 0)
@@ -735,7 +736,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                 continue;
             if(process_ctl_line(ps, config, file, uttid, sf, ef) < 0)
                 continue;
-            hyp = ps_get_hyp(ps, &score, &uttid);
+            hyp = ps_get_hyp(ps, &score);
             
             /* Write out results and such. */
             if (hypfh) {

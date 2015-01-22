@@ -100,7 +100,6 @@ main(int argc, char *argv[])
 	cmd_ln_t *config;
 	FILE *rawfh;
 	char const *hyp;
-	char const *uttid;
 	int32 score;
 
 	TEST_ASSERT(config =
@@ -115,10 +114,10 @@ main(int argc, char *argv[])
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = ps_init(config));
 	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
-	ps_decode_raw(ps, rawfh, "goforward", -1);
+	ps_decode_raw(ps, rawfh, -1);
 	fclose(rawfh);
-	hyp = ps_get_hyp(ps, &score, &uttid);
-	printf("FWDFLAT (%s): %s (%d)\n", uttid, hyp, score);
+	hyp = ps_get_hyp(ps, &score);
+	printf("FWDFLAT: %s (%d)\n", hyp, score);
 	TEST_ASSERT(dag = ps_get_lattice(ps));
 	ps_lattice_bestpath(dag, ps_get_lm(ps, PS_DEFAULT_SEARCH), 1.0, 1.0/15.0);
 	score = ps_lattice_posterior(dag, ps_get_lm(ps, PS_DEFAULT_SEARCH), 1.0/15.0);
