@@ -292,8 +292,7 @@ kws_search_trans(kws_search_t * kwss)
             if (hmm_out_score(last_hmm) - hmm_out_score(pl_best_hmm) 
                 >= keyword->threshold) {
 
-                int32 prob = hmm_out_score(last_hmm) - hmm_out_score(pl_best_hmm) - 
-                             keyword->threshold;
+                int32 prob = hmm_out_score(last_hmm) - hmm_out_score(pl_best_hmm);
                 kws_detections_add(kwss->detections, keyword->word, 
                                   hmm_out_history(last_hmm), 
                                   kwss->frame, prob, 
