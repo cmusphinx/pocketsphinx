@@ -55,11 +55,6 @@
 #include <string.h>
 #include <assert.h>
 
-#if !defined(_WIN32_WCE)
-#include <signal.h>
-#include <setjmp.h>
-#endif
-
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <windows.h>
 #else
@@ -150,7 +145,7 @@ check_wav_header(char *header, int expected_sr)
 static void
 recognize_from_file()
 {
-    int16 adbuf[4096];
+    int16 adbuf[2048];
     const char *fname;
     const char *hyp;
     int32 k;
@@ -170,9 +165,10 @@ recognize_from_file()
     	    E_FATAL("Failed to process file '%s' due to format mismatch.\n", fname);
     }
     
-    utt_started = FALSE;
     ps_start_utt(ps);
-    while ((k = fread(adbuf, sizeof(int16), 4096, rawfd)) > 0) {
+    utt_started = FALSE;
+
+    while ((k = fread(adbuf, sizeof(int16), 2048, rawfd)) > 0) {
         ps_process_raw(ps, adbuf, k, FALSE, FALSE);
         in_speech = ps_get_in_speech(ps);
         if (in_speech && !utt_started) {
@@ -184,6 +180,7 @@ recognize_from_file()
             printf("%s\n", hyp);
             if (print_times)
         	print_word_times();
+
             ps_start_utt(ps);
             utt_started = FALSE;
         }
@@ -221,7 +218,7 @@ sleep_msec(int32 ms)
  * Main utterance processing loop:
  *     for (;;) {
  *        start utterance and wait for speech to process
- *     decoding till end-of-utterance silence will be detected
+ *        decoding till end-of-utterance silence will be detected
  *        print utterance result;
  *     }
  */
@@ -229,7 +226,7 @@ static void
 recognize_from_microphone()
 {
     ad_rec_t *ad;
-    int16 adbuf[4096];
+    int16 adbuf[2048];
     uint8 utt_started, in_speech;
     int32 k;
     char const *hyp;
@@ -244,12 +241,11 @@ recognize_from_microphone()
     if (ps_start_utt(ps) < 0)
         E_FATAL("Failed to start utterance\n");
     utt_started = FALSE;
-    /* Indicate listening for next utterance */
     printf("READY....\n");
+
     for (;;) {
-        if ((k = ad_read(ad, adbuf, 4096)) < 0)
+        if ((k = ad_read(ad, adbuf, 2048)) < 0)
             E_FATAL("Failed to read audio\n");
-        sleep_msec(100);
         ps_process_raw(ps, adbuf, k, FALSE, FALSE);
         in_speech = ps_get_in_speech(ps);
         if (in_speech && !utt_started) {
@@ -257,26 +253,19 @@ recognize_from_microphone()
             printf("Listening...\n");
         }
         if (!in_speech && utt_started) {
-            //speech -> silence transition, 
-            //time to start new utterance
+            /* speech -> silence transition, time to start new utterance  */
             ps_end_utt(ps);
             hyp = ps_get_hyp(ps, NULL );
             printf("%s\n", hyp);
+
             if (ps_start_utt(ps) < 0)
                 E_FATAL("Failed to start utterance\n");
-            /* Indicate listening for next utterance */
-            printf("READY....\n");
             utt_started = FALSE;
+            printf("READY....\n");
         }
+        sleep_msec(100);
     }
     ad_close(ad);
-}
-
-static jmp_buf jbuf;
-static void
-sighandler(int signo)
-{
-    longjmp(jbuf, 1);
 }
 
 int
@@ -300,7 +289,7 @@ main(int argc, char *argv[])
     ps_default_search_args(config);
     ps = ps_init(config);
     if (ps == NULL) {
-    cmd_ln_free_r(config);
+        cmd_ln_free_r(config);
         return 1;
     }
 
@@ -309,14 +298,7 @@ main(int argc, char *argv[])
     if (cmd_ln_str_r(config, "-infile") != NULL) {
         recognize_from_file();
     } else if (cmd_ln_boolean_r(config, "-inmic")) {
-    /* Make sure we exit cleanly (needed for profiling among other things) */
-        /* Signals seem to be broken in arm-wince-pe. */
-#if !defined(GNUWINCE) && !defined(_WIN32_WCE) && !defined(__SYMBIAN32__)
-        signal(SIGINT, &sighandler);
-#endif
-        if (setjmp(jbuf) == 0) {
-            recognize_from_microphone();
-        }
+        recognize_from_microphone();
     }
 
     ps_free(ps);
