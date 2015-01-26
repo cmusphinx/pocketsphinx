@@ -177,7 +177,8 @@ recognize_from_file()
         if (!in_speech && utt_started) {
             ps_end_utt(ps);
             hyp = ps_get_hyp(ps, NULL);
-            printf("%s\n", hyp);
+            if (hyp != NULL)
+        	printf("%s\n", hyp);
             if (print_times)
         	print_word_times();
 
@@ -188,7 +189,8 @@ recognize_from_file()
     ps_end_utt(ps);
     if (utt_started) {
         hyp = ps_get_hyp(ps, NULL);
-        printf("%s\n", hyp);
+        if (hyp != NULL)
+    	    printf("%s\n", hyp);
         if (print_times) {
         print_word_times();
     }
