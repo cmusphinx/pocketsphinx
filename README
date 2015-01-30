@@ -19,6 +19,10 @@ and project files can find it. On Windows, you will need to rename
 'sphinxbase-X.Y' (where X.Y is the SphinxBase version number) to simply
 'sphinxbase' for this to work.
 
+
+Linux/Unix installation
+===================================================================================================
+
 In a unix-like environment (such as linux, solaris etc):
 
  * build and optionally install SphinxBase.  If you want to use
@@ -35,28 +39,37 @@ In a unix-like environment (such as linux, solaris etc):
 
 % ./configure
 % make clean all
-% make test
-% make install
+% make check
+% sudo make install
 
-XCode Installation (for iPhone):
 
-Sphinxbase uses the standard unix autogen system, and there's a script
-included, 'build_for_iphone.sh' that will setup configure to create
-binaries that are XCode friendly.
+XCode Installation (for iPhone)
+===================================================================================================
 
-1) ./autogen.sh
-2) ./build_for_iphone.sh simulator
-3) ./build_for_iphone.sh device
+Pocketsphinx uses the standard unix autogen system, you can build
+pocketsphinx with automake given you already built sphinxbase You just
+need to pass correct configure arguments, set compiler path, set sysroot
+and other options. After you build the code you need to import dylib file
+into your project and you also need to configure includes for your
+project to find sphinxbase headers.
 
-Then in XCode, open your project info, and for 'All Configurations', and
-set:
+You also will have to create a recorder to capture audio with CoreAudio
+and feed it into the recognizer.
 
-'Header Search Paths' = "$(HOME)$(SDK_DIR)/include/pocketsphinx"
-'Library Search Paths' = "$(HOME)$(SDK_DIR)/lib"
-'Other Linker Flags' = "-lpocketsphinx"
+For details see http://github.com/cmusphinx/pocketsphinx-ios-demo
 
-In MS Windows (TM), under MS Visual Studio 2010 (or newer - we test
-with Visual C++ 2010 Express):
+If you want to quickly start with Pocketsphinx, try OpenEars toolkit which
+includes Pocketsphinx http://www.politepix.com/openears/
+
+
+Android installation
+===================================================================================================
+
+Use pocketsphinx-android-demo project
+
+
+In MS Windows (TM), under MS Visual Studio 2010 (or newer - we test with Visual C++ 2010 Express)
+===================================================================================================
 
  * load sphinxbase.sln located in sphinxbase directory
 
