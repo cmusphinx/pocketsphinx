@@ -16,7 +16,7 @@ DIE=0
   DIE=1
 }
 
-(grep "^LT_INIT" $srcdir/configure.in >/dev/null) && {
+(grep "^LT_INIT" $srcdir/configure.ac >/dev/null) && {
   if libtoolize --version </dev/null >/dev/null 2>&1; then
 	LIBTOOLIZE=libtoolize
   elif glibtoolize --version </dev/null >/dev/null 2>&1; then
@@ -66,7 +66,7 @@ xlc )
   am_opt=--include-deps;;
 esac
 
-for coin in `find $srcdir -name configure.in -print`
+for coin in `find $srcdir -name configure.ac -print`
 do 
   dr=`dirname $coin`
   if test -f $dr/NO-AUTO-GEN; then
@@ -83,13 +83,13 @@ do
 	##  echo "**Warning**: No such directory \`$k'.  Ignored."
         fi
       done
-      if grep "^LT_INIT" configure.in >/dev/null; then
+      if grep "^LT_INIT" configure.ac >/dev/null; then
 	echo "Running $LIBTOOLIZE..."
 	$LIBTOOLIZE --force --copy
       fi
       echo "Running aclocal $aclocalinclude ..."
       aclocal -I m4 $aclocalinclude
-      if grep "^AC_CONFIG_HEADER" configure.in >/dev/null; then
+      if grep "^AC_CONFIG_HEADER" configure.ac >/dev/null; then
 	echo "Running autoheader..."
 	autoheader
       fi
