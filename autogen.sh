@@ -93,8 +93,8 @@ do
 	echo "Running autoheader..."
 	autoheader
       fi
-      echo "Running automake --gnu --copy $am_opt ..."
-      automake --add-missing --gnu --copy $am_opt
+      echo "Running automake --foreign --copy $am_opt ..."
+      automake --add-missing --foreign --copy $am_opt
       echo "Running autoconf ..."
       autoconf
     )
