@@ -35,6 +35,33 @@
  * @file ps_search.h User can configure several "search" objects with
  * different grammars and langauge models and switch them in runtime to
  * provide interactive experience for the user.
+ *
+ * There are different possible search modes:
+ * 
+ * <ul>
+ * <li>keyword - efficiently looks for keyphrase and ignores other speech. allows to configure detection threshold.</li>
+ * <li>grammar - recognizes speech according to JSGF grammar. Unlike keyphrase grammar search doesn't ignore words which are not in grammar but tries to recognize them.</li>
+ * <li>ngram/lm - recognizes natural speech with a language model.</li>
+ * <li>allphone - recognizes phonemes with a phonetic language model.</li>
+ * </ul>
+ * 
+ * Each search has a name and can be referenced by a name, names are
+ * application-specific. The function ps_set_search allows to activate
+ * the search previously added by a name. 
+ *
+ * To add the search one needs to point to the grammar/language model
+ * describing the search. The location of the grammar is specific to the
+ * application.
+ * 
+ * The exact design of a searches depends on your application. For
+ * example, you might want to listen for activation keyword first and once
+ * keyword is recognized switch to ngram search to recognize actual
+ * command. Once you recognized the command you can switch to grammar
+ * search to recognize the confirmation and then switch back to keyword listening
+ * mode to wait for another command.
+ *
+ * If only a simple recognition is required it is sufficient to add a single search or
+ * just configure the required mode with configuration options.
  */
 
 #ifndef __PS_SEARCH_H__
