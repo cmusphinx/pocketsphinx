@@ -193,7 +193,7 @@ recognize_from_file()
     	    printf("%s\n", hyp);
         if (print_times) {
         print_word_times();
-    }
+	}
     }
     
     fclose(rawfd);
@@ -258,7 +258,8 @@ recognize_from_microphone()
             /* speech -> silence transition, time to start new utterance  */
             ps_end_utt(ps);
             hyp = ps_get_hyp(ps, NULL );
-            printf("%s\n", hyp);
+            if (hyp != NULL)
+                printf("%s\n", hyp);
 
             if (ps_start_utt(ps) < 0)
                 E_FATAL("Failed to start utterance\n");
