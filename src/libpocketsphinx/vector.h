@@ -87,28 +87,3 @@ int32 vector_is_zero (float32 *vec,	/* In: Vector to be checked */
 		      int32 len);	/* In: Length of above vector */
 
 #endif /* VECTOR_H */ 
-
-
-/*
- * Log record.  Maintained by RCS.
- *
- * Revision 1.1.1.1  2004/03/29 20:29:40  rkm
- *
- *
- * Revision 1.1.1.1  2004/03/05 16:55:44  rkm
- *
- *
- * Revision 1.1.1.1  2000/02/28 18:05:54  rkm
- * Imported Sources
- *
- * Revision 1.1.1.1  1999/11/23 20:24:18  rkm
- * imported sources
- *
- * Revision 1.2  1995/10/09  20:55:35  eht
- * Changes for prim_type.h
- *
- * Revision 1.1  1995/08/15  13:44:14  eht
- * Initial revision
- *
- *
- */
