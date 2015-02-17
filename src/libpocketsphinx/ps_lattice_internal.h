@@ -72,7 +72,7 @@ struct ps_lattice_s {
     ps_latnode_t *end;    /**< Ending node. */
 
     frame_idx_t n_frames;    /**< Number of frames for this utterance. */
-    int16 n_nodes;     /**< Number of nodes in this lattice. */
+    int32 n_nodes;     /**< Number of nodes in this lattice. */
     int32 final_node_ascr; /**< Acoustic score of implicit link exiting final node. */
     int32 norm;        /**< Normalizer for posterior probabilities. */
     char *hyp_str;     /**< Current hypothesis string. */
