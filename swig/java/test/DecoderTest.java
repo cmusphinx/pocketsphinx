@@ -40,7 +40,7 @@ public class DecoderTest {
                                 16, 1, true, true);
         ais = AudioSystem.getAudioInputStream(targetAudioFormat, tmp);
 
-        d.startUtt("");
+        d.startUtt();
         d.setRawdataSize(300000);
         byte[] b = new byte[4096];
         try {

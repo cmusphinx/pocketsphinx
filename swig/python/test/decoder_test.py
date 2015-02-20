@@ -69,7 +69,7 @@ for best, i in izip(decoder.nbest(), range(10)):
 
 # Decode streaming data.
 decoder = Decoder(config)
-decoder.start_utt('goforward')
+decoder.start_utt()
 decoder.set_rawdata_size(100000);
 stream = open(path.join(DATADIR, 'goforward.raw'), 'rb')
 while True:

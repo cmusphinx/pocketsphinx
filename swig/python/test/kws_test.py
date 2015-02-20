@@ -60,7 +60,7 @@ stream = open(os.path.join(datadir, "goforward.raw"))
 
 # Process audio chunk by chunk. On keyword detected perform action and restart search
 decoder = Decoder(config)
-decoder.start_utt('spotting')
+decoder.start_utt()
 while True:
     buf = stream.read(1024)
     if not buf:
@@ -69,4 +69,4 @@ while True:
     if decoder.hyp() != None and decoder.hyp().hypstr == 'forward':
     	print "Detected keyword, restarting search"
 	decoder.end_utt()
-	decoder.start_utt('spotting')
+	decoder.start_utt()
