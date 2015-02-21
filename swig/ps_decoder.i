@@ -44,14 +44,16 @@
      * int ps_process_cep
      */
 
-    Decoder() {
+    Decoder(int *errcode) {
         Decoder *d = ps_init(cmd_ln_init(NULL, ps_args(), FALSE, NULL));
+        *errcode = d ? 0 : -1;
         return d;
     }
 
-    Decoder(Config *config) {
-        Decoder *decoder = ps_init(config);
-        return decoder;
+    Decoder(Config *config, int *errcode) {
+        Decoder *d = ps_init(config);
+        *errcode = d ? 0 : -1;
+        return d;
     }
 
     ~Decoder() {
