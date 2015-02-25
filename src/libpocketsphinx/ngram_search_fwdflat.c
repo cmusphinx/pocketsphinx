@@ -755,7 +755,10 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
     /* Transition to noise words */
     newscore = best_silrc_score + ngs->fillpen + pip;
     if ((newscore BETTER_THAN thresh) && (newscore BETTER_THAN WORST_SCORE)) {
-        for (w = ps_search_silence_wid(ngs) + 1; w < ps_search_n_words(ngs); w++) {
+        for (w = dict_filler_start(dict); w <= dict_filler_end(dict); w++) {
+            if (w == ps_search_silence_wid(ngs))
+                continue;
+
             rhmm = (root_chan_t *) ngs->word_chan[w];
             /* Noise words that aren't a single phone will have NULL here. */
             if (rhmm == NULL)
