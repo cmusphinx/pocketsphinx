@@ -908,6 +908,11 @@ ps_start_utt(ps_decoder_t *ps)
     int rv;
     char uttid[16];
     
+    if (ps->acmod->state == ACMOD_STARTED || ps->acmod->state == ACMOD_PROCESSING) {
+	E_ERROR("Utterance already started\n");
+	return -1;
+    }
+
     if (ps->search == NULL) {
         E_ERROR("No search module is selected, did you forget to "
                 "specify a language model or grammar?\n");
@@ -1094,6 +1099,10 @@ ps_end_utt(ps_decoder_t *ps)
 {
     int rv, i;
 
+    if (ps->acmod->state == ACMOD_ENDED || ps->acmod->state == ACMOD_IDLE) {
+	E_ERROR("Utterance is not started\n");
+	return -1;
+    }
     acmod_end_utt(ps->acmod);
 
     /* Search any remaining frames. */
