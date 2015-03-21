@@ -88,7 +88,7 @@ main(int argc, char *argv[])
     TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 59);
     itor = ps_alignment_iter_next(itor);
     TEST_EQUAL(ps_alignment_iter_get(itor)->start, 163);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 51);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 49);
     itor = ps_alignment_iter_next(itor);
     TEST_EQUAL(itor, NULL);
 
