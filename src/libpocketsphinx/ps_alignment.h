@@ -65,6 +65,7 @@ struct ps_alignment_entry_s {
     } id;
     int16 start;
     int16 duration;
+    int32 score;
     uint16 parent;
     uint16 child;
 };

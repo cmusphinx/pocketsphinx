@@ -118,6 +118,7 @@ ps_alignment_add_word(ps_alignment_t *al,
     else
         ent->start = 0;
     ent->duration = duration;
+    ent->score = 0;
     ent->parent = PS_ALIGNMENT_NONE;
     ent->child = PS_ALIGNMENT_NONE;
 
@@ -162,6 +163,7 @@ ps_alignment_populate(ps_alignment_t *al)
         sent->id.pid.tmatid = bin_mdef_pid2tmatid(mdef, sent->id.pid.cipid);
         sent->start = went->start;
         sent->duration = went->duration;
+        sent->score = 0;
         sent->parent = i;
         went->child = (uint16)(sent - al->sseq.seq);
         if (len == 1)
@@ -185,6 +187,7 @@ ps_alignment_populate(ps_alignment_t *al)
             assert(sent->id.pid.ssid != BAD_SSID);
             sent->start = went->start;
             sent->duration = went->duration;
+            sent->score = 0;
             sent->parent = i;
         }
 
@@ -204,6 +207,7 @@ ps_alignment_populate(ps_alignment_t *al)
             assert(sent->id.pid.ssid != BAD_SSID);
             sent->start = went->start;
             sent->duration = went->duration;
+            sent->score = 0;
             sent->parent = i;
         }
         /* Update lc.  Could just use sent->id.pid.cipid here but that
@@ -228,6 +232,7 @@ ps_alignment_populate(ps_alignment_t *al)
             assert(sent->id.senid != BAD_SENID);
             sent->start = pent->start;
             sent->duration = pent->duration;
+            sent->score = 0;
             sent->parent = i;
             if (j == 0)
                 pent->child = (uint16)(sent - al->state.seq);
@@ -272,6 +277,7 @@ ps_alignment_populate_ci(ps_alignment_t *al)
             assert(sent->id.pid.ssid != BAD_SSID);
             sent->start = went->start;
             sent->duration = went->duration;
+            sent->score = 0;
             sent->parent = i;
         }
     }
@@ -293,6 +299,7 @@ ps_alignment_populate_ci(ps_alignment_t *al)
             assert(sent->id.senid != BAD_SENID);
             sent->start = pent->start;
             sent->duration = pent->duration;
+            sent->score = 0;
             sent->parent = i;
             if (j == 0)
                 pent->child = (uint16)(sent - al->state.seq);
@@ -315,8 +322,10 @@ ps_alignment_propagate(ps_alignment_t *al)
         if (pent != last_ent) {
             pent->start = sent->start;
             pent->duration = 0;
+            pent->score = 0;
         }
         pent->duration += sent->duration;
+        pent->score += sent->score;
         last_ent = pent;
     }
 
@@ -328,8 +337,10 @@ ps_alignment_propagate(ps_alignment_t *al)
         if (went != last_ent) {
             went->start = pent->start;
             went->duration = 0;
+            went->score = 0;
         }
         went->duration += pent->duration;
+        went->score += pent->score;
         last_ent = went;
     }
 
