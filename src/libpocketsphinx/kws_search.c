@@ -350,6 +350,7 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
 {
     FILE *list_file;
     lineiter_t *li;
+    char *line;
     int i;
     
     if ((list_file = fopen(keyfile, "r")) == NULL) {
@@ -357,35 +358,32 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
         return -1;
     }
 
-    /* count keyphrases amount */
+    /* count keyphrases */
     kwss->n_keyphrases = 0;
     for (li = lineiter_start(list_file); li; li = lineiter_next(li))
         if (li->len > 0)
             kwss->n_keyphrases++;
+
     kwss->keyphrases = (kws_keyword_t *)ckd_calloc(kwss->n_keyphrases, sizeof(*kwss->keyphrases));
     fseek(list_file, 0L, SEEK_SET);
 
     /* read keyphrases */
     for (li = lineiter_start(list_file), i=0; li; li = lineiter_next(li), i++) {
-        size_t last_ptr = li->len - 1;
+        size_t begin, end;
         kwss->keyphrases[i].threshold = kwss->def_threshold;
-        while (li->buf[last_ptr] == '\n')
-            last_ptr--;
-        if (li->buf[last_ptr] == '/') {
-            size_t digit_len, start;
-            char digit[16];
-            
-            start = last_ptr - 1;
-            while (li->buf[start] != '/' && start > 0)
-                start--;
-            digit_len = last_ptr - start;
-            memcpy(digit, &li->buf[start+1], digit_len);
-            kwss->keyphrases[i].threshold =  (int32) logmath_log(kwss->base.acmod->lmath, atof_c(digit)) 
-                                              >> SENSCR_SHIFT;
-            li->buf[start-1] = '\0';
+        line = string_trim(li->buf, STRING_BOTH);
+        end = strlen(line) - 1;
+        begin = end - 1;
+
+        if (line[end] == '/') {
+            while (line[begin] != '/' && begin > 0)
+                begin--;
+            line[end] = 0;
+	    line[begin] = 0;
+    	    kwss->keyphrases[i].threshold = (int32) logmath_log(kwss->base.acmod->lmath, atof_c(line + begin + 1)) 
+                                          >> SENSCR_SHIFT;
         }
-        li->buf[last_ptr + 1] = '\0';
-        kwss->keyphrases[i].word = ckd_salloc(li->buf);
+        kwss->keyphrases[i].word = ckd_salloc(line);
     }
 
     fclose(list_file);
