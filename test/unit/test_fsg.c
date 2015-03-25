@@ -56,7 +56,7 @@ main(int argc, char *argv[])
                 }
                 hyp = fsg_search_hyp(ps_search_base(fsgs), &score, &is_final);
                 printf("FSG: %d %s (%d) %s\n", acmod->output_frame, hyp, score, is_final ? "FINAL" : "");
-                TEST_EQUAL (is_final, acmod->output_frame > 124);
+                TEST_EQUAL (is_final, acmod->output_frame > 135);
             }
         }
         fsg_search_finish(ps_search_base(fsgs));

@@ -73,21 +73,21 @@ main(int argc, char *argv[])
 
     itor = ps_alignment_words(al);
     TEST_EQUAL(ps_alignment_iter_get(itor)->start, 0);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 3);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 8);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 3);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 12);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 8);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 18);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 15);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 26);
     TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 53);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 68);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 79);
     TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 36);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 104);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 115);
     TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 59);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 163);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 174);
     TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 49);
     itor = ps_alignment_iter_next(itor);
     TEST_EQUAL(itor, NULL);

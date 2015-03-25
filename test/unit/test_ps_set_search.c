@@ -90,15 +90,20 @@ test_set_search()
     TEST_ASSERT(!ps_set_fsg(ps, "goforward", fsg));
     fsg_model_free(fsg);
 
+    TEST_ASSERT(!ps_set_jsgf_file(ps, "goforward_other", DATADIR "/goforward.gram"));
+
     ngram_model_t *lm = ngram_model_read(config, DATADIR "/tidigits/lm/tidigits.lm.dmp",
                                          NGRAM_AUTO, ps->lmath);
     TEST_ASSERT(!ps_set_lm(ps, "tidigits", lm));
     ngram_model_free(lm);
 
     TEST_ASSERT(!ps_set_search(ps, "tidigits"));
+
     TEST_ASSERT(!ps_set_search(ps, "goforward"));
     
     itor = ps_search_iter(ps);
+    TEST_EQUAL(0, strcmp("goforward_other", ps_search_iter_val(itor)));
+    itor = ps_search_iter_next(itor);
     TEST_EQUAL(0, strcmp("tidigits", ps_search_iter_val(itor)));
     itor = ps_search_iter_next(itor);
     TEST_EQUAL(0, strcmp("goforward", ps_search_iter_val(itor)));
