@@ -21,7 +21,7 @@ and project files can find it. On Windows, you will need to rename
 
 
 Linux/Unix installation
-===================================================================================================
+==============================================================================
 
 In a unix-like environment (such as linux, solaris etc):
 
@@ -44,7 +44,7 @@ In a unix-like environment (such as linux, solaris etc):
 
 
 XCode Installation (for iPhone)
-===================================================================================================
+==============================================================================
 
 Pocketsphinx uses the standard unix autogen system, you can build
 pocketsphinx with automake given you already built sphinxbase You just
@@ -63,13 +63,13 @@ includes Pocketsphinx http://www.politepix.com/openears/
 
 
 Android installation
-===================================================================================================
+==============================================================================
 
 Use pocketsphinx-android-demo project
 
 
 In MS Windows (TM), under MS Visual Studio 2010 (or newer - we test with Visual C++ 2010 Express)
-===================================================================================================
+==============================================================================
 
  * load sphinxbase.sln located in sphinxbase directory
 
