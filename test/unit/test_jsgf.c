@@ -59,6 +59,7 @@ main(int argc, char *argv[])
         int is_final;
 
         TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
+	acmod_start_stream(acmod);
         TEST_EQUAL(0, acmod_start_utt(acmod));
         fsg_search_start(ps_search_base(fsgs));
         is_final = FALSE;
@@ -73,8 +74,8 @@ main(int argc, char *argv[])
                 }
             }
             hyp = fsg_search_hyp(ps_search_base(fsgs), &score, &is_final);
-            printf("FSG: %s (%d) frame %d final %s\n", hyp, score, acmod->output_frame, is_final ? "FINAL" : "");
-            TEST_EQUAL (is_final, (acmod->output_frame > 86));
+            printf("FSG: %s (%d) frame %d %s\n", hyp, score, acmod->output_frame, is_final ? "FINAL" : "");
+            TEST_EQUAL (is_final, (acmod->output_frame > 135));
         }
         fsg_search_finish(ps_search_base(fsgs));
         hyp = fsg_search_hyp(ps_search_base(fsgs), &score, NULL);

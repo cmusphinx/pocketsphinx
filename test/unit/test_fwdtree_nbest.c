@@ -46,7 +46,7 @@ main(int argc, char *argv[])
         ps_astar_t *nbest;
         ps_latpath_t *path;
         char *besthyp;
-        const char *astar_besthyp;
+        const char *astar_besthyp = NULL;
         int32 astar_hyp_score;
         int i;
 
