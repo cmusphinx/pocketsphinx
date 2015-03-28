@@ -817,6 +817,7 @@ main(int32 argc, char *argv[])
     ps_default_search_args(config);
     if (!(ps = ps_init(config))) {
         cmd_ln_free_r(config);
+        fclose(ctlfh);
         E_FATAL("PocketSphinx decoder init failed\n");
     }
 
