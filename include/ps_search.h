@@ -47,7 +47,8 @@
  * 
  * Each search has a name and can be referenced by a name, names are
  * application-specific. The function ps_set_search allows to activate
- * the search previously added by a name. 
+ * the search previously added by a name. Only single search can be
+ * activated at time.
  *
  * To add the search one needs to point to the grammar/language model
  * describing the search. The location of the grammar is specific to the
