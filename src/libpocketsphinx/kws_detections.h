@@ -56,7 +56,6 @@ typedef struct kws_detection_s {
 
 typedef struct kws_detections_s {
     glist_t detect_list;
-    gnode_t *insert_ptr;
 } kws_detections_t;
 
 /**
@@ -72,6 +71,6 @@ void kws_detections_add(kws_detections_t *detections, const char* keyphrase, int
 /**
  * Compose hypothesis.
  */
-void kws_detections_hyp_str(kws_detections_t *detections, char** hyp_str);
+void kws_detections_hyp_str(kws_detections_t *detections, char** hyp_str, int frame, int delay);
 
 #endif                          /* __KWS_DETECTIONS_H__ */

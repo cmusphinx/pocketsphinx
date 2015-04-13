@@ -196,6 +196,10 @@
       ARG_FLOAT64,                                              \
       "1e-1",                                                   \
       "Phone loop probability for keyword spotting" },          \
+{ "-kws_delay",                                                 \
+      ARG_INT32,                                                \
+      "10",                                                     \
+      "Delay to wait for best detection score" },               \
 { "-kws_threshold",                                             \
       ARG_FLOAT64,                                              \
       "1",                                                      \

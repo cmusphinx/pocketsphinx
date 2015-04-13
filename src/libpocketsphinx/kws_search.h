@@ -72,7 +72,7 @@ typedef struct kws_search_s {
     hmm_context_t *hmmctx;        /**< HMM context. */
 
     kws_detections_t *detections; /**< Keyword spotting history */
-    kws_keyword_t* keyphrases;   /**< Keyphrases to spot */
+    kws_keyword_t* keyphrases;    /**< Keyphrases to spot */
     int n_keyphrases;             /**< Keyphrases amount */
     frame_idx_t frame;            /**< Frame index */
 
@@ -81,10 +81,10 @@ typedef struct kws_search_s {
     int32 plp;                    /**< Phone loop probability */
     int32 bestscore;              /**< For beam pruning */
     int32 def_threshold;          /**< default threshold for p(hyp)/p(altern) ratio */
+    int32 delay;                  /**< Delay to wait for best detection score */
 
     int32 n_pl;                   /**< Number of CI phones */
     hmm_t *pl_hmms;               /**< Phone loop hmms - hmms of CI phones */
-
 } kws_search_t;
 
 /**

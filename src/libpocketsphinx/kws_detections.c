@@ -54,32 +54,45 @@ kws_detections_reset(kws_detections_t *detections)
 void
 kws_detections_add(kws_detections_t *detections, const char* keyphrase, int sf, int ef, int prob, int ascr)
 {
+    gnode_t *gn;
     kws_detection_t* detection;
-
+    for (gn = detections->detect_list; gn; gn = gnode_next(gn)) {
+        kws_detection_t *det = (kws_detection_t *)gnode_ptr(gn);
+        if (strcmp(keyphrase, det->keyphrase) == 0 && det->sf < ef && det->ef > sf) {
+    	    if (det->prob < prob) {
+    		det->sf = sf;
+    		det->ef = ef;
+    		det->prob = prob;
+    		det->ascr = ascr;
+    	    }
+    	    return;
+        }
+    }
+                                            
+    /* Nothing found */
     detection = (kws_detection_t *)ckd_calloc(1, sizeof(*detection));
     detection->sf = sf;
     detection->ef = ef;
     detection->keyphrase = keyphrase;
     detection->prob = prob;
     detection->ascr = ascr;
-    if (!detections->detect_list) {
-        detections->detect_list = glist_add_ptr(detections->detect_list, (void *)detection);
-        detections->insert_ptr = detections->detect_list;
-    } else {
-        detections->insert_ptr = glist_insert_ptr(detections->insert_ptr, (void *)detection);
-    }
+    detections->detect_list = glist_add_ptr(detections->detect_list, (void *)detection);
 }
 
 void
-kws_detections_hyp_str(kws_detections_t *detections, char** hyp_str)
+kws_detections_hyp_str(kws_detections_t *detections, char** hyp_str, int frame, int delay)
 {
     gnode_t *gn;
     char *c;
     int len;
 
     len = 0;
-    for (gn = detections->detect_list; gn; gn = gnode_next(gn))
-        len += strlen(((kws_detection_t *)gnode_ptr(gn))->keyphrase) + 2;
+    for (gn = detections->detect_list; gn; gn = gnode_next(gn)) {
+	kws_detection_t *det = (kws_detection_t *)gnode_ptr(gn);
+	if (det->ef < frame - delay) {
+	    len += strlen(det->keyphrase) + 2;
+	}
+    }
 
     if (len == 0) {
         hyp_str = NULL;
@@ -89,11 +102,13 @@ kws_detections_hyp_str(kws_detections_t *detections, char** hyp_str)
     *hyp_str = (char *)ckd_calloc(len, sizeof(char));
     c = *hyp_str;
     for (gn = detections->detect_list; gn; gn = gnode_next(gn)) {
-        const char *word = ((kws_detection_t *)gnode_ptr(gn))->keyphrase;
-        memcpy(c, word, strlen(word));
-        c += strlen(word);
-        *c = ' ';
-        c++;
+	kws_detection_t *det = (kws_detection_t *)gnode_ptr(gn);
+	if (det->ef < frame - delay) {
+            memcpy(c, det->keyphrase, strlen(det->keyphrase));
+    	    c += strlen(det->keyphrase);
+    	    *c = ' ';
+    	    c++;
+    	}
     }
     c--;
     *c = '\0';

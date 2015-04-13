@@ -265,7 +265,6 @@ kws_search_trans(kws_search_t * kwss)
     hmm_t *pl_best_hmm = NULL;
     int32 best_out_score = WORST_SCORE;
     int i, keyword_iter;
-    uint8 to_clear;
 
     /* select best hmm in phone-loop to be a predecessor */
     for (i = 0; i < kwss->n_pl; i++)
@@ -279,7 +278,6 @@ kws_search_trans(kws_search_t * kwss)
         return;
 
     /* Check whether keyword wasn't spotted yet */
-    to_clear = FALSE;
     for (keyword_iter = 0; keyword_iter < kwss->n_keyphrases; keyword_iter++) {
         kws_keyword_t *keyword;
         hmm_t *last_hmm;
@@ -297,19 +295,9 @@ kws_search_trans(kws_search_t * kwss)
                                   hmm_out_history(last_hmm), 
                                   kwss->frame, prob, 
                                   hmm_out_score(last_hmm));
-                to_clear = TRUE;
             } /* keyword is spotted */
         } /* last hmm of keyword is active */
     } /* keywords loop */
-
-    if (to_clear) {
-        for (keyword_iter = 0; keyword_iter < kwss->n_keyphrases; keyword_iter++) {
-            kws_keyword_t* keyword = &kwss->keyphrases[keyword_iter];
-            for (i = 0; i < keyword->n_hmms; i++) {
-                hmm_clear(kws_nth_hmm(keyword, i));
-            }
-        }
-    } /* clear all keywords because something was spotted */
 
     /* Make transition for all phone loop hmms */
     for (i = 0; i < kwss->n_pl; i++) {
@@ -412,14 +400,17 @@ kws_search_init(const char *keyphrase,
                             cmd_ln_float32_r(config,
                                              "-kws_plp")) >> SENSCR_SHIFT;
 
+
     kwss->def_threshold =
         (int32) logmath_log(acmod->lmath,
                             cmd_ln_float64_r(config,
                                              "-kws_threshold")) >>
         SENSCR_SHIFT;
 
-    E_INFO("KWS(beam: %d, plp: %d, default threshold %d)\n",
-           kwss->beam, kwss->plp, kwss->def_threshold);
+    kwss->delay = (int32) cmd_ln_int32_r(config, "-kws_delay");
+
+    E_INFO("KWS(beam: %d, plp: %d, default threshold %d, delay %d)\n",
+           kwss->beam, kwss->plp, kwss->def_threshold, kwss->delay);
 
     if (keyfile) {
 	if (kws_search_read_list(kwss, keyfile) < 0) {
@@ -636,7 +627,7 @@ kws_search_hyp(ps_search_t * search, int32 * out_score,
 
     if (search->hyp_str)
         ckd_free(search->hyp_str);
-    kws_detections_hyp_str(kwss->detections, &search->hyp_str);
+    kws_detections_hyp_str(kwss->detections, &search->hyp_str, kwss->frame, kwss->delay);
     
     return search->hyp_str;
 }
