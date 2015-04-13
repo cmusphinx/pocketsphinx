@@ -1041,6 +1041,10 @@ ps_process_raw(ps_decoder_t *ps,
 	return 0;
     }
 
+    if (n_samples > 2048) {
+	E_WARN("Data size is too large, word timings might be wrong, process audio in smaller chunks\n");
+    }
+
     if (no_search)
         acmod_set_grow(ps->acmod, TRUE);
 
