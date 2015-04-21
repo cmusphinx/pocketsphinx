@@ -12,7 +12,6 @@ AC_PROG_CC
 AC_WORDS_BIGENDIAN
 AC_CHECK_TYPES(long long)
 AC_CHECK_SIZEOF(long long)
-AC_CHECK_FUNCS(dup2)
 
 LT_INIT
 
@@ -87,11 +86,11 @@ GST_PLUGIN_LDFLAGS='-module -avoid-version -export-symbols-regex [_]*\(gst_\|Gst
 AC_SUBST(GST_PLUGIN_LDFLAGS)
 
 dnl
-dnl Get SphinxBase source from command line if given
+dnl Get SphinxBase from command line if given
 dnl
 AC_ARG_WITH(sphinxbase,
 	AS_HELP_STRING([--with-sphinxbase=DIRECTORY],
-			[Look for SphinxBase source files in DIRECTORY.  If this is 'auto',
+			[Look for SphinxBase installation in DIRECTORY.  If this is 'auto',
 			 the system-wide installation will be used.]),
 			 sphinxbase=$withval)
 
@@ -153,9 +152,8 @@ it was installed in a non-standard prefix.])])
    AC_CHECK_HEADER(sphinx_config.h,,[AC_MSG_FAILURE([SphinxBase was not found on your system.])])
 else
    LIBS="$LIBS -lsphinxbase"
-   LDFLAGS="$LDFLAGS -L$sphinxbase/src/libsphinxad \
-		     -L$sphinxbase/src/libsphinxbase"
-   CPPFLAGS="$CPPFLAGS -I$sphinxbase/include"
+   LDFLAGS="$LDFLAGS -L$sphinxbase/lib -L$sphinxbase/src/libsphinxad -L$sphinxbase/src/libsphinxbase"
+   CPPFLAGS="$CPPFLAGS -I$sphinxbase/include -I$sphinxbase/include/sphinxbase"
    SPHINXBASE_SWIG="$sphinxbase/swig"
 fi
 
