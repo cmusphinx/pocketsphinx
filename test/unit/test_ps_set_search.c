@@ -89,6 +89,7 @@ test_set_search()
                                       ps->lmath, cmd_ln_int32_r(config, "-lw"));
     TEST_ASSERT(!ps_set_fsg(ps, "goforward", fsg));
     fsg_model_free(fsg);
+    jsgf_grammar_free(jsgf);
 
     TEST_ASSERT(!ps_set_jsgf_file(ps, "goforward_other", DATADIR "/goforward.gram"));
 

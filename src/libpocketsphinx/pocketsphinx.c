@@ -306,8 +306,11 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         fsg_model_t *fsg = fsg_model_readfile(path, ps->lmath, lw);
         if (!fsg)
             return -1;
-        if (ps_set_fsg(ps, PS_DEFAULT_SEARCH, fsg))
+        if (ps_set_fsg(ps, PS_DEFAULT_SEARCH, fsg)) {
+            fsg_model_free(fsg);
             return -1;
+        }
+        fsg_model_free(fsg);
         ps_set_search(ps, PS_DEFAULT_SEARCH);
     }
     
@@ -342,17 +345,16 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         }
 
         for(lmset_it = ngram_model_set_iter(lmset);
-            lmset_it; lmset_it = ngram_model_set_iter_next(lmset_it)) {
-            
+            lmset_it; lmset_it = ngram_model_set_iter_next(lmset_it)) {    
             ngram_model_t *lm = ngram_model_set_iter_model(lmset_it, &name);            
             E_INFO("adding search %s\n", name);
             if (ps_set_lm(ps, name, lm)) {
-    		ngram_model_free(lm);
                 ngram_model_set_iter_free(lmset_it);
+        	ngram_model_free(lmset);
                 return -1;
             }
-	    ngram_model_free(lm);
         }
+        ngram_model_free(lmset);
 
         name = cmd_ln_str_r(config, "-lmname");
         if (name)
@@ -644,12 +646,14 @@ ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
       rule = jsgf_get_rule(jsgf, toprule);
       if (rule == NULL) {
           E_ERROR("Start rule %s not found\n", toprule);
+          jsgf_grammar_free(jsgf);
           return -1;
       }
   } else {
       rule = jsgf_get_public_rule(jsgf);
       if (rule == NULL) {
           E_ERROR("No public rules found in %s\n", path);
+          jsgf_grammar_free(jsgf);
           return -1;
       }
   }
@@ -658,6 +662,7 @@ ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
   fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, lw);
   result = ps_set_fsg(ps, name, fsg);
   fsg_model_free(fsg);
+  jsgf_grammar_free(jsgf);
   return result;
 }
 
