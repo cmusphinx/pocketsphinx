@@ -108,7 +108,8 @@ typedef struct fsg_search_s {
 /**
  * Create, initialize and return a search module.
  */
-ps_search_t *fsg_search_init(fsg_model_t *fsg,
+ps_search_t *fsg_search_init(const char *name,
+			     fsg_model_t *fsg,
                              cmd_ln_t *config,
                              acmod_t *acmod,
                              dict_t *dict,

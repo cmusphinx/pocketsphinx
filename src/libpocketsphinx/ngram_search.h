@@ -360,7 +360,8 @@ typedef struct ngram_search_s ngram_search_t;
 /**
  * Initialize the N-Gram search module.
  */
-ps_search_t *ngram_search_init(ngram_model_t *lm,
+ps_search_t *ngram_search_init(const char *name,
+			       ngram_model_t *lm,
                                cmd_ln_t *config,
                                acmod_t *acmod,
                                dict_t *dict,

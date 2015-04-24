@@ -125,7 +125,6 @@ allphone_search_seg_iter(ps_search_t * search, int32 * out_score)
 }
 
 static ps_searchfuncs_t allphone_funcs = {
-    /* name: */ "allphone",
     /* start: */ allphone_search_start,
     /* step: */ allphone_search_step,
     /* finish: */ allphone_search_finish,
@@ -525,7 +524,8 @@ phmm_trans(allphone_search_t * allphs, int32 best,
 }
 
 ps_search_t *
-allphone_search_init(ngram_model_t * lm,
+allphone_search_init(const char *name,
+                     ngram_model_t * lm,
                      cmd_ln_t * config,
                      acmod_t * acmod, dict_t * dict, dict2pid_t * d2p)
 {
@@ -535,7 +535,7 @@ allphone_search_init(ngram_model_t * lm,
     static char *lmname = "default";
 
     allphs = (allphone_search_t *) ckd_calloc(1, sizeof(*allphs));
-    ps_search_init(ps_search_base(allphs), &allphone_funcs, config, acmod,
+    ps_search_init(ps_search_base(allphs), &allphone_funcs, PS_SEARCH_TYPE_ALLPHONE, name, config, acmod,
                    dict, d2p);
     mdef = acmod->mdef;
 
@@ -643,6 +643,7 @@ allphone_search_free(ps_search_t * search)
 {
     allphone_search_t *allphs = (allphone_search_t *) search;
 
+    
     double n_speech = (double)allphs->n_tot_frame
             / cmd_ln_int32_r(ps_search_config(allphs), "-frate");
 
@@ -653,7 +654,8 @@ allphone_search_free(ps_search_t * search)
            allphs->perf.t_tot_elapsed,
            allphs->perf.t_tot_elapsed / n_speech);
 
-    ps_search_deinit(search);
+    ps_search_base_free(search);
+
     hmm_context_free(allphs->hmmctx);
     phmm_free(allphs);
     if (allphs->lm)

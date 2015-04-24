@@ -138,7 +138,8 @@ typedef struct allphone_search_s {
 /**
  * Create, initialize and return a search module.
  */
-ps_search_t *allphone_search_init(ngram_model_t * lm,
+ps_search_t *allphone_search_init(const char *name,
+				  ngram_model_t * lm,
                                   cmd_ln_t * config,
                                   acmod_t * acmod,
                                   dict_t * dict, dict2pid_t * d2p);

@@ -92,6 +92,8 @@ test_set_search()
     jsgf_grammar_free(jsgf);
 
     TEST_ASSERT(!ps_set_jsgf_file(ps, "goforward_other", DATADIR "/goforward.gram"));
+    // Second time
+    TEST_ASSERT(!ps_set_jsgf_file(ps, "goforward_other", DATADIR "/goforward.gram"));
 
     ngram_model_t *lm = ngram_model_read(config, DATADIR "/tidigits/lm/tidigits.lm.dmp",
                                          NGRAM_AUTO, ps->lmath);
@@ -109,7 +111,7 @@ test_set_search()
     itor = ps_search_iter_next(itor);
     TEST_EQUAL(0, strcmp("goforward", ps_search_iter_val(itor)));
     itor = ps_search_iter_next(itor);
-    TEST_EQUAL(0, strcmp("phone_loop", ps_search_iter_val(itor)));
+    TEST_EQUAL(0, strcmp("_default_pl", ps_search_iter_val(itor)));
     itor = ps_search_iter_next(itor);
     TEST_EQUAL(NULL, itor);
     

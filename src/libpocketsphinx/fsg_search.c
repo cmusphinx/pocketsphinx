@@ -75,7 +75,6 @@ static ps_lattice_t *fsg_search_lattice(ps_search_t *search);
 static int fsg_search_prob(ps_search_t *search);
 
 static ps_searchfuncs_t fsg_funcs = {
-    /* name: */   "fsg",
     /* start: */  fsg_search_start,
     /* step: */   fsg_search_step,
     /* finish: */ fsg_search_finish,
@@ -176,14 +175,15 @@ fsg_search_add_altpron(fsg_search_t *fsgs, fsg_model_t *fsg)
 }
 
 ps_search_t *
-fsg_search_init(fsg_model_t *fsg,
+fsg_search_init(const char *name,
+		fsg_model_t *fsg,
                 cmd_ln_t *config,
                 acmod_t *acmod,
                 dict_t *dict,
                 dict2pid_t *d2p)
 {
     fsg_search_t *fsgs = ckd_calloc(1, sizeof(*fsgs));
-    ps_search_init(ps_search_base(fsgs), &fsg_funcs, config, acmod, dict, d2p);
+    ps_search_init(ps_search_base(fsgs), &fsg_funcs, PS_SEARCH_TYPE_FSG, name, config, acmod, dict, d2p);
 
     fsgs->fsg = fsg_model_retain(fsg);
     /* Initialize HMM context. */
@@ -255,7 +255,7 @@ fsg_search_free(ps_search_t *search)
 {
     fsg_search_t *fsgs = (fsg_search_t *)search;
 
-    ps_search_deinit(search);
+    ps_search_base_free(search);
     fsg_lextree_free(fsgs->lextree);
     if (fsgs->history) {
         fsg_history_reset(fsgs->history);

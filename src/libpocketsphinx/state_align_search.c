@@ -261,7 +261,7 @@ static void
 state_align_search_free(ps_search_t *search)
 {
     state_align_search_t *sas = (state_align_search_t *)search;
-    ps_search_deinit(search);
+    ps_search_base_free(search);
     ckd_free(sas->hmms);
     ckd_free(sas->tokens);
     hmm_context_free(sas->hmmctx);
@@ -269,7 +269,6 @@ state_align_search_free(ps_search_t *search)
 }
 
 static ps_searchfuncs_t state_align_search_funcs = {
-    /* name: */   "state_align",
     /* start: */  state_align_search_start,
     /* step: */   state_align_search_step,
     /* finish: */ state_align_search_finish,
@@ -282,7 +281,8 @@ static ps_searchfuncs_t state_align_search_funcs = {
 };
 
 ps_search_t *
-state_align_search_init(cmd_ln_t *config,
+state_align_search_init(const char *name,
+                        cmd_ln_t *config,
                         acmod_t *acmod,
                         ps_alignment_t *al)
 {
@@ -292,6 +292,7 @@ state_align_search_init(cmd_ln_t *config,
 
     sas = ckd_calloc(1, sizeof(*sas));
     ps_search_init(ps_search_base(sas), &state_align_search_funcs,
+		   PS_SEARCH_TYPE_STATE_ALIGN, name,
                    config, acmod, al->d2p->dict, al->d2p);
     sas->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
                                    acmod->tmat->tp, NULL, acmod->mdef->sseq);

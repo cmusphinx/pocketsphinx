@@ -79,7 +79,8 @@ struct state_align_search_s {
 };
 typedef struct state_align_search_s state_align_search_t;
 
-ps_search_t *state_align_search_init(cmd_ln_t *config,
+ps_search_t *state_align_search_init(const char *name,
+				     cmd_ln_t *config,
                                      acmod_t *acmod,
                                      ps_alignment_t *al);
 

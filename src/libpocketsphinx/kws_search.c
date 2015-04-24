@@ -127,7 +127,6 @@ kws_search_seg_iter(ps_search_t * search, int32 * out_score)
 }
 
 static ps_searchfuncs_t kws_funcs = {
-    /* name: */ "kws",
     /* start: */ kws_search_start,
     /* step: */ kws_search_step,
     /* finish: */ kws_search_finish,
@@ -379,13 +378,14 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
 }
 
 ps_search_t *
-kws_search_init(const char *keyphrase,
+kws_search_init(const char *name,
+		const char *keyphrase,
                 const char *keyfile,
                 cmd_ln_t * config,
                 acmod_t * acmod, dict_t * dict, dict2pid_t * d2p)
 {
     kws_search_t *kwss = (kws_search_t *) ckd_calloc(1, sizeof(*kwss));
-    ps_search_init(ps_search_base(kwss), &kws_funcs, config, acmod, dict,
+    ps_search_init(ps_search_base(kwss), &kws_funcs, PS_SEARCH_TYPE_KWS, name, config, acmod, dict,
                    d2p);
 
     kwss->detections = (kws_detections_t *)ckd_calloc(1, sizeof(*kwss->detections));
@@ -449,7 +449,7 @@ kws_search_free(ps_search_t * search)
     kws_search_t *kwss;
 
     kwss = (kws_search_t *) search;
-    ps_search_deinit(search);
+    ps_search_base_free(search);
     hmm_context_free(kwss->hmmctx);
     kws_detections_reset(kwss->detections);
     ckd_free(kwss->pl_hmms);

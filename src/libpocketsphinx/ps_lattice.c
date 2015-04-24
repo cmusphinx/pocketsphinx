@@ -890,7 +890,7 @@ ps_lattice_compute_lscr(ps_seg_t *seg, ps_latlink_t *link, int to)
 
     /* Language model score is included in the link score for FSG
      * search.  FIXME: Of course, this is sort of a hack :( */
-    if (0 != strcmp(ps_search_name(seg->search), PS_SEARCH_NGRAM)) {
+    if (0 != strcmp(ps_search_type(seg->search), PS_SEARCH_TYPE_NGRAM)) {
         seg->lback = 1; /* Unigram... */
         seg->lscr = 0;
         return;
@@ -1392,7 +1392,7 @@ ps_lattice_joint(ps_lattice_t *dag, ps_latlink_t *link, float32 ascale)
     int32 jprob;
 
     /* Sort of a hack... */
-    if (dag->search && 0 == strcmp(ps_search_name(dag->search), PS_SEARCH_NGRAM))
+    if (dag->search && 0 == strcmp(ps_search_type(dag->search), PS_SEARCH_TYPE_NGRAM))
         lmset = ((ngram_search_t *)dag->search)->lmset;
     else
         lmset = NULL;

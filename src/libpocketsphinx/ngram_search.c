@@ -64,7 +64,6 @@ static int32 ngram_search_prob(ps_search_t *search);
 static ps_seg_t *ngram_search_seg_iter(ps_search_t *search, int32 *out_score);
 
 static ps_searchfuncs_t ngram_funcs = {
-    /* name: */   "ngram",
     /* start: */  ngram_search_start,
     /* step: */   ngram_search_step,
     /* finish: */ ngram_search_finish,
@@ -138,7 +137,8 @@ ngram_search_calc_beams(ngram_search_t *ngs)
 }
 
 ps_search_t *
-ngram_search_init(ngram_model_t *lm,
+ngram_search_init(const char *name,
+                  ngram_model_t *lm,
                   cmd_ln_t *config,
                   acmod_t *acmod,
                   dict_t *dict,
@@ -153,7 +153,8 @@ ngram_search_init(ngram_model_t *lm,
                           cmd_ln_boolean_r(config, "-fwdtree"));
 
     ngs = ckd_calloc(1, sizeof(*ngs));
-    ps_search_init(&ngs->base, &ngram_funcs, config, acmod, dict, d2p);
+    ps_search_init(&ngs->base, &ngram_funcs, PS_SEARCH_TYPE_NGRAM, name, config, acmod, dict, d2p);
+
     ngs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
                                    acmod->tmat->tp, NULL, acmod->mdef->sseq);
     if (ngs->hmmctx == NULL) {
@@ -288,8 +289,7 @@ void
 ngram_search_free(ps_search_t *search)
 {
     ngram_search_t *ngs = (ngram_search_t *)search;
-
-    ps_search_deinit(search);
+    
     if (ngs->fwdtree)
         ngram_fwdtree_deinit(ngs);
     if (ngs->fwdflat)
@@ -306,6 +306,7 @@ ngram_search_free(ps_search_t *search)
                ngs->bestpath_perf.t_tot_elapsed / n_speech);
     }
 
+    ps_search_base_free(search);
     hmm_context_free(ngs->hmmctx);
     listelem_alloc_free(ngs->chan_alloc);
     listelem_alloc_free(ngs->root_chan_alloc);

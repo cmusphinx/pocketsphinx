@@ -134,15 +134,11 @@ static void
 ps_free_searches(ps_decoder_t *ps)
 {
     if (ps->searches) {
-        /* Release keys manually as we used ckd_salloc to add them, release every search too. */
         hash_iter_t *search_it;
         for (search_it = hash_table_iter(ps->searches); search_it;
              search_it = hash_table_iter_next(search_it)) {
-            ckd_free((char *) hash_entry_key(search_it->ent));
             ps_search_free(hash_entry_val(search_it->ent));
         }
-
-        hash_table_empty(ps->searches);
         hash_table_free(ps->searches);
     }
 
@@ -272,7 +268,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
              phone_loop_search_init(ps->config, ps->acmod, ps->dict)) == NULL)
             return -1;
         hash_table_enter(ps->searches,
-                         ckd_salloc(ps_search_name(ps->phone_loop)),
+                         ps_search_name(ps->phone_loop),
                          ps->phone_loop);
     }
 
@@ -454,7 +450,7 @@ ps_set_search(ps_decoder_t *ps, const char *name)
         ps->search = search;
     
     /* Set pl window depending on the search */
-    if (!strcmp(PS_SEARCH_NGRAM, ps_search_name(search))) {
+    if (!strcmp(PS_SEARCH_TYPE_NGRAM, ps_search_type(search))) {
 	ps->pl_window = cmd_ln_int32_r(ps->config, "-pl_window");
     } else {
 	ps->pl_window = 0;
@@ -518,7 +514,7 @@ ngram_model_t *
 ps_get_lm(ps_decoder_t *ps, const char *name)
 {
     ps_search_t *search =  ps_find_search(ps, name);
-    if (search && strcmp(PS_SEARCH_NGRAM, ps_search_name(search)))
+    if (search && strcmp(PS_SEARCH_TYPE_NGRAM, ps_search_type(search)))
         return NULL;
     return search ? ((ngram_search_t *) search)->lmset : NULL;
 }
@@ -527,7 +523,7 @@ fsg_model_t *
 ps_get_fsg(ps_decoder_t *ps, const char *name)
 {
     ps_search_t *search = ps_find_search(ps, name);
-    if (search && strcmp(PS_SEARCH_FSG, ps_search_name(search)))
+    if (search && strcmp(PS_SEARCH_TYPE_FSG, ps_search_type(search)))
         return NULL;
     return search ? ((fsg_search_t *) search)->fsg : NULL;
 }
@@ -536,13 +532,13 @@ const char*
 ps_get_kws(ps_decoder_t *ps, const char* name)
 {
     ps_search_t *search = ps_find_search(ps, name);
-    if (search && strcmp(PS_SEARCH_KWS, ps_search_name(search)))
+    if (search && strcmp(PS_SEARCH_TYPE_KWS, ps_search_type(search)))
         return NULL;
     return search ? kws_search_get_keywords(search) : NULL;
 }
 
 static int
-set_search_internal(ps_decoder_t *ps, const char *name, ps_search_t *search)
+set_search_internal(ps_decoder_t *ps, ps_search_t *search)
 {
     ps_search_t *old_search;
     
@@ -550,7 +546,7 @@ set_search_internal(ps_decoder_t *ps, const char *name, ps_search_t *search)
 	return 1;
 
     search->pls = ps->phone_loop;
-    old_search = (ps_search_t *) hash_table_replace(ps->searches, ckd_salloc(name), search);
+    old_search = (ps_search_t *) hash_table_replace(ps->searches, ps_search_name(search), search);
     if (old_search != search)
         ps_search_free(old_search);
 
@@ -561,8 +557,8 @@ int
 ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
 {
     ps_search_t *search;
-    search = ngram_search_init(lm, ps->config, ps->acmod, ps->dict, ps->d2p);
-    return set_search_internal(ps, name, search);
+    search = ngram_search_init(name, lm, ps->config, ps->acmod, ps->dict, ps->d2p);
+    return set_search_internal(ps, search);
 }
 
 int
@@ -584,8 +580,8 @@ int
 ps_set_allphone(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
 {
     ps_search_t *search;
-    search = allphone_search_init(lm, ps->config, ps->acmod, ps->dict, ps->d2p);
-    return set_search_internal(ps, name, search);
+    search = allphone_search_init(name, lm, ps->config, ps->acmod, ps->dict, ps->d2p);
+    return set_search_internal(ps, search);
 }
 
 int
@@ -607,24 +603,24 @@ int
 ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyfile)
 {
     ps_search_t *search;
-    search = kws_search_init(NULL, keyfile, ps->config, ps->acmod, ps->dict, ps->d2p);
-    return set_search_internal(ps, name, search);
+    search = kws_search_init(name, NULL, keyfile, ps->config, ps->acmod, ps->dict, ps->d2p);
+    return set_search_internal(ps, search);
 }
 
 int
 ps_set_keyphrase(ps_decoder_t *ps, const char *name, const char *keyphrase)
 {
     ps_search_t *search;
-    search = kws_search_init(keyphrase, NULL, ps->config, ps->acmod, ps->dict, ps->d2p);
-    return set_search_internal(ps, name, search);
+    search = kws_search_init(name, keyphrase, NULL, ps->config, ps->acmod, ps->dict, ps->d2p);
+    return set_search_internal(ps, search);
 }
 
 int
 ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
 {
     ps_search_t *search;
-    search = fsg_search_init(fsg, ps->config, ps->acmod, ps->dict, ps->d2p);
-    return set_search_internal(ps, name, search);
+    search = fsg_search_init(name, fsg, ps->config, ps->acmod, ps->dict, ps->d2p);
+    return set_search_internal(ps, search);
 }
 
 int 
@@ -814,7 +810,7 @@ ps_add_word(ps_decoder_t *ps,
     for (search_it = hash_table_iter(ps->searches); search_it;
          search_it = hash_table_iter_next(search_it)) {
         ps_search_t *search = hash_entry_val(search_it->ent);
-        if (!strcmp(PS_SEARCH_NGRAM, ps_search_name(search))) {
+        if (!strcmp(PS_SEARCH_TYPE_NGRAM, ps_search_type(search))) {
             ngram_model_t *lmset = ((ngram_search_t *) search)->lmset;
             if (ngram_model_add_word(lmset, word, 1.0) == NGRAM_INVALID_WID) {
                 hash_table_iter_free(search_it);
@@ -937,7 +933,6 @@ ps_start_utt(ps_decoder_t *ps)
     ps->search->post = 0;
     ckd_free(ps->search->hyp_str);
     ps->search->hyp_str = NULL;
-
     if ((rv = acmod_start_utt(ps->acmod)) < 0)
         return rv;
 
@@ -1274,7 +1269,7 @@ ps_nbest(ps_decoder_t *ps, int sf, int ef,
     /* FIXME: This is all quite specific to N-Gram search.  Either we
      * should make N-best a method for each search module or it needs
      * to be abstracted to work for N-Gram and FSG. */
-    if (0 != strcmp(ps_search_name(ps->search), PS_SEARCH_NGRAM)) {
+    if (0 != strcmp(ps_search_type(ps->search), PS_SEARCH_TYPE_NGRAM)) {
         lmset = NULL;
         lwf = 1.0f;
     } else {
@@ -1366,10 +1361,15 @@ ps_get_in_speech(ps_decoder_t *ps)
 
 void
 ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
+	       const char *type,
+	       const char *name,
                cmd_ln_t *config, acmod_t *acmod, dict_t *dict,
                dict2pid_t *d2p)
 {
     search->vt = vt;
+    search->name = ckd_salloc(name);
+    search->type = ckd_salloc(type);
+
     search->config = config;
     search->acmod = acmod;
     if (d2p)
@@ -1388,6 +1388,19 @@ ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
         search->start_wid = search->finish_wid = search->silence_wid = -1;
         search->n_words = 0;
     }
+}
+
+void
+ps_search_base_free(ps_search_t *search)
+{
+    /* FIXME: We will have refcounting on acmod, config, etc, at which
+     * point we will free them here too. */
+    ckd_free(search->name);
+    ckd_free(search->type);
+    dict_free(search->dict);
+    dict2pid_free(search->d2p);
+    ckd_free(search->hyp_str);
+    ps_lattice_free(search->dag);
 }
 
 void
@@ -1413,17 +1426,6 @@ ps_search_base_reinit(ps_search_t *search, dict_t *dict,
         search->d2p = dict2pid_retain(d2p);
     else
         search->d2p = NULL;
-}
-
-void
-ps_search_deinit(ps_search_t *search)
-{
-    /* FIXME: We will have refcounting on acmod, config, etc, at which
-     * point we will free them here too. */
-    dict_free(search->dict);
-    dict2pid_free(search->d2p);
-    ckd_free(search->hyp_str);
-    ps_lattice_free(search->dag);
 }
 
 void

@@ -66,7 +66,7 @@ main(int argc, char *argv[])
     TEST_EQUAL(6, ps_alignment_add_word(al, dict_wordid(dict, "</s>"), 0));
     TEST_EQUAL(0, ps_alignment_populate(al));
 
-    TEST_ASSERT(search = state_align_search_init(config, acmod, al));
+    TEST_ASSERT(search = state_align_search_init("state_align", config, acmod, al));
 
     for (i = 0; i < 5; ++i)
         do_search(search, acmod);

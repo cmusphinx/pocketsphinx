@@ -91,7 +91,8 @@ typedef struct kws_search_s {
  * Create, initialize and return a search module. Gets keywords either
  * from keyphrase or from a keyphrase file.
  */
-ps_search_t *kws_search_init(const char *keyphrase,
+ps_search_t *kws_search_init(const char *name,
+			     const char *keyphrase,
 			     const char *keyfile,
                              cmd_ln_t * config,
                              acmod_t * acmod,

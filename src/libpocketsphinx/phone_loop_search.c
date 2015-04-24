@@ -53,7 +53,6 @@ static int32 phone_loop_search_prob(ps_search_t *search);
 static ps_seg_t *phone_loop_search_seg_iter(ps_search_t *search, int32 *out_score);
 
 static ps_searchfuncs_t phone_loop_search_funcs = {
-    /* name: */   "phone_loop",
     /* start: */  phone_loop_search_start,
     /* step: */   phone_loop_search_step,
     /* finish: */ phone_loop_search_finish,
@@ -127,6 +126,7 @@ phone_loop_search_init(cmd_ln_t *config,
     /* Allocate and initialize. */
     pls = (phone_loop_search_t *)ckd_calloc(1, sizeof(*pls));
     ps_search_init(ps_search_base(pls), &phone_loop_search_funcs,
+		   PS_SEARCH_TYPE_PHONE_LOOP, PS_DEFAULT_PL_SEARCH,
                    config, acmod, dict, NULL);
     phone_loop_search_reinit(ps_search_base(pls), ps_search_dict(pls),
                              ps_search_dict2pid(pls));
@@ -150,7 +150,7 @@ phone_loop_search_free(ps_search_t *search)
     phone_loop_search_t *pls = (phone_loop_search_t *)search;
     int i;
 
-    ps_search_deinit(search);
+    ps_search_base_free(search);
     for (i = 0; i < pls->n_phones; ++i)
         hmm_deinit((hmm_t *)&pls->hmms[i]);
     phone_loop_search_free_renorm(pls);
