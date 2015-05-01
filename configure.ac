@@ -27,28 +27,13 @@ AC_CHECK_PROG(HAVE_DOXYGEN, doxygen, yes, no)
 AM_CONDITIONAL(BUILD_DOXYGEN, test "x$HAVE_DOXYGEN" = "xyes")
 
 dnl Check for SWIG and Python
-AC_ARG_WITH(swig-python,
-	AS_HELP_STRING([--with-swig-python],
+AC_ARG_WITH(python,
+	AS_HELP_STRING([--with-python],
                  [Enable Python extension, built with swig, enabled by default]))
 
-if test "x${with_swig_python}" != "xno"; then
-  AM_PATH_PYTHON(2.4, [], [AC_MSG_ERROR([python not found])])
-  AC_MSG_CHECKING([for python include path])
-  if test -z "$PYTHON_CPPFLAGS"; then
-    python_path=`$PYTHON -c "import distutils.sysconfig; \
-      print (distutils.sysconfig.get_python_inc ());"`
-    plat_python_path=`$PYTHON -c "import distutils.sysconfig; \
-    print (distutils.sysconfig.get_python_inc (plat_specific=1));"`
-    if test -n "${python_path}"; then
-      if test "${plat_python_path}" != "${python_path}"; then
-        python_path="-I$python_path -I$plat_python_path"
-      else
-        python_path="-I$python_path"
-      fi
-    fi
-    PYTHON_CPPFLAGS=$python_path
-  fi
-  AC_MSG_RESULT([$PYTHON_CPPFLAGS])
+if test "x${with_python}" != "xno"; then
+  AM_PATH_PYTHON(2.6, [], [AC_MSG_ERROR([python not found])])
+  AX_PYTHON_DEVEL()
   AX_PKG_SWIG(2.0, [], [AC_MSG_ERROR([swig not found])])
 fi
 

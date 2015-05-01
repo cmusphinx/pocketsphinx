@@ -80,6 +80,12 @@ typedef ngram_model_t NGramModel;
 typedef ngram_model_t NGramModelSet;
 %}
 
+#if SWIGPYTHON
+%begin %{
+#include <Python.h>
+%}
+#endif
+
 %begin %{
 #include <pocketsphinx.h>
 
