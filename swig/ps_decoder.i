@@ -114,40 +114,29 @@
     }
 
 #ifdef SWIGPYTHON
+    %include <pybuffer.i>
+    %pybuffer_binary(const char* SDATA, size_t NSAMP);
     int
-    process_raw(const void *SDATA, size_t NSAMP, bool no_search, bool full_utt,
+    process_raw(const char* SDATA, size_t NSAMP, bool no_search, bool full_utt,
                 int *errcode) {
         NSAMP /= sizeof(int16);
-        return *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
+        return *errcode = ps_process_raw($self, (int16 *)SDATA, NSAMP, no_search, full_utt);
     }
 #else
-    int
+    int     
     process_raw(const int16 *SDATA, size_t NSAMP, bool no_search, bool full_utt,
                 int *errcode) {
         return *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
     }
 #endif
 
-    int decode_raw(FILE *fin, int *errcode) {
-        *errcode = ps_decode_raw($self, fin, -1);
-        return *errcode;
-    }
-
-
+#ifdef SWIGJAVA
+    // Not sure how to properly return binary buffer in python yet (python3 is also an issue)
     void
     set_rawdata_size(size_t size) {
 	ps_set_rawdata_size($self, size);
     }
 
-#ifdef SWIGPYTHON
-    %cstring_output_allocate_size(char **RAWDATA, size_t *RAWDATA_SIZE, );
-    void get_rawdata(char **RAWDATA, size_t *RAWDATA_SIZE) {
-	int32 size;
-	ps_get_rawdata($self, (int16**)RAWDATA, &size);
-	if (RAWDATA_SIZE)
-	    *RAWDATA_SIZE = size * sizeof(int16);
-    }
-#else
     int16 *get_rawdata(int32 *RAWDATA_SIZE) {
 	int16 *result;
 	ps_get_rawdata($self, &result, RAWDATA_SIZE);
@@ -205,6 +194,7 @@
 	*errcode = ps_set_allphone_file($self, name, lmfile);
     }
 
+    %newobject get_lm;
     NGramModel * get_lm(const char *name) {
         return ngram_model_retain(ps_get_lm($self, name));
     }
@@ -217,6 +207,7 @@
         *errcode = ps_set_lm_file($self, name, path);
     }
 
+    %newobject get_logmath;
     LogMath * get_logmath() {
         return logmath_retain(ps_get_logmath($self));
     }

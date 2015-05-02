@@ -34,10 +34,10 @@
 
 
 from os import environ, path
-from itertools import izip
 
-from pocketsphinx import *
-from sphinxbase import *
+
+from pocketsphinx.pocketsphinx import *
+from sphinxbase.sphinxbase import *
 
 MODELDIR = "../../../model"
 DATADIR = "../../../test/data"
@@ -50,27 +50,14 @@ config.set_string('-dict', path.join(MODELDIR, 'en-us/cmudict-en-us.dict'))
 decoder = Decoder(config)
 
 
-print "Pronunciation for word 'hello' is ", decoder.lookup_word("hello");
-print "Pronunciation for word 'abcdf' is ", decoder.lookup_word("abcdf");
+print ("Pronunciation for word 'hello' is ", decoder.lookup_word("hello"))
+print ("Pronunciation for word 'abcdf' is ", decoder.lookup_word("abcdf"))
 
-# Decode static file.
-decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
-
-# Retrieve hypothesis.
-hypothesis = decoder.hyp()
-print 'Best hypothesis: ', hypothesis.hypstr, " model score: ", hypothesis.best_score, " confidence: ", hypothesis.prob
-
-print 'Best hypothesis segments: ', [seg.word for seg in decoder.seg()]
-
-# Access N best decodings.
-print 'Best 10 hypothesis: '
-for best, i in izip(decoder.nbest(), range(10)):
-	print best.hyp().best_score, best.hyp().hypstr
+#decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
 
 # Decode streaming data.
 decoder = Decoder(config)
 decoder.start_utt()
-decoder.set_rawdata_size(100000);
 stream = open(path.join(DATADIR, 'goforward.raw'), 'rb')
 while True:
   buf = stream.read(1024)
@@ -79,7 +66,13 @@ while True:
   else:
     break
 decoder.end_utt()
-print 'Stream decoding result:', decoder.hyp().hypstr
 
-# Storing raw data
-open("/tmp/test.raw", "w").write(decoder.get_rawdata())
+hypothesis = decoder.hyp()
+print ('Best hypothesis: ', hypothesis.hypstr, " model score: ", hypothesis.best_score, " confidence: ", hypothesis.prob)
+
+print ('Best hypothesis segments: ', [seg.word for seg in decoder.seg()])
+
+# Access N best decodings.
+print ('Best 10 hypothesis: ')
+for best, i in zip(decoder.nbest(), range(10)):
+	print (best.hyp().best_score, best.hyp().hypstr)

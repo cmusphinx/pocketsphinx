@@ -35,8 +35,8 @@
 
 from os import environ, path
 
-from pocketsphinx import *
-from sphinxbase import *
+from pocketsphinx.pocketsphinx import *
+from sphinxbase.sphinxbase import *
 
 MODELDIR = "../../../model"
 DATADIR = "../../../test/data"
@@ -48,6 +48,15 @@ config.set_string('-lm', path.join(MODELDIR, 'en-us/en-us.lm.dmp'))
 config.set_string('-dict', path.join(MODELDIR, 'en-us/cmudict-en-us.dict'))
 decoder = Decoder(config)
 
-decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
+decoder.start_utt()
+stream = open(path.join(DATADIR, 'goforward.raw'), 'rb')
+while True:
+    buf = stream.read(1024)
+    if buf:
+         decoder.process_raw(buf, False, False)
+    else:
+         break
+decoder.end_utt()
+
 decoder.get_lattice().write('goforward.lat')
 decoder.get_lattice().write_htk('goforward.htk')

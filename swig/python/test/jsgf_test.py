@@ -33,12 +33,11 @@
 # ====================================================================
 
 
-from itertools import izip
 from os import environ, path
 from sys import stdout
 
-from pocketsphinx import *
-from sphinxbase import *
+from pocketsphinx.pocketsphinx import *
+from sphinxbase.sphinxbase import *
 
 MODELDIR = "../../../model"
 DATADIR = "../../../test/data"
@@ -51,18 +50,33 @@ config.set_string('-dict', path.join(DATADIR, 'turtle.dic'))
 decoder = Decoder(config)
 
 # Decode with lm
-decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
-print 'Decoding with "turtle" language:', decoder.hyp().hypstr
+decoder.start_utt()
+stream = open(path.join(DATADIR, 'goforward.raw'), 'rb')
+while True:
+    buf = stream.read(1024)
+    if buf:
+         decoder.process_raw(buf, False, False)
+    else:
+         break
+decoder.end_utt()
+print ('Decoding with "turtle" language:', decoder.hyp().hypstr)
 
 # Switch to JSGF grammar
 jsgf = Jsgf(path.join(DATADIR, 'goforward.gram'))
 rule = jsgf.get_rule('goforward.move2')
 fsg = jsgf.build_fsg(rule, decoder.get_logmath(), 7.5)
-fsg.write(stdout)
 fsg.writefile('goforward.fsg')
 
 decoder.set_fsg("goforward", fsg)
 decoder.set_search("goforward")
 
-decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
-print 'Decoding with "goforward" grammar:', decoder.hyp().hypstr
+decoder.start_utt()
+stream = open(path.join(DATADIR, 'goforward.raw'), 'rb')
+while True:
+    buf = stream.read(1024)
+    if buf:
+         decoder.process_raw(buf, False, False)
+    else:
+         break
+decoder.end_utt()
+print ('Decoding with "goforward" grammar:', decoder.hyp().hypstr)

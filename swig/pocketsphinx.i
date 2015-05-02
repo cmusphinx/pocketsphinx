@@ -42,13 +42,9 @@ Doxygen format. As some C types and data structures cannot be directly mapped
 into Python types, some non-trivial type conversion could have place.
 Basically a type is replaced with another one that has the closest match, and
 sometimes one argument of generated function comprises several arguments of the
-original function (usually two). Apparently Doxygen comments do not mention
-this fact, so here is a list of all known conversions so far:
+original function (usually two).
 
-  FILE * -> file
-  const int16 *SDATA, size_t NSAMP -> str
-
-Also functions having error code as the return value and returning effective
+Functions having error code as the return value and returning effective
 value in one of its arguments are transformed so that the effective value is
 returned in a regular fashion and run-time exception is being thrown in case of
 negative error code."
@@ -68,6 +64,7 @@ negative error code."
 
 #if SWIGPYTHON
 %include cstring.i
+%include pybuffer.i
 #endif
 
 %{
