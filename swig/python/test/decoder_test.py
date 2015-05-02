@@ -53,8 +53,6 @@ decoder = Decoder(config)
 print ("Pronunciation for word 'hello' is ", decoder.lookup_word("hello"))
 print ("Pronunciation for word 'abcdf' is ", decoder.lookup_word("abcdf"))
 
-#decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
-
 # Decode streaming data.
 decoder = Decoder(config)
 decoder.start_utt()
