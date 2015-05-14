@@ -71,6 +71,6 @@ void kws_detections_add(kws_detections_t *detections, const char* keyphrase, int
 /**
  * Compose hypothesis.
  */
-void kws_detections_hyp_str(kws_detections_t *detections, char** hyp_str, int frame, int delay);
+char* kws_detections_hyp_str(kws_detections_t *detections, int frame, int delay);
 
 #endif /* __KWS_DETECTIONS_H__ */

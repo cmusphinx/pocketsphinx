@@ -629,7 +629,7 @@ kws_search_hyp(ps_search_t * search, int32 * out_score,
 
     if (search->hyp_str)
         ckd_free(search->hyp_str);
-    kws_detections_hyp_str(kwss->detections, &search->hyp_str, kwss->frame, kwss->delay);
+    search->hyp_str = kws_detections_hyp_str(kwss->detections, kwss->frame, kwss->delay);
     
     return search->hyp_str;
 }

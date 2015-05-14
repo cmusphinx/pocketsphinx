@@ -77,31 +77,31 @@ kws_detections_add(kws_detections_t *detections, const char* keyphrase, int sf, 
     detection->keyphrase = keyphrase;
     detection->prob = prob;
     detection->ascr = ascr;
-    detections->detect_list = glist_add_ptr(detections->detect_list, (void *)detection);
+    detections->detect_list = glist_add_ptr(detections->detect_list, detection);
 }
 
-void
-kws_detections_hyp_str(kws_detections_t *detections, char** hyp_str, int frame, int delay)
+char *
+kws_detections_hyp_str(kws_detections_t *detections, int frame, int delay)
 {
     gnode_t *gn;
     char *c;
     int len;
+    char *hyp_str;
 
     len = 0;
     for (gn = detections->detect_list; gn; gn = gnode_next(gn)) {
 	kws_detection_t *det = (kws_detection_t *)gnode_ptr(gn);
 	if (det->ef < frame - delay) {
-	    len += strlen(det->keyphrase) + 2;
+	    len += strlen(det->keyphrase) + 1;
 	}
     }
 
     if (len == 0) {
-        hyp_str = NULL;
-        return;
+        return NULL;
     }
 
-    *hyp_str = (char *)ckd_calloc(len, sizeof(char));
-    c = *hyp_str;
+    hyp_str = (char *)ckd_calloc(len, sizeof(char));
+    c = hyp_str;
     for (gn = detections->detect_list; gn; gn = gnode_next(gn)) {
 	kws_detection_t *det = (kws_detection_t *)gnode_ptr(gn);
 	if (det->ef < frame - delay) {
@@ -111,7 +111,10 @@ kws_detections_hyp_str(kws_detections_t *detections, char** hyp_str, int frame, 
     	    c++;
     	}
     }
-    c--;
-    *c = '\0';
+    if (c > hyp_str) {
+        c--;
+	*c = '\0';
+    }
+    return hyp_str;
 }
 
