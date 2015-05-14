@@ -48,6 +48,7 @@ kws_detections_reset(kws_detections_t *detections)
 
     for (gn = detections->detect_list; gn; gn = gnode_next(gn))
         ckd_free(gnode_ptr(gn));
+    glist_free(detections->detect_list);
     detections->detect_list = NULL;
 }
 

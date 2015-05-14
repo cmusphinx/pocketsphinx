@@ -73,4 +73,4 @@ void kws_detections_add(kws_detections_t *detections, const char* keyphrase, int
  */
 void kws_detections_hyp_str(kws_detections_t *detections, char** hyp_str, int frame, int delay);
 
-#endif                          /* __KWS_DETECTIONS_H__ */
+#endif /* __KWS_DETECTIONS_H__ */

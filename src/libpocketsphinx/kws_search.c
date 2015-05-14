@@ -452,6 +452,8 @@ kws_search_free(ps_search_t * search)
     ps_search_base_free(search);
     hmm_context_free(kwss->hmmctx);
     kws_detections_reset(kwss->detections);
+    ckd_free(kwss->detections);
+
     ckd_free(kwss->pl_hmms);
     for (i = 0; i < kwss->n_keyphrases; i++) {
         ckd_free(kwss->keyphrases[i].hmms);
