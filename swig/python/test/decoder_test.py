@@ -72,4 +72,5 @@ print ('Best hypothesis segments: ', [seg.word for seg in decoder.seg()])
 # Access N best decodings.
 print ('Best 10 hypothesis: ')
 for best, i in zip(decoder.nbest(), range(10)):
-	print (best.hyp().best_score, best.hyp().hypstr)
+    print best.hypstr, best.score
+

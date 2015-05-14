@@ -63,7 +63,6 @@ negative error code."
 %import sphinxbase.i
 
 #if SWIGPYTHON
-%include cstring.i
 %include pybuffer.i
 #endif
 
@@ -117,7 +116,8 @@ typedef struct {
 } Segment;
 
 typedef struct {
-    ps_nbest_t *nbest;
+    char *hypstr;
+    int32 score;
 } NBest;
 
 %}
@@ -158,9 +158,10 @@ typedef struct {} SegmentList;
 %extend Segment {
 
     static Segment* fromIter(ps_seg_t *itor) {
-	Segment *seg = ckd_malloc(sizeof(Segment));
+	Segment *seg;
 	if (!itor)
 	    return NULL;
+	seg = ckd_malloc(sizeof(Segment));
 	seg->word = ckd_salloc(ps_seg_word(itor));
 	seg->prob = ps_seg_prob(itor, &(seg->ascore), &(seg->lscore), &(seg->lback));
 	ps_seg_frames(itor, &seg->start_frame, &seg->end_frame);
@@ -175,20 +176,21 @@ typedef struct {} SegmentList;
 %extend NBest {
 
     static NBest* fromIter(ps_nbest_t *itor) {
-	NBest *nbest = ckd_malloc(sizeof(NBest));
-	nbest->nbest = itor;
+	NBest *nbest;
+	if (!itor)
+	    return NULL;
+	nbest = ckd_malloc(sizeof(NBest));
+	nbest->hypstr = ckd_salloc(ps_nbest_hyp(itor, &(nbest->score)));
 	return nbest;
     }
     
     %newobject hyp;
-    Hypothesis* hyp (){
-        char const *hyp;
-        int32 best_score;
-        hyp = ps_nbest_hyp($self->nbest, &best_score);
-        return hyp ? new_Hypothesis(hyp, best_score, 0) : NULL;
+    Hypothesis* hyp() {
+        return $self->hypstr ? new_Hypothesis($self->hypstr, $self->score, 0) : NULL;
     }
     
     ~NBest() {
+	ckd_free($self->hypstr);
 	ckd_free($self);
     }
 }
@@ -210,7 +212,7 @@ typedef struct {} SegmentList;
   }
   %newobject __iter__;
   NBestIterator * __iter__() {
-    return new_NBestIterator(ps_nbest($self, 0, -1, NULL, NULL));
+    return new_NBestIterator(ps_nbest_next(ps_nbest($self, 0, -1, NULL, NULL)));
   }
 }
 

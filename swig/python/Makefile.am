@@ -19,6 +19,7 @@ endif
 CLEANFILES = pocketsphinx_wrap.c pocketsphinx.py pocketsphinx.pyc
 
 nodist_pkgpyexec_PYTHON = pocketsphinx.py
+pkgpyexec_PYTHON = __init__.py 
 pkgpyexec_LTLIBRARIES = _pocketsphinx.la
 nodist__pocketsphinx_la_SOURCES = pocketsphinx_wrap.c
 
