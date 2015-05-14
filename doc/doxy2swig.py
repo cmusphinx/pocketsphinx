@@ -37,6 +37,7 @@ import types
 import os.path
 import optparse
 
+# TODO: do not process unnecessary files
 TYPEMAP = {
   'ps_decoder_t': ('Decoder', 'ps_'),
   'ps_lattice_t': ('Lattice', 'ps_lattice_'),
@@ -44,6 +45,9 @@ TYPEMAP = {
   'ps_seg_t': ('Segment', 'ps_seg_')
 }
 
+USE_PREFIXES = [
+  'ps_',
+]
 
 def my_open_read(source):
     if hasattr(source, "read"):
@@ -157,7 +161,7 @@ class Doxy2SWIG:
 
     def add_text(self, value):
         """Adds text corresponding to `value` into `self.pieces`."""
-        if type(value) in (types.ListType, types.TupleType):
+        if isinstance(value, tuple) or isinstance(value, list):
             self.pieces.extend(value)
         else:
             self.pieces.append(value)
@@ -211,13 +215,13 @@ class Doxy2SWIG:
     def do_compoundname(self, node):
         self.add_text('\n\n')
         data = node.firstChild.data
-        self.add_text('%%feature("docstring") %s "\n'%data)
+        self.add_text('%%feature("docstring") %s "\n' % data)
 
     def do_compounddef(self, node):
         kind = node.attributes['kind'].value
         if kind in ('class', 'struct'):
             prot = node.attributes['prot'].value
-            if prot <> 'public':
+            if prot != 'public':
                 return
             names = ('compoundname', 'briefdescription',
                      'detaileddescription', 'includes')
@@ -290,15 +294,18 @@ class Doxy2SWIG:
               ref = self.get_specific_nodes(arg_type, ('ref'))
               if 'ref' in ref:
                 type_name = ref['ref'].firstChild.data
+                # TODO: check argument position
                 if type_name in TYPEMAP:
                   alias, prefix = TYPEMAP[type_name]
-                  name =  alias + '::' + name.replace(prefix, '')
-                  break
+                  short_name = name.replace(prefix, '')
+                  if not re.match(r'^\d', short_name):
+                    name =  alias + '::' + name.replace(prefix, '')
+                    break
 
             if name[:8] == 'operator': # Don't handle operators yet.
                 return
 
-            if not first.has_key('definition') or \
+            if not ('definition' in first) or \
                    kind in ['variable', 'typedef']:
                 return
 
@@ -387,13 +394,16 @@ class Doxy2SWIG:
         for c in comps:
             refid = c.attributes['refid'].value
             fname = refid + '.xml'
-            if not os.path.exists(fname):
-                fname = os.path.join(self.my_dir,  fname)
-            if not self.quiet:
-                print "parsing file: %s"%fname
-            p = Doxy2SWIG(fname, self.include_function_definition, self.quiet)
-            p.generate()
-            self.pieces.extend(self.clean_pieces(p.pieces))
+            for prefix in USE_PREFIXES:
+              if fname.startswith(prefix):
+                if not os.path.exists(fname):
+                    fname = os.path.join(self.my_dir,  fname)
+                if not self.quiet:
+                    print ("parsing file: %s" % fname)
+                p = Doxy2SWIG(fname, self.include_function_definition, self.quiet)
+                p.generate()
+                self.pieces.extend(self.clean_pieces(p.pieces))
+                break
 
     def write(self, fname):
         o = my_open_write(fname)
@@ -467,3 +477,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
