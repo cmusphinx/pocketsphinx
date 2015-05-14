@@ -47,14 +47,13 @@ config = Decoder.default_config()
 config.set_string('-hmm', path.join(MODELDIR, 'en-us/en-us'))
 config.set_string('-lm', path.join(MODELDIR, 'en-us/en-us.lm.dmp'))
 config.set_string('-dict', path.join(MODELDIR, 'en-us/cmudict-en-us.dict'))
-decoder = Decoder(config)
 
+# Decode streaming data.
+decoder = Decoder(config)
 
 print ("Pronunciation for word 'hello' is ", decoder.lookup_word("hello"))
 print ("Pronunciation for word 'abcdf' is ", decoder.lookup_word("abcdf"))
 
-# Decode streaming data.
-decoder = Decoder(config)
 decoder.start_utt()
 stream = open(path.join(DATADIR, 'goforward.raw'), 'rb')
 while True:

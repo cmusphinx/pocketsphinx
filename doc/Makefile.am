@@ -6,6 +6,8 @@ man_MANS = \
 EXTRA_DIST = \
 	args2man.pl \
 	doxy2swig.py \
+	pocketsphinx_batch.1.in \
+	pocketsphinx_continuous.1.in \
 	pocketsphinx_batch.1 \
 	pocketsphinx_continuous.1 \
 	pocketsphinx_mdef_convert.1
@@ -29,8 +31,11 @@ if BUILD_DOXYGEN
 all-local: html/index.html $(SWIG_DOC)
 endif
 
-headers = $(top_srcdir)/include/pocketsphinx.h \
-	$(top_srcdir)/include/ps_lattice.h
+headers = \
+	$(top_srcdir)/include/pocketsphinx.h \
+	$(top_srcdir)/include/ps_lattice.h \
+	$(top_srcdir)/include/ps_mllr.h \
+	$(top_srcdir)/include/ps_search.h
 
 latex/refman.pdf: doxyfile $(headers)
 	doxygen

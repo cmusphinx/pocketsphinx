@@ -13,8 +13,11 @@ pocketsphinx_continuous \- Run speech recognition in continuous listening mode
 This program opens the audio device and waits for speech.  When it
 detects an utterance, it performs speech recognition on it.
 .TP
-.B \-adcdev
-of audio device to use for input.
+.B \-adchdr
+Size of audio file header in bytes (headers are ignored)
+.TP
+.B \-adcin
+Input is raw audio data
 .TP
 .B \-agc
 Automatic gain control for c0 ('max', 'emax', 'noise', or 'none')
@@ -52,6 +55,15 @@ Run bestpath (Dijkstra) search over word lattice (3rd pass)
 .B \-bestpathlw
 Language model probability weight for bestpath search
 .TP
+.B \-build_outdirs
+Create missing subdirectories in output directory
+.TP
+.B \-cepdir
+files directory (prefixed to filespecs in control file)
+.TP
+.B \-cepext
+Input files extension (suffixed to filespecs in control file)
+.TP
 .B \-ceplen
 Number of components in the input feature vector
 .TP
@@ -63,6 +75,21 @@ Initial values (comma-separated) for cepstral mean when 'prior' is used
 .TP
 .B \-compallsen
 Compute all senone scores in every frame (can be faster when there are many senones)
+.TP
+.B \-ctl
+file listing utterances to be processed
+.TP
+.B \-ctlcount
+No. of utterances to be processed (after skipping \fB\-ctloffset\fR entries)
+.TP
+.B \-ctlincr
+Do every Nth line in the control file
+.TP
+.B \-ctloffset
+No. of utterances at the beginning of \fB\-ctl\fR file to be skipped
+.TP
+.B \-ctm
+output in CTM file format (may require post-sorting)
 .TP
 .B \-debug
 level for debugging messages
@@ -100,6 +127,15 @@ Frame rate
 .B \-fsg
 format finite state grammar file
 .TP
+.B \-fsgctl
+file listing FSG file to use for each utterance
+.TP
+.B \-fsgdir
+directory for FSG files
+.TP
+.B \-fsgext
+extension for FSG files (including leading dot)
+.TP
 .B \-fsgusealtpron
 Add alternate pronunciations to FSG
 .TP
@@ -130,11 +166,11 @@ Run forward lexicon-tree search (1st pass)
 .B \-hmm
 containing acoustic model files.
 .TP
-.B \-infile
-file to transcribe.
+.B \-hyp
+output file name
 .TP
-.B \-inmic
-Transcribe audio from microphone.
+.B \-hypseg
+output with segmentation file name
 .TP
 .B \-input_endian
 Endianness of input data, big or little, ignored if NIST or MS Wav
@@ -147,6 +183,9 @@ to spot
 .TP
 .B \-kws
 file with keyphrases to spot, one per line
+.TP
+.B \-kws_delay
+Delay to wait for best detection score
 .TP
 .B \-kws_plp
 Phone loop probability for keyword spotting
