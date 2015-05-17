@@ -446,9 +446,10 @@ int
 ps_set_search(ps_decoder_t *ps, const char *name)
 {
     ps_search_t *search = ps_find_search(ps, name);
-    if (search)
-        ps->search = search;
+    if (!search)
+	return -1;
     
+    ps->search = search;
     /* Set pl window depending on the search */
     if (!strcmp(PS_SEARCH_TYPE_NGRAM, ps_search_type(search))) {
 	ps->pl_window = cmd_ln_int32_r(ps->config, "-pl_window");
@@ -456,7 +457,7 @@ ps_set_search(ps_decoder_t *ps, const char *name)
 	ps->pl_window = 0;
     }
     
-    return search ? 0 : -1;
+    return 0;
 }
 
 const char*
@@ -543,7 +544,7 @@ set_search_internal(ps_decoder_t *ps, ps_search_t *search)
     ps_search_t *old_search;
     
     if (!search)
-	return 1;
+	return -1;
 
     search->pls = ps->phone_loop;
     old_search = (ps_search_t *) hash_table_replace(ps->searches, ps_search_name(search), search);
