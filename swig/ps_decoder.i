@@ -132,7 +132,11 @@
         for (i = 0; i < NSAMP; i++)
             for (j = 0; j < ncep; j++)
                 input[i][j] = ((mfcc_t*)SDATA)[j+i*ncep];
-        return *errcode = ps_process_cep($self, input, NSAMP, no_search, full_utt);
+        *errcode = ps_process_cep($self, input, NSAMP, no_search, full_utt);
+        for (i = 0; i < NSAMP; i++)
+            free(input[i]);
+        free(input);
+        return *errcode;
     }
 #else
     int
