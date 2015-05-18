@@ -124,14 +124,14 @@
         process_cep(const void *SDATA, size_t NSAMP, bool no_search, bool full_utt,
                 int *errcode) {
         int ncep = fe_get_output_size(ps_get_fe($self));
-        NSAMP /= ncep * sizeof(Mfcc);
-        Mfcc ** input = (Mfcc**) malloc(NSAMP*sizeof(Mfcc*));
+        NSAMP /= ncep * sizeof(mfcc_t);
+        mfcc_t ** input = (mfcc_t**) malloc(NSAMP*sizeof(mfcc_t*));
         int i, j;
         for (i = 0; i < NSAMP; i++)
-            input[i] = (Mfcc*) malloc(ncep * sizeof(Mfcc));
+            input[i] = (mfcc_t*) malloc(ncep * sizeof(mfcc_t));
         for (i = 0; i < NSAMP; i++)
             for (j = 0; j < ncep; j++)
-                input[i][j] = ((Mfcc*)SDATA)[j+i*ncep];
+                input[i][j] = ((mfcc_t*)SDATA)[j+i*ncep];
         return *errcode = ps_process_cep($self, input, NSAMP, no_search, full_utt);
     }
 #else
@@ -139,11 +139,6 @@
     process_raw(const int16 *SDATA, size_t NSAMP, bool no_search, bool full_utt,
                 int *errcode) {
         return *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
-    }
-    int
-    process_cep(Mfcc **SDATA, size_t NSAMP, bool no_search, bool full_utt,
-                int *errcode) {
-        return *errcode = ps_process_cep($self, SDATA, NSAMP, no_search, full_utt);
     }
 #endif
 

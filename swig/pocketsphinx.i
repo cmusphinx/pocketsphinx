@@ -78,7 +78,6 @@ typedef fsg_model_t FsgModel;
 typedef logmath_t LogMath;
 typedef ngram_model_t NGramModel;
 typedef ngram_model_t NGramModelSet;
-typedef mfcc_t Mfcc;
 %}
 
 %begin %{
