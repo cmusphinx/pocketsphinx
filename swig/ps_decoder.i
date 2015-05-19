@@ -35,15 +35,12 @@
  *
  */
 
-
-// TODO: check for multiple values
 %extend Decoder {
+
     /* Following functions have no bindings:
      * ps_mllr_t *ps_update_mllr - requires
      * int ps_decode_senscr
-     * int ps_process_cep
      */
-
     Decoder(int *errcode) {
         Decoder *d = ps_init(cmd_ln_init(NULL, ps_args(), FALSE, NULL));
         *errcode = d ? 0 : -1;
@@ -116,36 +113,25 @@
 #ifdef SWIGPYTHON
     %include <pybuffer.i>
     %pybuffer_binary(const char* SDATA, size_t NSAMP);
-    int
-    process_raw(const char* SDATA, size_t NSAMP, bool no_search, bool full_utt,
+    int process_raw(const char* SDATA, size_t NSAMP, bool no_search, bool full_utt,
                 int *errcode) {
         NSAMP /= sizeof(int16);
         return *errcode = ps_process_raw($self, (int16 *)SDATA, NSAMP, no_search, full_utt);
     }
-    int
-    process_cep(const void *SDATA,
-                size_t NSAMP,
-                bool no_search,
-                bool full_utt,
+    
+    int process_cep(const char *SDATA, size_t NSAMP, bool no_search, bool full_utt,
                 int *errcode) {
+        mfcc_t **feats;
         int ncep = fe_get_output_size(ps_get_fe($self));
         NSAMP /= ncep * sizeof(mfcc_t);
-        mfcc_t ** input = (mfcc_t**) malloc(NSAMP*sizeof(mfcc_t*));
-        int i, j;
-        for (i = 0; i < NSAMP; i++)
-            input[i] = (mfcc_t*) malloc(ncep * sizeof(mfcc_t));
-        for (i = 0; i < NSAMP; i++)
-            for (j = 0; j < ncep; j++)
-                input[i][j] = ((mfcc_t*)SDATA)[j+i*ncep];
-        *errcode = ps_process_cep($self, input, NSAMP, no_search, full_utt);
-        for (i = 0; i < NSAMP; i++)
-            free(input[i]);
-        free(input);
+        feats = ckd_calloc_2d(NSAMP, ncep, sizeof(mfcc_t));
+        memcpy(feats[0], SDATA, NSAMP * ncep * sizeof(mfcc_t));
+        *errcode = ps_process_cep($self, feats, NSAMP, no_search, full_utt);
+        ckd_free_2d(feats);
         return *errcode;
     }
 #else
-    int     
-    process_raw(const int16 *SDATA, size_t NSAMP, bool no_search, bool full_utt,
+    int process_raw(const int16 *SDATA, size_t NSAMP, bool no_search, bool full_utt,
                 int *errcode) {
         return *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
     }
@@ -153,8 +139,7 @@
 
 #ifdef SWIGJAVA
     // Not sure how to properly return binary buffer in python yet (python3 is also an issue)
-    void
-    set_rawdata_size(size_t size) {
+    void set_rawdata_size(size_t size) {
 	ps_set_rawdata_size($self, size);
     }
 

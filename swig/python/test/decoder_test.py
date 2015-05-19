@@ -74,3 +74,11 @@ print ('Best 10 hypothesis: ')
 for best, i in zip(decoder.nbest(), range(10)):
     print (best.hypstr, best.score)
 
+stream = open(path.join(DATADIR, 'goforward.mfc'), 'rb')
+stream.read(4)
+buf = stream.read(13780)
+decoder.start_utt()
+decoder.process_cep(buf, False, True)
+decoder.end_utt()
+hypothesis = decoder.hyp()
+print ('Best hypothesis: ', hypothesis.hypstr, " model score: ", hypothesis.best_score, " confidence: ", hypothesis.prob)
