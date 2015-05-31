@@ -349,6 +349,12 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     GstPocketSphinx *ps = GST_POCKETSPHINX(object);
 
     switch (prop_id) {
+    case PROP_CONFIGURED:
+        if (ps->ps)
+            ps_reinit(ps->ps, NULL);
+        else
+            ps->ps = ps_init(ps->config);
+        break;
     case PROP_HMM_DIR:
         gst_pocketsphinx_set_string(ps, "-hmm", value);
         if (ps->ps) {
