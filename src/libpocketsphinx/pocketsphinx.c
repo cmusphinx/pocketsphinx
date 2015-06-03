@@ -279,26 +279,26 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
         return -1;
 
-    lw = cmd_ln_float32_r(config, "-lw");
+    lw = cmd_ln_float32_r(ps->config, "-lw");
 
     /* Determine whether we are starting out in FSG or N-Gram search mode.
      * If neither is used skip search initialization. */
 
     /* Load KWS if one was specified in config */
-    if ((keyphrase = cmd_ln_str_r(config, "-keyphrase"))) {
+    if ((keyphrase = cmd_ln_str_r(ps->config, "-keyphrase"))) {
         if (ps_set_keyphrase(ps, PS_DEFAULT_SEARCH, keyphrase))
             return -1;
         ps_set_search(ps, PS_DEFAULT_SEARCH);
     }
 
-    if ((path = cmd_ln_str_r(config, "-kws"))) {
+    if ((path = cmd_ln_str_r(ps->config, "-kws"))) {
         if (ps_set_kws(ps, PS_DEFAULT_SEARCH, path))
             return -1;
         ps_set_search(ps, PS_DEFAULT_SEARCH);
     }
 
     /* Load an FSG if one was specified in config */
-    if ((path = cmd_ln_str_r(config, "-fsg"))) {
+    if ((path = cmd_ln_str_r(ps->config, "-fsg"))) {
         fsg_model_t *fsg = fsg_model_readfile(path, ps->lmath, lw);
         if (!fsg)
             return -1;
@@ -311,7 +311,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     }
     
     /* Or load a JSGF grammar */
-    if ((path = cmd_ln_str_r(config, "-jsgf"))) {
+    if ((path = cmd_ln_str_r(ps->config, "-jsgf"))) {
         if (ps_set_jsgf_file(ps, PS_DEFAULT_SEARCH, path)
             || ps_set_search(ps, PS_DEFAULT_SEARCH))
             return -1;
@@ -352,7 +352,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         }
         ngram_model_free(lmset);
 
-        name = cmd_ln_str_r(config, "-lmname");
+        name = cmd_ln_str_r(ps->config, "-lmname");
         if (name)
             ps_set_search(ps, name);
         else {
@@ -372,6 +372,11 @@ ps_decoder_t *
 ps_init(cmd_ln_t *config)
 {
     ps_decoder_t *ps;
+    
+    if (!config) {
+	E_ERROR("No configuration specified");
+	return NULL;
+    }
 
     ps = ckd_calloc(1, sizeof(*ps));
     ps->refcount = 1;

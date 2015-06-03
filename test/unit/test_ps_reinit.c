@@ -29,6 +29,9 @@ main(int argc, char *argv[])
 	ps_add_word(ps, "foobie", "F UW B IY", FALSE);
 	ps_add_word(ps, "hellosomething", "HH EH L OW S", TRUE);
 
+	/* Reinit with existing config */
+	ps_reinit(ps, NULL);
+
 	ps_free(ps);
 	cmd_ln_free_r(config);
 
