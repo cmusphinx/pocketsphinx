@@ -318,7 +318,10 @@ static void
 gst_pocketsphinx_set_string(GstPocketSphinx *ps,
                             const gchar *key, const GValue *value)
 {
-    cmd_ln_set_str_r(ps->config, key, g_value_get_string(value));
+    if (value != NULL)
+        cmd_ln_set_str_r(ps->config, key, g_value_get_string(value));
+    else
+        cmd_ln_set_str_r(ps->config, key, NULL);
 }
 
 static void
@@ -350,17 +353,10 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
 
     switch (prop_id) {
     case PROP_CONFIGURED:
-        if (ps->ps)
-            ps_reinit(ps->ps, NULL);
-        else
-            ps->ps = ps_init(ps->config);
+        ps_reinit(ps->ps, ps->config);
         break;
     case PROP_HMM_DIR:
         gst_pocketsphinx_set_string(ps, "-hmm", value);
-        if (ps->ps) {
-            /* Reinitialize the decoder with the new acoustic model. */
-            ps_reinit(ps->ps, NULL);
-        }
         break;
     case PROP_LM_FILE:
         /* FSG and LM are mutually exclusive. */
@@ -376,20 +372,24 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         break;
     case PROP_LM_NAME:
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "-lm", NULL);
         gst_pocketsphinx_set_string(ps, "-lmname", value);
+
+        /**
+         * Chances are that lmctl is already loaded and all
+         * corresponding searches are configured, so we simply
+         * try to set the search 
+         */
+
+        if (value != NULL) {
+    	    ps_set_search(ps->ps, g_value_get_string(value));
+        }
         break;
     case PROP_DICT_FILE:
         gst_pocketsphinx_set_string(ps, "-dict", value);
-        if (ps->ps) {
-            /* Reinitialize the decoder with the new dictionary. */
-            ps_reinit(ps->ps, NULL);
-        }
         break;
     case PROP_MLLR_FILE:
         gst_pocketsphinx_set_string(ps, "-mllr", value);
-        /* Reinitialize the decoder with the new MLLR transform. */
-        if (ps->ps)
-            ps_reinit(ps->ps, NULL);
         break;
     case PROP_FSG_MODEL:
         {

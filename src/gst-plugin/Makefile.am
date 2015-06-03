@@ -25,4 +25,5 @@ AM_CFLAGS = \
 	$(GST_CFLAGS) \
 	-DMODELDIR=\"$(pkgdatadir)/model\"
 
-EXTRA_DIST = livedemo.py
+EXTRA_DIST = livedemo.py livedemo.c
+
