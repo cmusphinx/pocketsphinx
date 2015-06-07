@@ -164,6 +164,10 @@ recognize_from_file()
 	if (!check_wav_header(waveheader, (int)cmd_ln_float32_r(config, "-samprate")))
     	    E_FATAL("Failed to process file '%s' due to format mismatch.\n", fname);
     }
+
+    if (strlen(fname) > 4 && strcmp(fname + strlen(fname) - 4, ".mp3") == 0) {
+	E_FATAL("Can not decode mp3 files, convert input file to WAV 16kHz 16-bit mono before decoding.\n");
+    }
     
     ps_start_utt(ps);
     utt_started = FALSE;
