@@ -105,16 +105,24 @@ ps_add_file(ps_decoder_t *ps, const char *arg,
     ckd_free(tmp);
 }
 
+/* Feature and front-end parameters that may be in feat.params */
+static const arg_t feat_defn[] = {
+    waveform_to_cepstral_command_line_macro(),
+    cepstral_to_feature_command_line_macro(),
+    CMDLN_EMPTY_OPTION
+};
+
 static void
-ps_init_defaults(ps_decoder_t *ps)
+ps_expand_model_config(ps_decoder_t *ps)
 {
+    char const *hmmdir, *featparams;
+
     /* Disable memory mapping on Blackfin (FIXME: should be uClinux in general). */
 #ifdef __ADSPBLACKFIN__
     E_INFO("Will not use mmap() on uClinux/Blackfin.");
     cmd_ln_set_boolean_r(ps->config, "-mmap", FALSE);
 #endif
 
-    char const *hmmdir;
     /* Get acoustic model filenames and add them to the command-line */
     if ((hmmdir = cmd_ln_str_r(ps->config, "-hmm")) != NULL) {
         ps_add_file(ps, "-mdef", hmmdir, "mdef");
@@ -128,6 +136,17 @@ ps_init_defaults(ps_decoder_t *ps)
         ps_add_file(ps, "-featparams", hmmdir, "feat.params");
         ps_add_file(ps, "-senmgau", hmmdir, "senmgau");
     }
+
+    /* Look for feat.params in acoustic model dir. */
+    if ((featparams = cmd_ln_str_r(ps->config, "-featparams"))) {
+        if (NULL !=
+            cmd_ln_parse_file_r(ps->config, feat_defn, featparams, FALSE))
+            E_INFO("Parsed model-specific feature parameters from %s\n",
+                    featparams);
+    }
+
+    /* Print here because acmod_init might load feat.params file */
+    cmd_ln_print_values_r(ps->config, err_get_logfp(), ps_args());
 }
 
 static void
@@ -236,7 +255,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     ps->senlogdir = cmd_ln_str_r(ps->config, "-senlogdir");
 
     /* Fill in some default arguments. */
-    ps_init_defaults(ps);
+    ps_expand_model_config(ps);
 
     /* Free old searches (do this before other reinit) */
     ps_free_searches(ps);
@@ -271,9 +290,6 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         return -1;
 
 
-    /* Print here because acmod_init might load feat.params file */
-    if (config)
-	cmd_ln_print_values_r(ps->config, err_get_logfp(), ps_args());
 
     if (cmd_ln_int32_r(ps->config, "-pl_window") > 0) {
         /* Initialize an auxiliary phone loop search, which will run in

@@ -62,13 +62,6 @@
 #include "ptm_mgau.h"
 #include "ms_mgau.h"
 
-/* Feature and front-end parameters that may be in feat.params */
-static const arg_t feat_defn[] = {
-    waveform_to_cepstral_command_line_macro(),
-    cepstral_to_feature_command_line_macro(),
-    CMDLN_EMPTY_OPTION
-};
-
 #ifndef WORDS_BIGENDIAN
 #define WORDS_BIGENDIAN 1
 #endif
@@ -243,14 +236,6 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
     acmod->config = cmd_ln_retain(config);
     acmod->lmath = lmath;
     acmod->state = ACMOD_IDLE;
-
-    /* Look for feat.params in acoustic model dir. */
-    if ((featparams = cmd_ln_str_r(acmod->config, "-featparams"))) {
-        if (NULL !=
-            cmd_ln_parse_file_r(acmod->config, feat_defn, featparams, FALSE))
-            E_INFO("Parsed model-specific feature parameters from %s\n",
-                    featparams);
-    }
 
     /* Initialize feature computation. */
     if (fe) {

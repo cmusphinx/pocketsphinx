@@ -39,7 +39,6 @@ main(int argc, char *argv[])
 
     lmath = logmath_init(1.0001, 0, 0);
     config = cmd_ln_init(NULL, ps_args(), TRUE,
-                 "-featparams", MODELDIR "/en-us/en-us/feat.params",
                  "-mdef", MODELDIR "/en-us/en-us/mdef",
                  "-mean", MODELDIR "/en-us/en-us/means",
                  "-var", MODELDIR "/en-us/en-us/variances",
@@ -56,6 +55,8 @@ main(int argc, char *argv[])
                  "-input_endian", "little",
                  "-samprate", "16000", NULL);
     TEST_ASSERT(config);
+    cmd_ln_parse_file_r(config, ps_args(), MODELDIR "/en-us/en-us/feat.params", FALSE);
+
     TEST_ASSERT(acmod = acmod_init(config, lmath, NULL, NULL));
     cmn_prior_set(acmod->fcb->cmn_struct, prior);
 
