@@ -222,6 +222,15 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     }
 
     err_set_debug_level(cmd_ln_int32_r(ps->config, "-debug"));
+    /* Set up logging. We need to do this earlier because we want to dump
+     * the information to the configured log, not to the stderr. */
+    if (config && cmd_ln_str_r(ps->config, "-logfn")) {
+        if (err_set_logfile(cmd_ln_str_r(ps->config, "-logfn")) < 0) {
+            E_ERROR("Cannot redirect log output\n");
+    	    return -1;
+        }
+    }
+    
     ps->mfclogdir = cmd_ln_str_r(ps->config, "-mfclogdir");
     ps->rawlogdir = cmd_ln_str_r(ps->config, "-rawlogdir");
     ps->senlogdir = cmd_ln_str_r(ps->config, "-senlogdir");
@@ -260,6 +269,11 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
      * uttproc.c, senscr.c, and others used to do) */
     if ((ps->acmod = acmod_init(ps->config, ps->lmath, NULL, NULL)) == NULL)
         return -1;
+
+
+    /* Print here because acmod_init might load feat.params file */
+    if (config)
+	cmd_ln_print_values_r(ps->config, err_get_logfp(), ps_args());
 
     if (cmd_ln_int32_r(ps->config, "-pl_window") > 0) {
         /* Initialize an auxiliary phone loop search, which will run in
