@@ -1,5 +1,5 @@
 CFLAGS := -g -Wall -DPIC -fPIC
-CPPFLAGS := -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux `pkg-config --cflags sphinxbase pocketsphinx`
+CPPFLAGS := -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -Wno-unused-function `pkg-config --cflags sphinxbase pocketsphinx`
 
 all: libpocketsphinx_jni.so
 
