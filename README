@@ -2,14 +2,15 @@ PocketSphinx 5prealpha
 ===============================================================================
 
 This is PocketSphinx, one of Carnegie Mellon University's open source large
-vocabulary, speaker-independent continuous speech recognition engine. Please
-see the LICENSE file for terms of use.
+vocabulary, speaker-independent continuous speech recognition engine.
 
 **THIS IS A RESEARCH SYSTEM**. This is also an early release of a research
 system. We know the APIs and function names are likely to change, and that
 several tools need to be made available to make this all complete. With your
 help and contributions, this can progress in response to the needs and patches
 provided.
+
+**Please see the LICENSE file for terms of use.**
 
 Prerequisites
 -------------------------------------------------------------------------------
@@ -32,15 +33,15 @@ In a unix-like environment (such as linux, solaris etc):
  * If you downloaded directly from the CVS repository, you need to do
    this at least once to generate the "configure" file:
 
-     $ ./autogen.sh
+       $ ./autogen.sh
 
  * If you downloaded the release version, or ran `autogen.sh` at least
    once, then compile and install:
 
-     $ ./configure
-     $ make clean all
-     $ make check
-     $ sudo make install
+       $ ./configure
+       $ make clean all
+       $ make check
+       $ sudo make install
 
 
 XCode Installation (for iPhone)
