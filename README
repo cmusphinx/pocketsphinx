@@ -33,16 +33,18 @@ In a unix-like environment (such as linux, solaris etc):
  * If you downloaded directly from the CVS repository, you need to do
    this at least once to generate the "configure" file:
 
-       $ ./autogen.sh
-
+   ```
+   $ ./autogen.sh
+   ```
  * If you downloaded the release version, or ran `autogen.sh` at least
    once, then compile and install:
 
-       $ ./configure
-       $ make clean all
-       $ make check
-       $ sudo make install
-
+   ```
+   $ ./configure
+   $ make clean all
+   $ make check
+   $ sudo make install
+   ```
 
 XCode Installation (for iPhone)
 ------------------------------------------------------------------------------
