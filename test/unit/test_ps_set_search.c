@@ -53,7 +53,7 @@ static void
 test_default_lm()
 {
     cmd_ln_t *config = default_config();
-    cmd_ln_set_str_r(config, "-lm", MODELDIR "/en-us/en-us.lm.dmp");
+    cmd_ln_set_str_r(config, "-lm", MODELDIR "/en-us/en-us.lm.bin");
     ps_decoder_t *ps = ps_init(config);
     TEST_ASSERT(!ps_get_fsg(ps, PS_DEFAULT_SEARCH));
     TEST_ASSERT(ps_get_lm(ps, PS_DEFAULT_SEARCH));
@@ -95,7 +95,7 @@ test_set_search()
     // Second time
     TEST_ASSERT(!ps_set_jsgf_file(ps, "goforward_other", DATADIR "/goforward.gram"));
 
-    ngram_model_t *lm = ngram_model_read(config, DATADIR "/tidigits/lm/tidigits.lm.dmp",
+    ngram_model_t *lm = ngram_model_read(config, DATADIR "/tidigits/lm/tidigits.lm.bin",
                                          NGRAM_AUTO, ps->lmath);
     TEST_ASSERT(!ps_set_lm(ps, "tidigits", lm));
     ngram_model_free(lm);

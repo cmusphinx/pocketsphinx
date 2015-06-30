@@ -7,7 +7,7 @@ bn=`basename $0 .sh`
 echo "Test: $bn"
 run_program pocketsphinx_batch \
     -hmm $data/tidigits/hmm \
-    -lm $data/tidigits/lm/tidigits.lm.dmp \
+    -lm $data/tidigits/lm/tidigits.lm.bin \
     -dict $data/tidigits/lm/tidigits.dic \
     -ctl $data/tidigits/tidigits.ctl \
     -cepdir $data/tidigits \

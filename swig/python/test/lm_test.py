@@ -43,7 +43,7 @@ DATADIR = "../../../test/data"
 # Create a decoder with certain model
 config = Decoder.default_config()
 config.set_string('-hmm', path.join(MODELDIR, 'en-us/en-us'))
-config.set_string('-lm', path.join(MODELDIR, 'en-us/en-us.lm.dmp'))
+config.set_string('-lm', path.join(MODELDIR, 'en-us/en-us.lm.bin'))
 config.set_string('-dict', path.join(DATADIR, 'defective.dic'))
 config.set_boolean('-mmap', False)
 decoder = Decoder(config)
@@ -60,7 +60,7 @@ decoder.end_utt()
 print ('Decoding with default settings:', decoder.hyp().hypstr)
 
 # Load "turtle" language model and decode again.
-lm = NGramModel(config, decoder.get_logmath(), path.join(DATADIR, 'turtle.lm.dmp'))
+lm = NGramModel(config, decoder.get_logmath(), path.join(DATADIR, 'turtle.lm.bin'))
 print (lm.prob(['you']))
 print (lm.prob(['are','you']))
 print (lm.prob(['you', 'are', 'what']))

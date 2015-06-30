@@ -18,7 +18,7 @@ main(int argc, char *argv[])
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", DATADIR "/an4_ci_cont",
-				"-lm", DATADIR "/turtle.lm.dmp",
+				"-lm", DATADIR "/turtle.lm.bin",
 				"-dict", DATADIR "/turtle.dic",
 				"-mllr", DATADIR "/mllr_matrices",
 				"-samprate", "16000", NULL));

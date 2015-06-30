@@ -19,7 +19,7 @@ main(int argc, char *argv[])
     TEST_ASSERT(config =
                 cmd_ln_init(NULL, ps_args(), TRUE,
                             "-hmm", MODELDIR "/en-us/en-us",
-                            "-lm", MODELDIR "/en-us/en-us.lm.dmp",
+                            "-lm", MODELDIR "/en-us/en-us.lm.bin",
                             "-dict", DATADIR "/defective.dic",
                             "-dictcase", "yes",
                             "-input_endian", "little",
@@ -33,7 +33,7 @@ main(int argc, char *argv[])
     TEST_EQUAL(0, strcmp(hyp, "go forward ten years"));
 
     /* Now load the turtle language model. */
-    lm = ngram_model_read(config, DATADIR "/turtle.lm.dmp",
+    lm = ngram_model_read(config, DATADIR "/turtle.lm.bin",
                           NGRAM_AUTO, ps_get_logmath(ps));
     ps_set_lm(ps, "turtle", lm);
     ps_set_search(ps, "turtle");

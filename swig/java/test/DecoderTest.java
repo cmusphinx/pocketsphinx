@@ -27,7 +27,7 @@ public class DecoderTest {
     public void testDecodeRaw() throws IOException, UnsupportedAudioFileException {
         Config c = Decoder.defaultConfig();
         c.setString("-hmm", "../../model/en-us/en-us");
-        c.setString("-lm", "../../model/en-us/en-us.lm.dmp");
+        c.setString("-lm", "../../model/en-us/en-us.lm.bin");
         c.setString("-dict", "../../model/en-us/cmudict-en-us.dict");
         Decoder d = new Decoder(c);
         AudioInputStream ais = null;

@@ -1,3 +1,3 @@
 -hmm ../../model/en-us/en-us
--lm ../../model/en-us/en-us.lm.dmp
+-lm ../../model/en-us/en-us.lm.bin
 -dict ../../model/en-us/cmudict-en-us.dict
