@@ -184,6 +184,10 @@
         *errcode = ps_set_jsgf_file($self, name, path);
     }
 
+    void set_jsgf_string(const char *name, const char *jsgf_string, int *errcode) {
+        *errcode = ps_set_jsgf_string($self, name, jsgf_string);
+    }
+
     const char * get_kws(const char *name) {
         return ps_get_kws($self, name);
     }
