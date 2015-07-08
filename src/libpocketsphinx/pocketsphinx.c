@@ -655,7 +655,7 @@ int
 ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
 {
     ps_search_t *search;
-    search = fsg_search_init(name, fsg, ps->config, ps->acmod, ps->dict, ps->d2p);
+    search = fsg_search_init(name, fsg, ps->config, ps->acmod, ps->dict, ps->d2p, ps);
     return set_search_internal(ps, search);
 }
 
