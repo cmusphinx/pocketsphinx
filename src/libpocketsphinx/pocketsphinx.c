@@ -304,7 +304,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     /* Dictionary and triphone mappings (depends on acmod). */
     /* FIXME: pass config, change arguments, implement LTS, etc. */
-    if ((ps->dict = dict_init(ps->config, ps->acmod->mdef)) == NULL)
+    if ((ps->dict = dict_init(ps->config, ps->acmod->mdef, ps->acmod->lmath)) == NULL)
         return -1;
     if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
         return -1;
@@ -655,7 +655,7 @@ int
 ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
 {
     ps_search_t *search;
-    search = fsg_search_init(name, fsg, ps->config, ps->acmod, ps->dict, ps->d2p, ps);
+    search = fsg_search_init(name, fsg, ps->config, ps->acmod, ps->dict, ps->d2p);
     return set_search_internal(ps, search);
 }
 
@@ -757,7 +757,7 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
                          cmd_ln_str_r(ps->config, "-fdict"));
 
     /* Try to load it. */
-    if ((dict = dict_init(newconfig, ps->acmod->mdef)) == NULL) {
+    if ((dict = dict_init(newconfig, ps->acmod->mdef, ps->acmod->lmath)) == NULL) {
         cmd_ln_free_r(newconfig);
         return -1;
     }

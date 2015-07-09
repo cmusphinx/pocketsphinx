@@ -65,6 +65,7 @@
 #include "fsg_search_internal.h"
 #include "fsg_history.h"
 #include "fsg_lextree.h"
+#include "dict.h"
 
 /* Turn this on for detailed debugging dump */
 #define __FSG_DBG__		0
@@ -139,11 +140,15 @@ fsg_search_check_dict(fsg_search_t *fsgs, fsg_model_t *fsg)
         wid = dict_wordid(dict, word);
         if (wid == BAD_S3WID) {
             E_WARN("The word '%s' is missing in the dictionary. Trying to create new phoneme \n", word);
-            char *word_phoneme = g2p(word, fsgs->arpafile);
-            if (word_phoneme){
-                ps_add_word(fsgs->ps, word, word_phoneme, 0);
-                E_INFO("Created %s \n", word_phoneme);
-                free(word_phoneme);
+            if (!dict->ngram_g2p_model) {
+                E_ERROR("NO dict->ngram_g2p_model. Aborting..");
+                return FALSE;
+            }
+
+            int new_wid = dict_add_g2p_word(dict, word);
+            if (new_wid > 0){
+                /* Now we also have to add it to dict2pid. */
+                dict2pid_add_word(ps_search_dict2pid(fsgs), new_wid);
             } else {
                 E_ERROR("Exiting... \n");
                 return FALSE;
@@ -188,12 +193,11 @@ fsg_search_init(const char *name,
                 cmd_ln_t *config,
                 acmod_t *acmod,
                 dict_t *dict,
-                dict2pid_t *d2p,
-                ps_decoder_t *ps)
+                dict2pid_t *d2p)
 {
     fsg_search_t *fsgs = ckd_calloc(1, sizeof(*fsgs));
     ps_search_init(ps_search_base(fsgs), &fsg_funcs, PS_SEARCH_TYPE_FSG, name, config, acmod, dict, d2p);
-    fsgs->ps = ps;
+
     fsgs->fsg = fsg_model_retain(fsg);
     /* Initialize HMM context. */
     fsgs->hmmctx = hmm_context_init(bin_mdef_n_emit_state(acmod->mdef),
@@ -201,10 +205,6 @@ fsg_search_init(const char *name,
     if (fsgs->hmmctx == NULL) {
         ps_search_free(ps_search_base(fsgs));
         return NULL;
-    }
-
-    if (config) {
-        fsgs->arpafile = strcat(cmd_ln_str_r(config, "-dict"),".dmp");
     }
 
     /* Intialize the search history object */
@@ -1548,124 +1548,4 @@ error_out:
 
 }
 
-char *
-g2p(char const *word_grapheme, char const *arpafile)
-{
-    logmath_t *logmath = logmath_init(1.0001f, 0, 0);
-    ngram_model_t *model = ngram_model_read(NULL,arpafile,NGRAM_AUTO,logmath);
-    if (!model) {
-        E_ERROR("No arpa model found  \n");
-        return NULL;
-    }
-    const int32 *total_unigrams = ngram_model_get_counts(model);
-    int32 history[1000];
-
-    // start with sentence
-    int32 wid_sentence = ngram_wid(model,"<s>");
-    history[0] = wid_sentence;
-    int totalh = 0;
-    size_t increment = 1;
-    int offset_word = 0;
-    for (int j = 0 ; j <= (int) strlen(word_grapheme)-1 ; j += increment) {
-        struct winner_t winner_s = get_winner_wid(model,word_grapheme,history,*total_unigrams,totalh,offset_word);
-        increment = winner_s.length_match;
-        history[j+1] = winner_s.winner_wid;
-        totalh = j+1;
-        offset_word += winner_s.length_match;
-    }
-
-    char *final_word = malloc(128);
-    for (int w = 0; w <= totalh; w++){
-        const char* word;
-        word = ngram_word(model, history[w]);
-
-        char *new_vocab;
-        new_vocab = strdup(word);
-
-        const char *pch = strtok(&new_vocab[0], "}");
-        pch = strtok(NULL, "}");
-
-        if (pch == NULL)
-            continue;
-
-        strcat (final_word,pch);
-        strcat (final_word," ");
-
-        free((void*)word);
-    }
-
-    free(logmath);
-    ngram_model_free(model);
-
-    return final_word;
-}
-
-struct winner_t
-get_winner_wid(ngram_model_t *model, const char * word_grapheme, int32 history[], const int32 total_unigrams, int total_history, int offset_word) {
-
-    int32 current_prob = -2147483647;
-    struct winner_t winner_s;
-
-    for (int32 i = 0; i <= total_unigrams; i++) {
-
-        const char *vocab = ngram_word(model, i);
-
-        if (vocab == NULL)
-            continue;
-
-        char *new_vocab;
-        new_vocab = strdup(vocab);
-
-        char *pch = strtok(new_vocab, "}");
-
-        char* str_pch = malloc(strlen(pch)+1);
-        strcpy(str_pch, pch);
-        removeChar(str_pch, '|');
-
-        char sub[1000];
-        substring(word_grapheme, sub, offset_word+1, (strlen(word_grapheme) - offset_word));
-        if ( startsWith(str_pch, sub)){
-            int nused;
-            const int32 prob = ngram_ng_prob(model, i, history, total_history, &nused);
-
-            if (current_prob < prob) {
-                current_prob = prob;
-                winner_s.winner_wid = i;
-                winner_s.length_match = strlen(pch);
-            }
-        }
-
-        free(str_pch);
-        free(new_vocab);
-
-    }
-    return winner_s;
-}
-
-int
-startsWith(const char *pre, const char *str) {
-    size_t lenpre = strlen(pre), lenstr = strlen(str);
-    return lenstr < lenpre ? 0 : strncmp(pre, str, lenpre) == 0;
-}
-
-void
-removeChar(char *str, char garbage) {
-    char *src, *dst;
-    for (src = dst = str; *src != '\0'; src++) {
-        *dst = *src;
-        if (*dst != garbage) dst++;
-    }
-    *dst = '\0';
-}
-
-void
-substring(const char *s, char sub[], int p, int l) {
-    int c = 0;
-
-    while (c < l) {
-        sub[c] = s[p+c-1];
-        c++;
-    }
-    sub[c] = '\0';
-}
 

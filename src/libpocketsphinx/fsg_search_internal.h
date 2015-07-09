@@ -67,15 +67,14 @@ typedef struct fsg_seg_s {
  */
 typedef struct fsg_search_s {
     ps_search_t base;
-    ps_decoder_t *ps;
     hmm_context_t *hmmctx; /**< HMM context. */
     char const *arpafile;
-
+    cmd_ln_t *config;
     fsg_model_t *fsg;		/**< FSG model */
     struct fsg_lextree_s *lextree;/**< Lextree structure for the currently
 				   active FSG */
     struct fsg_history_s *history;/**< For storing the Viterbi search history */
-  
+
     glist_t pnode_active;	/**< Those active in this frame */
     glist_t pnode_active_next;	/**< Those activated for the next frame */
   
@@ -114,8 +113,7 @@ ps_search_t *fsg_search_init(const char *name,
                              cmd_ln_t *config,
                              acmod_t *acmod,
                              dict_t *dict,
-                             dict2pid_t *d2p,
-                             ps_decoder_t *ps);
+                             dict2pid_t *d2p);
 
 /**
  * Deallocate search structure.
@@ -148,16 +146,6 @@ int fsg_search_finish(ps_search_t *search);
  */
 char const *fsg_search_hyp(ps_search_t *search, int32 *out_score, int32 *out_is_final);
 
-struct winner_t get_winner_wid(ngram_model_t *model, const char * word_grapheme, int32 history[], const int32 total_unigrams, int total_history, int offset_word);
-void removeChar(char *str, char garbage);
-int startsWith(const char *pre, const char *str);
-void substring(const char *s, char sub[], int p, int l);
-char * g2p(char const *word_grapheme, char const *arpafile);
 
-struct winner_t
-{
-    size_t length_match;
-    int winner_wid;
-};
 
 #endif
