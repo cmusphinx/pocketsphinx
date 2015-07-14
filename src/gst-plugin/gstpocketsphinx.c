@@ -9,32 +9,79 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
+ * This work was supported in part by funding from the Defense Advanced
+ * Research Projects Agency and the National Science Foundation of the
  * United States of America, and the CMU Sphinx Speech Consortium.
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
  *
  * Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
+ */
+
+/**
+ * SECTION:element-pocketsphix
+ *
+ * The element runs the speech recohgnition on incomming audio buffers and
+ * generates an element messages named <classname>&quot;pocketsphinx&quot;</classname>
+ * for each hypothesis and one for the final result. The message's structure 
+ * contains these fields:
+ *
+ * <itemizedlist>
+ * <listitem>
+ *   <para>
+ *   #GstClockTime
+ *   <classname>&quot;timestamp&quot;</classname>:
+ *   the timestamp of the buffer that triggered the message.
+ *   </para>
+ * </listitem>
+ * <listitem>
+ *   <para>
+ *   #gboolean
+ *   <classname>&quot;final&quot;</classname>:
+ *   %FALSE for intermediate messages.
+ *   </para>
+ * </listitem>
+ * <listitem>
+ *   <para>
+ *   #gin32
+ *   <classname>&quot;confidence&quot;</classname>:
+ *   posterior probability (confidence) of the result in log domain
+ *   </para>
+ * </listitem>
+ * <listitem>
+ *   <para>
+ *   #gchar
+ *   <classname>&quot;hypothesis&quot;</classname>:
+ *   the recognized text
+ *   </para>
+ * </listitem>
+ * </itemizedlist>
+ *
+ * <refsect2>
+ * <title>Example pipeline</title>
+ * |[
+ * gst-launch-1.0 -m autoaudiosrc ! audioconvert ! audioresample ! pocketsphinx configured=true ! fakesink
+ * ]|
+ * </refsect2>
  */
 
 #ifdef HAVE_CONFIG_H
@@ -56,24 +103,20 @@ GST_DEBUG_CATEGORY_STATIC(pocketsphinx_debug);
 static void
 gst_pocketsphinx_set_property(GObject * object, guint prop_id,
                           const GValue * value, GParamSpec * pspec);
-static void 
+static void
 gst_pocketsphinx_get_property(GObject * object, guint prop_id,
                               GValue * value, GParamSpec * pspec);
 static GstFlowReturn
 gst_pocketsphinx_chain(GstPad * pad, GstObject *parent, GstBuffer * buffer);
+
 static gboolean
 gst_pocketsphinx_event(GstPad *pad, GstObject *parent, GstEvent *event);
+
 static void
 gst_pocketsphinx_finalize_utt(GstPocketSphinx *ps);
+
 static void
 gst_pocketsphinx_finalize(GObject * gobject);
-
-enum
-{
-    SIGNAL_PARTIAL_RESULT,
-    SIGNAL_RESULT,
-    LAST_SIGNAL
-};
 
 enum
 {
@@ -124,13 +167,11 @@ static GstStaticPadTemplate src_factory =
                             GST_PAD_SRC,
                             GST_PAD_ALWAYS,
                             GST_STATIC_CAPS("text/plain")
-        );
-static guint gst_pocketsphinx_signals[LAST_SIGNAL];
+	);
 
 /*
  * Boxing of ps_decoder_t.
  */
-
 GType
 ps_decoder_get_type(void)
 {
@@ -148,12 +189,7 @@ ps_decoder_get_type(void)
 }
 
 
-/*
- * Class definition
- */
-
 G_DEFINE_TYPE(GstPocketSphinx, gst_pocketsphinx, GST_TYPE_ELEMENT);
-
 
 static void
 gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
@@ -279,27 +315,6 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                               FALSE,
                               G_PARAM_READWRITE));
 
-    gst_pocketsphinx_signals[SIGNAL_PARTIAL_RESULT] = 
-        g_signal_new("partial_result",
-                     G_TYPE_FROM_CLASS(klass),
-                     G_SIGNAL_RUN_LAST,
-                     G_STRUCT_OFFSET(GstPocketSphinxClass, partial_result),
-                     NULL, NULL,
-                     g_cclosure_marshal_VOID__STRING,
-                     G_TYPE_NONE,
-                     1, G_TYPE_STRING
-            );
-
-    gst_pocketsphinx_signals[SIGNAL_RESULT] = 
-        g_signal_new("result",
-                     G_TYPE_FROM_CLASS(klass),
-                     G_SIGNAL_RUN_LAST,
-                     G_STRUCT_OFFSET(GstPocketSphinxClass, result),
-                     NULL, NULL,
-                     g_cclosure_marshal_VOID__STRING,
-                     G_TYPE_NONE,
-                     1, G_TYPE_STRING
-            );
 
     GST_DEBUG_CATEGORY_INIT(pocketsphinx_debug, "pocketsphinx", 0,
                             "Automatic Speech Recognition");
@@ -318,10 +333,11 @@ static void
 gst_pocketsphinx_set_string(GstPocketSphinx *ps,
                             const gchar *key, const GValue *value)
 {
-    if (value != NULL)
+    if (value != NULL) {
         cmd_ln_set_str_r(ps->config, key, g_value_get_string(value));
-    else
+    } else {
         cmd_ln_set_str_r(ps->config, key, NULL);
+    }
 }
 
 static void
@@ -352,6 +368,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     GstPocketSphinx *ps = GST_POCKETSPHINX(object);
 
     switch (prop_id) {
+    
     case PROP_CONFIGURED:
         ps_reinit(ps->ps, ps->config);
         break;
@@ -378,7 +395,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         /**
          * Chances are that lmctl is already loaded and all
          * corresponding searches are configured, so we simply
-         * try to set the search 
+         * try to set the search
          */
 
         if (value != NULL) {
@@ -550,13 +567,26 @@ gst_pocketsphinx_init(GstPocketSphinx * ps)
     ps->last_result = NULL;
 }
 
+static void
+gst_pocketsphinx_post_message(GstPocketSphinx *ps, gboolean final,
+    GstClockTime timestamp, gint32 prob, const gchar *hyp)
+{
+    GstStructure *s = gst_structure_new ("pocketsphinx",
+        "timestamp", G_TYPE_UINT64, timestamp,
+        "final", G_TYPE_BOOLEAN, final,
+        "confidence", G_TYPE_LONG, prob,
+        "hypothesis", G_TYPE_STRING, hyp, NULL);
+
+    gst_element_post_message (GST_ELEMENT (ps), gst_message_new_element (GST_OBJECT (ps), s));
+}
+
 static GstFlowReturn
 gst_pocketsphinx_chain(GstPad * pad, GstObject *parent, GstBuffer * buffer)
 {
     GstPocketSphinx *ps;
     GstMapInfo info;
     gboolean in_speech;
-    
+
     ps = GST_POCKETSPHINX(parent);
 
     /* Start an utterance for the first buffer we get */
@@ -592,9 +622,8 @@ gst_pocketsphinx_chain(GstPad * pad, GstObject *parent, GstBuffer * buffer)
             if (ps->last_result == NULL || 0 != strcmp(ps->last_result, hyp)) {
                 g_free(ps->last_result);
                 ps->last_result = g_strdup(hyp);
-                /* Emit a signal for applications. */
-                g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_PARTIAL_RESULT],
-                              0, hyp);
+                gst_pocketsphinx_post_message(ps, FALSE, ps->last_result_time,
+                    ps_get_prob(ps->ps), hyp);
             }
         }
     }
@@ -614,7 +643,7 @@ gst_pocketsphinx_finalize_utt(GstPocketSphinx *ps)
     hyp = NULL;
     if (!ps->listening_started || !ps->utt_started)
 	return;
-	
+
     ps_end_utt(ps->ps);
     ps->listening_started = FALSE;
     hyp = ps_get_hyp(ps->ps, &score);
@@ -633,8 +662,8 @@ gst_pocketsphinx_finalize_utt(GstPocketSphinx *ps)
         ckd_free(latfile);
     }
     if (hyp) {
-        g_signal_emit(ps, gst_pocketsphinx_signals[SIGNAL_RESULT],
-    		      0, hyp);
+    		gst_pocketsphinx_post_message(ps, TRUE, GST_CLOCK_TIME_NONE,
+    		    ps_get_prob(ps->ps), hyp);
         buffer = gst_buffer_new_and_alloc(strlen(hyp) + 1);
 	gst_buffer_fill(buffer, 0, hyp, strlen(hyp));
 	gst_buffer_fill(buffer, strlen(hyp), "\n", 1);
@@ -665,7 +694,7 @@ gst_pocketsphinx_log(void *user_data, err_lvl_t lvl, const char *fmt, ...)
 {
     static const int gst_level[ERR_MAX] = {GST_LEVEL_DEBUG, GST_LEVEL_INFO,
              GST_LEVEL_INFO, GST_LEVEL_WARNING, GST_LEVEL_ERROR, GST_LEVEL_ERROR};
-                 
+
      va_list ap;
      va_start(ap, fmt);
      gst_debug_log_valist(pocketsphinx_debug, gst_level[lvl], "", "", 0, NULL, fmt, ap);
@@ -688,7 +717,7 @@ plugin_init(GstPlugin * plugin)
 #define PACKAGE PACKAGE_NAME
 GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
                   GST_VERSION_MINOR,
-                  PACKAGE_NAME,
+                  pocketsphinx,
                   "PocketSphinx plugin",
                   plugin_init, PACKAGE_VERSION,
                   "BSD",
