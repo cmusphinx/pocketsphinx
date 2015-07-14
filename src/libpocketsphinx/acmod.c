@@ -230,7 +230,6 @@ acmod_t *
 acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
 {
     acmod_t *acmod;
-    char const *featparams;
 
     acmod = ckd_calloc(1, sizeof(*acmod));
     acmod->config = cmd_ln_retain(config);

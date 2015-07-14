@@ -146,7 +146,9 @@ ps_expand_model_config(ps_decoder_t *ps)
     }
 
     /* Print here because acmod_init might load feat.params file */
-    cmd_ln_print_values_r(ps->config, err_get_logfp(), ps_args());
+    if (err_get_logfp() != NULL) {
+	cmd_ln_print_values_r(ps->config, err_get_logfp(), ps_args());
+    }
 }
 
 static void
