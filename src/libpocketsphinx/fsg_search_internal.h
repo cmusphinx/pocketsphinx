@@ -67,14 +67,14 @@ typedef struct fsg_seg_s {
  */
 typedef struct fsg_search_s {
     ps_search_t base;
-
     hmm_context_t *hmmctx; /**< HMM context. */
-
+    char const *arpafile;
+    cmd_ln_t *config;
     fsg_model_t *fsg;		/**< FSG model */
     struct fsg_lextree_s *lextree;/**< Lextree structure for the currently
 				   active FSG */
     struct fsg_history_s *history;/**< For storing the Viterbi search history */
-  
+
     glist_t pnode_active;	/**< Those active in this frame */
     glist_t pnode_active_next;	/**< Those activated for the next frame */
   
@@ -145,5 +145,7 @@ int fsg_search_finish(ps_search_t *search);
  * Get hypothesis string from the FSG search.
  */
 char const *fsg_search_hyp(ps_search_t *search, int32 *out_score, int32 *out_is_final);
+
+
 
 #endif
