@@ -89,7 +89,12 @@ static ps_seg_t *
 kws_seg_next(ps_seg_t *seg)
 {
     kws_seg_t *itor = (kws_seg_t *)seg;
-    itor->detection = gnode_next(itor->detection);
+
+    gnode_t *detect_head = gnode_next(itor->detection);
+    while (detect_head != NULL && ((kws_detection_t*)gnode_ptr(detect_head))->ef > itor->last_frame)
+	detect_head = gnode_next(detect_head);
+    itor->detection = detect_head;
+
     if (!itor->detection) {
         kws_seg_free(seg);
         return NULL;
@@ -110,8 +115,12 @@ kws_search_seg_iter(ps_search_t * search, int32 * out_score)
 {
     kws_search_t *kwss = (kws_search_t *)search;
     kws_seg_t *itor;
+    gnode_t *detect_head = kwss->detections->detect_list;
     
-    if (!kwss->detections->detect_list)
+    while (detect_head != NULL && ((kws_detection_t*)gnode_ptr(detect_head))->ef > kwss->frame - kwss->delay)
+	detect_head = gnode_next(detect_head);
+    
+    if (!detect_head)
         return NULL;
 
     if (out_score)
@@ -121,7 +130,8 @@ kws_search_seg_iter(ps_search_t * search, int32 * out_score)
     itor->base.vt = &kws_segfuncs;
     itor->base.search = search;
     itor->base.lwf = 1.0;
-    itor->detection = kwss->detections->detect_list;
+    itor->detection = detect_head;
+    itor->last_frame = kwss->frame - kwss->delay;
     kws_seg_fill(itor);
     return (ps_seg_t *)itor;
 }

@@ -54,6 +54,7 @@
 typedef struct kws_seg_s {
     ps_seg_t base;       /**< Base structure. */
     gnode_t *detection;  /**< Keyword detection correspondent to segment. */
+    frame_idx_t last_frame; /**< Last frame to raise the detection */
 } kws_seg_t;
 
 typedef struct kws_keyword_s {

@@ -193,10 +193,12 @@ recognize_from_file()
     ps_end_utt(ps);
     if (utt_started) {
         hyp = ps_get_hyp(ps, NULL);
-        if (hyp != NULL)
+        if (hyp != NULL) {
     	    printf("%s\n", hyp);
-        if (print_times) {
-        print_word_times();
+    	    if (print_times) {
+    		printf("!!! here\n");
+    		print_word_times();
+	    }
 	}
     }
     
