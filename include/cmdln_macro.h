@@ -202,9 +202,9 @@
       ARG_FLOAT64,                                              \
       "1",                                                      \
       "Threshold for p(hyp)/p(alternatives) ratio" },           \
-{ "-kws_missing_words",                                         \
+{ "-kws_ignore_missing",                                        \
       ARG_BOOLEAN,                                              \
-      "no",                                                    \
+      "no",                                                     \
       "Ignore words missing from dictionary" }
 
 /** Command-line options for finite state grammars. */
