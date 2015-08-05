@@ -8,7 +8,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -16,16 +16,16 @@
  *    distribution.
  *
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
@@ -116,16 +116,16 @@ kws_search_seg_iter(ps_search_t * search, int32 * out_score)
     kws_search_t *kwss = (kws_search_t *)search;
     kws_seg_t *itor;
     gnode_t *detect_head = kwss->detections->detect_list;
-    
+
     while (detect_head != NULL && ((kws_detection_t*)gnode_ptr(detect_head))->ef > kwss->frame - kwss->delay)
 	detect_head = gnode_next(detect_head);
-    
+
     if (!detect_head)
         return NULL;
 
     if (out_score)
         *out_score = 0;
-    
+
     itor = (kws_seg_t *)ckd_calloc(1, sizeof(*itor));
     itor->base.vt = &kws_segfuncs;
     itor->base.search = search;
@@ -150,7 +150,7 @@ static ps_searchfuncs_t kws_funcs = {
 
 /* Scans the dictionary and check if all words are present. */
 static int
-kws_search_check_dict(kws_search_t * kwss)
+kws_search_check_dict(kws_search_t * kwss, int32 ignore_missing)
 {
     dict_t *dict;
     char **wrdptr;
@@ -169,7 +169,7 @@ kws_search_check_dict(kws_search_t * kwss)
         str2words(tmp_keyphrase, wrdptr, nwrds);
         for (i = 0; i < nwrds; i++) {
             wid = dict_wordid(dict, wrdptr[i]);
-            if (wid == BAD_S3WID) {
+            if (wid == BAD_S3WID && !ignore_missing) {
                 E_ERROR("The word '%s' is missing in the dictionary\n",
                         wrdptr[i]);
                 success = FALSE;
@@ -177,7 +177,7 @@ kws_search_check_dict(kws_search_t * kwss)
             }
         }
         ckd_free(wrdptr);
-        ckd_free(tmp_keyphrase);    
+        ckd_free(tmp_keyphrase);
     }
     return success;
 }
@@ -290,19 +290,19 @@ kws_search_trans(kws_search_t * kwss)
     for (keyword_iter = 0; keyword_iter < kwss->n_keyphrases; keyword_iter++) {
         kws_keyword_t *keyword;
         hmm_t *last_hmm;
-        
+
         keyword = &kwss->keyphrases[keyword_iter];
         last_hmm = kws_nth_hmm(keyword, keyword->n_hmms - 1);
         if (hmm_is_active(last_hmm)
             && hmm_out_score(pl_best_hmm) BETTER_THAN WORST_SCORE) {
-            
-            if (hmm_out_score(last_hmm) - hmm_out_score(pl_best_hmm) 
+
+            if (hmm_out_score(last_hmm) - hmm_out_score(pl_best_hmm)
                 >= keyword->threshold) {
 
                 int32 prob = hmm_out_score(last_hmm) - hmm_out_score(pl_best_hmm);
-                kws_detections_add(kwss->detections, keyword->word, 
-                                  hmm_out_history(last_hmm), 
-                                  kwss->frame, prob, 
+                kws_detections_add(kwss->detections, keyword->word,
+                                  hmm_out_history(last_hmm),
+                                  kwss->frame, prob,
                                   hmm_out_score(last_hmm));
             } /* keyword is spotted */
         } /* last hmm of keyword is active */
@@ -325,7 +325,7 @@ kws_search_trans(kws_search_t * kwss)
             hmm_t *pred_hmm = kws_nth_hmm(keyword, i - 1);
 	    hmm_t *hmm = kws_nth_hmm(keyword, i);
 
-            if (hmm_is_active(pred_hmm)) {    
+            if (hmm_is_active(pred_hmm)) {
                 if (!hmm_is_active(hmm)
                     || hmm_out_score(pred_hmm) BETTER_THAN
                     hmm_in_score(hmm))
@@ -349,7 +349,7 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
     lineiter_t *li;
     char *line;
     int i;
-    
+
     if ((list_file = fopen(keyfile, "r")) == NULL) {
         E_ERROR_SYSTEM("Failed to open keyword file '%s'", keyfile);
         return -1;
@@ -377,7 +377,7 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
                 begin--;
             line[end] = 0;
 	    line[begin] = 0;
-    	    kwss->keyphrases[i].threshold = (int32) logmath_log(kwss->base.acmod->lmath, atof_c(line + begin + 1)) 
+    	    kwss->keyphrases[i].threshold = (int32) logmath_log(kwss->base.acmod->lmath, atof_c(line + begin + 1))
                                           >> SENSCR_SHIFT;
         }
         kwss->keyphrases[i].word = ckd_salloc(line);
@@ -422,6 +422,8 @@ kws_search_init(const char *name,
     E_INFO("KWS(beam: %d, plp: %d, default threshold %d, delay %d)\n",
            kwss->beam, kwss->plp, kwss->def_threshold, kwss->delay);
 
+    int32 ignore_missing = cmd_ln_boolean(config, "-kws_ignore_missing");
+
     if (keyfile) {
 	if (kws_search_read_list(kwss, keyfile) < 0) {
 	    E_ERROR("Failed to create kws search\n");
@@ -436,7 +438,7 @@ kws_search_init(const char *name,
     }
 
     /* Check if all words are in dictionary */
-    if (!kws_search_check_dict(kwss)) {
+    if (!kws_search_check_dict(kwss, ignore_missing)) {
         kws_search_free(ps_search_base(kwss));
         return NULL;
     }
@@ -640,11 +642,11 @@ kws_search_hyp(ps_search_t * search, int32 * out_score,
     if (search->hyp_str)
         ckd_free(search->hyp_str);
     search->hyp_str = kws_detections_hyp_str(kwss->detections, kwss->frame, kwss->delay);
-    
+
     return search->hyp_str;
 }
 
-char * 
+char *
 kws_search_get_keywords(ps_search_t * search)
 {
     int i, c, len;
@@ -652,12 +654,12 @@ kws_search_get_keywords(ps_search_t * search)
     char* line;
 
     kwss = (kws_search_t *) search;
-    
+
     len = 0;
     for (i = 0; i < kwss->n_keyphrases; i++)
         len += strlen(kwss->keyphrases[i].word);
     len += kwss->n_keyphrases;
-    
+
     c = 0;
     line = (char *)ckd_calloc(len, sizeof(*line));
     for (i = 0; i < kwss->n_keyphrases; i++) {
