@@ -422,7 +422,7 @@ kws_search_init(const char *name,
     E_INFO("KWS(beam: %d, plp: %d, default threshold %d, delay %d)\n",
            kwss->beam, kwss->plp, kwss->def_threshold, kwss->delay);
 
-    int32 ignore_missing = cmd_ln_boolean(config, "-kws_ignore_missing");
+    int32 ignore_missing = cmd_ln_boolean_r(config, "-kws_ignore_missing");
 
     if (keyfile) {
 	if (kws_search_read_list(kwss, keyfile) < 0) {
