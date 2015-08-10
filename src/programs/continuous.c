@@ -196,7 +196,6 @@ recognize_from_file()
         if (hyp != NULL) {
     	    printf("%s\n", hyp);
     	    if (print_times) {
-    		printf("!!! here\n");
     		print_word_times();
 	    }
 	}
