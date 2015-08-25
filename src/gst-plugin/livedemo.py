@@ -3,18 +3,25 @@
 # Copyright (c) 2008 Carnegie Mellon University.
 #
 # You may modify and redistribute this file under the same terms as
-# the CMU Sphinx system.  See
-# http://cmusphinx.sourceforge.net/html/LICENSE for more information.
+# the CMU Sphinx system. See LICENSE for more information.
 
-import pygtk
-pygtk.require('2.0')
+
+from gi import pygtkcompat
+import gi
+
+gi.require_version('Gst', '1.0')
+from gi.repository import GObject, Gst
+GObject.threads_init()
+Gst.init(None)
+    
+gst = Gst
+    
+print("Using pygtkcompat and Gst from gi")
+
+pygtkcompat.enable() 
+pygtkcompat.enable_gtk(version='3.0')
+
 import gtk
-
-import gobject
-import pygst
-pygst.require('1.0')
-gobject.threads_init()
-import gst
 
 class DemoApp(object):
     """GStreamer/PocketSphinx Demo Application"""
@@ -31,7 +38,7 @@ class DemoApp(object):
         self.window.set_border_width(10)
         vbox = gtk.VBox()
         self.textbuf = gtk.TextBuffer()
-        self.text = gtk.TextView(self.textbuf)
+        self.text = gtk.TextView(buffer=self.textbuf)
         self.text.set_wrap_mode(gtk.WRAP_WORD)
         vbox.pack_start(self.text)
         self.button = gtk.ToggleButton("Speak")
@@ -42,26 +49,26 @@ class DemoApp(object):
 
     def init_gst(self):
         """Initialize the speech components"""
-        self.pipeline = gst.parse_launch('gconfaudiosrc ! audioconvert ! audioresample '
+        self.pipeline = gst.parse_launch('autoaudiosrc ! audioconvert ! audioresample '
                                          + '! pocketsphinx configured=true ! fakesink')
         bus = self.pipeline.get_bus()
         bus.add_signal_watch()
         bus.connect('message::element', self.element_message)
 
-        self.pipeline.set_state(gst.STATE_PAUSED)
+        self.pipeline.set_state(gst.State.PAUSED)
 
     def element_message(self, bus, msg):
         """Receive element messages from the bus."""
-        msgtype = msg.structure.get_name()
+        msgtype = msg.get_structure().get_name()
         if msgtype != 'pocketsphinx':
-          return
+            return
 
-        if msg.structure['final']:
-            self.final_result(msg.structure['hypothesis'], msg.structure['confidence'])
-            self.pipeline.set_state(gst.STATE_PAUSED)
+        if msg.get_structure()['final']:
+            self.final_result(msg.get_structure()['hypothesis'], msg.get_structure()['confidence'])
+            self.pipeline.set_state(gst.State.PAUSED)
             self.button.set_active(False)
-        elif msgtype == 'result':
-            self.partial_result(msg.structure['hypothesis'])
+        elif msg.get_structure()['hypothesis']:
+            self.partial_result(msg.get_structure()['hypothesis'])
 
     def partial_result(self, hyp):
         """Delete any previous selection, insert text and select it."""
@@ -87,11 +94,10 @@ class DemoApp(object):
         """Handle button presses."""
         if button.get_active():
             button.set_label("Stop")
-            self.pipeline.set_state(gst.STATE_PLAYING)
+            self.pipeline.set_state(gst.State.PLAYING)
         else:
             button.set_label("Speak")
-            vader = self.pipeline.get_by_name('vad')
-            vader.set_property('silent', True)
+            self.pipeline.set_state(gst.State.PAUSED)
 
 app = DemoApp()
 gtk.main()
