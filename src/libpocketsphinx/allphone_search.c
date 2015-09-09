@@ -62,7 +62,7 @@ allphone_search_prob(ps_search_t * search)
 }
 
 static void
-allphone_backtrace(allphone_search_t * allphs, int32 f);
+allphone_backtrace(allphone_search_t * allphs, int32 f, int32 *out_score);
 
 static void
 allphone_search_seg_free(ps_seg_t * seg)
@@ -110,7 +110,7 @@ allphone_search_seg_iter(ps_search_t * search, int32 * out_score)
     allphone_search_t *allphs = (allphone_search_t *) search;
     phseg_iter_t *iter;
 
-    allphone_backtrace(allphs, allphs->frame - 1);
+    allphone_backtrace(allphs, allphs->frame - 1, out_score);
     if (allphs->segments == NULL)
         return NULL;
     
@@ -774,7 +774,7 @@ allphone_clear_segments(allphone_search_t * allphs)
 }
 
 static void
-allphone_backtrace(allphone_search_t * allphs, int32 f)
+allphone_backtrace(allphone_search_t * allphs, int32 f, int32 *out_score)
 {
     int32 best, hist_idx, best_idx;
     int32 frm, last_frm;
@@ -815,6 +815,9 @@ allphone_backtrace(allphone_search_t * allphs, int32 f)
     if (best_idx < 0)
         return;
 
+    if (out_score)
+        *out_score = best;
+
     /* Backtrace */
     while (best_idx > 0) {
         h = blkarray_list_get(allphs->history, best_idx);
@@ -854,7 +857,7 @@ allphone_search_finish(ps_search_t * search)
          n_hist, (allphs->frame > 0) ? n_hist / allphs->frame : 0);
 
     /* Now backtrace. */
-    allphone_backtrace(allphs, allphs->frame - 1);
+    allphone_backtrace(allphs, allphs->frame - 1, NULL);
 
     /* Print out some statistics. */
     ptmr_stop(&allphs->perf);
@@ -892,7 +895,7 @@ allphone_search_hyp(ps_search_t * search, int32 * out_score,
         ckd_free(search->hyp_str);
     search->hyp_str = NULL;
 
-    allphone_backtrace(allphs, allphs->frame - 1);
+    allphone_backtrace(allphs, allphs->frame - 1, out_score);
     if (allphs->segments == NULL) {
         return NULL;
     }
