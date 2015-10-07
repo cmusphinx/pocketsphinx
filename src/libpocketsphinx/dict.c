@@ -44,6 +44,8 @@
 
 /* Local headers. */
 #include "dict.h"
+#include <sphinxbase/ngram_model.h>
+#include <sphinxbase/array_heap.h>
 
 
 #define DELIM	" \t\n"         /* Set of field separator characters */
@@ -249,18 +251,20 @@ dict_write(dict_t *dict, char const *filename, char const *format)
 
 
 dict_t *
-dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
+dict_init(cmd_ln_t *config, bin_mdef_t * mdef, logmath_t *logmath)
 {
-    FILE *fp, *fp2;
+    FILE *fp, *fp2, *fp3;
     int32 n;
     lineiter_t *li;
     dict_t *d;
     s3cipid_t sil;
     char const *dictfile = NULL, *fillerfile = NULL;
+    char *arpafile = NULL;
 
     if (config) {
         dictfile = cmd_ln_str_r(config, "-dict");
         fillerfile = cmd_ln_str_r(config, "-fdict");
+        arpafile = string_join(dictfile, ".dmp",  NULL);
     }
 
     /*
@@ -303,6 +307,24 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
      * Also check for type size restrictions.
      */
     d = (dict_t *) ckd_calloc(1, sizeof(dict_t));       /* freed in dict_free() */
+
+    if (arpafile) {
+        fp3 = NULL;
+        if ((fp3 = fopen(arpafile, "r")) == NULL) {
+            E_INFO("No arpa model found.\n");
+            d->ngram_g2p_model = NULL;
+        } else {
+            fclose(fp3);
+            ngram_model_t *ngram_g2p_model = ngram_model_read(NULL,arpafile,NGRAM_AUTO,logmath);
+            if (!ngram_g2p_model) {
+                E_ERROR("Arpa model is broken\n");
+                return NULL;
+            }
+            d->ngram_g2p_model = ngram_g2p_model;
+        }
+        ckd_free(arpafile);
+    }
+
     d->refcnt = 1;
     d->max_words =
         (n + S3DICT_INC_SZ < MAX_S3WID) ? n + S3DICT_INC_SZ : MAX_S3WID;
@@ -490,6 +512,9 @@ dict_free(dict_t * d)
         hash_table_free(d->ht);
     if (d->mdef)
         bin_mdef_free(d->mdef);
+    if (d->ngram_g2p_model)
+        ngram_model_free(d->ngram_g2p_model);
+
     ckd_free((void *) d);
 
     return 0;
@@ -502,4 +527,241 @@ dict_report(dict_t * d)
     E_INFO_NOFN("Max word: %d\n", d->max_words);
     E_INFO_NOFN("No of word: %d\n", d->n_word);
     E_INFO_NOFN("\n");
+}
+
+typedef struct dict_g2p_tree_element_s {
+    int32 wid;
+    int32 probability;
+    struct dict_g2p_tree_element_s *parent;
+} dict_g2p_tree_element_t;
+
+#define U8_IS_LEAD(c) ((uint8_t)((c)-0xc0)<0x3e)
+
+#define U8_IS_SINGLE(c) (((c)&0x80)==0)
+
+#define U8_IS_TRAIL(c) (((c)&0xc0)==0x80)
+
+uint32 dict_utf8_length(const char* string) {
+    uint32 length = 0;
+    while (*string) {
+        if (U8_IS_LEAD(*string) || U8_IS_SINGLE(*string)) {
+            length++;
+        }
+        string++;
+    }
+    return length;
+}
+
+dict_g2p_tree_element_t *dict_g2p_tree_element_new(int32 wid, int32 probability, dict_g2p_tree_element_t* parent) {
+    dict_g2p_tree_element_t *tree_element = ckd_malloc(sizeof(dict_g2p_tree_element_t));
+    tree_element->wid = wid;
+    tree_element->parent = parent;
+    tree_element->probability = probability;
+    return tree_element;
+}
+
+int
+dict_graphemes_fit_count(const char *word, const char* unigram_text) {
+    int32 count = 0;
+
+    while (*word && *unigram_text && *unigram_text != '<' && *unigram_text != '}') {
+        if (*unigram_text == '|') {
+            unigram_text++;
+        }
+        if (*word != *unigram_text) {
+            return 0;
+        }
+        if (U8_IS_SINGLE(*word) || U8_IS_LEAD(*word)) {
+            count++;
+        }
+        unigram_text++;
+        word++;
+    }
+    return count;
+}
+
+char *
+dict_unwind_phoneme(ngram_model_t *model, dict_g2p_tree_element_t *tree_element) {
+    int32 i, j, size = 0;
+    char* phoneme;
+    const char* unigram_phoneme;
+    dict_g2p_tree_element_t *element = tree_element;
+
+    while (element) {
+        unigram_phoneme = strchr(ngram_word(model, element->wid), '}') + 1;
+        if (strcmp(unigram_phoneme, "_") != 0) {
+            size += strlen(unigram_phoneme) + 1;
+        }
+        element = element->parent;
+    }
+
+    phoneme = ckd_malloc(size);
+    phoneme[size - 1] = '\0';
+    i = size - 2;
+
+    element = tree_element;
+    while (element) {
+        unigram_phoneme = strchr(ngram_word(model, element->wid), '}') + 1;
+        if (strcmp(unigram_phoneme, "_") != 0) {
+            i -= strlen(unigram_phoneme);
+            j = i + 1;
+            while (*unigram_phoneme) {
+                phoneme[j] = *unigram_phoneme == '|' ? ' ' : *unigram_phoneme;
+                j++;
+                unigram_phoneme++;
+            }
+            if (i >= 0) {
+                phoneme[i] = ' ';
+            }
+            i--;
+        }
+        element = element->parent;
+    }
+    return phoneme;
+}
+
+void
+dict_try_add_tree_element(ngram_model_t *model, int32 wid, int32 *history, int32 history_size,
+        dict_g2p_tree_element_t *tree_element_from, array_heap_t *heap) {
+    int32 nused;
+    int32 probability = ngram_ng_prob(model, wid, history, history_size, &nused);
+    if (tree_element_from) {
+        probability += tree_element_from->probability;
+    }
+    if (!array_heap_full(heap)) {
+        array_heap_add(heap, probability, dict_g2p_tree_element_new(wid, probability, tree_element_from));
+    } else if (array_heap_min_key(heap) < probability) {
+        ckd_free(array_heap_pop(heap));
+        array_heap_add(heap, probability, dict_g2p_tree_element_new(wid, probability, tree_element_from));
+    }
+}
+
+int32
+dict_unwind_history(int32 *history, dict_g2p_tree_element_t *tree_element, int32 start_wid) {
+    int32 i = 0;
+
+    while (tree_element) {
+        history[i] = tree_element->wid;
+        tree_element = tree_element->parent;
+        i++;
+    }
+    history[i] = start_wid;
+    return i + 1;
+}
+
+void
+dict_try_add_tree_elements(ngram_model_t *model, int32 wid, array_heap_t *previous, array_heap_t *heap_to_fill,
+        int32 *history_buffer, int32 start_wid) {
+    int32 i, history_size;
+
+    if (previous == NULL) {
+        history_buffer[0] = start_wid;
+        dict_try_add_tree_element(model, wid, history_buffer, 1, NULL, heap_to_fill);
+    } else {
+        for (i = 0; i < previous->size; i++) {
+            dict_g2p_tree_element_t *tree_element = array_heap_element(previous, i);
+            history_size = dict_unwind_history(history_buffer, tree_element, start_wid);
+            dict_try_add_tree_element(model, wid, history_buffer, history_size, tree_element, heap_to_fill);
+        }
+    }
+}
+
+char *
+dict_g2p(ngram_model_t *model, const char *grapheme, uint32 search_width) {
+    int32 i, j, n, wid, fit_count;
+    array_heap_t **tree_table;
+    const char* unigram_text;
+    char *phoneme;
+    const char *current_char_p;
+    int32 *history_buffer;
+    int32 start_wid, end_wid;
+    const uint32 total_unigrams = *ngram_model_get_counts(model);
+
+    n = dict_utf8_length(grapheme);
+    tree_table = ckd_calloc(n + 1, sizeof(array_heap_t *));
+    for (i = 0; i < n; i++) {
+        tree_table[i] = array_heap_new(search_width);
+    }
+    tree_table[n] = array_heap_new(1);
+    history_buffer = ckd_calloc(n + 1, sizeof(int32));
+    start_wid = ngram_wid(model, "<s>");
+    end_wid = ngram_wid(model, "</s>");
+
+    current_char_p = grapheme;
+    for (i = 0; i < n; i++) {
+        for (wid = 0; wid < total_unigrams; wid++) {
+            unigram_text = ngram_word(model, wid);
+            fit_count = dict_graphemes_fit_count(current_char_p, unigram_text);
+            if (fit_count != 0) {
+                dict_try_add_tree_elements(model, wid, i == 0 ? NULL : tree_table[i - 1], tree_table[i + fit_count - 1],
+                        history_buffer, start_wid);
+            }
+        }
+        current_char_p++;
+        while (*current_char_p && U8_IS_TRAIL(*current_char_p)) {
+            current_char_p++;
+        }
+    }
+
+    dict_try_add_tree_elements(model, end_wid, tree_table[n - 1], tree_table[n], history_buffer, start_wid);
+
+    phoneme = (tree_table[n]->size == 0) ? NULL : dict_unwind_phoneme(model,
+            ((dict_g2p_tree_element_t*) array_heap_element(tree_table[n], 0))->parent);
+
+    for (i = 0; i <= n; i++) {
+        for (j = 0; j < tree_table[i]->size; j++) {
+            ckd_free(array_heap_element(tree_table[i], j));
+        }
+        array_heap_free(tree_table[i]);
+    }
+    ckd_free(tree_table);
+    ckd_free(history_buffer);
+    return phoneme;
+}
+
+/**
+ * This functions just receives the dict lacking word from fsg_search, call the main function dict_g2p, and then add the word to the memory dict.
+ * The second part of this function is the same as pocketsphinx.c: https://github.com/cmusphinx/pocketsphinx/blob/ba6bd21b3601339646d2db6d2297d02a8a6b7029/src/libpocketsphinx/pocketsphinx.c#L816
+ */
+int
+dict_add_g2p_word(dict_t *dict, char const *word)
+{
+    int32 wid = 0;
+    s3cipid_t *pron;
+    char **phonestr, *tmp;
+    int np, i;
+    char *phones;
+
+    phones = dict_g2p(dict->ngram_g2p_model, word, G2P_SEARCH_WIDTH);
+    if (phones == NULL)
+        return 0;
+
+    E_INFO("Adding phone %s for word %s \n",  phones, word);
+    tmp = ckd_salloc(phones);
+    np = str2words(tmp, NULL, 0);
+    phonestr = ckd_calloc(np, sizeof(*phonestr));
+    str2words(tmp, phonestr, np);
+    pron = ckd_calloc(np, sizeof(*pron));
+    for (i = 0; i < np; ++i) {
+        pron[i] = bin_mdef_ciphone_id(dict->mdef, phonestr[i]);
+        if (pron[i] == -1) {
+            E_ERROR("Unknown phone %s in phone string %s\n",
+                    phonestr[i], tmp);
+            ckd_free(phonestr);
+            ckd_free(tmp);
+            ckd_free(pron);
+            ckd_free(phones);
+            return -1;
+        }
+    }
+    ckd_free(phonestr);
+    ckd_free(tmp);
+    ckd_free(phones);
+    if ((wid = dict_add_word(dict, word, pron, np)) == -1) {
+        ckd_free(pron);
+        return -1;
+    }
+    ckd_free(pron);
+
+    return wid;
 }

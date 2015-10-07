@@ -20,7 +20,7 @@ main(int argc, char *argv[])
 			     "-fdict", MODELDIR "/en-us/en-us/noisedict",
 			     NULL);
 	mdef = bin_mdef_read(NULL, MODELDIR "/en-us/en-us/mdef");
-	dict = dict_init(config, mdef);
+	dict = dict_init(config, mdef, NULL);
 	d2p = dict2pid_build(mdef, dict);
 
 	al = ps_alignment_init(d2p);

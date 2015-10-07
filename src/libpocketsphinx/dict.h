@@ -44,6 +44,7 @@
 
 /* SphinxBase headers. */
 #include <sphinxbase/hash_table.h>
+#include <sphinxbase/ngram_model.h>
 
 /* Local headers. */
 #include "s3types.h"
@@ -86,6 +87,7 @@ typedef struct {
     s3wid_t finishwid;	/**< FOR INTERNAL-USE ONLY */
     s3wid_t silwid;	/**< FOR INTERNAL-USE ONLY */
     int nocase;
+    ngram_model_t *ngram_g2p_model;
 } dict_t;
 
 
@@ -101,7 +103,8 @@ typedef struct {
  * Return ptr to dict_t if successful, NULL otherwise.
  */
 dict_t *dict_init(cmd_ln_t *config, /**< Configuration (-dict, -fdict, -dictcase) or NULL */
-                  bin_mdef_t *mdef  /**< For looking up CI phone IDs (or NULL) */
+                  bin_mdef_t *mdef,  /**< For looking up CI phone IDs (or NULL) */
+                  logmath_t *logmath // To load ngram_model for g2p load
     );
 
 /**
@@ -180,6 +183,8 @@ const char *dict_ciphone_str(dict_t *d,	/**< In: Dictionary to look up */
 #define S3_SILENCE_WORD		"<sil>"
 #define S3_UNKNOWN_WORD		"<UNK>"
 
+#define G2P_SEARCH_WIDTH    100
+
 /**
  * If the given word contains a trailing "(....)" (i.e., a Sphinx-II style alternative
  * pronunciation specification), strip that trailing portion from it.  Note that the given
@@ -202,6 +207,10 @@ int dict_free(dict_t *d);
 /** Report a dictionary structure */
 void dict_report(dict_t *d /**< A dictionary structure */
     );
+
+char *dict_g2p(ngram_model_t *model, const char *grapheme, uint32 search_width);
+
+int dict_add_g2p_word(dict_t * dict, char const *word);
 
 #ifdef __cplusplus
 }
