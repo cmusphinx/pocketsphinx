@@ -63,12 +63,12 @@ class DemoApp(object):
         if msgtype != 'pocketsphinx':
             return
 
-        if msg.get_structure()['final']:
-            self.final_result(msg.get_structure()['hypothesis'], msg.get_structure()['confidence'])
+        if msg.get_structure().get_value('final'):
+            self.final_result(msg.get_structure().get_value('hypothesis'), msg.get_structure().get_value('confidence'))
             self.pipeline.set_state(gst.State.PAUSED)
             self.button.set_active(False)
-        elif msg.get_structure()['hypothesis']:
-            self.partial_result(msg.get_structure()['hypothesis'])
+        elif msg.get_structure().get_value('hypothesis'):
+            self.partial_result(msg.get_structure().get_value('hypothesis'))
 
     def partial_result(self, hyp):
         """Delete any previous selection, insert text and select it."""
