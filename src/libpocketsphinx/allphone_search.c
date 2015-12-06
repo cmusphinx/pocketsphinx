@@ -490,10 +490,6 @@ phmm_trans(allphone_search_t * allphs, int32 best,
             /* No LM, just use uniform (insertion penalty). */
             if (!allphs->lm)
                 tscore = allphs->inspen;
-            /* If they are not in the LM, kill this
-             * transition. */
-            else if (ci2lmwid[to->ci] == NGRAM_INVALID_WID)
-                continue;
             else {
                 int32 n_used;
                 if (h->hist > 0) {
@@ -552,14 +548,19 @@ allphone_search_init(const char *name,
     phmm_build(allphs);
 
     if (lm) {
-        //language model is defined
-        allphs->lm = ngram_model_set_init(config, &lm, &lmname, NULL, 1);
-        if (!allphs->lm) {
-            E_ERROR
-                ("Failed to initialize ngram model set for phoneme decoding");
-            allphone_search_free((ps_search_t *) allphs);
-            return NULL;
-        }
+	int32 silwid;
+	
+        allphs->lm = ngram_model_retain(lm);
+        
+        silwid = ngram_wid(allphs->lm, bin_mdef_ciphone_str(mdef,
+                                                            mdef_silphone
+                                                            (mdef)));
+	if (silwid == ngram_unknown_wid(allphs->lm)) {
+	    E_ERROR("Phonetic LM does not have SIL phone in vocabulary\n");
+	    allphone_search_free((ps_search_t *) allphs);
+	    return NULL;
+	}
+        
         allphs->ci2lmwid =
             (int32 *) ckd_calloc(mdef->n_ciphone,
                                  sizeof(*allphs->ci2lmwid));
@@ -567,14 +568,9 @@ allphone_search_init(const char *name,
             allphs->ci2lmwid[i] =
                 ngram_wid(allphs->lm,
                           (char *) bin_mdef_ciphone_str(mdef, i));
-            /* Map filler phones to silence if not found */
-            if (allphs->ci2lmwid[i] == NGRAM_INVALID_WID
-                && bin_mdef_ciphone_str(mdef, i))
-                allphs->ci2lmwid[i] =
-                    ngram_wid(allphs->lm,
-                              (char *) bin_mdef_ciphone_str(mdef,
-                                                            mdef_silphone
-                                                            (mdef)));
+            /* Map filler phones and other missing phones to silence if not found */
+            if (allphs->ci2lmwid[i] == ngram_unknown_wid(allphs->lm))
+                allphs->ci2lmwid[i] = silwid;
         }
     }
     else {
@@ -662,8 +658,8 @@ allphone_search_free(ps_search_t * search)
         ngram_model_free(allphs->lm);
     if (allphs->ci2lmwid)
         ckd_free(allphs->ci2lmwid);
-
-    blkarray_list_free(allphs->history);
+    if (allphs->history)
+        blkarray_list_free(allphs->history);
 
     ckd_free(allphs);
 }
