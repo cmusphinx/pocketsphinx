@@ -528,7 +528,6 @@ allphone_search_init(const char *name,
     int i;
     bin_mdef_t *mdef;
     allphone_search_t *allphs;
-    static char *lmname = "default";
 
     allphs = (allphone_search_t *) ckd_calloc(1, sizeof(*allphs));
     ps_search_init(ps_search_base(allphs), &allphone_funcs, PS_SEARCH_TYPE_ALLPHONE, name, config, acmod,
