@@ -1,15 +1,11 @@
 package test;
 
-import static org.junit.Assert.*;
-
-import org.junit.Test;
-
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.URL;
-import javax.sound.sampled.*;
 import java.nio.*;
 
 import edu.cmu.pocketsphinx.Decoder;
@@ -23,36 +19,25 @@ public class DecoderTest {
         System.loadLibrary("pocketsphinx_jni");
     }
 
-    @Test
-    public void testDecodeRaw() throws IOException, UnsupportedAudioFileException {
+    public static void main(String args[]) throws IOException {
         Config c = Decoder.defaultConfig();
         c.setString("-hmm", "../../model/en-us/en-us");
         c.setString("-lm", "../../model/en-us/en-us.lm.bin");
         c.setString("-dict", "../../model/en-us/cmudict-en-us.dict");
         Decoder d = new Decoder(c);
-        AudioInputStream ais = null;
 
-        URL testwav = new URL("file:../../test/data/goforward.wav");
-        AudioInputStream tmp = AudioSystem.getAudioInputStream(testwav);
-        // Convert it to the desired audio format for PocketSphinx.
-        AudioFormat targetAudioFormat =
-            new AudioFormat((float)c.getFloat("-samprate"),
-                                16, 1, true, true);
-        ais = AudioSystem.getAudioInputStream(targetAudioFormat, tmp);
+        FileInputStream ais = new FileInputStream(new File("../../test/data/goforward.raw"));
 
         d.startUtt();
         d.setRawdataSize(300000);
         byte[] b = new byte[4096];
-        try {
-            int nbytes;
-            while ((nbytes = ais.read(b)) >= 0) {
-                ByteBuffer bb = ByteBuffer.wrap(b, 0, nbytes);
-                short[] s = new short[nbytes/2];
-                bb.asShortBuffer().get(s);
-                d.processRaw(s, nbytes/2, false, false);
-            }
-        } catch (IOException e) {
-            fail("Error when reading goforward.wav" + e.getMessage());
+        int nbytes;
+        while ((nbytes = ais.read(b)) >= 0) {
+            ByteBuffer bb = ByteBuffer.wrap(b, 0, nbytes);
+            bb.order(ByteOrder.LITTLE_ENDIAN);
+            short[] s = new short[nbytes/2];
+            bb.asShortBuffer().get(s);
+            d.processRaw(s, nbytes/2, false, false);
         }
         d.endUtt();
         System.out.println(d.hyp().getHypstr());

@@ -83,11 +83,8 @@ typedef ngram_model_t NGramModelSet;
 #endif
 
 %begin %{
+#include <stdbool.h>
 #include <pocketsphinx.h>
-
-typedef int bool;
-#define false 0
-#define true 1
 
 typedef ps_decoder_t Decoder;
 typedef ps_decoder_t SegmentList;
@@ -138,7 +135,7 @@ typedef struct {} SegmentList;
 
 %extend Hypothesis {
     Hypothesis(char const *hypstr, int best_score, int prob) {
-        Hypothesis *h = ckd_malloc(sizeof *h);
+        Hypothesis *h = (Hypothesis *)ckd_malloc(sizeof *h);
         if (hypstr)
             h->hypstr = ckd_salloc(hypstr);
         else
@@ -161,7 +158,7 @@ typedef struct {} SegmentList;
 	Segment *seg;
 	if (!itor)
 	    return NULL;
-	seg = ckd_malloc(sizeof(Segment));
+	seg = (Segment *)ckd_malloc(sizeof(Segment));
 	seg->word = ckd_salloc(ps_seg_word(itor));
 	seg->prob = ps_seg_prob(itor, &(seg->ascore), &(seg->lscore), &(seg->lback));
 	ps_seg_frames(itor, &seg->start_frame, &seg->end_frame);
@@ -179,7 +176,7 @@ typedef struct {} SegmentList;
 	NBest *nbest;
 	if (!itor)
 	    return NULL;
-	nbest = ckd_malloc(sizeof(NBest));
+	nbest = (NBest *)ckd_malloc(sizeof(NBest));
 	nbest->hypstr = ckd_salloc(ps_nbest_hyp(itor, &(nbest->score)));
 	return nbest;
     }
