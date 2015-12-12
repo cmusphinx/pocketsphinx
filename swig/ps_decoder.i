@@ -130,6 +130,13 @@
         ckd_free_2d(feats);
         return *errcode;
     }
+#elif SWIGJAVASCRIPT
+    int process_raw(SWIG_Object ptr, bool no_search, bool full_utt,
+                int *errcode) {
+	int16* data = (int16*) node::Buffer::Data(ptr);
+	size_t length = node::Buffer::Length(ptr) / sizeof(int16);
+        return *errcode = ps_process_raw($self, data, length, no_search, full_utt);
+    }
 #else
     int process_raw(const int16 *SDATA, size_t NSAMP, bool no_search, bool full_utt,
                 int *errcode) {

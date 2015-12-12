@@ -82,6 +82,14 @@ typedef ngram_model_t NGramModelSet;
 %}
 #endif
 
+#if SWIGJAVASCRIPT
+%begin %{
+#include <v8.h>
+#include <node.h>
+#include <node_buffer.h>
+%}
+#endif
+
 %begin %{
 #include <stdbool.h>
 #include <pocketsphinx.h>
