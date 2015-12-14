@@ -137,10 +137,15 @@
 	size_t length = node::Buffer::Length(ptr) / sizeof(int16);
         return *errcode = ps_process_raw($self, data, length, no_search, full_utt);
     }
-#else
+#elif SWIGJAVA
     int process_raw(const int16 *SDATA, size_t NSAMP, bool no_search, bool full_utt,
                 int *errcode) {
         return *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
+    }
+#elif SWIGRUBY
+    int process_raw(const char* STRING, size_t SIZE, bool no_search, bool full_utt,
+                int *errcode) {
+        return *errcode = ps_process_raw($self, (const int16 *)STRING, SIZE / 2, no_search, full_utt);
     }
 #endif
 
@@ -241,6 +246,16 @@
         return ps_get_n_frames($self);
     }
 
+#if SWIGRUBY
+    SegmentIterator *seg() {
+	int32 best_score;
+	return new_SegmentIterator(ps_seg_iter($self, &best_score));;
+    }
+    
+    NBestIterator *nbest() {
+	return new_NBestIterator(ps_nbest_next(ps_nbest($self, 0, -1, NULL, NULL)));;
+    }
+#else
     SegmentList *seg() {
 	return $self;
     }
@@ -248,4 +263,5 @@
     NBestList *nbest() {
 	return $self;
     }
+#endif
 }
