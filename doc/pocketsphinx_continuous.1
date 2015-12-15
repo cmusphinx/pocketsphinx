@@ -155,7 +155,7 @@ Minimum number of end frames for a word to be searched in fwdflat search
 Language model probability weight for flat lexicon (2nd pass) decoding
 .TP
 .B \-fwdflatsfwin
-Window of frames in lattice to search for successor words in fwdflat search 
+Window of frames in lattice to search for successor words in fwdflat search
 .TP
 .B \-fwdflatwbeam
 Beam width applied to word exits in second-pass flat search
@@ -192,6 +192,9 @@ Phone loop probability for keyword spotting
 .TP
 .B \-kws_threshold
 Threshold for p(hyp)/p(alternatives) ratio
+.TP
+B \-kws_ignore_missing
+Ignore words missing from dictionary
 .TP
 .B \-latsize
 Initial backpointer table size
