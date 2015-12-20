@@ -1,6 +1,6 @@
 var fs = require('fs');
 
-var ps = require('.').ps;
+var ps = require('pocketsphinx').ps;
 
 modeldir = "../../model/en-us/"
 

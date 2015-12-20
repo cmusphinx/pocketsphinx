@@ -1,0 +1,17 @@
+Pocketsphinx is available in node with pocketsphinx module
+
+https://www.npmjs.com/package/pocketsphinx
+
+To install it type
+
+   npm install -g pocketsphinx
+
+then
+
+   node test.js
+
+Requirements include latest pocketsphinx, sphinxbase and swig 3.0
+
+Current module simply wraps pocketsphinx API as described in our swig files, in the future
+we might add asyncroneous extensions for the pocketsphinx API so recognition would not
+block event loop.
