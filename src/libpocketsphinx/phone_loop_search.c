@@ -50,7 +50,7 @@ static int phone_loop_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_
 static void phone_loop_search_free(ps_search_t *search);
 static char const *phone_loop_search_hyp(ps_search_t *search, int32 *out_score, int32 *out_is_final);
 static int32 phone_loop_search_prob(ps_search_t *search);
-static ps_seg_t *phone_loop_search_seg_iter(ps_search_t *search, int32 *out_score);
+static ps_seg_t *phone_loop_search_seg_iter(ps_search_t *search);
 
 static ps_searchfuncs_t phone_loop_search_funcs = {
     /* start: */  phone_loop_search_start,
@@ -360,7 +360,7 @@ phone_loop_search_prob(ps_search_t *search)
 }
 
 static ps_seg_t *
-phone_loop_search_seg_iter(ps_search_t *search, int32 *out_score)
+phone_loop_search_seg_iter(ps_search_t *search)
 {
     E_WARN("Hypotheses are not returned from phone loop search");
     return NULL;

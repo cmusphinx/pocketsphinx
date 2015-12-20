@@ -68,7 +68,7 @@ main(int argc, char *argv[])
     }
     TEST_EQUAL(0, strcmp("go forward ten meters",
                  fsg_search_hyp(ps_search_base(fsgs), &score, NULL)));
-    for (seg = ps_seg_iter(ps, &score); seg;
+    for (seg = ps_seg_iter(ps); seg;
          seg = ps_seg_next(seg)) {
         char const *word;
         int sf, ef;

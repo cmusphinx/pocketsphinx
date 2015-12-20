@@ -101,7 +101,7 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
     printf("%s: %s (%d, %d)\n", sname, hyp, score, prob);
     TEST_EQUAL(0, strcmp(hyp, expected));
     TEST_ASSERT(prob <= 0);
-    for (seg = ps_seg_iter(ps, &score); seg;
+    for (seg = ps_seg_iter(ps); seg;
          seg = ps_seg_next(seg)) {
         char const *word;
         int sf, ef;

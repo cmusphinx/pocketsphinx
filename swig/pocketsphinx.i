@@ -90,6 +90,7 @@ typedef ngram_model_t NGramModelSet;
 %}
 #endif
 
+
 %begin %{
 #include <stdbool.h>
 #include <pocketsphinx.h>
@@ -127,15 +128,19 @@ typedef struct {
 
 %}
 
+%nodefaultctor SegmentList;
+%nodefaultctor NBestList;
+
 sb_iterator(Segment, ps_seg, Segment)
 sb_iterator(NBest, ps_nbest, NBest)
-sb_iterable_java(SegmentList, Segment)
+sb_iterable(SegmentList, Segment, ps_seg_iter, Segment)
 sb_iterable_java(NBestList, NBest)
 
 typedef struct {} Decoder;
 typedef struct {} Lattice;
 typedef struct {} NBestList;
 typedef struct {} SegmentList;
+
 
 #ifdef HAS_DOC
 %include pydoc.i
@@ -200,17 +205,6 @@ typedef struct {} SegmentList;
     }
 }
 
-
-%extend SegmentList {
-  SegmentList(ps_decoder_t *ptr) {
-    return ptr; 
-  }
-  %newobject __iter__;
-  SegmentIterator * __iter__() {
-    int32 best_score;
-    return new_SegmentIterator(ps_seg_iter($self, &best_score));
-  }
-}
 %extend NBestList {
   NBestList(ps_decoder_t *ptr) {
     return ptr; 

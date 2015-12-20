@@ -1180,7 +1180,7 @@ ps_end_utt(ps_decoder_t *ps)
     	    E_INFO("%s (%d)\n", hyp, score);
     	    E_INFO_NOFN("%-20s %-5s %-5s %-5s %-10s %-10s %-3s\n",
                     "word", "start", "end", "pprob", "ascr", "lscr", "lback");
-    	    for (seg = ps_seg_iter(ps, &score); seg;
+    	    for (seg = ps_seg_iter(ps); seg;
         	 seg = ps_seg_next(seg)) {
     	        char const *word;
         	int sf, ef;
@@ -1233,12 +1233,12 @@ ps_get_prob(ps_decoder_t *ps)
 }
 
 ps_seg_t *
-ps_seg_iter(ps_decoder_t *ps, int32 *out_best_score)
+ps_seg_iter(ps_decoder_t *ps)
 {
     ps_seg_t *itor;
 
     ptmr_start(&ps->perf);
-    itor = ps_search_seg_iter(ps->search, out_best_score);
+    itor = ps_search_seg_iter(ps->search);
     ptmr_stop(&ps->perf);
     return itor;
 }

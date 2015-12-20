@@ -70,7 +70,7 @@
 #define __FSG_DBG__		0
 #define __FSG_DBG_CHAN__	0
 
-static ps_seg_t *fsg_search_seg_iter(ps_search_t *search, int32 *out_score);
+static ps_seg_t *fsg_search_seg_iter(ps_search_t *search);
 static ps_lattice_t *fsg_search_lattice(ps_search_t *search);
 static int fsg_search_prob(ps_search_t *search);
 
@@ -1086,13 +1086,14 @@ static ps_segfuncs_t fsg_segfuncs = {
 };
 
 static ps_seg_t *
-fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
+fsg_search_seg_iter(ps_search_t *search)
 {
     fsg_search_t *fsgs = (fsg_search_t *)search;
     fsg_seg_t *itor;
+    int32 out_score;
     int bp, bpidx, cur;
 
-    bpidx = fsg_search_find_exit(fsgs, fsgs->frame, fsgs->final, out_score, NULL);
+    bpidx = fsg_search_find_exit(fsgs, fsgs->frame, fsgs->final, &out_score, NULL);
     /* No hypothesis (yet). */
     if (bpidx <= 0)
         return NULL;
@@ -1104,7 +1105,7 @@ fsg_search_seg_iter(ps_search_t *search, int32 *out_score)
 
         if ((dag = fsg_search_lattice(search)) == NULL)
             return NULL;
-        if ((link = fsg_search_bestpath(search, out_score, TRUE)) == NULL)
+        if ((link = fsg_search_bestpath(search, &out_score, TRUE)) == NULL)
             return NULL;
         return ps_lattice_seg_iter(dag, link, 1.0);
     }

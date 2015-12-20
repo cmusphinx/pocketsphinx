@@ -454,12 +454,11 @@ ps_lattice_t *ps_get_lattice(ps_decoder_t *ps);
  * Get an iterator over the word segmentation for the best hypothesis.
  *
  * @param ps Decoder.
- * @param out_best_score Output: path score corresponding to hypothesis.
  * @return Iterator over the best hypothesis at this point in
  *         decoding.  NULL if no hypothesis is available.
  */
 POCKETSPHINX_EXPORT
-ps_seg_t *ps_seg_iter(ps_decoder_t *ps, int32 *out_best_score);
+ps_seg_t *ps_seg_iter(ps_decoder_t *ps);
 
 /**
  * Get the next segment in a word segmentation.

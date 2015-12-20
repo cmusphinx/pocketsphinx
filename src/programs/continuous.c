@@ -100,7 +100,7 @@ static void
 print_word_times()
 {
     int frame_rate = cmd_ln_int32_r(config, "-frate");
-    ps_seg_t *iter = ps_seg_iter(ps, NULL);
+    ps_seg_t *iter = ps_seg_iter(ps);
     while (iter != NULL) {
         int32 sf, ef, pprob;
         float conf;

@@ -105,12 +105,12 @@ static ps_segfuncs_t fsg_segfuncs = {
 
 
 static ps_seg_t *
-allphone_search_seg_iter(ps_search_t * search, int32 * out_score)
+allphone_search_seg_iter(ps_search_t * search)
 {
     allphone_search_t *allphs = (allphone_search_t *) search;
     phseg_iter_t *iter;
 
-    allphone_backtrace(allphs, allphs->frame - 1, out_score);
+    allphone_backtrace(allphs, allphs->frame - 1, NULL);
     if (allphs->segments == NULL)
         return NULL;
     

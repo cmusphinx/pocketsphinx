@@ -504,22 +504,23 @@ write_nbest(ps_decoder_t *ps, char const *nbestdir, char const *uttid)
 static int
 write_hypseg(FILE *fh, ps_decoder_t *ps, char const *uttid)
 {
-    int32 score, lscr, sf, ef;
-    ps_seg_t *itor = ps_seg_iter(ps, &score);
+    int32 ascr, lscr, sf, ef;
+    ps_seg_t *itor = ps_seg_iter(ps);
 
     /* Accumulate language model scores. */
-    lscr = 0;
+    lscr = 0; ascr = 0;
     while (itor) {
-        int32 ascr, wlscr;
-        ps_seg_prob(itor, &ascr, &wlscr, NULL);
+        int32 wlascr, wlscr;
+        ps_seg_prob(itor, &wlascr, &wlscr, NULL);
         lscr += wlscr;
+        ascr += wlascr;
         itor = ps_seg_next(itor);
     }
     fprintf(fh, "%s S %d T %d A %d L %d", uttid,
             0, /* "scaling factor" which is mostly useless anyway */
-            score, score - lscr, lscr);
+            ascr + lscr, ascr, lscr);
     /* Now print out words. */
-    itor = ps_seg_iter(ps, &score);
+    itor = ps_seg_iter(ps);
     while (itor) {
         char const *w = ps_seg_word(itor);
         int32 ascr, wlscr;
@@ -746,7 +747,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                 write_hypseg(hypsegfh, ps, uttid);
             }
             if (ctmfh) {
-                ps_seg_t *itor = ps_seg_iter(ps, &score);
+                ps_seg_t *itor = ps_seg_iter(ps);
                 write_ctm(ctmfh, ps, itor, uttid, frate);
             }
             if (outlatdir) {

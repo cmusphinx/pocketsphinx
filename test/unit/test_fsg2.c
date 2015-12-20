@@ -63,7 +63,7 @@ main(int argc, char *argv[])
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 		fclose(rawfh);
 	}
-	for (seg = ps_seg_iter(ps, &score); seg;
+	for (seg = ps_seg_iter(ps); seg;
 	     seg = ps_seg_next(seg)) {
 		char const *word;
 		int sf, ef;
