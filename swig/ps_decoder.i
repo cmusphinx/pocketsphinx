@@ -246,16 +246,6 @@
         return ps_get_n_frames($self);
     }
 
-#if SWIGRUBY
-    SegmentIterator *seg() {
-	int32 best_score;
-	return new_SegmentIterator(ps_seg_iter($self, &best_score));;
-    }
-    
-    NBestIterator *nbest() {
-	return new_NBestIterator(ps_nbest_next(ps_nbest($self, 0, -1, NULL, NULL)));;
-    }
-#else
     SegmentList *seg() {
 	return $self;
     }
@@ -263,5 +253,4 @@
     NBestList *nbest() {
 	return $self;
     }
-#endif
 }

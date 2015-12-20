@@ -23,3 +23,6 @@ decoder.seg().each { |seg|
     puts "#{seg.word} #{seg.start_frame} #{seg.end_frame}"
 }
 
+decoder.nbest().each(10) { |nbest|
+    puts nbest.hyp.hypstr();
+}

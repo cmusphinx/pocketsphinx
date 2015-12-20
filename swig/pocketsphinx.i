@@ -133,8 +133,8 @@ typedef struct {
 
 sb_iterator(Segment, ps_seg, Segment)
 sb_iterator(NBest, ps_nbest, NBest)
-sb_iterable(SegmentList, Segment, ps_seg_iter, Segment)
-sb_iterable(NBestList, NBest, ps_nbest, NBest)
+sb_iterable(SegmentList, Segment, ps_seg, ps_seg_iter, Segment)
+sb_iterable(NBestList, NBest, ps_nbest, ps_nbest, NBest)
 
 typedef struct {} Decoder;
 typedef struct {} Lattice;
