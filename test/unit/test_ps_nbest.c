@@ -32,13 +32,12 @@ main(int argc, char *argv[])
 	fclose(rawfh);
 	hyp = ps_get_hyp(ps, &score);
 	printf("BESTPATH: %s (%d)\n", hyp, score);
-	TEST_ASSERT(nbest = ps_nbest(ps, 0, -1, NULL, NULL));
-	n = 1;
-	while (nbest && (nbest = ps_nbest_next(nbest))) {
+
+	for (n = 1, nbest = ps_nbest(ps); nbest && n < 10; nbest = ps_nbest_next(nbest), n++) {
 		ps_seg_t *seg;
 		hyp = ps_nbest_hyp(nbest, &score);
 		printf("NBEST %d: %s (%d)\n", n, hyp, score);
-		for (seg = ps_nbest_seg(nbest, &score); seg;
+		for (seg = ps_nbest_seg(nbest); seg;
 		     seg = ps_seg_next(seg)) {
 			char const *word;
 			int sf, ef;
@@ -47,9 +46,6 @@ main(int argc, char *argv[])
 			ps_seg_frames(seg, &sf, &ef);
 			printf("%s %d %d\n", word, sf, ef);
 		}
-		if (n == 10)
-			break;
-		++n;
 	}
 	if (nbest)
 	    ps_nbest_free(nbest);

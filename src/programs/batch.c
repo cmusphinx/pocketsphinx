@@ -489,7 +489,7 @@ write_nbest(ps_decoder_t *ps, char const *nbestdir, char const *uttid)
         E_ERROR_SYSTEM("Failed to write a lattice to file %s\n", outfile);
         return -1;
     }
-    nbest = ps_nbest(ps, 0, -1, NULL, NULL);
+    nbest = ps_nbest(ps);
     for (i = 0; i < n && nbest && (nbest = ps_nbest_next(nbest)); i++) {
         hyp = ps_nbest_hyp(nbest, &score);
         fprintf(fh, "%s %d\n", hyp, score);        

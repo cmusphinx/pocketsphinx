@@ -526,22 +526,15 @@ POCKETSPHINX_EXPORT
 void ps_seg_free(ps_seg_t *seg);
 
 /**
- * Get an iterator over the best hypotheses, optionally within a
- * selected region of the utterance. Iterator is empty now, it must
- * be advanced with ps_nbest_next first. The function may also
+ * Get an iterator over the best hypotheses. The function may also
  * return a NULL which means that there is no hypothesis available for this
  * utterance.
  *
  * @param ps Decoder.
- * @param sf Start frame for N-best search (0 for whole utterance) 
- * @param ef End frame for N-best search (-1 for whole utterance) 
- * @param ctx1 First word of trigram context (NULL for whole utterance)
- * @param ctx2 First word of trigram context (NULL for whole utterance)
  * @return Iterator over N-best hypotheses or NULL if no hypothesis is available
  */
 POCKETSPHINX_EXPORT
-ps_nbest_t *ps_nbest(ps_decoder_t *ps, int sf, int ef,
-                     char const *ctx1, char const *ctx2);
+ps_nbest_t *ps_nbest(ps_decoder_t *ps);
 
 /**
  * Move an N-best list iterator forward.
@@ -571,7 +564,7 @@ char const *ps_nbest_hyp(ps_nbest_t *nbest, int32 *out_score);
  * @return Iterator over the next best hypothesis.
  */
 POCKETSPHINX_EXPORT
-ps_seg_t *ps_nbest_seg(ps_nbest_t *nbest, int32 *out_score);
+ps_seg_t *ps_nbest_seg(ps_nbest_t *nbest);
 
 /**
  * Finish N-best search early, releasing resources.

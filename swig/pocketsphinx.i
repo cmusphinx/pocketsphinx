@@ -134,7 +134,7 @@ typedef struct {
 sb_iterator(Segment, ps_seg, Segment)
 sb_iterator(NBest, ps_nbest, NBest)
 sb_iterable(SegmentList, Segment, ps_seg_iter, Segment)
-sb_iterable_java(NBestList, NBest)
+sb_iterable(NBestList, NBest, ps_nbest, NBest)
 
 typedef struct {} Decoder;
 typedef struct {} Lattice;
@@ -203,16 +203,6 @@ typedef struct {} SegmentList;
 	ckd_free($self->hypstr);
 	ckd_free($self);
     }
-}
-
-%extend NBestList {
-  NBestList(ps_decoder_t *ptr) {
-    return ptr; 
-  }
-  %newobject __iter__;
-  NBestIterator * __iter__() {
-    return new_NBestIterator(ps_nbest_next(ps_nbest($self, 0, -1, NULL, NULL)));
-  }
 }
 
 %include ps_decoder.i

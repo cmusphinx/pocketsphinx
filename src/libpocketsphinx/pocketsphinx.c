@@ -1286,14 +1286,12 @@ ps_get_lattice(ps_decoder_t *ps)
 }
 
 ps_nbest_t *
-ps_nbest(ps_decoder_t *ps, int sf, int ef,
-         char const *ctx1, char const *ctx2)
+ps_nbest(ps_decoder_t *ps)
 {
     ps_lattice_t *dag;
     ngram_model_t *lmset;
     ps_astar_t *nbest;
     float32 lwf;
-    int32 w1, w2;
 
     if (ps->search == NULL)
         return NULL;
@@ -1311,9 +1309,9 @@ ps_nbest(ps_decoder_t *ps, int sf, int ef,
         lwf = ((ngram_search_t *)ps->search)->bestpath_fwdtree_lw_ratio;
     }
 
-    w1 = ctx1 ? dict_wordid(ps_search_dict(ps->search), ctx1) : -1;
-    w2 = ctx2 ? dict_wordid(ps_search_dict(ps->search), ctx2) : -1;
-    nbest = ps_astar_start(dag, lmset, lwf, sf, ef, w1, w2);
+    nbest = ps_astar_start(dag, lmset, lwf, 0, -1, -1, -1);
+
+    nbest = ps_nbest_next(nbest);
 
     return (ps_nbest_t *)nbest;
 }
@@ -1349,11 +1347,11 @@ ps_nbest_hyp(ps_nbest_t *nbest, int32 *out_score)
 }
 
 ps_seg_t *
-ps_nbest_seg(ps_nbest_t *nbest, int32 *out_score)
+ps_nbest_seg(ps_nbest_t *nbest)
 {
     if (nbest->top == NULL)
         return NULL;
-    if (out_score) *out_score = nbest->top->score;
+
     return ps_astar_seg_iter(nbest, nbest->top, 1.0);
 }
 
