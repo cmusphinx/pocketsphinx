@@ -24,7 +24,7 @@ main(int argc, char *argv[])
 
 	/* Test dictionary in standard fashion. */
 	TEST_ASSERT(mdef = bin_mdef_read(NULL, MODELDIR "/en-us/en-us/mdef"));
-	TEST_ASSERT(dict = dict_init(config, mdef));
+	TEST_ASSERT(dict = dict_init(config, mdef, NULL));
 
 	printf("Word ID (CARNEGIE) = %d\n",
 	       dict_wordid(dict, "CARNEGIE"));
@@ -38,7 +38,7 @@ main(int argc, char *argv[])
 	bin_mdef_free(mdef);
 
 	/* Now test an empty dictionary. */
-	TEST_ASSERT(dict = dict_init(NULL, NULL));
+	TEST_ASSERT(dict = dict_init(NULL, NULL, NULL));
 	printf("Word ID(<s>) = %d\n", dict_wordid(dict, "<s>"));
 	TEST_ASSERT(BAD_S3WID != dict_add_word(dict, "FOOBIE", NULL, 0));
 	TEST_ASSERT(BAD_S3WID != dict_add_word(dict, "BLETCH", NULL, 0));
@@ -50,7 +50,7 @@ main(int argc, char *argv[])
 	dict_free(dict);
 
 	/* Test to add 500k words. */
-	TEST_ASSERT(dict = dict_init(NULL, NULL));
+	TEST_ASSERT(dict = dict_init(NULL, NULL, NULL));
 	for (i = 0; i < 500000; i++) {
 	    sprintf(buf, "word_%d", i);
     	    TEST_ASSERT(BAD_S3WID != dict_add_word(dict, buf, NULL, 0));

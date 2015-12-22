@@ -21,7 +21,7 @@ main(int argc, char *argv[])
 						   "-fdict", MODELDIR "/en-us/en-us/noisedict",
 						   NULL));
 	TEST_ASSERT(mdef = bin_mdef_read(NULL, MODELDIR "/en-us/en-us/mdef"));
-	TEST_ASSERT(dict = dict_init(config, mdef));
+	TEST_ASSERT(dict = dict_init(config, mdef, NULL));
 	TEST_ASSERT(d2p = dict2pid_build(mdef, dict));
 
 	dict_free(dict);

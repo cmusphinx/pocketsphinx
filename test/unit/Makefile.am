@@ -1,4 +1,5 @@
 check_PROGRAMS = \
+	test_g2p \
 	test_ps_init \
 	test_ps_reinit \
 	test_ps_fwdtree \

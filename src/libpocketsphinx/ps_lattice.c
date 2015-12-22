@@ -407,8 +407,8 @@ ps_lattice_read(ps_decoder_t *ps,
         dag->frate = cmd_ln_int32_r(dag->search->config, "-frate");
     }
     else {
-        dag->dict = dict_init(NULL, NULL);
         dag->lmath = logmath_init(1.0001, 0, FALSE);
+        dag->dict = dict_init(NULL, NULL, dag->lmath);
         dag->frate = 100;
     }
     dag->silence = dict_silwid(dag->dict);
