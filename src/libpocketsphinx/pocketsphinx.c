@@ -95,14 +95,20 @@ hmmdir_exists(const char *path)
 #endif
 
 static void
-ps_add_file(ps_decoder_t *ps, const char *arg,
-            const char *hmmdir, const char *file)
+ps_expand_file_config(ps_decoder_t *ps, const char *arg, const char *extra_arg,
+	              const char *hmmdir, const char *file)
 {
-    char *tmp = string_join(hmmdir, "/", file, NULL);
-
-    if (cmd_ln_str_r(ps->config, arg) == NULL && file_exists(tmp))
-        cmd_ln_set_str_r(ps->config, arg, tmp);
-    ckd_free(tmp);
+    const char *val;
+    if ((val = cmd_ln_str_r(ps->config, arg)) != NULL) {
+	cmd_ln_set_str_extra_r(ps->config, extra_arg, val);
+    } else {
+        char *tmp = string_join(hmmdir, "/", file, NULL);
+        if (file_exists(tmp))
+	    cmd_ln_set_str_extra_r(ps->config, extra_arg, tmp);
+	else
+	    cmd_ln_set_str_extra_r(ps->config, extra_arg, NULL);
+        ckd_free(tmp);
+    }
 }
 
 /* Feature and front-end parameters that may be in feat.params */
@@ -125,20 +131,20 @@ ps_expand_model_config(ps_decoder_t *ps)
 
     /* Get acoustic model filenames and add them to the command-line */
     if ((hmmdir = cmd_ln_str_r(ps->config, "-hmm")) != NULL) {
-        ps_add_file(ps, "-mdef", hmmdir, "mdef");
-        ps_add_file(ps, "-mean", hmmdir, "means");
-        ps_add_file(ps, "-var", hmmdir, "variances");
-        ps_add_file(ps, "-tmat", hmmdir, "transition_matrices");
-        ps_add_file(ps, "-mixw", hmmdir, "mixture_weights");
-        ps_add_file(ps, "-sendump", hmmdir, "sendump");
-        ps_add_file(ps, "-fdict", hmmdir, "noisedict");
-        ps_add_file(ps, "-lda", hmmdir, "feature_transform");
-        ps_add_file(ps, "-featparams", hmmdir, "feat.params");
-        ps_add_file(ps, "-senmgau", hmmdir, "senmgau");
+        ps_expand_file_config(ps, "-mdef", "-full_mdef", hmmdir, "mdef");
+        ps_expand_file_config(ps, "-mean", "-full_mean", hmmdir, "means");
+        ps_expand_file_config(ps, "-var", "-full_var", hmmdir, "variances");
+        ps_expand_file_config(ps, "-tmat", "-full_tmat", hmmdir, "transition_matrices");
+        ps_expand_file_config(ps, "-mixw", "-full_mixw", hmmdir, "mixture_weights");
+        ps_expand_file_config(ps, "-sendump", "-full_sendump", hmmdir, "sendump");
+        ps_expand_file_config(ps, "-fdict", "-full_fdict", hmmdir, "noisedict");
+        ps_expand_file_config(ps, "-lda", "-full_lda", hmmdir, "feature_transform");
+        ps_expand_file_config(ps, "-featparams", "-full_featparams", hmmdir, "feat.params");
+        ps_expand_file_config(ps, "-senmgau", "-full_senmgau", hmmdir, "senmgau");
     }
 
     /* Look for feat.params in acoustic model dir. */
-    if ((featparams = cmd_ln_str_r(ps->config, "-featparams"))) {
+    if ((featparams = cmd_ln_str_r(ps->config, "-full_featparams"))) {
         if (NULL !=
             cmd_ln_parse_file_r(ps->config, feat_defn, featparams, FALSE))
             E_INFO("Parsed model-specific feature parameters from %s\n",
@@ -741,10 +747,10 @@ int
 ps_load_dict(ps_decoder_t *ps, char const *dictfile,
              char const *fdictfile, char const *format)
 {
-    cmd_ln_t *newconfig;
     dict2pid_t *d2p;
     dict_t *dict;
     hash_iter_t *search_it;
+    cmd_ln_t *newconfig;
 
     /* Create a new scratch config to load this dict (so existing one
      * won't be affected if it fails) */
@@ -753,10 +759,10 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
                          cmd_ln_boolean_r(ps->config, "-dictcase"));
     cmd_ln_set_str_r(newconfig, "-dict", dictfile);
     if (fdictfile)
-        cmd_ln_set_str_r(newconfig, "-fdict", fdictfile);
+        cmd_ln_set_str_extra_r(newconfig, "-full_fdict", fdictfile);
     else
-        cmd_ln_set_str_r(newconfig, "-fdict",
-                         cmd_ln_str_r(ps->config, "-fdict"));
+        cmd_ln_set_str_extra_r(newconfig, "-full_fdict",
+                               cmd_ln_str_r(ps->config, "-full_fdict"));
 
     /* Try to load it. */
     if ((dict = dict_init(newconfig, ps->acmod->mdef)) == NULL) {
@@ -773,9 +779,6 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
     /* Success!  Update the existing config to reflect new dicts and
      * drop everything into place. */
     cmd_ln_free_r(newconfig);
-    cmd_ln_set_str_r(ps->config, "-dict", dictfile);
-    if (fdictfile)
-        cmd_ln_set_str_r(ps->config, "-fdict", fdictfile);
     dict_free(ps->dict);
     ps->dict = dict;
     dict2pid_free(ps->d2p);

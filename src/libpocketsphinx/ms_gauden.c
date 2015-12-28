@@ -569,10 +569,10 @@ gauden_mllr_transform(gauden_t *g, ps_mllr_t *mllr, cmd_ln_t *config)
     /* Reload means and variances (un-precomputed). */
     fgau = NULL;
     gauden_param_read(&fgau, &g->n_mgau, &g->n_feat, &g->n_density,
-                      &g->featlen, cmd_ln_str_r(config, "-mean"));
+                      &g->featlen, cmd_ln_str_r(config, "-full_mean"));
     g->mean = (mfcc_t ****)fgau;
     fgau = NULL;
-    gauden_param_read(&fgau, &m, &f, &d, &flen, cmd_ln_str_r(config, "-var"));
+    gauden_param_read(&fgau, &m, &f, &d, &flen, cmd_ln_str_r(config, "-full_var"));
     g->var = (mfcc_t ****)fgau;
 
     /* Verify mean and variance parameter dimensions */

@@ -260,7 +260,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
 
     if (config) {
         dictfile = cmd_ln_str_r(config, "-dict");
-        fillerfile = cmd_ln_str_r(config, "-fdict");
+        fillerfile = cmd_ln_str_r(config, "-full_fdict");
     }
 
     /*

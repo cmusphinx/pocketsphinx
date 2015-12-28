@@ -74,7 +74,7 @@ acmod_init_am(acmod_t *acmod)
     char const *mdeffn, *tmatfn, *mllrfn, *hmmdir;
 
     /* Read model definition. */
-    if ((mdeffn = cmd_ln_str_r(acmod->config, "-mdef")) == NULL) {
+    if ((mdeffn = cmd_ln_str_r(acmod->config, "-full_mdef")) == NULL) {
         if ((hmmdir = cmd_ln_str_r(acmod->config, "-hmm")) == NULL)
             E_ERROR("Acoustic model definition is not specified either "
                     "with -mdef option or with -hmm\n");
@@ -91,7 +91,7 @@ acmod_init_am(acmod_t *acmod)
     }
 
     /* Read transition matrices. */
-    if ((tmatfn = cmd_ln_str_r(acmod->config, "-tmat")) == NULL) {
+    if ((tmatfn = cmd_ln_str_r(acmod->config, "-full_tmat")) == NULL) {
         E_ERROR("No tmat file specified\n");
         return -1;
     }
@@ -100,14 +100,14 @@ acmod_init_am(acmod_t *acmod)
                             TRUE);
 
     /* Read the acoustic models. */
-    if ((cmd_ln_str_r(acmod->config, "-mean") == NULL)
-        || (cmd_ln_str_r(acmod->config, "-var") == NULL)
-        || (cmd_ln_str_r(acmod->config, "-tmat") == NULL)) {
+    if ((cmd_ln_str_r(acmod->config, "-full_mean") == NULL)
+        || (cmd_ln_str_r(acmod->config, "-full_var") == NULL)
+        || (cmd_ln_str_r(acmod->config, "-full_tmat") == NULL)) {
         E_ERROR("No mean/var/tmat files specified\n");
         return -1;
     }
 
-    if (cmd_ln_str_r(acmod->config, "-senmgau")) {
+    if (cmd_ln_str_r(acmod->config, "-full_senmgau")) {
         E_INFO("Using general multi-stream GMM computation\n");
         acmod->mgau = ms_mgau_init(acmod, acmod->lmath, acmod->mdef);
         if (acmod->mgau == NULL)
@@ -149,11 +149,11 @@ acmod_init_feat(acmod_t *acmod)
     if (acmod->fcb == NULL)
         return -1;
 
-    if (cmd_ln_str_r(acmod->config, "-lda")) {
+    if (cmd_ln_str_r(acmod->config, "-full_lda")) {
         E_INFO("Reading linear feature transformation from %s\n",
-               cmd_ln_str_r(acmod->config, "-lda"));
+               cmd_ln_str_r(acmod->config, "-full_lda"));
         if (feat_read_lda(acmod->fcb,
-                          cmd_ln_str_r(acmod->config, "-lda"),
+                          cmd_ln_str_r(acmod->config, "-full_lda"),
                           cmd_ln_int32_r(acmod->config, "-ldadim")) < 0)
             return -1;
     }
@@ -357,7 +357,7 @@ acmod_write_senfh_header(acmod_t *acmod, FILE *logfh)
     sprintf(logbasestr, "%f", logmath_get_base(acmod->lmath));
     return bio_writehdr(logfh,
                         "version", "0.1",
-                        "mdef_file", cmd_ln_str_r(acmod->config, "-mdef"),
+                        "mdef_file", cmd_ln_str_r(acmod->config, "-full_mdef"),
                         "n_sen", nsenstr,
                         "logbase", logbasestr, NULL);
 }
