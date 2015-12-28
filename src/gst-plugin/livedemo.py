@@ -50,7 +50,7 @@ class DemoApp(object):
     def init_gst(self):
         """Initialize the speech components"""
         self.pipeline = gst.parse_launch('autoaudiosrc ! audioconvert ! audioresample '
-                                         + '! pocketsphinx configured=true ! fakesink')
+                                         + '! pocketsphinx ! fakesink')
         bus = self.pipeline.get_bus()
         bus.add_signal_watch()
         bus.connect('message::element', self.element_message)
