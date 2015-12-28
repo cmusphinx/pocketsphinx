@@ -439,16 +439,18 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
          * try to set the search
          */
 
-        if (value != NULL) {
+        if (value != NULL && ps->ps) {
     	    ps_set_search(ps->ps, g_value_get_string(value));
         }
         break;
     case PROP_FSG_MODEL:
         {
-            fsg_model_t *fsg = g_value_get_pointer(value);
-            const char *name = fsg_model_name(fsg);
-            ps_set_fsg(ps->ps, name, fsg);
-            ps_set_search(ps->ps, name);
+    	    if (ps->ps) {
+                fsg_model_t *fsg = g_value_get_pointer(value);
+                const char *name = fsg_model_name(fsg);
+                ps_set_fsg(ps->ps, name, fsg);
+                ps_set_search(ps->ps, name);
+            }
         }
         break;
 
