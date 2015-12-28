@@ -143,7 +143,6 @@ enum
 
     PROP_LATDIR,
     PROP_LM_NAME,
-    PROP_FSG_MODEL,
     PROP_DECODER
 };
 
@@ -298,11 +297,6 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                              NULL,
                              G_PARAM_READWRITE));
     g_object_class_install_property
-        (gobject_class, PROP_FSG_MODEL,
-         g_param_spec_pointer("fsg_model", "FSG Model",
-                              "Finite state grammar object (fsg_model_t *)",
-                              G_PARAM_WRITABLE));
-    g_object_class_install_property
         (gobject_class, PROP_LATDIR,
          g_param_spec_string("latdir", "Lattice Directory",
                              "Output Directory for Lattices",
@@ -376,15 +370,15 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         break;
     case PROP_LM_FILE:
         /* FSG and LM are mutually exclusive. */
-        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
-        gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
         gst_pocketsphinx_set_string(ps, "-lm", value);
+        gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
+        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
         break;
     case PROP_LMCTL_FILE:
         /* FSG and LM are mutually exclusive. */
-        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
-        gst_pocketsphinx_set_string(ps, "-lmctl", value);
         gst_pocketsphinx_set_string(ps, "-lm", NULL);
+        gst_pocketsphinx_set_string(ps, "-lmctl", value);
+        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
         break;
     case PROP_DICT_FILE:
         gst_pocketsphinx_set_string(ps, "-dict", value);
@@ -395,6 +389,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     case PROP_FSG_FILE:
         /* FSG and LM are mutually exclusive */
         gst_pocketsphinx_set_string(ps, "-lm", NULL);
+        gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
         gst_pocketsphinx_set_string(ps, "-fsg", value);
         break;
     case PROP_FWDFLAT:
@@ -443,25 +438,13 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     	    ps_set_search(ps->ps, g_value_get_string(value));
         }
         break;
-    case PROP_FSG_MODEL:
-        {
-    	    if (ps->ps) {
-                fsg_model_t *fsg = g_value_get_pointer(value);
-                const char *name = fsg_model_name(fsg);
-                ps_set_fsg(ps->ps, name, fsg);
-                ps_set_search(ps->ps, name);
-            }
-        }
-        break;
-
-
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         return;
     }
     
     /* If decoder was already initialized, reinit */
-    if (ps->ps)
+    if (ps->ps && prop_id != PROP_LATDIR && prop_id != PROP_LM_NAME)
 	ps_reinit(ps->ps, ps->config);
 }
 
@@ -583,9 +566,13 @@ gst_pocketsphinx_change_state(GstElement *element, GstStateChange transition)
 	        return GST_STATE_CHANGE_FAILURE;
 	    }
             break;
+         case GST_STATE_CHANGE_READY_TO_NULL:
+            ps_free(ps->ps);
+            ps->ps = NULL;
          default:
             break;
-    }
+    }                             
+    
     return GST_ELEMENT_CLASS(gst_pocketsphinx_parent_class)->change_state(element, transition);
 }
 
