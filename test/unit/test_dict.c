@@ -19,7 +19,7 @@ main(int argc, char *argv[])
 
 	TEST_ASSERT(config = cmd_ln_init(NULL, NULL, FALSE,
 						   "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
-						   "-full_fdict", MODELDIR "/en-us/en-us/noisedict",
+						   "_fdict", MODELDIR "/en-us/en-us/noisedict",
 						   NULL));
 
 	/* Test dictionary in standard fashion. */

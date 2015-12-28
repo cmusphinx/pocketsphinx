@@ -1249,8 +1249,8 @@ s2_semi_mgau_init(acmod_t *acmod)
     }
 
     /* Read means and variances. */
-    if ((s->g = gauden_init(cmd_ln_str_r(s->config, "-full_mean"),
-                            cmd_ln_str_r(s->config, "-full_var"),
+    if ((s->g = gauden_init(cmd_ln_str_r(s->config, "_mean"),
+                            cmd_ln_str_r(s->config, "_var"),
                             cmd_ln_float32_r(s->config, "-varfloor"),
                             s->lmath)) == NULL)
         goto error_out;
@@ -1274,13 +1274,13 @@ s2_semi_mgau_init(acmod_t *acmod)
         }
     }
     /* Read mixture weights */
-    if ((sendump_path = cmd_ln_str_r(s->config, "-full_sendump"))) {
+    if ((sendump_path = cmd_ln_str_r(s->config, "_sendump"))) {
         if (read_sendump(s, acmod->mdef, sendump_path) < 0) {
             goto error_out;
         }
     }
     else {
-        if (read_mixw(s, cmd_ln_str_r(s->config, "-full_mixw"),
+        if (read_mixw(s, cmd_ln_str_r(s->config, "_mixw"),
                       cmd_ln_float32_r(s->config, "-mixwfloor")) < 0) {
             goto error_out;
         }

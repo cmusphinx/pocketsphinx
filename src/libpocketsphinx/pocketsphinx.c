@@ -133,19 +133,19 @@ ps_expand_model_config(ps_decoder_t *ps)
 
     /* Get acoustic model filenames and add them to the command-line */
     hmmdir = cmd_ln_str_r(ps->config, "-hmm");
-    ps_expand_file_config(ps, "-mdef", "-full_mdef", hmmdir, "mdef");
-    ps_expand_file_config(ps, "-mean", "-full_mean", hmmdir, "means");
-    ps_expand_file_config(ps, "-var", "-full_var", hmmdir, "variances");
-    ps_expand_file_config(ps, "-tmat", "-full_tmat", hmmdir, "transition_matrices");
-    ps_expand_file_config(ps, "-mixw", "-full_mixw", hmmdir, "mixture_weights");
-    ps_expand_file_config(ps, "-sendump", "-full_sendump", hmmdir, "sendump");
-    ps_expand_file_config(ps, "-fdict", "-full_fdict", hmmdir, "noisedict");
-    ps_expand_file_config(ps, "-lda", "-full_lda", hmmdir, "feature_transform");
-    ps_expand_file_config(ps, "-featparams", "-full_featparams", hmmdir, "feat.params");
-    ps_expand_file_config(ps, "-senmgau", "-full_senmgau", hmmdir, "senmgau");
+    ps_expand_file_config(ps, "-mdef", "_mdef", hmmdir, "mdef");
+    ps_expand_file_config(ps, "-mean", "_mean", hmmdir, "means");
+    ps_expand_file_config(ps, "-var", "_var", hmmdir, "variances");
+    ps_expand_file_config(ps, "-tmat", "_tmat", hmmdir, "transition_matrices");
+    ps_expand_file_config(ps, "-mixw", "_mixw", hmmdir, "mixture_weights");
+    ps_expand_file_config(ps, "-sendump", "_sendump", hmmdir, "sendump");
+    ps_expand_file_config(ps, "-fdict", "_fdict", hmmdir, "noisedict");
+    ps_expand_file_config(ps, "-lda", "_lda", hmmdir, "feature_transform");
+    ps_expand_file_config(ps, "-featparams", "_featparams", hmmdir, "feat.params");
+    ps_expand_file_config(ps, "-senmgau", "_senmgau", hmmdir, "senmgau");
 
     /* Look for feat.params in acoustic model dir. */
-    if ((featparams = cmd_ln_str_r(ps->config, "-full_featparams"))) {
+    if ((featparams = cmd_ln_str_r(ps->config, "_featparams"))) {
         if (NULL !=
             cmd_ln_parse_file_r(ps->config, feat_defn, featparams, FALSE))
             E_INFO("Parsed model-specific feature parameters from %s\n",
@@ -760,10 +760,10 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
                          cmd_ln_boolean_r(ps->config, "-dictcase"));
     cmd_ln_set_str_r(newconfig, "-dict", dictfile);
     if (fdictfile)
-        cmd_ln_set_str_extra_r(newconfig, "-full_fdict", fdictfile);
+        cmd_ln_set_str_extra_r(newconfig, "_fdict", fdictfile);
     else
-        cmd_ln_set_str_extra_r(newconfig, "-full_fdict",
-                               cmd_ln_str_r(ps->config, "-full_fdict"));
+        cmd_ln_set_str_extra_r(newconfig, "_fdict",
+                               cmd_ln_str_r(ps->config, "_fdict"));
 
     /* Try to load it. */
     if ((dict = dict_init(newconfig, ps->acmod->mdef)) == NULL) {

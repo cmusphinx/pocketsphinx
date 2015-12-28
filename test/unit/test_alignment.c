@@ -17,7 +17,7 @@ main(int argc, char *argv[])
 
 	config = cmd_ln_init(NULL, NULL, FALSE,
 			     "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
-			     "-full_fdict", MODELDIR "/en-us/en-us/noisedict",
+			     "_fdict", MODELDIR "/en-us/en-us/noisedict",
 			     NULL);
 	mdef = bin_mdef_read(NULL, MODELDIR "/en-us/en-us/mdef");
 	dict = dict_init(config, mdef);
