@@ -71,7 +71,6 @@ main(int argc, char *argv[])
 
     g_object_set(G_OBJECT(decoder), "lmctl", "test.lmctl", NULL);
     g_object_set(G_OBJECT(decoder), "lmname", "tidigits", NULL);
-    g_object_set(G_OBJECT(decoder), "configured", TRUE, NULL);
 
     /* we add a message handler */
     bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));

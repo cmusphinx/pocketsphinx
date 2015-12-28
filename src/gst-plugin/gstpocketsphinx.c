@@ -79,7 +79,7 @@
  * <refsect2>
  * <title>Example pipeline</title>
  * |[
- * gst-launch-1.0 -m autoaudiosrc ! audioconvert ! audioresample ! pocketsphinx configured=true ! fakesink
+ * gst-launch-1.0 -m autoaudiosrc ! audioconvert ! audioresample ! pocketsphinx ! fakesink
  * ]|
  * </refsect2>
  */
@@ -103,9 +103,14 @@ GST_DEBUG_CATEGORY_STATIC(pocketsphinx_debug);
 static void
 gst_pocketsphinx_set_property(GObject * object, guint prop_id,
                           const GValue * value, GParamSpec * pspec);
+
 static void
 gst_pocketsphinx_get_property(GObject * object, guint prop_id,
                               GValue * value, GParamSpec * pspec);
+
+static GstStateChangeReturn
+gst_pocketsphinx_change_state(GstElement *element, GstStateChange transition);
+
 static GstFlowReturn
 gst_pocketsphinx_chain(GstPad * pad, GstObject *parent, GstBuffer * buffer);
 
@@ -124,11 +129,9 @@ enum
     PROP_HMM_DIR,
     PROP_LM_FILE,
     PROP_LMCTL_FILE,
-    PROP_LM_NAME,
     PROP_DICT_FILE,
     PROP_MLLR_FILE,
     PROP_FSG_FILE,
-    PROP_FSG_MODEL,
     PROP_FWDFLAT,
     PROP_BESTPATH,
     PROP_MAXHMMPF,
@@ -137,9 +140,11 @@ enum
     PROP_WBEAM,
     PROP_PBEAM,
     PROP_DSRATIO,
+
     PROP_LATDIR,
-    PROP_DECODER,
-    PROP_CONFIGURED
+    PROP_LM_NAME,
+    PROP_FSG_MODEL,
+    PROP_DECODER
 };
 
 /*
@@ -225,22 +230,11 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                              NULL,
                              G_PARAM_READWRITE));
     g_object_class_install_property
-        (gobject_class, PROP_LM_NAME,
-         g_param_spec_string("lmname", "LM Name",
-                             "Language model name (to select LMs from lmctl)",
-                             NULL,
-                             G_PARAM_READWRITE));
-    g_object_class_install_property
         (gobject_class, PROP_FSG_FILE,
          g_param_spec_string("fsg", "FSG File",
                              "Finite state grammar file",
                              NULL,
                              G_PARAM_READWRITE));
-    g_object_class_install_property
-        (gobject_class, PROP_FSG_MODEL,
-         g_param_spec_pointer("fsg_model", "FSG Model",
-                              "Finite state grammar object (fsg_model_t *)",
-                              G_PARAM_WRITABLE));
     g_object_class_install_property
         (gobject_class, PROP_DICT_FILE,
          g_param_spec_string("dict", "Dictionary File",
@@ -259,13 +253,6 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                               "Enable Graph Search",
                               FALSE,
                               G_PARAM_READWRITE));
-
-    g_object_class_install_property
-        (gobject_class, PROP_LATDIR,
-         g_param_spec_string("latdir", "Lattice Directory",
-                             "Output Directory for Lattices",
-                             NULL,
-                             G_PARAM_READWRITE));
     g_object_class_install_property
         (gobject_class, PROP_MAXHMMPF,
          g_param_spec_int("maxhmmpf", "Maximum HMMs per frame",
@@ -302,23 +289,38 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                           "Evaluate acoustic model every N frames",
                           1, 10, 1,
                           G_PARAM_READWRITE));
+
+    /* Could be changed on runtime when ps is already initialized */
+    g_object_class_install_property
+        (gobject_class, PROP_LM_NAME,
+         g_param_spec_string("lmname", "LM Name",
+                             "Language model name (to select LMs from lmctl)",
+                             NULL,
+                             G_PARAM_READWRITE));
+    g_object_class_install_property
+        (gobject_class, PROP_FSG_MODEL,
+         g_param_spec_pointer("fsg_model", "FSG Model",
+                              "Finite state grammar object (fsg_model_t *)",
+                              G_PARAM_WRITABLE));
+    g_object_class_install_property
+        (gobject_class, PROP_LATDIR,
+         g_param_spec_string("latdir", "Lattice Directory",
+                             "Output Directory for Lattices",
+                             NULL,
+                             G_PARAM_READWRITE));
     g_object_class_install_property
         (gobject_class, PROP_DECODER,
          g_param_spec_boxed("decoder", "Decoder object",
                             "The underlying decoder",
                             PS_DECODER_TYPE,
                             G_PARAM_READABLE));
-    g_object_class_install_property
-        (gobject_class, PROP_CONFIGURED,
-         g_param_spec_boolean("configured", "Finalize configuration",
-                              "Set this to finalize configuration",
-                              FALSE,
-                              G_PARAM_READWRITE));
 
 
     GST_DEBUG_CATEGORY_INIT(pocketsphinx_debug, "pocketsphinx", 0,
                             "Automatic Speech Recognition");
 
+
+    element_class->change_state = gst_pocketsphinx_change_state;
 
     gst_element_class_add_pad_template(element_class,
                                        gst_static_pad_template_get(&sink_factory));
@@ -369,9 +371,6 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
 
     switch (prop_id) {
     
-    case PROP_CONFIGURED:
-        ps_reinit(ps->ps, ps->config);
-        break;
     case PROP_HMM_DIR:
         gst_pocketsphinx_set_string(ps, "-hmm", value);
         break;
@@ -387,34 +386,11 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_string(ps, "-lmctl", value);
         gst_pocketsphinx_set_string(ps, "-lm", NULL);
         break;
-    case PROP_LM_NAME:
-        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
-        gst_pocketsphinx_set_string(ps, "-lm", NULL);
-        gst_pocketsphinx_set_string(ps, "-lmname", value);
-
-        /**
-         * Chances are that lmctl is already loaded and all
-         * corresponding searches are configured, so we simply
-         * try to set the search
-         */
-
-        if (value != NULL) {
-    	    ps_set_search(ps->ps, g_value_get_string(value));
-        }
-        break;
     case PROP_DICT_FILE:
         gst_pocketsphinx_set_string(ps, "-dict", value);
         break;
     case PROP_MLLR_FILE:
         gst_pocketsphinx_set_string(ps, "-mllr", value);
-        break;
-    case PROP_FSG_MODEL:
-        {
-            fsg_model_t *fsg = g_value_get_pointer(value);
-            const char *name = fsg_model_name(fsg);
-            ps_set_fsg(ps->ps, name, fsg);
-            ps_set_search(ps->ps, name);
-        }
         break;
     case PROP_FSG_FILE:
         /* FSG and LM are mutually exclusive */
@@ -426,11 +402,6 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         break;
     case PROP_BESTPATH:
         gst_pocketsphinx_set_boolean(ps, "-bestpath", value);
-        break;
-    case PROP_LATDIR:
-        if (ps->latdir)
-            g_free(ps->latdir);
-        ps->latdir = g_strdup(g_value_get_string(value));
         break;
     case PROP_MAXHMMPF:
         gst_pocketsphinx_set_int(ps, "-maxhmmpf", value);
@@ -450,10 +421,46 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     case PROP_DSRATIO:
         gst_pocketsphinx_set_int(ps, "-ds", value);
         break;
+
+
+    case PROP_LATDIR:
+        if (ps->latdir)
+            g_free(ps->latdir);
+        ps->latdir = g_strdup(g_value_get_string(value));
+        break;
+    case PROP_LM_NAME:
+        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "-lm", NULL);
+        gst_pocketsphinx_set_string(ps, "-lmname", value);
+
+        /**
+         * Chances are that lmctl is already loaded and all
+         * corresponding searches are configured, so we simply
+         * try to set the search
+         */
+
+        if (value != NULL) {
+    	    ps_set_search(ps->ps, g_value_get_string(value));
+        }
+        break;
+    case PROP_FSG_MODEL:
+        {
+            fsg_model_t *fsg = g_value_get_pointer(value);
+            const char *name = fsg_model_name(fsg);
+            ps_set_fsg(ps->ps, name, fsg);
+            ps_set_search(ps->ps, name);
+        }
+        break;
+
+
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         return;
     }
+    
+    /* If decoder was already initialized, reinit */
+    if (ps->ps)
+	ps_reinit(ps->ps, ps->config);
 }
 
 static void
@@ -465,9 +472,6 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
     switch (prop_id) {
     case PROP_DECODER:
         g_value_set_boxed(value, ps->ps);
-        break;
-    case PROP_CONFIGURED:
-        g_value_set_boolean(value, ps->ps != NULL);
         break;
     case PROP_HMM_DIR:
         g_value_set_string(value, cmd_ln_str_r(ps->config, "-hmm"));
@@ -531,6 +535,7 @@ gst_pocketsphinx_finalize(GObject * gobject)
     ps_free(ps->ps);
     cmd_ln_free_r(ps->config);
     g_free(ps->last_result);
+    g_free(ps->latdir);
 
     G_OBJECT_CLASS(gst_pocketsphinx_parent_class)->finalize(gobject);
 }
@@ -546,12 +551,6 @@ gst_pocketsphinx_init(GstPocketSphinx * ps)
     /* Parse default command-line options. */
     ps->config = cmd_ln_parse_r(NULL, ps_args(), default_argc, default_argv, FALSE);
     ps_default_search_args(ps->config);
-    ps->ps = ps_init(ps->config);
-    if (ps->ps == NULL) {
-        GST_ELEMENT_ERROR(GST_ELEMENT(ps), LIBRARY, INIT,
-                          ("Failed to initialize PocketSphinx"),
-                          ("Failed to initialize PocketSphinx"));
-    }
 
     /* Set up pads. */
     gst_element_add_pad(GST_ELEMENT(ps), ps->sinkpad);
@@ -565,6 +564,27 @@ gst_pocketsphinx_init(GstPocketSphinx * ps)
     /* Initialize time. */
     ps->last_result_time = 0;
     ps->last_result = NULL;
+}
+
+static GstStateChangeReturn
+gst_pocketsphinx_change_state(GstElement *element, GstStateChange transition)
+{
+    GstPocketSphinx *ps = GST_POCKETSPHINX(element);
+    
+    switch (transition) {
+         case GST_STATE_CHANGE_NULL_TO_READY:
+	    ps->ps = ps_init(ps->config);
+	    if (ps->ps == NULL) {
+	        GST_ELEMENT_ERROR(GST_ELEMENT(ps), LIBRARY, INIT,
+                          ("Failed to initialize PocketSphinx"),
+                          ("Failed to initialize PocketSphinx"));
+	        return GST_STATE_CHANGE_FAILURE;
+	    }
+            break;
+         default:
+            break;
+    }
+    return GST_ELEMENT_CLASS(gst_pocketsphinx_parent_class)->change_state(element, transition);
 }
 
 static void
@@ -662,8 +682,8 @@ gst_pocketsphinx_finalize_utt(GstPocketSphinx *ps)
         ckd_free(latfile);
     }
     if (hyp) {
-    		gst_pocketsphinx_post_message(ps, TRUE, GST_CLOCK_TIME_NONE,
-    		    ps_get_prob(ps->ps), hyp);
+    	gst_pocketsphinx_post_message(ps, TRUE, GST_CLOCK_TIME_NONE,
+    		                      ps_get_prob(ps->ps), hyp);
         buffer = gst_buffer_new_and_alloc(strlen(hyp) + 1);
 	gst_buffer_fill(buffer, 0, hyp, strlen(hyp));
 	gst_buffer_fill(buffer, strlen(hyp), "\n", 1);

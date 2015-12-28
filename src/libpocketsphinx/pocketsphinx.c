@@ -101,6 +101,8 @@ ps_expand_file_config(ps_decoder_t *ps, const char *arg, const char *extra_arg,
     const char *val;
     if ((val = cmd_ln_str_r(ps->config, arg)) != NULL) {
 	cmd_ln_set_str_extra_r(ps->config, extra_arg, val);
+    } else if (hmmdir == NULL) {
+        cmd_ln_set_str_extra_r(ps->config, extra_arg, NULL);
     } else {
         char *tmp = string_join(hmmdir, "/", file, NULL);
         if (file_exists(tmp))
@@ -130,18 +132,17 @@ ps_expand_model_config(ps_decoder_t *ps)
 #endif
 
     /* Get acoustic model filenames and add them to the command-line */
-    if ((hmmdir = cmd_ln_str_r(ps->config, "-hmm")) != NULL) {
-        ps_expand_file_config(ps, "-mdef", "-full_mdef", hmmdir, "mdef");
-        ps_expand_file_config(ps, "-mean", "-full_mean", hmmdir, "means");
-        ps_expand_file_config(ps, "-var", "-full_var", hmmdir, "variances");
-        ps_expand_file_config(ps, "-tmat", "-full_tmat", hmmdir, "transition_matrices");
-        ps_expand_file_config(ps, "-mixw", "-full_mixw", hmmdir, "mixture_weights");
-        ps_expand_file_config(ps, "-sendump", "-full_sendump", hmmdir, "sendump");
-        ps_expand_file_config(ps, "-fdict", "-full_fdict", hmmdir, "noisedict");
-        ps_expand_file_config(ps, "-lda", "-full_lda", hmmdir, "feature_transform");
-        ps_expand_file_config(ps, "-featparams", "-full_featparams", hmmdir, "feat.params");
-        ps_expand_file_config(ps, "-senmgau", "-full_senmgau", hmmdir, "senmgau");
-    }
+    hmmdir = cmd_ln_str_r(ps->config, "-hmm");
+    ps_expand_file_config(ps, "-mdef", "-full_mdef", hmmdir, "mdef");
+    ps_expand_file_config(ps, "-mean", "-full_mean", hmmdir, "means");
+    ps_expand_file_config(ps, "-var", "-full_var", hmmdir, "variances");
+    ps_expand_file_config(ps, "-tmat", "-full_tmat", hmmdir, "transition_matrices");
+    ps_expand_file_config(ps, "-mixw", "-full_mixw", hmmdir, "mixture_weights");
+    ps_expand_file_config(ps, "-sendump", "-full_sendump", hmmdir, "sendump");
+    ps_expand_file_config(ps, "-fdict", "-full_fdict", hmmdir, "noisedict");
+    ps_expand_file_config(ps, "-lda", "-full_lda", hmmdir, "feature_transform");
+    ps_expand_file_config(ps, "-featparams", "-full_featparams", hmmdir, "feat.params");
+    ps_expand_file_config(ps, "-senmgau", "-full_senmgau", hmmdir, "senmgau");
 
     /* Look for feat.params in acoustic model dir. */
     if ((featparams = cmd_ln_str_r(ps->config, "-full_featparams"))) {
