@@ -29,6 +29,12 @@ bus_call(GstBus * bus, GstMessage * msg, gpointer data)
     default:
         break;
     }
+    
+    const GstStructure *st = gst_message_get_structure(msg);
+    if (st && strcmp(gst_structure_get_name(st), "pocketsphinx") == 0) {
+	if (g_value_get_boolean(gst_structure_get_value(st, "final")))
+    	    g_print("Got result %s\n", g_value_get_string(gst_structure_get_value(st, "hypothesis")));
+    }
 
     return TRUE;
 }
@@ -55,7 +61,7 @@ main(int argc, char *argv[])
     }
 
     /* Create gstreamer elements */
-    pipeline = gst_pipeline_new("test");
+    pipeline = gst_pipeline_new("pipeline");
     source = gst_element_factory_make("filesrc", "file-source");
     decoder = gst_element_factory_make("pocketsphinx", "asr");
     sink = gst_element_factory_make("fakesink", "output");
