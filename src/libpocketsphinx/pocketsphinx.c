@@ -489,9 +489,16 @@ ps_update_mllr(ps_decoder_t *ps, ps_mllr_t *mllr)
 int
 ps_set_search(ps_decoder_t *ps, const char *name)
 {
-    ps_search_t *search = ps_find_search(ps, name);
-    if (!search)
+    ps_search_t *search;
+    
+    if (ps->acmod->state != ACMOD_ENDED && ps->acmod->state != ACMOD_IDLE) {
+	E_ERROR("Cannot change search while decoding, end utterance first\n");
 	return -1;
+    }
+    
+    if (!(search = ps_find_search(ps, name))) {
+	return -1;
+    }
     
     ps->search = search;
     /* Set pl window depending on the search */

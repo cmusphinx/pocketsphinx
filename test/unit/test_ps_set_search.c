@@ -121,6 +121,30 @@ test_set_search()
     cmd_ln_free_r(config);
 }
 
+static void
+test_check_mode()
+{
+    cmd_ln_t *config = default_config();
+    ps_decoder_t *ps = ps_init(config);
+
+    TEST_ASSERT(!ps_set_jsgf_file(ps, "goforward", DATADIR "/goforward.gram"));
+
+    ngram_model_t *lm = ngram_model_read(config, DATADIR "/tidigits/lm/tidigits.lm.bin",
+                                         NGRAM_AUTO, ps->lmath);
+    TEST_ASSERT(!ps_set_lm(ps, "tidigits", lm));
+    ngram_model_free(lm);
+
+    TEST_ASSERT(!ps_set_search(ps, "tidigits"));
+
+    ps_start_utt(ps);
+    TEST_EQUAL(-1, ps_set_search(ps, "tidigits"));
+    TEST_EQUAL(-1, ps_set_search(ps, "goforward"));    
+    ps_end_utt(ps);
+    
+    ps_free(ps);
+    cmd_ln_free_r(config);
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -130,6 +154,7 @@ main(int argc, char* argv[])
     test_default_lm();
     test_default_lmctl();
     test_set_search();
+    test_check_mode();
 
     return 0;
 }
