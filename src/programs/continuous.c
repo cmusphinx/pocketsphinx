@@ -185,6 +185,7 @@ recognize_from_file()
         	printf("%s\n", hyp);
             if (print_times)
         	print_word_times();
+            fflush(stdout);
 
             ps_start_utt(ps);
             utt_started = FALSE;
@@ -248,7 +249,7 @@ recognize_from_microphone()
     if (ps_start_utt(ps) < 0)
         E_FATAL("Failed to start utterance\n");
     utt_started = FALSE;
-    printf("READY....\n");
+    E_INFO("Ready....\n");
 
     for (;;) {
         if ((k = ad_read(ad, adbuf, 2048)) < 0)
@@ -257,19 +258,21 @@ recognize_from_microphone()
         in_speech = ps_get_in_speech(ps);
         if (in_speech && !utt_started) {
             utt_started = TRUE;
-            printf("Listening...\n");
+            E_INFO("Listening...\n");
         }
         if (!in_speech && utt_started) {
             /* speech -> silence transition, time to start new utterance  */
             ps_end_utt(ps);
             hyp = ps_get_hyp(ps, NULL );
-            if (hyp != NULL)
+            if (hyp != NULL) {
                 printf("%s\n", hyp);
+                fflush(stdout);
+            }
 
             if (ps_start_utt(ps) < 0)
                 E_FATAL("Failed to start utterance\n");
             utt_started = FALSE;
-            printf("READY....\n");
+            E_INFO("Ready....\n");
         }
         sleep_msec(100);
     }
