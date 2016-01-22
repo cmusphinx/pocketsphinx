@@ -38,12 +38,6 @@
 #ifndef __POCKETSPHINX_H__
 #define __POCKETSPHINX_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#if 0
-}
-#endif
 
 /* System headers we need. */
 #include <stdio.h>
@@ -59,6 +53,13 @@ extern "C" {
 #include <cmdln_macro.h>
 #include <ps_lattice.h>
 #include <ps_mllr.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
 
 /**
  * PocketSphinx speech recognizer object.

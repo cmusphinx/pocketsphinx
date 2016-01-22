@@ -49,6 +49,13 @@
 /* PocketSphinx headers. */
 #include <pocketsphinx_export.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /**
  * Feature space linear transform object.
  */
@@ -71,5 +78,9 @@ ps_mllr_t *ps_mllr_retain(ps_mllr_t *mllr);
  */
 POCKETSPHINX_EXPORT
 int ps_mllr_free(ps_mllr_t *mllr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __PS_MLLR_H__ */

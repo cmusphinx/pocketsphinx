@@ -49,6 +49,13 @@
 /* PocketSphinx headers. */
 #include <pocketsphinx_export.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /**
  * Word graph structure used in bestpath/nbest search.
  */
@@ -441,5 +448,9 @@ int32 ps_lattice_ngram_expand(ps_lattice_t *dag, ngram_model_t *lm);
  */
 POCKETSPHINX_EXPORT
 int ps_lattice_n_frames(ps_lattice_t *dag);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __PS_LATTICE_H__ */
