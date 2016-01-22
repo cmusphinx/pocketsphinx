@@ -65,7 +65,8 @@ while True:
 decoder.end_utt()
 
 hypothesis = decoder.hyp()
-print ('Best hypothesis: ', hypothesis.hypstr, " model score: ", hypothesis.best_score, " confidence: ", hypothesis.prob)
+logmath = decoder.get_logmath()
+print ('Best hypothesis: ', hypothesis.hypstr, " model score: ", hypothesis.best_score, " confidence: ", logmath.exp(hypothesis.prob))
 
 print ('Best hypothesis segments: ', [seg.word for seg in decoder.seg()])
 

@@ -11,3 +11,5 @@ fsg.word_add("hello")
 fsg.word_add("world")
 print (fsg.word_id("world"))
 
+fsg.add_silence("<sil>", 1, 0.5)
+
