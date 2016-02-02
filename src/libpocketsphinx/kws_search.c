@@ -362,10 +362,10 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
     fseek(list_file, 0L, SEEK_SET);
 
     /* read keyphrases */
-    for (li = lineiter_start(list_file), i=0; li; li = lineiter_next(li), i++) {
+    for (li = lineiter_start_clean(list_file), i=0; li; li = lineiter_next(li), i++) {
         size_t begin, end;
         kwss->keyphrases[i].threshold = kwss->def_threshold;
-        line = string_trim(li->buf, STRING_BOTH);
+        line = li->buf;
         end = strlen(line) - 1;
         begin = end - 1;
 
