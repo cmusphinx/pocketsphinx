@@ -92,7 +92,13 @@ typedef ngram_model_t NGramModelSet;
 
 
 %begin %{
-#include <stdbool.h>
+
+#ifndef __cplusplus
+typedef int bool;
+#define true 1
+#define false 0
+#endif
+
 #include <pocketsphinx.h>
 
 typedef ps_decoder_t Decoder;
