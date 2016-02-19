@@ -642,10 +642,10 @@ allphone_search_free(ps_search_t * search)
     double n_speech = (double)allphs->n_tot_frame
             / cmd_ln_int32_r(ps_search_config(allphs), "-frate");
 
-    E_INFO("TOTAL fwdflat %.2f CPU %.3f xRT\n",
+    E_INFO("TOTAL allphone %.2f CPU %.3f xRT\n",
            allphs->perf.t_tot_cpu,
            allphs->perf.t_tot_cpu / n_speech);
-    E_INFO("TOTAL fwdflat %.2f wall %.3f xRT\n",
+    E_INFO("TOTAL allphone %.2f wall %.3f xRT\n",
            allphs->perf.t_tot_elapsed,
            allphs->perf.t_tot_elapsed / n_speech);
 

@@ -100,6 +100,10 @@ typedef struct fsg_search_s {
   
     int32 n_hmm_eval;		/**< Total HMMs evaluated this utt */
     int32 n_sen_eval;		/**< Total senones evaluated this utt */
+    
+    ptmr_t perf; /**< Performance counter */
+    int32 n_tot_frame;
+        
 } fsg_search_t;
 
 /* Access macros */

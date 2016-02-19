@@ -86,6 +86,10 @@ typedef struct kws_search_s {
 
     int32 n_pl;                   /**< Number of CI phones */
     hmm_t *pl_hmms;               /**< Phone loop hmms - hmms of CI phones */
+
+    ptmr_t perf; /**< Performance counter */
+    int32 n_tot_frame;
+
 } kws_search_t;
 
 /**

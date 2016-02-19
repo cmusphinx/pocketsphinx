@@ -245,7 +245,9 @@ fsg_search_init(const char *name,
     {
         ps_search_free(ps_search_base(fsgs));
         return NULL;
+    
     }
+    ptmr_init(&fsgs->perf);
         
     return ps_search_base(fsgs);
 }
@@ -254,6 +256,16 @@ void
 fsg_search_free(ps_search_t *search)
 {
     fsg_search_t *fsgs = (fsg_search_t *)search;
+
+    double n_speech = (double)fsgs->n_tot_frame
+            / cmd_ln_int32_r(ps_search_config(fsgs), "-frate");
+
+    E_INFO("TOTAL fsg %.2f CPU %.3f xRT\n",
+           fsgs->perf.t_tot_cpu,
+           fsgs->perf.t_tot_cpu / n_speech);
+    E_INFO("TOTAL fsg %.2f wall %.3f xRT\n",
+           fsgs->perf.t_tot_elapsed,
+           fsgs->perf.t_tot_elapsed / n_speech);
 
     ps_search_base_free(search);
     fsg_lextree_free(fsgs->lextree);
@@ -802,6 +814,9 @@ fsg_search_start(ps_search_t *search)
     fsgs->n_hmm_eval = 0;
     fsgs->n_sen_eval = 0;
 
+    ptmr_reset(&fsgs->perf);
+    ptmr_start(&fsgs->perf);
+
     return 0;
 }
 
@@ -814,7 +829,7 @@ fsg_search_finish(ps_search_t *search)
     fsg_search_t *fsgs = (fsg_search_t *)search;
     gnode_t *gn;
     fsg_pnode_t *pnode;
-    int32 n_hist;
+    int32 n_hist, cf;
 
     /* Deactivate all nodes in the current and next-frame active lists */
     for (gn = fsgs->pnode_active; gn; gn = gnode_next(gn)) {
@@ -834,6 +849,7 @@ fsg_search_finish(ps_search_t *search)
     fsgs->final = TRUE;
 
     n_hist = fsg_history_n_entries(fsgs->history);
+    fsgs->n_tot_frame += fsgs->frame;
     E_INFO
         ("%d frames, %d HMMs (%d/fr), %d senones (%d/fr), %d history entries (%d/fr)\n\n",
          fsgs->frame, fsgs->n_hmm_eval,
@@ -841,6 +857,20 @@ fsg_search_finish(ps_search_t *search)
          fsgs->n_sen_eval,
          (fsgs->frame > 0) ? fsgs->n_sen_eval / fsgs->frame : 0,
          n_hist, (fsgs->frame > 0) ? n_hist / fsgs->frame : 0);
+
+    /* Print out some statistics. */
+    ptmr_stop(&fsgs->perf);
+    /* This is the number of frames processed. */
+    cf = ps_search_acmod(fsgs)->output_frame;
+    if (cf > 0) {
+        double n_speech = (double) (cf + 1)
+            / cmd_ln_int32_r(ps_search_config(fsgs), "-frate");
+        E_INFO("fsg %.2f CPU %.3f xRT\n",
+               fsgs->perf.t_cpu, fsgs->perf.t_cpu / n_speech);
+        E_INFO("fsg %.2f wall %.3f xRT\n",
+               fsgs->perf.t_elapsed, fsgs->perf.t_elapsed / n_speech);
+    }
+
 
     return 0;
 }
