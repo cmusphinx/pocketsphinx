@@ -20,6 +20,7 @@ main(int argc, char *argv[])
 				"-fwdtree", "no",
 				"-fwdflat", "yes",
 				"-bestpath", "no",
+				"-fwdflatbeam", "1e-30",
 				"-input_endian", "little",
 				"-samprate", "16000", NULL));
 	return ps_decoder_test(config, "FWDFLAT", "go forward ten meters");
