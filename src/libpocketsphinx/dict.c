@@ -209,8 +209,8 @@ dict_read(FILE * fp, dict_t * d)
             }
         }
     }
-    E_INFO("Allocated %d KiB for strings, %d KiB for phones\n",
-           (int)stralloc / 1024, (int)phnalloc / 1024);
+    E_INFO("Dictionary size %d, allocated %d KiB for strings, %d KiB for phones\n",
+           dict_size(d), (int)stralloc / 1024, (int)phnalloc / 1024);
     ckd_free(p);
     ckd_free(wptr);
 

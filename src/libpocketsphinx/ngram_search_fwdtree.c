@@ -71,6 +71,8 @@ init_search_tree(ngram_search_t *ngs)
     dict_t *dict = ps_search_dict(ngs);
     bitvec_t *dimap;
 
+    E_INFO("Initializing search tree\n");
+
     n_words = ps_search_n_words(ngs);
     ngs->homophone_set = ckd_calloc(n_words, sizeof(*ngs->homophone_set));
 
@@ -144,8 +146,6 @@ init_search_tree(ngram_search_t *ngs)
 
     ngs->single_phone_wid = ckd_calloc(ngs->n_1ph_words,
                                        sizeof(*ngs->single_phone_wid));
-    E_INFO("%d root, %d non-root channels, %d single-phone words\n",
-           ngs->n_root_chan, ngs->n_nonroot_chan, ngs->n_1ph_words);
 }
 
 /*
@@ -172,7 +172,7 @@ init_nonroot_chan(ngram_search_t *ngs, chan_t * hmm, int32 ph, int32 ci, int32 t
  * search tree to suit the currently active LM.
  */
 static void
-create_search_tree(ngram_search_t *ngs)
+create_search_channels(ngram_search_t *ngs)
 {
     chan_t *hmm;
     root_chan_t *rhmm;
@@ -183,13 +183,10 @@ create_search_tree(ngram_search_t *ngs)
 
     n_words = ps_search_n_words(ngs);
 
-    E_INFO("Creating search tree\n");
+    E_INFO("Creating search channels\n");
 
     for (w = 0; w < n_words; w++)
         ngs->homophone_set[w] = -1;
-
-    E_INFO("before: %d root, %d non-root channels, %d single-phone words\n",
-           ngs->n_root_chan, ngs->n_nonroot_chan, ngs->n_1ph_words);
 
     ngs->n_1ph_LMwords = 0;
     ngs->n_root_chan = 0;
@@ -323,7 +320,7 @@ create_search_tree(ngram_search_t *ngs)
     if (ngs->n_nonroot_chan >= ngs->max_nonroot_chan) {
         /* Give some room for channels for new words added dynamically at run time */
         ngs->max_nonroot_chan = ngs->n_nonroot_chan + 128;
-        E_INFO("after: max nonroot chan increased to %d\n", ngs->max_nonroot_chan);
+        E_INFO("Max nonroot chan increased to %d\n", ngs->max_nonroot_chan);
 
         /* Free old active channel list array if any and allocate new one */
         if (ngs->active_chan_list)
@@ -332,11 +329,11 @@ create_search_tree(ngram_search_t *ngs)
                                               sizeof(**ngs->active_chan_list));
     }
 
-    if (!ngs->n_root_chan)
-	E_ERROR("No word from the language model has pronunciation in the dictionary\n");
-
-    E_INFO("after: %d root, %d non-root channels, %d single-phone words\n",
+    E_INFO("Created %d root, %d non-root channels, %d single-phone words\n",
            ngs->n_root_chan, ngs->n_nonroot_chan, ngs->n_1ph_words);
+
+    if (ngs->n_root_chan + ngs->n_1ph_words == 0)
+	E_ERROR("No word from the language model has pronunciation in the dictionary\n");
 }
 
 static void
@@ -389,7 +386,7 @@ ngram_fwdtree_init(ngram_search_t *ngs)
     ngs->lastphn_cand = ckd_calloc(ps_search_n_words(ngs),
                                    sizeof(*ngs->lastphn_cand));
     init_search_tree(ngs);
-    create_search_tree(ngs);
+    create_search_channels(ngs);
 }
 
 static void
@@ -466,7 +463,7 @@ ngram_fwdtree_reinit(ngram_search_t *ngs)
                                 sizeof(*ngs->word_chan));
     /* Rebuild the search tree. */
     init_search_tree(ngs);
-    create_search_tree(ngs);
+    create_search_channels(ngs);
     return 0;
 }
 
