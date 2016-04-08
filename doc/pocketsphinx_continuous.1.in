@@ -1,35 +1,41 @@
-.TH POCKETSPHINX_CONTINUOUS 1 "2007-08-27"
+.TH POCKETSPHINX_CONTINUOUS 1 "2016-04-01"
 .SH NAME
 pocketsphinx_continuous \- Run speech recognition in continuous listening mode
 .SH SYNOPSIS
 .B pocketsphinx_continuous
-.RI \fB\-hmm\fR
-\fIhmmdir\fR
-\fB\-dict\fR
-\fIdictfile\fR
-[\fI options \fR]...
+.RI [ \fB\-infile\fR
+\fIfilename.wav\fR ]
+[ \fB\-inmic yes\fR ]
+[ \fIoptions\fR ]...
 .SH DESCRIPTION
 .PP
-This program opens the audio device and waits for speech.  When it
+This program opens the audio device or a file and waits for speech.  When it
 detects an utterance, it performs speech recognition on it.
-.\" ### ARGUMENTS ###
 .PP
-The
-.B \-hmm
-and
-.B \-dict
-arguments are always required.  Either
+To record from microphone and decode use 
+.TP
+.B \-inmic yes
+.PP
+To decode a 16kHz 16-bit mono WAV file use 
+.TP
+.B \-infile \fIfilename.wav\fR
+.PP
+You can also specify
 .B \-lm
 or
 .B \-fsg
-is required, depending on whether you are using a statistical language
-model or a finite-state grammar.
+or
+.B \-kws
+depending on whether you are using a statistical language
+model or a finite-state grammar or look for a keyphase.
+.SH OPTIONS
+.\" ### ARGUMENTS ###
 .SH AUTHOR
 Written by numerous people at CMU from 1994 onwards.  This manual page
 by David Huggins-Daines <dhuggins@cs.cmu.edu>
 .SH COPYRIGHT
-Copyright \(co 1994-2007 Carnegie Mellon University.  See the file
-\fICOPYING\fR included with this package for more information.
+Copyright \(co 1994-2016 Carnegie Mellon University.  See the file
+\fILICENSE\fR included with this package for more information.
 .br
 .SH "SEE ALSO"
 .BR pocketsphinx_batch (1),

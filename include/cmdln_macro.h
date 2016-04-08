@@ -243,7 +243,7 @@
 { "-lmctl",										\
       ARG_STRING,									\
       NULL,										\
-      "Specify a set of language model\n"},						\
+      "Specify a set of language model"},						\
 { "-lmname",										\
       ARG_STRING,									\
       NULL,									\

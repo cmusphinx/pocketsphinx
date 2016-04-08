@@ -1,23 +1,37 @@
-.TH POCKETSPHINX_CONTINUOUS 1 "2007-08-27"
+.TH POCKETSPHINX_CONTINUOUS 1 "2016-04-01"
 .SH NAME
 pocketsphinx_continuous \- Run speech recognition in continuous listening mode
 .SH SYNOPSIS
 .B pocketsphinx_continuous
-.RI \fB\-hmm\fR
-\fIhmmdir\fR
-\fB\-dict\fR
-\fIdictfile\fR
-[\fI options \fR]...
+.RI [ \fB\-infile\fR
+\fIfilename.wav\fR ]
+[ \fB\-inmic yes\fR ]
+[ \fIoptions\fR ]...
 .SH DESCRIPTION
 .PP
-This program opens the audio device and waits for speech.  When it
+This program opens the audio device or a file and waits for speech.  When it
 detects an utterance, it performs speech recognition on it.
+.PP
+To record from microphone and decode use 
 .TP
-.B \-adchdr
-Size of audio file header in bytes (headers are ignored)
+.B \-inmic yes
+.PP
+To decode a 16kHz 16-bit mono WAV file use 
 .TP
-.B \-adcin
-Input is raw audio data
+.B \-infile \fIfilename.wav\fR
+.PP
+You can also specify
+.B \-lm
+or
+.B \-fsg
+or
+.B \-kws
+depending on whether you are using a statistical language
+model or a finite-state grammar or look for a keyphase.
+.SH OPTIONS
+.TP
+.B \-adcdev
+of audio device to use for input.
 .TP
 .B \-agc
 Automatic gain control for c0 ('max', 'emax', 'noise', or 'none')
@@ -55,15 +69,6 @@ Run bestpath (Dijkstra) search over word lattice (3rd pass)
 .B \-bestpathlw
 Language model probability weight for bestpath search
 .TP
-.B \-build_outdirs
-Create missing subdirectories in output directory
-.TP
-.B \-cepdir
-files directory (prefixed to filespecs in control file)
-.TP
-.B \-cepext
-Input files extension (suffixed to filespecs in control file)
-.TP
 .B \-ceplen
 Number of components in the input feature vector
 .TP
@@ -75,21 +80,6 @@ Initial values (comma-separated) for cepstral mean when 'prior' is used
 .TP
 .B \-compallsen
 Compute all senone scores in every frame (can be faster when there are many senones)
-.TP
-.B \-ctl
-file listing utterances to be processed
-.TP
-.B \-ctlcount
-No. of utterances to be processed (after skipping \fB\-ctloffset\fR entries)
-.TP
-.B \-ctlincr
-Do every Nth line in the control file
-.TP
-.B \-ctloffset
-No. of utterances at the beginning of \fB\-ctl\fR file to be skipped
-.TP
-.B \-ctm
-output in CTM file format (may require post-sorting)
 .TP
 .B \-debug
 level for debugging messages
@@ -127,15 +117,6 @@ Frame rate
 .B \-fsg
 format finite state grammar file
 .TP
-.B \-fsgctl
-file listing FSG file to use for each utterance
-.TP
-.B \-fsgdir
-directory for FSG files
-.TP
-.B \-fsgext
-extension for FSG files (including leading dot)
-.TP
 .B \-fsgusealtpron
 Add alternate pronunciations to FSG
 .TP
@@ -166,11 +147,11 @@ Run forward lexicon-tree search (1st pass)
 .B \-hmm
 containing acoustic model files.
 .TP
-.B \-hyp
-output file name
+.B \-infile
+file to transcribe.
 .TP
-.B \-hypseg
-output with segmentation file name
+.B \-inmic
+Transcribe audio from microphone.
 .TP
 .B \-input_endian
 Endianness of input data, big or little, ignored if NIST or MS Wav
@@ -210,23 +191,207 @@ trigram language model input file
 .TP
 .B \-lmctl
 a set of language model
-.PP
-The
-.B \-hmm
-and
-.B \-dict
-arguments are always required.  Either
-.B \-lm
-or
-.B \-fsg
-is required, depending on whether you are using a statistical language
-model or a finite-state grammar.
+.TP
+.B \-lmname
+language model in \fB\-lmctl\fR to use by default
+.TP
+.B \-logbase
+Base in which all log-likelihoods calculated
+.TP
+.B \-logfn
+to write log messages in
+.TP
+.B \-logspec
+Write out logspectral files instead of cepstra
+.TP
+.B \-lowerf
+Lower edge of filters
+.TP
+.B \-lpbeam
+Beam width applied to last phone in words
+.TP
+.B \-lponlybeam
+Beam width applied to last phone in single-phone words
+.TP
+.B \-lw
+Language model probability weight
+.TP
+.B \-maxhmmpf
+Maximum number of active HMMs to maintain at each frame (or \fB\-1\fR for no pruning)
+.TP
+.B \-maxwpf
+Maximum number of distinct word exits at each frame (or \fB\-1\fR for no pruning)
+.TP
+.B \-mdef
+definition input file
+.TP
+.B \-mean
+gaussian means input file
+.TP
+.B \-mfclogdir
+to log feature files to
+.TP
+.B \-min_endfr
+Nodes ignored in lattice construction if they persist for fewer than N frames
+.TP
+.B \-mixw
+mixture weights input file (uncompressed)
+.TP
+.B \-mixwfloor
+Senone mixture weights floor (applied to data from \fB\-mixw\fR file)
+.TP
+.B \-mllr
+transformation to apply to means and variances
+.TP
+.B \-mmap
+Use memory-mapped I/O (if possible) for model files
+.TP
+.B \-ncep
+Number of cep coefficients
+.TP
+.B \-nfft
+Size of FFT
+.TP
+.B \-nfilt
+Number of filter banks
+.TP
+.B \-nwpen
+New word transition penalty
+.TP
+.B \-pbeam
+Beam width applied to phone transitions
+.TP
+.B \-pip
+Phone insertion penalty
+.TP
+.B \-pl_beam
+Beam width applied to phone loop search for lookahead
+.TP
+.B \-pl_pbeam
+Beam width applied to phone loop transitions for lookahead
+.TP
+.B \-pl_pip
+Phone insertion penalty for phone loop
+.TP
+.B \-pl_weight
+Weight for phoneme lookahead penalties
+.TP
+.B \-pl_window
+Phoneme lookahead window size, in frames
+.TP
+.B \-rawlogdir
+to log raw audio files to
+.TP
+.B \-remove_dc
+Remove DC offset from each frame
+.TP
+.B \-remove_noise
+Remove noise with spectral subtraction in mel-energies
+.TP
+.B \-remove_silence
+Enables VAD, removes silence frames from processing
+.TP
+.B \-round_filters
+Round mel filter frequencies to DFT points
+.TP
+.B \-samprate
+Sampling rate
+.TP
+.B \-seed
+Seed for random number generator; if less than zero, pick our own
+.TP
+.B \-sendump
+dump (compressed mixture weights) input file
+.TP
+.B \-senlogdir
+to log senone score files to
+.TP
+.B \-senmgau
+to codebook mapping input file (usually not needed)
+.TP
+.B \-silprob
+Silence word transition probability
+.TP
+.B \-smoothspec
+Write out cepstral-smoothed logspectral files
+.TP
+.B \-svspec
+specification (e.g., 24,0-11/25,12-23/26-38 or 0-12/13-25/26-38)
+.TP
+.B \-time
+Print word times in file transcription.
+.TP
+.B \-tmat
+state transition matrix input file
+.TP
+.B \-tmatfloor
+HMM state transition probability floor (applied to \fB\-tmat\fR file)
+.TP
+.B \-topn
+Maximum number of top Gaussians to use in scoring.
+.TP
+.B \-topn_beam
+Beam width used to determine top-N Gaussians (or a list, per-feature)
+.TP
+.B \-toprule
+rule for JSGF (first public rule is default)
+.TP
+.B \-transform
+Which type of transform to use to calculate cepstra (legacy, dct, or htk)
+.TP
+.B \-unit_area
+Normalize mel filters to unit area
+.TP
+.B \-upperf
+Upper edge of filters
+.TP
+.B \-uw
+Unigram weight
+.TP
+.B \-vad_postspeech
+Num of silence frames to keep after from speech to silence.
+.TP
+.B \-vad_prespeech
+Num of speech frames to keep before silence to speech.
+.TP
+.B \-vad_startspeech
+Num of speech frames to trigger vad from silence to speech.
+.TP
+.B \-vad_threshold
+Threshold for decision between noise and silence frames. Log-ratio between signal level and noise level.
+.TP
+.B \-var
+gaussian variances input file
+.TP
+.B \-varfloor
+Mixture gaussian variance floor (applied to data from \fB\-var\fR file)
+.TP
+.B \-varnorm
+Variance normalize each utterance (only if CMN == current)
+.TP
+.B \-verbose
+Show input filenames
+.TP
+.B \-warp_params
+defining the warping function
+.TP
+.B \-warp_type
+Warping function type (or shape)
+.TP
+.B \-wbeam
+Beam width applied to word exits
+.TP
+.B \-wip
+Word insertion penalty
+.TP
+.B \-wlen
+Hamming window length
 .SH AUTHOR
 Written by numerous people at CMU from 1994 onwards.  This manual page
 by David Huggins-Daines <dhuggins@cs.cmu.edu>
 .SH COPYRIGHT
-Copyright \(co 1994-2007 Carnegie Mellon University.  See the file
-\fICOPYING\fR included with this package for more information.
+Copyright \(co 1994-2016 Carnegie Mellon University.  See the file
+\fILICENSE\fR included with this package for more information.
 .br
 .SH "SEE ALSO"
 .BR pocketsphinx_batch (1),
