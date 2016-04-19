@@ -183,11 +183,11 @@ ps_find_search(ps_decoder_t *ps, char const *name)
     return (ps_search_t *) search;
 }
 
+/* Set default acoustic and language models if they are not defined in configuration. */
 void
 ps_default_search_args(cmd_ln_t *config)
 {
 #ifdef MODELDIR
-    /* Set default acoustic and language models. */
     const char *hmmdir = cmd_ln_str_r(config, "-hmm");
     if (hmmdir == NULL && hmmdir_exists(MODELDIR "/en-us/en-us")) {
         hmmdir = MODELDIR "/en-us/en-us";
@@ -195,7 +195,6 @@ ps_default_search_args(cmd_ln_t *config)
     }
 
     const char *lmfile = cmd_ln_str_r(config, "-lm");
-
     if (lmfile == NULL && !cmd_ln_str_r(config, "-fsg")
         && !cmd_ln_str_r(config, "-jsgf")
         && !cmd_ln_str_r(config, "-lmctl")
@@ -210,29 +209,6 @@ ps_default_search_args(cmd_ln_t *config)
     if (dictfile == NULL && file_exists(MODELDIR "/en-us/cmudict-en-us.dict")) {
         dictfile = MODELDIR "/en-us/cmudict-en-us.dict";
         cmd_ln_set_str_r(config, "-dict", dictfile);
-    }
-
-    /* Expand acoustic and language model filenames relative to installation
-     * path. */
-    if (hmmdir && !path_is_absolute(hmmdir) && !hmmdir_exists(hmmdir)) {
-        char *tmphmm = string_join(MODELDIR "/hmm/", hmmdir, NULL);
-        if (hmmdir_exists(tmphmm)) {
-            cmd_ln_set_str_r(config, "-hmm", tmphmm);
-        } else {
-            E_ERROR("Failed to find mdef file inside the model folder "
-                    "specified with -hmm `%s'\n", hmmdir);
-        }
-        ckd_free(tmphmm);
-    }
-    if (lmfile && !path_is_absolute(lmfile) && !file_exists(lmfile)) {
-        char *tmplm = string_join(MODELDIR "/lm/", lmfile, NULL);
-        cmd_ln_set_str_r(config, "-lm", tmplm);
-        ckd_free(tmplm);
-    }
-    if (dictfile && !path_is_absolute(dictfile) && !file_exists(dictfile)) {
-        char *tmpdict = string_join(MODELDIR "/lm/", dictfile, NULL);
-        cmd_ln_set_str_r(config, "-dict", tmpdict);
-        ckd_free(tmpdict);
     }
 #endif
 }
