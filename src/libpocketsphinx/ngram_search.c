@@ -59,7 +59,7 @@ static int ngram_search_start(ps_search_t *search);
 static int ngram_search_step(ps_search_t *search, int frame_idx);
 static int ngram_search_finish(ps_search_t *search);
 static int ngram_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p);
-static char const *ngram_search_hyp(ps_search_t *search, int32 *out_score, int32 *out_is_final);
+static char const *ngram_search_hyp(ps_search_t *search, int32 *out_score);
 static int32 ngram_search_prob(ps_search_t *search);
 static ps_seg_t *ngram_search_seg_iter(ps_search_t *search);
 
@@ -503,7 +503,7 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
 }
 
 int
-ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score, int32 *out_is_final)
+ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score)
 {
     /* End of backpointers for this frame. */
     int end_bpidx;
@@ -542,9 +542,6 @@ ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score
 
     if (out_best_score) {
 	*out_best_score = best_score;
-    }
-    if (out_is_final) {
-	*out_is_final = (ngs->bp_table[bp].wid == ps_search_finish_wid(ngs));
     }
     return best_exit;
 }
@@ -849,7 +846,7 @@ ngram_search_bestpath(ps_search_t *search, int32 *out_score, int backward)
 }
 
 static char const *
-ngram_search_hyp(ps_search_t *search, int32 *out_score, int32 *out_is_final)
+ngram_search_hyp(ps_search_t *search, int32 *out_score)
 {
     ngram_search_t *ngs = (ngram_search_t *)search;
 
@@ -882,7 +879,7 @@ ngram_search_hyp(ps_search_t *search, int32 *out_score, int32 *out_is_final)
         int32 bpidx;
 
         /* fwdtree and fwdflat use same backpointer table. */
-        bpidx = ngram_search_find_exit(ngs, -1, out_score, out_is_final);
+        bpidx = ngram_search_find_exit(ngs, -1, out_score);
         if (bpidx != NO_BP)
             return ngram_search_bp_hyp(ngs, bpidx);
     }
@@ -1037,7 +1034,7 @@ ngram_search_seg_iter(ps_search_t *search)
         int32 bpidx;
 
         /* fwdtree and fwdflat use same backpointer table. */
-        bpidx = ngram_search_find_exit(ngs, -1, NULL, NULL);
+        bpidx = ngram_search_find_exit(ngs, -1, NULL);
         return ngram_search_bp_iter(ngs, bpidx,
                                     /* but different language weights... */
                                     (ngs->done && ngs->fwdflat)

@@ -174,7 +174,6 @@ int allphone_search_finish(ps_search_t * search);
 /**
  * Get hypothesis string from the allphone search.
  */
-char const *allphone_search_hyp(ps_search_t * search, int32 * out_score,
-                                int32 * out_is_final);
+char const *allphone_search_hyp(ps_search_t * search, int32 * out_score);
 
 #endif                          /* __ALLPHONE_SEARCH_H__ */

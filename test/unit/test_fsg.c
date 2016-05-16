@@ -40,7 +40,6 @@ main(int argc, char *argv[])
         int16 const *bptr;
         char const *hyp;
         int nfr;
-        int is_final;
 
         TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
         TEST_EQUAL(0, acmod_start_utt(acmod));
@@ -54,20 +53,17 @@ main(int argc, char *argv[])
                             acmod->output_frame);
                     acmod_advance(acmod);
                 }
-                hyp = fsg_search_hyp(ps_search_base(fsgs), &score, &is_final);
-                printf("FSG: %d %s (%d) %s\n", acmod->output_frame, hyp, score, is_final ? "FINAL" : "");
-                TEST_EQUAL (is_final, acmod->output_frame > 173);
             }
         }
         fsg_search_finish(ps_search_base(fsgs));
-        hyp = fsg_search_hyp(ps_search_base(fsgs), &score, NULL);
+        hyp = fsg_search_hyp(ps_search_base(fsgs), &score);
         printf("FSG: %s (%d)\n", hyp, score);
 
         TEST_ASSERT(acmod_end_utt(acmod) >= 0);
         fclose(rawfh);
     }
     TEST_EQUAL(0, strcmp("go forward ten meters",
-                 fsg_search_hyp(ps_search_base(fsgs), &score, NULL)));
+                 fsg_search_hyp(ps_search_base(fsgs), &score)));
     for (seg = ps_seg_iter(ps); seg;
          seg = ps_seg_next(seg)) {
         char const *word;

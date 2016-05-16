@@ -664,8 +664,7 @@ kws_search_finish(ps_search_t * search)
 }
 
 char const *
-kws_search_hyp(ps_search_t * search, int32 * out_score,
-               int32 * out_is_final)
+kws_search_hyp(ps_search_t * search, int32 * out_score)
 {
     kws_search_t *kwss = (kws_search_t *) search;
     if (out_score)

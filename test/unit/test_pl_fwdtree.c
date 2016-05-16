@@ -66,13 +66,13 @@ main(int argc, char *argv[])
         }
         ps_search_finish(pls);
         ps_search_finish(ngs);
-        printf("%s\n", ps_search_hyp(ngs, &score, NULL));
+        printf("%s\n", ps_search_hyp(ngs, &score));
 
         TEST_ASSERT(acmod_end_utt(acmod) >= 0);
         fclose(rawfh);
     }
-    printf("%s\n", ps_search_hyp(ngs, &score, NULL));
-    TEST_EQUAL(0, strcmp("go forward ten meters", ps_search_hyp(ngs, &score, NULL)));
+    printf("%s\n", ps_search_hyp(ngs, &score));
+    TEST_EQUAL(0, strcmp("go forward ten meters", ps_search_hyp(ngs, &score)));
     c = clock() - c;
     printf("5 * fwdtree search in %.2f sec\n",
            (double)c / CLOCKS_PER_SEC);

@@ -400,7 +400,7 @@ void ngram_search_free_all_rc(ngram_search_t *ngs, int32 w);
  *
  * @return the backpointer index of the best word exit.
  */
-int ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score, int32 *out_is_final);
+int ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score);
 
 /**
  * Backtrace from a given backpointer index to obtain a word hypothesis.

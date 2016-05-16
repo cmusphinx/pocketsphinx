@@ -87,7 +87,7 @@ typedef struct ps_searchfuncs_s {
     void (*free)(ps_search_t *search);
 
     ps_lattice_t *(*lattice)(ps_search_t *search);
-    char const *(*hyp)(ps_search_t *search, int32 *out_score, int32 *out_is_final);
+    char const *(*hyp)(ps_search_t *search, int32 *out_score);
     int32 (*prob)(ps_search_t *search);
     ps_seg_t *(*seg_iter)(ps_search_t *search);
 } ps_searchfuncs_t;
@@ -138,7 +138,7 @@ struct ps_search_s {
 #define ps_search_reinit(s,d,d2p) (*(ps_search_base(s)->vt->reinit))(s,d,d2p)
 #define ps_search_free(s) (*(ps_search_base(s)->vt->free))(s)
 #define ps_search_lattice(s) (*(ps_search_base(s)->vt->lattice))(s)
-#define ps_search_hyp(s,sc,final) (*(ps_search_base(s)->vt->hyp))(s,sc,final)
+#define ps_search_hyp(s,sc) (*(ps_search_base(s)->vt->hyp))(s,sc)
 #define ps_search_prob(s) (*(ps_search_base(s)->vt->prob))(s)
 #define ps_search_seg_iter(s) (*(ps_search_base(s)->vt->seg_iter))(s)
 

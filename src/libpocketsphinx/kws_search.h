@@ -132,8 +132,8 @@ int kws_search_finish(ps_search_t * search);
 /**
  * Get hypothesis string from the KWS search.
  */
-char const *kws_search_hyp(ps_search_t * search, int32 * out_score,
-                           int32 * out_is_final);
+char const *kws_search_hyp(ps_search_t * search, int32 * out_score);
+
 /**
  * Get active keyphrases
  */

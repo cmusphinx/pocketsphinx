@@ -56,7 +56,7 @@ main(int argc, char *argv[])
 			}
 		}
 		fsg_search_finish(ps_search_base(fsgs));
-		hyp = fsg_search_hyp(ps_search_base(fsgs), &score, NULL);
+		hyp = fsg_search_hyp(ps_search_base(fsgs), &score);
 		printf("FSG: %s (%d)\n", hyp, score);
 
 		TEST_ASSERT(acmod_end_utt(acmod) >= 0);

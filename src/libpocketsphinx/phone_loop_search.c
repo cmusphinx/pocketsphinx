@@ -48,7 +48,7 @@ static int phone_loop_search_step(ps_search_t *search, int frame_idx);
 static int phone_loop_search_finish(ps_search_t *search);
 static int phone_loop_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p);
 static void phone_loop_search_free(ps_search_t *search);
-static char const *phone_loop_search_hyp(ps_search_t *search, int32 *out_score, int32 *out_is_final);
+static char const *phone_loop_search_hyp(ps_search_t *search, int32 *out_score);
 static int32 phone_loop_search_prob(ps_search_t *search);
 static ps_seg_t *phone_loop_search_seg_iter(ps_search_t *search);
 
@@ -345,7 +345,7 @@ phone_loop_search_finish(ps_search_t *search)
 }
 
 static char const *
-phone_loop_search_hyp(ps_search_t *search, int32 *out_score, int32 *out_is_final)
+phone_loop_search_hyp(ps_search_t *search, int32 *out_score)
 {
     E_WARN("Hypotheses are not returned from phone loop search");
     return NULL;

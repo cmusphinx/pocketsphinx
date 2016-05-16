@@ -63,7 +63,7 @@ main(int argc, char *argv[])
         }
         ngram_fwdtree_finish(ngs);
         printf("FWDTREE: %s\n",
-               ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL)));
+               ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
 
         TEST_ASSERT(acmod_end_utt(acmod) >= 0);
         fclose(rawfh);
@@ -77,9 +77,9 @@ main(int argc, char *argv[])
         printf("BESTPATH: %s\n",
                ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset, 1.461538, 15.0)));
     }
-    printf("%s\n", ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL)));
+    printf("%s\n", ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
     TEST_EQUAL(0, strcmp("go forward ten meters",
-                 ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL))));
+                 ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL))));
     printf("%s\n", ps_lattice_hyp(dag, ps_lattice_bestpath(dag, ngs->lmset,
                                    1.461538, 15.0)));
     TEST_EQUAL(0, strcmp("go forward ten meters",

@@ -44,7 +44,7 @@ test_decode(ps_decoder_t *ps)
 	}
 	ngram_fwdtree_finish(ngs);
 	printf("FWDTREE: %s\n",
-	       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL, NULL)));
+	       ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
 
 	TEST_ASSERT(acmod_end_utt(acmod) >= 0);
 	fclose(rawfh);

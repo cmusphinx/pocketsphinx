@@ -1191,22 +1191,10 @@ ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score)
     char const *hyp;
 
     ptmr_start(&ps->perf);
-    hyp = ps_search_hyp(ps->search, out_best_score, NULL);
+    hyp = ps_search_hyp(ps->search, out_best_score);
     ptmr_stop(&ps->perf);
     return hyp;
 }
-
-char const *
-ps_get_hyp_final(ps_decoder_t *ps, int32 *out_is_final)
-{
-    char const *hyp;
-
-    ptmr_start(&ps->perf);
-    hyp = ps_search_hyp(ps->search, NULL, out_is_final);
-    ptmr_stop(&ps->perf);
-    return hyp;
-}
-
 
 int32
 ps_get_prob(ps_decoder_t *ps)

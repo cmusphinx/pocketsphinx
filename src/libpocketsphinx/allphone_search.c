@@ -872,8 +872,7 @@ allphone_search_finish(ps_search_t * search)
 }
 
 char const *
-allphone_search_hyp(ps_search_t * search, int32 * out_score,
-                    int32 * out_is_final)
+allphone_search_hyp(ps_search_t * search, int32 * out_score)
 {
     allphone_search_t *allphs;
     phseg_t *p;

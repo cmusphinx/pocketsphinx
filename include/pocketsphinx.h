@@ -409,17 +409,6 @@ POCKETSPHINX_EXPORT
 char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score);
 
 /**
- * Get hypothesis string and final flag.
- *
- * @param ps Decoder.
- * @param out_is_best_score Output: if hypothesis is reached final state in the grammar.
- * @return String containing best hypothesis at this point in
- *         decoding.  NULL if no hypothesis is available.
- */
-POCKETSPHINX_EXPORT
-char const *ps_get_hyp_final(ps_decoder_t *ps, int32 *out_is_final);
-
-/**
  * Get posterior probability.
  *
  * @note Unless the -bestpath option is enabled, this function will
