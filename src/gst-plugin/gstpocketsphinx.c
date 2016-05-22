@@ -132,6 +132,8 @@ enum
     PROP_DICT_FILE,
     PROP_MLLR_FILE,
     PROP_FSG_FILE,
+    PROP_ALLPHONE_FILE,
+    PROP_KWS_FILE,
     PROP_FWDFLAT,
     PROP_BESTPATH,
     PROP_MAXHMMPF,
@@ -232,6 +234,18 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
         (gobject_class, PROP_FSG_FILE,
          g_param_spec_string("fsg", "FSG File",
                              "Finite state grammar file",
+                             NULL,
+                             G_PARAM_READWRITE));
+    g_object_class_install_property
+        (gobject_class, PROP_ALLPHONE_FILE,
+         g_param_spec_string("allphone", "Allphone File",
+                             "Phonetic language model file",
+                             NULL,
+                             G_PARAM_READWRITE));
+    g_object_class_install_property
+        (gobject_class, PROP_KWS_FILE,
+         g_param_spec_string("kws", "Keyphrases File",
+                             "List of keyphrases for spotting",
                              NULL,
                              G_PARAM_READWRITE));
     g_object_class_install_property
@@ -373,12 +387,16 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_string(ps, "-lm", value);
         gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "-allphone", NULL);
+        gst_pocketsphinx_set_string(ps, "-kws", NULL);
         break;
     case PROP_LMCTL_FILE:
         /* FSG and LM are mutually exclusive. */
         gst_pocketsphinx_set_string(ps, "-lm", NULL);
         gst_pocketsphinx_set_string(ps, "-lmctl", value);
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "-allphone", NULL);
+        gst_pocketsphinx_set_string(ps, "-kws", NULL);
         break;
     case PROP_DICT_FILE:
         gst_pocketsphinx_set_string(ps, "-dict", value);
@@ -391,6 +409,24 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_string(ps, "-lm", NULL);
         gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
         gst_pocketsphinx_set_string(ps, "-fsg", value);
+        gst_pocketsphinx_set_string(ps, "-allphone", NULL);
+        gst_pocketsphinx_set_string(ps, "-kws", NULL);
+        break;
+    case PROP_ALLPHONE_FILE:
+        /* FSG and LM are mutually exclusive. */
+        gst_pocketsphinx_set_string(ps, "-lm", NULL);
+        gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
+        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "-allphone", value);
+        gst_pocketsphinx_set_string(ps, "-kws", NULL);
+        break;
+    case PROP_KWS_FILE:
+        /* FSG and LM are mutually exclusive. */
+        gst_pocketsphinx_set_string(ps, "-lm", NULL);
+        gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
+        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "-allphone", NULL);
+        gst_pocketsphinx_set_string(ps, "-kws", value);
         break;
     case PROP_FWDFLAT:
         gst_pocketsphinx_set_boolean(ps, "-fwdflat", value);
@@ -426,6 +462,8 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     case PROP_LM_NAME:
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
         gst_pocketsphinx_set_string(ps, "-lm", NULL);
+        gst_pocketsphinx_set_string(ps, "-allphone", NULL);
+        gst_pocketsphinx_set_string(ps, "-kws", NULL);
         gst_pocketsphinx_set_string(ps, "-lmname", value);
 
         /**
@@ -478,6 +516,12 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
         break;
     case PROP_FSG_FILE:
         g_value_set_string(value, cmd_ln_str_r(ps->config, "-fsg"));
+        break;
+    case PROP_ALLPHONE_FILE:
+        g_value_set_string(value, cmd_ln_str_r(ps->config, "-allphone"));
+        break;
+    case PROP_KWS_FILE:
+        g_value_set_string(value, cmd_ln_str_r(ps->config, "-kws"));
         break;
     case PROP_FWDFLAT:
         g_value_set_boolean(value, cmd_ln_boolean_r(ps->config, "-fwdflat"));
