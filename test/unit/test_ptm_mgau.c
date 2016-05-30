@@ -8,20 +8,20 @@
 #include "ms_mgau.h"
 #include "test_macros.h"
 
-static const mfcc_t prior[13] = {
-	FLOAT2MFCC(37.03),
-	FLOAT2MFCC(-1.01),
-	FLOAT2MFCC(0.53),
-	FLOAT2MFCC(0.49),
-	FLOAT2MFCC(-0.60),
-	FLOAT2MFCC(0.14),
-	FLOAT2MFCC(-0.05),
-	FLOAT2MFCC(0.25),
-	FLOAT2MFCC(0.37),
-	FLOAT2MFCC(0.58),
-	FLOAT2MFCC(0.13),
-	FLOAT2MFCC(-0.16),
-	FLOAT2MFCC(0.17)
+static const mfcc_t cmninit[13] = {
+	FLOAT2MFCC(41.00),
+	FLOAT2MFCC(-5.29),
+	FLOAT2MFCC(-0.12),
+	FLOAT2MFCC(5.09),
+	FLOAT2MFCC(2.48),
+	FLOAT2MFCC(-4.07),
+	FLOAT2MFCC(-1.37),
+	FLOAT2MFCC(-1.78),
+	FLOAT2MFCC(-5.08),
+	FLOAT2MFCC(-2.05),
+	FLOAT2MFCC(-6.45),
+	FLOAT2MFCC(-1.42),
+	FLOAT2MFCC(1.17)
 };
 
 void
@@ -34,7 +34,7 @@ run_acmod_test(acmod_t *acmod)
 	int nfr;
 	int frame_counter;
 
-	cmn_prior_set(acmod->fcb->cmn_struct, prior);
+	cmn_live_set(acmod->fcb->cmn_struct, cmninit);
 	nsamps = 2048;
 	frame_counter = 0;
 	buf = ckd_calloc(nsamps, sizeof(*buf));

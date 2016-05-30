@@ -7,20 +7,20 @@
 #include "acmod.h"
 #include "test_macros.h"
 
-static const mfcc_t prior[13] = {
-    FLOAT2MFCC(37.03),
-    FLOAT2MFCC(-1.01),
-    FLOAT2MFCC(0.53),
-    FLOAT2MFCC(0.49),
-    FLOAT2MFCC(-0.60),
-    FLOAT2MFCC(0.14),
-    FLOAT2MFCC(-0.05),
-    FLOAT2MFCC(0.25),
-    FLOAT2MFCC(0.37),
-    FLOAT2MFCC(0.58),
-    FLOAT2MFCC(0.13),
-    FLOAT2MFCC(-0.16),
-    FLOAT2MFCC(0.17)
+static const mfcc_t cmninit[13] = {
+	FLOAT2MFCC(41.00),
+	FLOAT2MFCC(-5.29),
+	FLOAT2MFCC(-0.12),
+	FLOAT2MFCC(5.09),
+	FLOAT2MFCC(2.48),
+	FLOAT2MFCC(-4.07),
+	FLOAT2MFCC(-1.37),
+	FLOAT2MFCC(-1.78),
+	FLOAT2MFCC(-5.08),
+	FLOAT2MFCC(-2.05),
+	FLOAT2MFCC(-6.45),
+	FLOAT2MFCC(-1.42),
+	FLOAT2MFCC(1.17)
 };
 
 int
@@ -40,7 +40,7 @@ main(int argc, char *argv[])
     lmath = logmath_init(1.0001, 0, 0);
     config = cmd_ln_init(NULL, ps_args(), TRUE,
                  "-compallsen", "true",
-                 "-cmn", "prior",
+                 "-cmn", "live",
                  "-tmatfloor", "0.0001",
                  "-mixwfloor", "0.001",
                  "-varfloor", "0.0001",
@@ -62,7 +62,7 @@ main(int argc, char *argv[])
     cmd_ln_set_str_extra_r(config, "_senmgau", NULL);
 
     TEST_ASSERT(acmod = acmod_init(config, lmath, NULL, NULL));
-    cmn_prior_set(acmod->fcb->cmn_struct, prior);
+    cmn_live_set(acmod->fcb->cmn_struct, cmninit);
 
     nsamps = 2048;
     frame_counter = 0;

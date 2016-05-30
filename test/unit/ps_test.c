@@ -6,22 +6,6 @@
 
 #include "test_macros.h"
 
-static const mfcc_t prior[13] = {
-    FLOAT2MFCC(33.89),
-    FLOAT2MFCC(-1.13),
-    FLOAT2MFCC(0.83),
-    FLOAT2MFCC(0.49),
-    FLOAT2MFCC(-0.65),
-    FLOAT2MFCC(0.12),
-    FLOAT2MFCC(-0.03),
-    FLOAT2MFCC(0.28),
-    FLOAT2MFCC(0.41),
-    FLOAT2MFCC(0.59),
-    FLOAT2MFCC(0.11),
-    FLOAT2MFCC(-0.20),
-    FLOAT2MFCC(0.17)
-};
-
 int
 ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
 {

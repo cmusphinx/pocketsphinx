@@ -149,7 +149,6 @@ main(int argc, char *argv[])
 				"-fwdflat", "no",
 				"-bestpath", "yes",
 				"-input_endian", "little",
-				"-cmninit", "37",
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = ps_init(config));
 	rv = test_decode(ps);
