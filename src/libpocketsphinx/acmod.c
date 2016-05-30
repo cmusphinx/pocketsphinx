@@ -120,8 +120,10 @@ acmod_init_am(acmod_t *acmod)
             if ((acmod->mgau = s2_semi_mgau_init(acmod)) == NULL) {
                 E_INFO("Falling back to general multi-stream GMM computation\n");
                 acmod->mgau = ms_mgau_init(acmod, acmod->lmath, acmod->mdef);
-                if (acmod->mgau == NULL)
+                if (acmod->mgau == NULL) {
+                    E_ERROR("Failed to read acoustic model\n");
                     return -1;
+                }
             }
         }
     }

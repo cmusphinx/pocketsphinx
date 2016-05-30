@@ -34,96 +34,16 @@
  * ====================================================================
  *
  */
-/*
- * gauden.c -- gaussian density module.
- *
- ***********************************************
- * CMU ARPA Speech Project
- *
- * Copyright (c) 1996 Carnegie Mellon University.
- * ALL RIGHTS RESERVED.
- ***********************************************
- *
- * HISTORY
- * $Log$
- * Revision 1.7  2006/02/22  17:09:55  arthchan2003
- * Merged from SPHINX3_5_2_RCI_IRII_BRANCH: 1, Followed Dave's change, keep active to be uint8 instead int8 in gauden_dist_norm.\n 2, Introdued gauden_dump and gauden_dump_ind.  This allows debugging of ms_gauden routine. \n 3, Introduced gauden_free, this fixed some minor memory leaks. \n 4, gauden_init accept an argument precompute to specify whether the distance is pre-computed or not.\n 5, Added license. \n 6, Fixed dox-doc.
- * 
- *
- * Revision 1.5.4.7  2006/01/16 19:45:59  arthchan2003
- * Change the gaussian density dumping routine to a function.
- *
- * Revision 1.5.4.6  2005/10/09 19:51:05  arthchan2003
- * Followed Dave's changed in the trunk.
- *
- * Revision 1.5.4.5  2005/09/25 18:54:20  arthchan2003
- * Added a flag to turn on and off precomputation.
- *
- * Revision 1.6  2005/10/05 00:31:14  dhdfu
- * Make int8 be explicitly signed (signedness of 'char' is
- * architecture-dependent).  Then make a bunch of things use uint8 where
- * signedness is unimportant, because on the architecture where 'char' is
- * unsigned, it is that way for a reason (signed chars are slower).
- *
- * Revision 1.5.4.4  2005/09/07 23:29:07  arthchan2003
- * Added FIXME warning.
- *
- * Revision 1.5.4.3  2005/09/07 23:25:10  arthchan2003
- * 1, Behavior changes of cont_mgau, instead of remove Gaussian with zero variance vector before flooring, now remove Gaussian with zero mean and variance before flooring. Notice that this is not yet synchronize with ms_mgau. 2, Added warning message in multi-stream gaussian distribution.
- *
- * Revision 1.5.4.2  2005/08/03 18:53:44  dhdfu
- * Add memory deallocation functions.  Also move all the initialization
- * of ms_mgau_model_t into ms_mgau_init (duh!), which entails removing it
- * from decode_anytopo and friends.
- *
- * Revision 1.5.4.1  2005/07/20 19:39:01  arthchan2003
- * Added licences in ms_* series of code.
- *
- * Revision 1.5  2005/06/21 18:55:09  arthchan2003
- * 1, Add comments to describe this modules, 2, Fixed doxygen documentation. 3, Added $ keyword.
- *
- * Revision 1.3  2005/03/30 01:22:47  archan
- * Fixed mistakes in last updates. Add
- *
- * 
- * 20-Dec-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Changed gauden_param_read to use the new libio/bio_fread functions.
- * 
- * 26-Sep-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added gauden_mean_reload() for application of MLLR; and correspondingly
- * 		made gauden_param_read allocate memory for parameter only if not
- * 		already allocated.
- * 
- * 09-Sep-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Interleaved two density computations for speed improvement.
- * 
- * 19-Aug-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added compute_dist_all special case for improving speed.
- * 
- * 26-Jan-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added check for underflow and floor insertion in gauden_dist.
- * 
- * 20-Jan-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Added active argument to gauden_dist_norm and gauden_dist_norm_global,
- * 		and made the latter a static function.
- * 
- * 07-Nov-95	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
- * 		Initial version created.
- * 		Very liberally borrowed/adapted from Eric's S3 trainer implementation.
- */
 
-/* System headers. */
 #include <assert.h>
 #include <string.h>
 #include <math.h>
 #include <float.h>
 
-/* SphinxBase headers. */
 #include <sphinxbase/bio.h>
 #include <sphinxbase/err.h>
 #include <sphinxbase/ckd_alloc.h>
 
-/* Local headesr. */
 #include "ms_gauden.h"
 
 #define GAUDEN_PARAM_VERSION	"1.0"
@@ -156,7 +76,7 @@ gauden_dump_ind(const gauden_t * g, int senidx)
         for (d = 0; d < g->n_density; d++) {
             printf("m[%3d]", d);
             for (i = 0; i < g->featlen[f]; i++)
-		printf(" %7.4f", MFCC2FLOAT(g->mean[senidx][f][d][i]));
+                printf(" %7.4f", MFCC2FLOAT(g->mean[senidx][f][d][i]));
             printf("\n");
         }
         printf("\n");
@@ -175,12 +95,21 @@ gauden_dump_ind(const gauden_t * g, int senidx)
     fflush(stderr);
 }
 
-static int32
-gauden_param_read(float32 ***** out_param,      /* Alloc space iff *out_param == NULL */
+/**
+ * Reads gaussian parameters from a file
+ *
+ * @param: out_param   output parameter
+ * @
+ *
+ * @returns: allocated 4-d array of gaussians
+ *
+ */
+static float ****
+gauden_param_read(const char *file_name,
                   int32 * out_n_mgau,
                   int32 * out_n_feat,
                   int32 * out_n_density,
-                  int32 ** out_veclen, const char *file_name)
+                  int32 ** out_veclen)
 {
     char tmp;
     FILE *fp;
@@ -197,12 +126,17 @@ gauden_param_read(float32 ***** out_param,      /* Alloc space iff *out_param ==
 
     E_INFO("Reading mixture gaussian parameter: %s\n", file_name);
 
-    if ((fp = fopen(file_name, "rb")) == NULL)
-        E_FATAL_SYSTEM("Failed to open file '%s' for reading", file_name);
+    if ((fp = fopen(file_name, "rb")) == NULL) {
+        E_ERROR_SYSTEM("Failed to open file '%s' for reading", file_name);
+        return NULL;
+    }
 
     /* Read header, including argument-value info and 32-bit byteorder magic */
-    if (bio_readhdr(fp, &argname, &argval, &byteswap) < 0)
-        E_FATAL("Failed to read header from file '%s'\n", file_name);
+    if (bio_readhdr(fp, &argname, &argval, &byteswap) < 0) {
+        E_ERROR("Failed to read header from file '%s'\n", file_name);
+        fclose(fp);
+        return NULL;
+    }
 
     /* Parse argument-value list */
     chksum_present = 0;
@@ -222,78 +156,94 @@ gauden_param_read(float32 ***** out_param,      /* Alloc space iff *out_param ==
     chksum = 0;
 
     /* #Codebooks */
-    if (bio_fread(&n_mgau, sizeof(int32), 1, fp, byteswap, &chksum) != 1)
-        E_FATAL("fread(%s) (#codebooks) failed\n", file_name);
+    if (bio_fread(&n_mgau, sizeof(int32), 1, fp, byteswap, &chksum) != 1) {
+        E_ERROR("Failed to read number fo codebooks from %s\n", file_name);
+        fclose(fp);
+        return NULL;
+    }
     *out_n_mgau = n_mgau;
 
     /* #Features/codebook */
-    if (bio_fread(&n_feat, sizeof(int32), 1, fp, byteswap, &chksum) != 1)
-        E_FATAL("fread(%s) (#features) failed\n", file_name);
+    if (bio_fread(&n_feat, sizeof(int32), 1, fp, byteswap, &chksum) != 1) {
+        E_ERROR("Failed to read number of features from %s\n", file_name);
+        fclose(fp);
+        return NULL;
+    }
     *out_n_feat = n_feat;
 
     /* #Gaussian densities/feature in each codebook */
-    if (bio_fread(&n_density, sizeof(int32), 1, fp, byteswap, &chksum) != 1)
-        E_FATAL("fread(%s) (#density/codebook) failed\n", file_name);
+    if (bio_fread(&n_density, sizeof(int32), 1, fp, byteswap, &chksum) != 1) {
+        E_ERROR("fread(%s) (#density/codebook) failed\n", file_name);
+    }
     *out_n_density = n_density;
 
     /* #Dimensions in each feature stream */
     veclen = ckd_calloc(n_feat, sizeof(uint32));
     *out_veclen = veclen;
     if (bio_fread(veclen, sizeof(int32), n_feat, fp, byteswap, &chksum) !=
-        n_feat)
-        E_FATAL("fread(%s) (feature-lengths) failed\n", file_name);
+        n_feat) {
+        E_ERROR("fread(%s) (feature-lengths) failed\n", file_name);
+        fclose(fp);
+        return NULL;
+    }
 
     /* blk = total vector length of all feature streams */
     for (i = 0, blk = 0; i < n_feat; i++)
         blk += veclen[i];
 
     /* #Floats to follow; for the ENTIRE SET of CODEBOOKS */
-    if (bio_fread(&n, sizeof(int32), 1, fp, byteswap, &chksum) != 1)
-        E_FATAL("fread(%s) (total #floats) failed\n", file_name);
+    if (bio_fread(&n, sizeof(int32), 1, fp, byteswap, &chksum) != 1) {
+        E_ERROR("Failed to read number of parameters from %s\n", file_name);
+        fclose(fp);
+        return NULL;
+    }
+
     if (n != n_mgau * n_density * blk) {
-        E_FATAL
-            ("%s: #mfcc_ts(%d) doesn't match dimensions: %d x %d x %d\n",
+        E_ERROR
+            ("Number of parameters in %s(%d) doesn't match dimensions: %d x %d x %d\n",
              file_name, n, n_mgau, n_density, blk);
+        fclose(fp);
+        return NULL;
     }
 
     /* Allocate memory for mixture gaussian densities if not already allocated */
-    if (!(*out_param)) {
-        out = (float32 ****) ckd_calloc_3d(n_mgau, n_feat, n_density,
-                                         sizeof(float32 *));
-        buf = (float32 *) ckd_calloc(n, sizeof(float32));
-        for (i = 0, l = 0; i < n_mgau; i++) {
-            for (j = 0; j < n_feat; j++) {
-                for (k = 0; k < n_density; k++) {
-                    out[i][j][k] = &buf[l];
-                    l += veclen[j];
-                }
+    out = (float32 ****) ckd_calloc_3d(n_mgau, n_feat, n_density,
+                                      sizeof(float32 *));
+    buf = (float32 *) ckd_calloc(n, sizeof(float32));
+    for (i = 0, l = 0; i < n_mgau; i++) {
+        for (j = 0; j < n_feat; j++) {
+            for (k = 0; k < n_density; k++) {
+                out[i][j][k] = &buf[l];
+                l += veclen[j];
             }
         }
     }
-    else {
-        out = (float32 ****) *out_param;
-        buf = out[0][0][0];
-    }
 
     /* Read mixture gaussian densities data */
-    if (bio_fread(buf, sizeof(float32), n, fp, byteswap, &chksum) != n)
-        E_FATAL("fread(%s) (densitydata) failed\n", file_name);
+    if (bio_fread(buf, sizeof(float32), n, fp, byteswap, &chksum) != n) {
+        E_ERROR("Failed to read density data from file '%s'\n", file_name);
+        fclose(fp);
+        ckd_free_3d(out);
+        return NULL;
+    }
 
     if (chksum_present)
         bio_verify_chksum(fp, byteswap, chksum);
 
-    if (fread(&tmp, 1, 1, fp) == 1)
-        E_FATAL("More data than expected in %s\n", file_name);
+    if (fread(&tmp, 1, 1, fp) == 1) {
+        E_ERROR("More data than expected in %s\n", file_name);
+        fclose(fp);
+        ckd_free_3d(out);
+        return NULL;
+    }
 
     fclose(fp);
-
-    *out_param = out;
 
     E_INFO("%d codebook, %d feature, size: \n", n_mgau, n_feat);
     for (i = 0; i < n_feat; i++)
         E_INFO(" %dx%d\n", n_density, veclen[i]);
 
-    return 0;
+    return out;
 }
 
 static void
@@ -361,7 +311,6 @@ gauden_t *
 gauden_init(char const *meanfile, char const *varfile, float32 varfloor, logmath_t *lmath)
 {
     int32 i, m, f, d, *flen;
-    float32 ****fgau;
     gauden_t *g;
 
     assert(meanfile != NULL);
@@ -371,25 +320,35 @@ gauden_init(char const *meanfile, char const *varfile, float32 varfloor, logmath
     g = (gauden_t *) ckd_calloc(1, sizeof(gauden_t));
     g->lmath = lmath;
 
-    /* Read means and (diagonal) variances for all mixture gaussians */
-    fgau = NULL;
-    gauden_param_read(&fgau, &g->n_mgau, &g->n_feat, &g->n_density,
-                      &g->featlen, meanfile);
-    g->mean = (mfcc_t ****)fgau;
-    fgau = NULL;
-    gauden_param_read(&fgau, &m, &f, &d, &flen, varfile);
-    g->var = (mfcc_t ****)fgau;
+    g->mean = (mfcc_t ****)gauden_param_read(meanfile, &g->n_mgau, &g->n_feat, &g->n_density,
+                      &g->featlen);
+    if (g->mean == NULL) {
+	return NULL;
+    }
+    g->var = (mfcc_t ****)gauden_param_read(varfile, &m, &f, &d, &flen);
+    if (g->var == NULL) {
+	return NULL;
+    }
 
     /* Verify mean and variance parameter dimensions */
-    if ((m != g->n_mgau) || (f != g->n_feat) || (d != g->n_density))
-        E_FATAL
+    if ((m != g->n_mgau) || (f != g->n_feat) || (d != g->n_density)) {
+        E_ERROR
             ("Mixture-gaussians dimensions for means and variances differ\n");
-    for (i = 0; i < g->n_feat; i++)
-        if (g->featlen[i] != flen[i])
+        ckd_free(flen);
+        gauden_free(g);
+        return NULL;
+    }
+    for (i = 0; i < g->n_feat; i++) {
+        if (g->featlen[i] != flen[i]) {
             E_FATAL("Feature lengths for means and variances differ\n");
+            ckd_free(flen);
+            gauden_free(g);
+            return NULL;
+        }
+    }
+
     ckd_free(flen);
 
-    /* Floor variances and precompute variance determinants */
     gauden_dist_precompute(g, lmath, varfloor);
 
     return g;
@@ -550,7 +509,6 @@ int32
 gauden_mllr_transform(gauden_t *g, ps_mllr_t *mllr, cmd_ln_t *config)
 {
     int32 i, m, f, d, *flen;
-    float32 ****fgau;
 
     /* Free data if already here */
     if (g->mean)
@@ -561,19 +519,13 @@ gauden_mllr_transform(gauden_t *g, ps_mllr_t *mllr, cmd_ln_t *config)
         ckd_free_3d(g->det);
     if (g->featlen)
         ckd_free(g->featlen);
-    g->mean = NULL;
-    g->var = NULL;
     g->det = NULL;
     g->featlen = NULL;
 
     /* Reload means and variances (un-precomputed). */
-    fgau = NULL;
-    gauden_param_read(&fgau, &g->n_mgau, &g->n_feat, &g->n_density,
-                      &g->featlen, cmd_ln_str_r(config, "_mean"));
-    g->mean = (mfcc_t ****)fgau;
-    fgau = NULL;
-    gauden_param_read(&fgau, &m, &f, &d, &flen, cmd_ln_str_r(config, "_var"));
-    g->var = (mfcc_t ****)fgau;
+    g->mean = (mfcc_t ****)gauden_param_read(cmd_ln_str_r(config, "_mean"), &g->n_mgau, &g->n_feat, &g->n_density,
+                      &g->featlen);
+    g->var = (mfcc_t ****)gauden_param_read(cmd_ln_str_r(config, "_var"), &m, &f, &d, &flen);
 
     /* Verify mean and variance parameter dimensions */
     if ((m != g->n_mgau) || (f != g->n_feat) || (d != g->n_density))

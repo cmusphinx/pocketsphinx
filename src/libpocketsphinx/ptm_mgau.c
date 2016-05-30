@@ -793,8 +793,11 @@ ptm_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
     if ((s->g = gauden_init(cmd_ln_str_r(s->config, "_mean"),
                             cmd_ln_str_r(s->config, "_var"),
                             cmd_ln_float32_r(s->config, "-varfloor"),
-                            s->lmath)) == NULL)
+                            s->lmath)) == NULL) {
+        E_ERROR("Failed to read means and variances\n");	
         goto error_out;
+    }
+
     /* We only support 256 codebooks or less (like 640k or 2GB, this
      * should be enough for anyone) */
     if (s->g->n_mgau > 256) {
