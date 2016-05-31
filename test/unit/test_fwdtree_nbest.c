@@ -27,7 +27,6 @@ main(int argc, char *argv[])
                 "-fwdtree", "yes",
                 "-fwdflat", "no",
                 "-bestpath", "yes",
-                "-input_endian", "little",
                 "-samprate", "16000", NULL));
     TEST_ASSERT(ps = ps_init(config));
 
@@ -81,15 +80,15 @@ main(int argc, char *argv[])
         }
         besthyp = ckd_salloc
             (ps_lattice_hyp(dag, ps_lattice_bestpath
-                    (dag, ngs->lmset, 6.5, 1.0)));
+                    (dag, ngs->lmset, 9.5/6.5, 1.0)));
         printf("BESTPATH: %s\n", besthyp);
 
-        TEST_ASSERT(nbest = ps_astar_start(dag, ngs->lmset, 6.5, 0, -1, -1, -1));
+        TEST_ASSERT(nbest = ps_astar_start(dag, ngs->lmset, 9.5/6.5, 0, -1, -1, -1));
         i = 0;
         astar_hyp_score = WORST_SCORE;
         while ((path = ps_astar_next(nbest))) {
             if (i < 10)
-                printf("NBEST %d: %s\n", i, ps_astar_hyp(nbest, path));
+                printf("NBEST %d: %s (%d)\n", i, ps_astar_hyp(nbest, path), path->score);
             if (path->score > astar_hyp_score) {
                 astar_hyp_score = path->score;
                 astar_besthyp = ps_astar_hyp(nbest, path);

@@ -705,6 +705,7 @@ acetylene AH S EH T AH L IY N
 acevedo AE S AH V EY D OW
 aceves AA S EY V EH S
 acey EY S IY
+ach EY S IY EY CH
 achaean AH CH IY AH N
 achatz AE K AH T S
 ache EY K
@@ -1009,6 +1010,7 @@ adarand AE D AH R AE N D
 adas EY D AH Z
 aday AH D EY
 adaza AH D AA Z AH
+adblock AE D B L AA K
 adcock AH D K AA K
 adcox AH D K AA K S
 add AE D
@@ -1211,7 +1213,8 @@ administrator AH D M IH N AH S T R EY T ER
 administrator's AE D M IH N IH S T R EY T ER Z
 administrators AE D M IH N IH S T R EY T ER Z
 administrators' AE D M IH N AH S T R EY T ER Z
-admins AE D M IH N Z
+admins AH D M IH N Z
+admins(2) AE D M IH N Z
 admira AE D M AY R AH
 admira's AE D M AY R AH Z
 admirable AE D M ER AH B AH L
@@ -1450,6 +1453,7 @@ advocating AE D V AH K EY T IH NG
 advocation AE D V AH K EY SH AH N
 adweek AE D W IY K
 adwell AH D W EH L
+adwords AE D W ER D Z
 ady EY D IY
 adz AE D Z
 ae EY
@@ -4307,6 +4311,7 @@ anisa AE N IY S AH
 anise AE N AH S
 aniseed AE N AH S IY D
 anisette AE N AH S EH T
+aniston AE N AH S T AH N
 anita AH N IY T AH
 anitec AE N IH T EH K
 anitole AE N IH T OW L
@@ -4375,8 +4380,7 @@ annihilating AH N AY AH L EY T IH NG
 annihilation AH N AY AH L EY SH AH N
 annis AE N IY Z
 annissa AE N IY S AH
-anniston AE N IH S T IH N
-anniston(2) AE N IH S IH N
+anniston AE N AH S T AH N
 anniversaries AE N AH V ER S ER IY Z
 anniversary AE N AH V ER S ER IY
 anno AE N OW
@@ -4441,6 +4445,8 @@ anomie AE N AH M IY
 anon AE N AO N
 anona AA N OW N AH
 anonymity AE N AH N IH M IH T IY
+anonymize AH N AA N AH M AY Z
+anonymized AH N AA N AH M AY Z D
 anonymous AH N AA N AH M AH S
 anonymously AH N AA N AH M AH S L IY
 anopheles AA N AO F IH L IY Z
@@ -4582,6 +4588,7 @@ anti-doping AE N T IY D OW P IH NG
 anti-federalist AE N T IY F EH D R AH L IH S T
 anti-federalists AE N T IY F EH D R AH L AH S T S
 anti-infective AE N T IY IH N F EH K T IH V
+anti-war AE N T IY W AO R
 antiabortion AE N T IY AH B AO R SH AH N
 antiabortion(2) AE N T AY AH B AO R SH AH N
 antiaircraft AE N T AY EH R K R AE F T
@@ -4831,6 +4838,7 @@ apartheid's AH P AA R T AY T S
 apartheid's(2) AH P AA R T AY D Z
 apartheid(2) AH P AA R T AY D
 apartment AH P AA R T M AH N T
+apartment's AH P AA R T M AH N T S
 apartments AH P AA R T M AH N T S
 apathetic AE P AH TH EH T IH K
 apathy AE P AH TH IY
@@ -5413,6 +5421,7 @@ ardrey AA R D R IY
 ardshiel AA R D SH IY L
 ardsley AA R D Z L IY
 arduini AA R D UW IY N IY
+arduino AA R D W IY N OW
 arduous AA R JH UW AH S
 are AA R
 are(2) ER
@@ -6942,6 +6951,7 @@ authentically AO TH EH N T IH K L IY
 authentically(2) AO TH EH N IH K L IY
 authenticate AO TH EH N T AH K EY T
 authenticated AO TH EH N T AH K EY T IH D
+authenticates AO TH EH N T AH K EY T S
 authenticating AO TH EH N T AH K EY T IH NG
 authentication AO TH EH N T AH K EY SH AH N
 authentications AO TH EH N T AH K EY SH AH N Z
@@ -8524,6 +8534,7 @@ barbecue's B AA R B IH K Y UW Z
 barbecued B AA R B IH K Y UW D
 barbecueing B AA R B IH K Y UW IH NG
 barbecues B AA R B IH K Y UW Z
+barbecuing B AA R B IH K Y UW IH NG
 barbed B AA R B D
 barbed-wire B AA R B D W AY R
 barbee B AA R B IY
@@ -8675,6 +8686,8 @@ barings B EH R IH NG Z
 barings' B EH R IH NG Z
 baris B AA R IY Z
 barish B EH R IH SH
+barista B AA R IY S T AH
+baristas B AA R IY S T AH Z
 barite B EH R AY T
 barites B EH R AY T S
 baritone B EH R AH T OW N
@@ -11252,6 +11265,7 @@ bhutto's B UW T OW Z
 bi B AY
 bi-daily B AY D EY L IY
 bi-polar B AY P OW L ER
+bi-weekly B AY W IY K L IY
 biaggi B IY AE JH IY
 biaggini B IY AH G IY N IY
 biagi B IY AA JH IY
@@ -11378,6 +11392,7 @@ biderman B AY D ER M AH N
 bidgood B IH D G UH D
 biding B AY D IH NG
 bidinger B AY D IH NG ER
+bidirectional B IH D ER EH K SH AH N AH L
 bidlack B IH D L AE K
 bidlo B IH D L OW
 bidlo's B IH D L OW Z
@@ -11983,6 +11998,8 @@ bitches B IH CH IH Z
 bitchiness B IH CH IY N AH S
 bitching B IH CH IH NG
 bitchy B IH CH IY
+bitcoin B IH T K OY N
+bitcoins B IH T K OY N Z
 bite B AY T
 biter B AY T ER
 bites B AY T S
@@ -12481,6 +12498,7 @@ blockages B L AA K IH JH IH Z
 blockbuster B L AA K B AH S T ER
 blockbuster's B L AA K B AH S T ER Z
 blockbusters B L AA K B AH S T ER Z
+blockchain B L AA K CH EY N
 blocked B L AA K T
 blocker B L AA K ER
 blockers B L AA K ER Z
@@ -14741,6 +14759,7 @@ breaching B R IY CH IH NG
 bread B R EH D
 breadbasket B R EH D B AE S K AH T
 breadbox B R EH D B AA K S
+breadcrumb B R EH D K R AH M
 breaded B R EH D IH D
 breadfruit B R EH D F R UW T
 breading B R EH D IH NG
@@ -17077,6 +17096,7 @@ buzzelli B UW T S EH L IY
 buzzer B AH Z ER
 buzzes B AH Z IH Z
 buzzetta B Y UW Z EH T AH
+buzzfeed B AH Z F IY D
 buzzing B AH Z IH NG
 buzzword B AH Z W ER D
 buzzwords B AH Z W ER D Z
@@ -17582,6 +17602,7 @@ callari K AA L AA R IY
 callas K AE L AH Z
 callaway K AE L AH W EY
 callaway's K AO L AH W EY Z
+callback K AO L B AE K
 calle K EY L
 callebs K EY L EH B Z
 called K AO L D
@@ -17670,6 +17691,7 @@ caltagirone K AA L T AA JH IH R OW N IY
 caltex K AH L T EH K S
 caltha K AE L DH AH
 calton K AE L T AH N
+caltrain K AE L T R EY N
 caltrans K AE L T R AE N Z
 calumet K AE L Y AH M EH T
 calumny K AE L AH M N IY
@@ -19319,6 +19341,7 @@ catered K EY T ER D
 caterer K EY T ER ER
 caterers K EY T ER ER Z
 catering K EY T ER IH NG
+caterings K AE T ER IH NG Z
 caterino K AA T ER IY N OW
 caterpillar K AE T AH P IH L ER
 caterpillar's K AE T ER P IH L ER Z
@@ -19532,6 +19555,7 @@ caves K EY V Z
 cavett K AE V IH T
 cavey K EY V IY
 caviar K AE V IY AA R
+caviar's K AE V IY AA R Z
 cavin K AE V IH N
 caviness K EY V IY N IH S
 caving K EY V IH NG
@@ -20314,6 +20338,8 @@ charest SH AA R EH S T
 charette SH ER EH T
 charge CH AA R JH
 chargeable CH AA R JH AH B AH L
+chargeback CH AA R JH B AE K
+chargebacks CH AA R JH B AE K S
 charged CH AA R JH D
 charger CH AA R JH ER
 chargers CH AA R JH ER Z
@@ -20469,6 +20495,7 @@ chatihachi's CH AE T IH HH AA CH IY Z
 chatman CH AE T M AH N
 chatmon CH AE T M AH N
 chato CH EY T OW
+chatroom CH AE T R UW M
 chats CH AE T S
 chatswood CH AE T S W UH D
 chatsworth CH AE T S W ER TH
@@ -21384,6 +21411,7 @@ chromatogram K R OW M AE T AH G R AE M
 chromatograms K R OW M AE T AH G R AE M Z
 chromatography K R OW M AH T AA G R AH F IY
 chrome K R OW M
+chromecast K R OW M K AE S T
 chrominance K R OW M AH N AH N S
 chromium K R OW M IY AH M
 chromosomal K R OW M AH S OW M AH L
@@ -21789,6 +21817,7 @@ citrano CH IY T R AA N OW
 citric S IH T R IH K
 citrin S IH T R IH N
 citrine S IH T R IY N
+citrix S IH T R IH K S
 citro S IH T R OW
 citroen S IH T R OW N
 citron S IH T R AH N
@@ -22565,6 +22594,7 @@ cnn's S IY EH N EH N Z
 cnn.com S IY EH N EH N D AA T K AA M
 cnnfn S IY EH N EH N EH F EH N
 co K OW
+co-founder K OW F AW N D ER
 co-leader K OW L IY D ER
 co-leaders K OW L IY D ER Z
 co-op K OW AA P
@@ -22572,6 +22602,7 @@ co-operative K OW AA P ER AH T IH V
 co-operative(2) K OW AA P R AH T IH V
 co-opt K OW AA P T
 co-opted K OW AA P T AH D
+co-owner K OW OW N ER
 co-wife K OW W AY F
 co-worker K OW W ER K ER
 co-workers K OW W ER K ER Z
@@ -22781,6 +22812,7 @@ coddling K AA D AH L IH NG
 coddling(2) K AA D L IH NG
 code K OW D
 code's K OW D Z
+codebase K OW D B EY S
 codebreaker K OW D B R EY K ER
 codebreakers K OW D B R EY K ER Z
 coded K OW D IH D
@@ -26006,6 +26038,7 @@ counterrevolt K AW N T ER R IY V OW L T
 counterrevolution K AW N T ER R EH V AH L UW SH AH N
 counterrevolutionary K AW N T ER R EH V AH L UW SH AH N EH R IY
 counters K AW N T ER Z
+counterstrike K AW N T ER S T R AY K
 countersue K AW N T ER S UW
 countersued K AW N T ER S UW D
 countersuing K AW N T ER S UW IH NG
@@ -26884,6 +26917,7 @@ crivaro K R IH V AE R OW
 crivelli K R IH V EH L IY
 crivello K R IH V EH L OW
 criven K R IH V AH N
+crm S IY AA R EH M
 crnkovich S ER N AH V IH CH
 cro K R OW
 croak K R OW K
@@ -27077,6 +27111,8 @@ crouse K R AW S
 crouser K R AW S ER
 crout K R AW T
 crouthamel K R AW TH AH M EH L
+crouton K R UW T AH N
+croutons K R UW T AH N Z
 crovitz K R OW V IH T S
 crovitz's K R OW V IH T S IH Z
 crovl K R OW V AH L
@@ -27276,6 +27312,7 @@ csaszar T S AA SH AA R
 csi S IY EH S AY
 cspan S IY S P AE N
 cspi S IY EH S P IY AY
+csv S IY EH S V IY
 ct K AO R T
 cuadra K UW AA D R AH
 cuadrado K UW AA D R AA D OW
@@ -27519,6 +27556,7 @@ curacao K Y UH R AH S AW
 curare K Y UW R AE R EY
 curari K Y UW R AE R EY
 curate K Y UH R AH T
+curated K Y UH R EY T IH D
 curative K Y UH R AH T IH V
 curatolo K UH R AA T OW L OW
 curator K Y UH R EY T ER
@@ -27705,6 +27743,7 @@ customer K AH S T AH M ER
 customer's K AH S T AH M ER Z
 customers K AH S T AH M ER Z
 customers' K AH S T AH M ER Z
+customizable K AH S T AH M AY Z AH B AH L
 customize K AH S T AH M AY Z
 customized K AH S T AH M AY Z D
 customizes K AH S T AH M AY Z IH Z
@@ -28706,6 +28745,7 @@ datarex(2) D AE T ER EH K S
 datas D EY T AH Z
 datas(2) D AE T AH Z
 dataset D EY T AH S EH T
+datasets D EY T AH S EH T S
 date D EY T
 date's D EY T S
 dated D EY T IH D
@@ -34388,6 +34428,10 @@ downtrodden D AW N T R AA D AH N
 downturn D AW N T ER N
 downturns D AW N T ER N Z
 downum D AW N AH M
+downvote D AW N V OW T
+downvoted D AW N V OW T IH D
+downvotes D AW N V OW T S
+downvoting D AW N V OW T IH NG
 downward D AW N W ER D
 downwardly D AW N W ER D L IY
 downwards D AW N W ER D Z
@@ -34787,6 +34831,7 @@ drop D R AA P
 drop(2) D R AO P
 drop-off D R AA P AO F
 drop-offs D R AA P AO F S
+dropbox D R AA P B AA K S
 dropkin D R AA P K IH N
 droplet D R AA P L AH T
 droplets D R AA P L AH T S
@@ -35692,6 +35737,7 @@ dziuk JH IY UW K
 dzokhar JH OW K AA R
 e IY
 e's IY Z
+e-commerce IY K AA M ER S
 e-mail IY M EY L
 e-mailed IY M EY L D
 e-mailing IY M EY L IH NG
@@ -37511,7 +37557,7 @@ emily EH M IH L IY
 emily's EH M IH L IY Z
 emina EH M IY N AH
 eminase EH M IH N AA S IY
-eminem EH M IH N EH M
+eminem EH M AH N AH M
 eminence EH M AH N AH N S
 eminences EH M AH N AH N S IH Z
 eminent EH M AH N AH N T
@@ -37688,6 +37734,7 @@ emptying(2) EH M T IY IH NG
 emrich EH M R IH K
 emrick EH M R IH K
 emry EH M R IY
+ems IY EH M EH S
 emslie EH M S AH L IY
 emswiler EH M Z W AY L ER
 emu IY M Y UW
@@ -37698,6 +37745,7 @@ emulated EH M Y AH L EY T IH D
 emulates EH M Y AH L EY T S
 emulating EH M Y AH L EY T IH NG
 emulation EH M Y AH L EY SH AH N
+emulator EH M Y AH L EY T ER
 emulex EH M Y UW L AH K S
 emulsifier IH M AH L S AH F AY ER
 emulsion IH M AH L SH AH N
@@ -39311,6 +39359,7 @@ etruscan IH T R AH S K AH N
 etruscans IH T R AH S K AH N Z
 etsty EH T S T IY
 etsu EH T S UW
+etsy EH T S IY
 etta EH T AH
 etter EH T ER
 etters EH T ER Z
@@ -39328,6 +39377,7 @@ etzel's EH T Z AH L Z
 etzioni EH T S IY OW N IY
 etzkorn EH T S K ER N
 etzler EH T S L ER
+eu IY Y UW
 euan Y UW AH N
 eubank Y UW B AE NG K
 eubanks Y UW B AE NG K S
@@ -40435,6 +40485,7 @@ eyerman IY ER M AH N
 eyes AY Z
 eyes' AY Z
 eyeshade AY SH EY D
+eyeshadow AY SH AE D OW
 eyesight AY S AY T
 eyesore AY S AO R
 eyespot AY S P AA T
@@ -40520,6 +40571,7 @@ facciola F AE CH IY OW L AH
 face F EY S
 face-to-face F EY S T UW F EY S
 facebook F EY S B UH K
+facebook's F EY S B UH K S
 faced F EY S T
 facedown F EY S D AW N
 faceless F EY S L AH S
@@ -42213,12 +42265,14 @@ fiery F AY ER IY
 fieser F IY S ER
 fiest F IY IH S T
 fiesta F IY EH S T AH
+fifa F IH F AA
 fife F AY F
 fifer F AY F ER
 fifi F IY F IY
 fifield F IH F IY L D
 fiftee F IH F T IY
 fifteen F IH F T IY N
+fifteen's F IH F T IY N Z
 fifteens F IH F T IY N Z
 fifteenth F IH F T IY N TH
 fifth F IH F TH
@@ -42707,6 +42761,7 @@ firmly F ER M L IY
 firmness F ER M N AH S
 firms F ER M Z
 firms' F ER M Z
+firmware F ER M W EH R
 firpo F IH R P OW
 firs F ER Z
 first F ER S T
@@ -45308,6 +45363,7 @@ fucked F AH K T
 fucked-up F AH K T AH P
 fucker F AH K ER
 fuckers F AH K ER Z
+fuckin F AH K IH N
 fucking F AH K IH NG
 fucks F AH K S
 fudala F UW D AA L AH
@@ -46120,6 +46176,7 @@ gambro G AE M B R OW
 gamco G AE M K OW
 game G EY M
 game's G EY M Z
+gameboy G EY M B OY
 gamecock G EY M K AO K
 gamecocks G EY M K AO K S
 gamekeeper G EY M K IY P ER
@@ -48565,6 +48622,7 @@ glynn G L IH N
 glynnie G L IH N IY
 glynnis G L IH N IH S
 gm JH IY EH M
+gmail JH IY M EY L
 gmbh G AH M
 gmbh(2) JH IY EH M B IY EY CH
 gnagey N AE JH IY
@@ -48656,6 +48714,7 @@ gockley G AA K L IY
 god G AA D
 god's G AA D Z
 goda G OW D AH
+godaddy G OW D AE D IY
 godammit G AA D AE M IH T
 godar G AH D AA R
 godard G AH D AA R D
@@ -49131,6 +49190,7 @@ googe G UW JH
 googin G UW G IH N
 googins G UW G IH N Z
 google G UW G AH L
+google's G UW G AH L Z
 googled G UW G AH L D
 googles G UW G AH L Z
 googleverse G UW G AH L V ER S
@@ -49712,6 +49772,7 @@ grandmas G R AE N D M AA Z
 grandmaster G R AE N D M AE S T ER
 grandmaster(2) G R AE N M AE S T ER
 grandmet G R AE N D M EH T
+grandmom G R AE N D M AA M
 grandmother G R AE N D M AH DH ER
 grandmother's G R AE N D M AH DH ER Z
 grandmotherly G R AE N D M AH DH ER L IY
@@ -51585,6 +51646,7 @@ hadlock HH AE D L AH K
 hadn't HH AE D AH N T
 hadn't(2) HH AE D AH N
 hadnot HH AE D N AH T
+hadoop HH AE D UW P
 hadoya HH AH D OY AH
 hadria HH AE D R IY AH
 hadrian HH AE D R IY AH N
@@ -51937,6 +51999,7 @@ halloway HH AE L OW W EY
 hallowe'en HH AE L AH W IY N
 hallowed HH AE L OW D
 halloween HH AE L AH W IY N
+halloween's HH AE L AH W IY N Z
 hallowell HH AE L AH W EH L
 hallows HH AE L OW Z
 hallquist HH AE L K W IH S T
@@ -53465,6 +53528,7 @@ heads-up HH EH D Z AH P
 headset HH EH D S EH T
 headsets HH EH D S EH T S
 headship HH EH D SH IH P
+headshot HH EH D SH AA T
 headsman HH EH D Z M AH N
 headstart HH EH D S T AA R T
 headstarts HH EH D S T AA R T S
@@ -53507,6 +53571,7 @@ healthtrust HH EH L TH T R AH S T
 healthtrust's HH EH L TH T R AH S T S
 healthvest HH EH L TH V EH S T
 healthweek HH EH L TH W IY K
+healthwise HH EH L TH W AY Z
 healthwork HH EH L TH W ER K
 healthworks HH EH L TH W ER K S
 healthy HH EH L TH IY
@@ -56121,6 +56186,7 @@ homeowner's HH OW M OW N ER Z
 homeowners HH OW M OW N ER Z
 homeowners' HH OW M OW N ER Z
 homeownership HH OW M OW N ER SH IH P
+homepage HH OW M P EY JH
 homeporting HH OW M P AO R T IH NG
 homer HH OW M ER
 homer's HH OW M ER Z
@@ -56695,6 +56761,7 @@ hotlanta HH AO T L AE N T AH
 hotline HH AA T L AY N
 hotlines HH AA T L AY N Z
 hotly HH AA T L IY
+hotmail HH AA T M EY L
 hotpot HH AA T P AO T
 hots HH AA T S
 hotshot HH AA SH AA T
@@ -56932,6 +56999,8 @@ hoyne HH OY N
 hoyos HH OY OW Z
 hoyt HH OY T
 hoyvald HH OY V AH L D
+hp EY CH P IY
+hr EY CH AA R
 hrabak HH R AA B AH K
 hrabak(2) R AA B AH K
 hrawi HH R AA W IY
@@ -57277,6 +57346,7 @@ hulton HH AH L T AH N
 hultquist HH AH L T K W IH S T
 hults HH AH L T S
 hultz HH AH L T S
+hulu HH UW L UW
 hulvey HH AH L V IY
 hum HH AH M
 human HH Y UW M AH N
@@ -57369,6 +57439,7 @@ hummingbirds HH AH M IH NG B ER D Z
 hummus HH UH M AH S
 humongous HH Y UW M AO NG G AH S
 humor HH Y UW M ER
+humor's HH Y UW M ER Z
 humoral HH Y UW M ER AH L
 humored HH Y UW M ER D
 humorist HH Y UW M ER AH S T
@@ -58021,6 +58092,7 @@ ickes' IH K AH S
 ickes'(2) IH K IY Z
 ickes(2) AY K IY Z
 ickes(3) AY K S
+icloud AY K L AW D
 icon AY K AA N
 iconic AY K AA N IH K
 iconoclasm AY K AA N AH K L AE Z AH M
@@ -58047,6 +58119,7 @@ ideal's AY D IY L Z
 idealism AY D IY L IH Z AH M
 idealist AY D IY L IH S T
 idealistic AY D IY AH L IH S T IH K
+idealistically AY D IY AH L IH S T IH K L IY
 idealists AY D IY L IH S T S
 idealize AY D IY L AY Z
 idealized AY D IY AH L AY Z D
@@ -58067,6 +58140,7 @@ identification AY D EH N T AH F AH K EY SH AH N
 identifications AY D EH N T AH F AH K EY SH AH N Z
 identified AY D EH N T AH F AY D
 identifier AY D EH N T AH F AY ER
+identifiers AY D EH N AH F AY ER Z
 identifies AY D EH N T AH F AY Z
 identify AY D EH N T AH F AY
 identifying AY D EH N T AH F AY IH NG
@@ -58727,9 +58801,13 @@ imrie IH M ER IY
 imus AY M AH S
 in IH N
 in's IH N Z
+in-app IH N AE P
+in-depth IH N D EH P TH
 in-house IH N HH AW S
 in-law IH N L AO
 in-laws IH N L AO Z
+in-memory IH N M EH M ER IY
+in-person IH N P ER S AH N
 in. IH N
 in.(2) IH N CH
 ina IY N AH
@@ -58802,6 +58880,7 @@ inboden IH N B OW D AH N
 inbody IH N B AA D IY
 inborn IH N B AO R N
 inbound IH N B AW N D
+inbox IH N B AA K S
 inbred IH N B R EH D
 inbreed IH N B R IY D
 inbreeding IH N B R IY D IH NG
@@ -59392,6 +59471,7 @@ influenza IH N F L UW EH N Z AH
 influx IH N F L AH K S
 info IH N F OW
 infocorp IH N F OW K AO R P
+infographic IH N F OW G R AE F IH K
 infomercial IH N F OW M ER SH AH L
 infomercial's IH N F OW M ER SH AH L Z
 infomercials IH N F OW M ER SH AH L Z
@@ -59645,6 +59725,7 @@ inlay IH N L EY
 inlet IH N L EH T
 inlets IH N L EH T S
 inlex IH N L EH K S
+inline IH N L AY N
 inlow IH N L OW
 inmac IH N M AE K
 inman IH N M AH N
@@ -59862,6 +59943,7 @@ inspiring IH N S P AY R IH NG
 inspiring(2) IH N S P AY ER IH NG
 instabilities IH N S T AH B IH L IH T IY Z
 instability IH N S T AH B IH L IH T IY
+instagram IH N S T AH G R AE M
 install IH N S T AO L
 installation IH N S T AH L EY SH AH N
 installations IH N S T AH L EY SH AH N Z
@@ -60700,6 +60782,7 @@ invitron IH N V IH T R AA N
 invitron's IH N V IH T R AA N Z
 invocation IH N V AH K EY SH AH N
 invoice IH N V OY S
+invoiced IH N V OY S T
 invoices IH N V OY S IH Z
 invoicing IH N V OY S IH NG
 invoke IH N V OW K
@@ -60774,6 +60857,7 @@ iowans(2) AY OW AH N Z
 ip AY P IY
 ip(2) IH P
 ipad AY P AE D
+ipad's AY P AE D Z
 ipads AY P AE D Z
 ipalco IY P AE L K OW
 ipalco's IY P AE L K OW Z
@@ -61480,6 +61564,7 @@ jai JH AY
 jai(2) HH AY
 jail JH EY L
 jail's JH EY L Z
+jailbreak JH EY L B R EY K
 jailed JH EY L D
 jailer JH EY L ER
 jailers JH EY L ER Z
@@ -64393,6 +64478,7 @@ key's K IY Z
 key-largo K IY L AA R G OW
 key-west K IY W EH S T
 keyboard K IY B AO R D
+keyboarding K IY B AO R D IH NG
 keyboards K IY B AO R D Z
 keycorp K IY K AO R P
 keycorp's K IY K AO R P S
@@ -64515,6 +64601,7 @@ kicking K IH K IH NG
 kicklighter K IH K L AY T ER
 kickoff K IH K AO F
 kicks K IH K S
+kickstarter K IH K S T AA R T ER
 kid K IH D
 kid's K IH D Z
 kida K IY D AH
@@ -64823,6 +64910,7 @@ kinds K AY N D Z
 kinds(2) K AY N Z
 kindt K IH N T
 kindy K AY N D IY
+kinect K IH N EH K T
 kinepolis K IH N EH P AH L IH S
 kiner K AY N ER
 kines K AY N Z
@@ -67258,6 +67346,7 @@ labove L AH B AH V
 labow L AE B OW
 laboy L AH B OY
 labrador L AE B R AH D AO R
+labradors L AE B R AH D AO R Z
 labrake L AE B R AH K
 labranche L AA B R AA N K IY
 labreck L AE B R IH K
@@ -67839,6 +67928,7 @@ landlady L AE N D L EY D IY
 landler L AE N D L ER
 landler's L AE N D L ER Z
 landless L AE N D L AH S
+landline L AE N D L AY N
 landlock L AE N D L AA K
 landlocked L AE N D L AA K T
 landlord L AE N D L AO R D
@@ -69001,6 +69091,7 @@ lebow L AH B OW
 lebow's L AH B OW Z
 lebowe L IH B OW
 lebowitz L EH B AH W IH T S
+lebowski L IH B AA F S K IY
 lebrecht L EH B R IH K T
 lebreton L EH B R IH T AA N
 lebron L EH B R AH N
@@ -70238,6 +70329,7 @@ lifeblood L AY F B L AH D
 lifeboat L AY F B OW T
 lifeboats L AY F B OW T S
 lifeco L IY F K OW
+lifecycle L AY F S AY K AH L
 lifeguard L AY F G AA R D
 lifeguards L AY F G AA R D Z
 lifeless L AY F L AH S
@@ -71360,6 +71452,7 @@ logographic L AO G AH G R AE F IH K
 logophilia L OW G OW F IH L IY AH
 logos L OW G OW Z
 logothetis L OW G OW TH EH T IH S
+logout L AO G AW T
 lograsso L OW G R AA S OW
 logs L AO G Z
 logsdon L AA G Z D AH N
@@ -72755,6 +72848,7 @@ macauley M AH K AO L IY
 macaw M AH K AO
 macaws M AH K AO Z
 macbeth M AH K B EH TH
+macbook M AE K B UH K
 macbride M AH K B R AY D
 maccabean M AE K AH B IY AH N
 maccabee M AE K AH B IY
@@ -77139,6 +77233,7 @@ meeting M IY T IH NG
 meeting's M IY T IH NG Z
 meetings M IY T IH NG Z
 meets M IY T S
+meetup M IY T AH P
 meetze M IY T Z
 meeuwsen M IY UW S AH N
 mefferd M EH F ER D
@@ -77663,10 +77758,12 @@ mentored M EH N T ER D
 mentoring M EH N T ER IH NG
 mentors M EH N T ER Z
 mentors(2) M EH N T AO R Z
+mentorship M EH N T ER SH IH P
 mentz M EH N T S
 mentzel M EH N T Z AH L
 mentzer M EH N T Z ER
 menu M EH N Y UW
+menu's M EH N UW Z
 menudo M AH N Y UW D OW
 menuhin M AH N UW HH IH N
 menuhin(2) M IH N Y UW IH N
@@ -78992,6 +79089,7 @@ minea M IH N IY AH
 minear M IH N IH R
 mineau M IH N OW
 minebea M IH N AH B IY AH
+minecraft M AY N K R AE F T
 mined M AY N D
 mineer M AY N ER
 minefield M AY N F IY L D
@@ -79986,6 +80084,8 @@ modicum M AA D IH K AH M
 modification M AA D AH F AH K EY SH AH N
 modifications M AA D AH F AH K EY SH AH N Z
 modified M AA D AH F AY D
+modifier M AA D AH F AY ER
+modifiers M AA D AH F AY ER Z
 modifies M AA D AH F AY Z
 modify M AA D AH F AY
 modifying M AA D AH F AY IH NG
@@ -80337,6 +80437,8 @@ monetarism M AA N AH T ER IH Z AH M
 monetarist M AA N AH T ER IH S T
 monetarists M AA N AH T ER IH S T S
 monetary M AA N AH T EH R IY
+monetize M AA N AH T AY Z
+monetizing M AA N AH T AY Z IH NG
 monett M AA N IH T
 monette M AH N EH T
 money M AH N IY
@@ -81157,6 +81259,7 @@ mothballs M AO TH B AO L Z
 mother M AH DH ER
 mother's M AH DH ER Z
 mother-in-law M AH DH ER IH N L AO
+motherboard M AH DH ER B AO R D
 mothercare M AH DH ER K EH R
 motherfucker M AH DH ER F AH K ER
 motherfucker's M AH DH ER F AH K ER Z
@@ -82745,6 +82848,7 @@ nationsbank's N EY SH AH N Z B AE NG K S
 nationwide N EY SH AH N W AY D
 nationwide's N EY SH AH N W AY D Z
 native N EY T IH V
+natively N EY T IH V L IY
 natives N EY T IH V Z
 natividad N AH T IH V IH D AA D
 nativism N EY T IH V IH Z AH M
@@ -83747,6 +83851,7 @@ neylon N EY L AH N
 neyman N EY M AH N
 neysa N EY S AH
 nez N EH Z
+nfc EH N EH F S IY
 nfl EH N EH F EH L
 ng EH NG
 ng(2) IH NG
@@ -83755,7 +83860,8 @@ ngai(2) EH N G AY
 ngema EH N G EH M AA
 nghi G IY
 nghi(2) EH N G IY
-ngo EH NG G OW
+ngo EH NG JH IY OW
+ngo's EH NG JH IY OW Z
 ngor EH NG G AO R
 ngos EH NG G OW Z
 ngueppe EH NG G EH P IY
@@ -85418,6 +85524,7 @@ nuzzling N AH Z AH L IH NG
 nuzzo N UW Z OW
 nvhome EH N V IY HH OW M
 nvhomes EH N V IY HH OW M Z
+nvidia EH N V IH D IY AH
 nvryan EH N V R AY AH N
 nyack N AY AE K
 nyberg N AY B ER G
@@ -85655,6 +85762,7 @@ oba OW B AH
 obadiah OW B AH D AY AH
 obama OW B AA M AH
 obama's OW B AA M AH Z
+obamacare OW B AA M AH K EH R
 obando OW B AE N D OW
 obanion OW B AE N Y AH N
 obannon OW B AE N AH N
@@ -86672,8 +86780,8 @@ onderdonk AA N D ER D AH NG K
 ondo AO N D OW
 ondracek AA N D R AH S EH K
 one W AH N
-one's W AH N Z
 one(2) HH W AH N
+one's W AH N Z
 one-eyed W AH N AY D
 one-legged W AH N L EH G AH D
 one-man W AH N M AE N
@@ -86952,6 +87060,8 @@ optimistically(2) AA P T IH M IH S T IH K L IY
 optimists AA P T AH M IH S T S
 optimization AA P T AH M AH Z EY SH AH N
 optimize AA P T AH M AY Z
+optimized AA P T AH M AY Z D
+optimizing AA P T AH M AY Z IH NG
 optimum AA P T AH M AH M
 optimus AA P T IH M AH S
 opting AA P T IH NG
@@ -87402,6 +87512,7 @@ osborne AO Z B AO R N
 osborne's AO Z B AO R N Z
 osbourn AA S B ER N
 osbourne AA S B ER N
+osbournes AA S B ER N Z
 osbun AA S B AH N
 osburn AA S B ER N
 osby AA S B IY
@@ -87977,6 +88088,8 @@ overcharge OW V ER CH AA R JH
 overcharged OW V ER CH AA R JH D
 overcharges OW V ER CH AA R JH IH Z
 overcharging OW V ER CH AA R JH IH NG
+overclock OW V ER K L AO K
+overclocking OW V ER K L AO K IH NG
 overcoat OW V ER K OW T
 overcoats OW V ER K OW T S
 overcome OW V ER K AH M
@@ -89553,6 +89666,7 @@ partlow P AA R T L OW
 partly P AA R T L IY
 partner P AA R T N ER
 partner's P AA R T N ER Z
+partnered P AA R T N ER D
 partnering P AA R T N ER IH NG
 partners P AA R T N ER Z
 partners' P AA R T N ER Z
@@ -90077,7 +90191,10 @@ payoffs P EY AO F S
 payola P EY OW L AH
 payout P EY AW T
 payouts P EY AW T S
+paypal P EY P AH L
+paypal's P EY P AH L Z
 payroll P EY R OW L
+payroll's P EY R OW L Z
 payrolls P EY R OW L Z
 pays P EY Z
 paysinger P EY S IH NG G ER
@@ -91822,6 +91939,7 @@ photophoresis F OW T OW F ER IY S IH S
 photorefractive F OW T OW R IH F R AE K T IH V
 photos F OW T OW Z
 photoshop F OW T OW SH AA P
+photoshopped F OW T OW SH AA P T
 photoshopping F OW T OW SH AA P IH NG
 photoshops F OW T OW SH AA P S
 photosynthesis F OW T OW S IH N TH AH S IH S
@@ -91831,6 +91949,7 @@ photovoltaic F OW T AH V OW L T EY IH K
 photovoltaics F OW T OW V OW L T EY IH K S
 photronic F OW T R AA N IH K
 photronics F OW T R AA N IH K S
+php P IY EY CH P IY
 phrase F R EY Z
 phrased F R EY Z D
 phraseology F R EY Z IY AO L AO JH IY
@@ -92393,6 +92512,7 @@ pint-sized P AY N T S AY Z D
 pinta P IH N T AH
 pintar P IY N T AA R
 pinter P AY N T ER
+pinterest P IH N T R AH S T
 pinto P IH N T OW
 pints P AY N T S
 piny P AY N IY
@@ -92868,6 +92988,8 @@ playhouse P L EY HH AW S
 playhouses P L EY HH AW S IH Z
 playin' P L EY IH N
 playing P L EY IH NG
+playlist P L EY L IH S T
+playlists P L EY L IH S T S
 playmate P L EY M EY T
 playmates P L EY M EY T S
 playoff P L EY AO F
@@ -93312,6 +93434,7 @@ poitras P OY T R AA Z
 pokazukha P AO K AH Z UW K AA
 poke P OW K
 poked P OW K T
+pokemon P OW K EY M AH N
 poker P OW K ER
 pokes P OW K S
 pokeweed P OW K W IY D
@@ -93827,6 +93950,7 @@ populists P AA P Y AH L IH S T S
 populists(2) P AA P Y AH L IH S S
 populists(3) P AA P Y AH L IH S
 populous P AA P Y AH L AH S
+popup P AA P AH P
 popwell P AA P W EH L
 poquette P AH K EH T
 por P AO R
@@ -94324,6 +94448,7 @@ pozo P OW Z OW
 pozos P OW Z OW S
 pozzi P AA Z IY
 ppm P IY P IY EH M
+pr P IY AA R
 prab P R AE B
 pracht P R AE K T
 practicable P R AE K T AH K AH B AH L
@@ -94537,6 +94662,7 @@ predecessor P R EH D AH S EH S ER
 predecessor's P R EH D AH S EH S ER Z
 predecessors P R EH D AH S EH S ER Z
 predecessors' P R EH D AH S EH S ER Z
+predefined P R IY D IH F AY N D
 predestination P R IY D EH S T AH N EY SH AH N
 predestine P R IY D EH S T AH N
 predestined P R IY D EH S T AH N D
@@ -94735,6 +94861,8 @@ preoccupy P R IY AA K Y AH P AY
 preoperative P R IY AO P AH R AH T IH V
 preordain P R IY AO R D EY N
 preordained P R IY AO R D EY N D
+preordered P R IY AO R D ER D
+preorders P R IY AO R D ER Z
 prep P R EH P
 prepackage P R IY P AE K AH JH
 prepackaged P R IY P AE K AH JH D
@@ -95338,6 +95466,8 @@ proactively P R OW AE K T IH V L IY
 prob P R AA B
 prob(2) P R OW B
 proba P R OW B AA
+probabilistic P R AA B AH B IH L IH S T AH K
+probabilistically P R AA B AH B IH L IH S T AH K L IY
 probabilities P R AA B AH B IH L AH T IY Z
 probability P R AA B AH B IH L AH T IY
 probable P R AA B AH B AH L
@@ -98408,6 +98538,7 @@ readjusted R IY AH JH AH S T IH D
 readjusting R IY AH JH AH S T IH NG
 readjustment R IY AH JH AH S T M AH N T
 readjustments R IY AH JH AH S T M AH N T S
+readmission R IY AE D M IH SH AH N
 readmit R IY AH D M IH T
 readmitted R IY AH D M IH T IH D
 readout R IY D AW T
@@ -99528,6 +99659,7 @@ refund R IH F AH N D
 refund(2) R IY F AH N D
 refundable R IH F AH N D AH B AH L
 refunded R IH F AH N D IH D
+refunders R IH F AH N D ER Z
 refunding R IH F AH N D IH NG
 refundings R IY F AH N D IH NG Z
 refunds R IH F AH N D Z
@@ -100673,6 +100805,8 @@ repossess R IY P AH Z EH S
 repossessed R IY P AH Z EH S T
 repossession R IY P AH Z EH SH AH N
 repossessions R IY P AH Z EH SH AH N Z
+repost R IY P OW S T
+reposted R IY P OW S T IH D
 repp R EH P
 reppert R EH P ER T
 reppond R EH P AH N D
@@ -100888,6 +101022,7 @@ resembles(2) R IY Z EH M B AH L Z
 resembling R IH Z EH M B AH L IH NG
 resembling(2) R IY Z EH M B AH L IH NG
 resembling(3) R IY Z EH M B L IH NG
+resend R IH Z EH N D
 resende R IH S EH N D EY
 resendes R EH S IH N D Z
 resendez R EY S EY N D EH Z
@@ -101062,6 +101197,7 @@ resourceful R IY S AO R S F AH L
 resourcefulness R IY S AO R S F AH L N AH S
 resources R IY S AO R S IH Z
 resources' R IY S AO R S IH Z
+respawn R IY S P AA N
 respeak R IY S P IY K
 respect R IH S P EH K T
 respect(2) R IY S P EH K T
@@ -101295,6 +101431,10 @@ retarding R IH T AA R D IH NG
 retarding(2) R IY T AA R D IH NG
 retards R IH T AA R D Z
 retards(2) R IY T AA R D Z
+retarget R IY T AA R G AH T
+retargeter R IY T AA R G AH T ER
+retargeters R IY T AA R G AH T ER Z
+retargeting R IY T AA R G AH T IH NG
 retell R IY T EH L
 retelling R IY T EH L IH NG
 retemeyer R EH T AH M AY R
@@ -101991,6 +102131,7 @@ ricocheting R IH K AH SH EY IH NG
 ricoh R IY K OW
 ricoh's R IY K OW Z
 ricostruzione R IY K OW S T R UW Z IY OW N IY
+ricotta R IY K AA T AH
 rid R IH D
 ridable R AY D AH B AH L
 riddance R IH D AH N S
@@ -102589,6 +102730,7 @@ roadcap R OW D K AE P
 roades R OW D Z
 roadhouse R OW D HH AW S
 roadie R OW D IY
+roadmap R OW D M AE P
 roadmaster R OW D M AE S T ER
 roadrailer R OW D R EY L ER
 roadrunner R OW D R AH N ER
@@ -102829,6 +102971,7 @@ rockresort R AA K R IH Z AO R T
 rockresorts R AA K R IH Z AO R T S
 rockrose R AA K R OW Z
 rocks R AA K S
+rockstar R AA K S T AA R
 rockville R AA K V IH L
 rockwell R AA K W EH L
 rockwell's R AA K W EH L Z
@@ -103228,6 +103371,7 @@ ron's R AA N Z
 rona R OW N AH
 ronald R AA N AH L D
 ronalda R OW N AA L D AH
+ronaldo R OW N AA L D OW
 ronan R OW N AH N
 ronan's R OW N AH N Z
 ronayne R AA N EY N
@@ -103651,6 +103795,8 @@ rottinghaus R AA T IH NG HH AW S
 rottler R AA T L ER
 rottman R AA T M AH N
 rottmann R AA T M AH N
+rottweiler R AA T W AY L ER
+rottweilers R AA T W AY L ER Z
 rotund R OW T AH N D
 rotunda R OW T AH N D AH
 rotundo R OW T UW N D OW
@@ -103876,6 +104022,7 @@ rozzell R AA Z AH L
 rozzi R AA Z IY
 rpf AA R P IY EH F
 rpm AA R P IY EH M
+rsvp AA R EH S V IY P IY
 ru R UW
 ru(2) AA R Y UW
 rua R UW AH
@@ -104544,6 +104691,7 @@ saar S AA R
 saari S AA R IY
 saarinen S AA R IH N AH N
 saarinen(2) S AH R IY N AH N
+saas S AA S
 saatchi S AA CH IY
 saatchi's S AA CH IY Z
 saathoff S AA T HH AO F
@@ -104949,6 +105097,7 @@ salemme S AE L IH M
 salerno S AH L EH R N OW
 sales S EY L Z
 sales' S EY L Z
+salesforce S EY L Z F AO R S
 salesman S EY L Z M AH N
 salesman's S EY L Z M AH N Z
 salesmanship S EY L Z M AH N SH IH P
@@ -106014,6 +106163,7 @@ scags S K AE G Z
 scahill S K EY HH IH L
 scaife S K EY F
 scala S K AA L AH
+scalability S K EY L AH B IH L IH T IY
 scalable S K EY L AH B AH L
 scalamandre S K AA L AH M AA N D ER
 scalamandre(2) S K AE L AH M AE N D ER
@@ -107393,6 +107543,8 @@ screenings S K R IY N IH NG Z
 screenplay S K R IY N P L EY
 screenplays S K R IY N P L EY Z
 screens S K R IY N Z
+screenshot S K R IY N SH AA T
+screenshots S K R IY N SH AA T S
 screenwriter S K R IY N R AY T ER
 screenwriters S K R IY N R AY T ER Z
 screenwriting S K R IY N R AY T IH NG
@@ -107450,6 +107602,7 @@ scroggins S K R AA G IH N Z
 scroggs S K R AA G Z
 scrogham S K R AA G HH AH M
 scroll S K R OW L
+scrolling S K R OW L IH NG
 scrolls S K R OW L Z
 scronce S K R AA N S
 scrooge S K R UW JH
@@ -107985,6 +108138,7 @@ segment(2) S EH G M EH N T
 segmentation S EH G M AH N T EY SH AH N
 segmented S EH G M EH N T IH D
 segmented(2) S EH G M EH N IH D
+segmenting S EH G M EH N T IH NG
 segments S EH G M AH N T S
 segments(2) S EH G M EH N T S
 segner S EH G N ER
@@ -108592,6 +108746,7 @@ sephardim S IH F AA R D IH M
 sephardim(2) S EH F AA R D IY M
 sephlon S EH F L AO N
 sephlon's S EH F L AO N Z
+sephora S EH F AO R AH
 sepia S IY P IY AH
 sepich S EH P IH CH
 sepik S EH P IH K
@@ -111013,6 +111168,7 @@ singling(2) S IH NG G L IH NG
 singly S IH NG G L IY
 sings S IH NG Z
 singular S IH NG G Y AH L ER
+singularity S IH NG G Y AH L EH R AH T IY
 singularization S IH NG G Y AH L ER IH Z EY SH AH N
 singularly S IH NG G Y AH L ER L IY
 sinha S IH N HH AH
@@ -111973,6 +112129,8 @@ smartish S M AA R T IH SH
 smartly S M AA R T L IY
 smartmoney S M AA R T M AH N IY
 smartness S M AA R T N IH S
+smartphone S M AA R T F OW N
+smartphones S M AA R T F OW N Z
 smarts S M AA R T S
 smartt S M AA R T
 smarty S M AA R T IY
@@ -113307,6 +113465,7 @@ spacesuits S P EY S UW T S
 spacewalk S P EY S W AA K
 spacewalking S P EY S W AA K IH NG
 spacewalks S P EY S W AA K S
+spacex S P EY S AH K S
 spacey S P EY S IY
 spacial S P EY SH AH L
 spacing S P EY S IH NG
@@ -113351,6 +113510,7 @@ spalla S P AE L AH
 spallone S P AE L OW N
 spalvins S P AE L V IH N Z
 spam S P AE M
+spamming S P AE M IH NG
 spampinato S P AA M P IY N AA T OW
 span S P AE N
 span's S P AE N Z
@@ -113473,6 +113633,7 @@ speak-easy S P IY K IY Z IY
 speake S P IY K
 speaker S P IY K ER
 speaker's S P IY K ER Z
+speakerphone S P IY K ER F OW N
 speakers S P IY K ER Z
 speakership S P IY K ER SH IH P
 speakes S P IY K S
@@ -113935,6 +114096,7 @@ spomer S P OW M ER
 sponaugle S P AA N AO G AH L
 spong S P AO NG
 sponge S P AH N JH
+spongebob S P AH N JH B AA B
 sponged S P AH N JH D
 spongeform S P AH N JH F AO R M
 sponges S P AH N JH AH Z
@@ -114008,6 +114170,7 @@ sporty S P AO R T IY
 sposato S P OW S AA T OW
 sposito S P OW S IY T OW
 spot S P AA T
+spotify S P AO T AH F AY
 spotless S P AA T L AH S
 spotlight S P AA T L AY T
 spotlighted S P AA T L AY T IH D
@@ -114318,6 +114481,7 @@ sroka SH R OW K AH
 sroufe SH R OW F
 srpska S R AH P S K AH
 ssangyong S AE NG Y AO NG
+ssn EH S EH S EH N
 st S T R IY T
 st(2) S EY N T
 st-charles S EY N T CH AA R AH L Z
@@ -114620,6 +114784,7 @@ stand S T AE N D
 stand-by S T AE N D B AY
 stand-up S T AE N D AH P
 standa S T AE N D AH
+standalone S T AE N D AH L OW N
 standard S T AE N D ER D
 standard's S T AE N D ER D Z
 standard-bearer S T AE N D ER D B EH R ER
@@ -115334,6 +115499,7 @@ steny S T EH N IY
 stenz S T EH N Z
 stenzel S T EH N Z AH L
 step S T EH P
+step-by-step S T EH P B IY S T EH P
 stepan S T EH P AH N
 stepanakert S T AH P AE N AH K ER T
 stepanek S T EH P AH N IH K
@@ -115369,6 +115535,7 @@ stepien S T EH P IY AH N
 stepka S T EH P K AA
 stepladder S T EH P L AE D ER
 stepladders S T EH P L AE D ER Z
+stepmom S T EH P M AA M
 stepmother S T EH P M AH DH ER
 stepney S T EH P N IY
 stepp S T EH P
@@ -116954,6 +117121,7 @@ subverting S AH B V ER T IH NG
 subverts S AH B V ER T S
 subvolcanic S AH B V AA L K AE N IH K
 subway S AH B W EY
+subway's S AH B W EY Z
 subways S AH B W EY Z
 subzero S AH B Z IH R OW
 subzero(2) S AH B Z IY R OW
@@ -117740,6 +117908,7 @@ survey S ER V EY
 survey's S ER V EY Z
 surveyed S ER V EY D
 surveying S ER V EY IH NG
+surveymonkey S ER V EY M AH NG K IY
 surveyor S ER V EY ER
 surveyor's S ER V EY ER Z
 surveyors S ER V EY ER Z
@@ -117884,6 +118053,7 @@ svitak S V IH T AH K
 svizzera S V IH Z EH R AH
 svoboda S V OW B OW D AH
 svoray S V AO R EY
+svp S V IY P IY
 swab S W AA B
 swabs S W AA B Z
 swaby S W AA B IY
@@ -118765,6 +118935,8 @@ takashimaya T AA K AA SH IH M AA Y AH
 takata T AA K AA T AH
 takayama T AA K AA Y AA M AH
 take T EY K
+takeaway T EY K AH W EY
+takeaways T EY K AH W EY Z
 takecare T EY K EH R
 takeda T AA K EY D AH
 takei T AA K EY
@@ -119482,6 +119654,7 @@ tebuthiuron T EH B AH TH Y UW R AA N
 tec T EH K
 tech T EH K
 tech's T EH K S
+techcrunch T EH CH K R AH N CH
 techie T EH K IY
 techies T EH K IY Z
 techint T EH CH IH N T
@@ -121306,6 +121479,7 @@ timetable T AY M T EY B AH L
 timetables T AY M T EY B AH L Z
 timewise T AY M W AY Z
 timex T AY M EH K S
+timezone T AY M Z OW N
 timid T IH M IH D
 timidity T AH M IH D AH T IY
 timidly T IH M AH D L IY
@@ -121697,6 +121871,7 @@ toles T OW L Z
 tolhurst T OW L HH ER S T
 tolin T OW L IH N
 toliver T OW L IH V ER
+tolkien T AO L K IY EH N
 toll T OW L
 tolland T AA L AH N D
 tolland's T AA L AH N D Z
@@ -122484,6 +122659,7 @@ trainees T R EY N IY Z
 trainer T R EY N ER
 trainers T R EY N ER Z
 training T R EY N IH NG
+trainings T R EY N IH NG Z
 trainmen T R EY N M AH N
 trainor T R EY N ER
 trains T R EY N Z
@@ -122800,6 +122976,7 @@ traveller T R AE V AH L ER
 travellers T R AE V AH L ER Z
 travelling T R AE V AH L IH NG
 travelling(2) T R AE V L IH NG
+travelocity T R AE V AH L AA S AH T IY
 travelodge T R AE V AH L AA JH
 travelogue T R AE V AH L AO G
 travels T R AE V AH L Z
@@ -124030,6 +124207,7 @@ tweedy T W IY D IY
 tween T W IY N
 tweet T W IY T
 tweeted T W IY T IH D
+tweets T W IY T S
 tweezer T W IY Z ER
 tweezerman T W IY Z ER M AE N
 tweezers T W IY Z ER Z
@@ -124325,6 +124503,7 @@ uhr UH R
 uhrich UH R IH K
 uhrig UH R IH G
 uhrin UH R IH N
+ui Y UW AY
 uinta Y UW IH N T AH
 uk Y UW K EY
 ukase Y UW K EY Z
@@ -125150,6 +125329,7 @@ uninitiated(2) AH N IY N IH SH IY EY T IH D
 uninjured AH N IH N JH ER D
 uninspired AH N IH N S P AY ER D
 uninspiring AH N IH N S P AY R IH NG
+uninstall AH N IH N S T AO L
 uninsurable AH N IH N SH UH R AH B AH L
 uninsured AH N IH N SH UH R D
 unintelligible AH N IH N T EH L AH JH AH B AH L
@@ -125650,6 +125830,7 @@ unzip AH N Z IH P
 unzipped AH N Z IH P T
 up AH P
 up's AH P S
+up-front AH P F R AH N T
 upbeat AH P B IY T
 upbraid AH P B R EY D
 upbraided AH P B R EY D IH D
@@ -125761,6 +125942,9 @@ uptrend AH P T R EH N D
 upturn AH P T ER N
 upturns AH P T ER N Z
 upvote AH P V OW T
+upvoted AH P V OW T IH D
+upvotes AH P V OW T S
+upvoting AH P V OW T IH NG
 upward AH P W ER D
 upwardly AH P W ER D L IY
 upwards AH P W ER D Z
@@ -125847,6 +126031,7 @@ urioste Y ER IY OW S T IY
 urkel ER K AH L
 url Y UW AA R EH L
 url(2) UH R L
+urls Y UW AA R EH L Z
 urman ER M AH N
 urn ER N
 urness ER N AH S
@@ -125898,6 +126083,7 @@ usair Y UW EH S EH R
 usair's Y UW EH S EH R Z
 usairways Y UW EH S EH R W EY Z
 usameribancs Y UW EH S AH M EH R IH B AE N K S
+usb Y UW EH S B IY
 usbancorp Y UW EH S B AE NG K AO R P
 usda Y UW EH S D IY EY
 use Y UW S
@@ -125914,6 +126100,8 @@ uselton Y UW S AH L T AH N
 usenet Y UW Z N EH T
 user Y UW Z ER
 user's Y UW Z ER Z
+username Y UW Z ER N EY M
+usernames Y UW Z ER N EY M Z
 users Y UW Z ER Z
 users' Y UW Z ER Z
 usery Y UW Z ER IY
@@ -127388,6 +127576,7 @@ viator V AY EY T ER
 viau V IY OW
 vibbert V IH B ER T
 vibe V AY B
+viber V AY B ER
 vibes V AY B Z
 vibhu V IY B UW
 vibrancy V AY B R AH N S IY
@@ -128724,6 +128913,7 @@ walkouts W AO K AW T S
 walkowiak W AO K AW IY AE K
 walkowski W AO K AO F S K IY
 walks W AO K S
+walkthrough W AO K TH R AW
 walkup W AO K AH P
 walkure W AO K Y ER
 walkway W AO K W EY
@@ -128793,6 +128983,7 @@ wally's W AO L IY Z
 wally(2) W EY L IY
 walmart W AO L M AA R T
 walmart's W AO L M AA R T S
+walmarts W AO L M AA R T S
 walmer W AO L M ER
 walmond W AO L M AH N D
 walmsley W AO L M S L IY
@@ -129481,9 +129672,11 @@ weber's V EY B ER Z
 weber's(2) W EH B ER Z
 weberg W EH B ER G
 webers W EH B ER Z
+webinar W EH B IH N ER
 webley W EH B L IY
 webmaster W EH B M AE S T ER
 webmasters W EH B M AE S T ER Z
+webpage W EH B P IH JH
 webre W EH B ER
 webs W EH B Z
 website W EH B S AY T
@@ -130308,6 +130501,7 @@ whatnot W AH T N AA T
 whatnot(2) HH W AH T N AA T
 whats W AH T S
 whats(2) HH W AH T S
+whatsapp W AH T S AA P
 whatsoever W AH T S OW EH V ER
 whatsoever(2) HH W AH T S OW EH V ER
 whay-yu W EY Y UW
@@ -131808,6 +132002,7 @@ wishes W IH SH IH Z
 wishful W IH SH F AH L
 wishfully W IH SH F AH L IY
 wishing W IH SH IH NG
+wishlist W IH SH L IH S T
 wishner W IH SH N ER
 wishnick W IH SH N IH K
 wishon W IH SH AH N
@@ -132067,6 +132262,7 @@ wolfenbarger W UH L F IH N B AA R G ER
 wolfenden W UH L F EH N D AH N
 wolfenschmidt W UH L F AH N SH M IH T
 wolfensohn W UH L F AH N S AH N
+wolfenstein W UH L F AH N S T AY N
 wolfer W UH L F ER
 wolfert W UH L F ER T
 wolff W UH L F
@@ -132346,6 +132542,7 @@ worden W ER D AH N
 wording W ER D IH NG
 wordless W ER D L AH S
 wordperfect W ER D P ER F EH K T
+wordpress W ER D P R IH S
 words W ER D Z
 words' W ER D Z
 wordsmith W ER D S M IH TH
@@ -132359,6 +132556,7 @@ workable W ER K AH B AH L
 workaday W ER K AH D EY
 workaholic W ER K AH HH AA L IH K
 workaholics W ER K AH HH AA L IH K S
+workaround W ER K ER AW N D
 workbench W ER K B EH N CH
 workbook W ER K B UH K
 workbooks W ER K B UH K S
@@ -132400,6 +132598,7 @@ worksheet W ER K SH IY T
 worksheets W ER K SH IY T S
 workshop W ER K SH AA P
 workshops W ER K SH AA P S
+workspace W ER K S P EY S
 workstation W ER K S T EY SH AH N
 workstations W ER K S T EY SH AH N Z
 workweek W ER K W IY K
@@ -132807,6 +133006,7 @@ xantippe Z AE N T IH P
 xaver Z EY V ER
 xavier Z EY V Y ER
 xaviera Z EY V Y EH R AH
+xbox EH K S B AA K S
 xebec Z EH B AH K
 xena Z IY N AH
 xene Z IY N
@@ -132817,6 +133017,7 @@ xenophobic Z EH N AH F AA B IH K
 xenophon Z EH N AH F AH N
 xenos Z IY N OW Z
 xeriscape Z EH R IH S K EY P
+xero Z EH R OW
 xerox Z IH R AA K S
 xerox's Z IH R AA K S IH Z
 xeroxed Z IH R AA K S T
