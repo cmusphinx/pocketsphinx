@@ -60,16 +60,16 @@ kws_detections_add(kws_detections_t *detections, const char* keyphrase, int sf, 
     for (gn = detections->detect_list; gn; gn = gnode_next(gn)) {
         kws_detection_t *det = (kws_detection_t *)gnode_ptr(gn);
         if (strcmp(keyphrase, det->keyphrase) == 0 && det->sf < ef && det->ef > sf) {
-    	    if (det->prob < prob) {
-    		det->sf = sf;
-    		det->ef = ef;
-    		det->prob = prob;
-    		det->ascr = ascr;
-    	    }
-    	    return;
+            if (det->prob < prob) {
+                det->sf = sf;
+                det->ef = ef;
+                det->prob = prob;
+                det->ascr = ascr;
+            }
+            return;
         }
     }
-                                            
+
     /* Nothing found */
     detection = (kws_detection_t *)ckd_calloc(1, sizeof(*detection));
     detection->sf = sf;

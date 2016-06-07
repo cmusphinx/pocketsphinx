@@ -466,24 +466,24 @@ int
 ps_set_search(ps_decoder_t *ps, const char *name)
 {
     ps_search_t *search;
-    
+
     if (ps->acmod->state != ACMOD_ENDED && ps->acmod->state != ACMOD_IDLE) {
-	E_ERROR("Cannot change search while decoding, end utterance first\n");
-	return -1;
+        E_ERROR("Cannot change search while decoding, end utterance first\n");
+        return -1;
     }
-    
+
     if (!(search = ps_find_search(ps, name))) {
-	return -1;
+        return -1;
     }
-    
+
     ps->search = search;
     /* Set pl window depending on the search */
     if (!strcmp(PS_SEARCH_TYPE_NGRAM, ps_search_type(search))) {
-	ps->pl_window = cmd_ln_int32_r(ps->config, "-pl_window");
+        ps->pl_window = cmd_ln_int32_r(ps->config, "-pl_window");
     } else {
-	ps->pl_window = 0;
+        ps->pl_window = 0;
     }
-    
+
     return 0;
 }
 
@@ -495,8 +495,8 @@ ps_get_search(ps_decoder_t *ps)
     for (search_it = hash_table_iter(ps->searches); search_it;
         search_it = hash_table_iter_next(search_it)) {
         if (hash_entry_val(search_it->ent) == ps->search) {
-    	    name = hash_entry_key(search_it->ent);
-    	    break;
+            name = hash_entry_key(search_it->ent);
+            break;
         }
     }
     return name;

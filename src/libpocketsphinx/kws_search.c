@@ -53,6 +53,12 @@
 #define hmm_is_active(hmm) ((hmm)->frame > 0)
 #define kws_nth_hmm(keyword,n) (&((keyword)->hmms[n]))
 
+/* Value selected experimentally as maximum difference between triphone
+score and phone loop score, used in confidence computation to make sure
+that confidence value is less than 1. This might be different for
+different models. Corresponds to threshold of about 1e+50 */ 
+#define KWS_MAX 1500
+
 static ps_lattice_t *
 kws_search_lattice(ps_search_t * search)
 {
@@ -92,7 +98,7 @@ kws_seg_next(ps_seg_t *seg)
 
     gnode_t *detect_head = gnode_next(itor->detection);
     while (detect_head != NULL && ((kws_detection_t*)gnode_ptr(detect_head))->ef > itor->last_frame)
-	detect_head = gnode_next(detect_head);
+         detect_head = gnode_next(detect_head);
     itor->detection = detect_head;
 
     if (!itor->detection) {
@@ -287,19 +293,19 @@ kws_search_trans(kws_search_t * kwss)
     for (keyword_iter = 0; keyword_iter < kwss->n_keyphrases; keyword_iter++) {
         kws_keyword_t *keyword;
         hmm_t *last_hmm;
-        
+
         keyword = &kwss->keyphrases[keyword_iter];
         last_hmm = kws_nth_hmm(keyword, keyword->n_hmms - 1);
         if (hmm_is_active(last_hmm)
             && hmm_out_score(pl_best_hmm) BETTER_THAN WORST_SCORE) {
-            
+
             if (hmm_out_score(last_hmm) - hmm_out_score(pl_best_hmm) 
                 >= keyword->threshold) {
 
-                int32 prob = hmm_out_score(last_hmm) - hmm_out_score(pl_best_hmm);
-                kws_detections_add(kwss->detections, keyword->word, 
-                                  hmm_out_history(last_hmm), 
-                                  kwss->frame, prob, 
+                int32 prob = hmm_out_score(last_hmm) - hmm_out_score(pl_best_hmm) - KWS_MAX;
+                kws_detections_add(kwss->detections, keyword->word,
+                                  hmm_out_history(last_hmm),
+                                  kwss->frame, prob,
                                   hmm_out_score(last_hmm));
             } /* keyword is spotted */
         } /* last hmm of keyword is active */
@@ -320,7 +326,7 @@ kws_search_trans(kws_search_t * kwss)
         kws_keyword_t *keyword = &kwss->keyphrases[keyword_iter];
         for (i = keyword->n_hmms - 1; i > 0; i--) {
             hmm_t *pred_hmm = kws_nth_hmm(keyword, i - 1);
-	    hmm_t *hmm = kws_nth_hmm(keyword, i);
+            hmm_t *hmm = kws_nth_hmm(keyword, i);
 
             if (hmm_is_active(pred_hmm)) {    
                 if (!hmm_is_active(hmm)
@@ -373,8 +379,8 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
             while (line[begin] != '/' && begin > 0)
                 begin--;
             line[end] = 0;
-	    line[begin] = 0;
-    	    kwss->keyphrases[i].threshold = (int32) logmath_log(kwss->base.acmod->lmath, atof_c(line + begin + 1)) 
+            line[begin] = 0;
+            kwss->keyphrases[i].threshold = (int32) logmath_log(kwss->base.acmod->lmath, atof_c(line + begin + 1)) 
                                           >> SENSCR_SHIFT;
         }
         kwss->keyphrases[i].word = ckd_salloc(line);
@@ -386,7 +392,7 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
 
 ps_search_t *
 kws_search_init(const char *name,
-		const char *keyphrase,
+                const char *keyphrase,
                 const char *keyfile,
                 cmd_ln_t * config,
                 acmod_t * acmod, dict_t * dict, dict2pid_t * d2p)
@@ -673,7 +679,7 @@ kws_search_hyp(ps_search_t * search, int32 * out_score)
     if (search->hyp_str)
         ckd_free(search->hyp_str);
     search->hyp_str = kws_detections_hyp_str(kwss->detections, kwss->frame, kwss->delay);
-    
+
     return search->hyp_str;
 }
 
@@ -685,12 +691,12 @@ kws_search_get_keywords(ps_search_t * search)
     char* line;
 
     kwss = (kws_search_t *) search;
-    
+
     len = 0;
     for (i = 0; i < kwss->n_keyphrases; i++)
         len += strlen(kwss->keyphrases[i].word);
     len += kwss->n_keyphrases;
-    
+
     c = 0;
     line = (char *)ckd_calloc(len, sizeof(*line));
     for (i = 0; i < kwss->n_keyphrases; i++) {
