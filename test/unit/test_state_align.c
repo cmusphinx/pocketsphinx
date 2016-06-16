@@ -6,7 +6,7 @@
 
 #include "test_macros.h"
 
-static void
+static int
 do_search(ps_search_t *search, acmod_t *acmod)
 {
     FILE *rawfh;
@@ -28,9 +28,9 @@ do_search(ps_search_t *search, acmod_t *acmod)
             }
         }
     }
-    ps_search_finish(search);
     TEST_ASSERT(acmod_end_utt(acmod) >= 0);
     fclose(rawfh);
+    return ps_search_finish(search);
 }
 
 
@@ -50,7 +50,6 @@ main(int argc, char *argv[])
     config = cmd_ln_init(NULL, ps_args(), FALSE,
                  "-hmm", MODELDIR "/en-us/en-us",
                  "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
-                 "-input_endian", "little",
                  "-samprate", "16000", NULL);
     TEST_ASSERT(ps = ps_init(config));
     dict = ps->dict;
@@ -68,7 +67,7 @@ main(int argc, char *argv[])
 
     TEST_ASSERT(search = state_align_search_init("state_align", config, acmod, al));
 
-    for (i = 0; i < 5; ++i)
+    for (i = 0; i < 5; i++)
         do_search(search, acmod);
 
     itor = ps_alignment_words(al);
@@ -94,6 +93,23 @@ main(int argc, char *argv[])
 
     ps_search_free(search);
     ps_alignment_free(al);
+
+    /* Test bad alignment */
+
+    al = ps_alignment_init(d2p);
+    TEST_EQUAL(1, ps_alignment_add_word(al, dict_wordid(dict, "<s>"), 0));
+    for (i = 0; i < 20; i++) {
+        TEST_EQUAL(i + 2, ps_alignment_add_word(al, dict_wordid(dict, "hello"), 0));
+    }
+    TEST_EQUAL(22, ps_alignment_add_word(al, dict_wordid(dict, "</s>"), 0));
+    TEST_EQUAL(0, ps_alignment_populate(al));
+    TEST_ASSERT(search = state_align_search_init("state_align", config, acmod, al));
+    E_INFO("Error here is expected, testing bad alignment\n");
+    TEST_EQUAL(-1, do_search(search, acmod));
+
+    ps_search_free(search);
+    ps_alignment_free(al);
+
     ps_free(ps);
     cmd_ln_free_r(config);
     return 0;

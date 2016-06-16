@@ -214,7 +214,7 @@ state_align_search_finish(ps_search_t *search)
     /* Best state exiting the last cur_frame. */
     last.id = cur.id = hmm_out_history(final_phone);
     last.score = hmm_out_score(final_phone);
-    if (last.score == 0xffff) {
+    if (last.id == 0xffff) {
         E_ERROR("Failed to reach final state in alignment\n");
         return -1;
     }
