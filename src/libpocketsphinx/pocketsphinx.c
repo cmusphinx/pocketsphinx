@@ -189,12 +189,14 @@ ps_default_search_args(cmd_ln_t *config)
 {
 #ifdef MODELDIR
     const char *hmmdir = cmd_ln_str_r(config, "-hmm");
+    const char *lmfile = cmd_ln_str_r(config, "-lm");
+    const char *dictfile = cmd_ln_str_r(config, "-dict");
+
     if (hmmdir == NULL && hmmdir_exists(MODELDIR "/en-us/en-us")) {
         hmmdir = MODELDIR "/en-us/en-us";
         cmd_ln_set_str_r(config, "-hmm", hmmdir);
     }
 
-    const char *lmfile = cmd_ln_str_r(config, "-lm");
     if (lmfile == NULL && !cmd_ln_str_r(config, "-fsg")
         && !cmd_ln_str_r(config, "-jsgf")
         && !cmd_ln_str_r(config, "-lmctl")
@@ -205,7 +207,6 @@ ps_default_search_args(cmd_ln_t *config)
         cmd_ln_set_str_r(config, "-lm", lmfile);
     }
 
-    const char *dictfile = cmd_ln_str_r(config, "-dict");
     if (dictfile == NULL && file_exists(MODELDIR "/en-us/cmudict-en-us.dict")) {
         dictfile = MODELDIR "/en-us/cmudict-en-us.dict";
         cmd_ln_set_str_r(config, "-dict", dictfile);

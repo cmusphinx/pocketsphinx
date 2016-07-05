@@ -460,13 +460,14 @@ kws_search_init(const char *name,
 void
 kws_search_free(ps_search_t * search)
 {
-    int i;
+    int32 i;
     kws_search_t *kwss;
+    double n_speech;
 
     kwss = (kws_search_t *) search;
 
-    double n_speech = (double)kwss->n_tot_frame
-            / cmd_ln_int32_r(ps_search_config(kwss), "-frate");
+    n_speech = (double)kwss->n_tot_frame
+        / cmd_ln_int32_r(ps_search_config(kwss), "-frate");
 
     E_INFO("TOTAL kws %.2f CPU %.3f xRT\n",
            kwss->perf.t_tot_cpu,

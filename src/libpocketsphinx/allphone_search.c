@@ -51,7 +51,6 @@
 static ps_lattice_t *
 allphone_search_lattice(ps_search_t * search)
 {
-    //cap
     return NULL;
 }
 
@@ -156,7 +155,6 @@ phmm_lookup(allphone_search_t * allphs, s3pid_t pid)
                 return p;
     }
 
-    //not found
     return NULL;
 }
 
@@ -238,7 +236,7 @@ phmm_build(allphone_search_t * allphs)
     E_INFO("Building PHMM net of %d phones\n", nphone);
     for (pid = 0; pid < nphone; pid++) {
         if ((p = phmm_lookup(allphs, pid)) == NULL) {
-            //not found, should be created
+            /* not found, should be created */
             p = (phmm_t *) ckd_calloc(1, sizeof(*p));
             hmm_init(allphs->hmmctx, &(p->hmm), FALSE,
                      mdef_pid2ssid(mdef, pid), mdef->phone[pid].tmat);
@@ -319,7 +317,6 @@ phmm_free(allphone_search_t * allphs)
     bin_mdef_t *mdef;
 
     if (!allphs->ci_phmm)
-        //nothing to free
         return;
     ckd_free(allphs->ci_phmm[0]->lc);
     mdef = ((ps_search_t *) allphs)->acmod->mdef;
@@ -894,7 +891,7 @@ allphone_search_hyp(ps_search_t * search, int32 * out_score)
         return NULL;
     }
 
-    len = glist_count(allphs->segments) * 10;  // maximum length of one phone with spacebar
+    len = glist_count(allphs->segments) * 10;  /* maximum length of one phone with spacebar */
 
     search->hyp_str = (char *) ckd_calloc(len, sizeof(*search->hyp_str));
     hyp_idx = 0;

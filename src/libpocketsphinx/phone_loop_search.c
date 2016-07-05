@@ -232,7 +232,7 @@ store_scores(phone_loop_search_t *pls, int frame_idx)
     pls->pen_buf_ptr++;
     pls->pen_buf_ptr = pls->pen_buf_ptr % pls->window;
 
-    //update penalties
+    /* update penalties */
     for (i = 0; i < pls->n_phones; ++i) {
         pls->penalties[i] = WORST_SCORE;
         for (j = 0, itr = pls->pen_buf_ptr + 1; j < pls->window; j++, itr++) {

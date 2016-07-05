@@ -1321,10 +1321,10 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
             /* Calculate language score for bestpath if possible */
             if (lmset && !w1_is_fil && !w2_is_fil) {
                 if (w3_is_fil)
-                    //partial context available
+                    /* partial context available */
                     score += (ngram_bg_score(lmset, w1_wid, w2_wid, &n_used) >> SENSCR_SHIFT) * lwf;
                 else
-                    //full context available
+                    /* full context available */
                     score += (ngram_tg_score(lmset, w1_wid, w2_wid, w3_wid, &n_used) >> SENSCR_SHIFT) * lwf;
             }
 
