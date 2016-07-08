@@ -5,7 +5,7 @@
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
 #include "test_macros.h"
-#include "ps_test.c"
+#include "test_ps.c"
 
 int
 test_nodes_and_stuff(ps_lattice_t *dag)
@@ -110,7 +110,6 @@ main(int argc, char *argv[])
 				"-fwdtree", "yes",
 				"-fwdflat", "no",
 				"-bestpath", "no",
-				"-input_endian", "little",
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = ps_init(config));
 	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));

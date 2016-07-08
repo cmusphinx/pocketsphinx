@@ -13,11 +13,11 @@ main(int argc, char *argv[])
 {
     ps_decoder_t *ps;
     cmd_ln_t *config;
-    acmod_t *acmod;
-    fsg_search_t *fsgs;
     ps_lattice_t *dag;
+    const char *hyp;
     ps_seg_t *seg;
-    int32 score;
+    int32 score, prob;
+    FILE *rawfh;
 
     TEST_ASSERT(config =
             cmd_ln_init(NULL, ps_args(), TRUE,
@@ -25,45 +25,17 @@ main(int argc, char *argv[])
                 "-fsg", DATADIR "/goforward.fsg",
                 "-dict", DATADIR "/turtle.dic",
                 "-bestpath", "no",
-                "-input_endian", "little",
                 "-samprate", "16000", NULL));
     TEST_ASSERT(ps = ps_init(config));
 
-    fsgs = (fsg_search_t *) ps->search;
-    acmod = ps->acmod;
+    TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
+    ps_decode_raw(ps, rawfh, -1);
+    hyp = ps_get_hyp(ps, &score);
+    prob = ps_get_prob(ps);
+    printf("%s (%d, %d)\n", hyp, score, prob);
+    TEST_EQUAL(0, strcmp("go forward ten meters", hyp));
 
-    setbuf(stdout, NULL);
-    {
-        FILE *rawfh;
-        int16 buf[2048];
-        size_t nread;
-        int16 const *bptr;
-        char const *hyp;
-        int nfr;
 
-        TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
-        TEST_EQUAL(0, acmod_start_utt(acmod));
-        fsg_search_start(ps_search_base(fsgs));
-        while (!feof(rawfh)) {
-            nread = fread(buf, sizeof(*buf), 2048, rawfh);
-            bptr = buf;
-            while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
-                while (acmod->n_feat_frame > 0) {
-                    fsg_search_step(ps_search_base(fsgs),
-                            acmod->output_frame);
-                    acmod_advance(acmod);
-                }
-            }
-        }
-        fsg_search_finish(ps_search_base(fsgs));
-        hyp = fsg_search_hyp(ps_search_base(fsgs), &score);
-        printf("FSG: %s (%d)\n", hyp, score);
-
-        TEST_ASSERT(acmod_end_utt(acmod) >= 0);
-        fclose(rawfh);
-    }
-    TEST_EQUAL(0, strcmp("go forward ten meters",
-                 fsg_search_hyp(ps_search_base(fsgs), &score)));
     for (seg = ps_seg_iter(ps); seg;
          seg = ps_seg_next(seg)) {
         char const *word;

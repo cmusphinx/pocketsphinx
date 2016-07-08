@@ -1,42 +1,32 @@
 check_PROGRAMS = \
-	test_ps_init \
-	test_ps_reinit \
-	test_ps_allphone \
-	test_ps_fwdtree \
-	test_ps_fwdtree_fwdflat \
-	test_ps_fwdflat \
-	test_ps_fwdflat_bestpath \
-	test_ps_fwdtree_bestpath \
-	test_ps_keyphrase \
-	test_ps_simple \
-	test_ps_nbest \
-	test_ps_lattice \
-	test_ps_set_search \
 	test_acmod \
 	test_acmod_grow \
-	test_fwdtree \
-	test_fwdflat \
-	test_fwdtree_fwdflat \
-	test_fwdtree_bestpath \
-	test_fwdtree_nbest \
-	test_pl_fwdtree \
-	test_ptm_mgau \
-	test_posterior \
-	test_fsg \
-	test_fsg2 \
-	test_fsg3 \
-	test_jsgf \
-	test_lm_read \
-	test_dict \
-	test_dict2pid \
-	test_senfh \
 	test_alignment \
-	test_state_align \
-	test_mllr
+	test_allphone \
+	test_dict2pid \
+	test_dict \
+	test_fsg \
+	test_fwdflat \
+	test_fwdtree_bestpath \
+	test_fwdtree \
+	test_init \
+	test_jsgf \
+	test_keyphrase \
+	test_lattice \
+	test_lm_read \
+	test_mllr \
+	test_nbest \
+	test_posterior \
+	test_ptm_mgau \
+	test_reinit \
+	test_senfh \
+	test_set_search \
+	test_simple \
+	test_state_align
 
 TESTS = $(check_PROGRAMS)
 
-EXTRA_DIST = ps_test.c
+EXTRA_DIST = test_ps.c
 
 noinst_HEADERS = test_macros.h
 

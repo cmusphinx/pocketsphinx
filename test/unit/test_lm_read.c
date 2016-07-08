@@ -22,7 +22,6 @@ main(int argc, char *argv[])
                             "-lm", MODELDIR "/en-us/en-us.lm.bin",
                             "-dict", DATADIR "/defective.dic",
                             "-dictcase", "yes",
-                            "-input_endian", "little",
                             "-samprate", "16000", NULL));
     TEST_ASSERT(ps = ps_init(config));
     TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));

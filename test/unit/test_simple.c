@@ -4,7 +4,7 @@
 
 #include "pocketsphinx_internal.h"
 #include "test_macros.h"
-#include "ps_test.c"
+#include "test_ps.c"
 
 int
 main(int argc, char *argv[])
@@ -16,10 +16,11 @@ main(int argc, char *argv[])
                 "-hmm", MODELDIR "/en-us/en-us",
                 "-lm", MODELDIR "/en-us/en-us.lm.bin",
                 "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
-                "-fwdtree", "no",
+                "-fwdtree", "yes",
                 "-fwdflat", "yes",
                 "-bestpath", "yes",
-                "-input_endian", "little",
+                "-mfclogdir", ".",
+                "-rawlogdir", ".",
                 "-samprate", "16000", NULL));
     return ps_decoder_test(config, "BESTPATH", "go forward ten meters");
 }

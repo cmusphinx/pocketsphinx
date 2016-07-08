@@ -4,7 +4,7 @@
 #include <time.h>
 
 #include "pocketsphinx_internal.h"
-#include "ngram_search_fwdflat.h"
+#include "ngram_search_fwdtree.h"
 #include "test_macros.h"
 
 int
@@ -20,10 +20,9 @@ main(int argc, char *argv[])
                 "-hmm", MODELDIR "/en-us/en-us",
                 "-lm", MODELDIR "/en-us/en-us.lm.bin",
                 "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
-                "-fwdtree", "no",
-                "-fwdflat", "yes",
+                "-fwdtree", "yes",
+                "-fwdflat", "no",
                 "-bestpath", "no",
-                "-input_endian", "little",
                 "-samprate", "16000", NULL));
     TEST_ASSERT(ps = ps_init(config));
 
@@ -42,18 +41,18 @@ main(int argc, char *argv[])
         TEST_EQUAL(0, acmod_start_utt(acmod));
         TEST_ASSERT(senfh = fopen("goforward.sen", "wb"));
         TEST_EQUAL(0, acmod_set_senfh(acmod, senfh));
-        ngram_fwdflat_start(ngs);
+        ngram_fwdtree_start(ngs);
         while (!feof(rawfh)) {
             nread = fread(buf, sizeof(*buf), 2048, rawfh);
             bptr = buf;
             while ((nfr = acmod_process_raw(acmod, &bptr, &nread, FALSE)) > 0) {
                 while (acmod->n_feat_frame > 0) {
-                    ngram_fwdflat_search(ngs, acmod->output_frame);
+                    ngram_fwdtree_search(ngs, acmod->output_frame);
                     acmod_advance(acmod);
                 }
             }
         }
-        ngram_fwdflat_finish(ngs);
+        ngram_fwdtree_finish(ngs);
         printf("%s\n",
                ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
 
@@ -67,14 +66,14 @@ main(int argc, char *argv[])
         TEST_EQUAL(0, acmod_start_utt(acmod));
         TEST_ASSERT(senfh = fopen("goforward.sen", "rb"));
         TEST_EQUAL(0, acmod_set_insenfh(acmod, senfh));
-        ngram_fwdflat_start(ngs);
+        ngram_fwdtree_start(ngs);
         while ((nfr = acmod_read_scores(acmod)) > 0) {
             while (acmod->n_feat_frame > 0) {
-                ngram_fwdflat_search(ngs, acmod->output_frame);
+                ngram_fwdtree_search(ngs, acmod->output_frame);
                 acmod_advance(acmod);
             }
         }
-        ngram_fwdflat_finish(ngs);
+        ngram_fwdtree_finish(ngs);
         printf("%s\n",
                ngram_search_bp_hyp(ngs, ngram_search_find_exit(ngs, -1, NULL)));
 

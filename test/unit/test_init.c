@@ -2,13 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "pocketsphinx_internal.h"
 #include "test_macros.h"
-#include "ps_test.c"
 
 int
 main(int argc, char *argv[])
 {
+	ps_decoder_t *ps;
 	cmd_ln_t *config;
 
 	TEST_ASSERT(config =
@@ -16,12 +15,14 @@ main(int argc, char *argv[])
 				"-hmm", MODELDIR "/en-us/en-us",
 				"-lm", MODELDIR "/en-us/en-us.lm.bin",
 				"-dict", MODELDIR "/en-us/cmudict-en-us.dict",
-				"-fwdflatlw", "6.5",
-				"-fwdtree", "no",
+				"-fwdtree", "yes",
 				"-fwdflat", "yes",
-				"-bestpath", "no",
-				"-fwdflatbeam", "1e-30",
-				"-input_endian", "little",
+				"-bestpath", "yes",
 				"-samprate", "16000", NULL));
-	return ps_decoder_test(config, "FWDFLAT", "go forward ten meters");
+	TEST_ASSERT(ps = ps_init(config));
+
+	ps_free(ps);
+	cmd_ln_free_r(config);
+
+	return 0;
 }

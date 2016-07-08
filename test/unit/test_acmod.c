@@ -48,7 +48,6 @@ main(int argc, char *argv[])
                  "-mmap", "no",
                  "-topn", "4",
                  "-ds", "1",
-                 "-input_endian", "little",
                  "-samprate", "16000", NULL);
     TEST_ASSERT(config);
     cmd_ln_parse_file_r(config, ps_args(), MODELDIR "/en-us/en-us/feat.params", FALSE);

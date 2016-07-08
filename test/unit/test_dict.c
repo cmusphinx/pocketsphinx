@@ -51,7 +51,7 @@ main(int argc, char *argv[])
 
 	/* Test to add 500k words. */
 	TEST_ASSERT(dict = dict_init(NULL, NULL));
-	for (i = 0; i < 500000; i++) {
+	for (i = 0; i < 5000; i++) {
 	    sprintf(buf, "word_%d", i);
     	    TEST_ASSERT(BAD_S3WID != dict_add_word(dict, buf, NULL, 0));
 	}

@@ -4,7 +4,7 @@
 
 #include "pocketsphinx_internal.h"
 #include "test_macros.h"
-#include "ps_test.c"
+#include "test_ps.c"
 
 int
 main(int argc, char *argv[])
@@ -24,7 +24,6 @@ main(int argc, char *argv[])
 				"-fwdtree", "yes",
 				"-fwdflat", "yes",
 				"-bestpath", "yes",
-				"-input_endian", "little",
 				"-samprate", "16000", NULL));
 	TEST_ASSERT(ps = ps_init(config));
 	TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
