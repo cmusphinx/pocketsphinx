@@ -72,9 +72,9 @@ typedef struct kws_search_s {
 
     hmm_context_t *hmmctx;        /**< HMM context. */
 
+    glist_t keyphrases;          /**< Keyphrases to spot */
+
     kws_detections_t *detections; /**< Keyword spotting history */
-    kws_keyword_t* keyphrases;    /**< Keyphrases to spot */
-    int n_keyphrases;             /**< Keyphrases amount */
     frame_idx_t frame;            /**< Frame index */
 
     int32 beam;

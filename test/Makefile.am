@@ -25,6 +25,7 @@ EXTRA_DIST = \
 	data/goforward.fsg \
 	data/goforward.gram \
 	data/goforward.raw \
+	data/goforward.kws \
 	data/goforward.mfc \
 	data/mllr_matrices \
 	data/numbers.raw \
