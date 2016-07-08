@@ -26,7 +26,7 @@ stream = open(os.path.join(datadir, "goforward.raw"), "rb")
 # stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=1024)
 # stream.start_stream()
 
-# Process audio chunk by chunk. On keyword detected perform action and restart search
+# Process audio chunk by chunk. On keyphrase detected perform action and restart search
 decoder = Decoder(config)
 decoder.start_utt()
 while True:
@@ -37,6 +37,6 @@ while True:
          break
     if decoder.hyp() != None:
         print ([(seg.word, seg.prob, seg.start_frame, seg.end_frame) for seg in decoder.seg()])
-        print ("Detected keyword, restarting search")
+        print ("Detected keyphrase, restarting search")
         decoder.end_utt()
         decoder.start_utt()

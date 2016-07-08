@@ -180,7 +180,7 @@
       "25",                                                                    	                \
       "Window of frames in lattice to search for successor words in fwdflat search " }
 
-/** Command-line options for keyword spotting */
+/** Command-line options for keyphrase spotting */
 #define POCKETSPHINX_KWS_OPTIONS \
 { "-keyphrase",                                                 \
          ARG_STRING,                                            \
@@ -193,7 +193,7 @@
 { "-kws_plp",                                                   \
       ARG_FLOAT64,                                              \
       "1e-1",                                                   \
-      "Phone loop probability for keyword spotting" },          \
+      "Phone loop probability for keyphrase spotting" },          \
 { "-kws_delay",                                                 \
       ARG_INT32,                                                \
       "10",                                                     \

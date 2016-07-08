@@ -51,7 +51,7 @@
 
 /** Access macros */
 #define hmm_is_active(hmm) ((hmm)->frame > 0)
-#define kws_nth_hmm(keyword,n) (&((keyword)->hmms[n]))
+#define kws_nth_hmm(keyphrase,n) (&((keyphrase)->hmms[n]))
 
 /* Value selected experimentally as maximum difference between triphone
 score and phone loop score, used in confidence computation to make sure
@@ -167,10 +167,10 @@ kws_search_sen_active(kws_search_t * kwss)
 
     /* activate hmms in active nodes */
     for (gn = kwss->keyphrases; gn; gn = gnode_next(gn)) {
-        kws_keyword_t *keyword = gnode_ptr(gn);
-        for (i = 0; i < keyword->n_hmms; i++) {
-            if (hmm_is_active(kws_nth_hmm(keyword, i)))
-                acmod_activate_hmm(ps_search_acmod(kwss), kws_nth_hmm(keyword, i));
+        kws_keyphrase_t *keyphrase = gnode_ptr(gn);
+        for (i = 0; i < keyphrase->n_hmms; i++) {
+            if (hmm_is_active(kws_nth_hmm(keyphrase, i)))
+                acmod_activate_hmm(ps_search_acmod(kwss), kws_nth_hmm(keyphrase, i));
         }
     }
 }
@@ -199,9 +199,9 @@ kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
     }
     /* evaluate hmms for active nodes */
     for (gn = kwss->keyphrases; gn; gn = gnode_next(gn)) {
-        kws_keyword_t *keyword = gnode_ptr(gn);
-        for (i = 0; i < keyword->n_hmms; i++) {
-            hmm_t *hmm = kws_nth_hmm(keyword, i);
+        kws_keyphrase_t *keyphrase = gnode_ptr(gn);
+        for (i = 0; i < keyphrase->n_hmms; i++) {
+            hmm_t *hmm = kws_nth_hmm(keyphrase, i);
 
             if (hmm_is_active(hmm)) {
                 int32 score;
@@ -228,9 +228,9 @@ kws_search_hmm_prune(kws_search_t * kwss)
     thresh = kwss->bestscore + kwss->beam;
 
     for (gn = kwss->keyphrases; gn; gn = gnode_next(gn)) {
-        kws_keyword_t *keyword = gnode_ptr(gn);
-        for (i = 0; i < keyword->n_hmms; i++) {
-    	    hmm_t *hmm = kws_nth_hmm(keyword, i);
+        kws_keyphrase_t *keyphrase = gnode_ptr(gn);
+        for (i = 0; i < keyphrase->n_hmms; i++) {
+    	    hmm_t *hmm = kws_nth_hmm(keyphrase, i);
             if (hmm_is_active(hmm) && hmm_bestscore(hmm) < thresh)
                 hmm_clear(hmm);
         }
@@ -260,29 +260,29 @@ kws_search_trans(kws_search_t * kwss)
     if (!pl_best_hmm)
         return;
 
-    /* Check whether keyword wasn't spotted yet */
+    /* Check whether keyphrase wasn't spotted yet */
     for (gn = kwss->keyphrases; gn; gn = gnode_next(gn)) {
-        kws_keyword_t *keyword = gnode_ptr(gn);
+        kws_keyphrase_t *keyphrase = gnode_ptr(gn);
         
-        if (keyword->n_hmms < 1)
+        if (keyphrase->n_hmms < 1)
     	    continue;
         
-        hmm_t *last_hmm = kws_nth_hmm(keyword, keyword->n_hmms - 1);
+        hmm_t *last_hmm = kws_nth_hmm(keyphrase, keyphrase->n_hmms - 1);
 
         if (hmm_is_active(last_hmm)
             && hmm_out_score(pl_best_hmm) BETTER_THAN WORST_SCORE) {
 
             if (hmm_out_score(last_hmm) - hmm_out_score(pl_best_hmm) 
-                >= keyword->threshold) {
+                >= keyphrase->threshold) {
 
                 int32 prob = hmm_out_score(last_hmm) - hmm_out_score(pl_best_hmm) - KWS_MAX;
-                kws_detections_add(kwss->detections, keyword->word,
+                kws_detections_add(kwss->detections, keyphrase->word,
                                   hmm_out_history(last_hmm),
                                   kwss->frame, prob,
                                   hmm_out_score(last_hmm));
-            } /* keyword is spotted */
-        } /* last hmm of keyword is active */
-    } /* keywords loop */
+            } /* keyphrase is spotted */
+        } /* last hmm of keyphrase is active */
+    } /* keyphrase loop */
 
     /* Make transition for all phone loop hmms */
     for (i = 0; i < kwss->n_pl; i++) {
@@ -294,16 +294,16 @@ kws_search_trans(kws_search_t * kwss)
         }
     }
 
-    /* Activate new keyword nodes, enter their hmms */
+    /* Activate new keyphrase nodes, enter their hmms */
     for (gn = kwss->keyphrases; gn; gn = gnode_next(gn)) {
-        kws_keyword_t *keyword = gnode_ptr(gn);
+        kws_keyphrase_t *keyphrase = gnode_ptr(gn);
         
-        if (keyword->n_hmms < 1)
+        if (keyphrase->n_hmms < 1)
     	    continue;
         
-        for (i = keyword->n_hmms - 1; i > 0; i--) {
-            hmm_t *pred_hmm = kws_nth_hmm(keyword, i - 1);
-            hmm_t *hmm = kws_nth_hmm(keyword, i);
+        for (i = keyphrase->n_hmms - 1; i > 0; i--) {
+            hmm_t *pred_hmm = kws_nth_hmm(keyphrase, i - 1);
+            hmm_t *hmm = kws_nth_hmm(keyphrase, i);
 
             if (hmm_is_active(pred_hmm)) {    
                 if (!hmm_is_active(hmm)
@@ -314,10 +314,10 @@ kws_search_trans(kws_search_t * kwss)
             }
         }
 
-        /* Enter keyword start node from phone loop */
+        /* Enter keyphrase start node from phone loop */
         if (hmm_out_score(pl_best_hmm) BETTER_THAN
-            hmm_in_score(kws_nth_hmm(keyword, 0)))
-                hmm_enter(kws_nth_hmm(keyword, 0), hmm_out_score(pl_best_hmm),
+            hmm_in_score(kws_nth_hmm(keyphrase, 0)))
+                hmm_enter(kws_nth_hmm(keyphrase, 0), hmm_out_score(pl_best_hmm),
                     kwss->frame, kwss->frame + 1);
     }
 }
@@ -330,7 +330,7 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
     char *line;
     
     if ((list_file = fopen(keyfile, "r")) == NULL) {
-        E_ERROR_SYSTEM("Failed to open keyword file '%s'", keyfile);
+        E_ERROR_SYSTEM("Failed to open keyphrase file '%s'", keyfile);
         return -1;
     }
 
@@ -339,12 +339,12 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
     /* read keyphrases */
     for (li = lineiter_start_clean(list_file); li; li = lineiter_next(li)) {
         size_t begin, end;
-        kws_keyword_t *keyword;
+        kws_keyphrase_t *keyphrase;
 	
 	if (li->len == 0)
 	    continue;
 
-	keyword = ckd_calloc(1, sizeof(kws_keyword_t));
+	keyphrase = ckd_calloc(1, sizeof(kws_keyphrase_t));
 
         line = li->buf;
         end = strlen(line) - 1;
@@ -354,15 +354,15 @@ kws_search_read_list(kws_search_t *kwss, const char* keyfile)
                 begin--;
             line[end] = 0;
             line[begin] = 0;
-            keyword->threshold = (int32) logmath_log(kwss->base.acmod->lmath, atof_c(line + begin + 1)) 
+            keyphrase->threshold = (int32) logmath_log(kwss->base.acmod->lmath, atof_c(line + begin + 1)) 
                                           >> SENSCR_SHIFT;
         } else {
-            keyword->threshold = kwss->def_threshold;
+            keyphrase->threshold = kwss->def_threshold;
         }
 
-        keyword->word = ckd_salloc(line);
+        keyphrase->word = ckd_salloc(line);
 
-        kwss->keyphrases = glist_add_ptr(kwss->keyphrases, keyword);
+        kwss->keyphrases = glist_add_ptr(kwss->keyphrases, keyphrase);
     }
 
     fclose(list_file);
@@ -411,13 +411,13 @@ kws_search_init(const char *name,
 	    return NULL;
 	}
     } else {
-        kws_keyword_t *keyword = (kws_keyword_t *)ckd_calloc(1, sizeof(kws_keyword_t));
-        keyword->threshold = kwss->def_threshold;
-        keyword->word = ckd_salloc(keyphrase);
-        kwss->keyphrases = glist_add_ptr(NULL, keyword);
+        kws_keyphrase_t *k = ckd_calloc(1, sizeof(kws_keyphrase_t));
+        k->threshold = kwss->def_threshold;
+        k->word = ckd_salloc(keyphrase);
+        kwss->keyphrases = glist_add_ptr(NULL, k);
     }
 
-    /* Reinit for provided keyword */
+    /* Reinit for provided keyphrase */
     if (kws_search_reinit(ps_search_base(kwss),
                           ps_search_dict(kwss),
                           ps_search_dict2pid(kwss)) < 0) {
@@ -457,10 +457,10 @@ kws_search_free(ps_search_t * search)
 
     ckd_free(kwss->pl_hmms);
     for (gn = kwss->keyphrases; gn; gn = gnode_next(gn)) {
-	kws_keyword_t *keyword = gnode_ptr(gn);
-        ckd_free(keyword->hmms);
-        ckd_free(keyword->word);
-        ckd_free(keyword);
+	kws_keyphrase_t *keyphrase = gnode_ptr(gn);
+        ckd_free(keyphrase->hmms);
+        ckd_free(keyphrase->word);
+        ckd_free(keyphrase);
     }
     glist_free(kwss->keyphrases);
     ckd_free(kwss);
@@ -510,10 +510,10 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
     }
 
     for (gn = kwss->keyphrases; gn; gn = gnode_next(gn)) {
-        kws_keyword_t *keyword = gnode_ptr(gn);
+        kws_keyphrase_t *keyphrase = gnode_ptr(gn);
 
         /* Initialize keyphrase HMMs */
-        tmp_keyphrase = (char *) ckd_salloc(keyword->word);
+        tmp_keyphrase = (char *) ckd_salloc(keyphrase->word);
         n_wrds = str2words(tmp_keyphrase, NULL, 0);
         wrdptr = (char **) ckd_calloc(n_wrds, sizeof(*wrdptr));
         str2words(tmp_keyphrase, wrdptr, n_wrds);
@@ -524,7 +524,7 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
         for (i = 0; i < n_wrds; i++) {
             wid = dict_wordid(dict, wrdptr[i]);
             if (wid == BAD_S3WID) {
-        	E_ERROR("Word '%s' in phrase '%s' is missing in the dictionary\n", wrdptr[i], keyword->word);
+        	E_ERROR("Word '%s' in phrase '%s' is missing in the dictionary\n", wrdptr[i], keyphrase->word);
         	in_dict = FALSE;
         	break;
             }
@@ -539,10 +539,10 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
         }
 
         /* allocate node array */
-        if (keyword->hmms)
-            ckd_free(keyword->hmms);
-        keyword->hmms = (hmm_t *) ckd_calloc(n_hmms, sizeof(hmm_t));
-        keyword->n_hmms = n_hmms;
+        if (keyphrase->hmms)
+            ckd_free(keyphrase->hmms);
+        keyphrase->hmms = (hmm_t *) ckd_calloc(n_hmms, sizeof(hmm_t));
+        keyphrase->n_hmms = n_hmms;
 
         /* fill node array */
         j = 0;
@@ -569,7 +569,7 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
                     ssid = dict2pid_internal(d2p, wid, p);
                 }
                 tmatid = bin_mdef_pid2tmatid(mdef, ci);
-                hmm_init(kwss->hmmctx, &keyword->hmms[j], FALSE, ssid,
+                hmm_init(kwss->hmmctx, &keyphrase->hmms[j], FALSE, ssid,
                          tmatid);
                 j++;
             }
@@ -621,7 +621,7 @@ kws_search_step(ps_search_t * search, int frame_idx)
     /* Calculate senone scores for current frame. */
     senscr = acmod_score(acmod, &frame_idx);
 
-    /* Evaluate hmms in phone loop and in active keyword nodes */
+    /* Evaluate hmms in phone loop and in active keyphrase nodes */
     kws_search_hmm_eval(kwss, senscr);
 
     /* Prune hmms with low prob */
@@ -675,7 +675,7 @@ kws_search_hyp(ps_search_t * search, int32 * out_score)
 }
 
 char * 
-kws_search_get_keywords(ps_search_t * search)
+kws_search_get_keyphrases(ps_search_t * search)
 {
     int c, len;
     kws_search_t *kwss;
@@ -686,14 +686,14 @@ kws_search_get_keywords(ps_search_t * search)
 
     len = 0;
     for (gn = kwss->keyphrases; gn; gn = gnode_next(gn))
-        len += strlen(((kws_keyword_t *)gnode_ptr(gn))->word) + 1;
+        len += strlen(((kws_keyphrase_t *)gnode_ptr(gn))->word) + 1;
 
     c = 0;
     line = (char *)ckd_calloc(len, sizeof(*line));
     for (gn = kwss->keyphrases; gn; gn = gnode_next(gn)) {
-        char *keyword_str = ((kws_keyword_t *)gnode_ptr(gn))->word;
-        memcpy(&line[c], keyword_str, strlen(keyword_str));
-        c += strlen(keyword_str);
+        const char *str = ((kws_keyphrase_t *)gnode_ptr(gn))->word;
+        memcpy(&line[c], str, strlen(str));
+        c += strlen(str);
         line[c++] = '\n';
     }
     line[--c] = '\0';

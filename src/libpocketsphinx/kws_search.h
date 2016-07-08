@@ -33,7 +33,7 @@
  */
 
 /*
- * kws_search.h -- Search structures for keyword spotting.
+ * kws_search.h -- Search structures for keyphrase spotting.
  */
 
 #ifndef __KWS_SEARCH_H__
@@ -53,16 +53,16 @@
  */
 typedef struct kws_seg_s {
     ps_seg_t base;       /**< Base structure. */
-    gnode_t *detection;  /**< Keyword detection correspondent to segment. */
+    gnode_t *detection;  /**< Keyphrase detection correspondent to segment. */
     frame_idx_t last_frame; /**< Last frame to raise the detection */
 } kws_seg_t;
 
-typedef struct kws_keyword_s {
+typedef struct kws_keyphrase_s {
     char* word;
     int32 threshold;
     hmm_t* hmms;
     int32 n_hmms;
-} kws_keyword_t;
+} kws_keyphrase_t;
 
 /**
  * Implementation of KWS search structure.
@@ -93,7 +93,7 @@ typedef struct kws_search_s {
 } kws_search_t;
 
 /**
- * Create, initialize and return a search module. Gets keywords either
+ * Create, initialize and return a search module. Gets keyphrases either
  * from keyphrase or from a keyphrase file.
  */
 ps_search_t *kws_search_init(const char *name,
@@ -137,6 +137,6 @@ char const *kws_search_hyp(ps_search_t * search, int32 * out_score);
 /**
  * Get active keyphrases
  */
-char* kws_search_get_keywords(ps_search_t * search);
+char* kws_search_get_keyphrases(ps_search_t * search);
 
 #endif                          /* __KWS_SEARCH_H__ */

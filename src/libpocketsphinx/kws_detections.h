@@ -33,7 +33,7 @@
  */
 
 /*
- * kws_detections.h -- Structures for storing keyword spotting results.
+ * kws_detections.h -- Structures for storing keyphrase spotting results.
  */
 
 #ifndef __KWS_DETECTIONS_H__

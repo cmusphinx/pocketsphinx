@@ -33,7 +33,7 @@
  */
 
 /*
-* kws_detections.c -- Object for storing keyword search results
+* kws_detections.c -- Object for storing keyphrase search results
 */
 
 #include "kws_detections.h"
