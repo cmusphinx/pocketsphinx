@@ -79,25 +79,11 @@ EXTRA_DIST = \
 	data/turtle.dic \
 	data/turtle.lm.bin \
 	data/unreachable.lat \
-	data/wsj/440c0201.mfc \
-	data/wsj/441c0201.mfc \
-	data/wsj/442c0201.mfc \
-	data/wsj/443c0201.mfc \
-	data/wsj/444c0201.mfc \
-	data/wsj/446c0201.mfc \
-	data/wsj/447c0201.mfc \
-	data/wsj/n800_440c0201.wav \
-	data/wsj/n800_440c0202.wav \
-	data/wsj/n800_440c0203.wav \
-	data/wsj/n800_440c0204.wav \
-	data/wsj/n800_440c0205.wav \
-	data/wsj/n800_440c0206.wav \
-	data/wsj/n800_440c0207.wav \
-	data/wsj/s1.mllr \
-	data/wsj/test-hub4-n800-fwdtree.match \
-	data/wsj/test-hub4-simple-pl.match \
-	data/wsj/test-hub4-simple.match \
-	data/wsj/test5k.n800.ctl \
-	data/wsj/test5k.n800.lsn \
-	data/wsj/test5k.s1.ctl \
-	data/wsj/test5k.s1.lsn
+	data/librivox/fileids \
+	data/librivox/sense_and_sensibility_01_austen_64kb-0880.wav \
+	data/librivox/sense_and_sensibility_01_austen_64kb-0890.wav \
+	data/librivox/sense_and_sensibility_01_austen_64kb-0930.wav \
+	data/librivox/sense_and_sensibility_01_austen_64kb-0870.wav \
+	data/librivox/sense_and_sensibility_01_austen_64kb-0920.wav \
+	data/librivox/transcription \
+	data/librivox/test-lm.match
