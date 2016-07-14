@@ -967,9 +967,9 @@ ps_start_utt(ps_decoder_t *ps)
         char *logfn = string_join(ps->mfclogdir, "/",
                                   uttid, ".mfc", NULL);
         FILE *mfcfh;
-        E_INFO("Writing MFCC log file: %s\n", logfn);
+        E_INFO("Writing MFCC file: %s\n", logfn);
         if ((mfcfh = fopen(logfn, "wb")) == NULL) {
-            E_ERROR_SYSTEM("Failed to open MFCC log file %s", logfn);
+            E_ERROR_SYSTEM("Failed to open MFCC file %s", logfn);
             ckd_free(logfn);
             return -1;
         }
@@ -980,9 +980,9 @@ ps_start_utt(ps_decoder_t *ps)
         char *logfn = string_join(ps->rawlogdir, "/",
                                   uttid, ".raw", NULL);
         FILE *rawfh;
-        E_INFO("Writing raw audio log file: %s\n", logfn);
+        E_INFO("Writing raw audio file: %s\n", logfn);
         if ((rawfh = fopen(logfn, "wb")) == NULL) {
-            E_ERROR_SYSTEM("Failed to open raw audio log file %s", logfn);
+            E_ERROR_SYSTEM("Failed to open raw audio file %s", logfn);
             ckd_free(logfn);
             return -1;
         }
@@ -993,9 +993,9 @@ ps_start_utt(ps_decoder_t *ps)
         char *logfn = string_join(ps->senlogdir, "/",
                                   uttid, ".sen", NULL);
         FILE *senfh;
-        E_INFO("Writing senone score log file: %s\n", logfn);
+        E_INFO("Writing senone score file: %s\n", logfn);
         if ((senfh = fopen(logfn, "wb")) == NULL) {
-            E_ERROR_SYSTEM("Failed to open senone score log file %s", logfn);
+            E_ERROR_SYSTEM("Failed to open senone score file %s", logfn);
             ckd_free(logfn);
             return -1;
         }

@@ -154,7 +154,7 @@
 { "-backtrace",                                                                                 \
       ARG_BOOLEAN,                                                                              \
       "no",                                                                                     \
-      "Print results and backtraces to log file." },                                            \
+      "Print results and backtraces to log." },                                                 \
 { "-latsize",                                                                                   \
       ARG_INT32,                                                                                \
       "5000",                                                                                   \

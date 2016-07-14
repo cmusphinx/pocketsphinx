@@ -503,7 +503,7 @@ acmod_log_mfc(acmod_t *acmod,
     }
     /* Write features. */
     if (fwrite(cep[0], sizeof(mfcc_t), n, acmod->mfcfh) != n) {
-        E_ERROR_SYSTEM("Failed to write %d values to log file", n);
+        E_ERROR_SYSTEM("Failed to write %d values to file", n);
     }
 
     /* Swap them back. */
@@ -522,7 +522,7 @@ acmod_process_full_cep(acmod_t *acmod,
 {
     int32 nfr;
 
-    /* Write to log file. */
+    /* Write to file. */
     if (acmod->mfcfh)
         acmod_log_mfc(acmod, *inout_cep, *inout_n_frames);
 
@@ -730,7 +730,7 @@ acmod_process_cep(acmod_t *acmod,
     if (full_utt)
         return acmod_process_full_cep(acmod, inout_cep, inout_n_frames);
 
-    /* Write to log file. */
+    /* Write to file. */
     if (acmod->mfcfh)
         acmod_log_mfc(acmod, *inout_cep, *inout_n_frames);
 
