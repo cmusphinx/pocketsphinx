@@ -694,7 +694,7 @@ gst_pocketsphinx_finalize_utt(GstPocketSphinx *ps)
     int32 score;
 
     hyp = NULL;
-    if (!ps->listening_started || !ps->utt_started)
+    if (!ps->listening_started && !ps->utt_started)
 	return;
 
     ps_end_utt(ps->ps);
