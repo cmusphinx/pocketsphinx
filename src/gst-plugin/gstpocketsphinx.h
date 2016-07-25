@@ -69,7 +69,7 @@ struct _GstPocketSphinx
 
     gchar *latdir;                 /**< Output directory for word lattices. */
 
-    gboolean utt_started;
+    gboolean speech_started;
     gboolean listening_started;
     gint uttno;
 

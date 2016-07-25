@@ -645,7 +645,7 @@ gst_pocketsphinx_chain(GstPad * pad, GstObject *parent, GstBuffer * buffer)
     /* Start an utterance for the first buffer we get */
     if (!ps->listening_started) {
         ps->listening_started = TRUE;
-        ps->utt_started = FALSE;
+        ps->speech_started = FALSE;
         ps_start_utt(ps->ps);
     }
 
@@ -657,10 +657,10 @@ gst_pocketsphinx_chain(GstPad * pad, GstObject *parent, GstBuffer * buffer)
     gst_buffer_unmap (buffer, &info);
 
     in_speech = ps_get_in_speech(ps->ps);
-    if (in_speech && !ps->utt_started) {
-    	ps->utt_started = TRUE;
+    if (in_speech && !ps->speech_started) {
+    	ps->speech_started = TRUE;
     }
-    if (!in_speech && ps->utt_started) {
+    if (!in_speech && ps->speech_started) {
 	gst_pocketsphinx_finalize_utt(ps);
     } else if (ps->last_result_time == 0
         /* Get a partial result every now and then, see if it is different. */
@@ -694,14 +694,22 @@ gst_pocketsphinx_finalize_utt(GstPocketSphinx *ps)
     int32 score;
 
     hyp = NULL;
-    if (!ps->listening_started || !ps->utt_started)
+    if (!ps->listening_started)
 	return;
 
     ps_end_utt(ps->ps);
     ps->listening_started = FALSE;
     hyp = ps_get_hyp(ps->ps, &score);
 
-    /* Dump the lattice if requested. */
+    if (hyp) {
+    	gst_pocketsphinx_post_message(ps, TRUE, GST_CLOCK_TIME_NONE,
+    		                      ps_get_prob(ps->ps), hyp);
+        buffer = gst_buffer_new_and_alloc(strlen(hyp) + 1);
+	gst_buffer_fill(buffer, 0, hyp, strlen(hyp));
+	gst_buffer_fill(buffer, strlen(hyp), "\n", 1);
+	gst_pad_push(ps->srcpad, buffer);
+    }
+
     if (ps->latdir) {
         char *latfile;
         char uttid[16];
@@ -713,14 +721,6 @@ gst_pocketsphinx_finalize_utt(GstPocketSphinx *ps)
         if ((dag = ps_get_lattice(ps->ps)))
             ps_lattice_write(dag, latfile);
         ckd_free(latfile);
-    }
-    if (hyp) {
-    	gst_pocketsphinx_post_message(ps, TRUE, GST_CLOCK_TIME_NONE,
-    		                      ps_get_prob(ps->ps), hyp);
-        buffer = gst_buffer_new_and_alloc(strlen(hyp) + 1);
-	gst_buffer_fill(buffer, 0, hyp, strlen(hyp));
-	gst_buffer_fill(buffer, strlen(hyp), "\n", 1);
-	gst_pad_push(ps->srcpad, buffer);
     }
 }
 
