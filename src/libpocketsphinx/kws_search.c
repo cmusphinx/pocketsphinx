@@ -263,11 +263,12 @@ kws_search_trans(kws_search_t * kwss)
     /* Check whether keyphrase wasn't spotted yet */
     for (gn = kwss->keyphrases; gn; gn = gnode_next(gn)) {
         kws_keyphrase_t *keyphrase = gnode_ptr(gn);
+        hmm_t *last_hmm;
         
         if (keyphrase->n_hmms < 1)
     	    continue;
         
-        hmm_t *last_hmm = kws_nth_hmm(keyphrase, keyphrase->n_hmms - 1);
+        last_hmm = kws_nth_hmm(keyphrase, keyphrase->n_hmms - 1);
 
         if (hmm_is_active(last_hmm)
             && hmm_out_score(pl_best_hmm) BETTER_THAN WORST_SCORE) {
