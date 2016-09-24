@@ -62,10 +62,6 @@
 #include "ptm_mgau.h"
 #include "ms_mgau.h"
 
-#ifndef WORDS_BIGENDIAN
-#define WORDS_BIGENDIAN 1
-#endif
-
 static int32 acmod_process_mfcbuf(acmod_t *acmod);
 
 static int
@@ -465,8 +461,6 @@ acmod_end_utt(acmod_t *acmod)
         long outlen;
         int32 rv;
         outlen = (ftell(acmod->mfcfh) - 4) / 4;
-        if (!WORDS_BIGENDIAN)
-            SWAP_INT32(&outlen);
         /* Try to seek and write */
         if ((rv = fseek(acmod->mfcfh, 0, SEEK_SET)) == 0) {
             fwrite(&outlen, 4, 1, acmod->mfcfh);
@@ -491,26 +485,10 @@ static int
 acmod_log_mfc(acmod_t *acmod,
               mfcc_t **cep, int n_frames)
 {
-    int i, n;
-    int32 *ptr = (int32 *)cep[0];
-
-    n = n_frames * feat_cepsize(acmod->fcb);
-    /* Swap bytes. */
-    if (!WORDS_BIGENDIAN) {
-        for (i = 0; i < (n * sizeof(mfcc_t)); ++i) {
-            SWAP_INT32(ptr + i);
-        }
-    }
+    int n = n_frames * feat_cepsize(acmod->fcb);
     /* Write features. */
     if (fwrite(cep[0], sizeof(mfcc_t), n, acmod->mfcfh) != n) {
         E_ERROR_SYSTEM("Failed to write %d values to file", n);
-    }
-
-    /* Swap them back. */
-    if (!WORDS_BIGENDIAN) {
-        for (i = 0; i < (n * sizeof(mfcc_t)); ++i) {
-            SWAP_INT32(ptr + i);
-        }
     }
     return 0;
 }

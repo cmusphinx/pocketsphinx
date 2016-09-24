@@ -2,6 +2,7 @@ dnl Welcome to the Sphinx automated build system.
 dnl try not to hurt yourself ;)
 
 AC_INIT(pocketsphinx, 5prealpha)
+AC_CONFIG_HEADERS([include/config.h])
 AM_INIT_AUTOMAKE([no-define foreign])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -9,7 +10,6 @@ CFLAGS=${CFLAGS:--g -O2 -Wall}
 
 AC_CANONICAL_HOST
 AC_PROG_CC
-AC_WORDS_BIGENDIAN
 AC_CHECK_TYPES(long long)
 AC_CHECK_SIZEOF(long long)
 
