@@ -238,6 +238,10 @@
       *errcode = ps_set_search($self, search_name);
     }
 
+    void unset_search(const char *search_name, int *errcode) {
+      *errcode = ps_unset_search($self, search_name);
+    }
+
     const char * get_search() {
         return ps_get_search($self);
     }
