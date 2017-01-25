@@ -107,6 +107,11 @@ typedef ps_decoder_t NBestList;
 typedef ps_lattice_t Lattice;
 %}
 
+%typemap(cscode) Segment %{
+    public override string ToString() {
+	return Word + " " + StartFrame + " " + EndFrame + " " + Prob;
+    }
+%}
 
 %inline %{
 
@@ -133,6 +138,7 @@ typedef struct {
 } NBest;
 
 %}
+
 
 %nodefaultctor SegmentList;
 %nodefaultctor NBestList;
@@ -188,6 +194,7 @@ typedef struct {} SegmentList;
 	ckd_free($self);
     }
 }
+
 
 %extend NBest {
 

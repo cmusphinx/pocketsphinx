@@ -147,7 +147,13 @@
                 int *errcode) {
         return *errcode = ps_process_raw($self, (const int16 *)STRING, SIZE / 2, no_search, full_utt);
     }
+#elif SWIGCSHARP
+    int process_raw(const unsigned char* SDATA, int SIZE, bool no_search, bool full_utt,
+                int *errcode) {
+        return *errcode = ps_process_raw($self, (const int16 *)SDATA, SIZE / 2, no_search, full_utt);
+    }
 #endif
+
 
 #ifdef SWIGJAVA
     // Not sure how to properly return binary buffer in python yet (python3 is also an issue)
