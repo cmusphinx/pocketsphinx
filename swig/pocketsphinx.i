@@ -124,17 +124,17 @@ typedef struct {
 
 typedef struct {
     char *word;
-    int32 ascore;
-    int32 lscore;
-    int32 lback;
-    int32 prob;
+    int ascore;
+    int lscore;
+    int lback;
+    int prob;
     int start_frame;
     int end_frame;
 } Segment;
 
 typedef struct {
     char *hypstr;
-    int32 score;
+    int score;
 } NBest;
 
 %}
@@ -179,12 +179,12 @@ typedef struct {} SegmentList;
 
 %extend Segment {
 
-    static Segment* fromIter(ps_seg_t *itor) {
+    static Segment* fromIter(void *itor) {
 	Segment *seg;
 	if (!itor)
 	    return NULL;
 	seg = (Segment *)ckd_malloc(sizeof(Segment));
-	seg->word = ckd_salloc(ps_seg_word(itor));
+	seg->word = ckd_salloc(ps_seg_word((ps_seg_t *)itor));
 	seg->prob = ps_seg_prob(itor, &(seg->ascore), &(seg->lscore), &(seg->lback));
 	ps_seg_frames(itor, &seg->start_frame, &seg->end_frame);
 	return seg;
@@ -198,7 +198,7 @@ typedef struct {} SegmentList;
 
 %extend NBest {
 
-    static NBest* fromIter(ps_nbest_t *itor) {
+    static NBest* fromIter(void *itor) {
 	NBest *nbest;
 	if (!itor)
 	    return NULL;
