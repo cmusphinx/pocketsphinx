@@ -50,8 +50,10 @@ returned in a regular fashion and run-time exception is being thrown in case of
 negative error code."
 %enddef
 
-#if SWIGJAVA
+#if SWIGJAVA || SWIGCSHARP || SWIGJAVASCRIPT
 %module PocketSphinx
+#elif SWIGRUBY
+%module pocketsphinx
 #else
 %module(docstring=DOCSTRING) pocketsphinx
 #endif
@@ -185,8 +187,8 @@ typedef struct {} SegmentList;
 	    return NULL;
 	seg = (Segment *)ckd_malloc(sizeof(Segment));
 	seg->word = ckd_salloc(ps_seg_word((ps_seg_t *)itor));
-	seg->prob = ps_seg_prob(itor, &(seg->ascore), &(seg->lscore), &(seg->lback));
-	ps_seg_frames(itor, &seg->start_frame, &seg->end_frame);
+	seg->prob = ps_seg_prob((ps_seg_t *)itor, &(seg->ascore), &(seg->lscore), &(seg->lback));
+	ps_seg_frames((ps_seg_t *)itor, &seg->start_frame, &seg->end_frame);
 	return seg;
     }
     ~Segment() {
@@ -203,7 +205,7 @@ typedef struct {} SegmentList;
 	if (!itor)
 	    return NULL;
 	nbest = (NBest *)ckd_malloc(sizeof(NBest));
-	nbest->hypstr = ckd_salloc(ps_nbest_hyp(itor, &(nbest->score)));
+	nbest->hypstr = ckd_salloc(ps_nbest_hyp((ps_nbest_t *)itor, &(nbest->score)));
 	return nbest;
     }
     
