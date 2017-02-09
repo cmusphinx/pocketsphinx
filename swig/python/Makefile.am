@@ -2,7 +2,7 @@ if BUILD_SWIG
 
 SUBDIRS = test
 
-SWIG_FLAGS = -I$(top_srcdir)/include -I@SPHINXBASE_SWIG@
+SWIG_FLAGS = -I$(top_srcdir)/include -I@SPHINXBASE_SWIG@ -threads
 
 SWIG_DIR = $(top_srcdir)/swig
 
