@@ -285,11 +285,11 @@ populate_lrdiph(dict2pid_t *d2p, s3ssid_t ***rdiph_rc, s3cipid_t b)
                 rdiph_rc[b][l][r]
                     = bin_mdef_pid2ssid(mdef, p);
             assert(IS_S3SSID(bin_mdef_pid2ssid(mdef, p)));
-            E_DEBUG(2,("%s(%s,%s) => %d / %d\n",
-                       bin_mdef_ciphone_str(mdef, b),
-                       bin_mdef_ciphone_str(mdef, l),
-                       bin_mdef_ciphone_str(mdef, r),
-                       p, bin_mdef_pid2ssid(mdef, p)));
+            E_DEBUG("%s(%s,%s) => %d / %d\n",
+                    bin_mdef_ciphone_str(mdef, b),
+                    bin_mdef_ciphone_str(mdef, l),
+                    bin_mdef_ciphone_str(mdef, r),
+                    p, bin_mdef_pid2ssid(mdef, p));
         }
     }
 }
@@ -307,9 +307,9 @@ dict2pid_add_word(dict2pid_t *d2p,
          * word. */
         if (d2p->ldiph_lc[dict_first_phone(d, wid)][dict_second_phone(d, wid)][0]
             == BAD_S3SSID) {
-            E_DEBUG(2, ("Filling in left-context diphones for %s(?,%s)\n",
+            E_DEBUG("Filling in left-context diphones for %s(?,%s)\n",
                    bin_mdef_ciphone_str(mdef, dict_first_phone(d, wid)),
-                   bin_mdef_ciphone_str(mdef, dict_second_phone(d, wid))));
+                   bin_mdef_ciphone_str(mdef, dict_second_phone(d, wid)));
             for (l = 0; l < bin_mdef_n_ciphone(mdef); l++) {
                 int p
                     = bin_mdef_phone_id_nearest(mdef,
@@ -327,9 +327,9 @@ dict2pid_add_word(dict2pid_t *d2p,
             s3cipid_t *tmpcimap;
             s3cipid_t r;
 
-            E_DEBUG(2, ("Filling in right-context diphones for %s(%s,?)\n",
+            E_DEBUG("Filling in right-context diphones for %s(%s,?)\n",
                    bin_mdef_ciphone_str(mdef, dict_last_phone(d, wid)),
-                   bin_mdef_ciphone_str(mdef, dict_second_last_phone(d, wid))));
+                   bin_mdef_ciphone_str(mdef, dict_second_last_phone(d, wid)));
             rmap = ckd_calloc(bin_mdef_n_ciphone(mdef), sizeof(*rmap));
             for (r = 0; r < bin_mdef_n_ciphone(mdef); r++) {
                 int p
@@ -472,8 +472,8 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict)
         }
         else if (pronlen == 1) {
             b = dict_pron(dict, w, 0);
-            E_DEBUG(1,("Building tables for single phone word %s phone %d = %s\n",
-                       dict_wordstr(dict, w), b, bin_mdef_ciphone_str(mdef, b)));
+            E_DEBUG("Building tables for single phone word %s phone %d = %s\n",
+                       dict_wordstr(dict, w), b, bin_mdef_ciphone_str(mdef, b));
             /* Populate lrdiph_rc (and also ldiph_lc, rdiph_rc if needed) */
             if (bitvec_is_clear(single, b)) {
                 populate_lrdiph(dict2pid, rdiph_rc, b);

@@ -1033,8 +1033,8 @@ acmod_read_scores(acmod_t *acmod)
        get reused below in acmod_score(). */
     acmod->senscr_frame = acmod->output_frame + acmod->n_feat_frame;
 
-    E_DEBUG(1,("Frame %d has %d active states\n",
-               acmod->senscr_frame, acmod->n_senone_active));
+    E_DEBUG("Frame %d has %d active states\n",
+            acmod->senscr_frame, acmod->n_senone_active);
 
     /* Increment the "feature frame counter" and record the file
      * position for the relevant frame in the (possibly circular)
@@ -1157,8 +1157,8 @@ acmod_score(acmod_t *acmod, int *inout_frame_idx)
                                acmod->senone_scores,
                                acmod->senfh) < 0)
             return NULL;
-        E_DEBUG(1,("Frame %d has %d active states\n", frame_idx,
-                   acmod->n_senone_active));
+        E_DEBUG("Frame %d has %d active states\n", frame_idx,
+                acmod->n_senone_active);
     }
 
     return acmod->senone_scores;
@@ -1299,8 +1299,8 @@ acmod_flags2list(acmod_t *acmod)
     }
 
     acmod->n_senone_active = n;
-    E_DEBUG(1, ("acmod_flags2list: %d active in frame %d\n",
-                acmod->n_senone_active, acmod->output_frame));
+    E_DEBUG("acmod_flags2list: %d active in frame %d\n",
+            acmod->n_senone_active, acmod->output_frame);
     return n;
 }
 

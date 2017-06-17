@@ -310,13 +310,12 @@ ptm_mgau_calc_cb_active(ptm_mgau_t *s, uint8 *senone_active,
         bitvec_set(s->f->mgau_active, cb);
         lastsen = sen;
     }
-    E_DEBUG(1, ("Active codebooks:"));
+    E_DEBUG("Active codebooks:");
     for (i = 0; i < s->g->n_mgau; ++i) {
         if (bitvec_is_clear(s->f->mgau_active, i))
             continue;
-        E_DEBUGCONT(1, (" %d", i));
+        E_DEBUG(" %d", i);
     }
-    E_DEBUGCONT(1, ("\n"));
     return 0;
 }
 
@@ -385,8 +384,8 @@ ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
                 else
                     fden = fast_logmath_add(s->lmath_8b, fden,
                                        mixw + topn[j].score);
-                E_DEBUG(3, ("fden[%d][%d] l+= %d + %d = %d\n",
-                            sen, f, mixw, topn[j].score, fden));
+                E_DEBUG("fden[%d][%d] l+= %d + %d = %d\n",
+                        sen, f, mixw, topn[j].score, fden);
             }
             ascore += fden;
         }

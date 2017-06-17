@@ -499,7 +499,7 @@ fwdflat_prune_chan(ngram_search_t *ngs, int frame_idx)
     thresh = ngs->best_score + ngs->fwdflatbeam;
     wordthresh = ngs->best_score + ngs->fwdflatwbeam;
     pip = ngs->pip;
-    E_DEBUG(3,("frame %d thresh %d wordthresh %d\n", frame_idx, thresh, wordthresh));
+    E_DEBUG("frame %d thresh %d wordthresh %d\n", frame_idx, thresh, wordthresh);
 
     /* Scan all active words. */
     for (i = 0; i < nw; i++) {
@@ -721,9 +721,9 @@ fwdflat_word_transition(ngram_search_t *ngs, int frame_idx)
                         dict2pid_ldiph_lc(d2p, rhmm->ciphone, rhmm->ci2phone,
                                           dict_last_phone(dict, bp->wid));
                     assert(IS_S3SSID(hmm_mpx_ssid(&rhmm->hmm, 0)));
-                    E_DEBUG(6,("ssid %d(%d,%d) = %d\n",
-                               rhmm->ciphone, dict_last_phone(dict, bp->wid), rhmm->ci2phone,
-                               hmm_mpx_ssid(&rhmm->hmm, 0)));
+                    E_DEBUG("ssid %d(%d,%d) = %d\n",
+                            rhmm->ciphone, dict_last_phone(dict, bp->wid), rhmm->ci2phone,
+                            hmm_mpx_ssid(&rhmm->hmm, 0));
                     bitvec_set(ngs->word_active, w);
                 }
             }

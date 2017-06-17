@@ -201,8 +201,8 @@ create_search_channels(ngram_search_t *ngs)
 
         /* Handle single-phone words individually; not in channel tree */
         if (dict_is_single_phone(dict, w)) {
-            E_DEBUG(1,("single_phone_wid[%d] = %s\n",
-                       ngs->n_1ph_LMwords, dict_wordstr(dict, w)));
+            E_DEBUG("single_phone_wid[%d] = %s\n",
+                       ngs->n_1ph_LMwords, dict_wordstr(dict, w));
             ngs->single_phone_wid[ngs->n_1ph_LMwords++] = w;
             continue;
         }
@@ -229,7 +229,7 @@ create_search_channels(ngram_search_t *ngs)
         else
             rhmm = &(ngs->root_chan[i]);
 
-        E_DEBUG(3,("word %s rhmm %d\n", dict_wordstr(dict, w), rhmm - ngs->root_chan));
+        E_DEBUG("word %s rhmm %d\n", dict_wordstr(dict, w), rhmm - ngs->root_chan);
         /* Now, rhmm = root channel for w.  Go on to remaining phones */
         if (dict_pronlen(dict, w) == 2) {
             /* Next phone is the last; not kept in tree; add w to penult_phn_wid set */
@@ -261,9 +261,9 @@ create_search_channels(ngram_search_t *ngs)
                     ngs->n_nonroot_chan++;
                 }
             }
-            E_DEBUG(3,("phone %s = %d\n",
+            E_DEBUG("phone %s = %d\n",
                        bin_mdef_ciphone_str(ps_search_acmod(ngs)->mdef,
-                                            dict_second_phone(dict, w)), ph));
+                                            dict_second_phone(dict, w)), ph);
             for (p = 2; p < dict_pronlen(dict, w) - 1; p++) {
                 ph = dict2pid_internal(d2p, w, p);
                 tmatid = bin_mdef_pid2tmatid(ps_search_acmod(ngs)->mdef, dict_pron(dict, w, p));
@@ -285,9 +285,9 @@ create_search_channels(ngram_search_t *ngs)
                         ngs->n_nonroot_chan++;
                     }
                 }
-                E_DEBUG(3,("phone %s = %d\n",
-                           bin_mdef_ciphone_str(ps_search_acmod(ngs)->mdef,
-                                                dict_pron(dict, w, p)), ph));
+                E_DEBUG("phone %s = %d\n",
+                        bin_mdef_ciphone_str(ps_search_acmod(ngs)->mdef,
+                                            dict_pron(dict, w, p)), ph);
             }
 
             /* All but last phone of w in tree; add w to hmm->info.penult_phn_wid set */
@@ -312,8 +312,8 @@ create_search_channels(ngram_search_t *ngs)
             continue;
         if (ngram_model_set_known_wid(ngs->lmset, dict_basewid(dict, w)))
             continue;
-        E_DEBUG(1,("single_phone_wid[%d] = %s\n",
-                   ngs->n_1ph_words, dict_wordstr(dict, w)));
+        E_DEBUG("single_phone_wid[%d] = %s\n",
+                   ngs->n_1ph_words, dict_wordstr(dict, w));
         ngs->single_phone_wid[ngs->n_1ph_words++] = w;
     }
 
@@ -739,15 +739,15 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
     pls = (phone_loop_search_t *)ps_search_lookahead(ngs);
 
     for (i = 0, rhmm = ngs->root_chan; i < ngs->n_root_chan; i++, rhmm++) {
-        E_DEBUG(3,("Root channel %d frame %d score %d thresh %d\n",
-                   i, hmm_frame(&rhmm->hmm), hmm_bestscore(&rhmm->hmm), thresh));
+        E_DEBUG("Root channel %d frame %d score %d thresh %d\n",
+                i, hmm_frame(&rhmm->hmm), hmm_bestscore(&rhmm->hmm), thresh);
         /* First check if this channel was active in current frame */
         if (hmm_frame(&rhmm->hmm) < frame_idx)
             continue;
 
         if (hmm_bestscore(&rhmm->hmm) BETTER_THAN thresh) {
             hmm_frame(&rhmm->hmm) = nf;  /* rhmm will be active in next frame */
-            E_DEBUG(3,("Preserving root channel %d score %d\n", i, hmm_bestscore(&rhmm->hmm)));
+            E_DEBUG("Preserving root channel %d score %d\n", i, hmm_bestscore(&rhmm->hmm));
             /* transitions out of this root channel */
             /* transition to all next-level channels in the HMM tree */
             newphone_score = hmm_out_score(&rhmm->hmm) + ngs->pip;
@@ -777,7 +777,7 @@ prune_root_chan(ngram_search_t *ngs, int frame_idx)
                     int32 pl_newphone_score = newphone_score
                         + phone_loop_search_score
                         (pls, dict_last_phone(ps_search_dict(ngs),w));
-                    E_DEBUG(3,("word %s newphone_score %d\n", dict_wordstr(ps_search_dict(ngs), w), newphone_score));
+                    E_DEBUG("word %s newphone_score %d\n", dict_wordstr(ps_search_dict(ngs), w), newphone_score);
                     if (pl_newphone_score BETTER_THAN lastphn_thresh) {
                         candp = ngs->lastphn_cand + ngs->n_lastphn_cand;
                         ngs->n_lastphn_cand++;
@@ -1104,10 +1104,10 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
     for (i = 0; i < ngs->n_1ph_words; i++) {
         w = ngs->single_phone_wid[i];
         rhmm = (root_chan_t *) ngs->word_chan[w];
-        E_DEBUG(3,("Single phone word %s frame %d score %d thresh %d outscore %d nwthresh %d\n",
-                   dict_wordstr(ps_search_dict(ngs),w),
-                   hmm_frame(&rhmm->hmm), hmm_bestscore(&rhmm->hmm),
-                   lastphn_thresh, hmm_out_score(&rhmm->hmm), newword_thresh));
+        E_DEBUG("Single phone word %s frame %d score %d thresh %d outscore %d nwthresh %d\n",
+                dict_wordstr(ps_search_dict(ngs),w),
+                hmm_frame(&rhmm->hmm), hmm_bestscore(&rhmm->hmm),
+                lastphn_thresh, hmm_out_score(&rhmm->hmm), newword_thresh);
         if (hmm_frame(&rhmm->hmm) < frame_idx)
             continue;
         if (hmm_bestscore(&rhmm->hmm) BETTER_THAN lastphn_thresh) {
@@ -1115,10 +1115,10 @@ prune_word_chan(ngram_search_t *ngs, int frame_idx)
 
             /* Could if ((! skip_alt_frm) || (frame_idx & 0x1)) the following */
             if (hmm_out_score(&rhmm->hmm) BETTER_THAN newword_thresh) {
-                E_DEBUG(4,("Exiting single phone word %s with %d > %d, %d\n",
-                           dict_wordstr(ps_search_dict(ngs),w),
-                           hmm_out_score(&rhmm->hmm),
-                           lastphn_thresh, newword_thresh));
+                E_DEBUG("Exiting single phone word %s with %d > %d, %d\n",
+                        dict_wordstr(ps_search_dict(ngs),w),
+                        hmm_out_score(&rhmm->hmm),
+                        lastphn_thresh, newword_thresh);
                 ngram_search_save_bp(ngs, frame_idx, w,
                              hmm_out_score(&rhmm->hmm),
                              hmm_out_history(&rhmm->hmm), 0);
@@ -1278,8 +1278,8 @@ word_transition(ngram_search_t *ngs, int frame_idx)
             /* No right context expansion. */
             for (rc = 0; rc < bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef); ++rc) {
                 if (bpe->score BETTER_THAN ngs->bestbp_rc[rc].score) {
-                    E_DEBUG(4,("bestbp_rc[0] = %d lc %d\n",
-                               bpe->score, bpe->last_phone));
+                    E_DEBUG("bestbp_rc[0] = %d lc %d\n",
+                            bpe->score, bpe->last_phone);
                     ngs->bestbp_rc[rc].score = bpe->score;
                     ngs->bestbp_rc[rc].path = bp;
                     ngs->bestbp_rc[rc].lc = bpe->last_phone;
@@ -1291,8 +1291,8 @@ word_transition(ngram_search_t *ngs, int frame_idx)
             int32 *rcss = &(ngs->bscore_stack[bpe->s_idx]);
             for (rc = 0; rc < bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef); ++rc) {
                 if (rcss[rssid->cimap[rc]] BETTER_THAN ngs->bestbp_rc[rc].score) {
-                    E_DEBUG(4,("bestbp_rc[%d] = %d lc %d\n",
-                               rc, rcss[rssid->cimap[rc]], bpe->last_phone));
+                    E_DEBUG("bestbp_rc[%d] = %d lc %d\n",
+                            rc, rcss[rssid->cimap[rc]], bpe->last_phone);
                     ngs->bestbp_rc[rc].score = rcss[rssid->cimap[rc]];
                     ngs->bestbp_rc[rc].path = bp;
                     ngs->bestbp_rc[rc].lc = bpe->last_phone;
@@ -1347,8 +1347,8 @@ word_transition(ngram_search_t *ngs, int frame_idx)
             w = ngs->single_phone_wid[i];
             newscore = ngram_search_exit_score
                 (ngs, bpe, dict_first_phone(dict, w));
-            E_DEBUG(4, ("initial newscore for %s: %d\n",
-                        dict_wordstr(dict, w), newscore));
+            E_DEBUG("initial newscore for %s: %d\n",
+                    dict_wordstr(dict, w), newscore);
             if (newscore != WORST_SCORE)
                 newscore += ngram_tg_score(ngs->lmset,
                                            dict_basewid(dict, w),

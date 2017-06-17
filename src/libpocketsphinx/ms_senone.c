@@ -387,8 +387,8 @@ senone_eval(senone_t * s, int id, gauden_dist_t ** dist, int32 n_top)
         fscr = (s->n_gauden > 1)
 	    ? (fden + -s->pdf[id][f][fdist[0].id])  /* untransposed */
 	    : (fden + -s->pdf[f][fdist[0].id][id]); /* transposed */
-        E_DEBUG(1, ("fden[%d][%d] l+= %d + %d = %d\n",
-                    id, f, -(fscr - fden), -(fden-top), -(fscr-top)));
+        E_DEBUG("fden[%d][%d] l+= %d + %d = %d\n",
+                    id, f, -(fscr - fden), -(fden-top), -(fscr-top));
         /* Remaining of n_top codewords for feature f */
         for (t = 1; t < n_top; t++) {
 	    fden = ((int32)fdist[t].dist + ((1<<SENSCR_SHIFT) - 1)) >> SENSCR_SHIFT;
@@ -396,8 +396,8 @@ senone_eval(senone_t * s, int id, gauden_dist_t ** dist, int32 n_top)
                 (fden + -s->pdf[id][f][fdist[t].id]) :
                 (fden + -s->pdf[f][fdist[t].id][id]);
             fscr = logmath_add(s->lmath, fscr, fwscr);
-            E_DEBUG(1, ("fden[%d][%d] l+= %d + %d = %d\n",
-                        id, f, -(fwscr - fden), -(fden-top), -(fscr-top)));
+            E_DEBUG("fden[%d][%d] l+= %d + %d = %d\n",
+                        id, f, -(fwscr - fden), -(fden-top), -(fscr-top));
         }
 	/* Senone scores are also scaled, negated logs3 values.  Hence
 	 * we have to negate the stuff we calculated above. */
