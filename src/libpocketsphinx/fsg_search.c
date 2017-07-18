@@ -1101,7 +1101,7 @@ fsg_search_hyp_with_tags(ps_search_t *search, int32 *out_score)
                                 dict_wordid(dict,
                                             fsg_model_word_str(fsgs->fsg, wid)));
 
-        ps_hyptags_t *r = ckd_calloc(1, sizeof(ps_hyptags_t));
+        ps_hyptags_t *r = (ps_hyptags_t *)ckd_calloc(1, sizeof(ps_hyptags_t));
         r->tags = tags;
         r->word = baseword;
 

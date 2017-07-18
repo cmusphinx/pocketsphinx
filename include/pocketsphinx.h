@@ -8,7 +8,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -16,16 +16,16 @@
  *    distribution.
  *
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
@@ -61,11 +61,6 @@ extern "C" {
 #if 0
 }
 #endif
-
-/**
- * PocketSphinx hyptags struct.
- */
-typedef struct ps_hyptags_s ps_hyptags_t;
 
 /**
  * PocketSphinx speech recognizer object.
@@ -272,7 +267,7 @@ int ps_add_word(ps_decoder_t *ps,
                 char const *phones,
                 int update);
 
-/** 
+/**
  * Lookup for the word in the dictionary and return phone transcription
  * for it.
  *
@@ -284,7 +279,7 @@ int ps_add_word(ps_decoder_t *ps,
  *         allocated and must be freed by the user.
  */
 POCKETSPHINX_EXPORT
-char *ps_lookup_word(ps_decoder_t *ps, 
+char *ps_lookup_word(ps_decoder_t *ps,
 	             const char *word);
 
 /**
@@ -419,12 +414,21 @@ char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score);
  *
  * @param ps Decoder.
  * @param out_best_score Output: path score corresponding to returned string.
- * @return glist_t containing ps_hyptags_t. Each struct has a word of the best 
- *         hypothesis at this point in decoding, and a glist_t of chars for the tags (can be NULL).
- *          NULL is returned if no hypothesis is available. 
+ * @return glist_t of ps_hyptags_t structs, accessed through iterators below. NULL on error
  */
+
 POCKETSPHINX_EXPORT
 glist_t ps_get_hyp_with_tags(ps_decoder_t *ps, int32 *out_best_score);
+
+/**
+ * Get glist containing tags and word referenced.
+ *
+ * @param glist containing word-tags pairs.
+ * @param referenced word of the hypothesis.
+ *
+ * @return glist_t to hold extracted tags,or NULL on error.
+ */
+glist_t ps_get_word_and_tags(glist_t hyptags_list, char *word);
 
 /**
  * Get posterior probability.
@@ -551,7 +555,7 @@ ps_nbest_t *ps_nbest(ps_decoder_t *ps);
  * @return Updated N-best iterator, or NULL if no more hypotheses are
  *         available (iterator is freed ni this case).
  */
-POCKETSPHINX_EXPORT 
+POCKETSPHINX_EXPORT
 ps_nbest_t *ps_nbest_next(ps_nbest_t *nbest);
 
 /**
@@ -629,7 +633,7 @@ void ps_set_rawdata_size(ps_decoder_t *ps, int32 size);
 
 /**
  * Retrieves the raw data collected during utterance decoding.
- * 
+ *
  * @param ps Decoder
  * @param buffer preallocated buffer to store the data, must be within the limit
  * set before

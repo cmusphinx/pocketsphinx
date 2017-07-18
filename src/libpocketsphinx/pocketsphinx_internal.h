@@ -76,10 +76,10 @@ typedef struct ps_search_s ps_search_t;
 #define PS_SEARCH_TYPE_STATE_ALIGN  "state_align"
 #define PS_SEARCH_TYPE_PHONE_LOOP  "phone_loop"
 
-struct ps_hyptags_s {
+typedef struct ps_hyptags_s{
     char const *word;
     glist_t tags;
-};
+}ps_hyptags_t;
 
 
 /**
