@@ -49,6 +49,7 @@ static int phone_loop_search_finish(ps_search_t *search);
 static int phone_loop_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p);
 static void phone_loop_search_free(ps_search_t *search);
 static char const *phone_loop_search_hyp(ps_search_t *search, int32 *out_score);
+static glist_t phone_loop_search_hyp_with_tags(ps_search_t *search, int32 *out_score);
 static int32 phone_loop_search_prob(ps_search_t *search);
 static ps_seg_t *phone_loop_search_seg_iter(ps_search_t *search);
 
@@ -60,6 +61,7 @@ static ps_searchfuncs_t phone_loop_search_funcs = {
     /* free: */   phone_loop_search_free,
     /* lattice: */  NULL,
     /* hyp: */      phone_loop_search_hyp,
+    /* hyptags_list: */ phone_loop_search_hyp_with_tags,
     /* prob: */     phone_loop_search_prob,
     /* seg_iter: */ phone_loop_search_seg_iter,
 };
@@ -348,6 +350,13 @@ static char const *
 phone_loop_search_hyp(ps_search_t *search, int32 *out_score)
 {
     E_WARN("Hypotheses are not returned from phone loop search");
+    return NULL;
+}
+
+static glist_t
+phone_loop_search_hyp_with_tags(ps_search_t *search, int32 *out_score)
+{
+    E_WARN("hyptags lists are not returned from phone loop search");
     return NULL;
 }
 

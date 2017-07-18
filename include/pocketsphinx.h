@@ -47,6 +47,7 @@
 #include <sphinxbase/logmath.h>
 #include <sphinxbase/fe.h>
 #include <sphinxbase/feat.h>
+#include <sphinxbase/glist.h>
 
 /* PocketSphinx headers (not many of them!) */
 #include <pocketsphinx_export.h>
@@ -60,6 +61,11 @@ extern "C" {
 #if 0
 }
 #endif
+
+/**
+ * PocketSphinx hyptags struct.
+ */
+typedef struct ps_hyptags_s ps_hyptags_t;
 
 /**
  * PocketSphinx speech recognizer object.
@@ -407,6 +413,18 @@ int ps_end_utt(ps_decoder_t *ps);
  */
 POCKETSPHINX_EXPORT
 char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score);
+
+/**
+ * Get glist containing word-tags pairs, as ps_hyptags_t.
+ *
+ * @param ps Decoder.
+ * @param out_best_score Output: path score corresponding to returned string.
+ * @return glist_t containing ps_hyptags_t. Each struct has a word of the best 
+ *         hypothesis at this point in decoding, and a glist_t of chars for the tags (can be NULL).
+ *          NULL is returned if no hypothesis is available. 
+ */
+POCKETSPHINX_EXPORT
+glist_t ps_get_hyp_with_tags(ps_decoder_t *ps, int32 *out_best_score);
 
 /**
  * Get posterior probability.

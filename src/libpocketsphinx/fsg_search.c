@@ -75,15 +75,16 @@ static ps_lattice_t *fsg_search_lattice(ps_search_t *search);
 static int fsg_search_prob(ps_search_t *search);
 
 static ps_searchfuncs_t fsg_funcs = {
-    /* start: */  fsg_search_start,
-    /* step: */   fsg_search_step,
-    /* finish: */ fsg_search_finish,
-    /* reinit: */ fsg_search_reinit,
-    /* free: */   fsg_search_free,
-    /* lattice: */  fsg_search_lattice,
-    /* hyp: */      fsg_search_hyp,
-    /* prob: */     fsg_search_prob,
-    /* seg_iter: */ fsg_search_seg_iter,
+    /* start: */        fsg_search_start,
+    /* step: */         fsg_search_step,
+    /* finish: */       fsg_search_finish,
+    /* reinit: */       fsg_search_reinit,
+    /* free: */         fsg_search_free,
+    /* lattice: */      fsg_search_lattice,
+    /* hyp: */          fsg_search_hyp,
+    /* hyptags_list: */ fsg_search_hyp_with_tags,
+    /* prob: */         fsg_search_prob,
+    /* seg_iter: */     fsg_search_seg_iter,
 };
 
 static int
@@ -1051,6 +1052,62 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score)
     }
 
     return search->hyp_str;
+}
+
+glist_t
+fsg_search_hyp_with_tags(ps_search_t *search, int32 *out_score)
+{
+    fsg_search_t *fsgs = (fsg_search_t *)search;
+    dict_t *dict = ps_search_dict(search);
+    int bp, bpidx;
+
+    /* Get last backpointer table index. */
+    bpidx = fsg_search_find_exit(fsgs, fsgs->frame, fsgs->final, out_score);
+    /* No hypothesis (yet). */
+    if (bpidx <= 0) {
+        return NULL;
+    }
+
+    /* If bestpath is enabled and the utterance is complete, then run it. */
+    if (fsgs->bestpath && fsgs->final) {
+        ps_lattice_t *dag;
+        ps_latlink_t *link;
+
+        if ((dag = fsg_search_lattice(search)) == NULL) {
+    	    E_WARN("Failed to obtain the lattice while bestpath enabled\n");
+            return NULL;
+        }
+        if ((link = fsg_search_bestpath(search, out_score, FALSE)) == NULL) {
+    	    E_WARN("Failed to find the bestpath in a lattice\n");
+            return NULL;
+        }
+        return ps_lattice_hyp(dag, link);
+    }
+
+    glist_free(search->hyptags_list);
+    bp = bpidx;
+    while (bp > 0) {
+        fsg_hist_entry_t *hist_entry = fsg_history_entry_get(fsgs->history, bp);
+        fsg_link_t *fl = fsg_hist_entry_fsglink(hist_entry);
+
+        char const *baseword;
+        int32 wid;
+        glist_t tags = fsg_link_tags(fl);
+        bp = fsg_hist_entry_pred(hist_entry);
+        wid = fsg_link_wid(fl);
+        if (wid < 0 || fsg_model_is_filler(fsgs->fsg, wid))
+            continue;
+        baseword = dict_basestr(dict,
+                                dict_wordid(dict,
+                                            fsg_model_word_str(fsgs->fsg, wid)));
+
+        ps_hyptags_t *r = ckd_calloc(1, sizeof(ps_hyptags_t));
+        r->tags = tags;
+        r->word = baseword;
+
+        search->hyptags_list = glist_add_ptr(search->hyptags_list, (void *)r);
+    }
+    return search->hyptags_list;
 }
 
 static void

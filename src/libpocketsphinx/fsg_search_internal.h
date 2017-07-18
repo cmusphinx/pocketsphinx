@@ -150,4 +150,9 @@ int fsg_search_finish(ps_search_t *search);
  */
 char const *fsg_search_hyp(ps_search_t *search, int32 *out_score);
 
+/**
+ * Get glist_t with word-tags pairs.
+ */
+glist_t fsg_search_hyp_with_tags(ps_search_t *search, int32 *out_score);
+
 #endif

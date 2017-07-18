@@ -131,6 +131,7 @@ static ps_searchfuncs_t allphone_funcs = {
     /* free: */ allphone_search_free,
     /* lattice: */ allphone_search_lattice,
     /* hyp: */ allphone_search_hyp,
+	/* hyptags_list: */ allphone_search_hyp_with_tags,
     /* prob: */ allphone_search_prob,
     /* seg_iter: */ allphone_search_seg_iter,
 };
@@ -906,4 +907,11 @@ allphone_search_hyp(ps_search_t * search, int32 * out_score)
     search->hyp_str[--hyp_idx] = '\0';
     E_INFO("Hyp: %s\n", search->hyp_str);
     return search->hyp_str;
+}
+
+glist_t
+allphone_search_hyp_with_tags(ps_search_t * search, int32 * out_score)
+{
+	E_WARN("Tags extraction for allphone_search not implemented\n");
+	return NULL;
 }
