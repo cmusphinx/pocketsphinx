@@ -61,6 +61,7 @@
 #include "s2_semi_mgau.h"
 #include "ptm_mgau.h"
 #include "ms_mgau.h"
+#include "nn_mgau.h"
 
 static int32 acmod_process_mfcbuf(acmod_t *acmod);
 
@@ -102,8 +103,12 @@ acmod_init_am(acmod_t *acmod)
         E_ERROR("No mean/var/tmat files specified\n");
         return -1;
     }
-
-    if (cmd_ln_str_r(acmod->config, "_senmgau")) {
+    if (cmd_ln_str_r(acmod->config, "-nnmgau")) {
+        acmod->mgau = nn_mgau_init(acmod, acmod->mdef);
+        if (acmod->mgau == NULL)
+            return -1;
+    }
+    else if (cmd_ln_str_r(acmod->config, "_senmgau")) {
         E_INFO("Using general multi-stream GMM computation\n");
         acmod->mgau = ms_mgau_init(acmod, acmod->lmath, acmod->mdef);
         if (acmod->mgau == NULL)

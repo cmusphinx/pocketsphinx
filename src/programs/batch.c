@@ -178,7 +178,10 @@ static const arg_t ps_args_def[] = {
       ARG_INT32,
       "0",
       "Number of N-best hypotheses to write to -nbestdir (0 for no N-best)" },
-
+    { "-nnmgau",
+      ARG_BOOLEAN,
+      "no",
+      "Use DNN for posteriors" },
     CMDLN_EMPTY_OPTION
 };
 
