@@ -51,6 +51,8 @@
 #include "stdarg.h"
 #include <errno.h>
 #include <time.h>
+#include <math.h>
+#include <unistd.h>
 #if defined(__ADSPBLACKFIN__)
 #elif !defined(_WIN32_WCE)
 #include <sys/types.h>
@@ -170,11 +172,41 @@ nn_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
 {
     nn_mgau_t *s;
     ps_mgau_t *ps;
+
+    int port = cmd_ln_int32_r(acmod->config, "-nnport");
+    char *model_name = cmd_ln_str_r(acmod->config, "-nnmgau");
+    char *acwt = cmd_ln_str_r(acmod->config, "-nnacwt");
+
+    if (access(model_name, R_OK) != 0){
+        printf("Model file (%s) does not exist or is not readable\n", model_name);
+        return NULL;
+    }
+    if (feat_dimension1(acmod->fcb) != 1){
+        printf("Multi-stream feature types not supported yet\n");
+        return NULL;
+    }
     s = ckd_calloc(1, sizeof(*s));
-    system("python /home/mshah1/sphinx/pocketsphinx/src/libpocketsphinx/runNN.py > /home/mshah1/wsj/wsj0/keras_server_log &");
     s->keras_server_sock = -1;
     s->n_feats = feat_dimension2(acmod->fcb, 0);
     printf("N_FEATS: %d\n", s->n_feats);
+
+    char *base_comm = "python /home/mshah1/sphinx/pocketsphinx/src/libpocketsphinx/runNN.py";
+    char *log_comm = "> /home/mshah1/wsj/wsj0/keras_server_log &";
+
+    // calculating the number of digits in n_feats
+    int len_n_feats = log10(s->n_feats) + 1e-9;
+    // assuming port number isn't more than 5 digits
+    char *comm = calloc(strlen(base_comm) + 
+                    1 + strlen(model_name) + 
+                    1 + len_n_feats + 
+                    1 + 5 + 
+                    1 + strlen(acwt) +
+                    1 + strlen(log_comm), sizeof(char));
+    sprintf(comm, "%s %s %d %s %d %s", base_comm, model_name, s->n_feats, acwt, port, log_comm);
+    printf("%s\n", comm);
+    system(comm);
+    free(comm);
+    // system("python /home/mshah1/sphinx/pocketsphinx/src/libpocketsphinx/runNN.py > /home/mshah1/wsj/wsj0/keras_server_log &");
     // s->keras_server_sock = open_server_socket("127.0.0.1","0.0.0.0",9000);
     // printf("KERAS_SERVER_SOCK: %d\n", s->keras_server_sock);
     ps = (ps_mgau_t *)s;
@@ -192,5 +224,7 @@ nn_mgau_mllr_transform(ps_mgau_t *ps,
 void
 nn_mgau_free(ps_mgau_t *ps)
 {
-    
+    nn_mgau_t *s;
+    s = (nn_mgau_t *)ps;
+    free(s);
 }

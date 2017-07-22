@@ -179,9 +179,17 @@ static const arg_t ps_args_def[] = {
       "0",
       "Number of N-best hypotheses to write to -nbestdir (0 for no N-best)" },
     { "-nnmgau",
-      ARG_BOOLEAN,
-      "no",
-      "Use DNN for posteriors" },
+      ARG_STRING,
+      NULL,
+      "Keras DNN model for generating posteriors" },
+    { "-nnport",
+      ARG_INT32,
+      "9000",
+      "Port number to use for the Keras DNN model server" },
+    { "-nnacwt",
+      ARG_STRING,
+      "0.1",
+      "Acoustic weight to scale the NN scores by" },
     CMDLN_EMPTY_OPTION
 };
 
