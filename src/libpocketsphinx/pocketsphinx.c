@@ -226,7 +226,6 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         ps->config = cmd_ln_retain(config);
     }
 
-    err_set_debug_level(cmd_ln_int32_r(ps->config, "-debug"));
     /* Set up logging. We need to do this earlier because we want to dump
      * the information to the configured log, not to the stderr. */
     if (config && cmd_ln_str_r(ps->config, "-logfn")) {

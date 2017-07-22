@@ -406,8 +406,8 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
                 /* But, sometimes, the history *is* lost.  If we wanted to
                  * do exact language model scoring we'd have to preserve
                  * these alternate histories. */
-                E_DEBUG(2,("Updating path history %d => %d frame %d\n",
-                           ngs->bp_table[bp].bp, path, frame_idx));
+                E_DEBUG("Updating path history %d => %d frame %d\n",
+                        ngs->bp_table[bp].bp, path, frame_idx);
                 bplh[0] = ngs->bp_table[bp].bp == -1
                     ? -1 : ngs->bp_table[ngs->bp_table[bp].bp].prev_real_wid;
                 bplh[1] = ngs->bp_table[bp].bp == -1
@@ -422,12 +422,12 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
                     /* It's fairly rare that the actual language model
                      * state changes, but it does happen some
                      * times. */
-                    E_DEBUG(1, ("Updating language model state %s,%s => %s,%s frame %d\n",
+                    E_DEBUG("Updating language model state %s,%s => %s,%s frame %d\n",
                                 dict_wordstr(ps_search_dict(ngs), bplh[0]),
                                 dict_wordstr(ps_search_dict(ngs), bplh[1]),
                                 dict_wordstr(ps_search_dict(ngs), newlh[0]),
                                 dict_wordstr(ps_search_dict(ngs), newlh[1]),
-                                frame_idx));
+                                frame_idx);
                     set_real_wid(ngs, bp);
                 }
                 ngs->bp_table[bp].bp = path;
@@ -618,10 +618,10 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
         hmm->info.rc_id = 0;
         hmm->ciphone = ciphone;
         hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, rssid->ssid[0], tmatid);
-        E_DEBUG(3,("allocated rc_id 0 ssid %d ciphone %d lc %d word %s\n",
-                   rssid->ssid[0], hmm->ciphone,
-                   dict_second_last_phone(ps_search_dict(ngs),w),
-                   dict_wordstr(ps_search_dict(ngs),w)));
+        E_DEBUG("allocated rc_id 0 ssid %d ciphone %d lc %d word %s\n",
+                rssid->ssid[0], hmm->ciphone,
+                dict_second_last_phone(ps_search_dict(ngs),w),
+                dict_wordstr(ps_search_dict(ngs),w));
     }
     for (i = 1; i < rssid->n_ssid; ++i) {
         if ((hmm->next == NULL) || (hmm_nonmpx_ssid(&hmm->next->hmm) != rssid->ssid[i])) {
@@ -633,10 +633,10 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
             hmm->info.rc_id = i;
             hmm->ciphone = ciphone;
             hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, rssid->ssid[i], tmatid);
-            E_DEBUG(3,("allocated rc_id %d ssid %d ciphone %d lc %d word %s\n",
-                       i, rssid->ssid[i], hmm->ciphone,
-                       dict_second_last_phone(ps_search_dict(ngs),w),
-                       dict_wordstr(ps_search_dict(ngs),w)));
+            E_DEBUG("allocated rc_id %d ssid %d ciphone %d lc %d word %s\n",
+                    i, rssid->ssid[i], hmm->ciphone,
+                    dict_second_last_phone(ps_search_dict(ngs),w),
+                    dict_wordstr(ps_search_dict(ngs),w));
         }
         else
             hmm = hmm->next;

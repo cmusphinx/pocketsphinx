@@ -495,7 +495,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
 		if (glist && glist->glist) {
 		    assert(glist->ci == ci && glist->rc == rc);
 		    /* We've found a valid glist. Hook to it and move to next phoneme */
-                    E_DEBUG(2,("Found match for (%d,%d)\n", ci, rc));
+                    E_DEBUG("Found match for (%d,%d)\n", ci, rc);
 		    lc_pnodelist = glist->glist;
                     /* Set the predecessor node for the future tree first */
 		    pred = (fsg_pnode_t *) gnode_ptr(lc_pnodelist);
@@ -576,7 +576,7 @@ psubtree_add_trans(fsg_lextree_t *lextree,
 		}
 		if (pnode && (hmm_nonmpx_ssid(&pnode->hmm) == ssid && !pnode->leaf)) {
 		    /* Found the ssid; go to next phoneme */
-                    E_DEBUG(2,("Found match for %d\n", ci));
+                    E_DEBUG("Found match for %d\n", ci);
 		    pred = pnode;
 		    continue;
 		}
@@ -688,9 +688,9 @@ psubtree_add_trans(fsg_lextree_t *lextree,
         glist_free(rc_pnodelist);
     }
 
-    E_DEBUG(2,("Allocated %d HMMs (%d lc, %d rc, %d internal)\n",
-               n_lc_alloc + n_rc_alloc + n_int_alloc,
-               n_lc_alloc, n_rc_alloc, n_int_alloc));
+    E_DEBUG("Allocated %d HMMs (%d lc, %d rc, %d internal)\n",
+            n_lc_alloc + n_rc_alloc + n_int_alloc,
+            n_lc_alloc, n_rc_alloc, n_int_alloc);
     *alloc_head = head;
 
     return root;
@@ -728,15 +728,15 @@ fsg_psubtree_init(fsg_lextree_t *lextree,
         if (fsg_link_wid(fsglink) < 0)
             continue;
 
-        E_DEBUG(2,("Building lextree for arc from %d to %d: %s\n",
-                   from_state, dst, fsg_model_word_str(fsg, fsg_link_wid(fsglink))));
+        E_DEBUG("Building lextree for arc from %d to %d: %s\n",
+                from_state, dst, fsg_model_word_str(fsg, fsg_link_wid(fsglink)));
         root = psubtree_add_trans(lextree, root, &glist, fsglink,
                                   lextree->lc[from_state],
                                   lextree->rc[dst],
                                   alloc_head);
         ++n_arc;
     }
-    E_DEBUG(2,("State %d has %d outgoing arcs\n", from_state, n_arc));
+    E_DEBUG("State %d has %d outgoing arcs\n", from_state, n_arc);
 
     fsg_glist_linklist_free(glist);
 

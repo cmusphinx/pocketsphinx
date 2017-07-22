@@ -63,10 +63,6 @@
             ARG_STRING,                                 \
             NULL,                                       \
             "File to write log messages in" },          \
-    { "-debug",                                         \
-            ARG_INT32,                                  \
-            NULL,                                       \
-            "Verbosity level for debugging messages" }, \
      { "-mfclogdir",                                    \
              ARG_STRING,                                \
              NULL,                                      \

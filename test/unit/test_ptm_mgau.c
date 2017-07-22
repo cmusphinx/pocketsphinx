@@ -103,22 +103,21 @@ main(int argc, char *argv[])
 	cmd_ln_set_str_extra_r(config, "_lda", NULL);
 	cmd_ln_set_str_extra_r(config, "_senmgau", NULL);	
 	
-	err_set_debug_level(3);
 	TEST_ASSERT(config);
 	TEST_ASSERT((acmod = acmod_init(config, lmath, NULL, NULL)));
 	TEST_ASSERT((ps = acmod->mgau));
 	TEST_EQUAL(0, strcmp(ps->vt->name, "ptm"));
 	s = (ptm_mgau_t *)ps;
-	E_DEBUG(2,("PTM model loaded: %d codebooks, %d senones, %d frames of history\n",
-		   s->g->n_mgau, s->n_sen, s->n_fast_hist));
-	E_DEBUG(2,("Senone to codebook mappings:\n"));
+	E_DEBUG("PTM model loaded: %d codebooks, %d senones, %d frames of history\n",
+		   s->g->n_mgau, s->n_sen, s->n_fast_hist);
+	E_DEBUG("Senone to codebook mappings:\n");
 	lastcb = s->sen2cb[0];
-	E_DEBUG(2,("\t%d: 0", lastcb));
+	E_DEBUG("\t%d: 0", lastcb);
 	for (i = 0; i < s->n_sen; ++i) {
 		if (s->sen2cb[i] != lastcb) {
 			lastcb = s->sen2cb[i];
-			E_DEBUGCONT(2,("-%d\n", i-1));
-			E_DEBUGCONT(2,("\t%d: %d", lastcb, i));
+			E_DEBUG("-%d\n", i-1);
+			E_DEBUG("\t%d: %d", lastcb, i);
 		}
 	}
 	E_INFOCONT("-%d\n", i-1);
