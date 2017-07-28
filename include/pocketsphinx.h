@@ -62,6 +62,8 @@ extern "C" {
 }
 #endif
 
+#define MAX_TAG_SIZE 50
+
 /**
  * PocketSphinx speech recognizer object.
  */
@@ -425,8 +427,7 @@ glist_t ps_get_hyp_with_tags(ps_decoder_t *ps, int32 *out_best_score);
  *
  * @param glist containing word-tags pairs.
  * @param referenced word of the hypothesis.
- *
- * @return glist_t to hold extracted tags,or NULL on error.
+ * @param referenced tag of the hypothesis.
  */
 void ps_get_word_and_tag(glist_t hyptags_list, char *word, char *tag);
 

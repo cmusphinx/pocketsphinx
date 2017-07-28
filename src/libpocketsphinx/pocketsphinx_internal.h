@@ -77,8 +77,8 @@ typedef struct ps_search_s ps_search_t;
 #define PS_SEARCH_TYPE_PHONE_LOOP  "phone_loop"
 
 typedef struct ps_hyptags_s{
-    char word[50];
-    char tag[50];
+    char word[MAX_TAG_SIZE];
+    char tag[MAX_TAG_SIZE];
 }ps_hyptags_t;
 
 

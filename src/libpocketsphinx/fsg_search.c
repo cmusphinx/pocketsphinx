@@ -1103,8 +1103,8 @@ fsg_search_hyp_with_tags(ps_search_t *search, int32 *out_score)
                                             fsg_model_word_str(fsgs->fsg, wid)));
 
         ps_hyptags_t *r = (ps_hyptags_t *)ckd_calloc(1, sizeof(ps_hyptags_t));
-        strncpy(r->tag,fsg_link_tag(fl),50);
-        strncpy(r->word,baseword,50);
+        strncpy(r->tag,fsg_link_tag(fl),MAX_TAG_SIZE);
+        strncpy(r->word,baseword,MAX_TAG_SIZE);
 
         search->hyptags_list = glist_add_ptr(search->hyptags_list, (void *)r);
     }
