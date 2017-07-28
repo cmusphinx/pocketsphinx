@@ -416,11 +416,13 @@ char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score);
  *
  * @param ps Decoder.
  * @param out_best_score Output: path score corresponding to returned string.
- * @return glist_t of ps_hyptags_t structs, accessed through iterators below. NULL on error
+ * @param glist pointer in which to store word-tag pairs
+ * @return String containing best hypothesis at this point in
+ *         decoding.  NULL if no hypothesis is available.
  */
 
 POCKETSPHINX_EXPORT
-glist_t ps_get_hyp_with_tags(ps_decoder_t *ps, int32 *out_best_score);
+char const *ps_get_hyp_with_tags(ps_decoder_t *ps, int32 *out_best_score, glist_t *hyptagsP);
 
 /**
  * Get glist containing tags and word referenced.

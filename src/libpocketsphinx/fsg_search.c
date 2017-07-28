@@ -1055,11 +1055,13 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score)
     return search->hyp_str;
 }
 
-glist_t
-fsg_search_hyp_with_tags(ps_search_t *search, int32 *out_score)
+char const *
+fsg_search_hyp_with_tags(ps_search_t *search, int32 *out_score, glist_t *wordtags_listP)
 {
     fsg_search_t *fsgs = (fsg_search_t *)search;
     dict_t *dict = ps_search_dict(search);
+    char *c;
+    size_t len;
     int bp, bpidx;
 
     /* Get last backpointer table index. */
@@ -1085,15 +1087,14 @@ fsg_search_hyp_with_tags(ps_search_t *search, int32 *out_score)
         return ps_lattice_hyp(dag, link);
     }
 
-    if(search->hyptags_list) glist_free(search->hyptags_list);
-    search->hyptags_list = (glist_t)ckd_calloc(1,sizeof(gnode_t));
     bp = bpidx;
+    len = 0;
     while (bp > 0) {
         fsg_hist_entry_t *hist_entry = fsg_history_entry_get(fsgs->history, bp);
         fsg_link_t *fl = fsg_hist_entry_fsglink(hist_entry);
-
         char const *baseword;
         int32 wid;
+
         bp = fsg_hist_entry_pred(hist_entry);
         wid = fsg_link_wid(fl);
         if (wid < 0 || fsg_model_is_filler(fsgs->fsg, wid))
@@ -1101,14 +1102,53 @@ fsg_search_hyp_with_tags(ps_search_t *search, int32 *out_score)
         baseword = dict_basestr(dict,
                                 dict_wordid(dict,
                                             fsg_model_word_str(fsgs->fsg, wid)));
+        len += strlen(baseword) + 1;
+    }
+
+    ckd_free(search->hyp_str);
+    if (len == 0) {
+	search->hyp_str = NULL;
+	return search->hyp_str;
+    }
+    search->hyp_str = ckd_calloc(1, len);
+
+    glist_t wt;
+    wt = (glist_t)ckd_calloc(1,sizeof(gnode_t));
+    wt->next = NULL;
+
+    bp = bpidx;
+    c = search->hyp_str + len - 1;
+    while (bp > 0) {
+        fsg_hist_entry_t *hist_entry = fsg_history_entry_get(fsgs->history, bp);
+        fsg_link_t *fl = fsg_hist_entry_fsglink(hist_entry);
+        char const *baseword;
+        int32 wid;
+
+        bp = fsg_hist_entry_pred(hist_entry);
+        wid = fsg_link_wid(fl);
+        if (wid < 0 || fsg_model_is_filler(fsgs->fsg, wid))
+            continue;
+        baseword = dict_basestr(dict,
+                                dict_wordid(dict,
+                                            fsg_model_word_str(fsgs->fsg, wid)));
+        len = strlen(baseword);
+        c -= len;
+        memcpy(c, baseword, len);
+        if (c > search->hyp_str) {
+            --c;
+            *c = ' ';
+        }
 
         ps_hyptags_t *r = (ps_hyptags_t *)ckd_calloc(1, sizeof(ps_hyptags_t));
         strncpy(r->tag,fsg_link_tag(fl),MAX_TAG_SIZE);
         strncpy(r->word,baseword,MAX_TAG_SIZE);
 
-        search->hyptags_list = glist_add_ptr(search->hyptags_list, (void *)r);
+        wt = glist_add_ptr(wt, (void *)r);
     }
-    return search->hyptags_list;
+
+    if(*wordtags_listP) glist_free(*wordtags_listP);
+    *wordtags_listP = wt;
+    return search->hyp_str;
 }
 
 static void

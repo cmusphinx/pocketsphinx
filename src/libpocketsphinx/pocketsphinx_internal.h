@@ -94,7 +94,7 @@ typedef struct ps_searchfuncs_s {
 
     ps_lattice_t *(*lattice)(ps_search_t *search);
     char const *(*hyp)(ps_search_t *search, int32 *out_score);
-    glist_t (*hyptags_list)(ps_search_t *search, int32 *out_score);
+    char const *(*hyp_tags)(ps_search_t *search, int32 *out_score, glist_t *hyptags);
     int32 (*prob)(ps_search_t *search);
     ps_seg_t *(*seg_iter)(ps_search_t *search);
 } ps_searchfuncs_t;
@@ -114,7 +114,6 @@ struct ps_search_s {
     dict_t *dict;        /**< Pronunciation dictionary. */
     dict2pid_t *d2p;       /**< Dictionary to senone mappings. */
     char *hyp_str;         /**< Current hypothesis string. */
-    glist_t hyptags_list;   /**< glist containing word-tags pairs. */
     ps_lattice_t *dag;	   /**< Current hypothesis word graph. */
     ps_latlink_t *last_link; /**< Final link in best path. */
     int32 post;            /**< Utterance posterior probability. */
@@ -147,7 +146,7 @@ struct ps_search_s {
 #define ps_search_free(s) (*(ps_search_base(s)->vt->free))(s)
 #define ps_search_lattice(s) (*(ps_search_base(s)->vt->lattice))(s)
 #define ps_search_hyp(s,sc) (*(ps_search_base(s)->vt->hyp))(s,sc)
-#define ps_search_hyp_with_tags(s,sc) (*(ps_search_base(s)->vt->hyptags_list))(s,sc)
+#define ps_search_hyp_with_tags(s,sc,tg) (*(ps_search_base(s)->vt->hyp_tags))(s,sc,tg)
 #define ps_search_prob(s) (*(ps_search_base(s)->vt->prob))(s)
 #define ps_search_seg_iter(s) (*(ps_search_base(s)->vt->seg_iter))(s)
 

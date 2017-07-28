@@ -1199,13 +1199,14 @@ ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score)
     return hyp;
 }
 
-glist_t
-ps_get_hyp_with_tags(ps_decoder_t *ps, int32 *out_best_score)
+char const *
+ps_get_hyp_with_tags(ps_decoder_t *ps, int32 *out_best_score, glist_t *hyptagsP)
 {
+    char const *hyp;
     ptmr_start(&ps->perf);
-    glist_t hyptags_list = ps_search_hyp_with_tags(ps->search, out_best_score);
+    hyp = ps_search_hyp_with_tags(ps->search, out_best_score, hyptagsP);
     ptmr_stop(&ps->perf);
-    return hyptags_list;
+    return hyp;
 }
 
 void
