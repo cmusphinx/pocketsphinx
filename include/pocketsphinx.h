@@ -428,7 +428,7 @@ glist_t ps_get_hyp_with_tags(ps_decoder_t *ps, int32 *out_best_score);
  *
  * @return glist_t to hold extracted tags,or NULL on error.
  */
-glist_t ps_get_word_and_tags(glist_t hyptags_list, char *word);
+void ps_get_word_and_tag(glist_t hyptags_list, char *word, char *tag);
 
 /**
  * Get posterior probability.
@@ -443,6 +443,9 @@ glist_t ps_get_word_and_tags(glist_t hyptags_list, char *word);
  * @param ps Decoder.
  * @return Posterior probability of the best hypothesis.
  */
+
+void ps_free_tags_struct(glist_t hyptags_list);
+
 POCKETSPHINX_EXPORT
 int32 ps_get_prob(ps_decoder_t *ps);
 

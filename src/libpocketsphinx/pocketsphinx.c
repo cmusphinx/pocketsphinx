@@ -1208,20 +1208,28 @@ ps_get_hyp_with_tags(ps_decoder_t *ps, int32 *out_best_score)
     return hyptags_list;
 }
 
-glist_t
-ps_get_word_and_tags(glist_t hyptags_list, char *word)
+void
+ps_get_word_and_tag(glist_t hyptags_list, char *word, char *tag)
 {
     if(!hyptags_list)
-        return NULL;
+        return;
 
     ps_hyptags_t *r = (ps_hyptags_t *)gnode_ptr(hyptags_list);
     if(!r){
-        E_ERROR("glist_t data NULL");
-        return NULL;
+        E_WARN("r NULL\n");
+        return;
     }
 
+    strncpy(tag, r->tag, strlen(r->tag)+1);
     strncpy(word, r->word, strlen(r->word)+1);
-    return r->tags;
+}
+
+void ps_free_tags_struct(glist_t hyptags_list)
+{
+    ps_hyptags_t *r = (ps_hyptags_t *)gnode_ptr(hyptags_list);
+    if(r){
+        free(r);
+    }
 }
 
 

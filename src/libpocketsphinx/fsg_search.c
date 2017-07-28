@@ -8,7 +8,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -16,16 +16,16 @@
  *    distribution.
  *
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
@@ -34,14 +34,14 @@
 
 /*
  * fsg_search.c -- Search structures for FSM decoding.
- * 
+ *
  * **********************************************
  * CMU ARPA Speech Project
  *
  * Copyright (c) 2004 Carnegie Mellon University.
  * ALL RIGHTS RESERVED.
  * **********************************************
- * 
+ *
  * HISTORY
  *
  * 18-Feb-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
@@ -246,10 +246,10 @@ fsg_search_init(const char *name,
     {
         ps_search_free(ps_search_base(fsgs));
         return NULL;
-    
+
     }
     ptmr_init(&fsgs->perf);
-        
+
     return ps_search_base(fsgs);
 }
 
@@ -270,6 +270,7 @@ fsg_search_free(ps_search_t *search)
 
     ps_search_base_free(search);
     fsg_lextree_free(fsgs->lextree);
+
     if (fsgs->history) {
         fsg_history_reset(fsgs->history);
         fsg_history_set_fsg(fsgs->history, NULL, NULL);
@@ -291,7 +292,7 @@ fsg_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
 
     /* Free old dict2pid, dict */
     ps_search_base_reinit(search, dict, d2p);
-    
+
     /* Update the number of words (not used by this module though). */
     search->n_words = dict_size(dict);
 
@@ -913,7 +914,7 @@ fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_sc
 
         fl = fsg_hist_entry_fsglink(hist_entry);
         score = fsg_hist_entry_score(hist_entry);
-        
+
         if (fl == NULL)
 	    break;
 
@@ -928,7 +929,7 @@ fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_sc
                 besthist = bpidx;
             }
         }
-        
+
         --bpidx;
         if (bpidx < 0)
             break;
@@ -1019,7 +1020,7 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score)
                                             fsg_model_word_str(fsgs->fsg, wid)));
         len += strlen(baseword) + 1;
     }
-    
+
     ckd_free(search->hyp_str);
     if (len == 0) {
 	search->hyp_str = NULL;
@@ -1084,7 +1085,8 @@ fsg_search_hyp_with_tags(ps_search_t *search, int32 *out_score)
         return ps_lattice_hyp(dag, link);
     }
 
-    glist_free(search->hyptags_list);
+    if(search->hyptags_list) glist_free(search->hyptags_list);
+    search->hyptags_list = (glist_t)ckd_calloc(1,sizeof(gnode_t));
     bp = bpidx;
     while (bp > 0) {
         fsg_hist_entry_t *hist_entry = fsg_history_entry_get(fsgs->history, bp);
@@ -1092,7 +1094,6 @@ fsg_search_hyp_with_tags(ps_search_t *search, int32 *out_score)
 
         char const *baseword;
         int32 wid;
-        glist_t tags = fsg_link_tags(fl);
         bp = fsg_hist_entry_pred(hist_entry);
         wid = fsg_link_wid(fl);
         if (wid < 0 || fsg_model_is_filler(fsgs->fsg, wid))
@@ -1102,8 +1103,8 @@ fsg_search_hyp_with_tags(ps_search_t *search, int32 *out_score)
                                             fsg_model_word_str(fsgs->fsg, wid)));
 
         ps_hyptags_t *r = (ps_hyptags_t *)ckd_calloc(1, sizeof(ps_hyptags_t));
-        r->tags = tags;
-        r->word = baseword;
+        strncpy(r->tag,fsg_link_tag(fl),50);
+        strncpy(r->word,baseword,50);
 
         search->hyptags_list = glist_add_ptr(search->hyptags_list, (void *)r);
     }
@@ -1220,7 +1221,7 @@ fsg_search_seg_iter(ps_search_t *search)
 
     /* Fill in relevant fields for first element. */
     fsg_seg_bp2itor((ps_seg_t *)itor, itor->hist[0]);
-    
+
     return (ps_seg_t *)itor;
 }
 
@@ -1371,7 +1372,7 @@ find_end_node(fsg_search_t *fsgs, ps_lattice_t *dag)
             E_INFO("End node %s.%d:%d:%d (%d)\n",
                    fsg_model_word_str(fsgs->fsg, node->wid),
                    node->sf, node->fef, node->lef, node->info.best_exit);
-    }    
+    }
     else {
         /* If there was more than one end node candidate, then we need
          * to create an artificial end node with epsilon transitions
@@ -1522,7 +1523,7 @@ fsg_search_lattice(ps_search_t *search)
         for (itor = fsg_model_arcs(fsg, fsg_link_to_state(fh->fsglink));
              itor; itor = fsg_arciter_next(itor)) {
             fsg_link_t *link = fsg_arciter_get(itor);
-            
+
             /* FIXME: Need to figure out what to do about tag transitions. */
             if (link->wid >= 0) {
                 /*
@@ -1538,7 +1539,7 @@ fsg_search_lattice(ps_search_t *search)
                  * just need to look one link forward from them.
                  */
                 fsg_arciter_t *itor2;
-                
+
                 /* Add all non-null links out of j. */
                 for (itor2 = fsg_model_arcs(fsg, fsg_link_to_state(link));
                      itor2; itor2 = fsg_arciter_next(itor2)) {
@@ -1546,7 +1547,7 @@ fsg_search_lattice(ps_search_t *search)
 
                     if (link->wid == -1)
                         continue;
-                    
+
                     if ((dest = find_node(dag, fsg, sf, link->wid, fsg_link_to_state(link))) != NULL) {
                         ps_lattice_link(dag, src, dest, ascr, fh->frame);
                     }
@@ -1601,7 +1602,7 @@ fsg_search_lattice(ps_search_t *search)
                                       cmd_ln_float32_r(ps_search_config(fsgs), "-fillprob"))
                           * fsg->lw)
             >> SENSCR_SHIFT;
-	
+
 	ps_lattice_penalize_fillers(dag, silpen, fillpen);
     }
     search->dag = dag;
