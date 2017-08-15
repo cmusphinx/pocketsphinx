@@ -55,7 +55,7 @@
  * Make it smaller (2) to save memory if your phoneset has less than
  * 64 phones.
  */
-#define FSG_PNODE_CTXT_BVSZ	4
+#define FSG_PNODE_CTXT_BVSZ	30
 
 typedef struct {
     uint32 bv[FSG_PNODE_CTXT_BVSZ];
