@@ -109,12 +109,14 @@ typedef struct {
                                     First dimension: base phone,
                                     Second dimension: left context. 
                                  */
+
+    int16 ci_mode;               /** Ignore context. **/
 } dict2pid_t;
 
 /** Access macros; not designed for arbitrary use */
-#define dict2pid_rssid(d,ci,lc)  (&(d)->rssid[ci][lc])
-#define dict2pid_ldiph_lc(d,b,r,l) ((d)->ldiph_lc[b][r][l])
-#define dict2pid_lrdiph_rc(d,b,l,r) ((d)->lrdiph_rc[b][l][r])
+#define dict2pid_rssid(d,ci,lc) ((d)->ci_mode ? &(d)->rssid[ci][0] : &(d)->rssid[ci][lc])
+#define dict2pid_ldiph_lc(d,b,r,l) ((d)->ci_mode ? (d)->ldiph_lc[b][0][0] : (d)->ldiph_lc[b][r][l])
+#define dict2pid_lrdiph_rc(d,b,l,r) ((d)->ci_mode ? (d)->lrdiph_rc[b][0][0] : (d)->lrdiph_rc[b][l][r])
 
 /**
  * Build the dict2pid structure for the given model/dictionary

@@ -22,6 +22,7 @@ check_PROGRAMS = \
 	test_senfh \
 	test_set_search \
 	test_simple \
+	test_diphones \
 	test_state_align
 
 TESTS = $(check_PROGRAMS)

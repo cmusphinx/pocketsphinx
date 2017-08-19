@@ -377,7 +377,11 @@
 { "-logbase",                                                                   \
       ARG_FLOAT32,                                                              \
       "1.0001",                                                                 \
-      "Base in which all log-likelihoods calculated" }
+      "Base in which all log-likelihoods calculated" },                         \
+{ "-diphones",                                                                  \
+      ARG_STRING,                                                               \
+      "no",                                                                     \
+      "Use diphone-based acoustic model (synthetic/trained/yes/no)" }
 
 #define CMDLN_EMPTY_OPTION { NULL, 0, NULL, NULL }
 

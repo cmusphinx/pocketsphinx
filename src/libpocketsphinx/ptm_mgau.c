@@ -349,6 +349,11 @@ ptm_mgau_senone_eval(ptm_mgau_t *s, int16 *senone_scores,
         lastsen = sen;
         cb = s->sen2cb[sen];
 
+        if (cb == 255) {
+            senone_scores[sen] = 0;
+            continue;
+        }
+
         if (bitvec_is_clear(s->f->mgau_active, cb)) {
             int j;
             /* Because senone_active is deltas we can't really "knock

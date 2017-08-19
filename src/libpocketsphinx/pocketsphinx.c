@@ -188,13 +188,28 @@ void
 ps_default_search_args(cmd_ln_t *config)
 {
 #ifdef MODELDIR
+    int16 diphones_trained;
     const char *hmmdir = cmd_ln_str_r(config, "-hmm");
     const char *lmfile = cmd_ln_str_r(config, "-lm");
     const char *dictfile = cmd_ln_str_r(config, "-dict");
 
-    if (hmmdir == NULL && hmmdir_exists(MODELDIR "/en-us/en-us")) {
-        hmmdir = MODELDIR "/en-us/en-us";
-        cmd_ln_set_str_r(config, "-hmm", hmmdir);
+    if (strcmp(cmd_ln_str_r(config, "-diphones"), "yes") == 0) {
+        cmd_ln_set_str_r(config, "-diphones", "trained");
+    }
+
+    diphones_trained = (strcmp(cmd_ln_str_r(config, "-diphones"), "trained") == 0);
+
+    if (hmmdir == NULL) {
+        if (diphones_trained) {
+            hmmdir = MODELDIR "/en-us/en-us-diphones";
+        }
+        else {
+            hmmdir = MODELDIR "/en-us/en-us";
+        }
+
+        if (hmmdir_exists(hmmdir)) {
+            cmd_ln_set_str_r(config, "-hmm", hmmdir);
+        }
     }
 
     if (lmfile == NULL && !cmd_ln_str_r(config, "-fsg")
@@ -207,9 +222,17 @@ ps_default_search_args(cmd_ln_t *config)
         cmd_ln_set_str_r(config, "-lm", lmfile);
     }
 
-    if (dictfile == NULL && file_exists(MODELDIR "/en-us/cmudict-en-us.dict")) {
-        dictfile = MODELDIR "/en-us/cmudict-en-us.dict";
-        cmd_ln_set_str_r(config, "-dict", dictfile);
+    if (dictfile == NULL) {
+        if (diphones_trained) {
+            dictfile = MODELDIR "/en-us/cmudict-en-us-diphones.dict";
+        }
+        else {
+            dictfile = MODELDIR "/en-us/cmudict-en-us.dict";
+        }
+
+        if (file_exists(dictfile)) {
+            cmd_ln_set_str_r(config, "-dict", dictfile);
+        }
     }
 #endif
 }
