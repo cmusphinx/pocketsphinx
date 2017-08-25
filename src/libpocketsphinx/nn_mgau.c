@@ -137,10 +137,10 @@ void get_senone_scores(float *feat, int n_feats,
                         int16_t *scores, int n_scores,
                         int server_sock){
     int packet_len = (n_feats*sizeof(float));
-    // printf("%s\n", "sending request...");
+    
     Send(server_sock,&packet_len,sizeof(int));
     Send(server_sock,feat,n_feats*sizeof(float));
-    // printf("%s\n", "receiving scores...");
+    
     Recv(server_sock,scores,n_scores*2);
 }
 
@@ -156,14 +156,14 @@ nn_mgau_frame_eval(ps_mgau_t *ps,
                     int32 compallsen)
 {
     nn_mgau_t *s = (nn_mgau_t *)ps;
+    // slightly hacky, tensorflow might take some time to initialize so the
+    // socket might not be open when we get here
     while (s->keras_server_sock == -1){
         s->keras_server_sock = open_server_socket("127.0.0.1","0.0.0.0",9000);
     }
-    // printf("%s\n", "KERAS_SERVER_SOCK opened");
-    // printf("KERAS_SERVER_SOCK: %d\n", s->keras_server_sock);
+    
     get_senone_scores(featbuf[0],s->n_feats,senone_scores,138,s->keras_server_sock);
-    // printf("\r%d", frame);
-    // fflush(stdout);
+    
     return 0;
 }
 
@@ -173,6 +173,7 @@ nn_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
     nn_mgau_t *s;
     ps_mgau_t *ps;
 
+    // get parameters from commandline
     int port = cmd_ln_int32_r(acmod->config, "-nnport");
     char *model_name = cmd_ln_str_r(acmod->config, "-nnmgau");
     char *acwt = cmd_ln_str_r(acmod->config, "-nnacwt");
@@ -185,8 +186,11 @@ nn_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
         printf("Multi-stream feature types not supported yet\n");
         return NULL;
     }
+
     s = ckd_calloc(1, sizeof(*s));
     s->keras_server_sock = -1;
+
+    // get dimensionality of the feature vectors
     s->n_feats = feat_dimension2(acmod->fcb, 0);
     printf("N_FEATS: %d\n", s->n_feats);
 
@@ -195,7 +199,7 @@ nn_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
 
     // calculating the number of digits in n_feats
     int len_n_feats = log10(s->n_feats) + 1e-9;
-    // assuming port number isn't more than 5 digits
+    // calculate the total lenght of command string assuming port number isn't more than 5 digits
     char *comm = calloc(strlen(base_comm) + 
                     1 + strlen(model_name) + 
                     1 + len_n_feats + 
@@ -204,11 +208,10 @@ nn_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
                     1 + strlen(log_comm), sizeof(char));
     sprintf(comm, "%s %s %d %s %d %s", base_comm, model_name, s->n_feats, acwt, port, log_comm);
     printf("%s\n", comm);
+    // will need to kill python separately after Pocketsphinx finishes execution
     system(comm);
     free(comm);
-    // system("python /home/mshah1/sphinx/pocketsphinx/src/libpocketsphinx/runNN.py > /home/mshah1/wsj/wsj0/keras_server_log &");
-    // s->keras_server_sock = open_server_socket("127.0.0.1","0.0.0.0",9000);
-    // printf("KERAS_SERVER_SOCK: %d\n", s->keras_server_sock);
+    
     ps = (ps_mgau_t *)s;
     ps->vt = &nn_mgau_funcs;
     return ps;
