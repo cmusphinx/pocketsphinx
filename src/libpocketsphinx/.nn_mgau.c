@@ -182,6 +182,7 @@ nn_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
     int port = cmd_ln_int32_r(acmod->config, "-nnport");
     char *model_name = cmd_ln_str_r(acmod->config, "-nnmgau");
     char *acwt = cmd_ln_str_r(acmod->config, "-nnacwt");
+    int *cudaid = cmd_ln_str_r(acmod->config, "-cudaid");
 
     if (access(model_name, R_OK) != 0){
         printf("Model file (%s) does not exist or is not readable\n", model_name);
@@ -210,8 +211,9 @@ nn_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
                     1 + len_n_feats + 
                     1 + 5 + 
                     1 + strlen(acwt) +
-                    1 + strlen(log_comm), sizeof(char));
-    sprintf(comm, "%s %s %d %s %d %s", base_comm, model_name, s->n_feats, acwt, port, log_comm);
+                    1 + 2+
+		    1 + strlen(log_comm), sizeof(char));
+    sprintf(comm, "%s %s %d %s %d %d %s", base_comm, model_name, s->n_feats, acwt, port, cudaid, log_comm);
     printf("%s\n", comm);
     // will need to kill python separately after Pocketsphinx finishes execution
     system(comm);

@@ -1,11 +1,10 @@
 import os
-CUDA_VISIBLE_DEVICES = '0'
-os.environ["CUDA_VISIBLE_DEVICES"] = CUDA_VISIBLE_DEVICES
-from keras.models import load_model
 import numpy as np
 import socket
 import struct
 import time
+import sys
+
 def predictFrame(model,frame,weight=1,offset=0):
 	scores = model.predict(frame)
 	
@@ -28,8 +27,18 @@ def predictFrame(model,frame,weight=1,offset=0):
 	return r_str
 
 if __name__ == '__main__':
-	model_name = "/home/mshah1/GSOC/bestModels/best_CI.h5"
-	HOST, PORT = '', 9000
+	print 'ARGS:',sys.argv
+   	base, model_name, n_feats, acwt, port, cuda_id = sys.argv[:6]
+	print  base, model_name, n_feats, acwt, port, cuda_id
+	if cuda_id == -1:
+		CUDA_VISIBLE_DEVICES = ''
+	else:
+		CUDA_VISIBLE_DEVICES = str(cuda_id)
+	os.environ["CUDA_VISIBLE_DEVICES"] = CUDA_VISIBLE_DEVICES
+	from keras.models import load_model
+
+	#model_name = "/home/mshah1/GSOC/bestModels/best_CI.h5"
+	HOST, PORT = '', int(port)
 	listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	listen_socket.bind((HOST, PORT))
@@ -53,10 +62,10 @@ if __name__ == '__main__':
 		assert(len(full_req) == packet_len)
 		
 		frame = full_req
-		frame = list(struct.unpack('%sf' % 225, frame))
+		frame = list(struct.unpack('%sf' % int(n_feats), frame))
 		frame = np.array([frame])
 		
-		resp = str(predictFrame(model,frame,weight=0.00296036))
+		resp = str(predictFrame(model,frame,weight=float(acwt)))
 		print time.time()
 		client_connection.send(resp)
 		print time.time()

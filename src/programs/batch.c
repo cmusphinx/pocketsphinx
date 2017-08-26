@@ -190,6 +190,10 @@ static const arg_t ps_args_def[] = {
       ARG_STRING,
       "0.1",
       "Acoustic weight to scale the NN scores by" },
+    { "-cudaid",
+      ARG_INT32,
+      "-1",
+      "ID for the CUDA device to use for NN-based decoding. CPU will be used by default." },
     CMDLN_EMPTY_OPTION
 };
 
