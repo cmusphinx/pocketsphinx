@@ -21,7 +21,7 @@ def predictFrame(model,frame,weight=1,offset=0):
 	truncateToShort = lambda x: 32676 if x > 32767 else (-32768 if x < -32768 else x)
 	vf = np.vectorize(truncateToShort)
 	scores = vf(scores)
-	print scores
+	# print scores
 	r_str = struct.pack('%sh' % len(scores[0]), *scores[0])
 
 	# scores /= np.sum(scores,axis=0)
@@ -41,7 +41,7 @@ if __name__ == '__main__':
 		    client_connection, client_address = listen_socket.accept()
 		    model = load_model(model_name)
 		r = client_connection.recv(4)
-		if 	len(r) != 4:
+		if len(r) != 4:
 			print "Expected 4 bytes for PACKET_LEN got " + str(len(r))
 			continue	
 		packet_len = struct.unpack('i',r)[0]

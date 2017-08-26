@@ -193,9 +193,9 @@ nn_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
     // get dimensionality of the feature vectors
     s->n_feats = feat_dimension2(acmod->fcb, 0);
     printf("N_FEATS: %d\n", s->n_feats);
-    char *base_comm = "python /home/mshah1/sphinx_/pocketsphinx/src/libpocketsphinx/runNN.py";
+    char *base_comm = "python INSERT_PATH/src/libpocketsphinx/runNN.py";
     //char *base_comm = "python runNN.py";
-    char *log_comm = "> /home/mshah1/sphinx_/pocketsphinx/nn_logs/keras_server.log &";
+    char *log_comm = "> INSERT_PATH/nn_logs/keras_server.log &";
 
     // calculating the number of digits in n_feats
     int len_n_feats = log10(s->n_feats) + 1e-9;
