@@ -216,16 +216,13 @@ ms_cont_mgau_frame_eval(ps_mgau_t * mg,
 	    gauden_dist(g, gid, topn, feat, msg->dist[gid]);
 
 	best = (int32) 0x7fffffff;
-	int bestidx = -1;
 	for (s = 0; s < sen->n_sen; s++) {
 	    senscr[s] = senone_eval(sen, s, msg->dist[sen->mgau[s]], topn);
 	    if (best > senscr[s]) {
 		best = senscr[s];
-		bestidx = s;
 	    }
 	}
-	printf("%d\n",bestidx);
-	//printf("Frame %d idx %d score %d\n", frame, bestidx, best);
+
 	/* Normalize senone scores */
 	for (s = 0; s < sen->n_sen; s++) {
 	    int32 bs = senscr[s] - best;
