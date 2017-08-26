@@ -158,10 +158,15 @@ nn_mgau_frame_eval(ps_mgau_t *ps,
     nn_mgau_t *s = (nn_mgau_t *)ps;
     // slightly hacky, tensorflow might take some time to initialize so the
     // socket might not be open when we get here
-    while (s->keras_server_sock == -1){
+    int count = 0;
+    while (s->keras_server_sock == -1 && count < 10){
         s->keras_server_sock = open_server_socket("127.0.0.1","0.0.0.0",9000);
+        unsigned int t = time(0) + 1;
+        while(time(0) < t);
+        count ++;
     }
-    
+    if (s->keras_server_sock == -1 && count == 10) return -1;
+   
     get_senone_scores(featbuf[0],s->n_feats,senone_scores,138,s->keras_server_sock);
     
     return 0;
