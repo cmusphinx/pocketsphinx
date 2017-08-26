@@ -31,13 +31,13 @@ hmm.lo: hmm.c /usr/include/stdc-predef.h /usr/include/assert.h \
  /usr/include/x86_64-linux-gnu/bits/local_lim.h \
  /usr/include/linux/limits.h \
  /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h \
  /usr/include/setjmp.h /usr/include/x86_64-linux-gnu/bits/setjmp.h \
  /usr/include/x86_64-linux-gnu/bits/setjmp2.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinx_config.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/err.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinx_config.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/err.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include/stdarg.h /usr/include/stdio.h \
  /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
@@ -48,14 +48,14 @@ hmm.lo: hmm.c /usr/include/stdc-predef.h /usr/include/assert.h \
  /usr/include/x86_64-linux-gnu/asm/errno.h \
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
  hmm.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h \
  bin_mdef.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h \
  ../../include/pocketsphinx_export.h mdef.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h
 
 /usr/include/stdc-predef.h:
 
@@ -141,7 +141,7 @@ hmm.lo: hmm.c /usr/include/stdc-predef.h /usr/include/assert.h \
 
 /usr/include/x86_64-linux-gnu/bits/posix2_lim.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h:
 
 /usr/include/setjmp.h:
 
@@ -149,13 +149,13 @@ hmm.lo: hmm.c /usr/include/stdc-predef.h /usr/include/assert.h \
 
 /usr/include/x86_64-linux-gnu/bits/setjmp2.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinx_config.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinx_config.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/err.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/err.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/5/include/stdarg.h:
 
@@ -189,20 +189,20 @@ hmm.lo: hmm.c /usr/include/stdc-predef.h /usr/include/assert.h \
 
 hmm.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h:
 
 bin_mdef.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h:
 
 ../../include/pocketsphinx_export.h:
 
 mdef.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h:

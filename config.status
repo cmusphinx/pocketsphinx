@@ -437,7 +437,7 @@ Copyright (C) 2012 Free Software Foundation, Inc.
 This config.status script is free software; the Free Software Foundation
 gives unlimited permission to copy, distribute and modify it."
 
-ac_pwd='/home/mshah1/sphinx/pocketsphinx'
+ac_pwd='/home/mshah1/sphinx_/pocketsphinx'
 srcdir='.'
 INSTALL='/usr/bin/install -c'
 MKDIR_P='/bin/mkdir -p'
@@ -679,7 +679,7 @@ finish_cmds='PATH="\$PATH:/sbin" ldconfig -n $libdir'
 finish_eval=''
 hardcode_into_libs='yes'
 sys_lib_search_path_spec='/usr/lib/gcc/x86_64-linux-gnu/5 /usr/lib/x86_64-linux-gnu /usr/lib /lib/x86_64-linux-gnu /lib '
-configure_time_dlsearch_path='/lib /usr/lib /usr/local/cuda-8.0/targets/x86_64-linux/lib /usr/lib/x86_64-linux-gnu/libfakeroot /usr/local/lib /lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu/mesa-egl /usr/lib/x86_64-linux-gnu/mesa /lib32 /usr/lib32 '
+configure_time_dlsearch_path='/lib /usr/lib /usr/local/cuda-8.0/targets/x86_64-linux/lib /usr/lib/x86_64-linux-gnu/libfakeroot /usr/local/lib /lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu /usr/lib/nvidia-375 /usr/lib32/nvidia-375 /usr/lib/nvidia-375 /usr/lib32/nvidia-375 /lib32 /usr/lib32 '
 configure_time_lt_sys_library_path=''
 hardcode_action='immediate'
 enable_dlopen='unknown'
@@ -835,7 +835,7 @@ S["am__EXEEXT_FALSE"]=""
 S["am__EXEEXT_TRUE"]="#"
 S["LTLIBOBJS"]=""
 S["LIBOBJS"]=""
-S["SPHINXBASE_SWIG"]="/home/mshah1/sphinx/pocketsphinx/../sphinxbase/swig"
+S["SPHINXBASE_SWIG"]="/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/swig"
 S["SPHINXBASE_LIBS"]=""
 S["SPHINXBASE_CFLAGS"]=""
 S["GST_PLUGIN_LDFLAGS"]="-module -avoid-version -export-symbols-regex _*\\(gst_\\|Gst\\|GST_\\).*"
@@ -906,9 +906,9 @@ S["DEPDIR"]=".deps"
 S["OBJEXT"]="o"
 S["EXEEXT"]=""
 S["ac_ct_CC"]="gcc"
-S["CPPFLAGS"]=" -I/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include -I/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase"
-S["LDFLAGS"]=" -L/home/mshah1/sphinx/pocketsphinx/../sphinxbase/lib -L/home/mshah1/sphinx/pocketsphinx/../sphinxbase/src/libsphinxad -L/home/mshah1/sphinx/pockets"\
-"phinx/../sphinxbase/src/libsphinxbase"
+S["CPPFLAGS"]=" -I/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include -I/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase"
+S["LDFLAGS"]=" -L/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/lib -L/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/src/libsphinxad -L/home/mshah1/sphinx_/pock"\
+"etsphinx/../sphinxbase/src/libsphinxbase"
 S["CFLAGS"]="-g -O2 -Wall"
 S["CC"]="gcc"
 S["host_os"]="linux-gnu"
@@ -933,12 +933,12 @@ S["mkdir_p"]="$(MKDIR_P)"
 S["MKDIR_P"]="/bin/mkdir -p"
 S["INSTALL_STRIP_PROGRAM"]="$(install_sh) -c -s"
 S["STRIP"]="strip"
-S["install_sh"]="${SHELL} /home/mshah1/sphinx/pocketsphinx/install-sh"
-S["MAKEINFO"]="${SHELL} /home/mshah1/sphinx/pocketsphinx/missing makeinfo"
-S["AUTOHEADER"]="${SHELL} /home/mshah1/sphinx/pocketsphinx/missing autoheader"
-S["AUTOMAKE"]="${SHELL} /home/mshah1/sphinx/pocketsphinx/missing automake-1.15"
-S["AUTOCONF"]="${SHELL} /home/mshah1/sphinx/pocketsphinx/missing autoconf"
-S["ACLOCAL"]="${SHELL} /home/mshah1/sphinx/pocketsphinx/missing aclocal-1.15"
+S["install_sh"]="${SHELL} /home/mshah1/sphinx_/pocketsphinx/install-sh"
+S["MAKEINFO"]="${SHELL} /home/mshah1/sphinx_/pocketsphinx/missing makeinfo"
+S["AUTOHEADER"]="${SHELL} /home/mshah1/sphinx_/pocketsphinx/missing autoheader"
+S["AUTOMAKE"]="${SHELL} /home/mshah1/sphinx_/pocketsphinx/missing automake-1.15"
+S["AUTOCONF"]="${SHELL} /home/mshah1/sphinx_/pocketsphinx/missing autoconf"
+S["ACLOCAL"]="${SHELL} /home/mshah1/sphinx_/pocketsphinx/missing aclocal-1.15"
 S["VERSION"]="5prealpha"
 S["PACKAGE"]="pocketsphinx"
 S["CYGPATH_W"]="echo"

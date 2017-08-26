@@ -1,5 +1,5 @@
 ps_alignment.lo: ps_alignment.c /usr/include/stdc-predef.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h \
  /usr/include/stdlib.h /usr/include/features.h \
  /usr/include/x86_64-linux-gnu/sys/cdefs.h \
  /usr/include/x86_64-linux-gnu/bits/wordsize.h \
@@ -26,9 +26,9 @@ ps_alignment.lo: ps_alignment.c /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib.h /usr/include/setjmp.h \
  /usr/include/x86_64-linux-gnu/bits/setjmp.h \
  /usr/include/x86_64-linux-gnu/bits/setjmp2.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinx_config.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinx_config.h \
  ps_alignment.h dict2pid.h /usr/include/stdio.h /usr/include/libio.h \
  /usr/include/_G_config.h /usr/include/wchar.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include/stdarg.h \
@@ -36,36 +36,36 @@ ps_alignment.lo: ps_alignment.c /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/sys_errlist.h \
  /usr/include/x86_64-linux-gnu/bits/stdio.h \
  /usr/include/x86_64-linux-gnu/bits/stdio2.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/logmath.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/bitvec.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/logmath.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/bitvec.h \
  /usr/include/string.h /usr/include/xlocale.h \
  /usr/include/x86_64-linux-gnu/bits/string.h \
  /usr/include/x86_64-linux-gnu/bits/string2.h \
  /usr/include/x86_64-linux-gnu/bits/string3.h s3types.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include/float.h /usr/include/assert.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/err.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/err.h \
  /usr/include/errno.h /usr/include/x86_64-linux-gnu/bits/errno.h \
  /usr/include/linux/errno.h /usr/include/x86_64-linux-gnu/asm/errno.h \
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
  bin_mdef.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h \
  ../../include/pocketsphinx_export.h mdef.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h \
  dict.h hmm.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/limits.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/syslimits.h \
  /usr/include/limits.h /usr/include/x86_64-linux-gnu/bits/posix1_lim.h \
  /usr/include/x86_64-linux-gnu/bits/local_lim.h \
  /usr/include/linux/limits.h \
  /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h
 
 /usr/include/stdc-predef.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h:
 
 /usr/include/stdlib.h:
 
@@ -129,11 +129,11 @@ ps_alignment.lo: ps_alignment.c /usr/include/stdc-predef.h \
 
 /usr/include/x86_64-linux-gnu/bits/setjmp2.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinx_config.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinx_config.h:
 
 ps_alignment.h:
 
@@ -157,11 +157,11 @@ dict2pid.h:
 
 /usr/include/x86_64-linux-gnu/bits/stdio2.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/logmath.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/logmath.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/bitvec.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/bitvec.h:
 
 /usr/include/string.h:
 
@@ -179,7 +179,7 @@ s3types.h:
 
 /usr/include/assert.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/err.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/err.h:
 
 /usr/include/errno.h:
 
@@ -195,21 +195,21 @@ s3types.h:
 
 bin_mdef.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h:
 
 ../../include/pocketsphinx_export.h:
 
 mdef.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h:
 
 dict.h:
 
 hmm.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/limits.h:
 
@@ -225,4 +225,4 @@ hmm.h:
 
 /usr/include/x86_64-linux-gnu/bits/posix2_lim.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h:

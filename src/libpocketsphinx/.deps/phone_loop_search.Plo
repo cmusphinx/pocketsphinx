@@ -1,5 +1,5 @@
 phone_loop_search.lo: phone_loop_search.c /usr/include/stdc-predef.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/err.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/err.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include/stdarg.h /usr/include/stdio.h \
  /usr/include/features.h /usr/include/x86_64-linux-gnu/sys/cdefs.h \
  /usr/include/x86_64-linux-gnu/bits/wordsize.h \
@@ -32,40 +32,40 @@ phone_loop_search.lo: phone_loop_search.c /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/errno.h /usr/include/linux/errno.h \
  /usr/include/x86_64-linux-gnu/asm/errno.h \
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h \
  phone_loop_search.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinx_config.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/logmath.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/ngram_model.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinx_config.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/logmath.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/ngram_model.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h \
  pocketsphinx_internal.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fe.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fe.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/limits.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/syslimits.h \
  /usr/include/limits.h /usr/include/x86_64-linux-gnu/bits/posix1_lim.h \
  /usr/include/x86_64-linux-gnu/bits/local_lim.h \
  /usr/include/linux/limits.h \
  /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/feat.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/cmn.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/agc.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/profile.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/feat.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/cmn.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/agc.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/profile.h \
  ../../include/pocketsphinx.h ../../include/pocketsphinx_export.h \
  ../../include/cmdln_macro.h ../../include/ps_lattice.h \
  ../../include/ps_mllr.h ../../include/ps_search.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fsg_model.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fsg_model.h \
  /usr/include/string.h /usr/include/xlocale.h \
  /usr/include/x86_64-linux-gnu/bits/string.h \
  /usr/include/x86_64-linux-gnu/bits/string2.h \
  /usr/include/x86_64-linux-gnu/bits/string3.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/bitvec.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/bitvec.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h \
  /usr/include/setjmp.h /usr/include/x86_64-linux-gnu/bits/setjmp.h \
  /usr/include/x86_64-linux-gnu/bits/setjmp2.h acmod.h bin_mdef.h mdef.h \
  tmat.h hmm.h dict.h s3types.h \
@@ -74,7 +74,7 @@ phone_loop_search.lo: phone_loop_search.c /usr/include/stdc-predef.h \
 
 /usr/include/stdc-predef.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/err.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/err.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/5/include/stdarg.h:
 
@@ -162,29 +162,29 @@ phone_loop_search.lo: phone_loop_search.c /usr/include/stdc-predef.h \
 
 /usr/include/asm-generic/errno-base.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h:
 
 phone_loop_search.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinx_config.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinx_config.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/logmath.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/logmath.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/ngram_model.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/ngram_model.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h:
 
 pocketsphinx_internal.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fe.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fe.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/limits.h:
 
@@ -200,17 +200,17 @@ pocketsphinx_internal.h:
 
 /usr/include/x86_64-linux-gnu/bits/posix2_lim.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/feat.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/feat.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/cmn.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/cmn.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/agc.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/agc.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/profile.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/profile.h:
 
 ../../include/pocketsphinx.h:
 
@@ -224,7 +224,7 @@ pocketsphinx_internal.h:
 
 ../../include/ps_search.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fsg_model.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fsg_model.h:
 
 /usr/include/string.h:
 
@@ -236,9 +236,9 @@ pocketsphinx_internal.h:
 
 /usr/include/x86_64-linux-gnu/bits/string3.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/bitvec.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/bitvec.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h:
 
 /usr/include/setjmp.h:
 

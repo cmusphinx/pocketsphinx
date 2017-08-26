@@ -140,9 +140,10 @@ am_libpocketsphinx_la_OBJECTS = acmod.lo bin_mdef.lo blkarray_list.lo \
 	fsg_search.lo allphone_search.lo kws_search.lo \
 	kws_detections.lo hmm.lo mdef.lo ms_gauden.lo ms_mgau.lo \
 	ms_senone.lo ngram_search.lo ngram_search_fwdtree.lo \
-	ngram_search_fwdflat.lo phone_loop_search.lo ps_alignment.lo \
-	ps_lattice.lo ps_mllr.lo ptm_mgau.lo nn_mgau.lo s2_semi_mgau.lo \
-	state_align_search.lo tmat.lo vector.lo pocketsphinx.lo
+	ngram_search_fwdflat.lo nn_mgau.lo phone_loop_search.lo \
+	ps_alignment.lo ps_lattice.lo ps_mllr.lo ptm_mgau.lo \
+	s2_semi_mgau.lo state_align_search.lo tmat.lo vector.lo \
+	pocketsphinx.lo
 libpocketsphinx_la_OBJECTS = $(am_libpocketsphinx_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -215,19 +216,19 @@ ETAGS = etags
 CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/mshah1/sphinx/pocketsphinx/missing aclocal-1.15
+ACLOCAL = ${SHELL} /home/mshah1/sphinx_/pocketsphinx/missing aclocal-1.15
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
 AR = ar
-AUTOCONF = ${SHELL} /home/mshah1/sphinx/pocketsphinx/missing autoconf
-AUTOHEADER = ${SHELL} /home/mshah1/sphinx/pocketsphinx/missing autoheader
-AUTOMAKE = ${SHELL} /home/mshah1/sphinx/pocketsphinx/missing automake-1.15
+AUTOCONF = ${SHELL} /home/mshah1/sphinx_/pocketsphinx/missing autoconf
+AUTOHEADER = ${SHELL} /home/mshah1/sphinx_/pocketsphinx/missing autoheader
+AUTOMAKE = ${SHELL} /home/mshah1/sphinx_/pocketsphinx/missing automake-1.15
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2 -Wall
 CPP = gcc -E
-CPPFLAGS =  -I/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include -I/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase
+CPPFLAGS =  -I/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include -I/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
@@ -255,7 +256,7 @@ INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 LD = /usr/bin/ld -m elf_x86_64
-LDFLAGS =  -L/home/mshah1/sphinx/pocketsphinx/../sphinxbase/lib -L/home/mshah1/sphinx/pocketsphinx/../sphinxbase/src/libsphinxad -L/home/mshah1/sphinx/pocketsphinx/../sphinxbase/src/libsphinxbase
+LDFLAGS =  -L/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/lib -L/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/src/libsphinxad -L/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/src/libsphinxbase
 LIBOBJS = 
 LIBS =  -lsphinxbase
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
@@ -263,7 +264,7 @@ LIPO =
 LN_S = ln -s
 LTLIBOBJS = 
 LT_SYS_LIBRARY_PATH = 
-MAKEINFO = ${SHELL} /home/mshah1/sphinx/pocketsphinx/missing makeinfo
+MAKEINFO = ${SHELL} /home/mshah1/sphinx_/pocketsphinx/missing makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /bin/mkdir -p
 NM = /usr/bin/nm -B
@@ -297,15 +298,15 @@ SET_MAKE =
 SHELL = /bin/bash
 SPHINXBASE_CFLAGS = 
 SPHINXBASE_LIBS = 
-SPHINXBASE_SWIG = /home/mshah1/sphinx/pocketsphinx/../sphinxbase/swig
+SPHINXBASE_SWIG = /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/swig
 STRIP = strip
 SWIG = /usr/bin/swig
 SWIG_LIB = /usr/share/swig3.0
 VERSION = 5prealpha
-abs_builddir = /home/mshah1/sphinx/pocketsphinx/src/libpocketsphinx
-abs_srcdir = /home/mshah1/sphinx/pocketsphinx/src/libpocketsphinx
-abs_top_builddir = /home/mshah1/sphinx/pocketsphinx
-abs_top_srcdir = /home/mshah1/sphinx/pocketsphinx
+abs_builddir = /home/mshah1/sphinx_/pocketsphinx/src/libpocketsphinx
+abs_srcdir = /home/mshah1/sphinx_/pocketsphinx/src/libpocketsphinx
+abs_top_builddir = /home/mshah1/sphinx_/pocketsphinx
+abs_top_srcdir = /home/mshah1/sphinx_/pocketsphinx
 ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_DUMPBIN = 
@@ -334,7 +335,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/mshah1/sphinx/pocketsphinx/install-sh
+install_sh = ${SHELL} /home/mshah1/sphinx_/pocketsphinx/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -383,12 +384,12 @@ libpocketsphinx_la_SOURCES = \
 	ngram_search.c				\
 	ngram_search_fwdtree.c			\
 	ngram_search_fwdflat.c			\
+	nn_mgau.c				\
 	phone_loop_search.c			\
 	ps_alignment.c				\
 	ps_lattice.c				\
 	ps_mllr.c				\
 	ptm_mgau.c				\
-	nn_mgau.c				\
 	s2_semi_mgau.c				\
 	state_align_search.c			\
 	tmat.c					\
@@ -414,6 +415,7 @@ noinst_HEADERS = \
 	ms_gauden.h				\
 	ms_mgau.h				\
 	ms_senone.h				\
+	nn_mgau.h				\
 	ngram_search.h				\
 	ngram_search_fwdtree.h			\
 	ngram_search_fwdflat.h			\
@@ -421,7 +423,6 @@ noinst_HEADERS = \
 	ps_alignment.h				\
 	ps_lattice_internal.h			\
 	ptm_mgau.h				\
-	nn_mgau.h				\
 	s2_semi_mgau.h				\
 	s3types.h				\
 	state_align_search.h			\
@@ -531,13 +532,13 @@ include ./$(DEPDIR)/ms_senone.Plo
 include ./$(DEPDIR)/ngram_search.Plo
 include ./$(DEPDIR)/ngram_search_fwdflat.Plo
 include ./$(DEPDIR)/ngram_search_fwdtree.Plo
+include ./$(DEPDIR)/nn_mgau.Plo
 include ./$(DEPDIR)/phone_loop_search.Plo
 include ./$(DEPDIR)/pocketsphinx.Plo
 include ./$(DEPDIR)/ps_alignment.Plo
 include ./$(DEPDIR)/ps_lattice.Plo
 include ./$(DEPDIR)/ps_mllr.Plo
 include ./$(DEPDIR)/ptm_mgau.Plo
-include ./$(DEPDIR)/nn_mgau.Plo
 include ./$(DEPDIR)/s2_semi_mgau.Plo
 include ./$(DEPDIR)/state_align_search.Plo
 include ./$(DEPDIR)/tmat.Plo

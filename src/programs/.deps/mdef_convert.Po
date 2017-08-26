@@ -20,29 +20,29 @@ mdef_convert.o: mdef_convert.c /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/byteswap-16.h /usr/include/stdlib.h \
  /usr/include/x86_64-linux-gnu/bits/string3.h \
  ../../include/pocketsphinx.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinx_config.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/logmath.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fe.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinx_config.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/logmath.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fe.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/limits.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/syslimits.h \
  /usr/include/limits.h /usr/include/x86_64-linux-gnu/bits/posix1_lim.h \
  /usr/include/x86_64-linux-gnu/bits/local_lim.h \
  /usr/include/linux/limits.h \
  /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/feat.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/cmn.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/agc.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/feat.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/cmn.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/agc.h \
  ../../include/pocketsphinx_export.h ../../include/cmdln_macro.h \
  ../../include/ps_lattice.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/ngram_model.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/ngram_model.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h \
  ../../include/ps_mllr.h ../../include/ps_search.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fsg_model.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fsg_model.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h \
  /usr/include/x86_64-linux-gnu/bits/waitflags.h \
  /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
  /usr/include/x86_64-linux-gnu/sys/types.h /usr/include/time.h \
@@ -56,12 +56,12 @@ mdef_convert.o: mdef_convert.c /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/bitvec.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/bitvec.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h \
  /usr/include/setjmp.h /usr/include/x86_64-linux-gnu/bits/setjmp.h \
  /usr/include/x86_64-linux-gnu/bits/setjmp2.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h \
- /home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h \
+ /home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h \
  ../../src/libpocketsphinx/bin_mdef.h ../../src/libpocketsphinx/mdef.h
 
 /usr/include/stdc-predef.h:
@@ -122,19 +122,19 @@ mdef_convert.o: mdef_convert.c /usr/include/stdc-predef.h \
 
 ../../include/pocketsphinx.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/cmd_ln.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/sphinxbase_export.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/prim_type.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinx_config.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinx_config.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/logmath.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/logmath.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fe.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fe.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fixpoint.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/limits.h:
 
@@ -150,11 +150,11 @@ mdef_convert.o: mdef_convert.c /usr/include/stdc-predef.h \
 
 /usr/include/x86_64-linux-gnu/bits/posix2_lim.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/feat.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/feat.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/cmn.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/cmn.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/agc.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/agc.h:
 
 ../../include/pocketsphinx_export.h:
 
@@ -162,17 +162,17 @@ mdef_convert.o: mdef_convert.c /usr/include/stdc-predef.h \
 
 ../../include/ps_lattice.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/ngram_model.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/ngram_model.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/mmio.h:
 
 ../../include/ps_mllr.h:
 
 ../../include/ps_search.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/fsg_model.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/fsg_model.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/glist.h:
 
 /usr/include/x86_64-linux-gnu/bits/waitflags.h:
 
@@ -204,9 +204,9 @@ mdef_convert.o: mdef_convert.c /usr/include/stdc-predef.h \
 
 /usr/include/x86_64-linux-gnu/bits/stdlib.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/bitvec.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/bitvec.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/ckd_alloc.h:
 
 /usr/include/setjmp.h:
 
@@ -214,9 +214,9 @@ mdef_convert.o: mdef_convert.c /usr/include/stdc-predef.h \
 
 /usr/include/x86_64-linux-gnu/bits/setjmp2.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/hash_table.h:
 
-/home/mshah1/sphinx/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h:
+/home/mshah1/sphinx_/pocketsphinx/../sphinxbase/include/sphinxbase/listelem_alloc.h:
 
 ../../src/libpocketsphinx/bin_mdef.h:
 

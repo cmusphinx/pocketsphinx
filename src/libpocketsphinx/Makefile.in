@@ -140,9 +140,10 @@ am_libpocketsphinx_la_OBJECTS = acmod.lo bin_mdef.lo blkarray_list.lo \
 	fsg_search.lo allphone_search.lo kws_search.lo \
 	kws_detections.lo hmm.lo mdef.lo ms_gauden.lo ms_mgau.lo \
 	ms_senone.lo ngram_search.lo ngram_search_fwdtree.lo \
-	ngram_search_fwdflat.lo phone_loop_search.lo ps_alignment.lo \
-	ps_lattice.lo ps_mllr.lo ptm_mgau.lo s2_semi_mgau.lo \
-	state_align_search.lo tmat.lo vector.lo pocketsphinx.lo
+	ngram_search_fwdflat.lo nn_mgau.lo phone_loop_search.lo \
+	ps_alignment.lo ps_lattice.lo ps_mllr.lo ptm_mgau.lo \
+	s2_semi_mgau.lo state_align_search.lo tmat.lo vector.lo \
+	pocketsphinx.lo
 libpocketsphinx_la_OBJECTS = $(am_libpocketsphinx_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -383,6 +384,7 @@ libpocketsphinx_la_SOURCES = \
 	ngram_search.c				\
 	ngram_search_fwdtree.c			\
 	ngram_search_fwdflat.c			\
+	nn_mgau.c				\
 	phone_loop_search.c			\
 	ps_alignment.c				\
 	ps_lattice.c				\
@@ -413,6 +415,7 @@ noinst_HEADERS = \
 	ms_gauden.h				\
 	ms_mgau.h				\
 	ms_senone.h				\
+	nn_mgau.h				\
 	ngram_search.h				\
 	ngram_search_fwdtree.h			\
 	ngram_search_fwdflat.h			\
@@ -529,6 +532,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ngram_search.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ngram_search_fwdflat.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ngram_search_fwdtree.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nn_mgau.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phone_loop_search.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pocketsphinx.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ps_alignment.Plo@am__quote@

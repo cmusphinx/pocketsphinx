@@ -110,4 +110,4 @@ if test x$NOCONFIGURE = x; then
 else
   echo Skipping configure process.
 fi
-cp src/libpocketsphinx/__Makefile src/libpocketsphinx/Makefile
+
