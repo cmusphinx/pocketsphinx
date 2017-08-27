@@ -110,5 +110,3 @@ if test x$NOCONFIGURE = x; then
 else
   echo Skipping configure process.
 fi
-mkdir nn_logs
-sed -- "s~INSERT_PATH~$(pwd)~g" src/libpocketsphinx/.nn_mgau.c > src/libpocketsphinx/nn_mgau.c

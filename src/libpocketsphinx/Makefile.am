@@ -74,4 +74,4 @@ AM_CFLAGS =\
 	-I$(top_srcdir)/include \
 	-I$(top_builddir)/include \
 	-DMODELDIR=\"${prefix}/share/pocketsphinx/model\"
-
+CFLAGS += -DSRCDIR=\"${CURDIR}\"

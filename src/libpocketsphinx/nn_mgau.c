@@ -158,10 +158,15 @@ nn_mgau_frame_eval(ps_mgau_t *ps,
     nn_mgau_t *s = (nn_mgau_t *)ps;
     // slightly hacky, tensorflow might take some time to initialize so the
     // socket might not be open when we get here
-    while (s->keras_server_sock == -1){
+    int count = 0;
+    while (s->keras_server_sock == -1 && count < 10){
         s->keras_server_sock = open_server_socket("127.0.0.1","0.0.0.0",9000);
+        unsigned int t = time(0) + 1;
+        while(time(0) < t);
+        count ++;
     }
-    
+    if (s->keras_server_sock == -1 && count == 10) return -1;
+   
     get_senone_scores(featbuf[0],s->n_feats,senone_scores,138,s->keras_server_sock);
     
     return 0;
@@ -177,6 +182,7 @@ nn_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
     int port = cmd_ln_int32_r(acmod->config, "-nnport");
     char *model_name = cmd_ln_str_r(acmod->config, "-nnmgau");
     char *acwt = cmd_ln_str_r(acmod->config, "-nnacwt");
+    int *cudaid = cmd_ln_str_r(acmod->config, "-cudaid");
 
     if (access(model_name, R_OK) != 0){
         printf("Model file (%s) does not exist or is not readable\n", model_name);
@@ -193,20 +199,25 @@ nn_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
     // get dimensionality of the feature vectors
     s->n_feats = feat_dimension2(acmod->fcb, 0);
     printf("N_FEATS: %d\n", s->n_feats);
-    char *base_comm = "python /home/mshah1/sphinx_/pocketsphinx/src/libpocketsphinx/runNN.py";
+    //char *base_comm1 = strcat("python ",SRCDIR);
+    char *python = "python";
+    char *py = "/runNN.py";
     //char *base_comm = "python runNN.py";
-    char *log_comm = "> /home/mshah1/sphinx_/pocketsphinx/nn_logs/keras_server.log &";
+    char *log_comm = "/../../keras_serve.log &";
 
     // calculating the number of digits in n_feats
     int len_n_feats = log10(s->n_feats) + 1e-9;
     // calculate the total lenght of command string assuming port number isn't more than 5 digits
-    char *comm = calloc(strlen(base_comm) + 
+    char *comm = calloc(strlen(python) +
+		    1 + 2*strlen(SRCDIR) +
+		    strlen(py) + 
                     1 + strlen(model_name) + 
                     1 + len_n_feats + 
                     1 + 5 + 
                     1 + strlen(acwt) +
-                    1 + strlen(log_comm), sizeof(char));
-    sprintf(comm, "%s %s %d %s %d %s", base_comm, model_name, s->n_feats, acwt, port, log_comm);
+                    1 + 2+
+		    1 + 1 + strlen(log_comm), sizeof(char));
+    sprintf(comm, "%s %s%s %s %d %s %d %d > %s%s", python,SRCDIR,py, model_name, s->n_feats, acwt, port, cudaid, SRCDIR,log_comm);
     printf("%s\n", comm);
     // will need to kill python separately after Pocketsphinx finishes execution
     system(comm);
