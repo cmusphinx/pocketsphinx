@@ -18,7 +18,6 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-
   <PropertyGroup Label="Globals">
     <ProjectGuid>{94001A0E-A837-445C-8004-F918F10D0226}</ProjectGuid>
     <RootNamespace>pocketsphinx</RootNamespace>
@@ -207,6 +206,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\libpocketsphinx\fast_ptm.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\sphinxbase\win32\sphinxbase\sphinxbase.vcxproj">
+      <Project>{2f025ead-99bd-40f5-b2cc-f0a28cad7f2d}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
