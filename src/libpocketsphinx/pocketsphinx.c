@@ -1176,13 +1176,15 @@ ps_end_utt(ps_decoder_t *ps)
         	int sf, ef;
         	int32 post, lscr, ascr, lback;
 
-        	word = ps_seg_word(seg);
-        	ps_seg_frames(seg, &sf, &ef);
-        	post = ps_seg_prob(seg, &ascr, &lscr, &lback);
-        	E_INFO_NOFN("%-20s %-5d %-5d %-1.3f %-10d %-10d %-3d\n",
-                    	    word, sf, ef, logmath_exp(ps_get_logmath(ps), post),
-                    	ascr, lscr, lback);
-    	    }
+            if(seg != NULL) {
+                word = ps_seg_word(seg);
+                ps_seg_frames(seg, &sf, &ef);
+                post = ps_seg_prob(seg, &ascr, &lscr, &lback);
+                E_INFO_NOFN("%-20s %-5d %-5d %-1.3f %-10d %-10d %-3d\n",
+                            word, sf, ef, logmath_exp(ps_get_logmath(ps), post), ascr, lscr, lback);
+                }
+            }
+  
         }
     }
     return rv;
@@ -1254,6 +1256,8 @@ ps_seg_prob(ps_seg_t *seg, int32 *out_ascr, int32 *out_lscr, int32 *out_lback)
 void
 ps_seg_free(ps_seg_t *seg)
 {
+    if(!seg)
+        return;    
     ps_search_seg_free(seg);
 }
 
