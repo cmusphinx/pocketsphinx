@@ -1176,7 +1176,7 @@ ps_end_utt(ps_decoder_t *ps)
         	int sf, ef;
         	int32 post, lscr, ascr, lback;
 
-        	if(seg != NULL) {
+            if(seg != NULL) {
                 word = ps_seg_word(seg);
                 ps_seg_frames(seg, &sf, &ef);
                 post = ps_seg_prob(seg, &ascr, &lscr, &lback);
