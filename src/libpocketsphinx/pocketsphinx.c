@@ -652,6 +652,47 @@ ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
 }
 
 int
+ps_set_jsgf(ps_decoder_t *ps, const char *name, jsgf_t *jsgf)
+{
+  if (!jsgf)
+    return -1;
+
+  fsg_model_t *fsg;
+  jsgf_rule_t *rule;
+  char const *toprule;
+  float lw;
+  int result;
+
+  if (!jsgf)
+      return -1;
+
+  rule = NULL;
+  /* Take the -toprule if specified. */
+  if ((toprule = cmd_ln_str_r(ps->config, "-toprule"))) {
+      rule = jsgf_get_rule(jsgf, toprule);
+      if (rule == NULL) {
+          E_ERROR("Start rule %s not found\n", toprule);
+          jsgf_grammar_free(jsgf);
+          return -1;
+      }
+  } else {
+      rule = jsgf_get_public_rule(jsgf);
+      if (rule == NULL) {
+          E_ERROR("No public rules found in grammar\n");
+          jsgf_grammar_free(jsgf);
+          return -1;
+      }
+  }
+
+  lw = cmd_ln_float32_r(ps->config, "-lw");
+  fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, lw);
+  result = ps_set_fsg(ps, name, fsg);
+  fsg_model_free(fsg);
+  jsgf_grammar_free(jsgf);
+  return result;
+}
+
+int
 ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
 {
   fsg_model_t *fsg;
@@ -951,6 +992,7 @@ ps_start_utt(ps_decoder_t *ps)
     ptmr_reset(&ps->perf);
     ptmr_start(&ps->perf);
 
+
     sprintf(uttid, "%09u", ps->uttno);
     ++ps->uttno;
 
@@ -963,6 +1005,7 @@ ps_start_utt(ps_decoder_t *ps)
     ps->search->hyp_str = NULL;
     if ((rv = acmod_start_utt(ps->acmod)) < 0)
         return rv;
+
 
     /* Start logging features and audio if requested. */
     if (ps->mfclogdir) {
@@ -1004,11 +1047,9 @@ ps_start_utt(ps_decoder_t *ps)
         ckd_free(logfn);
         acmod_set_senfh(ps->acmod, senfh);
     }
-
     /* Start auxiliary phone loop search. */
     if (ps->phone_loop)
         ps_search_start(ps->phone_loop);
-
     return ps_search_start(ps->search);
 }
 

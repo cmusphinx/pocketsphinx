@@ -684,7 +684,6 @@ fsg_search_word_trans(fsg_search_t *fsgs)
     }
 }
 
-
 int
 fsg_search_step(ps_search_t *search, int frame_idx)
 {
