@@ -127,7 +127,7 @@ bin_mdef_read_text(cmd_ln_t *config, const char *filename)
         bmdef->ciname[i] =
             bmdef->ciname[i - 1] + strlen(bmdef->ciname[i - 1]) + 1;
         strcpy(bmdef->ciname[i], mdef->ciphone[i].name);
-        if (i > 0 && strcmp(bmdef->ciname[i - 1], bmdef->ciname[i]) > 0) {
+        if (strcmp(bmdef->ciname[i - 1], bmdef->ciname[i]) > 0) {
             /* FIXME: there should be a solution to this, actually. */
             E_ERROR("Phone names are not in sorted order, sorry.");
             bin_mdef_free(bmdef);
