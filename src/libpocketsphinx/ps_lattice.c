@@ -392,7 +392,6 @@ ps_lattice_read(ps_decoder_t *ps,
     lineiter_t *line;
     float64 lb;
     float32 logratio;
-    ps_latnode_t *tail;
     ps_latnode_t **darray;
     ps_lattice_t *dag;
     int i, k, n_nodes;
@@ -417,7 +416,6 @@ ps_lattice_read(ps_decoder_t *ps,
     dag->latlink_list_alloc = listelem_alloc_init(sizeof(latlink_list_t));
     dag->refcount = 1;
 
-    tail = NULL;
     darray = NULL;
 
     E_INFO("Reading DAG file: %s\n", file);
@@ -471,8 +469,8 @@ ps_lattice_read(ps_decoder_t *ps,
 
     /* Read nodes */
     darray = ckd_calloc(n_nodes, sizeof(*darray));
+    ps_latnode_t **pnodes = &dag->nodes;
     for (i = 0; i < n_nodes; i++) {
-        ps_latnode_t *d;
         int32 w;
         int seqid, sf, fef, lef;
         char wd[256];
@@ -511,23 +509,19 @@ ps_lattice_read(ps_decoder_t *ps,
             goto load_error;
         }
 
-        d = listelem_malloc(dag->latnode_alloc);
-        darray[i] = d;
-        d->wid = w;
-        d->basewid = dict_basewid(dag->dict, w);
-        d->id = seqid;
-        d->sf = sf;
-        d->fef = fef;
-        d->lef = lef;
-        d->reachable = 0;
-        d->exits = d->entries = NULL;
-        d->next = NULL;
-
-        if (!dag->nodes)
-            dag->nodes = d;
-        else
-            tail->next = d;
-        tail = d;
+        *pnodes = listelem_malloc(dag->latnode_alloc);
+        ps_latnode_t *node = *pnodes;
+        darray[i] = node;
+        node->wid = w;
+        node->basewid = dict_basewid(dag->dict, w);
+        node->id = seqid;
+        node->sf = sf;
+        node->fef = fef;
+        node->lef = lef;
+        node->reachable = 0;
+        node->exits = node->entries = NULL;
+        node->next = NULL;
+        pnodes = &node->next;
     }
 
     /* Read initial node ID */
