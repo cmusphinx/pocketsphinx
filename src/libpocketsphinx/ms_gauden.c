@@ -340,7 +340,7 @@ gauden_init(char const *meanfile, char const *varfile, float32 varfloor, logmath
     }
     for (i = 0; i < g->n_feat; i++) {
         if (g->featlen[i] != flen[i]) {
-            E_FATAL("Feature lengths for means and variances differ\n");
+            E_ERROR("Feature lengths for means and variances differ\n");
             ckd_free(flen);
             gauden_free(g);
             return NULL;
