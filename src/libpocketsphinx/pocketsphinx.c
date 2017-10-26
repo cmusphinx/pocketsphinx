@@ -847,7 +847,7 @@ ps_add_word(ps_decoder_t *ps,
         }
 
         if (update) {
-            if ((rv = ps_search_reinit(search, ps->dict, ps->d2p) < 0)) {
+            if ((rv = ps_search_reinit(search, ps->dict, ps->d2p)) < 0) {
                 hash_table_iter_free(search_it);
                 return rv;
             }
