@@ -704,7 +704,7 @@ bin_mdef_ciphone_id(bin_mdef_t * m, const char *ciphone)
             return mid;
         else if (c > 0)
             low = mid + 1;
-        else if (c < 0)
+        else
             high = mid;
     }
     return -1;
@@ -727,7 +727,7 @@ bin_mdef_ciphone_id_nocase(bin_mdef_t * m, const char *ciphone)
             return mid;
         else if (c > 0)
             low = mid + 1;
-        else if (c < 0)
+        else
             high = mid;
     }
     return -1;
