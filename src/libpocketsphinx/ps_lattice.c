@@ -618,7 +618,7 @@ ps_lattice_read(ps_decoder_t *ps,
   load_error:
     E_ERROR("Failed to load %s\n", file);
     lineiter_free(line);
-    if (fp) fclose_comp(fp, ispipe);
+    fclose_comp(fp, ispipe);
     ckd_free(darray);
     return NULL;
 }
