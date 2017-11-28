@@ -348,7 +348,7 @@ parse_base_line(mdef_t * m, char *line, int p)
 
     /* Read filler attribute, if present */
     if (sscanf(lp, "%s%n", word, &wlen) != 1)
-        E_FATAL("Missing filler atribute field: %s\n", line);
+        E_FATAL("Missing filler attribute field: %s\n", line);
     lp += wlen;
     if (strcmp(word, "filler") == 0)
         m->ciphone[(int) ci].filler = 1;
