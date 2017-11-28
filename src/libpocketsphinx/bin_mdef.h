@@ -125,7 +125,7 @@ struct bin_mdef_s {
 	int32 n_sseq;       /**< Number of unique senone sequences */
 	int32 n_ctx;	    /**< Number of phones of context */
 	int32 n_cd_tree;    /**< Number of nodes in cd_tree (below) */
-	int16 sil;	    /**< CI phone ID for silence */
+	int32 sil;	    /**< CI phone ID for silence */
 
 	mmio_file_t *filemap;/**< File map for this file (if any) */
 	char **ciname;       /**< CI phone names */
