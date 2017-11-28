@@ -296,22 +296,18 @@ fsg_history_print(fsg_history_t *h, dict_t *dict)
         printf("History entry: ");
         while (bp > 0) {
             fsg_hist_entry_t *hist_entry = fsg_history_entry_get(h, bp);
-	    fsg_link_t *fl = fsg_hist_entry_fsglink(hist_entry);
-    	    char const *baseword;
-    	    int32 wid;
-    	    bp = fsg_hist_entry_pred(hist_entry);
-    	    wid = fsg_link_wid(fl);
+            fsg_link_t *fl = fsg_hist_entry_fsglink(hist_entry);
+            bp = fsg_hist_entry_pred(hist_entry);
+            if (fl == NULL) continue;
 
-    	    if (fl == NULL)
-        	    continue;
+            int32 wid = fsg_link_wid(fl);
+            const char *baseword = fsg_model_word_str(h->fsg, wid);
 
-    	    baseword = fsg_model_word_str(h->fsg, wid);
-
-    	    printf("%s(%d->%d:%d) ", baseword, 
-    				     fsg_link_from_state(hist_entry->fsglink), 
-    				     fsg_link_to_state(hist_entry->fsglink), 
-    				     hist_entry->frame);
-	}
-	printf("\n");
+            printf("%s(%d->%d:%d) ", baseword,
+                fsg_link_from_state(hist_entry->fsglink),
+                fsg_link_to_state(hist_entry->fsglink),
+                hist_entry->frame);
+        }
+        printf("\n");
     }
 }
