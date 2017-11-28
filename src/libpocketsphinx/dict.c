@@ -309,8 +309,8 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
     if (n >= MAX_S3WID) {
         E_ERROR("Number of words in dictionaries (%d) exceeds limit (%d)\n", n,
                 MAX_S3WID);
-        fclose(fp);
-        fclose(fp2);
+        if (fp) fclose(fp);
+        if (fp2) fclose(fp2);
         ckd_free(d);
         return NULL;
     }
@@ -354,7 +354,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
 
     /* Now the filler dictionary file, if it exists */
     d->filler_start = d->n_word;
-    if (fillerfile) {
+    if (fp2) {
         E_INFO("Reading filler dictionary: %s\n", fillerfile);
         dict_read(fp2, d);
         fclose(fp2);
