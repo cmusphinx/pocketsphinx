@@ -1,7 +1,11 @@
 CFLAGS := -g -Wall -DPIC -fPIC
-CPPFLAGS := -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -Wno-unused-function `pkg-config --cflags sphinxbase pocketsphinx`
+CPPFLAGS := -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/darwin -I$(JAVA_HOME)/include/linux -Wno-unused-function `pkg-config --cflags sphinxbase pocketsphinx`
 
 all: libpocketsphinx_jni.so
+
+libpocketsphinx_jni.dylib: pocketsphinx_wrap.o sphinxbase_wrap.o
+	$(CC) -dynamiclib -o $@ pocketsphinx_wrap.o sphinxbase_wrap.o `pkg-config --libs sphinxbase pocketsphinx`
+
 
 libpocketsphinx_jni.so: pocketsphinx_wrap.o sphinxbase_wrap.o
 	$(CC) -shared -o $@ pocketsphinx_wrap.o sphinxbase_wrap.o `pkg-config --libs sphinxbase pocketsphinx`
