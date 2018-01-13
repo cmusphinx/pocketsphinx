@@ -6,8 +6,9 @@ To install it type
 
    npm install -g pocketsphinx
 
-then
-
+then cd to test.js file directory
+   
+   npm install pocketsphinx
    node test.js
 
 Requirements include latest pocketsphinx, sphinxbase and swig 3.0
