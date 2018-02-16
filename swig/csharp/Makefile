@@ -18,7 +18,7 @@ pocketsphinx.c: ../pocketsphinx.i
 libpocketsphinxwrap.so: pocketsphinx.c
 	gcc -fPIC `pkg-config --libs --cflags pocketsphinx` pocketsphinx.c sphinxbase.c -shared -o $@
 
-test.exe: libpocketsphinxwrap.so
+test.exe: libpocketsphinxwrap.so test.cs
 	mcs test.cs gen/*.cs
 
 run: test.exe
