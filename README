@@ -70,7 +70,7 @@ Android installation
 See http://github.com/cmusphinx/pocketsphinx-android-demo.
 
 
-MS Windows™ (MS Visual Studio 2010 (or newer - we test with VC++ 2010 Express)
+MS Windows™ (MS Visual Studio 2012 (or newer - we test with VC++ 2012 Express)
 ------------------------------------------------------------------------------
 
  * load sphinxbase.sln located in sphinxbase directory
