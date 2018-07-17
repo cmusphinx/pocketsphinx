@@ -303,7 +303,7 @@ long ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
  * Decode a senone score dump file.
  *
  * @param ps Decoder
- * @param fh Previously opened file handle positioned at start of file.
+ * @param senfh Previously opened file handle positioned at start of file.
  * @return Number of frames read.
  */
 POCKETSPHINX_EXPORT
@@ -479,7 +479,7 @@ char const *ps_seg_word(ps_seg_t *seg);
  *
  * @param seg Segment iterator.
  * @param out_sf Output: First frame index in segment.
- * @param out_sf Output: Last frame index in segment.
+ * @param out_ef Output: Last frame index in segment.
  */
 POCKETSPHINX_EXPORT
 void ps_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef);
@@ -550,7 +550,6 @@ char const *ps_nbest_hyp(ps_nbest_t *nbest, int32 *out_score);
  * Get the word segmentation from an N-best list iterator.
  *
  * @param nbest N-best iterator.
- * @param out_score Output: Path score for this hypothesis.
  * @return Iterator over the next best hypothesis.
  */
 POCKETSPHINX_EXPORT
