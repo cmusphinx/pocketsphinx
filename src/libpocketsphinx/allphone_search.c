@@ -648,6 +648,7 @@ allphone_search_free(ps_search_t * search)
 
     ps_search_base_free(search);
 
+    allphone_clear_segments(allphs);
     hmm_context_free(allphs->hmmctx);
     phmm_free(allphs);
     if (allphs->lm)
