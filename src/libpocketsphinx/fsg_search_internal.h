@@ -8,7 +8,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -16,16 +16,16 @@
  *    distribution.
  *
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
@@ -74,10 +74,10 @@ typedef struct fsg_search_s {
     struct fsg_lextree_s *lextree;/**< Lextree structure for the currently
 				   active FSG */
     struct fsg_history_s *history;/**< For storing the Viterbi search history */
-  
+
     glist_t pnode_active;	/**< Those active in this frame */
     glist_t pnode_active_next;	/**< Those activated for the next frame */
-  
+
     int32 beam_orig;		/**< Global pruning threshold */
     int32 pbeam_orig;		/**< Pruning threshold for phone transition */
     int32 wbeam_orig;		/**< Pruning threshold for word exit */
@@ -86,7 +86,7 @@ typedef struct fsg_search_s {
                                      For implementing absolute pruning. */
     int32 beam, pbeam, wbeam;	/**< Effective beams after applying beam_factor */
     int32 lw, pip, wip;         /**< Language weights */
-  
+
     frame_idx_t frame;		/**< Current frame. */
     uint8 final;		/**< Decoding is finished for this utterance. */
     uint8 bestpath;		/**< Whether to run bestpath search
@@ -95,15 +95,15 @@ typedef struct fsg_search_s {
 
     int32 bestscore;		/**< For beam pruning */
     int32 bpidx_start;		/**< First history entry index this frame */
-  
+
     int32 ascr, lscr;		/**< Total acoustic and lm score for utt */
-  
+
     int32 n_hmm_eval;		/**< Total HMMs evaluated this utt */
     int32 n_sen_eval;		/**< Total senones evaluated this utt */
-    
+
     ptmr_t perf; /**< Performance counter */
     int32 n_tot_frame;
-        
+
 } fsg_search_t;
 
 /* Access macros */
@@ -149,5 +149,10 @@ int fsg_search_finish(ps_search_t *search);
  * Get hypothesis string from the FSG search.
  */
 char const *fsg_search_hyp(ps_search_t *search, int32 *out_score);
+
+/**
+ * Get glist_t with word-tags pairs and hyp.
+ */
+char const *fsg_search_hyp_with_tags(ps_search_t *search, int32 *out_score, glist_t *wordtags_listP);
 
 #endif

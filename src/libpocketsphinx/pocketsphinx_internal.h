@@ -8,27 +8,27 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
+ * This work was supported in part by funding from the Defense Advanced
+ * Research Projects Agency and the National Science Foundation of the
  * United States of America, and the CMU Sphinx Speech Consortium.
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
@@ -76,6 +76,12 @@ typedef struct ps_search_s ps_search_t;
 #define PS_SEARCH_TYPE_STATE_ALIGN  "state_align"
 #define PS_SEARCH_TYPE_PHONE_LOOP  "phone_loop"
 
+typedef struct ps_hyptags_s{
+    char word[MAX_TAG_SIZE];
+    char tag[MAX_TAG_SIZE];
+}ps_hyptags_t;
+
+
 /**
  * V-table for search algorithm.
  */
@@ -88,6 +94,7 @@ typedef struct ps_searchfuncs_s {
 
     ps_lattice_t *(*lattice)(ps_search_t *search);
     char const *(*hyp)(ps_search_t *search, int32 *out_score);
+    char const *(*hyp_tags)(ps_search_t *search, int32 *out_score, glist_t *hyptags);
     int32 (*prob)(ps_search_t *search);
     ps_seg_t *(*seg_iter)(ps_search_t *search);
 } ps_searchfuncs_t;
@@ -97,10 +104,10 @@ typedef struct ps_searchfuncs_s {
  */
 struct ps_search_s {
     ps_searchfuncs_t *vt;  /**< V-table of search methods. */
-    
+
     char *type;
     char *name;
-    
+
     ps_search_t *pls;      /**< Phoneme loop for lookahead. */
     cmd_ln_t *config;      /**< Configuration. */
     acmod_t *acmod;        /**< Acoustic model. */
@@ -139,6 +146,7 @@ struct ps_search_s {
 #define ps_search_free(s) (*(ps_search_base(s)->vt->free))(s)
 #define ps_search_lattice(s) (*(ps_search_base(s)->vt->lattice))(s)
 #define ps_search_hyp(s,sc) (*(ps_search_base(s)->vt->hyp))(s,sc)
+#define ps_search_hyp_with_tags(s,sc,tg) (*(ps_search_base(s)->vt->hyp_tags))(s,sc,tg)
 #define ps_search_prob(s) (*(ps_search_base(s)->vt->prob))(s)
 #define ps_search_seg_iter(s) (*(ps_search_base(s)->vt->seg_iter))(s)
 

@@ -60,6 +60,7 @@ static int ngram_search_step(ps_search_t *search, int frame_idx);
 static int ngram_search_finish(ps_search_t *search);
 static int ngram_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p);
 static char const *ngram_search_hyp(ps_search_t *search, int32 *out_score);
+static glist_t ngram_search_hyp_with_tags(ps_search_t *search, int32 *out_score);
 static int32 ngram_search_prob(ps_search_t *search);
 static ps_seg_t *ngram_search_seg_iter(ps_search_t *search);
 
@@ -71,6 +72,7 @@ static ps_searchfuncs_t ngram_funcs = {
     /* free: */   ngram_search_free,
     /* lattice: */  ngram_search_lattice,
     /* hyp: */      ngram_search_hyp,
+    /* hyptags_list: */ ngram_search_hyp_with_tags,
     /* prob: */     ngram_search_prob,
     /* seg_iter: */ ngram_search_seg_iter,
 };
@@ -885,6 +887,13 @@ ngram_search_hyp(ps_search_t *search, int32 *out_score)
     }
 
     return NULL;
+}
+
+static glist_t
+ngram_search_hyp_with_tags(ps_search_t * search, int32 * out_score)
+{
+    E_WARN("Tags extraction for ngram_search not implemented\n");
+	return NULL;
 }
 
 static void

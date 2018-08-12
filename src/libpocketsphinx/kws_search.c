@@ -147,6 +147,7 @@ static ps_searchfuncs_t kws_funcs = {
     /* free: */ kws_search_free,
     /* lattice: */ kws_search_lattice,
     /* hyp: */ kws_search_hyp,
+    /* hyptags_list: */ kws_search_hyp_with_tags,
     /* prob: */ kws_search_prob,
     /* seg_iter: */ kws_search_seg_iter,
 };
@@ -673,6 +674,13 @@ kws_search_hyp(ps_search_t * search, int32 * out_score)
     search->hyp_str = kws_detections_hyp_str(kwss->detections, kwss->frame, kwss->delay);
 
     return search->hyp_str;
+}
+
+glist_t
+kws_search_hyp_with_tags(ps_search_t * search, int32 * out_score)
+{
+	E_WARN("Tags extraction for kws_search not implemented\n");
+	return NULL;
 }
 
 char * 
