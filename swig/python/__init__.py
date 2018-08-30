@@ -34,4 +34,4 @@
 # ====================================================================
 
 
-from pocketsphinx import *
+from .pocketsphinx import *
