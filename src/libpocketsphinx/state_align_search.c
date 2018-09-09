@@ -253,7 +253,7 @@ state_align_search_finish(ps_search_t *search)
 static int
 state_align_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
 {
-    /* This does nothing. */
+    /* This does nothing, you need to make a new search for each utterance. */
     return 0;
 }
 
@@ -265,7 +265,120 @@ state_align_search_free(ps_search_t *search)
     ckd_free(sas->hmms);
     ckd_free(sas->tokens);
     hmm_context_free(sas->hmmctx);
+    ps_alignment_free(sas->al);
     ckd_free(sas);
+}
+
+struct state_align_seg_s {
+    ps_seg_t base;
+    ps_alignment_iter_t *itor;
+};
+typedef struct state_align_seg_s state_align_seg_t;
+
+static void
+state_align_search_seg_free(ps_seg_t * seg)
+{
+    state_align_seg_t *itor = (state_align_seg_t *)seg;
+    ps_alignment_iter_free(itor->itor);
+    ckd_free(itor);
+}
+
+static void
+state_align_search_fill_iter(ps_seg_t *seg)
+{
+    state_align_seg_t *itor = (state_align_seg_t *)seg;
+    ps_alignment_entry_t *entry = ps_alignment_iter_get(itor->itor);
+
+    seg->sf = entry->start;
+    seg->ef = entry->start + entry->duration - 1;
+    seg->ascr = entry->score;
+    seg->lscr = 0;
+    seg->word = dict_wordstr(ps_search_dict(seg->search), entry->id.wid);
+}
+
+static ps_seg_t *
+state_align_search_seg_next(ps_seg_t * seg)
+{
+    state_align_seg_t *itor = (state_align_seg_t *)seg;
+
+    itor->itor = ps_alignment_iter_next(itor->itor);
+    if (itor->itor == NULL) {
+        state_align_search_seg_free(seg);
+        return NULL;
+    }
+    state_align_search_fill_iter(seg);
+    return seg;
+}
+
+static ps_segfuncs_t state_align_segfuncs = {
+    /* seg_next */ state_align_search_seg_next,
+    /* seg_free */ state_align_search_seg_free
+};
+
+
+static ps_seg_t *
+state_align_search_seg_iter(ps_search_t * search)
+{
+    state_align_search_t *sas = (state_align_search_t *) search;
+    state_align_seg_t *seg;
+    ps_alignment_iter_t *itor;
+
+    if (sas->al == NULL)
+        return NULL;
+    /* Even though the alignment has a bunch of levels, for the
+       purposes of the decoder API we will just iterate over words,
+       which is the most likely/useful use case.  We will also expose
+       the rest of the alignment API separately. */
+    
+    itor = ps_alignment_words(sas->al);
+    if (itor == NULL)
+        return NULL;
+    seg = ckd_calloc(1, sizeof(state_align_seg_t));
+    seg->base.vt = &state_align_segfuncs;
+    seg->base.search = search;
+    seg->itor = itor;
+    state_align_search_fill_iter((ps_seg_t *)seg);
+    
+    return (ps_seg_t *)seg;
+}
+
+static char const *
+state_align_search_hyp(ps_search_t *search, int32 *out_score)
+{
+    state_align_search_t *sas = (state_align_search_t *)search;
+    ps_alignment_iter_t *itor;
+    size_t hyp_len;
+
+    if (search->hyp_str)
+        ckd_free(search->hyp_str);
+    search->hyp_str = NULL;
+    if (sas->al == NULL)
+        return NULL;
+    itor = ps_alignment_words(sas->al);
+    if (itor == NULL)
+        return NULL;
+    for (hyp_len = 0; itor; itor = ps_alignment_iter_next(itor)) {
+        const char *word = dict_wordstr(ps_search_dict(search),
+                                        ps_alignment_iter_get(itor)->id.wid); 
+        if (word == NULL) {
+            E_ERROR("Unknown word id %d in alignment",
+                    ps_alignment_iter_get(itor)->id.wid);
+            return NULL;
+        }
+        hyp_len += strlen(word) + 1;
+    }
+    search->hyp_str = ckd_calloc(hyp_len + 1, sizeof(*search->hyp_str));
+    for (itor = ps_alignment_words(sas->al);
+         itor; itor = ps_alignment_iter_next(itor)) {
+        ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
+        const char *word = dict_wordstr(ps_search_dict(search),
+                                        ent->id.wid); 
+        strcat(search->hyp_str, word);
+        strcat(search->hyp_str, " ");
+        *out_score = ent->score;
+    }
+    search->hyp_str[strlen(search->hyp_str) - 1] = '\0';
+    return search->hyp_str;
 }
 
 static ps_searchfuncs_t state_align_search_funcs = {
@@ -275,9 +388,9 @@ static ps_searchfuncs_t state_align_search_funcs = {
     /* reinit: */ state_align_search_reinit,
     /* free: */   state_align_search_free,
     /* lattice: */  NULL,
-    /* hyp: */      NULL,
+    /* hyp: */      state_align_search_hyp,
     /* prob: */     NULL,
-    /* seg_iter: */ NULL,
+    /* seg_iter: */ state_align_search_seg_iter,
 };
 
 ps_search_t *
@@ -300,7 +413,7 @@ state_align_search_init(const char *name,
         ckd_free(sas);
         return NULL;
     }
-    sas->al = al;
+    sas->al = ps_alignment_retain(al);
 
     /* Generate HMM vector from phone level of alignment. */
     sas->n_phones = ps_alignment_n_phones(al);

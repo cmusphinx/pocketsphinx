@@ -110,6 +110,18 @@ static const arg_t ps_args_def[] = {
       ARG_STRING,
       NULL,
       "File extension for FSG files (including leading dot)" },
+    { "-alignctl",
+      ARG_STRING,
+      NULL,
+      "Control file listing transcript files to force-align to utts" },
+    { "-aligndir",
+      ARG_STRING,
+      NULL,
+      "Base directory for transcript files" },
+    { "-alignext",
+      ARG_STRING,
+      NULL,
+      "File extension for transcript files (including leading dot)" },
 
     /* Input file types and locations. */
     { "-adcin",
@@ -332,6 +344,62 @@ process_lmnamectl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *lmname)
         return -1;
     }
     return 0;
+}
+
+static int
+process_alignctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *fname)
+{
+    int err;
+    char *path = NULL;
+    const char *aligndir = cmd_ln_str_r(config, "-aligndir");
+    const char *alignext = cmd_ln_str_r(config, "-alignext");
+    char *text = NULL;
+    size_t nchars, nread;
+    FILE *fh;
+
+    if (fname == NULL)
+        return 0;
+
+    if (aligndir)
+        path = string_join(aligndir, "/", fname, alignext ? alignext : "", NULL);
+    else if (alignext)
+        path = string_join(fname, alignext, NULL);
+    else
+        path = ckd_salloc(fname);
+
+    if ((fh = fopen(path, "r")) == NULL) {
+        E_ERROR_SYSTEM("Failed to open transcript file %s", path);
+        err = -1;
+        goto error_out;
+    }
+    fseek(fh, 0, SEEK_END);
+    nchars = ftell(fh);
+    text = ckd_calloc(nchars + 1, 1);
+    fseek(fh, 0, SEEK_SET);
+    if ((nread = fread(text, 1, nchars, fh)) != nchars) {
+        E_ERROR_SYSTEM("Failed to fully read transcript file %s", path);
+        err = -1;
+        goto error_out;
+    }
+    if ((err = fclose(fh)) != 0) {
+        E_ERROR_SYSTEM("Failed to close transcript file %s", path);
+        goto error_out;
+    }
+    /* Always use the same name so that we don't leak memory (hopefully). */
+    if (ps_set_align(ps, "align", text)) {
+        err = -1;
+        goto error_out;
+    }
+
+    E_INFO("Force-aligning with transcript from: %s\n", fname);
+    if (ps_set_search(ps, "align"))
+        err = -1;
+
+error_out:
+    ckd_free(path);
+    ckd_free(text);
+
+    return err;
 }
 
 static int
@@ -597,7 +665,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     char *line;
     size_t len;
     FILE *hypfh = NULL, *hypsegfh = NULL, *ctmfh = NULL;
-    FILE *mllrfh = NULL, *lmfh = NULL, *fsgfh = NULL;
+    FILE *mllrfh = NULL, *lmfh = NULL, *fsgfh = NULL, *alignfh = NULL;
     double n_speech, n_cpu, n_wall;
     char const *outlatdir;
     char const *nbestdir;
@@ -622,6 +690,13 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
         fsgfh = fopen(str, "r");
         if (fsgfh == NULL) {
             E_ERROR_SYSTEM("Failed to open FSG control file file %s", str);
+            goto done;
+        }
+    }
+    if ((str = cmd_ln_str_r(config, "-alignctl"))) {
+        alignfh = fopen(str, "r");
+        if (alignfh == NULL) {
+            E_ERROR_SYSTEM("Failed to open alignment control file file %s", str);
             goto done;
         }
     }
@@ -663,6 +738,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
         int32 nf, sf, ef;
         char *mllrline = NULL, *lmline = NULL, *fsgline = NULL;
         char *fsgfile = NULL, *lmname = NULL, *mllrfile = NULL;
+        char *alignline = NULL, *alignfile = NULL;
 
         if (mllrfh) {
             mllrline = fread_line(mllrfh, &len);
@@ -693,6 +769,16 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                 goto done;
             }
             fsgfile = string_trim(fsgline, STRING_BOTH);
+        }
+        if (alignfh) {
+            alignline = fread_line(alignfh, &len);
+            if (alignline == NULL) {
+                E_ERROR("File size mismatch between control and align control\n");
+                ckd_free(line);
+                ckd_free(alignline);
+                goto done;
+            }
+            alignfile = string_trim(alignline, STRING_BOTH);
         }
 
         if (i < ctloffset) {
@@ -735,6 +821,8 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                 continue;
             if(process_fsgctl_line(ps, config, fsgfile) < 0)
                 continue;
+            if(process_alignctl_line(ps, config, alignfile) < 0)
+                continue;
             if(process_ctl_line(ps, config, file, uttid, sf, ef) < 0)
                 continue;
             hyp = ps_get_hyp(ps, &score);
@@ -767,6 +855,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
         }
         i += ctlincr;
     nextline:
+        ckd_free(alignline);
         ckd_free(mllrline);
         ckd_free(fsgline);
         ckd_free(lmline);
@@ -786,6 +875,8 @@ done:
         fclose(hypsegfh);
     if (ctmfh)
         fclose(ctmfh);
+    if (alignfh)
+        fclose(alignfh);
 }
 
 int

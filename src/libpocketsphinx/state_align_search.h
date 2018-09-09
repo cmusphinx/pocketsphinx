@@ -61,7 +61,7 @@ struct state_align_hist_s {
 typedef struct state_align_hist_s state_align_hist_t;
 
 /**
- * Phone loop search structure.
+ * Forced alignment search structure.
  */
 struct state_align_search_s {
     ps_search_t base;       /**< Base search structure. */

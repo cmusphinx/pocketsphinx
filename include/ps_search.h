@@ -43,6 +43,7 @@
  * <li>grammar - recognizes speech according to JSGF grammar. Unlike keyphrase grammar search doesn't ignore words which are not in grammar but tries to recognize them.</li>
  * <li>ngram/lm - recognizes natural speech with a language model.</li>
  * <li>allphone - recognizes phonemes with a phonetic language model.</li>
+ * <li>align - creates time alignments for a fixed word sequence.</li>
  * </ul>
  * 
  * Each search has a name and can be referenced by a name, names are
@@ -292,6 +293,21 @@ int ps_set_allphone(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
  */
 POCKETSPHINX_EXPORT
 int ps_set_allphone_file(ps_decoder_t *ps, const char *name, const char *path);
+
+/**
+ * Adds new search based on forced alignment.
+ *
+ * Convenient method to and create a forced aligner for a piece of text.
+ *
+ * @param ps Decoder
+ * @param name Name for this search (could be anything, such as an utterance
+ *   label or the name of the input file)
+ * @param words String containing whitespace-separated words for alignment.
+ *   These words are assumed to exist in the current dictionary.
+ * 
+ */
+POCKETSPHINX_EXPORT
+int ps_set_align(ps_decoder_t *ps, const char *name, const char *words);
 
 #ifdef __cplusplus
 }
