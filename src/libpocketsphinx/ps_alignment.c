@@ -52,6 +52,14 @@ ps_alignment_init(dict2pid_t *d2p)
 {
     ps_alignment_t *al = ckd_calloc(1, sizeof(*al));
     al->d2p = dict2pid_retain(d2p);
+    al->refcount = 1;
+    return al;
+}
+
+ps_alignment_t *
+ps_alignment_retain(ps_alignment_t *al)
+{
+    ++al->refcount;
     return al;
 }
 
@@ -60,6 +68,8 @@ ps_alignment_free(ps_alignment_t *al)
 {
     if (al == NULL)
         return 0;
+    if (--al->refcount > 0)
+        return al->refcount;
     dict2pid_free(al->d2p);
     ckd_free(al->word.seq);
     ckd_free(al->sseq.seq);

@@ -63,6 +63,7 @@
 #include "ngram_search_fwdtree.h"
 #include "ngram_search_fwdflat.h"
 #include "allphone_search.h"
+#include "state_align_search.h"
 
 static const arg_t ps_args_def[] = {
     POCKETSPHINX_OPTIONS,
@@ -202,6 +203,7 @@ ps_default_search_args(cmd_ln_t *config)
         && !cmd_ln_str_r(config, "-lmctl")
         && !cmd_ln_str_r(config, "-kws")
         && !cmd_ln_str_r(config, "-keyphrase")
+        && !cmd_ln_str_r(config, "-alignctl")
         && file_exists(MODELDIR "/en-us/en-us.lm.bin")) {
         lmfile = MODELDIR "/en-us/en-us.lm.bin";
         cmd_ln_set_str_r(config, "-lm", lmfile);
@@ -625,6 +627,38 @@ ps_set_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
   if (lm)
       ngram_model_free(lm);
   return result;
+}
+
+int
+ps_set_align(ps_decoder_t *ps, const char *name, const char *text)
+{
+    ps_search_t *search;
+    ps_alignment_t *alignment;
+    char *textbuf = ckd_salloc(text);
+    char *ptr, *word, delimfound;
+    int n;
+
+    textbuf = string_trim(textbuf, STRING_BOTH);
+    alignment = ps_alignment_init(ps->d2p);
+    ps_alignment_add_word(alignment, dict_wordid(ps->dict, "<s>"), 0);
+    for (ptr = textbuf;
+         (n = nextword(ptr, " \t\n\r", &word, &delimfound)) >= 0;
+         ptr = word + n, *ptr = delimfound) {
+        int wid;
+        if ((wid = dict_wordid(ps->dict, word)) == BAD_S3WID) {
+            E_ERROR("Unknown word %s\n", word);
+            ckd_free(textbuf);
+            ps_alignment_free(alignment);
+            return -1;
+        }
+        ps_alignment_add_word(alignment, wid, 0);
+    }
+    ps_alignment_add_word(alignment, dict_wordid(ps->dict, "</s>"), 0);
+    ps_alignment_populate(alignment);
+    search = state_align_search_init(name, ps->config, ps->acmod, alignment);
+    ps_alignment_free(alignment);
+    ckd_free(textbuf);
+    return set_search_internal(ps, search);
 }
 
 int

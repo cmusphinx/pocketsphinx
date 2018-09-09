@@ -79,11 +79,17 @@ EXTRA_DIST = \
 	data/turtle.dic \
 	data/turtle.lm.bin \
 	data/unreachable.lat \
-	data/librivox/fileids \
-	data/librivox/sense_and_sensibility_01_austen_64kb-0880.wav \
-	data/librivox/sense_and_sensibility_01_austen_64kb-0890.wav \
-	data/librivox/sense_and_sensibility_01_austen_64kb-0930.wav \
-	data/librivox/sense_and_sensibility_01_austen_64kb-0870.wav \
-	data/librivox/sense_and_sensibility_01_austen_64kb-0920.wav \
-	data/librivox/transcription \
-	data/librivox/test-lm.match
+	data/librivox/fileids						\
+	data/librivox/sense_and_sensibility_01_austen_64kb-0870.txt	\
+	data/librivox/sense_and_sensibility_01_austen_64kb-0870.wav	\
+	data/librivox/sense_and_sensibility_01_austen_64kb-0880.txt	\
+	data/librivox/sense_and_sensibility_01_austen_64kb-0880.wav	\
+	data/librivox/sense_and_sensibility_01_austen_64kb-0890.txt	\
+	data/librivox/sense_and_sensibility_01_austen_64kb-0890.wav	\
+	data/librivox/sense_and_sensibility_01_austen_64kb-0920.txt	\
+	data/librivox/sense_and_sensibility_01_austen_64kb-0920.wav	\
+	data/librivox/sense_and_sensibility_01_austen_64kb-0930.txt	\
+	data/librivox/sense_and_sensibility_01_austen_64kb-0930.wav	\
+	data/librivox/test-align.matchseg				\
+	data/librivox/test-lm.match					\
+	data/librivox/transcription

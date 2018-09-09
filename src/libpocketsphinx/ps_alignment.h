@@ -78,6 +78,7 @@ struct ps_alignment_vector_s {
 typedef struct ps_alignment_vector_s ps_alignment_vector_t;
 
 struct ps_alignment_s {
+    int refcount;
     dict2pid_t *d2p;
     ps_alignment_vector_t word;
     ps_alignment_vector_t sseq;
@@ -96,6 +97,11 @@ typedef struct ps_alignment_iter_s ps_alignment_iter_t;
  * Create a new, empty alignment.
  */
 ps_alignment_t *ps_alignment_init(dict2pid_t *d2p);
+
+/**
+ * Retain an alighment
+ */
+ps_alignment_t *ps_alignment_retain(ps_alignment_t *al);
 
 /**
  * Release an alignment
@@ -155,6 +161,8 @@ ps_alignment_iter_t *ps_alignment_states(ps_alignment_t *al);
 
 /**
  * Get the alignment entry pointed to by an iterator.
+ *
+ * The iterator retains ownership of this so don't try to free it.
  */
 ps_alignment_entry_t *ps_alignment_iter_get(ps_alignment_iter_t *itor);
 
@@ -165,20 +173,30 @@ ps_alignment_iter_t *ps_alignment_iter_goto(ps_alignment_iter_t *itor, int pos);
 
 /**
  * Move an alignment iterator forward.
+ *
+ * If the end of the alignment is reached, this will free the iterator
+ * and return NULL.
  */
 ps_alignment_iter_t *ps_alignment_iter_next(ps_alignment_iter_t *itor);
 
 /**
  * Move an alignment iterator back.
+ *
+ * If the start of the alignment is reached, this will free the iterator
+ * and return NULL.
  */
 ps_alignment_iter_t *ps_alignment_iter_prev(ps_alignment_iter_t *itor);
 
 /**
  * Get a new iterator starting at the parent of the current node.
+ *
+ * If there is no parent node, NULL is returned.
  */
 ps_alignment_iter_t *ps_alignment_iter_up(ps_alignment_iter_t *itor);
 /**
  * Get a new iterator starting at the first child of the current node.
+ *
+ * If there is no child node, NULL is returned.
  */
 ps_alignment_iter_t *ps_alignment_iter_down(ps_alignment_iter_t *itor);
 
