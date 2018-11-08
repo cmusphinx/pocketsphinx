@@ -18,7 +18,6 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-
   <PropertyGroup Label="Globals">
     <ProjectGuid>{94001A0E-A837-445C-8004-F918F10D0226}</ProjectGuid>
     <RootNamespace>pocketsphinx</RootNamespace>
@@ -168,10 +167,12 @@
     <ClInclude Include="..\..\src\libpocketsphinx\ngram_search_fwdtree.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\phone_loop_search.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\pocketsphinx_internal.h" />
+    <ClInclude Include="..\..\src\libpocketsphinx\ps_alignment.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\ps_lattice_internal.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\ptm_mgau.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\s2_semi_mgau.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\s3types.h" />
+    <ClInclude Include="..\..\src\libpocketsphinx\state_align_search.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\tied_mgau_common.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\tmat.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\vector.h" />
@@ -198,10 +199,12 @@
     <ClCompile Include="..\..\src\libpocketsphinx\ngram_search_fwdtree.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\phone_loop_search.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\pocketsphinx.c" />
+    <ClCompile Include="..\..\src\libpocketsphinx\ps_alignment.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\ps_lattice.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\ps_mllr.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\ptm_mgau.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\s2_semi_mgau.c" />
+    <ClCompile Include="..\..\src\libpocketsphinx\state_align_search.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\tmat.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\vector.c" />
   </ItemGroup>

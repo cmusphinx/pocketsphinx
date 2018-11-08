@@ -28,6 +28,8 @@
     <ClCompile Include="..\..\src\libpocketsphinx\vector.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\kws_detections.c" />
     <ClCompile Include="..\..\src\libpocketsphinx\allphone_search.c" />
+    <ClCompile Include="..\..\src\libpocketsphinx\ps_alignment.c" />
+    <ClCompile Include="..\..\src\libpocketsphinx\state_align_search.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\cmdln_macro.h" />
@@ -63,6 +65,8 @@
     <ClInclude Include="..\..\src\libpocketsphinx\vector.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\kws_detections.h" />
     <ClInclude Include="..\..\src\libpocketsphinx\allphone_search.h" />
+    <ClInclude Include="..\..\src\libpocketsphinx\ps_alignment.h" />
+    <ClInclude Include="..\..\src\libpocketsphinx\state_align_search.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\libpocketsphinx\fast_ptm.txt" />

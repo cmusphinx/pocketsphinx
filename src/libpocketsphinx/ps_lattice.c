@@ -396,6 +396,7 @@ ps_lattice_read(ps_decoder_t *ps,
     ps_lattice_t *dag;
     int i, k, n_nodes;
     int32 pip, silpen, fillpen;
+    ps_latnode_t **pnodes;
 
     dag = ckd_calloc(1, sizeof(*dag));
 
@@ -469,11 +470,12 @@ ps_lattice_read(ps_decoder_t *ps,
 
     /* Read nodes */
     darray = ckd_calloc(n_nodes, sizeof(*darray));
-    ps_latnode_t **pnodes = &dag->nodes;
+    pnodes = &dag->nodes;
     for (i = 0; i < n_nodes; i++) {
         int32 w;
         int seqid, sf, fef, lef;
         char wd[256];
+        ps_latnode_t *node;
 
         if ((line = lineiter_next(line)) == NULL) {
             E_ERROR("Premature EOF while loading Nodes(%s)\n", file);
@@ -510,7 +512,7 @@ ps_lattice_read(ps_decoder_t *ps,
         }
 
         *pnodes = listelem_malloc(dag->latnode_alloc);
-        ps_latnode_t *node = *pnodes;
+        node = *pnodes;
         darray[i] = node;
         node->wid = w;
         node->basewid = dict_basewid(dag->dict, w);
