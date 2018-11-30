@@ -134,6 +134,7 @@ enum
     PROP_FSG_FILE,
     PROP_ALLPHONE_FILE,
     PROP_KWS_FILE,
+    PROP_JSGF_FILE,
     PROP_FWDFLAT,
     PROP_BESTPATH,
     PROP_MAXHMMPF,
@@ -246,6 +247,12 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
         (gobject_class, PROP_KWS_FILE,
          g_param_spec_string("kws", "Keyphrases File",
                              "List of keyphrases for spotting",
+                             NULL,
+                             G_PARAM_READWRITE));
+    g_object_class_install_property
+        (gobject_class, PROP_JSGF_FILE,
+         g_param_spec_string("jsgf", "Grammer file",
+                             "File with grammer in Java Speech Grammar Format (JSGF)",
                              NULL,
                              G_PARAM_READWRITE));
     g_object_class_install_property
@@ -389,6 +396,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
         gst_pocketsphinx_set_string(ps, "-allphone", NULL);
         gst_pocketsphinx_set_string(ps, "-kws", NULL);
+        gst_pocketsphinx_set_string(ps, "-jsgf", NULL);
         break;
     case PROP_LMCTL_FILE:
         /* FSG and LM are mutually exclusive. */
@@ -397,6 +405,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
         gst_pocketsphinx_set_string(ps, "-allphone", NULL);
         gst_pocketsphinx_set_string(ps, "-kws", NULL);
+        gst_pocketsphinx_set_string(ps, "-jsgf", NULL);
         break;
     case PROP_DICT_FILE:
         gst_pocketsphinx_set_string(ps, "-dict", value);
@@ -411,6 +420,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_string(ps, "-fsg", value);
         gst_pocketsphinx_set_string(ps, "-allphone", NULL);
         gst_pocketsphinx_set_string(ps, "-kws", NULL);
+        gst_pocketsphinx_set_string(ps, "-jsgf", NULL);
         break;
     case PROP_ALLPHONE_FILE:
         /* FSG and LM are mutually exclusive. */
@@ -419,6 +429,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
         gst_pocketsphinx_set_string(ps, "-allphone", value);
         gst_pocketsphinx_set_string(ps, "-kws", NULL);
+        gst_pocketsphinx_set_string(ps, "-jsgf", NULL);
         break;
     case PROP_KWS_FILE:
         /* FSG and LM are mutually exclusive. */
@@ -426,7 +437,17 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
         gst_pocketsphinx_set_string(ps, "-fsg", NULL);
         gst_pocketsphinx_set_string(ps, "-allphone", NULL);
+        gst_pocketsphinx_set_string(ps, "-jsgf", NULL);
         gst_pocketsphinx_set_string(ps, "-kws", value);
+        break;
+    case PROP_JSGF_FILE:
+        /* FSG and LM are mutually exclusive. */
+        gst_pocketsphinx_set_string(ps, "-lm", NULL);
+        gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
+        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "-allphone", NULL);
+        gst_pocketsphinx_set_string(ps, "-kws", NULL);
+        gst_pocketsphinx_set_string(ps, "-jsgf", value);
         break;
     case PROP_FWDFLAT:
         gst_pocketsphinx_set_boolean(ps, "-fwdflat", value);
@@ -464,6 +485,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         gst_pocketsphinx_set_string(ps, "-lm", NULL);
         gst_pocketsphinx_set_string(ps, "-allphone", NULL);
         gst_pocketsphinx_set_string(ps, "-kws", NULL);
+        gst_pocketsphinx_set_string(ps, "-jsgf", NULL);
         gst_pocketsphinx_set_string(ps, "-lmname", value);
 
         /**
@@ -522,6 +544,9 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
         break;
     case PROP_KWS_FILE:
         g_value_set_string(value, cmd_ln_str_r(ps->config, "-kws"));
+        break;
+    case PROP_JSGF_FILE:
+        g_value_set_string(value, cmd_ln_str_r(ps->config, "-jsgf"));
         break;
     case PROP_FWDFLAT:
         g_value_set_boolean(value, cmd_ln_boolean_r(ps->config, "-fwdflat"));
