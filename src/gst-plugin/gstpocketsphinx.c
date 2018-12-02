@@ -262,6 +262,12 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                              NULL,
                              G_PARAM_READWRITE));
     g_object_class_install_property
+        (gobject_class, PROP_MLLR_FILE,
+         g_param_spec_string("mllr", "MLLR transformation file",
+                             "Transformation to apply to means and variances",
+                             NULL,
+                             G_PARAM_READWRITE));
+    g_object_class_install_property
         (gobject_class, PROP_FWDFLAT,
          g_param_spec_boolean("fwdflat", "Flat Lexicon Search",
                               "Enable Flat Lexicon Search",
