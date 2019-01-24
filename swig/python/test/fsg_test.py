@@ -2,8 +2,8 @@
 
 import sys
 
-from sphinxbase.sphinxbase import LogMath
-from sphinxbase.sphinxbase import FsgModel
+from sphinxbase import LogMath
+from sphinxbase import FsgModel
 
 lmath = LogMath()
 fsg = FsgModel("simple_grammar", lmath, 1.0, 10)

@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 import sys, os
-from pocketsphinx.pocketsphinx import *
-from sphinxbase.sphinxbase import *
+from pocketsphinx import *
+from sphinxbase import *
 
 
 modeldir = "../../../model"
