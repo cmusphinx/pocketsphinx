@@ -42,6 +42,9 @@
 #ifndef __PS_LATTICE_INTERNAL_H__
 #define __PS_LATTICE_INTERNAL_H__
 
+/* Local headers. */
+#include "pocketsphinx_internal.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
