@@ -61,6 +61,13 @@
 #include "tmat.h"
 #include "hmm.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /**
  * States in utterance processing.
  */
@@ -462,5 +469,9 @@ void acmod_set_rawdata_size(acmod_t *acmod, int32 size);
  * Retrieves the raw data collected during utterance decoding
  */
 void acmod_get_rawdata(acmod_t *acmod, int16 **buffer, int32 *size);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* __ACMOD_H__ */

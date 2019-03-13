@@ -46,6 +46,13 @@
 #include <sphinxbase/logmath.h>
 #include <sphinxbase/fixpoint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 #define MGAU_MIXW_VERSION	"1.0"   /* Sphinx-3 file format version for mixw */
 #define MGAU_PARAM_VERSION	"1.0"   /* Sphinx-3 file format version for mean/var */
 #define NONE		-1
@@ -117,5 +124,9 @@ fast_logmath_add(logmath_t *lmath, int mlx, int mly)
 
     return r - (((uint8 *)t->table)[d]);
 }
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* __TIED_MGAU_COMMON_H__ */

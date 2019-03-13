@@ -47,6 +47,13 @@
 /* Local headers. */
 #include "ngram_search.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /**
  * Initialize N-Gram search for fwdflat decoding.
  */
@@ -77,5 +84,8 @@ int ngram_fwdflat_search(ngram_search_t *ngs, int frame_idx);
  */
 void ngram_fwdflat_finish(ngram_search_t *ngs);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* __NGRAM_SEARCH_FWDFLAT_H__ */

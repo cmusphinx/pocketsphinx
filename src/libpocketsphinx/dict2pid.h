@@ -64,6 +64,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if 0
+}
+#endif
 
 /**
  * \struct xwdssid_t
@@ -173,8 +176,7 @@ s3cipid_t* dict2pid_get_rcmap(dict2pid_t *d2p,  /**< In: a dict2pid */
     );
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
-
 
 #endif

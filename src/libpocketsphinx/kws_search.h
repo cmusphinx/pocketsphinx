@@ -48,6 +48,13 @@
 #include "kws_detections.h"
 #include "hmm.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /**
  * Segmentation "iterator" for KWS history.
  */
@@ -138,5 +145,9 @@ char const *kws_search_hyp(ps_search_t * search, int32 * out_score);
  * Get active keyphrases
  */
 char* kws_search_get_keyphrases(ps_search_t * search);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif                          /* __KWS_SEARCH_H__ */

@@ -53,6 +53,13 @@
 #include "bin_mdef.h"
 #include "ms_gauden.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 typedef struct ptm_mgau_s ptm_mgau_t;
 
 typedef struct ptm_topn_s {
@@ -99,5 +106,8 @@ int ptm_mgau_frame_eval(ps_mgau_t *s,
 int ptm_mgau_mllr_transform(ps_mgau_t *s,
                             ps_mllr_t *mllr);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /*  __PTM_MGAU_H__ */

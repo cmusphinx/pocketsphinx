@@ -52,6 +52,13 @@
 #include "fsg_history.h"
 #include "fsg_lextree.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /**
  * Segmentation "iterator" for FSG history.
  */
@@ -149,5 +156,9 @@ int fsg_search_finish(ps_search_t *search);
  * Get hypothesis string from the FSG search.
  */
 char const *fsg_search_hyp(ps_search_t *search, int32 *out_score);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

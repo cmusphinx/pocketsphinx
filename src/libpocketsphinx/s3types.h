@@ -52,6 +52,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if 0
+}
+#endif
 
 /**
  * Size definitions for more semantially meaningful units.
@@ -93,7 +96,7 @@ typedef int32		s3wid_t;	/** Dictionary word id */
 #define MAX_S3WID	((int32)0x7ffffffe)
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
 #endif

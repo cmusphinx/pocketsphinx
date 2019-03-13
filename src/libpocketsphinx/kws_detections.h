@@ -46,6 +46,13 @@
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 typedef struct kws_detection_s {
     const char* keyphrase;
     frame_idx_t sf;
@@ -72,5 +79,9 @@ void kws_detections_add(kws_detections_t *detections, const char* keyphrase, int
  * Compose hypothesis.
  */
 char* kws_detections_hyp_str(kws_detections_t *detections, int frame, int delay);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* __KWS_DETECTIONS_H__ */

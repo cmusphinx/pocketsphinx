@@ -55,6 +55,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if 0
+}
+#endif
 
 /** 
     \struct dictword_t
@@ -204,7 +207,7 @@ void dict_report(dict_t *d /**< A dictionary structure */
     );
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
 #endif

@@ -53,6 +53,13 @@
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /**
  * Lexical tree node data type.
  *
@@ -430,5 +437,9 @@ int32 ngram_search_exit_score(ngram_search_t *ngs, bptbl_t *pbe, int rcphone);
  * Sets the language model to use if nothing was passed in configuration
  */
 void ngram_search_set_lm(ngram_model_t *lm);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* __NGRAM_SEARCH_H__ */

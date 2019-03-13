@@ -47,6 +47,13 @@
 /* Local headers. */
 #include "ngram_search.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /**
  * Initialize N-Gram search for fwdtree decoding.
  */
@@ -79,5 +86,8 @@ int ngram_fwdtree_search(ngram_search_t *ngs, int frame_idx);
  */
 void ngram_fwdtree_finish(ngram_search_t *ngs);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* __NGRAM_SEARCH_FWDTREE_H__ */

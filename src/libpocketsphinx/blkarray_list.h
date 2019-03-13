@@ -68,6 +68,12 @@
 
 #include <sphinxbase/prim_type.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
 
 /*
  * For maintaining a (conceptual) "list" of pointers to arbitrary data.
@@ -135,5 +141,9 @@ void blkarray_list_reset (blkarray_list_t *);
 
 /* Gets n-th element of the array list */
 void * blkarray_list_get(blkarray_list_t *, int32 n);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

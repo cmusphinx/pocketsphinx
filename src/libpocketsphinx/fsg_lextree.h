@@ -48,6 +48,13 @@
 #include "dict.h"
 #include "dict2pid.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /*
  * Compile-time constant determining the size of the
  * bitvector fsg_pnode_t.fsg_pnode_ctxt_t.bv.  (See below.)
@@ -251,5 +258,9 @@ void fsg_pnode_add_all_ctxt(fsg_pnode_ctxt_t *ctxt);
  *  Generic variant for arbitrary size
  */
 uint32 fsg_pnode_ctxt_sub_generic(fsg_pnode_ctxt_t *src, fsg_pnode_ctxt_t *sub);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -60,6 +60,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if 0
+}
+#endif
 
 /** \file mdef.h
  * \brief Model definition 
@@ -265,7 +268,7 @@ void mdef_free (mdef_t *mdef /**< In : The model definition*/
 
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
 #endif

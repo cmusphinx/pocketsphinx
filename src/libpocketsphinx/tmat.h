@@ -46,6 +46,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if 0
+}
+#endif
 
 /**
  * \struct tmat_t
@@ -92,7 +95,7 @@ void tmat_report(tmat_t *t /**< In: transition matrix*/
     );
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
 #endif

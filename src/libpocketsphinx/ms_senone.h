@@ -63,6 +63,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if 0
+}
+#endif
 
 typedef uint8 senprob_t;	/**< Senone logs3-probs, truncated to 8 bits */
 
@@ -125,7 +128,7 @@ int32 senone_eval (senone_t *s, int id,		/**< In: senone for which score desired
     );
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
 #endif
