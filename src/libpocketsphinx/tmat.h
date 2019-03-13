@@ -52,7 +52,7 @@ extern "C" {
  * \brief Transition matrix data structure.  All phone HMMs are assumed to have the same
  * topology.
  */
-typedef struct {
+typedef struct tmat_s {
     uint8 ***tp;	/**< The transition matrices; kept in the same scale as acoustic scores;
 			   tp[tmatid][from-state][to-state] */
     int16 n_tmat;	/**< Number matrices */

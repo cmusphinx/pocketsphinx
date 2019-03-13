@@ -73,7 +73,7 @@ typedef uint8 senprob_t;	/**< Senone logs3-probs, truncated to 8 bits */
  * 8-bit senone PDF structure.  Senone pdf values are normalized, floored, converted to
  * logs3 domain, and finally truncated to 8 bits precision to conserve memory space.
  */
-typedef struct {
+typedef struct senone_s {
     senprob_t ***pdf;		/**< gaussian density mixture weights, organized two possible
                                    ways depending on n_gauden:
                                    if (n_gauden > 1): pdf[sen][feat][codeword].  Not an

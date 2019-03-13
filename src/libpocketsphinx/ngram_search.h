@@ -148,14 +148,14 @@ typedef struct lastphn_cand_s {
  * just the first time and cache it for future occurrences.  Structure for such
  * a cache.
  */
-typedef struct {
+typedef struct last_ltrans_s {
     int32 sf;                   /* Start frame */
     int32 dscr;                 /* Delta-score upon entering last phone */
     int32 bp;                   /* Best BP */
 } last_ltrans_t;
 
 #define CAND_SF_ALLOCSIZE	32
-typedef struct {
+typedef struct cand_sf_s {
     int32 bp_ef;
     int32 cand;
 } cand_sf_t;

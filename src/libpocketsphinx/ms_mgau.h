@@ -111,7 +111,7 @@
     \brief Multi-stream mixture gaussian. It is not necessary to be continr
 */
 
-typedef struct {
+typedef struct ms_mgau_model_s {
     ps_mgau_t base;
     gauden_t* g;   /**< The codebook */
     senone_t* s;   /**< The senone */

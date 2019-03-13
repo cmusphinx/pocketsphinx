@@ -57,7 +57,7 @@
  */
 #define FSG_PNODE_CTXT_BVSZ	4
 
-typedef struct {
+typedef struct fsg_pnode_ctxt_s {
     uint32 bv[FSG_PNODE_CTXT_BVSZ];
 } fsg_pnode_ctxt_t;
 

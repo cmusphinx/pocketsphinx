@@ -60,7 +60,7 @@ extern "C" {
     \struct dictword_t
     \brief a structure for one dictionary word. 
 */
-typedef struct {
+typedef struct dictword_s {
     char *word;		/**< Ascii word string */
     s3cipid_t *ciphone;	/**< Pronunciation */
     int32 pronlen;	/**< Pronunciation length */
@@ -73,7 +73,7 @@ typedef struct {
     \brief a structure for a dictionary. 
 */
 
-typedef struct {
+typedef struct dict_s {
     int refcnt;
     bin_mdef_t *mdef;	/**< Model definition used for phone IDs; NULL if none used */
     dictword_t *word;	/**< Array of entries in dictionary */
