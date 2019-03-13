@@ -42,6 +42,16 @@
 #ifndef __PS_LATTICE_INTERNAL_H__
 #define __PS_LATTICE_INTERNAL_H__
 
+/* Local headers. */
+#include "pocketsphinx_internal.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /**
  * Linked list of DAG link pointers.
  *
@@ -278,5 +288,8 @@ char const *ps_astar_hyp(ps_astar_t *nbest, ps_latpath_t *path);
  */
 ps_seg_t *ps_astar_seg_iter(ps_astar_t *astar, ps_latpath_t *path, float32 lwf);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* __PS_LATTICE_INTERNAL_H__ */

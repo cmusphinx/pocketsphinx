@@ -63,12 +63,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if 0
+}
+#endif
 
 /**
  * \struct gauden_dist_t
  * \brief Structure to store distance (density) values for a given input observation wrt density values in some given codebook.
  */
-typedef struct {
+typedef struct gauden_dist_s {
     int32 id;		/**< Index of codeword (gaussian density) */
     mfcc_t dist;		/**< Density value for input observation wrt above codeword;
                            NOTE: result in logs3 domain, but var_t used for speed */
@@ -79,7 +82,7 @@ typedef struct {
  * \struct gauden_t
  * \brief Multivariate gaussian mixture density parameters
  */
-typedef struct {
+typedef struct gauden_s {
     mfcc_t ****mean;	/**< mean[codebook][feature][codeword] vector */
     mfcc_t ****var;	/**< like mean; diagonal covariance vector only */
     mfcc_t ***det;	/**< log(determinant) for each variance vector;
@@ -144,7 +147,7 @@ void gauden_dump_ind (const gauden_t *g,  /**< In: Gaussian distribution g*/
     );
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
 #endif /* GAUDEN_H */ 

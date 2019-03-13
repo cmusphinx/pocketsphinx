@@ -64,13 +64,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if 0
+}
+#endif
 
 /**
  * \struct xwdssid_t
  * \brief cross word triphone model structure 
  */
 
-typedef struct {
+typedef struct xwdssid_s {
     s3ssid_t  *ssid;	/**< Senone Sequence ID list for all context ciphones */
     s3cipid_t *cimap;	/**< Index into ssid[] above for each ci phone */
     int32     n_ssid;	/**< #Unique ssid in above, compressed ssid list */
@@ -81,7 +84,7 @@ typedef struct {
    \brief Building composite triphone (as well as word internal triphones) with the dictionary. 
 */
 
-typedef struct {
+typedef struct dict2pid_s {
     int refcount;
 
     bin_mdef_t *mdef;           /**< Model definition, used to generate
@@ -173,8 +176,7 @@ s3cipid_t* dict2pid_get_rcmap(dict2pid_t *d2p,  /**< In: a dict2pid */
     );
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
-
 
 #endif

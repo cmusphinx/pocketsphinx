@@ -57,6 +57,13 @@
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /**
  * Renormalization event.
  */
@@ -98,5 +105,9 @@ ps_search_t *phone_loop_search_init(cmd_ln_t *config,
  */
 #define phone_loop_search_score(pls,ci) \
     ((pls == NULL) ? 0 : (pls->penalties[ci]))
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* __PHONE_LOOP_SEARCH_H__ */

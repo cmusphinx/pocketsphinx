@@ -47,7 +47,10 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#endif
+#if 0
+}
+#endif
 
 /* SphinxBase headers. */
 #include <sphinxbase/mmio.h>
@@ -230,7 +233,7 @@ int bin_mdef_phone_str(bin_mdef_t *m,	/**< In: Model structure being queried */
 		       char *buf);	/**< Out: On return, buf has the string */
 
 #ifdef __cplusplus
-}; /* extern "C" */
-#endif /* __cplusplus */
+} /* extern "C" */
+#endif
 
 #endif /* __BIN_MDEF_H__ */

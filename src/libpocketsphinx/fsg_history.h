@@ -84,6 +84,13 @@
 #include "fsg_lextree.h"
 #include "dict.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /*
  * The Viterbi history structure.  This is a tree, with the root at the
  * FSG start state, at frame 0, with a null predecessor.
@@ -212,4 +219,8 @@ void fsg_history_free (fsg_history_t *h);
 /* Print the entire history */
 void fsg_history_print(fsg_history_t *h, dict_t *dict);
 				     
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #endif

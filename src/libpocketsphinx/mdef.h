@@ -60,6 +60,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if 0
+}
+#endif
 
 /** \file mdef.h
  * \brief Model definition 
@@ -84,7 +87,7 @@ typedef enum {
    \struct ciphone_t
    \brief CI phone information 
 */
-typedef struct {
+typedef struct ciphone_s {
     char *name;                 /**< The name of the CI phone */
     int32 filler;		/**< Whether a filler phone; if so, can be substituted by
 				   silence phone in left or right context position */
@@ -94,7 +97,7 @@ typedef struct {
  * \struct phone_t
  * \brief Triphone information, including base phones as a subset.  For the latter, lc, rc and wpos are non-existent.
  */
-typedef struct {
+typedef struct phone_s {
     int32 ssid;			/**< State sequence (or senone sequence) ID, considering the
 				   n_emit_state senone-ids are a unit.  The senone sequences
 				   themselves are in a separate table */
@@ -132,7 +135,7 @@ typedef struct ph_lc_s {
    \struct mdef_t
    \brief strcture for storing the model definition. 
 */
-typedef struct {
+typedef struct mdef_s {
     int32 n_ciphone;		/**< number basephones actually present */
     int32 n_phone;		/**< number basephones + number triphones actually present */
     int32 n_emit_state;		/**< number emitting states per phone */
@@ -265,7 +268,7 @@ void mdef_free (mdef_t *mdef /**< In : The model definition*/
 
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
 #endif
