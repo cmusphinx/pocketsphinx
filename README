@@ -46,7 +46,7 @@ In a unix-like environment (such as linux, solaris etc):
    $ sudo make install
    ```
 
-XCode Installation (for iPhone)
+Xcode Installation (for iPhone)
 ------------------------------------------------------------------------------
 
 Pocketsphinx uses the standard unix autogen system, you can build pocketsphinx
