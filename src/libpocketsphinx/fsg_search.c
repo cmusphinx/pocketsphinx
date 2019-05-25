@@ -69,6 +69,7 @@
 /* Turn this on for detailed debugging dump */
 #define __FSG_DBG__		0
 #define __FSG_DBG_CHAN__	0
+#define __FSG_ALLOW_BESTPATH__	0
 
 static ps_seg_t *fsg_search_seg_iter(ps_search_t *search);
 static ps_lattice_t *fsg_search_lattice(ps_search_t *search);
@@ -238,6 +239,13 @@ fsg_search_init(const char *name,
     if (cmd_ln_boolean_r(config, "-fsgusealtpron") &&
         !fsg_model_has_alt(fsg))
         fsg_search_add_altpron(fsgs, fsg);
+
+#if __FSG_ALLOW_BESTPATH__
+    /* If bestpath is enabled, hypotheses are generated from a ps_lattice_t.
+     * This is not allowed by default because it tends to be very slow. */
+    if (cmd_ln_boolean_r(config, "-bestpath"))
+        fsgs->bestpath = TRUE;
+#endif
 
     if (fsg_search_reinit(ps_search_base(fsgs),
                           ps_search_dict(fsgs),
@@ -985,7 +993,8 @@ fsg_search_hyp(ps_search_t *search, int32 *out_score)
         return NULL;
     }
 
-    /* If bestpath is enabled and the utterance is complete, then run it. */
+    /* If bestpath is enabled and the utterance is complete, then run it.
+     * Note that setting bestpath in fsg_search_init is disabled by default. */
     if (fsgs->bestpath && fsgs->final) {
         ps_lattice_t *dag;
         ps_latlink_t *link;
@@ -1120,7 +1129,8 @@ fsg_search_seg_iter(ps_search_t *search)
     if (bpidx <= 0)
         return NULL;
 
-    /* If bestpath is enabled and the utterance is complete, then run it. */
+    /* If bestpath is enabled and the utterance is complete, then run it.
+     * Note that setting bestpath in fsg_search_init is disabled by default. */
     if (fsgs->bestpath && fsgs->final) {
         ps_lattice_t *dag;
         ps_latlink_t *link;
@@ -1172,7 +1182,8 @@ fsg_search_prob(ps_search_t *search)
 {
     fsg_search_t *fsgs = (fsg_search_t *)search;
 
-    /* If bestpath is enabled and the utterance is complete, then run it. */
+    /* If bestpath is enabled and the utterance is complete, then run it.
+     * Note that setting bestpath in fsg_search_init is disabled by default. */
     if (fsgs->bestpath && fsgs->final) {
         ps_lattice_t *dag;
         ps_latlink_t *link;
