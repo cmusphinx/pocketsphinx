@@ -53,6 +53,13 @@
 #include "bin_mdef.h"
 #include "ms_gauden.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 typedef struct vqFeature_s vqFeature_t;
 
 typedef struct s2_semi_mgau_s s2_semi_mgau_t;
@@ -94,5 +101,8 @@ int s2_semi_mgau_frame_eval(ps_mgau_t *s,
 int s2_semi_mgau_mllr_transform(ps_mgau_t *s,
                                 ps_mllr_t *mllr);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /*  __S2_SEMI_MGAU_H__ */

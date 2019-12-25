@@ -55,6 +55,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if 0
+}
+#endif
 
 /** 
  * Type for frame index values. Used in HMM indexes and 
@@ -300,7 +303,7 @@ void hmm_dump(hmm_t *h,  /**< In/Out: HMM being updated */
 
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
 
 #endif /* __HMM_H__ */

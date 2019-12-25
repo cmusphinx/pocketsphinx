@@ -51,6 +51,13 @@
 #include "dict2pid.h"
 #include "hmm.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 #define PS_ALIGNMENT_NONE ((uint16)0xffff)
 
 struct ps_alignment_entry_s {
@@ -204,5 +211,9 @@ ps_alignment_iter_t *ps_alignment_iter_down(ps_alignment_iter_t *itor);
  * Release an iterator before completing all iterations.
  */
 int ps_alignment_iter_free(ps_alignment_iter_t *itor);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* __PS_ALIGNMENT_H__ */

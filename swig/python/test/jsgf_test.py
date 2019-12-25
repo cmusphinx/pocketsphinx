@@ -3,8 +3,8 @@
 from os import environ, path
 from sys import stdout
 
-from pocketsphinx.pocketsphinx import *
-from sphinxbase.sphinxbase import *
+from pocketsphinx import *
+from sphinxbase import *
 
 MODELDIR = "../../../model"
 DATADIR = "../../../test/data"

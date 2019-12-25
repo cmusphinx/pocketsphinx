@@ -55,6 +55,13 @@
 /* SphinxBase headers. */
 #include <sphinxbase/prim_type.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 typedef float32 *vector_t;
 
 /*
@@ -85,5 +92,9 @@ void vector_print(FILE *fp, vector_t v, int32 dim);
 /* Return TRUE iff given vector is all 0.0 */
 int32 vector_is_zero (float32 *vec,	/* In: Vector to be checked */
 		      int32 len);	/* In: Length of above vector */
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* VECTOR_H */ 

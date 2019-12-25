@@ -107,11 +107,18 @@
 #include "ms_gauden.h"
 #include "ms_senone.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /** \struct ms_mgau_t
     \brief Multi-stream mixture gaussian. It is not necessary to be continr
 */
 
-typedef struct {
+typedef struct ms_mgau_model_s {
     ps_mgau_t base;
     gauden_t* g;   /**< The codebook */
     senone_t* s;   /**< The senone */
@@ -139,5 +146,8 @@ int32 ms_cont_mgau_frame_eval(ps_mgau_t * msg,
 int32 ms_mgau_mllr_transform(ps_mgau_t *s,
                              ps_mllr_t *mllr);
 
-#endif /* _LIBFBS_MS_CONT_MGAU_H_*/
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#endif /* _LIBFBS_MS_CONT_MGAU_H_*/

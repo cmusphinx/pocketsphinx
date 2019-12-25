@@ -53,6 +53,13 @@
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /**
  * Lexical tree node data type.
  *
@@ -148,14 +155,14 @@ typedef struct lastphn_cand_s {
  * just the first time and cache it for future occurrences.  Structure for such
  * a cache.
  */
-typedef struct {
+typedef struct last_ltrans_s {
     int32 sf;                   /* Start frame */
     int32 dscr;                 /* Delta-score upon entering last phone */
     int32 bp;                   /* Best BP */
 } last_ltrans_t;
 
 #define CAND_SF_ALLOCSIZE	32
-typedef struct {
+typedef struct cand_sf_s {
     int32 bp_ef;
     int32 cand;
 } cand_sf_t;
@@ -430,5 +437,9 @@ int32 ngram_search_exit_score(ngram_search_t *ngs, bptbl_t *pbe, int rcphone);
  * Sets the language model to use if nothing was passed in configuration
  */
 void ngram_search_set_lm(ngram_model_t *lm);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* __NGRAM_SEARCH_H__ */

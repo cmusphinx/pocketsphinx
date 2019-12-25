@@ -52,6 +52,13 @@
 #include "blkarray_list.h"
 #include "hmm.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#if 0
+}
+#endif
+
 /**
  * Models a single unique <senone-sequence, tmat> pair.
  * Can represent several different triphones, but all with the same parent basephone.
@@ -175,5 +182,9 @@ int allphone_search_finish(ps_search_t * search);
  * Get hypothesis string from the allphone search.
  */
 char const *allphone_search_hyp(ps_search_t * search, int32 * out_score);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif                          /* __ALLPHONE_SEARCH_H__ */
