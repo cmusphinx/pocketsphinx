@@ -131,6 +131,7 @@ bin_mdef_read_text(cmd_ln_t *config, const char *filename)
             /* FIXME: there should be a solution to this, actually. */
             E_ERROR("Phone names are not in sorted order, sorry.");
             bin_mdef_free(bmdef);
+            mdef_free(mdef);
             return NULL;
         }
     }
