@@ -18,7 +18,7 @@ LT_INIT
 dnl
 dnl Check for pkgconfig
 dnl
-AC_CHECK_PROG(HAVE_PKGCONFIG, pkg-config, yes, no)
+PKG_PROG_PKG_CONFIG
 
 dnl
 dnl Check for Doxygen, and build dox if present
@@ -117,7 +117,7 @@ dnl
 if test x$sphinxbase = x || test x$sphinxbase = xauto; then
    sphinxbase=
 
-   if test "x$HAVE_PKGCONFIG" = "xno"; then
+   if test "x$PKG_CONFIG" = "x"; then
       SPHINXBASE_CFLAGS = "-I/usr/include/sphinxbase -I/usr/local/include/sphinxbase"
       SPHINXBASE_LIBS = "-lsphinxbase"
       SPHINXBASE_PREFIX="/usr/local"
@@ -128,7 +128,7 @@ if test x$sphinxbase = x || test x$sphinxbase = xauto; then
 Make sure that you have installed it and that the
 PKG_CONFIG_PATH environment variable is set correctly, if
 it was installed in a non-standard prefix.])])
-      SPHINXBASE_PREFIX=`pkg-config --variable=prefix sphinxbase`
+      SPHINXBASE_PREFIX=`$PKG_CONFIG --variable=prefix sphinxbase`
    fi
    
    LIBS="$LIBS $SPHINXBASE_LIBS"
