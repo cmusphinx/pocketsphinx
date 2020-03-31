@@ -61,6 +61,7 @@
 #include "s2_semi_mgau.h"
 #include "ptm_mgau.h"
 #include "ms_mgau.h"
+#include "nn_mgau.h"
 
 static int32 acmod_process_mfcbuf(acmod_t *acmod);
 
@@ -102,8 +103,12 @@ acmod_init_am(acmod_t *acmod)
         E_ERROR("No mean/var/tmat files specified\n");
         return -1;
     }
-
-    if (cmd_ln_str_r(acmod->config, "_senmgau")) {
+    if (cmd_ln_str_r(acmod->config, "-nnmgau")) {
+        acmod->mgau = nn_mgau_init(acmod, acmod->mdef);
+        if (acmod->mgau == NULL)
+            return -1;
+    }
+    else if (cmd_ln_str_r(acmod->config, "_senmgau")) {
         E_INFO("Using general multi-stream GMM computation\n");
         acmod->mgau = ms_mgau_init(acmod, acmod->lmath, acmod->mdef);
         if (acmod->mgau == NULL)
@@ -538,7 +543,7 @@ acmod_process_full_raw(acmod_t *acmod,
 
     /* Write to logging file if any. */
     if (*inout_n_samps + acmod->rawdata_pos < acmod->rawdata_size) {
-	memcpy(acmod->rawdata + acmod->rawdata_pos, *inout_raw, *inout_n_samps * sizeof(int16));
+    	memcpy(acmod->rawdata + acmod->rawdata_pos, *inout_raw, *inout_n_samps * sizeof(int16));
 	acmod->rawdata_pos += *inout_n_samps;
     }
     if (acmod->rawfh)
@@ -634,16 +639,15 @@ acmod_process_raw(acmod_t *acmod,
             int32 ncep1 = acmod->n_mfc_alloc - inptr;
             if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                                   acmod->mfc_buf + inptr, &ncep1, &out_frameidx) < 0)
-                return -1;
-	    
-	    if (out_frameidx > 0)
-		acmod->utt_start_frame = out_frameidx;
+                return -1;      
+        if (out_frameidx > 0)
+	    acmod->utt_start_frame = out_frameidx;
 
-    	    processed_samples = *inout_raw - prev_audio_inptr;
-	    if (processed_samples + acmod->rawdata_pos < acmod->rawdata_size) {
-		memcpy(acmod->rawdata + acmod->rawdata_pos, prev_audio_inptr, processed_samples * sizeof(int16));
-		acmod->rawdata_pos += processed_samples;
-	    }
+            processed_samples = *inout_raw - prev_audio_inptr;
+        if (processed_samples + acmod->rawdata_pos < acmod->rawdata_size) {
+            memcpy(acmod->rawdata + acmod->rawdata_pos, prev_audio_inptr, processed_samples * sizeof(int16));
+            acmod->rawdata_pos += processed_samples;
+        }
             /* Write to logging file if any. */
             if (acmod->rawfh) {
                 fwrite(prev_audio_inptr, sizeof(int16),
@@ -664,7 +668,7 @@ acmod_process_raw(acmod_t *acmod,
             inptr += ncep1;
             inptr %= acmod->n_mfc_alloc;
             if (ncep1 == 0)
-        	goto alldone;
+            	goto alldone;
         }
 
         assert(inptr + ncep <= acmod->n_mfc_alloc);        
@@ -672,15 +676,15 @@ acmod_process_raw(acmod_t *acmod,
                               acmod->mfc_buf + inptr, &ncep, &out_frameidx) < 0)
             return -1;
 
-	if (out_frameidx > 0)
-	    acmod->utt_start_frame = out_frameidx;
+        if (out_frameidx > 0)
+            acmod->utt_start_frame = out_frameidx;
 
-	
-	processed_samples = *inout_raw - prev_audio_inptr;
-	if (processed_samples + acmod->rawdata_pos < acmod->rawdata_size) {
-	    memcpy(acmod->rawdata + acmod->rawdata_pos, prev_audio_inptr, processed_samples * sizeof(int16));
-	    acmod->rawdata_pos += processed_samples;
-	}
+    
+        processed_samples = *inout_raw - prev_audio_inptr;
+        if (processed_samples + acmod->rawdata_pos < acmod->rawdata_size) {
+            memcpy(acmod->rawdata + acmod->rawdata_pos, prev_audio_inptr, processed_samples * sizeof(int16));
+            acmod->rawdata_pos += processed_samples;
+    }
         if (acmod->rawfh) {
             fwrite(prev_audio_inptr, sizeof(int16),
                    processed_samples, acmod->rawfh);
@@ -1319,12 +1323,12 @@ acmod_start_stream(acmod_t *acmod)
 
 void
 acmod_set_rawdata_size(acmod_t *acmod, int32 size)
-{	
+{   
     assert(size >= 0);
     acmod->rawdata_size = size;
     if (acmod->rawdata_size > 0) {
-	ckd_free(acmod->rawdata);
-	acmod->rawdata = ckd_calloc(size, sizeof(int16));
+       ckd_free(acmod->rawdata);
+       acmod->rawdata = ckd_calloc(size, sizeof(int16));
     }
 }
 
@@ -1332,10 +1336,9 @@ void
 acmod_get_rawdata(acmod_t *acmod, int16 **buffer, int32 *size)
 {
     if (buffer) {
-	*buffer = acmod->rawdata;
+       *buffer = acmod->rawdata;
     }
     if (size) {
-	*size = acmod->rawdata_pos;
+       *size = acmod->rawdata_pos;
     }
 }
-

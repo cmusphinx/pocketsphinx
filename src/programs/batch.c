@@ -190,7 +190,22 @@ static const arg_t ps_args_def[] = {
       ARG_INT32,
       "0",
       "Number of N-best hypotheses to write to -nbestdir (0 for no N-best)" },
-
+    { "-nnmgau",
+      ARG_STRING,
+      NULL,
+      "Keras DNN model for generating posteriors" },
+    { "-nnport",
+      ARG_INT32,
+      "9000",
+      "Port number to use for the Keras DNN model server" },
+    { "-nnacwt",
+      ARG_STRING,
+      "0.1",
+      "Acoustic weight to scale the NN scores by" },
+    { "-cudaid",
+      ARG_INT32,
+      "-1",
+      "ID for the CUDA device to use for NN-based decoding. CPU will be used by default." },
     CMDLN_EMPTY_OPTION
 };
 

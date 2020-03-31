@@ -1,0 +1,5 @@
+*.log
+*.Po
+*.m4
+*Makefile.in
+*Makefile
