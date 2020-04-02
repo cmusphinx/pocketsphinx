@@ -1,7 +1,27 @@
 CFLAGS := -g -Wall -DPIC -fPIC
 CPPFLAGS := -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/darwin -I$(JAVA_HOME)/include/linux -Wno-unused-function `pkg-config --cflags sphinxbase pocketsphinx`
 
-all: libpocketsphinx_jni.so
+# Dynamic libraries are named differently on Linux and MacOS.
+# Set DYLIB to the one we want for this platform.
+UNAME := $(shell uname)
+ifeq ($(UNAME), Linux)
+DYLIB=libpocketsphinx_jni.so
+else
+ifeq ($(UNAME), Darwin)
+DYLIB=libpocketsphinx_jni.dylib
+endif
+endif
+
+
+all: $(DYLIB) jar
+
+jar: build/pocketsphinx.jar
+
+build/pocketsphinx.jar: $(DYLIB)
+	mkdir -p build/edu/cmu/pocketsphinx
+	javac edu/cmu/pocketsphinx/*.java
+	mv edu/cmu/pocketsphinx/*.class build/edu/cmu/pocketsphinx
+	cd build; jar cf pocketsphinx.jar edu
 
 libpocketsphinx_jni.dylib: pocketsphinx_wrap.o sphinxbase_wrap.o
 	$(CC) -dynamiclib -o $@ pocketsphinx_wrap.o sphinxbase_wrap.o `pkg-config --libs sphinxbase pocketsphinx`
@@ -23,8 +43,9 @@ sphinxbase_wrap.c: ../../../sphinxbase/swig/sphinxbase.i
 		-outdir edu/cmu/pocketsphinx -o $@ $<
 
 clean:
-	$(RM) *.so *_wrap.c *_wrap.o test/*.class
+	$(RM) *.so *.dylib *_wrap.c *_wrap.o test/*.class
 	$(RM) -r edu
+	$(RM) -r build
 
 run:
 	javac test/*.java edu/cmu/pocketsphinx/*.java
