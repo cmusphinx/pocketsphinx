@@ -40,7 +40,7 @@
 /**
  * SECTION:element-pocketsphix
  *
- * The element runs the speech recohgnition on incomming audio buffers and
+ * The element runs the speech recognition on incoming audio buffers and
  * generates an element messages named <classname>&quot;pocketsphinx&quot;</classname>
  * for each hypothesis and one for the final result. The message's structure 
  * contains these fields:

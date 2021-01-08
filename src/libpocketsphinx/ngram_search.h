@@ -211,7 +211,7 @@ struct ngram_search_s {
     uint8 fwdflat;
     uint8 bestpath;
 
-    /* State of procesing. */
+    /* State of processing. */
     uint8 done;
 
     /* Allocators */

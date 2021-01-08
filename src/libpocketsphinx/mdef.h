@@ -133,7 +133,7 @@ typedef struct ph_lc_s {
 /** The main model definition structure */
 /**
    \struct mdef_t
-   \brief strcture for storing the model definition. 
+   \brief structure for storing the model definition. 
 */
 typedef struct mdef_s {
     int32 n_ciphone;		/**< number basephones actually present */
