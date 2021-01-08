@@ -90,7 +90,7 @@ ps_default_search_args(cmd_ln_t *);
  *
  * @note The decoder retains ownership of the pointer
  * <code>config</code>, so if you are not going to use it
- * elsewere, you can free it.
+ * elsewhere, you can free it.
  *
  * @param config a command-line structure, as created by
  * cmd_ln_parse_r() or cmd_ln_parse_file_r().

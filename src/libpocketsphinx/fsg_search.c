@@ -195,7 +195,7 @@ fsg_search_init(const char *name,
         return NULL;
     }
 
-    /* Intialize the search history object */
+    /* Initialize the search history object */
     fsgs->history = fsg_history_init(NULL, dict);
     fsgs->frame = -1;
 

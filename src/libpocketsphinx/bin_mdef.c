@@ -584,7 +584,7 @@ bin_mdef_write(bin_mdef_t * m, const char *filename)
     else {
         int32 n;
 
-        /* Calcluate size of sseq */
+        /* Calculate size of sseq */
         n = 0;
         for (i = 0; i < m->n_sseq; ++i)
             n += m->sseq_len[i];

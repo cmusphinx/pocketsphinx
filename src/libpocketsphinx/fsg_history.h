@@ -157,7 +157,7 @@ typedef struct fsg_history_s {
 
 
 /*
- * One-time intialization: Allocate and return an initially empty history
+ * One-time initialization: Allocate and return an initially empty history
  * module.
  */
 fsg_history_t *fsg_history_init(fsg_model_t *fsg, dict_t *dict);

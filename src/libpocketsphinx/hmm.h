@@ -143,7 +143,7 @@ typedef int32 frame_idx_t;
  *
  * We assume that the initial state is emitting and that the
  * transition matrix is n_emit_state x (n_emit_state+1), where the
- * extra destination dimension correponds to the non-emitting final or
+ * extra destination dimension corresponds to the non-emitting final or
  * exit state.
  */
 typedef struct hmm_context_s {
