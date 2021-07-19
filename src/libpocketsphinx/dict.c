@@ -191,7 +191,7 @@ dict_read(FILE * fp, dict_t * d)
         for (i = 1; i < nwd; i++) {
             p[i - 1] = dict_ciphone_id(d, wptr[i]);
             if (NOT_S3CIPID(p[i - 1])) {
-                E_ERROR("Line %d: Phone '%s' is mising in the acoustic model; word '%s' ignored\n",
+                E_ERROR("Line %d: Phone '%s' is missing in the acoustic model; word '%s' ignored\n",
                         lineno, wptr[i], wptr[0]);
                 break;
             }

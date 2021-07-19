@@ -605,7 +605,7 @@ ps_lattice_read(ps_decoder_t *ps,
     if (ps) {
         /* Build links around silence and filler words, since they do
          * not exist in the language model.  FIXME: This is
-         * potentially buggy, as we already do this before outputing
+         * potentially buggy, as we already do this before outputting
          * lattices. */
         pip = logmath_log(dag->lmath, cmd_ln_float32_r(ps->config, "-pip"));
         silpen = pip + logmath_log(dag->lmath,

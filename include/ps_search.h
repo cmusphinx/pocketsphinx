@@ -33,7 +33,7 @@
  */
 /**
  * @file ps_search.h User can configure several "search" objects with
- * different grammars and langauge models and switch them in runtime to
+ * different grammars and language models and switch them in runtime to
  * provide interactive experience for the user.
  *
  * There are different possible search modes:
@@ -97,7 +97,7 @@ POCKETSPHINX_EXPORT
 int ps_set_search(ps_decoder_t *ps, const char *name);
 
 /**
- * Returns name of curent search in decoder
+ * Returns name of current search in decoder
  *
  * @see ps_set_search
  */
