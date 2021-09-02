@@ -69,7 +69,7 @@
 /* Turn this on for detailed debugging dump */
 #define __FSG_DBG__		0
 #define __FSG_DBG_CHAN__	0
-#define __FSG_ALLOW_BESTPATH__	0
+#define __FSG_ALLOW_BESTPATH__	1
 
 static ps_seg_t *fsg_search_seg_iter(ps_search_t *search);
 static ps_lattice_t *fsg_search_lattice(ps_search_t *search);
