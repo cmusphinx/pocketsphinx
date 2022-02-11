@@ -96,9 +96,7 @@ typedef ngram_model_t NGramModelSet;
 %begin %{
 
 #ifndef __cplusplus
-typedef int bool;
-#define true 1
-#define false 0
+#include <stdbool.h>
 #endif
 
 #include <pocketsphinx.h>
