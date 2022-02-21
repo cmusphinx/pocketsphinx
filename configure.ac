@@ -32,7 +32,7 @@ AC_ARG_WITH(python,
                  [Enable Python extension, built with swig, enabled by default]))
 
 if test "x${with_python}" != "xno"; then
-  AM_PATH_PYTHON(2.6, [], [AC_MSG_ERROR([python not found])])
+  AM_PATH_PYTHON(3.0, [], [AC_MSG_ERROR([python not found])])
   AX_PYTHON_DEVEL()
   AX_PKG_SWIG(2.0, [], [AC_MSG_ERROR([swig not found])])
 fi
