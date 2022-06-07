@@ -1,0 +1,72 @@
+.TH SPHINX_PITCH 1 "2007-05-12"
+.SH NAME
+sphinx_pitch \- Extract pitch from audio files
+.SH SYNOPSIS
+.B sphinx_pitch
+[\fI options \fR]...
+.SH DESCRIPTION
+.PP
+This program reads audio files and analyzes them for pitch and voicing.
+.TP
+.B \-c
+file for batch processing
+.TP
+.B \-di
+directory, input file names are relative to this, if defined
+.TP
+.B \-do
+directory, output files are relative to this
+.TP
+.B \-ei
+extension to be applied to all input files
+.TP
+.B \-eo
+extension to be applied to all output files
+.TP
+.B \-flen
+Number of seconds in each analysis frame (needs to be greater than twice the longest period you wish to detect - to detect down to 80Hz you need a frame length of 2.0/80 = 0.025).
+.TP
+.B \-fshift
+Frame shift: number of seconds between each analysis frame.
+.TP
+.B \-i
+audio input file
+.TP
+.B \-input_endian
+of audio data (will be determined automatically if not given)
+.TP
+.B \-mswav
+Defines input format as Microsoft Wav (RIFF)
+.TP
+.B \-nist
+Defines input format as NIST sphere
+.TP
+.B \-nskip
+If a control file was specified, the number of utterances to skip at the head of the file
+.TP
+.B \-o
+text output file (standard output will be used if not given)
+.TP
+.B \-raw
+Defines input format as raw binary data
+.TP
+.B \-runlen
+If a control file was specified, the number of utterances to process (see \fB\-nskip\fR too)
+.TP
+.B \-samprate
+Sampling rate of audio data (will be determined automatically if 0)
+.TP
+.B \-search_range
+Fraction of the best local estimate to use as a search range for smoothing.
+.TP
+.B \-smooth_window
+Number of frames on either side of the current frame to use for smoothing.
+.TP
+.B \-voice_thresh
+Threshold of normalized difference under which to search for the fundamental period.
+.SH AUTHOR
+David Huggins-Daines <dhuggins@cs.cmu.edu>
+.SH COPYRIGHT
+Copyright \(co 2007-2008 Carnegie Mellon University.  See the file
+\fICOPYING\fR included with this package for more information.
+.br

@@ -1,0 +1,45 @@
+.TH SPHINX_LM_CONVERT 1 "2010-03-18"
+.SH NAME
+sphinx_lm_convert \- Convert and manipulate language model files
+.SH SYNOPSIS
+.B sphinx_lm_convert
+[\fI options \fR]...
+.SH DESCRIPTION
+.PP
+This program converts language model files from one format to
+another.  It can also be used to change the character encoding
+of the text in a language model file and to force word strings
+to upper or lower case.
+.TP
+.B \-case
+\'lower\' or \'upper\' - case fold to lower/upper case (NOT UNICODE AWARE)
+.TP
+.B \-debug
+level for debugging messages
+.TP
+.B \-help
+Shows the usage of the tool
+.TP
+.B \-i
+language model file (required)
+.TP
+.B \-ifmt
+language model format (will guess if not specified)
+.TP
+.B \-logbase
+Base in which all log-likelihoods calculated
+.TP
+.B \-mmap
+Use memory-mapped I/O for reading binary LM files
+.TP
+.B \-o
+language model file (required)
+.TP
+.B \-ofmt
+language model file (will guess if not specified)
+.SH AUTHOR
+David Huggins-Daines <dhuggins@cs.cmu.edu>
+.SH COPYRIGHT
+Copyright \(co 2010 Carnegie Mellon University.  See the file
+\fICOPYING\fR included with this package for more information.
+.br

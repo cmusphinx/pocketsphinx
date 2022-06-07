@@ -1,0 +1,56 @@
+.TH SPHINX_LM_EVAL 1 "2008-05-12"
+.SH NAME
+sphinx_lm_eval \- Evaluate perplexity of a transcription
+.SH SYNOPSIS
+.B sphinx_lm_eval
+[\fI options \fR]...
+.SH DESCRIPTION
+.PP
+This program evaluates the perplexity of a text file according to a
+given language model.  The text file is assumed to be in transcript
+format, i.e. one utterance per line, delimited by <s> and </s>.
+.TP
+.B \-help
+Shows the usage of the tool
+.TP
+.B \-lm
+model file
+.TP
+.B \-lmctlfn
+file listing a set of language models
+.TP
+.B \-lmname
+of language model in \fB\-lmctlfn\fR to use for all utterances
+.TP
+.B \-logbase
+Base in which all log-likelihoods calculated
+.TP
+.B \-lsn
+file to evaluate
+.TP
+.B \-lw
+Language model weight
+.TP
+.B \-mmap
+Use memory-mapped I/O for reading binary LM files
+.TP
+.B \-probdef
+definition file for classes in LM
+.TP
+.B \-text
+string to evaluate	
+.TP
+.B \-uw
+Unigram probability weight (interpolated with uniform distribution)
+.TP
+.B \-verbose
+Print details of perplexity calculation
+.TP
+.B \-wip
+Word insertion probability
+.SH AUTHOR
+David Huggins-Daines <dhuggins@cs.cmu.edu>
+.SH COPYRIGHT
+Copyright \(co 2007-2008 Carnegie Mellon University.  See the file
+\fICOPYING\fR included with this package for more information.
+.br

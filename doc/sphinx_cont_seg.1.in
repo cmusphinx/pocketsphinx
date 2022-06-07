@@ -1,0 +1,19 @@
+.TH SPHINX_CONT_SEG 1 "2008-05-12"
+.SH NAME
+sphinx_cont_seg \- Segment a waveform file into non-silence regions
+.SH SYNOPSIS
+.B sphinx_cont_seg
+[\fI options \fR]...
+.SH DESCRIPTION
+.PP
+This program reads an input file and segments it into individual
+non-silence regions. It can process either file or read data from
+microphone. Use following arguments:
+.\" ### ARGUMENTS ###
+.SH AUTHOR
+Written by M. K. Ravishankar <rkm@cs.cmu.edu>.  This (rather lousy) manual page
+by David Huggins-Daines <dhuggins@cs.cmu.edu>
+.SH COPYRIGHT
+Copyright \(co 1999-2001 Carnegie Mellon University.  See the file
+\fICOPYING\fR included with this package for more information.
+.br

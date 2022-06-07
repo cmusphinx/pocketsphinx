@@ -1,0 +1,117 @@
+.TH SPHINX_CONT_SEG 1 "2008-05-12"
+.SH NAME
+sphinx_cont_seg \- Segment a waveform file into non-silence regions
+.SH SYNOPSIS
+.B sphinx_cont_seg
+[\fI options \fR]...
+.SH DESCRIPTION
+.PP
+This program reads an input file and segments it into individual
+non-silence regions. It can process either file or read data from
+microphone. Use following arguments:
+.TP
+.B \-adcdev
+of audio device to use for input.
+.TP
+.B \-alpha
+Preemphasis parameter
+.TP
+.B \-argfile
+file giving extra arguments.
+.TP
+.B \-dither
+Add 1/2-bit noise
+.TP
+.B \-doublebw
+Use double bandwidth filters (same center freq)
+.TP
+.B \-frate
+Frame rate
+.TP
+.B \-infile
+of audio file to use for input.
+.TP
+.B \-input_endian
+Endianness of input data, big or little, ignored if NIST or MS Wav
+.TP
+.B \-lifter
+Length of sin-curve for liftering, or 0 for no liftering.
+.TP
+.B \-logspec
+Write out logspectral files instead of cepstra
+.TP
+.B \-lowerf
+Lower edge of filters
+.TP
+.B \-ncep
+Number of cep coefficients
+.TP
+.B \-nfft
+Size of FFT
+.TP
+.B \-nfilt
+Number of filter banks
+.TP
+.B \-remove_dc
+Remove DC offset from each frame
+.TP
+.B \-remove_noise
+Remove noise with spectral subtraction in mel-energies
+.TP
+.B \-remove_silence
+Enables VAD, removes silence frames from processing
+.TP
+.B \-round_filters
+Round mel filter frequencies to DFT points
+.TP
+.B \-samprate
+Sampling rate
+.TP
+.B \-seed
+Seed for random number generator; if less than zero, pick our own
+.TP
+.B \-singlefile
+a single cleaned file.
+.TP
+.B \-smoothspec
+Write out cepstral-smoothed logspectral files
+.TP
+.B \-transform
+Which type of transform to use to calculate cepstra (legacy, dct, or htk)
+.TP
+.B \-unit_area
+Normalize mel filters to unit area
+.TP
+.B \-upperf
+Upper edge of filters
+.TP
+.B \-vad_postspeech
+Num of silence frames to keep after from speech to silence.
+.TP
+.B \-vad_prespeech
+Num of speech frames to keep before silence to speech.
+.TP
+.B \-vad_startspeech
+Num of speech frames to trigger vad from silence to speech.
+.TP
+.B \-vad_threshold
+Threshold for decision between noise and silence frames. Log-ratio between signal level and noise level.
+.TP
+.B \-verbose
+Show input filenames
+.TP
+.B \-warp_params
+defining the warping function
+.TP
+.B \-warp_type
+Warping function type (or shape)
+.TP
+.B \-wlen
+Hamming window length
+.SH AUTHOR
+Written by M. K. Ravishankar <rkm@cs.cmu.edu>.  This (rather lousy) manual page
+by David Huggins-Daines <dhuggins@cs.cmu.edu>
+.SH COPYRIGHT
+Copyright \(co 1999-2001 Carnegie Mellon University.  See the file
+\fICOPYING\fR included with this package for more information.
+.br

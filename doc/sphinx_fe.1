@@ -1,0 +1,193 @@
+.TH SPHINX_FE 1 "2007-08-27"
+.SH NAME
+sphinx_fe \- Convert audio files to acoustic feature files
+.SH SYNOPSIS
+.B sphinx_fe
+[\fI options \fR]...
+.SH DESCRIPTION
+.PP
+This program converts audio files (in either Microsoft WAV, NIST
+Sphere, or raw format) to acoustic feature files for input to
+batch-mode speech recognition.  The resulting files are also useful
+for various other things.  A list of options follows:
+.TP
+.B \-alpha
+Preemphasis parameter
+.TP
+.B \-argfile
+file (e.g. feat.params from an acoustic model) to read parameters from.  This will override anything set in other command line arguments.
+.TP
+.B \-blocksize
+Number of samples to read at a time.
+.TP
+.B \-build_outdirs
+Create missing subdirectories in output directory
+.TP
+.B \-c
+file for batch processing
+.TP
+.B \-cep2spec
+Input is cepstral files, output is log spectral files
+.TP
+.B \-di
+directory, input file names are relative to this, if defined
+.TP
+.B \-dither
+Add 1/2-bit noise
+.TP
+.B \-do
+directory, output files are relative to this
+.TP
+.B \-doublebw
+Use double bandwidth filters (same center freq)
+.TP
+.B \-ei
+extension to be applied to all input files
+.TP
+.B \-eo
+extension to be applied to all output files
+.TP
+.B \-example
+Shows example of how to use the tool
+.TP
+.B \-frate
+Frame rate
+.TP
+.B \-help
+Shows the usage of the tool
+.TP
+.B \-i
+audio input file
+.TP
+.B \-input_endian
+Endianness of input data, big or little, ignored if NIST or MS Wav
+.TP
+.B \-lifter
+Length of sin-curve for liftering, or 0 for no liftering.
+.TP
+.B \-logspec
+Write out logspectral files instead of cepstra
+.TP
+.B \-lowerf
+Lower edge of filters
+.TP
+.B \-mach_endian
+Endianness of machine, big or little
+.TP
+.B \-mswav
+Defines input format as Microsoft Wav (RIFF)
+.TP
+.B \-ncep
+Number of cep coefficients
+.TP
+.B \-nchans
+Number of channels of data (interlaced samples assumed)
+.TP
+.B \-nfft
+Size of FFT
+.TP
+.B \-nfilt
+Number of filter banks
+.TP
+.B \-nist
+Defines input format as NIST sphere
+.TP
+.B \-npart
+Number of parts to run in (supersedes \fB\-nskip\fR and \fB\-runlen\fR if non-zero)
+.TP
+.B \-nskip
+If a control file was specified, the number of utterances to skip at the head of the file
+.TP
+.B \-o
+cepstral output file
+.TP
+.B \-ofmt
+Format of output files - one of sphinx, htk, text.
+.TP
+.B \-part
+Index of the part to run (supersedes \fB\-nskip\fR and \fB\-runlen\fR if non-zero)
+.TP
+.B \-raw
+Defines input format as raw binary data
+.TP
+.B \-remove_dc
+Remove DC offset from each frame
+.TP
+.B \-remove_noise
+Remove noise with spectral subtraction in mel-energies
+.TP
+.B \-remove_silence
+Enables VAD, removes silence frames from processing
+.TP
+.B \-round_filters
+Round mel filter frequencies to DFT points
+.TP
+.B \-runlen
+If a control file was specified, the number of utterances to process, or \fB\-1\fR for all
+.TP
+.B \-samprate
+Sampling rate
+.TP
+.B \-seed
+Seed for random number generator; if less than zero, pick our own
+.TP
+.B \-smoothspec
+Write out cepstral-smoothed logspectral files
+.TP
+.B \-spec2cep
+Input is log spectral files, output is cepstral files
+.TP
+.B \-sph2pipe
+Input is NIST sphere (possibly with Shorten), use sph2pipe to convert
+.TP
+.B \-transform
+Which type of transform to use to calculate cepstra (legacy, dct, or htk)
+.TP
+.B \-unit_area
+Normalize mel filters to unit area
+.TP
+.B \-upperf
+Upper edge of filters
+.TP
+.B \-vad_postspeech
+Num of silence frames to keep after from speech to silence.
+.TP
+.B \-vad_prespeech
+Num of speech frames to keep before silence to speech.
+.TP
+.B \-vad_startspeech
+Num of speech frames to trigger vad from silence to speech.
+.TP
+.B \-vad_threshold
+Threshold for decision between noise and silence frames. Log-ratio between signal level and noise level.
+.TP
+.B \-verbose
+Show input filenames
+.TP
+.B \-warp_params
+defining the warping function
+.TP
+.B \-warp_type
+Warping function type (or shape)
+.TP
+.B \-whichchan
+Channel to process (numbered from 1), or 0 to mix all channels
+.TP
+.B \-wlen
+Hamming window length
+.PP
+Currently the only kind of features supported are MFCCs (mel-frequency
+cepstral coefficients).  There are numerous options which control the
+properties of the output features.  It is \fBVERY\fR important that
+you document the specific set of flags used to create any given set of
+feature files, since this information is \fBNOT\fR recorded in the
+files themselves, and any mismatch between the parameters used to
+extract features for recognition and those used to extract features
+for training will cause recognition to fail.
+.SH AUTHOR
+Written by numerous people at CMU from 1994 onwards.  This manual page
+by David Huggins-Daines <dhuggins@cs.cmu.edu>
+.SH COPYRIGHT
+Copyright \(co 1994-2007 Carnegie Mellon University.  See the file
+\fICOPYING\fR included with this package for more information.
+.br
