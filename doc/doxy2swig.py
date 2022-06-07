@@ -39,6 +39,13 @@ import optparse
 
 # TODO: do not process unnecessary files
 TYPEMAP = {
+  'cmd_ln_t': ('Config', 'cmd_ln_'),
+  'fe_t': ('FrontEnd', 'fe_'),
+  'feat_t': ('Feature', 'feat_'),
+  'fsg_model_t': ('FsgModel', 'fsg_model_'),
+  'jsgf_t': ('Jsgf', 'jsgf_'),
+  'ngram_model_set_t': ('NGramModelSet', 'ngram_model_set_'),
+  'ngram_model_t': ('NGramModel', 'ngram_model_'),
   'ps_decoder_t': ('Decoder', 'ps_'),
   'ps_lattice_t': ('Lattice', 'ps_lattice_'),
   'ps_nbest_t': ('NBest', 'ps_nbest_'),
@@ -47,6 +54,12 @@ TYPEMAP = {
 
 USE_PREFIXES = [
   'ps_',
+  'cmd__ln_8',
+  'fe_8',
+  'feat_',
+  'fsg__model_',
+  'jsgf_8',
+  'ngram__model_'
 ]
 
 def my_open_read(source):
@@ -290,7 +303,10 @@ class Doxy2SWIG:
             name = first['name'].firstChild.data
 
             for n in node.getElementsByTagName('param'):
-              arg_type = n.getElementsByTagName('type')[0]
+              elts = n.getElementsByTagName('type')
+              if len(elts) == 0:
+                  continue
+              arg_type = elts[0]
               ref = self.get_specific_nodes(arg_type, ('ref'))
               if 'ref' in ref:
                 type_name = ref['ref'].firstChild.data
