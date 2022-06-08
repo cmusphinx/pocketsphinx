@@ -318,7 +318,7 @@ gauden_init(char const *meanfile, char const *varfile, float32 varfloor, logmath
     assert(varfloor > 0.0);
 
     g = (gauden_t *) ckd_calloc(1, sizeof(gauden_t));
-    g->lmath = lmath;
+    g->lmath = logmath_retain(lmath);
 
     g->mean = (mfcc_t ****)gauden_param_read(meanfile, &g->n_mgau, &g->n_feat, &g->n_density,
                       &g->featlen);
@@ -367,6 +367,8 @@ gauden_free(gauden_t * g)
         ckd_free_3d(g->det);
     if (g->featlen)
         ckd_free(g->featlen);
+    if (g->lmath)
+        logmath_free(g->lmath);
     ckd_free(g);
 }
 

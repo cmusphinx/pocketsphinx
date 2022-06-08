@@ -152,11 +152,6 @@ ps_expand_model_config(ps_decoder_t *ps)
             E_INFO("Parsed model-specific feature parameters from %s\n",
                     featparams);
     }
-
-    /* Print here because acmod_init might load feat.params file */
-    if (err_get_logfp() != NULL) {
-	cmd_ln_print_values_r(ps->config, err_get_logfp(), ps_args());
-    }
 }
 
 static void
@@ -216,6 +211,26 @@ ps_default_search_args(cmd_ln_t *config)
 #endif
 }
 
+fe_t *
+ps_reinit_fe(ps_decoder_t *ps, cmd_ln_t *config)
+{
+    fe_t *new_fe;
+    
+    if (config && config != ps->config) {
+        cmd_ln_free_r(ps->config);
+        ps->config = cmd_ln_retain(config);
+    }
+    if ((new_fe = fe_init_auto_r(ps->config)) == NULL)
+        return NULL;
+    if (acmod_fe_mismatch(ps->acmod, new_fe)) {
+        fe_free(new_fe);
+        return NULL;
+    }
+    fe_free(ps->acmod->fe);
+    ps->acmod->fe = new_fe;
+    return new_fe;
+}
+
 int
 ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 {
@@ -230,10 +245,21 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     /* Set up logging. We need to do this earlier because we want to dump
      * the information to the configured log, not to the stderr. */
-    if (config && cmd_ln_str_r(ps->config, "-logfn")) {
-        if (err_set_logfile(cmd_ln_str_r(ps->config, "-logfn")) < 0) {
-            E_ERROR("Cannot redirect log output\n");
-    	    return -1;
+    if (config) {
+        const char *logfn, *loglevel;
+        logfn = cmd_ln_str_r(ps->config, "-logfn");
+        if (logfn) {
+            if (err_set_logfile(logfn) < 0) {
+                E_ERROR("Cannot redirect log output\n");
+                return -1;
+            }
+        }
+        loglevel = cmd_ln_str_r(ps->config, "-loglevel");
+        if (loglevel) {
+            if (err_set_loglevel_str(loglevel) == NULL) {
+                E_ERROR("Invalid log level: %s\n", loglevel);
+                return -1;
+            }
         }
     }
     
@@ -244,6 +270,9 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     /* Fill in some default arguments. */
     ps_expand_model_config(ps);
 
+    /* Print out the config for logging. */
+    cmd_ln_log_values_r(ps->config, ps_args());
+    
     /* Free old searches (do this before other reinit) */
     ps_free_searches(ps);
     ps->searches = hash_table_new(3, HASH_CASE_YES);
@@ -267,8 +296,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
         if (ps->lmath)
             logmath_free(ps->lmath);
         ps->lmath = logmath_init
-            ((float64)cmd_ln_float32_r(ps->config, "-logbase"), 0,
-             cmd_ln_boolean_r(ps->config, "-bestpath"));
+            ((float64)cmd_ln_float32_r(ps->config, "-logbase"), 0, TRUE);
     }
 
     /* Acoustic model (this is basically everything that
@@ -1051,6 +1079,11 @@ ps_search_forward(ps_decoder_t *ps)
 {
     int nfr;
 
+    if (ps->search == NULL) {
+        E_ERROR("No search module is selected, did you forget to "
+                "specify a language model or grammar?\n");
+        return -1;
+    }
     nfr = 0;
     while (ps->acmod->n_feat_frame > 0) {
         int k;
@@ -1161,6 +1194,11 @@ ps_end_utt(ps_decoder_t *ps)
 {
     int rv, i;
 
+    if (ps->search == NULL) {
+        E_ERROR("No search module is selected, did you forget to "
+                "specify a language model or grammar?\n");
+        return -1;
+    }
     if (ps->acmod->state == ACMOD_ENDED || ps->acmod->state == ACMOD_IDLE) {
 	E_ERROR("Utterance is not started\n");
 	return -1;
@@ -1227,6 +1265,11 @@ ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score)
 {
     char const *hyp;
 
+    if (ps->search == NULL) {
+        E_ERROR("No search module is selected, did you forget to "
+                "specify a language model or grammar?\n");
+        return NULL;
+    }
     ptmr_start(&ps->perf);
     hyp = ps_search_hyp(ps->search, out_best_score);
     ptmr_stop(&ps->perf);
@@ -1238,6 +1281,11 @@ ps_get_prob(ps_decoder_t *ps)
 {
     int32 prob;
 
+    if (ps->search == NULL) {
+        E_ERROR("No search module is selected, did you forget to "
+                "specify a language model or grammar?\n");
+        return -1;
+    }
     ptmr_start(&ps->perf);
     prob = ps_search_prob(ps->search);
     ptmr_stop(&ps->perf);
@@ -1249,6 +1297,11 @@ ps_seg_iter(ps_decoder_t *ps)
 {
     ps_seg_t *itor;
 
+    if (ps->search == NULL) {
+        E_ERROR("No search module is selected, did you forget to "
+                "specify a language model or grammar?\n");
+        return NULL;
+    }
     ptmr_start(&ps->perf);
     itor = ps_search_seg_iter(ps->search);
     ptmr_stop(&ps->perf);

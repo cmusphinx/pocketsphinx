@@ -231,7 +231,7 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
 
     acmod = ckd_calloc(1, sizeof(*acmod));
     acmod->config = cmd_ln_retain(config);
-    acmod->lmath = lmath;
+    acmod->lmath = logmath_retain(lmath);
     acmod->state = ACMOD_IDLE;
 
     /* Initialize feature computation. */
@@ -331,6 +331,7 @@ acmod_free(acmod_t *acmod)
         ps_mgau_free(acmod->mgau);
     if (acmod->mllr)
         ps_mllr_free(acmod->mllr);
+    logmath_free(acmod->lmath);
 
     ckd_free(acmod);
 }
@@ -340,7 +341,7 @@ acmod_update_mllr(acmod_t *acmod, ps_mllr_t *mllr)
 {
     if (acmod->mllr)
         ps_mllr_free(acmod->mllr);
-    acmod->mllr = mllr;
+    acmod->mllr = ps_mllr_retain(mllr);
     ps_mgau_transform(acmod->mgau, mllr);
 
     return mllr;
@@ -458,9 +459,9 @@ acmod_end_utt(acmod_t *acmod)
             feat_update_stats(acmod->fcb);
     }
     if (acmod->mfcfh) {
-        long outlen;
-        int32 rv;
+        int32 outlen, rv;
         outlen = (ftell(acmod->mfcfh) - 4) / 4;
+        SWAP_BE_32(&outlen);
         /* Try to seek and write */
         if ((rv = fseek(acmod->mfcfh, 0, SEEK_SET)) == 0) {
             fwrite(&outlen, 4, 1, acmod->mfcfh);
@@ -485,11 +486,27 @@ static int
 acmod_log_mfc(acmod_t *acmod,
               mfcc_t **cep, int n_frames)
 {
-    int n = n_frames * feat_cepsize(acmod->fcb);
+    size_t i, n;
+    int32 *ptr = (int32 *)cep[0];
+
+    n = n_frames * feat_cepsize(acmod->fcb);
+    /* Swap bytes. */
+#if !WORDS_BIGENDIAN
+    for (i = 0; i < (n * sizeof(mfcc_t) / sizeof(int32)); ++i) {
+            SWAP_INT32(ptr + i);
+    }
+#endif
     /* Write features. */
     if (fwrite(cep[0], sizeof(mfcc_t), n, acmod->mfcfh) != n) {
-        E_ERROR_SYSTEM("Failed to write %d values to file", n);
+        E_ERROR_SYSTEM("Failed to write %d values to log file", n);
     }
+
+    /* Swap them back. */
+#if !WORDS_BIGENDIAN
+    for (i = 0; i < (n * sizeof(mfcc_t) / sizeof(int32)); ++i) {
+        SWAP_INT32(ptr + i);
+    }
+#endif
     return 0;
 }
 
@@ -500,7 +517,7 @@ acmod_process_full_cep(acmod_t *acmod,
 {
     int32 nfr;
 
-    /* Write to file. */
+    /* Write to log file. */
     if (acmod->mfcfh)
         acmod_log_mfc(acmod, *inout_cep, *inout_n_frames);
 
@@ -524,7 +541,6 @@ acmod_process_full_cep(acmod_t *acmod,
     assert(acmod->n_feat_frame <= acmod->n_feat_alloc);
     *inout_cep += *inout_n_frames;
     *inout_n_frames = 0;
-
     return nfr;
 }
 
@@ -708,7 +724,7 @@ acmod_process_cep(acmod_t *acmod,
     if (full_utt)
         return acmod_process_full_cep(acmod, inout_cep, inout_n_frames);
 
-    /* Write to file. */
+    /* Write to log file. */
     if (acmod->mfcfh)
         acmod_log_mfc(acmod, *inout_cep, *inout_n_frames);
 
@@ -1221,6 +1237,7 @@ acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm)
         case 5:
             MPX_BITVEC_SET(acmod, hmm, 4);
             MPX_BITVEC_SET(acmod, hmm, 3);
+            /* FALLTHRU */
         case 3:
             MPX_BITVEC_SET(acmod, hmm, 2);
             MPX_BITVEC_SET(acmod, hmm, 1);
@@ -1237,6 +1254,7 @@ acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm)
         case 5:
             NONMPX_BITVEC_SET(acmod, hmm, 4);
             NONMPX_BITVEC_SET(acmod, hmm, 3);
+            /* FALLTHRU */
         case 3:
             NONMPX_BITVEC_SET(acmod, hmm, 2);
             NONMPX_BITVEC_SET(acmod, hmm, 1);

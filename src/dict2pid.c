@@ -492,7 +492,6 @@ dict2pid_build(bin_mdef_t * mdef, dict_t * dict)
 
     ckd_free_3d(rdiph_rc);
 
-    dict2pid_report(dict2pid);
     return dict2pid;
 }
 
@@ -527,11 +526,6 @@ dict2pid_free(dict2pid_t * d2p)
     dict_free(d2p->dict);
     ckd_free(d2p);
     return 0;
-}
-
-void
-dict2pid_report(dict2pid_t * d2p)
-{
 }
 
 void

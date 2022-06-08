@@ -73,34 +73,34 @@
 
 static arg_t arg[] = {
     {"-i",
-     ARG_INT32,
+     ARG_INTEGER,
      NUM_COEFF,
      "Number of coefficients in the feature vector."},
     {"-d",
-     ARG_INT32,
+     ARG_INTEGER,
      DISPLAY_SIZE,
      "Number of displayed coefficients."},
     {"-header",
-     ARG_INT32,
+     ARG_INTEGER,
      "0",
      "Whether header is shown."},
     {"-describe",
-     ARG_INT32,
+     ARG_INTEGER,
      "0",
      "Whether description will be shown."},
     {"-b",
-     ARG_INT32,
+     ARG_INTEGER,
      "0",
      "The beginning frame 0-based."},
     {"-e",
-     ARG_INT32,
+     ARG_INTEGER,
      "2147483647",
      "The ending frame."},
     {"-f",
      ARG_STRING,
      NULL,
      "Input feature file."},
-    {NULL, ARG_INT32, NULL, NULL}
+    {NULL, ARG_INTEGER, NULL, NULL}
 };
 
 int read_cep(char const *file, float ***cep, int *nframes, int numcep);
@@ -114,15 +114,16 @@ main(int argc, char *argv[])
     int is_header, is_describe;
     float *z, **cep;
     char const *cepfile;
+    cmd_ln_t *config;
 
-    cmd_ln_appl_enter(argc, argv, "default.arg", arg);
+    config = cmd_ln_parse_r(NULL, arg, argc, argv, TRUE);
 
-    vsize = cmd_ln_int32("-i");
-    dsize = cmd_ln_int32("-d");
-    frm_begin = cmd_ln_int32("-b");
-    frm_end = cmd_ln_int32("-e");
-    is_header = cmd_ln_int32("-header");
-    is_describe = cmd_ln_int32("-describe");
+    vsize = cmd_ln_int_r(config, "-i");
+    dsize = cmd_ln_int_r(config, "-d");
+    frm_begin = cmd_ln_int_r(config, "-b");
+    frm_end = cmd_ln_int_r(config, "-e");
+    is_header = cmd_ln_int_r(config, "-header");
+    is_describe = cmd_ln_int_r(config, "-describe");
 
     if (vsize < 0)
         E_FATAL("-i : Input vector size should be larger than 0.\n");
@@ -137,7 +138,7 @@ main(int argc, char *argv[])
         E_FATAL
             ("Ending frame (-e) should be larger than beginning frame (-b).\n");
 
-    if ((cepfile = cmd_ln_str("-f")) == NULL) {
+    if ((cepfile = cmd_ln_str_r(config, "-f")) == NULL) {
         E_FATAL("Input file was not specified with (-f)\n");
     }
     if (read_cep(cepfile, &cep, &noframe, vsize) == IO_ERR)
@@ -178,8 +179,8 @@ main(int argc, char *argv[])
         offset += vsize;
     }
     fflush(stdout);
-    cmd_ln_appl_exit();
     ckd_free_2d(cep);
+    cmd_ln_free_r(config);
 
     return (IO_SUCCESS);
 

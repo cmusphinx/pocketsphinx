@@ -223,6 +223,7 @@ dict_write(dict_t *dict, char const *filename, char const *format)
     FILE *fh;
     int i;
 
+    (void)format; /* FIXME */
     if ((fh = fopen(filename, "w")) == NULL) {
         E_ERROR_SYSTEM("Failed to open '%s'", filename);
         return -1;

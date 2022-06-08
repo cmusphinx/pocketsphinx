@@ -117,22 +117,22 @@ static arg_t defn[] = {
     "Control file for batch processing" },
   
   { "-nskip",
-    ARG_INT32,
+    ARG_INTEGER,
     "0",
     "If a control file was specified, the number of utterances to skip at the head of the file" },
   
   { "-runlen",
-    ARG_INT32,
+    ARG_INTEGER,
     "-1",
     "If a control file was specified, the number of utterances to process, or -1 for all" },
 
   { "-part",
-    ARG_INT32,
+    ARG_INTEGER,
     "0",
     "Index of the part to run (supersedes -nskip and -runlen if non-zero)" },
   
   { "-npart",
-    ARG_INT32,
+    ARG_INTEGER,
     "0",
     "Number of parts to run in (supersedes -nskip and -runlen if non-zero)" },
   
@@ -182,12 +182,12 @@ static arg_t defn[] = {
     "Defines input format as Microsoft Wav (RIFF)" },
   
   { "-nchans",
-    ARG_INT32,
+    ARG_INTEGER,
     "1",
     "Number of channels of data (interlaced samples assumed)" },
   
   { "-whichchan",
-    ARG_INT32,
+    ARG_INTEGER,
     "0",
     "Channel to process (numbered from 1), or 0 to mix all channels" },
   
@@ -206,7 +206,7 @@ static arg_t defn[] = {
     "Endianness of machine, big or little" },
   
   { "-blocksize",
-    ARG_INT32,
+    ARG_INTEGER,
     "2048",
     "Number of samples to read at a time." },
 

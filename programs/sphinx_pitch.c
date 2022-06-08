@@ -67,12 +67,12 @@ static arg_t defn[] = {
     "Control file for batch processing" },
   
   { "-nskip",
-    ARG_INT32,
+    ARG_INTEGER,
     "0",
     "If a control file was specified, the number of utterances to skip at the head of the file" },
   
   { "-runlen",
-    ARG_INT32,
+    ARG_INTEGER,
     "-1",
     "If a control file was specified, the number of utterances to process (see -nskip too)" },
   
@@ -112,7 +112,7 @@ static arg_t defn[] = {
     "Defines input format as Microsoft Wav (RIFF)" },
 
   { "-samprate",
-    ARG_INT32,
+    ARG_INTEGER,
     "0",
     "Sampling rate of audio data (will be determined automatically if 0)" },
 
@@ -122,57 +122,59 @@ static arg_t defn[] = {
     "Endianness of audio data (will be determined automatically if not given)" },
 
   { "-fshift",
-    ARG_FLOAT32,
+    ARG_FLOATING,
     "0.01",
     "Frame shift: number of seconds between each analysis frame." },
 
   { "-flen",
-    ARG_FLOAT32,
+    ARG_FLOATING,
     "0.025",
     "Number of seconds in each analysis frame (needs to be greater than twice the longest period you wish to detect - to detect down to 80Hz you need a frame length of 2.0/80 = 0.025)." },
 
   { "-smooth_window",
-    ARG_INT32,
+    ARG_INTEGER,
     "2",
     "Number of frames on either side of the current frame to use for smoothing." },
 
   { "-voice_thresh",
-    ARG_FLOAT32,
+    ARG_FLOATING,
     "0.1",
     "Threshold of normalized difference under which to search for the fundamental period." },
 
   { "-search_range",
-    ARG_FLOAT32,
+    ARG_FLOATING,
     "0.2",
     "Fraction of the best local estimate to use as a search range for smoothing." },
 
   { NULL, 0, NULL, NULL }
 };
 
-static int extract_pitch(const char *in, const char *out);
-static int run_control_file(const char *ctl);
+static int extract_pitch(const char *in, const char *out, cmd_ln_t *config);
+static int run_control_file(const char *ctl, cmd_ln_t *config);
 
 int
 main(int argc, char *argv[])
 {
-    cmd_ln_parse(defn, argc, argv, TRUE);
+    cmd_ln_t *config = cmd_ln_parse_r(NULL, defn, argc, argv, TRUE);
 
     /* Run a control file if requested. */
-    if (cmd_ln_str("-c")) {
-        if (run_control_file(cmd_ln_str("-c")) < 0)
+    if (cmd_ln_str_r(config, "-c")) {
+        if (run_control_file(cmd_ln_str_r(config, "-c"), config) < 0)
             return 1;
     }
     else {
-        if (extract_pitch(cmd_ln_str("-i"), cmd_ln_str("-o")) < 0)
+        if (extract_pitch(cmd_ln_str_r(config, "-i"),
+                          cmd_ln_str_r(config, "-o"),
+                          config) < 0)
             return 1;
     }
 
-    cmd_ln_free();
+    cmd_ln_free_r(config);
     return 0;
 }
 
 static int
-guess_file_type(char const *file, FILE *infh)
+guess_file_type(char const *file, FILE *infh, cmd_ln_t *config)
 {
     char header[4];
 
@@ -183,21 +185,21 @@ guess_file_type(char const *file, FILE *infh)
     }
     if (0 == memcmp(header, "RIFF", 4)) {
         E_INFO("%s appears to be a WAV file\n", file);
-        cmd_ln_set_boolean("-mswav", TRUE);
-        cmd_ln_set_boolean("-nist", FALSE);
-        cmd_ln_set_boolean("-raw", FALSE);
+        cmd_ln_set_boolean_r(config, "-mswav", TRUE);
+        cmd_ln_set_boolean_r(config, "-nist", FALSE);
+        cmd_ln_set_boolean_r(config, "-raw", FALSE);
     }
     else if (0 == memcmp(header, "NIST", 4)) {
         E_INFO("%s appears to be a NIST SPHERE file\n", file);
-        cmd_ln_set_boolean("-mswav", FALSE);
-        cmd_ln_set_boolean("-nist", TRUE);
-        cmd_ln_set_boolean("-raw", FALSE);
+        cmd_ln_set_boolean_r(config, "-mswav", FALSE);
+        cmd_ln_set_boolean_r(config, "-nist", TRUE);
+        cmd_ln_set_boolean_r(config, "-raw", FALSE);
     }
     else {
         E_INFO("%s appears to be raw data\n", file);
-        cmd_ln_set_boolean("-mswav", FALSE);
-        cmd_ln_set_boolean("-nist", FALSE);
-        cmd_ln_set_boolean("-raw", TRUE);
+        cmd_ln_set_boolean_r(config, "-mswav", FALSE);
+        cmd_ln_set_boolean_r(config, "-nist", FALSE);
+        cmd_ln_set_boolean_r(config, "-raw", TRUE);
     }
     fseek(infh, 0, SEEK_SET);
     return 0;
@@ -210,14 +212,14 @@ guess_file_type(char const *file, FILE *infh)
     }
 
 static int
-read_riff_header(FILE *infh)
+read_riff_header(FILE *infh, cmd_ln_t *config)
 {
     char id[4];
     int32 intval, header_len;
     int16 shortval;
 
     /* RIFF files are little-endian by definition. */
-    cmd_ln_set_str("-input_endian", "little");
+    cmd_ln_set_str_r(config, "-input_endian", "little");
 
     /* Read in all the header chunks and etcetera. */
     TRY_FREAD(id, 1, 4, infh);
@@ -259,11 +261,11 @@ read_riff_header(FILE *infh)
     /* Sampling rate (finally!) */
     TRY_FREAD(&intval, 4, 1, infh);
     SWAP_LE_32(&intval);
-    if (cmd_ln_int32("-samprate") == 0)
-        cmd_ln_set_int32("-samprate", intval);
-    else if (cmd_ln_int32("-samprate") != intval) {
+    if (cmd_ln_int_r(config, "-samprate") == 0)
+        cmd_ln_set_int_r(config, "-samprate", intval);
+    else if (cmd_ln_int_r(config, "-samprate") != intval) {
         E_WARN("WAVE file sampling rate %d != -samprate %d\n",
-               intval, cmd_ln_int32("-samprate"));
+               intval, cmd_ln_int_r(config, "-samprate"));
     }
 
     /* Average bytes per second (we don't care) */
@@ -308,7 +310,7 @@ error_out:
 }
 
 static int
-read_nist_header(FILE *infh)
+read_nist_header(FILE *infh, cmd_ln_t *config)
 {
     char hdr[1024];
     char *line, *c;
@@ -330,11 +332,11 @@ read_nist_header(FILE *infh)
         goto error_out;
     }
     ++c;
-    if (cmd_ln_int32("-samprate") == 0)
-        cmd_ln_set_int32("-samprate", atoi(c));
-    else if (cmd_ln_int32("-samprate") != atoi(c)) {
+    if (cmd_ln_int_r(config, "-samprate") == 0)
+        cmd_ln_set_int_r(config, "-samprate", atoi(c));
+    else if (cmd_ln_int_r(config, "-samprate") != atoi(c)) {
         E_WARN("NIST file sampling rate %d != -samprate %d\n",
-               atoi(c), cmd_ln_int32("-samprate"));
+               atoi(c), cmd_ln_int_r(config, "-samprate"));
     }
 
     if (line + strlen(line) < hdr + 1023)
@@ -352,10 +354,10 @@ read_nist_header(FILE *infh)
     }
     ++c;
     if (0 == memcmp(c, "01", 2)) {
-        cmd_ln_set_str("-input_endian", "little");
+        cmd_ln_set_str_r(config, "-input_endian", "little");
     }
     else if (0 == memcmp(c, "10", 2)) {
-        cmd_ln_set_str("-input_endian", "big");
+        cmd_ln_set_str_r(config, "-input_endian", "big");
     }
     else {
         E_ERROR("Unknown byte order %s\n", c);
@@ -369,7 +371,7 @@ error_out:
 }
 
 static int
-extract_pitch(const char *in, const char *out)
+extract_pitch(const char *in, const char *out, cmd_ln_t *config)
 {
     FILE *infh = NULL, *outfh = NULL;
     size_t flen, fshift, nsamps;
@@ -394,39 +396,39 @@ extract_pitch(const char *in, const char *out)
 
     /* If we weren't told what the file type is, weakly try to
      * determine it (actually it's pretty obvious) */
-    if (!(cmd_ln_boolean("-raw")
-          || cmd_ln_boolean("-mswav")
-          || cmd_ln_boolean("-nist"))) {
-        if (guess_file_type(in, infh) < 0)
+    if (!(cmd_ln_boolean_r(config, "-raw")
+          || cmd_ln_boolean_r(config, "-mswav")
+          || cmd_ln_boolean_r(config, "-nist"))) {
+        if (guess_file_type(in, infh, config) < 0)
             goto error_out;
     }
     
     /* Grab the sampling rate and byte order from the header and also
      * make sure this is 16-bit linear PCM. */
-    if (cmd_ln_boolean("-mswav")) {
-        if (read_riff_header(infh) < 0)
+    if (cmd_ln_boolean_r(config, "-mswav")) {
+        if (read_riff_header(infh, config) < 0)
             goto error_out;
     }
-    else if (cmd_ln_boolean("-nist")) {
-        if (read_nist_header(infh) < 0)
+    else if (cmd_ln_boolean_r(config, "-nist")) {
+        if (read_nist_header(infh, config) < 0)
             goto error_out;
     }
-    else if (cmd_ln_boolean("-raw")) {
+    else if (cmd_ln_boolean_r(config, "-raw")) {
         /* Just use some defaults for sampling rate and endian. */
-        if (cmd_ln_str("-input_endian") == NULL) {
-            cmd_ln_set_str("-input_endian", "little");
+        if (cmd_ln_str_r(config, "-input_endian") == NULL) {
+            cmd_ln_set_str_r(config, "-input_endian", "little");
         }
-        if (cmd_ln_int32("-samprate") == 0)
-            cmd_ln_set_int32("-samprate", 16000);
+        if (cmd_ln_int_r(config, "-samprate") == 0)
+            cmd_ln_set_int_r(config, "-samprate", 16000);
     }
 
     /* Now read frames and write pitch estimates. */
-    sps = cmd_ln_int32("-samprate");
-    flen = (size_t)(0.5 + sps * cmd_ln_float32("-flen"));
-    fshift = (size_t)(0.5 + sps * cmd_ln_float32("-fshift"));
-    yin = yin_init(flen, cmd_ln_float32("-voice_thresh"),
-                   cmd_ln_float32("-search_range"),
-                   cmd_ln_int32("-smooth_window"));
+    sps = cmd_ln_int_r(config, "-samprate");
+    flen = (size_t)(0.5 + sps * cmd_ln_float_r(config, "-flen"));
+    fshift = (size_t)(0.5 + sps * cmd_ln_float_r(config, "-fshift"));
+    yin = yin_init(flen, cmd_ln_float_r(config, "-voice_thresh"),
+                   cmd_ln_float_r(config, "-search_range"),
+                   cmd_ln_int_r(config, "-smooth_window"));
     if (yin == NULL) {
         E_ERROR("Failed to initialize YIN\n");
         goto error_out;
@@ -488,7 +490,7 @@ error_out:
 }
 
 static int
-run_control_file(const char *ctl)
+run_control_file(const char *ctl, cmd_ln_t *config)
 {
     FILE *ctlfh;
     char *line;
@@ -497,36 +499,36 @@ run_control_file(const char *ctl)
     int rv, guess_type, guess_sps, guess_endian;
     int32 skip, runlen;
 
-    skip = cmd_ln_int32("-nskip");
-    runlen = cmd_ln_int32("-runlen");
+    skip = cmd_ln_int_r(config, "-nskip");
+    runlen = cmd_ln_int_r(config, "-runlen");
 
     /* Whether to guess file types */
-    guess_type = !(cmd_ln_boolean("-raw")
-                   || cmd_ln_boolean("-mswav")
-                   || cmd_ln_boolean("-nist"));
+    guess_type = !(cmd_ln_boolean_r(config, "-raw")
+                   || cmd_ln_boolean_r(config, "-mswav")
+                   || cmd_ln_boolean_r(config, "-nist"));
     /* Whether to guess sampling rate */
-    guess_sps = (cmd_ln_int32("-samprate") == 0);
+    guess_sps = (cmd_ln_int_r(config, "-samprate") == 0);
     /* Whether to guess endian */
-    guess_endian = (cmd_ln_str("-input_endian") == NULL);
+    guess_endian = (cmd_ln_str_r(config, "-input_endian") == NULL);
 
     if ((ctlfh = fopen(ctl, "r")) == NULL) {
         E_ERROR_SYSTEM("Failed to open control file %s", ctl);
         return -1;
     }
-    if (cmd_ln_str("-di"))
-        di = string_join(cmd_ln_str("-di"), "/", NULL);
+    if (cmd_ln_str_r(config, "-di"))
+        di = string_join(cmd_ln_str_r(config, "-di"), "/", NULL);
     else
         di = ckd_salloc("");
-    if (cmd_ln_str("-do"))
-        dout = string_join(cmd_ln_str("-do"), "/", NULL);
+    if (cmd_ln_str_r(config, "-do"))
+        dout = string_join(cmd_ln_str_r(config, "-do"), "/", NULL);
     else
         dout = ckd_salloc("");
-    if (cmd_ln_str("-ei"))
-        ei = string_join(".", cmd_ln_str("-ei"), NULL);
+    if (cmd_ln_str_r(config, "-ei"))
+        ei = string_join(".", cmd_ln_str_r(config, "-ei"), NULL);
     else
         ei = ckd_salloc("");
-    if (cmd_ln_str("-eo"))
-        eio = string_join(".", cmd_ln_str("-eo"), NULL);
+    if (cmd_ln_str_r(config, "-eo"))
+        eio = string_join(".", cmd_ln_str_r(config, "-eo"), NULL);
     else
         eio = ckd_salloc("");
     rv = 0;
@@ -551,16 +553,16 @@ run_control_file(const char *ctl)
 
         /* Reset various guessed information */
         if (guess_type) {
-            cmd_ln_set_boolean("-nist", FALSE);
-            cmd_ln_set_boolean("-mswav", FALSE);
-            cmd_ln_set_boolean("-raw", FALSE);
+            cmd_ln_set_boolean_r(config, "-nist", FALSE);
+            cmd_ln_set_boolean_r(config, "-mswav", FALSE);
+            cmd_ln_set_boolean_r(config, "-raw", FALSE);
         }
         if (guess_sps)
-            cmd_ln_set_int32("-samprate", 0);
+            cmd_ln_set_int_r(config, "-samprate", 0);
         if (guess_endian)
-            cmd_ln_set_str("-input_endian", NULL);
+            cmd_ln_set_str_r(config, "-input_endian", NULL);
 
-        rv = extract_pitch(infile, outfile);
+        rv = extract_pitch(infile, outfile, config);
 
         ckd_free(infile);
         ckd_free(outfile);
@@ -574,5 +576,6 @@ run_control_file(const char *ctl)
     ckd_free(ei);
     ckd_free(eio);
     fclose(ctlfh);
+    cmd_ln_free_r(config);
     return rv;
 }

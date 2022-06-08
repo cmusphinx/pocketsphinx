@@ -106,8 +106,7 @@ ps_decoder_t *ps_init(cmd_ln_t *config);
  * object.
  *
  * @note The decoder retains ownership of the pointer
- * <code>config</code>, so you must not attempt to free it manually.
- * If you wish to reuse it elsewhere, call cmd_ln_retain() on it.
+ * <code>config</code>, so you should free it when no longer used.
  *
  * @param ps Decoder.
  * @param config An optional new configuration to use.  If this is
@@ -117,6 +116,28 @@ ps_decoder_t *ps_init(cmd_ln_t *config);
  */
 POCKETSPHINX_EXPORT
 int ps_reinit(ps_decoder_t *ps, cmd_ln_t *config);
+
+/**
+ * Reinitialize only the feature extractor with updated configuration.
+ *
+ * This function allows you to switch the feature extraction
+ * parameters without otherwise affecting the decoder configuration.
+ * For example, if you change the sample rate or the frame rate and do
+ * not need to reconfigure the rest of the decoder.
+ *
+ * @note The decoder retains ownership of the pointer
+ * <code>config</code>, so you should free it when no longer used.
+ *
+ * @param ps Decoder.
+ * @param config An optional new configuration to use.  If this is
+ *               NULL, the previous configuration will be reloaded,
+ *               with any changes to feature extraction applied.
+ * @return pointer to new feature extractor. The decoder owns this
+ *         pointer, so you should not attempt to free it manually.
+ *         Use fe_retain() if you wish to reuse it elsewhere.
+ */
+POCKETSPHINX_EXPORT
+fe_t * ps_reinit_fe(ps_decoder_t *ps, cmd_ln_t *config);
 
 /**
  * Returns the argument definitions used in ps_init().
@@ -143,9 +164,7 @@ ps_decoder_t *ps_retain(ps_decoder_t *ps);
 /**
  * Finalize the decoder.
  *
- * This releases all resources associated with the decoder, including
- * any language models or grammars which have been added to it, and
- * the initial configuration object passed to ps_init().
+ * This releases all resources associated with the decoder.
  *
  * @param ps Decoder to be freed.
  * @return New reference count (0 if freed).
@@ -157,9 +176,9 @@ int ps_free(ps_decoder_t *ps);
  * Get the configuration object for this decoder.
  *
  * @return The configuration object for this decoder.  The decoder
- *         retains ownership of this pointer, so you should not
- *         attempt to free it manually.  Use cmd_ln_retain() if you
- *         wish to reuse it elsewhere.
+ *         owns this pointer, so you should not attempt to free it
+ *         manually.  Use cmd_ln_retain() if you wish to reuse it
+ *         elsewhere.
  */
 POCKETSPHINX_EXPORT
 cmd_ln_t *ps_get_config(ps_decoder_t *ps);
@@ -167,10 +186,10 @@ cmd_ln_t *ps_get_config(ps_decoder_t *ps);
 /**
  * Get the log-math computation object for this decoder.
  *
- * @return The log-math object for this decoder.  The decoder retains
- *         ownership of this pointer, so you should not attempt to
- *         free it manually.  Use logmath_retain() if you wish to
- *         reuse it elsewhere.
+ * @return The log-math object for this decoder.  The decoder owns
+ *         this pointer, so you should not attempt to free it
+ *         manually.  Use logmath_retain() if you wish to reuse it
+ *         elsewhere.
  */
 POCKETSPHINX_EXPORT
 logmath_t *ps_get_logmath(ps_decoder_t *ps);
@@ -179,9 +198,9 @@ logmath_t *ps_get_logmath(ps_decoder_t *ps);
  * Get the feature extraction object for this decoder.
  *
  * @return The feature extraction object for this decoder.  The
- *         decoder retains ownership of this pointer, so you should
- *         not attempt to free it manually.  Use fe_retain() if you
- *         wish to reuse it elsewhere.
+ *         decoder owns this pointer, so you should not attempt to
+ *         free it manually.  Use fe_retain() if you wish to reuse it
+ *         elsewhere.
  */
 POCKETSPHINX_EXPORT
 fe_t *ps_get_fe(ps_decoder_t *ps);
@@ -189,10 +208,10 @@ fe_t *ps_get_fe(ps_decoder_t *ps);
 /**
  * Get the dynamic feature computation object for this decoder.
  *
- * @return The dynamic feature computation object for this decoder.  The
- *         decoder retains ownership of this pointer, so you should
- *         not attempt to free it manually.  Use feat_retain() if you
- *         wish to reuse it elsewhere.
+ * @return The dynamic feature computation object for this decoder.
+ *         The decoder owns this pointer, so you should not attempt to
+ *         free it manually.  Use feat_retain() if you wish to reuse
+ *         it elsewhere.
  */
 POCKETSPHINX_EXPORT
 feat_t *ps_get_feat(ps_decoder_t *ps);
@@ -200,11 +219,10 @@ feat_t *ps_get_feat(ps_decoder_t *ps);
 /**
  * Adapt current acoustic model using a linear transform.
  *
- * @param mllr The new transform to use, or NULL to update the existing
- *              transform.  The decoder retains ownership of this pointer,
- *              so you should not attempt to free it manually.  Use
- *              ps_mllr_retain() if you wish to reuse it
- *              elsewhere.
+ * @param mllr The new transform to use, or NULL to update the
+ *              existing transform.  The decoder retains ownership of
+ *              this pointer, so you may free it if you no longer need
+ *              it.
  * @return The updated transform object for this decoder, or
  *         NULL on failure.
  */
@@ -403,7 +421,8 @@ int ps_end_utt(ps_decoder_t *ps);
  * @param ps Decoder.
  * @param out_best_score Output: path score corresponding to returned string.
  * @return String containing best hypothesis at this point in
- *         decoding.  NULL if no hypothesis is available.
+ *         decoding.  NULL if no hypothesis is available.  This string is owned
+ *         by the decoder, so you should copy it if you need to hold onto it.
  */
 POCKETSPHINX_EXPORT
 char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score);

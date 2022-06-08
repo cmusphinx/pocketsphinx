@@ -64,6 +64,7 @@
 /* Win32/WinCE DLL gunk */
 #include <sphinxbase/sphinxbase_export.h>
 #include <sphinxbase/prim_type.h>
+#include <sphinxbase/hash_table.h>
 
 /**
  * @file cmd_ln.h
@@ -93,6 +94,16 @@ typedef struct arg_s {
 } arg_t;
 
 /**
+ * @struct cmd_ln_val_t
+ * Configuration parameter structure.
+ */
+typedef struct cmd_ln_val_s {
+    anytype_t val;
+    int type;
+    char *name;
+} cmd_ln_val_t;
+
+/**
  * @name Values for arg_t::type
  */
 /* @{ */
@@ -117,7 +128,7 @@ typedef struct arg_s {
  */
 #define ARG_BOOLEAN  (1<<4)
 /**
- * Boolean (true/false) argument (optional).
+ * String array argument (optional).
  */
 #define ARG_STRING_LIST  (1<<5)
 
@@ -138,30 +149,6 @@ typedef struct arg_s {
  */
 #define REQARG_BOOLEAN (ARG_BOOLEAN | ARG_REQUIRED)
 
-/**
- * @deprecated Use ARG_INTEGER instead.
- */
-#define ARG_INT32   ARG_INTEGER
-/**
- * @deprecated Use ARG_FLOATING instead.
- */
-#define ARG_FLOAT32 ARG_FLOATING
-/**
- * @deprecated Use ARG_FLOATING instead.
- */
-#define ARG_FLOAT64 ARG_FLOATING
-/**
- * @deprecated Use REQARG_INTEGER instead.
- */
-#define REQARG_INT32 (ARG_INT32 | ARG_REQUIRED)
-/**
- * @deprecated Use REQARG_FLOATING instead.
- */
-#define REQARG_FLOAT32 (ARG_FLOAT32 | ARG_REQUIRED)
-/**
- * @deprecated Use REQARG_FLOATING instead.
- */
-#define REQARG_FLOAT64 (ARG_FLOAT64 | ARG_REQUIRED)
 /* @} */
 
 
@@ -174,9 +161,15 @@ typedef struct arg_s {
 
 /**
  * @struct cmd_ln_t
- * Opaque structure used to hold the results of command-line parsing.
+ * Structure (no longer opaque) used to hold the results of command-line parsing.
  */
-typedef struct cmd_ln_s cmd_ln_t;
+typedef struct cmd_ln_s {
+    int refcount;
+    hash_table_t *ht;
+    char **f_argv;
+    uint32 f_argc;
+    arg_t const *defn;
+} cmd_ln_t;
 
 /**
  * Create a cmd_ln_t from NULL-terminated list of arguments.
@@ -261,10 +254,36 @@ cmd_ln_t *cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous comma
     );
 
 /**
- * Access the generic type union for a command line argument.
+ * Access the value and metadata for a configuration parameter.
+ *
+ * This structure is owned by the cmd_ln_t, assume that you must copy
+ * anything inside it, including strings, if you wish to retain it,
+ * and should never free it manually.
+ *
+ * @param cmdln Command-line object.
+ * @param name the command-line flag to retrieve.
+ * @return the value and metadata associated with <tt>name</tt>, or
+ *         NULL if <tt>name</tt> does not exist.  You must use
+ *         cmd_ln_exists_r() to distinguish between cases where a
+ *         value is legitimately NULL and where the corresponding flag
+ *         is unknown.
  */
 SPHINXBASE_EXPORT
-anytype_t *cmd_ln_access_r(cmd_ln_t *cmdln, char const *name);
+cmd_ln_val_t *cmd_ln_access_r(cmd_ln_t *cmdln, char const *name);
+
+/**
+ * Access the type of a configuration parameter.
+ *
+ * This function is provided as a convenience for dynamically typed
+ * language bindings.
+ *
+ * @param cmdln Command-line object.
+ * @param name the command-line flag to retrieve.
+ * @return the type of the parameter (as a combination of the ARG_*
+ *         bits), or 0 if no such parameter exists.
+ */
+SPHINXBASE_EXPORT
+int cmd_ln_type_r(cmd_ln_t *cmdln, char const *name);
 
 /**
  * Retrieve a string from a command-line object.
@@ -406,200 +425,19 @@ int cmd_ln_exists_r(cmd_ln_t *cmdln, char const *name);
  * attributes as given in defn.
  *
  * @param cmdln command-line object
- * @param fp   output stream
  * @param defn array of argument name definitions.
  */
 SPHINXBASE_EXPORT
-void cmd_ln_print_help_r (cmd_ln_t *cmdln, FILE *fp, const arg_t *defn);
+void cmd_ln_log_help_r (cmd_ln_t *cmdln, const arg_t *defn);
 
 /**
  * Print current configuration values and defaults.
  *
  * @param cmdln  command-line object
- * @param fp   output stream
  * @param defn array of argument name definitions.
  */
 SPHINXBASE_EXPORT
-void cmd_ln_print_values_r (cmd_ln_t *cmdln, FILE *fp, const arg_t *defn);
-
-/**
- * Non-reentrant version of cmd_ln_parse().
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_parse_r().
- * @return 0 if successful, <0 if error.
- */
-SPHINXBASE_EXPORT
-int32 cmd_ln_parse(const arg_t *defn,  /**< In: Array of argument name definitions */
-                   int32 argc,	       /**< In: Number of actual arguments */
-                   char *argv[],       /**< In: Actual arguments */
-                   int32 strict        /**< In: Fail on duplicate or unknown
-                                          arguments, or no arguments? */
-	);
-
-/**
- * Parse an arguments file by deliminating on " \r\t\n" and putting each tokens
- * into an argv[] for cmd_ln_parse().
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_parse_file_r().
- *
- * @return 0 if successful, <0 on error.
- */
-SPHINXBASE_EXPORT
-int32 cmd_ln_parse_file(const arg_t *defn,   /**< In: Array of argument name definitions*/
-			char const *filename,/**< In: A file that contains all the arguments */ 
-                        int32 strict         /**< In: Fail on duplicate or unknown
-                                                arguments, or no arguments? */
-	);
-
-/**
- * Old application initialization routine for Sphinx3 code.
- *
- * @deprecated This is deprecated in favor of the re-entrant API.
- */
-SPHINXBASE_EXPORT
-void cmd_ln_appl_enter(int argc,   /**< In: Number of actual arguments */
-		       char *argv[], /**< In: Number of actual arguments */
-		       char const* default_argfn, /**< In: default argument file name*/
-		       const arg_t *defn /**< Command-line argument definition */
-	);
-
-
-/**
- * Finalization routine corresponding to cmd_ln_appl_enter().
- *
- * @deprecated This is deprecated in favor of the re-entrant API.
- */
-
-SPHINXBASE_EXPORT
-void cmd_ln_appl_exit(void);
-
-/**
- * Retrieve the global cmd_ln_t object used by non-re-entrant functions.
- *
- * @deprecated This is deprecated in favor of the re-entrant API.
- * @return global cmd_ln_t object.
- */
-SPHINXBASE_EXPORT
-cmd_ln_t *cmd_ln_get(void);
-
-/**
- * Test the existence of a command-line argument in the global set of
- * definitions.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_exists_r().
- *
- * @return True if the command line argument exists (i.e. it
- * was one of the arguments defined in the call to cmd_ln_parse().
- */
-#define cmd_ln_exists(name)	cmd_ln_exists_r(cmd_ln_get(), name)
-
-/**
- * Return a pointer to the previously parsed value for the given argument name.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_access_r().
- */
-#define cmd_ln_access(name)	cmd_ln_access_r(cmd_ln_get(), name)
-
-/**
- * Retrieve a string from the global command line.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_str_r().
- */
-#define cmd_ln_str(name)	cmd_ln_str_r(cmd_ln_get(), name)
-
-/**
- * Retrieve an array of strings in the global command line.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_str_list_r().
- */
-#define cmd_ln_str_list(name)	cmd_ln_str_list_r(cmd_ln_get(), name)
-
-/**
- * Retrieve a 32-bit integer from the global command line.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_int_r().
- */
-#define cmd_ln_int32(name)	(int32)cmd_ln_int_r(cmd_ln_get(), name)
-/**
- * Retrieve a 32-bit float from the global command line.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_float_r().
- */
-#define cmd_ln_float32(name)	(float32)cmd_ln_float_r(cmd_ln_get(), name)
-/**
- * Retrieve a 64-bit float from the global command line.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_float_r().
- */
-#define cmd_ln_float64(name)	(float64)cmd_ln_float_r(cmd_ln_get(), name)
-/**
- * Retrieve a boolean from the global command line.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_boolean_r().
- */
-#define cmd_ln_boolean(name)	cmd_ln_boolean_r(cmd_ln_get(), name)
-
-/**
- * Set a string in the global command line.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_set_str_r().
- */
-#define cmd_ln_set_str(n,s)     cmd_ln_set_str_r(cmd_ln_get(),n,s)
-/**
- * Set a 32-bit integer value in the global command line.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_set_int_r().
- */
-#define cmd_ln_set_int32(n,i)   cmd_ln_set_int_r(cmd_ln_get(),n,i)
-/**
- * Set a 32-bit float in the global command line.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_set_float_r().
- */
-#define cmd_ln_set_float32(n,f) cmd_ln_set_float_r(cmd_ln_get(),n,f)
-/**
- * Set a 64-bit float in the global command line.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_set_float_r().
- */
-#define cmd_ln_set_float64(n,f) cmd_ln_set_float_r(cmd_ln_get(),n,f)
-/**
- * Set a boolean value in the global command line.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_set_boolean_r().
- */
-#define cmd_ln_set_boolean(n,b) cmd_ln_set_boolean_r(cmd_ln_get(),n,b)
-
-/**
- * Print a help message listing the valid argument names, and the associated
- * attributes as given in defn.
- *
- * @deprecated This is deprecated in favor of the re-entrant API
- * function cmd_ln_print_help_r().
- */
-#define cmd_ln_print_help(f,d) cmd_ln_print_help_r(cmd_ln_get(),f,d)
-
-/**
- * Free the global command line, if any exists.
- * @deprecated Use the re-entrant API instead.
- */
-SPHINXBASE_EXPORT
-void cmd_ln_free (void);
+void cmd_ln_log_values_r (cmd_ln_t *cmdln, const arg_t *defn);
 
 
 #ifdef __cplusplus
