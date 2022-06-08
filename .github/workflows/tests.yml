@@ -8,9 +8,11 @@ jobs:
     steps:
       - name: Build
         run: |
+          pwd
           mkdir build
-          (cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make)
+          (cd build && pwd && ls)
+          (cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=install ..)
+          (cd build && make)
 
       - name: Run tests
-        run: |
-          make test
+        run: make test
