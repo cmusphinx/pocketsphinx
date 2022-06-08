@@ -98,3 +98,5 @@ target_link_libraries(pocketsphinx PUBLIC Threads::Threads)
 set_target_properties(pocketsphinx PROPERTIES
   VERSION 4.0.0
   SOVERSION 4)
+
+install(TARGETS pocketsphinx LIBRARY)
