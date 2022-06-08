@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include "fe.h"
-#include "feat.h"
-#include "cmd_ln.h"
-#include "ckd_alloc.h"
+#include <sphinxbase/fe.h>
+#include <sphinxbase/feat.h>
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/ckd_alloc.h>
 
 #include "test_macros.h"
 

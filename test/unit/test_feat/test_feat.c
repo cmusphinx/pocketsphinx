@@ -6,8 +6,8 @@
 #include <string.h>
 #include <math.h>
 
-#include "feat.h"
-#include "ckd_alloc.h"
+#include <sphinxbase/feat.h>
+#include <sphinxbase/ckd_alloc.h>
 
 const mfcc_t data[6][13] = {
 	{ FLOAT2MFCC(15.114), FLOAT2MFCC(-1.424), FLOAT2MFCC(-0.953),

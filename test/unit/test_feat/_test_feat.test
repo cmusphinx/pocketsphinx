@@ -1,5 +1,5 @@
 #!/bin/sh
-. ../testfuncs.sh
+. ${CMAKE_BINARY_DIR}/test/testfuncs.sh
 
 set -e
 ./test_feat > _test_feat.out
