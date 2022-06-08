@@ -53,16 +53,8 @@ if(NOT DEFAULT_RADIX)
 endif()
 cmake_print_variables(FIXED_POINT DEFAULT_RADIX)
 
-configure_file(include/config.h.in include/config.h)
-configure_file(include/sphinx_config.h.in include/sphinx_config.h)
+configure_file(config.h.in config.h)
+configure_file(sphinx_config.h.in include/pocketsphinx/sphinx_config.h)
 add_definitions(-DHAVE_CONFIG_H)
 
-#install(TARGETS pocketsphinx DESTINATION lib)
-
-# add_subdirectory(include)
-# add_subdirectory(src)
-
-# add_subdirectory(test)
-# add_subdirectory(doc)
-# add_subdirectory(model)
-# add_subdirectory(swig)
+add_subdirectory(src)
