@@ -82,24 +82,8 @@
 #include "sphinxbase/case.h"
 #include "sphinxbase/strfuncs.h"
 
-typedef struct cmd_ln_val_s {
-    anytype_t val;
-    int type;
-    char *name;
-} cmd_ln_val_t;
-
-struct cmd_ln_s {
-    int refcount;
-    hash_table_t *ht;
-    char **f_argv;
-    uint32 f_argc;
-};
-
-/** Global command-line, for non-reentrant API. */
-cmd_ln_t *global_cmdln;
-
 static void
-arg_dump_r(cmd_ln_t *, FILE *, arg_t const *, int32);
+arg_log_r(cmd_ln_t *, arg_t const *, int32);
 
 static cmd_ln_t *
 parse_options(cmd_ln_t *, const arg_t *, int32, char* [], int32);
@@ -239,60 +223,43 @@ arg_resolve_env(const char *str)
 }
 
 static void
-arg_dump_r(cmd_ln_t *cmdln, FILE *fp, const arg_t * defn, int32 doc)
+arg_log_r(cmd_ln_t *cmdln, const arg_t * defn, int32 doc)
 {
     arg_t const **pos;
     int32 i, n;
     size_t l;
     int32 namelen, deflen;
-    anytype_t *vp;
+    cmd_ln_val_t const *vp;
     char const **array;
 
     /* No definitions, do nothing. */
-    if (defn == NULL || fp == NULL)
+    if (defn == NULL)
         return;
 
     /* Find max lengths of name and default value fields, and #entries in defn */
     n = arg_strlen(defn, &namelen, &deflen);
-    /*    E_INFO("String length %d. Name length %d, Default Length %d\n",n, namelen, deflen); */
-    namelen = namelen & 0xfffffff8;     /* Previous tab position */
-    deflen = deflen & 0xfffffff8;       /* Previous tab position */
-
-    fprintf(fp, "[NAME]");
-    for (l = strlen("[NAME]"); l < namelen; l += 8)
-        fprintf(fp, "\t");
-    fprintf(fp, "\t[DEFLT]");
-    for (l = strlen("[DEFLT]"); l < deflen; l += 8)
-        fprintf(fp, "\t");
-
+    namelen += 4;
+    deflen += 4;
+    E_INFO("%-*s", namelen, "[NAME]");
+    E_INFOCONT("%-*s", deflen, "[DEFLT]");
     if (doc) {
-        fprintf(fp, "\t[DESCR]\n");
+        E_INFOCONT("     [DESCR]\n");
     }
     else {
-        fprintf(fp, "\t[VALUE]\n");
+        E_INFOCONT("    [VALUE]\n");
     }
 
     /* Print current configuration, sorted by name */
     pos = arg_sort(defn, n);
     for (i = 0; i < n; i++) {
-        fprintf(fp, "%s", pos[i]->name);
-        for (l = strlen(pos[i]->name); l < namelen; l += 8)
-            fprintf(fp, "\t");
-
-        fprintf(fp, "\t");
-        if (pos[i]->deflt) {
-            fprintf(fp, "%s", pos[i]->deflt);
-            l = strlen(pos[i]->deflt);
-        }
+        E_INFO("%-*s", namelen, pos[i]->name);
+        if (pos[i]->deflt)
+            E_INFOCONT("%-*s", deflen, pos[i]->deflt);
         else
-            l = 0;
-        for (; l < deflen; l += 8)
-            fprintf(fp, "\t");
-
-        fprintf(fp, "\t");
+            E_INFOCONT("%-*s", deflen, "");
         if (doc) {
             if (pos[i]->doc)
-                fprintf(fp, "%s", pos[i]->doc);
+                E_INFOCONT("    %s", pos[i]->doc);
         }
         else {
             vp = cmd_ln_access_r(cmdln, pos[i]->name);
@@ -300,27 +267,28 @@ arg_dump_r(cmd_ln_t *cmdln, FILE *fp, const arg_t * defn, int32 doc)
                 switch (pos[i]->type) {
                 case ARG_INTEGER:
                 case REQARG_INTEGER:
-                    fprintf(fp, "%ld", vp->i);
+                    E_INFOCONT("    %ld", vp->val.i);
                     break;
                 case ARG_FLOATING:
                 case REQARG_FLOATING:
-                    fprintf(fp, "%e", vp->fl);
+                    E_INFOCONT("    %e", vp->val.fl);
                     break;
                 case ARG_STRING:
                 case REQARG_STRING:
-                    if (vp->ptr)
-                        fprintf(fp, "%s", (char *)vp->ptr);
+                    if (vp->val.ptr)
+                        E_INFOCONT("    %s", (char *)vp->val.ptr);
                     break;
                 case ARG_STRING_LIST:
-                    array = (char const**)vp->ptr;
+                    array = (char const**)vp->val.ptr;
                     if (array)
+                        E_INFOCONT("    ");
                         for (l = 0; array[l] != 0; l++) {
-                            fprintf(fp, "%s,", array[l]);
+                            E_INFOCONT("%s,", array[l]);
                         }
                     break;
                 case ARG_BOOLEAN:
                 case REQARG_BOOLEAN:
-                    fprintf(fp, "%s", vp->i ? "yes" : "no");
+                    E_INFOCONT("    %s", vp->val.i ? "yes" : "no");
                     break;
                 default:
                     E_ERROR("Unknown argument type: %d\n", pos[i]->type);
@@ -328,11 +296,10 @@ arg_dump_r(cmd_ln_t *cmdln, FILE *fp, const arg_t * defn, int32 doc)
             }
         }
 
-        fprintf(fp, "\n");
+        E_INFOCONT("\n");
     }
     ckd_free(pos);
-
-    fprintf(fp, "\n");
+    E_INFO("\n");
 }
 
 static char **
@@ -489,71 +456,10 @@ cmd_ln_val_free(cmd_ln_val_t *val)
     ckd_free(val);
 }
 
-cmd_ln_t *
-cmd_ln_get(void)
-{
-    return global_cmdln;
-}
-
-void
-cmd_ln_appl_enter(int argc, char *argv[],
-                  const char *default_argfn,
-                  const arg_t * defn)
-{
-    /* Look for default or specified arguments file */
-    const char *str;
-
-    str = NULL;
-
-    if ((argc == 2) && (strcmp(argv[1], "help") == 0)) {
-        cmd_ln_print_help(stderr, defn);
-        exit(1);
-    }
-
-    if ((argc == 2) && (argv[1][0] != '-'))
-        str = argv[1];
-    else if (argc == 1) {
-        FILE *fp;
-        E_INFO("Looking for default argument file: %s\n", default_argfn);
-
-        if ((fp = fopen(default_argfn, "r")) == NULL) {
-            E_INFO("Can't find default argument file %s.\n",
-                   default_argfn);
-        }
-        else {
-            str = default_argfn;
-        }
-        if (fp != NULL)
-            fclose(fp);
-    }
-
-
-    if (str) {
-        /* Build command line argument list from file */
-        E_INFO("Parsing command lines from file %s\n", str);
-        if (cmd_ln_parse_file(defn, str, TRUE)) {
-            E_INFOCONT("Usage:\n");
-            E_INFOCONT("\t%s argument-list, or\n", argv[0]);
-            E_INFOCONT("\t%s [argument-file] (default file: . %s)\n\n",
-                    argv[0], default_argfn);
-            cmd_ln_print_help(stderr, defn);
-            exit(1);
-        }
-    }
-    else {
-        cmd_ln_parse(defn, argc, argv, TRUE);
-    }
-}
-
-void
-cmd_ln_appl_exit()
-{
-    cmd_ln_free();
-}
-
 
 cmd_ln_t *
-cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn, int32 argc, char *argv[], int strict)
+cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn,
+               int32 argc, char *argv[], int strict)
 {
     int32 i, j, n, argstart;
     hash_table_t *defidx = NULL;
@@ -566,6 +472,7 @@ cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn, int32 argc, char *argv
     }
     else
         cmdln = inout_cmdln;
+    cmdln->defn = defn;
 
     /* Build a hash table for argument definitions */
     defidx = hash_table_new(50, 0);
@@ -616,7 +523,6 @@ cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn, int32 argc, char *argv
 
         /* Enter argument value */
         if (j + 1 >= argc) {
-            cmd_ln_print_help_r(cmdln, stderr, defn);
             E_ERROR("Argument value for '%s' missing\n", argv[j]);
             goto error;
         }
@@ -625,7 +531,6 @@ cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn, int32 argc, char *argv
             val = cmd_ln_val_init(ARG_STRING, argv[j], argv[j + 1]);
         else {
             if ((val = cmd_ln_val_init(argdef->type, argv[j], argv[j + 1])) == NULL) {
-                cmd_ln_print_help_r(cmdln, stderr, defn);
                 E_ERROR("Bad argument value for %s: %s\n", argv[j],
                         argv[j + 1]);
                 goto error;
@@ -674,23 +579,16 @@ cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn, int32 argc, char *argv
         }
     }
     if (j > 0) {
-        cmd_ln_print_help_r(cmdln, stderr, defn);
         goto error;
     }
 
     if (strict && argc == 1) {
-        E_ERROR("No arguments given, available options are:\n");
-        cmd_ln_print_help_r(cmdln, stderr, defn);
+        E_ERROR("No arguments given\n");
         if (defidx)
             hash_table_free(defidx);
         if (inout_cmdln == NULL)
             cmd_ln_free_r(cmdln);
         return NULL;
-    }
-
-    /* If we use it from something except pocketsphinx, print current values */
-    if (!cmd_ln_exists_r(cmdln, "-logfn") && err_get_logfp()) {
-	cmd_ln_print_values_r(cmdln, err_get_logfp(), defn);
     }
 
     hash_table_free(defidx);
@@ -740,24 +638,6 @@ cmd_ln_init(cmd_ln_t *inout_cmdln, const arg_t *defn, int32 strict, ...)
     va_end(args);
 
     return parse_options(inout_cmdln, defn, f_argc, f_argv, strict);
-}
-
-int
-cmd_ln_parse(const arg_t * defn, int32 argc, char *argv[], int strict)
-{
-    cmd_ln_t *cmdln;
-
-    cmdln = cmd_ln_parse_r(global_cmdln, defn, argc, argv, strict);
-    if (cmdln == NULL) {
-        /* Old, bogus behaviour... */
-        E_ERROR("Failed to parse arguments list, forced exit\n");
-        exit(-1);
-    }
-    /* Initialize global_cmdln if not present. */
-    if (global_cmdln == NULL) {
-        global_cmdln = cmdln;
-    }
-    return 0;
 }
 
 cmd_ln_t *
@@ -891,38 +771,22 @@ cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, const arg_t * defn, const char *filen
     return parse_options(inout_cmdln, defn, argc, f_argv, strict);
 }
 
-int
-cmd_ln_parse_file(const arg_t * defn, const char *filename, int32 strict)
-{
-    cmd_ln_t *cmdln;
-
-    cmdln = cmd_ln_parse_file_r(global_cmdln, defn, filename, strict);
-    if (cmdln == NULL) {
-        return -1;
-    }
-    /* Initialize global_cmdln if not present. */
-    if (global_cmdln == NULL) {
-        global_cmdln = cmdln;
-    }
-    return 0;
-}
-
 void
-cmd_ln_print_help_r(cmd_ln_t *cmdln, FILE *fp, arg_t const* defn)
+cmd_ln_log_help_r(cmd_ln_t *cmdln, arg_t const* defn)
 {
     if (defn == NULL)
         return;
-    fprintf(fp, "Arguments list definition:\n");
-    arg_dump_r(cmdln, fp, defn, TRUE);
+    E_INFO("Arguments list definition:\n");
+    arg_log_r(cmdln, defn, TRUE);
 }
 
 void
-cmd_ln_print_values_r(cmd_ln_t *cmdln, FILE *fp, arg_t const* defn)
+cmd_ln_log_values_r(cmd_ln_t *cmdln, arg_t const* defn)
 {
     if (defn == NULL)
         return;
-    fprintf(fp, "Current configuration:\n");
-    arg_dump_r(cmdln, fp, defn, FALSE);
+    E_INFO("Current configuration:\n");
+    arg_log_r(cmdln, defn, FALSE);
 }
 
 int
@@ -934,7 +798,7 @@ cmd_ln_exists_r(cmd_ln_t *cmdln, const char *name)
     return (hash_table_lookup(cmdln->ht, name, &val) == 0);
 }
 
-anytype_t *
+cmd_ln_val_t *
 cmd_ln_access_r(cmd_ln_t *cmdln, const char *name)
 {
     void *val;
@@ -942,60 +806,90 @@ cmd_ln_access_r(cmd_ln_t *cmdln, const char *name)
         E_ERROR("Unknown argument: %s\n", name);
         return NULL;
     }
-    return (anytype_t *)val;
+    return (cmd_ln_val_t *)val;
 }
+
+int
+cmd_ln_type_r(cmd_ln_t *cmdln, char const *name)
+{
+    cmd_ln_val_t *val = cmd_ln_access_r(cmdln, name);
+    if (val == NULL)
+        return 0;
+    return val->type;
+}
+
 
 char const *
 cmd_ln_str_r(cmd_ln_t *cmdln, char const *name)
 {
-    anytype_t *val;
+    cmd_ln_val_t *val;
     val = cmd_ln_access_r(cmdln, name);
     if (val == NULL)
         return NULL;
-    return (char const *)val->ptr;
+    if (!(val->type & ARG_STRING)) {
+        E_ERROR("Argument %s does not have string type\n", name);
+        return NULL;
+    }
+    return (char const *)val->val.ptr;
 }
 
 char const **
 cmd_ln_str_list_r(cmd_ln_t *cmdln, char const *name)
 {
-    anytype_t *val;
+    cmd_ln_val_t *val;
     val = cmd_ln_access_r(cmdln, name);
     if (val == NULL)
         return NULL;
-    return (char const **)val->ptr;
+    if (!(val->type & ARG_STRING_LIST)) {
+        E_ERROR("Argument %s does not have string list type\n", name);
+        return NULL;
+    }
+    return (char const **)val->val.ptr;
 }
 
 long
 cmd_ln_int_r(cmd_ln_t *cmdln, char const *name)
 {
-    anytype_t *val;
+    cmd_ln_val_t *val;
     val = cmd_ln_access_r(cmdln, name);
     if (val == NULL)
         return 0L;
-    return val->i;
+    if (!(val->type & (ARG_INTEGER | ARG_BOOLEAN))) {
+        E_ERROR("Argument %s does not have integer type\n", name);
+        return 0L;
+    }
+    return val->val.i;
 }
 
 double
 cmd_ln_float_r(cmd_ln_t *cmdln, char const *name)
 {
-    anytype_t *val;
+    cmd_ln_val_t *val;
     val = cmd_ln_access_r(cmdln, name);
     if (val == NULL)
         return 0.0;
-    return val->fl;
+    if (!(val->type & ARG_FLOATING)) {
+        E_ERROR("Argument %s does not have floating-point type\n", name);
+        return 0.0;
+    }
+    return val->val.fl;
 }
 
 void
 cmd_ln_set_str_r(cmd_ln_t *cmdln, char const *name, char const *str)
 {
-    anytype_t *val;
+    cmd_ln_val_t *val;
     val = cmd_ln_access_r(cmdln, name);
     if (val == NULL) {
         E_ERROR("Unknown argument: %s\n", name);
         return;
     }
-    ckd_free(val->ptr);
-    val->ptr = ckd_salloc(str);
+    if (!(val->type & ARG_STRING)) {
+        E_ERROR("Argument %s does not have string type\n", name);
+        return;
+    }
+    ckd_free(val->val.ptr);
+    val->val.ptr = ckd_salloc(str);
 }
 
 void
@@ -1006,6 +900,10 @@ cmd_ln_set_str_extra_r(cmd_ln_t *cmdln, char const *name, char const *str)
 	val = cmd_ln_val_init(ARG_STRING, name, str);
 	hash_table_enter(cmdln->ht, val->name, (void *)val);
     } else {
+        if (!(val->type & ARG_STRING)) {
+            E_ERROR("Argument %s does not have string type\n", name);
+            return;
+        }
         ckd_free(val->val.ptr);
         val->val.ptr = ckd_salloc(str);
     }
@@ -1014,25 +912,33 @@ cmd_ln_set_str_extra_r(cmd_ln_t *cmdln, char const *name, char const *str)
 void
 cmd_ln_set_int_r(cmd_ln_t *cmdln, char const *name, long iv)
 {
-    anytype_t *val;
+    cmd_ln_val_t *val;
     val = cmd_ln_access_r(cmdln, name);
     if (val == NULL) {
         E_ERROR("Unknown argument: %s\n", name);
         return;
     }
-    val->i = iv;
+    if (!(val->type & (ARG_INTEGER | ARG_BOOLEAN))) {
+        E_ERROR("Argument %s does not have integer type\n", name);
+        return;
+    }
+    val->val.i = iv;
 }
 
 void
 cmd_ln_set_float_r(cmd_ln_t *cmdln, char const *name, double fv)
 {
-    anytype_t *val;
+    cmd_ln_val_t *val;
     val = cmd_ln_access_r(cmdln, name);
     if (val == NULL) {
         E_ERROR("Unknown argument: %s\n", name);
         return;
     }
-    val->fl = fv;
+    if (!(val->type & ARG_FLOATING)) {
+        E_ERROR("Argument %s does not have floating-point type\n", name);
+        return;
+    }
+    val->val.fl = fv;
 }
 
 cmd_ln_t *
@@ -1067,7 +973,7 @@ cmd_ln_free_r(cmd_ln_t *cmdln)
 
     if (cmdln->f_argv) {
         int32 i;
-        for (i = 0; i < cmdln->f_argc; ++i) {
+        for (i = 0; i < (int32)cmdln->f_argc; ++i) {
             ckd_free(cmdln->f_argv[i]);
         }
         ckd_free(cmdln->f_argv);
@@ -1076,13 +982,6 @@ cmd_ln_free_r(cmd_ln_t *cmdln)
     }
     ckd_free(cmdln);
     return 0;
-}
-
-void
-cmd_ln_free(void)
-{
-    cmd_ln_free_r(global_cmdln);
-    global_cmdln = NULL;
 }
 
 /* vim: set ts=4 sw=4: */
