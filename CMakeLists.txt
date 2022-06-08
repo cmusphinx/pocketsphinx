@@ -63,3 +63,6 @@ add_subdirectory(include)
 add_subdirectory(model)
 add_subdirectory(programs)
 add_subdirectory(doc)
+
+configure_file(pocketsphinx.pc.in pocketsphinx.pc @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/pocketsphinx.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
