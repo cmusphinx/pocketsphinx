@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include <ckd_alloc.h>
+#include <sphinxbase/ckd_alloc.h>
 
 #include "test_macros.h"
 

@@ -34,3 +34,5 @@ foreach(TEST_EXECUTABLE ${TESTS})
     )
   add_test(${TEST_EXECUTABLE} ${TEST_EXECUTABLE})
 endforeach()
+
+add_subdirectory(test_alloc)
