@@ -1,5 +1,5 @@
 #!/bin/sh
-. ../testfuncs.sh
+. ${CMAKE_BINARY_DIR}/test/testfuncs.sh
 
 set -e
 ./deletehash -hmmdump > _hash_delete4.out 2>&1 

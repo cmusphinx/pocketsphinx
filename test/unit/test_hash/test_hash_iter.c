@@ -3,8 +3,9 @@
  * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
-#include "hash_table.h"
-#include "ckd_alloc.h"
+#include <sphinxbase/hash_table.h>
+#include <sphinxbase/ckd_alloc.h>
+
 #include "test_macros.h"
 
 #include <stdio.h>

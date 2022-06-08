@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <hash_table.h>
-#include <err.h>
+
+#include <sphinxbase/hash_table.h>
+#include <sphinxbase/err.h>
 
 /* Explore a more complicated case for deletion */
 int
