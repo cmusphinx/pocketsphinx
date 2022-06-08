@@ -56,7 +56,7 @@
 #include <sphinxbase/prim_type.h>
 
 /* Local headers. */
-#include "ps_mllr.h"
+#include <pocketsphinx/ps_mllr.h>
 #include "bin_mdef.h"
 #include "tmat.h"
 #include "hmm.h"
