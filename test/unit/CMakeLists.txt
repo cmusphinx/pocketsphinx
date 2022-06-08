@@ -16,6 +16,9 @@ set(TESTS
   test_keyphrase
   test_lattice
   test_lm_read
+  test_log_shifted
+  test_log_int8
+  test_log_int16
   test_mllr
   test_nbest
   test_pitch

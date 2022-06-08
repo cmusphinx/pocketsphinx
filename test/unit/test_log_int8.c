@@ -1,7 +1,8 @@
-#include <logmath.h>
+#include <sphinxbase/logmath.h>
 
 #include "test_macros.h"
 
+#undef LOG_EPSILON
 #define LOG_EPSILON 1500
 
 int
