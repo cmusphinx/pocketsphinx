@@ -57,7 +57,7 @@ static const arg_t defn[] = {
     "Shows the usage of the tool"},
 
   { "-logbase",
-    ARG_FLOAT64,
+    ARG_FLOATING,
     "1.0001",
     "Base in which all log-likelihoods calculated" },
 

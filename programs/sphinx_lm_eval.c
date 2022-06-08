@@ -57,7 +57,7 @@ static const arg_t defn[] = {
     "Shows the usage of the tool"},
 
   { "-logbase",
-    ARG_FLOAT64,
+    ARG_FLOATING,
     "1.0001",
     "Base in which all log-likelihoods calculated" },
 
@@ -96,12 +96,12 @@ static const arg_t defn[] = {
     "Use memory-mapped I/O for reading binary LM files"},
 
   { "-lw",
-    ARG_FLOAT32,
+    ARG_FLOATING,
     "1.0",
     "Language model weight" },
 
   { "-wip",
-    ARG_FLOAT32,
+    ARG_FLOATING,
     "1.0",
     "Word insertion probability" },
 

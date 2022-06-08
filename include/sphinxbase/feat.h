@@ -71,7 +71,7 @@ extern "C" {
       "1s_c_d_dd",                                                      \
       "Feature stream type, depends on the acoustic model" },           \
 { "-ceplen",                                                            \
-      ARG_INT32,                                                        \
+      ARG_INTEGER,                                                        \
       "13",                                                             \
      "Number of components in the input feature vector" },              \
 { "-cmn",                                                               \
@@ -91,7 +91,7 @@ extern "C" {
       "none",                                                           \
       "Automatic gain control for c0 ('max', 'emax', 'noise', or 'none')" }, \
 { "-agcthresh",                                                         \
-      ARG_FLOAT32,                                                      \
+      ARG_FLOATING,                                                      \
       "2.0",                                                            \
       "Initial threshold for automatic gain control" },                 \
 { "-lda",                                                               \
@@ -99,7 +99,7 @@ extern "C" {
       NULL,                                                             \
       "File containing transformation matrix to be applied to features (single-stream features only)" }, \
 { "-ldadim",                                                            \
-      ARG_INT32,                                                        \
+      ARG_INTEGER,                                                        \
       "0",                                                              \
       "Dimensionality of output of feature transformation (0 to use entire matrix)" }, \
 {"-svspec",                                                             \

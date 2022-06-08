@@ -127,42 +127,42 @@ extern "C" {
     "Which type of transform to use to calculate cepstra (legacy, dct, or htk)" }, \
    \
   { "-alpha", \
-    ARG_FLOAT32, \
+    ARG_FLOATING, \
     ARG_STRINGIFY(DEFAULT_PRE_EMPHASIS_ALPHA), \
     "Preemphasis parameter" }, \
    \
   { "-samprate", \
-    ARG_FLOAT32, \
+    ARG_FLOATING, \
     ARG_STRINGIFY(DEFAULT_SAMPLING_RATE), \
     "Sampling rate" }, \
    \
   { "-frate", \
-    ARG_INT32, \
+    ARG_INTEGER, \
     ARG_STRINGIFY(DEFAULT_FRAME_RATE), \
     "Frame rate" }, \
    \
   { "-wlen", \
-    ARG_FLOAT32, \
+    ARG_FLOATING, \
     ARG_STRINGIFY(DEFAULT_WINDOW_LENGTH), \
     "Hamming window length" }, \
    \
   { "-nfft", \
-    ARG_INT32, \
+    ARG_INTEGER, \
     ARG_STRINGIFY(DEFAULT_FFT_SIZE), \
     "Size of FFT" }, \
    \
   { "-nfilt", \
-    ARG_INT32, \
+    ARG_INTEGER, \
     ARG_STRINGIFY(DEFAULT_NUM_FILTERS), \
     "Number of filter banks" }, \
    \
   { "-lowerf", \
-    ARG_FLOAT32, \
+    ARG_FLOATING, \
     ARG_STRINGIFY(DEFAULT_LOWER_FILT_FREQ), \
     "Lower edge of filters" }, \
    \
   { "-upperf", \
-    ARG_FLOAT32, \
+    ARG_FLOATING, \
     ARG_STRINGIFY(DEFAULT_UPPER_FILT_FREQ), \
     "Upper edge of filters" }, \
    \
@@ -177,7 +177,7 @@ extern "C" {
     "Round mel filter frequencies to DFT points" }, \
    \
   { "-ncep", \
-    ARG_INT32, \
+    ARG_INTEGER, \
     ARG_STRINGIFY(DEFAULT_NUM_CEPSTRA), \
     "Number of cep coefficients" }, \
    \
@@ -187,27 +187,27 @@ extern "C" {
     "Use double bandwidth filters (same center freq)" }, \
    \
   { "-lifter", \
-    ARG_INT32, \
+    ARG_INTEGER, \
     "0", \
     "Length of sin-curve for liftering, or 0 for no liftering." }, \
    \
   { "-vad_prespeech", \
-    ARG_INT32, \
+    ARG_INTEGER, \
     ARG_STRINGIFY(DEFAULT_PRE_SPEECH), \
     "Num of speech frames to keep before silence to speech." }, \
    \
   { "-vad_startspeech", \
-    ARG_INT32, \
+    ARG_INTEGER, \
     ARG_STRINGIFY(DEFAULT_START_SPEECH), \
     "Num of speech frames to trigger vad from silence to speech." }, \
    \
   { "-vad_postspeech", \
-    ARG_INT32, \
+    ARG_INTEGER, \
     ARG_STRINGIFY(DEFAULT_POST_SPEECH), \
     "Num of silence frames to keep after from speech to silence." }, \
    \
   { "-vad_threshold", \
-    ARG_FLOAT32, \
+    ARG_FLOATING, \
     "3.0", \
     "Threshold for decision between noise and silence frames. Log-ratio between signal level and noise level." }, \
    \
@@ -232,7 +232,7 @@ extern "C" {
     "Add 1/2-bit noise" }, \
    \
   { "-seed", \
-    ARG_INT32, \
+    ARG_INTEGER, \
     ARG_STRINGIFY(SEED), \
     "Seed for random number generator; if less than zero, pick our own" }, \
    \
@@ -305,16 +305,6 @@ enum fe_error_e {
 };
 
 /**
- * Initialize a front-end object from global command-line.
- *
- * This is equivalent to calling fe_init_auto_r(cmd_ln_get()).
- *
- * @return Newly created front-end object.
- */
-SPHINXBASE_EXPORT
-fe_t* fe_init_auto(void);
-
-/**
  * Get the default set of arguments for fe_init_auto_r().
  *
  * @return Pointer to an argument structure which can be passed to
@@ -368,7 +358,7 @@ int fe_start_utt(fe_t *fe);
  * It is usually the number of MFCC
  * coefficients, but it might be the number of log-spectrum bins, if
  * the <tt>-logspec</tt> or <tt>-smoothspec</tt> options to
- * fe_init_auto() were true.
+ * fe_init_auto_r() were true.
  *
  * @param fe Front-end object
  * @return Dimensionality of front-end output.
