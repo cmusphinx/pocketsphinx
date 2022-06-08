@@ -1,0 +1,16 @@
+name: Run Tests
+on:
+  - push
+  - pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build
+        run: |
+          mkdir build
+          (cd build && cmake -DCMAKE_BUILD_TYPE=DEBUG .. && make)
+
+      - name: Run tests
+        run: |
+          make test
