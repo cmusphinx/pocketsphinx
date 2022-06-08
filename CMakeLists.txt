@@ -54,7 +54,7 @@ endif()
 cmake_print_variables(FIXED_POINT DEFAULT_RADIX)
 
 configure_file(config.h.in config.h)
-configure_file(sphinx_config.h.in include/sphinx_config.h)
+configure_file(sphinx_config.h.in include/sphinxbase/sphinx_config.h)
 add_definitions(-DHAVE_CONFIG_H)
 
 add_subdirectory(src)

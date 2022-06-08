@@ -47,7 +47,7 @@
 #include <sphinxbase/ngram_model.h>
 
 /* PocketSphinx headers. */
-#include <pocketsphinx_export.h>
+#include <pocketsphinx/export.h>
 
 #ifdef __cplusplus
 extern "C" {

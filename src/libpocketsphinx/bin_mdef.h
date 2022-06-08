@@ -55,7 +55,7 @@ extern "C" {
 /* SphinxBase headers. */
 #include <sphinxbase/mmio.h>
 #include <sphinxbase/cmd_ln.h>
-#include <pocketsphinx_export.h>
+#include <pocketsphinx/export.h>
 
 #include "mdef.h"
 

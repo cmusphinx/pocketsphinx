@@ -48,7 +48,7 @@
 /* Local headers. */
 #include "s3types.h"
 #include "bin_mdef.h"
-#include "pocketsphinx_export.h"
+#include "pocketsphinx/export.h"
 
 #define S3DICT_INC_SZ 4096
 

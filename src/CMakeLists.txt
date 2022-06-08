@@ -84,8 +84,11 @@ add_library(pocketsphinx
 target_include_directories(
   pocketsphinx PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/libpocketsphinx
   pocketsphinx PRIVATE ${CMAKE_BINARY_DIR} # config.h
-  pocketsphinx PRIVATE ${CMAKE_BINARY_DIR}/include # sphinx_config.h
-  pocketsphinx PUBLIC ${CMAKE_SOURCE_DIR}/include)
+  pocketsphinx PRIVATE ${CMAKE_BINARY_DIR}/include/sphinxbase
+  pocketsphinx PRIVATE ${CMAKE_SOURCE_DIR}/include/pocketsphinx
+  pocketsphinx PUBLIC ${CMAKE_SOURCE_DIR}/include
+  pocketsphinx PUBLIC ${CMAKE_SOURCE_DIR}/include/sphinxbase
+  )
 find_library(MATH_LIBRARY m)
 if(MATH_LIBRARY)
   target_link_libraries(pocketsphinx PUBLIC ${MATH_LIBRARY})
