@@ -1,4 +1,4 @@
-#include <pio.h>
+#include <sphinxbase/pio.h>
 #include <stdlib.h>
 
 #include "test_macros.h"
