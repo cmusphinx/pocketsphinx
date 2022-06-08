@@ -17,4 +17,5 @@ jobs:
           (cd build && make)
 
       - name: Run tests
-        run: make test
+        run: |
+          (cd build && make test)
