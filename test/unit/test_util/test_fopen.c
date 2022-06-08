@@ -3,7 +3,7 @@
  * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
-#include "pio.h"
+#include <sphinxbase/pio.h>
 #include "test_macros.h"
 
 #include <stdio.h>

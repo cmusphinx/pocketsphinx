@@ -4,8 +4,8 @@
  * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
-#include "ckd_alloc.h"
-#include "bio.h"
+#include <sphinxbase/ckd_alloc.h>
+#include <sphinxbase/bio.h>
 #include "test_macros.h"
 
 #include <stdio.h>

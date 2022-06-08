@@ -2,7 +2,7 @@
  * @file test_bitarr.c Test bit array io
  */
 
-#include "bitarr.h"
+#include <sphinxbase/bitarr.h>
 #include "test_macros.h"
 
 #include <stdio.h>

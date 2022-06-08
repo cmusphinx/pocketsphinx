@@ -3,7 +3,7 @@
  * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
-#include "heap.h"
+#include <sphinxbase/heap.h>
 #include "test_macros.h"
 
 #include <stdio.h>

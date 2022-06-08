@@ -4,7 +4,7 @@
  * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
-#include "filename.h"
+#include <sphinxbase/filename.h>
 #include "test_macros.h"
 
 #include <stdio.h>
