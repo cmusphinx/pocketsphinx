@@ -5,7 +5,10 @@ This is PocketSphinx, one of Carnegie Mellon University's open source large
 vocabulary, speaker-independent continuous speech recognition engines.
 
 Although this was at one point a research system, active development
-has largely ceased and it has become very, very far from the state of the art.
+has largely ceased and it has become very, very far from the state of
+the art.  We are making a release, because people are nonetheless
+using it, and there are a number of historical errors in the build
+system and API which needed to be corrected.
 
 **Please see the LICENSE file for terms of use.**
 
