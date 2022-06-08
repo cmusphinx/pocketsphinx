@@ -1,5 +1,7 @@
 find_package(SWIG)
-# mysteriously necessary
-include(${SWIG_USE_FILE})
 
-add_subdirectory(python)
+if(SWIG_FOUND)
+  # mysteriously necessary
+  include(${SWIG_USE_FILE})
+  add_subdirectory(python)
+endif()
