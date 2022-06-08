@@ -374,7 +374,7 @@ bio_fread_1d(void **buf, size_t el_sz, uint32 * n_el, FILE * fp,
     *buf = (void *) ckd_calloc(*n_el, el_sz);
 
     /* Read array data */
-    if (bio_fread(*buf, el_sz, *n_el, fp, sw, ck) != *n_el)
+    if (bio_fread(*buf, el_sz, *n_el, fp, sw, ck) != (int32)*n_el)
         E_FATAL("fread(arraydata) failed\n");
 
     return *n_el;
@@ -414,7 +414,7 @@ bio_fread_2d(void ***arr,
 	}
 	return -1;
     }
-    if (bio_fread_1d(&raw, e_sz, &n, fp, swap, chksum) != n)
+    if (bio_fread_1d(&raw, e_sz, &n, fp, swap, chksum) != (int32)n)
 	return -1;
 
     assert(n == l_d1*l_d2);
@@ -474,7 +474,7 @@ bio_fread_3d(void ****arr,
 	return -1;
     }
 
-    if (bio_fread_1d(&raw, e_sz, &n, fp, swap, chksum) != n) {
+    if (bio_fread_1d(&raw, e_sz, &n, fp, swap, chksum) != (int32)n) {
 	return -1;
     }
 
@@ -601,6 +601,7 @@ bio_read_wavfile(char const *directory,
     size_t n, l;
     int16 *data;
 
+    (void)endian;
     n = strlen(extension);
     l = strlen(filename);
     if ((n <= l) && (0 == strcmp(filename + l - n, extension)))
