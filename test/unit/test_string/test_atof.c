@@ -4,7 +4,7 @@
 #include <locale.h>
 #include <stdlib.h>
 
-#include "strfuncs.h"
+#include <sphinxbase/strfuncs.h>
 
 int
 main(int argc, char *argv[])
