@@ -1,4 +1,4 @@
-find_package(SWIG REQUIRED)
+find_package(SWIG)
 # mysteriously necessary
 include(${SWIG_USE_FILE})
 
