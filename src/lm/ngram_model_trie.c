@@ -310,6 +310,10 @@ read_word_str(ngram_model_t * base, FILE * fp)
     /* read ascii word strings */
     base->writable = TRUE;
     fread(&k, sizeof(k), 1, fp);
+#if defined(DEBUG_ENDIAN) || defined(WORDS_BIGENDIAN)
+    SWAP_INT32(&k);
+#endif
+    E_INFO("#word_str: %d\n", k);
     tmp_word_str = (char *) ckd_calloc((size_t) k, 1);
     fread(tmp_word_str, 1, (size_t) k, fp);
 
@@ -371,6 +375,12 @@ ngram_model_trie_read_bin(cmd_ln_t * config,
     fread(&order, sizeof(order), 1, fp);
     for (i = 0; i < order; i++) {
         fread(&counts[i], sizeof(counts[i]), 1, fp);
+#if defined(DEBUG_ENDIAN) || defined(WORDS_BIGENDIAN)
+        /* For some reason nobody ever considered the endianness of
+           this file.  I declare it to be canonically little-endian. */
+        SWAP_INT32(&counts[i]);
+#endif
+        E_INFO("#%d-grams: %d\n", i + 1, counts[i]);
     }
     ngram_model_init(base, &ngram_model_trie_funcs, lmath, order,
                      (int32) counts[0]);
@@ -394,6 +404,10 @@ write_word_str(FILE * fp, ngram_model_t * model)
     k = 0;
     for (i = 0; i < model->n_counts[0]; i++)
         k += strlen(model->word_str[i]) + 1;
+    E_DEBUG("#word_str: %d\n", k);
+#if defined(DEBUG_ENDIAN) || defined(WORDS_BIGENDIAN)
+    SWAP_INT32(&k);
+#endif
     fwrite(&k, sizeof(k), 1, fp);
     for (i = 0; i < model->n_counts[0]; i++)
         fwrite(model->word_str[i], 1, strlen(model->word_str[i]) + 1, fp);
@@ -414,8 +428,13 @@ ngram_model_trie_write_bin(ngram_model_t * base, const char *path)
     fwrite(trie_hdr, sizeof(*trie_hdr), strlen(trie_hdr), fp);
     fwrite(&model->base.n, sizeof(model->base.n), 1, fp);
     for (i = 0; i < model->base.n; i++) {
-        fwrite(&model->base.n_counts[i], sizeof(model->base.n_counts[i]),
-               1, fp);
+        uint32 count = model->base.n_counts[i];
+#if defined(DEBUG_ENDIAN) || defined(WORDS_BIGENDIAN)
+        /* For some reason nobody ever considered the endianness of
+           this file.  I declare it to be canonically little-endian. */
+        SWAP_INT32(&count);
+#endif
+        fwrite(&count, sizeof(count), 1, fp);
     }
     lm_trie_write_bin(model->trie, base->n_counts[0], fp);
     write_word_str(fp, base);

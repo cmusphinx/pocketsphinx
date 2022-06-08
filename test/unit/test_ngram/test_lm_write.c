@@ -28,8 +28,6 @@ test_lm_vals(ngram_model_t *model)
 	TEST_EQUAL_LOG(ngram_bg_score(model, ngram_wid(model, "sphinxtrain"),
 				  NGRAM_INVALID_WID, &n_used), -64208);
 	TEST_EQUAL(n_used, 1);
-	printf("FOO %d\n", ngram_score(model, "huggins", "david", NULL));
-	printf("FOO %d\n", ngram_score(model, "daines", "huggins", "david", NULL));
 	/* Test bigrams. */
 	TEST_EQUAL_LOG(ngram_score(model, "huggins", "david", NULL), -831);
 	/* Test trigrams. */
@@ -52,15 +50,22 @@ main(int argc, char *argv[])
 	TEST_EQUAL(0, ngram_model_write(model, "100.tmp.lm.bin", NGRAM_BIN));
 	ngram_model_free(model);
 
+#ifdef DEBUG_ENDIAN
+	E_INFO("Debugging endianness, will not use pre-existing model\n");
+#else
 	E_INFO("Converting BIN to ARPA\n");
 	model = ngram_model_read(NULL, LMDIR "/100.lm.bin", NGRAM_BIN, lmath);
 	test_lm_vals(model);
 	TEST_EQUAL(0, ngram_model_write(model, "100.tmp.lm", NGRAM_ARPA));
 	ngram_model_free(model);
+#endif
 
 	E_INFO("Testing converted BIN\n");
 	model = ngram_model_read(NULL, "100.tmp.lm.bin", NGRAM_BIN, lmath);
 	test_lm_vals(model);
+#ifdef DEBUG_ENDIAN
+	TEST_EQUAL(0, ngram_model_write(model, "100.tmp.lm", NGRAM_ARPA));
+#endif
 	ngram_model_free(model);
 
 	E_INFO("Testing converted ARPA\n");

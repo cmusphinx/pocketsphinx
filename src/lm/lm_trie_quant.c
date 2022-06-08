@@ -37,8 +37,13 @@
 
 #include <math.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <sphinxbase/prim_type.h>
 #include <sphinxbase/ckd_alloc.h>
+#include <sphinxbase/byteorder.h>
 #include <sphinxbase/err.h>
 
 #include "ngram_model_internal.h"

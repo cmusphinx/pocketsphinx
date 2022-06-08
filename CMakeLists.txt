@@ -42,6 +42,13 @@ cmake_print_variables(WORDS_BIGENDIAN)
 #  set(SPHINX_DEBUG 1)
 #endif()
 
+# Compiles some code as the wrong endianness in order to ensure that
+# it works properly
+if(DEBUG_ENDIAN)
+  add_definitions(-DDEBUG_ENDIAN)
+endif()
+cmake_print_variables(SPHINX_DEBUG DEBUG_ENDIAN)
+
 if(MSVC)
   add_compile_options(/W3)
 else()
