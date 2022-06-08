@@ -15,7 +15,7 @@ set(TESTS
   test_jsgf
   test_keyphrase
   test_lattice
-  test_lm_read
+  test_ngram_model_read
   test_log_shifted
   test_log_int8
   test_log_int16
@@ -49,3 +49,4 @@ add_subdirectory(test_fsg)
 add_subdirectory(test_hash)
 add_subdirectory(test_lineiter)
 add_subdirectory(test_matrix)
+add_subdirectory(test_ngram)
