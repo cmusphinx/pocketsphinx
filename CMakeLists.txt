@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.14)
 
 project(PocketSphinx VERSION 1.0.0
   DESCRIPTION "A small speech recognizer"
@@ -72,6 +72,7 @@ add_subdirectory(model)
 add_subdirectory(programs)
 add_subdirectory(doc)
 add_subdirectory(test)
+add_subdirectory(swig)
 
 configure_file(pocketsphinx.pc.in pocketsphinx.pc @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/pocketsphinx.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
