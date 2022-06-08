@@ -43,8 +43,7 @@
 #ifndef __SBTHREAD_H__
 #define __SBTHREAD_H__
 
-#include <sphinx_config.h>
-
+#include <sphinxbase/sphinx_config.h>
 #include <sphinxbase/sphinxbase_export.h>
 #include <sphinxbase/cmd_ln.h>
 

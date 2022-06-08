@@ -48,7 +48,7 @@
 #endif
 
 /* SphinxBase headers */
-#include <sphinx_config.h>
+#include <sphinxbase/sphinx_config.h>
 #include <sphinxbase/cmd_ln.h>
 #include <sphinxbase/fixpoint.h>
 #include <sphinxbase/ckd_alloc.h>

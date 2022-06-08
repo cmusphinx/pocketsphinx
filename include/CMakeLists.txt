@@ -22,7 +22,6 @@ install(FILES
   sphinxbase/priority_queue.h
   sphinxbase/glist.h
   sphinxbase/prim_type.h
-  sphinxbase/ad.h
   sphinxbase/agc.h
   sphinxbase/yin.h
   sphinxbase/pio.h
