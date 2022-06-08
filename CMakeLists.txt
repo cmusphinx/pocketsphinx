@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.14) # I like pie
 
-project(PocketSphinx VERSION 1.0.0
+project(PocketSphinx VERSION 0.9.999.0
   DESCRIPTION "A small speech recognizer"
-  HOMEPAGE_URL "https://github.com/dhdaines/pocketsphinx")
+  HOMEPAGE_URL "https://github.com/cmusphinx/pocketsphinx")
 include(CMakePrintHelpers)
 set(PACKAGE_NAME ${PROJECT_NAME})
 string(TOLOWER ${PROJECT_NAME} PROJECT_SHORTNAME)
