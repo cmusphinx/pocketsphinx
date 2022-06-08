@@ -38,3 +38,4 @@ endforeach()
 
 add_subdirectory(test_alloc)
 add_subdirectory(test_case)
+add_subdirectory(test_cmdln)
