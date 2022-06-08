@@ -30,9 +30,6 @@
 /* The size of `long long', as computed by sizeof. */
 #cmakedefine SIZEOF_LONG_LONG @SIZEOF_LONG_LONG@
 
-/* Define to enable matrix algebra with LAPACK */
-#cmakedefine WITH_LAPACK
-
 /* Define WORDS_BIGENDIAN if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
 #if defined __BIG_ENDIAN__

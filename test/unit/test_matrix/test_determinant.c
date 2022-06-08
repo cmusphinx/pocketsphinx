@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "matrix.h"
-#include "ckd_alloc.h"
+#include <sphinxbase/matrix.h>
+#include <sphinxbase/ckd_alloc.h>
 
 const float32 foo[3][3] = {
 	{2, 0.42, 1},
