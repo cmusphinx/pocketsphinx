@@ -8,3 +8,5 @@
 #define TEST_EQUAL_FLOAT(a,b) TEST_ASSERT(fabs((a) - (b)) < EPSILON)
 #define LOG_EPSILON 200
 #define TEST_EQUAL_LOG(a,b) TEST_ASSERT(abs((a) - (b)) < LOG_EPSILON)
+#define MODELDIR "@CMAKE_SOURCE_DIR@/model"
+#define DATADIR "@CMAKE_SOURCE_DIR@/test/data"

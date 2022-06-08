@@ -1,13 +1,12 @@
 # Utility functions and parameters for regression tests
 
 # Predefined directories you may need
-# Stupid broken CMU Facilities autoconf doesn't do @abs_top_srcdir@
-builddir=../"@top_builddir@"
-sourcedir=../"@top_srcdir@"
+builddir="@CMAKE_BINARY_DIR@"
+sourcedir="@CMAKE_SOURCE_DIR@"
 tests=$sourcedir/test
 data=$sourcedir/test/data
 model=$sourcedir/model
-programs="$builddir/src/programs"
+programs="$builddir/programs"
 
 # Automatically report failures on exit
 failures=""

@@ -37,9 +37,10 @@ cmake_print_variables(SIZEOF_LONG SIZEOF_LONG_LONG)
 test_big_endian(WORDS_BIGENDIAN)
 cmake_print_variables(WORDS_BIGENDIAN)
 
-if(CMAKE_BUILD_TYPE STREQUAL Debug)
-  set(SPHINX_DEBUG 1)
-endif()
+# Don't do this
+#if(CMAKE_BUILD_TYPE STREQUAL Debug)
+#  set(SPHINX_DEBUG 1)
+#endif()
 
 if(MSVC)
   add_compile_options(/W3)
@@ -63,6 +64,7 @@ add_subdirectory(include)
 add_subdirectory(model)
 add_subdirectory(programs)
 add_subdirectory(doc)
+add_subdirectory(test)
 
 configure_file(pocketsphinx.pc.in pocketsphinx.pc @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/pocketsphinx.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
