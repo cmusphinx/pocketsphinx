@@ -132,8 +132,12 @@ main(int argc, char *argv[])
     cmd_ln_t *config;
     const char *rule;
         
-    if ((config = cmd_ln_parse_r(NULL, defn, argc, argv, TRUE)) == NULL)
-	return 1;
+    if ((config = cmd_ln_parse_r(NULL, defn, argc, argv, TRUE)) == NULL) {
+        /* This probably just means that we got no arguments. */
+        err_set_loglevel(ERR_INFO);
+        cmd_ln_log_help_r(NULL, defn);
+        return 1;
+    }
 
     if (cmd_ln_boolean_r(config, "-help")) {
         usagemsg(argv[0]);

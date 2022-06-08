@@ -157,6 +157,13 @@ main(int argc, char *argv[])
 {
     cmd_ln_t *config = cmd_ln_parse_r(NULL, defn, argc, argv, TRUE);
 
+    if (config == NULL) {
+        /* This probably just means that we got no arguments. */
+        err_set_loglevel(ERR_INFO);
+        cmd_ln_log_help_r(NULL, defn);
+        return 1;
+    }
+
     /* Run a control file if requested. */
     if (cmd_ln_str_r(config, "-c")) {
         if (run_control_file(cmd_ln_str_r(config, "-c"), config) < 0)

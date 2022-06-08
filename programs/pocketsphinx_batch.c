@@ -896,6 +896,8 @@ main(int32 argc, char *argv[])
     
     if (config == NULL) {
         /* This probably just means that we got no arguments. */
+        err_set_loglevel(ERR_INFO);
+        cmd_ln_log_help_r(NULL, ps_args_def);
         return 1;
     }
 

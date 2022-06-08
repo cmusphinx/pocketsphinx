@@ -1180,7 +1180,12 @@ main(int argc, char *argv[])
     cmd_ln_t *config;
     int rv;
 
-    config = cmd_ln_parse_r(NULL, defn, argc, argv, TRUE);
+    if ((config = cmd_ln_parse_r(NULL, defn, argc, argv, TRUE)) == NULL) {
+        /* This probably just means that we got no arguments. */
+        err_set_loglevel(ERR_INFO);
+        cmd_ln_log_help_r(NULL, defn);
+        return 1;
+    }
 
     if (config && cmd_ln_str_r(config, "-argfile"))
         config = cmd_ln_parse_file_r(config, defn,

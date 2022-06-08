@@ -116,7 +116,12 @@ main(int argc, char *argv[])
     char const *cepfile;
     cmd_ln_t *config;
 
-    config = cmd_ln_parse_r(NULL, arg, argc, argv, TRUE);
+    if ((config = cmd_ln_parse_r(NULL, arg, argc, argv, TRUE)) == NULL) {
+        /* This probably just means that we got no arguments. */
+        err_set_loglevel(ERR_INFO);
+        cmd_ln_log_help_r(NULL, arg);
+        return 1;
+    }
 
     vsize = cmd_ln_int_r(config, "-i");
     dsize = cmd_ln_int_r(config, "-d");
