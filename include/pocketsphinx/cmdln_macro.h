@@ -231,7 +231,7 @@
 { "-allphone",										\
       ARG_STRING,									\
       NULL,										\
-      "Perform phoneme decoding with phonetic lm" },					\
+      "Perform phoneme decoding with phonetic lm (given here)" },			\
 { "-allphone_ci",									\
       ARG_BOOLEAN,									\
       "yes",										\

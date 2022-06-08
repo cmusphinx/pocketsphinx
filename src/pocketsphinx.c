@@ -369,7 +369,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     }
 
     if ((path = cmd_ln_str_r(ps->config, "-lm")) && 
-        !cmd_ln_boolean_r(ps->config, "-allphone")) {
+        !cmd_ln_str_r(ps->config, "-allphone")) {
         if (ps_set_lm_file(ps, PS_DEFAULT_SEARCH, path)
             || ps_set_search(ps, PS_DEFAULT_SEARCH))
             return -1;
