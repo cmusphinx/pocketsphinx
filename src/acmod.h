@@ -211,29 +211,47 @@ typedef struct acmod_s acmod_t;
 /**
  * Initialize an acoustic model.
  *
- * @param config a command-line object containing parameters.  This
- *               pointer is not retained by this object.
+ * @param config a command-line object containing parameters.
+ *               Ownership of this pointer is retained by this object,
+ *               so you may free it if you no longer need it.
  * @param lmath global log-math parameters.
  * @param fe a previously-initialized acoustic feature module to use,
  *           or NULL to create one automatically.  If this is supplied
  *           and its parameters do not match those in the acoustic
- *           model, this function will fail.  This pointer is not retained.
- * @param fe a previously-initialized dynamic feature module to use,
+ *           model, this function will fail.  This pointer is retained.
+ * @param fcb a previously-initialized dynamic feature module to use,
  *           or NULL to create one automatically.  If this is supplied
  *           and its parameters do not match those in the acoustic
- *           model, this function will fail.  This pointer is not retained.
+ *           model, this function will fail.  This pointer is retained.
  * @return a newly initialized acmod_t, or NULL on failure.
  */
 acmod_t *acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb);
 
 /**
+ * Verify that feature extraction parameters are compatible with
+ * acoustic model.
+ *
+  * @param fe acoustic feature extraction module to verify.
+ * @return TRUE if compatible, FALSE otherwise
+ */
+int acmod_fe_mismatch(acmod_t *acmod, fe_t *fe);
+
+/**
+ * Verify that dynamic feature computation parameters are compatible
+ * with acoustic model.
+ *
+ * @param fcb dynamic feature computation module to verify.
+ * @return TRUE if compatible, FALSE otherwise
+ */
+int acmod_feat_mismatch(acmod_t *acmod, feat_t *fcb);
+
+/**
  * Adapt acoustic model using a linear transform.
  *
- * @param mllr The new transform to use, or NULL to update the existing
- *              transform.  The decoder retains ownership of this pointer,
- *              so you should not attempt to free it manually.  Use
- *              ps_mllr_retain() if you wish to reuse it
- *              elsewhere.
+ * @param mllr The new transform to use, or NULL to update the
+ *              existing transform.  The decoder retains ownership of
+ *              this pointer, so you may free it if you no longer need
+ *              it.
  * @return The updated transform object for this decoder, or
  *         NULL on failure.
  */
@@ -446,7 +464,7 @@ void acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm);
 #define acmod_activate_sen(acmod, sen) bitvec_set((acmod)->senone_active_vec, sen)
 
 /**
- * Build active list from 
+ * Build active list.
  */
 int32 acmod_flags2list(acmod_t *acmod);
 
