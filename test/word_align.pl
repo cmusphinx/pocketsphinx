@@ -11,7 +11,7 @@ use strict;
 use Getopt::Long;
 use Pod::Usage;
 use vars qw($Verbose $CER $IgnoreUttID);
-use encoding 'utf8';
+use utf8;
 
 my ($help,%hyphash);
 GetOptions(

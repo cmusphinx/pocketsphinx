@@ -1,5 +1,5 @@
 #!/bin/sh
-. ./testfuncs.sh
+.${CMAKE_BINARY_DIR}/test/testfuncs.sh
 
 echo "CEPVIEW TEST"
 tmpout="test-cepview.out"

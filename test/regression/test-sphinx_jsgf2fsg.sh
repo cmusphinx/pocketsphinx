@@ -1,5 +1,5 @@
 #!/bin/sh
-. ./testfuncs.sh
+.${CMAKE_BINARY_DIR}/test/testfuncs.sh
 
 echo "JSGF2FSG TEST"
 rules="test.rightRecursion test.nestedRightRecursion test.kleene test.nulltest test.command"

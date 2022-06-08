@@ -1,4 +1,5 @@
 # Utility functions and parameters for regression tests
+# No longer very useful with CMake but whatever
 
 # Predefined directories you may need
 builddir="@CMAKE_BINARY_DIR@"
@@ -15,19 +16,19 @@ trap "report_failures" 0
 run_program() {
     program="$1"
     shift
-    $builddir/libtool --mode=execute "$programs/$program" $@
+    "$programs/$program" $@
 }
 
 debug_program() {
     program="$1"
     shift
-    $builddir/libtool --mode=execute gdb --args "$programs/$program" $@
+    gdb --args "$programs/$program" $@
 }
 
 memcheck_program() {
     program="$1"
     shift
-    $builddir/libtool --mode=execute valgrind --leak-check=full "$programs/$program" $@
+    valgrind --leak-check=full "$programs/$program" $@
 }
 
 pass() {
