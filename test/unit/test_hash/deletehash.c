@@ -19,6 +19,8 @@ main(int argc, char **argv)
         exit(-1);
     }
 
+    /* Make sure failure gets printed! */
+    err_set_loglevel(ERR_INFO);
     ht = hash_table_new(75, 0);
 
     if (hash_table_enter(ht, "-hmmdump", (void *)1) != (void *)1) {
