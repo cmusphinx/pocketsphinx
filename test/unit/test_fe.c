@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "fe.h"
-#include "cmd_ln.h"
-#include "ckd_alloc.h"
+#include <sphinxbase/fe.h>
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/ckd_alloc.h>
 
 #include "test_macros.h"
 

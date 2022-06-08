@@ -7,6 +7,7 @@ set(TESTS
   test_bitvec
   test_dict2pid
   test_dict
+  test_fe
   test_fwdflat
   test_fwdtree_bestpath
   test_fwdtree
@@ -17,6 +18,7 @@ set(TESTS
   test_lm_read
   test_mllr
   test_nbest
+  test_pitch
   test_posterior
   test_ptm_mgau
   test_reinit

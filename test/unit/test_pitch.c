@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include "yin.h"
-#include "ckd_alloc.h"
+#include <sphinxbase/yin.h>
+#include <sphinxbase/ckd_alloc.h>
 
 #include "test_macros.h"
 
