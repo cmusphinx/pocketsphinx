@@ -1,8 +1,10 @@
 #include <stdio.h>
-#include <sbthread.h>
-#include <fe.h>
-#include <ckd_alloc.h>
-#include <err.h>
+#include <sphinxbase/sbthread.h>
+#include <sphinxbase/fe.h>
+#include <sphinxbase/ckd_alloc.h>
+#include <sphinxbase/err.h>
+
+#include "test_macros.h"
 
 static const arg_t fe_args[] = {
 	waveform_to_cepstral_command_line_macro(),

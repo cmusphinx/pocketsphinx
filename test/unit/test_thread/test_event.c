@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <sbthread.h>
-#include <err.h>
+#include <sphinxbase/sbthread.h>
+#include <sphinxbase/err.h>
 
 int
 worker_main(sbthread_t *th)
