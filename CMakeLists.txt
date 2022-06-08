@@ -60,5 +60,6 @@ add_definitions(-DHAVE_CONFIG_H)
 
 add_subdirectory(src)
 add_subdirectory(include)
+add_subdirectory(model)
 add_subdirectory(programs)
 add_subdirectory(doc)
