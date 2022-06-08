@@ -36,7 +36,7 @@
  */
 /**
  * @file ngram_model_set.c Set of language models.
- * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
 #include <string.h>

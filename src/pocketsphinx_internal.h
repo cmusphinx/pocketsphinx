@@ -38,7 +38,7 @@
 /**
  * @file pocketsphinx_internal.h Internal implementation of
  * PocketSphinx decoder.
- * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
 #ifndef __POCKETSPHINX_INTERNAL_H__

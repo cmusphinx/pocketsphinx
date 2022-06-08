@@ -1,7 +1,7 @@
 /* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /**
  * @file test_filename.c Test file name operations
- * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
 #include "filename.h"

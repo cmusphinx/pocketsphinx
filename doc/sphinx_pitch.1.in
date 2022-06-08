@@ -9,7 +9,7 @@ sphinx_pitch \- Extract pitch from audio files
 This program reads audio files and analyzes them for pitch and voicing.
 .\" ### ARGUMENTS ###
 .SH AUTHOR
-David Huggins-Daines <dhuggins@cs.cmu.edu>
+David Huggins-Daines <dhdaines@gmail.com>
 .SH COPYRIGHT
 Copyright \(co 2007-2008 Carnegie Mellon University.  See the file
 \fICOPYING\fR included with this package for more information.

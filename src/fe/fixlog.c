@@ -37,7 +37,7 @@
  *
  * Description: Fast approximate fixed-point logarithms
  *
- * Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * Author: David Huggins-Daines <dhdaines@gmail.com>
  *
  */
 

@@ -65,7 +65,7 @@ descriptions from I<PROGRAM>.
 
 =head1 AUTHOR
 
-David Huggins-Daines <dhuggins@cs.cmu.edu>
+David Huggins-Daines <dhdaines@gmail.com>
 
 =head1 COPYRIGHT
 

@@ -40,7 +40,7 @@
  * 
  * Description: mmap() wrappers for Unix/Windows
  * 
- * Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * Author: David Huggins-Daines <dhdaines@gmail.com>
  * 
  *********************************************************************/
 

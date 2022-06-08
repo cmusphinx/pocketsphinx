@@ -40,7 +40,7 @@
  * Binary format model definition files, with support for
  * heterogeneous topologies and variable-size N-phones
  *
- * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 #ifndef __BIN_MDEF_H__
 #define __BIN_MDEF_H__

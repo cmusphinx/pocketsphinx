@@ -1,5 +1,5 @@
 PocketSphinx 1.0.0
-===============================================================================
+==================
 
 This is PocketSphinx, one of Carnegie Mellon University's open source large
 vocabulary, speaker-independent continuous speech recognition engines.
@@ -13,7 +13,7 @@ and API which needed to be corrected.
 **Please see the LICENSE file for terms of use.**
 
 Installation
-------------------------------------------------------------------------------
+------------
 
 We now use CMake for building, which should give reasonable results
 across Linux and Windows.  Not certain about Mac OS X because I don't
@@ -34,4 +34,3 @@ cmake ..
 make
 make install
 ```
-

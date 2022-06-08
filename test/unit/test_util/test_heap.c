@@ -1,6 +1,6 @@
 /**
  * @file test_heap.c Test heaps
- * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
 #include "heap.h"

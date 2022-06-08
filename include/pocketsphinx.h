@@ -621,7 +621,7 @@ void ps_get_rawdata(ps_decoder_t *ps, int16 **buffer, int32 *size);
 
 /**
  * @mainpage PocketSphinx API Documentation
- * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * @author David Huggins-Daines <dhdaines@gmail.com>
  * @author Alpha Cephei Inc.
  * @version 5prealpha
  * @date July, 2015

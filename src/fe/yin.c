@@ -29,7 +29,7 @@
 
 /**
  * @file yin.c Implementation of pitch extraction.
- * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
 /* This implements part of the YIN algorithm:

@@ -1,6 +1,6 @@
 /**
  * @file test_hash_iter.c Test hash table iterators
- * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
 #include "hash_table.h"

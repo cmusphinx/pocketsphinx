@@ -37,7 +37,7 @@
 /**
  * @file sbthread.h 
  * @brief Simple portable thread functions.
- * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * @author David Huggins-Daines <dhdaines@gmail.com>
  **/
 
 #ifndef __SBTHREAD_H__

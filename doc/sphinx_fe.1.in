@@ -22,7 +22,7 @@ extract features for recognition and those used to extract features
 for training will cause recognition to fail.
 .SH AUTHOR
 Written by numerous people at CMU from 1994 onwards.  This manual page
-by David Huggins-Daines <dhuggins@cs.cmu.edu>
+by David Huggins-Daines <dhdaines@gmail.com>
 .SH COPYRIGHT
 Copyright \(co 1994-2007 Carnegie Mellon University.  See the file
 \fICOPYING\fR included with this package for more information.

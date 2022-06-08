@@ -43,7 +43,7 @@
  *	heterogeneous topologies and variable-size N-phones
  *
  * Author: 
- * 	David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * 	David Huggins-Daines <dhdaines@gmail.com>
  *********************************************************************/
 
 /* System headers. */

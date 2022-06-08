@@ -30,7 +30,7 @@
 /**
  * @file yin.h
  * @brief Implementation of pitch estimation
- * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * @author David Huggins-Daines <dhdaines@gmail.com>
  *
  * This implements part of the YIN algorithm:
  *

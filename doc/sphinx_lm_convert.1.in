@@ -12,7 +12,7 @@ of the text in a language model file and to force word strings
 to upper or lower case.
 .\" ### ARGUMENTS ###
 .SH AUTHOR
-David Huggins-Daines <dhuggins@cs.cmu.edu>
+David Huggins-Daines <dhdaines@gmail.com>
 .SH COPYRIGHT
 Copyright \(co 2010 Carnegie Mellon University.  See the file
 \fICOPYING\fR included with this package for more information.

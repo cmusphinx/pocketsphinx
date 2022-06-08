@@ -36,7 +36,7 @@
  */
 /**
  * @file ptm_mgau.h Fast phonetically-tied mixture evaluation.
- * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
 #ifndef __PTM_MGAU_H__

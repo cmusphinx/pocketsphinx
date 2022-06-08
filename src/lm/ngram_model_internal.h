@@ -37,7 +37,7 @@
 /*
  * \file ngram_model_internal.h Internal structures for N-Gram models
  *
- * Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * Author: David Huggins-Daines <dhdaines@gmail.com>
  */
 
 #ifndef __NGRAM_MODEL_INTERNAL_H__

@@ -2,7 +2,7 @@ Regenerating lapack_lite source
 ===============================
 
 :Author: David M. Cooke <cookedm@physics.mcmaster.ca>
-:Modified by David Huggins-Daines <dhuggins@cs.cmu.edu> for Sphinx
+:Modified by David Huggins-Daines <dhdaines@gmail.com> for Sphinx
 
 ``blas_lite.c``, ``slapack_lite.c``, are ``f2c``'d versions of the
 LAPACK routines required by the ``LinearAlgebra`` module, and wrapped

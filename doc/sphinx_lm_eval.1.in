@@ -11,7 +11,7 @@ given language model.  The text file is assumed to be in transcript
 format, i.e. one utterance per line, delimited by <s> and </s>.
 .\" ### ARGUMENTS ###
 .SH AUTHOR
-David Huggins-Daines <dhuggins@cs.cmu.edu>
+David Huggins-Daines <dhdaines@gmail.com>
 .SH COPYRIGHT
 Copyright \(co 2007-2008 Carnegie Mellon University.  See the file
 \fICOPYING\fR included with this package for more information.

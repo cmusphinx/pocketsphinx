@@ -1,6 +1,6 @@
 /**
  * @file test_fopen.c Test file opening
- * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
 #include "pio.h"

@@ -38,7 +38,7 @@
 /**
  * @file sbthread.c
  * @brief Simple portable thread functions
- * @author David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
 #include <string.h>

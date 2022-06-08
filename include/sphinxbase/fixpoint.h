@@ -35,7 +35,7 @@
 
 /* Fixed-point arithmetic macros.
  *
- * Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * Author: David Huggins-Daines <dhdaines@gmail.com>
  */
 
 #ifndef _FIXPOINT_H_

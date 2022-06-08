@@ -37,7 +37,7 @@
 /**
  * mdef_convert.c - convert text to binary model definition files (and vice versa)
  *
- * Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * Author: David Huggins-Daines <dhdaines@gmail.com>
  **/
 
 #include <stdio.h>

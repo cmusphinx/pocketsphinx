@@ -33,7 +33,7 @@
  *
  * ====================================================================
  *
- * Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
+ * Author: David Huggins-Daines <dhdaines@gmail.com>
  */
 
 #ifndef __GST_POCKETSPHINX_H__
