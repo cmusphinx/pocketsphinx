@@ -95,8 +95,9 @@ if(MATH_LIBRARY)
 endif()
 find_package(Threads)
 target_link_libraries(pocketsphinx PUBLIC Threads::Threads)
+# Shared library version != package version, unfortunately
 set_target_properties(pocketsphinx PROPERTIES
-  VERSION ${PROJECT_VERSION}
-  SOVERSION ${PROJECT_VERSION_MAJOR})
+  VERSION 4.0.0
+  SOVERSION 4)
 
 add_subdirectory(programs)
