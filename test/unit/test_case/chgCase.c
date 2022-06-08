@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <case.h>
-#include <err.h>
+#include <sphinxbase/case.h>
+#include <sphinxbase/err.h>
 
 #define MAX_STR_LEN 64
 #define NUM_STRS 6

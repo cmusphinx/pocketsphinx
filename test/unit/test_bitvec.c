@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "bitvec.h"
+#include <sphinxbase/bitvec.h>
 #include "test_macros.h"
 
 int

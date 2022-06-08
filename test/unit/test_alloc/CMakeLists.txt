@@ -1,11 +1,11 @@
-set(TESTS
+set(TEST_EXECUTABLES
   test_ckd_alloc
   test_ckd_alloc_catch
   test_ckd_alloc_fail
   test_ckd_alloc_abort
   test_listelem_alloc
   )
-foreach(TEST_EXECUTABLE ${TESTS})
+foreach(TEST_EXECUTABLE ${TEST_EXECUTABLES})
   add_executable(${TEST_EXECUTABLE} ${TEST_EXECUTABLE}.c)
   target_link_libraries(${TEST_EXECUTABLE} pocketsphinx)
   target_include_directories(

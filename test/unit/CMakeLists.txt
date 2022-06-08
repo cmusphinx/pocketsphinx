@@ -4,6 +4,7 @@ set(TESTS
   test_acmod_grow
   test_alignment
   test_allphone
+  test_bitvec
   test_dict2pid
   test_dict
   test_fwdflat
@@ -36,3 +37,4 @@ foreach(TEST_EXECUTABLE ${TESTS})
 endforeach()
 
 add_subdirectory(test_alloc)
+add_subdirectory(test_case)
