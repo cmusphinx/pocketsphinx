@@ -14,6 +14,7 @@ run_program pocketsphinx_batch \
     -cepext .wav \
     -adcin yes \
     -hyp $bn.match \
+    -loglevel INFO \
     -backtrace yes \
     > $bn.log 2>&1
 

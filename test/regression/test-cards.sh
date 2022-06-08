@@ -6,6 +6,7 @@ bn=`basename $0 .sh`
 
 echo "Test: $bn"
 run_program pocketsphinx_batch \
+    -loglevel INFO \
     -hmm $model/en-us/en-us \
     -jsgf $data/cards/cards.gram \
     -dict $model/en-us/cmudict-en-us.dict\
