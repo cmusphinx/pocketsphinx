@@ -9,7 +9,7 @@ jobs:
       - name: Build
         run: |
           mkdir build
-          (cd build && cmake -DCMAKE_BUILD_TYPE=DEBUG .. && make)
+          (cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make)
 
       - name: Run tests
         run: |
