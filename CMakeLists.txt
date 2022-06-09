@@ -70,6 +70,11 @@ if(NOT DEFAULT_RADIX)
 endif()
 cmake_print_variables(FIXED_POINT DEFAULT_RADIX)
 
+# Maybe not a great idea, but it does work on both Windows and Linux
+set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
 configure_file(config.h.in config.h)
 configure_file(sphinx_config.h.in include/sphinxbase/sphinx_config.h)
 add_definitions(-DHAVE_CONFIG_H)
