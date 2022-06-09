@@ -384,8 +384,7 @@ lm_trie_read_ug(lm_trie_t * trie, uint32 * counts, FILE * fp)
 {
     size_t rv = fread(trie->unigrams, sizeof(*trie->unigrams),
                       (counts[0] + 1), fp);
-#if defined(DEBUG_ENDIAN) || defined(WORDS_BIGENDIAN)
-    {
+    if (SWAP_LM_TRIE) {
         int i;
         for (i = 0; i < counts[0] + 1; ++i) {
             SWAP_FLOAT32(&trie->unigrams[i].prob);
@@ -393,7 +392,6 @@ lm_trie_read_ug(lm_trie_t * trie, uint32 * counts, FILE * fp)
             SWAP_INT32(&trie->unigrams[i].next);
         }
     }
-#endif
     return rv;
 }
 
@@ -402,15 +400,13 @@ lm_trie_read_bin(uint32 * counts, int order, FILE * fp)
 {
     lm_trie_t *trie = lm_trie_init(counts[0]);
     trie->quant = (order > 1) ? lm_trie_quant_read_bin(fp, order) : NULL;
-    E_DEBUG("pos after quant: %ld\n", ftell(fp));
+    E_INFO("pos after quant: %ld\n", ftell(fp));
     lm_trie_read_ug(trie, counts, fp);
-    E_DEBUG("pos after ug: %ld\n", ftell(fp));
-    /* It looks like quant and ngram_mem are just blobs of bits so no
-       swapping needed. */
+    E_INFO("pos after ug: %ld\n", ftell(fp));
     if (order > 1) {
         lm_trie_alloc_ngram(trie, counts, order);
         fread(trie->ngram_mem, 1, trie->ngram_mem_size, fp);
-        E_DEBUG("#ngram_mem: %ld\n", trie->ngram_mem_size);
+        E_INFO("#ngram_mem: %ld\n", trie->ngram_mem_size);
     }
     return trie;
 }
@@ -418,22 +414,21 @@ lm_trie_read_bin(uint32 * counts, int order, FILE * fp)
 static size_t
 lm_trie_write_ug(lm_trie_t * trie, uint32 unigram_count, FILE * fp)
 {
-#if defined(DEBUG_ENDIAN) || defined(WORDS_BIGENDIAN)
-    int i;
-    for (i = 0; i < unigram_count + 1; ++i) {
-        unigram_t ug = trie->unigrams[i];
-        SWAP_FLOAT32(&ug.prob);
-        SWAP_FLOAT32(&ug.bo);
-        SWAP_INT32(&ug.next);
-        if (fwrite(&ug, sizeof(ug), 1, fp) != 1)
-            return -1;
+    if (SWAP_LM_TRIE)  {
+        int i;
+        for (i = 0; i < unigram_count + 1; ++i) {
+            unigram_t ug = trie->unigrams[i];
+            SWAP_FLOAT32(&ug.prob);
+            SWAP_FLOAT32(&ug.bo);
+            SWAP_INT32(&ug.next);
+            if (fwrite(&ug, sizeof(ug), 1, fp) != 1)
+                return -1;
+        }
+        return (size_t)i;
     }
-    return (size_t)i;
-#else
-    return fwrite(trie->unigrams, sizeof(*trie->unigrams),
-                  (unigram_count + 1), fp);
-    
-#endif
+    else
+        return fwrite(trie->unigrams, sizeof(*trie->unigrams),
+                      (unigram_count + 1), fp);
 }
 
 void
@@ -442,12 +437,12 @@ lm_trie_write_bin(lm_trie_t * trie, uint32 unigram_count, FILE * fp)
 
     if (trie->quant)
         lm_trie_quant_write_bin(trie->quant, fp);
-    E_DEBUG("pos after quant: %ld\n", ftell(fp));
+    E_INFO("pos after quant: %ld\n", ftell(fp));
     lm_trie_write_ug(trie, unigram_count, fp);
-    E_DEBUG("pos after ug: %ld\n", ftell(fp));
+    E_INFO("pos after ug: %ld\n", ftell(fp));
     if (trie->ngram_mem) {
         fwrite(trie->ngram_mem, 1, trie->ngram_mem_size, fp);
-        E_DEBUG("#ngram_mem: %ld\n", trie->ngram_mem_size);
+        E_INFO("#ngram_mem: %ld\n", trie->ngram_mem_size);
     }
 }
 

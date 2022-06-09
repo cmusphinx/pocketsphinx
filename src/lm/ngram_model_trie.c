@@ -38,6 +38,10 @@
 #include <string.h>
 #include <assert.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <sphinxbase/err.h>
 #include <sphinxbase/pio.h>
 #include <sphinxbase/strfuncs.h>
@@ -302,7 +306,7 @@ ngram_model_trie_write_arpa(ngram_model_t * base, const char *path)
 }
 
 static void
-read_word_str(ngram_model_t * base, FILE * fp)
+read_word_str(ngram_model_t * base, FILE * fp, int do_swap)
 {
     int32 k;
     uint32 i, j;
@@ -310,9 +314,8 @@ read_word_str(ngram_model_t * base, FILE * fp)
     /* read ascii word strings */
     base->writable = TRUE;
     fread(&k, sizeof(k), 1, fp);
-#if defined(DEBUG_ENDIAN) || defined(WORDS_BIGENDIAN)
-    SWAP_INT32(&k);
-#endif
+    if (do_swap)
+        SWAP_INT32(&k);
     E_INFO("#word_str: %d\n", k);
     tmp_word_str = (char *) ckd_calloc((size_t) k, 1);
     fread(tmp_word_str, 1, (size_t) k, fp);
@@ -375,11 +378,8 @@ ngram_model_trie_read_bin(cmd_ln_t * config,
     fread(&order, sizeof(order), 1, fp);
     for (i = 0; i < order; i++) {
         fread(&counts[i], sizeof(counts[i]), 1, fp);
-#if defined(DEBUG_ENDIAN) || defined(WORDS_BIGENDIAN)
-        /* For some reason nobody ever considered the endianness of
-           this file.  I declare it to be canonically little-endian. */
-        SWAP_INT32(&counts[i]);
-#endif
+        if (SWAP_LM_TRIE)
+            SWAP_INT32(&counts[i]);
         E_INFO("#%d-grams: %d\n", i + 1, counts[i]);
     }
     ngram_model_init(base, &ngram_model_trie_funcs, lmath, order,
@@ -389,14 +389,14 @@ ngram_model_trie_read_bin(cmd_ln_t * config,
     }
 
     model->trie = lm_trie_read_bin(counts, order, fp);
-    read_word_str(base, fp);
+    read_word_str(base, fp, SWAP_LM_TRIE);
     fclose_comp(fp, is_pipe);
 
     return base;
 }
 
 static void
-write_word_str(FILE * fp, ngram_model_t * model)
+write_word_str(FILE * fp, ngram_model_t * model, int do_swap)
 {
     int32 k;
     uint32 i;
@@ -404,10 +404,9 @@ write_word_str(FILE * fp, ngram_model_t * model)
     k = 0;
     for (i = 0; i < model->n_counts[0]; i++)
         k += strlen(model->word_str[i]) + 1;
-    E_DEBUG("#word_str: %d\n", k);
-#if defined(DEBUG_ENDIAN) || defined(WORDS_BIGENDIAN)
-    SWAP_INT32(&k);
-#endif
+    E_INFO("#word_str: %d\n", k);
+    if (do_swap)
+        SWAP_INT32(&k);
     fwrite(&k, sizeof(k), 1, fp);
     for (i = 0; i < model->n_counts[0]; i++)
         fwrite(model->word_str[i], 1, strlen(model->word_str[i]) + 1, fp);
@@ -429,15 +428,12 @@ ngram_model_trie_write_bin(ngram_model_t * base, const char *path)
     fwrite(&model->base.n, sizeof(model->base.n), 1, fp);
     for (i = 0; i < model->base.n; i++) {
         uint32 count = model->base.n_counts[i];
-#if defined(DEBUG_ENDIAN) || defined(WORDS_BIGENDIAN)
-        /* For some reason nobody ever considered the endianness of
-           this file.  I declare it to be canonically little-endian. */
-        SWAP_INT32(&count);
-#endif
+        if (SWAP_LM_TRIE)
+            SWAP_INT32(&count);
         fwrite(&count, sizeof(count), 1, fp);
     }
     lm_trie_write_bin(model->trie, base->n_counts[0], fp);
-    write_word_str(fp, base);
+    write_word_str(fp, base, SWAP_LM_TRIE);
     fclose_comp(fp, is_pipe);
     return 0;
 }
@@ -601,7 +597,7 @@ ngram_model_trie_read_dmp(cmd_ln_t * config,
     ckd_free(unigram_next);
 
     /* read ascii word strings */
-    read_word_str(base, fp);
+    read_word_str(base, fp, do_swap);
 
     fclose_comp(fp, is_pipe);
     return base;
