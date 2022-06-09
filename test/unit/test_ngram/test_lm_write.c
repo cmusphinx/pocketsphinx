@@ -29,6 +29,7 @@ test_lm_vals(ngram_model_t *model)
 				  NGRAM_INVALID_WID, &n_used), -64208);
 	TEST_EQUAL(n_used, 1);
 	/* Test bigrams. */
+	E_INFO("%d\n", ngram_score(model, "huggins", "david", NULL));
 	TEST_EQUAL_LOG(ngram_score(model, "huggins", "david", NULL), -831);
 	/* Test trigrams. */
 	TEST_EQUAL_LOG(ngram_score(model, "daines", "huggins", "david", NULL), -9450);
@@ -41,12 +42,16 @@ main(int argc, char *argv[])
 	logmath_t *lmath;
 	ngram_model_t *model;
 
+	err_set_loglevel(ERR_INFO);
+
 	/* Initialize a logmath object to pass to ngram_read */
 	lmath = logmath_init(1.0001, 0, 0);
 
 	E_INFO("Converting ARPA to BIN\n");
 	model = ngram_model_read(NULL, LMDIR "/100.lm.bz2", NGRAM_ARPA, lmath);
+	E_INFO("Verifying ARPA\n");
 	test_lm_vals(model);
+	E_INFO("Writing BIN\n");
 	TEST_EQUAL(0, ngram_model_write(model, "100.tmp.lm.bin", NGRAM_BIN));
 	ngram_model_free(model);
 
