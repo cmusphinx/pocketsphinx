@@ -239,11 +239,13 @@ typedef struct bit_encode_s bit_encode_t;
 /**
  * Attach bitstream encoder to a file.
  */
+SPHINXBASE_EXPORT
 bit_encode_t *bit_encode_attach(FILE *outfh);
 
 /**
  * Retain pointer to a bit encoder.
  */
+SPHINXBASE_EXPORT
 bit_encode_t *bit_encode_retain(bit_encode_t *be);
 
 /**
@@ -251,21 +253,25 @@ bit_encode_t *bit_encode_retain(bit_encode_t *be);
  *
  * Note that this does NOT flush any leftover bits.
  */
+SPHINXBASE_EXPORT
 int bit_encode_free(bit_encode_t *be);
 
 /**
  * Write bits to encoder.
  */
+SPHINXBASE_EXPORT
 int bit_encode_write(bit_encode_t *be, unsigned char const *bits, int nbits);
 
 /**
  * Write lowest-order bits of codeword to encoder.
  */
+SPHINXBASE_EXPORT
 int bit_encode_write_cw(bit_encode_t *be, uint32 codeword, int nbits);
 
 /**
  * Flush any unwritten bits, zero-padding if necessary.
  */
+SPHINXBASE_EXPORT
 int bit_encode_flush(bit_encode_t *be);
 
 /**

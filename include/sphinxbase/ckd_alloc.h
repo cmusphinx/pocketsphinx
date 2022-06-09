@@ -124,6 +124,7 @@ extern "C" {
  * allocation fails rather than exiting or calling longjmp().
  * @return Pointer to a previously set <code>jmp_buf</code>, if any.
  */
+SPHINXBASE_EXPORT
 jmp_buf *ckd_set_jump(jmp_buf *env, int abort);
 
 /**
