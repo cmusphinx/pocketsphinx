@@ -1,0 +1,21 @@
+name: Run Tests
+on:
+  - push
+  - pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Build Dependencies
+        run: sudo apt-get -y install doxygen swig
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build
+        run: |
+          mkdir build
+          (cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=install ..)
+          (cd build && make)
+
+      - name: Run tests
+        run: |
+          (cd build && make test)

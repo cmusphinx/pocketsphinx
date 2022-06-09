@@ -1,0 +1,58 @@
+/* include/config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Default radix point for fixed-point */
+#cmakedefine DEFAULT_RADIX @DEFAULT_RADIX@
+
+/* Define to use fixed-point computation */
+#cmakedefine FIXED_POINT
+
+/* Define if the system has the type `long long'. */
+#cmakedefine HAVE_LONG_LONG
+
+/* Define if you have the `popen' function. */
+#cmakedefine HAVE_POPEN
+
+/* Define if you have the `snprintf' function. */
+#cmakedefine HAVE_SNPRINTF
+
+/* Define if you have the <sys/stat.h> header file. */
+#cmakedefine HAVE_SYS_STAT_H
+
+/* Define if you have the <sys/types.h> header file. */
+#cmakedefine HAVE_SYS_TYPES_H
+
+/* Define if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H
+
+/* The size of `long', as computed by sizeof. */
+#cmakedefine SIZEOF_LONG @SIZEOF_LONG@
+
+/* The size of `long long', as computed by sizeof. */
+#cmakedefine SIZEOF_LONG_LONG @SIZEOF_LONG_LONG@
+
+/* Define WORDS_BIGENDIAN if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN
+#else
+#  cmakedefine WORDS_BIGENDIAN
+#endif
+
+/* Define to the address where bug reports for this package should be sent. */
+#cmakedefine PACKAGE_BUGREPORT "@PACKAGE_BUGREPORT@"
+
+/* Define to the full name of this package. */
+#cmakedefine PACKAGE_NAME "@PACKAGE_NAME@"
+
+/* Define to the full name and version of this package. */
+#cmakedefine PACKAGE_STRING "@PACKAGE_STRING@"
+
+/* Define to the one symbol short name of this package. */
+#cmakedefine PACKAGE_TARNAME "@PACKAGE_TARNAME@"
+
+/* Define to the home page for this package. */
+#cmakedefine PACKAGE_URL "@PACKAGE_URL@"
+
+/* Define to the version of this package. */
+#cmakedefine PACKAGE_VERSION "@PACKAGE_VERSION@"
+

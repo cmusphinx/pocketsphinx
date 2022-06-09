@@ -1,16 +1,15 @@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-includedir=@includedir@
-libs=@LIBS@
-datadir=@datarootdir@/@PACKAGE@
-modeldir=@datarootdir@/@PACKAGE@/model
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_LIBDIR@
+includedir=@CMAKE_INSTALL_INCLUDEDIR@
+libs=
+datadir=@CMAKE_INSTALL_DATAROOTDIR@/@PROJECT_SHORTNAME@
+modeldir=@CMAKE_INSTALL_DATAROOTDIR@/@PROJECT_SHORTNAME@/model
 
 Name: PocketSphinx
 Description: Lightweight speech recognition system
-Version: @VERSION@
-URL: http://cmusphinx.sourceforge.net/
-Requires: sphinxbase >= @VERSION@
+Version: @PROJECT_VERSION@
+URL: @PACKAGE_URL@
 Libs: -L${libdir} -lpocketsphinx
-Libs.private: ${libs} -lm
+Libs.private: ${libs} -lm -lpthread
 Cflags: -I${includedir} -I${includedir}/sphinxbase -I${includedir}/pocketsphinx

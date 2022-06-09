@@ -1,11 +1,12 @@
 #!/bin/sh
 
-. ../testfuncs.sh
+. ${CMAKE_BINARY_DIR}/test/testfuncs.sh
 
 bn=`basename $0 .sh`
 
 echo "Test: $bn"
 run_program pocketsphinx_batch \
+    -loglevel INFO \
     -hmm $model/en-us/en-us \
     -dict $model/en-us/cmudict-en-us.dict \
     -alignctl $data/librivox/fileids \

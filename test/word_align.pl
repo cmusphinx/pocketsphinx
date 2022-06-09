@@ -3,7 +3,7 @@
 # word_align.pl - Calculate word error and accuracy for a recognition
 # hypothesis file vs. a reference transcription
 #
-# Written by David Huggins-Daines <dhuggins@cs.cmu.edu> for Speech
+# Written by David Huggins-Daines <dhdaines@gmail.com> for Speech
 # Recognition and Understanding 11-751, Carnegie Mellon University,
 # October 2004.
 
@@ -11,7 +11,7 @@ use strict;
 use Getopt::Long;
 use Pod::Usage;
 use vars qw($Verbose $CER $IgnoreUttID);
-use encoding 'utf8';
+use utf8;
 
 my ($help,%hyphash);
 GetOptions(

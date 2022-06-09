@@ -1,0 +1,21 @@
+/* sphinx_config.h: Externally visible configuration parameters */
+
+/* Define to use fixed-point computation */
+#cmakedefine FIXED_POINT
+
+/* Default radix point for fixed-point */
+#cmakedefine DEFAULT_RADIX @DEFAULT_RADIX@
+
+/* The size of `long', as computed by sizeof. */
+#cmakedefine SIZEOF_LONG @SIZEOF_LONG@
+
+/* Define if the system has the type `long long'. */
+#ifndef HAVE_LONG_LONG /* sometimes it is already defined */
+#cmakedefine HAVE_LONG_LONG
+#endif
+
+/* The size of `long long', as computed by sizeof. */
+#cmakedefine SIZEOF_LONG_LONG @SIZEOF_LONG_LONG@
+
+/* Enable debugging output */
+#cmakedefine SPHINX_DEBUG

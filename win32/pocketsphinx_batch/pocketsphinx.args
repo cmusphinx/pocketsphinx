@@ -1,6 +1,0 @@
--hmm ../../model/en-us/en-us
--lm ../../model/en-us/en-us.lm.bin
--dict ../../model/en-us/cmudict-en-us.dict
--ctl ../../test/data/wsj/test5k.s1.ctl
--cepdir ../../test/data/wsj
--backtrace yes
