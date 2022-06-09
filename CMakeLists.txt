@@ -23,6 +23,11 @@ include(CheckLibraryExists)
 include(TestBigEndian)
 include(GNUInstallDirs)
 
+# Statically link the Python package
+if(CALL_FROM_SETUP_PY)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
 CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 CHECK_INCLUDE_FILE(sys/types.h HAVE_SYS_TYPES_H)
 CHECK_INCLUDE_FILE(sys/stat.h HAVE_SYS_STAT_H)
@@ -65,22 +70,22 @@ if(NOT DEFAULT_RADIX)
 endif()
 cmake_print_variables(FIXED_POINT DEFAULT_RADIX)
 
-# Maybe not a great idea, but it does work on both Windows and Linux
-set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-
 configure_file(config.h.in config.h)
 configure_file(sphinx_config.h.in include/sphinxbase/sphinx_config.h)
 add_definitions(-DHAVE_CONFIG_H)
 
 add_subdirectory(src)
-add_subdirectory(include)
-add_subdirectory(model)
-add_subdirectory(programs)
-add_subdirectory(doc)
-add_subdirectory(test)
-add_subdirectory(swig)
+# Only build SWIG and Python if we are building the package
+if(CALL_FROM_SETUP_PY)
+  add_subdirectory(swig)
+else()
+  # Don't build or install these in Python
+  add_subdirectory(model)
+  add_subdirectory(doc)
+  add_subdirectory(include)
+  add_subdirectory(programs)
+  add_subdirectory(test)
+  configure_file(pocketsphinx.pc.in pocketsphinx.pc @ONLY)
+  install(FILES ${CMAKE_BINARY_DIR}/pocketsphinx.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+endif()
 
-configure_file(pocketsphinx.pc.in pocketsphinx.pc @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/pocketsphinx.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
