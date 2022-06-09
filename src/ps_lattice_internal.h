@@ -43,6 +43,7 @@
 #define __PS_LATTICE_INTERNAL_H__
 
 /* Local headers. */
+#include <pocketsphinx/export.h>
 #include "pocketsphinx_internal.h"
 
 #ifdef __cplusplus
@@ -217,6 +218,7 @@ void ps_lattice_penalize_fillers(ps_lattice_t *dag, int32 silpen, int32 fillpen)
 /**
  * Remove nodes marked as unreachable.
  */
+POCKETSPHINX_EXPORT
 void ps_lattice_delete_unreachable(ps_lattice_t *dag);
 
 /**
@@ -243,6 +245,7 @@ latlink_list_t *latlink_list_new(ps_lattice_t *dag, ps_latlink_t *link,
 /**
  * Get hypothesis string after bestpath search.
  */
+POCKETSPHINX_EXPORT
 char const *ps_lattice_hyp(ps_lattice_t *dag, ps_latlink_t *link);
 
 /**

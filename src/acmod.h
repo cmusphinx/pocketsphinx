@@ -57,6 +57,7 @@
 
 /* Local headers. */
 #include <pocketsphinx/ps_mllr.h>
+#include <pocketsphinx/export.h>
 #include "bin_mdef.h"
 #include "tmat.h"
 #include "hmm.h"
@@ -225,6 +226,7 @@ typedef struct acmod_s acmod_t;
  *           model, this function will fail.  This pointer is retained.
  * @return a newly initialized acmod_t, or NULL on failure.
  */
+POCKETSPHINX_EXPORT
 acmod_t *acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb);
 
 /**
@@ -234,6 +236,7 @@ acmod_t *acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb);
   * @param fe acoustic feature extraction module to verify.
  * @return TRUE if compatible, FALSE otherwise
  */
+POCKETSPHINX_EXPORT
 int acmod_fe_mismatch(acmod_t *acmod, fe_t *fe);
 
 /**
@@ -243,6 +246,7 @@ int acmod_fe_mismatch(acmod_t *acmod, fe_t *fe);
  * @param fcb dynamic feature computation module to verify.
  * @return TRUE if compatible, FALSE otherwise
  */
+POCKETSPHINX_EXPORT
 int acmod_feat_mismatch(acmod_t *acmod, feat_t *fcb);
 
 /**
@@ -255,6 +259,7 @@ int acmod_feat_mismatch(acmod_t *acmod, feat_t *fcb);
  * @return The updated transform object for this decoder, or
  *         NULL on failure.
  */
+POCKETSPHINX_EXPORT
 ps_mllr_t *acmod_update_mllr(acmod_t *acmod, ps_mllr_t *mllr);
 
 /**
@@ -264,6 +269,7 @@ ps_mllr_t *acmod_update_mllr(acmod_t *acmod, ps_mllr_t *mllr);
  * @param logfh Filehandle to log to.
  * @return 0 for success, <0 on error.
  */
+POCKETSPHINX_EXPORT
 int acmod_set_senfh(acmod_t *acmod, FILE *senfh);
 
 /**
@@ -273,6 +279,7 @@ int acmod_set_senfh(acmod_t *acmod, FILE *senfh);
  * @param logfh Filehandle to log to.
  * @return 0 for success, <0 on error.
  */
+POCKETSPHINX_EXPORT
 int acmod_set_mfcfh(acmod_t *acmod, FILE *logfh);
 
 /**
@@ -282,21 +289,25 @@ int acmod_set_mfcfh(acmod_t *acmod, FILE *logfh);
  * @param logfh Filehandle to log to.
  * @return 0 for success, <0 on error.
  */
+POCKETSPHINX_EXPORT
 int acmod_set_rawfh(acmod_t *acmod, FILE *logfh);
 
 /**
  * Finalize an acoustic model.
  */
+POCKETSPHINX_EXPORT
 void acmod_free(acmod_t *acmod);
 
 /**
  * Mark the start of an utterance.
  */
+POCKETSPHINX_EXPORT
 int acmod_start_utt(acmod_t *acmod);
 
 /**
  * Mark the end of an utterance.
  */
+POCKETSPHINX_EXPORT
 int acmod_end_utt(acmod_t *acmod);
 
 /**
@@ -311,6 +322,7 @@ int acmod_end_utt(acmod_t *acmod);
  * @return 0 for success, <0 for failure (if the utterance can't be
  *         rewound due to no feature or score data available)
  */
+POCKETSPHINX_EXPORT
 int acmod_rewind(acmod_t *acmod);
 
 /**
@@ -322,6 +334,7 @@ int acmod_rewind(acmod_t *acmod);
  *
  * @return New frame index.
  */
+POCKETSPHINX_EXPORT
 int acmod_advance(acmod_t *acmod);
 
 /**
@@ -332,6 +345,7 @@ int acmod_advance(acmod_t *acmod);
  * model.
  * @return previous allocation policy.
  */
+POCKETSPHINX_EXPORT
 int acmod_set_grow(acmod_t *acmod, int grow_feat);
 
 /**
@@ -352,6 +366,7 @@ int acmod_set_grow(acmod_t *acmod, int grow_feat);
  *                 utterance and should be processed as such.
  * @return Number of frames of data processed.
  */
+POCKETSPHINX_EXPORT
 int acmod_process_raw(acmod_t *acmod,
                       int16 const **inout_raw,
                       size_t *inout_n_samps,
@@ -368,6 +383,7 @@ int acmod_process_raw(acmod_t *acmod,
  *                 utterance and should be processed as such.
  * @return Number of frames of data processed.
  */
+POCKETSPHINX_EXPORT
 int acmod_process_cep(acmod_t *acmod,
                       mfcc_t ***inout_cep,
                       int *inout_n_frames,
@@ -386,6 +402,7 @@ int acmod_process_cep(acmod_t *acmod,
  * @param feat Pointer to one frame of dynamic features.
  * @return Number of frames processed (either 0 or 1).
  */
+POCKETSPHINX_EXPORT
 int acmod_process_feat(acmod_t *acmod,
                        mfcc_t **feat);
 
@@ -395,6 +412,7 @@ int acmod_process_feat(acmod_t *acmod,
  * @param insenfh File handle of dump file
  * @return 0 for success, <0 for failure
  */
+POCKETSPHINX_EXPORT
 int acmod_set_insenfh(acmod_t *acmod, FILE *insenfh);
 
 /**
@@ -402,6 +420,7 @@ int acmod_set_insenfh(acmod_t *acmod, FILE *insenfh);
  *
  * @return Number of frames read or <0 on error.
  */
+POCKETSPHINX_EXPORT
 int acmod_read_scores(acmod_t *acmod);
 
 /**
@@ -413,6 +432,7 @@ int acmod_read_scores(acmod_t *acmod);
  *                        set of features.
  * @return Feature array, or NULL if requested frame is not available.
  */
+POCKETSPHINX_EXPORT
 mfcc_t **acmod_get_frame(acmod_t *acmod, int *inout_frame_idx);
 
 /**
@@ -428,17 +448,20 @@ mfcc_t **acmod_get_frame(acmod_t *acmod, int *inout_frame_idx);
  *         data pointed to persists only until the next call to
  *         acmod_score() or acmod_advance().
  */
+POCKETSPHINX_EXPORT
 int16 const *acmod_score(acmod_t *acmod,
                          int *inout_frame_idx);
 
 /**
  * Write senone dump file header.
  */
+POCKETSPHINX_EXPORT
 int acmod_write_senfh_header(acmod_t *acmod, FILE *logfh);
 
 /**
  * Write a frame of senone scores to a dump file.
  */
+POCKETSPHINX_EXPORT
 int acmod_write_scores(acmod_t *acmod, int n_active, uint8 const *active,
                        int16 const *senscr, FILE *senfh);
 
@@ -446,6 +469,7 @@ int acmod_write_scores(acmod_t *acmod, int n_active, uint8 const *active,
 /**
  * Get best score and senone index for current frame.
  */
+POCKETSPHINX_EXPORT
 int acmod_best_score(acmod_t *acmod, int *out_best_senid);
 
 /**
@@ -466,26 +490,31 @@ void acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm);
 /**
  * Build active list.
  */
+POCKETSPHINX_EXPORT
 int32 acmod_flags2list(acmod_t *acmod);
 
 /**
  * Get the offset of the utterance start of the current stream, helpful for stream-wide timing.
  */
+POCKETSPHINX_EXPORT
 int32 acmod_stream_offset(acmod_t *acmod);
 
 /**
  * Reset the current stream
  */
+POCKETSPHINX_EXPORT
 void acmod_start_stream(acmod_t *acmod);
 
 /**
  * Sets the limit of the raw audio data to store
  */
+POCKETSPHINX_EXPORT
 void acmod_set_rawdata_size(acmod_t *acmod, int32 size);
 
 /**
  * Retrieves the raw data collected during utterance decoding
  */
+POCKETSPHINX_EXPORT
 void acmod_get_rawdata(acmod_t *acmod, int16 **buffer, int32 *size);
 
 #ifdef __cplusplus

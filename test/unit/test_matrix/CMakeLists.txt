@@ -20,7 +20,8 @@ set(TESTS
 )
 foreach(TEST ${TESTS})
   if(${TEST} MATCHES "\.(test|sh)$")
-    add_test(NAME ${TEST} COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/${TEST})
+    add_test(NAME ${TEST} COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/${TEST}
+          WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
   else()
     add_test(NAME ${TEST} COMMAND ${TEST})
   endif()

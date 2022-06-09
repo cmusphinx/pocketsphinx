@@ -101,6 +101,11 @@ target_link_libraries(pocketsphinx PUBLIC Threads::Threads)
 # Shared library version != package version, unfortunately
 set_target_properties(pocketsphinx PROPERTIES
   VERSION 4.0.0
-  SOVERSION 4)
+  SOVERSION 4
+  )
+# No idea why this can't just go in the above list but oh well
+set_property(TARGET pocketsphinx PROPERTY
+  COMPILE_DEFINITIONS POCKETSPHINX_EXPORTS;SPHINXBASE_EXPORTS
+)
 
 install(TARGETS pocketsphinx LIBRARY)
