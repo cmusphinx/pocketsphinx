@@ -40,86 +40,51 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
+
+#include "sphinxbase/err.h"
 #include "sphinxbase/bitarr.h"
-
-#define SIGN_BIT (0x80000000)
-
-/**
- * Shift bits depending on byte order in system.
- * Fun fact: __BYTE_ORDER is wrong on Solaris Sparc, but the version without __ is correct.
- * @param bit is an offset last byte
- * @param length - amount of bits for required for digit that is going to be read
- * @return shift forgiven architecture
- */
-static uint8 get_shift(uint8 bit, uint8 length)
-{
-#ifdef WORDS_BIGENDIAN
-    return 64 - length - bit;
-#else
-    return bit;
-#endif
-}
-
-/**
- * Read uint64 value from the given address
- * @param address to read from
- * @return uint64 value that was read
- */
-static uint64 read_off(bitarr_address_t address)
-{
-#if defined(__arm) || defined(__arm__)
-    uint64 value64;
-    const uint8 *base_off = (const uint8 *)(address.base) + (address.offset >> 3);
-    memcpy(&value64, base_off, sizeof(value64));
-    return value64;
-#else
-    return *(const uint64*)((const uint8 *)(address.base) + (address.offset >> 3));
-#endif
-}
+#include "sphinxbase/byteorder.h"
 
 uint64 bitarr_read_int57(bitarr_address_t address, uint8 length, uint64 mask)
 {
-    return (read_off(address) >> get_shift(address.offset & 7, length)) & mask;
+    uint64 value64;
+    const uint8 *base_off = (const uint8 *)(address.base) + (address.offset >> 3);
+    memcpy(&value64, base_off, sizeof(value64));
+    SWAP_LE_64(&value64);
+    return (value64 >> (address.offset & 7)) & mask;
 }
 
 void bitarr_write_int57(bitarr_address_t address, uint8 length, uint64 value) 
 {
-#if defined(__arm) || defined(__arm__)
     uint64 value64;
     uint8 *base_off = (uint8 *)(address.base) + (address.offset >> 3);
     memcpy(&value64, base_off, sizeof(value64));
-    value64 |= (value << get_shift(address.offset & 7, length));
+    SWAP_LE_64(&value64);
+    value64 |= (value << (address.offset & 7));
+    SWAP_LE_64(&value64);
     memcpy(base_off, &value64, sizeof(value64));
-#else
-    *(uint64 *)((uint8 *)(address.base) + (address.offset >> 3)) |= (value << get_shift(address.offset & 7, length));
-#endif
 }
 
 uint32 bitarr_read_int25(bitarr_address_t address, uint8 length, uint32 mask) 
 {
-#if defined(__arm) || defined(__arm__)
     uint32 value32;
     const uint8 *base_off = (const uint8*)(address.base) + (address.offset >> 3);
     memcpy(&value32, base_off, sizeof(value32));
-    return (value32 >> get_shift(address.offset & 7, length)) & mask;
-#else
-    return (*(const uint32*)((const uint8*)(address.base) + (address.offset >> 3)) >> get_shift(address.offset & 7, length)) & mask;
-#endif
+    SWAP_LE_32(&value32);
+    return (value32 >> (address.offset & 7)) & mask;
 }
 
 void bitarr_write_int25(bitarr_address_t address, uint8 length, uint32 value)
 {
-#if defined(__arm) || defined(__arm__)
     uint32 value32;
     uint8 *base_off = (uint8 *)(address.base) + (address.offset >> 3);
     memcpy(&value32, base_off, sizeof(value32));
-    value32 |= (value << get_shift(address.offset & 7, length));
+    SWAP_LE_32(&value32);
+    value32 |= (value << (address.offset & 7));
+    SWAP_LE_32(&value32);
     memcpy(base_off, &value32, sizeof(value32));
-#else
-    *(uint32 *)((uint8 *)(address.base) + (address.offset >> 3)) |= (value << get_shift(address.offset & 7, length));
-#endif
 }
 
 void bitarr_mask_from_max(bitarr_mask_t *bit_mask, uint32 max_value)

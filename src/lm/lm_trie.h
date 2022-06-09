@@ -77,7 +77,7 @@ typedef struct longest_s {
 } longest_t;
 
 typedef struct lm_trie_s {
-    uint8 *ngram_mem;
+    uint8 *ngram_mem; /*<< This appears to be a bitarr.h bit array */
     size_t ngram_mem_size;
     unigram_t *unigrams;
     middle_t *middle_begin;

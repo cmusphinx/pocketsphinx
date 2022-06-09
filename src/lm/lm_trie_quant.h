@@ -41,6 +41,19 @@
 
 #include "ngrams_raw.h"
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#if defined(DEBUG_ENDIAN) || defined(WORDS_BIGENDIAN)
+/* For some reason nobody ever considered the endianness of
+   this file.  I declare it to be canonically little-endian. */
+#define SWAP_LM_TRIE 1
+#else
+#define SWAP_LM_TRIE 0
+#endif
+
+
 typedef struct lm_trie_quant_s lm_trie_quant_t;
 
 /**

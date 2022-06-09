@@ -12,7 +12,7 @@
 static int
 test_lm_vals(ngram_model_t *model)
 {
-	int32 n_used;
+	int32 n_used, score;
 
 	TEST_ASSERT(model);
 	TEST_EQUAL(ngram_wid(model, "<UNK>"), 0);
@@ -20,18 +20,28 @@ test_lm_vals(ngram_model_t *model)
 	TEST_EQUAL(ngram_wid(model, "absolute"), 13);
 	TEST_EQUAL(strcmp(ngram_word(model, 13), "absolute"), 0);
 	/* Test unigrams. */
-	TEST_EQUAL_LOG(ngram_score(model, "<UNK>", NULL), -75346);
-	TEST_EQUAL_LOG(ngram_bg_score(model, ngram_wid(model, "<UNK>"),
-				  NGRAM_INVALID_WID, &n_used), -75346);
+	score = ngram_score(model, "<UNK>", NULL);
+	E_INFO("%d\n", score);
+	TEST_EQUAL_LOG(score, -75346);
+	score = ngram_bg_score(model, ngram_wid(model, "<UNK>"),
+			       NGRAM_INVALID_WID, &n_used);
+	E_INFO("%d\n", score);
+	TEST_EQUAL_LOG(score, -75346);
 	TEST_EQUAL(n_used, 1);
-	TEST_EQUAL_LOG(ngram_score(model, "sphinxtrain", NULL), -64208);
+	score = ngram_score(model, "sphinxtrain", NULL);
+	E_INFO("%d\n", score);
+	TEST_EQUAL_LOG(score, -64208);
 	TEST_EQUAL_LOG(ngram_bg_score(model, ngram_wid(model, "sphinxtrain"),
 				  NGRAM_INVALID_WID, &n_used), -64208);
 	TEST_EQUAL(n_used, 1);
 	/* Test bigrams. */
-	TEST_EQUAL_LOG(ngram_score(model, "huggins", "david", NULL), -831);
+	score = ngram_score(model, "huggins", "david", NULL);
+	E_INFO("%d\n", score);
+	TEST_EQUAL_LOG(score, -831);
 	/* Test trigrams. */
-	TEST_EQUAL_LOG(ngram_score(model, "daines", "huggins", "david", NULL), -9450);
+	score = ngram_score(model, "daines", "huggins", "david", NULL);
+	E_INFO("%d\n", score);
+	TEST_EQUAL_LOG(score, -9450);
 	return 0;
 }
 
@@ -41,12 +51,16 @@ main(int argc, char *argv[])
 	logmath_t *lmath;
 	ngram_model_t *model;
 
+	err_set_loglevel(ERR_INFO);
+
 	/* Initialize a logmath object to pass to ngram_read */
 	lmath = logmath_init(1.0001, 0, 0);
 
 	E_INFO("Converting ARPA to BIN\n");
 	model = ngram_model_read(NULL, LMDIR "/100.lm.bz2", NGRAM_ARPA, lmath);
+	E_INFO("Verifying ARPA\n");
 	test_lm_vals(model);
+	E_INFO("Writing BIN\n");
 	TEST_EQUAL(0, ngram_model_write(model, "100.tmp.lm.bin", NGRAM_BIN));
 	ngram_model_free(model);
 
