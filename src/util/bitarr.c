@@ -69,6 +69,7 @@ static uint8 get_shift(uint8 bit, uint8 length)
  */
 static uint64 read_off(bitarr_address_t address)
 {
+    /* FIXME: Likely to be needed on not just ARM */
 #if defined(__arm) || defined(__arm__)
     uint64 value64;
     const uint8 *base_off = (const uint8 *)(address.base) + (address.offset >> 3);
