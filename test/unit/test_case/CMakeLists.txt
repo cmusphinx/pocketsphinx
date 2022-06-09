@@ -23,5 +23,5 @@ set(TESTS
   _ucase3.test
 )
 foreach(TEST ${TESTS})
-  add_test(NAME ${TEST} COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/${TEST})
+  add_test(NAME ${TEST} COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/${TEST})
 endforeach()

@@ -7,7 +7,7 @@ sourcedir="@CMAKE_SOURCE_DIR@"
 tests=$sourcedir/test
 data=$sourcedir/test/data
 model=$sourcedir/model
-programs="$builddir/programs"
+programs=$builddir
 
 # Automatically report failures on exit
 failures=""

@@ -21,6 +21,6 @@ set(TESTS
   _test_parse_multiple.test
 )
 foreach(TEST ${TESTS})
-  add_test(NAME ${TEST} COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/${TEST})
+  add_test(NAME ${TEST} COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/${TEST})
   set_property(TEST ${TEST} PROPERTY ENVIRONMENT CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR})
 endforeach()
