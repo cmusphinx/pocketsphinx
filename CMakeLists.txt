@@ -56,11 +56,19 @@ else()
 endif()
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+if(BUILD_SHARED_LIBS)
+  add_definitions(-DSPHINX_DLL)
+endif()
 option(FIXED_POINT "Build using fixed-point math" OFF)
 if(NOT DEFAULT_RADIX)
   set(DEFAULT_RADIX 12)
 endif()
 cmake_print_variables(FIXED_POINT DEFAULT_RADIX)
+
+# FIXME: This maybe will break builds on not-Windows
+set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 configure_file(config.h.in config.h)
 configure_file(sphinx_config.h.in include/sphinxbase/sphinx_config.h)
