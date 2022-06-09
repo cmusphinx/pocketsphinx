@@ -1,4 +1,4 @@
-PocketSphinx 1.0.0 prerelease
+PocketSphinx 6.0.0 prerelease
 =============================
 
 This is PocketSphinx, one of Carnegie Mellon University's open source large
@@ -9,6 +9,9 @@ has largely ceased and it has become very, very far from the state of
 the art.  I am making a release, because people are nonetheless using
 it, and there are a number of historical errors in the build system
 and API which needed to be corrected.
+
+The version number is strange because it needs to be greater than 5prealpha,
+and we will use proper [semantic versioning](https://semver.org/) from now on.
 
 **Please see the LICENSE file for terms of use.**
 
