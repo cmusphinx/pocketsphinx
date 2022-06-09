@@ -46,9 +46,19 @@
 
 /** 
  * @file bitarr.h
- * @brief An implementation bit array - memory efficient storage for digit int and float data.
+ * @brief An implementation bit array - memory
+ * efficient storage for digit int and float data. (FIXME: NO)
  * 
- * Implementation of basic operations of read/write digits consuming as little space as possible.
+ * Implementation of basic operations of read/write digits consuming
+ * as little space as possible.
+ *
+ * I HAVE QUESTIONS.  Why 25 and 57 bits?  What are the other 7 bits
+ * *doing*?!?  Why didn't you stop to think about architectures with
+ * big-endian byte ordering or strictly aligned memory access when you
+ * wrote this?  Does it really store floats BECAUSE NO IT DOESN'T
+ *
+ * Note that because of the problems noted above data is canonically
+ * stored in little-endian order in memory.
  */
 
 #ifdef __cplusplus
