@@ -62,7 +62,6 @@ negative error code."
 
 %include typemaps.i
 %include iterators.i
-%import sphinxbase.i
 
 #if SWIGPYTHON
 %include pybuffer.i
@@ -72,6 +71,8 @@ negative error code."
 typedef cmd_ln_t Config;
 typedef feat_t Feature;
 typedef fe_t FrontEnd;
+typedef jsgf_t Jsgf;
+typedef jsgf_rule_t JsgfRule;
 typedef fsg_model_t FsgModel;
 typedef logmath_t LogMath;
 typedef ngram_model_t NGramModel;
@@ -100,12 +101,46 @@ typedef ngram_model_t NGramModelSet;
 #endif
 
 #include <pocketsphinx.h>
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/err.h>
+#include <sphinxbase/fe.h>
+#include <sphinxbase/feat.h>
+#include <sphinxbase/jsgf.h>
+#include <sphinxbase/ngram_model.h>
 
+typedef cmd_ln_t Config;
+typedef jsgf_t Jsgf;
+typedef jsgf_rule_t JsgfRule;
+typedef feat_t Feature;
+typedef fe_t FrontEnd;
+typedef fsg_model_t FsgModel;
+typedef logmath_t LogMath;
+typedef ngram_model_t NGramModel;
+typedef ngram_model_t NGramModelSet;
 typedef ps_decoder_t Decoder;
 typedef ps_decoder_t SegmentList;
 typedef ps_decoder_t NBestList;
 typedef ps_lattice_t Lattice;
 %}
+
+%nodefaultctor Config;
+
+typedef struct {} Config;
+typedef struct {} FrontEnd;
+typedef struct {} Feature;
+typedef struct {} FsgModel;
+typedef struct {} JsgfRule;
+typedef struct {} NGramModel;
+typedef struct {} LogMath;
+
+sb_iterator(NGramModelSet, ngram_model_set_iter, NGramModel);
+sb_iterator(Jsgf, jsgf_rule_iter, JsgfRule)
+
+sb_iterable(NGramModelSet, NGramModelSet, ngram_model_set_iter, ngram_model_set_iter, NGramModel)
+sb_iterable(Jsgf, Jsgf, jsgf_rule_iter, jsgf_rule_iter, JsgfRule)
+
+typedef struct {} NGramModelSet;
+typedef struct {} Jsgf;
 
 %typemap(cscode) Segment %{
     public override string ToString() {
@@ -220,3 +255,10 @@ typedef struct {} SegmentList;
 
 %include ps_decoder.i
 %include ps_lattice.i
+%include cmd_ln.i
+%include fe.i
+%include feat.i
+%include fsg_model.i
+%include jsgf.i
+%include ngram_model.i
+%include logmath.i
