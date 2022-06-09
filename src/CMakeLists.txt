@@ -88,6 +88,10 @@ target_include_directories(
   pocketsphinx PUBLIC ${CMAKE_BINARY_DIR}/include
   pocketsphinx INTERFACE ${CMAKE_SOURCE_DIR}/include
   )
+if(APPLE)
+  # Things we might need are here
+  target_link_directories(pocketsphinx PUBLIC /usr/local/lib)
+endif()
 find_library(MATH_LIBRARY m)
 if(MATH_LIBRARY)
   target_link_libraries(pocketsphinx PUBLIC ${MATH_LIBRARY})
