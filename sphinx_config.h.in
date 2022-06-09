@@ -10,7 +10,9 @@
 #cmakedefine SIZEOF_LONG @SIZEOF_LONG@
 
 /* Define if the system has the type `long long'. */
+#ifndef HAVE_LONG_LONG /* sometimes it is already defined */
 #cmakedefine HAVE_LONG_LONG
+#endif
 
 /* The size of `long long', as computed by sizeof. */
 #cmakedefine SIZEOF_LONG_LONG @SIZEOF_LONG_LONG@

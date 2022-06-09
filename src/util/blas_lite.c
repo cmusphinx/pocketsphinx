@@ -392,7 +392,7 @@ L60:
     } else {
 	nrowb = *n;
     }
-
+    (void) ncola;
 /*     Test the input parameters. */
 
     info = 0;
