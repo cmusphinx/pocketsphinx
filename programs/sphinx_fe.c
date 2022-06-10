@@ -552,7 +552,6 @@ decode_pcm(sphinx_wave2feat_t *wtf)
 
     nchans = cmd_ln_int32_r(wtf->config, "-nchans");
     whichchan = cmd_ln_int32_r(wtf->config, "-whichchan");
-    fe_start_stream(wtf->fe);
     fe_start_utt(wtf->fe);
     nfloat = 0;
     while ((nsamp = fread(wtf->audio, sizeof(int16), wtf->blocksize, wtf->infh)) != 0) {
@@ -574,7 +573,7 @@ decode_pcm(sphinx_wave2feat_t *wtf)
         /* Consume all samples. */
         while (nsamp) {
             nfr = nvec;
-            fe_process_frames(wtf->fe, &inspeech, &nsamp, wtf->feat, &nfr, NULL);
+            fe_process_frames(wtf->fe, &inspeech, &nsamp, wtf->feat, &nfr);
             if (nfr) {
                 if ((n = (*wtf->ot->output_frames)(wtf, wtf->feat, nfr)) < 0)
                     return -1;

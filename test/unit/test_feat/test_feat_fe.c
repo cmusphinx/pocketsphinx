@@ -38,7 +38,7 @@ main(int argc, char *argv[])
 	/* Determine how much data and how many MFCC frames we need. */
 	fseek(raw, 0, SEEK_END);
 	nsamp = ftell(raw) / sizeof(int16);
-	fe_process_frames(fe, NULL, &nsamp, NULL, &total_frames, NULL);
+	fe_process_frames(fe, NULL, &nsamp, NULL, &total_frames);
 	printf("%ld samples, %d + 1 frames\n", nsamp, total_frames);
 	total_frames++; /* For the possible fe_end_utt() frame */
 	cepbuf = ckd_calloc_2d(total_frames + 1, fe_get_output_size(fe), sizeof(**cepbuf));
@@ -52,7 +52,7 @@ main(int argc, char *argv[])
 		int16 const *bptr = buf;
 		while (nsamp) {
 			int32 ncep = nfr;
-			fe_process_frames(fe, &bptr, &nsamp, cptr, &ncep, NULL);
+			fe_process_frames(fe, &bptr, &nsamp, cptr, &ncep);
 			cptr += ncep;
 			nfr -= ncep;
 		}

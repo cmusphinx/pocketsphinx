@@ -725,12 +725,24 @@ fe_compute_melcosine(melfb_t * mel_fb)
 }
 
 static void
-fe_pre_emphasis(int16 const *in, frame_t * out, int32 len,
-                float32 factor, int16 prior)
+fe_pre_emphasis_int16(int16 const *in, frame_t * out, int32 len,
+                      float32 factor, int16 prior)
 {
     int i;
 
-#if defined(FIXED_POINT)
+#if defined(FIXED16)
+    int16 fxd_alpha = (int16)(factor * 0x8000);
+    int32 tmp1, tmp2;
+
+    tmp1 = (int32)in[0] << 15;
+    tmp2 = (int32)prior * fxd_alpha;
+    out[0] = (int16)((tmp1 - tmp2) >> 15);
+    for (i = 1; i < len; ++i) {
+        tmp1 = (int32)in[i] << 15;
+        tmp2 = (int32)in[i-1] * fxd_alpha;
+        out[i] = (int16)((tmp1 - tmp2) >> 15);
+    }
+#elif defined(FIXED_POINT)
     fixed32 fxd_alpha = FLOAT2FIX(factor);
     out[0] = ((fixed32) in[0] << DEFAULT_RADIX) - (prior * fxd_alpha);
     for (i = 1; i < len; ++i)
@@ -744,17 +756,39 @@ fe_pre_emphasis(int16 const *in, frame_t * out, int32 len,
 }
 
 static void
-fe_short_to_frame(int16 const *in, frame_t * out, int32 len)
+fe_copy_to_frame_int16(int16 const *in, frame_t * out, int32 len)
 {
     int i;
 
-#if defined(FIXED_POINT)
+#if defined(FIXED16)
+    memcpy(out, in, len * sizeof(*out));
+#elif defined(FIXED_POINT)
     for (i = 0; i < len; i++)
         out[i] = (int32) in[i] << DEFAULT_RADIX;
 #else                           /* FIXED_POINT */
     for (i = 0; i < len; i++)
         out[i] = (frame_t) in[i];
 #endif                          /* FIXED_POINT */
+}
+
+static void
+fe_pre_emphasis_float32(float32 const *in, frame_t * out, int32 len,
+                        float32 factor, float32 prior)
+{
+    int i;
+
+    out[0] = (frame_t) in[0] - (frame_t) prior *factor;
+    for (i = 1; i < len; i++)
+        out[i] = (frame_t) in[i] - (frame_t) in[i - 1] * factor;
+}
+
+static void
+fe_copy_to_frame_float32(float32 const *in, frame_t * out, int32 len)
+{
+    int i;
+
+    for (i = 0; i < len; i++)
+        out[i] = (frame_t) in[i];
 }
 
 void
@@ -767,7 +801,11 @@ fe_create_hamming(window_t * in, int32 in_len)
         float64 hamm;
         hamm = (0.54 - 0.46 * cos(2 * M_PI * i /
                                   ((float64) in_len - 1.0)));
+#ifdef FIXED16
+        in[i] = (int16)(hamm * 0x8000);
+#else
         in[i] = FLOAT2COS(hamm);
+#endif
     }
 }
 
@@ -778,7 +816,11 @@ fe_hamming_window(frame_t * in, window_t * window, int32 in_len,
     int i;
 
     if (remove_dc) {
+#ifdef FIXED16
+        int32 mean = 0; /* Use int32 to avoid possibility of overflow */
+#else
         frame_t mean = 0;
+#endif
 
         for (i = 0; i < in_len; i++)
             mean += in[i];
@@ -787,26 +829,53 @@ fe_hamming_window(frame_t * in, window_t * window, int32 in_len,
             in[i] -= (frame_t) mean;
     }
 
-    for (i = 0; i < in_len / 2; i++) {
+#ifdef FIXED16
+    for (i = 0; i < in_len/2; i++) {
+        int32 tmp1, tmp2;
+
+        tmp1 = (int32)in[i] * window[i];
+        tmp2 = (int32)in[in_len-1-i] * window[i];
+        in[i] = (int16)(tmp1 >> 15);
+        in[in_len-1-i] = (int16)(tmp2 >> 15);
+    }
+#else
+    for (i = 0; i < in_len/2; i++) {
         in[i] = COSMUL(in[i], window[i]);
         in[in_len - 1 - i] = COSMUL(in[in_len - 1 - i], window[i]);
     }
+#endif
 }
 
 static int
 fe_spch_to_frame(fe_t * fe, int len)
 {
     /* Copy to the frame buffer. */
-    if (fe->pre_emphasis_alpha != 0.0) {
-        fe_pre_emphasis(fe->spch, fe->frame, len,
-                        fe->pre_emphasis_alpha, fe->pre_emphasis_prior);
-        if (len >= fe->frame_shift)
-            fe->pre_emphasis_prior = fe->spch[fe->frame_shift - 1];
+    if (fe->is_float32) {
+        if (fe->pre_emphasis_alpha != 0.0) {
+            fe_pre_emphasis_float32(fe->spch.s_float32, fe->frame, len,
+                                    fe->pre_emphasis_alpha,
+                                    fe->pre_emphasis_prior.s_float32);
+            if (len >= fe->frame_shift)
+                fe->pre_emphasis_prior.s_float32 = fe->spch.s_float32[fe->frame_shift - 1];
+            else
+                fe->pre_emphasis_prior.s_float32 = fe->spch.s_float32[len - 1];
+        }
         else
-            fe->pre_emphasis_prior = fe->spch[len - 1];
+            fe_copy_to_frame_float32(fe->spch.s_float32, fe->frame, len);
     }
-    else
-        fe_short_to_frame(fe->spch, fe->frame, len);
+    else {
+        if (fe->pre_emphasis_alpha != 0.0) {
+            fe_pre_emphasis_int16(fe->spch.s_int16, fe->frame, len,
+                                  fe->pre_emphasis_alpha,
+                                  fe->pre_emphasis_prior.s_int16);
+            if (len >= fe->frame_shift)
+                fe->pre_emphasis_prior.s_int16 = fe->spch.s_int16[fe->frame_shift - 1];
+            else
+                fe->pre_emphasis_prior.s_int16 = fe->spch.s_int16[len - 1];
+        }
+        else
+            fe_copy_to_frame_int16(fe->spch.s_int16, fe->frame, len);
+    }
 
     /* Zero pad up to FFT size. */
     memset(fe->frame + len, 0, (fe->fft_size - len) * sizeof(*fe->frame));
@@ -819,47 +888,129 @@ fe_spch_to_frame(fe_t * fe, int len)
 }
 
 int
-fe_read_frame(fe_t * fe, int16 const *in, int32 len)
+fe_read_frame_int16(fe_t * fe, int16 const *in, int32 len)
 {
     int i;
+
+    if (fe->is_float32) {
+        E_ERROR("Called fe_read_frame_int16 when -input_float32 is true\n");
+        return -1;
+    }
 
     if (len > fe->frame_size)
         len = fe->frame_size;
 
     /* Read it into the raw speech buffer. */
-    memcpy(fe->spch, in, len * sizeof(*in));
+    memcpy(fe->spch.s_int16, in, len * sizeof(*in));
     /* Swap and dither if necessary. */
     if (fe->swap)
         for (i = 0; i < len; ++i)
-            SWAP_INT16(&fe->spch[i]);
+            SWAP_INT16(&fe->spch.s_int16[i]);
     if (fe->dither)
         for (i = 0; i < len; ++i)
-            fe->spch[i] += (int16) ((!(s3_rand_int31() % 4)) ? 1 : 0);
+            fe->spch.s_int16[i] += (int16) ((!(s3_rand_int31() % 4)) ? 1 : 0);
 
     return fe_spch_to_frame(fe, len);
 }
 
 int
-fe_shift_frame(fe_t * fe, int16 const *in, int32 len)
+fe_read_frame(fe_t * fe, int16 const *in, int32 len)
+{
+    return fe_read_frame_int16(fe, in, len);
+}
+
+#define FLOAT32_SCALE 32768.0
+#define FLOAT32_DITHER 1.0
+
+int
+fe_read_frame_float32(fe_t * fe, float32 const *in, int32 len)
+{
+    int i;
+
+    if (!fe->is_float32) {
+        E_ERROR("Called fe_read_frame_float32 when -input_float32 is false\n");
+        return -1;
+    }
+
+    if (len > fe->frame_size)
+        len = fe->frame_size;
+
+    /* Scale and dither if necessary. */
+    if (fe->dither)
+        for (i = 0; i < len; ++i)
+            fe->spch.s_float32[i] =
+                (in[i] * FLOAT32_SCALE
+                 + ((!(s3_rand_int31() % 4)) ? FLOAT32_DITHER : 0.0));
+    else
+        for (i = 0; i < len; ++i)
+            fe->spch.s_float32[i] = in[i] * FLOAT32_SCALE;
+
+    return fe_spch_to_frame(fe, len);
+}
+
+int
+fe_shift_frame_int16(fe_t * fe, int16 const *in, int32 len)
 {
     int offset, i;
+
+    if (fe->is_float32) {
+        E_ERROR("Called fe_shift_frame_int16 when -input_float32 is true\n");
+        return -1;
+    }
+
 
     if (len > fe->frame_shift)
         len = fe->frame_shift;
     offset = fe->frame_size - fe->frame_shift;
 
     /* Shift data into the raw speech buffer. */
-    memmove(fe->spch, fe->spch + fe->frame_shift,
-            offset * sizeof(*fe->spch));
-    memcpy(fe->spch + offset, in, len * sizeof(*fe->spch));
+    memmove(fe->spch.s_int16, fe->spch.s_int16 + fe->frame_shift,
+            offset * sizeof(*fe->spch.s_int16));
+    memcpy(fe->spch.s_int16 + offset, in, len * sizeof(*fe->spch.s_int16));
     /* Swap and dither if necessary. */
     if (fe->swap)
         for (i = 0; i < len; ++i)
-            SWAP_INT16(&fe->spch[offset + i]);
+            SWAP_INT16(&fe->spch.s_int16[offset + i]);
     if (fe->dither)
         for (i = 0; i < len; ++i)
-            fe->spch[offset + i]
+            fe->spch.s_int16[offset + i]
                 += (int16) ((!(s3_rand_int31() % 4)) ? 1 : 0);
+
+    return fe_spch_to_frame(fe, offset + len);
+}
+
+int
+fe_shift_frame(fe_t * fe, int16 const *in, int32 len)
+{
+    return fe_shift_frame_int16(fe, in, len);
+}
+
+int
+fe_shift_frame_float32(fe_t * fe, float32 const *in, int32 len)
+{
+    int offset, i;
+
+    if (!fe->is_float32) {
+        E_ERROR("Called fe_read_frame_float32 when -input_float32 is false\n");
+        return -1;
+    }
+
+    if (len > fe->frame_shift)
+        len = fe->frame_shift;
+    offset = fe->frame_size - fe->frame_shift;
+
+    /* Shift data into the raw speech buffer. */
+    memmove(fe->spch.s_float32, fe->spch.s_float32 + fe->frame_shift,
+            offset * sizeof(*fe->spch.s_float32));
+    /* Scale and dither if necessary. */
+    if (fe->dither)
+        for (i = 0; i < len; ++i)
+            fe->spch.s_float32[i + offset] =
+                (in[i] * FLOAT32_SCALE
+                 + ((!(s3_rand_int31() % 4)) ? FLOAT32_DITHER : 0.0));
+    else
+        for (i = 0; i < len; ++i)
+            fe->spch.s_float32[i + offset] = in[i] * FLOAT32_SCALE;
 
     return fe_spch_to_frame(fe, offset + len);
 }
@@ -874,7 +1025,10 @@ fe_create_twiddle(fe_t * fe)
 
     for (i = 0; i < fe->fft_size / 4; ++i) {
         float64 a = 2 * M_PI * i / fe->fft_size;
-#if defined(FIXED_POINT)
+#ifdef FIXED16
+        fe->ccc[i] = (int16)(cos(a) * 0x8000);
+        fe->sss[i] = (int16)(sin(a) * 0x8000);
+#elif defined(FIXED_POINT)
         fe->ccc[i] = FLOAT2COS(cos(a));
         fe->sss[i] = FLOAT2COS(sin(a));
 #else
@@ -884,9 +1038,135 @@ fe_create_twiddle(fe_t * fe)
     }
 }
 
-
+/* Translated from the FORTRAN (obviously) from "Real-Valued Fast
+ * Fourier Transform Algorithms" by Henrik V. Sorensen et al., IEEE
+ * Transactions on Acoustics, Speech, and Signal Processing, vol. 35,
+ * no.6.  The 16-bit version does a version of "block floating
+ * point" in order to avoid rounding errors.
+ */
+#if defined(FIXED16)
 static int
-fe_fft_real(fe_t * fe)
+fe_fft_real(fe_t *fe)
+{
+    int i, j, k, m, n, lz;
+    frame_t *x, xt, max;
+
+    x = fe->frame;
+    m = fe->fft_order;
+    n = fe->fft_size;
+
+    /* Bit-reverse the input. */
+    j = 0;
+    for (i = 0; i < n - 1; ++i) {
+        if (i < j) {
+            xt = x[j];
+            x[j] = x[i];
+            x[i] = xt;
+        }
+        k = n / 2;
+        while (k <= j) {
+            j -= k;
+            k /= 2;
+        }
+        j += k;
+    }
+    /* Determine how many bits of dynamic range are in the input. */
+    max = 0;
+    for (i = 0; i < n; ++i)
+        if (abs(x[i]) > max)
+            max = abs(x[i]);
+    /* The FFT has a gain of M bits, so we need to attenuate the input
+     * by M bits minus the number of leading zeroes in the input's
+     * range in order to avoid overflows.  */
+    for (lz = 0; lz < m; ++lz)
+        if (max & (1 << (15-lz)))
+            break;
+
+    /* Basic butterflies (2-point FFT, real twiddle factors):
+     * x[i]   = x[i] +  1 * x[i+1]
+     * x[i+1] = x[i] + -1 * x[i+1]
+     */
+    /* The quantization error introduced by attenuating the input at
+     * any given stage of the FFT has a cascading effect, so we hold
+     * off on it until it's absolutely necessary. */
+    for (i = 0; i < n; i += 2) {
+        int atten = (lz == 0);
+        xt = x[i] >> atten;
+        x[i]     = xt + (x[i + 1] >> atten);
+        x[i + 1] = xt - (x[i + 1] >> atten);
+    }
+
+    /* The rest of the butterflies, in stages from 1..m */
+    for (k = 1; k < m; ++k) {
+        int n1, n2, n4;
+        /* Start attenuating once we hit the number of leading zeros. */
+        int atten = (k >= lz);
+
+        n4 = k - 1;
+        n2 = k;
+        n1 = k + 1;
+        /* Stride over each (1 << (k+1)) points */
+        for (i = 0; i < n; i += (1 << n1)) {
+            /* Basic butterfly with real twiddle factors:
+             * x[i]          = x[i] +  1 * x[i + (1<<k)]
+             * x[i + (1<<k)] = x[i] + -1 * x[i + (1<<k)]
+             */
+            xt = x[i] >> atten;
+            x[i]             = xt + (x[i + (1 << n2)] >> atten);
+            x[i + (1 << n2)] = xt - (x[i + (1 << n2)] >> atten);
+
+            /* The other ones with real twiddle factors:
+             * x[i + (1<<k) + (1<<(k-1))]
+             *   = 0 * x[i + (1<<k-1)] + -1 * x[i + (1<<k) + (1<<k-1)]
+             * x[i + (1<<(k-1))]
+             *   = 1 * x[i + (1<<k-1)] +  0 * x[i + (1<<k) + (1<<k-1)]
+             */
+            x[i + (1 << n2) + (1 << n4)] = -x[i + (1 << n2) + (1 << n4)] >> atten;
+            x[i + (1 << n4)]             =  x[i + (1 << n4)] >> atten;
+            
+            /* Butterflies with complex twiddle factors.
+             * There are (1<<k-1) of them.
+             */
+            for (j = 1; j < (1 << n4); ++j) {
+                frame_t cc, ss, t1, t2;
+                int i1, i2, i3, i4;
+
+                i1 = i + j;
+                i2 = i + (1 << n2) - j;
+                i3 = i + (1 << n2) + j;
+                i4 = i + (1 << n2) + (1 << n2) - j;
+
+                /*
+                 * cc = real(W[j * n / (1<<(k+1))])
+                 * ss = imag(W[j * n / (1<<(k+1))])
+                 */
+                cc = fe->ccc[j << (m - n1)];
+                ss = fe->sss[j << (m - n1)];
+
+                /* There are some symmetry properties which allow us
+                 * to get away with only four multiplications here. */
+                {
+                    int32 tmp1, tmp2;
+                    tmp1 = (int32)x[i3] * cc + (int32)x[i4] * ss;
+                    tmp2 = (int32)x[i3] * ss - (int32)x[i4] * cc;
+                    t1 = (int16)(tmp1 >> 15) >> atten;
+                    t2 = (int16)(tmp2 >> 15) >> atten;
+                }
+
+                x[i4] = (x[i2] >> atten) - t2;
+                x[i3] = (-x[i2] >> atten) - t2;
+                x[i2] = (x[i1] >> atten) - t1;
+                x[i1] = (x[i1] >> atten) + t1;
+            }
+        }
+    }
+
+    /* Return the residual scaling factor. */
+    return lz;
+}
+#else /* !FIXED16 */
+static int
+fe_fft_real(fe_t *fe)
 {
     int i, j, k, m, n;
     frame_t *x, xt;
@@ -982,6 +1262,7 @@ fe_fft_real(fe_t * fe)
     /* This isn't used, but return it for completeness. */
     return m;
 }
+#endif /* !FIXED16 */
 
 static void
 fe_spec_magnitude(fe_t * fe)
@@ -1004,7 +1285,9 @@ fe_spec_magnitude(fe_t * fe)
 
     /* The first point (DC coefficient) has no imaginary part */
     {
-#if defined(FIXED_POINT)
+#ifdef FIXED16
+        spec[0] = fixlog(abs(fft[0]) << scale) * 2;
+#elif defined(FIXED_POINT)
         spec[0] = FIXLN(abs(fft[0]) << scale) * 2;
 #else
         spec[0] = fft[0] * fft[0];
@@ -1012,7 +1295,11 @@ fe_spec_magnitude(fe_t * fe)
     }
 
     for (j = 1; j <= fftsize / 2; j++) {
-#if defined(FIXED_POINT)
+#ifdef FIXED16
+        int32 rr = fixlog(abs(fft[j]) << scale) * 2;
+        int32 ii = fixlog(abs(fft[fftsize - j]) << scale) * 2;
+        spec[j] = fe_log_add(rr, ii);
+#elif defined(FIXED_POINT)
         int32 rr = FIXLN(abs(fft[j]) << scale) * 2;
         int32 ii = FIXLN(abs(fft[fftsize - j]) << scale) * 2;
         spec[j] = fe_log_add(rr, ii);
@@ -1031,6 +1318,7 @@ fe_mel_spec(fe_t * fe)
     /* Convenience poitners. */
     spec = fe->spec;
     mfspec = fe->mfspec;
+
     for (whichfilt = 0; whichfilt < fe->mel_fb->num_filters; whichfilt++) {
         int spec_start, filt_start, i;
 
@@ -1179,17 +1467,14 @@ fe_dct3(fe_t * fe, const mfcc_t * mfcep, powspec_t * mflogspec)
     }
 }
 
-void
-fe_write_frame(fe_t * fe, mfcc_t * feat, int32 store_pcm)
+int
+fe_write_frame(fe_t * fe, mfcc_t * feat)
 {
-    int32 is_speech;
-
     fe_spec_magnitude(fe);
     fe_mel_spec(fe);
-    fe_track_snr(fe, &is_speech);
     fe_mel_cep(fe, feat);
     fe_lifter(fe, feat);
-    fe_vad_hangover(fe, feat, is_speech, store_pcm);
+    return 1;
 }
 
 
