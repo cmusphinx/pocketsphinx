@@ -1,0 +1,2 @@
+cmake-build-extension~=0.5.1
+pytest~=7.1.2
