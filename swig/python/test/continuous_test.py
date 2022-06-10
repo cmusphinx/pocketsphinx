@@ -2,8 +2,7 @@
 
 from os import environ, path
 
-from pocketsphinx import *
-from sphinxbase import *
+from pocketsphinx5 import Decoder
 
 MODELDIR = "../../../model"
 DATADIR = "../../../test/data"
@@ -12,7 +11,6 @@ config = Decoder.default_config()
 config.set_string('-hmm', path.join(MODELDIR, 'en-us/en-us'))
 config.set_string('-lm', path.join(MODELDIR, 'en-us/en-us.lm.bin'))
 config.set_string('-dict', path.join(MODELDIR, 'en-us/cmudict-en-us.dict'))
-config.set_string('-logfn', '/dev/null')
 decoder = Decoder(config)
 
 stream = open(path.join(DATADIR, 'goforward.raw'), 'rb')
@@ -28,7 +26,7 @@ while True:
             in_speech_bf = decoder.get_in_speech()
             if not in_speech_bf:
                 decoder.end_utt()
-                print 'Result:', decoder.hyp().hypstr
+                print('Result:', decoder.hyp().hypstr)
                 decoder.start_utt()
     else:
         break

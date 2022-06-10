@@ -1,9 +1,7 @@
 #!/usr/bin/python
 
 import sys, os
-from pocketsphinx import *
-from sphinxbase import *
-
+from pocketsphinx5 import Decoder
 
 modeldir = "../../../model"
 datadir = "../../../test/data"

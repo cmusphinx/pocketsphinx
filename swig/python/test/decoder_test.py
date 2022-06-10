@@ -2,9 +2,7 @@
 
 from os import environ, path
 
-
-from pocketsphinx import *
-from sphinxbase import *
+from pocketsphinx5 import Decoder
 
 MODELDIR = "../../../model"
 DATADIR = "../../../test/data"

@@ -3,8 +3,7 @@
 from os import environ, path
 from sys import stdout
 
-from pocketsphinx import *
-from sphinxbase import *
+from pocketsphinx5 import Decoder, Jsgf
 
 MODELDIR = "../../../model"
 DATADIR = "../../../test/data"
