@@ -950,7 +950,6 @@ ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
     int16 *data;
     long total, pos, endpos;
 
-    ps_start_stream(ps);
     ps_start_utt(ps);
 
     /* If this file is seekable or maxsamps is specified, then decode

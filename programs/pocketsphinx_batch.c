@@ -492,7 +492,6 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
             ckd_free(infile);
             return -1;
         }
-        ps_start_stream(ps);
         ps_start_utt(ps);
         ps_process_cep(ps, mfcs, nfr, FALSE, TRUE);
         ps_end_utt(ps);
