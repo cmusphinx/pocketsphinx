@@ -41,6 +41,10 @@ install(
   FILES ${WRAPPER_PY_FILE}
   DESTINATION ${POCKETSPHINX_INSTALL_PREFIX}
   COMPONENT bindings)
+# Install the __init__ply file
+install(
+  FILES __init__.py
+  DESTINATION ${POCKETSPHINX_INSTALL_PREFIX})
 # Install the SWIG library
 install(
   TARGETS bindings

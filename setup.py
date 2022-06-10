@@ -6,10 +6,6 @@ from pathlib import Path
 import cmake_build_extension
 import setuptools
 
-init_py = """
-from .bindings import *
-"""
-
 # This example is compliant with PEP517 and PEP518. It uses the setup.cfg file to store
 # most of the package metadata. However, build extensions are not supported and must be
 # configured in the setup.py.
@@ -20,7 +16,6 @@ setuptools.setup(
             name="PocketSphinx5",
             # Name of the resulting package name (import mymath_swig)
             install_prefix="pocketsphinx5",
-            write_top_level_init=init_py,
             # Selects the folder where the main CMakeLists.txt is stored
             # (it could be a subfolder)
             source_dir=str(Path(__file__).parent.absolute()),
