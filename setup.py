@@ -13,7 +13,7 @@ setuptools.setup(
     ext_modules=[
         cmake_build_extension.CMakeExtension(
             # This could be anything you like, it is used to create build folders
-            name="PocketSphinx5",
+            name="pocketsphinx5",
             # Name of the resulting package name (import mymath_swig)
             install_prefix="pocketsphinx5",
             # Selects the folder where the main CMakeLists.txt is stored
