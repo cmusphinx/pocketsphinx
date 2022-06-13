@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4 -*- */
 #include <pocketsphinx.h>
 
 #include "ps_alignment.h"
@@ -89,42 +90,34 @@ main(int argc, char *argv[])
     for (i = 0; i < 5; i++)
         do_search(search, acmod);
 
+    for (itor = ps_alignment_words(al); itor;
+	 itor = ps_alignment_iter_next(itor)) {
+	ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
+
+	printf("%s %d %d\n",
+	       dict_wordstr(dict, ent->id.wid),
+	       ent->start, ent->duration);
+    }
     itor = ps_alignment_words(al);
     TEST_EQUAL(ps_alignment_iter_get(itor)->start, 0);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 8);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 46);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 8);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 18);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 46);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 17);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 26);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 53);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 63);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 54);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 79);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 117);
     TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 36);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 115);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 59);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 153);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 60);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 174);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 49);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 213);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 61);
     itor = ps_alignment_iter_next(itor);
     TEST_EQUAL(itor, NULL);
-
-    ps_search_free(search);
-    ps_alignment_free(al);
-
-    /* Test bad alignment */
-
-    al = ps_alignment_init(d2p);
-    TEST_EQUAL(1, ps_alignment_add_word(al, dict_wordid(dict, "<s>"), 0));
-    for (i = 0; i < 20; i++) {
-        TEST_EQUAL(i + 2, ps_alignment_add_word(al, dict_wordid(dict, "hello"), 0));
-    }
-    TEST_EQUAL(22, ps_alignment_add_word(al, dict_wordid(dict, "</s>"), 0));
-    TEST_EQUAL(0, ps_alignment_populate(al));
-    TEST_ASSERT(search = state_align_search_init("state_align", config, acmod, al));
-    E_INFO("Error here is expected, testing bad alignment\n");
-    TEST_EQUAL(-1, do_search(search, acmod));
 
     ps_search_free(search);
     ps_alignment_free(al);

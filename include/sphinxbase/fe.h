@@ -148,8 +148,8 @@ extern "C" {
    \
   { "-nfft", \
     ARG_INTEGER, \
-    ARG_STRINGIFY(DEFAULT_FFT_SIZE), \
-    "Size of FFT" }, \
+    "0", \
+    "Size of FFT, or 0 to set automatically (recommended)" }, \
    \
   { "-nfilt", \
     ARG_INTEGER, \
@@ -191,30 +191,15 @@ extern "C" {
     "0", \
     "Length of sin-curve for liftering, or 0 for no liftering." }, \
    \
-  { "-vad_prespeech", \
-    ARG_INTEGER, \
-    ARG_STRINGIFY(DEFAULT_PRE_SPEECH), \
-    "Num of speech frames to keep before silence to speech." }, \
-   \
-  { "-vad_startspeech", \
-    ARG_INTEGER, \
-    ARG_STRINGIFY(DEFAULT_START_SPEECH), \
-    "Num of speech frames to trigger vad from silence to speech." }, \
-   \
-  { "-vad_postspeech", \
-    ARG_INTEGER, \
-    ARG_STRINGIFY(DEFAULT_POST_SPEECH), \
-    "Num of silence frames to keep after from speech to silence." }, \
-   \
-  { "-vad_threshold", \
-    ARG_FLOATING, \
-    "3.0", \
-    "Threshold for decision between noise and silence frames. Log-ratio between signal level and noise level." }, \
-   \
   { "-input_endian", \
     ARG_STRING, \
     NATIVE_ENDIAN, \
     "Endianness of input data, big or little, ignored if NIST or MS Wav" }, \
+   \
+  { "-input_float32", \
+    ARG_BOOLEAN, \
+    "no", \
+    "Input is 32-bit floating point in [-1.0, 1.0]" }, \
    \
   { "-warp_type", \
     ARG_STRING, \
@@ -240,21 +225,18 @@ extern "C" {
     ARG_BOOLEAN, \
     "no", \
     "Remove DC offset from each frame" }, \
-                                          \
   { "-remove_noise", \
-    ARG_BOOLEAN, \
-    "yes", \
-    "Remove noise with spectral subtraction in mel-energies" }, \
-                                                                \
+          ARG_BOOLEAN, \
+          "no", \
+          "UNSUPPORTED option, do not use" }, \
   { "-remove_silence", \
-    ARG_BOOLEAN, \
-    "yes", \
-    "Enables VAD, removes silence frames from processing" }, \
-                                                             \
-  { "-verbose", \
-    ARG_BOOLEAN, \
-    "no", \
-    "Show input filenames" } \
+          ARG_BOOLEAN, \
+          "no", \
+          "UNSUPPORTED option, do not use" }, \
+  { "-verbose",                                 \
+          ARG_BOOLEAN,                          \
+          "no",                                 \
+          "Show input filenames" }
   
   
 #ifdef FIXED_POINT
@@ -318,10 +300,8 @@ arg_t const *fe_get_args(void);
  * Initialize a front-end object from a command-line parse.
  *
  * @param config Command-line object, as returned by cmd_ln_parse_r()
- *               or cmd_ln_parse_file().  Ownership of this object is
- *               claimed by the fe_t, so you must not attempt to free
- *               it manually.  Use cmd_ln_retain() if you wish to
- *               reuse it.
+ *               or cmd_ln_parse_file().  Ownership is retained by the
+ *               fe_t, so you may free this if you no longer need it.
  * @return Newly created front-end object.
  */
 SPHINXBASE_EXPORT
@@ -331,17 +311,11 @@ fe_t *fe_init_auto_r(cmd_ln_t *config);
  * Retrieve the command-line object used to initialize this front-end.
  *
  * @return command-line object for this front-end.  This pointer is
- *         retained by the fe_t, so you should not attempt to free it
+ *         owned by the fe_t, so you should not attempt to free it
  *         manually.
  */
 SPHINXBASE_EXPORT
-const cmd_ln_t *fe_get_config(fe_t *fe);
-
-/**
- * Start processing of the stream, resets processed frame counter
- */
-SPHINXBASE_EXPORT
-void fe_start_stream(fe_t *fe);
+cmd_ln_t *fe_get_config(fe_t *fe);
 
 /**
  * Start processing an utterance.
@@ -354,8 +328,8 @@ int fe_start_utt(fe_t *fe);
  * Get the dimensionality of the output of this front-end object.
  *
  * This is guaranteed to be the number of values in one frame of
- * output from fe_end_utt() and fe_process_frames().  
- * It is usually the number of MFCC
+ * output from fe_end_utt(), fe_process_frame(), and
+ * fe_process_frames().  It is usually the number of MFCC
  * coefficients, but it might be the number of log-spectrum bins, if
  * the <tt>-logspec</tt> or <tt>-smoothspec</tt> options to
  * fe_init_auto_r() were true.
@@ -382,14 +356,6 @@ int fe_get_output_size(fe_t *fe);
 SPHINXBASE_EXPORT
 void fe_get_input_size(fe_t *fe, int *out_frame_shift,
                        int *out_frame_size);
-
-/**
- * Get vad state for the last processed frame
- *
- * @return 1 if speech, 0 if silence
- */
-SPHINXBASE_EXPORT
-uint8 fe_get_vad_state(fe_t *fe);
 
 /**
  * Finish processing an utterance.
@@ -426,28 +392,17 @@ fe_t *fe_retain(fe_t *fe);
 SPHINXBASE_EXPORT
 int fe_free(fe_t *fe);
 
-/*
- * Do same as fe_process_frames, but also returns
- * voiced audio. Output audio is valid till next
- * fe_process_frames call.
+/**
+ * Process one frame of samples.
  *
- * DO NOT MIX fe_process_frames calls
- *
- * @param voiced_spch Output: obtain voiced audio samples here
- *
- * @param voiced_spch_nsamps Output: shows voiced_spch length
- *
- * @param out_frameidx Output: index of the utterance start
+ * @param spch Speech samples (signed 16-bit linear PCM)
+ * @param nsamps Number of samples in <code>spch</code>
+ * @param buf_cep Buffer which will receive one frame of features.
+ * @return 0 for success, <0 for error (see enum fe_error_e)
  */
 SPHINXBASE_EXPORT
-int fe_process_frames_ext(fe_t *fe,
-                      int16 const **inout_spch,
-                      size_t *inout_nsamps,
-                      mfcc_t **buf_cep,
-                      int32 *inout_nframes,
-                      int16 *voiced_spch,
-                      int32 *voiced_spch_nsamps,
-                      int32 *out_frameidx);
+int fe_process_frame(fe_t *fe, int16 const *spch,
+                     int32 nsamps, mfcc_t *out_cep);
 
 /** 
  * Process a block of samples.
@@ -494,8 +449,6 @@ int fe_process_frames_ext(fe_t *fe,
  * @param inout_nframes Input: Pointer to maximum number of frames to
  *                      generate.
  *                      Output: Number of frames actually generated.
- * @param out_frameidx Index of the first frame returned in a stream
- *
  * @return 0 for success, <0 for failure (see enum fe_error_e)
  */
 SPHINXBASE_EXPORT
@@ -503,8 +456,20 @@ int fe_process_frames(fe_t *fe,
                       int16 const **inout_spch,
                       size_t *inout_nsamps,
                       mfcc_t **buf_cep,
-                      int32 *inout_nframes,
-                      int32 *out_frameidx);
+                      int32 *inout_nframes);
+
+/** 
+ * Process a block of floating-point samples.
+ *
+ * See fe_process_frames(), except that the input is expected to be
+ * 32-bit floating point in the range of [-1.0, 1.0].
+ */
+SPHINXBASE_EXPORT
+int fe_process_frames_float32(fe_t *fe,
+                              float32 const **inout_spch,
+                              size_t *inout_nsamps,
+                              mfcc_t **buf_cep,
+                              int32 *inout_nframes);
 
 /** 
  * Process a block of samples, returning as many frames as possible.

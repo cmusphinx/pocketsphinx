@@ -418,16 +418,13 @@ ps_init(cmd_ln_t *config)
 {
     ps_decoder_t *ps;
     
-    if (!config) {
-	E_ERROR("No configuration specified");
-	return NULL;
-    }
-
     ps = ckd_calloc(1, sizeof(*ps));
     ps->refcount = 1;
-    if (ps_reinit(ps, config) < 0) {
-        ps_free(ps);
-        return NULL;
+    if (config) {
+        if (ps_reinit(ps, config) < 0) {
+            ps_free(ps);
+            return NULL;
+        }
     }
     return ps;
 }
@@ -950,7 +947,6 @@ ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
     int16 *data;
     long total, pos, endpos;
 
-    ps_start_stream(ps);
     ps_start_utt(ps);
 
     /* If this file is seekable or maxsamps is specified, then decode
@@ -984,13 +980,6 @@ ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
     }
     ps_end_utt(ps);
     return total;
-}
-
-int
-ps_start_stream(ps_decoder_t *ps)
-{
-    acmod_start_stream(ps->acmod);
-    return 0;
 }
 
 int
@@ -1118,6 +1107,42 @@ ps_decode_senscr(ps_decoder_t *ps, FILE *senfh)
     }
     ps_end_utt(ps);
     acmod_set_insenfh(ps->acmod, NULL);
+
+    return n_searchfr;
+}
+
+int
+ps_process_float32(ps_decoder_t *ps,
+                   float32 const *data,
+                   size_t n_samples,
+                   int no_search,
+                   int full_utt)
+{
+    int n_searchfr = 0;
+
+    if (ps->acmod->state == ACMOD_IDLE) {
+	E_ERROR("Failed to process data, utterance is not started. Use start_utt to start it\n");
+	return 0;
+    }
+
+    if (no_search)
+        acmod_set_grow(ps->acmod, TRUE);
+
+    while (n_samples) {
+        int nfr;
+
+        /* Process some data into features. */
+        if ((nfr = acmod_process_float32(ps->acmod, &data,
+                                         &n_samples, full_utt)) < 0)
+            return nfr;
+
+        /* Score and search as much data as possible */
+        if (no_search)
+            continue;
+        if ((nfr = ps_search_forward(ps)) < 0)
+            return nfr;
+        n_searchfr += nfr;
+    }
 
     return n_searchfr;
 }
@@ -1323,10 +1348,8 @@ ps_seg_word(ps_seg_t *seg)
 void
 ps_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef)
 {
-    int uf;
-    uf = acmod_stream_offset(seg->search->acmod);
-    if (out_sf) *out_sf = seg->sf + uf;
-    if (out_ef) *out_ef = seg->ef + uf;
+    if (out_sf) *out_sf = seg->sf;
+    if (out_ef) *out_ef = seg->ef;
 }
 
 int32
@@ -1347,6 +1370,11 @@ ps_seg_free(ps_seg_t *seg)
 ps_lattice_t *
 ps_get_lattice(ps_decoder_t *ps)
 {
+    if (ps->search == NULL) {
+        E_ERROR("No search module is selected, did you forget to "
+                "specify a language model or grammar?\n");
+        return NULL;
+    }
     return ps_search_lattice(ps->search);
 }
 
@@ -1358,8 +1386,11 @@ ps_nbest(ps_decoder_t *ps)
     ps_astar_t *nbest;
     float32 lwf;
 
-    if (ps->search == NULL)
+    if (ps->search == NULL) {
+        E_ERROR("No search module is selected, did you forget to "
+                "specify a language model or grammar?\n");
         return NULL;
+    }
     if ((dag = ps_get_lattice(ps)) == NULL)
         return NULL;
 
@@ -1450,12 +1481,6 @@ ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
     *out_nwall = ps->perf.t_tot_elapsed;
 }
 
-uint8 
-ps_get_in_speech(ps_decoder_t *ps)
-{
-    return fe_get_vad_state(ps->acmod->fe);
-}
-
 void
 ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
 	       const char *type,
@@ -1523,16 +1548,4 @@ ps_search_base_reinit(ps_search_t *search, dict_t *dict,
         search->d2p = dict2pid_retain(d2p);
     else
         search->d2p = NULL;
-}
-
-void
-ps_set_rawdata_size(ps_decoder_t *ps, int32 size) 
-{
-    acmod_set_rawdata_size(ps->acmod, size);
-}
-
-void
-ps_get_rawdata(ps_decoder_t *ps, int16 **buffer, int32 *size)
-{
-    acmod_get_rawdata(ps->acmod, buffer, size);
 }

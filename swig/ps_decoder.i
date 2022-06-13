@@ -98,10 +98,6 @@
         return cmd_ln_parse_file_r(NULL, ps_args(), path, FALSE);
     }
 
-    void start_stream(int *errcode) {
-        *errcode = ps_start_stream($self);
-    }
-
     void start_utt(int *errcode) {
         *errcode = ps_start_utt($self);
     }
@@ -186,10 +182,6 @@
         return ps_get_feat($self);
     }
    
-    bool get_in_speech() {
-        return ps_get_in_speech($self);
-    }
-
     FsgModel * get_fsg(const char *name) {
         return fsg_model_retain(ps_get_fsg($self, name));
     }

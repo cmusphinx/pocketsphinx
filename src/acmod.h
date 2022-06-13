@@ -186,18 +186,11 @@ struct acmod_s {
     FILE *insenfh;	/**< Input senone score file. */
     long *framepos;     /**< File positions of recent frames in senone file. */
 
-    /* Rawdata collected during decoding */
-    int16 *rawdata;
-    int32 rawdata_size;
-    int32 rawdata_pos;
-
     /* A whole bunch of flags and counters: */
     uint8 state;        /**< State of utterance processing. */
     uint8 compallsen;   /**< Compute all senones? */
     uint8 grow_feat;    /**< Whether to grow feat_buf. */
     uint8 insen_swap;   /**< Whether to swap input senone score. */
-
-    frame_idx_t utt_start_frame; /**< Index of the utterance start in the stream, all timings are relative to that. */
 
     frame_idx_t output_frame; /**< Index of next frame of dynamic features. */
     frame_idx_t n_mfc_alloc;  /**< Number of frames allocated in mfc_buf */
@@ -373,6 +366,24 @@ int acmod_process_raw(acmod_t *acmod,
                       int full_utt);
 
 /**
+ * Feed raw audio data in float32 format (in range [-1.0,1.0]) to the
+ * acoustic model for scoring.
+ *
+ * @param inout_raw In: Pointer to buffer of raw samples
+ *                  Out: Pointer to next sample to be read
+ * @param inout_n_samps In: Number of samples available
+ *                      Out: Number of samples remaining
+ * @param full_utt If non-zero, this block represents a full
+ *                 utterance and should be processed as such.
+ * @return Number of frames of data processed.
+ */
+int
+acmod_process_float32(acmod_t *acmod,
+                      float32 const **inout_raw,
+                      size_t *inout_n_samps,
+                      int full_utt);
+
+/**
  * Feed acoustic feature data into the acoustic model for scoring.
  *
  * @param inout_cep In: Pointer to buffer of features
@@ -492,30 +503,6 @@ void acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm);
  */
 POCKETSPHINX_EXPORT
 int32 acmod_flags2list(acmod_t *acmod);
-
-/**
- * Get the offset of the utterance start of the current stream, helpful for stream-wide timing.
- */
-POCKETSPHINX_EXPORT
-int32 acmod_stream_offset(acmod_t *acmod);
-
-/**
- * Reset the current stream
- */
-POCKETSPHINX_EXPORT
-void acmod_start_stream(acmod_t *acmod);
-
-/**
- * Sets the limit of the raw audio data to store
- */
-POCKETSPHINX_EXPORT
-void acmod_set_rawdata_size(acmod_t *acmod, int32 size);
-
-/**
- * Retrieves the raw data collected during utterance decoding
- */
-POCKETSPHINX_EXPORT
-void acmod_get_rawdata(acmod_t *acmod, int16 **buffer, int32 *size);
 
 #ifdef __cplusplus
 } /* extern "C" */

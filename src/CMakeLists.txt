@@ -32,7 +32,6 @@ add_library(pocketsphinx
   fe/fixlog.c
   fe/fe_prespch_buf.c
   fe/fe_warp_inverse_linear.c
-  fe/fe_noise.c
   fe/fe_warp.c
   fe/fe_interface.c
   fe/fe_warp_affine.c

@@ -93,7 +93,9 @@ ps_default_search_args(cmd_ln_t *);
  * elsewhere, you can free it.
  *
  * @param config a command-line structure, as created by
- * cmd_ln_parse_r() or cmd_ln_parse_file_r().
+ * cmd_ln_parse_r() or cmd_ln_parse_file_r().  If NULL, the
+ * decoder will be allocated but not initialized.  You can
+ * proceed to initialize it with ps_reinit().
  */
 POCKETSPHINX_EXPORT
 ps_decoder_t *ps_init(cmd_ln_t *config);
@@ -326,16 +328,6 @@ long ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
  */
 POCKETSPHINX_EXPORT
 int ps_decode_senscr(ps_decoder_t *ps, FILE *senfh);
-
-/**
- * Start processing of the stream of speech. Channel parameters like
- * noise-level are maintained for the stream and reused among utterances.
- * Times returned in segment iterators are also stream-wide.
- *
- * @return 0 for success, <0 on error.
- */
-POCKETSPHINX_EXPORT
-int ps_start_stream(ps_decoder_t *ps);
 
 /**
  * Start utterance processing.
@@ -607,42 +599,10 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
                      double *out_ncpu, double *out_nwall);
 
 /**
- * Checks if the last feed audio buffer contained speech
- *
- * @param ps Decoder.
- * @return 1 if last buffer contained speech, 0 - otherwise
- */
-POCKETSPHINX_EXPORT
-uint8 ps_get_in_speech(ps_decoder_t *ps);
-
-
-/**
- * Sets the limit of the raw audio data to store in decoder
- * to retrieve it later on ps_get_rawdata.
- *
- * @param ps Decoder
- * @param size bytes of the utterance to store
- */
-POCKETSPHINX_EXPORT
-void ps_set_rawdata_size(ps_decoder_t *ps, int32 size);
-
-
-/**
- * Retrieves the raw data collected during utterance decoding.
- * 
- * @param ps Decoder
- * @param buffer preallocated buffer to store the data, must be within the limit
- * set before
- * @param size size of the data collected in samples (not bytes).
- */
-POCKETSPHINX_EXPORT
-void ps_get_rawdata(ps_decoder_t *ps, int16 **buffer, int32 *size);
-
-/**
  * @mainpage PocketSphinx API Documentation
  * @author David Huggins-Daines <dhdaines@gmail.com>
  * @author Alpha Cephei Inc.
- * @version 5prealpha
+ * @version 5.0.0
  * @date July, 2015
  *
  * @section intro_sec Introduction

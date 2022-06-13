@@ -106,13 +106,6 @@ struct melfb_s {
 /* sqrt(1/2), also used for unitary DCT-II/DCT-III */
 #define SQRT_HALF FLOAT2MFCC(0.707106781186548)
 
-typedef struct vad_data_s {
-    uint8 in_speech;
-    int16 pre_speech_frames;
-    int16 post_speech_frames;
-    prespch_buf_t* prespch_buf;
-} vad_data_t;
-
 /** Structure for the front-end computation. */
 struct fe_s {
     cmd_ln_t *config;
@@ -134,15 +127,9 @@ struct fe_s {
     uint8 swap;
     uint8 dither;
     uint8 transform;
-    uint8 remove_noise;
-    uint8 remove_silence;
 
     float32 pre_emphasis_alpha;
-    int16 pre_emphasis_prior;
     int32 dither_seed;
-
-    int16 num_overflow_samps;    
-    size_t num_processed_samps;
 
     /* Twiddle factors for FFT. */
     frame_t *ccc, *sss;
@@ -151,37 +138,39 @@ struct fe_s {
     /* Half of a Hamming Window. */
     window_t *hamming_window;
 
-    /* Noise removal  */
-    noise_stats_t *noise_stats;
-
-    /* VAD variables */
-    int16 pre_speech;
-    int16 post_speech;
-    int16 start_speech;
-    float32 vad_threshold;
-    vad_data_t *vad_data;
-
     /* Temporary buffers for processing. */
-    /* FIXME: too many of these. */
-    int16 *spch;
+    union {
+        int16 *s_int16;
+        float32 *s_float32;
+    } spch;
     frame_t *frame;
     powspec_t *spec, *mfspec;
-    int16 *overflow_samps;
+    union {
+        int16 *s_int16;
+        float32 *s_float32;
+    } overflow_samps;
+    int num_overflow_samps;    
+    union {
+        int16 s_int16;
+        float32 s_float32;
+    } pre_emphasis_prior;
+    int is_float32;
 };
 
 void fe_init_dither(int32 seed);
 
-/* Apply 1/2 bit noise to a buffer of audio. */
-int32 fe_dither(int16 *buffer, int32 nsamps);
-
 /* Load a frame of data into the fe. */
-int fe_read_frame(fe_t *fe, int16 const *in, int32 len);
+//int fe_read_frame(fe_t *fe, int16 const *in, int32 len);
+int fe_read_frame_int16(fe_t *fe, int16 const *in, int32 len);
+int fe_read_frame_float32(fe_t *fe, float32 const *in, int32 len);
 
 /* Shift the input buffer back and read more data. */
-int fe_shift_frame(fe_t *fe, int16 const *in, int32 len);
+//int fe_shift_frame(fe_t *fe, int16 const *in, int32 len);
+int fe_shift_frame_int16(fe_t *fe, int16 const *in, int32 len);
+int fe_shift_frame_float32(fe_t *fe, float32 const *in, int32 len);
 
 /* Process a frame of data into features. */
-void fe_write_frame(fe_t *fe, mfcc_t *feat, int32 store_pcm);
+int fe_write_frame(fe_t *fe, mfcc_t *fea);
 
 /* Initialization functions. */
 int32 fe_build_melfilters(melfb_t *MEL_FB);
