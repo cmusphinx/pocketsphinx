@@ -88,6 +88,7 @@ static const arg_t defn[] = {
 
   { "-text",
     ARG_STRING,
+    NULL,
     "Text string to evaluate"},
 
   { "-mmap",
