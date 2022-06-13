@@ -97,10 +97,11 @@ if(MATH_LIBRARY)
 endif()
 find_package(Threads)
 target_link_libraries(pocketsphinx PUBLIC Threads::Threads)
-# Shared library version != package version, unfortunately
+# Shared library version != package version, but we will make it the
+# same for now to avoid confusion
 set_target_properties(pocketsphinx PROPERTIES
-  VERSION 4.0.0
-  SOVERSION 4
+  VERSION 5.0.0
+  SOVERSION 5
   )
 # No idea why this can't just go in the above list but oh well
 set_property(TARGET pocketsphinx PROPERTY
