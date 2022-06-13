@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 4 -*- */
 /* ====================================================================
  * Copyright (c) 2014 Carnegie Mellon University.  All rights
  * reserved.
@@ -51,12 +52,14 @@
 static ps_lattice_t *
 allphone_search_lattice(ps_search_t * search)
 {
+    (void) search;
     return NULL;
 }
 
 static int
 allphone_search_prob(ps_search_t * search)
 {
+    (void) search;
     return 0;
 }
 

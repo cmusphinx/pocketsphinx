@@ -56,6 +56,7 @@ static void
 renormalize_hmms(state_align_search_t *sas, int frame_idx, int32 norm)
 {
     int i;
+    (void) frame_idx;
     for (i = 0; i < sas->n_phones; ++i)
         hmm_normalize(sas->hmms + i, norm);
 }
@@ -254,6 +255,9 @@ static int
 state_align_search_reinit(ps_search_t *search, dict_t *dict, dict2pid_t *d2p)
 {
     /* This does nothing, you need to make a new search for each utterance. */
+    (void) search;
+    (void) dict;
+    (void) d2p;
     return 0;
 }
 

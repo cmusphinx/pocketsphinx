@@ -115,7 +115,7 @@ senone_mgau_map_read(senone_t * s, char const *file_name)
     /* Infer n_gauden if not present in this version */
     if (!n_gauden_present) {
         s->n_gauden = 1;
-        for (i = 0; i < s->n_sen; i++)
+        for (i = 0; (uint32)i < s->n_sen; i++)
             if (s->mgau[i] >= s->n_gauden)
                 s->n_gauden = s->mgau[i] + 1;
     }
@@ -183,7 +183,7 @@ senone_mixw_read(senone_t * s, char const *file_name, logmath_t *lmath)
         || (bio_fread(&i, sizeof(int32), 1, fp, byteswap, &chksum) != 1)) {
         E_FATAL("bio_fread(%s) (arraysize) failed\n", file_name);
     }
-    if (i != s->n_sen * s->n_feat * s->n_cw) {
+    if ((int32)i != s->n_sen * s->n_feat * s->n_cw) {
         E_FATAL
             ("%s: #float32s(%d) doesn't match dimensions: %d x %d x %d\n",
              file_name, i, s->n_sen, s->n_feat, s->n_cw);
@@ -221,12 +221,12 @@ senone_mixw_read(senone_t * s, char const *file_name, logmath_t *lmath)
 
     /* Read senone probs data, normalize, floor, convert to logs3, truncate to 8 bits */
     n_err = 0;
-    for (i = 0; i < s->n_sen; i++) {
-        for (f = 0; f < s->n_feat; f++) {
+    for (i = 0; (uint32)i < s->n_sen; i++) {
+        for (f = 0; (uint32)f < s->n_feat; f++) {
             if (bio_fread
                 ((void *) pdf, sizeof(float32), s->n_cw, fp, byteswap,
                  &chksum)
-                != s->n_cw) {
+                != (int32)s->n_cw) {
                 E_FATAL("bio_fread(%s) (arraydata) failed\n", file_name);
             }
 

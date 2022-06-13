@@ -917,7 +917,7 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
         }
         do_swap = 1;
     }
-    if (fread(line, sizeof(char), n, fp) != n) {
+    if (fread(line, sizeof(char), n, fp) != (size_t)n) {
         E_ERROR_SYSTEM("Cannot read title");
         goto error_out;
     }
@@ -933,7 +933,7 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
         goto error_out;
     }
     if (do_swap) SWAP_INT32(&n);
-    if (fread(line, sizeof(char), n, fp) != n) {
+    if (fread(line, sizeof(char), n, fp) != (size_t)n) {
         E_ERROR_SYSTEM("Cannot read header");
         goto error_out;
     }
@@ -951,7 +951,7 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
         if (do_swap) SWAP_INT32(&n);
         if (n == 0)
             break;
-        if (fread(line, sizeof(char), n, fp) != n) {
+        if (fread(line, sizeof(char), n, fp) != (size_t)n) {
             E_ERROR_SYSTEM("Cannot read header");
             goto error_out;
         }
@@ -1270,7 +1270,7 @@ s2_semi_mgau_init(acmod_t *acmod)
         goto error_out;
     }
     for (i = 0; i < n_feat; ++i) {
-        if (s->g->featlen[i] != feat_dimension2(acmod->fcb, i)) {
+        if ((uint32)s->g->featlen[i] != feat_dimension2(acmod->fcb, i)) {
             E_ERROR("Dimension of stream %d does not match: %d != %d\n",
                     i, s->g->featlen[i], feat_dimension2(acmod->fcb, i));
             goto error_out;
