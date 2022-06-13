@@ -15,6 +15,8 @@ main(int argc, char *argv[])
     FILE *rawfh;
     int32 score;
 
+    (void)argc;
+    (void)argv;
     /* First decode it with the crappy WSJ language model. */
     TEST_ASSERT(config =
                 cmd_ln_init(NULL, ps_args(), TRUE,

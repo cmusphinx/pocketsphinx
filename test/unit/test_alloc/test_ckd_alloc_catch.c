@@ -9,6 +9,8 @@ main(int argc, char *argv[])
 {
 	jmp_buf env;
 
+	(void)argc;
+	(void)argv;
 	ckd_set_jump(&env, FALSE);
 	if (setjmp(env)) {
 		printf("Successfully caught bad allocation!\n");

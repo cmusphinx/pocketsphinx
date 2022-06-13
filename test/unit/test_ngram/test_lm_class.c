@@ -26,7 +26,7 @@ run_tests(logmath_t *lmath, ngram_model_t *model)
 	TEST_EQUAL(strcmp(ngram_word(model, 285), "scylla"), 0);
 
 	/* Verify in-class word IDs. */
-	TEST_EQUAL(ngram_wid(model, "scylla:scylla"), 0x80000000 | 400);
+	TEST_EQUAL((uint32)ngram_wid(model, "scylla:scylla"), 0x80000000 | 400);
 
 	/* Verify in-class and out-class unigram scores. */
 	TEST_EQUAL_LOG(ngram_score(model, "scylla:scylla", NULL),
@@ -65,7 +65,7 @@ run_tests(logmath_t *lmath, ngram_model_t *model)
 	/* Add words to classes. */
 	rv = ngram_model_add_class_word(model, "scylla", "scrappy:scylla", 1.0);
 	TEST_ASSERT(rv >= 0);
-	TEST_EQUAL(ngram_wid(model, "scrappy:scylla"), 0x80000196);
+	TEST_EQUAL((uint32)ngram_wid(model, "scrappy:scylla"), 0x80000196);
 	TEST_EQUAL_LOG(ngram_score(model, "scrappy:scylla", NULL),
 		       logmath_log10_to_log(lmath, -2.7884) + logmath_log(lmath, 0.2));
 	printf("scrappy:scylla %08x %d %f\n", 
@@ -82,7 +82,7 @@ run_tests(logmath_t *lmath, ngram_model_t *model)
 		       ngram_score(model, word, NULL),
 		       logmath_exp(lmath, ngram_score(model, word, NULL)));
 		TEST_ASSERT(rv >= 0);
-		TEST_EQUAL(ngram_wid(model, word), 0x80000197 + i);
+		TEST_EQUAL((uint32)ngram_wid(model, word), 0x80000197 + i);
 	}
 
 	/* Add a new class. */
@@ -107,6 +107,8 @@ main(int argc, char *argv[])
 	logmath_t *lmath;
 	ngram_model_t *model;
 
+	(void)argc;
+	(void)argv;
 	lmath = logmath_init(1.0001, 0, 0);
 
 	model = ngram_model_read(NULL, LMDIR "/100.lm.dmp", NGRAM_BIN, lmath);

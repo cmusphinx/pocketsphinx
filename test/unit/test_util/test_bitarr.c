@@ -24,6 +24,8 @@ main(int argc, char *argv[])
     char mem[57+8];
     bitarr_address_t address;
 
+    (void)argc;
+    (void)argv;
     err_set_loglevel(ERR_INFO);
     //sign bit should be 0x80000000 (BUT WHY?!?!?)
     TEST_EQUAL((neg1.i ^ pos1.i), 0x80000000);

@@ -45,6 +45,8 @@ main(int argc, char *argv[])
 	mfcc_t **in_feats, ***out_feats, ***out_feats2, ***optr;
 	int32 i, j, ncep, nfr, nfr1, nfr2;
 
+	(void)argc;
+	(void)argv;
 	in_feats = (mfcc_t **)ckd_alloc_2d_ptr(6, 13, data, sizeof(mfcc_t));
 	out_feats = (mfcc_t ***)ckd_calloc_3d(8, 1, 39, sizeof(mfcc_t));
 	/* Test 1s_c_d_dd features */

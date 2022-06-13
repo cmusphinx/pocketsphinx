@@ -258,7 +258,8 @@ __listelem_free__(listelem_alloc_t *list, void *elem,
                   char *caller_file, int caller_line)
 {
     char **cpp;
-
+    (void)caller_file;
+    (void)caller_line;
     /*
      * Insert freed item at head of list.
      */

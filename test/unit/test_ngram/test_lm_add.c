@@ -28,6 +28,8 @@ main(int argc, char *argv[])
 	logmath_t *lmath;
 	ngram_model_t *model;
 
+	(void)argc;
+	(void)argv;
 	lmath = logmath_init(1.0001, 0, 0);
 
 	model = ngram_model_read(NULL, LMDIR "/100.lm.dmp", NGRAM_BIN, lmath);

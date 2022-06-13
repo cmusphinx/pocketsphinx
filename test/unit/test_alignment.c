@@ -15,6 +15,8 @@ main(int argc, char *argv[])
 	ps_alignment_iter_t *itor;
 	cmd_ln_t *config;
 
+	(void)argc;
+	(void)argv;
 	config = cmd_ln_init(NULL, NULL, FALSE,
 			     "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
 			     "_fdict", MODELDIR "/en-us/en-us/noisedict",

@@ -9,6 +9,8 @@ main(int argc, char *argv[])
 	fsg_model_t *fsg;
 	fsg_arciter_t *itor;
 
+	(void)argc;
+	(void)argv;
 	/* Initialize a logmath object to pass to fsg_model_read */
 	lmath = logmath_init(1.0001, 0, 0);
 	/* Read a FSG. */

@@ -763,7 +763,7 @@ static int input (yyscan_t yyscanner );
 		{ \
 		int c = '*'; \
 		size_t n; \
-		for ( n = 0; n < max_size && \
+		for ( n = 0; n < (size_t)max_size &&			\
 			     (c = getc( yyin )) != EOF && c != '\n'; ++n ) \
 			buf[n] = (char) c; \
 		if ( c == '\n' ) \
@@ -924,7 +924,7 @@ yy_find_action:
 		if ( yy_act != YY_END_OF_BUFFER && yy_rule_can_match_eol[yy_act] )
 			{
 			yy_size_t yyl;
-			for ( yyl = 0; yyl < yyleng; ++yyl )
+			for ( yyl = 0; yyl < (yy_size_t)yyleng; ++yyl )
 				if ( yytext[yyl] == '\n' )
 					   
     do{ yylineno++;
@@ -1826,7 +1826,7 @@ YY_BUFFER_STATE yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_len , yysc
 	if ( ! buf )
 		YY_FATAL_ERROR( "out of dynamic memory in yy_scan_bytes()" );
 
-	for ( i = 0; i < _yybytes_len; ++i )
+	for ( i = 0; i < (yy_size_t)_yybytes_len; ++i )
 		buf[i] = yybytes[i];
 
 	buf[_yybytes_len] = buf[_yybytes_len+1] = YY_END_OF_BUFFER_CHAR;

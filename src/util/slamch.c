@@ -25,7 +25,7 @@ doublereal
 slamch_(char *cmach, ftnlen cmach_len)
 {
     /* Initialized data */
-
+    (void)cmach_len;
     static logical first = TRUE_;
 
     /* System generated locals */

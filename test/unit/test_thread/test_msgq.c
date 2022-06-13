@@ -26,6 +26,8 @@ main(int argc, char *argv[])
 	sbthread_t *worker;
 	int i;
 	
+	(void)argc;
+	(void)argv;
 	worker = sbthread_start(NULL, worker_main, NULL);
 	for (i = 0; i <= 32; ++i) {
 		int ii[128];

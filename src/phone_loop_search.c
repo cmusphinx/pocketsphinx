@@ -225,6 +225,7 @@ store_scores(phone_loop_search_t *pls, int frame_idx)
 {
     int i, j, itr;
 
+    (void)frame_idx;
     for (i = 0; i < pls->n_phones; ++i) {
         hmm_t *hmm = (hmm_t *)&pls->hmms[i];
         pls->pen_buf[pls->pen_buf_ptr][i] = (hmm_bestscore(hmm) - pls->best_score) * pls->penalty_weight;
@@ -341,12 +342,15 @@ static int
 phone_loop_search_finish(ps_search_t *search)
 {
     /* Actually nothing to do here really. */
+    (void)search;
     return 0;
 }
 
 static char const *
 phone_loop_search_hyp(ps_search_t *search, int32 *out_score)
 {
+    (void)search;
+    (void)out_score;
     E_WARN("Hypotheses are not returned from phone loop search");
     return NULL;
 }
@@ -354,6 +358,7 @@ phone_loop_search_hyp(ps_search_t *search, int32 *out_score)
 static int32
 phone_loop_search_prob(ps_search_t *search)
 {
+    (void)search;
     /* FIXME: Actually... they ought to be. */
     E_WARN("Posterior probabilities are not returned from phone loop search");
     return 0;
@@ -362,6 +367,7 @@ phone_loop_search_prob(ps_search_t *search)
 static ps_seg_t *
 phone_loop_search_seg_iter(ps_search_t *search)
 {
+    (void)search;
     E_WARN("Hypotheses are not returned from phone loop search");
     return NULL;
 }

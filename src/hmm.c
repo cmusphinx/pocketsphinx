@@ -110,6 +110,7 @@ hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx, int ssid, int tmatid)
 void
 hmm_deinit(hmm_t *hmm)
 {
+    (void)hmm;
 }
 
 void

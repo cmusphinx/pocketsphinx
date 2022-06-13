@@ -27,6 +27,8 @@ main(int argc, char *argv[])
 	const int32 n_words = sizeof(words) / sizeof(words[0]);
 	float32 weights[] = { 0.6, 0.4 };
 
+	(void)argc;
+	(void)argv;
 	lmath = logmath_init(1.0001, 0, 0);
 
 	lms[0] = ngram_model_read(NULL, LMDIR "/100.lm.dmp", NGRAM_BIN, lmath);

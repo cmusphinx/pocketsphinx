@@ -238,7 +238,7 @@ keycmp_nocase(hash_entry_t * entry, const char *key)
     const char *str;
 
     str = entry->key;
-    for (i = 0; i < entry->len; i++) {
+    for (i = 0; (uint32)i < entry->len; i++) {
         c1 = *(str++);
         c1 = UPPER_CASE(c1);
         c2 = *(key++);
@@ -259,7 +259,7 @@ keycmp_case(hash_entry_t * entry, const char *key)
     const char *str;
 
     str = entry->key;
-    for (i = 0; i < entry->len; i++) {
+    for (i = 0; (uint32)i < entry->len; i++) {
         c1 = *(str++);
         c2 = *(key++);
         if (c1 != c2)
@@ -661,12 +661,12 @@ hash_table_iter_next(hash_iter_t *itor)
 	/* If we got to the end of the chain, or we had no entry, scan
 	 * forward in the table to find the next non-empty bucket. */
 	if (itor->ent == NULL) {
-		while (itor->idx < itor->ht->size
+              while (itor->idx < (size_t)itor->ht->size
 		       && itor->ht->table[itor->idx].key == NULL) 
 			++itor->idx;
 		/* If we did not find one then delete the iterator and
 		 * return NULL. */
-		if (itor->idx == itor->ht->size) {
+                if (itor->idx == (size_t)itor->ht->size) {
 			hash_table_iter_free(itor);
 			return NULL;
 		}

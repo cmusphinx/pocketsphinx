@@ -12,6 +12,8 @@ main(int argc, char *argv[])
 	int ***alloc3;
 	int i;
 
+	(void)argc;
+	(void)argv;
 	TEST_ASSERT(alloc1 = ckd_calloc(3*3*3, sizeof(*alloc1)));
 	TEST_ASSERT(alloc2 = ckd_calloc_2d(3, 3, sizeof(**alloc2)));
 	TEST_ASSERT(alloc3 = ckd_calloc_3d(3, 3, 3, sizeof(***alloc3)));

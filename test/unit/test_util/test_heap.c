@@ -16,6 +16,8 @@ main(int argc, char *argv[])
 	heap_t *heap;
 	int i;
 
+	(void)argc;
+	(void)argv;
 	heap = heap_new();
 	for (i = 0; i < 25; ++i)
 		heap_insert(heap, (void *)(long)i, i);
@@ -25,7 +27,7 @@ main(int argc, char *argv[])
 		TEST_EQUAL(1, heap_pop(heap, &data, &val));
 		TEST_EQUAL(val, i);
 		TEST_EQUAL((int)(long)data, i);
-		TEST_EQUAL(heap_size(heap), 25 - i - 1);
+		TEST_EQUAL(heap_size(heap), (size_t)25 - i - 1);
 	}
 	for (i = 0; i < 25; ++i)
 		heap_insert(heap, (void *)(long)i, i);

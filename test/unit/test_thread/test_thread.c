@@ -51,6 +51,8 @@ main(int argc, char *argv[])
 	cmd_ln_t *config;
 	int i;
 
+	(void)argc;
+	(void)argv;
 	E_INFO("Processing chan3.raw in 10 threads\n");
 	if ((config = cmd_ln_parse_r(NULL, fe_args, 0, NULL, FALSE)) == NULL)
 		return -1;

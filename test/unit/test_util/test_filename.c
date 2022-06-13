@@ -28,6 +28,8 @@ main(int argc, char *argv[])
     char const result2[] = "foo/bar";
 #endif
     char testout[32];
+    (void)argc;
+    (void)argv;
     TEST_EQUAL(0, strcmp("quux.argh", path2basename(testname)));
 
     path2dirname(testname, testout);

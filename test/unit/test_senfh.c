@@ -15,6 +15,8 @@ main(int argc, char *argv[])
     acmod_t *acmod;
     ngram_search_t *ngs;
 
+    (void)argc;
+    (void)argv;
     TEST_ASSERT(config =
             cmd_ln_init(NULL, ps_args(), TRUE,
                 "-hmm", MODELDIR "/en-us/en-us",

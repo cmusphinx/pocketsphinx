@@ -215,7 +215,7 @@ lm_trie_fix_counts(ngram_raw_t ** raw_ngrams, uint32 * counts,
             memcpy(words, top->words, 2 * sizeof(*words));
         }
         else {
-            for (i = 0; i < top->order - 1; i++) {
+            for (i = 0; (uint32)i < top->order - 1; i++) {
                 if (words[i] != top->words[i]) {
                     int num;
                     num = (i == 0) ? 1 : i;
@@ -297,12 +297,12 @@ recursive_insert(lm_trie_t * trie, ngram_raw_t ** raw_ngrams,
             priority_queue_add(ngrams, top);
         }
         else {
-            for (i = 0; i < top->order - 1; i++) {
+            for (i = 0; (uint32)i < top->order - 1; i++) {
                 if (words[i] != top->words[i]) {
                     /* need to insert dummy suffixes to make ngram of higher order reachable */
                     int j;
                     assert(i > 0);  /* unigrams are not pruned without removing ngrams that contains them */
-                    for (j = i; j < top->order - 1; j++) {
+                    for (j = i; (uint32)j < top->order - 1; j++) {
                         middle_t *middle = &trie->middle_begin[j - 1];
                         bitarr_address_t address =
                             middle_insert(middle, top->words[j],
@@ -319,7 +319,7 @@ recursive_insert(lm_trie_t * trie, ngram_raw_t ** raw_ngrams,
             }
             memcpy(words, top->words,
                    top->order * sizeof(*words));
-            if (top->order == order) {
+            if (top->order == (uint32)order) {
                 bitarr_address_t address =
                     longest_insert(trie->longest,
                                    top->words[top->order - 1]);
@@ -386,7 +386,7 @@ lm_trie_read_ug(lm_trie_t * trie, uint32 * counts, FILE * fp)
                       (counts[0] + 1), fp);
     if (SWAP_LM_TRIE) {
         int i;
-        for (i = 0; i < counts[0] + 1; ++i) {
+        for (i = 0; (uint32)i < counts[0] + 1; ++i) {
             SWAP_FLOAT32(&trie->unigrams[i].prob);
             SWAP_FLOAT32(&trie->unigrams[i].bo);
             SWAP_INT32(&trie->unigrams[i].next);
@@ -416,7 +416,7 @@ lm_trie_write_ug(lm_trie_t * trie, uint32 unigram_count, FILE * fp)
 {
     if (SWAP_LM_TRIE)  {
         int i;
-        for (i = 0; i < unigram_count + 1; ++i) {
+        for (i = 0; (uint32)i < unigram_count + 1; ++i) {
             unigram_t ug = trie->unigrams[i];
             SWAP_FLOAT32(&ug.prob);
             SWAP_FLOAT32(&ug.bo);

@@ -20,6 +20,8 @@ main(int argc, char *argv[])
 	uint32 cw = 0xdeadbeef;
 	unsigned char inbits[16];
 
+	(void)argc;
+	(void)argv;
 	fh = fopen("bittest.out", "wb");
 	be = bit_encode_attach(fh);
 	bit_encode_write(be, bits, 8);

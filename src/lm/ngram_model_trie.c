@@ -178,6 +178,7 @@ ngram_model_trie_read_arpa(cmd_ln_t * config,
     int order;
     int i;
 
+    (void)config;
     E_INFO("Trying to read LM in arpa format\n");
     if ((fp = fopen_comp(path, "r", &is_pipe)) == NULL) {
         E_ERROR("File %s not found\n", path);
@@ -358,6 +359,7 @@ ngram_model_trie_read_bin(cmd_ln_t * config,
     ngram_model_trie_t *model;
     ngram_model_t *base;
 
+    (void)config;
     E_INFO("Trying to read LM in trie binary format\n");
     if ((fp = fopen_comp(path, "rb", &is_pipe)) == NULL) {
         E_ERROR("File %s not found\n", path);
@@ -457,6 +459,7 @@ ngram_model_trie_read_dmp(cmd_ln_t * config,
     ngram_model_t *base;
     ngram_raw_t **raw_ngrams;
 
+    (void)config;
     E_INFO("Trying to read LM in dmp format\n");
     if ((fp = fopen_comp(file_name, "rb", &is_pipe)) == NULL) {
         E_ERROR("Dump file %s not found\n", file_name);
@@ -556,7 +559,7 @@ ngram_model_trie_read_dmp(cmd_ln_t * config,
 
     unigram_next =
         (uint32 *) ckd_calloc((int32) counts[0] + 1, sizeof(unigram_next));
-    for (j = 0; j <= (int32) counts[0]; j++) {
+    for (j = 0; j <= counts[0]; j++) {
         int32 bigrams;
         int32 mapid;
         dmp_weight_t weightp;

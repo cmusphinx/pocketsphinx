@@ -267,6 +267,8 @@ ptm_mgau_codebook_norm(ptm_mgau_t *s, mfcc_t **z, int frame)
 {
     int i, j;
 
+    (void)z;
+    (void)frame;
     for (j = 0; j < s->g->n_feat; ++j) {
         int32 norm = WORST_SCORE;
         for (i = 0; i < s->g->n_mgau; ++i) {
@@ -488,7 +490,7 @@ read_sendump(ptm_mgau_t *s, bin_mdef_t *mdef, char const *file)
         }
         do_swap = 1;
     }
-    if (fread(line, sizeof(char), n, fp) != n) {
+    if (fread(line, sizeof(char), n, fp) != (size_t)n) {
         E_ERROR_SYSTEM("Cannot read title");
         goto error_out;
     }
@@ -504,7 +506,7 @@ read_sendump(ptm_mgau_t *s, bin_mdef_t *mdef, char const *file)
         goto error_out;
     }
     if (do_swap) SWAP_INT32(&n);
-    if (fread(line, sizeof(char), n, fp) != n) {
+    if (fread(line, sizeof(char), n, fp) != (size_t)n) {
         E_ERROR_SYSTEM("Cannot read header");
         goto error_out;
     }
@@ -522,7 +524,7 @@ read_sendump(ptm_mgau_t *s, bin_mdef_t *mdef, char const *file)
         if (do_swap) SWAP_INT32(&n);
         if (n == 0)
             break;
-        if (fread(line, sizeof(char), n, fp) != n) {
+        if (fread(line, sizeof(char), n, fp) != (size_t)n) {
             E_ERROR_SYSTEM("Cannot read header");
             goto error_out;
         }
@@ -814,7 +816,7 @@ ptm_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
         goto error_out;
     }
     for (i = 0; i < s->g->n_feat; ++i) {
-        if (s->g->featlen[i] != feat_dimension2(acmod->fcb, i)) {
+        if ((uint32)s->g->featlen[i] != feat_dimension2(acmod->fcb, i)) {
             E_ERROR("Dimension of stream %d does not match: %d != %d\n",
                     s->g->featlen[i], feat_dimension2(acmod->fcb, i));
             goto error_out;

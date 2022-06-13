@@ -24,6 +24,8 @@ main(int argc, char *argv[])
 	sbthread_t *worker;
 	sbevent_t *cond;
 
+	(void)argc;
+	(void)argv;
 	cond = sbevent_init();
 	worker = sbthread_start(NULL, worker_main, cond);
 

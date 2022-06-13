@@ -11,6 +11,8 @@ main(int argc, char *argv[])
 	logmath_t *lmath;
 	int32 rv;
 
+	(void)argc;
+	(void)argv;
 	lmath = logmath_init(1.003, 0, 1);
 	TEST_ASSERT(lmath);
 	printf("log(1e-48) = %d\n", logmath_log(lmath, 1e-48));

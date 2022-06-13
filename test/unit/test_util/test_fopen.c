@@ -16,6 +16,8 @@ main(int argc, char *argv[])
     char line[256];
     int ispipe;
 
+    (void)argc;
+    (void)argv;
     fh = fopen_comp(LMDIR "/100.lm.gz", "r", &ispipe);
     TEST_ASSERT(fh != NULL);
     (void) fgets(line, sizeof(line), fh);

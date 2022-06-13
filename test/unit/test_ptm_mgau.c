@@ -88,6 +88,8 @@ main(int argc, char *argv[])
 	ptm_mgau_t *s;
 	int i, lastcb;
 
+	(void)argc;
+	(void)argv;
 	lmath = logmath_init(1.0001, 0, 0);
 	config = cmd_ln_init(NULL, ps_args(), TRUE,
 	     "-compallsen", "yes",

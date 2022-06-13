@@ -211,12 +211,14 @@ lm_trie_quant_free(lm_trie_quant_t * quant)
 uint8
 lm_trie_quant_msize(lm_trie_quant_t * quant)
 {
+    (void)quant;
     return 32;
 }
 
 uint8
 lm_trie_quant_lsize(lm_trie_quant_t * quant)
 {
+    (void)quant;
     return 16;
 }
 

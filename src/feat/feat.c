@@ -367,7 +367,7 @@ feat_array_alloc(feat_t * fcb, int32 nfr)
     k = 0;
     for (i = 0; i < fcb->n_stream; ++i)
         k += fcb->stream_len[i];
-    assert(k >= feat_dimension(fcb));
+    assert((uint32)k >= feat_dimension(fcb));
     assert(k >= fcb->sv_dim);
 
     feat =
@@ -401,7 +401,7 @@ feat_array_realloc(feat_t *fcb, mfcc_t ***old_feat, int32 ofr, int32 nfr)
     k = 0;
     for (i = 0; i < fcb->n_stream; ++i)
         k += fcb->stream_len[i];
-    assert(k >= feat_dimension(fcb));
+    assert((uint32)k >= feat_dimension(fcb));
     assert(k >= fcb->sv_dim);
     
     new_feat = feat_array_alloc(fcb, nfr);
@@ -558,7 +558,7 @@ feat_s3_cep_dcep(feat_t * fcb, mfcc_t ** mfc, mfcc_t ** feat)
 
     assert(fcb);
     assert(feat_n_stream(fcb) == 1);
-    assert(feat_stream_len(fcb, 0) == feat_cepsize(fcb) * 2);
+    assert(feat_stream_len(fcb, 0) == (uint32)feat_cepsize(fcb) * 2);
     assert(feat_window_size(fcb) == 2);
 
     /* CEP */
@@ -586,7 +586,7 @@ feat_1s_c_d_dd_cep2feat(feat_t * fcb, mfcc_t ** mfc, mfcc_t ** feat)
 
     assert(fcb);
     assert(feat_n_stream(fcb) == 1);
-    assert(feat_stream_len(fcb, 0) == feat_cepsize(fcb) * 3);
+    assert(feat_stream_len(fcb, 0) == (uint32)feat_cepsize(fcb) * 3);
     assert(feat_window_size(fcb) == FEAT_DCEP_WIN + 1);
 
     /* CEP */
@@ -632,7 +632,7 @@ feat_1s_c_d_ld_dd_cep2feat(feat_t * fcb, mfcc_t ** mfc, mfcc_t ** feat)
 
     assert(fcb);
     assert(feat_n_stream(fcb) == 1);
-    assert(feat_stream_len(fcb, 0) == feat_cepsize(fcb) * 4);
+    assert(feat_stream_len(fcb, 0) == (uint32)feat_cepsize(fcb) * 4);
     assert(feat_window_size(fcb) == FEAT_DCEP_WIN * 2);
 
     /* CEP */
@@ -817,7 +817,7 @@ feat_init(char const *type, cmn_type_t cmn, int32 varnorm,
          */
         len = strlen(mtype);
         k = 0;
-        for (i = 1; i < len - 1; i++) {
+        for (i = 1; (size_t)i < len - 1; i++) {
             if (mtype[i] == ',') {
                 mtype[i] = ' ';
                 k++;
@@ -897,10 +897,10 @@ feat_print(feat_t * fcb, mfcc_t *** feat, int32 nfr, FILE * fp)
 {
     uint32 i, j, k;
 
-    for (i = 0; i < nfr; i++) {
+    for (i = 0; i < (uint32)nfr; i++) {
         fprintf(fp, "%8d:\n", i);
 
-        for (j = 0; j < feat_dimension1(fcb); j++) {
+        for (j = 0; j < (uint32)feat_dimension1(fcb); j++) {
             fprintf(fp, "\t%2d:", j);
 
             for (k = 0; k < feat_dimension2(fcb, j); k++)

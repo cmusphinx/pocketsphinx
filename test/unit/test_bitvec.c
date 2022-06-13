@@ -11,6 +11,8 @@ main(int argc, char *argv[])
 	int i, j;
 	clock_t c;
 
+	(void)argc;
+	(void)argv;
 	TEST_ASSERT(bv = bitvec_alloc(199));
 	bitvec_set(bv,198);
 	bitvec_set(bv,0);

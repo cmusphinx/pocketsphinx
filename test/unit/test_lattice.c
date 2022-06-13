@@ -102,6 +102,8 @@ main(int argc, char *argv[])
 	char const *hyp;
 	int32 score;
 
+	(void)argc;
+	(void)argv;
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/en-us/en-us",

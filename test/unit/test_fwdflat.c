@@ -11,6 +11,8 @@ main(int argc, char *argv[])
 {
 	cmd_ln_t *config;
 
+	(void)argc;
+	(void)argv;
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", MODELDIR "/en-us/en-us",

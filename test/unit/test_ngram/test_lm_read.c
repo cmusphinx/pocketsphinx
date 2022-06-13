@@ -49,6 +49,8 @@ main(int argc, char *argv[])
 	logmath_t *lmath;
 	ngram_model_t *model;
 
+	(void)argc;
+	(void)argv;
 	err_set_loglevel(ERR_INFO);
 
 	/* Initialize a logmath object to pass to ngram_read */

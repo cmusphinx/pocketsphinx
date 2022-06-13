@@ -20,6 +20,8 @@ main(int argc, char *argv[])
 {
 	float32 **a;
 
+	(void)argc;
+	(void)argv;
 	a = (float32 **)ckd_calloc_2d(3, 3, sizeof(float32));
 
 	memcpy(a[0], foo, sizeof(float32) * 3 * 3);

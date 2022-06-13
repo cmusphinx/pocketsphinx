@@ -13,6 +13,8 @@ main(int argc, char **argv)
     hash_table_t *ht;
     ht = hash_table_new(75, 0);
 
+    (void)argc;
+    (void)argv;
     if (hash_table_enter(ht, "-hmmdump", (void *)1) != (void *)1) {
         E_FATAL("Insertion of -hmmdump failed\n");
     }

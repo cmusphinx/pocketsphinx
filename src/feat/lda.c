@@ -127,7 +127,7 @@ feat_read_lda(feat_t *feat, const char *ldafile, int32 dim)
 	E_FATAL("LDA matrix dimension %d doesn't match feature stream size %d\n", n, feat->stream_len[0]);
     
     /* Override dim from file if it is 0 or greater than m. */
-    if (dim > m || dim <= 0) {
+    if ((uint32)dim > m || dim <= 0) {
         dim = m;
     }
     feat->out_dim = dim;

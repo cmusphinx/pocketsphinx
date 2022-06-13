@@ -246,7 +246,7 @@ logmath_read(const char *file_name)
     }
     else {
         lmath->t.table = ckd_calloc(lmath->t.table_size, lmath->t.width);
-        if (bio_fread(lmath->t.table, lmath->t.width, lmath->t.table_size,
+        if ((uint32)bio_fread(lmath->t.table, lmath->t.width, lmath->t.table_size,
                       fp, byteswap, &chksum) != lmath->t.table_size) {
             E_ERROR("Failed to read data (%d x %d bytes) from the file '%s' failed",
                     lmath->t.table_size, lmath->t.width, file_name);
@@ -312,7 +312,7 @@ logmath_write(logmath_t *lmath, const char *file_name)
         goto error_out;
     }
 
-    if (bio_fwrite(lmath->t.table, lmath->t.width, lmath->t.table_size,
+    if ((uint32)bio_fwrite(lmath->t.table, lmath->t.width, lmath->t.table_size,
                    fp, 0, &chksum) != lmath->t.table_size) {
         E_ERROR("Failed to write data (%d x %d bytes) to the file '%s'",
                 lmath->t.table_size, lmath->t.width, file_name);

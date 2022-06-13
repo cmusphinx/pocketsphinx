@@ -148,6 +148,8 @@ test_check_mode()
 int
 main(int argc, char* argv[])
 {
+  (void)argc;
+  (void)argv;
     test_no_search();
     test_default_fsg();
     test_default_jsgf();

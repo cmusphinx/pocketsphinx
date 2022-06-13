@@ -10,6 +10,8 @@ main(int argc, char *argv[])
 	ps_decoder_t *ps;
 	cmd_ln_t *config;
 
+	(void)argc;
+	(void)argv;
 	TEST_ASSERT(config =
 		    cmd_ln_init(NULL, ps_args(), TRUE,
 				"-hmm", DATADIR "/tidigits/hmm",

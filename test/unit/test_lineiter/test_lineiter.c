@@ -11,6 +11,8 @@ main(int argc, char *argv[])
 	lineiter_t *li;
 	int i;
 	
+	(void)argc;
+	(void)argv;
 	for (i = 0, li = lineiter_start(fp); i < 3 && li; li = lineiter_next(li), i++) {
 	    printf ("Line is %s\n", li->buf);
 	}

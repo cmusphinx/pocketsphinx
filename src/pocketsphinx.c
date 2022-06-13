@@ -208,6 +208,8 @@ ps_default_search_args(cmd_ln_t *config)
         dictfile = MODELDIR "/en-us/cmudict-en-us.dict";
         cmd_ln_set_str_r(config, "-dict", dictfile);
     }
+#else
+    (void)config;
 #endif
 }
 
@@ -798,6 +800,7 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
     hash_iter_t *search_it;
     cmd_ln_t *newconfig;
 
+    (void)format;
     /* Create a new scratch config to load this dict (so existing one
      * won't be affected if it fails) */
     newconfig = cmd_ln_init(NULL, ps_args(), TRUE, NULL);

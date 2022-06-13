@@ -232,7 +232,7 @@ read_mfc_file(FILE *infh, int sf, int ef, int *out_nfr, int ceplen)
     nfr = ef - sf;
     mfcs = ckd_calloc_2d(nfr, ceplen, sizeof(**mfcs));
     floats = (float32 *)mfcs[0];
-    if (fread(floats, 4, nfr * ceplen, infh) != nfr * ceplen) {
+    if (fread(floats, 4, nfr * ceplen, infh) != (size_t)nfr * ceplen) {
         E_ERROR_SYSTEM("Failed to read %d items from mfcfile");
         ckd_free_2d(mfcs);
         return NULL;
@@ -335,6 +335,7 @@ error_out:
 static int
 process_lmnamectl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *lmname)
 {
+    (void)config;
     if (!lmname)
         return 0;
 

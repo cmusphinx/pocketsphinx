@@ -183,7 +183,7 @@ senone_mixw_read(senone_t * s, char const *file_name, logmath_t *lmath)
         || (bio_fread(&i, sizeof(int32), 1, fp, byteswap, &chksum) != 1)) {
         E_FATAL("bio_fread(%s) (arraysize) failed\n", file_name);
     }
-    if ((int32)i != s->n_sen * s->n_feat * s->n_cw) {
+    if ((uint32)i != s->n_sen * s->n_feat * s->n_cw) {
         E_FATAL
             ("%s: #float32s(%d) doesn't match dimensions: %d x %d x %d\n",
              file_name, i, s->n_sen, s->n_feat, s->n_cw);
@@ -237,7 +237,7 @@ senone_mixw_read(senone_t * s, char const *file_name, logmath_t *lmath)
             vector_sum_norm(pdf, s->n_cw);
 
             /* Convert to logs3, truncate to 8 bits, and store in s->pdf */
-            for (c = 0; c < s->n_cw; c++) {
+            for (c = 0; (uint32)c < s->n_cw; c++) {
                 p = -(logmath_log(lmath, pdf[c]));
                 p += (1 << (SENSCR_SHIFT - 1)) - 1; /* Rounding before truncation */
 
@@ -294,7 +294,7 @@ senone_init(gauden_t *g, char const *mixwfile, char const *sen2mgau_map_file,
     else {
 	if (s->n_gauden == 1)
 	    sen2mgau_map_file = ".semi.";
-	else if (s->n_gauden == bin_mdef_n_ciphone(mdef))
+	else if (s->n_gauden == (uint32)bin_mdef_n_ciphone(mdef))
 	    sen2mgau_map_file = ".ptm.";
 	else
 	    sen2mgau_map_file = ".cont.";
@@ -311,7 +311,7 @@ senone_init(gauden_t *g, char const *mixwfile, char const *sen2mgau_map_file,
         /* All-to-ciphone-id senones-codebook mapping */
 	E_INFO("Mapping senones to context-independent phone codebooks\n");
         s->mgau = (uint32 *) ckd_calloc(s->n_sen, sizeof(*s->mgau));
-        for (i = 0; i < s->n_sen; i++)
+        for (i = 0; (uint32)i < s->n_sen; i++)
 	    s->mgau[i] = bin_mdef_sen2cimap(mdef, i);
     }
     else if (strcmp(sen2mgau_map_file, ".cont.") == 0
@@ -322,13 +322,13 @@ senone_init(gauden_t *g, char const *mixwfile, char const *sen2mgau_map_file,
             E_FATAL("#senone=%d; must be >1\n", s->n_sen);
 
         s->mgau = (uint32 *) ckd_calloc(s->n_sen, sizeof(*s->mgau));
-        for (i = 0; i < s->n_sen; i++)
+        for (i = 0; (uint32)i < s->n_sen; i++)
             s->mgau[i] = i;
 	/* Not sure why this is here, it probably does nothing. */
         s->n_gauden = s->n_sen;
     }
     else {
-        if (s->n_sen != n)
+        if (s->n_sen != (uint32)n)
             E_FATAL("#senones inconsistent: %d in %s; %d in %s\n",
                     n, sen2mgau_map_file, s->n_sen, mixwfile);
     }
@@ -368,12 +368,12 @@ senone_eval(senone_t * s, int id, gauden_dist_t ** dist, int32 n_top)
     int32 f, t;
     gauden_dist_t *fdist;
 
-    assert((id >= 0) && (id < s->n_sen));
-    assert((n_top > 0) && (n_top <= s->n_cw));
+    assert((id >= 0) && ((uint32)id < s->n_sen));
+    assert((n_top > 0) && ((uint32)n_top <= s->n_cw));
 
     scr = 0;
 
-    for (f = 0; f < s->n_feat; f++) {
+    for (f = 0; (uint32)f < s->n_feat; f++) {
         fdist = dist[f];
 
 	fden = ((int32)fdist[0].dist + ((1<<SENSCR_SHIFT) - 1)) >> SENSCR_SHIFT;

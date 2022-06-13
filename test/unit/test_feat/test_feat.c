@@ -43,6 +43,8 @@ main(int argc, char *argv[])
 	mfcc_t **in_feats, ***out_feats;
 	int32 i, j, ncep;
 
+	(void)argc;
+	(void)argv;
 	/* Test "raw" features without concatenation */
 	fcb = feat_init("13", CMN_NONE, 0, AGC_NONE, 1, 13);
 

@@ -21,6 +21,8 @@ main(int argc, char *argv[])
 	float32 **a, **ainv, **ii;
 	int i, j;
 
+	(void)argc;
+	(void)argv;
 	a = (float32 **)ckd_calloc_2d(3, 3, sizeof(float32));
 	ainv = (float32 **)ckd_calloc_2d(3, 3, sizeof(float32));
 	ii = (float32 **)ckd_calloc_2d(3, 3, sizeof(float32));

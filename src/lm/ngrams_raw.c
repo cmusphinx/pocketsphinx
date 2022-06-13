@@ -53,7 +53,7 @@ ngram_ord_comparator(const void *a_raw, const void *b_raw)
     ngram_raw_t *b = (ngram_raw_t *) b_raw;
     int a_w_ptr = 0;
     int b_w_ptr = 0;
-    while (a_w_ptr < a->order && b_w_ptr < b->order) {
+    while ((uint32)a_w_ptr < a->order && (uint32)b_w_ptr < b->order) {
         if (a->words[a_w_ptr] == b->words[b_w_ptr]) {
             a_w_ptr++;
             b_w_ptr++;
@@ -249,7 +249,7 @@ ngrams_raw_read_dmp(FILE * fp, logmath_t * lmath, uint32 * counts,
         (uint16 *) ckd_calloc((size_t) (counts[1] + 1),
                               sizeof(*bigrams_next));
     ngram_idx = 1;
-    for (j = 0; j <= (int32) counts[1]; j++) {
+    for (j = 0; j <= counts[1]; j++) {
         uint16 wid, prob_idx, bo_idx;
         ngram_raw_t *raw_ngram = &raw_ngrams[0][j];
 
@@ -295,7 +295,7 @@ ngrams_raw_read_dmp(FILE * fp, logmath_t * lmath, uint32 * counts,
         raw_ngrams[1] =
             (ngram_raw_t *) ckd_calloc((size_t) counts[2],
                                        sizeof(*raw_ngrams[1]));
-        for (j = 0; j < (int32) counts[2]; j++) {
+        for (j = 0; j < counts[2]; j++) {
             uint16 wid, prob_idx;
             ngram_raw_t *raw_ngram = &raw_ngrams[1][j];
 

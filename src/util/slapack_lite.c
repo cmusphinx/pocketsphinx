@@ -197,7 +197,9 @@ integer ilaenv_(integer *ispec, char *name__, char *opts, integer *n1,
     extern integer ieeeck_(integer *, real *, real *);
     static char subnam[6];
 
-
+    (void)opts;
+    (void)n3;
+    (void)opts_len;
 /*
     -- LAPACK auxiliary routine (version 3.0) --
        Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,

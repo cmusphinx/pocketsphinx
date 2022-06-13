@@ -13,6 +13,8 @@
 int
 main(int argc, char *argv[])
 {
+    (void)argc;
+    (void)argv;
     TEST_EQUAL(0, build_directory("foo/bar/baz"));
     TEST_ASSERT(stat_mtime("foo/bar/baz") != -1);
     TEST_EQUAL(0, build_directory("./quux/"));

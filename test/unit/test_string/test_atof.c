@@ -11,6 +11,8 @@ main(int argc, char *argv[])
 {
 	double foo;
 
+	(void)argc;
+	(void)argv;
 	/* Ensure that it's really locale-independent. */
 	if (setlocale(LC_ALL, "fr_CA.UTF-8") == NULL)
 		fprintf(stderr, "Note: setlocale(LC_ALL, fr_CA.UTF-8) failed\n");

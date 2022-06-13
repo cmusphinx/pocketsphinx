@@ -13,7 +13,7 @@
 
 extern void
 s_wsfe(cilist * f)
-{;
+{(void)f;
 }
 extern void
 e_wsfe(void)
@@ -21,7 +21,7 @@ e_wsfe(void)
 }
 extern void
 do_fio(integer * c, char *s, ftnlen l)
-{;
+{(void)c;(void)s;(void)l;
 }
 
 /* You'll want this if you redo the *_lite.c files with the -C option

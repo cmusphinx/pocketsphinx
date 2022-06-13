@@ -130,6 +130,7 @@ ngram_model_set_init(cmd_ln_t * config,
     logmath_t *lmath;
     int32 i, n;
 
+    (void)config;
     if (n_models == 0)          /* WTF */
         return NULL;
 
@@ -863,4 +864,5 @@ static ngram_funcs_t ngram_model_set_funcs = {
     ngram_model_set_score,      /* score */
     ngram_model_set_raw_score,  /* raw_score */
     ngram_model_set_add_ug,     /* add_ug */
+    NULL                        /* flush */
 };

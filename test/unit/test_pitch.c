@@ -17,6 +17,8 @@ main(int argc, char *argv[])
 	uint16 period, bestdiff;
 	int nfr;
 
+	(void)argc;
+	(void)argv;
 	/* To make life easier, read the whole thing. */
 	TEST_ASSERT(raw = fopen(TESTDATADIR "/chan3.raw", "rb"));
 	fseek(raw, 0, SEEK_END);

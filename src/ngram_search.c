@@ -828,6 +828,7 @@ ngram_search_bestpath(ps_search_t *search, int32 *out_score, int backward)
 {
     ngram_search_t *ngs = (ngram_search_t *)search;
 
+    (void)backward;
     if (search->last_link == NULL) {
         search->last_link = ps_lattice_bestpath(search->dag, ngs->lmset,
                                                 ngs->bestpath_fwdtree_lw_ratio,

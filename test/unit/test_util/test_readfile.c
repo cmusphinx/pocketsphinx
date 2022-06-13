@@ -18,6 +18,8 @@ main(int argc, char *argv[])
     size_t nsamps;
     int16 *data;
     
+    (void)argc;
+    (void)argv;
     data = bio_read_wavfile(TESTDATADIR, "chan3", ".wav", 44, FALSE, &nsamps);
     TEST_EQUAL(230108, nsamps);
     

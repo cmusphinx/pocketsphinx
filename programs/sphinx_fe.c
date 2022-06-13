@@ -560,7 +560,7 @@ decode_pcm(sphinx_wave2feat_t *wtf)
 
         /* Byteswap stuff here if necessary. */
         if (wtf->byteswap) {
-            for (n = 0; n < nsamp; ++n)
+            for (n = 0; (uint32)n < nsamp; ++n)
                 SWAP_INT16(wtf->audio + n);
         }
 
@@ -685,7 +685,8 @@ output_frames_sphinx(sphinx_wave2feat_t *wtf, mfcc_t **frames, int nfr)
 
     fe_mfcc_to_float(wtf->fe, frames, (float32 **)frames, nfr);
     for (i = 0; i < nfr; ++i) {
-        if (fwrite(frames[i], sizeof(float32), wtf->veclen, wtf->outfh) != wtf->veclen) {
+        if (fwrite(frames[i], sizeof(float32), wtf->veclen, wtf->outfh)
+            != (size_t)wtf->veclen) {
             E_ERROR_SYSTEM("Writing %d values to %s failed",
                            wtf->veclen, wtf->outfile);
             return -1;
@@ -787,7 +788,8 @@ output_frames_htk(sphinx_wave2feat_t *wtf, mfcc_t **frames, int nfr)
         if (swap)
             for (j = 0; j < wtf->veclen; ++j)
                 SWAP_FLOAT32(frames[i] + j);
-        if (fwrite(frames[i], sizeof(float32), wtf->veclen, wtf->outfh) != wtf->veclen) {
+        if (fwrite(frames[i], sizeof(float32), wtf->veclen, wtf->outfh)
+            != (size_t)wtf->veclen) {
             E_ERROR_SYSTEM("Writing %d values to %s failed",
                            wtf->veclen, wtf->outfile);
             return -1;

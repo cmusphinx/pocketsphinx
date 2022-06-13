@@ -51,6 +51,7 @@ uint64 bitarr_read_int57(bitarr_address_t address, uint8 length, uint64 mask)
 {
     uint64 value64;
     const uint8 *base_off = (const uint8 *)(address.base) + (address.offset >> 3);
+    (void)length; /* Yeah, what is this for anyway? */
     memcpy(&value64, base_off, sizeof(value64));
     SWAP_LE_64(&value64);
     return (value64 >> (address.offset & 7)) & mask;
@@ -60,6 +61,7 @@ void bitarr_write_int57(bitarr_address_t address, uint8 length, uint64 value)
 {
     uint64 value64;
     uint8 *base_off = (uint8 *)(address.base) + (address.offset >> 3);
+    (void)length; /* Yeah, what is this for anyway? */
     memcpy(&value64, base_off, sizeof(value64));
     SWAP_LE_64(&value64);
     value64 |= (value << (address.offset & 7));
@@ -71,6 +73,7 @@ uint32 bitarr_read_int25(bitarr_address_t address, uint8 length, uint32 mask)
 {
     uint32 value32;
     const uint8 *base_off = (const uint8*)(address.base) + (address.offset >> 3);
+    (void)length; /* Yeah, what is this for anyway? */
     memcpy(&value32, base_off, sizeof(value32));
     SWAP_LE_32(&value32);
     return (value32 >> (address.offset & 7)) & mask;
@@ -80,6 +83,7 @@ void bitarr_write_int25(bitarr_address_t address, uint8 length, uint32 value)
 {
     uint32 value32;
     uint8 *base_off = (uint8 *)(address.base) + (address.offset >> 3);
+    (void)length; /* Yeah, what is this for anyway? */
     memcpy(&value32, base_off, sizeof(value32));
     SWAP_LE_32(&value32);
     value32 |= (value << (address.offset & 7));

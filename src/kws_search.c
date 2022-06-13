@@ -62,12 +62,14 @@ different models. Corresponds to threshold of about 1e+50 */
 static ps_lattice_t *
 kws_search_lattice(ps_search_t * search)
 {
+    (void)search;
     return NULL;
 }
 
 static int
 kws_search_prob(ps_search_t * search)
 {
+    (void)search;
     return 0;
 }
 

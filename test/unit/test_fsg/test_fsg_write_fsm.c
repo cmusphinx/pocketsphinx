@@ -11,6 +11,8 @@ main(int argc, char *argv[])
 	jsgf_t *jsgf;
 	jsgf_rule_t *rule;
 
+	(void)argc;
+	(void)argv;
 	/* Initialize a logmath object to pass to fsg_model_read */
 	lmath = logmath_init(1.0001, 0, 0);
 	jsgf = jsgf_parse_file(LMDIR "/polite.gram", NULL);

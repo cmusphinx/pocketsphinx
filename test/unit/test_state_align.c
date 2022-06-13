@@ -67,6 +67,8 @@ main(int argc, char *argv[])
     cmd_ln_t *config;
     int i, sf, ef, last_ef;
 
+    (void)argc;
+    (void)argv;
     config = cmd_ln_init(NULL, ps_args(), FALSE,
                  "-hmm", MODELDIR "/en-us/en-us",
                  "-dict", MODELDIR "/en-us/cmudict-en-us.dict",

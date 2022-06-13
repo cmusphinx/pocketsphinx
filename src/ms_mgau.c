@@ -111,7 +111,7 @@ ms_mgau_init(acmod_t *acmod, logmath_t *lmath, bin_mdef_t *mdef)
         goto error_out;
     }
     for (i = 0; i < g->n_feat; ++i) {
-        if (g->featlen[i] != feat_dimension2(acmod->fcb, i)) {
+        if ((uint32)g->featlen[i] != feat_dimension2(acmod->fcb, i)) {
             E_ERROR("Dimension of stream %d does not match: %d != %d\n", i,
                     g->featlen[i], feat_dimension2(acmod->fcb, i));
             goto error_out;
@@ -127,16 +127,16 @@ ms_mgau_init(acmod_t *acmod, logmath_t *lmath, bin_mdef_t *mdef)
     s->aw = cmd_ln_int32_r(config, "-aw");
 
     /* Verify senone parameters against gauden parameters */
-    if (s->n_feat != g->n_feat)
+    if (s->n_feat != (uint32)g->n_feat)
         E_FATAL("#Feature mismatch: gauden= %d, senone= %d\n", g->n_feat,
                 s->n_feat);
-    if (s->n_cw != g->n_density)
+    if (s->n_cw != (uint32)g->n_density)
         E_FATAL("#Densities mismatch: gauden= %d, senone= %d\n",
                 g->n_density, s->n_cw);
-    if (s->n_gauden > g->n_mgau)
+    if (s->n_gauden > (uint32)g->n_mgau)
         E_FATAL("Senones need more codebooks (%d) than present (%d)\n",
                 s->n_gauden, g->n_mgau);
-    if (s->n_gauden < g->n_mgau)
+    if (s->n_gauden < (uint32)g->n_mgau)
         E_ERROR("Senones use fewer codebooks (%d) than present (%d)\n",
                 s->n_gauden, g->n_mgau);
 
@@ -205,6 +205,7 @@ ms_cont_mgau_frame_eval(ps_mgau_t * mg,
     gauden_t *g;
     senone_t *sen;
 
+    (void)frame;
     topn = ms_mgau_topn(msg);
     g = ms_mgau_gauden(msg);
     sen = ms_mgau_senone(msg);
@@ -216,7 +217,7 @@ ms_cont_mgau_frame_eval(ps_mgau_t * mg,
 	    gauden_dist(g, gid, topn, feat, msg->dist[gid]);
 
 	best = (int32) 0x7fffffff;
-	for (s = 0; s < sen->n_sen; s++) {
+	for (s = 0; (uint32)s < sen->n_sen; s++) {
 	    senscr[s] = senone_eval(sen, s, msg->dist[sen->mgau[s]], topn);
 	    if (best > senscr[s]) {
 		best = senscr[s];
@@ -224,7 +225,7 @@ ms_cont_mgau_frame_eval(ps_mgau_t * mg,
 	}
 
 	/* Normalize senone scores */
-	for (s = 0; s < sen->n_sen; s++) {
+	for (s = 0; (uint32)s < sen->n_sen; s++) {
 	    int32 bs = senscr[s] - best;
 	    if (bs > 32767)
 		bs = 32767;

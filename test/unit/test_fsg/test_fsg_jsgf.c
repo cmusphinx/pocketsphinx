@@ -12,6 +12,8 @@ main(int argc, char *argv[])
 	jsgf_t *jsgf;
 	jsgf_rule_t *rule;
 
+	(void)argc;
+	(void)argv;
 	lmath = logmath_init(1.0001, 0, 0);
 
 	/* Test loading */

@@ -14,6 +14,8 @@ main(int argc, char *argv[])
 	logmath_t *lmath;
 	ngram_model_t *model;
 
+	(void)argc;
+	(void)argv;
 	/* Initialize a logmath object to pass to ngram_read */
 	lmath = logmath_init(1.0001, 0, 0);
 

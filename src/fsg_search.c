@@ -962,6 +962,7 @@ fsg_search_bestpath(ps_search_t *search, int32 *out_score, int backward)
 {
     fsg_search_t *fsgs = (fsg_search_t *)search;
 
+    (void)backward;
     if (search->last_link == NULL) {
         search->last_link = ps_lattice_bestpath(search->dag, NULL,
                                                 1.0, fsgs->ascale);
@@ -1205,6 +1206,7 @@ find_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int32 wid, int32 node_id)
 {
     ps_latnode_t *node;
 
+    (void)fsg;
     for (node = dag->nodes; node; node = node->next)
         if ((node->sf == sf) && (node->wid == wid) && (node->node_id == node_id))
             break;
@@ -1352,6 +1354,7 @@ mark_reachable(ps_lattice_t *dag, ps_latnode_t *end)
 {
     glist_t q;
 
+    (void)dag;
     /* It doesn't matter which order we do this in. */
     end->reachable = TRUE;
     q = glist_add_ptr(NULL, end);

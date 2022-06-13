@@ -16,6 +16,8 @@ main(int argc, char *argv[])
 	dict2pid_t *d2p;
 	cmd_ln_t *config;
 
+	(void)argc;
+	(void)argv;
 	TEST_ASSERT(config = cmd_ln_init(NULL, NULL, FALSE,
 						   "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
 						   "_fdict", MODELDIR "/en-us/en-us/noisedict",

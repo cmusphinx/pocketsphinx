@@ -20,6 +20,8 @@ main(int argc, char *argv[])
 	char *foo2 = ckd_salloc("foo");
 	char *foo3 = ckd_salloc("foo");
 
+	(void)argc;
+	(void)argv;
 	/* Test insertion and replacement. */
 	TEST_ASSERT(h = hash_table_new(42, FALSE));
 	TEST_EQUAL((void*)0xdeadbeef, hash_table_enter(h, "foo", (void*)0xdeadbeef));
