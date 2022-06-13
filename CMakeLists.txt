@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14) # I like pie
 
-project(PocketSphinx VERSION 0.9.999.0
+project(PocketSphinx VERSION 4.9.999.0
   DESCRIPTION "A small speech recognizer"
   HOMEPAGE_URL "https://github.com/cmusphinx/pocketsphinx")
 include(CMakePrintHelpers)
@@ -57,7 +57,7 @@ cmake_print_variables(SPHINX_DEBUG DEBUG_ENDIAN)
 if(MSVC)
   add_compile_options(/W3)
 else()
-  add_compile_options(-Wall)
+  add_compile_options(-Wall -Wextra)
 endif()
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
