@@ -69,16 +69,6 @@ cmn_live_set(cmn_t *cmn, mfcc_t const * vec)
     E_INFOCONT(">\n");
 }
 
-void
-cmn_live_get(cmn_t *cmn, mfcc_t * vec)
-{
-    int32 i;
-
-    for (i = 0; i < cmn->veclen; i++)
-        vec[i] = cmn->cmn_mean[i];
-
-}
-
 static void
 cmn_live_shiftwin(cmn_t *cmn)
 {
