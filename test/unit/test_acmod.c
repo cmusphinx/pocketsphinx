@@ -3,6 +3,7 @@
 #include <pocketsphinx.h>
 
 #include <sphinxbase/logmath.h>
+#include <sphinxbase/err.h>
 
 #include "acmod.h"
 #include "test_macros.h"
@@ -40,6 +41,7 @@ main(int argc, char *argv[])
 
     (void)argc;
     (void)argv;
+    err_set_loglevel(ERR_INFO);
     lmath = logmath_init(1.0001, 0, 0);
     config = cmd_ln_init(NULL, ps_args(), TRUE,
                  "-compallsen", "true",
@@ -63,6 +65,8 @@ main(int argc, char *argv[])
     cmd_ln_set_str_extra_r(config, "_lda", NULL);
     cmd_ln_set_str_extra_r(config, "_senmgau", NULL);	
 
+    /* Unset -cmninit to avoid confusion */
+    cmd_ln_set_str_r(config, "-cmninit", NULL);
     TEST_ASSERT(acmod = acmod_init(config, lmath, NULL, NULL));
     cmn_live_set(acmod->fcb->cmn_struct, cmninit);
 
@@ -93,6 +97,9 @@ main(int argc, char *argv[])
         }
     }
     TEST_EQUAL(0, acmod_end_utt(acmod));
+    /* Make sure -cmninit was updated. */
+    TEST_ASSERT(cmd_ln_str_r(config, "-cmninit") != NULL);
+    E_INFO("New -cmninit: %s\n", cmd_ln_str_r(config, "-cmninit"));
     nread = 0;
     {
         int16 best_score;
@@ -123,6 +130,9 @@ main(int argc, char *argv[])
     TEST_EQUAL(0, acmod_start_utt(acmod));
     acmod_process_raw(acmod, &bptr, &nsamps, TRUE);
     TEST_EQUAL(0, acmod_end_utt(acmod));
+    /* Make sure -cmninit was updated. */
+    TEST_ASSERT(cmd_ln_str_r(config, "-cmninit") != NULL);
+    E_INFO("New -cmninit: %s\n", cmd_ln_str_r(config, "-cmninit"));
     {
         int16 best_score;
         int frame_idx = -1, best_senid;
@@ -175,6 +185,9 @@ main(int argc, char *argv[])
         }
     }
     TEST_EQUAL(0, acmod_end_utt(acmod));
+    /* Make sure -cmninit was updated. */
+    TEST_ASSERT(cmd_ln_str_r(config, "-cmninit") != NULL);
+    E_INFO("New -cmninit: %s\n", cmd_ln_str_r(config, "-cmninit"));
     nfr = 0;
     acmod_process_cep(acmod, &cptr, &nfr, FALSE);
     {
@@ -210,6 +223,9 @@ main(int argc, char *argv[])
     nfr = frame_counter;
     acmod_process_cep(acmod, &cptr, &nfr, TRUE);
     TEST_EQUAL(0, acmod_end_utt(acmod));
+    /* Make sure -cmninit was updated. */
+    TEST_ASSERT(cmd_ln_str_r(config, "-cmninit") != NULL);
+    E_INFO("New -cmninit: %s\n", cmd_ln_str_r(config, "-cmninit"));
     {
         int16 best_score;
         int frame_idx = -1, best_senid;

@@ -48,7 +48,7 @@
 #include <sphinxbase/fe.h>
 #include <sphinxbase/feat.h>
 
-/* PocketSphinx headers (not many of them!) */
+/* PocketSphinx headers */
 #include <pocketsphinx/export.h>
 #include <pocketsphinx/cmdln_macro.h>
 #include <pocketsphinx/ps_lattice.h>
@@ -107,6 +107,12 @@ ps_decoder_t *ps_init(cmd_ln_t *config);
  * or other configuration without creating an entirely new decoding
  * object.
  *
+ * @note Since the acoustic model will be reloaded, changes made to
+ * feature extraction parameters may be overridden if a `feat.params`
+ * file is present.
+ * @note Any searches created with ps_set_search() or words added to
+ * the dictionary with ps_add_word() will also be lost.  To avoid this
+ * you can use ps_reinit_feat().
  * @note The decoder retains ownership of the pointer
  * <code>config</code>, so you should free it when no longer used.
  *
@@ -120,26 +126,28 @@ POCKETSPHINX_EXPORT
 int ps_reinit(ps_decoder_t *ps, cmd_ln_t *config);
 
 /**
- * Reinitialize only the feature extractor with updated configuration.
+ * Reinitialize only the feature computation with updated configuration.
  *
- * This function allows you to switch the feature extraction
+ * This function allows you to switch the feature computation
  * parameters without otherwise affecting the decoder configuration.
- * For example, if you change the sample rate or the frame rate and do
- * not need to reconfigure the rest of the decoder.
+ * For example, if you change the sample rate or the frame rate, the
+ * cepstral mean, or the VTLN warping factor, and do not need to
+ * reconfigure the rest of the decoder.
  *
- * @note The decoder retains ownership of the pointer
- * <code>config</code>, so you should free it when no longer used.
+ * Note that if your code has modified any internal parameters in the
+ * \ref acmod_t, these will be overriden by values from the config.
+ *
+ * @note The decoder retains ownership of the pointer `config`, so you
+ * should free it when no longer used.
  *
  * @param ps Decoder.
  * @param config An optional new configuration to use.  If this is
  *               NULL, the previous configuration will be reloaded,
- *               with any changes to feature extraction applied.
- * @return pointer to new feature extractor. The decoder owns this
- *         pointer, so you should not attempt to free it manually.
- *         Use fe_retain() if you wish to reuse it elsewhere.
+ *               with any changes to feature computation applied.
+ * @return 0 for success, <0 for failure (usually an invalid parameter)
  */
 POCKETSPHINX_EXPORT
-fe_t * ps_reinit_fe(ps_decoder_t *ps, cmd_ln_t *config);
+int ps_reinit_feat(ps_decoder_t *ps, cmd_ln_t *config);
 
 /**
  * Returns the argument definitions used in ps_init().
@@ -235,7 +243,7 @@ ps_mllr_t *ps_update_mllr(ps_decoder_t *ps, ps_mllr_t *mllr);
  * Reload the pronunciation dictionary from a file.
  *
  * This function replaces the current pronunciation dictionary with
- * the one stored in dictfile.  This also causes the active search
+ * the one stored in `dictfile`.  This also causes the active search
  * module(s) to be reinitialized, in the same manner as calling
  * ps_add_word() with update=TRUE.
  *
@@ -252,7 +260,7 @@ int ps_load_dict(ps_decoder_t *ps, char const *dictfile,
 /**
  * Dump the current pronunciation dictionary to a file.
  *
- * This function dumps the current pronunciation dictionary to a tex
+ * This function dumps the current pronunciation dictionary to a text file.
  *
  * @param dictfile Path to file where dictionary will be written.
  * @param format Format of the dictionary file, or NULL for the
@@ -414,7 +422,8 @@ int ps_end_utt(ps_decoder_t *ps);
  * @param out_best_score Output: path score corresponding to returned string.
  * @return String containing best hypothesis at this point in
  *         decoding.  NULL if no hypothesis is available.  This string is owned
- *         by the decoder, so you should copy it if you need to hold onto it.
+ *         by the decoder and only valid for the current hypothesis, so you
+ *         should copy it if you need to hold onto it.
  */
 POCKETSPHINX_EXPORT
 char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score);
@@ -552,7 +561,8 @@ ps_nbest_t *ps_nbest_next(ps_nbest_t *nbest);
  *
  * @param nbest N-best iterator.
  * @param out_score Output: Path score for this hypothesis.
- * @return String containing next best hypothesis.
+ * @return String containing next best hypothesis. Note that this
+ *         pointer is only valid for the current iteration.
  */
 POCKETSPHINX_EXPORT
 char const *ps_nbest_hyp(ps_nbest_t *nbest, int32 *out_score);
@@ -599,17 +609,73 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
                      double *out_ncpu, double *out_nwall);
 
 /**
- * @mainpage PocketSphinx API Documentation
+ * @mainpage PocketSphinx Documentation
  * @author David Huggins-Daines <dhdaines@gmail.com>
- * @author Alpha Cephei Inc.
  * @version 5.0.0
- * @date July, 2015
+ * @date July, 2022
  *
  * @section intro_sec Introduction
  *
- * This is the API documentation for the PocketSphinx speech
- * recognition engine.  The main API calls are documented in
- * <pocketsphinx.h>.
+ * This is the documentation for the PocketSphinx speech recognition
+ * engine.  The main API calls are documented in <pocketsphinx.h>.
+ *
+ * @section install_sec Installation
+ *
+ * To install from source, you will need a C compiler and a recent
+ * version of CMake.  If you wish to use an integrated development
+ * environment, Visual Studio Code will automate most of this process
+ * for you once you have installed C++ and CMake support as described
+ * at https://code.visualstudio.com/docs/languages/cpp
+ *
+ * @subsection unix_install Unix-like systems
+ *
+ * From the Unix command line, you will create a separate directory in
+ * which to build the source code, then run `cmake` with the top-level
+ * source directory as argument to generate the build files:
+ *
+ *     mkdir build
+ *     cmake ..
+ *
+ * Now you can compile and run the tests, and install the code:
+ *
+ *     make all test
+ *     make install
+ *
+ * By default CMake will try to install things in `/usr/local`, which
+ * you might not have access to.  If you want to install somewhere
+ * else you need to set `CMAKE_INSTALL_PREFIX` *when running cmake*:
+ *
+ *     cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/.local
+ *
+ * In this case you may also need to set the `LD_LIBRARY_PATH`
+ * environment variable so that the PocketSphinx library can be found:
+ *
+ *     export LD_LIBRARY_PATH=$HOME/local/lib
+ *
+ * @subsection windows_install Windows
+ *
+ * On Windows, the process is similar, but you will need to tell CMake
+ * what build tool you are using with the `-g` option, and there are
+ * many of them.  The build is known to work with `nmake` but it is
+ * easiest just to use Visual Studio Code.  Once built, you will find
+ * the DLL and EXE files in `build\Debug` or `build\Release` depending
+ * on your build type.  If the EXE files do not run, you need to
+ * ensure that `pocketsphinx.dll` is located in the same directory as
+ * them.
+ *
+ * @section faq_sec Frequently Asked Questions
+ *
+ * @subsection faq_faq Why are there no frequently asked questions?
+ *
+ * I'm glad you asked! There will be some soon.
+ *
+ * @section thanks_sec Acknowledgements
+ *
+ * PocketSphinx is largely based on the previous Sphinx-II and
+ * Sphinx-III systems, developed by a large number of contributors at
+ * Carnegie Mellon University.  For some time afterwards, it was
+ * maintained by Nickolay Shmyrev and others at Alpha Cephei, Inc.
+ * See the `AUTHORS` file for a list of contributors.
  */
 
 #ifdef __cplusplus

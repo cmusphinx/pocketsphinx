@@ -63,6 +63,7 @@
 #include "ms_mgau.h"
 
 static int32 acmod_process_mfcbuf(acmod_t *acmod);
+static const char *acmod_update_cmninit(acmod_t *acmod);
 
 static int
 acmod_init_am(acmod_t *acmod)
@@ -135,63 +136,109 @@ acmod_init_am(acmod_t *acmod)
     return 0;
 }
 
-static int
-acmod_init_feat(acmod_t *acmod)
+int
+acmod_reinit_feat(acmod_t *acmod, fe_t *fe, feat_t *fcb)
 {
-    acmod->fcb =
-        feat_init(cmd_ln_str_r(acmod->config, "-feat"),
-                  cmn_type_from_str(cmd_ln_str_r(acmod->config,"-cmn")),
-                  cmd_ln_boolean_r(acmod->config, "-varnorm"),
-                  agc_type_from_str(cmd_ln_str_r(acmod->config, "-agc")),
-                  1, cmd_ln_int32_r(acmod->config, "-ceplen"));
-    if (acmod->fcb == NULL)
+    if (fe)
+        fe = fe_retain(fe);
+    else {
+        fe = fe_init_auto_r(acmod->config);
+        if (fe == NULL)
+            return -1;
+    }
+    if (acmod_fe_mismatch(acmod, fe)) {
+        fe_free(fe);
         return -1;
-
-    if (cmd_ln_str_r(acmod->config, "_lda")) {
-        E_INFO("Reading linear feature transformation from %s\n",
-               cmd_ln_str_r(acmod->config, "_lda"));
-        if (feat_read_lda(acmod->fcb,
-                          cmd_ln_str_r(acmod->config, "_lda"),
-                          cmd_ln_int32_r(acmod->config, "-ldadim")) < 0)
-            return -1;
     }
+    if (acmod->fe)
+        fe_free(acmod->fe);
+    acmod->fe = fe;
 
-    if (cmd_ln_str_r(acmod->config, "-svspec")) {
-        int32 **subvecs;
-        E_INFO("Using subvector specification %s\n",
-               cmd_ln_str_r(acmod->config, "-svspec"));
-        if ((subvecs = parse_subvecs(cmd_ln_str_r(acmod->config, "-svspec"))) == NULL)
+    if (fcb)
+        fcb = feat_retain(fcb);
+    else {
+        fcb =
+            feat_init(cmd_ln_str_r(acmod->config, "-feat"),
+                      cmn_type_from_str(cmd_ln_str_r(acmod->config,"-cmn")),
+                      cmd_ln_boolean_r(acmod->config, "-varnorm"),
+                      agc_type_from_str(cmd_ln_str_r(acmod->config, "-agc")),
+                      1, cmd_ln_int32_r(acmod->config, "-ceplen"));
+        if (fcb == NULL)
             return -1;
-        if ((feat_set_subvecs(acmod->fcb, subvecs)) < 0)
-            return -1;
-    }
 
-    if (cmd_ln_exists_r(acmod->config, "-agcthresh")
-        && 0 != strcmp(cmd_ln_str_r(acmod->config, "-agc"), "none")) {
-        agc_set_threshold(acmod->fcb->agc_struct,
-                          cmd_ln_float32_r(acmod->config, "-agcthresh"));
-    }
-
-    if (acmod->fcb->cmn_struct
-        && cmd_ln_exists_r(acmod->config, "-cmninit")) {
-        char *c, *cc, *vallist;
-        int32 nvals;
-
-        vallist = ckd_salloc(cmd_ln_str_r(acmod->config, "-cmninit"));
-        c = vallist;
-        nvals = 0;
-        while (nvals < acmod->fcb->cmn_struct->veclen
-               && (cc = strchr(c, ',')) != NULL) {
-            *cc = '\0';
-            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof_c(c));
-            c = cc + 1;
-            ++nvals;
+        if (cmd_ln_str_r(acmod->config, "_lda")) {
+            E_INFO("Reading linear feature transformation from %s\n",
+                   cmd_ln_str_r(acmod->config, "_lda"));
+            if (feat_read_lda(fcb,
+                              cmd_ln_str_r(acmod->config, "_lda"),
+                              cmd_ln_int32_r(acmod->config, "-ldadim")) < 0)
+                return -1;
         }
-        if (nvals < acmod->fcb->cmn_struct->veclen && *c != '\0') {
-            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof_c(c));
+
+        if (cmd_ln_str_r(acmod->config, "-svspec")) {
+            int32 **subvecs;
+            E_INFO("Using subvector specification %s\n",
+                   cmd_ln_str_r(acmod->config, "-svspec"));
+            if ((subvecs = parse_subvecs(cmd_ln_str_r(acmod->config, "-svspec"))) == NULL)
+                return -1;
+            if ((feat_set_subvecs(fcb, subvecs)) < 0)
+                return -1;
         }
-        ckd_free(vallist);
+
+        if (cmd_ln_exists_r(acmod->config, "-agcthresh")
+            && 0 != strcmp(cmd_ln_str_r(acmod->config, "-agc"), "none")) {
+            agc_set_threshold(fcb->agc_struct,
+                              cmd_ln_float32_r(acmod->config, "-agcthresh"));
+        }
+
+        if (fcb->cmn_struct
+            && cmd_ln_exists_r(acmod->config, "-cmninit")
+            && cmd_ln_str_r(acmod->config, "-cmninit")) {
+            char *c, *cc, *vallist;
+            int32 nvals;
+
+            vallist = ckd_salloc(cmd_ln_str_r(acmod->config, "-cmninit"));
+            c = vallist;
+            nvals = 0;
+            while (nvals < fcb->cmn_struct->veclen
+                   && (cc = strchr(c, ',')) != NULL) {
+                *cc = '\0';
+                fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof_c(c));
+                c = cc + 1;
+                ++nvals;
+            }
+            if (nvals < fcb->cmn_struct->veclen && *c != '\0') {
+                fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof_c(c));
+            }
+            ckd_free(vallist);
+        }
     }
+    if (acmod_feat_mismatch(acmod, fcb)) {
+        feat_free(fcb);
+        return -1;
+    }
+    if (acmod->fcb)
+        feat_free(acmod->fcb);
+    acmod->fcb = fcb;
+
+    /* The MFCC buffer needs to be at least as large as the dynamic
+     * feature window.  */
+    acmod->n_mfc_alloc = acmod->fcb->window_size * 2 + 1;
+    if (acmod->mfc_buf)
+        ckd_free_2d(acmod->mfc_buf);
+    acmod->mfc_buf = (mfcc_t **)
+        ckd_calloc_2d(acmod->n_mfc_alloc, acmod->fcb->cepsize,
+                      sizeof(**acmod->mfc_buf));
+
+    /* Feature buffer has to be at least as large as MFCC buffer. */
+    acmod->n_feat_alloc = acmod->n_mfc_alloc + cmd_ln_int32_r(acmod->config, "-pl_window");
+    if (acmod->feat_buf)
+        feat_array_free(acmod->feat_buf);
+    acmod->feat_buf = feat_array_alloc(acmod->fcb, acmod->n_feat_alloc);
+    if (acmod->framepos)
+        ckd_free(acmod->framepos);
+    acmod->framepos = ckd_calloc(acmod->n_feat_alloc, sizeof(*acmod->framepos));
+
     return 0;
 }
 
@@ -234,49 +281,13 @@ acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
     acmod->lmath = logmath_retain(lmath);
     acmod->state = ACMOD_IDLE;
 
-    /* Initialize feature computation. */
-    if (fe) {
-        if (acmod_fe_mismatch(acmod, fe))
-            goto error_out;
-        fe_retain(fe);
-        acmod->fe = fe;
-    }
-    else {
-        /* Initialize a new front end. */
-        acmod->fe = fe_init_auto_r(config);
-        if (acmod->fe == NULL)
-            goto error_out;
-        if (acmod_fe_mismatch(acmod, acmod->fe))
-            goto error_out;
-    }
-    if (fcb) {
-        if (acmod_feat_mismatch(acmod, fcb))
-            goto error_out;
-        feat_retain(fcb);
-        acmod->fcb = fcb;
-    }
-    else {
-        /* Initialize a new fcb. */
-        if (acmod_init_feat(acmod) < 0)
-            goto error_out;
-    }
+    /* Initialize or retain fe and fcb. */
+    if (acmod_reinit_feat(acmod, fe, fcb) < 0)
+        goto error_out;
 
     /* Load acoustic model parameters. */
     if (acmod_init_am(acmod) < 0)
         goto error_out;
-
-
-    /* The MFCC buffer needs to be at least as large as the dynamic
-     * feature window.  */
-    acmod->n_mfc_alloc = acmod->fcb->window_size * 2 + 1;
-    acmod->mfc_buf = (mfcc_t **)
-        ckd_calloc_2d(acmod->n_mfc_alloc, acmod->fcb->cepsize,
-                      sizeof(**acmod->mfc_buf));
-
-    /* Feature buffer has to be at least as large as MFCC buffer. */
-    acmod->n_feat_alloc = acmod->n_mfc_alloc + cmd_ln_int32_r(config, "-pl_window");
-    acmod->feat_buf = feat_array_alloc(acmod->fcb, acmod->n_feat_alloc);
-    acmod->framepos = ckd_calloc(acmod->n_feat_alloc, sizeof(*acmod->framepos));
 
     /* Senone computation stuff. */
     acmod->senone_scores = ckd_calloc(bin_mdef_n_sen(acmod->mdef),
@@ -471,7 +482,43 @@ acmod_end_utt(acmod_t *acmod)
         acmod->senfh = NULL;
     }
 
+    acmod_update_cmninit(acmod);
+
     return nfr;
+}
+
+static const char *
+acmod_update_cmninit(acmod_t *acmod)
+{
+    char *cmninit, *ptr;
+    cmn_t *cmn;
+    int i, len;
+    
+    if (acmod->fcb == NULL)
+        return NULL;
+    if ((cmn = acmod->fcb->cmn_struct) == NULL)
+        return NULL;
+    len = 0;
+    for (i = 0; i < cmn->veclen; ++i) {
+        int nbytes = snprintf(NULL, 0, "%g,", cmn->cmn_mean[i]);
+        if (nbytes <= 0) {
+            E_ERROR_SYSTEM("Failed to format %g for cmninit", cmn->cmn_mean[i]);
+            return NULL;
+        }
+        len += nbytes;
+    }
+    len++;
+    ptr = cmninit = ckd_malloc(len);
+    if (ptr == NULL) {
+        E_ERROR_SYSTEM("Failed to allocate %d bytes for cmninit", len);
+        return NULL;
+    }
+    for (i = 0; i < cmn->veclen; ++i)
+        ptr += snprintf(ptr, cmninit + len - ptr, "%g,", cmn->cmn_mean[i]);
+    *--ptr = '\0';
+    cmd_ln_set_str_r(acmod->config, "-cmninit", cmninit);
+    ckd_free(cmninit);
+    return cmd_ln_str_r(acmod->config, "-cmninit");
 }
 
 static int
