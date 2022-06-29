@@ -61,6 +61,10 @@
         *errcode = ps_reinit($self, config);
     }
 
+    void reinit_feat(Config *config, int *errcode) {
+        *errcode = ps_reinit_feat($self, config);
+    }
+
     void load_dict(
         char const *fdict, char const *ffilter, char const *format, int *errcode) {
         *errcode = ps_load_dict($self, fdict, ffilter, format);
