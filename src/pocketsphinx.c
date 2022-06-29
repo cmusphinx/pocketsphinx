@@ -213,24 +213,14 @@ ps_default_search_args(cmd_ln_t *config)
 #endif
 }
 
-fe_t *
-ps_reinit_fe(ps_decoder_t *ps, cmd_ln_t *config)
+int
+ps_reinit_feat(ps_decoder_t *ps, cmd_ln_t *config)
 {
-    fe_t *new_fe;
-    
     if (config && config != ps->config) {
         cmd_ln_free_r(ps->config);
         ps->config = cmd_ln_retain(config);
     }
-    if ((new_fe = fe_init_auto_r(ps->config)) == NULL)
-        return NULL;
-    if (acmod_fe_mismatch(ps->acmod, new_fe)) {
-        fe_free(new_fe);
-        return NULL;
-    }
-    fe_free(ps->acmod->fe);
-    ps->acmod->fe = new_fe;
-    return new_fe;
+    return acmod_reinit_feat(ps->acmod, NULL, NULL);
 }
 
 int

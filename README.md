@@ -29,12 +29,24 @@ There is no longer any dependency on SphinxBase, because there is no
 reason for SphinxBase to exist.  You can just link against the
 PocketSphinx library, which now includes all of its functionality.
 
-So you can do something like this:
+To install the Python module in a virtual environment (replace
+`~/ve_pocketsphinx` with the virtual environment you wish to create),
+from the top level directory:
+
+```
+python3 -m venv ~/ve_pocketsphinx
+. ~/ve_pocketsphinx/bin/activate
+pip install .
+```
+
+To install the C library and bindings (assuming you have access to
+/usr/local - if not, use `-DCMAKE_INSTALL_PREFIX` to set a different
+prefix when running `cmake`):
 
 ```
 mkdir build
 cd build
-cmake ..
-make
+cmake .. # Add CMake options here
+make all test
 make install
 ```

@@ -126,9 +126,9 @@ cmn_type_t cmn_type_from_str(const char *str);
  */
 
 typedef struct {
-    mfcc_t *cmn_mean;   /**< Temporary variable: current means */
-    mfcc_t *cmn_var;    /**< Temporary variables: stored the cmn variance */
-    mfcc_t *sum;        /**< The sum of the cmn frames */
+    mfcc_t *cmn_mean;   /**< Current means */
+    mfcc_t *cmn_var;    /**< Stored cmn variance */
+    mfcc_t *sum;        /**< Accumulated cepstra for computing mean */
     int32 nframe;	/**< Number of frames */
     int32 veclen;	/**< Length of cepstral vector */
 } cmn_t;
@@ -173,12 +173,6 @@ void cmn_live_update(cmn_t *cmn);
  */
 SPHINXBASE_EXPORT
 void cmn_live_set(cmn_t *cmn, mfcc_t const *vec);
-
-/**
- * Get the live mean.
- */
-SPHINXBASE_EXPORT
-void cmn_live_get(cmn_t *cmn, mfcc_t *vec);
 
 /* RAH, free previously allocated memory */
 SPHINXBASE_EXPORT

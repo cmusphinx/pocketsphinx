@@ -9,6 +9,7 @@ main(int argc, char *argv[])
 {
 	ps_decoder_t *ps;
 	cmd_ln_t *config;
+        char *pron;
 
 	(void)argc;
 	(void)argv;
@@ -31,8 +32,25 @@ main(int argc, char *argv[])
 	ps_add_word(ps, "foobie", "F UW B IY", FALSE);
 	ps_add_word(ps, "hellosomething", "HH EH L OW S", TRUE);
 
+        /* Reinit features only, words should remain */
+        cmd_ln_set_str_r(config, "-cmninit", "41,-4,1");
+	TEST_EQUAL(0, ps_reinit_feat(ps, config));
+        TEST_EQUAL(0, strcmp(cmd_ln_str_r(ps_get_config(ps), "-cmninit"),
+                             "41,-4,1"));
+        pron = ps_lookup_word(ps, "foobie");
+        TEST_ASSERT(pron != NULL);
+        TEST_EQUAL(0, strcmp(pron, "F UW B IY"));
+        ckd_free(pron);
+
 	/* Reinit with existing config */
 	ps_reinit(ps, NULL);
+        /* Words added above are gone, we expect that. */
+        pron = ps_lookup_word(ps, "foobie");
+        TEST_ASSERT(pron == NULL);
+        /* Unfortunately so are feature params if feat.params is in
+         * AM.  No way around this... */
+        TEST_ASSERT(0 != strcmp(cmd_ln_str_r(ps_get_config(ps), "-cmninit"),
+                                "41,-4,1"));
 
 	ps_free(ps);
 	cmd_ln_free_r(config);

@@ -223,10 +223,16 @@ POCKETSPHINX_EXPORT
 acmod_t *acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb);
 
 /**
+ * Reinitialize feature computation modules.
+ */
+POCKETSPHINX_EXPORT
+int acmod_reinit_feat(acmod_t *acmod, fe_t *fe, feat_t *fcb);
+
+/**
  * Verify that feature extraction parameters are compatible with
  * acoustic model.
  *
-  * @param fe acoustic feature extraction module to verify.
+ * @param fe acoustic feature extraction module to verify.
  * @return TRUE if compatible, FALSE otherwise
  */
 POCKETSPHINX_EXPORT

@@ -297,7 +297,10 @@ int ps_set_allphone_file(ps_decoder_t *ps, const char *name, const char *path);
 /**
  * Adds new search based on forced alignment.
  *
- * Convenient method to and create a forced aligner for a piece of text.
+ * Convenient method to and create a forced aligner for a piece of
+ * text.  Note that this is currently less than useful, as it depends
+ * on the word sequence exactly matching the input, including
+ * alternate pronunciations and silences.
  *
  * @param ps Decoder
  * @param name Name for this search (could be anything, such as an utterance

@@ -780,7 +780,6 @@ cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, const arg_t * defn, const char *filen
 void
 cmd_ln_log_help_r(cmd_ln_t *cmdln, arg_t const* defn)
 {
-
     if (defn == NULL)
         return;
     E_INFO("Arguments list definition:\n");
