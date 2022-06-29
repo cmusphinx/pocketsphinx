@@ -627,6 +627,22 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * for you once you have installed C++ and CMake support as described
  * at https://code.visualstudio.com/docs/languages/cpp
  *
+ * @subsection python_install Python module install
+ *
+ * The easiest way to program PocketSphinx is with the Python module.
+ * This can be installed in a
+ * [VirtualEnv](https://docs.python.org/3/library/venv.html) or
+ * [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html)
+ * environment without affecting the rest of your system.  For
+ * example, from the *top-level source directory*:
+ *
+ *     python3 -m venv ~/ve_pocketsphinx
+ *     . ~/ve_pocketsphinx/bin/activate
+ *     pip install .
+ *
+ * There is no need to create a separate build directory as `pip` will
+ * do this for you.
+ *
  * @subsection unix_install Unix-like systems
  *
  * From the Unix command line, you will create a separate directory in
