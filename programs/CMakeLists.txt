@@ -1,12 +1,10 @@
 set(POCKETSPHINX_PROGRAMS
   pocketsphinx_batch
   pocketsphinx_mdef_convert
-  sphinx_cepview
-  sphinx_fe
-  sphinx_jsgf2fsg
-  sphinx_lm_convert
-  sphinx_lm_eval
-  sphinx_pitch
+  pocketsphinx_jsgf2fsg
+  pocketsphinx_lm_convert
+  pocketsphinx_lm_eval
+  pocketsphinx_pitch
   )
 foreach(PROGRAM ${POCKETSPHINX_PROGRAMS})
   add_executable(${PROGRAM} ${PROGRAM}.c)
