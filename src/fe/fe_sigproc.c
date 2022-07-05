@@ -1469,11 +1469,9 @@ fe_dct3(fe_t * fe, const mfcc_t * mfcep, powspec_t * mflogspec)
 int
 fe_write_frame(fe_t * fe, mfcc_t * feat)
 {
-    int in_speech;
-    
     fe_spec_magnitude(fe);
     fe_mel_spec(fe);
-    in_speech = fe_update_noisestats(fe);
+    fe_update_noisestats(fe);
     fe_mel_cep(fe, feat);
     fe_lifter(fe, feat);
 
