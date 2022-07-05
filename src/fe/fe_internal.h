@@ -122,12 +122,12 @@ struct fe_s {
     uint8 feature_dimension;
     uint8 num_cepstra;
     uint8 remove_dc;
+
     uint8 log_spec;
     uint8 swap;
     uint8 dither;
     uint8 transform;
     uint8 remove_noise;
-    uint8 remove_silence;
 
     float32 pre_emphasis_alpha;
     int32 dither_seed;
@@ -156,7 +156,7 @@ struct fe_s {
         float32 s_float32;
     } pre_emphasis_prior;
     int is_float32;
-    /* Noise removal and VAD */
+    /* Noise removal */
     noise_stats_t *noise_stats;
     float32 vad_threshold;
 };

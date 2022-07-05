@@ -400,9 +400,9 @@ fe_update_noisestats(fe_t * fe)
 #endif
 
 #ifndef FIXED_POINT
-    if (fe->remove_silence && (lrt < fe->vad_threshold || is_quiet)) {
+    if (lrt < fe->vad_threshold || is_quiet) {
 #else
-    if (fe->remove_silence && (lrt < FLOAT2FIX(fe->vad_threshold) || is_quiet)) {
+    if (lrt < FLOAT2FIX(fe->vad_threshold) || is_quiet) {
 #endif
         in_speech = FALSE;
     } else {

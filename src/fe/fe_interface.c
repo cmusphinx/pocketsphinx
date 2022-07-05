@@ -135,6 +135,7 @@ fe_parse_general_params(cmd_ln_t *config, fe_t * fe)
         }
     }
 
+    fe->vad_threshold = cmd_ln_float32_r(config, "-vad_threshold");
     fe->remove_dc = cmd_ln_boolean_r(config, "-remove_dc");
     fe->remove_noise = cmd_ln_boolean_r(config, "-remove_noise");
 
@@ -289,7 +290,7 @@ fe_init_auto_r(cmd_ln_t *config)
     
     fe_build_melfilters(fe->mel_fb);
     fe_compute_melcosine(fe->mel_fb);
-    if (fe->remove_noise || fe->remove_silence)
+    if (fe->remove_noise)
         fe->noise_stats = fe_init_noisestats(fe->mel_fb->num_filters);
 
     /* Create temporary FFT, spectrum and mel-spectrum buffers. */
