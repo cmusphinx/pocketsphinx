@@ -1,5 +1,8 @@
 #!/bin/sh
-.${CMAKE_BINARY_DIR}/test/testfuncs.sh
+
+
+: ${CMAKE_BINARY_DIR:=$(pwd)}
+. ${CMAKE_BINARY_DIR}/test/testfuncs.sh
 
 tmpout="test-sphinx_fe-dct.out"
 
