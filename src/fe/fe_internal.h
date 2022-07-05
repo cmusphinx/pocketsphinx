@@ -46,7 +46,6 @@
 #include "sphinxbase/fixpoint.h"
 
 #include "fe_noise.h"
-#include "fe_prespch_buf.h"
 #include "fe_type.h"
 
 #ifdef __cplusplus
@@ -127,6 +126,8 @@ struct fe_s {
     uint8 swap;
     uint8 dither;
     uint8 transform;
+    uint8 remove_noise;
+    uint8 remove_silence;
 
     float32 pre_emphasis_alpha;
     int32 dither_seed;
@@ -155,6 +156,9 @@ struct fe_s {
         float32 s_float32;
     } pre_emphasis_prior;
     int is_float32;
+    /* Noise removal and VAD */
+    noise_stats_t *noise_stats;
+    float32 vad_threshold;
 };
 
 void fe_init_dither(int32 seed);

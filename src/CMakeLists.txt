@@ -30,13 +30,13 @@ add_library(pocketsphinx
   dict.c
   fe/fe_sigproc.c
   fe/fixlog.c
-  fe/fe_prespch_buf.c
   fe/fe_warp_inverse_linear.c
   fe/fe_warp.c
   fe/fe_interface.c
+  fe/fe_noise.c
   fe/fe_warp_affine.c
-  fe/yin.c
   fe/fe_warp_piecewise_linear.c
+  fe/yin.c
   feat/cmn.c
   feat/agc.c
   feat/cmn_live.c

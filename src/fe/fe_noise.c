@@ -89,11 +89,13 @@ struct noise_stats_s {
     powspec_t *floor;
     /* Peak for temporal masking */
     powspec_t *peak;
+    /* Buffers used in update_noisestats */
+    powspec_t *signal, *gain;
 
     /* Initialize it next time */
-    uint8 undefined;
+    int undefined;
     /* Number of items to process */
-    uint32 num_filters;
+    int num_filters;
 
     /* Sum of slow peaks for VAD */
     powspec_t slow_peak_sum;
@@ -219,6 +221,7 @@ fe_weight_smooth(noise_stats_t *noise_stats, powspec_t * buf, powspec_t * coefs,
               (num_filt - 1)) ? (i + SMOOTH_WINDOW) : (num_filt - 1);
 
 #ifndef FIXED_POINT
+        (void)noise_stats;
         coef = 0;
         for (j = l1; j <= l2; j++) {
             coef += coefs[j];
@@ -287,6 +290,9 @@ fe_init_noisestats(int num_filters)
     }
 #endif
 
+    noise_stats->signal = (powspec_t *) ckd_calloc(num_filters, sizeof(powspec_t));
+    noise_stats->gain = (powspec_t *) ckd_calloc(num_filters, sizeof(powspec_t));
+
 #ifdef VAD_DEBUG
     vad_stats = fopen("vad_debug", "w");
 #endif
@@ -304,6 +310,8 @@ fe_reset_noisestats(noise_stats_t * noise_stats)
 void
 fe_free_noisestats(noise_stats_t * noise_stats)
 {
+    ckd_free(noise_stats->signal);
+    ckd_free(noise_stats->gain);
     ckd_free(noise_stats->power);
     ckd_free(noise_stats->noise);
     ckd_free(noise_stats->floor);
@@ -320,27 +328,22 @@ fe_free_noisestats(noise_stats_t * noise_stats)
  * For fixed point we are doing the computation in a fixlog domain,
  * so we have to add many processing cases.
  */
-void
-fe_track_snr(fe_t * fe, int32 *in_speech)
+int
+fe_update_noisestats(fe_t * fe)
 {
-    powspec_t *signal;
-    powspec_t *gain;
     noise_stats_t *noise_stats;
     powspec_t *mfspec;
     int32 i, num_filts;
     int16 is_quiet;
     powspec_t lrt, snr;
+    int in_speech;
 
-    if (!(fe->remove_noise || fe->remove_silence)) {
-        *in_speech = TRUE;
-        return;
-    }
+    if (fe->noise_stats == NULL)
+        return TRUE;
 
     noise_stats = fe->noise_stats;
     mfspec = fe->mfspec;
     num_filts = noise_stats->num_filters;
-
-    signal = (powspec_t *) ckd_calloc(num_filts, sizeof(powspec_t));
 
     if (noise_stats->undefined) {
         noise_stats->slow_peak_sum = FIX2FLOAT(0.0);
@@ -376,18 +379,18 @@ fe_track_snr(fe_t * fe, int32 *in_speech)
     lrt = FLOAT2FIX(0.0);
     for (i = 0; i < num_filts; i++) {
 #ifndef FIXED_POINT
-        signal[i] = noise_stats->power[i] - noise_stats->noise[i];
-        if (signal[i] < 1.0)
-            signal[i] = 1.0;
+        noise_stats->signal[i] = noise_stats->power[i] - noise_stats->noise[i];
+        if (noise_stats->signal[i] < 1.0)
+            noise_stats->signal[i] = 1.0;
         snr = log(noise_stats->power[i] / noise_stats->noise[i]);
 #else
-        signal[i] = fe_log_sub(noise_stats->power[i], noise_stats->noise[i]);
+        noise_stats->signal[i] = fe_log_sub(noise_stats->power[i], noise_stats->noise[i]);
         snr = noise_stats->power[i] - noise_stats->noise[i];
 #endif    
         if (snr > lrt)
             lrt = snr;
     }
-    is_quiet = fe_is_frame_quiet(noise_stats, signal, num_filts);
+    is_quiet = fe_is_frame_quiet(noise_stats, noise_stats->signal, num_filts);
 
 #ifdef VAD_DEBUG
     if (lrt < fe->vad_threshold)
@@ -401,92 +404,55 @@ fe_track_snr(fe_t * fe, int32 *in_speech)
 #else
     if (fe->remove_silence && (lrt < FLOAT2FIX(fe->vad_threshold) || is_quiet)) {
 #endif
-        *in_speech = FALSE;
+        in_speech = FALSE;
     } else {
-        *in_speech = TRUE;
+        in_speech = TRUE;
     }
 
 #ifdef VAD_DEBUG
 #ifndef FIXED_POINT
-    fprintf(vad_stats, "%.3f %d\n", lrt, *in_speech);
+    fprintf(vad_stats, "%.3f %d\n", lrt, in_speech);
 #else
-    fprintf(vad_stats, "%d %d\n", lrt, *in_speech);
+    fprintf(vad_stats, "%d %d\n", lrt, in_speech);
 #endif
 #endif
 
-    fe_lower_envelope(noise_stats, signal, noise_stats->floor, num_filts);
+    fe_lower_envelope(noise_stats, noise_stats->signal, noise_stats->floor, num_filts);
 
-    fe_temp_masking(noise_stats, signal, noise_stats->peak, num_filts);
+    fe_temp_masking(noise_stats, noise_stats->signal, noise_stats->peak, num_filts);
 
     if (!fe->remove_noise) {
         /* no need for further calculations if noise cancellation disabled */
-        ckd_free(signal);
-        return;
+        ckd_free(noise_stats->signal);
+        return in_speech;
     }
 
     for (i = 0; i < num_filts; i++) {
-        if (signal[i] < noise_stats->floor[i])
-            signal[i] = noise_stats->floor[i];
+        if (noise_stats->signal[i] < noise_stats->floor[i])
+            noise_stats->signal[i] = noise_stats->floor[i];
     }
 
-    gain = (powspec_t *) ckd_calloc(num_filts, sizeof(powspec_t));
 #ifndef FIXED_POINT
     for (i = 0; i < num_filts; i++) {
-        if (signal[i] < noise_stats->max_gain * noise_stats->power[i])
-            gain[i] = signal[i] / noise_stats->power[i];
+        if (noise_stats->signal[i] < noise_stats->max_gain * noise_stats->power[i])
+            noise_stats->gain[i] = noise_stats->signal[i] / noise_stats->power[i];
         else
-            gain[i] = noise_stats->max_gain;
-        if (gain[i] < noise_stats->inv_max_gain)
-            gain[i] = noise_stats->inv_max_gain;
+            noise_stats->gain[i] = noise_stats->max_gain;
+        if (noise_stats->gain[i] < noise_stats->inv_max_gain)
+            noise_stats->gain[i] = noise_stats->inv_max_gain;
     }
 #else
     for (i = 0; i < num_filts; i++) {
-        gain[i] = signal[i] - noise_stats->power[i];
-        if (gain[i] > noise_stats->max_gain)
-            gain[i] = noise_stats->max_gain;
-        if (gain[i] < noise_stats->inv_max_gain)
-            gain[i] = noise_stats->inv_max_gain;
+        noise_stats->gain[i] = noise_stats->signal[i] - noise_stats->power[i];
+        if (noise_stats->gain[i] > noise_stats->max_gain)
+            noise_stats->gain[i] = noise_stats->max_gain;
+        if (noise_stats->gain[i] < noise_stats->inv_max_gain)
+            noise_stats->gain[i] = noise_stats->inv_max_gain;
     }
 #endif
 
     /* Weight smoothing and time frequency normalization */
-    fe_weight_smooth(noise_stats, mfspec, gain, num_filts);
+    fe_weight_smooth(noise_stats, mfspec, noise_stats->gain, num_filts);
 
-    ckd_free(gain);
-    ckd_free(signal);
-}
-
-void
-fe_vad_hangover(fe_t * fe, mfcc_t * feat, int32 is_speech, int32 store_pcm)
-{
-    if (!fe->vad_data->in_speech) {
-        fe_prespch_write_cep(fe->vad_data->prespch_buf, feat);
-        if (store_pcm)
-            fe_prespch_write_pcm(fe->vad_data->prespch_buf, fe->spch);
-    }
-    
-    /* track vad state and deal with cepstrum prespeech buffer */
-    if (is_speech) {
-        fe->vad_data->post_speech_frames = 0;
-        if (!fe->vad_data->in_speech) {
-            fe->vad_data->pre_speech_frames++;
-            /* check for transition sil->speech */
-            if (fe->vad_data->pre_speech_frames >= fe->start_speech) {
-                fe->vad_data->pre_speech_frames = 0;
-                fe->vad_data->in_speech = 1;
-            }
-        }
-    } else {
-        fe->vad_data->pre_speech_frames = 0;
-        if (fe->vad_data->in_speech) {
-            fe->vad_data->post_speech_frames++;
-            /* check for transition speech->sil */
-            if (fe->vad_data->post_speech_frames >= fe->post_speech) {
-                fe->vad_data->post_speech_frames = 0;
-                fe->vad_data->in_speech = 0;
-    	        fe_prespch_reset_cep(fe->vad_data->prespch_buf);
-        	fe_prespch_reset_pcm(fe->vad_data->prespch_buf);
-            }
-        }
-    }
+    return in_speech;
 }

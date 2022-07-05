@@ -1472,8 +1472,10 @@ fe_write_frame(fe_t * fe, mfcc_t * feat)
 {
     fe_spec_magnitude(fe);
     fe_mel_spec(fe);
+    fe_update_noisestats(fe);
     fe_mel_cep(fe, feat);
     fe_lifter(fe, feat);
+
     return 1;
 }
 
