@@ -1,3 +1,4 @@
+
 /* -*- c-basic-offset: 4 -*- */
 #include <pocketsphinx.h>
 
@@ -105,19 +106,19 @@ main(int argc, char *argv[])
     TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 46);
     itor = ps_alignment_iter_next(itor);
     TEST_EQUAL(ps_alignment_iter_get(itor)->start, 46);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 17);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 18);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 63);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 54);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 64);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 53);
     itor = ps_alignment_iter_next(itor);
     TEST_EQUAL(ps_alignment_iter_get(itor)->start, 117);
     TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 36);
     itor = ps_alignment_iter_next(itor);
     TEST_EQUAL(ps_alignment_iter_get(itor)->start, 153);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 60);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 59);
     itor = ps_alignment_iter_next(itor);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 213);
-    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 61);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->start, 212);
+    TEST_EQUAL(ps_alignment_iter_get(itor)->duration, 62);
     itor = ps_alignment_iter_next(itor);
     TEST_EQUAL(itor, NULL);
 

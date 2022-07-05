@@ -19,5 +19,5 @@ main(int argc, char *argv[])
                 "-allphone", MODELDIR "/en-us/en-us-phone.lm.bin",
                 "-beam", "1e-20", "-pbeam", "1e-10", "-allphone_ci", "no", "-lw", "2.0",
                 NULL));
-    return ps_decoder_test(config, "ALLPHONE", "SIL G OW F AO R W ER D K EH N M IY IH ZH ER Z S V SIL");
+    return ps_decoder_test(config, "ALLPHONE", "SIL G OW F AO R W ER D T AE N M IY IH ZH ER Z S V SIL");
 }
