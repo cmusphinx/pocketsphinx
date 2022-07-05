@@ -47,9 +47,8 @@ main(int argc, char *argv[])
         /* Words added above are gone, we expect that. */
         pron = ps_lookup_word(ps, "foobie");
         TEST_ASSERT(pron == NULL);
-        /* Unfortunately so are feature params if feat.params is in
-         * AM.  No way around this... */
-        TEST_ASSERT(0 != strcmp(cmd_ln_str_r(ps_get_config(ps), "-cmninit"),
+        /* Hooray! -cmninit isn't in feat.params anymore, so yes! */
+        TEST_EQUAL(0, strcmp(cmd_ln_str_r(ps_get_config(ps), "-cmninit"),
                                 "41,-4,1"));
 
 	ps_free(ps);
