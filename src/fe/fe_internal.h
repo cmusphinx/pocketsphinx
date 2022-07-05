@@ -158,7 +158,6 @@ struct fe_s {
     int is_float32;
     /* Noise removal */
     noise_stats_t *noise_stats;
-    float32 vad_threshold;
 };
 
 void fe_init_dither(int32 seed);

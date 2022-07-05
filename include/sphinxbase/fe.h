@@ -191,12 +191,6 @@ extern "C" {
     "0", \
     "Length of sin-curve for liftering, or 0 for no liftering." }, \
    \
-  { "-vad_threshold", \
-    ARG_FLOATING, \
-    "3.0", \
-    "Threshold for decision between noise and silence frames when " \
-    "-remove_noise enabled. Log-ratio between signal level and noise level." }, \
-   \
   { "-input_endian", \
     ARG_STRING, \
     NATIVE_ENDIAN, \

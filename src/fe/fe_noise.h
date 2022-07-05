@@ -53,9 +53,8 @@ void fe_reset_noisestats(noise_stats_t * noise_stats);
 void fe_free_noisestats(noise_stats_t * noise_stats);
 
 /**
- * Process frame, update noise statistics, remove noise components if needed, 
- * and return local vad decision.
+ * Process frame, update noise statistics, remove noise components if needed.
  */
-int fe_update_noisestats(fe_t * fe);
+void fe_remove_noise(fe_t *fe);
 
 #endif                          /* FE_NOISE_H */

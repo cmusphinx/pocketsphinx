@@ -135,7 +135,6 @@ fe_parse_general_params(cmd_ln_t *config, fe_t * fe)
         }
     }
 
-    fe->vad_threshold = cmd_ln_float32_r(config, "-vad_threshold");
     fe->remove_dc = cmd_ln_boolean_r(config, "-remove_dc");
     fe->remove_noise = cmd_ln_boolean_r(config, "-remove_noise");
 
