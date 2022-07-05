@@ -1,5 +1,6 @@
 #!/bin/sh
 
+: ${CMAKE_BINARY_DIR:=$(pwd)}
 . ${CMAKE_BINARY_DIR}/test/testfuncs.sh
 
 bn=`basename $0 .sh`
