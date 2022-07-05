@@ -423,7 +423,6 @@ fe_update_noisestats(fe_t * fe)
 
     if (!fe->remove_noise) {
         /* no need for further calculations if noise cancellation disabled */
-        ckd_free(noise_stats->signal);
         return in_speech;
     }
 

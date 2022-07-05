@@ -958,7 +958,6 @@ fe_shift_frame_int16(fe_t * fe, int16 const *in, int32 len)
         return -1;
     }
 
-
     if (len > fe->frame_shift)
         len = fe->frame_shift;
     offset = fe->frame_size - fe->frame_shift;
@@ -1470,9 +1469,11 @@ fe_dct3(fe_t * fe, const mfcc_t * mfcep, powspec_t * mflogspec)
 int
 fe_write_frame(fe_t * fe, mfcc_t * feat)
 {
+    int in_speech;
+    
     fe_spec_magnitude(fe);
     fe_mel_spec(fe);
-    fe_update_noisestats(fe);
+    in_speech = fe_update_noisestats(fe);
     fe_mel_cep(fe, feat);
     fe_lifter(fe, feat);
 
