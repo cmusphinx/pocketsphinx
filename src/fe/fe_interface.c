@@ -65,14 +65,6 @@ fe_parse_general_params(cmd_ln_t *config, fe_t * fe)
 {
     int j, frate, window_samples;
 
-    if (cmd_ln_boolean_r(config, "-remove_noise")) {
-        E_ERROR("-remove_noise is no longer supported");
-        return -1;
-    }
-    if (cmd_ln_boolean_r(config, "-remove_silence")) {
-        E_ERROR("-remove_silence is no longer supported");
-        return -1;
-    }
     fe->config = cmd_ln_retain(config);
     fe->sampling_rate = cmd_ln_float32_r(config, "-samprate");
     frate = cmd_ln_int32_r(config, "-frate");
@@ -292,6 +284,8 @@ fe_init_auto_r(cmd_ln_t *config)
     
     fe_build_melfilters(fe->mel_fb);
     fe_compute_melcosine(fe->mel_fb);
+    if (cmd_ln_boolean_r(config, "-remove_noise"))
+        fe->noise_stats = fe_init_noisestats(fe->mel_fb->num_filters);
 
     /* Create temporary FFT, spectrum and mel-spectrum buffers. */
     /* FIXME: Gosh there are a lot of these. */
@@ -348,6 +342,7 @@ fe_start_utt(fe_t * fe)
                fe->frame_size * sizeof(*fe->overflow_samps.s_int16));
         fe->pre_emphasis_prior.s_int16 = 0;
     }
+    fe_reset_noisestats(fe->noise_stats);
     return 0;
 }
 
@@ -630,6 +625,8 @@ fe_free(fe_t * fe)
     ckd_free(fe->mfspec);
     ckd_free(fe->overflow_samps.s_float32);
     ckd_free(fe->hamming_window);
+    if (fe->noise_stats)
+        fe_free_noisestats(fe->noise_stats);
     cmd_ln_free_r(fe->config);
     ckd_free(fe);
 

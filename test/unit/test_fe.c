@@ -222,11 +222,43 @@ main(int argc, char *argv[])
       E_INFOCONT("\n");
     }
 
+    /* Now test -remove_noise */
+    fe_free(fe);
+    cmd_ln_set_boolean_r(config, "-remove_noise", TRUE);
+    TEST_ASSERT(fe = fe_init_auto_r(config));
+    E_INFO("Testing all data at once (1024 samples)\n");
+    inptr = &buf[0];
+    nfr = 5;
+    nsamp = 1024;
+    TEST_EQUAL(0, fe_start_utt(fe));
+    TEST_ASSERT(fe_process_frames(fe, &inptr, &nsamp, cepbuf2, &nfr) >= 0);
+    E_INFO("fe_process_frames consumed nfr %d frames\n", nfr);
+    TEST_EQUAL(nfr, 4);
+    TEST_EQUAL(inptr - buf, 1024);
+    TEST_EQUAL(nsamp, 0);
+    /* And again, should get a frame here due to overflow samples. */
+    TEST_ASSERT(fe_end_utt(fe, cepbuf2[4], &nfr) >= 0);
+    E_INFO("fe_end_utt nfr %d\n", nfr);
+    TEST_EQUAL(nfr, 1);
+
+    /* output features stored in cepbuf will not be the same */
+    E_INFO("Expect differences due to -remove_noise\n");
+    for (nfr = 0; nfr < 5; ++nfr) {
+      E_INFO("%d: ", nfr);
+      for (i = 0; i < DEFAULT_NUM_CEPSTRA; ++i) {
+        E_INFOCONT("%.2f,%.2f ",
+		   MFCC2FLOAT(cepbuf1[nfr][i]),
+		   MFCC2FLOAT(cepbuf2[nfr][i]));
+      }
+      E_INFOCONT("\n");
+    }
+
+    fe_free(fe);
     ckd_free_2d(cepbuf1);
     ckd_free_2d(cepbuf2);
     fclose(raw);
-    fe_free(fe);
     cmd_ln_free_r(config);
+
 
     return 0;
 }

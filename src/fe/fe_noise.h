@@ -53,14 +53,8 @@ void fe_reset_noisestats(noise_stats_t * noise_stats);
 void fe_free_noisestats(noise_stats_t * noise_stats);
 
 /**
- * Process frame, update noise statistics, remove noise components if needed, 
- * and return local vad decision.
+ * Process frame, update noise statistics, remove noise components if needed.
  */
-void fe_track_snr(fe_t *fe, int32 *in_speech);
-
-/**
- * Updates global state based on local VAD state smoothing the estimate.
- */
-void fe_vad_hangover(fe_t *fe, mfcc_t *feat, int32 is_speech, int32 store_pcm);
+void fe_remove_noise(fe_t *fe);
 
 #endif                          /* FE_NOISE_H */

@@ -958,7 +958,6 @@ fe_shift_frame_int16(fe_t * fe, int16 const *in, int32 len)
         return -1;
     }
 
-
     if (len > fe->frame_shift)
         len = fe->frame_shift;
     offset = fe->frame_size - fe->frame_shift;
@@ -1472,8 +1471,10 @@ fe_write_frame(fe_t * fe, mfcc_t * feat)
 {
     fe_spec_magnitude(fe);
     fe_mel_spec(fe);
+    fe_remove_noise(fe);
     fe_mel_cep(fe, feat);
     fe_lifter(fe, feat);
+
     return 1;
 }
 
