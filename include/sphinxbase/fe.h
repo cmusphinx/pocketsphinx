@@ -229,10 +229,6 @@ extern "C" {
     ARG_BOOLEAN,                          \
     "no",                                        \
     "Remove noise using spectral subtraction" }, \
-  { "-remove_silence", \
-    ARG_BOOLEAN, \
-    "no", \
-    "UNSUPPORTED option, do not use" }, \
   { "-verbose",                                 \
           ARG_BOOLEAN,                          \
           "no",                                 \
