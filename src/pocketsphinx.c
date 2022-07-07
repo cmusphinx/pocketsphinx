@@ -1105,42 +1105,6 @@ ps_decode_senscr(ps_decoder_t *ps, FILE *senfh)
 }
 
 int
-ps_process_float32(ps_decoder_t *ps,
-                   float32 const *data,
-                   size_t n_samples,
-                   int no_search,
-                   int full_utt)
-{
-    int n_searchfr = 0;
-
-    if (ps->acmod->state == ACMOD_IDLE) {
-	E_ERROR("Failed to process data, utterance is not started. Use start_utt to start it\n");
-	return 0;
-    }
-
-    if (no_search)
-        acmod_set_grow(ps->acmod, TRUE);
-
-    while (n_samples) {
-        int nfr;
-
-        /* Process some data into features. */
-        if ((nfr = acmod_process_float32(ps->acmod, &data,
-                                         &n_samples, full_utt)) < 0)
-            return nfr;
-
-        /* Score and search as much data as possible */
-        if (no_search)
-            continue;
-        if ((nfr = ps_search_forward(ps)) < 0)
-            return nfr;
-        n_searchfr += nfr;
-    }
-
-    return n_searchfr;
-}
-
-int
 ps_process_raw(ps_decoder_t *ps,
                int16 const *data,
                size_t n_samples,

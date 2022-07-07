@@ -371,23 +371,6 @@ int acmod_process_raw(acmod_t *acmod,
                       size_t *inout_n_samps,
                       int full_utt);
 
-/**
- * Feed raw audio data in float32 format (in range [-1.0,1.0]) to the
- * acoustic model for scoring.
- *
- * @param inout_raw In: Pointer to buffer of raw samples
- *                  Out: Pointer to next sample to be read
- * @param inout_n_samps In: Number of samples available
- *                      Out: Number of samples remaining
- * @param full_utt If non-zero, this block represents a full
- *                 utterance and should be processed as such.
- * @return Number of frames of data processed.
- */
-int
-acmod_process_float32(acmod_t *acmod,
-                      float32 const **inout_raw,
-                      size_t *inout_n_samps,
-                      int full_utt);
 
 /**
  * Feed acoustic feature data into the acoustic model for scoring.

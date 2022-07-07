@@ -618,42 +618,6 @@ acmod_process_full_raw(acmod_t *acmod,
     return nfr;
 }
 
-
-static int
-acmod_process_full_float32(acmod_t *acmod,
-                           float32 const **inout_raw,
-                           size_t *inout_n_samps)
-{
-    int32 nfr, ntail;
-    mfcc_t **cepptr;
-
-    /* Write to logging file if any. */
-    if (acmod->rawfh)
-        fwrite(*inout_raw, 2, *inout_n_samps, acmod->rawfh);
-    /* Resize mfc_buf to fit. */
-    if (fe_process_frames_float32(acmod->fe, NULL, inout_n_samps, NULL, &nfr) < 0)
-        return -1;
-    if (acmod->n_mfc_alloc < nfr + 1) {
-        ckd_free_2d(acmod->mfc_buf);
-        acmod->mfc_buf = ckd_calloc_2d(nfr + 1, fe_get_output_size(acmod->fe),
-                                       sizeof(**acmod->mfc_buf));
-        acmod->n_mfc_alloc = nfr + 1;
-    }
-    acmod->n_mfc_frame = 0;
-    acmod->mfc_outidx = 0;
-    fe_start_utt(acmod->fe);
-    if (fe_process_frames_float32(acmod->fe, inout_raw, inout_n_samps,
-                                  acmod->mfc_buf, &nfr) < 0)
-        return -1;
-    fe_end_utt(acmod->fe, acmod->mfc_buf[nfr], &ntail);
-    nfr += ntail;
-
-    cepptr = acmod->mfc_buf;
-    nfr = acmod_process_full_cep(acmod, &cepptr, &nfr);
-    acmod->n_mfc_frame = 0;
-    return nfr;
-}
-
 /**
  * Process MFCCs that are in the internal buffer into features.
  */
@@ -743,75 +707,6 @@ acmod_process_raw(acmod_t *acmod,
         assert(inptr + ncep <= acmod->n_mfc_alloc);
         if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                               acmod->mfc_buf + inptr, &ncep) < 0)
-            return -1;
-        /* Write to logging file if any. */
-        if (acmod->rawfh) {
-            fwrite(prev_audio_inptr, 2,
-                   *inout_raw - prev_audio_inptr, acmod->rawfh);
-            prev_audio_inptr = *inout_raw;
-        }
-        acmod->n_mfc_frame += ncep;
-    alldone:
-        ;
-    }
-
-    /* Hand things off to acmod_process_cep. */
-    return acmod_process_mfcbuf(acmod);
-}
-
-int
-acmod_process_float32(acmod_t *acmod,
-                      float32 const **inout_raw,
-                      size_t *inout_n_samps,
-                      int full_utt)
-{
-    int32 ncep;
-
-    /* If this is a full utterance, process it all at once. */
-    if (full_utt)
-        return acmod_process_full_float32(acmod, inout_raw, inout_n_samps);
-
-    /* Append MFCCs to the end of any that are previously in there
-     * (in practice, there will probably be none) */
-    if (inout_n_samps && *inout_n_samps) {
-        float32 const *prev_audio_inptr = *inout_raw;
-        int inptr;
-
-        /* Total number of frames available. */
-        ncep = acmod->n_mfc_alloc - acmod->n_mfc_frame;
-        /* Where to start writing them (circular buffer) */
-        inptr = (acmod->mfc_outidx + acmod->n_mfc_frame) % acmod->n_mfc_alloc;
-
-        /* Write them in two (or more) parts if there is wraparound. */
-        while (inptr + ncep > acmod->n_mfc_alloc) {
-            int32 ncep1 = acmod->n_mfc_alloc - inptr;
-            if (fe_process_frames_float32(acmod->fe, inout_raw, inout_n_samps,
-                                          acmod->mfc_buf + inptr, &ncep1) < 0)
-                return -1;
-            /* Write to logging file if any. */
-            if (acmod->rawfh) {
-                fwrite(prev_audio_inptr, 2,
-                       *inout_raw - prev_audio_inptr,
-                       acmod->rawfh);
-                prev_audio_inptr = *inout_raw;
-            }
-            /* ncep1 now contains the number of frames actually
-             * processed.  This is a good thing, but it means we
-             * actually still might have some room left at the end of
-             * the buffer, hence the while loop.  Unfortunately it
-             * also means that in the case where we are really
-             * actually done, we need to get out totally, hence the
-             * goto. */
-            acmod->n_mfc_frame += ncep1;
-            ncep -= ncep1;
-            inptr += ncep1;
-            inptr %= acmod->n_mfc_alloc;
-            if (ncep1 == 0)
-        	goto alldone;
-        }
-        assert(inptr + ncep <= acmod->n_mfc_alloc);
-        if (fe_process_frames_float32(acmod->fe, inout_raw, inout_n_samps,
-                                      acmod->mfc_buf + inptr, &ncep) < 0)
             return -1;
         /* Write to logging file if any. */
         if (acmod->rawfh) {
