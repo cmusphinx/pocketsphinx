@@ -80,7 +80,7 @@ fe_parse_general_params(cmd_ln_t *config, fe_t * fe)
         fe->dither = 1;
         fe->dither_seed = cmd_ln_int32_r(config, "-seed");
     }
-#if WORDS_BIGENDIAN
+#ifdef WORDS_BIGENDIAN
     /* i.e. if input_endian is *not* "big", then fe->swap is true. */
     fe->swap = strcmp("big", cmd_ln_str_r(config, "-input_endian"));
 #else        
