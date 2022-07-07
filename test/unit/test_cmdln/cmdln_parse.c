@@ -18,7 +18,7 @@ const arg_t defs[] = {
 int
 main(int argc, char *argv[])
 {
-    cmd_ln_t *config = cmd_ln_parse_r(NULL, defs, argc, argv, TRUE);
+    cmd_ln_t *config = cmd_ln_parse_r(NULL, defs, argc, argv, FALSE);
     if (config == NULL)
         return 1;
     printf("%ld %s %d %f\n",

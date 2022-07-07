@@ -11,6 +11,7 @@ programs=$builddir
 
 # Automatically report failures on exit
 failures=""
+trap "fail $0" ERR
 trap "report_failures" 0
 
 run_program() {

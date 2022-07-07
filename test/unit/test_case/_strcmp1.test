@@ -1,2 +1,2 @@
-#!/bin/sh
+#!/bin/bash
 ./chgCase strcmp_nocase 2 3

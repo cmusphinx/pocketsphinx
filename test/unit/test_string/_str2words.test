@@ -1,2 +1,2 @@
-#!/bin/sh
+#!/bin/bash
 exec ./strtest str2words

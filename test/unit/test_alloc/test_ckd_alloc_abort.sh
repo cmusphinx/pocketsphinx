@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 . ${CMAKE_BINARY_DIR}/test/testfuncs.sh
 

@@ -1,8 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 . ${CMAKE_BINARY_DIR}/test/testfuncs.sh
 
 set -e
 testname=`basename $0 .test`
-./cmdln_parse_r -a 42 > $testname.out 2>&1
+"${CMAKE_BINARY_DIR}/cmdln_parse_r" -a 42 > $testname.out 2>&1
 compare_table defaults $testname.out $tests/unit/test_cmdln/$testname.res 100
 #rm -f $testname.out
