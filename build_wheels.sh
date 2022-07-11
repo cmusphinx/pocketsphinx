@@ -18,14 +18,11 @@ many224_run() {
 python setup.py clean || true
 rm -rf *.whl dist/* py/pocketsphinx.egg-info
 python -m build --sdist
-docker pull quay.io/pypa/manylinux1_x86_64
-for version in cp39-cp39 cp38-cp38 cp37-cp37m; do
-    many1_run /opt/python/$version/bin/pip wheel dist/pocketsphinx5-$VERSION.tar.gz
+docker pull quay.io/pypa/manylinux2014_x86_64
+for version in cp39-cp39 cp38-cp38 cp37-cp37m cp310-cp310; do
+    many2014_run /opt/python/$version/bin/pip -vv wheel dist/pocketsphinx5-$VERSION.tar.gz
 done
-# Currently BROKEN: see https://github.com/pypa/manylinux/issues/1347
-# docker pull quay.io/pypa/manylinux2014_x86_64
-# many2014_run /opt/python/cp310-cp310/bin/pip wheel dist/pocketsphinx5-$VERSION.tar.gz
 for w in *.whl; do
-    many1_run auditwheel repair -w dist $w
+    many2014_run auditwheel repair -w dist $w
     rm $w
 done
