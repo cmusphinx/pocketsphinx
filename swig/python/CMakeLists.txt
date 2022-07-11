@@ -1,4 +1,4 @@
-find_package(Python3 COMPONENTS Interpreter Development)
+find_package(Python3 COMPONENTS Interpreter Development.Module)
 
 # Handle where to install the resulting Python package
 if(CALL_FROM_SETUP_PY)
@@ -22,7 +22,7 @@ swig_add_library(bindings
   ../pocketsphinx.i
   )
 # Link the bindings with pocketsphinx and Python
-target_link_libraries(bindings PRIVATE pocketsphinx Python3::Python)
+target_link_libraries(bindings PRIVATE pocketsphinx Python3::Module)
 # Build the library in the proper place and not the weird random CMake place
 set_target_properties(bindings PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pocketsphinx5)
