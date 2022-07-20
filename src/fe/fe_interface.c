@@ -334,7 +334,6 @@ fe_start_utt(fe_t * fe)
     memset(fe->overflow_samps, 0,
            fe->frame_size * sizeof(*fe->overflow_samps));
     fe->pre_emphasis_prior = 0;
-    fe_reset_noisestats(fe->noise_stats);
     return 0;
 }
 

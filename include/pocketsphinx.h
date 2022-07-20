@@ -338,6 +338,32 @@ POCKETSPHINX_EXPORT
 int ps_decode_senscr(ps_decoder_t *ps, FILE *senfh);
 
 /**
+ * Start processing of the stream of speech.
+ *
+ * @deprecated This function is retained for compatibility, but its
+ * only effect is to reset the noise removal statistics, which are
+ * otherwise retained across utterances.  You do not need to call it.
+ *
+ * @return 0 for success, <0 on error.
+ */
+POCKETSPHINX_EXPORT
+int ps_start_stream(ps_decoder_t *ps);
+
+/**
+ * Checks if the last feed audio buffer contained speech.
+ *
+ * @deprecated This function is retained for compatibility but should
+ * not be considered a reliable voice activity detector.  It will
+ * always return 1 between calls to ps_start_utt() and ps_end_utt().
+ *
+ * @param ps Decoder.
+ * @return 1 if last buffer contained speech, 0 - otherwise
+ */
+POCKETSPHINX_EXPORT
+int ps_get_in_speech(ps_decoder_t *ps);
+
+
+/**
  * Start utterance processing.
  *
  * This function should be called before any utterance data is passed

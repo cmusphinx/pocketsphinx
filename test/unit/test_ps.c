@@ -41,6 +41,7 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
     fseek(rawfh, 0, SEEK_END);
     nsamps = ftell(rawfh) / sizeof(*buf);
     fseek(rawfh, 0, SEEK_SET);
+    ps_start_stream(ps);
     TEST_EQUAL(0, ps_start_utt(ps));
     nsamps = 2048;
     buf = ckd_calloc(nsamps, sizeof(*buf));
@@ -60,6 +61,7 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
            n_cpu / n_speech, n_wall / n_speech);
 
     /* Now read the whole file and produce an MFCC buffer. */
+    ps_start_stream(ps);
     clearerr(rawfh);
     fseek(rawfh, 0, SEEK_END);
     nsamps = ftell(rawfh) / sizeof(*buf);

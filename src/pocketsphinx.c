@@ -64,6 +64,7 @@
 #include "ngram_search_fwdflat.h"
 #include "allphone_search.h"
 #include "state_align_search.h"
+#include "fe/fe_internal.h"
 
 static const arg_t ps_args_def[] = {
     POCKETSPHINX_OPTIONS,
@@ -973,6 +974,25 @@ ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
     }
     ps_end_utt(ps);
     return total;
+}
+
+int
+ps_start_stream(ps_decoder_t *ps)
+{
+    if (ps->acmod == NULL)
+        return -1;
+    if (ps->acmod->fe == NULL)
+        return -1;
+    if (ps->acmod->fe->noise_stats == NULL)
+        return -1;
+    fe_reset_noisestats(ps->acmod->fe->noise_stats);
+    return 0;
+}
+
+int
+ps_get_in_speech(ps_decoder_t *ps)
+{
+    return (ps->acmod->state == ACMOD_STARTED || ps->acmod->state == ACMOD_PROCESSING);
 }
 
 int
