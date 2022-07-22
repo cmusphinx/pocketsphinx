@@ -3,6 +3,7 @@
 import unittest
 from pocketsphinx5 import LogMath, FsgModel
 
+
 class FsgTest(unittest.TestCase):
     def testfsg(self):
         lmath = LogMath()
@@ -14,6 +15,7 @@ class FsgTest(unittest.TestCase):
         self.assertEqual(fsg.word_add("world"), 1)
 
         fsg.add_silence("<sil>", 1, 0.5)
+        # TODO: Test everything else!!!
 
 
 if __name__ == "__main__":

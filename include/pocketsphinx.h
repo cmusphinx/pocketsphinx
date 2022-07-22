@@ -295,7 +295,7 @@ int ps_add_word(ps_decoder_t *ps,
                 int update);
 
 /** 
- * Lookup for the word in the dictionary and return phone transcription
+ * Look up a word in the dictionary and return phone transcription
  * for it.
  *
  * @param ps Pocketsphinx decoder
@@ -400,6 +400,7 @@ int ps_process_raw(ps_decoder_t *ps,
  * Decode acoustic feature data.
  *
  * @param ps Decoder.
+ * @param data Acoustic feature data, as returned by... something :)
  * @param no_search If non-zero, perform feature extraction but don't
  *                  do any recognition yet.  This may be necessary if
  *                  your processor has trouble doing recognition in
