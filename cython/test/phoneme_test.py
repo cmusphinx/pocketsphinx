@@ -23,20 +23,19 @@ class PhonemeTest(unittest.TestCase):
     config.set_boolean('-mmap', False)
 
     # Decode streaming data.
-    decoder = Decoder(config)
+    with open(os.path.join(DATADIR, 'goforward.raw'), 'rb') as stream:
+      decoder = Decoder(config)
+      decoder.start_utt()
+      while True:
+        buf = stream.read(1024)
+        if buf:
+          decoder.process_raw(buf, False, False)
+        else:
+          break
+      decoder.end_utt()
 
-    decoder.start_utt()
-    stream = open(os.path.join(DATADIR, 'goforward.raw'), 'rb')
-    while True:
-      buf = stream.read(1024)
-      if buf:
-        decoder.process_raw(buf, False, False)
-      else:
-        break
-    decoder.end_utt()
-
-    hypothesis = decoder.hyp()
-    print ('Best phonemes: ', [seg.word for seg in decoder.seg()])
+      hypothesis = decoder.hyp()
+      print ('Best phonemes: ', [seg.word for seg in decoder.seg()])
 
 
 if __name__ == "__main__":
