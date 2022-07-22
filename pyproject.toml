@@ -2,7 +2,7 @@
 requires = [
          "wheel",
          "setuptools>=45",
-     	 "scikit-build~=0.13",
+     	 "scikit-build~=0.15",
 	 "Cython",
          "cmake"
 ]
