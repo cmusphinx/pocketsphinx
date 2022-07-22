@@ -119,6 +119,12 @@ cdef class Config:
         else:
             cmd_ln_set_str_r(self.cmd_ln, key.encode('utf-8'), val.encode('utf-8'))
 
+    def set_string_extra(self, key, val):
+        if val == None:
+            cmd_ln_set_str_extra_r(self.cmd_ln, key.encode('utf-8'), NULL)
+        else:
+            cmd_ln_set_str_extra_r(self.cmd_ln, key.encode('utf-8'), val.encode('utf-8'))
+
     def exists(self, key):
         return key in self
 
@@ -506,7 +512,29 @@ cdef class Decoder:
                           of words, to speed things up.
 
         """
+        if not isinstance(word, bytes):
+            word = word.encode("utf-8")
+        if not isinstance(phones, bytes):
+            phones = phones.encode("utf-8")
         return ps_add_word(self.ps, word, phones, update)
+
+    def lookup_word(self, word):
+        """Look up a word in the dictionary and return phone transcription
+        for it.
+
+        Args:
+            word(str|bytes): Text of word to search for.
+        Returns:
+            str: Space-separated list of phones, or None if not found.
+        """
+        cdef const char *cphones
+        if not isinstance(word, bytes):
+            word = word.encode("utf-8")
+        cphones = ps_lookup_word(self.ps, word)
+        if cphones == NULL:
+            return None
+        else:
+            return cphones.decode("utf-8")
 
     def seg(self):
         """Get current word segmentation.
