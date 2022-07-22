@@ -799,6 +799,15 @@ cdef class Decoder:
         if ps_reinit_feat(self.ps, cconfig) < 0:
             raise RuntimeError("Failed to reinitialize feature extraction")
 
+    def start_stream(self):
+        """Reset noise statistics.
+
+        This method can be called at the beginning of a new audio
+        stream (but this is not necessary)."""
+        cdef int rv = ps_start_stream(self.ps)
+        if rv < 0:
+            raise RuntimeError("Failed to start audio stream")
+
     def start_utt(self):
         """Start processing raw audio input.
 
@@ -808,6 +817,15 @@ cdef class Decoder:
         """
         if ps_start_utt(self.ps) < 0:
             raise RuntimeError, "Failed to start utterance processing"
+
+    def get_in_speech(self):
+        """Return speech status of previously passed buffer.
+
+        This method is retained for compatibility, but it will always
+        return True as long as `ps_start_utt` has been previously
+        called.
+        """
+        return ps_get_in_speech(self.ps)
 
     def process_raw(self, data, no_search=False, full_utt=False):
         """Process a block of raw audio.
@@ -842,7 +860,7 @@ cdef class Decoder:
         rv = ps_process_cep(self.ps, feats, nfr, no_search, full_utt)
         ckd_free(feats)
         if rv < 0:
-            raise RuntimeError, "Failed to process %d frames of audio data" % nfr
+            raise RuntimeError, "Failed to process %d frames of MFCC data" % nfr
 
     def end_utt(self):
         """Finish processing raw audio input.
