@@ -10,6 +10,10 @@ DATADIR = os.path.join(os.path.dirname(__file__),
                        "../../test/data")
 
 class TestJsgf(unittest.TestCase):
+    def test_create_jsgf(self):
+        jsgf = Jsgf(os.path.join(DATADIR, 'goforward.gram'))
+        del jsgf
+        
     def test_jsgf(self):
         # Create a decoder with certain model
         config = Decoder.default_config()

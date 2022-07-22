@@ -56,7 +56,8 @@ cdef class Config:
  """
     cdef cmd_ln_t *cmd_ln
 
-    def __cinit__(self, *args, **kwargs):
+    # This is __init__ so we can bypass it if necessary
+    def __init__(self, *args, **kwargs):
         cdef char **argv
         if args or kwargs:
             args = [str(k).encode('utf-8')
@@ -82,8 +83,11 @@ cdef class Config:
         else:
             self.cmd_ln = cmd_ln_parse_r(NULL, ps_args(), 0, NULL, 0)
 
-    def __init__(self, *args, **kwargs):
-        pass
+    @staticmethod
+    cdef create_from_ptr(cmd_ln_t *cmd_ln):
+        cdef Config self = Config.__new__(Config)
+        self.cmd_ln = cmd_ln
+        return self
 
     def __dealloc__(self):
         cmd_ln_free_r(self.cmd_ln)
@@ -264,8 +268,8 @@ cdef class Config:
             elif base_type == ARG_BOOLEAN:
                 arg_type = bool
             else:
-                raise RuntimeError("Unknown type %d in argument %s"
-                                   % (base_type, name))
+                raise ValueError("Unknown type %d in argument %s"
+                                 % (base_type, name))
             arg = arg + 1
             yield pocketsphinx5.Arg(name=name, default=default, doc=doc,
                                     type=arg_type, required=required)
@@ -461,23 +465,241 @@ cdef class NBestList:
                           logmath_exp(self.lmath, prob))
 
 
+cdef class NGramModel:
+    """N-Gram language model."""
+    cdef ngram_model_t *lm
+
+    def __init__(self, Config config, LogMath logmath, str path):
+        cdef ngram_model_t *lm = ngram_model_read(config.cmd_ln,
+                                                  path.encode("utf-8"),
+                                                  NGRAM_AUTO,
+                                                  logmath.lmath)
+        if lm == NULL:
+            raise ValueError("Unable to create language model")
+        self.lm = lm
+
+    @staticmethod
+    def readfile(str path):
+        cdef logmath_t *lmath = logmath_init(1.0001, 0, 0)
+        cdef ngram_model_t *lm = ngram_model_read(NULL, path.encode("utf-8"),
+                                                  NGRAM_AUTO, lmath)
+        logmath_free(lmath)
+        if lm == NULL:
+            raise ValueError("Unable to read language model from %s" % path)
+        return NGramModel.create_from_ptr(lm)
+
+    @staticmethod
+    cdef create_from_ptr(ngram_model_t *lm):
+        cdef NGramModel self = NGramModel.__new__(NGramModel)
+        self.lm = lm
+        return self
+
+    def __dealloc__(self):
+        if self.lm != NULL:
+            ngram_model_free(self.lm)
+
+    def write(self, str path, ngram_file_type_t ftype=NGRAM_AUTO):
+        cdef int rv = ngram_model_write(self.lm, path.encode(), ftype)
+        if rv < 0:
+            raise RuntimeError("Failed to write language model to %s" % path)
+
+    @staticmethod
+    def str_to_type(str typestr):
+        return ngram_str_to_type(typestr.encode("utf-8"))
+
+    @staticmethod
+    def type_to_str(ngram_file_type_t _type):
+        return ngram_type_to_str(_type).decode("utf-8")
+
+    def casefold(self, ngram_case_t kase):
+        cdef int rv = ngram_model_casefold(self.lm, kase)
+        if rv < 0:
+            raise RuntimeError("Failed to case-fold language model")
+
+    def size(self):
+        return ngram_model_get_size(self.lm)
+
+    def add_word(self, word, float weight):
+        if not isinstance(word, bytes):
+            word = word.encode("utf-8")
+        return ngram_model_add_word(self.lm, word, weight)
+
+    def prob(self, words):
+        cdef const char **cwords
+        cdef int prob
+        bwords = [w.encode("utf-8") for w in words]
+        cwords = <const char **>malloc(len(bwords))
+        for i, w in enumerate(bwords):
+            cwords[i] = w
+        prob = ngram_prob(self.lm, cwords, len(words))
+        free(cwords)
+        return prob
+
+
 cdef class FsgModel:
     """Finite-state recognition grammar.
-
-    Note that you *cannot* create one of these directly, as it depends
-    on some internal configuration from the `Decoder`.  Use the
-    factory methods such as `create_fsg` or `parse_jsgf` instead.
     """
     cdef fsg_model_t *fsg
 
-    def __cinit__(self):
-        # Unsure this is the right way to do this.  The FsgModel
-        # constructor isn't meant to be called from Python.
-        self.fsg = NULL
+    def __init__(self, name, LogMath logmath, float lw, int nstate):
+        if not isinstance(name, bytes):
+            name = name.encode("utf-8")
+        self.fsg = fsg_model_init(name, logmath.lmath,
+                                  lw, nstate)
+        if self.fsg == NULL:
+            raise ValueError("Failed to initialize FSG model")
+
+    @staticmethod
+    def readfile(str filename, LogMath logmath, float lw):
+        cdef fsg_model_t *cfsg
+        cdef FsgModel fsg
+        cfsg = fsg_model_readfile(filename.encode(), logmath.lmath, lw)
+        return FsgModel.create_from_ptr(cfsg)
+
+    @staticmethod
+    def jsgf_read_file(str filename, LogMath logmath, float lw):
+        cdef fsg_model_t *cfsg
+        cdef FsgModel fsg
+        cfsg = jsgf_read_file(filename.encode(), logmath.lmath, lw)
+        return FsgModel.create_from_ptr(cfsg)
+
+    @staticmethod
+    cdef create_from_ptr(fsg_model_t *fsg):
+        cdef FsgModel self = FsgModel.__new__(FsgModel)
+        self.fsg = fsg
+        return self
 
     def __dealloc__(self):
         fsg_model_free(self.fsg)
 
+    def word_id(self, word):
+        if not isinstance(word, bytes):
+            word = word.encode("utf-8")
+        return fsg_model_word_id(self.fsg, word)
+
+    def word_str(self, wid):
+        return fsg_model_word_str(self.fsg, wid).decode("utf-8")
+
+    def word_add(self, word):
+        if not isinstance(word, bytes):
+            word = word.encode("utf-8")
+        return fsg_model_word_add(self.fsg, word)
+
+    def trans_add(self, int src, int dst, int logp, int wid):
+        fsg_model_trans_add(self.fsg, src, dst, logp, wid)
+
+    def null_trans_add(self, int src, int dst, int logp):
+        return fsg_model_null_trans_add(self.fsg, src, dst, logp)
+
+    def tag_trans_add(self, int src, int dst, int logp, int wid):
+        return fsg_model_tag_trans_add(self.fsg, src, dst, logp, wid)
+
+    def add_silence(self, silword, int state, float silprob):
+        if not isinstance(silword, bytes):
+            silword = silword.encode("utf-8")
+        return fsg_model_add_silence(self.fsg, silword, state, silprob)
+
+    def add_alt(self, baseword, altword):
+        if not isinstance(baseword, bytes):
+            baseword = baseword.encode("utf-8")
+        if not isinstance(altword, bytes):
+            altword = altword.encode("utf-8")
+        return fsg_model_add_alt(self.fsg, baseword, altword)
+
+    def writefile(self, str path):
+        cpath = path.encode()
+        fsg_model_writefile(self.fsg, cpath)
+
+    def writefile_fsm(self, str path):
+        cpath = path.encode()
+        fsg_model_writefile_fsm(self.fsg, cpath)
+
+    def writefile_symtab(self, str path):
+        cpath = path.encode()
+        fsg_model_writefile_symtab(self.fsg, cpath)
+
+
+cdef class JsgfRule:
+    """JSGF Rule.
+
+    Do not create this class directly."""
+    cdef jsgf_rule_t *rule
+
+    @staticmethod
+    cdef create_from_ptr(jsgf_rule_t *rule):
+        cdef JsgfRule self = JsgfRule.__new__(JsgfRule)
+        self.rule = rule
+        return self
+
+    def get_name(self):
+        return jsgf_rule_name(self.rule).decode("utf-8")
+
+    def is_public(self):
+        return jsgf_rule_public(self.rule)
+
+
+cdef class Jsgf:
+    """JSGF parser.
+    """
+    cdef jsgf_t *jsgf
+    
+    def __init__(self, str path, Jsgf parent=None):
+        cdef jsgf_t *cparent
+        cpath = path.encode()
+        if parent is not None:
+            cparent = parent.jsgf
+        else:
+            cparent = NULL
+        self.jsgf = jsgf_parse_file(cpath, cparent)
+        if self.jsgf == NULL:
+            raise ValueError("Failed to parse %s as JSGF" % path)
+
+    def __dealloc__(self):
+        if self.jsgf != NULL:
+            jsgf_grammar_free(self.jsgf)
+
+    def get_name(self):
+        return jsgf_grammar_name(self.jsgf).decode("utf-8")
+
+    def get_rule(self, name):
+        cdef jsgf_rule_t *rule = jsgf_get_rule(self.jsgf, name.encode("utf-8"))
+        return JsgfRule.create_from_ptr(rule)
+
+    def build_fsg(self, JsgfRule rule, LogMath logmath, float lw):
+        cdef fsg_model_t *fsg = jsgf_build_fsg(self.jsgf, rule.rule, logmath.lmath, lw)
+        return FsgModel.create_from_ptr(fsg)
+
+
+cdef class Lattice:
+    """Word lattice."""
+    cdef ps_lattice_t *dag
+
+    @staticmethod
+    def readfile(str path):
+        cdef ps_lattice_t *dag = ps_lattice_read(NULL, path.encode("utf-8"))
+        if dag == NULL:
+            raise ValueError("Unable to read lattice from %s" % path)
+        return Lattice.create_from_ptr(dag)
+
+    @staticmethod
+    cdef create_from_ptr(ps_lattice_t *dag):
+        cdef Lattice self = Lattice.__new__(Lattice)
+        self.dag = dag
+        return self
+
+    def __dealloc__(self):
+        if self.dag != NULL:
+            ps_lattice_free(self.dag)
+    
+    def write(self, str path):
+        rv = ps_lattice_write(self.dag, path.encode("utf-8"))
+        if rv < 0:
+            raise RuntimeError("Failed to write lattice to %s" % path)
+    
+    def write_htk(self, str path):
+        rv = ps_lattice_write_htk(self.dag, path.encode("utf-8"))
+        if rv < 0:
+            raise RuntimeError("Failed to write lattice to %s" % path)
 
 cdef class Decoder:
     """Main class for speech recognition and alignment in PocketSphinx.
@@ -503,33 +725,19 @@ cdef class Decoder:
     cdef ps_decoder_t *ps
     cdef public Config config
 
-    def __cinit__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         if len(args) == 1 and isinstance(args[0], Config):
             self.config = args[0]
         else:
             self.config = Config(*args, **kwargs)
         if self.config is None:
-            raise RuntimeError, "Failed to parse argument list"
+            raise ValueError, "Failed to parse argument list"
         self.ps = ps_init(self.config.cmd_ln)
         if self.ps == NULL:
             raise RuntimeError, "Failed to initialize PocketSphinx"
 
-    def __init__(self, *args, **kwargs):
-        pass
-
     def __dealloc__(self):
         ps_free(self.ps)
-
-    @classmethod
-    def default_config(_):
-        """Return default configuraiton.
-
-        Actually this does the same thing as just creating a `Config`.
-
-        Returns:
-            Config: Newly created default configuration.
-        """
-        return Config()
 
     def reinit(self, Config config=None):
         """Reinitialize the decoder.
@@ -737,17 +945,10 @@ cdef class Decoder:
             FsgModel: Newly loaded finite-state grammar.
 
         """
-        cdef logmath_t *lmath
         cdef float lw
 
         lw = cmd_ln_float_r(self.config.cmd_ln, "-lw")
-        lmath = ps_get_logmath(self.ps)
-        fsg = FsgModel()
-        # FIXME: not the proper way to encode filenames on Windows, I think
-        fsg.fsg = fsg_model_readfile(filename.encode(), lmath, lw)
-        if fsg.fsg == NULL:
-            raise RuntimeError("Failed to read FSG from %s" % filename)
-        return fsg
+        return FsgModel.readfile(filename, self.get_logmath(), lw)
 
     def read_jsgf(self, filename):
         """Read a grammar from a JSGF file.
@@ -762,16 +963,10 @@ cdef class Decoder:
             FsgModel: Newly loaded finite-state grammar.
 
         """
-        cdef logmath_t *lmath
         cdef float lw
 
         lw = cmd_ln_float_r(self.config.cmd_ln, "-lw")
-        lmath = ps_get_logmath(self.ps)
-        fsg = FsgModel()
-        fsg.fsg = jsgf_read_file(filename.encode(), lmath, lw)
-        if fsg.fsg == NULL:
-            raise RuntimeError("Failed to read JSGF from %s" % filename)
-        return fsg
+        return FsgModel.jsgf_read_file(filename, self.get_logmath(), lw)
 
     def create_fsg(self, name, start_state, final_state, transitions):
         """Create a finite-state grammar.
@@ -805,29 +1000,27 @@ cdef class Decoder:
             FsgModel: Newly created finite-state grammar.
 
         """
-        cdef logmath_t *lmath
         cdef float lw
         cdef int wid
 
         lw = cmd_ln_float_r(self.config.cmd_ln, "-lw")
-        lmath = ps_get_logmath(self.ps)
-        fsg = FsgModel()
+        lmath = self.get_logmath()
         n_state = max(itertools.chain(*((t[0], t[1]) for t in transitions))) + 1
-        fsg.fsg = fsg_model_init(name.encode("utf-8"), lmath, lw, n_state)
-        fsg.fsg.start_state = start_state
-        fsg.fsg.final_state = final_state
+        fsg = FsgModel(name, lmath, lw, n_state)
+        fsg.set_start_state(start_state)
+        fsg.set_final_state(final_state)
         for t in transitions:
             source, dest, prob = t[0:3]
             if len(t) > 3:
                 word = t[3]
-                wid = fsg_model_word_add(fsg.fsg, word.encode("utf-8"))
+                wid = fsg.word_add(word)
                 if wid == -1:
-                    raise RuntimeError("Failed to add word to FSG: %s" % word)
-                fsg_model_trans_add(fsg.fsg, source, dest,
-                                    logmath_log(lmath, prob), wid)
+                    raise ValueError("Failed to add word to FSG: %s" % word)
+                fsg.trans_add(source, dest,
+                              lmath.log(prob), wid)
             else:
-                fsg_model_null_trans_add(fsg.fsg, source, dest,
-                                         logmath_log(lmath, prob))
+                fsg.null_trans_add(source, dest,
+                                   lmath.log(prob))
         return fsg
 
     def parse_jsgf(self, jsgf_string, toprule=None):
@@ -854,12 +1047,12 @@ cdef class Decoder:
             jsgf_string = jsgf_string.encode("utf-8")
         jsgf = jsgf_parse_string(jsgf_string, NULL)
         if jsgf == NULL:
-            raise RuntimeError("Failed to parse JSGF")
+            raise ValueError("Failed to parse JSGF")
         if toprule is not None:
             rule = jsgf_get_rule(jsgf, toprule.encode('utf-8'))
             if rule == NULL:
                 jsgf_grammar_free(jsgf)
-                raise RuntimeError("Failed to find top rule %s" % toprule)
+                raise ValueError("Failed to find top rule %s" % toprule)
         else:
             rule = jsgf_get_public_rule(jsgf)
             if rule == NULL:
@@ -867,22 +1060,31 @@ cdef class Decoder:
                 raise RuntimeError("No public rules found in JSGF")
         lw = cmd_ln_float_r(self.config.cmd_ln, "-lw")
         lmath = ps_get_logmath(self.ps)
-        fsg = FsgModel()
-        fsg.fsg = jsgf_build_fsg(jsgf, rule, lmath, lw)
+        cdef fsg_model_t *cfsg = jsgf_build_fsg(jsgf, rule, lmath, lw)
         jsgf_grammar_free(jsgf)
-        return fsg
+        return FsgModel.create_from_ptr(cfsg)
 
-    def set_fsg(self, FsgModel fsg):
+    def get_fsg(self, str name):
+        cdef fsg_model_t *fsg = ps_get_fsg(self.ps, name.encode("utf-8"))
+        if fsg == NULL:
+            return None
+        return FsgModel.create_from_ptr(fsg_model_retain(fsg))
+    
+    def set_fsg(self, str name, FsgModel fsg):
         """Set the grammar for recognition.
 
         Args:
             fsg(FsgModel): Previously loaded or constructed grammar.
 
         """
-        if ps_set_fsg(self.ps, fsg_model_name(fsg.fsg), fsg.fsg) != 0:
+        if name is None:
+            cname = fsg_model_name(fsg.fsg)
+        else:
+            cname = name.encode("utf-8")
+        if ps_set_fsg(self.ps, cname, fsg.fsg) != 0:
             raise RuntimeError("Failed to set FSG in decoder")
 
-    def set_jsgf_file(self, filename, name="_default"):
+    def set_jsgf_file(self, name, filename):
         """Set the grammar for recognition from a JSGF file.
 
         Args:
@@ -893,7 +1095,7 @@ cdef class Decoder:
                             filename.encode()) != 0:
             raise RuntimeError("Failed to set JSGF from %s" % filename)
 
-    def set_jsgf_string(self, jsgf_string, name="_default"):
+    def set_jsgf_string(self, name, jsgf_string):
         """Set the grammar for recognition from JSGF bytes or string.
 
         Args:
@@ -904,9 +1106,124 @@ cdef class Decoder:
         if not isinstance(jsgf_string, bytes):
             jsgf_string = jsgf_string.encode("utf-8")
         if ps_set_jsgf_string(self.ps, name.encode("utf-8"), jsgf_string) != 0:
-            raise RuntimeError("Failed to parse JSGF in decoder")
+            raise ValueError("Failed to parse JSGF in decoder")
+
+    def get_kws(self, str name):
+        return ps_get_kws(self.ps, name.encode("utf-8"))
+
+    def set_kws(self, str name, str keyfile):
+        cdef int rv = ps_set_kws(self.ps, name.encode("utf-8"), keyfile.encode())
+        if rv < 0:
+            return RuntimeError("Failed to set keyword search %s from %s"
+                                % (name, keyfile))
+
+    def set_keyphrase(self, str name, str keyphrase):
+        cdef int rv = ps_set_keyphrase(self.ps, name.encode("utf-8"),
+                                       keyphrase.encode("utf-8"))
+        if rv < 0:
+            return RuntimeError("Failed to set keyword search %s from phrase %s"
+                                % (name, keyphrase))
+    
+    def set_allphone_file(self, str name, str lmfile = None):
+        cdef int rv
+        if lmfile is None:
+            rv = ps_set_allphone_file(self.ps, name.encode("utf-8"), NULL)
+        else:
+            rv = ps_set_allphone_file(self.ps, name.encode("utf-8"), lmfile.encode())
+        if rv < 0:
+            return RuntimeError("Failed to set allphone search %s from %s"
+                                % (name, lmfile))
+    def get_lattice(self):
+        cdef ps_lattice_t *lattice = ps_get_lattice(self.ps)
+        if lattice == NULL:
+            return None
+        return Lattice.create_from_ptr(ps_lattice_retain(lattice))
+
+    def get_config(self):
+        return self.config
+
+    # These two do not belong here but they're here for compatibility
+    @staticmethod
+    def default_config():
+        return Config()
+
+    @staticmethod
+    def file_config(str path):
+        cdef cmd_ln_t *config = cmd_ln_parse_file_r(NULL, ps_args(),
+                                                    path.encode(), False)
+        if config == NULL:
+            return None
+        return Config.create_from_ptr(config)
+    
+    def load_dict(self, str dict_path, str fdict_path = None, str _format = None):
+        cdef int rv
+        # THIS IS VERY ANNOYING, CYTHON
+        cdef const char *cformat = NULL
+        cdef const char *cdict = NULL
+        cdef const char *cfdict = NULL
+        if _format is not None:
+            spam = _format.encode("utf-8")
+            cformat = spam
+        if dict_path is not None:
+            eggs = dict_path.encode()
+            cdict = eggs
+        if fdict_path is not None:
+            bacon = fdict_path.encode()
+            cfdict = bacon
+        rv = ps_load_dict(self.ps, cdict, cfdict, cformat)
+        if rv < 0:
+            raise RuntimeError("Failed to load dictionary from %s and %s"
+                               % (dict_path, fdict_path))
+
+    def save_dict(self, str dict_path, str _format = None):
+        cdef int rv
+        cdef const char *cformat = NULL
+        cdef const char *cdict = NULL
+        if _format is not None:
+            spam = _format.encode("utf-8")
+            cformat = spam
+        if dict_path is not None:
+            eggs = dict_path.encode()
+            cdict = eggs
+        rv = ps_save_dict(self.ps, cdict, cformat)
+        if rv < 0:
+            raise RuntimeError("Failed to save dictionary to %s" % dict_path)
+
+    def get_lm(self, str name):
+        cdef ngram_model_t *lm = ps_get_lm(self.ps, name.encode("utf-8"))
+        if lm == NULL:
+            return None
+        return NGramModel.create_from_ptr(ngram_model_retain(lm))
+
+    def set_lm(self, str name, NGramModel lm):
+        cdef int rv = ps_set_lm(self.ps, name.encode("utf-8"), lm.lm)
+        if rv < 0:
+            raise RuntimeError("Failed to set language model %s" % name)
+
+    def set_lm_file(self, str name, str path):
+        cdef int rv = ps_set_lm_file(self.ps, name.encode("utf-8"), path.encode())
+        if rv < 0:
+            raise RuntimeError("Failed to set language model %s from %s"
+                               % (name, path))
 
     def get_logmath(self):
         """Get the LogMath object for this decoder."""
         cdef logmath_t *lmath = ps_get_logmath(self.ps)
         return LogMath.create(lmath)
+
+    def set_search(self, str search_name):
+        cdef int rv = ps_set_search(self.ps, search_name.encode("utf-8"))
+        if rv < 0:
+            raise KeyError("Unable to set search %s" % search_name)
+
+    def unset_search(self, str search_name):
+        cdef int rv = ps_unset_search(self.ps, search_name.encode("utf-8"))
+        if rv < 0:
+            raise KeyError("Unable to unset search %s" % search_name)
+
+    def get_search(self):
+        return ps_get_search(self.ps).decode("utf-8")
+
+    def n_frames(self):
+        return ps_get_n_frames(self.ps)
+
