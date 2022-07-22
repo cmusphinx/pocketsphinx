@@ -1,2 +1,3 @@
-cmake-build-extension~=0.5.1
-pytest~=7.1.2
+cmake~=3.22.0
+scikit-build~=0.15.0
+Cython==0.29.30
