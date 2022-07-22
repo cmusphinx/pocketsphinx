@@ -107,8 +107,3 @@ set_target_properties(pocketsphinx PROPERTIES
 set_property(TARGET pocketsphinx PROPERTY
   COMPILE_DEFINITIONS POCKETSPHINX_EXPORTS;SPHINXBASE_EXPORTS
 )
-
-# No, do not install this when building Python
-if(NOT CALL_FROM_SETUP_PY)
-  install(TARGETS pocketsphinx LIBRARY)
-endif()
