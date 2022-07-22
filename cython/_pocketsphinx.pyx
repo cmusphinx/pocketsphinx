@@ -303,8 +303,7 @@ cdef class LogMath:
 
     PocketSphinx does various computations internally using integer
     math in logarithmic space with a very small base (usually 1.0001
-    or 1.0003).  In general we try to hide this detail from the user,
-    but some legacy APIs require it."""
+    or 1.0003)."""
     cdef logmath_t *lmath
 
     # This is __init__ and *not* __cinit__ because we do not want it
@@ -313,9 +312,9 @@ cdef class LogMath:
         self.lmath = logmath_init(base, shift, use_table)
 
     @staticmethod
-    cdef create(logmath_t *lmath):
+    cdef create_from_ptr(logmath_t *lmath):
         cdef LogMath self = LogMath.__new__(LogMath)
-        self.lmath = logmath_retain(lmath)
+        self.lmath = lmath
         return self
 
     def __dealloc__(self):
@@ -1247,7 +1246,7 @@ cdef class Decoder:
     def get_logmath(self):
         """Get the LogMath object for this decoder."""
         cdef logmath_t *lmath = ps_get_logmath(self.ps)
-        return LogMath.create(lmath)
+        return LogMath.create_from_ptr(logmath_retain(lmath))
 
     def set_search(self, str search_name):
         cdef int rv = ps_set_search(self.ps, search_name.encode("utf-8"))
