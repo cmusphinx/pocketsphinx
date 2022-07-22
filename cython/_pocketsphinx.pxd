@@ -26,6 +26,7 @@ cdef extern from "sphinxbase/logmath.h":
         pass
     
     logmath_t *logmath_init(double base, int shift, int use_table)
+    logmath_t *logmath_retain(logmath_t *lmath)
     int logmath_free(logmath_t *lmath)
 
     int logmath_log(logmath_t *lmath, double p)
@@ -140,12 +141,18 @@ cdef extern from "pocketsphinx.h":
         pass
     ctypedef struct ps_seg_t:
         pass
+    ctypedef struct ps_nbest_t:
+        pass
+    ctypedef struct ps_lattice_t:
+        pass
     arg_t *ps_args()
     ps_decoder_t *ps_init(cmd_ln_t *config)
     int ps_free(ps_decoder_t *ps)
     int ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     int ps_reinit_feat(ps_decoder_t *ps, cmd_ln_t *config)
     logmath_t *ps_get_logmath(ps_decoder_t *ps)
+    int ps_start_stream(ps_decoder_t *ps)
+    int ps_get_in_speech(ps_decoder_t *ps)
     int ps_start_utt(ps_decoder_t *ps)
     int ps_process_raw(ps_decoder_t *ps,
                        const short *data, size_t n_samples,
@@ -164,3 +171,13 @@ cdef extern from "pocketsphinx.h":
     int ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
     int ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
     int ps_set_jsgf_string(ps_decoder_t *ps, const char *name, const char *jsgf_string)
+    ps_nbest_t *ps_nbest(ps_decoder_t *ps)
+    ps_nbest_t *ps_nbest_next(ps_nbest_t *nbest)
+    const char *ps_nbest_hyp(ps_nbest_t *nbest, int *out_score)
+    ps_seg_t *ps_nbest_seg(ps_nbest_t *nbest)
+    void ps_nbest_free(ps_nbest_t *nbest)
+    ps_lattice_t *ps_get_lattice(ps_decoder_t *ps)
+    void ps_get_utt_time(ps_decoder_t *ps, double *out_nspeech,
+                         double *out_ncpu, double *out_nwall)
+    void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
+                         double *out_ncpu, double *out_nwall)
