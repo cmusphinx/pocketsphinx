@@ -17,5 +17,6 @@ class FsgTest(unittest.TestCase):
         fsg.add_silence("<sil>", 1, 0.5)
         # TODO: Test everything else!!!
 
+
 if __name__ == "__main__":
     unittest.main()

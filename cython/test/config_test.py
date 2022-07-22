@@ -4,8 +4,7 @@ import os
 from pocketsphinx5 import Decoder
 import unittest
 
-MODELDIR = os.path.join(os.path.dirname(__file__),
-                        "../../model")
+MODELDIR = os.path.join(os.path.dirname(__file__), "../../model")
 
 
 class TestConfig(unittest.TestCase):

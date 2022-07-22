@@ -4,14 +4,13 @@ import os
 from pocketsphinx5 import Decoder
 import unittest
 
-MODELDIR = os.path.join(os.path.dirname(__file__),
-                        "../../model")
-DATADIR = os.path.join(os.path.dirname(__file__),
-                       "../../test/data")
+MODELDIR = os.path.join(os.path.dirname(__file__), "../../model")
+DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")
+
 
 class TestDecoder(unittest.TestCase):
     def _run_decode(self, decoder, expect_fail=False):
-        with open(os.path.join(DATADIR, 'goforward.raw'), "rb") as fh:
+        with open(os.path.join(DATADIR, "goforward.raw"), "rb") as fh:
             buf = fh.read()
             decoder.start_utt()
             decoder.process_raw(buf, no_search=False, full_utt=True)
@@ -38,54 +37,61 @@ class TestDecoder(unittest.TestCase):
             self.assertEqual(words, "go forward ten meters".split())
 
     def test_decoder(self):
-      config = Decoder.default_config()
-      config.set_string('-hmm', os.path.join(MODELDIR, 'en-us/en-us'))
-      config.set_string('-lm', os.path.join(MODELDIR, 'en-us/en-us.lm.bin'))
-      config.set_string('-dict', os.path.join(MODELDIR, 'en-us/cmudict-en-us.dict'))
-      decoder = Decoder(config)
+        config = Decoder.default_config()
+        config.set_string("-hmm", os.path.join(MODELDIR, "en-us/en-us"))
+        config.set_string("-lm", os.path.join(MODELDIR, "en-us/en-us.lm.bin"))
+        config.set_string("-dict", os.path.join(MODELDIR, "en-us/cmudict-en-us.dict"))
+        decoder = Decoder(config)
 
-      lmath = decoder.get_logmath()
-      print("log(1e-150) = ", lmath.log(1e-150))
-      print("Pronunciation for word 'hello' is ", decoder.lookup_word("hello"))
-      self.assertEqual("HH AH L OW", decoder.lookup_word("hello"))
-      print("Pronunciation for word 'abcdf' is ", decoder.lookup_word("abcdf"))
-      self.assertEqual(None, decoder.lookup_word("abcdf"))
+        lmath = decoder.get_logmath()
+        print("log(1e-150) = ", lmath.log(1e-150))
+        print("Pronunciation for word 'hello' is ", decoder.lookup_word("hello"))
+        self.assertEqual("HH AH L OW", decoder.lookup_word("hello"))
+        print("Pronunciation for word 'abcdf' is ", decoder.lookup_word("abcdf"))
+        self.assertEqual(None, decoder.lookup_word("abcdf"))
 
-      self._run_decode(decoder);
+        self._run_decode(decoder)
 
-      # Access N best decodings.
-      print ('Best 10 hypothesis: ')
-      for best, i in zip(decoder.nbest(), range(10)):
-          print (best.hypstr, best.score)
+        # Access N best decodings.
+        print("Best 10 hypothesis: ")
+        for best, i in zip(decoder.nbest(), range(10)):
+            print(best.hypstr, best.score)
 
-      with open(os.path.join(DATADIR, 'goforward.mfc'), 'rb') as stream:
-          stream.read(4)
-          buf = stream.read(13780)
-          decoder.start_utt()
-          decoder.process_cep(buf, False, True)
-          decoder.end_utt()
-          hypothesis = decoder.hyp()
-          print ('Best hypothesis: ', hypothesis.hypstr, " model score: ", hypothesis.best_score, " confidence: ", hypothesis.prob)
-          self.assertEqual("go forward ten meters", decoder.hyp().hypstr)
+        with open(os.path.join(DATADIR, "goforward.mfc"), "rb") as stream:
+            stream.read(4)
+            buf = stream.read(13780)
+            decoder.start_utt()
+            decoder.process_cep(buf, False, True)
+            decoder.end_utt()
+            hypothesis = decoder.hyp()
+            print(
+                "Best hypothesis: ",
+                hypothesis.hypstr,
+                " model score: ",
+                hypothesis.best_score,
+                " confidence: ",
+                hypothesis.prob,
+            )
+            self.assertEqual("go forward ten meters", decoder.hyp().hypstr)
 
     def test_reinit(self):
-      config = Decoder.default_config()
-      config.set_string('-hmm', os.path.join(MODELDIR, 'en-us/en-us'))
-      config.set_string('-lm', os.path.join(MODELDIR, 'en-us/en-us.lm.bin'))
-      config.set_string('-dict', os.path.join(MODELDIR, 'en-us/cmudict-en-us.dict'))
-      decoder = Decoder(config)
-      decoder.add_word("_forward", "F AO R W ER D", True)
-      self._run_decode(decoder);
-      # should preserve dict words, but make decoding fail
-      config.set_float("-samprate", 48000)
-      decoder.reinit_feat(config)
-      self.assertEqual("F AO R W ER D", decoder.lookup_word("_forward"))
-      self._run_decode(decoder, expect_fail=True);
-      config.set_float("-samprate", 16000)
-      # should erase dict words
-      decoder.reinit(config)
-      self.assertEqual(None, decoder.lookup_word("_forward"))
-      self._run_decode(decoder);
+        config = Decoder.default_config()
+        config.set_string("-hmm", os.path.join(MODELDIR, "en-us/en-us"))
+        config.set_string("-lm", os.path.join(MODELDIR, "en-us/en-us.lm.bin"))
+        config.set_string("-dict", os.path.join(MODELDIR, "en-us/cmudict-en-us.dict"))
+        decoder = Decoder(config)
+        decoder.add_word("_forward", "F AO R W ER D", True)
+        self._run_decode(decoder)
+        # should preserve dict words, but make decoding fail
+        config.set_float("-samprate", 48000)
+        decoder.reinit_feat(config)
+        self.assertEqual("F AO R W ER D", decoder.lookup_word("_forward"))
+        self._run_decode(decoder, expect_fail=True)
+        config.set_float("-samprate", 16000)
+        # should erase dict words
+        decoder.reinit(config)
+        self.assertEqual(None, decoder.lookup_word("_forward"))
+        self._run_decode(decoder)
 
 
 if __name__ == "__main__":
