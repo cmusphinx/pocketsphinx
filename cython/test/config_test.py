@@ -69,30 +69,27 @@ class TestConfig(unittest.TestCase):
 class TestConfigHash(unittest.TestCase):
     def test_config__getitem(self):
         config = Config()
-        self.assertEqual(config['samprate'], 16000.)
-        self.assertEqual(config['nfft'], 0)
-        self.assertEqual(config['fsg'], None)
-        self.assertEqual(config['backtrace'], False)
-        self.assertEqual(config['feat'], '1s_c_d_dd')
+        self.assertEqual(config["samprate"], 16000.0)
+        self.assertEqual(config["nfft"], 0)
+        self.assertEqual(config["fsg"], None)
+        self.assertEqual(config["backtrace"], False)
+        self.assertEqual(config["feat"], "1s_c_d_dd")
 
     def test_config_easyinit(self):
-        config = Config(samprate=11025.,
-                        fsg=None,
-                        backtrace=False,
-                        feat="1s_c_d_dd")
-        self.assertEqual(config['samprate'], 11025.)
-        self.assertEqual(config.get_float('-samprate'), 11025.)
-        self.assertEqual(config['nfft'], 0)
-        self.assertEqual(config['fsg'], None)
-        self.assertEqual(config['backtrace'], False)
-        self.assertEqual(config['feat'], '1s_c_d_dd')
+        config = Config(samprate=11025.0, fsg=None, backtrace=False, feat="1s_c_d_dd")
+        self.assertEqual(config["samprate"], 11025.0)
+        self.assertEqual(config.get_float("-samprate"), 11025.0)
+        self.assertEqual(config["nfft"], 0)
+        self.assertEqual(config["fsg"], None)
+        self.assertEqual(config["backtrace"], False)
+        self.assertEqual(config["feat"], "1s_c_d_dd")
 
     def test_config_coercion(self):
         config = Config()
         config["samprate"] = 48000
-        self.assertEqual(config['samprate'], 48000.)
+        self.assertEqual(config["samprate"], 48000.0)
         config["nfft"] = "1024"
-        self.assertEqual(config['nfft'], 1024)
+        self.assertEqual(config["nfft"], 1024)
 
 
 class TestConfigIter(unittest.TestCase):
