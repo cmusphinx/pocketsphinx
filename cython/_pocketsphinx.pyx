@@ -95,6 +95,18 @@ cdef class Config:
 
     @staticmethod
     def parse_file(str path):
+        """Parse a config file.
+
+        This reads a configuration file in "command-line" format, for example::
+
+            -arg1 value -arg2 value
+            -arg3 value
+
+        Args:
+            path(str): Path to configuration file.
+        Returns:
+            Config: Parsed config, or None on error.
+        """
         cdef cmd_ln_t *config = cmd_ln_parse_file_r(NULL, ps_args(),
                                                     path.encode(), False)
         if config == NULL:
