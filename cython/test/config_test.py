@@ -5,6 +5,7 @@ from pocketsphinx5 import Decoder, Config
 import unittest
 
 MODELDIR = os.path.join(os.path.dirname(__file__), "../../model")
+DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")
 
 
 class TestConfig(unittest.TestCase):
@@ -63,6 +64,80 @@ class TestConfig(unittest.TestCase):
         with self.assertRaises(KeyError):
             self.assertEqual(config["model"], "ptm")
         self.assertEqual(config["remove_noise"], True)
+
+
+class TestConfigHash(unittest.TestCase):
+    def test_config__getitem(self):
+        config = Config()
+        self.assertEqual(config['samprate'], 16000.)
+        self.assertEqual(config['nfft'], 0)
+        self.assertEqual(config['fsg'], None)
+        self.assertEqual(config['backtrace'], False)
+        self.assertEqual(config['feat'], '1s_c_d_dd')
+
+    def test_config_easyinit(self):
+        config = Config(samprate=11025.,
+                        fsg=None,
+                        backtrace=False,
+                        feat="1s_c_d_dd")
+        self.assertEqual(config['samprate'], 11025.)
+        self.assertEqual(config.get_float('-samprate'), 11025.)
+        self.assertEqual(config['nfft'], 0)
+        self.assertEqual(config['fsg'], None)
+        self.assertEqual(config['backtrace'], False)
+        self.assertEqual(config['feat'], '1s_c_d_dd')
+
+    def test_config_coercion(self):
+        config = Config()
+        config["samprate"] = 48000
+        self.assertEqual(config['samprate'], 48000.)
+        config["nfft"] = "1024"
+        self.assertEqual(config['nfft'], 1024)
+
+
+class TestConfigIter(unittest.TestCase):
+    def test_config__iter(self):
+        config = Config()
+        default_len = len(config)
+        for key in config:
+            self.assertTrue(key in config)
+        for key, value in config.items():
+            self.assertTrue(key in config)
+            self.assertEqual(config[key], value)
+        config = Decoder.default_config()
+        self.assertEqual(default_len, len(config))
+        config["hmm"] = os.path.join(MODELDIR, "en-us", "en-us")
+        config["fsg"] = os.path.join(DATADIR, "goforward.fsg")
+        config["dict"] = os.path.join(DATADIR, "turtle.dic")
+        self.assertEqual(default_len, len(config))
+        for key in config:
+            self.assertTrue(key in config)
+        for key, value in config.items():
+            self.assertTrue(key in config)
+            self.assertEqual(config[key], value)
+        self.assertIsNone(config["mdef"])
+        # Now check weird extra value stuff.  Length should never change
+        _ = Decoder(config)
+        # But mdef, etc, should be filled in
+        default_mdef = config["mdef"]
+        self.assertIsNotNone(default_mdef)
+        # And we should get them for dash and underscore versions too
+        self.assertEqual(default_mdef, config["-mdef"])
+        self.assertEqual(default_mdef, config["_mdef"])
+        self.assertEqual(default_len, len(config))
+        for key in config:
+            self.assertTrue(key in config)
+        for key, value in config.items():
+            self.assertTrue(key in config)
+            self.assertEqual(config[key], value)
+
+
+class TestConfigDefn(unittest.TestCase):
+    def test_config_describe(self):
+        config = Config()
+        for defn in config.describe():
+            if defn.name == "hmm":
+                self.assertTrue(defn.required)
 
 
 if __name__ == "__main__":
