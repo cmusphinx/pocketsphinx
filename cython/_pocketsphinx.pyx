@@ -9,6 +9,7 @@
 # Author: David Huggins-Daines <dhdaines@gmail.com>
 
 from libc.stdlib cimport malloc, free
+from libc.string cimport memcpy
 import itertools
 import logging
 import pocketsphinx5
@@ -308,6 +309,12 @@ cdef class Segment:
 
 
 cdef class SegmentList:
+    """List of word segmentations, as returned by `Decoder.seg`.
+
+    This is a one-time iterator over the word segmentation.  Basically
+    you can think of it as Iterable[Segment].  You should not try to
+    create it directly.
+    """
     cdef ps_seg_t *seg
     cdef logmath_t *lmath
 
@@ -339,11 +346,16 @@ cdef class Hypothesis:
     Attributes:
       hypstr(str): Recognized text.
       score(float): Recognition score.
+      best_score(float): Alias for `score` for compatibility.
       prob(float): Posterior probability.
     """
     cdef public str hypstr
     cdef public double score
     cdef public double prob
+
+    @property
+    def best_score(self):
+        return self.score
 
     def __init__(self, hypstr, score, prob):
         self.hypstr = hypstr
@@ -352,6 +364,12 @@ cdef class Hypothesis:
 
 
 cdef class NBestList:
+    """List of hypotheses, as returned by `Decoder.nbest`.
+
+    This is a one-time iterator over the N-Best list.  Basically
+    you can think of it as Iterable[Hypothesis].  You should not try to
+    create it directly.
+    """
     cdef ps_nbest_t *nbest
     cdef logmath_t *lmath
 
@@ -527,6 +545,25 @@ cdef class Decoder:
                           n_samples, no_search, full_utt) < 0:
             raise RuntimeError, "Failed to process %d samples of audio data" % len / 2
 
+    def process_cep(self, data, no_search=False, full_utt=False):
+        """Process a block of MFCC data.
+
+        Args:
+            data(bytes): Raw MFCC data, a block of 32-bit floating point data.
+            no_search(bool): If `True`, do not do any decoding on this data.
+            full_utt(bool): If `True`, assume this is the entire utterance, for
+                            purposes of acoustic normalization.
+
+        """
+        cdef const unsigned char[:] cdata = data
+        cdef int ncep = fe_get_output_size(ps_get_fe(self.ps))
+        cdef int nfr = len(cdata) // (ncep * sizeof(float))
+        cdef float **feats = <float **>ckd_alloc_2d_ptr(nfr, ncep, <void *>&cdata[0], sizeof(float))
+        rv = ps_process_cep(self.ps, feats, nfr, no_search, full_utt)
+        ckd_free(feats)
+        if rv < 0:
+            raise RuntimeError, "Failed to process %d frames of audio data" % nfr
+
     def end_utt(self):
         """Finish processing raw audio input.
 
@@ -630,7 +667,7 @@ cdef class Decoder:
         """Get N-Best hypotheses.
 
         Returns:
-            Iterable[NBest]: Generator over N-Best recognition results
+            Iterable[Hypothesis]: Generator over N-Best recognition results
 
         """
         cdef ps_nbest_t *itor

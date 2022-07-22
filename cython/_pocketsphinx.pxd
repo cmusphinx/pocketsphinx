@@ -45,6 +45,7 @@ cdef extern from "sphinxbase/logmath.h":
 cdef extern from "sphinxbase/fe.h":
     ctypedef struct fe_t:
         pass
+    int fe_get_output_size(fe_t *fe)
 
 cdef extern from "sphinxbase/hash_table.h":
     ctypedef struct hash_table_t:
@@ -56,6 +57,14 @@ cdef extern from "sphinxbase/hash_table.h":
     hash_iter_t *hash_table_iter(hash_table_t *h)
     hash_iter_t *hash_table_iter_next(hash_iter_t *h)
     const char *hash_entry_key(hash_entry_t *ent)
+
+
+cdef extern from "sphinxbase/ckd_alloc.h":
+    void *ckd_alloc_2d_ptr(size_t d1,
+                           size_t d2,
+                           void *store,
+                           size_t elem_size)
+    void ckd_free(void *ptr)
 
 
 cdef extern from "sphinxbase/cmd_ln.h":
@@ -157,6 +166,11 @@ cdef extern from "pocketsphinx.h":
     int ps_process_raw(ps_decoder_t *ps,
                        const short *data, size_t n_samples,
                        int no_search, int full_utt)
+    int ps_process_cep(ps_decoder_t *ps,
+                       float **data,
+                       int n_frames,
+                       int no_search,
+                       int full_utt)
     int ps_end_utt(ps_decoder_t *ps)
     const char *ps_get_hyp(ps_decoder_t *ps, int *out_best_score)
     int ps_get_prob(ps_decoder_t *ps)
@@ -181,3 +195,4 @@ cdef extern from "pocketsphinx.h":
                          double *out_ncpu, double *out_nwall)
     void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
                          double *out_ncpu, double *out_nwall)
+    fe_t *ps_get_fe(ps_decoder_t *ps)
