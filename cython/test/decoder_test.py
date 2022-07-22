@@ -44,9 +44,11 @@ class TestDecoder(unittest.TestCase):
       config.set_string('-dict', os.path.join(MODELDIR, 'en-us/cmudict-en-us.dict'))
       decoder = Decoder(config)
 
-      print ("Pronunciation for word 'hello' is ", decoder.lookup_word("hello"))
+      lmath = decoder.get_logmath()
+      print("log(1e-150) = ", lmath.log(1e-150))
+      print("Pronunciation for word 'hello' is ", decoder.lookup_word("hello"))
       self.assertEqual("HH AH L OW", decoder.lookup_word("hello"))
-      print ("Pronunciation for word 'abcdf' is ", decoder.lookup_word("abcdf"))
+      print("Pronunciation for word 'abcdf' is ", decoder.lookup_word("abcdf"))
       self.assertEqual(None, decoder.lookup_word("abcdf"))
 
       self._run_decode(decoder);

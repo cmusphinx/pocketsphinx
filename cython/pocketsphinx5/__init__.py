@@ -3,6 +3,7 @@
 
 import collections
 
+from ._pocketsphinx import LogMath
 from ._pocketsphinx import Config
 from ._pocketsphinx import Decoder
 from ._pocketsphinx import FsgModel
