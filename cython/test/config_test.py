@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-from pocketsphinx5 import Decoder
+from pocketsphinx5 import Decoder, Config
 import unittest
 
 MODELDIR = os.path.join(os.path.dirname(__file__), "../../model")
@@ -44,6 +44,25 @@ class TestConfig(unittest.TestCase):
         config.set_string_extra("-something12321", "abc")
         s = config.get_string("-something12321")
         self.assertEqual(s, "abc")
+
+    def test_config_file(self):
+        config = Config.parse_file(
+            os.path.join(MODELDIR, "en-us", "en-us", "feat.params")
+        )
+        self.assertEqual(config["lowerf"], 130)
+        self.assertEqual(config["upperf"], 6800)
+        self.assertEqual(config["nfilt"], 25)
+        self.assertEqual(config["transform"], "dct")
+        self.assertEqual(config["lifter"], 22)
+        self.assertEqual(config["feat"], "1s_c_d_dd")
+        self.assertEqual(config["svspec"], "0-12/13-25/26-38")
+        self.assertEqual(config["agc"], "none")
+        self.assertEqual(config["cmn"], "batch")
+        self.assertEqual(config["varnorm"], False)
+        # not an actual config parameter, it seems!
+        with self.assertRaises(KeyError):
+            self.assertEqual(config["model"], "ptm")
+        self.assertEqual(config["remove_noise"], True)
 
 
 if __name__ == "__main__":

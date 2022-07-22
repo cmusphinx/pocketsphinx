@@ -34,6 +34,10 @@ cdef class Config:
 
         config = Config(hmm="path/to/things", dict="my.dict")
 
+    Finally it can also be initialized by parsing a file::
+
+        config = Config.parse_file("feat.params")
+
     It is possible to access the `Config` either with the set_*
     methods or directly by setting and getting keys, as with a Python
     dictionary.  The set_* methods are not recommended as they require
@@ -89,6 +93,14 @@ cdef class Config:
         self.cmd_ln = cmd_ln
         return self
 
+    @staticmethod
+    def parse_file(str path):
+        cdef cmd_ln_t *config = cmd_ln_parse_file_r(NULL, ps_args(),
+                                                    path.encode(), False)
+        if config == NULL:
+            return None
+        return Config.create_from_ptr(config)
+        
     def __dealloc__(self):
         cmd_ln_free_r(self.cmd_ln)
 
@@ -1149,11 +1161,7 @@ cdef class Decoder:
 
     @staticmethod
     def file_config(str path):
-        cdef cmd_ln_t *config = cmd_ln_parse_file_r(NULL, ps_args(),
-                                                    path.encode(), False)
-        if config == NULL:
-            return None
-        return Config.create_from_ptr(config)
+        return Config.parse_file(path)
     
     def load_dict(self, str dict_path, str fdict_path = None, str _format = None):
         cdef int rv
