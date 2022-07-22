@@ -5,9 +5,9 @@ import os
 from pocketsphinx5 import Decoder, NGramModel
 
 MODELDIR = os.path.join(os.path.dirname(__file__),
-                        "../../../model")
+                        "../../model")
 DATADIR = os.path.join(os.path.dirname(__file__),
-                       "../../../test/data")
+                       "../../test/data")
 
 
 class TestLM(unittest.TestCase):

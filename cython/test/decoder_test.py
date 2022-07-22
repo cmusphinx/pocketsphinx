@@ -5,9 +5,9 @@ from pocketsphinx5 import Decoder
 import unittest
 
 MODELDIR = os.path.join(os.path.dirname(__file__),
-                        "../../../model")
+                        "../../model")
 DATADIR = os.path.join(os.path.dirname(__file__),
-                       "../../../test/data")
+                       "../../test/data")
 
 class TestDecoder(unittest.TestCase):
     def _run_decode(self, decoder, expect_fail=False):

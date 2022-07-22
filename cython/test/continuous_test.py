@@ -5,9 +5,9 @@ from pocketsphinx5 import Decoder
 import unittest
 
 MODELDIR = os.path.join(os.path.dirname(__file__),
-                        "../../../model")
+                        "../../model")
 DATADIR = os.path.join(os.path.dirname(__file__),
-                       "../../../test/data")
+                       "../../test/data")
 
 class TestContinuous(unittest.TestCase):
     def test_continuous(self):

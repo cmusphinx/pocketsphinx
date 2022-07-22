@@ -5,7 +5,7 @@ from pocketsphinx5 import Decoder
 import unittest
 
 MODELDIR = os.path.join(os.path.dirname(__file__),
-                        "../../../model")
+                        "../../model")
 
 
 class TestConfig(unittest.TestCase):

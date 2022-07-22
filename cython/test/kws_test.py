@@ -5,9 +5,9 @@ import sys, os
 from pocketsphinx5 import Decoder
 
 MODELDIR = os.path.join(os.path.dirname(__file__),
-                        "../../../model")
+                        "../../model")
 DATADIR = os.path.join(os.path.dirname(__file__),
-                       "../../../test/data")
+                       "../../test/data")
 
 class TestKWS(unittest.TestCase):
     def test_kws(self):
