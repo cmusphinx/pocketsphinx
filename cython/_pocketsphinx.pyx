@@ -48,9 +48,6 @@ cdef class Config:
         config.get_string("-dict")
         config["dict"]
 
-    In a future version, probably the next major one, these methods
-    will be deprecated or may just disappear.
-
     In general, a `Config` mostly acts like a dictionary, and can be
     iterated over in the same fashion.  However, attempting to access
     a parameter that does not already exist will raise a `KeyError`.
@@ -736,14 +733,18 @@ cdef class Decoder:
                         for more information.
         hmm(str): Path to directory containing acoustic model files.
         dict(str): Path to pronunciation dictionary.
+        lm(str): Path to N-Gram language model.
         jsgf(str): Path to JSGF grammar file.
-        fsg(str): Path to FSG grammar file (only one of ``jsgf`` or ``fsg`` should
-                  be specified).
+        fsg(str): Path to FSG grammar file (only one of ``lm``, ``jsgf``,
+                  or ``fsg`` should be specified).
         toprule(str): Name of top-level rule in JSGF file to use as entry point.
         samprate(float): Sampling rate for raw audio data.
-        logfn(str): File to write log messages to (set to `os.devnull` to
-                    silence these messages)
-
+        loglevel(str): Logging level, one of "INFO", "ERROR", "FATAL".
+        logfn(str): File to write log messages to.
+    Raises:
+        ValueError: On invalid configuration or argument list.
+        RuntimeError: On invalid configuration or other failure to
+                      reinitialize decoder.
     """
     cdef ps_decoder_t *ps
     cdef public Config config
@@ -769,7 +770,9 @@ cdef class Decoder:
             config(Config): Optional new configuration to apply, otherwise
                             the existing configuration in the `config`
                             attribute will be reloaded.
-
+        Raises:
+            RuntimeError: On invalid configuration or other failure to
+                          reinitialize decoder.
         """
         cdef cmd_ln_t *cconfig
         if config is None:
@@ -787,7 +790,9 @@ cdef class Decoder:
             config(Config): Optional new configuration to apply, otherwise
                             the existing configuration in the `config`
                             attribute will be reloaded.
-
+        Raises:
+            RuntimeError: On invalid configuration or other failure to
+                          initialize feature extraction.
         """
         cdef cmd_ln_t *cconfig
         if config is None:
@@ -813,6 +818,9 @@ cdef class Decoder:
         This method must be called at the beginning of each separate
         "utterance" of raw audio input.
 
+        Raises:
+            RuntimeError: If processing fails to start (usually if it
+                          has already been started).
         """
         if ps_start_utt(self.ps) < 0:
             raise RuntimeError, "Failed to start utterance processing"
@@ -834,7 +842,8 @@ cdef class Decoder:
             no_search(bool): If `True`, do not do any decoding on this data.
             full_utt(bool): If `True`, assume this is the entire utterance, for
                             purposes of acoustic normalization.
-
+        Raises:
+            RuntimeError: If processing fails.
         """
         cdef const unsigned char[:] cdata = data
         cdef Py_ssize_t n_samples = len(cdata) // 2
@@ -850,7 +859,8 @@ cdef class Decoder:
             no_search(bool): If `True`, do not do any decoding on this data.
             full_utt(bool): If `True`, assume this is the entire utterance, for
                             purposes of acoustic normalization.
-
+        Raises:
+            RuntimeError: If processing fails.
         """
         cdef const unsigned char[:] cdata = data
         cdef int ncep = fe_get_output_size(ps_get_fe(self.ps))
@@ -877,7 +887,6 @@ cdef class Decoder:
 
         Returns:
             Hypothesis: Current recognition output.
-
         """
         cdef const char *hyp
         cdef logmath_t *lmath
@@ -896,9 +905,9 @@ cdef class Decoder:
         """Posterior probability of current recogntion hypothesis.
 
         Returns:
-            float: Posterior probability of current hypothesis.  FIXME:
-            At the moment this is almost certainly 1.0, as confidence
-            estimation is not well supported.
+            float: Posterior probability of current hypothesis.  This
+            will be 1.0 unless the `bestpath` configuration option is
+            enabled.
 
         """
         cdef logmath_t *lmath
@@ -906,7 +915,7 @@ cdef class Decoder:
         lmath = ps_get_logmath(self.ps)
         return logmath_exp(lmath, ps_get_prob(self.ps))
 
-    def add_word(self, word, phones, update=True):
+    def add_word(self, str word, str phones, update=True):
         """Add a word to the pronunciation dictionary.
 
         Args:
@@ -918,27 +927,27 @@ cdef class Decoder:
             update(bool): Update the recognizer immediately.  You can
                           set this to `False` if you are adding a lot
                           of words, to speed things up.
-
+        Returns:
+            int: Word ID of added word.
+        Raises:
+            RuntimeError: If adding word failed for some reason.
         """
-        if not isinstance(word, bytes):
-            word = word.encode("utf-8")
-        if not isinstance(phones, bytes):
-            phones = phones.encode("utf-8")
-        return ps_add_word(self.ps, word, phones, update)
+        cdef rv = ps_add_word(self.ps, word.encode("utf-8"),
+                              phones.encode("utf-8"), update)
+        if rv < 0:
+            raise RuntimeError("Failed to add word %s" % word)
 
-    def lookup_word(self, word):
+    def lookup_word(self, str word):
         """Look up a word in the dictionary and return phone transcription
         for it.
 
         Args:
-            word(str|bytes): Text of word to search for.
+            word(str): Text of word to search for.
         Returns:
             str: Space-separated list of phones, or None if not found.
         """
         cdef const char *cphones
-        if not isinstance(word, bytes):
-            word = word.encode("utf-8")
-        cphones = ps_lookup_word(self.ps, word)
+        cphones = ps_lookup_word(self.ps, word.encode("utf-8"))
         if cphones == NULL:
             return None
         else:
@@ -949,7 +958,6 @@ cdef class Decoder:
 
         Returns:
             Iterable[Segment]: Generator over word segmentations.
-
         """
         cdef ps_seg_t *itor
         cdef logmath_t *lmath
@@ -965,7 +973,6 @@ cdef class Decoder:
 
         Returns:
             Iterable[Hypothesis]: Generator over N-Best recognition results
-
         """
         cdef ps_nbest_t *itor
         cdef logmath_t *lmath
@@ -984,14 +991,13 @@ cdef class Decoder:
 
         Returns:
             FsgModel: Newly loaded finite-state grammar.
-
         """
         cdef float lw
 
         lw = cmd_ln_float_r(self.config.cmd_ln, "-lw")
         return FsgModel.readfile(filename, self.get_logmath(), lw)
 
-    def read_jsgf(self, filename):
+    def read_jsgf(self, str filename):
         """Read a grammar from a JSGF file.
 
         The top rule used is the one specified by the "toprule"
@@ -999,17 +1005,15 @@ cdef class Decoder:
 
         Args:
             filename(str): Path to JSGF file.
-
         Returns:
             FsgModel: Newly loaded finite-state grammar.
-
         """
         cdef float lw
 
         lw = cmd_ln_float_r(self.config.cmd_ln, "-lw")
         return FsgModel.jsgf_read_file(filename, self.get_logmath(), lw)
 
-    def create_fsg(self, name, start_state, final_state, transitions):
+    def create_fsg(self, str name, int start_state, int final_state, transitions):
         """Create a finite-state grammar.
 
         This method allows the creation of a grammar directly from a
@@ -1036,10 +1040,10 @@ cdef class Decoder:
                                If the word is not specified, this is an
                                epsilon (null) transition that will always be
                                followed.
-
         Returns:
             FsgModel: Newly created finite-state grammar.
-
+        Raises:
+            ValueError: On invalid input.
         """
         cdef float lw
         cdef int wid
@@ -1072,12 +1076,15 @@ cdef class Decoder:
         and subsequently decoded.
 
         Args:
-            jsgf_string(bytes): JSGF grammar as string or UTF-8 encoded
-                                bytes.
-
+            jsgf_string(bytes|str): JSGF grammar as string or UTF-8
+                                    encoded bytes.
+            toprule(str): Name of starting rule in grammar (will
+                          default to first public rule).
         Returns:
             FsgModel: Newly loaded finite-state grammar.
-
+        Raises:
+            ValueError: On failure to parse or find `toprule`.
+            RuntimeError: If JSGF has no public rules.
         """
         cdef jsgf_t *jsgf
         cdef jsgf_rule_t *rule
@@ -1106,43 +1113,61 @@ cdef class Decoder:
         return FsgModel.create_from_ptr(cfsg)
 
     def get_fsg(self, str name):
+        """Get the actual FsgModel for an FSG search.
+
+        Args:
+            name(str): Name of search module for this FSG.
+        Returns:
+            FsgModel: FSG corresponding to `name`, or None if not found.
+        """
         cdef fsg_model_t *fsg = ps_get_fsg(self.ps, name.encode("utf-8"))
         if fsg == NULL:
             return None
         return FsgModel.create_from_ptr(fsg_model_retain(fsg))
     
     def set_fsg(self, str name, FsgModel fsg):
-        """Set the grammar for recognition.
+        """Create a search module from an FSG.
+
+        Note that because the API is stupid, you will have to call
+        `set_search(name)` in order to actually enable this FSG.
 
         Args:
+            name(str): Search module name to associate to this FSG.
             fsg(FsgModel): Previously loaded or constructed grammar.
-
+        Raises:
+            RuntimeError: If adding FSG failed for some reason.
         """
-        if name is None:
-            cname = fsg_model_name(fsg.fsg)
-        else:
-            cname = name.encode("utf-8")
-        if ps_set_fsg(self.ps, cname, fsg.fsg) != 0:
+        if ps_set_fsg(self.ps, name.encode("utf-8"), fsg.fsg) != 0:
             raise RuntimeError("Failed to set FSG in decoder")
 
     def set_jsgf_file(self, name, filename):
-        """Set the grammar for recognition from a JSGF file.
+        """Create a search module from a JSGF file.
+
+        Note that because the API is stupid, you will have to call
+        `set_search(name)` in order to actually enable this grammar.
 
         Args:
             filename(str): Path to a JSGF file to load.
-            name(str): Optional name to give the grammar (not very useful).
+            name(str): Search module name to associate to this grammar.
+        Raises:
+            RuntimeError: If adding grammar failed for some reason.
         """
         if ps_set_jsgf_file(self.ps, name.encode("utf-8"),
                             filename.encode()) != 0:
             raise RuntimeError("Failed to set JSGF from %s" % filename)
 
     def set_jsgf_string(self, name, jsgf_string):
-        """Set the grammar for recognition from JSGF bytes or string.
+        """Create a search module from JSGF as bytes or string.
+
+        Note that because the API is stupid, you will have to call
+        `set_search(name)` in order to actually enable this grammar.
 
         Args:
-            jsgf_string(bytes): JSGF grammar as string or UTF-8 encoded
-                                bytes.
-            name(str): Optional name to give the grammar (not very useful).
+            jsgf_string(bytes|str): JSGF grammar as string or UTF-8 encoded
+                                    bytes.
+            name(str): Search module name to associate to this grammar.
+        Raises:
+            ValueError: If grammar failed to parse.
         """
         if not isinstance(jsgf_string, bytes):
             jsgf_string = jsgf_string.encode("utf-8")
@@ -1150,15 +1175,44 @@ cdef class Decoder:
             raise ValueError("Failed to parse JSGF in decoder")
 
     def get_kws(self, str name):
-        return ps_get_kws(self.ps, name.encode("utf-8"))
+        """Get keyphrases as text from a search module.
+
+        Args:
+            name(str): Search module name for keywords.
+        Returns:
+            str: List of keywords as lines (i.e. separated by '\\\\n')
+        """
+        return ps_get_kws(self.ps, name.encode("utf-8")).decode("utf-8")
 
     def set_kws(self, str name, str keyfile):
+        """Create keyphrase recognition search module from a file.
+
+        Note that because the API is stupid, you will have to call
+        `set_search(name)` in order to actually enable keyphrase search.
+
+        Args:
+            name(str): Search module name to associate to these keyphrases.
+            keyfile(str): Path to file with list of keyphrases (one per line).
+        Raises:
+            RuntimeError: If adding keyphrases failed for some reason.
+        """
         cdef int rv = ps_set_kws(self.ps, name.encode("utf-8"), keyfile.encode())
         if rv < 0:
             return RuntimeError("Failed to set keyword search %s from %s"
                                 % (name, keyfile))
 
     def set_keyphrase(self, str name, str keyphrase):
+        """Create search module from a single keyphrase.
+
+        Note that because the API is stupid, you will have to call
+        `set_search(name)` in order to actually enable keyphrase search.
+
+        Args:
+            name(str): Search module name to associate to this keyphrase.
+            keyphrase(str): Keyphrase to add.
+        Raises:
+            RuntimeError: If adding keyphrase failed for some reason.
+        """
         cdef int rv = ps_set_keyphrase(self.ps, name.encode("utf-8"),
                                        keyphrase.encode("utf-8"))
         if rv < 0:
@@ -1166,6 +1220,18 @@ cdef class Decoder:
                                 % (name, keyphrase))
     
     def set_allphone_file(self, str name, str lmfile = None):
+        """Create a phoneme recognition search module.
+
+        Note that because the API is stupid, you will have to call
+        `set_search(name)` in order to actually enable allphone search.
+
+        Args:
+            name(str): Search module name to associate to allphone search.
+            lmfile(str): Path to phoneme N-Gram file, or None to use
+                         uniform probability (default is None)
+        Raises:
+            RuntimeError: If allphone search init failed for some reason.
+        """
         cdef int rv
         if lmfile is None:
             rv = ps_set_allphone_file(self.ps, name.encode("utf-8"), NULL)
@@ -1175,24 +1241,66 @@ cdef class Decoder:
             return RuntimeError("Failed to set allphone search %s from %s"
                                 % (name, lmfile))
     def get_lattice(self):
+        """Get word lattice from current recognition result.
+
+        Returns:
+            Lattice: Word lattice from current result.
+        """
         cdef ps_lattice_t *lattice = ps_get_lattice(self.ps)
         if lattice == NULL:
             return None
         return Lattice.create_from_ptr(ps_lattice_retain(lattice))
 
     def get_config(self):
+        """Get current configuration.
+
+        Returns:
+            Config: Current configuration.
+        """
         return self.config
 
     # These two do not belong here but they're here for compatibility
     @staticmethod
     def default_config():
+        """Get the default configuration.
+
+        This does the same thing as simply creating a `Config` and is
+        here for historical reasons.
+
+        Returns:
+            Config: Default configuration.
+        """
         return Config()
 
     @staticmethod
     def file_config(str path):
+        """Parse configuration from a file.
+
+        This simply calls `Config.parse_file` and is here for historical
+        reasons.
+
+        Args:
+            path(str): Path to arguments file.
+        Returns:
+            Config: Configuration parsed from `path`.
+        """
         return Config.parse_file(path)
     
     def load_dict(self, str dict_path, str fdict_path = None, str _format = None):
+        """Load dictionary (and possibly noise dictionary) from a file.
+
+        Note that the `format` argument does nothing, never has done
+        anything, and never will.  It's only here for historical
+        reasons.
+
+        Args:
+            dict_path(str): Path to pronunciation dictionary file.
+            fdict_path(str): Path to noise dictionary file, or None to keep
+                             existing one (default is None)
+            _format(str): Useless argument that does nothing.
+        Raises:
+            RuntimeError: If dictionary loading failed for some reason.
+        """
         cdef int rv
         # THIS IS VERY ANNOYING, CYTHON
         cdef const char *cformat = NULL
@@ -1213,6 +1321,18 @@ cdef class Decoder:
                                % (dict_path, fdict_path))
 
     def save_dict(self, str dict_path, str _format = None):
+        """Save dictionary to a file.
+
+        Note that the `format` argument does nothing, never has done
+        anything, and never will.  It's only here for historical
+        reasons.
+
+        Args:
+            dict_path(str): Path to save pronunciation dictionary in.
+            _format(str): Useless argument that does nothing.
+        Raises:
+            RuntimeError: If dictionary saving failed for some reason.
+        """
         cdef int rv
         cdef const char *cformat = NULL
         cdef const char *cdict = NULL
@@ -1227,40 +1347,109 @@ cdef class Decoder:
             raise RuntimeError("Failed to save dictionary to %s" % dict_path)
 
     def get_lm(self, str name):
+        """Get the N-Gram language model associated with a search module.
+
+        Args:
+            name(str): Name of search module for this language model.
+        Returns:
+            NGramModel: Model corresponding to `name`, or None if not found.
+        """
         cdef ngram_model_t *lm = ps_get_lm(self.ps, name.encode("utf-8"))
         if lm == NULL:
             return None
         return NGramModel.create_from_ptr(ngram_model_retain(lm))
 
     def set_lm(self, str name, NGramModel lm):
+        """Create a search module for an N-Gram language model.
+
+        Note that because the API is stupid, you will have to call
+        `set_search(name)` in order to actually enable this LM.
+
+        Args:
+            name(str): Search module name to associate to this LM.
+            lm(NGramModel): Previously loaded language model.
+        Raises:
+            RuntimeError: If adding LM failed for some reason.
+        """
         cdef int rv = ps_set_lm(self.ps, name.encode("utf-8"), lm.lm)
         if rv < 0:
             raise RuntimeError("Failed to set language model %s" % name)
 
     def set_lm_file(self, str name, str path):
+        """Load a language model from a file into the decoder.
+
+        Note that because the API is stupid, you will have to call
+        `set_search(name)` in order to actually enable this LM.
+
+        Args:
+            name(str): Search module name to associate to this LM.
+            path(str): Path to N-Gram language model file.
+        Raises:
+            RuntimeError: If adding LM failed for some reason.
+        """
         cdef int rv = ps_set_lm_file(self.ps, name.encode("utf-8"), path.encode())
         if rv < 0:
             raise RuntimeError("Failed to set language model %s from %s"
                                % (name, path))
 
     def get_logmath(self):
-        """Get the LogMath object for this decoder."""
+        """Get the LogMath object for this decoder.
+
+        Returns:
+            LogMath: Current log-math computation object.
+        """
         cdef logmath_t *lmath = ps_get_logmath(self.ps)
         return LogMath.create_from_ptr(logmath_retain(lmath))
 
     def set_search(self, str search_name):
+        """Actually use a language model or grammar you loaded.
+
+        This activates a "search module" that was created with one of
+        the very badly named functions `set_fsg`, `set_lm`,
+        `set_lm_file`, `set_allphone_file`, `set_keyphrase`,
+        `set_kws`, or `set_align`.
+
+        I might be the one responsible for this bad API. Sorry.
+
+        Args:
+            search_name(str): Name of search module to activate.
+        Raises:
+            KeyError: If `search_name` doesn't actually exist.
+        """
         cdef int rv = ps_set_search(self.ps, search_name.encode("utf-8"))
         if rv < 0:
             raise KeyError("Unable to set search %s" % search_name)
 
     def unset_search(self, str search_name):
+        """Remove a search (LM, grammar, etc) freeing resources.
+
+        What a dumb name for a method.  Oh well.
+
+        Args:
+            search_name(str): Name of search module to remove.
+        Raises:
+            KeyError: If `search_name` doesn't actually exist.
+        """
         cdef int rv = ps_unset_search(self.ps, search_name.encode("utf-8"))
         if rv < 0:
             raise KeyError("Unable to unset search %s" % search_name)
 
     def get_search(self):
+        """Get the name of the current search (LM, grammar, etc).
+
+        This is pretty important if you want to get the current LM or
+        FSG or what have you.
+
+        Returns:
+            str: Name of currently active search module.
+        """
         return ps_get_search(self.ps).decode("utf-8")
 
     def n_frames(self):
+        """Get the number of frames processed up to this point.
+
+        Returns:
+            int: Like it says.
+        """
         return ps_get_n_frames(self.ps)
 
