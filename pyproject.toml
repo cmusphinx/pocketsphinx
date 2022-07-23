@@ -4,6 +4,20 @@ requires = [
          "setuptools>=45",
      	 "scikit-build~=0.15",
 	 "Cython",
-         "cmake"
+         "cmake",
+	 "ninja"
 ]
 build-backend = "setuptools.build_meta"
+[tool.cibuildwheel]
+# Build the versions found in Ubuntu LTS, the stable PyPy, and 3.10
+# everywhere else
+build = [
+      "pp38*",
+      "cp36-manylinux_*",
+      "cp38-manylinux_*",
+      "cp310-*"
+]
+# PyPy 3.8 will choke on CPython 3.8 build leftovers...
+before-build = "rm -rf _skbuild"
+# PyPy builds are broken on Windows, and skip 32-bit and musl
+skip = ["*musl*", "*_i686", "*-win32", "pp*win*"]
