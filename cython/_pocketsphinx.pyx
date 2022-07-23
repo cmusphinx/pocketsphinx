@@ -48,9 +48,6 @@ cdef class Config:
         config.get_string("-dict")
         config["dict"]
 
-    In a future version, probably the next major one, these methods
-    will be deprecated or may just disappear.
-
     In general, a `Config` mostly acts like a dictionary, and can be
     iterated over in the same fashion.  However, attempting to access
     a parameter that does not already exist will raise a `KeyError`.
@@ -303,8 +300,7 @@ cdef class LogMath:
 
     PocketSphinx does various computations internally using integer
     math in logarithmic space with a very small base (usually 1.0001
-    or 1.0003).  In general we try to hide this detail from the user,
-    but some legacy APIs require it."""
+    or 1.0003)."""
     cdef logmath_t *lmath
 
     # This is __init__ and *not* __cinit__ because we do not want it
