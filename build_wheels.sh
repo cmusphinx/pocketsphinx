@@ -1,7 +1,7 @@
 #!/bin/sh
 
 set -e
-VERSION=5.0.0rc0
+VERSION=5.0.0rc1
 U=$(id -u)
 G=$(id -g)
 
@@ -18,8 +18,12 @@ many224_run() {
 python setup.py clean || true
 rm -rf *.whl dist/* py/pocketsphinx.egg-info
 python -m build --sdist
+docker pull quay.io/pypa/manylinux1_x86_64
+for version in cp39-cp39 cp38-cp38 cp37-cp37m; do
+    many1_run /opt/python/$version/bin/pip wheel dist/pocketsphinx5-$VERSION.tar.gz
+done
 docker pull quay.io/pypa/manylinux2014_x86_64
-for version in cp39-cp39 cp38-cp38 cp37-cp37m cp310-cp310; do
+for version in cp310-cp310; do
     many2014_run /opt/python/$version/bin/pip -vv wheel dist/pocketsphinx5-$VERSION.tar.gz
 done
 for w in *.whl; do
