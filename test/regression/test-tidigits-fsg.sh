@@ -14,6 +14,7 @@ run_program pocketsphinx_batch \
     -cepdir $data/tidigits \
     -hyp $bn.match \
     -wbeam 1e-48 \
+    -bestpath no \
     -loglevel INFO \
     > $bn.log 2>&1
 

@@ -12,6 +12,7 @@ run_program pocketsphinx_batch \
     -jsgf $data/cards/cards.gram \
     -dict $model/en-us/cmudict-en-us.dict\
     -ctl $data/cards/cards.fileids \
+    -bestpath no \
     -adcin yes \
     -cepdir $data/cards \
     -cepext .wav \
