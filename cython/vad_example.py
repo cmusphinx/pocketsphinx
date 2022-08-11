@@ -76,6 +76,7 @@ def vad_collector(sample_rate, frame_duration_ms, padding_duration_ms, vad, fram
             # the ring buffer are voiced frames, then enter the
             # TRIGGERED state.
             if num_voiced > 0.9 * ring_buffer.maxlen:
+                print("detected speech")
                 triggered = True
                 # We want to yield all the audio we see from now until
                 # we are NOTTRIGGERED, but we have to start with the
@@ -94,7 +95,7 @@ def vad_collector(sample_rate, frame_duration_ms, padding_duration_ms, vad, fram
             # audio we've collected.
             if num_unvoiced > 0.9 * ring_buffer.maxlen:
                 triggered = False
-                start_time = voiced_frames[0].timestamp + voiced_frames[0].duration
+                start_time = voiced_frames[0].timestamp
                 end_time = voiced_frames[-1].timestamp + voiced_frames[-1].duration
                 yield start_time, end_time, b"".join([f.pcm for f in voiced_frames])
                 ring_buffer.clear()
@@ -102,30 +103,15 @@ def vad_collector(sample_rate, frame_duration_ms, padding_duration_ms, vad, fram
     # If we have any leftover voiced audio when we run out of input,
     # yield it.
     if voiced_frames:
-        start_time = voiced_frames[0].timestamp + voiced_frames[0].duration
+        start_time = voiced_frames[0].timestamp
         end_time = voiced_frames[-1].timestamp + voiced_frames[-1].duration
         yield start_time, end_time, b"".join([f.pcm for f in voiced_frames])
 
 
 def popen_sox(sample_rate):
     """Use sox to get microphone input at sample_rate"""
-    soxcmd = [
-        "sox",
-        "-q",
-        "-r",
-        str(sample_rate),
-        "-c",
-        "1",
-        "-b",
-        "16",
-        "-e",
-        "signed-integer",
-        "-d",
-        "-t",
-        "raw",
-        "-",
-    ]
-    sox = subprocess.Popen(soxcmd, stdout=subprocess.PIPE)
+    soxcmd = "sox -q -r %d -c 1 -b 16 -e signed-integer -d -t raw -" % sample_rate
+    sox = subprocess.Popen(soxcmd.split(), stdout=subprocess.PIPE)
     # Yes, it will never get closed.  No, we don't care.
     return sox.stdout
 
