@@ -16,7 +16,11 @@
 #ifndef COMMON_AUDIO_SIGNAL_PROCESSING_RESAMPLE_BY_2_INTERNAL_H_
 #define COMMON_AUDIO_SIGNAL_PROCESSING_RESAMPLE_BY_2_INTERNAL_H_
 
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#else
+#include "rtc_base/typedefs.h"
+#endif
 
 /*******************************************************************
  * resample_by_2_fast.c

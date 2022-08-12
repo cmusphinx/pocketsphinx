@@ -16,7 +16,11 @@
 
 #include "rtc_base/compile_assert_c.h"
 
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#else
+#include "rtc_base/typedefs.h"
+#endif
 
 extern const int8_t kWebRtcSpl_CountLeadingZeros32_Table[64];
 
