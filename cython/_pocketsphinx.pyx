@@ -1453,3 +1453,64 @@ cdef class Decoder:
         """
         return ps_get_n_frames(self.ps)
 
+cdef class Vad:
+    """Voice activity detection using WebRTC VAD.
+
+    Args:
+      mode(int): Aggressiveness of voice activity detction (0-3)
+    """
+    cdef VadInst* _vad
+    
+    def __init__(self, mode=None):
+        self._vad = WebRtcVad_Create()
+        if WebRtcVad_Init(self._vad) < 0:
+            raise RuntimeError("Failed to initialize VAD")
+        if mode is not None:
+            self.set_mode(mode)
+
+    def set_mode(self, mode):
+        """Set aggressiveness of voice activity detection
+        
+        Args:
+          mode(int): Aggressiveness of voice activity detction (0-3)
+        """
+        if WebRtcVad_set_mode(self._vad, mode) < 0:
+            raise ValueError("Failed to set VAD mode")
+
+    def is_speech(self, buf, sample_rate, length=None):
+        """Classify a buffer as speech or not.
+        
+        Args:
+          buf(bytes): Buffer containing speech data (16-bit signed integer)
+          sample_rate(int): Sampling rate, must be 8000, 16000, 32000, 48000.
+          length(Optional[int]): Length of buffer, can be determined from `buf`.
+
+        Returns:
+          (boolean) Classification as speech or not speech.
+        """
+        cdef const unsigned char[:] cbuf = buf
+        cdef Py_ssize_t n_samples = len(cbuf) // 2
+        if length is None:
+            length = n_samples
+        if length * 2 > len(cbuf):
+            raise IndexError(
+                'buffer has %d frames, but length argument was %d' % (
+                    n_samples, length))
+        rv = WebRtcVad_Process(self._vad, sample_rate,
+                               <const short *>&cbuf[0], length)
+        if rv < 0:
+            raise ValueError("Invalid argument to VAD processing")
+        return rv
+
+    @staticmethod
+    def valid_rate_and_frame_length(rate, frame_length):
+        """Confirm that sampling rate and frame size are supported.
+        
+        Args:
+        rate(int): Sampling rate to test
+        frame_length(int): Frame length in milliseconds.
+        
+        Returns:
+        (boolean) True if supported.
+        """
+        return WebRtcVad_ValidRateAndFrameLength(rate, frame_length) == 0

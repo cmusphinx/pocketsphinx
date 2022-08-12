@@ -405,3 +405,16 @@ cdef extern from "pocketsphinx/ps_search.h":
     int ps_set_allphone(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
     int ps_set_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
     int ps_set_align(ps_decoder_t *ps, const char *name, const char *words)
+
+cdef extern from "pocketsphinx/webrtc_vad.h":
+    ctypedef struct VadInst:
+        pass
+    VadInst* WebRtcVad_Create()
+    void WebRtcVad_Free(VadInst* handle)
+    int WebRtcVad_Init(VadInst* handle)
+    int WebRtcVad_set_mode(VadInst* handle, int mode)
+    int WebRtcVad_Process(VadInst* handle,
+                          int fs,
+                          const short* audio_frame,
+                          size_t frame_length)
+    int WebRtcVad_ValidRateAndFrameLength(int rate, size_t frame_length)
