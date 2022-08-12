@@ -8,8 +8,7 @@ import subprocess
 import sys
 import os
 
-from pocketsphinx5 import Decoder
-import webrtcvad
+from pocketsphinx5 import Decoder, Vad
 
 MODELDIR = os.path.join(os.path.dirname(__file__), "../model")
 DATADIR = os.path.join(os.path.dirname(__file__), "../test/data")
@@ -34,7 +33,7 @@ def frame_generator(frame_duration_ms, audiofh, sample_rate):
 def vad_collector(sample_rate, frame_duration_ms, padding_duration_ms, vad, frames):
     """Filters out non-voiced audio frames.
 
-    Given a webrtcvad.Vad and a source of audio frames, yields speech
+    Given a pocketsphinx5.Vad and a source of audio frames, yields speech
     segments
 
     Uses a padded, sliding window algorithm over the audio frames.
@@ -52,7 +51,7 @@ def vad_collector(sample_rate, frame_duration_ms, padding_duration_ms, vad, fram
     sample_rate - The audio sample rate, in Hz.
     frame_duration_ms - The frame duration in milliseconds.
     padding_duration_ms - The amount to pad the window, in milliseconds.
-    vad - An instance of webrtcvad.Vad.
+    vad - An instance of pocketsphinx5.Vad.
     frames - a source of audio frames (sequence or generator).
 
     Returns: A generator that yields (start_time, end_time, pcm_data)
@@ -139,7 +138,7 @@ def main(argv=None):
         dict=os.path.join(MODELDIR, "en-us/cmudict-en-us.dict"),
     )
     sample_rate = int(decoder.config["samprate"])
-    vad = webrtcvad.Vad(args.aggressiveness)
+    vad = Vad(args.aggressiveness)
     if args.stdin:
         infh = sys.stdin.buffer
     else:
