@@ -13,12 +13,13 @@
 #ifndef COMMON_AUDIO_VAD_VAD_GMM_H_
 #define COMMON_AUDIO_VAD_VAD_GMM_H_
 
-
+#include <sphinxbase/sphinx_config.h>
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #else
 #include "rtc_base/typedefs.h"
 #endif
+
 
 // Calculates the probability for `input`, given that `input` comes from a
 // normal distribution with mean and standard deviation (`mean`, `std`).

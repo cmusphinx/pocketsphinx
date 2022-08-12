@@ -16,6 +16,7 @@
 
 #include "rtc_base/compile_assert_c.h"
 
+#include <sphinxbase/sphinx_config.h>
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #else
