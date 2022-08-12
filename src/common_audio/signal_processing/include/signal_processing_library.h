@@ -19,6 +19,13 @@
 
 #include <string.h>
 
+#include <sphinxbase/sphinx_config.h>
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#else
+#include "rtc_base/typedefs.h"
+#endif
+
 // Vade retro C++
 //#include "common_audio/signal_processing/dot_product_with_scale.h"
 

@@ -93,6 +93,7 @@ common_audio/signal_processing/min_max_operations.c
 common_audio/signal_processing/cross_correlation.c
 common_audio/signal_processing/vector_scaling_operations.c
 common_audio/signal_processing/resample_by_2_internal.c
+common_audio/signal_processing/spl_inl.c
 common_audio/signal_processing/energy.c
 common_audio/signal_processing/get_scaling_square.c
 
