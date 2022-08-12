@@ -29,13 +29,16 @@
 #define RTC_NORETURN
 #endif
 
-#ifdef __cplusplus
+/* Vade Retro C++ */
+/* #ifdef __cplusplus
 extern "C" {
 #endif
 RTC_NORETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
 #ifdef __cplusplus
 }  // extern "C"
-#endif
+#endif */
+#include <sphinxbase/err.h>
+#define rtc_FatalMessage(file, line, msg) E_FATAL(msg)
 
 #ifdef RTC_DISABLE_CHECK_MSG
 #define RTC_CHECK_MSG_ENABLED 0
