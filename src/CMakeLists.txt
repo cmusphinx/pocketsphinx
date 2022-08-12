@@ -79,10 +79,32 @@ add_library(pocketsphinx
   util/bitarr.c
   util/pio.c
   util/genrand.c
+  common_audio/vad/vad_gmm.c
+  common_audio/vad/webrtc_vad.c
+  common_audio/vad/vad_filterbank.c
+  common_audio/vad/vad_core.c
+  common_audio/vad/vad_sp.c
+  common_audio/signal_processing/division_operations.c
+  common_audio/signal_processing/resample_48khz.c
+  common_audio/signal_processing/resample.c
+  common_audio/signal_processing/resample_fractional.c
+  common_audio/signal_processing/spl_init.c
+  common_audio/signal_processing/downsample_fast.c
+  common_audio/signal_processing/min_max_operations.c
+  common_audio/signal_processing/cross_correlation.c
+  common_audio/signal_processing/vector_scaling_operations.c
+  common_audio/signal_processing/complex_fft.c
+  common_audio/signal_processing/resample_by_2_internal.c
+  common_audio/signal_processing/energy.c
+  common_audio/signal_processing/spl_inl.c
+  common_audio/signal_processing/get_scaling_square.c
+  common_audio/signal_processing/complex_bit_reverse.c
+  common_audio/signal_processing/spl_sqrt.c
   )
 target_include_directories(
   pocketsphinx PRIVATE ${CMAKE_BINARY_DIR} # config.h
   pocketsphinx PRIVATE ${CMAKE_SOURCE_DIR}/include/pocketsphinx
+  pocketsphinx PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   pocketsphinx PUBLIC ${CMAKE_SOURCE_DIR}/include
   pocketsphinx PUBLIC ${CMAKE_BINARY_DIR}/include
   pocketsphinx INTERFACE ${CMAKE_SOURCE_DIR}/include

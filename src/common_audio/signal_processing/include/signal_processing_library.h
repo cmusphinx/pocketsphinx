@@ -19,7 +19,8 @@
 
 #include <string.h>
 
-#include "common_audio/signal_processing/dot_product_with_scale.h"
+// Vade retro C++
+//#include "common_audio/signal_processing/dot_product_with_scale.h"
 
 // Macros specific for the fixed point implementation
 #define WEBRTC_SPL_WORD16_MAX 32767
@@ -98,7 +99,8 @@ extern "C" {
 #include "common_audio/signal_processing/include/spl_inl.h"
 
 // third party math functions
-#include "common_audio/third_party/spl_sqrt_floor/spl_sqrt_floor.h"
+// (unused)
+//#include "common_audio/third_party/spl_sqrt_floor/spl_sqrt_floor.h"
 
 int16_t WebRtcSpl_GetScalingSquare(int16_t* in_vector,
                                    size_t in_vector_length,
