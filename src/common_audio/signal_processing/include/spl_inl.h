@@ -23,6 +23,7 @@
 #include "rtc_base/typedefs.h"
 #endif
 
+#if 0 /* Not used in VAD */
 extern const int8_t kWebRtcSpl_CountLeadingZeros32_Table[64];
 
 // Don't call this directly except in tests!
@@ -41,6 +42,7 @@ static __inline int WebRtcSpl_CountLeadingZeros32_NotBuiltin(uint32_t n) {
   // significant bits are unique. Then look up the answer in the table.
   return kWebRtcSpl_CountLeadingZeros32_Table[(n * 0x8c0b2891) >> 26];
 }
+#endif
 
 // Don't call this directly except in tests!
 static __inline int WebRtcSpl_CountLeadingZeros64_NotBuiltin(uint64_t n) {
