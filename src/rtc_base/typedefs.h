@@ -12,4 +12,7 @@ typedef uint16		uint16_t;
 typedef uint8		uint8_t;
 typedef int64		int64_t;
 typedef uint64		uint64_t;
+
+#define INT32_MAX	MAX_INT32
+#define INT32_MIN	MIN_INT32
 #endif
