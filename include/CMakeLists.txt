@@ -1,3 +1,5 @@
 install(FILES pocketsphinx.h TYPE INCLUDE)
 install(DIRECTORY pocketsphinx TYPE INCLUDE)
 install(DIRECTORY sphinxbase TYPE INCLUDE)
+# Install generated header file(s)
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/sphinxbase TYPE INCLUDE)
