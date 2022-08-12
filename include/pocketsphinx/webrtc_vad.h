@@ -17,7 +17,8 @@
 #define COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_
 
 #include <stddef.h>
-#include <stdint.h>
+
+#include <sphinxbase/prim_type.h>
 
 typedef struct WebRtcVadInst VadInst;
 
@@ -68,7 +69,7 @@ int WebRtcVad_set_mode(VadInst* handle, int mode);
 //                       -1 - (Error)
 int WebRtcVad_Process(VadInst* handle,
                       int fs,
-                      const int16_t* audio_frame,
+                      const int16* audio_frame,
                       size_t frame_length);
 
 // Checks for valid combinations of `rate` and `frame_length`. We support 10,
