@@ -31,7 +31,7 @@ set(TESTS
   test_state_align
   )
 foreach(TEST_EXECUTABLE ${TESTS})
-  add_executable(${TEST_EXECUTABLE} ${TEST_EXECUTABLE}.c)
+  add_executable(${TEST_EXECUTABLE} EXCLUDE_FROM_ALL ${TEST_EXECUTABLE}.c)
   target_link_libraries(${TEST_EXECUTABLE} pocketsphinx)
   target_include_directories(
     ${TEST_EXECUTABLE} PRIVATE ${CMAKE_SOURCE_DIR}/src
@@ -39,6 +39,7 @@ foreach(TEST_EXECUTABLE ${TESTS})
     ${TEST_EXECUTABLE} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_test(NAME ${TEST_EXECUTABLE} COMMAND ${TEST_EXECUTABLE})
+  add_dependencies(check ${TEST_EXECUTABLE})
 endforeach()
 
 add_subdirectory(test_alloc)

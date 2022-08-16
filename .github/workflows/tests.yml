@@ -16,7 +16,7 @@ jobs:
 
       - name: Run tests
         run: |
-          (cd build && make test)
+          (cd build && make check)
   pytest:
     runs-on: ubuntu-latest
     steps:

@@ -6,7 +6,7 @@ set(TEST_EXECUTABLES
   test_listelem_alloc
   )
 foreach(TEST_EXECUTABLE ${TEST_EXECUTABLES})
-  add_executable(${TEST_EXECUTABLE} ${TEST_EXECUTABLE}.c)
+  add_executable(${TEST_EXECUTABLE} EXCLUDE_FROM_ALL ${TEST_EXECUTABLE}.c)
   target_link_libraries(${TEST_EXECUTABLE} pocketsphinx)
   target_include_directories(
     ${TEST_EXECUTABLE} PRIVATE ${CMAKE_SOURCE_DIR}/src
@@ -14,6 +14,7 @@ foreach(TEST_EXECUTABLE ${TEST_EXECUTABLES})
     ${TEST_EXECUTABLE} PRIVATE ${CMAKE_BINARY_DIR}/test/unit
     ${TEST_EXECUTABLE} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
     )
+  add_dependencies(check ${TEST_EXECUTABLE})
 endforeach()
 add_test(NAME test_ckd_alloc COMMAND test_ckd_alloc)
 add_test(NAME test_listelem_alloc COMMAND test_listelem_alloc)
