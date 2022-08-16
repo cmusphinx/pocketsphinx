@@ -19,7 +19,9 @@ main(int argc, char *argv[])
     short buf[BUFLEN];
     size_t len;
 
+    #ifndef MODELDIR
     #define MODELDIR "../model"
+    #endif
     if ((config = cmd_ln_init(NULL, ps_args(), TRUE,
                               "-hmm", MODELDIR "/en-us/en-us",
                               "-lm", MODELDIR "/en-us/en-us.lm.bin",
