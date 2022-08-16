@@ -2,7 +2,7 @@ from pocketsphinx5 import Decoder
 import subprocess
 import os
 MODELDIR = os.path.join(os.path.dirname(__file__), os.path.pardir, "model")
-BUFSIZE = 1024
+BUFSIZE = 4096  # about 250ms
 
 decoder = Decoder(
     hmm=os.path.join(MODELDIR, "en-us/en-us"),
@@ -19,6 +19,9 @@ with subprocess.Popen(soxcmd.split(), stdout=subprocess.PIPE) as sox:
             if len(buf) == 0:
                 break
             decoder.process_raw(buf)
+            hyp = decoder.hyp()
+            if hyp is not None:
+                print(hyp.hypstr)
     except KeyboardInterrupt:
         pass
     finally:
