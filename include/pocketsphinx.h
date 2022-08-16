@@ -48,6 +48,9 @@
 #include <sphinxbase/fe.h>
 #include <sphinxbase/feat.h>
 
+/* SphinxBase headers you need. */
+#include <sphinxbase/err.h>
+
 /* PocketSphinx headers */
 #include <pocketsphinx/export.h>
 #include <pocketsphinx/cmdln_macro.h>
