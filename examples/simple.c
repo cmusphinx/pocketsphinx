@@ -15,12 +15,16 @@ main(int argc, char *argv[])
     cmd_ln_t *config;
     char *soxcmd;
     FILE *sox;
-    #define BUFLEN 1024
+    #define BUFLEN 4096 // about 250ms
     short buf[BUFLEN];
     size_t len;
 
-    if ((config = cmd_ln_parse_r(NULL, ps_args(),
-                                 argc, argv, TRUE)) == NULL)
+    #define MODELDIR "../model"
+    if ((config = cmd_ln_init(NULL, ps_args(), TRUE,
+                              "-hmm", MODELDIR "/en-us/en-us",
+                              "-lm", MODELDIR "/en-us/en-us.lm.bin",
+                              "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
+                              NULL)) == NULL)
         E_FATAL("Command line parse failed\n");
     ps_default_search_args(config);
     if ((decoder = ps_init(config)) == NULL)
@@ -39,9 +43,12 @@ main(int argc, char *argv[])
     free(soxcmd);
     ps_start_utt(decoder);
     while (!global_done) {
+        const char *hyp;
         len = fread(buf, sizeof(buf[0]), BUFLEN, sox);
         if (ps_process_raw(decoder, buf, len, FALSE, FALSE) < 0)
             E_FATAL("ps_process_raw() failed\n");
+        if ((hyp = ps_get_hyp(decoder, NULL)) != NULL)
+            printf("%s\n", hyp);
     }
     ps_end_utt(decoder);
     if (pclose(sox) < 0)
