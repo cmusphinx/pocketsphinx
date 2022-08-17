@@ -25,6 +25,7 @@ add_library(pocketsphinx
   fsg_lextree.c
   ps_mllr.c
   pocketsphinx.c
+  ps_vad.c
   kws_search.c
   acmod.c
   dict.c

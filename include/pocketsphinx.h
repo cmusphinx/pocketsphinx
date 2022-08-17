@@ -69,6 +69,10 @@ extern "C" {
  */
 typedef struct ps_decoder_s ps_decoder_t;
 
+/* Voice activity detection. */
+#include <pocketsphinx/ps_vad.h>
+
+/* Search modules. */
 #include <pocketsphinx/ps_search.h>
 
 /**
