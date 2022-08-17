@@ -1553,6 +1553,7 @@ cdef class Vad:
     @staticmethod
     def valid_rate_and_frame_length(rate, frame_length):
         """Confirm that sampling rate and frame size are supported.
+        This method is for compatibility only, do not use it.
         
         Args:
         rate(int): Sampling rate to test
