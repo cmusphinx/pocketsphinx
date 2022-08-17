@@ -1458,7 +1458,7 @@ cdef class Vad:
 
     Args:
       mode(int): Aggressiveness of voice activity detction (0-3)
-      sample_rate(int): Sampling rate of input, default is 8000
+      sample_rate(int): Sampling rate of input, default is 16000
                           (only 8000, 16000, 32000, and 48000 are
                           supported)
       frame_length(float): Input frame length in seconds, default
@@ -1466,9 +1466,9 @@ cdef class Vad:
                            supported)
 
     Attributes:
-      sample_rate(int): Sampling rate for input (default is 8000)
+      sample_rate(int): Sampling rate for input (default is 16000)
       frame_bytes(int): Number of bytes in a frame (default
-                        is 480, i.e. 30ms of 16-bit samples at 8kHz)
+                        is 960, i.e. 30ms of 16-bit samples at 16kHz)
       frame_length(float): Frame length in seconds (default is 0.03)
     """
     cdef VadInst* _vad
@@ -1476,7 +1476,7 @@ cdef class Vad:
     cdef public int frame_bytes
     cdef public float frame_length
     
-    def __init__(self, mode=None, sample_rate=8000, frame_length=0.03):
+    def __init__(self, mode=None, sample_rate=16000, frame_length=0.03):
         self._vad = WebRtcVad_Create()
         if WebRtcVad_Init(self._vad) < 0:
             raise RuntimeError("Failed to initialize VAD")
