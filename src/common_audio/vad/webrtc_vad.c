@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <pocketsphinx/webrtc_vad.h>
+#include "include/webrtc_vad.h"
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "common_audio/vad/vad_core.h"
@@ -54,7 +54,7 @@ int WebRtcVad_set_mode(VadInst* handle, int mode) {
   return WebRtcVad_set_mode_core(self, mode);
 }
 
-int WebRtcVad_Process(VadInst* handle, int fs, const int16* audio_frame,
+int WebRtcVad_Process(VadInst* handle, int fs, const int16_t* audio_frame,
                       size_t frame_length) {
   int vad = -1;
   VadInstT* self = (VadInstT*) handle;
