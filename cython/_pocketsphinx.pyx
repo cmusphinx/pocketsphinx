@@ -1458,15 +1458,34 @@ cdef class Vad:
 
     Args:
       mode(int): Aggressiveness of voice activity detction (0-3)
+      sample_rate(int): Sampling rate of input, default is 8000
+                          (only 8000, 16000, 32000, and 48000 are
+                          supported)
+      frame_length(float): Input frame length in seconds, default
+                           is 0.03 (only 0.01, 0.02, and 0.03 are
+                           supported)
+
+    Attributes:
+      sample_rate(int): Sampling rate for input (default is 8000)
+      frame_bytes(int): Number of bytes in a frame (default
+                        is 480, i.e. 30ms of 16-bit samples at 8kHz)
+      frame_length(float): Frame length in seconds (default is 0.03)
     """
     cdef VadInst* _vad
+    cdef public int sample_rate
+    cdef public int frame_bytes
+    cdef public float frame_length
     
-    def __init__(self, mode=None):
+    def __init__(self, mode=None, sample_rate=8000, frame_length=0.03):
         self._vad = WebRtcVad_Create()
         if WebRtcVad_Init(self._vad) < 0:
             raise RuntimeError("Failed to initialize VAD")
         if mode is not None:
             self.set_mode(mode)
+        self.set_input_params(sample_rate, frame_length)
+
+    def __dealloc__(self):
+        WebRtcVad_Free(self._vad)
 
     def set_mode(self, mode):
         """Set aggressiveness of voice activity detection
@@ -1477,21 +1496,31 @@ cdef class Vad:
         if WebRtcVad_set_mode(self._vad, mode) < 0:
             raise ValueError("Failed to set VAD mode")
 
-    def is_speech(self, buf, sample_rate, length=None):
+    def is_speech(self, buf, sample_rate=None, length=None):
         """Classify a buffer as speech or not.
         
         Args:
-          buf(bytes): Buffer containing speech data (16-bit signed integer)
-          sample_rate(int): Sampling rate, must be 8000, 16000, 32000, 48000.
-          length(Optional[int]): Length of buffer, can be determined from `buf`.
+          buf(bytes): Buffer containing speech data (16-bit signed integers)
+          sample_rate(Optional[int]): Sampling rate for this buffer,
+                                      must be 8000, 16000, 32000,
+                                      48000.  Default is set in
+                                      constructor, this is for
+                                      compatibility only.
+          length(Optional[int]): Length of buffer in samples, can be determined
+                                 from `buf`, for compatibility only.  Please
+                                 use the `frame_bytes` for the size of input
+                                 buffers (in bytes, not samples).
 
         Returns:
           (boolean) Classification as speech or not speech.
+
         """
         cdef const unsigned char[:] cbuf = buf
         cdef Py_ssize_t n_samples = len(cbuf) // 2
         if length is None:
             length = n_samples
+        if sample_rate is None:
+            sample_rate = self.sample_rate
         if length * 2 > len(cbuf):
             raise IndexError(
                 'buffer has %d frames, but length argument was %d' % (
@@ -1502,13 +1531,32 @@ cdef class Vad:
             raise ValueError("Invalid argument to VAD processing")
         return rv
 
+    def set_input_params(self, sample_rate, frame_length=30):
+        """Set (and verify) the sampling rate and frame size.
+
+        Args:
+          sample_rate(int): Sampling rate for input.
+          frame_length(float): Frame length in seconds.
+        Raises:
+          ValueError: If `sample_rate` or `frame_length` are
+                      unsupported.  Currently only supports sampling
+                      rates of 8000, 16000, 32000, and 48000 and frame
+                      lengths of 0.01, 0.02, and 0.03.
+        """
+        self.sample_rate = sample_rate
+        self.frame_bytes = int(sample_rate * frame_length) * 2
+        self.frame_length = frame_length
+        if not Vad.valid_rate_and_frame_length(self.sample_rate,
+                                               self.frame_bytes // 2):
+            raise ValueError("Invalid input parameters")
+
     @staticmethod
     def valid_rate_and_frame_length(rate, frame_length):
         """Confirm that sampling rate and frame size are supported.
         
         Args:
         rate(int): Sampling rate to test
-        frame_length(int): Frame length in milliseconds.
+        frame_length(int): Frame length in samples
         
         Returns:
         (boolean) True if supported.

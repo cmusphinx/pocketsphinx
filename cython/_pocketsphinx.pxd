@@ -406,7 +406,7 @@ cdef extern from "pocketsphinx/ps_search.h":
     int ps_set_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
     int ps_set_align(ps_decoder_t *ps, const char *name, const char *words)
 
-cdef extern from "pocketsphinx/webrtc_vad.h":
+cdef extern from "../src/common_audio/vad/include/webrtc_vad.h":
     ctypedef struct VadInst:
         pass
     VadInst* WebRtcVad_Create()
