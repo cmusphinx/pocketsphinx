@@ -54,7 +54,8 @@ main(int argc, char *argv[])
     ps_start_utt(decoder);
     while (!global_done) {
         const char *hyp;
-        len = fread(buf, sizeof(buf[0]), BUFLEN, sox);
+        if ((len = fread(buf, sizeof(buf[0]), BUFLEN, sox)) == 0)
+            break;
         if (ps_process_raw(decoder, buf, len, FALSE, FALSE) < 0)
             E_FATAL("ps_process_raw() failed\n");
         if ((hyp = ps_get_hyp(decoder, NULL)) != NULL)
