@@ -1,7 +1,6 @@
 /* Example of simple PocketSphinx recognition.
  *
- * MIT license (c) 2022 Carnegie Mellon Unversity, see LICENSE for
- * more information.
+ * MIT license (c) 2022, see LICENSE for more information.
  *
  * Author: David Huggins-Daines <dhdaines@gmail.com>
  */
