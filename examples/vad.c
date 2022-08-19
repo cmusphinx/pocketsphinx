@@ -23,6 +23,7 @@ main(int argc, char *argv[])
     FILE *sox;
     short *frame;
     size_t len, frame_size;
+    int prev_is_speech;
 
     if ((vader = ps_vad_init(0, 0, 0)) == NULL)
         E_FATAL("PocketSphinx VAD init failed\n");
@@ -40,6 +41,7 @@ main(int argc, char *argv[])
     frame_size = ps_vad_frame_size(vader);
     if ((frame = malloc(frame_size * sizeof(frame[0]))) == NULL)
         E_FATAL_SYSTEM("Failed to allocate frame");
+    prev_is_speech = 0;
     while (!global_done) {
         int is_speech;
         if (fread(frame, sizeof(frame[0]), frame_size, sox) != frame_size) {
@@ -48,7 +50,9 @@ main(int argc, char *argv[])
             break;
         }
         is_speech = ps_vad_classify(vader, frame);
-        printf("%s\n", is_speech ? "speech" : "not speech");
+        if (is_speech != prev_is_speech)
+            printf("%s\n", is_speech ? "speech" : "not speech");
+        prev_is_speech = is_speech;
     }
     free(frame);
     if (pclose(sox) < 0)
