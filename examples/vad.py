@@ -6,8 +6,6 @@ Detect speech endlessly from the default audio device.
 from pocketsphinx5 import Vad
 import subprocess
 
-VAD_FRAMES = 10  # Number of frames used to make speech/non-speech decision
-
 vader = Vad()
 soxcmd = f"sox -q -r {vader.sample_rate} -c 1 -b 16 -e signed-integer -d -t raw -"
 with subprocess.Popen(soxcmd.split(), stdout=subprocess.PIPE) as sox:
