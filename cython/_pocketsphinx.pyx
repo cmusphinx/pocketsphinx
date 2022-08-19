@@ -1470,6 +1470,9 @@ cdef class Vad:
       frame_bytes(int): Number of bytes in a frame (default
                         is 960, i.e. 30ms of 16-bit samples at 16kHz)
       frame_length(float): Frame length in seconds (default is 0.03)
+
+    Raises:
+      ValueError: Invalid input parameter (see above).
     """
     cdef ps_vad_t *_vad
     cdef public int sample_rate
@@ -1495,19 +1498,23 @@ cdef class Vad:
     def __dealloc__(self):
         ps_vad_free(self._vad)
 
-    def is_speech(self, buf, sample_rate=None):
-        """Classify a buffer as speech or not.
+    def is_speech(self, frame, sample_rate=None):
+        """Classify a frame as speech or not.
         
         Args:
-          buf(bytes): Buffer containing speech data (16-bit signed integers)
+          frame(bytes): Buffer containing speech data (16-bit signed
+                        integers).  Must be of length `frame_bytes`
+                        (in bytes).
         Returns:
           (boolean) Classification as speech or not speech.
-
+        Raises:
+          IndexError: `buf` is of invalid size.
+          ValueError: Other internal VAD error.
         """
         cdef const unsigned char[:] cbuf = buf
         cdef Py_ssize_t n_samples = len(cbuf) // 2
         if len(cbuf) != self.frame_bytes:
-            raise ValueError("Frame size must be %d bytes" % self.frame_bytes)
+            raise IndexError("Frame size must be %d bytes" % self.frame_bytes)
         rv = ps_vad_classify(self._vad, <const short *>&cbuf[0])
         if rv < 0:
             raise ValueError("VAD classification failed")
