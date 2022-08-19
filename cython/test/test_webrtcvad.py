@@ -3,12 +3,12 @@ import wave
 import os
 from memory_profiler import memory_usage
 
-import pocketsphinx5 as webrtcvad
-webrtcvad.valid_rate_and_frame_length = webrtcvad.Vad.valid_rate_and_frame_length
+from pocketsphinx5 import Vad
 
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data/vad")
 
-class WebRtcVadTests(unittest.TestCase):
+
+class VadTests(unittest.TestCase):
     @staticmethod
     def _load_wave(file_name):
         fp = wave.open(file_name, 'rb')
@@ -30,42 +30,35 @@ class WebRtcVadTests(unittest.TestCase):
         return sound_data, sampling_frequency
 
     def test_constructor(self):
-        vad = webrtcvad.Vad()
+        _ = Vad()
 
     def test_set_mode(self):
-        vad = webrtcvad.Vad()
-        vad.set_mode(0)
-        vad.set_mode(1)
-        vad.set_mode(2)
-        vad.set_mode(3)
-        self.assertRaises(
-            ValueError,
-            vad.set_mode, 4)
+        _ = Vad(0)
+        _ = Vad(1)
+        _ = Vad(2)
+        _ = Vad(3)
+        with self.assertRaises(ValueError):
+            _ = Vad(4)
 
     def test_valid_rate_and_frame_length(self):
-        self.assertTrue(webrtcvad.valid_rate_and_frame_length(8000, 160))
-        self.assertTrue(webrtcvad.valid_rate_and_frame_length(16000, 160))
-        self.assertFalse(webrtcvad.valid_rate_and_frame_length(32000, 160))
-        self.assertRaises(
-            (ValueError, OverflowError),
-            webrtcvad.valid_rate_and_frame_length, 2 ** 35, 10)
+        _ = Vad(sample_rate=8000, frame_length=0.01)
+        _ = Vad(sample_rate=16000, frame_length=0.02)
+        _ = Vad(sample_rate=32000, frame_length=0.01)
+        _ = Vad(sample_rate=48000, frame_length=0.03)
+        with self.assertRaises(ValueError):
+            _ = Vad(sample_rate=283423, frame_length=1e-5)
 
     def test_process_zeroes(self):
         frame_len = 160
-        self.assertTrue(
-            webrtcvad.valid_rate_and_frame_length(8000, frame_len))
         sample = b'\x00' * frame_len * 2
-        vad = webrtcvad.Vad()
-        self.assertFalse(vad.is_speech(sample, 16000))
+        vad = Vad(sample_rate=16000, frame_length=0.01)
+        self.assertFalse(vad.is_speech(sample))
 
     def test_process_file(self):
         with open(os.path.join(DATADIR, 'test-audio.raw'), 'rb') as f:
             data = f.read()
-        frame_ms = 30
+        # 30ms frames at 8kHz
         n = int(8000 * 2 * 30 / 1000.0)
-        frame_len = int(n / 2)
-        self.assertTrue(
-            webrtcvad.valid_rate_and_frame_length(8000, frame_len))
         chunks = list(data[pos:pos + n] for pos in range(0, len(data), n))
         if len(chunks[-1]) != n:
             chunks = chunks[:-1]
@@ -76,10 +69,10 @@ class WebRtcVadTests(unittest.TestCase):
             '000000111111111111111100000000'
         ]
         for mode in (0, 1, 2, 3):
-            vad = webrtcvad.Vad(mode)
+            vad = Vad(mode=mode, sample_rate=8000, frame_length=0.03)
             result = ''
             for chunk in chunks:
-                voiced = vad.is_speech(chunk, 8000)
+                voiced = vad.is_speech(chunk)
                 result += '1' if voiced else '0'
             self.assertEqual(expecteds[mode], result)
 
@@ -89,7 +82,7 @@ class WebRtcVadTests(unittest.TestCase):
         frame_len = int(round(fs * frame_ms))
         n = int(len(sound) / (2 * frame_len))
         nrepeats = 1000
-        vad = webrtcvad.Vad(3)
+        vad = Vad(mode=3, sample_rate=fs, frame_length=frame_ms)
         used_memory_before = memory_usage(-1)[0]
         for counter in range(nrepeats):
             find_voice = False
