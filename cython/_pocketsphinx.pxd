@@ -406,15 +406,26 @@ cdef extern from "pocketsphinx/ps_search.h":
     int ps_set_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
     int ps_set_align(ps_decoder_t *ps, const char *name, const char *words)
 
-cdef extern from "../src/common_audio/vad/include/webrtc_vad.h":
-    ctypedef struct VadInst:
+cdef extern from "pocketsphinx/ps_vad.h":
+    ctypedef struct ps_vad_t:
         pass
-    VadInst* WebRtcVad_Create()
-    void WebRtcVad_Free(VadInst* handle)
-    int WebRtcVad_Init(VadInst* handle)
-    int WebRtcVad_set_mode(VadInst* handle, int mode)
-    int WebRtcVad_Process(VadInst* handle,
-                          int fs,
-                          const short* audio_frame,
-                          size_t frame_length)
-    int WebRtcVad_ValidRateAndFrameLength(int rate, size_t frame_length)
+    cdef enum ps_vad_mode_e:
+        PS_VAD_LOOSE,
+        PS_VAD_MEDIUM_LOOSE,
+        PS_VAD_MEDIUM_STRICT,
+        PS_VAD_STRICT
+    ctypedef ps_vad_mode_e ps_vad_mode_t
+    cdef enum ps_vad_class_e:
+        PS_VAD_ERROR,
+        PS_VAD_NOT_SPEECH,
+        PS_VAD_SPEECH
+    ctypedef ps_vad_class_e ps_vad_class_t
+    cdef int PS_VAD_DEFAULT_SAMPLE_RATE
+    cdef float PS_VAD_DEFAULT_FRAME_LENGTH
+
+    ps_vad_t *ps_vad_init(ps_vad_mode_t mode, int sample_rate, float frame_length)
+    int ps_vad_free(ps_vad_t *vad)
+    int ps_vad_set_input_params(ps_vad_t *vad, int sample_rate, float frame_length)
+    int ps_vad_sample_rate(ps_vad_t *vad)
+    size_t ps_vad_frame_size(ps_vad_t *vad)
+    ps_vad_class_t ps_vad_classify(ps_vad_t *vad, const short *frame)

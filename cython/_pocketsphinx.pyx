@@ -1454,16 +1454,16 @@ cdef class Decoder:
         return ps_get_n_frames(self.ps)
 
 cdef class Vad:
-    """Voice activity detection using WebRTC VAD.
+    """Voice activity detection class.
 
     Args:
       mode(int): Aggressiveness of voice activity detction (0-3)
       sample_rate(int): Sampling rate of input, default is 16000
                           (only 8000, 16000, 32000, and 48000 are
-                          supported)
+                          supported for the moment)
       frame_length(float): Input frame length in seconds, default
                            is 0.03 (only 0.01, 0.02, and 0.03 are
-                           supported)
+                           supported for the moment)
 
     Attributes:
       sample_rate(int): Sampling rate for input (default is 16000)
@@ -1471,95 +1471,44 @@ cdef class Vad:
                         is 960, i.e. 30ms of 16-bit samples at 16kHz)
       frame_length(float): Frame length in seconds (default is 0.03)
     """
-    cdef VadInst* _vad
+    cdef ps_vad_t *_vad
     cdef public int sample_rate
-    cdef public int frame_bytes
+    cdef public size_t frame_bytes
     cdef public float frame_length
+    LOOSE = PS_VAD_LOOSE
+    MEDIUM_LOOSE = PS_VAD_MEDIUM_LOOSE
+    MEDIUM_STRICT = PS_VAD_MEDIUM_STRICT
+    STRICT = PS_VAD_STRICT
+    DEFAULT_SAMPLE_RATE = PS_VAD_DEFAULT_SAMPLE_RATE
+    DEFAULT_FRAME_LENGTH = PS_VAD_DEFAULT_FRAME_LENGTH
     
-    def __init__(self, mode=None, sample_rate=16000, frame_length=0.03):
-        self._vad = WebRtcVad_Create()
-        if WebRtcVad_Init(self._vad) < 0:
-            raise RuntimeError("Failed to initialize VAD")
-        if mode is not None:
-            self.set_mode(mode)
-        self.set_input_params(sample_rate, frame_length)
+    def __init__(self, mode=PS_VAD_LOOSE,
+                 sample_rate=PS_VAD_DEFAULT_SAMPLE_RATE,
+                 frame_length=PS_VAD_DEFAULT_FRAME_LENGTH):
+        self._vad = ps_vad_init(mode, sample_rate, frame_length)
+        if self._vad == NULL:
+            raise ValueError("Invalid VAD parameters")
+        self.sample_rate = sample_rate
+        self.frame_length = frame_length
+        self.frame_bytes = ps_vad_frame_size(self._vad) * 2
 
     def __dealloc__(self):
-        WebRtcVad_Free(self._vad)
+        ps_vad_free(self._vad)
 
-    def set_mode(self, mode):
-        """Set aggressiveness of voice activity detection
-        
-        Args:
-          mode(int): Aggressiveness of voice activity detction (0-3)
-        """
-        if WebRtcVad_set_mode(self._vad, mode) < 0:
-            raise ValueError("Failed to set VAD mode")
-
-    def is_speech(self, buf, sample_rate=None, length=None):
+    def is_speech(self, buf, sample_rate=None):
         """Classify a buffer as speech or not.
         
         Args:
           buf(bytes): Buffer containing speech data (16-bit signed integers)
-          sample_rate(Optional[int]): Sampling rate for this buffer,
-                                      must be 8000, 16000, 32000,
-                                      48000.  Default is set in
-                                      constructor, this is for
-                                      compatibility only.
-          length(Optional[int]): Length of buffer in samples, can be determined
-                                 from `buf`, for compatibility only.  Please
-                                 use the `frame_bytes` for the size of input
-                                 buffers (in bytes, not samples).
-
         Returns:
           (boolean) Classification as speech or not speech.
 
         """
         cdef const unsigned char[:] cbuf = buf
         cdef Py_ssize_t n_samples = len(cbuf) // 2
-        if length is None:
-            length = n_samples
-        if sample_rate is None:
-            sample_rate = self.sample_rate
-        if length * 2 > len(cbuf):
-            raise IndexError(
-                'buffer has %d frames, but length argument was %d' % (
-                    n_samples, length))
-        rv = WebRtcVad_Process(self._vad, sample_rate,
-                               <const short *>&cbuf[0], length)
+        if len(cbuf) != self.frame_bytes:
+            raise ValueError("Frame size must be %d bytes" % self.frame_bytes)
+        rv = ps_vad_classify(self._vad, <const short *>&cbuf[0])
         if rv < 0:
-            raise ValueError("Invalid argument to VAD processing")
-        return rv
-
-    def set_input_params(self, sample_rate, frame_length=30):
-        """Set (and verify) the sampling rate and frame size.
-
-        Args:
-          sample_rate(int): Sampling rate for input.
-          frame_length(float): Frame length in seconds.
-        Raises:
-          ValueError: If `sample_rate` or `frame_length` are
-                      unsupported.  Currently only supports sampling
-                      rates of 8000, 16000, 32000, and 48000 and frame
-                      lengths of 0.01, 0.02, and 0.03.
-        """
-        self.sample_rate = sample_rate
-        self.frame_bytes = int(sample_rate * frame_length) * 2
-        self.frame_length = frame_length
-        if not Vad.valid_rate_and_frame_length(self.sample_rate,
-                                               self.frame_bytes // 2):
-            raise ValueError("Invalid input parameters")
-
-    @staticmethod
-    def valid_rate_and_frame_length(rate, frame_length):
-        """Confirm that sampling rate and frame size are supported.
-        This method is for compatibility only, do not use it.
-        
-        Args:
-        rate(int): Sampling rate to test
-        frame_length(int): Frame length in samples
-        
-        Returns:
-        (boolean) True if supported.
-        """
-        return WebRtcVad_ValidRateAndFrameLength(rate, frame_length) == 0
+            raise ValueError("VAD classification failed")
+        return rv == PS_VAD_SPEECH
