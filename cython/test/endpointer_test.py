@@ -4,7 +4,6 @@ Segment live speech from the default audio device.
 """
 
 from pocketsphinx5 import Vad
-from collections import deque
 from contextlib import closing
 import unittest
 import subprocess
@@ -17,33 +16,54 @@ DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data/librivox")
 
 class VadQ:
     def __init__(self, vad_frames=10, frame_length=0.03):
-        self.frames = deque(maxlen=vad_frames)
-        self.is_speech = deque(maxlen=vad_frames)
+        self.frames = [None] * vad_frames
+        self.is_speech = [0] * vad_frames
+        self.n = self.pos = 0
         self.maxlen = vad_frames
         self.frame_length = frame_length
         self.start_time = 0.0
 
     def __len__(self):
-        return len(self.frames)
+        return self.n
 
     def empty(self):
-        return len(self.frames) == 0
+        return self.n == 0
 
     def full(self):
-        return len(self.frames) == self.maxlen
+        return self.n == self.maxlen
 
     def push(self, is_speech, pcm):
+        i = (self.pos + self.n) % self.maxlen
+        self.frames[i] = pcm
+        self.is_speech[i] = is_speech
         if self.full():
             self.start_time += self.frame_length
-        self.frames.append(pcm)
-        self.is_speech.append(is_speech)
+            self.pos = (self.pos + 1) % self.maxlen
+        else:
+            self.n += 1
 
     def pop(self):
+        if self.empty():
+            raise IndexError("Queue is empty")
         self.start_time += self.frame_length
-        return self.is_speech.popleft(), self.frames.popleft()
+        rv = self.is_speech[self.pos], self.frames[self.pos]
+        self.pos = (self.pos + 1) % self.maxlen
+        self.n -= 1
+        return rv
 
     def speech_count(self):
-        return sum(self.is_speech)
+        if self.empty():
+            return 0
+        if self.full():
+            return sum(self.is_speech)
+        # Ideally we would let it equal self.maxlen
+        end = (self.pos + self.n) % self.maxlen
+        if end > self.pos:
+            return sum(self.is_speech[self.pos:end])
+        else:
+            # Note second term is 0 if end is 0
+            return sum(self.is_speech[self.pos:]) + sum(self.is_speech[:end])
+
 
 class Endpointer(Vad):
     def __init__(
