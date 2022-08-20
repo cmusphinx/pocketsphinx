@@ -44,8 +44,8 @@ what you want.
 Segmentation
 ------------
 
-The examples `segment.c` and `segment.py` use voice activity detection
-to *segment* the input stream into speech-like regions.
+The example `segment.py` uses voice activity detection to *segment*
+the input stream into speech-like regions.
 
 Live recognition
 ----------------
