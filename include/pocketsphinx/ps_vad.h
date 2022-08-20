@@ -138,6 +138,15 @@ POCKETSPHINX_EXPORT
 size_t ps_vad_frame_size(ps_vad_t *vad);
 
 /**
+ * Get the number of seconds of audio in each frame.
+ *
+ * @param vad Voice activity detector.
+ * @return Length, in seconds, of the frames passed to ps_vad_classify().
+ */
+POCKETSPHINX_EXPORT
+float ps_vad_frame_length(ps_vad_t *vad);
+
+/**
  * Classify a frame as speech or not speech.
  *
  * @param vad Voice activity detector.

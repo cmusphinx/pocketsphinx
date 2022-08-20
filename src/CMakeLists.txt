@@ -26,6 +26,7 @@ add_library(pocketsphinx
   ps_mllr.c
   pocketsphinx.c
   ps_vad.c
+  ps_endpointer.c
   kws_search.c
   acmod.c
   dict.c

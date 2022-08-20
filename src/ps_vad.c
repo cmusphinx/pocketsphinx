@@ -1,38 +1,31 @@
-/* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
+/* -*- c-basic-offset:4; indent-tabs-mode: nil -*- */
 /* ====================================================================
- * Copyright (c) 2022 Carnegie Mellon University.  All rights
- * reserved.
+ * Copyright (c) 2022 David Huggins-Daines.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
+ *    notice, this list of conditions and the following disclaimer. 
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced
- * Research Projects Agency and the National Science Foundation of the
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
  * ====================================================================
- *
  */
 
 #include <stdlib.h>
@@ -48,6 +41,7 @@ struct ps_vad_s {
     int refcount;
     int sample_rate;
     int frame_size;
+    float frame_length;
 };
 
 ps_vad_t *
@@ -62,7 +56,7 @@ ps_vad_init(ps_vad_mode_t mode, int sample_rate, float frame_length)
         goto error_out;
     return vad;
 error_out:
-    ckd_free(vad);
+    ps_vad_free(vad);
     return NULL;
 }
 
@@ -99,6 +93,7 @@ ps_vad_set_input_params(ps_vad_t *vad, int sample_rate, float frame_length)
         return rv;
     vad->sample_rate = sample_rate;
     vad->frame_size = frame_size;
+    vad->frame_length = frame_length;
     return rv;
 }
 
@@ -116,6 +111,14 @@ ps_vad_frame_size(ps_vad_t *vad)
     if (vad == NULL)
         return -1;
     return vad->frame_size;
+}
+
+float
+ps_vad_frame_length(ps_vad_t *vad)
+{
+    if (vad == NULL)
+        return 0.0;
+    return vad->frame_length;
 }
 
 ps_vad_class_t
