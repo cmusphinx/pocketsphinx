@@ -69,6 +69,7 @@ ps_endpointer_init(int nframes,
     ep->buf = ckd_calloc(sizeof(*ep->buf),
                          ep->maxlen * ep->frame_size);
     ep->is_speech = ckd_calloc(1, ep->maxlen);
+    ep->pos = ep->n = 0;
     return ep;
 error_out:
     ps_endpointer_free(ep);
@@ -144,7 +145,7 @@ static int
 ep_push(ps_endpointer_t *ep, int is_speech, const int16 *frame)
 {
     int i = (ep->pos + ep->n) % ep->maxlen;
-    int16 *dest = ep->buf + (i * sizeof(*ep->buf) * ep->frame_size);
+    int16 *dest = ep->buf + (i * ep->frame_size);
     memcpy(dest, frame, sizeof(*ep->buf) * ep->frame_size);
     ep->is_speech[i] = is_speech;
     if (ep_full(ep)) {
@@ -165,7 +166,7 @@ ep_pop(ps_endpointer_t *ep, int *out_is_speech)
     ep->qstart_time += ep->frame_length;
     if (out_is_speech)
         *out_is_speech = ep->is_speech[ep->pos];
-    pcm = ep->buf + (ep->pos * sizeof(*ep->buf) * ep->frame_size);
+    pcm = ep->buf + (ep->pos * ep->frame_size);
     ep->pos = (ep->pos + 1) % ep->maxlen;
     ep->n--;
     return pcm;
