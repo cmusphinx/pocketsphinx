@@ -1596,6 +1596,6 @@ cdef class Endpointer:
                                           &out_n_samples)
         if outbuf == NULL:
             return None
-        return (<const unsigned char *>&outbuf[0])[:n_samples * 2]
+        return (<const unsigned char *>&outbuf[0])[:out_n_samples * 2]
 
 
