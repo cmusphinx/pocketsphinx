@@ -41,7 +41,7 @@ class Segmenter(Vad):
             if self.speech_frames:
                 self.speech_frames.append(self.buf.popleft()[-1])
                 if speech_count < (1.0 - self.ratio) * self.buf.maxlen:
-                    self.end_time = self.buf[-1][1]
+                    self.end_time = self.buf[-1][1] + self.frame_length
                     self.speech_frames.extend(frame for _, _, frame in self.buf)
                     yield Speech(
                         idx=idx,

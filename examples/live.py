@@ -37,7 +37,7 @@ class Endpointer(Vad):
         # Handle state transitions
         if self.in_speech:
             if speech_count < (1.0 - self.ratio) * self.buf.maxlen:
-                self.end_time = self.buf[-1][1]
+                self.end_time = self.buf[-1][1] + self.frame_length
                 self.in_speech = False
                 # Return all trailing frames to match webrtc example
                 return b"".join(frame for _, _, frame in self.buf)

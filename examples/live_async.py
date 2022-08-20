@@ -53,7 +53,7 @@ class Endpointer(Vad):
             yield self.buf.popleft()
             speech_count = await self.read_frame()
             if speech_count < (1.0 - self.ratio) * self.buf.maxlen:
-                self.end_time = self.buf[-1][1]
+                self.end_time = self.buf[-1][1] + self.frame_length
                 for frame in self.buf:
                     yield frame
                 self.buf.clear()
