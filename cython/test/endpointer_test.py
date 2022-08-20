@@ -79,7 +79,7 @@ class Endpointer(Vad):
         self.ratio = vad_ratio
         self.timestamp = 0.0
         self.in_speech = False
-        self.start_time = self.end_time = None
+        self.segment_start = self.segment_end = None
 
     def eof_speech(self, frame):
         speech_frames = []
@@ -87,12 +87,12 @@ class Endpointer(Vad):
             is_speech, pcm = self.vadq.pop()
             if is_speech:
                 speech_frames.append(pcm)
-                self.end_time = self.vadq.start_time
+                self.segment_end = self.vadq.start_time
             else:
                 break
         if self.vadq.empty():
             speech_frames.append(frame)
-            self.end_time = self.timestamp
+            self.segment_end = self.timestamp
         return b"".join(speech_frames)
 
     def process(self, frame):
@@ -117,13 +117,13 @@ class Endpointer(Vad):
                 # queue to prevent overlapping segments.  It's also
                 # closer to what human annotators will do.
                 _, outframe = self.vadq.pop()
-                self.end_time = self.vadq.start_time
+                self.segment_end = self.vadq.start_time
                 self.in_speech = False
                 return outframe
         else:
             if speech_count > self.ratio * self.vadq.maxlen:
-                self.start_time = self.vadq.start_time
-                self.end_time = None
+                self.segment_start = self.vadq.start_time
+                self.segment_end = None
                 self.in_speech = True
         # Return a buffer if we are in a speech region
         if self.in_speech:
@@ -193,13 +193,13 @@ class EndpointerTest(unittest.TestCase):
                 if speech is not None:
                     if not ep.in_speech:
                         start_time, end_time, _ = labels[idx]
-                        start_diff = abs(start_time - ep.start_time)
-                        end_diff = abs(end_time - ep.end_time)
+                        start_diff = abs(start_time - ep.segment_start)
+                        end_diff = abs(end_time - ep.segment_end)
                         print(
                             "%.2f:%.2f (truth: %.2f:%.2f) (diff:%.2f:%.2f)"
                             % (
-                                ep.start_time,
-                                ep.end_time,
+                                ep.segment_start,
+                                ep.segment_end,
                                 start_time,
                                 end_time,
                                 start_diff,
