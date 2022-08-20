@@ -75,7 +75,6 @@ typedef enum ps_vad_class_e {
 /**
  * Initialize voice activity detection.
  *
- *
  * @param mode "Aggressiveness" of voice activity detection.  Stricter
  *             values (see ps_vad_mode_t) are less likely to
  *             misclassify non-speech as speech.
@@ -148,7 +147,7 @@ size_t ps_vad_frame_size(ps_vad_t *vad);
  *         ps_vad_class_t).
  */
 POCKETSPHINX_EXPORT
-ps_vad_class_t ps_vad_classify(ps_vad_t *vad, const short *frame);
+ps_vad_class_t ps_vad_classify(ps_vad_t *vad, const int16 *frame);
 
 #ifdef __cplusplus
 }

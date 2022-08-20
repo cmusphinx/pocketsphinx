@@ -72,6 +72,9 @@ typedef struct ps_decoder_s ps_decoder_t;
 /* Voice activity detection. */
 #include <pocketsphinx/ps_vad.h>
 
+/* Endpointing. */
+#include <pocketsphinx/ps_endpointer.h>
+
 /* Search modules. */
 #include <pocketsphinx/ps_search.h>
 
@@ -362,13 +365,14 @@ int ps_start_stream(ps_decoder_t *ps);
  * @deprecated This function is retained for compatibility but should
  * not be considered a reliable voice activity detector.  It will
  * always return 1 between calls to ps_start_utt() and ps_end_utt().
+ * You probably want ps_endpointer_t, but for single frames of data
+ * you can also use ps_vad_t.
  *
  * @param ps Decoder.
  * @return 1 if last buffer contained speech, 0 - otherwise
  */
 POCKETSPHINX_EXPORT
 int ps_get_in_speech(ps_decoder_t *ps);
-
 
 /**
  * Start utterance processing.
