@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include <sphinxbase/ckd_alloc.h>
+#include <sphinxbase/err.h>
 #include <pocketsphinx/ps_vad.h>
 
 #include "common_audio/vad/include/webrtc_vad.h"
@@ -50,8 +51,10 @@ ps_vad_init(ps_vad_mode_t mode, int sample_rate, float frame_length)
     ps_vad_t *vad = ckd_calloc(1, sizeof(*vad));
     vad->refcount = 1;
     WebRtcVad_Init((VadInst *)vad);
-    if (WebRtcVad_set_mode((VadInst *)vad, mode) < 0)
+    if (WebRtcVad_set_mode((VadInst *)vad, mode) < 0) {
+        E_ERROR("Invalid VAD mode %d\n", mode);
         goto error_out;
+    }
     if (ps_vad_set_input_params(vad, sample_rate, frame_length) < 0)
         goto error_out;
     return vad;
@@ -89,8 +92,11 @@ ps_vad_set_input_params(ps_vad_t *vad, int sample_rate, float frame_length)
     if (frame_length == 0)
         frame_length = PS_VAD_DEFAULT_FRAME_LENGTH;
     frame_size = (size_t)(sample_rate * frame_length);
-    if ((rv = WebRtcVad_ValidRateAndFrameLength(sample_rate, frame_size)) < 0)
+    if ((rv = WebRtcVad_ValidRateAndFrameLength(sample_rate, frame_size)) < 0) {
+        E_ERROR("Invalid sampling rate %d or frame length %f\n",
+                sample_rate, frame_length);
         return rv;
+    }
     vad->sample_rate = sample_rate;
     vad->frame_size = frame_size;
     vad->frame_length = frame_length;
