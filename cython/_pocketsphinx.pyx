@@ -109,7 +109,7 @@ cdef class Config:
         if config == NULL:
             return None
         return Config.create_from_ptr(config)
-        
+
     def __dealloc__(self):
         cmd_ln_free_r(self.cmd_ln)
 
@@ -662,7 +662,7 @@ cdef class Jsgf:
     """JSGF parser.
     """
     cdef jsgf_t *jsgf
-    
+
     def __init__(self, str path, Jsgf parent=None):
         cdef jsgf_t *cparent
         cpath = path.encode()
@@ -710,12 +710,12 @@ cdef class Lattice:
     def __dealloc__(self):
         if self.dag != NULL:
             ps_lattice_free(self.dag)
-    
+
     def write(self, str path):
         rv = ps_lattice_write(self.dag, path.encode("utf-8"))
         if rv < 0:
             raise RuntimeError("Failed to write lattice to %s" % path)
-    
+
     def write_htk(self, str path):
         rv = ps_lattice_write_htk(self.dag, path.encode("utf-8"))
         if rv < 0:
@@ -1124,7 +1124,7 @@ cdef class Decoder:
         if fsg == NULL:
             return None
         return FsgModel.create_from_ptr(fsg_model_retain(fsg))
-    
+
     def set_fsg(self, str name, FsgModel fsg):
         """Create a search module from an FSG.
 
@@ -1218,7 +1218,7 @@ cdef class Decoder:
         if rv < 0:
             return RuntimeError("Failed to set keyword search %s from phrase %s"
                                 % (name, keyphrase))
-    
+
     def set_allphone_file(self, str name, str lmfile = None):
         """Create a phoneme recognition search module.
 
@@ -1285,7 +1285,7 @@ cdef class Decoder:
             Config: Configuration parsed from `path`.
         """
         return Config.parse_file(path)
-    
+
     def load_dict(self, str dict_path, str fdict_path = None, str _format = None):
         """Load dictionary (and possibly noise dictionary) from a file.
 
@@ -1484,7 +1484,7 @@ cdef class Vad:
     STRICT = PS_VAD_STRICT
     DEFAULT_SAMPLE_RATE = PS_VAD_DEFAULT_SAMPLE_RATE
     DEFAULT_FRAME_LENGTH = PS_VAD_DEFAULT_FRAME_LENGTH
-    
+
     def __init__(self, mode=PS_VAD_LOOSE,
                  sample_rate=PS_VAD_DEFAULT_SAMPLE_RATE,
                  frame_length=PS_VAD_DEFAULT_FRAME_LENGTH):
@@ -1500,7 +1500,7 @@ cdef class Vad:
 
     def is_speech(self, frame, sample_rate=None):
         """Classify a frame as speech or not.
-        
+
         Args:
           frame(bytes): Buffer containing speech data (16-bit signed
                         integers).  Must be of length `frame_bytes`
@@ -1519,3 +1519,83 @@ cdef class Vad:
         if rv < 0:
             raise ValueError("VAD classification failed")
         return rv == PS_VAD_SPEECH
+
+cdef class Endpointer:
+    """Simple endpointer using voice activity detection.
+    """
+    cdef ps_endpointer_t *_ep
+    DEFAULT_NFRAMES = PS_ENDPOINTER_DEFAULT_NFRAMES
+    DEFAULT_RATIO = PS_ENDPOINTER_DEFAULT_RATIO
+    def __init__(
+        self,
+        vad_frames=10,
+        vad_ratio=0.9,
+        vad_mode=Vad.LOOSE,
+        sample_rate=Vad.DEFAULT_SAMPLE_RATE,
+        frame_length=Vad.DEFAULT_FRAME_LENGTH,
+    ):
+        self._ep = ps_endpointer_init(vad_frames, vad_ratio,
+                                      vad_mode, sample_rate, frame_length)
+        if (self._ep == NULL):
+            raise ValueError("Invalid endpointer or VAD parameters")
+
+    @property
+    def frame_bytes(self):
+        return ps_endpointer_frame_size(self._ep) * 2
+
+    @property
+    def sample_rate(self):
+        return ps_endpointer_sample_rate(self._ep)
+
+    @property
+    def in_speech(self):
+        return ps_endpointer_in_speech(self._ep)
+
+    @property
+    def speech_start(self):
+        return ps_endpointer_speech_start(self._ep)
+
+    @property
+    def speech_end(self):
+        return ps_endpointer_speech_end(self._ep)
+
+    def process(self, frame):
+        """Read a frame of data and return speech if detected.
+
+        Args:
+          frame(bytes): Buffer containing speech data (16-bit signed
+                        integers).  Must be of length `frame_bytes`
+                        (in bytes).
+        Returns:
+          (bytes) Frame of speech data, or None if none detected.
+        Raises:
+          IndexError: `buf` is of invalid size.
+          ValueError: Other internal VAD error.
+        """
+        cdef const unsigned char[:] cframe = frame
+        cdef Py_ssize_t n_samples = len(cframe) // 2
+        cdef const short *outframe
+        if len(cframe) != self.frame_bytes:
+            raise IndexError("Frame size must be %d bytes" % self.frame_bytes)
+        outframe = ps_endpointer_process(self._ep,
+                                         <const short *>&cframe[0])
+        if outframe == NULL:
+            return None
+        return (<const unsigned char *>&outframe[0])[:n_samples * 2]
+
+    def end_stream(self, frame):
+        cdef const unsigned char[:] cframe = frame
+        cdef Py_ssize_t n_samples = len(cframe) // 2
+        cdef const short *outbuf
+        cdef size_t out_n_samples
+        if len(cframe) > self.frame_bytes:
+            raise IndexError("Frame size must be %d bytes or less" % self.frame_bytes)
+        outbuf = ps_endpointer_end_stream(self._ep,
+                                          <const short *>&cframe[0],
+                                          n_samples,
+                                          &out_n_samples)
+        if outbuf == NULL:
+            return None
+        return (<const unsigned char *>&outbuf[0])[:n_samples * 2]
+
+

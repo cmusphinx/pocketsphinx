@@ -429,3 +429,27 @@ cdef extern from "pocketsphinx/ps_vad.h":
     int ps_vad_sample_rate(ps_vad_t *vad)
     size_t ps_vad_frame_size(ps_vad_t *vad)
     ps_vad_class_t ps_vad_classify(ps_vad_t *vad, const short *frame)
+
+cdef extern from "pocketsphinx/ps_endpointer.h":
+    ctypedef struct ps_endpointer_t:
+        pass
+    cdef int PS_ENDPOINTER_DEFAULT_NFRAMES
+    cdef float PS_ENDPOINTER_DEFAULT_RATIO
+    ps_endpointer_t *ps_endpointer_init(int nframes,
+                                        float ratio,
+                                        ps_vad_mode_t mode,
+                                        int sample_rate, float frame_length)
+    ps_endpointer_t *ps_endpointer_retain(ps_endpointer_t *ep)
+    int ps_endpointer_free(ps_endpointer_t *ep)
+    ps_vad_t *ps_endpointer_vad(ps_endpointer_t *ep)
+    size_t ps_endpointer_frame_size(ps_endpointer_t *ep)
+    int ps_endpointer_sample_rate(ps_endpointer_t *ep)
+    const short *ps_endpointer_process(ps_endpointer_t *ep,
+                                       const short *frame)
+    const short *ps_endpointer_end_stream(ps_endpointer_t *ep,
+                                          const short *frame,
+                                          size_t nsamp,
+                                          size_t *out_nsamp)
+    int ps_endpointer_in_speech(ps_endpointer_t *ep)
+    float ps_endpointer_speech_start(ps_endpointer_t *ep)
+    float ps_endpointer_speech_end(ps_endpointer_t *ep)
