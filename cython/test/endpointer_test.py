@@ -32,6 +32,9 @@ class VadQ:
     def full(self):
         return self.n == self.maxlen
 
+    def clear(self):
+        self.n = 0
+
     def push(self, is_speech, pcm):
         i = (self.pos + self.n) % self.maxlen
         self.frames[i] = pcm
@@ -93,6 +96,7 @@ class Endpointer(Vad):
         if self.vadq.empty():
             speech_frames.append(frame)
             self.segment_end = self.timestamp
+        self.vadq.clear()
         return b"".join(speech_frames)
 
     def process(self, frame):
