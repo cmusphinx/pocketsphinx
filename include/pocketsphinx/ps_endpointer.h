@@ -137,21 +137,23 @@ const int16 *ps_endpointer_process(ps_endpointer_t *ep,
                                    const int16 *frame);
 
 /**
- * Flush the internal buffer of the endpointer.
- *
- * This can be called at the end of a speech segment to obtain the
- * trailing samples in the buffer and avoid possibly truncating the
- * speech segment.
+ * Process remaining samples at end of stream.
  *
  * Note that the endpointer is *not* thread-safe.  You must call all
  * endpointer functions from the same thread.
  *
  * @param ep Endpointer.
+ * @param frame Frame of data, must contain ps_endpointer_frame_size()
+ *              samples or less.
+ * @param nsamp: Number of samples in frame.
  * @param out_nsamp: Output, number of samples available.
  * @return Pointer to available samples, or NULL if none available.
  */
 POCKETSPHINX_EXPORT
-const int16 *ps_endpointer_flush(ps_endpointer_t *ep, size_t *out_nsamp);
+const int16 *ps_endpointer_end_stream(ps_endpointer_t *ep,
+                                      const int16 *frame,
+                                      size_t nsamp,
+                                      size_t *out_nsamp);
 
 /**
  * Get the current state (speech/not-speech) of the endpointer.

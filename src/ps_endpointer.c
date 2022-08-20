@@ -33,6 +33,7 @@
 #include <pocketsphinx/ps_endpointer.h>
 
 #include <string.h>
+#include <assert.h>
 
 struct ps_endpointer_s {
     ps_vad_t *vad;
@@ -119,6 +120,12 @@ ep_full(ps_endpointer_t *ep)
     return ep->n == ep->maxlen;
 }
 
+static void
+ep_clear(ps_endpointer_t *ep)
+{
+    ep->n = 0;
+}
+
 static int
 ep_speech_count(ps_endpointer_t *ep)
 {
@@ -172,6 +179,88 @@ ep_pop(ps_endpointer_t *ep, int *out_is_speech)
     return pcm;
 }
 
+static void
+ep_linearize(ps_endpointer_t *ep)
+{
+    int16 *tmp_pcm;
+    uint8 *tmp_is_speech;
+
+    if (ep->pos == 0)
+        return;
+    /* Second part of data: | **** ^ .. | */
+    tmp_pcm = ckd_calloc(sizeof(*ep->buf),
+                         ep->pos * ep->frame_size);
+    tmp_is_speech = ckd_calloc(sizeof(*ep->is_speech), ep->pos);
+    memcpy(tmp_pcm, ep->buf,
+           sizeof(*ep->buf) * ep->pos * ep->frame_size);
+    memcpy(tmp_is_speech, ep->is_speech,
+           sizeof(*ep->is_speech) * ep->pos);
+
+    /* First part of data: | .... ^ ** | -> | ** ---- |  */
+    memmove(ep->buf, ep->buf + ep->pos * ep->frame_size,
+            sizeof(*ep->buf) * (ep->maxlen - ep->pos) * ep->frame_size);
+    memmove(ep->is_speech, ep->is_speech + ep->pos,
+            sizeof(*ep->is_speech) * (ep->maxlen - ep->pos));
+
+    /* Second part of data: | .. **** | */
+    memcpy(ep->buf + (ep->maxlen - ep->pos) * ep->frame_size, tmp_pcm,
+           sizeof(*ep->buf) * ep->pos * ep->frame_size);
+    memcpy(ep->is_speech + (ep->maxlen - ep->pos), tmp_is_speech,
+           sizeof(*ep->is_speech) * ep->pos);
+
+    /* Update pointer */
+    ep->pos = 0;
+    ckd_free(tmp_pcm);
+    ckd_free(tmp_is_speech);
+}
+
+const int16 *
+ps_endpointer_end_stream(ps_endpointer_t *ep,
+                         const int16 *frame,
+                         size_t nsamp,
+                         size_t *out_nsamp)
+{
+    if (nsamp > (size_t)ep->frame_size) {
+        E_ERROR("Final frame must be %d samples or less\n",
+                ep->frame_size);
+        return NULL;
+    }
+    
+    if (out_nsamp)
+        *out_nsamp = 0;
+    if (ep_empty(ep))
+        return NULL;
+
+    /* Rotate the buffer so we can return data in a single call. */
+    ep_linearize(ep);
+    assert(ep->pos == 0);
+    while (!ep_empty(ep)) {
+        int is_speech;
+        ep_pop(ep, &is_speech);
+        if (is_speech) {
+            *out_nsamp += ep->frame_size;
+            ep->segment_end = ep->qstart_time;
+        }
+        else
+            break;
+    }
+    if (ep_empty(ep)) {
+        if (ep->pos == ep->maxlen) {
+            E_ERROR("VAD queue overflow (should not happen)");
+            /* Not fatal, we just lose data. */
+        }
+        else {
+            ep->timestamp +=
+                (float)nsamp / ps_endpointer_sample_rate(ep);
+            memcpy(ep->buf + ep->pos * ep->frame_size,
+                   frame, nsamp * sizeof(*ep->buf));
+            ep->segment_end = ep->timestamp;
+        }
+    }
+    ep_clear(ep);
+    return ep->buf;
+}
+
 const int16 *
 ps_endpointer_process(ps_endpointer_t *ep,
                       const int16 *frame)
@@ -179,8 +268,10 @@ ps_endpointer_process(ps_endpointer_t *ep,
     int is_speech, speech_count;
     if (ep == NULL || ep->vad == NULL)
         return NULL;
-    if (ep->in_speech && ep_full(ep))
-        E_FATAL("VAD queue overflow (should not happen)");
+    if (ep->in_speech && ep_full(ep)) {
+        E_ERROR("VAD queue overflow (should not happen)");
+        /* Not fatal, we just lose data. */
+    }
     is_speech = ps_vad_classify(ep->vad, frame);
     ep_push(ep, is_speech, frame);
     ep->timestamp += ep->frame_length;
