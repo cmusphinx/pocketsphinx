@@ -17,31 +17,33 @@ DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data/librivox")
 
 class VadQ:
     def __init__(self, vad_frames=10, frame_length=0.03):
-        self.buf = deque(maxlen=vad_frames)
+        self.frames = deque(maxlen=vad_frames)
+        self.is_speech = deque(maxlen=vad_frames)
         self.maxlen = vad_frames
         self.frame_length = frame_length
         self.start_time = 0.0
 
     def __len__(self):
-        return len(self.buf)
+        return len(self.frames)
 
     def empty(self):
-        return len(self.buf) == 0
+        return len(self.frames) == 0
 
     def full(self):
-        return len(self.buf) == self.buf.maxlen
+        return len(self.frames) == self.maxlen
 
     def push(self, is_speech, pcm):
         if self.full():
             self.start_time += self.frame_length
-        self.buf.append((is_speech, pcm))
+        self.frames.append(pcm)
+        self.is_speech.append(is_speech)
 
     def pop(self):
         self.start_time += self.frame_length
-        return self.buf.popleft()
+        return self.is_speech.popleft(), self.frames.popleft()
 
     def speech_count(self):
-        return sum(f[0] for f in self.buf)
+        return sum(self.is_speech)
 
 class Endpointer(Vad):
     def __init__(
