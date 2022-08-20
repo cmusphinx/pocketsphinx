@@ -16,32 +16,32 @@ DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data/librivox")
 
 
 class VadQ:
-    def __init__(self, vad_frames=10):
+    def __init__(self, vad_frames=10, frame_length=0.03):
         self.buf = deque(maxlen=vad_frames)
         self.maxlen = vad_frames
+        self.frame_length = frame_length
+        self.start_time = 0.0
 
     def __len__(self):
         return len(self.buf)
+
+    def empty(self):
+        return len(self.buf) == 0
 
     def full(self):
         return len(self.buf) == self.buf.maxlen
 
     def push(self, is_speech, pcm):
+        if self.full():
+            self.start_time += self.frame_length
         self.buf.append((is_speech, pcm))
 
     def pop(self):
+        self.start_time += self.frame_length
         return self.buf.popleft()
 
     def speech_count(self):
         return sum(f[0] for f in self.buf)
-
-    def speech_frames(self):
-        frames = []
-        for in_speech, outframe in self.buf:
-            if in_speech:
-                frames.append(outframe)
-            else:
-                return frames
 
 class Endpointer(Vad):
     def __init__(
@@ -53,31 +53,37 @@ class Endpointer(Vad):
         frame_length=Vad.DEFAULT_FRAME_LENGTH,
     ):
         super(Endpointer, self).__init__(vad_mode, sample_rate, frame_length)
-        self.vadq = VadQ(vad_frames)
+        self.vadq = VadQ(vad_frames, frame_length)
         self.ratio = vad_ratio
         self.timestamp = 0.0
-        self.buf_timestamp = 0.0
         self.in_speech = False
         self.start_time = self.end_time = None
 
+    def eof_speech(self, frame):
+        speech_frames = []
+        while not self.vadq.empty():
+            is_speech, pcm = self.vadq.pop()
+            if is_speech:
+                speech_frames.append(pcm)
+                self.end_time = self.vadq.start_time
+            else:
+                break
+        if self.vadq.empty():
+            speech_frames.append(frame)
+            self.end_time = self.timestamp
+        return b"".join(speech_frames)
+
     def process(self, frame):
-        if self.in_speech and self.vadq.full():
-            raise IndexError("VAD queue overflow (should not happen)")
+        if self.in_speech:
+            assert not self.vadq.full(), "VAD queue overflow (should not happen)" 
         # Handle end of file
         if len(frame) < self.frame_bytes:
             self.timestamp += len(frame) * 0.5 / self.sample_rate
             if self.in_speech:
                 self.in_speech = False
-                speech_frames = self.vadq.speech_frames()
-                self.end_time = self.buf_timestamp + len(speech_frames) * self.frame_length
-                if len(speech_frames) == len(self.vadq):
-                    speech_frames.append(frame)
-                    self.end_time = self.timestamp
-                return b"".join(speech_frames)
+                return self.eof_speech(frame)
             else:
                 return None
-        if self.vadq.full():
-            self.buf_timestamp += self.frame_length
         self.vadq.push(self.is_speech(frame), frame)
         self.timestamp += self.frame_length
         speech_count = self.vadq.speech_count()
@@ -89,19 +95,17 @@ class Endpointer(Vad):
                 # queue to prevent overlapping segments.  It's also
                 # closer to what human annotators will do.
                 _, outframe = self.vadq.pop()
-                self.buf_timestamp += self.frame_length
-                self.end_time = self.buf_timestamp
+                self.end_time = self.vadq.start_time
                 self.in_speech = False
                 return outframe
         else:
             if speech_count > self.ratio * self.vadq.maxlen:
-                self.start_time = self.buf_timestamp
+                self.start_time = self.vadq.start_time
                 self.end_time = None
                 self.in_speech = True
         # Return a buffer if we are in a speech region
         if self.in_speech:
-            in_speech, outframe = self.vadq.pop()
-            self.buf_timestamp += self.frame_length
+            _, outframe = self.vadq.pop()
             return outframe
         else:
             return None
@@ -180,8 +184,8 @@ class EndpointerTest(unittest.TestCase):
                                 end_diff,
                             )
                         )
-                        self.assertLess(start_diff, 0.5)
-                        self.assertLess(end_diff, 0.5)
+                        self.assertLess(start_diff, 0.06)
+                        self.assertLess(end_diff, 0.21)
                         idx += 1
                 if len(frame) == 0:
                     break
