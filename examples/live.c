@@ -78,22 +78,16 @@ main(int argc, char *argv[])
             const char *hyp;
             if (!prev_in_speech) {
                 fprintf(stderr, "Speech start at %.2f\n",
-                        ps_endpointer_start_time(ep));
+                        ps_endpointer_segment_start(ep));
                 ps_start_utt(decoder);
             }
             if (ps_process_raw(decoder, speech, frame_size, FALSE, FALSE) < 0)
                 E_FATAL("ps_process_raw() failed\n");
             if ((hyp = ps_get_hyp(decoder, NULL)) != NULL)
-                printf("%s\n", hyp);
+                fprintf(stderr, "PARTIAL RESULT: %s\n", hyp);
             if (!ps_endpointer_in_speech(ep)) {
-                size_t nsamp;
                 fprintf(stderr, "Speech end at %.2f\n",
-                        ps_endpointer_end_time(ep));
-                speech = ps_endpointer_flush(ep, &nsamp);
-                if (speech != NULL) {
-                    if (ps_process_raw(decoder, speech, nsamp, FALSE, FALSE) < 0)
-                        E_FATAL("ps_process_raw() failed\n");
-                }
+                        ps_endpointer_segment_end(ep));
                 ps_end_utt(decoder);
                 if ((hyp = ps_get_hyp(decoder, NULL)) != NULL)
                     printf("%s\n", hyp);
@@ -104,6 +98,7 @@ main(int argc, char *argv[])
     if (pclose(sox) < 0)
         E_ERROR_SYSTEM("Failed to pclose(sox)");
     ps_endpointer_free(ep);
+    ps_free(decoder);
         
     return 0;
 }
