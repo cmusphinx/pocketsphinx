@@ -14,6 +14,7 @@ from ._pocketsphinx import Segment  # noqa: F401
 from ._pocketsphinx import Hypothesis  # noqa: F401
 from ._pocketsphinx import Vad  # noqa: F401
 from ._pocketsphinx import Endpointer  # noqa: F401
+from .segmenter import Segmenter  # noqa: F401
 
 Arg = collections.namedtuple("Arg", ["name", "default", "doc",
                                      "type", "required"])
