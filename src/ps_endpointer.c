@@ -69,6 +69,7 @@ ps_endpointer_init(int nframes,
     ep->buf = ckd_calloc(sizeof(*ep->buf),
                          ep->maxlen * ep->frame_size);
     ep->is_speech = ckd_calloc(1, ep->maxlen);
+    return ep;
 error_out:
     ps_endpointer_free(ep);
     return NULL;
