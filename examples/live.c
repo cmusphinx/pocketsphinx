@@ -78,7 +78,7 @@ main(int argc, char *argv[])
             const char *hyp;
             if (!prev_in_speech) {
                 fprintf(stderr, "Speech start at %.2f\n",
-                        ps_endpointer_segment_start(ep));
+                        ps_endpointer_speech_start(ep));
                 ps_start_utt(decoder);
             }
             if (ps_process_raw(decoder, speech, frame_size, FALSE, FALSE) < 0)
@@ -87,7 +87,7 @@ main(int argc, char *argv[])
                 fprintf(stderr, "PARTIAL RESULT: %s\n", hyp);
             if (!ps_endpointer_in_speech(ep)) {
                 fprintf(stderr, "Speech end at %.2f\n",
-                        ps_endpointer_segment_end(ep));
+                        ps_endpointer_speech_end(ep));
                 ps_end_utt(decoder);
                 if ((hyp = ps_get_hyp(decoder, NULL)) != NULL)
                     printf("%s\n", hyp);

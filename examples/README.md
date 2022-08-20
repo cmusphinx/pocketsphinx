@@ -30,16 +30,25 @@ Simplest possible example
 The examples `simple.c` and `simple.py` just recognize speech
 endlessly, until you stop them with Control-C.  They, like all the
 other examples below, use [SoX](http://sox.sourceforge.net/) to get
-audio from the default input device.
+audio from the default input device.  Feel free to modify them to read
+from standard input.
 
 Voice activity detection
 ------------------------
 
 The examples `vad.c` and `vad.py` just *detect* speech/non-speech
-transitions endlessly, until you stop them with Control-C.
+transitions endlessly, until you stop them with Control-C.  Note that
+this does VAD at the frame level (30ms) only, which is probably not
+what you want.
 
-Segmentation and recognition
-----------------------------
+Segmentation
+------------
 
-Finally (for the moment) the examples `recognize.c` and `recognize.py`
-detect speech segments and do recognition on them.
+The examples `segment.c` and `segment.py` use voice activity detection
+to *segment* the input stream into speech-like regions.
+
+Live recognition
+----------------
+
+Finally, the examples `live.c` and `live.py` do online segmentation
+and recognition.

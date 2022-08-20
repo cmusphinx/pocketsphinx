@@ -173,16 +173,16 @@ POCKETSPHINX_EXPORT
 int ps_endpointer_in_speech(ps_endpointer_t *ep);
 
 /**
- * Get the start time of the latest segment.
+ * Get the start time of the last speech segment.
  */
 POCKETSPHINX_EXPORT
-float ps_endpointer_segment_start(ps_endpointer_t *ep);
+float ps_endpointer_speech_start(ps_endpointer_t *ep);
 
 /**
- * Get the end time of the latest segment.
+ * Get the end time of the last speech segment
  */
 POCKETSPHINX_EXPORT
-float ps_endpointer_segment_end(ps_endpointer_t *ep);
+float ps_endpointer_speech_end(ps_endpointer_t *ep);
 
 #ifdef __cplusplus
 }

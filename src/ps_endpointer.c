@@ -47,7 +47,7 @@ struct ps_endpointer_s {
     int8 *is_speech;
     int pos, n;
     float qstart_time, timestamp;
-    float segment_start, segment_end;
+    float speech_start, speech_end;
 };
 
 ps_endpointer_t *
@@ -239,7 +239,7 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
         ep_pop(ep, &is_speech);
         if (is_speech) {
             *out_nsamp += ep->frame_size;
-            ep->segment_end = ep->qstart_time;
+            ep->speech_end = ep->qstart_time;
         }
         else
             break;
@@ -254,7 +254,7 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
                 (float)nsamp / ps_endpointer_sample_rate(ep);
             memcpy(ep->buf + ep->pos * ep->frame_size,
                    frame, nsamp * sizeof(*ep->buf));
-            ep->segment_end = ep->timestamp;
+            ep->speech_end = ep->timestamp;
         }
     }
     ep_clear(ep);
@@ -283,15 +283,15 @@ ps_endpointer_process(ps_endpointer_t *ep,
                prevent overlapping segments.  It's also closer to what
                human annotators will do. */
             int16 *pcm = ep_pop(ep, NULL);
-            ep->segment_end = ep->qstart_time;
+            ep->speech_end = ep->qstart_time;
             ep->in_speech = FALSE;
             return pcm;
         }
     }
     else {
         if (speech_count > ep->ratio * ep->maxlen) {
-            ep->segment_start = ep->qstart_time;
-            ep->segment_end = 0;
+            ep->speech_start = ep->qstart_time;
+            ep->speech_end = 0;
             ep->in_speech = TRUE;
         }
     }
@@ -308,13 +308,13 @@ ps_endpointer_in_speech(ps_endpointer_t *ep)
 }
 
 float
-ps_endpointer_segment_start(ps_endpointer_t *ep)
+ps_endpointer_speech_start(ps_endpointer_t *ep)
 {
-    return ep->segment_start;
+    return ep->speech_start;
 }
 
 float
-ps_endpointer_segment_end(ps_endpointer_t *ep)
+ps_endpointer_speech_end(ps_endpointer_t *ep)
 {
-    return ep->segment_end;
+    return ep->speech_end;
 }
