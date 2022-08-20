@@ -133,12 +133,13 @@ class EndpointerTest(unittest.TestCase):
         with subprocess.Popen(soxcmd, stdout=subprocess.PIPE) as sox:
             idx = 0
             while True:
-                prev_in_speech = ep.in_speech
                 frame = sox.stdout.read(ep.frame_bytes)
                 speech = ep.process(frame)
                 if speech is not None:
                     if not ep.in_speech:
                         start_time, end_time, _ = labels[idx]
+                        start_diff = abs(start_time - ep.start_time)
+                        end_diff = abs(end_time - ep.end_time)
                         print(
                             "%.2f:%.2f (truth: %.2f:%.2f) (diff:%.2f:%.2f)"
                             % (
@@ -146,10 +147,12 @@ class EndpointerTest(unittest.TestCase):
                                 ep.end_time,
                                 start_time,
                                 end_time,
-                                abs(start_time - ep.start_time),
-                                abs(end_time - ep.end_time),
+                                start_diff,
+                                end_diff,
                             )
                         )
+                        self.assertLess(start_diff, 0.5)
+                        self.assertLess(end_diff, 0.5)
                         idx += 1
                 if len(frame) == 0:
                     break
