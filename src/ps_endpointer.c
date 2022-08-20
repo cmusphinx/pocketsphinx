@@ -228,6 +228,9 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
     
     if (out_nsamp)
         *out_nsamp = 0;
+    if (!ep->in_speech)
+        return NULL;
+    ep->in_speech = FALSE;
     if (ep_empty(ep))
         return NULL;
 
@@ -238,7 +241,8 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
         int is_speech;
         ep_pop(ep, &is_speech);
         if (is_speech) {
-            *out_nsamp += ep->frame_size;
+            if (out_nsamp)
+                *out_nsamp += ep->frame_size;
             ep->speech_end = ep->qstart_time;
         }
         else
@@ -252,6 +256,8 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
         else {
             ep->timestamp +=
                 (float)nsamp / ps_endpointer_sample_rate(ep);
+            if (out_nsamp)
+                *out_nsamp += nsamp;
             memcpy(ep->buf + ep->pos * ep->frame_size,
                    frame, nsamp * sizeof(*ep->buf));
             ep->speech_end = ep->timestamp;
@@ -277,7 +283,7 @@ ps_endpointer_process(ps_endpointer_t *ep,
     ep->timestamp += ep->frame_length;
     speech_count = ep_speech_count(ep);
     if (ep->in_speech) {
-        if (speech_count < (1.0 - ep->ratio) * ep->maxlen) {
+        if (speech_count < (int)((1.0 - ep->ratio) * ep->maxlen)) {
             /* Return only the first frame.  Either way it's sort of
                arbitrary, but this avoids having to drain the queue to
                prevent overlapping segments.  It's also closer to what
@@ -289,7 +295,7 @@ ps_endpointer_process(ps_endpointer_t *ep,
         }
     }
     else {
-        if (speech_count > ep->ratio * ep->maxlen) {
+        if (speech_count > (int)(ep->ratio * ep->maxlen)) {
             ep->speech_start = ep->qstart_time;
             ep->speech_end = 0;
             ep->in_speech = TRUE;
