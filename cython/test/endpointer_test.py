@@ -28,6 +28,7 @@ class Endpointer(Vad):
         self.buf = deque(maxlen=vad_frames)
         self.ratio = vad_ratio
         self.timestamp = 0.0
+        self.buf_timestamp = 0.0
         self.in_speech = False
         self.start_time = self.end_time = None
 
@@ -40,18 +41,21 @@ class Endpointer(Vad):
             if self.in_speech:
                 self.in_speech = False
                 data = b""
-                for in_speech, timestamp, outframe in self.buf:
+                self.end_time = self.buf_timestamp
+                for in_speech, outframe in self.buf:
+                    self.end_time += self.frame_length
                     if in_speech:
                         data += outframe
                     else:
-                        self.end_time = timestamp + self.frame_length
                         return data
                 data += frame
                 self.end_time = self.timestamp
                 return data
             else:
                 return None
-        self.buf.append((self.is_speech(frame), self.timestamp, frame))
+        if len(self.buf) == self.buf.maxlen:
+            self.buf_timestamp += self.frame_length
+        self.buf.append((self.is_speech(frame), frame))
         self.timestamp += self.frame_length
         speech_count = sum(f[0] for f in self.buf)
         # Handle state transitions
@@ -61,18 +65,20 @@ class Endpointer(Vad):
                 # of arbitrary, but this avoids having to drain the
                 # queue to prevent overlapping segments.  It's also
                 # closer to what human annotators will do.
-                _, timestamp, outframe = self.buf.popleft()
-                self.end_time = timestamp + self.frame_length
+                _, outframe = self.buf.popleft()
+                self.buf_timestamp += self.frame_length
+                self.end_time = self.buf_timestamp
                 self.in_speech = False
                 return outframe
         else:
             if speech_count > self.ratio * self.buf.maxlen:
-                self.start_time = self.buf[0][1]
+                self.start_time = self.buf_timestamp
                 self.end_time = None
                 self.in_speech = True
         # Return a buffer if we are in a speech region
         if self.in_speech:
-            in_speech, timestamp, outframe = self.buf.popleft()
+            in_speech, outframe = self.buf.popleft()
+            self.buf_timestamp += self.frame_length
             return outframe
         else:
             return None
