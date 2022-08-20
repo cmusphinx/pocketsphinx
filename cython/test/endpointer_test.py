@@ -184,7 +184,9 @@ def make_single_track():
 
 class EndpointerTest(unittest.TestCase):
     def testEndpointer(self):
-        ep = PyEndpointer(vad_mode=3)
+        ep = Endpointer(vad_mode=3)
+        pyep = PyEndpointer(vad_mode=3)
+        self.assertEqual(ep.frame_bytes, pyep.frame_bytes)
         soxcmd = ["sox"]
         files, labels = make_single_track()
         soxcmd.extend(files)
@@ -199,26 +201,36 @@ class EndpointerTest(unittest.TestCase):
                     break
                 elif len(frame) < ep.frame_bytes:
                     speech = ep.end_stream(frame)
+                    pyspeech = pyep.end_stream(frame)
+                    self.assertEqual(speech, pyspeech)
                 else:
                     speech = ep.process(frame)
+                    pyspeech = pyep.process(frame)
+                    self.assertEqual(speech, pyspeech)
                 if speech is not None:
+                    self.assertEqual(ep.in_speech, pyep.in_speech)
                     if not ep.in_speech:
+                        self.assertFalse(pyep.in_speech)
                         start_time, end_time, _ = labels[idx]
                         start_diff = abs(start_time - ep.speech_start)
                         end_diff = abs(end_time - ep.speech_end)
                         print(
-                            "%.2f:%.2f (truth: %.2f:%.2f) (diff:%.2f:%.2f)"
+                            "%.2f:%.2f (py: %.2f:%.2f) (truth: %.2f:%.2f) (diff:%.2f:%.2f)"
                             % (
                                 ep.speech_start,
                                 ep.speech_end,
+                                pyep.speech_start,
+                                pyep.speech_end,
                                 start_time,
                                 end_time,
                                 start_diff,
                                 end_diff,
                             )
                         )
-                        # self.assertLess(start_diff, 0.06)
-                        # self.assertLess(end_diff, 0.21)
+                        self.assertAlmostEqual(ep.speech_start, pyep.speech_start, 3)
+                        self.assertAlmostEqual(ep.speech_end, pyep.speech_end, 3)
+                        self.assertLess(start_diff, 0.06)
+                        self.assertLess(end_diff, 0.21)
                         idx += 1
 
 
