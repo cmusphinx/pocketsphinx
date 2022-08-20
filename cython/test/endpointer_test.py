@@ -15,6 +15,34 @@ import os
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data/librivox")
 
 
+class VadQ:
+    def __init__(self, vad_frames=10):
+        self.buf = deque(maxlen=vad_frames)
+        self.maxlen = vad_frames
+
+    def __len__(self):
+        return len(self.buf)
+
+    def full(self):
+        return len(self.buf) == self.buf.maxlen
+
+    def push(self, is_speech, pcm):
+        self.buf.append((is_speech, pcm))
+
+    def pop(self):
+        return self.buf.popleft()
+
+    def speech_count(self):
+        return sum(f[0] for f in self.buf)
+
+    def speech_frames(self):
+        frames = []
+        for in_speech, outframe in self.buf:
+            if in_speech:
+                frames.append(outframe)
+            else:
+                return frames
+
 class Endpointer(Vad):
     def __init__(
         self,
@@ -25,7 +53,7 @@ class Endpointer(Vad):
         frame_length=Vad.DEFAULT_FRAME_LENGTH,
     ):
         super(Endpointer, self).__init__(vad_mode, sample_rate, frame_length)
-        self.buf = deque(maxlen=vad_frames)
+        self.vadq = VadQ(vad_frames)
         self.ratio = vad_ratio
         self.timestamp = 0.0
         self.buf_timestamp = 0.0
@@ -33,51 +61,46 @@ class Endpointer(Vad):
         self.start_time = self.end_time = None
 
     def process(self, frame):
-        if self.in_speech and len(self.buf) == self.buf.maxlen:
+        if self.in_speech and self.vadq.full():
             raise IndexError("VAD queue overflow (should not happen)")
         # Handle end of file
         if len(frame) < self.frame_bytes:
             self.timestamp += len(frame) * 0.5 / self.sample_rate
             if self.in_speech:
                 self.in_speech = False
-                data = b""
-                self.end_time = self.buf_timestamp
-                for in_speech, outframe in self.buf:
-                    self.end_time += self.frame_length
-                    if in_speech:
-                        data += outframe
-                    else:
-                        return data
-                data += frame
-                self.end_time = self.timestamp
-                return data
+                speech_frames = self.vadq.speech_frames()
+                self.end_time = self.buf_timestamp + len(speech_frames) * self.frame_length
+                if len(speech_frames) == len(self.vadq):
+                    speech_frames.append(frame)
+                    self.end_time = self.timestamp
+                return b"".join(speech_frames)
             else:
                 return None
-        if len(self.buf) == self.buf.maxlen:
+        if self.vadq.full():
             self.buf_timestamp += self.frame_length
-        self.buf.append((self.is_speech(frame), frame))
+        self.vadq.push(self.is_speech(frame), frame)
         self.timestamp += self.frame_length
-        speech_count = sum(f[0] for f in self.buf)
+        speech_count = self.vadq.speech_count()
         # Handle state transitions
         if self.in_speech:
-            if speech_count < (1.0 - self.ratio) * self.buf.maxlen:
+            if speech_count < (1.0 - self.ratio) * self.vadq.maxlen:
                 # Return only the first frame.  Either way it's sort
                 # of arbitrary, but this avoids having to drain the
                 # queue to prevent overlapping segments.  It's also
                 # closer to what human annotators will do.
-                _, outframe = self.buf.popleft()
+                _, outframe = self.vadq.pop()
                 self.buf_timestamp += self.frame_length
                 self.end_time = self.buf_timestamp
                 self.in_speech = False
                 return outframe
         else:
-            if speech_count > self.ratio * self.buf.maxlen:
+            if speech_count > self.ratio * self.vadq.maxlen:
                 self.start_time = self.buf_timestamp
                 self.end_time = None
                 self.in_speech = True
         # Return a buffer if we are in a speech region
         if self.in_speech:
-            in_speech, outframe = self.buf.popleft()
+            in_speech, outframe = self.vadq.pop()
             self.buf_timestamp += self.frame_length
             return outframe
         else:
