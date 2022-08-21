@@ -428,6 +428,7 @@ cdef extern from "pocketsphinx/ps_vad.h":
     int ps_vad_set_input_params(ps_vad_t *vad, int sample_rate, float frame_length)
     int ps_vad_sample_rate(ps_vad_t *vad)
     size_t ps_vad_frame_size(ps_vad_t *vad)
+    float ps_vad_frame_length(ps_vad_t *vad)
     ps_vad_class_t ps_vad_classify(ps_vad_t *vad, const short *frame)
 
 cdef extern from "pocketsphinx/ps_endpointer.h":

@@ -1458,26 +1458,30 @@ cdef class Vad:
 
     Args:
       mode(int): Aggressiveness of voice activity detction (0-3)
-      sample_rate(int): Sampling rate of input, default is 16000
-                          (only 8000, 16000, 32000, and 48000 are
-                          supported for the moment)
-      frame_length(float): Input frame length in seconds, default
-                           is 0.03 (only 0.01, 0.02, and 0.03 are
-                           supported for the moment)
+      sample_rate(int): Sampling rate of input, default is 16000.
+                        Rates other than 8000, 16000, 32000, 48000
+                        are only approximately supported, see note
+                        in `frame_length`.  Outlandish sampling
+                        rates like 3924 and 115200 will raise a
+                        `ValueError`.
+      frame_length(float): Desired input frame length in seconds,
+                           default is 0.03.  The *actual* frame
+                           length may be different if an
+                           approximately supported sampling rate is
+                           requested.  You must *always* use the
+                           `frame_bytes` and `frame_length`
+                           attributes to determine the input size.
 
     Attributes:
-      sample_rate(int): Sampling rate for input (default is 16000)
-      frame_bytes(int): Number of bytes in a frame (default
-                        is 960, i.e. 30ms of 16-bit samples at 16kHz)
-      frame_length(float): Frame length in seconds (default is 0.03)
+      sample_rate(int): Sampling rate of input (default is 16000)
+      frame_bytes(int): Number of bytes in a frame accepted by `process`.
+      frame_length(float): Length of a frame (*may be different from
+                           the one requested in the constructor*!)
 
     Raises:
       ValueError: Invalid input parameter (see above).
     """
     cdef ps_vad_t *_vad
-    cdef public int sample_rate
-    cdef public size_t frame_bytes
-    cdef public float frame_length
     LOOSE = PS_VAD_LOOSE
     MEDIUM_LOOSE = PS_VAD_MEDIUM_LOOSE
     MEDIUM_STRICT = PS_VAD_MEDIUM_STRICT
@@ -1491,12 +1495,21 @@ cdef class Vad:
         self._vad = ps_vad_init(mode, sample_rate, frame_length)
         if self._vad == NULL:
             raise ValueError("Invalid VAD parameters")
-        self.sample_rate = sample_rate
-        self.frame_length = frame_length
-        self.frame_bytes = ps_vad_frame_size(self._vad) * 2
 
     def __dealloc__(self):
         ps_vad_free(self._vad)
+
+    @property
+    def frame_bytes(self):
+        return ps_vad_frame_size(self._vad) * 2
+
+    @property
+    def frame_length(self):
+        return ps_vad_frame_length(self._vad)
+
+    @property
+    def sample_rate(self):
+        return ps_vad_sample_rate(self._vad)
 
     def is_speech(self, frame, sample_rate=None):
         """Classify a frame as speech or not.
