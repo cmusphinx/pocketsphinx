@@ -51,9 +51,11 @@
 #include <sphinxbase/jsgf.h>
 #include <sphinxbase/hash_table.h>
 
+/* PocketSphinx headers. */
+#include <pocketsphinx/config.h>
+#include <pocketsphinx.h>
+
 /* Local headers. */
-#include "cmdln_macro.h"
-#include "pocketsphinx.h"
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
 #include "phone_loop_search.h"

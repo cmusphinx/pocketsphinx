@@ -275,7 +275,7 @@ cdef extern from "sphinxbase/jsgf.h":
                                 logmath_t *lmath, float lw)
 
 
-cdef extern from "pocketsphinx/ps_lattice.h":
+cdef extern from "pocketsphinx/lattice.h":
     ctypedef struct ps_lattice_t:
         pass
     ctypedef struct ps_latnode_t:
@@ -383,7 +383,7 @@ cdef extern from "pocketsphinx.h":
                      const char *format)
 
 
-cdef extern from "pocketsphinx/ps_search.h":
+cdef extern from "pocketsphinx/search.h":
     ctypedef struct ps_search_iter_t:
         pass
     int ps_set_search(ps_decoder_t *ps, const char *name)
@@ -407,7 +407,7 @@ cdef extern from "pocketsphinx/ps_search.h":
     int ps_set_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
     int ps_set_align(ps_decoder_t *ps, const char *name, const char *words)
 
-cdef extern from "pocketsphinx/ps_vad.h":
+cdef extern from "pocketsphinx/vad.h":
     ctypedef struct ps_vad_t:
         pass
     cdef enum ps_vad_mode_e:
@@ -432,7 +432,7 @@ cdef extern from "pocketsphinx/ps_vad.h":
     double ps_vad_frame_length(ps_vad_t *vad)
     ps_vad_class_t ps_vad_classify(ps_vad_t *vad, const short *frame)
 
-cdef extern from "pocketsphinx/ps_endpointer.h":
+cdef extern from "pocketsphinx/endpointer.h":
     ctypedef struct ps_endpointer_t:
         pass
     cdef double PS_ENDPOINTER_DEFAULT_WINDOW

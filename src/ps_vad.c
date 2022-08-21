@@ -33,7 +33,7 @@
 
 #include <sphinxbase/ckd_alloc.h>
 #include <sphinxbase/err.h>
-#include <pocketsphinx/ps_vad.h>
+#include <pocketsphinx/vad.h>
 
 #include "common_audio/vad/include/webrtc_vad.h"
 #include "common_audio/vad/vad_core.h"

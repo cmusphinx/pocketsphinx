@@ -30,7 +30,7 @@
 
 #include <sphinxbase/ckd_alloc.h>
 #include <sphinxbase/err.h>
-#include <pocketsphinx/ps_endpointer.h>
+#include <pocketsphinx/endpointer.h>
 
 #include <string.h>
 #include <assert.h>
