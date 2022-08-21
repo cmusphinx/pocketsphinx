@@ -38,35 +38,50 @@
 struct ps_endpointer_s {
     ps_vad_t *vad;
     int refcount;
-    float ratio;
-    float frame_length;
+    int start_frames, end_frames;
+    double frame_length;
     int in_speech;
     int frame_size;
     int maxlen;
     int16 *buf;
     int8 *is_speech;
     int pos, n;
-    float qstart_time, timestamp;
-    float speech_start, speech_end;
+    double qstart_time, timestamp;
+    double speech_start, speech_end;
 };
 
 ps_endpointer_t *
-ps_endpointer_init(int nframes,
-                   float ratio,
+ps_endpointer_init(double window,
+                   double ratio,
                    ps_vad_mode_t mode,
-                   int sample_rate, float frame_length)
+                   int sample_rate, double frame_length)
 {
     ps_endpointer_t *ep = ckd_calloc(1, sizeof(*ep));
     ep->refcount = 1;
     if ((ep->vad = ps_vad_init(mode, sample_rate, frame_length)) == NULL)
         goto error_out;
-    if (nframes == 0)
-        nframes = PS_ENDPOINTER_DEFAULT_NFRAMES;
+    if (window == 0.0)
+        window = PS_ENDPOINTER_DEFAULT_WINDOW;
     if (ratio == 0.0)
         ratio = PS_ENDPOINTER_DEFAULT_RATIO;
-    ep->maxlen = nframes;
-    ep->ratio = ratio;
     ep->frame_length = ps_vad_frame_length(ep->vad);
+    ep->maxlen = (int)(window / ep->frame_length + 0.5);
+    ep->start_frames = (int)(ratio * ep->maxlen);
+    ep->end_frames = (int)((1.0 - ratio) * ep->maxlen + 0.5);
+    /* Make sure endpointing is possible ;-) */
+    if (ep->start_frames <= 0 || ep->start_frames >= ep->maxlen) {
+        E_ERROR("Ratio %.2f makes start-pointing stupid or impossible (%d frames of %d)\n",
+                ratio, ep->start_frames, ep->maxlen);
+        goto error_out;
+    }
+    if (ep->end_frames <= 0 || ep->end_frames >= ep->maxlen) {
+        E_ERROR("Ratio %.2f makes end-pointing stupid or impossible (%d frames of %d)\n",
+                ratio, ep->end_frames, ep->maxlen);
+        goto error_out;
+    }
+    E_INFO("Threshold %d%% of %.3fs window (>%d frames <%d frames of %d)\n",
+           (int)(ratio * 100.0 + 0.5),
+           ep->maxlen * ep->frame_length, ep->start_frames, ep->end_frames, ep->maxlen);
     ep->frame_size = ps_endpointer_frame_size(ep);
     ep->buf = ckd_calloc(sizeof(*ep->buf),
                          ep->maxlen * ep->frame_size);
@@ -232,8 +247,7 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
     if (!ep->in_speech)
         return NULL;
     ep->in_speech = FALSE;
-    if (ep_empty(ep))
-        return NULL;
+    ep->speech_end = ep->qstart_time;
 
     /* Rotate the buffer so we can return data in a single call. */
     ep_linearize(ep);
@@ -249,14 +263,15 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
         else
             break;
     }
-    if (ep_empty(ep)) {
+    /* If we used all the VAD queue, add the trailing samples. */
+    if (ep_empty(ep) && ep->speech_end == ep->qstart_time) {
         if (ep->pos == ep->maxlen) {
             E_ERROR("VAD queue overflow (should not happen)");
             /* Not fatal, we just lose data. */
         }
         else {
             ep->timestamp +=
-                (float)nsamp / ps_endpointer_sample_rate(ep);
+                (double)nsamp / ps_endpointer_sample_rate(ep);
             if (out_nsamp)
                 *out_nsamp += nsamp;
             memcpy(ep->buf + ep->pos * ep->frame_size,
@@ -283,8 +298,10 @@ ps_endpointer_process(ps_endpointer_t *ep,
     ep_push(ep, is_speech, frame);
     ep->timestamp += ep->frame_length;
     speech_count = ep_speech_count(ep);
+    E_DEBUG("%.2f %d %d %d\n", ep->timestamp, speech_count,
+            ep->start_frames, ep->end_frames);
     if (ep->in_speech) {
-        if (speech_count < (int)((1.0 - ep->ratio) * ep->maxlen)) {
+        if (speech_count < ep->end_frames) {
             /* Return only the first frame.  Either way it's sort of
                arbitrary, but this avoids having to drain the queue to
                prevent overlapping segments.  It's also closer to what
@@ -296,7 +313,7 @@ ps_endpointer_process(ps_endpointer_t *ep,
         }
     }
     else {
-        if (speech_count > (int)(ep->ratio * ep->maxlen)) {
+        if (speech_count > ep->start_frames) {
             ep->speech_start = ep->qstart_time;
             ep->speech_end = 0;
             ep->in_speech = TRUE;
@@ -314,13 +331,13 @@ ps_endpointer_in_speech(ps_endpointer_t *ep)
     return ep->in_speech;
 }
 
-float
+double
 ps_endpointer_speech_start(ps_endpointer_t *ep)
 {
     return ep->speech_start;
 }
 
-float
+double
 ps_endpointer_speech_end(ps_endpointer_t *ep)
 {
     return ep->speech_end;

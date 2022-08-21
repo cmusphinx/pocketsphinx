@@ -55,14 +55,14 @@ extern "C" {
  */
 typedef struct ps_endpointer_s ps_endpointer_t;
 
-#define PS_ENDPOINTER_DEFAULT_NFRAMES 10
+#define PS_ENDPOINTER_DEFAULT_WINDOW 0.3
 #define PS_ENDPOINTER_DEFAULT_RATIO 0.9
 
 /**
  * Initialize endpointing.
  *
- * @param nframes Number of frames to use in speech start/end decision,
- *                or 0 to use the default (PS_ENDPOINTER_DEFAULT_NFRAMES).
+ * @param window Seconds of audio to use in speech start/end decision,
+ *               or 0 to use the default (PS_ENDPOINTER_DEFAULT_WINDOW).
  * @param ratio Ratio of frames needed to trigger start/end decision,
  *              or 0 for the default (PS_ENDPOINTER_DEFAULT_RATIO).
  * @param mode "Aggressiveness" of voice activity detection.  Stricter
@@ -70,17 +70,26 @@ typedef struct ps_endpointer_s ps_endpointer_t;
  *             misclassify non-speech as speech.
  * @param sample_rate Sampling rate of input, or 0 for default (which can
  *                    be obtained with ps_vad_sample_rate()).  Only 8000,
- *                    16000, 32000, 48000 currently supported.
- * @param frame_length Frame length in seconds, or 0.0 for the default.  Only
- *                     0.01, 0.02, 0.03 currently supported.
+ *                    16000, 32000, 48000 are directly supported, others
+ *                    will use the closest supported rate (within reason).
+ *                    Note that this means that the actual frame length
+ *                    may not be exactly the one requested, so you must
+ *                    always use the one returned by
+ *                    ps_endpointer_frame_size()
+ *                    (in samples) or ps_endpointer_frame_length() (in
+ *                    seconds).
+ * @param frame_length Requested frame length in seconds, or 0.0 for the
+ *                     default.  Only 0.01, 0.02, 0.03 currently supported.
+ *                     **Actual frame length may be different, you must
+ *                     always use ps_endpointer_frame_length() to obtain it.**
  * @return Endpointer object or NULL on failure (invalid parameter for
  * instance).
  */
 POCKETSPHINX_EXPORT
-ps_endpointer_t *ps_endpointer_init(int nframes,
-                                    float ratio,
+ps_endpointer_t *ps_endpointer_init(double window,
+                                    double ratio,
                                     ps_vad_mode_t mode,
-                                    int sample_rate, float frame_length);
+                                    int sample_rate, double frame_length);
 
 /**
  * Retain a pointer to endpointer
@@ -176,13 +185,13 @@ int ps_endpointer_in_speech(ps_endpointer_t *ep);
  * Get the start time of the last speech segment.
  */
 POCKETSPHINX_EXPORT
-float ps_endpointer_speech_start(ps_endpointer_t *ep);
+double ps_endpointer_speech_start(ps_endpointer_t *ep);
 
 /**
  * Get the end time of the last speech segment
  */
 POCKETSPHINX_EXPORT
-float ps_endpointer_speech_end(ps_endpointer_t *ep);
+double ps_endpointer_speech_end(ps_endpointer_t *ep);
 
 #ifdef __cplusplus
 }

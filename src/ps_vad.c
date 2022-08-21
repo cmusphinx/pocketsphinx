@@ -47,7 +47,7 @@ struct ps_vad_s {
 };
 
 ps_vad_t *
-ps_vad_init(ps_vad_mode_t mode, int sample_rate, float frame_length)
+ps_vad_init(ps_vad_mode_t mode, int sample_rate, double frame_length)
 {
     ps_vad_t *vad = ckd_calloc(1, sizeof(*vad));
     vad->refcount = 1;
@@ -88,19 +88,19 @@ static const int sample_rates[] = {
 static const int n_sample_rates = sizeof(sample_rates)/sizeof(sample_rates[0]);
 
 int
-ps_vad_set_input_params(ps_vad_t *vad, int sample_rate, float frame_length)
+ps_vad_set_input_params(ps_vad_t *vad, int sample_rate, double frame_length)
 {
     size_t frame_size;
     int i, rv;
     int closest_sample_rate = 0;
-    float best_diff = 0.5;
+    double best_diff = 0.5;
 
     if (sample_rate == 0)
         sample_rate = PS_VAD_DEFAULT_SAMPLE_RATE;
     if (frame_length == 0)
         frame_length = PS_VAD_DEFAULT_FRAME_LENGTH;
     for (i = 0; i < n_sample_rates; ++i) {
-        float diff = fabs(1.0 - (float)sample_rates[i] / sample_rate);
+        double diff = fabs(1.0 - (double)sample_rates[i] / sample_rate);
         if (diff < best_diff) {
             closest_sample_rate = sample_rates[i];
             best_diff = diff;
@@ -113,7 +113,7 @@ ps_vad_set_input_params(ps_vad_t *vad, int sample_rate, float frame_length)
     frame_size = (size_t)(closest_sample_rate * frame_length);
     if (closest_sample_rate != sample_rate) {
         E_INFO("Closest supported sampling rate to %d is %d, frame size %d (%.3fs)\n",
-               sample_rate, closest_sample_rate, frame_size, (float)frame_size / sample_rate);
+               sample_rate, closest_sample_rate, frame_size, (double)frame_size / sample_rate);
     }
     if ((rv = WebRtcVad_ValidRateAndFrameLength(closest_sample_rate, frame_size)) < 0) {
         E_WARN("Unsupported frame length %f\n", frame_length);

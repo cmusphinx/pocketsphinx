@@ -14,21 +14,19 @@ static int sample_rates[] = {
     48000,
     11025,
     22050,
-    44100
+    //44100
 };
 static const int n_sample_rates = sizeof(sample_rates)/sizeof(sample_rates[0]);
 
 static float labels[] = {
     0.24,
-    1.74,
-    2.91,
-    7.11,
-    8.25,
-    11.19,
+    1.80,
+    2.88,
+    12.12,
+    12.51,
+    15.75,
     16.44,
-    19.20,
-    20.34,
-    20.73
+    20.87
 };
 static const int n_labels = sizeof(labels)/sizeof(labels[0]);
 
@@ -63,7 +61,7 @@ test_sample_rate(int sample_rate)
     int i;
 
     E_INFO("Sample rate %d\n", sample_rate);
-    ep = ps_endpointer_init(0, 0, 3, sample_rate, 0);
+    ep = ps_endpointer_init(0, 0, 0, sample_rate, 0);
     frame_size = ps_endpointer_frame_size(ep);
     frame = ckd_calloc(sizeof(*frame), frame_size);
     fh = open_data(sample_rate);
@@ -78,7 +76,7 @@ test_sample_rate(int sample_rate)
                 E_INFO("Speech start at %.2f (label %.2f)\n",
                        ps_endpointer_speech_start(ep), labels[i]);
                 TEST_ASSERT(fabs(ps_endpointer_speech_start(ep)
-                                 - labels[i++]) < 0.3);
+                                 - labels[i++]) < 0.3); 
             }
             if (!ps_endpointer_in_speech(ep)) {
                 E_INFO("Speech end at %.2f (label %.2f)\n",
@@ -128,6 +126,12 @@ main(int argc, char *argv[])
     ep = ps_endpointer_init(0, 0, 0, 42, 0);
     TEST_ASSERT(ep == NULL);
     ep = ps_endpointer_init(0, 0, 0, 96000, 0);
+    TEST_ASSERT(ep == NULL);
+
+    /* Test rejection of unreasonable windows and ratios. */
+    ep = ps_endpointer_init(0.3, 0.99, 0, 0, 0);
+    TEST_ASSERT(ep == NULL);
+    ep = ps_endpointer_init(0.03, 0.1, 0, 0, 0);
     TEST_ASSERT(ep == NULL);
 
     /* Test a variety of sample rates. */
