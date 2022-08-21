@@ -29,6 +29,8 @@ set(TESTS
   test_set_search
   test_simple
   test_state_align
+  test_vad
+  test_endpointer
   )
 foreach(TEST_EXECUTABLE ${TESTS})
   add_executable(${TEST_EXECUTABLE} EXCLUDE_FROM_ALL ${TEST_EXECUTABLE}.c)
