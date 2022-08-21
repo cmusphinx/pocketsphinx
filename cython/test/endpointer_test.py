@@ -78,7 +78,7 @@ class PyEndpointer(Vad):
         frame_length=Vad.DEFAULT_FRAME_LENGTH,
     ):
         super(PyEndpointer, self).__init__(vad_mode, sample_rate, frame_length)
-        self.vadq = VadQ(vad_frames, frame_length)
+        self.vadq = VadQ(vad_frames, self.frame_length)
         self.ratio = vad_ratio
         self.timestamp = 0.0
         self.in_speech = False
@@ -183,14 +183,14 @@ def make_single_track():
 
 
 class EndpointerTest(unittest.TestCase):
-    def testEndpointer(self):
-        ep = Endpointer(vad_mode=3)
-        pyep = PyEndpointer(vad_mode=3)
+    def srtest(self, sample_rate):
+        ep = Endpointer(vad_mode=3, sample_rate=sample_rate)
+        pyep = PyEndpointer(vad_mode=3, sample_rate=sample_rate)
         self.assertEqual(ep.frame_bytes, pyep.frame_bytes)
         soxcmd = ["sox"]
         files, labels = make_single_track()
         soxcmd.extend(files)
-        soxcmd.extend("-c 1 -b 16 -e signed-integer -r".split())
+        soxcmd.extend("-c 1 -b 16 -e signed-integer -D -G -r".split())
         soxcmd.append("%d" % ep.sample_rate)
         soxcmd.extend("-t raw -".split())
         with subprocess.Popen(soxcmd, stdout=subprocess.PIPE) as sox:
@@ -232,6 +232,12 @@ class EndpointerTest(unittest.TestCase):
                         self.assertLess(start_diff, 0.06)
                         self.assertLess(end_diff, 0.21)
                         idx += 1
+
+    def testEndpointer(self):
+        # 8000, 44100, 48000 give slightly different results unfortunately
+        for sample_rate in 11025, 16000, 22050, 32000:
+            print(sample_rate)
+            self.srtest(sample_rate)
 
 
 if __name__ == "__main__":
