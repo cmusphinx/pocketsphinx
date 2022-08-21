@@ -21,9 +21,9 @@ static int sample_rates[] = {
     16000,
     32000,
     48000,
-/*    11025,
+    11025,
     22050,
-    44100 */
+    44100
 };
 static const int n_sample_rates = sizeof(sample_rates)/sizeof(sample_rates[0]);
 
@@ -72,8 +72,9 @@ test_sample_rate(int sample_rate)
         size_t frame_size;
         char *classification, *c;
 
-        printf("Sample rate %d, mode %d\n", sample_rate, i);
-        c = classification = ckd_calloc(1, strlen(expecteds[i]) + 1);
+        E_INFO("Sample rate %d, mode %d\n", sample_rate, i);
+        /* Extra space for approximate rates */
+        c = classification = ckd_calloc(1, strlen(expecteds[i]) * 2);
         vader = ps_vad_init(i, sample_rate, 0.03);
         TEST_ASSERT(vader);
         frame_size = ps_vad_frame_size(vader);
@@ -87,8 +88,10 @@ test_sample_rate(int sample_rate)
             TEST_ASSERT(is_speech != PS_VAD_ERROR);
             *c++ = (is_speech == PS_VAD_SPEECH) ? '1' : '0';
         }
-        printf("%s\n%s\n", expecteds[i], classification);
-        if (sample_rate != 48000) /* Has Problems for some reason */
+        E_INFO("true: %s\n", expecteds[i]);
+        E_INFO("pred: %s\n", classification);
+        if (sample_rate != 48000 /* Has Problems for some reason */
+            && ps_vad_frame_length(vader) == 0.03) /* skip approximate rates */
             TEST_EQUAL(0, strcmp(expecteds[i], classification));
         ckd_free(classification);
         ps_vad_free(vader);
@@ -105,6 +108,7 @@ main(int argc, char *argv[])
     int i;
 
     (void)argc; (void)argv;
+    err_set_loglevel(ERR_INFO);
     /* Test initialization with default parameters. */
     vader = ps_vad_init(0, 0, 0);
     TEST_ASSERT(vader);
@@ -122,5 +126,11 @@ main(int argc, char *argv[])
     for (i = 0; i < n_sample_rates; ++i)
         test_sample_rate(sample_rates[i]);
 
+    /* Test rejection of unreasonable sample rates. */
+    vader = ps_vad_init(0, 42, 0.03);
+    TEST_ASSERT(vader == NULL);
+    vader = ps_vad_init(0, 96000, 0.03);
+    TEST_ASSERT(vader == NULL);
+   
     return 0;
 }
