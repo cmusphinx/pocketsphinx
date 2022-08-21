@@ -57,6 +57,7 @@ ps_endpointer_init(int nframes,
                    int sample_rate, float frame_length)
 {
     ps_endpointer_t *ep = ckd_calloc(1, sizeof(*ep));
+    ep->refcount = 1;
     if ((ep->vad = ps_vad_init(mode, sample_rate, frame_length)) == NULL)
         goto error_out;
     if (nframes == 0)
