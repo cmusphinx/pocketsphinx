@@ -24,6 +24,12 @@
 /* Define if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H
 
+/* Define if you have the <inttypes.h> header file. */
+#cmakedefine HAVE_INTTYPES_H
+
+/* Define if you have the <stdint.h> header file. */
+#cmakedefine HAVE_STDINT_H
+
 /* The size of `long', as computed by sizeof. */
 #cmakedefine SIZEOF_LONG @SIZEOF_LONG@
 

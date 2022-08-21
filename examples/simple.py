@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+"""
+Recognize speech endlessly from the default audio device.
+"""
+
 from pocketsphinx5 import Decoder
 import subprocess
 import os

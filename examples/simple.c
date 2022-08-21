@@ -1,3 +1,9 @@
+/* Example of simple PocketSphinx recognition.
+ *
+ * MIT license (c) 2022, see LICENSE for more information.
+ *
+ * Author: David Huggins-Daines <dhdaines@gmail.com>
+ */
 #include <pocketsphinx.h>
 #include <signal.h>
 
@@ -34,7 +40,8 @@ main(int argc, char *argv[])
     #define SOXCMD "sox -q -r %d -c 1 -b 16 -e signed-integer -d -t raw -"
     len = snprintf(NULL, 0, SOXCMD,
                    (int)cmd_ln_float_r(config, "-samprate"));
-    soxcmd = malloc(len + 1);
+    if ((soxcmd = malloc(len + 1)) == NULL)
+        E_FATAL_SYSTEM("Failed to allocate string");
     if (signal(SIGINT, catch_sig) == SIG_ERR)
         E_FATAL_SYSTEM("Failed to set SIGINT handler");
     if (snprintf(soxcmd, len + 1, SOXCMD,
@@ -46,7 +53,8 @@ main(int argc, char *argv[])
     ps_start_utt(decoder);
     while (!global_done) {
         const char *hyp;
-        len = fread(buf, sizeof(buf[0]), BUFLEN, sox);
+        if ((len = fread(buf, sizeof(buf[0]), BUFLEN, sox)) == 0)
+            break;
         if (ps_process_raw(decoder, buf, len, FALSE, FALSE) < 0)
             E_FATAL("ps_process_raw() failed\n");
         if ((hyp = ps_get_hyp(decoder, NULL)) != NULL)

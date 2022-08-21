@@ -6,6 +6,11 @@
 /* Default radix point for fixed-point */
 #cmakedefine DEFAULT_RADIX @DEFAULT_RADIX@
 
+/* Define if you have the <stdint.h> header file. */
+#ifndef HAVE_STDINT_H
+#cmakedefine HAVE_STDINT_H
+#endif
+
 /* The size of `long', as computed by sizeof. */
 #cmakedefine SIZEOF_LONG @SIZEOF_LONG@
 
