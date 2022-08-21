@@ -3,7 +3,7 @@
 Segment live speech from the default audio device.
 """
 
-from pocketsphinx5 import Vad, Endpointer
+from pocketsphinx5 import Vad, Endpointer, set_loglevel
 from contextlib import closing
 import unittest
 import subprocess
@@ -62,24 +62,30 @@ class VadQ:
         # Ideally we would let it equal self.maxlen
         end = (self.pos + self.n) % self.maxlen
         if end > self.pos:
-            return sum(self.is_speech[self.pos : end])
+            return sum(self.is_speech[self.pos: end])
         else:
             # Note second term is 0 if end is 0
-            return sum(self.is_speech[self.pos :]) + sum(self.is_speech[:end])
+            return sum(self.is_speech[self.pos:]) + sum(self.is_speech[:end])
 
 
 class PyEndpointer(Vad):
     def __init__(
         self,
-        vad_frames=10,
-        vad_ratio=0.9,
+        window=0.3,
+        ratio=0.9,
         vad_mode=Vad.LOOSE,
         sample_rate=Vad.DEFAULT_SAMPLE_RATE,
         frame_length=Vad.DEFAULT_FRAME_LENGTH,
     ):
         super(PyEndpointer, self).__init__(vad_mode, sample_rate, frame_length)
-        self.vadq = VadQ(vad_frames, self.frame_length)
-        self.ratio = vad_ratio
+        maxlen = int(window / self.frame_length + 0.5)
+        self.start_frames = int(ratio * maxlen)
+        self.end_frames = int((1.0 - ratio) * maxlen + 0.5)
+        print("Threshold %d%% of %.3fs window (>%d frames <%d frames of %d)" %
+              (int(ratio * 100.0 + 0.5),
+               maxlen * self.frame_length,
+               self.start_frames, self.end_frames, maxlen))
+        self.vadq = VadQ(maxlen, self.frame_length)
         self.timestamp = 0.0
         self.in_speech = False
         self.speech_start = self.speech_end = None
@@ -94,6 +100,7 @@ class PyEndpointer(Vad):
         if not self.in_speech:
             return None
         self.in_speech = False
+        self.speech_end = self.vadq.start_time
         while not self.vadq.empty():
             is_speech, pcm = self.vadq.pop()
             if is_speech:
@@ -101,7 +108,8 @@ class PyEndpointer(Vad):
                 self.speech_end = self.vadq.start_time
             else:
                 break
-        if self.vadq.empty():
+        # If we used all the VAD queue, add the trailing samples
+        if self.vadq.empty() and self.speech_end == self.vadq.start_time:
             speech_frames.append(frame)
             self.speech_end = self.timestamp
         self.vadq.clear()
@@ -115,9 +123,10 @@ class PyEndpointer(Vad):
         self.vadq.push(self.is_speech(frame), frame)
         self.timestamp += self.frame_length
         speech_count = self.vadq.speech_count()
+        #print("%.2f %d %d %d" % (self.timestamp, speech_count, self.start_frames, self.end_frames))
         # Handle state transitions
         if self.in_speech:
-            if speech_count < (1.0 - self.ratio) * self.vadq.maxlen:
+            if speech_count < self.end_frames:
                 # Return only the first frame.  Either way it's sort
                 # of arbitrary, but this avoids having to drain the
                 # queue to prevent overlapping segments.  It's also
@@ -127,7 +136,7 @@ class PyEndpointer(Vad):
                 self.in_speech = False
                 return outframe
         else:
-            if speech_count > self.ratio * self.vadq.maxlen:
+            if speech_count > self.start_frames:
                 self.speech_start = self.vadq.start_time
                 self.speech_end = None
                 self.in_speech = True
@@ -234,6 +243,7 @@ class EndpointerTest(unittest.TestCase):
                         idx += 1
 
     def testEndpointer(self):
+        set_loglevel("INFO")
         # 8000, 44100, 48000 give slightly different results unfortunately
         for sample_rate in 11025, 16000, 22050, 32000:
             print(sample_rate)

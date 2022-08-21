@@ -1537,17 +1537,17 @@ cdef class Endpointer:
     """Simple endpointer using voice activity detection.
     """
     cdef ps_endpointer_t *_ep
-    DEFAULT_NFRAMES = PS_ENDPOINTER_DEFAULT_NFRAMES
+    DEFAULT_WINDOW = PS_ENDPOINTER_DEFAULT_WINDOW
     DEFAULT_RATIO = PS_ENDPOINTER_DEFAULT_RATIO
     def __init__(
         self,
-        vad_frames=10,
-        vad_ratio=0.9,
+        window=0.3,
+        ratio=0.9,
         vad_mode=Vad.LOOSE,
         sample_rate=Vad.DEFAULT_SAMPLE_RATE,
         frame_length=Vad.DEFAULT_FRAME_LENGTH,
     ):
-        self._ep = ps_endpointer_init(vad_frames, vad_ratio,
+        self._ep = ps_endpointer_init(window, ratio,
                                       vad_mode, sample_rate, frame_length)
         if (self._ep == NULL):
             raise ValueError("Invalid endpointer or VAD parameters")
@@ -1611,4 +1611,8 @@ cdef class Endpointer:
             return None
         return (<const unsigned char *>&outbuf[0])[:out_n_samples * 2]
 
-
+def set_loglevel(level):
+    cdef const char *prev_level
+    prev_level = err_set_loglevel_str(level.encode('utf-8'))
+    if prev_level == NULL:
+        raise ValueError("Invalid log level %s" % level)

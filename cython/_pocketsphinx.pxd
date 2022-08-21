@@ -20,6 +20,7 @@ cdef extern from "sphinxbase/err.h":
     ctypedef err_e err_lvl_t
     ctypedef void (*err_cb_f)(void* user_data, err_lvl_t lvl, const char *msg)
     void err_set_callback(err_cb_f callback, void *user_data)
+    const char *err_set_loglevel_str(const char *lvl)
 
 
 cdef extern from "sphinxbase/logmath.h":
@@ -421,25 +422,25 @@ cdef extern from "pocketsphinx/ps_vad.h":
         PS_VAD_SPEECH
     ctypedef ps_vad_class_e ps_vad_class_t
     cdef int PS_VAD_DEFAULT_SAMPLE_RATE
-    cdef float PS_VAD_DEFAULT_FRAME_LENGTH
+    cdef double PS_VAD_DEFAULT_FRAME_LENGTH
 
-    ps_vad_t *ps_vad_init(ps_vad_mode_t mode, int sample_rate, float frame_length)
+    ps_vad_t *ps_vad_init(ps_vad_mode_t mode, int sample_rate, double frame_length)
     int ps_vad_free(ps_vad_t *vad)
-    int ps_vad_set_input_params(ps_vad_t *vad, int sample_rate, float frame_length)
+    int ps_vad_set_input_params(ps_vad_t *vad, int sample_rate, double frame_length)
     int ps_vad_sample_rate(ps_vad_t *vad)
     size_t ps_vad_frame_size(ps_vad_t *vad)
-    float ps_vad_frame_length(ps_vad_t *vad)
+    double ps_vad_frame_length(ps_vad_t *vad)
     ps_vad_class_t ps_vad_classify(ps_vad_t *vad, const short *frame)
 
 cdef extern from "pocketsphinx/ps_endpointer.h":
     ctypedef struct ps_endpointer_t:
         pass
-    cdef int PS_ENDPOINTER_DEFAULT_NFRAMES
-    cdef float PS_ENDPOINTER_DEFAULT_RATIO
-    ps_endpointer_t *ps_endpointer_init(int nframes,
-                                        float ratio,
+    cdef double PS_ENDPOINTER_DEFAULT_WINDOW
+    cdef double PS_ENDPOINTER_DEFAULT_RATIO
+    ps_endpointer_t *ps_endpointer_init(double window,
+                                        double ratio,
                                         ps_vad_mode_t mode,
-                                        int sample_rate, float frame_length)
+                                        int sample_rate, double frame_length)
     ps_endpointer_t *ps_endpointer_retain(ps_endpointer_t *ep)
     int ps_endpointer_free(ps_endpointer_t *ep)
     ps_vad_t *ps_endpointer_vad(ps_endpointer_t *ep)
@@ -452,5 +453,5 @@ cdef extern from "pocketsphinx/ps_endpointer.h":
                                           size_t nsamp,
                                           size_t *out_nsamp)
     int ps_endpointer_in_speech(ps_endpointer_t *ep)
-    float ps_endpointer_speech_start(ps_endpointer_t *ep)
-    float ps_endpointer_speech_end(ps_endpointer_t *ep)
+    double ps_endpointer_speech_start(ps_endpointer_t *ep)
+    double ps_endpointer_speech_end(ps_endpointer_t *ep)
