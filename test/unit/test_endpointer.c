@@ -89,8 +89,11 @@ test_sample_rate(int sample_rate)
     }
     speech = ps_endpointer_end_stream(ep, frame, nsamp, &end_nsamp);
     if (speech != NULL) {
-        E_INFO("Speech end at %.2f\n",
-               ps_endpointer_speech_end(ep));
+        TEST_ASSERT(i < n_labels);
+        E_INFO("Speech end at %.2f (label %.2f)\n",
+               ps_endpointer_speech_end(ep), labels[i]);
+        TEST_ASSERT(fabs(ps_endpointer_speech_end(ep)
+                         - labels[i]) < 0.3);
     }
     pclose(fh);
     ckd_free(frame);
