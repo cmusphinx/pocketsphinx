@@ -80,9 +80,12 @@ typedef enum ps_vad_class_e {
  *             misclassify non-speech as speech.
  * @param sample_rate Sampling rate of input, or 0 for default (which can
  *                    be obtained with ps_vad_sample_rate()).  Only 8000,
- *                    16000, 32000, 48000 currently supported.
+ *                    16000, 32000, 48000 are directly supported.  See
+ *                    ps_vad_set_input_params() for more information.
  * @param frame_length Frame length in seconds, or 0.0 for the default.  Only
- *                     0.01, 0.02, 0.03 currently supported.
+ *                     0.01, 0.02, 0.03 currently supported.  **Actual** value
+ *                     may differ, you must use ps_vad_frame_length() to
+ *                     obtain it.
  * @return VAD object or NULL on failure (invalid parameter for instance).
  */
 POCKETSPHINX_EXPORT
@@ -111,9 +114,16 @@ int ps_vad_free(ps_vad_t *vad);
  *
  * @param sample_rate Sampling rate of input, or 0 for default (which can
  *                    be obtained with ps_vad_sample_rate()).  Only 8000,
- *                    16000, 32000, 48000 currently supported.
- * @param frame_length Frame length in seconds, or 0.0 for the default.  Only
- *                     0.01, 0.02, 0.03 currently supported.
+ *                    16000, 32000, 48000 are directly supporte, others
+ *                    will use the closest supported rate (within reason).
+ *                    Note that this means that the actual frame length
+ *                    may not be exactly the one requested, so you must
+ *                    always use the one returned by ps_vad_frame_size()
+ *                    (in samples) or ps_vad_frame_length() (in seconds).
+ * @param frame_length Requested frame length in seconds, or 0.0 for the
+ *                     default.  Only 0.01, 0.02, 0.03 currently supported.
+ *                     **Actual frame length may be different, you must
+ *                     always use ps_vad_frame_length() to obtain it.**
  * @return 0 for success or -1 on error.
  */
 POCKETSPHINX_EXPORT
@@ -131,6 +141,10 @@ int ps_vad_sample_rate(ps_vad_t *vad);
 /**
  * Get the number of samples expected by voice activity detection.
  *
+ * You **must** always ensure that the buffers passed to
+ * ps_vad_classify() contain this number of samples (zero-pad them if
+ * necessary).
+ *
  * @param vad Voice activity detector.
  * @return Size, in samples, of the frames passed to ps_vad_classify().
  */
@@ -138,20 +152,18 @@ POCKETSPHINX_EXPORT
 size_t ps_vad_frame_size(ps_vad_t *vad);
 
 /**
- * Get the number of seconds of audio in each frame.
+ * Get the *actual* length of a frame in seconds.
  *
- * @param vad Voice activity detector.
- * @return Length, in seconds, of the frames passed to ps_vad_classify().
+ * This may differ from the value requested in ps_vad_set_input_params().
  */
-POCKETSPHINX_EXPORT
-float ps_vad_frame_length(ps_vad_t *vad);
+#define ps_vad_frame_length(vad) ((float)ps_vad_frame_size(vad) / ps_vad_sample_rate(vad))
 
 /**
  * Classify a frame as speech or not speech.
  *
  * @param vad Voice activity detector.
- * @param frame Frame of input, must contain the number of samples
- *              returned by ps_vad_frame_size().
+ * @param frame Frame of input, **must** contain the number of
+ *              samples returned by ps_vad_frame_size().
  * @return PS_VAD_SPEECH, PS_VAD_NOT_SPEECH, or PS_VAD_ERROR (see
  *         ps_vad_class_t).
  */

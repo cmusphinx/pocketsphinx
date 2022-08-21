@@ -29,6 +29,7 @@
  */
 
 #include <stdlib.h>
+#include <math.h>
 
 #include <sphinxbase/ckd_alloc.h>
 #include <sphinxbase/err.h>
@@ -41,8 +42,8 @@ struct ps_vad_s {
     VadInstT v;
     int refcount;
     int sample_rate;
+    int closest_sample_rate;
     int frame_size;
-    float frame_length;
 };
 
 ps_vad_t *
@@ -81,25 +82,46 @@ ps_vad_free(ps_vad_t *vad)
     return 0;
 }
 
+static const int sample_rates[] = {
+    8000, 16000, 32000, 48000
+};
+static const int n_sample_rates = sizeof(sample_rates)/sizeof(sample_rates[0]);
+
 int
 ps_vad_set_input_params(ps_vad_t *vad, int sample_rate, float frame_length)
 {
     size_t frame_size;
-    int rv;
+    int i, rv;
+    int closest_sample_rate = 0;
+    float best_diff = 0.5;
 
     if (sample_rate == 0)
         sample_rate = PS_VAD_DEFAULT_SAMPLE_RATE;
     if (frame_length == 0)
         frame_length = PS_VAD_DEFAULT_FRAME_LENGTH;
-    frame_size = (size_t)(sample_rate * frame_length);
-    if ((rv = WebRtcVad_ValidRateAndFrameLength(sample_rate, frame_size)) < 0) {
-        E_ERROR("Invalid sampling rate %d or frame length %f\n",
-                sample_rate, frame_length);
+    for (i = 0; i < n_sample_rates; ++i) {
+        float diff = fabs(1.0 - (float)sample_rates[i] / sample_rate);
+        if (diff < best_diff) {
+            closest_sample_rate = sample_rates[i];
+            best_diff = diff;
+        }
+    }
+    if (closest_sample_rate == 0) {
+        E_ERROR("No suitable sampling rate found for %d\n", sample_rate);
+        return -1;
+    }
+    frame_size = (size_t)(closest_sample_rate * frame_length);
+    if (closest_sample_rate != sample_rate) {
+        E_INFO("Closest supported sampling rate to %d is %d, frame size %d (%.3fs)\n",
+               sample_rate, closest_sample_rate, frame_size, (float)frame_size / sample_rate);
+    }
+    if ((rv = WebRtcVad_ValidRateAndFrameLength(closest_sample_rate, frame_size)) < 0) {
+        E_WARN("Unsupported frame length %f\n", frame_length);
         return rv;
     }
     vad->sample_rate = sample_rate;
+    vad->closest_sample_rate = closest_sample_rate;
     vad->frame_size = frame_size;
-    vad->frame_length = frame_length;
     return rv;
 }
 
@@ -119,17 +141,10 @@ ps_vad_frame_size(ps_vad_t *vad)
     return vad->frame_size;
 }
 
-float
-ps_vad_frame_length(ps_vad_t *vad)
-{
-    if (vad == NULL)
-        return 0.0;
-    return vad->frame_length;
-}
-
 ps_vad_class_t
 ps_vad_classify(ps_vad_t *vad, const short *frame)
 {
-    return WebRtcVad_Process((VadInst *)vad, vad->sample_rate,
+    return WebRtcVad_Process((VadInst *)vad,
+                             vad->closest_sample_rate,
                              frame, vad->frame_size);
 }
