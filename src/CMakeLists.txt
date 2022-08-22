@@ -67,7 +67,6 @@ add_library(pocketsphinx
   util/ckd_alloc.c
   util/slapack_lite.c
   util/matrix.c
-  util/sbthread.c
   util/bio.c
   util/heap.c
   util/priority_queue.c
@@ -116,8 +115,6 @@ find_library(MATH_LIBRARY m)
 if(MATH_LIBRARY)
   target_link_libraries(pocketsphinx PUBLIC ${MATH_LIBRARY})
 endif()
-find_package(Threads)
-target_link_libraries(pocketsphinx PUBLIC Threads::Threads)
 # Shared library version != package version, but we will make it the
 # same for now to avoid confusion
 set_target_properties(pocketsphinx PROPERTIES
