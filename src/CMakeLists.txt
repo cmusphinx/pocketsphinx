@@ -123,5 +123,5 @@ set_target_properties(pocketsphinx PROPERTIES
   )
 # No idea why this can't just go in the above list but oh well
 set_property(TARGET pocketsphinx PROPERTY
-  COMPILE_DEFINITIONS POCKETSPHINX_EXPORTS;SPHINXBASE_EXPORTS
+  COMPILE_DEFINITIONS POCKETSPHINX_EXPORTS;SPHINXBASE_EXPORTS;MODELDIR="${DATADIR}/pocketsphinx/model"
 )
