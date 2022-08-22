@@ -138,6 +138,7 @@ cmn_set_repr(cmn_t *cmn, const char *repr)
         cmn->sum[nvals] = cmn->cmn_mean[nvals] * CMN_WIN;
     }
     ckd_free(vallist);
+    cmn->nframe = CMN_WIN;
     E_INFO("Update to   < %s >\n", cmn_update_repr(cmn));
     return 0;
 }
@@ -165,7 +166,6 @@ cmn(cmn_t *cmn, mfcc_t ** mfc, int32 varnorm, int32 n_frame)
     mfcc_t *mfcp;
     mfcc_t t;
     int32 i, f;
-    int32 n_pos_frame;
 
     assert(mfc != NULL);
 
@@ -174,9 +174,10 @@ cmn(cmn_t *cmn, mfcc_t ** mfc, int32 varnorm, int32 n_frame)
 
     /* If cmn->cmn_mean wasn't NULL, we need to zero the contents */
     memset(cmn->cmn_mean, 0, cmn->veclen * sizeof(mfcc_t));
+    memset(cmn->sum, 0, cmn->veclen * sizeof(mfcc_t));
 
     /* Find mean cep vector for this utterance */
-    for (f = 0, n_pos_frame = 0; f < n_frame; f++) {
+    for (f = 0, cmn->nframe = 0; f < n_frame; f++) {
         mfcp = mfc[f];
 
         /* Skip zero energy frames */
@@ -184,14 +185,15 @@ cmn(cmn_t *cmn, mfcc_t ** mfc, int32 varnorm, int32 n_frame)
     	    continue;
 
         for (i = 0; i < cmn->veclen; i++) {
-            cmn->cmn_mean[i] += mfcp[i];
+            cmn->sum[i] += mfcp[i];
         }
 
-        n_pos_frame++;
+        cmn->nframe++;
     }
 
-    for (i = 0; i < cmn->veclen; i++)
-        cmn->cmn_mean[i] /= n_pos_frame;
+    for (i = 0; i < cmn->veclen; i++) {
+        cmn->cmn_mean[i] = cmn->sum[i] / cmn->nframe;
+    }
 
     E_INFO("CMN: %s\n", cmn_update_repr(cmn));
     if (!varnorm) {
