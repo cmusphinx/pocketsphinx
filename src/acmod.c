@@ -446,7 +446,11 @@ acmod_end_utt(acmod_t *acmod)
         /* Process whatever's left, and any leadout. */
         if (nfr)
             nfr = acmod_process_mfcbuf(acmod);
+        else /* Make sure to update CMN! */
+            feat_update_stats(acmod->fcb);
     }
+    else /* Make sure to update CMN! */
+        feat_update_stats(acmod->fcb);
     if (acmod->mfcfh) {
         int32 outlen, rv;
         outlen = (ftell(acmod->mfcfh) - 4) / 4;
