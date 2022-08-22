@@ -189,7 +189,7 @@ const char *cmn_update_repr(cmn_t *cmn);
  * Set the live mean from a string.
  */
 SPHINXBASE_EXPORT
-void cmn_set_repr(cmn_t *cmn, char const *repr);
+int cmn_set_repr(cmn_t *cmn, char const *repr);
 
 /**
  * Retain a CMN.

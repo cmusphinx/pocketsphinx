@@ -139,12 +139,13 @@ int ps_reinit(ps_decoder_t *ps, cmd_ln_t *config);
  *
  * This function allows you to switch the feature computation
  * parameters without otherwise affecting the decoder configuration.
- * For example, if you change the sample rate or the frame rate, the
- * cepstral mean, or the VTLN warping factor, and do not need to
- * reconfigure the rest of the decoder.
+ * For example, if you change the sample rate or the frame rate, and
+ * do not want to reconfigure the rest of the decoder.
  *
  * Note that if your code has modified any internal parameters in the
  * \ref acmod_t, these will be overriden by values from the config.
+ * Likewise if you have set a custom cepstral mean with ps_set_cmn(),
+ * it will be overridden.
  *
  * @note The decoder retains ownership of the pointer `config`, so you
  * should free it when no longer used.
@@ -157,6 +158,39 @@ int ps_reinit(ps_decoder_t *ps, cmd_ln_t *config);
  */
 POCKETSPHINX_EXPORT
 int ps_reinit_feat(ps_decoder_t *ps, cmd_ln_t *config);
+
+/**
+ * Get the current cepstral mean as a string.
+ *
+ * This is the string representation of the current cepstral mean,
+ * which represents the acoustic channel conditions in live
+ * recognition.  This can be used to initialize the decoder with the
+ * `-cmninit` flag.
+ *
+ * @param ps Decoder
+ * @return String representation of cepstral mean, as
+ *         `-ceplen` comma-separated numbers.  This pointer is owned
+ *         by the decoder and only valid until the next call to
+ *         ps_set_cmn() or ps_end_utt().
+ */
+POCKETSPHINX_EXPORT
+const char *ps_get_cmn(ps_decoder_t *ps);
+
+/**
+ * Set the current cepstral mean from a string.
+ *
+ * This does the same thing as setting `-cmninit` and running
+ * `ps_reinit_feat()` but is more efficient, and can also be
+ * done in the middle of an utterance if you like.
+ *
+ * @param ps Decoder
+ * @param cmn String representation of cepstral mean, as
+ *            up to `-ceplen` comma-separated numbers (any
+ *            missing values will be zero-filled).
+ * @return 0 for success of -1 for invalid input.
+ */
+POCKETSPHINX_EXPORT
+int ps_set_cmn(ps_decoder_t *ps, const char *cmn);
 
 /**
  * Returns the argument definitions used in ps_init().

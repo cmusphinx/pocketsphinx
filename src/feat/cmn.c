@@ -113,13 +113,15 @@ cmn_update_repr(cmn_t *cmn)
     return cmn->repr;
 }
 
-void
+int
 cmn_set_repr(cmn_t *cmn, const char *repr)
 {
     char *c, *cc, *vallist;
     int32 nvals;
 
     E_INFO("Update from < %s >\n", cmn->repr);
+    memset(cmn->cmn_mean, 0, sizeof(cmn->cmn_mean[0]) * cmn->veclen);
+    memset(cmn->sum, 0, sizeof(cmn->sum[0]) * cmn->veclen);
     vallist = ckd_salloc(repr);
     c = vallist;
     nvals = 0;
@@ -137,6 +139,7 @@ cmn_set_repr(cmn_t *cmn, const char *repr)
     }
     ckd_free(vallist);
     E_INFO("Update to   < %s >\n", cmn_update_repr(cmn));
+    return 0;
 }
 
 cmn_t *
