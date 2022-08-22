@@ -409,8 +409,10 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 }
 
 const char *
-ps_get_cmn(ps_decoder_t *ps)
+ps_get_cmn(ps_decoder_t *ps, int update)
 {
+    if (update)
+        cmn_live_update(ps->acmod->fcb->cmn_struct);
     return cmn_repr(ps->acmod->fcb->cmn_struct);
 }
 

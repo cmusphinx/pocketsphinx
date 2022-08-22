@@ -168,13 +168,14 @@ int ps_reinit_feat(ps_decoder_t *ps, cmd_ln_t *config);
  * `-cmninit` flag.
  *
  * @param ps Decoder
+ * @param update Update the cepstral mean using data processed so far.
  * @return String representation of cepstral mean, as
  *         `-ceplen` comma-separated numbers.  This pointer is owned
  *         by the decoder and only valid until the next call to
- *         ps_set_cmn() or ps_end_utt().
+ *         ps_get_cmn(), ps_set_cmn() or ps_end_utt().
  */
 POCKETSPHINX_EXPORT
-const char *ps_get_cmn(ps_decoder_t *ps);
+const char *ps_get_cmn(ps_decoder_t *ps, int update);
 
 /**
  * Set the current cepstral mean from a string.
