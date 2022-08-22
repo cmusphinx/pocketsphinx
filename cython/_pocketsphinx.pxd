@@ -341,6 +341,8 @@ cdef extern from "pocketsphinx.h":
     int ps_free(ps_decoder_t *ps)
     int ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     int ps_reinit_feat(ps_decoder_t *ps, cmd_ln_t *config)
+    const char *ps_get_cmn(ps_decoder_t *ps, int update)
+    int ps_set_cmn(ps_decoder_t *ps, const char *cmn)
     logmath_t *ps_get_logmath(ps_decoder_t *ps)
     int ps_start_stream(ps_decoder_t *ps)
     int ps_get_in_speech(ps_decoder_t *ps)
