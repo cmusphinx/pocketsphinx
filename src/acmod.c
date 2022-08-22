@@ -56,7 +56,6 @@
 #include <sphinxbase/bio.h>
 
 /* PocketSphinx headers. */
-#include <pocketsphinx/config.h>
 #include <pocketsphinx.h>
 
 /* Local headers. */

@@ -53,7 +53,6 @@
 
 /* PocketSphinx headers */
 #include <pocketsphinx/export.h>
-#include <pocketsphinx/config.h>
 #include <pocketsphinx/lattice.h>
 #include <pocketsphinx/mllr.h>
 
