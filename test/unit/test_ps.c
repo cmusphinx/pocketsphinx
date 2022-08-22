@@ -20,8 +20,12 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
     char const *hyp;
     double n_speech, n_cpu, n_wall;
     ps_seg_t *seg;
+    char *prev_cmn;
 
     TEST_ASSERT(ps = ps_init(config));
+    prev_cmn = ckd_salloc(ps_get_cmn(ps, FALSE));
+    printf("CMN: %s\n", prev_cmn);
+    err_set_loglevel(ERR_INFO);
     /* Test it first with pocketsphinx_decode_raw() */
     TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
     ps_decode_raw(ps, rawfh, -1);
@@ -35,6 +39,10 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
            n_speech, n_cpu, n_wall);
     printf("%.2f xRT (CPU), %.2f xRT (elapsed)\n",
            n_cpu / n_speech, n_wall / n_speech);
+    TEST_ASSERT(0 != strcmp(prev_cmn, ps_get_cmn(ps, FALSE)));
+    ckd_free(prev_cmn);
+    prev_cmn = ckd_salloc(ps_get_cmn(ps, FALSE));
+    printf("CMN: %s\n", prev_cmn);
 
     /* Test it with ps_process_raw() */
     clearerr(rawfh);
@@ -45,9 +53,17 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
     TEST_EQUAL(0, ps_start_utt(ps));
     nsamps = 2048;
     buf = ckd_calloc(nsamps, sizeof(*buf));
+    i = 0;
     while (!feof(rawfh)) {
         nread = fread(buf, sizeof(*buf), nsamps, rawfh);
         ps_process_raw(ps, buf, nread, FALSE, FALSE);
+        if (i++ == 1) {
+            /* Test updating CMN while decoding */
+            TEST_ASSERT(0 != strcmp(prev_cmn, ps_get_cmn(ps, TRUE)));
+            ckd_free(prev_cmn);
+            prev_cmn = ckd_salloc(ps_get_cmn(ps, FALSE));
+            printf("CMN: %s\n", prev_cmn);
+        }
     }
     TEST_EQUAL(0, ps_end_utt(ps));
     hyp = ps_get_hyp(ps, &score);
@@ -80,6 +96,13 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
     TEST_EQUAL(0, ps_start_utt(ps));
     for (i = 0; i < nfr; ++i) {
         ps_process_cep(ps, cepbuf + i, 1, FALSE, FALSE);
+        if (i == nfr - 5) {
+            /* Test updating CMN while decoding */
+            TEST_ASSERT(0 != strcmp(prev_cmn, ps_get_cmn(ps, TRUE)));
+            ckd_free(prev_cmn);
+            prev_cmn = ckd_salloc(ps_get_cmn(ps, FALSE));
+            printf("CMN: %s\n", prev_cmn);
+        }
     }
     TEST_EQUAL(0, ps_end_utt(ps));
     hyp = ps_get_hyp(ps, &score);
@@ -110,12 +133,17 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
            n_speech, n_cpu, n_wall);
     printf("TOTAL: %.2f xRT (CPU), %.2f xRT (elapsed)\n",
            n_cpu / n_speech, n_wall / n_speech);
+    TEST_ASSERT(0 != strcmp(prev_cmn, ps_get_cmn(ps, FALSE)));
+    ckd_free(prev_cmn);
+    prev_cmn = ckd_salloc(ps_get_cmn(ps, FALSE));
+    printf("CMN: %s\n", prev_cmn);
 
     fclose(rawfh);
     ps_free(ps);
     cmd_ln_free_r(config);
     ckd_free_2d(cepbuf);
     ckd_free(buf);
+    ckd_free(prev_cmn);
 
     return 0;
 }
