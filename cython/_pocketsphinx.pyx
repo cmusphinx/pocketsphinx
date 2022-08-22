@@ -803,6 +803,27 @@ cdef class Decoder:
         if ps_reinit_feat(self.ps, cconfig) < 0:
             raise RuntimeError("Failed to reinitialize feature extraction")
 
+    def get_cmn(self, update=False):
+        """Get current cepstral mean.
+
+        Args:
+          update(boolean): Update the mean based on current utterance.
+        Returns:
+          str: Cepstral mean as a comma-separated list of numbers.
+        """
+        cdef const char *cmn = ps_get_cmn(self.ps, update)
+        return cmn.decode("utf-8")
+    
+    def set_cmn(self, cmn):
+        """Get current cepstral mean.
+
+        Args:
+          cmn(str): Cepstral mean as a comma-separated list of numbers.
+        """
+        cdef int rv = ps_set_cmn(self.ps, cmn.encode("utf-8"))
+        if rv != 0:
+            raise ValueError("Invalid CMN string")
+        
     def start_stream(self):
         """Reset noise statistics.
 
@@ -1535,6 +1556,39 @@ cdef class Vad:
 
 cdef class Endpointer:
     """Simple endpointer using voice activity detection.
+
+    Args:
+      window(float): Length in seconds of window for decision.
+      ratio(float): Fraction of window that must be speech or
+                    non-speech to make a transition.
+      mode(int): Aggressiveness of voice activity detction (0-3)
+      sample_rate(int): Sampling rate of input, default is 16000.
+                        Rates other than 8000, 16000, 32000, 48000
+                        are only approximately supported, see note
+                        in `frame_length`.  Outlandish sampling
+                        rates like 3924 and 115200 will raise a
+                        `ValueError`.
+      frame_length(float): Desired input frame length in seconds,
+                           default is 0.03.  The *actual* frame
+                           length may be different if an
+                           approximately supported sampling rate is
+                           requested.  You must *always* use the
+                           `frame_bytes` and `frame_length`
+                           attributes to determine the input size.
+
+    Attributes:
+      sample_rate(int): Sampling rate of input (default is 16000)
+      frame_bytes(int): Number of bytes in a frame accepted by `process`.
+      frame_length(float): Length of a frame (*may be different from
+                           the one requested in the constructor*!)
+      in_speech(boolean): Are we currently in a speech region?
+      speech_start(float): Start of previous speech segment.
+      speech_end(float): End of previous speech segment.
+
+    Raises:
+      ValueError: Invalid input parameter.  Also raised if the ratio
+                  makes it impossible to do endpointing (i.e. it
+                  is more than N-1 or less than 1 frame).
     """
     cdef ps_endpointer_t *_ep
     DEFAULT_WINDOW = PS_ENDPOINTER_DEFAULT_WINDOW
@@ -1597,6 +1651,19 @@ cdef class Endpointer:
         return (<const unsigned char *>&outframe[0])[:n_samples * 2]
 
     def end_stream(self, frame):
+        """Read a final frame of data and return speech if any.
+
+        Args:
+          frame(bytes): Buffer containing speech data (16-bit signed
+                        integers).  Must be of length `frame_bytes`
+                        (in bytes) *or less*.
+        Returns:
+          (bytes) Remaining speech data (could be more than one frame),
+                  or None if none detected.
+        Raises:
+          IndexError: `buf` is of invalid size.
+          ValueError: Other internal VAD error.
+        """
         cdef const unsigned char[:] cframe = frame
         cdef Py_ssize_t n_samples = len(cframe) // 2
         cdef const short *outbuf
@@ -1612,7 +1679,15 @@ cdef class Endpointer:
         return (<const unsigned char *>&outbuf[0])[:out_n_samples * 2]
 
 def set_loglevel(level):
+    """Set internal log level of PocketSphinx.
+
+    Args:
+      level(str): one of "DEBUG", "INFO", "ERROR", "FATAL".
+    Raises:
+      ValueError: Invalid log level string.
+    """
     cdef const char *prev_level
     prev_level = err_set_loglevel_str(level.encode('utf-8'))
     if prev_level == NULL:
         raise ValueError("Invalid log level %s" % level)
+

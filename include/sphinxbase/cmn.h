@@ -131,6 +131,8 @@ typedef struct {
     mfcc_t *sum;        /**< Accumulated cepstra for computing mean */
     int32 nframe;	/**< Number of frames */
     int32 veclen;	/**< Length of cepstral vector */
+    char *repr;         /**< String representation of current means */
+    int refcount;
 } cmn_t;
 
 SPHINXBASE_EXPORT
@@ -169,14 +171,36 @@ SPHINXBASE_EXPORT
 void cmn_live_update(cmn_t *cmn);
 
 /**
- * Set the live mean.
+ * Set live mean from a vector of length cmn->veclen
+ */
+void cmn_live_set(cmn_t *cmn, mfcc_t const * vec);
+
+/**
+ * Get the string representation of the live mean.
+ */
+#define cmn_repr(cmn) (cmn)->repr
+
+/**
+ * Update the string representation.
+ */
+const char *cmn_update_repr(cmn_t *cmn);
+
+/**
+ * Set the live mean from a string.
  */
 SPHINXBASE_EXPORT
-void cmn_live_set(cmn_t *cmn, mfcc_t const *vec);
+int cmn_set_repr(cmn_t *cmn, char const *repr);
 
-/* RAH, free previously allocated memory */
+/**
+ * Retain a CMN.
+ */
+cmn_t *cmn_retain(cmn_t *cmn);
+
+/**
+ * Release a CMN, possibly freeing it.
+ */
 SPHINXBASE_EXPORT
-void cmn_free (cmn_t *cmn);
+int cmn_free (cmn_t *cmn);
 
 #ifdef __cplusplus
 }

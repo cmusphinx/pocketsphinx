@@ -408,6 +408,21 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     return 0;
 }
 
+const char *
+ps_get_cmn(ps_decoder_t *ps, int update)
+{
+    if (update)
+        cmn_live_update(ps->acmod->fcb->cmn_struct);
+    return cmn_repr(ps->acmod->fcb->cmn_struct);
+}
+
+int
+ps_set_cmn(ps_decoder_t *ps, const char *cmn)
+{
+    return cmn_set_repr(ps->acmod->fcb->cmn_struct, cmn);
+}
+
+
 ps_decoder_t *
 ps_init(cmd_ln_t *config)
 {

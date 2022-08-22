@@ -65,7 +65,6 @@
 #include "ms_mgau.h"
 
 static int32 acmod_process_mfcbuf(acmod_t *acmod);
-static const char *acmod_update_cmninit(acmod_t *acmod);
 
 static int
 acmod_init_am(acmod_t *acmod)
@@ -196,23 +195,8 @@ acmod_reinit_feat(acmod_t *acmod, fe_t *fe, feat_t *fcb)
         if (fcb->cmn_struct
             && cmd_ln_exists_r(acmod->config, "-cmninit")
             && cmd_ln_str_r(acmod->config, "-cmninit")) {
-            char *c, *cc, *vallist;
-            int32 nvals;
-
-            vallist = ckd_salloc(cmd_ln_str_r(acmod->config, "-cmninit"));
-            c = vallist;
-            nvals = 0;
-            while (nvals < fcb->cmn_struct->veclen
-                   && (cc = strchr(c, ',')) != NULL) {
-                *cc = '\0';
-                fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof_c(c));
-                c = cc + 1;
-                ++nvals;
-            }
-            if (nvals < fcb->cmn_struct->veclen && *c != '\0') {
-                fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof_c(c));
-            }
-            ckd_free(vallist);
+            E_INFO("Setting initial CMN to %s\n", cmd_ln_str_r(acmod->config, "-cmninit"));
+            cmn_set_repr(fcb->cmn_struct, cmd_ln_str_r(acmod->config, "-cmninit"));
         }
     }
     if (acmod_feat_mismatch(acmod, fcb)) {
@@ -462,7 +446,11 @@ acmod_end_utt(acmod_t *acmod)
         /* Process whatever's left, and any leadout. */
         if (nfr)
             nfr = acmod_process_mfcbuf(acmod);
+        else /* Make sure to update CMN! */
+            feat_update_stats(acmod->fcb);
     }
+    else /* Make sure to update CMN! */
+        feat_update_stats(acmod->fcb);
     if (acmod->mfcfh) {
         int32 outlen, rv;
         outlen = (ftell(acmod->mfcfh) - 4) / 4;
@@ -484,43 +472,7 @@ acmod_end_utt(acmod_t *acmod)
         acmod->senfh = NULL;
     }
 
-    acmod_update_cmninit(acmod);
-
     return nfr;
-}
-
-static const char *
-acmod_update_cmninit(acmod_t *acmod)
-{
-    char *cmninit, *ptr;
-    cmn_t *cmn;
-    int i, len;
-    
-    if (acmod->fcb == NULL)
-        return NULL;
-    if ((cmn = acmod->fcb->cmn_struct) == NULL)
-        return NULL;
-    len = 0;
-    for (i = 0; i < cmn->veclen; ++i) {
-        int nbytes = snprintf(NULL, 0, "%g,", cmn->cmn_mean[i]);
-        if (nbytes <= 0) {
-            E_ERROR_SYSTEM("Failed to format %g for cmninit", cmn->cmn_mean[i]);
-            return NULL;
-        }
-        len += nbytes;
-    }
-    len++;
-    ptr = cmninit = ckd_malloc(len);
-    if (ptr == NULL) {
-        E_ERROR_SYSTEM("Failed to allocate %d bytes for cmninit", len);
-        return NULL;
-    }
-    for (i = 0; i < cmn->veclen; ++i)
-        ptr += snprintf(ptr, cmninit + len - ptr, "%g,", cmn->cmn_mean[i]);
-    *--ptr = '\0';
-    cmd_ln_set_str_r(acmod->config, "-cmninit", cmninit);
-    ckd_free(cmninit);
-    return cmd_ln_str_r(acmod->config, "-cmninit");
 }
 
 static int
