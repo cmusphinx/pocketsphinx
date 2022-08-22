@@ -39,13 +39,13 @@ main(int argc, char *argv[])
         E_FATAL("PocketSphinx decoder init failed\n");
     #define SOXCMD "sox -q -r %d -c 1 -b 16 -e signed-integer -d -t raw -"
     len = snprintf(NULL, 0, SOXCMD,
-                   (int)cmd_ln_float_r(config, "-samprate"));
+                   cmd_ln_int_r(config, "-samprate"));
     if ((soxcmd = malloc(len + 1)) == NULL)
         E_FATAL_SYSTEM("Failed to allocate string");
     if (signal(SIGINT, catch_sig) == SIG_ERR)
         E_FATAL_SYSTEM("Failed to set SIGINT handler");
     if (snprintf(soxcmd, len + 1, SOXCMD,
-                 (int)cmd_ln_float_r(config, "-samprate")) != len)
+                 cmd_ln_int_r(config, "-samprate")) != len)
         E_FATAL_SYSTEM("snprintf() failed");
     if ((sox = popen(soxcmd, "r")) == NULL)
         E_FATAL_SYSTEM("Failed to popen(%s)", soxcmd);

@@ -14,7 +14,7 @@ decoder = Decoder(
     lm=os.path.join(MODELDIR, "en-us/en-us.lm.bin"),
     dict=os.path.join(MODELDIR, "en-us/cmudict-en-us.dict"),
 )
-sample_rate = int(decoder.config["samprate"])
+sample_rate = decoder.config["samprate"]
 soxcmd = f"sox -q -r {sample_rate} -c 1 -b 16 -e signed-integer -d -t raw -"
 with subprocess.Popen(soxcmd.split(), stdout=subprocess.PIPE) as sox:
     decoder.start_utt()

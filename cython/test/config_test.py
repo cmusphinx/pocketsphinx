@@ -12,16 +12,16 @@ class TestConfig(unittest.TestCase):
     def test_config(self):
         config = Decoder.default_config()
         intval = 256
-        floatval = 8000.0
+        floatval = 0.025
         stringval = "~/pocketsphinx"
         boolval = True
 
         # Check values that was previously set.
-        s = config.get_float("-samprate")
+        s = config.get_float("-wlen")
         print("Float:", floatval, " ", s)
-        self.assertEqual(s, 16000.0)
-        config.set_float("-samprate", floatval)
-        s = config.get_float("-samprate")
+        self.assertEqual(s, 0.025625)
+        config.set_float("-wlen", floatval)
+        s = config.get_float("-wlen")
         self.assertEqual(s, floatval)
 
         s = config.get_int("-nfft")
@@ -69,16 +69,16 @@ class TestConfig(unittest.TestCase):
 class TestConfigHash(unittest.TestCase):
     def test_config__getitem(self):
         config = Config()
-        self.assertEqual(config["samprate"], 16000.0)
+        self.assertEqual(config["samprate"], 16000)
         self.assertEqual(config["nfft"], 0)
         self.assertEqual(config["fsg"], None)
         self.assertEqual(config["backtrace"], False)
         self.assertEqual(config["feat"], "1s_c_d_dd")
 
     def test_config_easyinit(self):
-        config = Config(samprate=11025.0, fsg=None, backtrace=False, feat="1s_c_d_dd")
-        self.assertEqual(config["samprate"], 11025.0)
-        self.assertEqual(config.get_float("-samprate"), 11025.0)
+        config = Config(samprate=11025, fsg=None, backtrace=False, feat="1s_c_d_dd")
+        self.assertEqual(config["samprate"], 11025)
+        self.assertEqual(config.get_int("-samprate"), 11025)
         self.assertEqual(config["nfft"], 0)
         self.assertEqual(config["fsg"], None)
         self.assertEqual(config["backtrace"], False)
@@ -86,8 +86,8 @@ class TestConfigHash(unittest.TestCase):
 
     def test_config_coercion(self):
         config = Config()
-        config["samprate"] = 48000
-        self.assertEqual(config["samprate"], 48000.0)
+        config["samprate"] = 48000.0
+        self.assertEqual(config["samprate"], 48000)
         config["nfft"] = "1024"
         self.assertEqual(config["nfft"], 1024)
 

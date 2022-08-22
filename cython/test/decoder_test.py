@@ -83,11 +83,11 @@ class TestDecoder(unittest.TestCase):
         decoder.add_word("_forward", "F AO R W ER D", True)
         self._run_decode(decoder)
         # should preserve dict words, but make decoding fail
-        config.set_float("-samprate", 48000)
+        config.set_int("-samprate", 48000)
         decoder.reinit_feat(config)
         self.assertEqual("F AO R W ER D", decoder.lookup_word("_forward"))
         self._run_decode(decoder, expect_fail=True)
-        config.set_float("-samprate", 16000)
+        config.set_int("-samprate", 16000)
         # should erase dict words
         decoder.reinit(config)
         self.assertEqual(None, decoder.lookup_word("_forward"))

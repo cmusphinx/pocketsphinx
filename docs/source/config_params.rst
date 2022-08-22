@@ -25,7 +25,7 @@ default values.
    :keyword bool smoothspec: Write out cepstral-smoothed logspectral files, defaults to ``False``
    :keyword str transform: Which type of transform to use to calculate cepstra (legacy, dct, or htk), defaults to ``legacy``
    :keyword float alpha: Preemphasis parameter, defaults to ``0.97``
-   :keyword float samprate: Sampling rate, defaults to ``16000.0``
+   :keyword int samprate: Sampling rate, defaults to ``16000``
    :keyword int frate: Frame rate, defaults to ``100``
    :keyword float wlen: Hamming window length, defaults to ``0.025625``
    :keyword int nfft: Size of FFT, or 0 to set automatically (recommended), defaults to ``0``

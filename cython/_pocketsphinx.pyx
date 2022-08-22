@@ -738,7 +738,7 @@ cdef class Decoder:
         fsg(str): Path to FSG grammar file (only one of ``lm``, ``jsgf``,
                   or ``fsg`` should be specified).
         toprule(str): Name of top-level rule in JSGF file to use as entry point.
-        samprate(float): Sampling rate for raw audio data.
+        samprate(int): Sampling rate for raw audio data.
         loglevel(str): Logging level, one of "INFO", "ERROR", "FATAL".
         logfn(str): File to write log messages to.
     Raises:

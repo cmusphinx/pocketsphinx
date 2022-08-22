@@ -84,7 +84,7 @@ extern "C" {
  * DEFAULT_SAMPLING_RATE/DEFAULT_FRAME_RATE) */
 #define DEFAULT_FRAME_SHIFT 160
 /** Default size of each frame (410 samples @ 16000Hz). */
-#define DEFAULT_WINDOW_LENGTH 0.025625 
+#define DEFAULT_WINDOW_LENGTH 0.025625
 /** Default number of FFT points. */
 #define DEFAULT_FFT_SIZE 512
 /** Default number of MFCC coefficients in output. */
@@ -132,7 +132,7 @@ extern "C" {
     "Preemphasis parameter" }, \
    \
   { "-samprate", \
-    ARG_FLOATING, \
+    ARG_INTEGER, \
     ARG_STRINGIFY(DEFAULT_SAMPLING_RATE), \
     "Sampling rate" }, \
    \

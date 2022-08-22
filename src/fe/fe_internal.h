@@ -72,7 +72,7 @@ enum {
 typedef struct melfb_s melfb_t;
 /** Base Struct to hold all structure for MFCC computation. */
 struct melfb_s {
-    float32 sampling_rate;
+    int32 sampling_rate;
     int32 num_cepstra;
     int32 num_filters;
     int32 fft_size;
