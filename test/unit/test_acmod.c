@@ -24,6 +24,16 @@ static const mfcc_t cmninit[13] = {
 	FLOAT2MFCC(1.17)
 };
 
+static void
+assert_cmninit(cmn_t *cmn)
+{
+    int i;
+    for (i = 0; i < cmn->veclen; ++i) {
+        TEST_EQUAL_FLOAT(cmn->cmn_mean[i], cmninit[i]);
+        TEST_EQUAL_FLOAT(cmn->sum[i], cmninit[i] * CMN_WIN);
+    }
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -65,10 +75,17 @@ main(int argc, char *argv[])
     cmd_ln_set_str_extra_r(config, "_lda", NULL);
     cmd_ln_set_str_extra_r(config, "_senmgau", NULL);	
 
-    /* Unset -cmninit to avoid confusion */
-    cmd_ln_set_str_r(config, "-cmninit", NULL);
+    /* Ensure that -cmninit does what it should */
+    cmd_ln_set_str_r(config, "-cmninit",
+                     "41.00,-5.29,-0.12,5.09,2.48,-4.07,-1.37,-1.78,-5.08,-2.05,-6.45,-1.42,1.17");
     TEST_ASSERT(acmod = acmod_init(config, lmath, NULL, NULL));
+    assert_cmninit(acmod->fcb->cmn_struct);
+    /* Ensure that the two different ways of setting CMN do the right thing. */
     cmn_live_set(acmod->fcb->cmn_struct, cmninit);
+    assert_cmninit(acmod->fcb->cmn_struct);
+    cmn_set_repr(acmod->fcb->cmn_struct, 
+                 "41.00,-5.29,-0.12,5.09,2.48,-4.07,-1.37,-1.78,-5.08,-2.05,-6.45,-1.42,1.17");
+    assert_cmninit(acmod->fcb->cmn_struct);
 
     nsamps = 2048;
     frame_counter = 0;
