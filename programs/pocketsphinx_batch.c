@@ -472,13 +472,13 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
         
         if (ef != -1) {
             ef = (int32)((ef - sf)
-                         * (cmd_ln_float32_r(config, "-samprate")
-                            / cmd_ln_int32_r(config, "-frate"))
-                         + (cmd_ln_float32_r(config, "-samprate")
-                            * cmd_ln_float32_r(config, "-wlen")));
+                         * ((double)cmd_ln_int_r(config, "-samprate")
+                            / cmd_ln_int_r(config, "-frate"))
+                         + ((double)cmd_ln_int_r(config, "-samprate")
+                            * cmd_ln_float_r(config, "-wlen")));
         }
         sf = (int32)(sf
-                     * (cmd_ln_float32_r(config, "-samprate")
+                     * ((double)cmd_ln_int_r(config, "-samprate")
                         / cmd_ln_int32_r(config, "-frate")));
         fseek(infh, cmd_ln_int32_r(config, "-adchdr") + sf * sizeof(int16), SEEK_SET);
         ps_decode_raw(ps, infh, ef);

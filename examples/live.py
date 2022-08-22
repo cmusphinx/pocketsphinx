@@ -17,7 +17,7 @@ def main():
         hmm=os.path.join(MODELDIR, "en-us/en-us"),
         lm=os.path.join(MODELDIR, "en-us/en-us.lm.bin"),
         dict=os.path.join(MODELDIR, "en-us/cmudict-en-us.dict"),
-        samprate=float(ep.sample_rate),
+        samprate=ep.sample_rate,
     )
     soxcmd = f"sox -q -r {ep.sample_rate} -c 1 -b 16 -e signed-integer -d -t raw -"
     sox = subprocess.Popen(soxcmd.split(), stdout=subprocess.PIPE)
