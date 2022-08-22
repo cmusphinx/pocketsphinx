@@ -52,21 +52,13 @@ cmn_live_set(cmn_t *cmn, mfcc_t const * vec)
 {
     int32 i;
 
-    E_INFO("Update from < ");
-    for (i = 0; i < cmn->veclen; i++)
-        E_INFOCONT("%5.2f ", MFCC2FLOAT(cmn->cmn_mean[i]));
-    E_INFOCONT(">\n");
-
+    E_INFO("Update from < %s >\n", cmn->repr);
     for (i = 0; i < cmn->veclen; i++) {
         cmn->cmn_mean[i] = vec[i];
         cmn->sum[i] = vec[i] * CMN_WIN;
     }
     cmn->nframe = CMN_WIN;
-
-    E_INFO("Update to   < ");
-    for (i = 0; i < cmn->veclen; i++)
-        E_INFOCONT("%5.2f ", MFCC2FLOAT(cmn->cmn_mean[i]));
-    E_INFOCONT(">\n");
+    E_INFO("Update to   < %s >\n", cmn_update_repr(cmn));
 }
 
 static void
@@ -75,11 +67,7 @@ cmn_live_shiftwin(cmn_t *cmn)
     mfcc_t sf;
     int32 i;
 
-    E_INFO("Update from < ");
-    for (i = 0; i < cmn->veclen; i++)
-        E_INFOCONT("%5.2f ", MFCC2FLOAT(cmn->cmn_mean[i]));
-    E_INFOCONT(">\n");
-
+    E_INFO("Update from < %s >\n", cmn->repr);
     sf = FLOAT2MFCC(1.0) / cmn->nframe;
     for (i = 0; i < cmn->veclen; i++)
         cmn->cmn_mean[i] = cmn->sum[i] / cmn->nframe; /* sum[i] * sf */
@@ -91,11 +79,7 @@ cmn_live_shiftwin(cmn_t *cmn)
             cmn->sum[i] = MFCCMUL(cmn->sum[i], sf);
         cmn->nframe = CMN_WIN;
     }
-
-    E_INFO("Update to   < ");
-    for (i = 0; i < cmn->veclen; i++)
-        E_INFOCONT("%5.2f ", MFCC2FLOAT(cmn->cmn_mean[i]));
-    E_INFOCONT(">\n");
+    E_INFO("Update to   < %s >\n", cmn_update_repr(cmn));
 }
 
 void
@@ -107,11 +91,7 @@ cmn_live_update(cmn_t *cmn)
     if (cmn->nframe <= 0)
         return;
 
-    E_INFO("Update from < ");
-    for (i = 0; i < cmn->veclen; i++)
-        E_INFOCONT("%5.2f ", MFCC2FLOAT(cmn->cmn_mean[i]));
-    E_INFOCONT(">\n");
-
+    E_INFO("Update from < %s >\n", cmn->repr);
     /* Update mean buffer */
     sf = FLOAT2MFCC(1.0) / cmn->nframe;
     for (i = 0; i < cmn->veclen; i++)
@@ -124,11 +104,7 @@ cmn_live_update(cmn_t *cmn)
             cmn->sum[i] = MFCCMUL(cmn->sum[i], sf);
         cmn->nframe = CMN_WIN;
     }
-
-    E_INFO("Update to   < ");
-    for (i = 0; i < cmn->veclen; i++)
-        E_INFOCONT("%5.2f ", MFCC2FLOAT(cmn->cmn_mean[i]));
-    E_INFOCONT(">\n");
+    E_INFO("Update to   < %s >\n", cmn_update_repr(cmn));
 }
 
 void
