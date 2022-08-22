@@ -55,8 +55,10 @@
 #include <sphinxbase/feat.h>
 #include <sphinxbase/bio.h>
 
+/* PocketSphinx headers. */
+#include <pocketsphinx.h>
+
 /* Local headers. */
-#include "cmdln_macro.h"
 #include "acmod.h"
 #include "s2_semi_mgau.h"
 #include "ptm_mgau.h"

@@ -48,7 +48,7 @@ extern "C" {
 #include <sphinxbase/prim_type.h>
 #include <pocketsphinx/export.h>
 
-#include <pocketsphinx/ps_vad.h>
+#include <pocketsphinx/vad.h>
 
 /**
  * Endpointer object.

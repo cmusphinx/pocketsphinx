@@ -53,9 +53,8 @@
 
 /* PocketSphinx headers */
 #include <pocketsphinx/export.h>
-#include <pocketsphinx/cmdln_macro.h>
-#include <pocketsphinx/ps_lattice.h>
-#include <pocketsphinx/ps_mllr.h>
+#include <pocketsphinx/lattice.h>
+#include <pocketsphinx/mllr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,13 +69,13 @@ extern "C" {
 typedef struct ps_decoder_s ps_decoder_t;
 
 /* Voice activity detection. */
-#include <pocketsphinx/ps_vad.h>
+#include <pocketsphinx/vad.h>
 
 /* Endpointing. */
-#include <pocketsphinx/ps_endpointer.h>
+#include <pocketsphinx/endpointer.h>
 
 /* Search modules. */
-#include <pocketsphinx/ps_search.h>
+#include <pocketsphinx/search.h>
 
 /**
  * PocketSphinx N-best hypothesis iterator object.
