@@ -8,7 +8,7 @@ COPY . /pocketsphinx
 WORKDIR /pocketsphinx
 RUN cmake -S . -B build -G Ninja && cmake --build build --target install
 # Cannot use --build-option because pip sucks
-RUN CMAKE_ARGS="-DUSE_INSTALLED_POCKETSPHINX=ON" pip wheel .
+RUN CMAKE_ARGS="-DUSE_INSTALLED_POCKETSPHINX=ON" pip wheel -v .
 
 FROM runtime
 COPY --from=build /usr/local/ /usr/local/
