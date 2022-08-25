@@ -1,0 +1,11 @@
+build
+_skbuild
+__pycache__
+*~
+CMakeCache.txt
+CMakeFiles
+CTestTestfile.cmake
+DartConfiguration.tcl
+cmake_install.cmake
+Dockerfile
+*.whl
