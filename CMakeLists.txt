@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.14) # I like pie
 
 project(PocketSphinx VERSION 5.0.0
   DESCRIPTION "A small speech recognizer"
-  HOMEPAGE_URL "https://github.com/cmusphinx/pocketsphinx")
+  HOMEPAGE_URL "https://github.com/cmusphinx/pocketsphinx"
+  LANGUAGES C)
 include(CMakePrintHelpers)
 set(PACKAGE_NAME ${PROJECT_NAME})
 string(TOLOWER ${PROJECT_NAME} PROJECT_SHORTNAME)
@@ -23,10 +24,14 @@ include(CheckLibraryExists)
 include(TestBigEndian)
 include(GNUInstallDirs)
 
-# Statically link the Python package
-if(CALL_FROM_SETUP_PY)
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+if(SKBUILD)
+  # Can't set MODELDIR because we can't assume any particular install
+  # prefix for a Python package (virtualenvs, etc)
+else()
+  # Otherwise set a default MODELDIR for the C library
+  set(MODELDIR ${CMAKE_INSTALL_FULL_DATADIR}/pocketsphinx/model)
 endif()
+cmake_print_variables(MODELDIR)
 
 CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 CHECK_INCLUDE_FILE(sys/types.h HAVE_SYS_TYPES_H)
@@ -78,7 +83,14 @@ add_definitions(-DHAVE_CONFIG_H)
 
 # Python build
 if(SKBUILD)
-  add_subdirectory(src)
+  # Allow compiling against systemwide libpocketsphinx.so for Docker build
+  option(USE_INSTALLED_POCKETSPHINX "Build using installed PocketSphinx library" OFF)
+  if(USE_INSTALLED_POCKETSPHINX)
+    find_package(PkgConfig)
+    pkg_check_modules(POCKETSPHINX pocketsphinx)
+  else()
+    add_subdirectory(src)
+  endif()
   add_subdirectory(cython)
 else()
   # C shared library build

@@ -122,6 +122,11 @@ set_target_properties(pocketsphinx PROPERTIES
   SOVERSION 5
   )
 # No idea why this can't just go in the above list but oh well
-set_property(TARGET pocketsphinx PROPERTY
-  COMPILE_DEFINITIONS POCKETSPHINX_EXPORTS;SPHINXBASE_EXPORTS;MODELDIR="${DATADIR}/pocketsphinx/model"
-)
+if(MODELDIR)
+  set_property(TARGET pocketsphinx PROPERTY
+    COMPILE_DEFINITIONS POCKETSPHINX_EXPORTS;SPHINXBASE_EXPORTS;MODELDIR="${MODELDIR}"
+    )
+else()
+  set_property(TARGET pocketsphinx PROPERTY
+    COMPILE_DEFINITIONS POCKETSPHINX_EXPORTS;SPHINXBASE_EXPORTS)
+endif()
