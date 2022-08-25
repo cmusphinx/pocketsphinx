@@ -39,10 +39,6 @@ cdef class Config:
 
         config = Config.parse_file("feat.params")
 
-    Note that `hmm`, `lm`, and `dict` are set to the default ones
-    (some kind of US English models of unknown origin + CMUDict) if
-    they weren't already defined.
-
     It is possible to access the `Config` either with the set_*
     methods or directly by setting and getting keys, as with a Python
     dictionary.  The set_* methods are not recommended as they require
@@ -88,12 +84,25 @@ cdef class Config:
             free(argv)
         else:
             self.cmd_ln = cmd_ln_parse_r(NULL, ps_args(), 0, NULL, 0)
+
+    def default_search_args(self):
+        """Set arguments for the default acoustic and language model.
+
+        Set `hmm`, `lm`, and `dict` to the default ones (some kind of
+        US English models of unknown origin + CMUDict) if they weren't
+        already defined.
+        """
         # Yes, full of race conditions, don't really care (should we?)
         if self.get_string("-hmm") is None:
             default_am = pocketsphinx5.get_model_path("en-us/en-us")
             if os.path.exists(os.path.join(default_am, "means")):
                 self.set_string("-hmm", default_am)
-        if self.get_string("-lm") is None:
+        if (self.get_string("-lm") is None
+            # This API sucks.
+            and self.get_string("-jsgf") is None
+            and self.get_string("-lmctl") is None
+            and self.get_string("-kws") is None
+            and self.get_string("-keyphrase") is None):
             default_lm = pocketsphinx5.get_model_path("en-us/en-us.lm.bin")
             if os.path.exists(default_lm):
                 self.set_string("-lm", default_lm)
@@ -744,6 +753,10 @@ cdef class Decoder:
 
     See :doc:`config_params` for a description of keyword arguments.
 
+    Note that `hmm`, `lm`, and `dict` are set to the default ones
+    (some kind of US English models of unknown origin + CMUDict) if
+    not already defined.
+
     Args:
         config(Config): Optional configuration object.  You can also
                         use keyword arguments, the most important of
@@ -774,6 +787,7 @@ cdef class Decoder:
             self.config = Config(*args, **kwargs)
         if self.config is None:
             raise ValueError, "Failed to parse argument list"
+        self.config.default_search_args()
         self.ps = ps_init(self.config.cmd_ln)
         if self.ps == NULL:
             raise RuntimeError, "Failed to initialize PocketSphinx"
