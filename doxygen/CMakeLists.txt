@@ -7,7 +7,6 @@ if(DOXYGEN_FOUND)
     *config.h
     )
   doxygen_add_docs(docs
-    ALL
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/include)
 endif()
 install(FILES
