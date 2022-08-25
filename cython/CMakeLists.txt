@@ -18,4 +18,6 @@ target_include_directories(
   )
 python_extension_module(_pocketsphinx)
 install(TARGETS _pocketsphinx LIBRARY DESTINATION cython/pocketsphinx5)
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/model DESTINATION cython/pocketsphinx5)
+if(NOT USE_INSTALLED_POCKETSPHINX)
+  install(DIRECTORY ${PROJECT_SOURCE_DIR}/model DESTINATION cython/pocketsphinx5)
+endif()
