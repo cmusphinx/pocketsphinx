@@ -2,29 +2,19 @@
 
 import os
 import unittest
-from pocketsphinx5 import Decoder
+from pocketsphinx5 import Decoder, get_model_path
 
-MODELDIR = os.path.join(os.path.dirname(__file__), "../../model")
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")
 
 
 class PhonemeTest(unittest.TestCase):
     def test_phoneme(self):
-        # Create a decoder with certain model
-        config = Decoder.default_config()
-        config.set_string("-hmm", os.path.join(MODELDIR, "en-us/en-us"))
-        config.set_string(
-            "-allphone", os.path.join(MODELDIR, "en-us/en-us-phone.lm.bin")
-        )
-        config.set_float("-lw", 2.0)
-        config.set_float("-pip", 0.3)
-        config.set_float("-beam", 1e-200)
-        config.set_float("-pbeam", 1e-20)
-        config.set_boolean("-mmap", False)
+        decoder = Decoder(
+            allphone=get_model_path("en-us/en-us-phone.lm.bin"),
+            lw=2.0, pip=0.3, beam=1e-200, pbeam=1e-20)
 
         # Decode streaming data.
         with open(os.path.join(DATADIR, "goforward.raw"), "rb") as stream:
-            decoder = Decoder(config)
             decoder.start_utt()
             while True:
                 buf = stream.read(1024)
@@ -34,7 +24,6 @@ class PhonemeTest(unittest.TestCase):
                     break
             decoder.end_utt()
 
-            hypothesis = decoder.hyp()
             print("Best phonemes: ", [seg.word for seg in decoder.seg()])
 
 

@@ -4,7 +4,6 @@ import unittest
 import os
 from pocketsphinx5 import Decoder, Jsgf
 
-MODELDIR = os.path.join(os.path.dirname(__file__), "../../model")
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")
 
 
@@ -14,12 +13,9 @@ class TestJsgf(unittest.TestCase):
         del jsgf
 
     def test_jsgf(self):
-        # Create a decoder with certain model
-        config = Decoder.default_config()
-        config.set_string("-hmm", os.path.join(MODELDIR, "en-us/en-us"))
-        config.set_string("-lm", os.path.join(DATADIR, "turtle.lm.bin"))
-        config.set_string("-dict", os.path.join(DATADIR, "turtle.dic"))
-        decoder = Decoder(config)
+        # Create a decoder with turtle language model
+        decoder = Decoder(lm=os.path.join(DATADIR, "turtle.lm.bin"),
+                          dict=os.path.join(DATADIR, "turtle.dic"))
 
         # Decode with lm
         decoder.start_utt()
@@ -41,7 +37,7 @@ class TestJsgf(unittest.TestCase):
         fsg.writefile("goforward.fsg")
 
         decoder.set_fsg("goforward", fsg)
-        decoder.set_search("goforward")
+        decoder.set_search("goforward") # FIXME: This API sucks
 
         decoder.start_utt()
         with open(os.path.join(DATADIR, "goforward.raw"), "rb") as stream:

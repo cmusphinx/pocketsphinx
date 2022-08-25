@@ -4,19 +4,13 @@ import unittest
 import os
 from pocketsphinx5 import Decoder, NGramModel
 
-MODELDIR = os.path.join(os.path.dirname(__file__), "../../model")
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")
 
 
 class TestLM(unittest.TestCase):
     def test_lm(self):
-        # Create a decoder with certain model
-        config = Decoder.default_config()
-        config.set_string("-hmm", os.path.join(MODELDIR, "en-us/en-us"))
-        config.set_string("-lm", os.path.join(MODELDIR, "en-us/en-us.lm.bin"))
-        config.set_string("-dict", os.path.join(DATADIR, "defective.dic"))
-        config.set_boolean("-mmap", False)
-        decoder = Decoder(config)
+        # Create a decoder with a broken dictionary
+        decoder = Decoder(dict=os.path.join(DATADIR, "defective.dic"))
 
         decoder.start_utt()
         with open(os.path.join(DATADIR, "goforward.raw"), "rb") as stream:
@@ -32,7 +26,9 @@ class TestLM(unittest.TestCase):
 
         # Load "turtle" language model and decode again.
         lm = NGramModel(
-            config, decoder.get_logmath(), os.path.join(DATADIR, "turtle.lm.bin")
+            decoder.config,
+            decoder.get_logmath(),
+            os.path.join(DATADIR, "turtle.lm.bin"),
         )
         print(lm.prob(["you"]))
         print(lm.prob(["are", "you"]))

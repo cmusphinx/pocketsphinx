@@ -4,18 +4,13 @@ import unittest
 import os
 from pocketsphinx5 import Decoder
 
-MODELDIR = os.path.join(os.path.dirname(__file__), "../../model")
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")
 
 
 class LatticeTest(unittest.TestCase):
     def test_lattice(self):
-        # Create a decoder with certain model
-        config = Decoder.default_config()
-        config.set_string("-hmm", os.path.join(MODELDIR, "en-us/en-us"))
-        config.set_string("-lm", os.path.join(MODELDIR, "en-us/en-us.lm.bin"))
-        config.set_string("-dict", os.path.join(MODELDIR, "en-us/cmudict-en-us.dict"))
-        decoder = Decoder(config)
+        # Create a decoder with the default model
+        decoder = Decoder()
 
         decoder.start_utt()
         stream = open(os.path.join(DATADIR, "goforward.raw"), "rb")

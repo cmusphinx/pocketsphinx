@@ -4,7 +4,6 @@ import os
 from pocketsphinx5 import Decoder
 import unittest
 
-MODELDIR = os.path.join(os.path.dirname(__file__), "../../model")
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")
 
 
@@ -37,11 +36,7 @@ class TestDecoder(unittest.TestCase):
             self.assertEqual(words, "go forward ten meters".split())
 
     def test_decoder(self):
-        config = Decoder.default_config()
-        config.set_string("-hmm", os.path.join(MODELDIR, "en-us/en-us"))
-        config.set_string("-lm", os.path.join(MODELDIR, "en-us/en-us.lm.bin"))
-        config.set_string("-dict", os.path.join(MODELDIR, "en-us/cmudict-en-us.dict"))
-        decoder = Decoder(config)
+        decoder = Decoder()
 
         lmath = decoder.get_logmath()
         print("log(1e-150) = ", lmath.log(1e-150))
@@ -75,21 +70,17 @@ class TestDecoder(unittest.TestCase):
             self.assertEqual("go forward ten meters", decoder.hyp().hypstr)
 
     def test_reinit(self):
-        config = Decoder.default_config()
-        config.set_string("-hmm", os.path.join(MODELDIR, "en-us/en-us"))
-        config.set_string("-lm", os.path.join(MODELDIR, "en-us/en-us.lm.bin"))
-        config.set_string("-dict", os.path.join(MODELDIR, "en-us/cmudict-en-us.dict"))
-        decoder = Decoder(config)
+        decoder = Decoder()
         decoder.add_word("_forward", "F AO R W ER D", True)
         self._run_decode(decoder)
         # should preserve dict words, but make decoding fail
-        config.set_int("-samprate", 48000)
-        decoder.reinit_feat(config)
+        decoder.config["samprate"] = 48000
+        decoder.reinit_feat()
         self.assertEqual("F AO R W ER D", decoder.lookup_word("_forward"))
         self._run_decode(decoder, expect_fail=True)
-        config.set_int("-samprate", 16000)
+        decoder.config["samprate"] = 16000
         # should erase dict words
-        decoder.reinit(config)
+        decoder.reinit()
         self.assertEqual(None, decoder.lookup_word("_forward"))
         self._run_decode(decoder)
 
