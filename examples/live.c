@@ -43,14 +43,7 @@ main(int argc, char *argv[])
     short *frame;
     size_t frame_size;
 
-    #ifndef MODELDIR
-    #define MODELDIR "../model"
-    #endif
-    if ((config = cmd_ln_init(NULL, ps_args(), TRUE,
-                              "-hmm", MODELDIR "/en-us/en-us",
-                              "-lm", MODELDIR "/en-us/en-us.lm.bin",
-                              "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
-                              NULL)) == NULL)
+    if ((config = cmd_ln_init(NULL, ps_args(), TRUE, NULL)) == NULL)
         E_FATAL("Command line parse failed\n");
     ps_default_search_args(config);
     if ((decoder = ps_init(config)) == NULL)
