@@ -3,7 +3,11 @@
 #define __CLAPACK_LITE_H
 
 #include "f2c.h"
- 
+
+/**
+ * @file clapack_lite.h
+ * @brief Built-in tiny subset of LAPACK for MLLR and such
+ */
 
 #ifdef __cplusplus
 extern "C" {

@@ -33,7 +33,9 @@
  *
  * ==================================================================== */
 
-/* Fixed-point arithmetic macros.
+/**
+ * @file fixpoint.h
+ * @brief Fixed-point arithmetic macros.
  *
  * Author: David Huggins-Daines <dhdaines@gmail.com>
  */

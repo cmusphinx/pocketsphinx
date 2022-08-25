@@ -33,11 +33,6 @@
  *
  * ====================================================================
  *
- */
-
-/*
- * byteorder.h -- Byte swapping ordering macros.
- * 
  * **********************************************
  * CMU ARPA Speech Project
  *
@@ -56,6 +51,11 @@
  * (SWAP_?[LW]) whose names and semantics have been regularized.
  * Private, adhoc macros have been removed.
  *
+ */
+
+/**
+ * @file byteorder.h
+ * @brief Byte order swapping macros.
  */
 
 #ifndef __S2_BYTEORDER_H__

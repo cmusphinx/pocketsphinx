@@ -1,51 +1,18 @@
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
-  doxygen_add_docs(docs
-    ${CMAKE_SOURCE_DIR}/include/pocketsphinx.h
-    ${CMAKE_SOURCE_DIR}/include/pocketsphinx/ps_lattice.h
-    ${CMAKE_SOURCE_DIR}/include/pocketsphinx/ps_mllr.h
-    ${CMAKE_SOURCE_DIR}/include/pocketsphinx/ps_search.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/agc.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/bio.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/bitvec.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/byteorder.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/case.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/ckd_alloc.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/clapack_lite.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/cmd_ln.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/cmn.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/err.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/f2c.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/fe.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/feat.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/filename.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/fixpoint.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/fsg_model.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/genrand.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/glist.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/hash_table.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/heap.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/jsgf.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/listelem_alloc.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/logmath.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/matrix.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/mmio.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/ngram_model.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/pio.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/prim_type.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/profile.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/sphinxbase_export.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/strfuncs.h
-    ${CMAKE_SOURCE_DIR}/include/sphinxbase/yin.h
+  set(DOXYGEN_PROJECT_NUMBER 5.0.0rc1)
+  set(DOXYGEN_EXAMPLE_PATH ${CMAKE_SOURCE_DIR}/examples)
+  set(DOXYGEN_EXCLUDE_PATTERNS
+    *export.h
+    *config.h
     )
+  doxygen_add_docs(docs
+    ALL
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/include)
 endif()
 install(FILES
   pocketsphinx_batch.1
-  pocketsphinx_continuous.1
   pocketsphinx_mdef_convert.1
-  sphinx_cepview.1
-  sphinx_cont_seg.1
-  sphinx_fe.1
   sphinx_lm_convert.1
   sphinx_lm_eval.1
   sphinx_lm_sort.1

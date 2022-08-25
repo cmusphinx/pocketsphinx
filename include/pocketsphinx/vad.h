@@ -28,7 +28,8 @@
  * ====================================================================
  */
 /**
- * @file ps_vad.h Voice activity detection for PocketSphinx.
+ * @file vad.h
+ * @brief Simple voice activity detection
  */
 
 #ifndef __PS_VAD_H__
@@ -46,7 +47,7 @@ extern "C" {
 #endif
 
 /**
- * Voice activity detection object.
+ * Voice activity detector.
  */
 typedef struct ps_vad_s ps_vad_t;
 
@@ -69,7 +70,13 @@ typedef enum ps_vad_class_e {
     PS_VAD_SPEECH = 1
 } ps_vad_class_t;
 
+/**
+ * Default sampling rate for voice activity detector
+ */
 #define PS_VAD_DEFAULT_SAMPLE_RATE 16000
+/**
+ * Default frame length for voice activity detector
+ */
 #define PS_VAD_DEFAULT_FRAME_LENGTH 0.03
 
 /**

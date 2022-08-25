@@ -36,7 +36,8 @@
  */
 
 /**
- * @file ps_mllr.h Model-space linear transforms for speaker adaptation
+ * @file mllr.h
+ * @brief Model-space linear transforms for speaker adaptation
  */
 
 #ifndef __PS_MLLR_H__

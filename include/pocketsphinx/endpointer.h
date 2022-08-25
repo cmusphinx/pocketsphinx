@@ -28,7 +28,8 @@
  * ====================================================================
  */
 /**
- * @file ps_endpointer.h VAD-based endpointer for PocketSphinx
+ * @file endpointer.h
+ * @brief VAD-based endpointer for PocketSphinx
  */
 
 #ifndef __PS_ENDPOINTER_H__
@@ -51,11 +52,18 @@ extern "C" {
 #include <pocketsphinx/vad.h>
 
 /**
- * Endpointer object.
+ * @struct ps_endpointer_t
+ * @brief Simple voice activity detection based endpointing
  */
 typedef struct ps_endpointer_s ps_endpointer_t;
 
+/**
+ * Default window in seconds of audio to use for speech start/end decision.
+ */
 #define PS_ENDPOINTER_DEFAULT_WINDOW 0.3
+/**
+ * Default ratio of frames in window to trigger start/end decision.
+ */
 #define PS_ENDPOINTER_DEFAULT_RATIO 0.9
 
 /**

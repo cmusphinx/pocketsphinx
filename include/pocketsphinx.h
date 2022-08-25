@@ -64,6 +64,7 @@ extern "C" {
 #endif
 
 /**
+ * @struct ps_decoder_t
  * PocketSphinx speech recognizer object.
  */
 typedef struct ps_decoder_s ps_decoder_t;
@@ -78,11 +79,13 @@ typedef struct ps_decoder_s ps_decoder_t;
 #include <pocketsphinx/search.h>
 
 /**
+ * @struct ps_astar_t
  * PocketSphinx N-best hypothesis iterator object.
  */
 typedef struct ps_astar_s ps_nbest_t;
 
 /**
+ * @struct ps_seg_t
  * PocketSphinx segmentation iterator object.
  */
 typedef struct ps_seg_s ps_seg_t;
@@ -400,7 +403,7 @@ int ps_start_stream(ps_decoder_t *ps);
  * not be considered a reliable voice activity detector.  It will
  * always return 1 between calls to ps_start_utt() and ps_end_utt().
  * You probably want ps_endpointer_t, but for single frames of data
- * you can also use ps_vad_t.
+ * you can also use ps_vad_t
  *
  * @param ps Decoder.
  * @return 1 if last buffer contained speech, 0 - otherwise
@@ -683,8 +686,8 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
 /**
  * @mainpage PocketSphinx Documentation
  * @author David Huggins-Daines <dhdaines@gmail.com>
- * @version 5.0.0
- * @date July, 2022
+ * @version 5.0.0rc1
+ * @date August 24, 2022
  *
  * @section intro_sec Introduction
  *
@@ -717,17 +720,16 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  *
  * @subsection unix_install Unix-like systems
  *
- * From the Unix command line, you will create a separate directory in
- * which to build the source code, then run `cmake` with the top-level
- * source directory as argument to generate the build files:
+ * From the top-level source directory, use CMake to generate a build
+ * directory:
  *
- *     mkdir build
- *     cmake ..
+ *     cmake -S . -B build
  *
  * Now you can compile and run the tests, and install the code:
  *
- *     make all test
- *     make install
+ *     cmake --build build
+ *     cmake --build build --target check
+ *     cmake --build build --target install
  *
  * By default CMake will try to install things in `/usr/local`, which
  * you might not have access to.  If you want to install somewhere
@@ -743,13 +745,24 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * @subsection windows_install Windows
  *
  * On Windows, the process is similar, but you will need to tell CMake
- * what build tool you are using with the `-g` option, and there are
+ * what build tool you are using with the `-G` option, and there are
  * many of them.  The build is known to work with `nmake` but it is
  * easiest just to use Visual Studio Code.  Once built, you will find
  * the DLL and EXE files in `build\Debug` or `build\Release` depending
  * on your build type.  If the EXE files do not run, you need to
  * ensure that `pocketsphinx.dll` is located in the same directory as
  * them.
+ *
+ * @section programming_sec Using the Library
+ *
+ * The Python interface is documented at
+ * http://pocketsphinx5.readthedocs.io/.  Here is a full example:
+ *
+ * @include live.py
+ *
+ * Here is a complete example of using the C programming interface:
+ *
+ * @include live.c
  *
  * @section faq_sec Frequently Asked Questions
  *

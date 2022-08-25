@@ -39,7 +39,8 @@
 #define __JSGF_H__
 
 /**
- * @file jsgf.h JSGF grammar compiler
+ * @file jsgf.h
+ * @brief JSGF grammar compiler
  *
  * This file defines the data structures for parsing JSGF grammars
  * into Sphinx finite-state grammars.

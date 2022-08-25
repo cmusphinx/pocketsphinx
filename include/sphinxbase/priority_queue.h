@@ -13,7 +13,9 @@ extern "C" {
 #endif
 
 /**
- * Priority queue for max element tracking.
+ * @file priority_queue.h
+ * @brief Priority queue for max element tracking.
+ *
  * The one expects heap here, but for current application
  * (sorting of ngram entries one per order, i.e. maximum 10)
  * i'll put just and array here, so each operation takes linear time.

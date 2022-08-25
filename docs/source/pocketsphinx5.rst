@@ -10,6 +10,25 @@ Decoder class
    :members:
    :undoc-members:
 
+Segmentation and Endpointing classes
+------------------------------------
+
+.. autoclass:: pocketsphinx5.Segmenter
+   :members:
+   :no-undoc-members:
+
+.. autoclass:: pocketsphinx5.segmenter.SpeechSegment
+   :members:
+   :no-undoc-members:
+
+.. autoclass:: pocketsphinx5.Endpointer
+   :members:
+   :no-undoc-members:
+
+.. autoclass:: pocketsphinx5.Vad
+   :members:
+   :no-undoc-members:
+
 Other classes
 -------------
 
