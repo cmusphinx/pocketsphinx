@@ -1,6 +1,7 @@
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
-  set(DOXYGEN_PROJECT_NUMBER 5.0.0-rc1)
+  set(DOXYGEN_PROJECT_NUMBER 5.0.0rc1)
+  set(DOXYGEN_EXAMPLE_PATH ${CMAKE_SOURCE_DIR}/examples)
   set(DOXYGEN_EXCLUDE_PATTERNS
     *export.h
     *config.h

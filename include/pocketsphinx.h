@@ -686,7 +686,7 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
 /**
  * @mainpage PocketSphinx Documentation
  * @author David Huggins-Daines <dhdaines@gmail.com>
- * @version 5.0.0-rc1
+ * @version 5.0.0rc1
  * @date August 24, 2022
  *
  * @section intro_sec Introduction
@@ -754,6 +754,18 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * on your build type.  If the EXE files do not run, you need to
  * ensure that `pocketsphinx.dll` is located in the same directory as
  * them.
+ *
+ * @section programming_sec Using the Library
+ *
+ * The Python interface is documented at
+ * http://pocketsphinx5.readthedocs.io/.  Here is an example of using
+ * it:
+ *
+ * @include live.py
+ *
+ * Here is a complete example of using the C programming interface:
+ *
+ * @include live.c
  *
  * @section faq_sec Frequently Asked Questions
  *
