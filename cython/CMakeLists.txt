@@ -13,7 +13,9 @@ target_include_directories(
   _pocketsphinx PRIVATE ${PYTHON_INCLUDE_DIR}
   _pocketsphinx PRIVATE ${PROJECT_SOURCE_DIR}/src
   _pocketsphinx PRIVATE ${PROJECT_SOURCE_DIR}/include
+  _pocketsphinx PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   _pocketsphinx PRIVATE ${CMAKE_BINARY_DIR} # for config.h
   )
 python_extension_module(_pocketsphinx)
 install(TARGETS _pocketsphinx LIBRARY DESTINATION cython/pocketsphinx5)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/model DESTINATION cython/pocketsphinx5)

@@ -24,15 +24,6 @@ include(CheckLibraryExists)
 include(TestBigEndian)
 include(GNUInstallDirs)
 
-if(SKBUILD)
-  # Can't set MODELDIR because we can't assume any particular install
-  # prefix for a Python package (virtualenvs, etc)
-else()
-  # Otherwise set a default MODELDIR for the C library
-  set(MODELDIR ${CMAKE_INSTALL_FULL_DATADIR}/pocketsphinx/model)
-endif()
-cmake_print_variables(MODELDIR)
-
 CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 CHECK_INCLUDE_FILE(sys/types.h HAVE_SYS_TYPES_H)
 CHECK_INCLUDE_FILE(sys/stat.h HAVE_SYS_STAT_H)
@@ -81,19 +72,28 @@ configure_file(config.h.in config.h)
 configure_file(sphinx_config.h.in include/sphinxbase/sphinx_config.h)
 add_definitions(-DHAVE_CONFIG_H)
 
-# Python build
 if(SKBUILD)
-  # Allow compiling against systemwide libpocketsphinx.so for Docker build
+  # Python build
+
+  # Allow compiling against systemwide libpocketsphinx.so for Docker
+  # or distribution packages
   option(USE_INSTALLED_POCKETSPHINX "Build using installed PocketSphinx library" OFF)
   if(USE_INSTALLED_POCKETSPHINX)
     find_package(PkgConfig)
+    # Get the libraries and headers
     pkg_check_modules(POCKETSPHINX pocketsphinx)
+    # Set the model directory to the systemwide one.  Don't try to use
+    # CMAKE_INSTALL_FULL_DATADIR!  That is not what you want.
+    pkg_get_variable(MODELDIR pocketsphinx modeldir)
   else()
     add_subdirectory(src)
   endif()
   add_subdirectory(cython)
 else()
-  # C shared library build
+  # C build
+
+  # Set the default model directory to the install location
+  set(MODELDIR ${CMAKE_INSTALL_FULL_DATADIR}/pocketsphinx/model)
   option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
   if(BUILD_SHARED_LIBS)
     add_definitions(-DSPHINX_DLL)
@@ -111,3 +111,5 @@ else()
   install(FILES ${CMAKE_BINARY_DIR}/pocketsphinx.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 endif()
 
+# Can print this at the end, just to know what it was
+cmake_print_variables(MODELDIR)

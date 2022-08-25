@@ -13,6 +13,7 @@ from libc.string cimport memcpy
 import itertools
 import logging
 import pocketsphinx5
+import os
 cimport _pocketsphinx
 
 LOGGER = logging.getLogger("pocketsphinx5")
@@ -37,6 +38,10 @@ cdef class Config:
     Finally it can also be initialized by parsing a file::
 
         config = Config.parse_file("feat.params")
+
+    Note that `hmm`, `lm`, and `dict` are set to the default ones
+    (some kind of US English models of unknown origin + CMUDict) if
+    they weren't already defined.
 
     It is possible to access the `Config` either with the set_*
     methods or directly by setting and getting keys, as with a Python
@@ -83,7 +88,19 @@ cdef class Config:
             free(argv)
         else:
             self.cmd_ln = cmd_ln_parse_r(NULL, ps_args(), 0, NULL, 0)
-        ps_default_search_args(self.cmd_ln)
+        # Yes, full of race conditions, don't really care (should we?)
+        if self.get_string("-hmm") is None:
+            default_am = pocketsphinx5.get_model_path("en-us/en-us")
+            if os.path.exists(os.path.join(default_am, "means")):
+                self.set_string("-hmm", default_am)
+        if self.get_string("-lm") is None:
+            default_lm = pocketsphinx5.get_model_path("en-us/en-us.lm.bin")
+            if os.path.exists(default_lm):
+                self.set_string("-lm", default_lm)
+        if self.get_string("-dict") is None:
+            default_dict = pocketsphinx5.get_model_path("en-us/cmudict-en-us.dict")
+            if os.path.exists(default_dict):
+                self.set_string("-dict", default_dict)
 
     @staticmethod
     cdef create_from_ptr(cmd_ln_t *cmd_ln):
@@ -1692,3 +1709,17 @@ def set_loglevel(level):
     if prev_level == NULL:
         raise ValueError("Invalid log level %s" % level)
 
+def _ps_default_modeldir():
+    """Get the system default model path from the PocketSphinx library.
+
+    Do not use this function directly, use
+    pocketsphinx5.get_model_path() instead.
+
+    Returns:
+      str: System default model path from PocketSphinx library.
+    """
+    dirbytes = ps_default_modeldir()
+    if dirbytes == NULL:
+        return None
+    else:
+        return dirbytes.decode()

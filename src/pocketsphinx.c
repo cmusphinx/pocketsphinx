@@ -89,7 +89,7 @@ static int
 hmmdir_exists(const char *path)
 {
     FILE *tmp;
-    char *mdef = string_join(path, "/mdef", NULL);
+    char *mdef = string_join(path, "/means", NULL);
 
     tmp = fopen(mdef, "rb");
     if (tmp) fclose(tmp);
@@ -182,6 +182,16 @@ ps_find_search(ps_decoder_t *ps, char const *name)
     return (ps_search_t *) search;
 }
 
+const char *
+ps_default_modeldir(void)
+{
+#ifdef MODELDIR
+    return MODELDIR;
+#else
+    return NULL;
+#endif
+}
+
 /* Set default acoustic and language models if they are not defined in configuration. */
 void
 ps_default_search_args(cmd_ln_t *config)
@@ -216,6 +226,7 @@ ps_default_search_args(cmd_ln_t *config)
     }
 #else
     (void)config;
+    E_INFO("No system default model directory exists.\n");
 #endif
 }
 

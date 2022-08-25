@@ -94,8 +94,18 @@ typedef struct ps_seg_s ps_seg_t;
  * Sets default grammar and language model if they are not set explicitly and
  * are present in the default search path.
  */
-POCKETSPHINX_EXPORT void
-ps_default_search_args(cmd_ln_t *);
+POCKETSPHINX_EXPORT
+void ps_default_search_args(cmd_ln_t *);
+
+/**
+ * Gets the system default model directory, if any exists.
+ *
+ * @return system model directory defined at compile time, or NULL if
+ *         not defined (usually in a relocatable installation such as
+ *         a Python module).
+ */
+POCKETSPHINX_EXPORT
+const char *ps_default_modeldir(void);
 
 /**
  * Initialize the decoder from a configuration object.

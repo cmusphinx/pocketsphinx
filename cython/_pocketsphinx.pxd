@@ -339,6 +339,7 @@ cdef extern from "pocketsphinx.h":
     arg_t *ps_args()
     ps_decoder_t *ps_init(cmd_ln_t *config)
     int ps_free(ps_decoder_t *ps)
+    const char *ps_default_modeldir()
     void ps_default_search_args(cmd_ln_t *config)
     int ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     int ps_reinit_feat(ps_decoder_t *ps, cmd_ln_t *config)
