@@ -83,6 +83,7 @@ cdef class Config:
             free(argv)
         else:
             self.cmd_ln = cmd_ln_parse_r(NULL, ps_args(), 0, NULL, 0)
+        ps_default_search_args(self.cmd_ln)
 
     @staticmethod
     cdef create_from_ptr(cmd_ln_t *cmd_ln):

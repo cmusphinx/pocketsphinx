@@ -2,7 +2,9 @@ find_package(PythonExtensions REQUIRED)
 find_package(Python COMPONENTS Interpreter Development)
 find_package(Cython)
 
-set_property(TARGET pocketsphinx PROPERTY POSITION_INDEPENDENT_CODE on)
+if(NOT USE_INSTALLED_POCKETSPHINX)
+  set_property(TARGET pocketsphinx PROPERTY POSITION_INDEPENDENT_CODE on)
+endif()
 
 add_cython_target(_pocketsphinx _pocketsphinx.pyx)
 add_library(_pocketsphinx MODULE ${_pocketsphinx})
