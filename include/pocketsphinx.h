@@ -740,7 +740,7 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * In this case you may also need to set the `LD_LIBRARY_PATH`
  * environment variable so that the PocketSphinx library can be found:
  *
- *     export LD_LIBRARY_PATH=$HOME/local/lib
+ *     export LD_LIBRARY_PATH=$HOME/.local/lib
  *
  * @subsection windows_install Windows
  *
