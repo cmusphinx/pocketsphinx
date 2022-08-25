@@ -191,8 +191,10 @@ ps_default_search_args(cmd_ln_t *config)
     const char *lmfile = cmd_ln_str_r(config, "-lm");
     const char *dictfile = cmd_ln_str_r(config, "-dict");
 
+    E_INFO("Looking for default model in " MODELDIR "\n");
     if (hmmdir == NULL && hmmdir_exists(MODELDIR "/en-us/en-us")) {
         hmmdir = MODELDIR "/en-us/en-us";
+        E_INFO("Loading default acoustic model from %s\n", hmmdir);
         cmd_ln_set_str_r(config, "-hmm", hmmdir);
     }
 
@@ -201,14 +203,15 @@ ps_default_search_args(cmd_ln_t *config)
         && !cmd_ln_str_r(config, "-lmctl")
         && !cmd_ln_str_r(config, "-kws")
         && !cmd_ln_str_r(config, "-keyphrase")
-        && !cmd_ln_str_r(config, "-alignctl")
         && file_exists(MODELDIR "/en-us/en-us.lm.bin")) {
         lmfile = MODELDIR "/en-us/en-us.lm.bin";
+        E_INFO("Loading default language model from %s\n", lmfile);
         cmd_ln_set_str_r(config, "-lm", lmfile);
     }
 
     if (dictfile == NULL && file_exists(MODELDIR "/en-us/cmudict-en-us.dict")) {
         dictfile = MODELDIR "/en-us/cmudict-en-us.dict";
+        E_INFO("Loading default dictionary from %s\n", dictfile);
         cmd_ln_set_str_r(config, "-dict", dictfile);
     }
 #else
