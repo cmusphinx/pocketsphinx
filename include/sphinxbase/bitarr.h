@@ -46,8 +46,7 @@
 
 /** 
  * @file bitarr.h
- * @brief An implementation bit array - memory
- * efficient storage for digit int and float data. (FIXME: NO)
+ * @brief Cryptic KenLM-like bit arrays
  * 
  * Implementation of basic operations of read/write digits consuming
  * as little space as possible.

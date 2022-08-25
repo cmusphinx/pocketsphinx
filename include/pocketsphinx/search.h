@@ -32,7 +32,10 @@
  *
  */
 /**
- * @file ps_search.h User can configure several "search" objects with
+ * @file search.h
+ * @brief Search modules 
+ *
+ * User can configure several "search" objects with
  * different grammars and language models and switch them in runtime to
  * provide interactive experience for the user.
  *

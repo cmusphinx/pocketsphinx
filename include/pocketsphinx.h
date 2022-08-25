@@ -64,6 +64,7 @@ extern "C" {
 #endif
 
 /**
+ * @struct ps_decoder_t
  * PocketSphinx speech recognizer object.
  */
 typedef struct ps_decoder_s ps_decoder_t;
@@ -78,11 +79,13 @@ typedef struct ps_decoder_s ps_decoder_t;
 #include <pocketsphinx/search.h>
 
 /**
+ * @struct ps_astar_t
  * PocketSphinx N-best hypothesis iterator object.
  */
 typedef struct ps_astar_s ps_nbest_t;
 
 /**
+ * @struct ps_seg_t
  * PocketSphinx segmentation iterator object.
  */
 typedef struct ps_seg_s ps_seg_t;
@@ -400,7 +403,7 @@ int ps_start_stream(ps_decoder_t *ps);
  * not be considered a reliable voice activity detector.  It will
  * always return 1 between calls to ps_start_utt() and ps_end_utt().
  * You probably want ps_endpointer_t, but for single frames of data
- * you can also use ps_vad_t.
+ * you can also use ps_vad_t
  *
  * @param ps Decoder.
  * @return 1 if last buffer contained speech, 0 - otherwise
@@ -683,8 +686,8 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
 /**
  * @mainpage PocketSphinx Documentation
  * @author David Huggins-Daines <dhdaines@gmail.com>
- * @version 5.0.0
- * @date July, 2022
+ * @version 5.0.0-rc1
+ * @date August 24, 2022
  *
  * @section intro_sec Introduction
  *
@@ -726,7 +729,8 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  *
  * Now you can compile and run the tests, and install the code:
  *
- *     make all test
+ *     make all
+ *     make check
  *     make install
  *
  * By default CMake will try to install things in `/usr/local`, which

@@ -35,17 +35,9 @@
  *
  */
 
-/*
- * fe.h
- * 
- * $Log: fe.h,v $
- * Revision 1.11  2005/02/05 02:15:02  egouvea
- * Removed fe_process(), never used
- *
- * Revision 1.10  2004/12/10 16:48:55  rkm
- * Added continuous density acoustic model handling
- *
- *
+/**
+ * @file fe.h
+ * @brief Feature Extraction and/or Front End
  */
 
 #if defined(_WIN32) && !defined(GNUWINCE)

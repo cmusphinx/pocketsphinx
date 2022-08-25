@@ -29,11 +29,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
- *
- */
-
-/*
- * fsg_model.h -- Word-level finite state graph
  * 
  * **********************************************
  * CMU ARPA Speech Project
@@ -41,6 +36,12 @@
  * Copyright (c) 2003 Carnegie Mellon University.
  * ALL RIGHTS RESERVED.
  * **********************************************
+ *
+ */
+
+/**
+ * @file fsg_model.h
+ * @brief Finite-state grammars for recognition
  */
 
 
@@ -68,8 +69,9 @@ extern "C" {
 }
 #endif
 
-/*
- * A single transition in the FSG.
+/**
+ * @struct fsg_link_t
+ * @brief A single transition in the FSG.
  */
 typedef struct fsg_link_s {
     int32 from_state;
@@ -85,12 +87,15 @@ typedef struct fsg_link_s {
 #define fsg_link_logs2prob(l)	((l)->logs2prob)
 
 /**
- * Adjacency list (opaque) for a state in an FSG.
+ * @struct trans_list_t
+ * @brief Adjacency list (opaque) for a state in an FSG.
  */
 typedef struct trans_list_s trans_list_t;
 
 /**
- * Word level FSG definition.
+ * @struct fsg_model_t
+ * @brief Word level FSG definition.
+ *
  * States are simply integers 0..n_state-1.
  * A transition emits a word and has a given probability of being taken.
  * There can also be null or epsilon transitions, with no associated emitted

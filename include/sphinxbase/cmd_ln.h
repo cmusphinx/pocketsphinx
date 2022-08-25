@@ -68,7 +68,7 @@
 
 /**
  * @file cmd_ln.h
- * @brief Command-line and other configurationparsing and handling.
+ * @brief Command-line and other configuration parsing and handling.
  *  
  * Configuration parameters, optionally parsed from the command line.
  */

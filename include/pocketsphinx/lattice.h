@@ -36,7 +36,8 @@
  */
 
 /**
- * @file ps_lattice.h Word graph search
+ * @file lattice.h
+ * @brief Word lattices
  */
 
 #ifndef __PS_LATTICE_H__
@@ -57,12 +58,14 @@ extern "C" {
 #endif
 
 /**
- * Word graph structure used in bestpath/nbest search.
+ * @struct ps_lattice_t
+ * @brief Word graph structure used in bestpath/nbest search.
  */
 typedef struct ps_lattice_s ps_lattice_t;
 
 /**
- * DAG nodes.
+ * @struct ps_latnode_t
+ * @brief Node in a word lattice
  *
  * A node corresponds to a number of hypothesized instances of a word
  * which all share the same starting point.
@@ -70,12 +73,14 @@ typedef struct ps_lattice_s ps_lattice_t;
 typedef struct ps_latnode_s ps_latnode_t;
 
 /**
- * Iterator over DAG nodes.
+ * @struct ps_latnode_iter_t
+ * @brief Iterator over DAG nodes.
  */
 typedef struct ps_latnode_s ps_latnode_iter_t; /* pay no attention to the man behind the curtain */
 
 /**
- * Links between DAG nodes.
+ * @struct ps_latlink_t
+ * @brief Link between DAG nodes.
  *
  * A link corresponds to a single hypothesized instance of a word with
  * a given start and end point.
@@ -83,7 +88,8 @@ typedef struct ps_latnode_s ps_latnode_iter_t; /* pay no attention to the man be
 typedef struct ps_latlink_s ps_latlink_t;
 
 /**
- * Iterator over DAG links.
+ * @struct ps_latlink_iter_t
+ * @brief Iterator over DAG links.
  */
 typedef struct latlink_list_s ps_latlink_iter_t;
 

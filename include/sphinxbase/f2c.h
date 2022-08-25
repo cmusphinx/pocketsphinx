@@ -1,5 +1,8 @@
 /* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
-/* f2c.h  --  Standard Fortran to C header file */
+/**
+ * @file f2c.h 
+ * @brief Standard Fortran to C header file
+ */
 
 /**  barf  [ba:rf]  2.  "He suggested using FORTRAN, and everybody barfed."
 
