@@ -41,7 +41,7 @@ pip install .
 
 To install the C library and bindings (assuming you have access to
 /usr/local - if not, use `-DCMAKE_INSTALL_PREFIX` to set a different
-prefix when running `cmake`):
+prefix in the first `cmake` command below):
 
 ```
 cmake -S . -B build
