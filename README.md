@@ -44,9 +44,18 @@ To install the C library and bindings (assuming you have access to
 prefix when running `cmake`):
 
 ```
-mkdir build
-cd build
-cmake .. # Add CMake options here
-make all test
-make install
+cmake -S . -B build
+cmake --build build
+cmake --build build --target install
 ```
+
+Usage
+-----
+
+There is currently no command-line tool for PocketSphinx, aside from
+`pocketsphinx_batch`, which has far too many options to describe here,
+and is mostly just useful for evaluating on large test sets.  This
+will be fixed before the actual release.
+
+For now, see the [examples directory](./examples/) for a number of
+examples of using the library from C and Python.
