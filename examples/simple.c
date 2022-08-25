@@ -25,7 +25,7 @@ main(int argc, char *argv[])
     short buf[BUFLEN];
     size_t len;
 
-    if ((config = cmd_ln_init(NULL, ps_args(), TRUE, NULL)) == NULL)
+    if ((config = cmd_ln_parse_r(NULL, ps_args(), argc, argv, FALSE)) == NULL)
         E_FATAL("Command line parse failed\n");
     ps_default_search_args(config);
     if ((decoder = ps_init(config)) == NULL)
