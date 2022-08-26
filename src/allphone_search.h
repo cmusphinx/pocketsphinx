@@ -47,6 +47,9 @@
 #include <sphinxbase/ngram_model.h>
 #include <sphinxbase/bitvec.h>
 
+/* Public headers. */
+#include <pocketsphinx.h>
+
 /* Local headers. */
 #include "pocketsphinx_internal.h"
 #include "blkarray_list.h"
@@ -147,7 +150,7 @@ typedef struct allphone_search_s {
  */
 ps_search_t *allphone_search_init(const char *name,
 				  ngram_model_t * lm,
-                                  cmd_ln_t * config,
+                                  ps_config_t * config,
                                   acmod_t * acmod,
                                   dict_t * dict, dict2pid_t * d2p);
 

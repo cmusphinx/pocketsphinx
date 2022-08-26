@@ -46,6 +46,9 @@
 #include <sphinxbase/cmd_ln.h>
 #include <sphinxbase/fsg_model.h>
 
+/* Public headers. */
+#include <pocketsphinx.h>
+
 /* Local headers. */
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
@@ -121,7 +124,7 @@ typedef struct fsg_search_s {
  */
 ps_search_t *fsg_search_init(const char *name,
 			     fsg_model_t *fsg,
-                             cmd_ln_t *config,
+                             ps_config_t *config,
                              acmod_t *acmod,
                              dict_t *dict,
                              dict2pid_t *d2p);

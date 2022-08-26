@@ -524,7 +524,7 @@ phmm_trans(allphone_search_t * allphs, int32 best,
 ps_search_t *
 allphone_search_init(const char *name,
                      ngram_model_t * lm,
-                     cmd_ln_t * config,
+                     ps_config_t * config,
                      acmod_t * acmod, dict_t * dict, dict2pid_t * d2p)
 {
     int i;

@@ -45,6 +45,9 @@
 /* SphinxBase headers. */
 #include <sphinxbase/hash_table.h>
 
+/* Public headers. */
+#include <pocketsphinx.h>
+
 /* Local headers. */
 #include "s3types.h"
 #include "bin_mdef.h"
@@ -104,7 +107,7 @@ typedef struct dict_s {
  * Return ptr to dict_t if successful, NULL otherwise.
  */
 POCKETSPHINX_EXPORT
-dict_t *dict_init(cmd_ln_t *config, /**< Configuration (-dict, -fdict, -dictcase) or NULL */
+dict_t *dict_init(ps_config_t *config, /**< Configuration (-dict, -fdict, -dictcase) or NULL */
                   bin_mdef_t *mdef  /**< For looking up CI phone IDs (or NULL) */
     );
 

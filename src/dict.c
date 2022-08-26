@@ -250,7 +250,7 @@ dict_write(dict_t *dict, char const *filename, char const *format)
 
 
 dict_t *
-dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
+dict_init(ps_config_t *config, bin_mdef_t * mdef)
 {
     FILE *fp, *fp2;
     int32 n;
