@@ -764,9 +764,10 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  *
  * By default CMake will try to install things in `/usr/local`, which
  * you might not have access to.  If you want to install somewhere
- * else you need to set `CMAKE_INSTALL_PREFIX` *when running cmake*:
+ * else you need to set `CMAKE_INSTALL_PREFIX` *when running cmake for
+ * the first time*:
  *
- *     cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/.local
+ *     cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/.local
  *
  * In this case you may also need to set the `LD_LIBRARY_PATH`
  * environment variable so that the PocketSphinx library can be found:
