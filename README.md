@@ -1,4 +1,4 @@
-PocketSphinx 5.0.0 release candidate 1
+PocketSphinx 5.0.0 release candidate 2
 ======================================
 
 This is PocketSphinx, one of Carnegie Mellon University's open source large
@@ -52,10 +52,73 @@ cmake --build build --target install
 Usage
 -----
 
-There is currently no command-line tool for PocketSphinx, aside from
-`pocketsphinx_batch`, which has far too many options to describe here,
-and is mostly just useful for evaluating on large test sets.  This
-will be fixed before the actual release.
+The `pocketsphinx` command-line program reads single-channel 16-bit
+PCM audio from standard input and attemps to recognize speech in it
+using the default acoustic and language model.  It accepts a large
+number of options which you probably don't care about, and a *command*
+which defaults to `live`.  The commands are as follows:
 
-For now, see the [examples directory](./examples/) for a number of
-examples of using the library from C and Python.
+  - `live`: Detect speech segments in standard input, run recognition
+    on them (using those options you don't care about), and write the
+    results to standard output in line-delimited JSON.  I realize this
+    isn't the prettiest format, but it sure beats XML.  Each line
+    contains a JSON object with these fields, which have short names
+    to make the lines more readable:
+    
+    - `a`: Start time in seconds, from the beginning of the stream
+    - `e`: End time in seconds, from the beginning of the stream
+    - `t`: Full text of output
+    - `w`: List of segments (usually words), each of which in turn
+      contains the `a`, `e`, and `t` fields, for start, end, and the
+      text of the word.  In the future we may also support
+      hierarchical outputs in which case `w` could be present.
+
+  - `single`: Recognize the input as a single utterance, and write a
+    JSON object in the same format described above.
+
+  - `soxflags`: Return arguments to `sox` which will create the
+    appropriate input format.  Note that because the `sox`
+    command-line is slightly quirky these must always come *after* the
+    filename or `-d` (which tells `sox` to read from the microphone).
+    You can run live recognition like this:
+    
+        sox -d $(pocketsphinx soxflags) | pocketsphinx
+
+    or decode from a file named "audio.mp3" like this:
+    
+        sox audio.mp3 $(pocketsphinx soxflags) | pocketsphinx
+        
+By default only errors are printed to standard error, but if you want
+more information you can pass `-loglevel INFO`.  Partial results are
+not printed, maybe they will be in the future, but don't hold your
+breath.  Force-alignment is likely to be supported soon, however.
+
+Programming
+-----------
+
+For programming, see the [examples directory](./examples/) for a
+number of examples of using the library from C and Python.  You can
+also read the [documentation for the Python
+API](https://pocketsphinx5.readthedocs.io) or [the C
+API](https://cmusphinx.github.io/doc/pocketsphinx/)
+
+Authors
+-------
+
+PocketSphinx is ultimately based on `Sphinx-II` which in turn was
+based on some older systems at Carnegie Mellon University.  Much of
+the decoder in particular was written by Ravishankar Mosur (look for
+"rkm" in the comments), but various other people contributed as well,
+see [the AUTHORS file](./AUTHORS) for more details.
+
+David Huggins-Daines (the author of this document) is
+guilty^H^H^H^H^Hresponsible for creating `PocketSphinx` which added
+various speed and memory optimizations, fixed-point computation, JSGF
+support, portability to various platforms, and a somewhat coherent
+API.  He then disappeared for a while.
+
+Nickolay Shmyrev took over maintenance for quite a long time
+afterwards, and a lot of code was contributed by Alexander Solovets,
+Vyacheslav Klimkov, and others.
+
+Currently this is maintained by David Huggins-Daines again.
