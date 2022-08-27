@@ -64,8 +64,15 @@ format_hyp(char *outptr, int len, ps_endpointer_t *ep, ps_decoder_t *decoder)
 
     lmath = ps_get_logmath(decoder);
     prob = logmath_exp(lmath, ps_get_prob(decoder));
-    st = ps_endpointer_speech_start(ep);
-    et = ps_endpointer_speech_end(ep);
+    if (ep == NULL) {
+        st = 0.0;
+        et = (double)ps_get_n_frames(decoder)
+            / cmd_ln_int_r(ps_get_config(decoder), "-frate");
+    }
+    else {
+        st = ps_endpointer_speech_start(ep);
+        et = ps_endpointer_speech_end(ep);
+    }
     hyp = ps_get_hyp(decoder, NULL);
     if (hyp == NULL)
         hyp = "";
@@ -111,7 +118,10 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
     maxlen += 2; /* ",{" */
     lmath = ps_get_logmath(decoder);
     frate = cmd_ln_int_r(ps_get_config(decoder), "-frate");
-    st = ps_endpointer_speech_start(ep);
+    if (ep == NULL)
+        st = 0.0;
+    else
+        st = ps_endpointer_speech_start(ep);
     for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
         maxlen += format_seg(NULL, 0, itor, st, frate, lmath);
         maxlen++; /* "," or "}" at end */
@@ -221,9 +231,62 @@ error_out:
     return -1;
 }
 
+static int
+single(ps_config_t *config)
+{
+    ps_decoder_t *decoder = NULL;
+    short *data, *ptr;
+    size_t data_size, block_size;
+
+    if ((decoder = ps_init(config)) == NULL) {
+        E_FATAL("PocketSphinx decoder init failed\n");
+        goto error_out;
+    }
+    data_size = 65536;
+    block_size = 2048;
+    ptr = data = ckd_calloc(data_size, sizeof(*data));
+    if (signal(SIGINT, catch_sig) == SIG_ERR)
+        E_FATAL_SYSTEM("Failed to set SIGINT handler");
+    while (!global_done) {
+        size_t len;
+        if ((size_t)(ptr + block_size - data) > data_size) {
+            len = ptr - data;
+            data_size *= 2;
+            data = ckd_realloc(data, data_size * sizeof(*data));
+            ptr = data + len;
+        }
+        len = fread(ptr, sizeof(*ptr), block_size, stdin);
+        if (len == 0) {
+            if (feof(stdin))
+                break;
+            else
+                E_ERROR_SYSTEM("Failed to read %d bytes\n",
+                               sizeof(*ptr) * block_size);
+        }
+        ptr += len;
+    }
+    ps_start_utt(decoder);
+    if (ps_process_raw(decoder, data, ptr - data, FALSE, TRUE) < 0) {
+        E_ERROR("ps_process_raw() failed\n");
+        goto error_out;
+    }
+    ps_end_utt(decoder);
+    output_hyp(NULL, decoder);
+    ckd_free(data);
+    ps_free(decoder);
+    return 0;
+
+error_out:
+    if (data)
+        ckd_free(data);
+    if (decoder)
+        ps_free(decoder);
+    return -1;
+}
+
 #define SOX_FORMAT "-r %ld -c 1 -b 16 -e signed-integer -t raw -"
 static int
-soxargs(ps_config_t *config)
+soxflags(ps_config_t *config)
 {
     int maxlen, len;
     char *args;
@@ -273,11 +336,14 @@ main(int argc, char *argv[])
         return 1;
     ps_default_search_args(config);
     command = find_command(argc, argv);
-    if (0 == strcmp(command, "soxargs")) {
-        rv = soxargs(config);
+    if (0 == strcmp(command, "soxflags")) {
+        rv = soxflags(config);
     }
     else if (0 == strcmp(command, "live")) {
         rv = live(config);
+    }
+    else if (0 == strcmp(command, "single")) {
+        rv = single(config);
     }
     else {
         E_ERROR("Unknown command \"%s\"\n", command);
