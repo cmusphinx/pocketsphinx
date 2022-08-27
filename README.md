@@ -67,11 +67,13 @@ which defaults to `live`.  The commands are as follows:
     
     - `a`: Start time in seconds, from the beginning of the stream
     - `e`: End time in seconds, from the beginning of the stream
+    - `p`: Posterior probability of utterance
     - `t`: Full text of output
     - `w`: List of segments (usually words), each of which in turn
-      contains the `a`, `e`, and `t` fields, for start, end, and the
-      text of the word.  In the future we may also support
-      hierarchical outputs in which case `w` could be present.
+      contains the `a`, `e`, `p`, and `t` fields, for start, end,
+      probability, and the text of the word.  In the future we may
+      also support hierarchical outputs in which case `w` could be
+      present.
 
   - `single`: Recognize the input as a single utterance, and write a
     JSON object in the same format described above.
