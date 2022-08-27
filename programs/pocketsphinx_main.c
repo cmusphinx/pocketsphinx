@@ -42,25 +42,228 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <signal.h>
 
 #include <pocketsphinx.h>
+
+static int global_done = 0;
+static void
+catch_sig(int signum)
+{
+    (void)signum;
+    global_done = 1;
+}
+
+#define HYP_FORMAT "{\"a\":%.3f,\"e\":%.3f,\"p\":%.3f,\"t\":\"%s\""
+static size_t
+format_hyp(char *outptr, size_t len, ps_endpointer_t *ep, ps_decoder_t *decoder)
+{
+    logmath_t *lmath;
+    double prob, st, et;
+    const char *hyp;
+
+    lmath = ps_get_logmath(decoder);
+    prob = logmath_exp(lmath, ps_get_prob(decoder));
+    st = ps_endpointer_speech_start(ep);
+    et = ps_endpointer_speech_end(ep);
+    hyp = ps_get_hyp(decoder, NULL);
+    if (hyp == NULL)
+        hyp = "";
+    return snprintf(outptr, len, HYP_FORMAT, st, et, prob, hyp);
+}
+
+static size_t
+format_seg(char *outptr, size_t len, ps_seg_t *seg,
+           double utt_start, int frate, logmath_t *lmath)
+{
+    double prob, st, et;
+    int sf, ef;
+    const char *word;
+
+    ps_seg_frames(seg, &sf, &ef);
+    st = utt_start + (double)sf / frate;
+    et = utt_start + (double)ef / frate;
+    word = ps_seg_word(seg);
+    if (word == NULL)
+        word = "";
+    prob = logmath_exp(lmath, ps_seg_prob(seg, NULL, NULL, NULL));
+    len = snprintf(outptr, len, HYP_FORMAT, st, et, prob, word);
+    if (outptr) {
+        outptr += len;
+        *outptr++ = '}';
+        *outptr = '\0';
+    }
+    len++;
+    return len;
+}
+
+static void
+output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
+{
+    logmath_t *lmath;
+    char *hyp_json, *ptr;
+    ps_seg_t *itor;
+    int frate;
+    size_t maxlen, len;
+    double st;
+
+    maxlen = format_hyp(NULL, 0, ep, decoder);
+    maxlen += 2; /* ",{" */
+    lmath = ps_get_logmath(decoder);
+    frate = cmd_ln_int_r(ps_get_config(decoder), "-frate");
+    st = ps_endpointer_speech_start(ep);
+    for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
+        maxlen += format_seg(NULL, 0, itor, st, frate, lmath);
+        maxlen++; /* "," or "}" at end */
+    }
+    maxlen++; /* final } */
+    maxlen++; /* trailing \0 */
+
+    ptr = hyp_json = ckd_calloc(maxlen, 1);
+    len = maxlen;
+    len = format_hyp(hyp_json, len, ep, decoder);
+    ptr += len;
+    maxlen -= len;
+
+    assert(maxlen > 2);
+    strcpy(ptr, ",{");
+    ptr += 2;
+    maxlen -= 2;
+
+    for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
+        assert(maxlen > 0);
+        len = format_seg(ptr, maxlen, itor, st, frate, lmath);
+        ptr += len;
+        maxlen -= len;
+        *ptr++ = ',';
+        maxlen--;
+    }
+    --ptr;
+    *ptr++ = '}';
+    assert(maxlen == 2);
+    *ptr++ = '}';
+    --maxlen;
+    *ptr = '\0';
+    puts(hyp_json);
+    ckd_free(hyp_json);
+}
+
+static int
+live(ps_config_t *config)
+{
+    ps_decoder_t *decoder = NULL;
+    ps_endpointer_t *ep = NULL;
+    short *frame = NULL;
+    size_t frame_size;
+
+    if ((decoder = ps_init(config)) == NULL) {
+        E_FATAL("PocketSphinx decoder init failed\n");
+        goto error_out;
+    }
+    if ((ep = ps_endpointer_init(0, 0.0,
+                                 3, cmd_ln_int_r(config, "-samprate"),
+                                 0)) == NULL) {
+        E_ERROR("PocketSphinx endpointer init failed\n");
+        goto error_out;
+    }
+    frame_size = ps_endpointer_frame_size(ep);
+    if ((frame = ckd_calloc(frame_size, sizeof(frame[0]))) == NULL) {
+        E_ERROR("Failed to allocate frame");
+        goto error_out;
+    }
+    if (signal(SIGINT, catch_sig) == SIG_ERR)
+        E_FATAL_SYSTEM("Failed to set SIGINT handler");
+    while (!global_done) {
+        const int16 *speech;
+        int prev_in_speech = ps_endpointer_in_speech(ep);
+        size_t len, end_samples;
+        if ((len = fread(frame, sizeof(frame[0]),
+                         frame_size, stdin)) != frame_size) {
+            if (len > 0) {
+                speech = ps_endpointer_end_stream(ep, frame,
+                                                  frame_size,
+                                                  &end_samples);
+            }
+            else
+                break;
+        } else
+            speech = ps_endpointer_process(ep, frame);
+        if (speech != NULL) {
+            if (!prev_in_speech) {
+                E_INFO("Speech start at %.2f\n",
+                       ps_endpointer_speech_start(ep));
+                ps_start_utt(decoder);
+            }
+            if (ps_process_raw(decoder, speech, frame_size, FALSE, FALSE) < 0) {
+                E_ERROR("ps_process_raw() failed\n");
+                goto error_out;
+            }
+            if (!ps_endpointer_in_speech(ep)) {
+                E_INFO("Speech end at %.2f\n",
+                       ps_endpointer_speech_end(ep));
+                ps_end_utt(decoder);
+                output_hyp(ep, decoder);
+            }
+        }
+    }
+    ckd_free(frame);
+    ps_endpointer_free(ep);
+    ps_free(decoder);
+    return 0;
+
+error_out:
+    if (frame)
+        ckd_free(frame);
+    if (ep)
+        ps_endpointer_free(ep);
+    if (decoder)
+        ps_free(decoder);
+    return -1;
+}
+
+static int
+soxargs(ps_config_t *config)
+{
+    return 0;
+}
+
+static const char *
+find_command(int argc, char *argv[])
+{
+    /* Very unsophisticated, assume that it is at the end of the
+     * key/value arguments, we will maybe get a real argument parser
+     * one of these days. */
+    if (argc % 2) {
+        /* No extra argument */
+        return "live";
+    }
+    else {
+        return argv[argc-1];
+    }
+}
 
 int
 main(int argc, char *argv[])
 {
     ps_config_t *config;
-    ps_decoder_t *ps;
+    const char *command;
+    int rv;
 
     if ((config = ps_config_parse_args(argc, argv)) == NULL)
         return 1;
     ps_default_search_args(config);
-    if ((ps = ps_init(config)) == NULL) {
-        cmd_ln_free_r(config);
+    command = find_command(argc, argv);
+    if (0 == strcmp(command, "soxargs")) {
+        rv = soxargs(config);
+    }
+    else if (0 == strcmp(command, "live")) {
+        rv = live(config);
+    }
+    else {
+        E_ERROR("Unknown command \"%s\"\n", command);
         return 1;
     }
 
-    ps_free(ps);
     ps_config_free(config);
-
-    return 0;
+    return rv;
 }
