@@ -55,8 +55,8 @@ catch_sig(int signum)
 }
 
 #define HYP_FORMAT "{\"a\":%.3f,\"e\":%.3f,\"p\":%.3f,\"t\":\"%s\""
-static size_t
-format_hyp(char *outptr, size_t len, ps_endpointer_t *ep, ps_decoder_t *decoder)
+static int
+format_hyp(char *outptr, int len, ps_endpointer_t *ep, ps_decoder_t *decoder)
 {
     logmath_t *lmath;
     double prob, st, et;
@@ -72,8 +72,8 @@ format_hyp(char *outptr, size_t len, ps_endpointer_t *ep, ps_decoder_t *decoder)
     return snprintf(outptr, len, HYP_FORMAT, st, et, prob, hyp);
 }
 
-static size_t
-format_seg(char *outptr, size_t len, ps_seg_t *seg,
+static int
+format_seg(char *outptr, int len, ps_seg_t *seg,
            double utt_start, int frate, logmath_t *lmath)
 {
     double prob, st, et;
@@ -104,7 +104,7 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
     char *hyp_json, *ptr;
     ps_seg_t *itor;
     int frate;
-    size_t maxlen, len;
+    int maxlen, len;
     double st;
 
     maxlen = format_hyp(NULL, 0, ep, decoder);
@@ -221,9 +221,29 @@ error_out:
     return -1;
 }
 
+#define SOX_FORMAT "-r %ld -c 1 -b 16 -e signed-integer -t raw -"
 static int
 soxargs(ps_config_t *config)
 {
+    int maxlen, len;
+    char *args;
+
+    maxlen = snprintf(NULL, 0, SOX_FORMAT,
+                      cmd_ln_int_r(config, "-samprate"));
+    if (maxlen < 0) {
+        E_ERROR_SYSTEM("Failed to snprintf()");
+        return -1;
+    }
+    maxlen++;
+    args = ckd_calloc(maxlen, 1);
+    len = snprintf(args, maxlen, SOX_FORMAT,
+                   cmd_ln_int_r(config, "-samprate"));
+    if (len != maxlen - 1) {
+        E_ERROR_SYSTEM("Failed to snprintf()");
+        return -1;
+    }
+    puts(args);
+    ckd_free(args);
     return 0;
 }
 
