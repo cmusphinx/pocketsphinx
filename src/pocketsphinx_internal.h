@@ -52,8 +52,10 @@
 #include <sphinxbase/logmath.h>
 #include <sphinxbase/profile.h>
 
+/* Public headers. */
+#include <pocketsphinx.h>
+
 /* Local headers. */
-#include "pocketsphinx.h"
 #include "acmod.h"
 #include "dict.h"
 #include "dict2pid.h"

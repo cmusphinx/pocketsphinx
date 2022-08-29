@@ -69,6 +69,12 @@ extern "C" {
  */
 typedef struct ps_decoder_s ps_decoder_t;
 
+/**
+ * @struct ps_config_t
+ * PocketSphinx configuration object.
+ */
+typedef struct cmd_ln_s ps_config_t;
+
 /* Voice activity detection. */
 #include <pocketsphinx/vad.h>
 
@@ -91,11 +97,26 @@ typedef struct ps_astar_s ps_nbest_t;
 typedef struct ps_seg_s ps_seg_t;
 
 /**
+ * Parses arguments from the command-line into a configuration.
+ */
+#define ps_config_parse_args(argc, argv) cmd_ln_parse_r(NULL, ps_args(), argc, argv, FALSE)
+
+/**
+ * Retains a pointer to a configuration object.
+ */
+#define ps_config_retain(config) cmd_ln_retain(config)
+
+/**
+ * Releases a configuration object.
+ */
+#define ps_config_free(config) cmd_ln_free_r(config)
+
+/**
  * Sets default grammar and language model if they are not set explicitly and
  * are present in the default search path.
  */
 POCKETSPHINX_EXPORT
-void ps_default_search_args(cmd_ln_t *);
+void ps_default_search_args(ps_config_t *);
 
 /**
  * Gets the system default model directory, if any exists.
@@ -120,7 +141,7 @@ const char *ps_default_modeldir(void);
  * proceed to initialize it with ps_reinit().
  */
 POCKETSPHINX_EXPORT
-ps_decoder_t *ps_init(cmd_ln_t *config);
+ps_decoder_t *ps_init(ps_config_t *config);
 
 /**
  * Reinitialize the decoder with updated configuration.
@@ -145,7 +166,7 @@ ps_decoder_t *ps_init(cmd_ln_t *config);
  * @return 0 for success, <0 for failure.
  */
 POCKETSPHINX_EXPORT
-int ps_reinit(ps_decoder_t *ps, cmd_ln_t *config);
+int ps_reinit(ps_decoder_t *ps, ps_config_t *config);
 
 /**
  * Reinitialize only the feature computation with updated configuration.
@@ -170,7 +191,7 @@ int ps_reinit(ps_decoder_t *ps, cmd_ln_t *config);
  * @return 0 for success, <0 for failure (usually an invalid parameter)
  */
 POCKETSPHINX_EXPORT
-int ps_reinit_feat(ps_decoder_t *ps, cmd_ln_t *config);
+int ps_reinit_feat(ps_decoder_t *ps, ps_config_t *config);
 
 /**
  * Get the current cepstral mean as a string.
@@ -248,7 +269,7 @@ int ps_free(ps_decoder_t *ps);
  *         elsewhere.
  */
 POCKETSPHINX_EXPORT
-cmd_ln_t *ps_get_config(ps_decoder_t *ps);
+ps_config_t *ps_get_config(ps_decoder_t *ps);
 
 /**
  * Get the log-math computation object for this decoder.
@@ -694,10 +715,10 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
                      double *out_ncpu, double *out_nwall);
 
 /**
- * @mainpage PocketSphinx Documentation
+ * @mainpage PocketSphinx API Documentation
  * @author David Huggins-Daines <dhdaines@gmail.com>
- * @version 5.0.0rc1
- * @date August 24, 2022
+ * @version 5.0.0rc2
+ * @date August 26, 2022
  *
  * @section intro_sec Introduction
  *
@@ -767,11 +788,13 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * @section programming_sec Using the Library
  *
  * The Python interface is documented at
- * http://pocketsphinx5.readthedocs.io/.  Here is a full example:
+ * http://pocketsphinx5.readthedocs.io/.  Here is a full example,
+ * which will be explained in more detail soon:
  *
  * @include live.py
  *
- * Here is a complete example of using the C programming interface:
+ * Here is a complete example of using the C programming interface,
+ * which will be explained in more detail soon:
  *
  * @include live.c
  *

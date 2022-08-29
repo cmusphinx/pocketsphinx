@@ -508,7 +508,7 @@ gauden_dist(gauden_t * g,
 }
 
 int32
-gauden_mllr_transform(gauden_t *g, ps_mllr_t *mllr, cmd_ln_t *config)
+gauden_mllr_transform(gauden_t *g, ps_mllr_t *mllr, ps_config_t *config)
 {
     int32 i, m, f, d, *flen;
 

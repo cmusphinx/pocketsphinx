@@ -57,6 +57,9 @@ extern "C" {
 #include <sphinxbase/cmd_ln.h>
 #include <pocketsphinx/export.h>
 
+/* Public headers. */
+#include <pocketsphinx.h>
+
 #include "mdef.h"
 
 #define BIN_MDEF_FORMAT_VERSION 1
@@ -169,12 +172,12 @@ struct bin_mdef_s {
  * Read a binary mdef from a file.
  */
 POCKETSPHINX_EXPORT
-bin_mdef_t *bin_mdef_read(cmd_ln_t *config, const char *filename);
+bin_mdef_t *bin_mdef_read(ps_config_t *config, const char *filename);
 /**
  * Read a text mdef from a file (creating an in-memory binary mdef).
  */
 POCKETSPHINX_EXPORT
-bin_mdef_t *bin_mdef_read_text(cmd_ln_t *config, const char *filename);
+bin_mdef_t *bin_mdef_read_text(ps_config_t *config, const char *filename);
 /**
  * Write a binary mdef to a file.
  */

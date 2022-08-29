@@ -258,7 +258,7 @@ acmod_feat_mismatch(acmod_t *acmod, feat_t *fcb)
 }
 
 acmod_t *
-acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
+acmod_init(ps_config_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
 {
     acmod_t *acmod;
 
