@@ -1,4 +1,5 @@
 set(POCKETSPHINX_PROGRAMS
+  pocketsphinx_main
   pocketsphinx_batch
   pocketsphinx_mdef_convert
   pocketsphinx_jsgf2fsg
@@ -13,6 +14,8 @@ foreach(PROGRAM ${POCKETSPHINX_PROGRAMS})
     ${PROGRAM} PRIVATE ${CMAKE_SOURCE_DIR}/src
     ${PROGRAM} PRIVATE ${CMAKE_BINARY_DIR})
 endforeach()
+# CMake and its lovely flat namespace
+set_target_properties(pocketsphinx_main PROPERTIES OUTPUT_NAME pocketsphinx)
 
 # The cmake docs indicate you should check MACOSX_BUNDLE
 # and that MACOSX_BUNDLE is initialized based on the value

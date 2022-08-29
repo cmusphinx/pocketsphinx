@@ -376,7 +376,7 @@ ps_search_t *
 kws_search_init(const char *name,
                 const char *keyphrase,
                 const char *keyfile,
-                cmd_ln_t * config,
+                ps_config_t * config,
                 acmod_t * acmod, dict_t * dict, dict2pid_t * d2p)
 {
     kws_search_t *kwss = (kws_search_t *) ckd_calloc(1, sizeof(*kwss));

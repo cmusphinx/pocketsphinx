@@ -503,7 +503,8 @@ cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn,
         cmdln->ht = hash_table_new(n, 0 /* argument names are case-sensitive */ );
 
 
-    /* skip argv[0] if it doesn't start with dash */
+    /* skip argv[0] if it doesn't start with dash (starting with a
+     * dash would only happen if called from parse_options()) */
     argstart = 0;
     if (argc > 0 && argv[0][0] != '-') {
         argstart = 1;

@@ -194,7 +194,7 @@ ps_default_modeldir(void)
 
 /* Set default acoustic and language models if they are not defined in configuration. */
 void
-ps_default_search_args(cmd_ln_t *config)
+ps_default_search_args(ps_config_t *config)
 {
 #ifdef MODELDIR
     const char *hmmdir = cmd_ln_str_r(config, "-hmm");
@@ -231,7 +231,7 @@ ps_default_search_args(cmd_ln_t *config)
 }
 
 int
-ps_reinit_feat(ps_decoder_t *ps, cmd_ln_t *config)
+ps_reinit_feat(ps_decoder_t *ps, ps_config_t *config)
 {
     if (config && config != ps->config) {
         cmd_ln_free_r(ps->config);
@@ -241,7 +241,7 @@ ps_reinit_feat(ps_decoder_t *ps, cmd_ln_t *config)
 }
 
 int
-ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
+ps_reinit(ps_decoder_t *ps, ps_config_t *config)
 {
     const char *path;
     const char *keyphrase;
@@ -438,7 +438,7 @@ ps_set_cmn(ps_decoder_t *ps, const char *cmn)
 
 
 ps_decoder_t *
-ps_init(cmd_ln_t *config)
+ps_init(ps_config_t *config)
 {
     ps_decoder_t *ps;
     
@@ -483,7 +483,7 @@ ps_free(ps_decoder_t *ps)
     return 0;
 }
 
-cmd_ln_t *
+ps_config_t *
 ps_get_config(ps_decoder_t *ps)
 {
     return ps->config;
@@ -820,7 +820,7 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
     dict2pid_t *d2p;
     dict_t *dict;
     hash_iter_t *search_it;
-    cmd_ln_t *newconfig;
+    ps_config_t *newconfig;
 
     (void)format;
     /* Create a new scratch config to load this dict (so existing one
@@ -1493,7 +1493,7 @@ void
 ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
 	       const char *type,
 	       const char *name,
-               cmd_ln_t *config, acmod_t *acmod, dict_t *dict,
+               ps_config_t *config, acmod_t *acmod, dict_t *dict,
                dict2pid_t *d2p)
 {
     search->vt = vt;

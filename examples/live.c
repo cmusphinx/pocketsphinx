@@ -60,9 +60,10 @@ main(int argc, char *argv[])
     while (!global_done) {
         const int16 *speech;
         int prev_in_speech = ps_endpointer_in_speech(ep);
-        size_t end_samples;
-        if (fread(frame, sizeof(frame[0]), frame_size, sox) != frame_size) {
-            if (frame_size > 0) {
+        size_t len, end_samples;
+        if ((len = fread(frame, sizeof(frame[0]),
+                         frame_size, sox)) != frame_size) {
+            if (len > 0) {
                 speech = ps_endpointer_end_stream(ep, frame,
                                                   frame_size,
                                                   &end_samples);

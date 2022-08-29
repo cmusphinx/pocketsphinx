@@ -63,7 +63,7 @@
 #include "bin_mdef.h"
 
 bin_mdef_t *
-bin_mdef_read_text(cmd_ln_t *config, const char *filename)
+bin_mdef_read_text(ps_config_t *config, const char *filename)
 {
     bin_mdef_t *bmdef;
     mdef_t *mdef;
@@ -324,7 +324,7 @@ static const char format_desc[] =
     "END FILE FORMAT DESCRIPTION\n";
 
 bin_mdef_t *
-bin_mdef_read(cmd_ln_t *config, const char *filename)
+bin_mdef_read(ps_config_t *config, const char *filename)
 {
     bin_mdef_t *m;
     FILE *fh;

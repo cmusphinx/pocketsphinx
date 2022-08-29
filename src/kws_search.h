@@ -43,6 +43,9 @@
 #include <sphinxbase/glist.h>
 #include <sphinxbase/cmd_ln.h>
 
+/* Public headers. */
+#include <pocketsphinx.h>
+
 /* Local headers. */
 #include "pocketsphinx_internal.h"
 #include "kws_detections.h"
@@ -106,7 +109,7 @@ typedef struct kws_search_s {
 ps_search_t *kws_search_init(const char *name,
 			     const char *keyphrase,
 			     const char *keyfile,
-                             cmd_ln_t * config,
+                             ps_config_t * config,
                              acmod_t * acmod,
                              dict_t * dict, dict2pid_t * d2p);
 
