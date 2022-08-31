@@ -806,11 +806,13 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  *
  * @section thanks_sec Acknowledgements
  *
- * PocketSphinx is largely based on the previous Sphinx-II and
- * Sphinx-III systems, developed by a large number of contributors at
- * Carnegie Mellon University.  For some time afterwards, it was
- * maintained by Nickolay Shmyrev and others at Alpha Cephei, Inc.
- * See the `AUTHORS` file for a list of contributors.
+ * PocketSphinx was originally released by David Huggins-Daines, but
+ * is largely based on the previous Sphinx-II and Sphinx-III systems,
+ * developed by a large number of contributors at Carnegie Mellon
+ * University, and released as open source under a BSD-like license
+ * thanks to Kevin Lenzo.  For some time, it was maintained by
+ * Nickolay Shmyrev and others at Alpha Cephei, Inc.  See the
+ * `AUTHORS` file for a list of contributors.
  */
 
 #ifdef __cplusplus

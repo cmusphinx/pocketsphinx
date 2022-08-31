@@ -108,10 +108,12 @@ Authors
 -------
 
 PocketSphinx is ultimately based on `Sphinx-II` which in turn was
-based on some older systems at Carnegie Mellon University.  Much of
-the decoder in particular was written by Ravishankar Mosur (look for
-"rkm" in the comments), but various other people contributed as well,
-see [the AUTHORS file](./AUTHORS) for more details.
+based on some older systems at Carnegie Mellon University, which were
+released as free software under a BSD-like license thanks to the
+efforts of Kevin Lenzo.  Much of the decoder in particular was written
+by Ravishankar Mosur (look for "rkm" in the comments), but various
+other people contributed as well, see [the AUTHORS file](./AUTHORS)
+for more details.
 
 David Huggins-Daines (the author of this document) is
 guilty^H^H^H^H^Hresponsible for creating `PocketSphinx` which added
