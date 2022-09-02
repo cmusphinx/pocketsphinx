@@ -9,8 +9,50 @@ pocketsphinx \- Run speech recognition on audio data
 \fBsoxflags\fR ]
 .SH DESCRIPTION
 .PP
-This program reads standard input, attempts to recognize speech in it,
-and writes the results to standard input as JSON objects.
+The ‘\f[CR]pocketsphinx\fP’ command-line program reads single-channel
+16-bit PCM audio from standard input and attemps to recognize speech
+in it using the default acoustic and language model. It accepts a
+large number of options which you probably don't care about, and a
+\fIcommand\fP which defaults to ‘\f[CR]live\fP’. The commands are as
+follows:
+.TP
+.B live
+Detect speech segments in standard input, run
+recognition on them (using those options you don't care about), and
+write the results to standard output in line-delimited JSON. I
+realize this isn't the prettiest format, but it sure beats XML. Each
+line contains a JSON object with these fields, which have short names
+to make the lines more readable:
+.IP
+"b": Start time in seconds, from the beginning of the stream
+.IP
+"d": Duration in seconds, from the beginning of the stream
+.IP
+"p": Estimated probability of the recognition result, i.e. a number between
+0 and 1 which may be used as a confidence score
+.IP
+"t": Full text of recognition result
+.IP
+"w": List of segments (usually words), each of which in turn contains the
+‘\f[CR]b\fP’, ‘\f[CR]d\fP’, ‘\f[CR]p\fP’, and ‘\f[CR]t\fP’ fields, for
+start, end, probability, and the text of the word. In the future we
+may also support hierarchical results in which case ‘\f[CR]w\fP’ could
+be present.
+.TP
+.B single
+Recognize the input as a single utterance, and write a JSON object in the same format described above.
+.TP
+.B soxflags
+Return arguments to ‘\f[CR]sox\fP’ which will create the appropriate
+input format. Note that because the ‘\f[CR]sox\fP’ command-line is
+slightly quirky these must always come \fIafter\fP the filename or
+‘\f[CR]-d\fP’ (which tells ‘\f[CR]sox\fP’ to read from the
+microphone). You can run live recognition like this:
+.EX
+ sox -d $(pocketsphinx soxflags) | pocketsphinx
+.EE
+.PP
+or decode from a file named "audio.mp3" like this: sox audio.mp3 $(pocketsphinx soxflags) | pocketsphinx By default only errors are printed to standard error, but if you want more information you can pass ‘\f[CR]-loglevel INFO\fP’. Partial results are not printed, maybe they will be in the future, but don't hold your breath. Force-alignment is likely to be supported soon, however.
 .SH OPTIONS
 .TP
 .B \-agc
