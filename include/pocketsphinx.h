@@ -119,6 +119,12 @@ POCKETSPHINX_EXPORT
 void ps_default_search_args(ps_config_t *);
 
 /**
+ * Sets default file paths and parameters based on configuration.
+ */
+POCKETSPHINX_EXPORT
+void ps_expand_model_config(ps_config_t *config);
+
+/**
  * Gets the system default model directory, if any exists.
  *
  * @return system model directory defined at compile time, or NULL if

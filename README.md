@@ -65,14 +65,15 @@ which defaults to `live`.  The commands are as follows:
     contains a JSON object with these fields, which have short names
     to make the lines more readable:
     
-    - `a`: Start time in seconds, from the beginning of the stream
-    - `e`: End time in seconds, from the beginning of the stream
-    - `p`: Posterior probability of utterance
-    - `t`: Full text of output
+    - `b`: Start time in seconds, from the beginning of the stream
+    - `d`: Duration in seconds
+    - `p`: Estimated probability of the recognition result, i.e. a
+      number between 0 and 1 which may be used as a confidence score
+    - `t`: Full text of recognition result
     - `w`: List of segments (usually words), each of which in turn
-      contains the `a`, `e`, `p`, and `t` fields, for start, end,
+      contains the `b`, `d`, `p`, and `t` fields, for start, end,
       probability, and the text of the word.  In the future we may
-      also support hierarchical outputs in which case `w` could be
+      also support hierarchical results in which case `w` could be
       present.
 
   - `single`: Recognize the input as a single utterance, and write a

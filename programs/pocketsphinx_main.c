@@ -54,7 +54,7 @@ catch_sig(int signum)
     global_done = 1;
 }
 
-#define HYP_FORMAT "{\"a\":%.3f,\"e\":%.3f,\"p\":%.3f,\"t\":\"%s\""
+#define HYP_FORMAT "{\"b\":%.3f,\"d\":%.3f,\"p\":%.3f,\"t\":\"%s\""
 static int
 format_hyp(char *outptr, int len, ps_endpointer_t *ep, ps_decoder_t *decoder)
 {
@@ -76,25 +76,26 @@ format_hyp(char *outptr, int len, ps_endpointer_t *ep, ps_decoder_t *decoder)
     hyp = ps_get_hyp(decoder, NULL);
     if (hyp == NULL)
         hyp = "";
-    return snprintf(outptr, len, HYP_FORMAT, st, et, prob, hyp);
+    return snprintf(outptr, len, HYP_FORMAT, st, et - st, prob, hyp);
 }
 
 static int
 format_seg(char *outptr, int len, ps_seg_t *seg,
-           double utt_start, int frate, logmath_t *lmath)
+           double utt_start, int frate,
+           logmath_t *lmath)
 {
-    double prob, st, et;
+    double prob, st, dur;
     int sf, ef;
     const char *word;
 
     ps_seg_frames(seg, &sf, &ef);
     st = utt_start + (double)sf / frate;
-    et = utt_start + (double)ef / frate;
+    dur = (double)(ef + 1 - sf) / frate;
     word = ps_seg_word(seg);
     if (word == NULL)
         word = "";
     prob = logmath_exp(lmath, ps_seg_prob(seg, NULL, NULL, NULL));
-    len = snprintf(outptr, len, HYP_FORMAT, st, et, prob, word);
+    len = snprintf(outptr, len, HYP_FORMAT, st, dur, prob, word);
     if (outptr) {
         outptr += len;
         *outptr++ = '}';
@@ -284,28 +285,59 @@ error_out:
     return -1;
 }
 
-#define SOX_FORMAT "-r %ld -c 1 -b 16 -e signed-integer -t raw -"
+#if 0
+static int sample_rates[] = {
+    8000,
+    11025,
+    16000,
+    22050,
+    32000,
+    44100,
+    48000
+};
+static const int n_sample_rates = sizeof(sample_rates)/sizeof(sample_rates[0]);
+
+static int
+minimum_samprate(ps_config_t *config)
+{
+    double upperf = cmd_ln_float_r(config, "-upperf");
+    int nyquist = (int)(upperf * 2);
+    int i;
+    for (i = 0; i < n_sample_rates; ++i)
+        if (sample_rates[i] >= nyquist)
+            break;
+    if (i == n_sample_rates)
+        E_FATAL("Unable to find sampling rate for -upperf %f\n", upperf);
+    return sample_rates[i];
+}
+#endif
+
+#define SOX_FORMAT "-r %d -c 1 -b 16 -e signed-integer -t raw -"
 static int
 soxflags(ps_config_t *config)
 {
     int maxlen, len;
+    int samprate;
     char *args;
 
-    maxlen = snprintf(NULL, 0, SOX_FORMAT,
-                      cmd_ln_int_r(config, "-samprate"));
+    /* Get feature extraction parameters. */
+    ps_expand_model_config(config);
+    samprate = cmd_ln_int_r(config, "-samprate");
+
+    maxlen = snprintf(NULL, 0, SOX_FORMAT, samprate);
     if (maxlen < 0) {
         E_ERROR_SYSTEM("Failed to snprintf()");
         return -1;
     }
     maxlen++;
     args = ckd_calloc(maxlen, 1);
-    len = snprintf(args, maxlen, SOX_FORMAT,
-                   cmd_ln_int_r(config, "-samprate"));
+    len = snprintf(args, maxlen, SOX_FORMAT, samprate);
     if (len != maxlen - 1) {
         E_ERROR_SYSTEM("Failed to snprintf()");
         return -1;
     }
     puts(args);
+    fflush(stdout);
     ckd_free(args);
     return 0;
 }

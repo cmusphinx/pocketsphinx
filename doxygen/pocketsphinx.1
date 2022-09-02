@@ -1,37 +1,63 @@
-.TH POCKETSPHINX_CONTINUOUS 1 "2016-04-01"
+.TH POCKETSPHINX 1 "2016-04-01"
 .SH NAME
-pocketsphinx_continuous \- Run speech recognition in continuous listening mode
+pocketsphinx \- Run speech recognition on audio data
 .SH SYNOPSIS
-.B pocketsphinx_continuous
-.RI [ \fB\-infile\fR
-\fIfilename.wav\fR ]
-[ \fB\-inmic yes\fR ]
-[ \fIoptions\fR ]...
+.B pocketsphinx
+[ \fIoptions\fR... ]
+[ \fBlive\fR |
+\fBsingle\fR |
+\fBsoxflags\fR ]
 .SH DESCRIPTION
 .PP
-This program opens the audio device or a file and waits for speech.  When it
-detects an utterance, it performs speech recognition on it.
-.PP
-To record from microphone and decode use 
+The ‘\f[CR]pocketsphinx\fP’ command-line program reads single-channel
+16-bit PCM audio from standard input and attemps to recognize speech
+in it using the default acoustic and language model. It accepts a
+large number of options which you probably don't care about, and a
+\fIcommand\fP which defaults to ‘\f[CR]live\fP’. The commands are as
+follows:
 .TP
-.B \-inmic yes
-.PP
-To decode a 16kHz 16-bit mono WAV file use 
+.B live
+Detect speech segments in standard input, run
+recognition on them (using those options you don't care about), and
+write the results to standard output in line-delimited JSON. I
+realize this isn't the prettiest format, but it sure beats XML. Each
+line contains a JSON object with these fields, which have short names
+to make the lines more readable:
+.IP
+"b": Start time in seconds, from the beginning of the stream
+.IP
+"d": Duration in seconds
+.IP
+"p": Estimated probability of the recognition result, i.e. a number between
+0 and 1 which may be used as a confidence score
+.IP
+"t": Full text of recognition result
+.IP
+"w": List of segments (usually words), each of which in turn contains the
+‘\f[CR]b\fP’, ‘\f[CR]d\fP’, ‘\f[CR]p\fP’, and ‘\f[CR]t\fP’ fields, for
+start, end, probability, and the text of the word. In the future we
+may also support hierarchical results in which case ‘\f[CR]w\fP’ could
+be present.
 .TP
-.B \-infile \fIfilename.wav\fR
+.B single
+Recognize the input as a single utterance, and write a JSON object in the same format described above.
+.TP
+.B soxflags
+Return arguments to ‘\f[CR]sox\fP’ which will create the appropriate
+input format. Note that because the ‘\f[CR]sox\fP’ command-line is
+slightly quirky these must always come \fIafter\fP the filename or
+‘\f[CR]-d\fP’ (which tells ‘\f[CR]sox\fP’ to read from the
+microphone). You can run live recognition like this:
+.EX
+ sox -d $(pocketsphinx soxflags) | pocketsphinx
+.EE
+or decode from a file named "audio.mp3" like this:
+.EX
+sox audio.mp3 $(pocketsphinx soxflags) | pocketsphinx
+.EE
 .PP
-You can also specify
-.B \-lm
-or
-.B \-fsg
-or
-.B \-kws
-depending on whether you are using a statistical language
-model or a finite-state grammar or look for a keyphase.
+By default only errors are printed to standard error, but if you want more information you can pass ‘\f[CR]-loglevel INFO\fP’. Partial results are not printed, maybe they will be in the future, but don't hold your breath. Force-alignment is likely to be supported soon, however.
 .SH OPTIONS
-.TP
-.B \-adcdev
-of audio device to use for input.
 .TP
 .B \-agc
 Automatic gain control for c0 ('max', 'emax', 'noise', or 'none')
@@ -40,16 +66,13 @@ Automatic gain control for c0 ('max', 'emax', 'noise', or 'none')
 Initial threshold for automatic gain control
 .TP
 .B \-allphone
-phoneme decoding with phonetic lm
+phoneme decoding with phonetic lm (given here)
 .TP
 .B \-allphone_ci
 Perform phoneme decoding with phonetic lm and context-independent units only
 .TP
 .B \-alpha
 Preemphasis parameter
-.TP
-.B \-argfile
-file giving extra arguments.
 .TP
 .B \-ascale
 Inverse of acoustic model scale for confidence score calculation
@@ -58,7 +81,7 @@ Inverse of acoustic model scale for confidence score calculation
 Inverse weight applied to acoustic scores.
 .TP
 .B \-backtrace
-Print results and backtraces to log file.
+Print results and backtraces to log.
 .TP
 .B \-beam
 Beam width applied to every frame in Viterbi search (smaller values mean wider beam)
@@ -73,16 +96,13 @@ Language model probability weight for bestpath search
 Number of components in the input feature vector
 .TP
 .B \-cmn
-Cepstral mean normalization scheme ('current', 'prior', or 'none')
+Cepstral mean normalization scheme ('live', 'batch', or 'none')
 .TP
 .B \-cmninit
-Initial values (comma-separated) for cepstral mean when 'prior' is used
+Initial values (comma-separated) for cepstral mean when 'live' is used
 .TP
 .B \-compallsen
 Compute all senone scores in every frame (can be faster when there are many senones)
-.TP
-.B \-debug
-level for debugging messages
 .TP
 .B \-dict
 pronunciation dictionary (lexicon) input file
@@ -117,6 +137,12 @@ Frame rate
 .B \-fsg
 format finite state grammar file
 .TP
+.B \-fsgdir
+directory for FSG files
+.TP
+.B \-fsgext
+extension for FSG files (including leading dot)
+.TP
 .B \-fsgusealtpron
 Add alternate pronunciations to FSG
 .TP
@@ -147,12 +173,6 @@ Run forward lexicon-tree search (1st pass)
 .B \-hmm
 containing acoustic model files.
 .TP
-.B \-infile
-file to transcribe.
-.TP
-.B \-inmic
-Transcribe audio from microphone.
-.TP
 .B \-input_endian
 Endianness of input data, big or little, ignored if NIST or MS Wav
 .TP
@@ -169,7 +189,7 @@ file with keyphrases to spot, one per line
 Delay to wait for best detection score
 .TP
 .B \-kws_plp
-Phone loop probability for keyword spotting
+Phone loop probability for keyphrase spotting
 .TP
 .B \-kws_threshold
 Threshold for p(hyp)/p(alternatives) ratio
@@ -200,6 +220,9 @@ Base in which all log-likelihoods calculated
 .TP
 .B \-logfn
 to write log messages in
+.TP
+.B \-loglevel
+Minimum level of log messages (DEBUG, INFO, WARN, ERROR)
 .TP
 .B \-logspec
 Write out logspectral files instead of cepstra
@@ -250,7 +273,7 @@ Use memory-mapped I/O (if possible) for model files
 Number of cep coefficients
 .TP
 .B \-nfft
-Size of FFT
+Size of FFT, or 0 to set automatically (recommended)
 .TP
 .B \-nfilt
 Number of filter banks
@@ -286,7 +309,7 @@ to log raw audio files to
 Remove DC offset from each frame
 .TP
 .B \-remove_noise
-Remove noise with spectral subtraction in mel-energies
+Remove noise using spectral subtraction
 .TP
 .B \-round_filters
 Round mel filter frequencies to DFT points
@@ -314,9 +337,6 @@ Write out cepstral-smoothed logspectral files
 .TP
 .B \-svspec
 specification (e.g., 24,0-11/25,12-23/26-38 or 0-12/13-25/26-38)
-.TP
-.B \-time
-Print word times in file transcription.
 .TP
 .B \-tmat
 state transition matrix input file
