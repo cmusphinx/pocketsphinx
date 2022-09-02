@@ -66,7 +66,7 @@ which defaults to `live`.  The commands are as follows:
     to make the lines more readable:
     
     - `b`: Start time in seconds, from the beginning of the stream
-    - `d`: Duration in seconds, from the beginning of the stream
+    - `d`: Duration in seconds
     - `p`: Estimated probability of the recognition result, i.e. a
       number between 0 and 1 which may be used as a confidence score
     - `t`: Full text of recognition result
