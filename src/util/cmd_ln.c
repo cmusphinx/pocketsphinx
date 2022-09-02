@@ -286,11 +286,12 @@ arg_log_r(cmd_ln_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
                     break;
                 case ARG_STRING_LIST:
                     array = (char const**)vp->val.ptr;
-                    if (array)
+                    if (array) {
                         E_INFOCONT("    ");
                         for (l = 0; array[l] != 0; l++) {
                             E_INFOCONT("%s,", array[l]);
                         }
+                    }
                     break;
                 case ARG_BOOLEAN:
                 case REQARG_BOOLEAN:
