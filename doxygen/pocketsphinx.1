@@ -1,37 +1,17 @@
-.TH POCKETSPHINX_CONTINUOUS 1 "2016-04-01"
+.TH POCKETSPHINX 1 "2016-04-01"
 .SH NAME
-pocketsphinx_continuous \- Run speech recognition in continuous listening mode
+pocketsphinx \- Run speech recognition on audio data
 .SH SYNOPSIS
-.B pocketsphinx_continuous
-.RI [ \fB\-infile\fR
-\fIfilename.wav\fR ]
-[ \fB\-inmic yes\fR ]
-[ \fIoptions\fR ]...
+.B pocketsphinx
+[ \fIoptions\fR... ]
+[ \fBlive\fR |
+\fBsingle\fR |
+\fBsoxflags\fR ]
 .SH DESCRIPTION
 .PP
-This program opens the audio device or a file and waits for speech.  When it
-detects an utterance, it performs speech recognition on it.
-.PP
-To record from microphone and decode use 
-.TP
-.B \-inmic yes
-.PP
-To decode a 16kHz 16-bit mono WAV file use 
-.TP
-.B \-infile \fIfilename.wav\fR
-.PP
-You can also specify
-.B \-lm
-or
-.B \-fsg
-or
-.B \-kws
-depending on whether you are using a statistical language
-model or a finite-state grammar or look for a keyphase.
+This program reads standard input, attempts to recognize speech in it,
+and writes the results to standard input as JSON objects.
 .SH OPTIONS
-.TP
-.B \-adcdev
-of audio device to use for input.
 .TP
 .B \-agc
 Automatic gain control for c0 ('max', 'emax', 'noise', or 'none')
