@@ -11,6 +11,7 @@ static int global_done = 0;
 void
 catch_sig(int signum)
 {
+    (void)signum;
     global_done = 1;
 }
 
@@ -30,7 +31,7 @@ main(int argc, char *argv[])
     ps_default_search_args(config);
     if ((decoder = ps_init(config)) == NULL)
         E_FATAL("PocketSphinx decoder init failed\n");
-    #define SOXCMD "sox -q -r %d -c 1 -b 16 -e signed-integer -d -t raw -"
+    #define SOXCMD "sox -q -r %ld -c 1 -b 16 -e signed-integer -d -t raw -"
     len = snprintf(NULL, 0, SOXCMD,
                    cmd_ln_int_r(config, "-samprate"));
     if ((soxcmd = malloc(len + 1)) == NULL)

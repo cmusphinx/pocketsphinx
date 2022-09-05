@@ -11,6 +11,7 @@ static int global_done = 0;
 void
 catch_sig(int signum)
 {
+    (void)signum;
     global_done = 1;
 }
 
@@ -21,9 +22,10 @@ main(int argc, char *argv[])
     char *soxcmd;
     FILE *sox;
     short *frame;
-    size_t len, frame_size;
-    int prev_is_speech;
+    size_t frame_size;
+    int len, prev_is_speech;
 
+    (void)argc; (void)argv;
     if ((vader = ps_vad_init(0, 0, 0)) == NULL)
         E_FATAL("PocketSphinx VAD init failed\n");
     #define SOXCMD "sox -q -r %d -c 1 -b 16 -e signed-integer -d -t raw -"

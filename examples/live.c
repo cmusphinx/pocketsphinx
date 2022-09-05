@@ -11,6 +11,7 @@ static int global_done = 0;
 static void
 catch_sig(int signum)
 {
+    (void)signum;
     global_done = 1;
 }
 
@@ -18,7 +19,7 @@ static FILE *
 popen_sox(int sample_rate)
 {
     char *soxcmd;
-    size_t len;
+    int len;
     FILE *sox;
     #define SOXCMD "sox -q -r %d -c 1 -b 16 -e signed-integer -d -t raw -"
     len = snprintf(NULL, 0, SOXCMD, sample_rate);
