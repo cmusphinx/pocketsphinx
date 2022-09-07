@@ -35,7 +35,6 @@
 import collections
 import os
 import signal
-import sounddevice
 from contextlib import contextmanager
 
 from . import _pocketsphinx
@@ -90,6 +89,11 @@ class Pocketsphinx(Decoder):
     """
 
     def __init__(self, **kwargs):
+        # This never actually worked despite what the documentation
+        # said, but let's at least avoid nasty surprises
+        for badkey in ("lm", "dict", "dic"):
+            if badkey in kwargs and kwargs[badkey] is False:
+                del kwargs[badkey]
         if kwargs.get("dic") is not None and kwargs.get("dict") is None:
             kwargs["dict"] = kwargs.pop("dic")
         if kwargs.pop("verbose", False) is True:
@@ -183,6 +187,7 @@ class AudioFile(Pocketsphinx):
         # You would never actually set these!
         kwargs.pop("no_search", False)
         kwargs.pop("full_utt", False)
+        kwargs.pop("buffer_size", False)
         self.keyphrase = kwargs.get("keyphrase")
 
         super(AudioFile, self).__init__(**kwargs)
@@ -225,9 +230,16 @@ class LiveSpeech(Pocketsphinx):
         # Setting these will not do anything good!
         kwargs.pop("no_search", False)
         kwargs.pop("full_utt", False)
+        kwargs.pop("buffer_size", False)
 
         self.keyphrase = kwargs.get("keyphrase")
 
+        try:
+            import sounddevice
+            assert sounddevice
+        except Exception as e:
+            # In case PortAudio is not present, for instance
+            raise RuntimeError("LiveSpeech not supported: %s" % e)
         self.ad = sounddevice.RawInputStream(
             samplerate=self.sampling_rate,
             # WE DO NOT CARE ABOUT LATENCY!
