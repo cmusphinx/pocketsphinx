@@ -1,4 +1,4 @@
-PocketSphinx 5.0.0 release candidate 2
+PocketSphinx 5.0.0 release candidate 3
 ======================================
 
 This is PocketSphinx, one of Carnegie Mellon University's open source large
