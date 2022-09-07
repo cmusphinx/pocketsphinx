@@ -6,7 +6,7 @@ Segment speech endlessly from the default audio device.
 # MIT license (c) 2022, see LICENSE for more information.
 # Author: David Huggins-Daines <dhdaines@gmail.com>
 
-from pocketsphinx5 import Segmenter
+from pocketsphinx import Segmenter
 import subprocess
 
 seg = Segmenter()

@@ -6,7 +6,7 @@ Recognize speech endlessly from the default audio device.
 # MIT license (c) 2022, see LICENSE for more information.
 # Author: David Huggins-Daines <dhdaines@gmail.com>
 
-from pocketsphinx5 import Decoder
+from pocketsphinx import Decoder
 import subprocess
 import os
 BUFSIZE = 4096  # about 250ms
