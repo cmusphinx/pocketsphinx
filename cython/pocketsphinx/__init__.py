@@ -37,8 +37,7 @@ import os
 import signal
 from contextlib import contextmanager
 
-from . import _pocketsphinx
-
+from . import _pocketsphinx as pocketsphinx  # noqa: F401
 from ._pocketsphinx import LogMath  # noqa: F401
 from ._pocketsphinx import Config  # noqa: F401
 from ._pocketsphinx import Decoder  # noqa: F401
@@ -71,7 +70,7 @@ def get_model_path(subpath=None):
 
     Returns:
         The requested path within the model directory."""
-    model_path = _pocketsphinx._ps_default_modeldir()
+    model_path = pocketsphinx._ps_default_modeldir()
     if model_path is None:
         model_path = os.path.join(os.path.dirname(__file__), "model")
     if subpath is not None:
