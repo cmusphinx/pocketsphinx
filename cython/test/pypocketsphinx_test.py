@@ -112,7 +112,7 @@ class TestKws(TestCase):
         for phrase in AudioFile(audio_file=os.path.join(DATADIR, "goforward.raw"),
                                 keyphrase="forward", kws_threshold=1e20):
             segments = phrase.segments(detailed=True)
-        self.assertEqual(segments, [("forward", -676, 63, 121)])
+        self.assertEqual(segments, [("forward", -706, 63, 121)])
 
 
 class TestLm(TestCase):

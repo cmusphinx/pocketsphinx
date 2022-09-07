@@ -35,6 +35,7 @@
 import collections
 import os
 import signal
+import sounddevice
 from contextlib import contextmanager
 
 from . import _pocketsphinx
@@ -81,12 +82,19 @@ def get_model_path(subpath=None):
 
 
 class Pocketsphinx(Decoder):
+    """Compatibility wrapper class.
+
+    This class is deprecated, as most of its functionality is now
+    available in the main `Decoder` class, but it is here in case you
+    had code that used the old external pocketsphinx-python module.
+    """
+
     def __init__(self, **kwargs):
         if kwargs.get("dic") is not None and kwargs.get("dict") is None:
             kwargs["dict"] = kwargs.pop("dic")
         if kwargs.pop("verbose", False) is True:
             kwargs["loglevel"] = "INFO"
-
+        self.start_frame = 0
         super(Pocketsphinx, self).__init__(**kwargs)
 
     def __str__(self):
@@ -116,8 +124,15 @@ class Pocketsphinx(Decoder):
     def segments(self, detailed=False):
         if detailed:
             lmath = self.get_logmath()
-            return [(s.word, lmath.log(s.prob),
-                     s.start_frame, s.end_frame) for s in self.seg()]
+            return [
+                (
+                    s.word,
+                    lmath.log(s.prob),
+                    self.start_frame + s.start_frame,
+                    self.start_frame + s.end_frame,
+                )
+                for s in self.seg()
+            ]
         else:
             return [s.word for s in self.seg()]
 
@@ -140,7 +155,9 @@ class Pocketsphinx(Decoder):
 
     def best(self, count=10):
         lmath = self.get_logmath()
-        return [(h.hypstr, lmath.log(h.score)) for h, i in zip(self.nbest(), range(count))]
+        return [
+            (h.hypstr, lmath.log(h.score)) for h, i in zip(self.nbest(), range(count))
+        ]
 
     def confidence(self):
         hyp = self.hyp()
@@ -149,72 +166,103 @@ class Pocketsphinx(Decoder):
 
 
 class AudioFile(Pocketsphinx):
-    def __init__(self, **kwargs):
+    """Simple audio file segmentation and speech recognition.
+
+    It is recommended to use the `Segmenter` and `Decoder` classes
+    directly, but this is here in case you had code that used the old
+    external pocketsphinx-python module, or need something very
+    simple.
+
+    """
+    def __init__(self, audio_file=None, **kwargs):
         signal.signal(signal.SIGINT, self.stop)
 
-        self.audio_file = kwargs.pop("audio_file", None)
-        self.buffer_size = kwargs.pop("buffer_size", 2048)
-        self.no_search = kwargs.pop("no_search", False)
-        self.full_utt = kwargs.pop("full_utt", False)
+        self.audio_file = audio_file
+        self.segmenter = Segmenter()
 
+        # You would never actually set these!
+        kwargs.pop("no_search", False)
+        kwargs.pop("full_utt", False)
         self.keyphrase = kwargs.get("keyphrase")
 
-        self.in_speech = False
-        self.buf = bytearray(self.buffer_size)
-
         super(AudioFile, self).__init__(**kwargs)
-
         self.f = open(self.audio_file, "rb")
 
     def __iter__(self):
         with self.f:
-            with self.start_utterance():
-                while self.f.readinto(self.buf):
-                    self.process_raw(self.buf, self.no_search, self.full_utt)
-                    if self.keyphrase and self.hyp():
-                        with self.end_utterance():
-                            yield self
-                    elif self.in_speech != self.get_in_speech():
-                        self.in_speech = self.get_in_speech()
-                        if not self.in_speech and self.hyp():
-                            with self.end_utterance():
-                                yield self
+            for speech in self.segmenter.segment(self.f):
+                self.start_frame = int(speech.start_time * self.config["frate"] + 0.5)
+                self.start_utt()
+                self.process_raw(speech.pcm, full_utt=True)
+                if self.keyphrase and self.hyp():
+                    self.end_utt()
+                    yield self
+                else:
+                    self.end_utt()
+                    yield self
 
     def stop(self, *args, **kwargs):
         raise StopIteration
 
 
 class LiveSpeech(Pocketsphinx):
-    def __init__(self, **kwargs):
-        signal.signal(signal.SIGINT, self.stop)
+    """Simple endpointing and live speech recognition.
 
+    This class is not very useful for an actual application.  It is
+    recommended to use the `Endpointer` and `Decoder` classes
+    directly, but it is here in case you had code that used the old
+    external pocketsphinx-python module, or need something incredibly
+    simple.
+
+    """
+
+    def __init__(self, **kwargs):
         self.audio_device = kwargs.pop("audio_device", None)
         self.sampling_rate = kwargs.pop("sampling_rate", 16000)
-        self.buffer_size = kwargs.pop("buffer_size", 2048)
-        self.no_search = kwargs.pop("no_search", False)
-        self.full_utt = kwargs.pop("full_utt", False)
+        self.ep = Endpointer(sample_rate=self.sampling_rate)
+        self.buffer_size = self.ep.frame_bytes
+
+        # Setting these will not do anything good!
+        kwargs.pop("no_search", False)
+        kwargs.pop("full_utt", False)
 
         self.keyphrase = kwargs.get("keyphrase")
 
-        self.in_speech = False
-        self.buf = bytearray(self.buffer_size)
-        self.ad = Ad(self.audio_device, self.sampling_rate)
-
+        self.ad = sounddevice.RawInputStream(
+            samplerate=self.sampling_rate,
+            # WE DO NOT CARE ABOUT LATENCY!
+            blocksize=self.buffer_size // 2,
+            dtype="int16",
+            channels=1,
+            device=self.audio_device,
+        )
         super(LiveSpeech, self).__init__(**kwargs)
 
     def __iter__(self):
         with self.ad:
-            with self.start_utterance():
-                while self.ad.readinto(self.buf) >= 0:
-                    self.process_raw(self.buf, self.no_search, self.full_utt)
-                    if self.keyphrase and self.hyp():
-                        with self.end_utterance():
-                            yield self
-                    elif self.in_speech != self.get_in_speech():
-                        self.in_speech = self.get_in_speech()
-                        if not self.in_speech and self.hyp():
+            not_done = True
+            while not_done:
+                try:
+                    self.buf, _ = self.ad.read(self.buffer_size // 2)
+                    if len(self.buf) == self.buffer_size:
+                        speech = self.ep.process(self.buf)
+                    else:
+                        speech = self.ep.end_stream(self.buf)
+                        not_done = False
+                    if speech is not None:
+                        if not self.in_speech:
+                            self.start_utt()
+                        self.process_raw(speech)
+                        if self.keyphrase and self.hyp():
                             with self.end_utterance():
                                 yield self
+                        elif not self.ep.in_speech:
+                            self.end_utt()
+                            if self.hyp():
+                                yield self
+                except KeyboardInterrupt:
+                    break
 
-    def stop(self, *args, **kwargs):
-        raise StopIteration
+    @property
+    def in_speech(self):
+        return self.get_in_speech()
