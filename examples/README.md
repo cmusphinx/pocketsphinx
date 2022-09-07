@@ -2,8 +2,9 @@ PocketSphinx Examples
 =====================
 
 This directory contains some examples of basic PocketSphinx library
-usage in C and Python.  To compile the C example, you can either use
-the library directly in-place, for example, with `simple.c`:
+usage in C and Python.  To compile the C examples, you can build the
+target `examples`.  If you want to see how it works manually, either
+use the library directly in-place, for example, with `simple.c`:
 
     cmake -DBUILD_SHARED_LIBS=OFF .. && make
     cc -o simple simple.c -I../include -Iinclude -L. -lpocketsphinx -lm
@@ -12,11 +13,14 @@ Or if PocketSphinx is installed:
 
     cc -o simple simple.c $(pkg-config --static --libs --cflags pocketsphinx)
 
-By default they assume you are running from this directory, otherwise
-you could define `MODELDIR` when compiling, e.g.:
+`simple.c` and `live.c` will accept the same set of command-line
+arguments as `pocketsphinx`, so for example, if you have not installed
+PocketSphinx, you will need to specify the acoustic and language
+models, e.g.:
 
-    cc -o simple simple.c -DMODELDIR=/my/models \
-        $(pkg-config --static --libs --cflags pocketsphinx)
+    ./simple -hmm ../model/en-us/en-us \
+        -lm ../model/en-us/en-us.lm.bin \
+        -dict ../model/en-us/cmudict-en-us.dict
 
 The Python scripts, assuming you have installed the `pocketsphinx5`
 module (see [the top-leve README](../README.md) for instructions), can

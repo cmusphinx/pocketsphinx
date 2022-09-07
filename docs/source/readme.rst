@@ -1,5 +1,5 @@
 README File
 ===========
 
-.. include:: ../../README.md
+.. include:: ../../cython/README.md
    :parser: myst_parser.sphinx_
