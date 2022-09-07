@@ -109,7 +109,15 @@ class TestJsgf(TestCase):
 class TestKws(TestCase):
     def test_kws(self):
         segments = []
+        for phrase in AudioFile(os.path.join(DATADIR, "goforward.raw"),
+                                keyphrase="forward", kws_threshold=1e20):
+            segments = phrase.segments(detailed=True)
+        self.assertEqual(segments, [("forward", -706, 63, 121)])
+
+    def test_kws_badapi(self):
+        segments = []
         for phrase in AudioFile(audio_file=os.path.join(DATADIR, "goforward.raw"),
+                                lm=False,  # Make sure this still works
                                 keyphrase="forward", kws_threshold=1e20):
             segments = phrase.segments(detailed=True)
         self.assertEqual(segments, [("forward", -706, 63, 121)])
