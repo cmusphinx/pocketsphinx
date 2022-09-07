@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from pocketsphinx5 import LogMath
+from pocketsphinx import LogMath
 import unittest
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import unittest
-from pocketsphinx5 import LogMath, FsgModel
+from pocketsphinx import LogMath, FsgModel
 
 
 class FsgTest(unittest.TestCase):

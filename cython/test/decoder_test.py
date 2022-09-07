@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import os
-from pocketsphinx5 import Decoder
+from pocketsphinx import Decoder
 import unittest
 
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")

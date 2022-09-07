@@ -3,7 +3,7 @@
 Segment live speech from the default audio device.
 """
 
-from pocketsphinx5 import Vad, Endpointer, set_loglevel
+from pocketsphinx import Vad, Endpointer, set_loglevel
 from contextlib import closing
 import unittest
 import subprocess

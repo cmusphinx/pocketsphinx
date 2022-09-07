@@ -2,7 +2,7 @@
 
 import os
 import unittest
-from pocketsphinx5 import Decoder, get_model_path
+from pocketsphinx import Decoder, get_model_path
 
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")
 

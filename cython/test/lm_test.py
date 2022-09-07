@@ -2,7 +2,7 @@
 
 import unittest
 import os
-from pocketsphinx5 import Decoder, NGramModel
+from pocketsphinx import Decoder, NGramModel
 
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-from pocketsphinx5 import Decoder, Config
+from pocketsphinx import Decoder, Config
 import unittest
 
 MODELDIR = os.path.join(os.path.dirname(__file__), "../../model")

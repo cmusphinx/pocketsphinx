@@ -2,7 +2,7 @@
 
 import unittest
 import os
-from pocketsphinx5 import Decoder, Jsgf
+from pocketsphinx import Decoder, Jsgf
 
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")
 
