@@ -60,14 +60,14 @@ microphone.  For example, to do speech-to-text with the default (some
 kind of US English) model:
 
 ```python
-from pocketsphinx import LiveSpeech
+from pocketsphinx5 import LiveSpeech
 for phrase in LiveSpeech(): print(phrase)
 ```
 
 Or to do keyword search:
 
 ```python
-from pocketsphinx import LiveSpeech
+from pocketsphinx5 import LiveSpeech
 
 speech = LiveSpeech(keyphrase='forward', kws_threshold=1e-20)
 for phrase in speech:
@@ -78,7 +78,7 @@ With your model and dictionary:
 
 ```python
 import os
-from pocketsphinx import LiveSpeech, get_model_path
+from pocketsphinx5 import LiveSpeech, get_model_path
 
 speech = LiveSpeech(
     sampling_rate=16000,  # optional
@@ -98,14 +98,14 @@ from a file.  Currently it supports only raw, single-channel, 16-bit
 PCM data in native byte order.
 
 ```python
-from pocketsphinx import AudioFile
+from pocketsphinx5 import AudioFile
 for phrase in AudioFile("goforward.raw"): print(phrase) # => "go forward ten meters"
 ```
 
 An example of a keyword search:
 
 ```python
-from pocketsphinx import AudioFile
+from pocketsphinx5 import AudioFile
 
 audio = AudioFile("goforward.raw", keyphrase='forward', kws_threshold=1e-20)
 for phrase in audio:
@@ -116,7 +116,7 @@ With your model and dictionary:
 
 ```python
 import os
-from pocketsphinx import AudioFile, get_model_path
+from pocketsphinx5 import AudioFile, get_model_path
 
 model_path = get_model_path()
 
@@ -136,7 +136,7 @@ for phrase in audio:
 Convert frame into time coordinates:
 
 ```python
-from pocketsphinx import AudioFile
+from pocketsphinx5 import AudioFile
 
 # Frames per Second
 fps = 100
