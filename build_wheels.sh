@@ -20,11 +20,11 @@ rm -rf *.whl dist/* py/pocketsphinx.egg-info
 python -m build --sdist
 docker pull quay.io/pypa/manylinux1_x86_64
 for version in cp39-cp39 cp38-cp38 cp37-cp37m; do
-    many1_run /opt/python/$version/bin/pip wheel dist/pocketsphinx5-$VERSION.tar.gz
+    many1_run /opt/python/$version/bin/pip wheel dist/pocketsphinx-$VERSION.tar.gz
 done
 docker pull quay.io/pypa/manylinux2014_x86_64
 for version in cp310-cp310; do
-    many2014_run /opt/python/$version/bin/pip -vv wheel dist/pocketsphinx5-$VERSION.tar.gz
+    many2014_run /opt/python/$version/bin/pip -vv wheel dist/pocketsphinx-$VERSION.tar.gz
 done
 for w in *.whl; do
     many2014_run auditwheel repair -w dist $w
