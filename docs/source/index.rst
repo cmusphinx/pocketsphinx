@@ -15,7 +15,7 @@ be able to simply use `pip`::
 This is a (somewhat) "batteries-included" install, which comes with a
 default model and dictionary.  Sadly, this model is specifically for
 US (and, by extension Canadian) English, so it may not work well for
-your dialect and certainly won't work for your other language.
+your dialect and certainly won't work for your native language.
 
 On Unix-like platforms you may need to install `PortAudio
 <https://portaudio.com>`_ for live audio input to work.  Now you can
@@ -38,8 +38,6 @@ API Documentation
 -----------------
 
 .. toctree::
-   :maxdepth: 2
-
    pocketsphinx
    config_params
 
