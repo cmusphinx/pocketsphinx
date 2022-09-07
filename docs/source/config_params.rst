@@ -2,7 +2,7 @@ Configuration parameters
 ========================
 
 These are the parameters currently recognized by
-`pocketsphinx5.Config` and `pocketsphinx5.Decoder` along with their
+`pocketsphinx.Config` and `pocketsphinx.Decoder` along with their
 default values.
 
 .. method:: Config(*args, **kwargs)
@@ -17,7 +17,7 @@ default values.
         config = Config(hmm="path/to/things", dict="my.dict")
 
    The same keyword arguments can also be passed directly to the
-   constructor for `pocketsphinx5.Decoder`.
+   constructor for `pocketsphinx.Decoder`.
 
 
    :keyword str hmm: Directory containing acoustic model files.

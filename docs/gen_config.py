@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 
 """Generate the config.rst source from the currently installed version
-of PocketSphinx5.
+of PocketSphinx.
 
 FIXME: This should be integrated into the Sphinx build but I haven't
 figured out how to do that yet.
 """
 
-from pocketsphinx5 import Decoder
+from pocketsphinx import Decoder
 
 PREAMBLE = """Configuration parameters
 ========================
 
 These are the parameters currently recognized by
-`pocketsphinx5.Config` and `pocketsphinx5.Decoder` along with their
+`pocketsphinx.Config` and `pocketsphinx.Decoder` along with their
 default values.
 
 .. method:: Config(*args, **kwargs)
@@ -28,7 +28,7 @@ default values.
         config = Config(hmm="path/to/things", dict="my.dict")
 
    The same keyword arguments can also be passed directly to the
-   constructor for `pocketsphinx5.Decoder`.
+   constructor for `pocketsphinx.Decoder`.
 
 """
 

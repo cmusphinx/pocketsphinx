@@ -1,4 +1,4 @@
-PocketSphinx5 Documentation
+PocketSphinx Documentation
 ============================
 
 .. toctree::
@@ -6,7 +6,7 @@ PocketSphinx5 Documentation
    :caption: Contents:
 
    readme
-   pocketsphinx5
+   pocketsphinx
    config_params
 
 Indices and tables
