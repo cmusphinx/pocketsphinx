@@ -1,4 +1,6 @@
 build
+docs/build
+cython/pocketsphinx/model
 _skbuild
 __pycache__
 *~

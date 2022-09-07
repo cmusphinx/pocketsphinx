@@ -22,7 +22,7 @@ models, e.g.:
         -lm ../model/en-us/en-us.lm.bin \
         -dict ../model/en-us/cmudict-en-us.dict
 
-The Python scripts, assuming you have installed the `pocketsphinx5`
+The Python scripts, assuming you have installed the `pocketsphinx`
 module (see [the top-leve README](../README.md) for instructions), can
 just be run as-is:
 

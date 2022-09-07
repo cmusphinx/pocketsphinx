@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('../../py'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'PocketSphinx5'
+project = 'PocketSphinx'
 copyright = '2022, David Huggins-Daines'
 author = 'David Huggins-Daines'
 

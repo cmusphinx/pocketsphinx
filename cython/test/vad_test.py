@@ -3,7 +3,7 @@ import wave
 import os
 from memory_profiler import memory_usage
 
-from pocketsphinx5 import Vad
+from pocketsphinx import Vad
 
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data/vad")
 

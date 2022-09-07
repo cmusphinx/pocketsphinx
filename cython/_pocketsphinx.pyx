@@ -12,11 +12,11 @@ from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy
 import itertools
 import logging
-import pocketsphinx5
+import pocketsphinx
 import os
 cimport _pocketsphinx
 
-LOGGER = logging.getLogger("pocketsphinx5")
+LOGGER = logging.getLogger("pocketsphinx")
 
 cdef class Config:
     """Configuration object for PocketSphinx.
@@ -94,7 +94,7 @@ cdef class Config:
         """
         # Yes, full of race conditions, don't really care (should we?)
         if self.get_string("-hmm") is None:
-            default_am = pocketsphinx5.get_model_path("en-us/en-us")
+            default_am = pocketsphinx.get_model_path("en-us/en-us")
             if os.path.exists(os.path.join(default_am, "means")):
                 self.set_string("-hmm", default_am)
         if (self.get_string("-lm") is None
@@ -103,11 +103,11 @@ cdef class Config:
             and self.get_string("-lmctl") is None
             and self.get_string("-kws") is None
             and self.get_string("-keyphrase") is None):
-            default_lm = pocketsphinx5.get_model_path("en-us/en-us.lm.bin")
+            default_lm = pocketsphinx.get_model_path("en-us/en-us.lm.bin")
             if os.path.exists(default_lm):
                 self.set_string("-lm", default_lm)
         if self.get_string("-dict") is None:
-            default_dict = pocketsphinx5.get_model_path("en-us/cmudict-en-us.dict")
+            default_dict = pocketsphinx.get_model_path("en-us/cmudict-en-us.dict")
             if os.path.exists(default_dict):
                 self.set_string("-dict", default_dict)
 
@@ -319,7 +319,7 @@ cdef class Config:
                 raise ValueError("Unknown type %d in argument %s"
                                  % (base_type, name))
             arg = arg + 1
-            yield pocketsphinx5.Arg(name=name, default=default, doc=doc,
+            yield pocketsphinx.Arg(name=name, default=default, doc=doc,
                                     type=arg_type, required=required)
 
 cdef class LogMath:
@@ -1727,7 +1727,7 @@ def _ps_default_modeldir():
     """Get the system default model path from the PocketSphinx library.
 
     Do not use this function directly, use
-    pocketsphinx5.get_model_path() instead.
+    pocketsphinx.get_model_path() instead.
 
     Returns:
       str: System default model path from PocketSphinx library.

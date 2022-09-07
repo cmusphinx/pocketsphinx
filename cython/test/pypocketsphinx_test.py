@@ -8,7 +8,7 @@ be compatible.
 """
 
 import os
-from pocketsphinx5 import Pocketsphinx, AudioFile, NGramModel, Jsgf
+from pocketsphinx import Pocketsphinx, AudioFile, NGramModel, Jsgf
 from unittest import TestCase, main
 
 MODELDIR = os.path.join(os.path.dirname(__file__), "../../model")

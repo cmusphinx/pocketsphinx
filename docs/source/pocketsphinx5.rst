@@ -1,67 +1,78 @@
-pocketsphinx5 package
+pocketsphinx package
 ======================
 
-.. automodule:: pocketsphinx5
+.. automodule:: pocketsphinx
 
 Decoder class
 -------------
 
-.. autoclass:: pocketsphinx5.Decoder
+.. autoclass:: pocketsphinx.Decoder
+   :members:
+   :undoc-members:
+
+Simple Recognition classes
+--------------------------
+
+.. autoclass:: pocketsphinx.AudioFile
+   :members:
+   :undoc-members:
+
+.. autoclass:: pocketsphinx.LiveSpeech
    :members:
    :undoc-members:
 
 Segmentation and Endpointing classes
 ------------------------------------
 
-.. autoclass:: pocketsphinx5.Segmenter
+.. autoclass:: pocketsphinx.Segmenter
    :members:
    :no-undoc-members:
 
-.. autoclass:: pocketsphinx5.segmenter.SpeechSegment
+.. autoclass:: pocketsphinx.segmenter.SpeechSegment
    :members:
    :no-undoc-members:
 
-.. autoclass:: pocketsphinx5.Endpointer
+.. autoclass:: pocketsphinx.Endpointer
    :members:
    :no-undoc-members:
 
-.. autoclass:: pocketsphinx5.Vad
+.. autoclass:: pocketsphinx.Vad
    :members:
    :no-undoc-members:
 
 Other classes
 -------------
 
-.. autoclass:: pocketsphinx5.Config
+.. autoclass:: pocketsphinx.Config
    :members:
    :no-undoc-members:
 
-.. autoclass:: pocketsphinx5.Arg
+.. autoclass:: pocketsphinx.Arg
    :members:
    :undoc-members:
 
-.. autoclass:: pocketsphinx5.LogMath
+.. autoclass:: pocketsphinx.LogMath
    :members:
    :undoc-members:
 
-.. autoclass:: pocketsphinx5.Jsgf
+.. autoclass:: pocketsphinx.Jsgf
    :members:
    :undoc-members:
 
-.. autoclass:: pocketsphinx5.JsgfRule
+.. autoclass:: pocketsphinx.JsgfRule
    :members:
    :undoc-members:
 
-.. autoclass:: pocketsphinx5.NGramModel
+.. autoclass:: pocketsphinx.NGramModel
    :members:
    :undoc-members:
 
-.. autoclass:: pocketsphinx5.FsgModel
+.. autoclass:: pocketsphinx.FsgModel
    :members:
    :undoc-members:
 
-.. autoclass:: pocketsphinx5.Segment
+.. autoclass:: pocketsphinx.Segment
    :no-members:
 
-.. autoclass:: pocketsphinx5.Hypothesis
+.. autoclass:: pocketsphinx.Hypothesis
    :no-members:

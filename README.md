@@ -102,7 +102,7 @@ Programming
 For programming, see the [examples directory](./examples/) for a
 number of examples of using the library from C and Python.  You can
 also read the [documentation for the Python
-API](https://pocketsphinx5.readthedocs.io) or [the C
+API](https://pocketsphinx.readthedocs.io) or [the C
 API](https://cmusphinx.github.io/doc/pocketsphinx/)
 
 Authors

@@ -22,7 +22,7 @@ Installation
 You should be able to install this with pip for recent platforms and
 versions of Python:
 
-    pip3 install pocketsphinx5
+    pip3 install pocketsphinx
 
 Alternately, you can also compile it from the source tree.  I highly
 suggest doing this in a virtual environment (replace
@@ -46,7 +46,7 @@ Usage
 
 See the [examples directory](../examples/) for a number of examples of
 using the library from Python.  You can also read the [documentation
-for the Python API](https://pocketsphinx5.readthedocs.io) or [the C
+for the Python API](https://pocketsphinx.readthedocs.io) or [the C
 API](https://cmusphinx.github.io/doc/pocketsphinx/).
 
 It also mostly supports the same APIs as the previous
@@ -60,14 +60,14 @@ microphone.  For example, to do speech-to-text with the default (some
 kind of US English) model:
 
 ```python
-from pocketsphinx5 import LiveSpeech
+from pocketsphinx import LiveSpeech
 for phrase in LiveSpeech(): print(phrase)
 ```
 
 Or to do keyword search:
 
 ```python
-from pocketsphinx5 import LiveSpeech
+from pocketsphinx import LiveSpeech
 
 speech = LiveSpeech(keyphrase='forward', kws_threshold=1e-20)
 for phrase in speech:
@@ -78,7 +78,7 @@ With your model and dictionary:
 
 ```python
 import os
-from pocketsphinx5 import LiveSpeech, get_model_path
+from pocketsphinx import LiveSpeech, get_model_path
 
 speech = LiveSpeech(
     sampling_rate=16000,  # optional
@@ -98,14 +98,14 @@ from a file.  Currently it supports only raw, single-channel, 16-bit
 PCM data in native byte order.
 
 ```python
-from pocketsphinx5 import AudioFile
+from pocketsphinx import AudioFile
 for phrase in AudioFile("goforward.raw"): print(phrase) # => "go forward ten meters"
 ```
 
 An example of a keyword search:
 
 ```python
-from pocketsphinx5 import AudioFile
+from pocketsphinx import AudioFile
 
 audio = AudioFile("goforward.raw", keyphrase='forward', kws_threshold=1e-20)
 for phrase in audio:
@@ -116,7 +116,7 @@ With your model and dictionary:
 
 ```python
 import os
-from pocketsphinx5 import AudioFile, get_model_path
+from pocketsphinx import AudioFile, get_model_path
 
 model_path = get_model_path()
 
@@ -136,7 +136,7 @@ for phrase in audio:
 Convert frame into time coordinates:
 
 ```python
-from pocketsphinx5 import AudioFile
+from pocketsphinx import AudioFile
 
 # Frames per Second
 fps = 100

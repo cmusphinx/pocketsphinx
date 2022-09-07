@@ -6,7 +6,7 @@ Detect speech endlessly from the default audio device.
 # MIT license (c) 2022, see LICENSE for more information.
 # Author: David Huggins-Daines <dhdaines@gmail.com>
 
-from pocketsphinx5 import Vad
+from pocketsphinx import Vad
 import subprocess
 
 vader = Vad()
