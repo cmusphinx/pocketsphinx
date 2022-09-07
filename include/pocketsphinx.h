@@ -723,8 +723,8 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
 /**
  * @mainpage PocketSphinx API Documentation
  * @author David Huggins-Daines <dhdaines@gmail.com>
- * @version 5.0.0rc2
- * @date August 26, 2022
+ * @version 5.0.0rc3
+ * @date September 7, 2022
  *
  * @section intro_sec Introduction
  *
@@ -771,7 +771,7 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * By default CMake will try to install things in `/usr/local`, which
  * you might not have access to.  If you want to install somewhere
  * else you need to set `CMAKE_INSTALL_PREFIX` *when running cmake for
- * the first time*:
+ * the first time*, for example:
  *
  *     cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/.local
  *
@@ -785,30 +785,67 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * On Windows, the process is similar, but you will need to tell CMake
  * what build tool you are using with the `-G` option, and there are
  * many of them.  The build is known to work with `nmake` but it is
- * easiest just to use Visual Studio Code.  Once built, you will find
- * the DLL and EXE files in `build\Debug` or `build\Release` depending
- * on your build type.  If the EXE files do not run, you need to
- * ensure that `pocketsphinx.dll` is located in the same directory as
- * them.
+ * easiest just to use Visual Studio Code, which should automatically
+ * detect and offer to run the build when you add the source directory
+ * to your list of directories.  Once built, you will find the DLL and
+ * EXE files in `build\Debug` or `build\Release` depending on your
+ * build type.  If the EXE files do not run, you need to ensure that
+ * `pocketsphinx.dll` is located in the same directory as them.
  *
  * @section programming_sec Using the Library
  *
  * The Python interface is documented at
- * http://pocketsphinx5.readthedocs.io/.  Here is a full example,
- * which will be explained in more detail soon:
- *
- * @include live.py
- *
- * Here is a complete example of using the C programming interface,
- * which will be explained in more detail soon:
- *
- * @include live.c
+ * http://pocketsphinx.readthedocs.io/, where you will find a quick
+ * start guide as well as a full API reference.
  *
  * @section faq_sec Frequently Asked Questions
  *
- * @subsection faq_faq Why are there no frequently asked questions?
+ * @subsection faq_audio Why doesn't my audio device work?
  *
- * I'm glad you asked! There will be some soon.
+ * Because it's an audio device.  They don't work, at least for things
+ * other than making annoying "beep boop" noises and playing Video
+ * Games.  More generally, I cannot solve this problem for you,
+ * because every single computer, operating system, sound card,
+ * microphone, phase of the moon, and day of the week is different
+ * when it comes to recording audio.  That's why I suggest you use
+ * SoX, because (a) it usually works, and (b) whoever wrote it seems
+ * to have retired long ago, so you can't bother them.
+ *
+ * @subsection faq_error The recognized text is wrong.
+ *
+ * That's not a question!  But since this isn't Jeopardy, and my name
+ * is not Watson, I'll try to answer it anyway.  Be aware that the
+ * answer depends on many things, first and foremost what you mean by
+ * "wrong".
+ *
+ * If it *sounds* the same, e.g. "wreck a nice beach" when you said
+ * "recognize speech" then the issue is that the **language model** is
+ * not appropriate for the task, domain, dialect, or whatever it is
+ * you're trying to recognize.  You may wish to consider writing a
+ * JSGF grammar and using it instead of the default language model
+ * (with the `-jsgf` flag).  Or you can get an N-best list or word
+ * lattice and rescore it with a better language model, such as a
+ * recurrent neural network or a human being.
+ *
+ * If it is total nonsense, or if it is just blank, or if it's the
+ * same word repeated, e.g. "a a a a a a", then there is likely a
+ * problem with the input audio.  The sampling rate could be wrong, or
+ * even if it's correct, you may have narrow-band data.  Try to look
+ * at the spectrogram (Audacity can show you this) and see if it looks
+ * empty or flat below the frequency in the `-upperf` flag.
+ * Alternately it could just be very noisy.  In particular, if the
+ * noise consists of other people talking, automatic speech
+ * recognition will nearly always fail.
+ *
+ * @subsection faq_tech Why don't you support (pick one or more: WFST,
+ * fMLLR, SAT, DNN, CTC, LAS, CNN, RNN, LSTM, etc)?
+ *
+ * Not because there's anything wrong with those things (except LAS,
+ * which is kind of a dumb idea) but simply because PocketSphinx does
+ * not do them, or anything like them, and there is no point in adding
+ * them to it when other systems exist.  Many of them are also heavily
+ * dependent on distasteful and wasteful platforms like C++, CUDA,
+ * TensorFlow, PyTorch, and so on.
  *
  * @section thanks_sec Acknowledgements
  *
