@@ -1,5 +1,5 @@
-pocketsphinx package
-======================
+Main pocketsphinx package
+=========================
 
 .. automodule:: pocketsphinx
 
