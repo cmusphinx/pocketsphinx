@@ -71,6 +71,7 @@ class TestCepDecoder(TestCase):
             hmm=os.path.join(MODELDIR, "en-us/en-us"),
             lm=os.path.join(MODELDIR, "en-us/en-us.lm.bin"),
             dict=os.path.join(MODELDIR, "en-us/cmudict-en-us.dict"),
+            verbose=True
         )
         with open(os.path.join(DATADIR, "goforward.mfc"), "rb") as f:
             with ps.start_utterance():
