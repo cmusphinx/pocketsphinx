@@ -43,6 +43,8 @@
 #include <sphinxbase/err.h>
 #include <sphinxbase/strfuncs.h>
 
+#include "pocketsphinx_internal.h"
+
 static const arg_t defn[] = {
   { "-help",
     ARG_BOOLEAN,

@@ -46,6 +46,8 @@
 #include <sphinxbase/pio.h>
 #include <sphinxbase/strfuncs.h>
 
+#include "pocketsphinx_internal.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <math.h>

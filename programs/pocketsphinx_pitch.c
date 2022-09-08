@@ -50,6 +50,8 @@
 #include <sphinxbase/err.h>
 #include <sphinxbase/pio.h>
 
+#include "pocketsphinx_internal.h"
+
 static arg_t defn[] = {
   { "-i",
     ARG_STRING,

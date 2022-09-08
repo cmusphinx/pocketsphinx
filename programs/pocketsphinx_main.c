@@ -364,10 +364,10 @@ main(int argc, char *argv[])
     const char *command;
     int rv;
 
-    if ((config = ps_config_parse_args(argc, argv)) == NULL)
+    if ((config = ps_config_parse_args(NULL, argc, argv)) == NULL)
         return 1;
     ps_default_search_args(config);
-    command = find_command(argc, argv);
+    command = ps_config_command(config);
     if (0 == strcmp(command, "soxflags")) {
         rv = soxflags(config);
     }
