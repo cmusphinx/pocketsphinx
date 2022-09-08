@@ -273,7 +273,7 @@ const anytype_t *ps_config_set(ps_config_t *config, const char *name, const anyt
 POCKETSPHINX_EXPORT
 long ps_config_int(ps_config_t *config, const char *name);
 POCKETSPHINX_EXPORT
-int ps_config_boolean(ps_config_t *config, const char *name);
+int ps_config_bool(ps_config_t *config, const char *name);
 POCKETSPHINX_EXPORT
 double ps_config_float(ps_config_t *config, const char *name);
 POCKETSPHINX_EXPORT
@@ -282,7 +282,7 @@ const char *ps_config_str(ps_config_t *config, const char *name);
 POCKETSPHINX_EXPORT
 const anytype_t *ps_config_set_int(ps_config_t *config, const char *name, long val);
 POCKETSPHINX_EXPORT
-const anytype_t *ps_config_set_boolean(ps_config_t *config, const char *name, int val);
+const anytype_t *ps_config_set_bool(ps_config_t *config, const char *name, int val);
 POCKETSPHINX_EXPORT
 const anytype_t *ps_config_set_float(ps_config_t *config, const char *name, double val);
 POCKETSPHINX_EXPORT

@@ -61,7 +61,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-/* Win32/WinCE DLL gunk */
 #include <sphinxbase/sphinxbase_export.h>
 #include <sphinxbase/prim_type.h>
 #include <sphinxbase/hash_table.h>
@@ -116,72 +115,6 @@ typedef struct cmd_ln_s {
 } cmd_ln_t;
 
 /**
- * Create a cmd_ln_t from NULL-terminated list of arguments.
- *
- * This function creates a cmd_ln_t from a NULL-terminated list of
- * argument strings.  For example, to create the equivalent of passing
- * "-hmm foodir -dsratio 2 -lm bar.lm" on the command-line:
- *
- *  config = cmd_ln_init(NULL, defs, TRUE, "-hmm", "foodir", "-dsratio", "2",
- *                       "-lm", "bar.lm", NULL);
- *
- * Note that for simplicity, <strong>all</strong> arguments are passed
- * as strings, regardless of the actual underlying type.
- *
- * @param inout_cmdln Previous command-line to update, or NULL to create a new one.
- * @param defn Array of argument name definitions, or NULL to allow any arguments.
- * @param strict Whether to fail on duplicate or unknown arguments.
- * @return A cmd_ln_t* containing the results of command line parsing, or NULL on failure.
- */
-SPHINXBASE_EXPORT
-cmd_ln_t *cmd_ln_init(cmd_ln_t *inout_cmdln, arg_t const *defn, int32 strict, ...);
-
-/**
- * Retain ownership of a command-line argument set.
- *
- * @return pointer to retained command-line argument set.
- */
-SPHINXBASE_EXPORT
-cmd_ln_t *cmd_ln_retain(cmd_ln_t *cmdln);
-
-/**
- * Release a command-line argument set and all associated strings.
- *
- * @return new reference count (0 if freed completely)
- */
-SPHINXBASE_EXPORT
-int cmd_ln_free_r(cmd_ln_t *cmdln);
-
-/**
- * Parse a list of strings into argumetns.
- *
- * Parse the given list of arguments (name-value pairs) according to
- * the given definitions.  Argument values can be retrieved in future
- * using cmd_ln_access().  argv[0] is assumed to be the program name
- * and skipped.  Any unknown argument name causes a fatal error.  The
- * routine also prints the prevailing argument values (to stderr)
- * after parsing.
- *
- * @note It is currently assumed that the strings in argv are
- *       allocated statically, or at least that they will be valid as
- *       long as the cmd_ln_t returned from this function.
- *       Unpredictable behaviour will result if they are freed or
- *       otherwise become invalidated.
- *
- * @return A cmd_ln_t containing the results of command line parsing,
- *         or NULL on failure.
- **/
-SPHINXBASE_EXPORT
-cmd_ln_t *cmd_ln_parse_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-line to update,
-                                                     or NULL to create a new one. */
-                         arg_t const *defn,	/**< In: Array of argument name definitions */
-                         int32 argc,		/**< In: Number of actual arguments */
-                         char *argv[],		/**< In: Actual arguments */
-                         int32 strict           /**< In: Fail on duplicate or unknown
-                                                   arguments, or no arguments? */
-    );
-
-/**
  * Parse an arguments file by deliminating on " \r\t\n" and putting each tokens
  * into an argv[] for cmd_ln_parse().
  *
@@ -198,116 +131,6 @@ cmd_ln_t *cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous comma
     );
 
 /**
- * Access the value and metadata for a configuration parameter.
- *
- * This structure is owned by the cmd_ln_t, assume that you must copy
- * anything inside it, including strings, if you wish to retain it,
- * and should never free it manually.
- *
- * @param cmdln Command-line object.
- * @param name the command-line flag to retrieve.
- * @return the value and metadata associated with <tt>name</tt>, or
- *         NULL if <tt>name</tt> does not exist.  You must use
- *         cmd_ln_exists_r() to distinguish between cases where a
- *         value is legitimately NULL and where the corresponding flag
- *         is unknown.
- */
-SPHINXBASE_EXPORT
-cmd_ln_val_t *cmd_ln_access_r(cmd_ln_t *cmdln, char const *name);
-
-/**
- * Access the type of a configuration parameter.
- *
- * This function is provided as a convenience for dynamically typed
- * language bindings.
- *
- * @param cmdln Command-line object.
- * @param name the command-line flag to retrieve.
- * @return the type of the parameter (as a combination of the ARG_*
- *         bits), or 0 if no such parameter exists.
- */
-SPHINXBASE_EXPORT
-int cmd_ln_type_r(cmd_ln_t *cmdln, char const *name);
-
-/**
- * Retrieve a string from a command-line object.
- *
- * The command-line object retains ownership of this string, so you
- * should not attempt to free it manually.
- *
- * @param cmdln Command-line object.
- * @param name the command-line flag to retrieve.
- * @return the string value associated with <tt>name</tt>, or NULL if
- *         <tt>name</tt> does not exist.  You must use
- *         cmd_ln_exists_r() to distinguish between cases where a
- *         value is legitimately NULL and where the corresponding flag
- *         is unknown.
- */
-SPHINXBASE_EXPORT
-char const *cmd_ln_str_r(cmd_ln_t *cmdln, char const *name);
-
-/**
- * Retrieve an array of strings from a command-line object.
- *
- * The command-line object retains ownership of this array, so you
- * should not attempt to free it manually.
- *
- * @param cmdln Command-line object.
- * @param name the command-line flag to retrieve.
- * @return the array of strings associated with <tt>name</tt>, or NULL if
- *         <tt>name</tt> does not exist.  You must use
- *         cmd_ln_exists_r() to distinguish between cases where a
- *         value is legitimately NULL and where the corresponding flag
- *         is unknown.
- */
-SPHINXBASE_EXPORT
-char const **cmd_ln_str_list_r(cmd_ln_t *cmdln, char const *name);
-
-/**
- * Retrieve an integer from a command-line object.
- *
- * @param cmdln Command-line object.
- * @param name the command-line flag to retrieve.
- * @return the integer value associated with <tt>name</tt>, or 0 if
- *         <tt>name</tt> does not exist.  You must use
- *         cmd_ln_exists_r() to distinguish between cases where a
- *         value is legitimately zero and where the corresponding flag
- *         is unknown.
- */
-SPHINXBASE_EXPORT
-long cmd_ln_int_r(cmd_ln_t *cmdln, char const *name);
-
-/**
- * Retrieve a floating-point number from a command-line object.
- *
- * @param cmdln Command-line object.
- * @param name the command-line flag to retrieve.
- * @return the float value associated with <tt>name</tt>, or 0.0 if
- *         <tt>name</tt> does not exist.  You must use
- *         cmd_ln_exists_r() to distinguish between cases where a
- *         value is legitimately zero and where the corresponding flag
- *         is unknown.
- */
-SPHINXBASE_EXPORT
-double cmd_ln_float_r(cmd_ln_t *cmdln, char const *name);
-
-/**
- * Retrieve a boolean value from a command-line object.
- */
-#define cmd_ln_boolean_r(c,n) (cmd_ln_int_r(c,n) != 0)
-
-/**
- * Set a string in a command-line object.
- *
- * @param cmdln Command-line object.
- * @param name The command-line flag to set.
- * @param str String value to set.  The command-line object does not
- *            retain ownership of this pointer.
- */
-SPHINXBASE_EXPORT
-void cmd_ln_set_str_r(cmd_ln_t *cmdln, char const *name, char const *str);
-
-/**
  * Set a string in a command-line object even if it is not present in argument
  * description. Useful for setting extra values computed from configuration, propagated
  * to other parts.
@@ -319,50 +142,6 @@ void cmd_ln_set_str_r(cmd_ln_t *cmdln, char const *name, char const *str);
  */
 SPHINXBASE_EXPORT
 void cmd_ln_set_str_extra_r(cmd_ln_t *cmdln, char const *name, char const *str);
-
-/**
- * Set an integer in a command-line object.
- *
- * @param cmdln Command-line object.
- * @param name The command-line flag to set.
- * @param iv Integer value to set.
- */
-SPHINXBASE_EXPORT
-void cmd_ln_set_int_r(cmd_ln_t *cmdln, char const *name, long iv);
-
-/**
- * Set a floating-point number in a command-line object.
- *
- * @param cmdln Command-line object.
- * @param name The command-line flag to set.
- * @param fv Integer value to set.
- */
-SPHINXBASE_EXPORT
-void cmd_ln_set_float_r(cmd_ln_t *cmdln, char const *name, double fv);
-
-/**
- * Set a boolean value in a command-line object.
- */
-#define cmd_ln_set_boolean_r(c,n,b) (cmd_ln_set_int_r(c,n,(b)!=0))
-
-/*
- * Compatibility macros
- */
-#define cmd_ln_int32_r(c,n)	(int32)cmd_ln_int_r(c,n)
-#define cmd_ln_float32_r(c,n)	(float32)cmd_ln_float_r(c,n)
-#define cmd_ln_float64_r(c,n)	(float64)cmd_ln_float_r(c,n)
-#define cmd_ln_set_int32_r(c,n,i)   cmd_ln_set_int_r(c,n,i)
-#define cmd_ln_set_float32_r(c,n,f) cmd_ln_set_float_r(c,n,(double)f)
-#define cmd_ln_set_float64_r(c,n,f) cmd_ln_set_float_r(c,n,(double)f)
-
-/**
- * Re-entrant version of cmd_ln_exists().
- *
- * @return True if the command line argument exists (i.e. it
- * was one of the arguments defined in the call to cmd_ln_parse_r().
- */
-SPHINXBASE_EXPORT
-int cmd_ln_exists_r(cmd_ln_t *cmdln, char const *name);
 
 /**
  * Print a help message listing the valid argument names, and the associated
