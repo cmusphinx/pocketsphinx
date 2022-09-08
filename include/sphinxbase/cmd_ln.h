@@ -104,62 +104,6 @@ typedef struct cmd_ln_val_s {
 } cmd_ln_val_t;
 
 /**
- * @name Values for arg_t::type
- */
-/* @{ */
-/**
- * Bit indicating a required argument.
- */
-#define ARG_REQUIRED (1<<0)
-/**
- * Integer argument (optional).
- */
-#define ARG_INTEGER  (1<<1)
-/**
- * Floating point argument (optional).
- */
-#define ARG_FLOATING (1<<2)
-/**
- * String argument (optional).
- */
-#define ARG_STRING   (1<<3)
-/**
- * Boolean (true/false) argument (optional).
- */
-#define ARG_BOOLEAN  (1<<4)
-/**
- * String array argument (optional).
- */
-#define ARG_STRING_LIST  (1<<5)
-
-/**
- * Required integer argument.
- */
-#define REQARG_INTEGER (ARG_INTEGER | ARG_REQUIRED)
-/**
- * Required floating point argument.
- */
-#define REQARG_FLOATING (ARG_FLOATING | ARG_REQUIRED)
-/**
- * Required string argument.
- */
-#define REQARG_STRING (ARG_STRING | ARG_REQUIRED)
-/**
- * Required boolean argument.
- */
-#define REQARG_BOOLEAN (ARG_BOOLEAN | ARG_REQUIRED)
-
-/* @} */
-
-
-/**
- * Helper macro to stringify enums and other non-string values for
- * default arguments.
- **/
-#define ARG_STRINGIFY(s) ARG_STRINGIFY1(s)
-#define ARG_STRINGIFY1(s) #s
-
-/**
  * @struct cmd_ln_t
  * Structure (no longer opaque) used to hold the results of command-line parsing.
  */
