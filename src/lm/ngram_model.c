@@ -56,6 +56,7 @@
 #include "sphinxbase/strfuncs.h"
 #include "sphinxbase/case.h"
 
+#include "pocketsphinx_internal.h"
 #include "ngram_model_internal.h"
 #include "ngram_model_trie.h"
 
@@ -163,10 +164,8 @@ ngram_model_read(cmd_ln_t * config,
         float32 lw = 1.0;
         float32 wip = 1.0;
 
-        if (cmd_ln_exists_r(config, "-lw"))
-            lw = cmd_ln_float32_r(config, "-lw");
-        if (cmd_ln_exists_r(config, "-wip"))
-            wip = cmd_ln_float32_r(config, "-wip");
+        lw = ps_config_float(config, "-lw");
+        wip = ps_config_float(config, "-wip");
 
         ngram_model_apply_weights(model, lw, wip);
     }

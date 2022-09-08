@@ -48,7 +48,7 @@ main(int argc, char *argv[])
     TEST_EQUAL(0, strcmp("go forward ten meters", hyp));
     ps_free(ps);
     fclose(rawfh);
-    cmd_ln_free_r(config);
+    ps_config_free(config);
 
 
     TEST_ASSERT(config =
@@ -66,7 +66,7 @@ main(int argc, char *argv[])
     TEST_EQUAL(0, strcmp("go forward ten meters", hyp));
     ps_free(ps);
     fclose(rawfh);
-    cmd_ln_free_r(config);
+    ps_config_free(config);
 
     TEST_ASSERT(config =
             cmd_ln_init(NULL, ps_args(), TRUE,
@@ -83,7 +83,7 @@ main(int argc, char *argv[])
     printf("%s (%d, %d)\n", hyp, score, prob);
     TEST_EQUAL(0, strcmp("go forward ten meters", hyp));
     ps_free(ps);
-    cmd_ln_free_r(config);
+    ps_config_free(config);
     fclose(rawfh);
 
     TEST_ASSERT(config =
@@ -93,7 +93,7 @@ main(int argc, char *argv[])
                 "-jsgf", DATADIR "/defective.gram",
                 NULL));
     TEST_ASSERT(NULL == ps_init(config));
-    cmd_ln_free_r(config);
+    ps_config_free(config);
 
     return 0;
 }

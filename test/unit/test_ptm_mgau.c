@@ -128,12 +128,12 @@ main(int argc, char *argv[])
 #if 0
 	/* Replace it with ms_mgau. */
 	ptm_mgau_free(ps);
-	cmd_ln_set_str_r(config,
+	ps_config_set_str(config,
 			 "-mixw",
 			 MODELDIR "/en-us/en-us/mixture_weights");
 	TEST_ASSERT((acmod->mgau = ms_mgau_init(acmod, lmath, acmod->mdef)));
 	run_acmod_test(acmod);
-	cmd_ln_free_r(config);
+	ps_config_free(config);
 #endif
 
 	return 0;

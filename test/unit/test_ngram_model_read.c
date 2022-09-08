@@ -89,7 +89,7 @@ main(int argc, char *argv[])
 
     fclose(rawfh);
     ps_free(ps);
-    cmd_ln_free_r(config);
+    ps_config_free(config);
 
     return 0;
 }

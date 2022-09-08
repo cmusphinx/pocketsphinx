@@ -132,7 +132,7 @@ ps_expand_model_config(ps_config_t *config)
     /* Disable memory mapping on Blackfin (FIXME: should be uClinux in general). */
 #ifdef __ADSPBLACKFIN__
     E_INFO("Will not use mmap() on uClinux/Blackfin.");
-    cmd_ln_set_boolean_r(config, "-mmap", FALSE);
+    ps_config_set_bool(config, "-mmap", FALSE);
 #endif
 
     /* Get acoustic model filenames and add them to the command-line */
@@ -205,7 +205,7 @@ ps_default_search_args(ps_config_t *config)
     if (hmmdir == NULL && hmmdir_exists(MODELDIR "/en-us/en-us")) {
         hmmdir = MODELDIR "/en-us/en-us";
         E_INFO("Loading default acoustic model from %s\n", hmmdir);
-        cmd_ln_set_str_r(config, "-hmm", hmmdir);
+        ps_config_set_str(config, "-hmm", hmmdir);
     }
 
     if (lmfile == NULL && !ps_config_str(config, "-fsg")
@@ -216,13 +216,13 @@ ps_default_search_args(ps_config_t *config)
         && file_exists(MODELDIR "/en-us/en-us.lm.bin")) {
         lmfile = MODELDIR "/en-us/en-us.lm.bin";
         E_INFO("Loading default language model from %s\n", lmfile);
-        cmd_ln_set_str_r(config, "-lm", lmfile);
+        ps_config_set_str(config, "-lm", lmfile);
     }
 
     if (dictfile == NULL && file_exists(MODELDIR "/en-us/cmudict-en-us.dict")) {
         dictfile = MODELDIR "/en-us/cmudict-en-us.dict";
         E_INFO("Loading default dictionary from %s\n", dictfile);
-        cmd_ln_set_str_r(config, "-dict", dictfile);
+        ps_config_set_str(config, "-dict", dictfile);
     }
 #else
     (void)config;
@@ -826,8 +826,8 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
     /* Create a new scratch config to load this dict (so existing one
      * won't be affected if it fails) */
     newconfig = ps_config_init(NULL);
-    ps_config_set_boolean(newconfig, "-dictcase",
-                          ps_config_boolean(ps->config, "-dictcase"));
+    ps_config_set_bool(newconfig, "-dictcase",
+                          ps_config_bool(ps->config, "-dictcase"));
     ps_config_set_str(newconfig, "-dict", dictfile);
     if (fdictfile)
         cmd_ln_set_str_extra_r(newconfig, "_fdict", fdictfile);
@@ -849,7 +849,7 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
 
     /* Success!  Update the existing config to reflect new dicts and
      * drop everything into place. */
-    cmd_ln_free_r(newconfig);
+    ps_config_free(newconfig);
     dict_free(ps->dict);
     ps->dict = dict;
     dict2pid_free(ps->d2p);
@@ -1264,7 +1264,7 @@ ps_end_utt(ps_decoder_t *ps)
     ptmr_stop(&ps->perf);
 
     /* Log a backtrace if requested. */
-    if (cmd_ln_boolean_r(ps->config, "-backtrace")) {
+    if (ps_config_bool(ps->config, "-backtrace")) {
         const char* hyp;
         ps_seg_t *seg;
         int32 score;

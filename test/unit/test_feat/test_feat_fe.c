@@ -147,7 +147,7 @@ main(int argc, char *argv[])
 	feat_array_free(featbuf2);
 	feat_free(fcb);
 	ckd_free_2d(cepbuf);
-	cmd_ln_free_r(config);
+	ps_config_free(config);
 
 	return 0;
 }

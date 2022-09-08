@@ -59,7 +59,7 @@ main(int argc, char *argv[])
 	}
 	dict_free(dict);
 
-	cmd_ln_free_r(config);
+	ps_config_free(config);
 
 	return 0;
 }

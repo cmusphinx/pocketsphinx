@@ -151,8 +151,8 @@ ngram_fwdflat_init(ngram_search_t *ngs)
     ngs->expand_word_flag = bitvec_alloc(n_words);
     ngs->expand_word_list = ckd_calloc(n_words + 1, sizeof(*ngs->expand_word_list));
     ngs->frm_wordlist = ckd_calloc(ngs->n_frame_alloc, sizeof(*ngs->frm_wordlist));
-    ngs->min_ef_width = cmd_ln_int32_r(ps_search_config(ngs), "-fwdflatefwid");
-    ngs->max_sf_win = cmd_ln_int32_r(ps_search_config(ngs), "-fwdflatsfwin");
+    ngs->min_ef_width = ps_config_int(ps_search_config(ngs), "-fwdflatefwid");
+    ngs->max_sf_win = ps_config_int(ps_search_config(ngs), "-fwdflatsfwin");
     E_INFO("fwdflat: min_ef_width = %d, max_sf_win = %d\n",
            ngs->min_ef_width, ngs->max_sf_win);
 
@@ -169,7 +169,7 @@ void
 ngram_fwdflat_deinit(ngram_search_t *ngs)
 {
     double n_speech = (double)ngs->n_tot_frame
-            / cmd_ln_int32_r(ps_search_config(ngs), "-frate");
+            / ps_config_int(ps_search_config(ngs), "-frate");
 
     E_INFO("TOTAL fwdflat %.2f CPU %.3f xRT\n",
            ngs->fwdflat_perf.t_tot_cpu,
@@ -943,7 +943,7 @@ ngram_fwdflat_finish(ngram_search_t *ngs)
     /* Print out some statistics. */
     if (cf > 0) {
         double n_speech = (double)(cf + 1)
-            / cmd_ln_int32_r(ps_search_config(ngs), "-frate");
+            / ps_config_int(ps_search_config(ngs), "-frate");
         E_INFO("%8d words recognized (%d/fr)\n",
                ngs->bpidx, (ngs->bpidx + (cf >> 1)) / (cf + 1));
         E_INFO("%8d senones evaluated (%d/fr)\n", ngs->st.n_senone_active_utt,

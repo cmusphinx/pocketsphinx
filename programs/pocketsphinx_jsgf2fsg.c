@@ -141,16 +141,16 @@ main(int argc, char *argv[])
         return 1;
     }
 
-    if (cmd_ln_boolean_r(config, "-help")) {
+    if (ps_config_bool(config, "-help")) {
         usagemsg(argv[0]);
     }
 
-    jsgf = jsgf_parse_file(cmd_ln_str_r(config, "-jsgf"), NULL);
+    jsgf = jsgf_parse_file(ps_config_str(config, "-jsgf"), NULL);
     if (jsgf == NULL) {
         return 1;
     }
 
-    rule = cmd_ln_str_r(config, "-toprule") ? cmd_ln_str_r(config, "-toprule") : NULL;
+    rule = ps_config_str(config, "-toprule") ? ps_config_str(config, "-toprule") : NULL;
     if (!(fsg = get_fsg(jsgf, rule))) {
         E_ERROR("No fsg was built for the given rule '%s'.\n"
                 "Check rule name; it should be qualified (with grammar name)\n"
@@ -160,14 +160,14 @@ main(int argc, char *argv[])
     }
 
 
-    if (cmd_ln_boolean_r(config, "-compile")) {
+    if (ps_config_bool(config, "-compile")) {
 	fsg_model_null_trans_closure(fsg, NULL);
     }
 
     
-    if (cmd_ln_str_r(config, "-fsm")) {
-	const char* outfile = cmd_ln_str_r(config, "-fsm");
-	const char* symfile = cmd_ln_str_r(config, "-symtab");
+    if (ps_config_str(config, "-fsm")) {
+	const char* outfile = ps_config_str(config, "-fsm");
+	const char* symfile = ps_config_str(config, "-symtab");
         if (outfile)
             fsg_model_writefile_fsm(fsg, outfile);
         else
@@ -176,7 +176,7 @@ main(int argc, char *argv[])
             fsg_model_writefile_symtab(fsg, symfile);
     }
     else {
-        const char *outfile = cmd_ln_str_r(config, "-fsg");
+        const char *outfile = ps_config_str(config, "-fsg");
         if (outfile)
             fsg_model_writefile(fsg, outfile);
         else

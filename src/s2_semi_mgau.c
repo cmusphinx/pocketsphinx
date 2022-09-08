@@ -896,7 +896,7 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
     int n_bits = 8;
 
     s->n_sen = n_sen; /* FIXME: Should have been done earlier */
-    do_mmap = cmd_ln_boolean_r(s->config, "-mmap");
+    do_mmap = ps_config_bool(s->config, "-mmap");
 
     if ((fp = fopen(file, "rb")) == NULL)
         return -1;
@@ -1249,9 +1249,9 @@ s2_semi_mgau_init(acmod_t *acmod)
     }
 
     /* Read means and variances. */
-    if ((s->g = gauden_init(cmd_ln_str_r(s->config, "_mean"),
-                            cmd_ln_str_r(s->config, "_var"),
-                            cmd_ln_float32_r(s->config, "-varfloor"),
+    if ((s->g = gauden_init(ps_config_str(s->config, "_mean"),
+                            ps_config_str(s->config, "_var"),
+                            ps_config_float(s->config, "-varfloor"),
                             s->lmath)) == NULL) {
         E_ERROR("Failed to read means and variances\n");	
         goto error_out;
@@ -1277,23 +1277,23 @@ s2_semi_mgau_init(acmod_t *acmod)
         }
     }
     /* Read mixture weights */
-    if ((sendump_path = cmd_ln_str_r(s->config, "_sendump"))) {
+    if ((sendump_path = ps_config_str(s->config, "_sendump"))) {
         if (read_sendump(s, acmod->mdef, sendump_path) < 0) {
             goto error_out;
         }
     }
     else {
-        if (read_mixw(s, cmd_ln_str_r(s->config, "_mixw"),
-                      cmd_ln_float32_r(s->config, "-mixwfloor")) < 0) {
+        if (read_mixw(s, ps_config_str(s->config, "_mixw"),
+                      ps_config_float(s->config, "-mixwfloor")) < 0) {
             goto error_out;
         }
     }
-    s->ds_ratio = cmd_ln_int32_r(s->config, "-ds");
+    s->ds_ratio = ps_config_int(s->config, "-ds");
 
     /* Determine top-N for each feature */
     s->topn_beam = ckd_calloc(n_feat, sizeof(*s->topn_beam));
-    s->max_topn = cmd_ln_int32_r(s->config, "-topn");
-    split_topn(cmd_ln_str_r(s->config, "-topn_beam"), s->topn_beam, n_feat);
+    s->max_topn = ps_config_int(s->config, "-topn");
+    split_topn(ps_config_str(s->config, "-topn_beam"), s->topn_beam, n_feat);
     E_INFO("Maximum top-N: %d ", s->max_topn);
     E_INFOCONT("Top-N beams:");
     for (i = 0; i < n_feat; ++i) {
@@ -1302,7 +1302,7 @@ s2_semi_mgau_init(acmod_t *acmod)
     E_INFOCONT("\n");
 
     /* Top-N scores from recent frames */
-    s->n_topn_hist = cmd_ln_int32_r(s->config, "-pl_window") + 2;
+    s->n_topn_hist = ps_config_int(s->config, "-pl_window") + 2;
     s->topn_hist = (vqFeature_t ***)
         ckd_calloc_3d(s->n_topn_hist, n_feat, s->max_topn,
                       sizeof(***s->topn_hist));

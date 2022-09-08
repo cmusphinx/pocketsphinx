@@ -525,9 +525,9 @@ gauden_mllr_transform(gauden_t *g, ps_mllr_t *mllr, ps_config_t *config)
     g->featlen = NULL;
 
     /* Reload means and variances (un-precomputed). */
-    g->mean = (mfcc_t ****)gauden_param_read(cmd_ln_str_r(config, "_mean"), &g->n_mgau, &g->n_feat, &g->n_density,
+    g->mean = (mfcc_t ****)gauden_param_read(ps_config_str(config, "_mean"), &g->n_mgau, &g->n_feat, &g->n_density,
                       &g->featlen);
-    g->var = (mfcc_t ****)gauden_param_read(cmd_ln_str_r(config, "_var"), &m, &f, &d, &flen);
+    g->var = (mfcc_t ****)gauden_param_read(ps_config_str(config, "_var"), &m, &f, &d, &flen);
 
     /* Verify mean and variance parameter dimensions */
     if ((m != g->n_mgau) || (f != g->n_feat) || (d != g->n_density))
@@ -566,6 +566,6 @@ gauden_mllr_transform(gauden_t *g, ps_mllr_t *mllr, ps_config_t *config)
 
     /* Re-precompute (if we aren't adapting variances this isn't
      * actually necessary...) */
-    gauden_dist_precompute(g, g->lmath, cmd_ln_float32_r(config, "-varfloor"));
+    gauden_dist_precompute(g, g->lmath, ps_config_float(config, "-varfloor"));
     return 0;
 }

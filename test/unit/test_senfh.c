@@ -86,7 +86,7 @@ main(int argc, char *argv[])
         fclose(senfh);
     }
     ps_free(ps);
-    cmd_ln_free_r(config);
+    ps_config_free(config);
 
     return 0;
 }

@@ -29,7 +29,7 @@ main(int argc, char *argv[])
 	dict_free(dict);
 	dict2pid_free(d2p);
 	bin_mdef_free(mdef);
-	cmd_ln_free_r(config);
+	ps_config_free(config);
 
 	return 0;
 }

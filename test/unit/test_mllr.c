@@ -32,6 +32,6 @@ main(int argc, char *argv[])
 	hyp = ps_get_hyp(ps, &score);
 	printf("FWDFLAT: %s (%d)\n", hyp, score);
 	ps_free(ps);
-	cmd_ln_free_r(config);
+	ps_config_free(config);
 	return 0;
 }

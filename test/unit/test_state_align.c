@@ -175,6 +175,6 @@ main(int argc, char *argv[])
     TEST_EQUAL(NULL, seg);
 
     ps_free(ps);
-    cmd_ln_free_r(config);
+    ps_config_free(config);
     return 0;
 }

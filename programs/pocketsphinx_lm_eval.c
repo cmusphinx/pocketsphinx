@@ -295,31 +295,31 @@ main(int argc, char *argv[])
             return 1;
         }
 
-        verbose = cmd_ln_boolean_r(config, "-verbose");
+        verbose = ps_config_bool(config, "-verbose");
 
 	/* Create log math object. */
 	if ((lmath = logmath_init
-	     (cmd_ln_float64_r(config, "-logbase"), 0, 0)) == NULL) {
+	     (ps_config_float(config, "-logbase"), 0, 0)) == NULL) {
 		E_FATAL("Failed to initialize log math\n");
 	}
 
 	/* Load the language model. */
-	lmfn = cmd_ln_str_r(config, "-lm");
+	lmfn = ps_config_str(config, "-lm");
 	if (lmfn == NULL
 	    || (lm = ngram_model_read(config, lmfn,
 				      NGRAM_AUTO, lmath)) == NULL) {
 		E_FATAL("Failed to load language model from %s\n",
-			cmd_ln_str_r(config, "-lm"));
+			ps_config_str(config, "-lm"));
 	}
-        if ((probdefn = cmd_ln_str_r(config, "-probdef")) != NULL)
+        if ((probdefn = ps_config_str(config, "-probdef")) != NULL)
             ngram_model_read_classdef(lm, probdefn);
         ngram_model_apply_weights(lm,
-                                  cmd_ln_float32_r(config, "-lw"),
-                                  cmd_ln_float32_r(config, "-wip"));
+                                  ps_config_float(config, "-lw"),
+                                  ps_config_float(config, "-wip"));
 
 	/* Now evaluate some text. */
-	lsnfn = cmd_ln_str_r(config, "-lsn");
-	text = cmd_ln_str_r(config, "-text");
+	lsnfn = ps_config_str(config, "-lsn");
+	text = ps_config_str(config, "-text");
 	if (lsnfn) {
 		evaluate_file(lm, lmath, lsnfn);
 	}

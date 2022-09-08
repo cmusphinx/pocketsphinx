@@ -543,8 +543,8 @@ allphone_search_init(const char *name,
         return NULL;
     }
 
-    allphs->ci_only = cmd_ln_boolean_r(config, "-allphone_ci");
-    allphs->lw = cmd_ln_float32_r(config, "-lw");
+    allphs->ci_only = ps_config_bool(config, "-allphone_ci");
+    allphs->lw = ps_config_float(config, "-lw");
 
     phmm_build(allphs);
 
@@ -579,7 +579,7 @@ allphone_search_init(const char *name,
             ("Failed to load language model specified in -allphone, doing unconstrained phone-loop decoding\n");
         allphs->inspen =
             (int32) (logmath_log
-                     (acmod->lmath, cmd_ln_float32_r(config, "-pip"))
+                     (acmod->lmath, ps_config_float(config, "-pip"))
                      * allphs->lw) >> SENSCR_SHIFT;
     }
 
@@ -591,19 +591,19 @@ allphone_search_init(const char *name,
     allphs->beam
         =
         (int32) logmath_log(acmod->lmath,
-                            cmd_ln_float64_r(config, "-beam"))
+                            ps_config_float(config, "-beam"))
         >> SENSCR_SHIFT;
     allphs->pbeam
         =
         (int32) logmath_log(acmod->lmath,
-                            cmd_ln_float64_r(config, "-pbeam"))
+                            ps_config_float(config, "-pbeam"))
         >> SENSCR_SHIFT;
 
     /* LM related weights/penalties */
     allphs->history = blkarray_list_init();
 
     /* Acoustic score scale for posterior probabilities. */
-    allphs->ascale = 1.0 / cmd_ln_float32_r(config, "-ascale");
+    allphs->ascale = 1.0 / ps_config_float(config, "-ascale");
 
     E_INFO("Allphone(beam: %d, pbeam: %d)\n", allphs->beam, allphs->pbeam);
 
@@ -627,7 +627,7 @@ allphone_search_reinit(ps_search_t * search, dict_t * dict,
         allphs->inspen =
             (int32) (logmath_log
                      (search->acmod->lmath,
-                      cmd_ln_float32_r(search->config,
+                      ps_config_float(search->config,
                                        "-pip")) *
                      allphs->lw) >> SENSCR_SHIFT;
     }
@@ -642,7 +642,7 @@ allphone_search_free(ps_search_t * search)
 
     
     double n_speech = (double)allphs->n_tot_frame
-            / cmd_ln_int32_r(ps_search_config(allphs), "-frate");
+            / ps_config_int(ps_search_config(allphs), "-frate");
 
     E_INFO("TOTAL allphone %.2f CPU %.3f xRT\n",
            allphs->perf.t_tot_cpu,
@@ -863,7 +863,7 @@ allphone_search_finish(ps_search_t * search)
     cf = ps_search_acmod(allphs)->output_frame;
     if (cf > 0) {
         double n_speech = (double) (cf + 1)
-            / cmd_ln_int32_r(ps_search_config(allphs), "-frate");
+            / ps_config_int(ps_search_config(allphs), "-frate");
         E_INFO("allphone %.2f CPU %.3f xRT\n",
                allphs->perf.t_cpu, allphs->perf.t_cpu / n_speech);
         E_INFO("allphone %.2f wall %.3f xRT\n",

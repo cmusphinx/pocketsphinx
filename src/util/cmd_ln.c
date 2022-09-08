@@ -547,7 +547,7 @@ cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn,
         if (defidx)
             hash_table_free(defidx);
         if (inout_cmdln == NULL)
-            cmd_ln_free_r(cmdln);
+            ps_config_free(cmdln);
         return NULL;
     }
 
@@ -558,7 +558,7 @@ cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn,
     if (defidx)
         hash_table_free(defidx);
     if (inout_cmdln == NULL)
-        cmd_ln_free_r(cmdln);
+        ps_config_free(cmdln);
     E_ERROR("Failed to parse arguments list\n");
     return NULL;
 }
@@ -740,7 +740,7 @@ cmd_ln_log_help_r(cmd_ln_t *cmdln, arg_t const* defn)
     if (cmdln == NULL) {
         cmdln = cmd_ln_parse_r(NULL, defn, 0, NULL, FALSE);
         arg_log_r(cmdln, defn, TRUE, FALSE);
-        cmd_ln_free_r(cmdln);
+        ps_config_free(cmdln);
     }
     else
         arg_log_r(cmdln, defn, TRUE, FALSE);
@@ -786,7 +786,7 @@ cmd_ln_type_r(cmd_ln_t *cmdln, char const *name)
 
 
 char const *
-cmd_ln_str_r(cmd_ln_t *cmdln, char const *name)
+ps_config_str(cmd_ln_t *cmdln, char const *name)
 {
     cmd_ln_val_t *val;
     val = cmd_ln_access_r(cmdln, name);
@@ -800,7 +800,7 @@ cmd_ln_str_r(cmd_ln_t *cmdln, char const *name)
 }
 
 long
-cmd_ln_int_r(cmd_ln_t *cmdln, char const *name)
+ps_config_int(cmd_ln_t *cmdln, char const *name)
 {
     cmd_ln_val_t *val;
     val = cmd_ln_access_r(cmdln, name);
@@ -814,7 +814,7 @@ cmd_ln_int_r(cmd_ln_t *cmdln, char const *name)
 }
 
 double
-cmd_ln_float_r(cmd_ln_t *cmdln, char const *name)
+ps_config_float(cmd_ln_t *cmdln, char const *name)
 {
     cmd_ln_val_t *val;
     val = cmd_ln_access_r(cmdln, name);
@@ -828,7 +828,7 @@ cmd_ln_float_r(cmd_ln_t *cmdln, char const *name)
 }
 
 void
-cmd_ln_set_str_r(cmd_ln_t *cmdln, char const *name, char const *str)
+ps_config_set_str(cmd_ln_t *cmdln, char const *name, char const *str)
 {
     cmd_ln_val_t *val;
     val = cmd_ln_access_r(cmdln, name);
@@ -894,14 +894,14 @@ cmd_ln_set_float_r(cmd_ln_t *cmdln, char const *name, double fv)
 }
 
 cmd_ln_t *
-cmd_ln_retain(cmd_ln_t *cmdln)
+ps_config_retain(cmd_ln_t *cmdln)
 {
     ++cmdln->refcount;
     return cmdln;
 }
 
 int
-cmd_ln_free_r(cmd_ln_t *cmdln)
+ps_config_free(cmd_ln_t *cmdln)
 {
     if (cmdln == NULL)
         return 0;

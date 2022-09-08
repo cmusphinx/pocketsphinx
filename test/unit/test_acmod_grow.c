@@ -140,6 +140,6 @@ main(int argc, char *argv[])
     ckd_free(buf);
     acmod_free(acmod);
     logmath_free(lmath);
-    cmd_ln_free_r(config);
+    ps_config_free(config);
     return 0;
 }

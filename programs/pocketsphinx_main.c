@@ -67,7 +67,7 @@ format_hyp(char *outptr, int len, ps_endpointer_t *ep, ps_decoder_t *decoder)
     if (ep == NULL) {
         st = 0.0;
         et = (double)ps_get_n_frames(decoder)
-            / cmd_ln_int_r(ps_get_config(decoder), "-frate");
+            / ps_config_int(ps_get_config(decoder), "-frate");
     }
     else {
         st = ps_endpointer_speech_start(ep);
@@ -118,7 +118,7 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
     maxlen = format_hyp(NULL, 0, ep, decoder);
     maxlen += 2; /* ",{" */
     lmath = ps_get_logmath(decoder);
-    frate = cmd_ln_int_r(ps_get_config(decoder), "-frate");
+    frate = ps_config_int(ps_get_config(decoder), "-frate");
     if (ep == NULL)
         st = 0.0;
     else
@@ -172,7 +172,7 @@ live(ps_config_t *config)
         goto error_out;
     }
     if ((ep = ps_endpointer_init(0, 0.0,
-                                 3, cmd_ln_int_r(config, "-samprate"),
+                                 3, ps_config_int(config, "-samprate"),
                                  0)) == NULL) {
         E_ERROR("PocketSphinx endpointer init failed\n");
         goto error_out;
@@ -300,7 +300,7 @@ static const int n_sample_rates = sizeof(sample_rates)/sizeof(sample_rates[0]);
 static int
 minimum_samprate(ps_config_t *config)
 {
-    double upperf = cmd_ln_float_r(config, "-upperf");
+    double upperf = ps_config_float(config, "-upperf");
     int nyquist = (int)(upperf * 2);
     int i;
     for (i = 0; i < n_sample_rates; ++i)
@@ -322,7 +322,7 @@ soxflags(ps_config_t *config)
 
     /* Get feature extraction parameters. */
     ps_expand_model_config(config);
-    samprate = cmd_ln_int_r(config, "-samprate");
+    samprate = ps_config_int(config, "-samprate");
 
     maxlen = snprintf(NULL, 0, SOX_FORMAT, samprate);
     if (maxlen < 0) {
