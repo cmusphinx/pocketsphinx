@@ -41,14 +41,21 @@
 #define __PS_CMDLN_MACRO_H__
 
 #include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/feat.h>
-#include <sphinxbase/fe.h>
+#include "pocketsphinx_internal.h"
+
+/**
+ * Helper macro to stringify enums and other non-string values for
+ * default arguments.
+ **/
+#define ARG_STRINGIFY(s) ARG_STRINGIFY1(s)
+#define ARG_STRINGIFY1(s) #s
+
 
 /** Minimal set of command-line options for PocketSphinx. */
 #define POCKETSPHINX_OPTIONS \
-    waveform_to_cepstral_command_line_macro(), \
-    cepstral_to_feature_command_line_macro(), \
-    POCKETSPHINX_ACMOD_OPTIONS,      \
+    POCKETSPHINX_FE_OPTIONS,         \
+        POCKETSPHINX_FEAT_OPTIONS,   \
+        POCKETSPHINX_ACMOD_OPTIONS,  \
         POCKETSPHINX_BEAM_OPTIONS,   \
         POCKETSPHINX_SEARCH_OPTIONS, \
         POCKETSPHINX_DICT_OPTIONS,   \
@@ -382,6 +389,148 @@
       ARG_FLOATING,                                                              \
       "1.0001",                                                                 \
       "Base in which all log-likelihoods calculated" }
+
+/** Options for acoustic feature computation. */
+#define POCKETSPHINX_FE_OPTIONS                                         \
+    { "-logspec",                                                       \
+      ARG_BOOLEAN,                                                      \
+      "no",                                                             \
+      "Write out logspectral files instead of cepstra" },               \
+    { "-smoothspec",                                                    \
+      ARG_BOOLEAN,                                                      \
+      "no",                                                             \
+      "Write out cepstral-smoothed logspectral files" },                \
+    { "-transform",                                                     \
+      ARG_STRING,                                                       \
+      "legacy",                                                         \
+      "Which type of transform to use to calculate cepstra (legacy, dct, or htk)" }, \
+    { "-alpha",                                                         \
+      ARG_FLOATING,                                                     \
+      ARG_STRINGIFY(DEFAULT_PRE_EMPHASIS_ALPHA),                        \
+      "Preemphasis parameter" },                                        \
+    { "-samprate",                                                      \
+      ARG_INTEGER,                                                      \
+      ARG_STRINGIFY(DEFAULT_SAMPLING_RATE),                             \
+      "Sampling rate" },                                                \
+    { "-frate",                                                         \
+      ARG_INTEGER,                                                      \
+      ARG_STRINGIFY(DEFAULT_FRAME_RATE),                                \
+      "Frame rate" },                                                   \
+    { "-wlen",                                                          \
+      ARG_FLOATING,                                                     \
+      ARG_STRINGIFY(DEFAULT_WINDOW_LENGTH),                             \
+      "Hamming window length" },                                        \
+    { "-nfft",                                                          \
+      ARG_INTEGER,                                                      \
+      "0",                                                              \
+      "Size of FFT, or 0 to set automatically (recommended)" },         \
+    { "-nfilt",                                                         \
+      ARG_INTEGER,                                                      \
+      ARG_STRINGIFY(DEFAULT_NUM_FILTERS),                               \
+      "Number of filter banks" },                                       \
+    { "-lowerf",                                                        \
+      ARG_FLOATING,                                                     \
+      ARG_STRINGIFY(DEFAULT_LOWER_FILT_FREQ),                           \
+      "Lower edge of filters" },                                        \
+    { "-upperf",                                                        \
+      ARG_FLOATING,                                                     \
+      ARG_STRINGIFY(DEFAULT_UPPER_FILT_FREQ),                           \
+      "Upper edge of filters" },                                        \
+    { "-unit_area",                                                     \
+      ARG_BOOLEAN,                                                      \
+      "yes",                                                            \
+      "Normalize mel filters to unit area" },                           \
+    { "-round_filters",                                                 \
+      ARG_BOOLEAN,                                                      \
+      "yes",                                                            \
+      "Round mel filter frequencies to DFT points" },                   \
+    { "-ncep",                                                          \
+      ARG_INTEGER,                                                      \
+      ARG_STRINGIFY(DEFAULT_NUM_CEPSTRA),                               \
+      "Number of cep coefficients" },                                   \
+    { "-doublebw",                                                      \
+      ARG_BOOLEAN,                                                      \
+      "no",                                                             \
+      "Use double bandwidth filters (same center freq)" },              \
+    { "-lifter",                                                        \
+      ARG_INTEGER,                                                      \
+      "0",                                                              \
+      "Length of sin-curve for liftering, or 0 for no liftering." },    \
+    { "-input_endian",                                                  \
+      ARG_STRING,                                                       \
+      NATIVE_ENDIAN,                                                    \
+      "Endianness of input data, big or little, ignored if NIST or MS Wav" }, \
+    { "-warp_type",                                                     \
+      ARG_STRING,                                                       \
+      DEFAULT_WARP_TYPE,                                                \
+      "Warping function type (or shape)" },                             \
+    { "-warp_params",                                                   \
+      ARG_STRING,                                                       \
+      NULL,                                                             \
+      "Parameters defining the warping function" },                     \
+    { "-dither",                                                        \
+      ARG_BOOLEAN,                                                      \
+      "no",                                                             \
+      "Add 1/2-bit noise" },                                            \
+    { "-seed",                                                          \
+      ARG_INTEGER,                                                      \
+      ARG_STRINGIFY(SEED),                                              \
+      "Seed for random number generator; if less than zero, pick our own" }, \
+    { "-remove_dc",                                                     \
+      ARG_BOOLEAN,                                                      \
+      "no",                                                             \
+      "Remove DC offset from each frame" },                             \
+    { "-remove_noise",                                                  \
+      ARG_BOOLEAN,                                                      \
+      "no",                                                             \
+      "Remove noise using spectral subtraction" },                      \
+    { "-verbose",                                                       \
+      ARG_BOOLEAN,                                                      \
+      "no",                                                             \
+      "Show input filenames" }
+
+/** Options for dynamic feature calculation. */
+#define POCKETSPHINX_FEAT_OPTIONS                        \
+{ "-feat",                                                              \
+      ARG_STRING,                                                       \
+      "1s_c_d_dd",                                                      \
+      "Feature stream type, depends on the acoustic model" },           \
+{ "-ceplen",                                                            \
+      ARG_INTEGER,                                                        \
+      "13",                                                             \
+     "Number of components in the input feature vector" },              \
+{ "-cmn",                                                               \
+      ARG_STRING,                                                       \
+      "live",                                                        \
+      "Cepstral mean normalization scheme ('live', 'batch', or 'none')" }, \
+{ "-cmninit",                                                           \
+      ARG_STRING,                                                       \
+      "40,3,-1",                                                        \
+      "Initial values (comma-separated) for cepstral mean when 'live' is used" }, \
+{ "-varnorm",                                                           \
+      ARG_BOOLEAN,                                                      \
+      "no",                                                             \
+      "Variance normalize each utterance (only if CMN == current)" },   \
+{ "-agc",                                                               \
+      ARG_STRING,                                                       \
+      "none",                                                           \
+      "Automatic gain control for c0 ('max', 'emax', 'noise', or 'none')" }, \
+{ "-agcthresh",                                                         \
+      ARG_FLOATING,                                                      \
+      "2.0",                                                            \
+      "Initial threshold for automatic gain control" },                 \
+{ "-lda",                                                               \
+      ARG_STRING,                                                       \
+      NULL,                                                             \
+      "File containing transformation matrix to be applied to features (single-stream features only)" }, \
+{ "-ldadim",                                                            \
+      ARG_INTEGER,                                                        \
+      "0",                                                              \
+      "Dimensionality of output of feature transformation (0 to use entire matrix)" }, \
+{"-svspec",                                                             \
+     ARG_STRING,                                                        \
+     NULL,                                                           \
+     "Subvector specification (e.g., 24,0-11/25,12-23/26-38 or 0-12/13-25/26-38)"}
 
 #define CMDLN_EMPTY_OPTION { NULL, 0, NULL, NULL }
 

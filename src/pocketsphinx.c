@@ -119,8 +119,8 @@ ps_expand_file_config(ps_config_t *config, const char *arg, const char *extra_ar
 
 /* Feature and front-end parameters that may be in feat.params */
 static const arg_t feat_defn[] = {
-    waveform_to_cepstral_command_line_macro(),
-    cepstral_to_feature_command_line_macro(),
+    POCKETSPHINX_FE_OPTIONS,
+    POCKETSPHINX_FEAT_OPTIONS,
     CMDLN_EMPTY_OPTION
 };
 

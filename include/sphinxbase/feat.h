@@ -65,48 +65,6 @@ extern "C" {
 					   for livemode decoder */
 #define S3_MAX_FRAMES		15000    /* RAH, I believe this is still too large, but better than before */
 
-#define cepstral_to_feature_command_line_macro()                        \
-{ "-feat",                                                              \
-      ARG_STRING,                                                       \
-      "1s_c_d_dd",                                                      \
-      "Feature stream type, depends on the acoustic model" },           \
-{ "-ceplen",                                                            \
-      ARG_INTEGER,                                                        \
-      "13",                                                             \
-     "Number of components in the input feature vector" },              \
-{ "-cmn",                                                               \
-      ARG_STRING,                                                       \
-      "live",                                                        \
-      "Cepstral mean normalization scheme ('live', 'batch', or 'none')" }, \
-{ "-cmninit",                                                           \
-      ARG_STRING,                                                       \
-      "40,3,-1",                                                        \
-      "Initial values (comma-separated) for cepstral mean when 'live' is used" }, \
-{ "-varnorm",                                                           \
-      ARG_BOOLEAN,                                                      \
-      "no",                                                             \
-      "Variance normalize each utterance (only if CMN == current)" },   \
-{ "-agc",                                                               \
-      ARG_STRING,                                                       \
-      "none",                                                           \
-      "Automatic gain control for c0 ('max', 'emax', 'noise', or 'none')" }, \
-{ "-agcthresh",                                                         \
-      ARG_FLOATING,                                                      \
-      "2.0",                                                            \
-      "Initial threshold for automatic gain control" },                 \
-{ "-lda",                                                               \
-      ARG_STRING,                                                       \
-      NULL,                                                             \
-      "File containing transformation matrix to be applied to features (single-stream features only)" }, \
-{ "-ldadim",                                                            \
-      ARG_INTEGER,                                                        \
-      "0",                                                              \
-      "Dimensionality of output of feature transformation (0 to use entire matrix)" }, \
-{"-svspec",                                                             \
-     ARG_STRING,                                                        \
-     NULL,                                                           \
-     "Subvector specification (e.g., 24,0-11/25,12-23/26-38 or 0-12/13-25/26-38)"}
-
 /**
  * \struct feat_t
  * \brief Structure for describing a speech feature type

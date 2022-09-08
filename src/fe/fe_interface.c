@@ -52,11 +52,13 @@
 #include "sphinxbase/cmd_ln.h"
 #include "sphinxbase/ckd_alloc.h"
 
+#include "cmdln_macro.h"
+
 #include "fe_internal.h"
 #include "fe_warp.h"
 
 static const arg_t fe_args[] = {
-    waveform_to_cepstral_command_line_macro(),
+    POCKETSPHINX_FE_OPTIONS,
     { NULL, 0, NULL, NULL }
 };
 
