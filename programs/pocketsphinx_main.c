@@ -46,6 +46,8 @@
 
 #include <pocketsphinx.h>
 
+#include "pocketsphinx_internal.h"
+
 static int global_done = 0;
 static void
 catch_sig(int signum)
@@ -364,8 +366,10 @@ main(int argc, char *argv[])
     const char *command;
     int rv;
 
-    if ((config = ps_config_parse_args(NULL, argc, argv)) == NULL)
+    if ((config = ps_config_parse_args(NULL, argc, argv)) == NULL) {
+        cmd_ln_log_help_r(NULL, ps_args());
         return 1;
+    }
     ps_default_search_args(config);
     command = ps_config_command(config);
     if (0 == strcmp(command, "soxflags")) {

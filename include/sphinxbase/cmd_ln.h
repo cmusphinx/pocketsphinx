@@ -61,7 +61,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include <sphinxbase/sphinxbase_export.h>
 #include <sphinxbase/prim_type.h>
 #include <sphinxbase/hash_table.h>
 
@@ -112,7 +111,28 @@ typedef struct cmd_ln_s {
     char **f_argv;
     uint32 f_argc;
     arg_t const *defn;
+    char *command;
 } cmd_ln_t;
+
+/**
+ * Access the value and metadata for a configuration parameter.
+ *
+ * This structure is owned by the cmd_ln_t, assume that you must copy
+ * anything inside it, including strings, if you wish to retain it,
+ * and should never free it manually.
+ *
+ * @param cmdln Command-line object.
+ * @param name the command-line flag to retrieve.
+ * @return the value and metadata associated with <tt>name</tt>, or
+ *         NULL if <tt>name</tt> does not exist.  You must use
+ *         cmd_ln_exists_r() to distinguish between cases where a
+ *         value is legitimately NULL and where the corresponding flag
+ *         is unknown.
+ */
+cmd_ln_val_t *cmd_ln_access_r(cmd_ln_t *cmdln, char const *name);
+
+cmd_ln_val_t * cmd_ln_val_init(int t, const char *name, const char *str);
+void cmd_ln_val_free(cmd_ln_val_t *val);
 
 /**
  * Parse an arguments file by deliminating on " \r\t\n" and putting each tokens
@@ -120,7 +140,6 @@ typedef struct cmd_ln_s {
  *
  * @return A cmd_ln_t containing the results of command line parsing, or NULL on failure.
  */
-SPHINXBASE_EXPORT
 cmd_ln_t *cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-line to update,
                                                      or NULL to create a new one. */
                               arg_t const *defn,   /**< In: Array of argument name definitions*/
@@ -140,7 +159,6 @@ cmd_ln_t *cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous comma
  * @param str String value to set.  The command-line object does not
  *            retain ownership of this pointer.
  */
-SPHINXBASE_EXPORT
 void cmd_ln_set_str_extra_r(cmd_ln_t *cmdln, char const *name, char const *str);
 
 /**
@@ -150,7 +168,6 @@ void cmd_ln_set_str_extra_r(cmd_ln_t *cmdln, char const *name, char const *str);
  * @param cmdln command-line object
  * @param defn array of argument name definitions.
  */
-SPHINXBASE_EXPORT
 void cmd_ln_log_help_r (cmd_ln_t *cmdln, const arg_t *defn);
 
 /**
@@ -159,7 +176,6 @@ void cmd_ln_log_help_r (cmd_ln_t *cmdln, const arg_t *defn);
  * @param cmdln  command-line object
  * @param defn array of argument name definitions.
  */
-SPHINXBASE_EXPORT
 void cmd_ln_log_values_r (cmd_ln_t *cmdln, const arg_t *defn);
 
 

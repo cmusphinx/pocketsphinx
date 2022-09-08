@@ -68,11 +68,6 @@
 #include "state_align_search.h"
 #include "fe/fe_internal.h"
 
-static const arg_t ps_args_def[] = {
-    POCKETSPHINX_OPTIONS,
-    CMDLN_EMPTY_OPTION
-};
-
 /* I'm not sure what the portable way to do this is. */
 static int
 file_exists(const char *path)
@@ -451,12 +446,6 @@ ps_init(ps_config_t *config)
         }
     }
     return ps;
-}
-
-arg_t const *
-ps_args(void)
-{
-    return ps_args_def;
 }
 
 ps_decoder_t *

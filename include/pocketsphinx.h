@@ -264,11 +264,14 @@ const anytype_t *ps_config_get(ps_config_t *config, const char *name);
  * @param config Configuration object.
  * @param name Name of the parameter to retrieve.
  * @param val Pointer to the value (strings will be copied)
- * @return Pointer to the parameter's value, or NULL on failure.
- * This pointer (and any pointers inside it) is owned by the ps_config_t.
+ * @param t Type of the value
+ * @return Pointer to the parameter's value, or NULL on failure
+ * (e.g. type mismatch).  This pointer (and any pointers inside it) is
+ * owned by the ps_config_t.
  */
 POCKETSPHINX_EXPORT
-const anytype_t *ps_config_set(ps_config_t *config, const char *name, const anytype_t *val);
+const anytype_t *ps_config_set(ps_config_t *config, const char *name,
+                               const anytype_t *val, ps_type_t t);
 
 POCKETSPHINX_EXPORT
 long ps_config_int(ps_config_t *config, const char *name);
