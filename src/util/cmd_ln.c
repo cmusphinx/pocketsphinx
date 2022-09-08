@@ -82,6 +82,8 @@
 #include "sphinxbase/case.h"
 #include "sphinxbase/strfuncs.h"
 
+#include "pocketsphinx_internal.h"
+
 static void
 arg_log_r(cmd_ln_t *, arg_t const *, int32, int32);
 
@@ -284,15 +286,6 @@ arg_log_r(cmd_ln_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
                     if (vp->val.ptr)
                         E_INFOCONT("    %s", (char *)vp->val.ptr);
                     break;
-                case ARG_STRING_LIST:
-                    array = (char const**)vp->val.ptr;
-                    if (array) {
-                        E_INFOCONT("    ");
-                        for (l = 0; array[l] != 0; l++) {
-                            E_INFOCONT("%s,", array[l]);
-                        }
-                    }
-                    break;
                 case ARG_BOOLEAN:
                 case REQARG_BOOLEAN:
                     E_INFOCONT("    %s", vp->val.i ? "yes" : "no");
@@ -307,32 +300,6 @@ arg_log_r(cmd_ln_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
     }
     ckd_free(pos);
     E_INFOCONT("\n");
-}
-
-static char **
-parse_string_list(const char *str)
-{
-    int count, i, j;
-    const char *p;
-    char **result;
-
-    p = str;
-    count = 1;
-    while (*p) {
-	if (*p == ',')
-    	    count++;
-        p++;
-    }
-    /* Should end with NULL */
-    result = (char **) ckd_calloc(count + 1, sizeof(char *));
-    p = str;
-    for (i = 0; i < count; i++) {
-	for (j = 0; p[j] != ',' && p[j] != 0; j++);
-	result[i] = (char *)ckd_calloc(j + 1, sizeof(char));
-        strncpy( result[i], p, j);
-        p = p + j + 1;
-    }
-    return result;
 }
 
 static cmd_ln_val_t *
@@ -381,9 +348,6 @@ cmd_ln_val_init(int t, const char *name, const char *str)
         case ARG_STRING:
         case REQARG_STRING:
             val.ptr = ckd_salloc(e_str);
-            break;
-        case ARG_STRING_LIST:
-            val.ptr = parse_string_list(e_str);
             break;
         default:
             E_ERROR("Unknown argument type: %d\n", t);
@@ -448,15 +412,6 @@ void
 cmd_ln_val_free(cmd_ln_val_t *val)
 {
     int i;
-    if (val->type & ARG_STRING_LIST) {
-        char ** array = (char **)val->val.ptr;
-        if (array) {
-            for (i = 0; array[i] != NULL; i++) {
-                ckd_free(array[i]);
-            }
-            ckd_free(array);
-        }
-    }
     if (val->type & ARG_STRING)
         ckd_free(val->val.ptr);
     ckd_free(val->name);
@@ -845,20 +800,6 @@ cmd_ln_str_r(cmd_ln_t *cmdln, char const *name)
         return NULL;
     }
     return (char const *)val->val.ptr;
-}
-
-char const **
-cmd_ln_str_list_r(cmd_ln_t *cmdln, char const *name)
-{
-    cmd_ln_val_t *val;
-    val = cmd_ln_access_r(cmdln, name);
-    if (val == NULL)
-        return NULL;
-    if (!(val->type & ARG_STRING_LIST)) {
-        E_ERROR("Argument %s does not have string list type\n", name);
-        return NULL;
-    }
-    return (char const **)val->val.ptr;
 }
 
 long
