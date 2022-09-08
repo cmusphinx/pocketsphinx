@@ -43,7 +43,7 @@
 #include <stdio.h>
 
 /* SphinxBase headers we need. */
-#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/prim_type.h>
 #include <sphinxbase/logmath.h>
 #include <sphinxbase/fe.h>
 #include <sphinxbase/feat.h>
@@ -69,12 +69,6 @@ extern "C" {
  */
 typedef struct ps_decoder_s ps_decoder_t;
 
-/**
- * @struct ps_config_t
- * PocketSphinx configuration object.
- */
-typedef struct cmd_ln_s ps_config_t;
-
 /* Voice activity detection. */
 #include <pocketsphinx/vad.h>
 
@@ -97,26 +91,205 @@ typedef struct ps_astar_s ps_nbest_t;
 typedef struct ps_seg_s ps_seg_t;
 
 /**
- * Parses arguments from the command-line into a configuration.
+ * @struct ps_config_t
+ * PocketSphinx configuration object.
  */
-#define ps_config_parse_args(argc, argv) cmd_ln_parse_r(NULL, ps_args(), argc, argv, FALSE)
+typedef struct cmd_ln_s ps_config_t;
+
+/**
+ * @enum ps_type_t
+ * Types of configuration parameters.
+ */
+typedef enum ps_type_e  {
+    ARG_REQUIRED =  (1<<0), /*<< Bit indicating required argument. */
+    ARG_INTEGER = (1<<1),   /*<< Integer up to 64 bits. */
+    ARG_FLOATING  = (1<<2), /*<< Double-precision floating point. */
+    ARG_STRING = (1<<3),    /*<< String. */
+    ARG_BOOLEAN = (1<<4),   /*<< Boolean (true/false). */
+    REQARG_INTEGER = (ARG_INTEGER | ARG_REQUIRED),
+    REQARG_FLOATING = (ARG_FLOATING | ARG_REQUIRED),
+    REQARG_STRING = (ARG_STRING | ARG_REQUIRED),
+    REQARG_BOOLEAN = (ARG_BOOLEAN | ARG_REQUIRED)
+} ps_type_t;
+
+/**
+ * Creates a configuration with default values.
+ *
+ * @arg command Optional command name (can be NULL).
+ * @return Newly created configuration or NULL on failure (such as
+ * invalid or missing parameters).
+ */
+POCKETSPHINX_EXPORT
+ps_config_t *ps_config_init(const char *command);
+
+/**
+ * Creates a configuration by parsing the command-line.
+ *
+ * This parses the command line to create a configuration.  All
+ * arguments names must begin with a dash ('-').  If an extra argument
+ * (with no dash) is present it is assumed to be a "command", which
+ * can be retrieved with ps_config_command().
+ *
+ * @arg config Previously existing ps_config_t to update, or NULL to
+ * create a new one.
+ * @arg argc Argument count as passed to main()
+ * @arg argv Array of argument strings as passed to main().
+ * @return Newly created configuration or NULL on failure (such as
+ * invalid or missing parameters).
+ */
+POCKETSPHINX_EXPORT
+ps_config_t *ps_config_parse_args(ps_config_t *config, int argc, char *argv[]);
+
+/**
+ * Creates or updates a configuration by parsing slightly extended JSON.
+ *
+ * This function parses a JSON object in non-strict mode to produce a
+ * ps_config_t.  Configuration parameters are given *without* a
+ * leading dash, and do not need to be quoted, nor does the object
+ * need to be enclosed in curly braces, nor are commas necessary
+ * between key/value pairs.  Basically, it's degenerate YAML.  So, for
+ * example, this is accepted:
+ *
+ *    hmm: fr-fr
+ *    samprate: 8000
+ *    keyprhase: "hello world"
+ *
+ * Of course, valid JSON is also accepted, but who wants to use that.
+ *
+ * @arg config Previously existing ps_config_t to update, or NULL to
+ * create a new one.
+ * @arg command Optional command name (can be NULL).
+ * @arg json JSON serialized object as null-terminated UTF-8,
+ * containing configuration parameters.
+ * @return Newly created configuration or NULL on failure (such as
+ * invalid or missing parameters).
+ */
+POCKETSPHINX_EXPORT
+ps_config_t *ps_config_parse_json(ps_config_t *config, const char *command,
+                                  const char *json);
+
+/**
+ * Construct JSON from a configuration object.
+ *
+ * Unlike ps_config_parse_json(), this actually produces valid JSON ;-)
+ *
+ * @arg config Configuration object
+ * @return Newly created null-terminated JSON string.  The ps_config_t
+ * retains ownership of this pointer, which is only valid until the
+ * next call to ps_config_serialize_json().  You must copy it if you
+ * wish to retain it.
+ */
+POCKETSPHINX_EXPORT
+const char *ps_config_serialize_json(ps_config_t *config);
 
 /**
  * Retains a pointer to a configuration object.
  */
-#define ps_config_retain(config) cmd_ln_retain(config)
+POCKETSPHINX_EXPORT
+ps_config_t *ps_config_retain(ps_config_t *config);
 
 /**
  * Releases a configuration object.
  */
-#define ps_config_free(config) cmd_ln_free_r(config)
+POCKETSPHINX_EXPORT
+int ps_config_free(ps_config_t *config);
+
+/**
+ * Access the command in a configuration object.
+ *
+ * @param config Configuration object
+ * @return Command name, or NULL if none.  The ps_config_t retains
+ * ownership of this pointer, which is only valid until the next call
+ * to ps_config_set_command(), ps_config_parse_args() or
+ * ps_config_parse_json().
+ */
+POCKETSPHINX_EXPORT
+const char *ps_config_command(ps_config_t *config);
+
+/**
+ * Set or clear the command in a configuration object.
+ *
+ * @param config Configuration object
+ * @param command Commane namd, or NULL for none.
+ * @return Pointer to command name.  This is *not* the same pointer
+ * passed in (unless it's NULL) The ps_config_t retains ownership of
+ * this pointer, which is only valid until the next call to
+ * ps_config_set_command(), ps_config_parse_args() or
+ * ps_config_parse_json().
+ */
+POCKETSPHINX_EXPORT
+const char *ps_config_set_command(ps_config_t *config, const char *command);
+
+/**
+ * Access the type of a configuration parameter.
+ *
+ * @param config Configuration object.
+ * @param name the command-line flag to retrieve.
+ * @return the type of the parameter (as a combination of the ARG_*
+ *         bits), or 0 if no such parameter exists.
+ */
+POCKETSPHINX_EXPORT
+ps_type_t ps_config_typeof(ps_config_t *config, char const *name);
+
+/**
+ * Access the value of a configuration parameter.
+ *
+ * To actually get the value, you may need to know its type, which can
+ * be obtained with ps_config_typeof().  This function is thus mainly
+ * useful for dynamic language bindings, and you should use
+ * ps_config_int(), ps_config_float(), or ps_config_str() instead.
+ *
+ * @param config Configuration object.
+ * @param name Name of the parameter to retrieve.
+ * @return Pointer to the parameter's value, or NULL if the parameter
+ * does not exist.  Note that a string parameter can also have NULL as
+ * a value, in which case the `ptr` field in the return value is NULL.
+ * This pointer (and any pointers inside it) is owned by the ps_config_t.
+ */
+POCKETSPHINX_EXPORT
+const anytype_t *ps_config_get(ps_config_t *config, const char *name);
+
+/**
+ * Set the value of a configuration parameter.
+ *
+ * To actually set a value, you need to know its type, which can be
+ * obtained with ps_config_typeof().  This function is thus mainly
+ * useful for dynamic language bindings, and you should use
+ * ps_config_set_int(), ps_config_set_float(), or ps_config_set_str()
+ * instead.
+ *
+ * Note that the return pointer will *not* be the same as the one
+ * passed in.
+ *
+ * @param config Configuration object.
+ * @param name Name of the parameter to retrieve.
+ * @param val Pointer to the value (strings will be copied)
+ * @return Pointer to the parameter's value, or NULL on failure.
+ * This pointer (and any pointers inside it) is owned by the ps_config_t.
+ */
+POCKETSPHINX_EXPORT
+const anytype_t *ps_config_set(ps_config_t *config, const char *name, const anytype_t *val);
+
+POCKETSPHINX_EXPORT
+long ps_config_int(ps_config_t *config, const char *name);
+POCKETSPHINX_EXPORT
+double ps_config_float(ps_config_t *config, const char *name);
+POCKETSPHINX_EXPORT
+const char *ps_config_str(ps_config_t *config, const char *name);
+
+POCKETSPHINX_EXPORT
+const anytype_t *ps_config_set_int(ps_config_t *config, const char *name, long val);
+POCKETSPHINX_EXPORT
+const anytype_t *ps_config_set_float(ps_config_t *config, const char *name, double val);
+POCKETSPHINX_EXPORT
+const anytype_t *ps_config_set_str(ps_config_t *config, const char *name, const char *val);
 
 /**
  * Sets default grammar and language model if they are not set explicitly and
  * are present in the default search path.
  */
 POCKETSPHINX_EXPORT
-void ps_default_search_args(ps_config_t *);
+void ps_default_search_args(ps_config_t *config);
 
 /**
  * Sets default file paths and parameters based on configuration.
@@ -140,9 +313,7 @@ const char *ps_default_modeldir(void);
  * @note The decoder retains ownership of the pointer
  * <code>config</code>, so if you are not going to use it
  * elsewhere, you can free it.
- *
- * @param config a command-line structure, as created by
- * cmd_ln_parse_r() or cmd_ln_parse_file_r().  If NULL, the
+ * @param config a configuration object.  If NULL, the
  * decoder will be allocated but not initialized.  You can
  * proceed to initialize it with ps_reinit().
  */
@@ -271,7 +442,7 @@ int ps_free(ps_decoder_t *ps);
  *
  * @return The configuration object for this decoder.  The decoder
  *         owns this pointer, so you should not attempt to free it
- *         manually.  Use cmd_ln_retain() if you wish to reuse it
+ *         manually.  Use ps_config_retain() if you wish to reuse it
  *         elsewhere.
  */
 POCKETSPHINX_EXPORT
