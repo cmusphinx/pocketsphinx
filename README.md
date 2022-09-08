@@ -68,7 +68,8 @@ which defaults to `live`.  The commands are as follows:
     - `b`: Start time in seconds, from the beginning of the stream
     - `d`: Duration in seconds
     - `p`: Estimated probability of the recognition result, i.e. a
-      number between 0 and 1 which may be used as a confidence score
+      number between 0 and 1 representing the likelihood of the input
+      according to the model
     - `t`: Full text of recognition result
     - `w`: List of segments (usually words), each of which in turn
       contains the `b`, `d`, `p`, and `t` fields, for start, end,
