@@ -229,10 +229,8 @@ arg_log_r(cmd_ln_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
 {
     arg_t const **pos;
     int32 i, n;
-    size_t l;
     int32 namelen, deflen;
     cmd_ln_val_t const *vp;
-    char const **array;
 
     /* No definitions, do nothing. */
     if (defn == NULL)
@@ -411,7 +409,6 @@ parse_options(cmd_ln_t *cmdln, const arg_t *defn, int32 argc, char* argv[], int3
 void
 cmd_ln_val_free(cmd_ln_val_t *val)
 {
-    int i;
     if (val->type & ARG_STRING)
         ckd_free(val->val.ptr);
     ckd_free(val->name);

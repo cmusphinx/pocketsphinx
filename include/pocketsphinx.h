@@ -123,6 +123,18 @@ POCKETSPHINX_EXPORT
 ps_config_t *ps_config_init(const char *command);
 
 /**
+ * Retains a pointer to a configuration object.
+ */
+POCKETSPHINX_EXPORT
+ps_config_t *ps_config_retain(ps_config_t *config);
+
+/**
+ * Releases a configuration object.
+ */
+POCKETSPHINX_EXPORT
+int ps_config_free(ps_config_t *config);
+
+/**
  * Creates a configuration by parsing the command-line.
  *
  * This parses the command line to create a configuration.  All
@@ -181,18 +193,6 @@ ps_config_t *ps_config_parse_json(ps_config_t *config, const char *command,
  */
 POCKETSPHINX_EXPORT
 const char *ps_config_serialize_json(ps_config_t *config);
-
-/**
- * Retains a pointer to a configuration object.
- */
-POCKETSPHINX_EXPORT
-ps_config_t *ps_config_retain(ps_config_t *config);
-
-/**
- * Releases a configuration object.
- */
-POCKETSPHINX_EXPORT
-int ps_config_free(ps_config_t *config);
 
 /**
  * Access the command in a configuration object.

@@ -1,4 +1,10 @@
 add_library(pocketsphinx
+  pocketsphinx.c
+  ps_config.c
+  ps_lattice.c
+  ps_mllr.c
+  ps_vad.c
+  ps_endpointer.c
   tmat.c
   fsg_history.c
   allphone_search.c
@@ -21,12 +27,7 @@ add_library(pocketsphinx
   ngram_search_fwdtree.c
   ms_mgau.c
   fsg_search.c
-  ps_lattice.c
   fsg_lextree.c
-  ps_mllr.c
-  pocketsphinx.c
-  ps_vad.c
-  ps_endpointer.c
   kws_search.c
   acmod.c
   dict.c
