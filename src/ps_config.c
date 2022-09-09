@@ -49,11 +49,9 @@ ps_args(void)
 }
 
 ps_config_t *
-ps_config_init(const char *command)
+ps_config_init(void)
 {
     ps_config_t *config = ckd_calloc(1, sizeof(*config));
-    if (command)
-        ps_config_set_command(config, command);
     return config;
 }
 
@@ -71,8 +69,6 @@ ps_config_free(ps_config_t *config)
         return 0;
     if (--config->refcount > 0)
         return config->refcount;
-    if (config->command)
-        ckd_free(config->command);
     if (config->ht) {
         glist_t entries;
         gnode_t *gn;
@@ -102,126 +98,7 @@ ps_config_free(ps_config_t *config)
 }
 
 ps_config_t *
-ps_config_parse_args(ps_config_t *config, int argc, char *argv[])
-{
-    int32 i, j, n;
-    hash_table_t *defidx = NULL;
-    int new_config = FALSE;
-
-    /* Construct command-line object */
-    if (config == NULL) {
-        new_config = TRUE;
-        config = ps_config_init(NULL);
-    }
-    config->defn = ps_args_def;
-
-    /* Build a hash table for argument definitions */
-    defidx = hash_table_new(50, 0);
-    for (n = 0; config->defn[n].name; n++) {
-        void *v;
-
-        v = hash_table_enter(defidx, config->defn[n].name, (void *)&config->defn[n]);
-        if (v != &config->defn[n]) {
-            E_ERROR("Duplicate argument name in definition: %s\n", config->defn[n].name);
-            goto error;
-        }
-    }
-
-    /* Allocate memory for argument values */
-    if (config->ht == NULL)
-        config->ht = hash_table_new(n, 0 /* argument names are case-sensitive */ );
-
-    /* Parse command line arguments (name-value pairs) */
-    for (j = 0; j < argc; j += 2) {
-        arg_t *argdef;
-        cmd_ln_val_t *val;
-        void *v;
-
-        if (hash_table_lookup(defidx, argv[j], &v) < 0) {
-            E_ERROR("Unknown argument name '%s'\n", argv[j]);
-            goto error;
-        }
-        argdef = (arg_t *)v;
-
-        /* Enter argument value */
-        if (j + 1 >= argc) {
-            E_ERROR("Argument value for '%s' missing\n", argv[j]);
-            goto error;
-        }
-
-        if (argdef == NULL)
-            val = cmd_ln_val_init(ARG_STRING, argv[j], argv[j + 1]);
-        else {
-            if ((val = cmd_ln_val_init(argdef->type, argv[j], argv[j + 1])) == NULL) {
-                E_ERROR("Bad argument value for %s: %s\n", argv[j],
-                        argv[j + 1]);
-                goto error;
-            }
-        }
-
-        if ((v = hash_table_enter(config->ht, val->name, (void *)val)) !=
-            (void *)val) {
-            cmd_ln_val_free(val);
-            E_ERROR("Duplicate argument name in arguments: %s\n",
-                    argdef->name);
-            goto error;
-        }
-    }
-
-    /* Fill in default values, if any, for unspecified arguments */
-    for (i = 0; i < n; i++) {
-        cmd_ln_val_t *val;
-        void *v;
-
-        if (hash_table_lookup(config->ht, config->defn[i].name, &v) < 0) {
-            if ((val = cmd_ln_val_init(config->defn[i].type,
-                                       config->defn[i].name,
-                                       config->defn[i].deflt)) == NULL) {
-                E_ERROR
-                    ("Bad default argument value for %s: %s\n",
-                     config->defn[i].name, config->defn[i].deflt);
-                goto error;
-            }
-            hash_table_enter(config->ht, val->name, (void *)val);
-        }
-    }
-
-    /* Check for required arguments; exit if any missing */
-    j = 0;
-    for (i = 0; i < n; i++) {
-        if (config->defn[i].type & ARG_REQUIRED) {
-            void *v;
-            if (hash_table_lookup(config->ht, config->defn[i].name, &v) != 0)
-                E_ERROR("Missing required argument %s\n", config->defn[i].name);
-        }
-    }
-    if (j > 0) {
-        goto error;
-    }
-
-    if (argc == 1) {
-        E_ERROR("No arguments given\n");
-        if (defidx)
-            hash_table_free(defidx);
-        if (new_config)
-            ps_config_free(config);
-        return NULL;
-    }
-
-    hash_table_free(defidx);
-    return config;
-
-  error:
-    if (defidx)
-        hash_table_free(defidx);
-    if (new_config)
-        ps_config_free(config);
-    E_ERROR("Failed to parse arguments list\n");
-    return NULL;
-}
-
-ps_config_t *
-ps_config_parse_json(ps_config_t *config, const char *command,
+ps_config_parse_json(ps_config_t *config,
                      const char *json)
 {
     return NULL;
@@ -231,24 +108,6 @@ const char *
 ps_config_serialize_json(ps_config_t *config)
 {
     return NULL;
-}
-
-const char *
-ps_config_command(ps_config_t *config)
-{
-    return config->command;
-}
-
-const char *
-ps_config_set_command(ps_config_t *config, const char *command)
-{
-    if (config->command)
-        ckd_free(config->command);
-    if (command)
-        config->command = ckd_salloc(command);
-    else
-        config->command = NULL;
-    return config->command;
 }
 
 ps_type_t

@@ -85,10 +85,10 @@
 #include "pocketsphinx_internal.h"
 
 static void
-arg_log_r(cmd_ln_t *, arg_t const *, int32, int32);
+arg_log_r(ps_config_t *, arg_t const *, int32, int32);
 
-static cmd_ln_t *
-parse_options(cmd_ln_t *, const arg_t *, int32, char* [], int32);
+static ps_config_t *
+parse_options(ps_config_t *, const arg_t *, int32, char* [], int32);
 
 /*
  * Find max length of name and default fields in the given defn array.
@@ -140,7 +140,7 @@ arg_sort(const arg_t * defn, int32 n)
 }
 
 cmd_ln_val_t *
-cmd_ln_access_r(cmd_ln_t *cmdln, const char *name)
+cmd_ln_access_r(ps_config_t *cmdln, const char *name)
 {
     void *val;
     if (hash_table_lookup(cmdln->ht, name, &val) < 0) {
@@ -221,7 +221,7 @@ cmd_ln_val_free(cmd_ln_val_t *val)
 
 
 static void
-arg_log_r(cmd_ln_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
+arg_log_r(ps_config_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
 {
     arg_t const **pos;
     int32 i, n;
@@ -302,12 +302,12 @@ arg_log_r(cmd_ln_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
  * also takes care of storing argv.
  * DO NOT call it from cmd_ln_parse_r()
  */
-static cmd_ln_t *
-parse_options(cmd_ln_t *cmdln, const arg_t *defn, int32 argc, char* argv[], int32 strict)
+static ps_config_t *
+parse_options(ps_config_t *cmdln, const arg_t *defn, int32 argc, char* argv[], int32 strict)
 {
-    cmd_ln_t *new_cmdln;
+    ps_config_t *new_cmdln;
 
-    new_cmdln = ps_config_parse_args(cmdln, argc, argv);
+    new_cmdln = cmd_ln_parse_r(cmdln, defn, argc, argv, strict);
     /* If this failed then clean up and return NULL. */
     if (new_cmdln == NULL) {
         int32 i;
@@ -338,45 +338,155 @@ parse_options(cmd_ln_t *cmdln, const arg_t *defn, int32 argc, char* argv[], int3
     return new_cmdln;
 }
 
-cmd_ln_t *
-cmd_ln_init(cmd_ln_t *inout_cmdln, const arg_t *defn, int32 strict, ...)
+ps_config_t *
+cmd_ln_parse_r(ps_config_t *inout_cmdln, const arg_t * defn,
+               int32 argc, char *argv[], int strict)
 {
-    va_list args;
-    const char *arg, *val;
-    char **f_argv;
-    int32 f_argc;
+    int32 i, j, n, argstart;
+    hash_table_t *defidx = NULL;
+    ps_config_t *cmdln;
 
-    va_start(args, strict);
-    f_argc = 0;
-    while ((arg = va_arg(args, const char *))) {
-        ++f_argc;
-        val = va_arg(args, const char*);
-        if (val == NULL) {
-            E_ERROR("Number of arguments must be even!\n");
-            return NULL;
+    /* Construct command-line object */
+    if (inout_cmdln == NULL) {
+        cmdln = (ps_config_t*)ckd_calloc(1, sizeof(*cmdln));
+        cmdln->refcount = 1;
+    }
+    else
+        cmdln = inout_cmdln;
+    cmdln->defn = defn;
+
+    /* Build a hash table for argument definitions */
+    defidx = hash_table_new(50, 0);
+    if (defn) {
+        for (n = 0; defn[n].name; n++) {
+            void *v;
+
+            v = hash_table_enter(defidx, defn[n].name, (void *)&defn[n]);
+            if (strict && (v != &defn[n])) {
+                E_ERROR("Duplicate argument name in definition: %s\n", defn[n].name);
+                goto error;
+            }
         }
-        ++f_argc;
     }
-    va_end(args);
-
-    /* Now allocate f_argv */
-    f_argv = (char**)ckd_calloc(f_argc, sizeof(*f_argv));
-    va_start(args, strict);
-    f_argc = 0;
-    while ((arg = va_arg(args, const char *))) {
-        f_argv[f_argc] = ckd_salloc(arg);
-        ++f_argc;
-        val = va_arg(args, const char*);
-        f_argv[f_argc] = ckd_salloc(val);
-        ++f_argc;
+    else {
+        /* No definitions. */
+        n = 0;
     }
-    va_end(args);
 
-    return parse_options(inout_cmdln, defn, f_argc, f_argv, strict);
+    /* Allocate memory for argument values */
+    if (cmdln->ht == NULL)
+        cmdln->ht = hash_table_new(n, 0 /* argument names are case-sensitive */ );
+
+
+    /* skip argv[0] if it doesn't start with dash (starting with a
+     * dash would only happen if called from parse_options()) */
+    argstart = 0;
+    if (argc > 0 && argv[0][0] != '-') {
+        argstart = 1;
+    }
+
+    /* Parse command line arguments (name-value pairs) */
+    for (j = argstart; j < argc; j += 2) {
+        arg_t *argdef;
+        cmd_ln_val_t *val;
+        void *v;
+
+        if (hash_table_lookup(defidx, argv[j], &v) < 0) {
+            if (strict) {
+                E_ERROR("Unknown argument name '%s'\n", argv[j]);
+                goto error;
+            }
+            else if (defn == NULL)
+                v = NULL;
+            else
+                continue;
+        }
+        argdef = (arg_t *)v;
+
+        /* Enter argument value */
+        if (j + 1 >= argc) {
+            E_ERROR("Argument value for '%s' missing\n", argv[j]);
+            goto error;
+        }
+
+        if (argdef == NULL)
+            val = cmd_ln_val_init(ARG_STRING, argv[j], argv[j + 1]);
+        else {
+            if ((val = cmd_ln_val_init(argdef->type, argv[j], argv[j + 1])) == NULL) {
+                E_ERROR("Bad argument value for %s: %s\n", argv[j],
+                        argv[j + 1]);
+                goto error;
+            }
+        }
+
+        if ((v = hash_table_enter(cmdln->ht, val->name, (void *)val)) !=
+            (void *)val)
+        {
+            if (strict) {
+                cmd_ln_val_free(val);
+                E_ERROR("Duplicate argument name in arguments: %s\n",
+                        argdef->name);
+                goto error;
+            }
+            else {
+                v = hash_table_replace(cmdln->ht, val->name, (void *)val);
+                cmd_ln_val_free((cmd_ln_val_t *)v);
+            }
+        }
+    }
+
+    /* Fill in default values, if any, for unspecified arguments */
+    for (i = 0; i < n; i++) {
+        cmd_ln_val_t *val;
+        void *v;
+
+        if (hash_table_lookup(cmdln->ht, defn[i].name, &v) < 0) {
+            if ((val = cmd_ln_val_init(defn[i].type, defn[i].name, defn[i].deflt)) == NULL) {
+                E_ERROR
+                    ("Bad default argument value for %s: %s\n",
+                     defn[i].name, defn[i].deflt);
+                goto error;
+            }
+            hash_table_enter(cmdln->ht, val->name, (void *)val);
+        }
+    }
+
+    /* Check for required arguments; exit if any missing */
+    j = 0;
+    for (i = 0; i < n; i++) {
+        if (defn[i].type & ARG_REQUIRED) {
+            void *v;
+            if (hash_table_lookup(cmdln->ht, defn[i].name, &v) != 0)
+                E_ERROR("Missing required argument %s\n", defn[i].name);
+        }
+    }
+    if (j > 0) {
+        goto error;
+    }
+
+    if (strict && argc == 1) {
+        E_ERROR("No arguments given\n");
+        if (defidx)
+            hash_table_free(defidx);
+        if (inout_cmdln == NULL)
+            ps_config_free(cmdln);
+        return NULL;
+    }
+
+    hash_table_free(defidx);
+    return cmdln;
+
+  error:
+    if (defidx)
+        hash_table_free(defidx);
+    if (inout_cmdln == NULL)
+        ps_config_free(cmdln);
+    E_ERROR("Failed to parse arguments list\n");
+    return NULL;
 }
 
-cmd_ln_t *
-cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, const arg_t * defn, const char *filename, int32 strict)
+ps_config_t *
+cmd_ln_parse_file_r(ps_config_t *inout_cmdln, const arg_t * defn, const char *filename, int32 strict)
 {
     FILE *file;
     int argc;
@@ -507,7 +617,7 @@ cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, const arg_t * defn, const char *filen
 }
 
 void
-cmd_ln_log_help_r(cmd_ln_t *cmdln, arg_t const* defn)
+cmd_ln_log_help_r(ps_config_t *cmdln, arg_t const* defn)
 {
     if (defn == NULL)
         return;
@@ -522,7 +632,7 @@ cmd_ln_log_help_r(cmd_ln_t *cmdln, arg_t const* defn)
 }
 
 void
-cmd_ln_log_values_r(cmd_ln_t *cmdln, arg_t const* defn)
+cmd_ln_log_values_r(ps_config_t *cmdln, arg_t const* defn)
 {
     if (defn == NULL)
         return;
@@ -531,7 +641,7 @@ cmd_ln_log_values_r(cmd_ln_t *cmdln, arg_t const* defn)
 }
 
 void
-cmd_ln_set_str_extra_r(cmd_ln_t *cmdln, char const *name, char const *str)
+cmd_ln_set_str_extra_r(ps_config_t *cmdln, char const *name, char const *str)
 {
     cmd_ln_val_t *val;
     if (hash_table_lookup(cmdln->ht, name, (void **)&val) < 0) {

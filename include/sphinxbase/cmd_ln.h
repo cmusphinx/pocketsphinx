@@ -66,9 +66,11 @@
 
 /**
  * @file cmd_ln.h
- * @brief Command-line and other configuration parsing and handling.
+ * @brief Internal interface for configuration parameters.
  *  
- * Configuration parameters, optionally parsed from the command line.
+ * This file contains internal APIs used for configuration by the
+ * PocketSphinx command-line tools.  Library users should use the
+ * ps_config_t interface as described in <pocketsphinx.h>.
  */
   
 
@@ -101,6 +103,7 @@ typedef struct cmd_ln_val_s {
     char *name;
 } cmd_ln_val_t;
 
+
 /**
  * @struct cmd_ln_t
  * Structure (no longer opaque) used to hold the results of command-line parsing.
@@ -111,8 +114,29 @@ typedef struct cmd_ln_s {
     char **f_argv;
     uint32 f_argc;
     arg_t const *defn;
-    char *command;
 } cmd_ln_t;
+
+/**
+ * Parse a list of strings into argumetns.
+ *
+ * Parse the given list of arguments (name-value pairs) according to
+ * the given definitions.  Argument values can be retrieved in future
+ * using cmd_ln_access().  argv[0] is assumed to be the program name
+ * and skipped.  Any unknown argument name causes an error.  If an
+ * extra argument (with no dash) is present it is assumed to be a
+ * "command", which can be retrieved with ps_config_command().
+ *
+ * @return A cmd_ln_t containing the results of command line parsing,
+ *         or NULL on failure.
+ **/
+cmd_ln_t *cmd_ln_parse_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-line to update,
+                                                     or NULL to create a new one. */
+                         arg_t const *defn,	/**< In: Array of argument name definitions */
+                         int32 argc,		/**< In: Number of actual arguments */
+                         char *argv[],		/**< In: Actual arguments */
+                         int32 strict           /**< In: Fail on duplicate or unknown
+                                                   arguments, or no arguments? */
+    );
 
 /**
  * Access the value and metadata for a configuration parameter.
@@ -131,7 +155,14 @@ typedef struct cmd_ln_s {
  */
 cmd_ln_val_t *cmd_ln_access_r(cmd_ln_t *cmdln, char const *name);
 
+/**
+ * Create a configuration key/value pair.
+ */
 cmd_ln_val_t * cmd_ln_val_init(int t, const char *name, const char *str);
+
+/**
+ * Release a configuration key/value pair.
+ */ 
 void cmd_ln_val_free(cmd_ln_val_t *val);
 
 /**

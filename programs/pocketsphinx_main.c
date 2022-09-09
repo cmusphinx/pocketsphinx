@@ -366,12 +366,12 @@ main(int argc, char *argv[])
     const char *command;
     int rv;
 
-    if ((config = ps_config_parse_args(NULL, argc, argv)) == NULL) {
+    if ((config = cmd_ln_parse_r(NULL, ps_args(), argc, argv, TRUE)) == NULL) {
         cmd_ln_log_help_r(NULL, ps_args());
         return 1;
     }
     ps_default_search_args(config);
-    command = ps_config_command(config);
+    command = find_command(argc, argv);
     if (0 == strcmp(command, "soxflags")) {
         rv = soxflags(config);
     }

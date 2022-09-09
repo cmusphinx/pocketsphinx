@@ -113,47 +113,28 @@ typedef enum ps_type_e  {
 } ps_type_t;
 
 /**
- * Creates a configuration with default values.
+ * Create a configuration with default values.
  *
- * @arg command Optional command name (can be NULL).
  * @return Newly created configuration or NULL on failure (such as
  * invalid or missing parameters).
  */
 POCKETSPHINX_EXPORT
-ps_config_t *ps_config_init(const char *command);
+ps_config_t *ps_config_init(void);
 
 /**
- * Retains a pointer to a configuration object.
+ * Retain a pointer to a configuration object.
  */
 POCKETSPHINX_EXPORT
 ps_config_t *ps_config_retain(ps_config_t *config);
 
 /**
- * Releases a configuration object.
+ * Release a configuration object.
  */
 POCKETSPHINX_EXPORT
 int ps_config_free(ps_config_t *config);
 
 /**
- * Creates a configuration by parsing the command-line.
- *
- * This parses the command line to create a configuration.  All
- * arguments names must begin with a dash ('-').  If an extra argument
- * (with no dash) is present it is assumed to be a "command", which
- * can be retrieved with ps_config_command().
- *
- * @arg config Previously existing ps_config_t to update, or NULL to
- * create a new one.
- * @arg argc Argument count as passed to main()
- * @arg argv Array of argument strings as passed to main().
- * @return Newly created configuration or NULL on failure (such as
- * invalid or missing parameters).
- */
-POCKETSPHINX_EXPORT
-ps_config_t *ps_config_parse_args(ps_config_t *config, int argc, char *argv[]);
-
-/**
- * Creates or updates a configuration by parsing slightly extended JSON.
+ * Create or update a configuration by parsing slightly extended JSON.
  *
  * This function parses a JSON object in non-strict mode to produce a
  * ps_config_t.  Configuration parameters are given *without* a
@@ -170,15 +151,13 @@ ps_config_t *ps_config_parse_args(ps_config_t *config, int argc, char *argv[]);
  *
  * @arg config Previously existing ps_config_t to update, or NULL to
  * create a new one.
- * @arg command Optional command name (can be NULL).
  * @arg json JSON serialized object as null-terminated UTF-8,
  * containing configuration parameters.
  * @return Newly created configuration or NULL on failure (such as
  * invalid or missing parameters).
  */
 POCKETSPHINX_EXPORT
-ps_config_t *ps_config_parse_json(ps_config_t *config, const char *command,
-                                  const char *json);
+ps_config_t *ps_config_parse_json(ps_config_t *config, const char *json);
 
 /**
  * Construct JSON from a configuration object.
@@ -195,36 +174,10 @@ POCKETSPHINX_EXPORT
 const char *ps_config_serialize_json(ps_config_t *config);
 
 /**
- * Access the command in a configuration object.
- *
- * @param config Configuration object
- * @return Command name, or NULL if none.  The ps_config_t retains
- * ownership of this pointer, which is only valid until the next call
- * to ps_config_set_command(), ps_config_parse_args() or
- * ps_config_parse_json().
- */
-POCKETSPHINX_EXPORT
-const char *ps_config_command(ps_config_t *config);
-
-/**
- * Set or clear the command in a configuration object.
- *
- * @param config Configuration object
- * @param command Commane namd, or NULL for none.
- * @return Pointer to command name.  This is *not* the same pointer
- * passed in (unless it's NULL) The ps_config_t retains ownership of
- * this pointer, which is only valid until the next call to
- * ps_config_set_command(), ps_config_parse_args() or
- * ps_config_parse_json().
- */
-POCKETSPHINX_EXPORT
-const char *ps_config_set_command(ps_config_t *config, const char *command);
-
-/**
  * Access the type of a configuration parameter.
  *
  * @param config Configuration object.
- * @param name the command-line flag to retrieve.
+ * @param name Name of the parameter to retrieve.
  * @return the type of the parameter (as a combination of the ARG_*
  *         bits), or 0 if no such parameter exists.
  */

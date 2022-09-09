@@ -271,7 +271,7 @@ read_riff_header(FILE *infh, cmd_ln_t *config)
     TRY_FREAD(&intval, 4, 1, infh);
     SWAP_LE_32(&intval);
     if (ps_config_int(config, "-samprate") == 0)
-        cmd_ln_set_int_r(config, "-samprate", intval);
+        ps_config_set_int(config, "-samprate", intval);
     else if (ps_config_int(config, "-samprate") != intval) {
         E_WARN("WAVE file sampling rate %d != -samprate %d\n",
                intval, ps_config_int(config, "-samprate"));
@@ -342,7 +342,7 @@ read_nist_header(FILE *infh, cmd_ln_t *config)
     }
     ++c;
     if (ps_config_int(config, "-samprate") == 0)
-        cmd_ln_set_int_r(config, "-samprate", atoi(c));
+        ps_config_set_int(config, "-samprate", atoi(c));
     else if (ps_config_int(config, "-samprate") != atoi(c)) {
         E_WARN("NIST file sampling rate %d != -samprate %d\n",
                atoi(c), ps_config_int(config, "-samprate"));
@@ -428,7 +428,7 @@ extract_pitch(const char *in, const char *out, cmd_ln_t *config)
             ps_config_set_str(config, "-input_endian", "little");
         }
         if (ps_config_int(config, "-samprate") == 0)
-            cmd_ln_set_int_r(config, "-samprate", 16000);
+            ps_config_set_int(config, "-samprate", 16000);
     }
 
     /* Now read frames and write pitch estimates. */
@@ -567,7 +567,7 @@ run_control_file(const char *ctl, cmd_ln_t *config)
             ps_config_set_bool(config, "-raw", FALSE);
         }
         if (guess_sps)
-            cmd_ln_set_int_r(config, "-samprate", 0);
+            ps_config_set_int(config, "-samprate", 0);
         if (guess_endian)
             ps_config_set_str(config, "-input_endian", NULL);
 
