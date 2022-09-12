@@ -38,24 +38,26 @@
 #ifndef __POCKETSPHINX_H__
 #define __POCKETSPHINX_H__
 
-
-/* System headers we need. */
+/* System headers */
 #include <stdio.h>
 
-/* SphinxBase headers we need. */
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/fe.h>
-#include <sphinxbase/feat.h>
+/* PocketSphinx utility headers */
+#include <pocketsphinx/sphinx_config.h>
+#include <pocketsphinx/prim_type.h>
+#include <pocketsphinx/logmath.h>
+#include <pocketsphinx/fe.h>
+#include <pocketsphinx/feat.h>
+#include <pocketsphinx/err.h>
 
-/* SphinxBase headers you need. */
-#include <sphinxbase/err.h>
-
-/* PocketSphinx headers */
+/* PocketSphinx API headers */
+#include <pocketsphinx/vad.h>
+#include <pocketsphinx/endpointer.h>
+#include <pocketsphinx/search.h>
 #include <pocketsphinx/export.h>
 #include <pocketsphinx/lattice.h>
 #include <pocketsphinx/mllr.h>
 
+/* Namum manglium idut domem */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -63,39 +65,7 @@ extern "C" {
 }
 #endif
 
-/**
- * @struct ps_decoder_t
- * PocketSphinx speech recognizer object.
- */
-typedef struct ps_decoder_s ps_decoder_t;
-
-/* Voice activity detection. */
-#include <pocketsphinx/vad.h>
-
-/* Endpointing. */
-#include <pocketsphinx/endpointer.h>
-
-/* Search modules. */
-#include <pocketsphinx/search.h>
-
-/**
- * @struct ps_astar_t
- * PocketSphinx N-best hypothesis iterator object.
- */
-typedef struct ps_astar_s ps_nbest_t;
-
-/**
- * @struct ps_seg_t
- * PocketSphinx segmentation iterator object.
- */
-typedef struct ps_seg_s ps_seg_t;
-
-/**
- * @struct ps_config_t
- * PocketSphinx configuration object.
- */
-typedef struct cmd_ln_s ps_config_t;
-
+/* Transparent structures */
 /**
  * @enum ps_type_t
  * Types of configuration parameters.
@@ -122,6 +92,32 @@ typedef struct arg_s {
 	char const *deflt;  /**< Default value (as a character string), or NULL if none */
 	char const *doc;    /**< Documentation/description string */
 } arg_t;
+
+/* Opaque structures */
+
+/**
+ * @struct ps_config_t
+ * PocketSphinx configuration object.
+ */
+typedef struct cmd_ln_s ps_config_t;
+
+/**
+ * @struct ps_decoder_t
+ * PocketSphinx speech recognizer object.
+ */
+typedef struct ps_decoder_s ps_decoder_t;
+
+/**
+ * @struct ps_astar_t
+ * PocketSphinx N-best hypothesis iterator object.
+ */
+typedef struct ps_astar_s ps_nbest_t;
+
+/**
+ * @struct ps_seg_t
+ * PocketSphinx segmentation iterator object.
+ */
+typedef struct ps_seg_s ps_seg_t;
 
 /**
  * Create a configuration with default values.
