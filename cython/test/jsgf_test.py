@@ -35,6 +35,8 @@ class TestJsgf(unittest.TestCase):
         rule = jsgf.get_rule("goforward.move2")
         fsg = jsgf.build_fsg(rule, decoder.get_logmath(), 7.5)
         fsg.writefile("goforward.fsg")
+        self.assertTrue(os.path.exists("goforward.fsg"))
+        os.remove("goforward.fsg")
 
         decoder.set_fsg("goforward", fsg)
         decoder.set_search("goforward") # FIXME: This API sucks
