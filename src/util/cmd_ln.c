@@ -346,14 +346,15 @@ cmd_ln_parse_r(ps_config_t *inout_cmdln, const arg_t * defn,
     hash_table_t *defidx = NULL;
     ps_config_t *cmdln;
 
+
     /* Construct command-line object */
-    if (inout_cmdln == NULL) {
-        cmdln = (ps_config_t*)ckd_calloc(1, sizeof(*cmdln));
-        cmdln->refcount = 1;
-    }
-    else
+    if (inout_cmdln == NULL)
+        cmdln = ps_config_init();
+    else {
         cmdln = inout_cmdln;
-    cmdln->defn = defn;
+        /* FIXME: ... what if it wasn't before? */
+        cmdln->defn = defn;
+    }
 
     /* Build a hash table for argument definitions */
     defidx = hash_table_new(50, 0);

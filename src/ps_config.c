@@ -29,6 +29,9 @@
  */
 
 
+/* Public headers. */
+#include <pocketsphinx.h>
+
 #include <sphinxbase/err.h>
 #include <sphinxbase/cmd_ln.h>
 #include <sphinxbase/strfuncs.h>
@@ -97,10 +100,84 @@ ps_config_free(ps_config_t *config)
     return 0;
 }
 
+void
+json_error(int err)
+{
+    const char *errstr;
+    switch (err) {
+    case JSMN_ERROR_INVAL:
+        errstr = "JSMN_ERROR_INVAL - bad token, JSON string is corrupted";
+        break;
+    case JSMN_ERROR_NOMEM:
+        errstr = "JSMN_ERROR_NOMEM - not enough tokens, JSON string is too large";
+        break;
+    case JSMN_ERROR_PART:
+        errstr = "JSMN_ERROR_PART - JSON string is too short, expecting more JSON data";
+        break;
+    default:
+        errstr = "Unknown error";
+    }
+    E_ERROR("JSON parsing failed: %s\n", errstr);
+}
+
 ps_config_t *
 ps_config_parse_json(ps_config_t *config,
                      const char *json)
 {
+    jsmn_parser parser;
+    jsmntok_t *tokens = NULL;
+    int i, jslen, ntok, new_config = FALSE;
+
+    if (json == NULL)
+        return NULL;
+    if (config == NULL) {
+        if ((config = ps_config_init()) == NULL)
+            return NULL;
+        new_config = TRUE;
+    }
+    jsmn_init(&parser);
+    jslen = strlen(json);
+    if ((ntok = jsmn_parse(&parser, json, jslen, NULL, 0)) < 0) {
+        json_error(ntok);
+        goto error_out;
+    }
+    tokens = ckd_calloc(ntok, sizeof(*tokens));
+    if ((ntok = jsmn_parse(&parser, json, jslen, tokens, ntok)) < 0) {
+        json_error(ntok);
+        goto error_out;
+    }
+    if (ntok == 0 || tokens[0].type != JSMN_OBJECT) {
+        E_ERROR("Expected JSON object at top level\n");
+        goto error_out;
+    }
+    /* JSMN is really a tokenizer more than a parser, but that is all
+     * you need for JSON. */
+    for (i = 1; i < ntok; ++i) {
+        char *key, *val;
+        key = ckd_calloc(tokens[i].end - tokens[i].start + 1, 1);
+        memcpy(key, json + tokens[i].start, tokens[i].end - tokens[i].start);
+        if (tokens[i].type != JSMN_STRING) {
+            E_ERROR("Expected string key, got %s\n", key);
+            ckd_free(key);
+            goto error_out;
+        }
+        if (i + 1 == ntok) {
+            E_ERROR("Missing value for %s\n", key);
+            ckd_free(key);
+            goto error_out;
+        }
+        val = ckd_calloc(tokens[i+1].end - tokens[i+1].start + 1, 1);
+        memcpy(val, json + tokens[i+1].start, tokens[i+1].end - tokens[i+1].start);
+    }
+
+    ckd_free(tokens);
+    return config;
+
+error_out:
+    if (tokens)
+        ckd_free(tokens);
+    if (new_config)
+        ps_config_free(config);
     return NULL;
 }
 
