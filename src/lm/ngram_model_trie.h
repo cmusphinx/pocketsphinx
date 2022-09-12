@@ -37,9 +37,6 @@
 #ifndef __NGRAM_MODEL_TRIE_H__
 #define __NGRAM_MODEL_TRIE_H__
 
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/logmath.h>
-
 #include "ngram_model_internal.h"
 #include "lm_trie.h"
 
@@ -51,7 +48,7 @@ typedef struct ngram_model_trie_s {
 /**
  * Read N-Gram model from and ARPABO text file and arrange it in trie structure
  */
-ngram_model_t *ngram_model_trie_read_arpa(cmd_ln_t * config,
+ngram_model_t *ngram_model_trie_read_arpa(ps_config_t * config,
                                           const char *path,
                                           logmath_t * lmath);
 
@@ -63,7 +60,7 @@ int ngram_model_trie_write_arpa(ngram_model_t * base, const char *path);
 /**
  * Read N-Gram model from the binary file and arrange it in a trie structure
  */
-ngram_model_t *ngram_model_trie_read_bin(cmd_ln_t * config,
+ngram_model_t *ngram_model_trie_read_bin(ps_config_t * config,
                                          const char *path,
                                          logmath_t * lmath);
 
@@ -75,7 +72,7 @@ int ngram_model_trie_write_bin(ngram_model_t * model, const char *path);
 /**
  * Read N-Gram model from DMP file and arrange it in trie structure
  */
-ngram_model_t *ngram_model_trie_read_dmp(cmd_ln_t * config,
+ngram_model_t *ngram_model_trie_read_dmp(ps_config_t * config,
                                          const char *file_name,
                                          logmath_t * lmath);
 

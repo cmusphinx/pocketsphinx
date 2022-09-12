@@ -121,7 +121,7 @@ build_widmap(ngram_model_t * base, logmath_t * lmath, int32 n)
 }
 
 ngram_model_t *
-ngram_model_set_init(cmd_ln_t * config,
+ngram_model_set_init(ps_config_t * config,
                      ngram_model_t ** models,
                      char **names, const float32 * weights, int32 n_models)
 {
@@ -183,7 +183,7 @@ ngram_model_set_init(cmd_ln_t * config,
 }
 
 ngram_model_t *
-ngram_model_set_read(cmd_ln_t * config,
+ngram_model_set_read(ps_config_t * config,
                      const char *lmctlfile, logmath_t * lmath)
 {
     FILE *ctlfp;

@@ -73,7 +73,6 @@
 #define __PS_SEARCH_H__
 
 #include <sphinxbase/fsg_model.h>
-#include <sphinxbase/ngram_model.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -164,6 +163,9 @@ void ps_search_iter_free(ps_search_iter_t *itor);
 POCKETSPHINX_EXPORT
 const char* ps_search_iter_val(ps_search_iter_t *itor);
 
+
+/* Forward declare this (not public API) */
+typedef struct ngram_model_s ngram_model_t;
 
 /**
  * Get the language model set object for this decoder.

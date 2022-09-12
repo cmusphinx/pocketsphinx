@@ -46,17 +46,16 @@
 /* System headers. */
 #include <stdio.h>
 
+/* Public headers. */
+#include <pocketsphinx.h>
+
 /* SphinxBase headers. */
-#include <sphinxbase/cmd_ln.h>
 #include <sphinxbase/logmath.h>
 #include <sphinxbase/fe.h>
 #include <sphinxbase/feat.h>
 #include <sphinxbase/bitvec.h>
 #include <sphinxbase/err.h>
 #include <sphinxbase/prim_type.h>
-
-/* Public headers. */
-#include <pocketsphinx.h>
 
 /* Local headers. */
 #include "bin_mdef.h"

@@ -45,7 +45,6 @@
 
 /* SphinxBase headers. */
 #include <sphinxbase/prim_type.h>
-#include <sphinxbase/ngram_model.h>
 
 /* PocketSphinx headers. */
 #include <pocketsphinx/export.h>
@@ -397,6 +396,9 @@ ps_latlink_t *ps_lattice_reverse_edges(ps_lattice_t *dag, ps_latnode_t *start, p
  */
 POCKETSPHINX_EXPORT
 ps_latlink_t *ps_lattice_reverse_next(ps_lattice_t *dag, ps_latnode_t *start);
+
+/* Forward declare this (not public API) */
+typedef struct ngram_model_s ngram_model_t;
 
 /**
  * Do N-Gram based best-path search on a word graph.

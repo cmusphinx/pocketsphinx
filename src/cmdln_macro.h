@@ -40,8 +40,8 @@
 #ifndef __PS_CMDLN_MACRO_H__
 #define __PS_CMDLN_MACRO_H__
 
-#include <sphinxbase/cmd_ln.h>
-#include "pocketsphinx_internal.h"
+/* Public headers. */
+#include <pocketsphinx.h>
 
 /**
  * Helper macro to stringify enums and other non-string values for

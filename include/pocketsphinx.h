@@ -113,6 +113,17 @@ typedef enum ps_type_e  {
 } ps_type_t;
 
 /**
+ * @struct ps_arg_t
+ * Definition of configuration parameter.
+ */
+typedef struct arg_s {
+	char const *name;   /**< Name of the command line switch */
+	int type;           /**< Type of the argument in question */
+	char const *deflt;  /**< Default value (as a character string), or NULL if none */
+	char const *doc;    /**< Documentation/description string */
+} arg_t;
+
+/**
  * Create a configuration with default values.
  *
  * @return Newly created configuration or NULL on failure (such as

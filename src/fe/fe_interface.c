@@ -44,12 +44,14 @@
 #include <config.h>
 #endif
 
+/* Public headers. */
+#include <pocketsphinx.h>
+
 #include "sphinxbase/prim_type.h"
 #include "sphinxbase/byteorder.h"
 #include "sphinxbase/fixpoint.h"
 #include "sphinxbase/genrand.h"
 #include "sphinxbase/err.h"
-#include "sphinxbase/cmd_ln.h"
 #include "sphinxbase/ckd_alloc.h"
 
 #include "cmdln_macro.h"

@@ -45,10 +45,11 @@
 
 #include <stdarg.h>
 
+#include <pocketsphinx.h>
+
 /* Win32/WinCE DLL gunk */
 #include <sphinxbase/sphinxbase_export.h>
 #include <sphinxbase/prim_type.h>
-#include <sphinxbase/cmd_ln.h>
 #include <sphinxbase/logmath.h>
 #include <sphinxbase/mmio.h>
 
@@ -85,7 +86,7 @@ typedef enum ngram_file_type_e {
 /**
  * Read an N-Gram model from a file on disk.
  *
- * @param config Optional pointer to a set of command-line arguments.
+ * @param config Optional pointer to a PocketSphinx configuration.
  * Recognized arguments are:
  *
  *  - -mmap (boolean) whether to use memory-mapped I/O
@@ -102,7 +103,7 @@ typedef enum ngram_file_type_e {
  * @return newly created ngram_model_t.
  */
 SPHINXBASE_EXPORT
-ngram_model_t *ngram_model_read(cmd_ln_t *config,
+ngram_model_t *ngram_model_read(ps_config_t *config,
 				const char *file_name,
                                 ngram_file_type_t file_type,
 				logmath_t *lmath);
@@ -503,7 +504,7 @@ int32 ngram_model_add_class_word(ngram_model_t *model,
  * @param n_models Number of elements in the arrays passed to this function.
  */
 SPHINXBASE_EXPORT
-ngram_model_t *ngram_model_set_init(cmd_ln_t *config,
+ngram_model_t *ngram_model_set_init(ps_config_t *config,
                                     ngram_model_t **models,
                                     char **names,
                                     const float32 *weights,
@@ -540,7 +541,7 @@ ngram_model_t *ngram_model_set_init(cmd_ln_t *config,
  * @return newly created language model set.
  */
 SPHINXBASE_EXPORT
-ngram_model_t *ngram_model_set_read(cmd_ln_t *config,
+ngram_model_t *ngram_model_set_read(ps_config_t *config,
                                     const char *lmctlfile,
                                     logmath_t *lmath);
 

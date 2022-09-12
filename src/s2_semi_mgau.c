@@ -47,9 +47,11 @@
 #include <sys/types.h>
 #endif
 
+/* Public headers. */
+#include <pocketsphinx.h>
+
 /* SphinxBase headers */
 #include <sphinxbase/sphinx_config.h>
-#include <sphinxbase/cmd_ln.h>
 #include <sphinxbase/fixpoint.h>
 #include <sphinxbase/ckd_alloc.h>
 #include <sphinxbase/bio.h>

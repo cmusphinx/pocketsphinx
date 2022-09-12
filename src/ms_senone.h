@@ -42,10 +42,12 @@
 #define _MS_SENONE_H_
 
 
+/* Public headers. */
+#include <pocketsphinx.h>
+
 /* SphinxBase headers. */
 #include <sphinxbase/err.h>
 #include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/cmd_ln.h>
 #include <sphinxbase/logmath.h>
 
 /* Local headers. */

@@ -44,7 +44,6 @@
 #include <sphinxbase/ckd_alloc.h>
 #include <sphinxbase/strfuncs.h>
 #include <sphinxbase/pio.h>
-#include <sphinxbase/cmd_ln.h>
 
 #include "pocketsphinx_internal.h"
 #include "kws_search.h"

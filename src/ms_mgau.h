@@ -96,8 +96,10 @@
 #ifndef _LIBFBS_MS_CONT_MGAU_H_
 #define _LIBFBS_MS_CONT_MGAU_H_
 
+/* Public headers. */
+#include <pocketsphinx.h>
+
 /* SphinxBase headers. */
-#include <sphinxbase/cmd_ln.h>
 #include <sphinxbase/logmath.h>
 #include <sphinxbase/feat.h>
 

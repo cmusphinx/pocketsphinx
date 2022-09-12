@@ -45,7 +45,6 @@
 
 /* SphinxBase headers. */
 #include <sphinxbase/prim_type.h>
-#include <sphinxbase/ngram_model.h>
 
 /* PocketSphinx headers. */
 #include <pocketsphinx/export.h>

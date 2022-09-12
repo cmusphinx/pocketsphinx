@@ -165,7 +165,7 @@ read_1grams_arpa(lineiter_t ** li, uint32 count, ngram_model_t * base,
 }
 
 ngram_model_t *
-ngram_model_trie_read_arpa(cmd_ln_t * config,
+ngram_model_trie_read_arpa(ps_config_t * config,
                            const char *path, logmath_t * lmath)
 {
     FILE *fp;
@@ -346,7 +346,7 @@ read_word_str(ngram_model_t * base, FILE * fp, int do_swap)
 }
 
 ngram_model_t *
-ngram_model_trie_read_bin(cmd_ln_t * config,
+ngram_model_trie_read_bin(ps_config_t * config,
                           const char *path, logmath_t * lmath)
 {
     int32 is_pipe;
@@ -441,7 +441,7 @@ ngram_model_trie_write_bin(ngram_model_t * base, const char *path)
 }
 
 ngram_model_t *
-ngram_model_trie_read_dmp(cmd_ln_t * config,
+ngram_model_trie_read_dmp(ps_config_t * config,
                           const char *file_name, logmath_t * lmath)
 {
     uint8 do_swap;

@@ -42,6 +42,7 @@
 #include <config.h>
 #endif
 
+#include "sphinxbase/cmd_ln.h"
 #include "sphinxbase/fe.h"
 #include "sphinxbase/fixpoint.h"
 

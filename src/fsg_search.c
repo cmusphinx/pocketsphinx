@@ -53,11 +53,13 @@
 #include <string.h>
 #include <assert.h>
 
+/* Public headers. */
+#include <pocketsphinx.h>
+
 /* SphinxBase headers. */
 #include <sphinxbase/err.h>
 #include <sphinxbase/ckd_alloc.h>
 #include <sphinxbase/strfuncs.h>
-#include <sphinxbase/cmd_ln.h>
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"
