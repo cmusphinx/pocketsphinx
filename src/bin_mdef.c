@@ -46,19 +46,15 @@
  * 	David Huggins-Daines <dhdaines@gmail.com>
  *********************************************************************/
 
-/* System headers. */
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/byteorder.h>
-#include <sphinxbase/case.h>
-#include <sphinxbase/err.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
+#include "util/ckd_alloc.h"
+#include "util/byteorder.h"
+#include "util/case.h"
 #include "mdef.h"
 #include "bin_mdef.h"
 

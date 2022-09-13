@@ -41,23 +41,16 @@
  * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
-/* System headers. */
 #include <assert.h>
 #include <string.h>
 #include <math.h>
 
-/* PocketSphinx headers. */
 #include <pocketsphinx.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/byteorder.h>
-#include <sphinxbase/feat.h>
-#include <sphinxbase/bio.h>
-
-/* Local headers. */
+#include "util/strfuncs.h"
+#include "util/byteorder.h"
+#include "feat/feat.h"
+#include "util/bio.h"
 #include "acmod.h"
 #include "s2_semi_mgau.h"
 #include "ptm_mgau.h"

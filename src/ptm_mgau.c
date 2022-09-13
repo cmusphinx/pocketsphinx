@@ -35,7 +35,6 @@
  *
  */
 
-/* System headers */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,18 +46,11 @@
 #include <sys/types.h>
 #endif
 
-/* Public headers. */
 #include <pocketsphinx.h>
 
-/* SphinxBase headers */
-#include <sphinxbase/sphinx_config.h>
-#include <sphinxbase/fixpoint.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/bio.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/prim_type.h>
-
-/* Local headers */
+#include "fe/fixpoint.h"
+#include "util/ckd_alloc.h"
+#include "util/bio.h"
 #include "tied_mgau_common.h"
 #include "ptm_mgau.h"
 

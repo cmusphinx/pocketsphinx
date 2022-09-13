@@ -38,15 +38,10 @@
 #ifndef _S3_DICT2PID_H_
 #define _S3_DICT2PID_H_
 
-/* System headers. */
 #include <stdio.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/bitvec.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
-#include <pocketsphinx/export.h>
 #include "s3types.h"
 #include "bin_mdef.h"
 #include "dict.h"
@@ -123,7 +118,6 @@ typedef struct dict2pid_s {
 /**
  * Build the dict2pid structure for the given model/dictionary
  */
-POCKETSPHINX_EXPORT
 dict2pid_t *dict2pid_build(bin_mdef_t *mdef,   /**< A  model definition*/
                            dict_t *dict        /**< An initialized dictionary */
     );
@@ -131,13 +125,11 @@ dict2pid_t *dict2pid_build(bin_mdef_t *mdef,   /**< A  model definition*/
 /**
  * Retain a pointer to dict2pid
  */
-POCKETSPHINX_EXPORT
 dict2pid_t *dict2pid_retain(dict2pid_t *d2p);  
 
 /**
  * Free the memory dict2pid structure
  */
-POCKETSPHINX_EXPORT
 int dict2pid_free(dict2pid_t *d2p /**< In: the d2p */
     );
 
@@ -151,7 +143,6 @@ s3ssid_t dict2pid_internal(dict2pid_t *d2p,
 /**
  * Add a word to the dict2pid structure (after adding it to dict).
  */
-POCKETSPHINX_EXPORT
 int dict2pid_add_word(dict2pid_t *d2p,
                       int32 wid);
 

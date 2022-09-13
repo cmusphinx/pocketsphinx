@@ -49,9 +49,7 @@ extern "C" {
 } /* Fool Emacs. */
 #endif
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-#include <sphinxbase/prim_type.h>
+#include <pocketsphinx/prim_type.h>
 
 /**
  * Frame-based moving-window pitch estimator.
@@ -61,26 +59,22 @@ typedef struct yin_s yin_t;
 /**
  * Initialize moving-window pitch estimation.
  */
-SPHINXBASE_EXPORT
 yin_t *yin_init(int frame_size, float search_threshold,
                 float search_range, int smooth_window);
 
 /**
  * Free a moving-window pitch estimator.
  */
-SPHINXBASE_EXPORT
 void yin_free(yin_t *pe);
 
 /**
  * Start processing an utterance.
  */
-SPHINXBASE_EXPORT
 void yin_start(yin_t *pe);
 
 /**
  * Mark the end of an utterance.
  */
-SPHINXBASE_EXPORT
 void yin_end(yin_t *pe);
 
 /**
@@ -90,7 +84,6 @@ void yin_end(yin_t *pe);
  * @param frame Frame of <code>frame_size</code> (see
  * yin_init()) samples of audio data.
  */
-SPHINXBASE_EXPORT
 void yin_write(yin_t *pe, int16 const *frame);
 
 /**
@@ -106,7 +99,6 @@ void yin_write(yin_t *pe, int16 const *frame);
  * @return Non-zero if enough data was avaliable to return a pitch
  *         estimate, zero otherwise.
  */
-SPHINXBASE_EXPORT
 int yin_read(yin_t *pe, uint16 *out_period, uint16 *out_bestdiff);
 
 #ifdef __cplusplus

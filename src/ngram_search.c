@@ -39,16 +39,11 @@
  * @file ngram_search.c N-Gram based multi-pass search ("FBS")
  */
 
-/* System headers. */
 #include <string.h>
 #include <assert.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/listelem_alloc.h>
-#include <sphinxbase/err.h>
-
-/* Local headers. */
+#include "util/ckd_alloc.h"
+#include "util/listelem_alloc.h"
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
 #include "ngram_search.h"

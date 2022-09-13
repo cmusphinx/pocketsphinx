@@ -39,19 +39,17 @@
  * @file ps_lattice.c Word graph search.
  */
 
-/* System headers. */
 #include <assert.h>
 #include <string.h>
 #include <math.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/listelem_alloc.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/pio.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
+#include "util/ckd_alloc.h"
+#include "util/listelem_alloc.h"
+#include "util/strfuncs.h"
+#include "util/pio.h"
+
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
 #include "ngram_search.h"

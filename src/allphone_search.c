@@ -42,10 +42,9 @@
 
 #include <pocketsphinx.h>
 
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/pio.h>
+#include "util/ckd_alloc.h"
+#include "util/strfuncs.h"
+#include "util/pio.h"
 
 #include "pocketsphinx_internal.h"
 #include "allphone_search.h"

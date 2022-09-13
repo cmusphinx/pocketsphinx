@@ -50,15 +50,10 @@
  *
  */
 
-/* Public headers. */
 #include <pocketsphinx.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/feat.h>
-#include <sphinxbase/logmath.h>
-
-/* Local headers. */
-#include "vector.h"
+#include "feat/feat.h"
+#include "util/vector.h"
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
 

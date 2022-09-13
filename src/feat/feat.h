@@ -44,9 +44,10 @@
 #include <stdio.h>
 
 #include <pocketsphinx/prim_type.h>
-#include <pocketsphinx/fe.h>
-#include <pocketsphinx/cmn.h>
-#include <pocketsphinx/agc.h>
+
+#include "fe/fe.h"
+#include "feat/cmn.h"
+#include "feat/agc.h"
 
 #ifdef __cplusplus
 extern "C" {

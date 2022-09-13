@@ -40,18 +40,13 @@
 #ifndef __ALLPHONE_SEARCH_H__
 #define __ALLPHONE_SEARCH_H__
 
-
-/* Public headers. */
 #include <pocketsphinx.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/glist.h>
-#include <sphinxbase/ngram_model.h>
-#include <sphinxbase/bitvec.h>
-
-/* Local headers. */
+#include "util/glist.h"
+#include "util/bitvec.h"
+#include "util/blkarray_list.h"
+#include "lm/ngram_model.h"
 #include "pocketsphinx_internal.h"
-#include "blkarray_list.h"
 #include "hmm.h"
 
 #ifdef __cplusplus

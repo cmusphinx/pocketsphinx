@@ -47,17 +47,14 @@
 /* Public headers. */
 #include <pocketsphinx.h>
 
-#include "sphinxbase/prim_type.h"
-#include "sphinxbase/byteorder.h"
-#include "sphinxbase/fixpoint.h"
-#include "sphinxbase/genrand.h"
-#include "sphinxbase/err.h"
-#include "sphinxbase/ckd_alloc.h"
-
+#include "util/byteorder.h"
+#include "util/genrand.h"
+#include "util/ckd_alloc.h"
+#include "fe/fixpoint.h"
+#include "fe/fe_internal.h"
+#include "fe/fe_warp.h"
 #include "cmdln_macro.h"
 
-#include "fe_internal.h"
-#include "fe_warp.h"
 
 static const arg_t fe_args[] = {
     POCKETSPHINX_FE_OPTIONS,

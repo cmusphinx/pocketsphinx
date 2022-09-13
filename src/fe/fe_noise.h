@@ -37,9 +37,9 @@
 #ifndef FE_NOISE_H
 #define FE_NOISE_H
 
-#include "sphinxbase/fe.h"
-#include "sphinxbase/fixpoint.h"
-#include "fe_type.h"
+#include "fe/fe.h"
+#include "fe/fixpoint.h"
+#include "fe/fe_type.h"
 
 typedef struct noise_stats_s noise_stats_t;
 

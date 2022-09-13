@@ -39,14 +39,13 @@
  * @file ngram_search_fwdtree.c Lexicon tree search.
  */
 
-/* System headers. */
 #include <string.h>
 #include <assert.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/listelem_alloc.h>
-#include <sphinxbase/err.h>
+#include <pocketsphinx.h>
+
+#include "util/ckd_alloc.h"
+#include "util/listelem_alloc.h"
 
 /* Local headers. */
 #include "ngram_search_fwdtree.h"

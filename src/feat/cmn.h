@@ -83,10 +83,7 @@
 #ifndef _S3_CMN_H_
 #define _S3_CMN_H_
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/fe.h>
+#include "fe/fe.h"
 
 #ifdef __cplusplus
 extern "C" {

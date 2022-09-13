@@ -48,15 +48,10 @@
  * 		Started..
  */
 
-/* System headers. */
 #include <assert.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
-
-/* Local headers. */
+#include <pocketsphinx.h>
+#include "util/ckd_alloc.h"
 #include "fsg_search_internal.h"
 #include "fsg_history.h"
 

@@ -50,10 +50,11 @@
 #pragma warning (disable: 4018)
 #endif
 
-#include "sphinxbase/feat.h"
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/bio.h"
-#include "sphinxbase/err.h"
+#include <pocketsphinx/err.h>
+
+#include "feat/feat.h"
+#include "util/ckd_alloc.h"
+#include "util/bio.h"
 
 #define MATRIX_FILE_VERSION "0.1"
 

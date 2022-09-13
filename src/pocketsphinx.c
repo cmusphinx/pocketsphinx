@@ -43,18 +43,13 @@
 #include <unistd.h>
 #endif
 
-/* SphinxBase headers. */
-#include <sphinxbase/err.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/filename.h>
-#include <sphinxbase/pio.h>
-#include <sphinxbase/jsgf.h>
-#include <sphinxbase/hash_table.h>
-
-/* PocketSphinx headers. */
 #include <pocketsphinx.h>
 
-/* Local headers. */
+#include "util/strfuncs.h"
+#include "util/filename.h"
+#include "util/pio.h"
+#include "lm/jsgf.h"
+#include "util/hash_table.h"
 #include "cmdln_macro.h"
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"

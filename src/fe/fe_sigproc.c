@@ -56,16 +56,15 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#include "sphinxbase/prim_type.h"
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/byteorder.h"
-#include "sphinxbase/fixpoint.h"
-#include "sphinxbase/fe.h"
-#include "sphinxbase/genrand.h"
-#include "sphinxbase/err.h"
+#include <pocketsphinx.h>
 
-#include "fe_internal.h"
-#include "fe_warp.h"
+#include "util/ckd_alloc.h"
+#include "util/genrand.h"
+#include "util/byteorder.h"
+#include "fe/fixpoint.h"
+#include "fe/fe.h"
+#include "fe/fe_internal.h"
+#include "fe/fe_warp.h"
 
 /* Use extra precision for cosines, Hamming window, pre-emphasis
  * coefficient, twiddle factors. */

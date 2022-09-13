@@ -42,11 +42,7 @@
 #ifndef __STATE_ALIGN_SEARCH_H__
 #define __STATE_ALIGN_SEARCH_H__
 
-/* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
-
-/* Local headers. */
-#include <pocketsphinx/export.h>
+#include <pocketsphinx.h>
 #include "pocketsphinx_internal.h"
 #include "ps_alignment.h"
 #include "hmm.h"
@@ -86,7 +82,6 @@ struct state_align_search_s {
 };
 typedef struct state_align_search_s state_align_search_t;
 
-POCKETSPHINX_EXPORT
 ps_search_t *state_align_search_init(const char *name,
 				     cmd_ln_t *config,
                                      acmod_t *acmod,

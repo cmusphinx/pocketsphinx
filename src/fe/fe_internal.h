@@ -42,12 +42,11 @@
 #include <config.h>
 #endif
 
-#include "sphinxbase/cmd_ln.h"
-#include "sphinxbase/fe.h"
-#include "sphinxbase/fixpoint.h"
-
-#include "fe_noise.h"
-#include "fe_type.h"
+#include "util/cmd_ln.h"
+#include "fe/fe.h"
+#include "fe/fixpoint.h"
+#include "fe/fe_noise.h"
+#include "fe/fe_type.h"
 
 #ifdef __cplusplus
 extern "C" {

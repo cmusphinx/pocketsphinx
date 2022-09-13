@@ -29,12 +29,10 @@
  */
 
 
-/* Public headers. */
 #include <pocketsphinx.h>
 
-#include <sphinxbase/err.h>
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/strfuncs.h>
+#include "util/cmd_ln.h"
+#include "util/strfuncs.h"
 
 #include "pocketsphinx_internal.h"
 #include "cmdln_macro.h"

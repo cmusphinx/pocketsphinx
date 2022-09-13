@@ -42,15 +42,11 @@
  * \brief Operations on dictionary. 
  */
 
-/* SphinxBase headers. */
-#include <sphinxbase/hash_table.h>
-
-/* Public headers. */
 #include <pocketsphinx.h>
 
-/* Local headers. */
 #include "s3types.h"
 #include "bin_mdef.h"
+#include "util/hash_table.h"
 #include "pocketsphinx/export.h"
 
 #define S3DICT_INC_SZ 4096
@@ -106,7 +102,6 @@ typedef struct dict_s {
  *
  * Return ptr to dict_t if successful, NULL otherwise.
  */
-POCKETSPHINX_EXPORT
 dict_t *dict_init(ps_config_t *config, /**< Configuration (-dict, -fdict, -dictcase) or NULL */
                   bin_mdef_t *mdef  /**< For looking up CI phone IDs (or NULL) */
     );
@@ -114,18 +109,15 @@ dict_t *dict_init(ps_config_t *config, /**< Configuration (-dict, -fdict, -dictc
 /**
  * Write dictionary to a file.
  */
-POCKETSPHINX_EXPORT
 int dict_write(dict_t *dict, char const *filename, char const *format);
 
 /** Return word id for given word string if present.  Otherwise return BAD_S3WID */
-POCKETSPHINX_EXPORT
 s3wid_t dict_wordid(dict_t *d, const char *word);
 
 /**
  * Return 1 if w is a filler word, 0 if not.  A filler word is one that was read in from the
  * filler dictionary; however, sentence START and FINISH words are not filler words.
  */
-POCKETSPHINX_EXPORT
 int dict_filler_word(dict_t *d,  /**< The dictionary structure */
                      s3wid_t w     /**< The word ID */
     );
@@ -133,7 +125,6 @@ int dict_filler_word(dict_t *d,  /**< The dictionary structure */
 /**
  * Test if w is a "real" word, i.e. neither a filler word nor START/FINISH.
  */
-POCKETSPHINX_EXPORT
 int dict_real_word(dict_t *d,  /**< The dictionary structure */
                    s3wid_t w     /**< The word ID */
     );
@@ -142,7 +133,6 @@ int dict_real_word(dict_t *d,  /**< The dictionary structure */
  * Add a word with the given ciphone pronunciation list to the dictionary.
  * Return value: Result word id if successful, BAD_S3WID otherwise
  */
-POCKETSPHINX_EXPORT
 s3wid_t dict_add_word(dict_t *d,          /**< The dictionary structure. */
                       char const *word,   /**< The word. */
                       s3cipid_t const *p, /**< The pronunciation. */
@@ -152,7 +142,6 @@ s3wid_t dict_add_word(dict_t *d,          /**< The dictionary structure. */
 /**
  * Return value: CI phone string for the given word, phone position.
  */
-POCKETSPHINX_EXPORT
 const char *dict_ciphone_str(dict_t *d,	/**< In: Dictionary to look up */
                              s3wid_t wid,	/**< In: Component word being looked up */
                              int32 pos   	/**< In: Pronunciation phone position */
@@ -198,23 +187,19 @@ const char *dict_ciphone_str(dict_t *d,	/**< In: Dictionary to look up */
  * Return value: If string was modified, the character position at which the original string
  * was truncated; otherwise -1.
  */
-POCKETSPHINX_EXPORT
 int32 dict_word2basestr(char *word);
 
 /**
  * Retain a pointer to an dict_t.
  */
-POCKETSPHINX_EXPORT
 dict_t *dict_retain(dict_t *d);
 
 /**
  * Release a pointer to a dictionary.
  */
-POCKETSPHINX_EXPORT
 int dict_free(dict_t *d);
 
 /** Report a dictionary structure */
-POCKETSPHINX_EXPORT
 void dict_report(dict_t *d /**< A dictionary structure */
     );
 

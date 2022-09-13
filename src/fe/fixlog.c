@@ -45,10 +45,10 @@
 #include <config.h>
 #endif
 
-#include "sphinxbase/prim_type.h"
-#include "sphinxbase/fixpoint.h"
+#include <pocketsphinx.h>
 
-#include "fe_internal.h"
+#include "fe/fixpoint.h"
+#include "fe/fe_internal.h"
 
 /* Table of log2(x/128)*(1<<DEFAULT_RADIX) */
 /* perl -e 'for (0..128) {my $x = 1 + $_/128; $y = 1 + ($_ + 1.) / 128;

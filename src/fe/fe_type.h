@@ -41,8 +41,7 @@
 #include <config.h>
 #endif
 
-#include "sphinxbase/fe.h"
-#include "sphinxbase/fixpoint.h"
+#include "fe/fixpoint.h"
 
 #ifdef FIXED16
 /* Q15 format */

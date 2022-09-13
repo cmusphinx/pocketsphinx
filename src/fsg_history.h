@@ -75,11 +75,9 @@
 #define __S2_FSG_HISTORY_H__
 
 
-/* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/fsg_model.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
+#include "lm/fsg_model.h"
 #include "blkarray_list.h"
 #include "fsg_lextree.h"
 #include "dict.h"

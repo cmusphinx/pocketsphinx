@@ -44,10 +44,7 @@
 #define _FIXPOINT_H_
 
 #include <limits.h>
-
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-#include <sphinxbase/prim_type.h>
+#include <pocketsphinx/prim_type.h>
 
 #ifdef __cplusplus
 extern "C" {

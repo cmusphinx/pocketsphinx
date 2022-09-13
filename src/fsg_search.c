@@ -48,21 +48,15 @@
  * 		Started.
  */
 
-/* System headers. */
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
-/* Public headers. */
 #include <pocketsphinx.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/strfuncs.h>
-
-/* Local headers. */
 #include "pocketsphinx_internal.h"
+#include "util/ckd_alloc.h"
+#include "util/strfuncs.h"
 #include "ps_lattice_internal.h"
 #include "fsg_search_internal.h"
 #include "fsg_history.h"

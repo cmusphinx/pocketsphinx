@@ -40,9 +40,10 @@
 #include <math.h>
 #include <float.h>
 
-#include <sphinxbase/bio.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
+#include <pocketsphinx.h>
+
+#include "util/bio.h"
+#include "util/ckd_alloc.h"
 
 #include "ms_gauden.h"
 
