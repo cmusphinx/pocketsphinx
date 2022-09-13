@@ -85,7 +85,7 @@ extern "C" {
 } /* Fool Emacs into not indenting things. */
 #endif
 
-#include <sphinxbase/sphinx_config.h>
+#include <pocketsphinx/sphinx_config.h>
 
 /* Define some things for VisualDSP++ */
 #if defined(__ADSPBLACKFIN__) && !defined(__GNUC__)

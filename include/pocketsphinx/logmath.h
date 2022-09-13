@@ -72,10 +72,8 @@
 #ifndef __LOGMATH_H__
 #define __LOGMATH_H__
 
-#include <sphinxbase/sphinxbase_export.h>
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/cmd_ln.h>
-
+#include <pocketsphinx/export.h>
+#include <pocketsphinx/prim_type.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -119,50 +117,50 @@ typedef struct logmath_s logmath_t;
  * @param use_table Whether to use an add table or not
  * @return The newly created log math table.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 logmath_t *logmath_init(float64 base, int shift, int use_table);
 
 /**
  * Memory-map (or read) a log table from a file.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 logmath_t *logmath_read(const char *filename);
 
 /**
  * Write a log table to a file.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 int32 logmath_write(logmath_t *lmath, const char *filename);
 
 /**
  * Get the log table size and dimensions.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 int32 logmath_get_table_shape(logmath_t *lmath, uint32 *out_size,
                               uint32 *out_width, uint32 *out_shift);
 
 /**
  * Get the log base.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 float64 logmath_get_base(logmath_t *lmath);
 
 /**
  * Get the smallest possible value represented in this base.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 int logmath_get_zero(logmath_t *lmath);
 
 /**
  * Get the width of the values in a log table.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 int logmath_get_width(logmath_t *lmath);
 
 /**
  * Get the shift of the values in a log table.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 int logmath_get_shift(logmath_t *lmath);
 
 /**
@@ -170,7 +168,7 @@ int logmath_get_shift(logmath_t *lmath);
  *
  * @return pointer to retained log table.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 logmath_t *logmath_retain(logmath_t *lmath);
 
 /**
@@ -178,67 +176,67 @@ logmath_t *logmath_retain(logmath_t *lmath);
  *
  * @return new reference count (0 if freed completely)
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 int logmath_free(logmath_t *lmath);
 
 /**
  * Add two values in log space exactly and slowly (without using add table).
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 int logmath_add_exact(logmath_t *lmath, int logb_p, int logb_q);
 
 /**
  * Add two values in log space (i.e. return log(exp(p)+exp(q)))
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 int logmath_add(logmath_t *lmath, int logb_p, int logb_q);
 
 /**
  * Convert linear floating point number to integer log in base B.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 int logmath_log(logmath_t *lmath, float64 p);
 
 /**
  * Convert integer log in base B to linear floating point.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 float64 logmath_exp(logmath_t *lmath, int logb_p);
 
 /**
  * Convert natural log (in floating point) to integer log in base B.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 int logmath_ln_to_log(logmath_t *lmath, float64 log_p);
 
 /**
  * Convert integer log in base B to natural log (in floating point).
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 float64 logmath_log_to_ln(logmath_t *lmath, int logb_p);
 
 /**
  * Convert base 10 log (in floating point) to integer log in base B.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 int logmath_log10_to_log(logmath_t *lmath, float64 log_p);
 
 /**
  * Convert base 10 log (in floating point) to float log in base B.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 float logmath_log10_to_log_float(logmath_t *lmath, float64 log_p);
 
 /**
  * Convert integer log in base B to base 10 log (in floating point).
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 float64 logmath_log_to_log10(logmath_t *lmath, int logb_p);
 
 /**
  * Convert float log in base B to base 10 log.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 float64 logmath_log_float_to_log10(logmath_t *lmath, float log_p);
 
 #ifdef __cplusplus

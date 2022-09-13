@@ -55,7 +55,7 @@
 #include <pocketsphinx/lattice.h>
 #include <pocketsphinx/mllr.h>
 
-/* Namum manglium idut domem */
+/* Namum manglium ii domum */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -192,10 +192,10 @@ ps_type_t ps_config_typeof(ps_config_t *config, char const *name);
 /**
  * Access the value of a configuration parameter.
  *
- * To actually get the value, you may need to know its type, which can
- * be obtained with ps_config_typeof().  This function is thus mainly
- * useful for dynamic language bindings, and you should use
- * ps_config_int(), ps_config_float(), or ps_config_str() instead.
+ * To actually do something with the value, you will need to know its
+ * type, which can be obtained with ps_config_typeof().  This function
+ * is thus mainly useful for dynamic language bindings, and you should
+ * use ps_config_int(), ps_config_float(), or ps_config_str() instead.
  *
  * @param config Configuration object.
  * @param name Name of the parameter to retrieve.
@@ -210,19 +210,19 @@ const anytype_t *ps_config_get(ps_config_t *config, const char *name);
 /**
  * Set the value of a configuration parameter.
  *
- * To actually set a value, you need to know its type, which can be
- * obtained with ps_config_typeof().  This function is thus mainly
- * useful for dynamic language bindings, and you should use
- * ps_config_set_int(), ps_config_set_float(), or ps_config_set_str()
- * instead.
- *
- * Note that the return pointer will *not* be the same as the one
- * passed in.
+ * This will coerce the value to the proper type, so you can, for
+ * example, pass it a string with ARG_STRING as the type when adding
+ * options from the command-line.  Note that the return pointer will
+ * *not* be the same as the one passed in the value.
  *
  * @param config Configuration object.
  * @param name Name of the parameter to retrieve.
- * @param val Pointer to the value (strings will be copied)
- * @param t Type of the value
+ * @param val Pointer to the value (strings will be copied) inside an
+ * anytype_t union.  On 64-bit little-endian platforms, you *can* cast
+ * a pointer to int, long, double, or char* here, but that doesn't
+ * necessarily mean that you *should*.
+ * @param t Type of the value in `val`, will be coerced to the type of
+ * the actual parameter if necessary.
  * @return Pointer to the parameter's value, or NULL on failure
  * (e.g. type mismatch).  This pointer (and any pointers inside it) is
  * owned by the ps_config_t.

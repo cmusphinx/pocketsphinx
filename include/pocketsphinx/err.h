@@ -138,13 +138,13 @@ typedef enum err_e {
     ERR_MAX
 } err_lvl_t;
 
-SPHINXBASE_EXPORT void
+POCKETSPHINX_EXPORT void
 err_msg(err_lvl_t lvl, const char *path, long ln, const char *fmt, ...);
 
-SPHINXBASE_EXPORT void
+POCKETSPHINX_EXPORT void
 err_msg_system(err_lvl_t lvl, const char *path, long ln, const char *fmt, ...);
 
-SPHINXBASE_EXPORT void
+POCKETSPHINX_EXPORT void
 err_logfp_cb(void * user_data, err_lvl_t level, const char *fmt, ...);
 
 typedef void (*err_cb_f)(void* user_data, err_lvl_t, const char *, ...);
@@ -157,7 +157,7 @@ typedef void (*err_cb_f)(void* user_data, err_lvl_t, const char *, ...);
  * mode)
  * @return previous log level.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 int err_set_loglevel(err_lvl_t lvl);
 
 /**
@@ -169,7 +169,7 @@ int err_set_loglevel(err_lvl_t lvl);
  * without the leading "ERR_" prefix.
  * @return previous log level string, or NULL for invalid argument.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 const char *err_set_loglevel_str(const char *lvl);
 
 /**
@@ -180,7 +180,7 @@ const char *err_set_loglevel_str(const char *lvl);
  * @param callback callback to pass messages too
  * @param user_data data to pass to callback
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 void err_set_callback(err_cb_f callback, void *user_data);
 
 /**
@@ -188,7 +188,7 @@ void err_set_callback(err_cb_f callback, void *user_data);
  *
  * @param stream Filehandle to send log messages to, or NULL to disable logging.
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 void err_set_logfp(FILE *stream);
 
 /**
@@ -197,7 +197,7 @@ void err_set_logfp(FILE *stream);
  * @return Current logging filehandle, NULL if logging is disabled. Initially
  * it returns stderr
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 FILE *err_get_logfp(void);
 
 /**
@@ -208,7 +208,7 @@ FILE *err_get_logfp(void);
  * @param path File path to send log messages to
  * @return 0 for success, <0 for failure (e.g. if file does not exist)
  */
-SPHINXBASE_EXPORT
+POCKETSPHINX_EXPORT
 int err_set_logfile(const char *path);
 
 #ifdef __cplusplus
