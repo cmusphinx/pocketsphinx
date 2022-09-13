@@ -67,11 +67,8 @@
 #ifndef _S3_AGC_H_
 #define _S3_AGC_H_
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/fe.h>
+#include <pocketsphinx.h>
+#include "fe/fe.h"
 
 /** \file agc.h
  *  \brief routine that implements automatic gain control
@@ -100,11 +97,9 @@ typedef enum agc_type_e {
 } agc_type_t;
 
 /** Convert string representation (from command-line) to agc_type_t */
-SPHINXBASE_EXPORT
 agc_type_t agc_type_from_str(const char *str);
 
 /** String representations of agc_type_t values. */
-SPHINXBASE_EXPORT
 extern const char *agc_type_str[];
 
 /**
@@ -122,13 +117,11 @@ typedef struct agc_s {
 /**
  * Initialize AGC structure with default values.
  */
-SPHINXBASE_EXPORT
 agc_t *agc_init(void);
 
 /**
  * Free AGC structure.
  */
-SPHINXBASE_EXPORT
 void agc_free(agc_t *agc);
 
 /**
@@ -137,7 +130,6 @@ void agc_free(agc_t *agc);
  * This function operates on an entire utterance at a time.  Hence, the entire utterance
  * must be available beforehand (batchmode).
  */
-SPHINXBASE_EXPORT
 void agc_max(agc_t *agc,	/**< In: AGC structure (not used) */
              mfcc_t **mfc,	/**< In/Out: mfc[f] = cepstrum vector in frame f */
              int32 n_frame	/**< In: number of frames of cepstrum vectors supplied */
@@ -148,7 +140,6 @@ void agc_max(agc_t *agc,	/**< In: AGC structure (not used) */
  * Unlike agc_max() this does not require the entire utterance to be
  * available.  Call agc_emax_update() at the end of each utterance to
  * update the AGC parameters. */
-SPHINXBASE_EXPORT
 void agc_emax(agc_t *agc,	/**< In: AGC structure */
               mfcc_t **mfc,	/**< In/Out: mfc[f] = cepstrum vector in frame f */
               int32 n_frame	/**< In: number of frames of cepstrum vectors supplied */
@@ -157,26 +148,22 @@ void agc_emax(agc_t *agc,	/**< In: AGC structure */
 /**
  * Update AGC parameters for next utterance.
  **/
-SPHINXBASE_EXPORT
 void agc_emax_update(agc_t *agc /**< In: AGC structure */
     );
 
 /**
  * Get the current AGC maximum estimate.
  **/
-SPHINXBASE_EXPORT
 float32 agc_emax_get(agc_t *agc);
 
 /**
  * Set the current AGC maximum estimate.
  **/
-SPHINXBASE_EXPORT
 void agc_emax_set(agc_t *agc, float32 m);
 
 /**
  * Apply AGC using noise threshold to the given block of MFC vectors. 
  **/
-SPHINXBASE_EXPORT
 void agc_noise(agc_t *agc,	/**< In: AGC structure */
                mfcc_t **mfc,	/**< In/Out: mfc[f] = cepstrum vector in frame f */
                int32 n_frame	/**< In: number of frames of cepstrum vectors supplied */
@@ -185,13 +172,11 @@ void agc_noise(agc_t *agc,	/**< In: AGC structure */
 /**
  * Get the current AGC noise threshold.
  **/
-SPHINXBASE_EXPORT
 float32 agc_get_threshold(agc_t *agc);
 
 /**
  * Set the current AGC noise threshold.
  **/
-SPHINXBASE_EXPORT
 void agc_set_threshold(agc_t *agc, float32 threshold);
 
 

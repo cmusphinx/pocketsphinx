@@ -1,86 +1,7 @@
 add_library(pocketsphinx
-  pocketsphinx.c
-  ps_config.c
-  ps_lattice.c
-  ps_mllr.c
-  ps_vad.c
-  ps_endpointer.c
-  tmat.c
-  fsg_history.c
-  allphone_search.c
-  s2_semi_mgau.c
-  ps_alignment.c
-  ms_gauden.c
-  state_align_search.c
-  mdef.c
-  blkarray_list.c
-  dict2pid.c
-  vector.c
-  ms_senone.c
-  ptm_mgau.c
-  ngram_search_fwdflat.c
-  kws_detections.c
-  hmm.c
-  bin_mdef.c
-  phone_loop_search.c
-  ngram_search.c
-  ngram_search_fwdtree.c
-  ms_mgau.c
-  fsg_search.c
-  fsg_lextree.c
-  kws_search.c
-  acmod.c
-  dict.c
-  fe/fe_sigproc.c
-  fe/fixlog.c
-  fe/fe_warp_inverse_linear.c
-  fe/fe_warp.c
-  fe/fe_interface.c
-  fe/fe_noise.c
-  fe/fe_warp_affine.c
-  fe/fe_warp_piecewise_linear.c
-  fe/yin.c
-  feat/cmn.c
-  feat/agc.c
-  feat/cmn_live.c
-  feat/feat.c
-  feat/lda.c
-  lm/lm_trie_quant.c
-  lm/ngram_model_trie.c
-  lm/fsg_model.c
-  lm/jsgf.c
-  lm/ngram_model_set.c
-  lm/ngrams_raw.c
-  lm/jsgf_scanner.c
-  lm/ngram_model.c
-  lm/lm_trie.c
-  lm/jsgf_parser.c
-  util/strfuncs.c
-  util/dtoa.c
-  util/case.c
-  util/filename.c
-  util/slamch.c
-  util/cmd_ln.c
-  util/blas_lite.c
-  util/mmio.c
-  util/hash_table.c
-  util/err.c
-  util/ckd_alloc.c
-  util/slapack_lite.c
-  util/matrix.c
-  util/bio.c
-  util/heap.c
-  util/priority_queue.c
-  util/bitvec.c
-  util/profile.c
-  util/errno.c
-  util/logmath.c
-  util/glist.c
-  util/f2c_lite.c
-  util/listelem_alloc.c
-  util/bitarr.c
-  util/pio.c
-  util/genrand.c
+acmod.c
+allphone_search.c
+bin_mdef.c
 common_audio/vad/vad_gmm.c
 common_audio/vad/webrtc_vad.c
 common_audio/vad/vad_filterbank.c
@@ -95,10 +16,89 @@ common_audio/signal_processing/min_max_operations.c
 common_audio/signal_processing/cross_correlation.c
 common_audio/signal_processing/vector_scaling_operations.c
 common_audio/signal_processing/resample_by_2_internal.c
-common_audio/signal_processing/spl_inl.c
 common_audio/signal_processing/energy.c
+common_audio/signal_processing/spl_inl.c
 common_audio/signal_processing/get_scaling_square.c
-
+dict2pid.c
+dict.c
+fe/fe_sigproc.c
+fe/fixlog.c
+fe/fe_warp_inverse_linear.c
+fe/fe_noise.c
+fe/fe_warp.c
+fe/fe_interface.c
+fe/fe_warp_affine.c
+fe/yin.c
+fe/fe_warp_piecewise_linear.c
+feat/cmn.c
+feat/agc.c
+feat/cmn_live.c
+feat/feat.c
+feat/lda.c
+fsg_history.c
+fsg_lextree.c
+fsg_search.c
+hmm.c
+kws_detections.c
+kws_search.c
+lm/lm_trie_quant.c
+lm/ngram_model_trie.c
+lm/fsg_model.c
+lm/jsgf.c
+lm/ngram_model_set.c
+lm/ngrams_raw.c
+lm/jsgf_scanner.c
+lm/ngram_model.c
+lm/lm_trie.c
+lm/jsgf_parser.c
+mdef.c
+ms_gauden.c
+ms_mgau.c
+ms_senone.c
+ngram_search.c
+ngram_search_fwdflat.c
+ngram_search_fwdtree.c
+phone_loop_search.c
+pocketsphinx.c
+ps_alignment.c
+ps_config.c
+ps_endpointer.c
+ps_lattice.c
+ps_mllr.c
+ps_vad.c
+ptm_mgau.c
+s2_semi_mgau.c
+state_align_search.c
+tmat.c
+util/strfuncs.c
+util/dtoa.c
+util/case.c
+util/filename.c
+util/slamch.c
+util/cmd_ln.c
+util/blas_lite.c
+util/blkarray_list.c
+util/vector.c
+util/mmio.c
+util/hash_table.c
+util/err.c
+util/ckd_alloc.c
+util/slapack_lite.c
+util/matrix.c
+util/sbthread.c
+util/bio.c
+util/heap.c
+util/priority_queue.c
+util/bitvec.c
+util/profile.c
+util/errno.c
+util/logmath.c
+util/glist.c
+util/f2c_lite.c
+util/listelem_alloc.c
+util/bitarr.c
+util/pio.c
+util/genrand.c
   )
 target_include_directories(
   pocketsphinx PRIVATE ${CMAKE_BINARY_DIR} # config.h
