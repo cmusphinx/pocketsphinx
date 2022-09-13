@@ -45,8 +45,6 @@
 #include <pocketsphinx/sphinx_config.h>
 #include <pocketsphinx/prim_type.h>
 #include <pocketsphinx/logmath.h>
-#include <pocketsphinx/fe.h>
-#include <pocketsphinx/feat.h>
 #include <pocketsphinx/err.h>
 
 /* PocketSphinx API headers */

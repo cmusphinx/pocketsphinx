@@ -43,9 +43,6 @@
 #include <stdlib.h>
 #include <errno.h>
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-
 /**
  * @file err.h
  * @brief Implementation of logging routines.

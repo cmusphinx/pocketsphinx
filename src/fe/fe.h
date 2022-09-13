@@ -48,11 +48,8 @@
 #ifndef _NEW_FE_H_
 #define _NEW_FE_H_
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/fixpoint.h>
+#include "util/cmd_ln.h"
+#include "fixpoint.h"
 
 #ifdef __cplusplus
 extern "C" {
