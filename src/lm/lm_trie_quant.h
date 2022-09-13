@@ -37,7 +37,7 @@
 #ifndef __LM_TRIE_QUANT_H__
 #define __LM_TRIE_QUANT_H__
 
-#include "util/bitarr.h"
+#include "lm/bitarr.h"
 #include "lm/ngrams_raw.h"
 
 #ifdef HAVE_CONFIG_H

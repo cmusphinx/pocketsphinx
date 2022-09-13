@@ -44,9 +44,10 @@
 
 #include <stdio.h>
 
+#include <pocketsphinx/logmath.h>
+
 #include "util/hash_table.h"
 #include "util/glist.h"
-#include "util/logmath.h"
 #include "util/strfuncs.h"
 
 #include "lm/fsg_model.h"

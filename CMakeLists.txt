@@ -69,7 +69,7 @@ set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 configure_file(config.h.in config.h)
-configure_file(sphinx_config.h.in include/sphinxbase/sphinx_config.h)
+configure_file(sphinx_config.h.in include/pocketsphinx/sphinx_config.h)
 add_definitions(-DHAVE_CONFIG_H)
 
 if(SKBUILD)

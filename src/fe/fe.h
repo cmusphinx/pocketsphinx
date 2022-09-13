@@ -273,7 +273,6 @@ enum fe_error_e {
  * cmd_ln_init() in friends to create argument structures for
  * fe_init_auto_r().
  */
-SPHINXBASE_EXPORT
 arg_t const *fe_get_args(void);
 
 /**
@@ -284,7 +283,6 @@ arg_t const *fe_get_args(void);
  *               fe_t, so you may free this if you no longer need it.
  * @return Newly created front-end object.
  */
-SPHINXBASE_EXPORT
 fe_t *fe_init_auto_r(cmd_ln_t *config);
 
 /**
@@ -294,14 +292,12 @@ fe_t *fe_init_auto_r(cmd_ln_t *config);
  *         owned by the fe_t, so you should not attempt to free it
  *         manually.
  */
-SPHINXBASE_EXPORT
 cmd_ln_t *fe_get_config(fe_t *fe);
 
 /**
  * Start processing an utterance.
  * @return 0 for success, <0 for error (see enum fe_error_e)
  */
-SPHINXBASE_EXPORT
 int fe_start_utt(fe_t *fe);
 
 /**
@@ -317,7 +313,6 @@ int fe_start_utt(fe_t *fe);
  * @param fe Front-end object
  * @return Dimensionality of front-end output.
  */
-SPHINXBASE_EXPORT
 int fe_get_output_size(fe_t *fe);
 
 /**
@@ -333,7 +328,6 @@ int fe_get_output_size(fe_t *fe);
  * @param out_frame_shift Output: Number of samples between each frame start.
  * @param out_frame_size Output: Number of samples in each frame.
  */
-SPHINXBASE_EXPORT
 void fe_get_input_size(fe_t *fe, int *out_frame_shift,
                        int *out_frame_size);
 
@@ -351,7 +345,6 @@ void fe_get_input_size(fe_t *fe, int *out_frame_shift,
  *                    (either 0 or 1).
  * @return 0 for success, <0 for error (see enum fe_error_e)
  */
-SPHINXBASE_EXPORT
 int fe_end_utt(fe_t *fe, mfcc_t *out_cepvector, int32 *out_nframes);
 
 /**
@@ -359,7 +352,6 @@ int fe_end_utt(fe_t *fe, mfcc_t *out_cepvector, int32 *out_nframes);
  *
  * @return pointer to the retained front end.
  */
-SPHINXBASE_EXPORT
 fe_t *fe_retain(fe_t *fe);
 
 /**
@@ -369,7 +361,6 @@ fe_t *fe_retain(fe_t *fe);
  *
  * @return new reference count (0 if freed completely)
  */
-SPHINXBASE_EXPORT
 int fe_free(fe_t *fe);
 
 /**
@@ -380,7 +371,6 @@ int fe_free(fe_t *fe);
  * @param buf_cep Buffer which will receive one frame of features.
  * @return 0 for success, <0 for error (see enum fe_error_e)
  */
-SPHINXBASE_EXPORT
 int fe_process_frame(fe_t *fe, int16 const *spch,
                      int32 nsamps, mfcc_t *out_cep);
 
@@ -431,7 +421,6 @@ int fe_process_frame(fe_t *fe, int16 const *spch,
  *                      Output: Number of frames actually generated.
  * @return 0 for success, <0 for failure (see enum fe_error_e)
  */
-SPHINXBASE_EXPORT
 int fe_process_frames(fe_t *fe,
                       int16 const **inout_spch,
                       size_t *inout_nsamps,
@@ -453,7 +442,6 @@ int fe_process_frames(fe_t *fe,
  *
  * @return 0 for success, <0 for failure (see enum fe_error_e)
  */
-SPHINXBASE_EXPORT
 int fe_process_utt(fe_t *fe,  /**< A front end object */
                    int16 const *spch, /**< The speech samples */
                    size_t nsamps, /**< number of samples*/
@@ -464,13 +452,11 @@ int fe_process_utt(fe_t *fe,  /**< A front end object */
 /**
  * Free the output pointer returned by fe_process_utt().
  **/
-SPHINXBASE_EXPORT
 void fe_free_2d(void *arr);
 
 /**
  * Convert a block of mfcc_t to float32 (can be done in-place)
  **/
-SPHINXBASE_EXPORT
 int fe_mfcc_to_float(fe_t *fe,
                      mfcc_t **input,
                      float32 **output,
@@ -479,7 +465,6 @@ int fe_mfcc_to_float(fe_t *fe,
 /**
  * Convert a block of float32 to mfcc_t (can be done in-place)
  **/
-SPHINXBASE_EXPORT
 int fe_float_to_mfcc(fe_t *fe,
                      float32 **input,
                      mfcc_t **output,
@@ -508,7 +493,6 @@ int fe_float_to_mfcc(fe_t *fe,
  *
  * Also, it normalizes by 1/nfilt rather than 2/nfilt, for some reason.
  **/
-SPHINXBASE_EXPORT
 int fe_logspec_to_mfcc(fe_t *fe,  /**< A fe structure */
                        const mfcc_t *fr_spec, /**< One frame of spectrum */
                        mfcc_t *fr_cep /**< One frame of cepstrum */
@@ -522,7 +506,6 @@ int fe_logspec_to_mfcc(fe_t *fe,  /**< A fe structure */
  * cos(0) basis vector (i.e. the one corresponding to the DC
  * coefficient in the output).
  **/
-SPHINXBASE_EXPORT
 int fe_logspec_dct2(fe_t *fe,  /**< A fe structure */
                     const mfcc_t *fr_spec, /**< One frame of spectrum */
                     mfcc_t *fr_cep /**< One frame of cepstrum */
@@ -536,7 +519,6 @@ int fe_logspec_dct2(fe_t *fe,  /**< A fe structure */
  * cos(0) basis vector (i.e. the one corresponding to the DC
  * coefficient in the input).
  **/
-SPHINXBASE_EXPORT
 int fe_mfcc_dct3(fe_t *fe,  /**< A fe structure */
                  const mfcc_t *fr_cep, /**< One frame of cepstrum */
                  mfcc_t *fr_spec /**< One frame of spectrum */

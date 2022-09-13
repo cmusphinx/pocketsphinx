@@ -43,10 +43,7 @@
 #ifndef __PS_MLLR_H__
 #define __PS_MLLR_H__
 
-/* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
-
-/* PocketSphinx headers. */
+#include <pocketsphinx/prim_type.h>
 #include <pocketsphinx/export.h>
 
 #ifdef __cplusplus

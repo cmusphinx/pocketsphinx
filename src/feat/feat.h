@@ -223,13 +223,11 @@ typedef struct feat_s {
  * NULL; and each subvec[0]..subvec[N-1] is -1 terminated vector of
  * feature dims.
  */
-SPHINXBASE_EXPORT
 int32 **parse_subvecs(char const *str);
 
 /**
  * Free array of subvector specs.
  */
-SPHINXBASE_EXPORT
 void subvecs_free(int32 **subvecs);
 
 
@@ -245,7 +243,6 @@ void subvecs_free(int32 **subvecs);
  * NOTE: For I/O convenience, the entire data area is allocated as one contiguous block.
  * @return pointer to the allocated space if successful, NULL if any error.
  */
-SPHINXBASE_EXPORT
 mfcc_t ***feat_array_alloc(feat_t *fcb,	/**< In: Descriptor from feat_init(), used
 					     to obtain number of streams and stream sizes */
                            int32 nfr	/**< In: Number of frames for which to allocate */
@@ -254,7 +251,6 @@ mfcc_t ***feat_array_alloc(feat_t *fcb,	/**< In: Descriptor from feat_init(), us
 /**
  * Realloate the array of features. Requires us to know the old size
  */
-SPHINXBASE_EXPORT
 mfcc_t ***feat_array_realloc(feat_t *fcb, /**< In: Descriptor from feat_init(), used
 					      to obtain number of streams and stream sizes */
 			     mfcc_t ***old_feat, /**< Feature array. Freed */
@@ -265,7 +261,6 @@ mfcc_t ***feat_array_realloc(feat_t *fcb, /**< In: Descriptor from feat_init(), 
 /**
  * Free a buffer allocated with feat_array_alloc()
  */
-SPHINXBASE_EXPORT
 void feat_array_free(mfcc_t ***feat);
 
 
@@ -284,7 +279,6 @@ void feat_array_free(mfcc_t ***feat);
  * @return (feat_t *) descriptor if successful, NULL if error.  Caller 
  * must not directly modify the contents of the returned value.
  */
-SPHINXBASE_EXPORT
 feat_t *feat_init(char const *type,/**< In: Type of feature stream */
                   cmn_type_t cmn, /**< In: Type of cepstram mean normalization to 
                                      be done before feature computation; can be 
@@ -304,7 +298,6 @@ feat_t *feat_init(char const *type,/**< In: Type of feature stream */
  * Add an LDA transformation to the feature module from a file.
  * @return 0 for success or -1 if reading the LDA file failed.
  **/
-SPHINXBASE_EXPORT
 int32 feat_read_lda(feat_t *feat,	 /**< In: Descriptor from feat_init() */
                     const char *ldafile, /**< In: File to read the LDA matrix from. */
                     int32 dim		 /**< In: Dimensionality of LDA output. */
@@ -313,7 +306,6 @@ int32 feat_read_lda(feat_t *feat,	 /**< In: Descriptor from feat_init() */
 /**
  * Transform a block of features using the feature module's LDA transform.
  **/
-SPHINXBASE_EXPORT
 void feat_lda_transform(feat_t *fcb,		/**< In: Descriptor from feat_init() */
                         mfcc_t ***inout_feat,	/**< Feature block to transform. */
                         uint32 nfr		/**< In: Number of frames in inout_feat. */
@@ -337,13 +329,11 @@ void feat_lda_transform(feat_t *fcb,		/**< In: Descriptor from feat_init() */
  * @return 0 for success or -1 if the subvector specification was
  * invalid.
  */
-SPHINXBASE_EXPORT
 int feat_set_subvecs(feat_t *fcb, int32 **subvecs);
 
 /**
  * Print the given block of feature vectors to the given FILE.
  */
-SPHINXBASE_EXPORT
 void feat_print(feat_t *fcb,		/**< In: Descriptor from feat_init() */
 		mfcc_t ***feat,		/**< In: Feature data to be printed */
 		int32 nfr,		/**< In: Number of frames of feature data above */
@@ -367,7 +357,6 @@ void feat_print(feat_t *fcb,		/**< In: Descriptor from feat_init() */
  * already specifies extension or absolute path, then these are not
  * applied. The default extension is defined by the application.
  */
-SPHINXBASE_EXPORT
 int32 feat_s2mfc2feat(feat_t *fcb,	/**< In: Descriptor from feat_init() */
 		      const char *file,	/**< In: File to be read */
 		      const char *dir,	/**< In: Directory prefix for file, 
@@ -416,7 +405,6 @@ int32 feat_s2mfc2feat(feat_t *fcb,	/**< In: Descriptor from feat_init() */
  *
  * @return The number of output frames actually computed.
  **/
-SPHINXBASE_EXPORT
 int32 feat_s2mfc2feat_live(feat_t  *fcb,     /**< In: Descriptor from feat_init() */
                            mfcc_t **uttcep,  /**< In: Incoming cepstral buffer */
                            int32 *inout_ncep,/**< In: Size of incoming buffer.
@@ -433,7 +421,6 @@ int32 feat_s2mfc2feat_live(feat_t  *fcb,     /**< In: Descriptor from feat_init(
  * Update the normalization stats, possibly in the end of utterance
  *
  */
-SPHINXBASE_EXPORT
 void feat_update_stats(feat_t *fcb);
 
 
@@ -442,7 +429,6 @@ void feat_update_stats(feat_t *fcb);
  *
  * @return pointer to retained feat_t.
  */
-SPHINXBASE_EXPORT
 feat_t *feat_retain(feat_t *f);
 
 /**
@@ -450,14 +436,12 @@ feat_t *feat_retain(feat_t *f);
  *
  * @return new reference count (0 if freed)
  */
-SPHINXBASE_EXPORT
 int feat_free(feat_t *f /**< In: feat_t */
     );
 
 /**
  * Report the feat_t data structure 
  */
-SPHINXBASE_EXPORT
 void feat_report(feat_t *f /**< In: feat_t */
     );
 #ifdef __cplusplus

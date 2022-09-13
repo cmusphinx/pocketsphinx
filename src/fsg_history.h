@@ -78,7 +78,7 @@
 #include <pocketsphinx.h>
 
 #include "lm/fsg_model.h"
-#include "blkarray_list.h"
+#include "util/blkarray_list.h"
 #include "fsg_lextree.h"
 #include "dict.h"
 

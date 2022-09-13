@@ -72,8 +72,6 @@
 #ifndef __PS_SEARCH_H__
 #define __PS_SEARCH_H__
 
-#include <sphinxbase/fsg_model.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -86,6 +84,8 @@ extern "C" {
  */
 typedef struct ps_search_iter_s ps_search_iter_t;
 
+/* Forward-declare this because header files are an atrocity. */
+typedef struct ps_decoder_s ps_decoder_t;
 
 /**
  * Actives search with the provided name.
@@ -164,8 +164,9 @@ POCKETSPHINX_EXPORT
 const char* ps_search_iter_val(ps_search_iter_t *itor);
 
 
-/* Forward declare this (not public API) */
+/* Forward declare these (not public API) */
 typedef struct ngram_model_s ngram_model_t;
+typedef struct fsg_model_s fsg_model_t;
 
 /**
  * Get the language model set object for this decoder.

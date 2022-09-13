@@ -16,7 +16,7 @@
 #ifndef COMMON_AUDIO_SIGNAL_PROCESSING_RESAMPLE_BY_2_INTERNAL_H_
 #define COMMON_AUDIO_SIGNAL_PROCESSING_RESAMPLE_BY_2_INTERNAL_H_
 
-#include <sphinxbase/sphinx_config.h>
+#include <pocketsphinx/sphinx_config.h>
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #else

@@ -38,15 +38,14 @@
  * \file sphinx_lm_convert.c
  * Language model conversion tool.
  */
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/ngram_model.h>
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/pio.h>
-#include <sphinxbase/strfuncs.h>
-
+#include <pocketsphinx.h>
 #include "pocketsphinx_internal.h"
+#include "lm/ngram_model.h"
+#include "util/ckd_alloc.h"
+#include "util/cmd_ln.h"
+#include "util/ckd_alloc.h"
+#include "util/pio.h"
+#include "util/strfuncs.h"
 
 #include <stdio.h>
 #include <string.h>

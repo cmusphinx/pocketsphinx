@@ -44,8 +44,9 @@
 #include <string.h>
 #include <limits.h>
 
+#include <pocketsphinx/err.h>
+
 #include "util/ckd_alloc.h"
-#include "util/err.h"
 #include "hmm.h"
 
 hmm_context_t *

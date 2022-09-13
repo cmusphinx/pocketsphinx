@@ -61,7 +61,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include <pocketsphinx/prim_type.h>
+#include <pocketsphinx.h>
 
 #include "util/hash_table.h"
 
@@ -80,17 +80,6 @@ extern "C" {
 /* Fool Emacs. */
 }
 #endif
-
-/**
- * @struct arg_t
- * Argument definition structure.
- */
-typedef struct arg_s {
-	char const *name;   /**< Name of the command line switch */
-	int type;           /**< Type of the argument in question */
-	char const *deflt;  /**< Default value (as a character string), or NULL if none */
-	char const *doc;    /**< Documentation/description string */
-} arg_t;
 
 /**
  * @struct cmd_ln_val_t
@@ -420,6 +409,8 @@ void cmd_ln_log_help_r (cmd_ln_t *cmdln, const arg_t *defn);
  */
 void cmd_ln_log_values_r (cmd_ln_t *cmdln, const arg_t *defn);
 
+cmd_ln_val_t * cmd_ln_val_init(int t, const char *name, const char *str);
+void cmd_ln_val_free(cmd_ln_val_t *val);
 
 #ifdef __cplusplus
 }

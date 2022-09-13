@@ -100,12 +100,12 @@ util/pio.c
 util/genrand.c
   )
 target_include_directories(
-  pocketsphinx PRIVATE ${CMAKE_BINARY_DIR} # config.h
-  pocketsphinx PRIVATE ${CMAKE_SOURCE_DIR}/include/pocketsphinx
+  pocketsphinx PRIVATE ${CMAKE_BINARY_DIR}
   pocketsphinx PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   pocketsphinx PUBLIC ${CMAKE_SOURCE_DIR}/include
   pocketsphinx PUBLIC ${CMAKE_BINARY_DIR}/include
   pocketsphinx INTERFACE ${CMAKE_SOURCE_DIR}/include
+  pocketsphinx INTERFACE ${CMAKE_BINARY_DIR}/include
   )
 if(APPLE)
   # Things we might need are here

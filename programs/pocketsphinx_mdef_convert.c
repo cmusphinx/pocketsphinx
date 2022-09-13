@@ -45,6 +45,7 @@
 
 #include <pocketsphinx.h>
 
+#include "util/ckd_alloc.h"
 #include "bin_mdef.h"
 
 int

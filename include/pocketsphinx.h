@@ -425,28 +425,6 @@ POCKETSPHINX_EXPORT
 logmath_t *ps_get_logmath(ps_decoder_t *ps);
 
 /**
- * Get the feature extraction object for this decoder.
- *
- * @return The feature extraction object for this decoder.  The
- *         decoder owns this pointer, so you should not attempt to
- *         free it manually.  Use fe_retain() if you wish to reuse it
- *         elsewhere.
- */
-POCKETSPHINX_EXPORT
-fe_t *ps_get_fe(ps_decoder_t *ps);
-
-/**
- * Get the dynamic feature computation object for this decoder.
- *
- * @return The dynamic feature computation object for this decoder.
- *         The decoder owns this pointer, so you should not attempt to
- *         free it manually.  Use feat_retain() if you wish to reuse
- *         it elsewhere.
- */
-POCKETSPHINX_EXPORT
-feat_t *ps_get_feat(ps_decoder_t *ps);
-
-/**
  * Adapt current acoustic model using a linear transform.
  *
  * @param mllr The new transform to use, or NULL to update the
@@ -633,7 +611,7 @@ int ps_process_raw(ps_decoder_t *ps,
  */
 POCKETSPHINX_EXPORT
 int ps_process_cep(ps_decoder_t *ps,
-                   mfcc_t **data,
+                   float **data,
                    int n_frames,
                    int no_search,
                    int full_utt);

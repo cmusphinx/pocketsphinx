@@ -43,6 +43,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include <pocketsphinx/export.h>
+
 /**
  * @file err.h
  * @brief Implementation of logging routines.
@@ -138,14 +140,14 @@ typedef enum err_e {
     ERR_MAX
 } err_lvl_t;
 
-POCKETSPHINX_EXPORT void
-err_msg(err_lvl_t lvl, const char *path, long ln, const char *fmt, ...);
+POCKETSPHINX_EXPORT
+void err_msg(err_lvl_t lvl, const char *path, long ln, const char *fmt, ...);
 
-POCKETSPHINX_EXPORT void
-err_msg_system(err_lvl_t lvl, const char *path, long ln, const char *fmt, ...);
+POCKETSPHINX_EXPORT
+void err_msg_system(err_lvl_t lvl, const char *path, long ln, const char *fmt, ...);
 
-POCKETSPHINX_EXPORT void
-err_logfp_cb(void * user_data, err_lvl_t level, const char *fmt, ...);
+POCKETSPHINX_EXPORT
+void err_logfp_cb(void * user_data, err_lvl_t level, const char *fmt, ...);
 
 typedef void (*err_cb_f)(void* user_data, err_lvl_t, const char *, ...);
 

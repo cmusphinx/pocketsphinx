@@ -38,7 +38,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "util/err.h"
+#include <pocketsphinx/err.h>
+
 #include "util/ckd_alloc.h"
 #include "util/listelem_alloc.h"
 #include "util/glist.h"

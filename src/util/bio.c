@@ -68,8 +68,9 @@
 #pragma warning (disable: 4996)
 #endif
 
+#include <pocketsphinx/err.h>
+
 #include "util/bio.h"
-#include "util/err.h"
 #include "util/ckd_alloc.h"
 
 

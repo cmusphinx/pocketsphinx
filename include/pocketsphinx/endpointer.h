@@ -36,7 +36,7 @@
 #define __PS_ENDPOINTER_H__
 
 
-#include <sphinxbase/prim_type.h>
+#include <pocketsphinx/prim_type.h>
 #include <pocketsphinx/export.h>
 
 #ifdef __cplusplus
@@ -46,9 +46,8 @@ extern "C" {
 }
 #endif
 
-#include <sphinxbase/prim_type.h>
+#include <pocketsphinx/prim_type.h>
 #include <pocketsphinx/export.h>
-
 #include <pocketsphinx/vad.h>
 
 /**

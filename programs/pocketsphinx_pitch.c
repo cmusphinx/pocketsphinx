@@ -42,13 +42,14 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/yin.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/byteorder.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/pio.h>
+#include <pocketsphinx.h>
+
+#include "util/cmd_ln.h"
+#include "util/ckd_alloc.h"
+#include "util/byteorder.h"
+#include "util/strfuncs.h"
+#include "util/pio.h"
+#include "fe/yin.h"
 
 #include "pocketsphinx_internal.h"
 

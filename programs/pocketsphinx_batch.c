@@ -35,20 +35,16 @@
  *
  */
 
-/* System headers. */
 #include <stdio.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/pio.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/filename.h>
-#include <sphinxbase/byteorder.h>
-
-/* PocketSphinx headers. */
 #include <pocketsphinx.h>
 
-/* S3kr3t headerz. */
+#include "util/ckd_alloc.h"
+#include "util/strfuncs.h"
+#include "util/filename.h"
+#include "util/byteorder.h"
+#include "util/pio.h"
+#include "lm/fsg_model.h"
 #include "cmdln_macro.h"
 #include "pocketsphinx_internal.h"
 

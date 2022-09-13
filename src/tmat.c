@@ -41,9 +41,10 @@
 
 #include "util/ckd_alloc.h"
 #include "util/bio.h"
+#include "util/vector.h"
+
 #include "tmat.h"
 #include "hmm.h"
-#include "vector.h"
 
 #define TMAT_PARAM_VERSION		"1.0"
 

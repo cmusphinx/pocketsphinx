@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "util/pio.h"
+#include "util/ckd_alloc.h"
 #include "util/strfuncs.h"
 #include "dict.h"
 

@@ -46,6 +46,7 @@
 
 #include <pocketsphinx.h>
 
+#include "util/ckd_alloc.h"
 #include "pocketsphinx_internal.h"
 
 static int global_done = 0;

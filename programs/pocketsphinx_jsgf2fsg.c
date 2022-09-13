@@ -37,12 +37,11 @@
 
 #include <string.h>
 
-#include <sphinxbase/hash_table.h>
-#include <sphinxbase/fsg_model.h>
-#include <sphinxbase/jsgf.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/strfuncs.h>
-
+#include "util/ckd_alloc.h"
+#include "util/hash_table.h"
+#include "util/strfuncs.h"
+#include "lm/fsg_model.h"
+#include "lm/jsgf.h"
 #include "pocketsphinx_internal.h"
 
 static const arg_t defn[] = {

@@ -37,6 +37,9 @@
 
 #include <string.h>
 
+#include "util/ckd_alloc.h"
+#include "util/bitvec.h"
+#include "s3types.h"
 #include "dict2pid.h"
 #include "hmm.h"
 

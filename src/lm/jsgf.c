@@ -45,10 +45,10 @@
 #include "util/hash_table.h"
 #include "util/filename.h"
 
-#include "fe/jsgf.h"
-#include "fe/jsgf_internal.h"
-#include "fe/jsgf_parser.h"
-#include "fe/jsgf_scanner.h"
+#include "lm/jsgf.h"
+#include "lm/jsgf_internal.h"
+#include "lm/jsgf_parser.h"
+#include "lm/jsgf_scanner.h"
 
 extern int yyparse(void *scanner, jsgf_t * jsgf);
 
@@ -872,7 +872,6 @@ jsgf_set_search_path(jsgf_t * jsgf, const char *filename)
 #if !defined(_WIN32_WCE)
     if ((jsgf_path = getenv("JSGF_PATH")) != NULL) {
         char *word, *c;
-        /* FIXME: This should be a function in libsphinxbase. */
         word = jsgf_path = ckd_salloc(jsgf_path);
         while ((c = strchr(word, ':'))) {
             *c = '\0';

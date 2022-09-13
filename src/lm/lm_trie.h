@@ -39,10 +39,9 @@
 #define __LM_TRIE_H__
 
 #include "util/pio.h"
-#include "util/bitarr.h"
-
-#include "ngram_model_internal.h"
-#include "lm_trie_quant.h"
+#include "lm/bitarr.h"
+#include "lm/ngram_model_internal.h"
+#include "lm/lm_trie_quant.h"
 
 typedef struct unigram_s {
     float prob;

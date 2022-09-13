@@ -111,11 +111,9 @@ typedef enum cmn_type_e {
 } cmn_type_t;
 
 /** String representations of cmn_type_t values. */
-SPHINXBASE_EXPORT
 extern const char *cmn_type_str[];
 
 /** Convert string representation (from command-line) to cmn_type_t */
-SPHINXBASE_EXPORT
 cmn_type_t cmn_type_from_str(const char *str);
 
 /** \struct cmn_t
@@ -132,13 +130,11 @@ typedef struct {
     int refcount;
 } cmn_t;
 
-SPHINXBASE_EXPORT
 cmn_t* cmn_init(int32 veclen);
 
 /**
  * CMN for the whole sentence
 */
-SPHINXBASE_EXPORT
 void cmn (cmn_t *cmn,   /**< In/Out: cmn normalization, which contains the cmn_mean and cmn_var) */
           mfcc_t **mfc,	/**< In/Out: mfc[f] = mfc vector in frame f */
 	  int32 varnorm,/**< In: if not FALSE, variance normalize the input vectors
@@ -153,7 +149,6 @@ void cmn (cmn_t *cmn,   /**< In/Out: cmn normalization, which contains the cmn_m
 /**
  * CMN for one block of data, using live mean
  */
-SPHINXBASE_EXPORT
 void cmn_live(cmn_t *cmn,        /**< In/Out: cmn normalization, which contains
                                     the cmn_mean and cmn_var) */
                mfcc_t **incep,  /**< In/Out: mfc[f] = mfc vector in frame f*/
@@ -164,7 +159,6 @@ void cmn_live(cmn_t *cmn,        /**< In/Out: cmn normalization, which contains
 /**
  * Update live mean based on observed data
  */
-SPHINXBASE_EXPORT
 void cmn_live_update(cmn_t *cmn);
 
 /**
@@ -185,7 +179,6 @@ const char *cmn_update_repr(cmn_t *cmn);
 /**
  * Set the live mean from a string.
  */
-SPHINXBASE_EXPORT
 int cmn_set_repr(cmn_t *cmn, char const *repr);
 
 /**
@@ -196,7 +189,6 @@ cmn_t *cmn_retain(cmn_t *cmn);
 /**
  * Release a CMN, possibly freeing it.
  */
-SPHINXBASE_EXPORT
 int cmn_free (cmn_t *cmn);
 
 #ifdef __cplusplus

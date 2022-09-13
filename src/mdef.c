@@ -87,6 +87,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <pocketsphinx/err.h>
+
 #include "util/ckd_alloc.h"
 #include "mdef.h"
 

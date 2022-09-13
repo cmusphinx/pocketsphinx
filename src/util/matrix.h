@@ -74,7 +74,7 @@ extern "C" {
  * @param d2 dimension
  * @param d3 dimension
  **/
-SPHINXBASE_EXPORT void norm_3d(float32 ***arr, uint32 d1, uint32 d2, uint32 d3);
+void norm_3d(float32 ***arr, uint32 d1, uint32 d2, uint32 d3);
 
 /**
  * Floor 3-d array
@@ -84,15 +84,14 @@ SPHINXBASE_EXPORT void norm_3d(float32 ***arr, uint32 d1, uint32 d2, uint32 d3);
  * @param d2 dimension
  * @param d3 dimension
  **/
-SPHINXBASE_EXPORT void
-accum_3d(float32 ***out, float32 ***in, uint32 d1, uint32 d2, uint32 d3);
+void accum_3d(float32 ***out, float32 ***in, uint32 d1, uint32 d2, uint32 d3);
 
 /** Ensures that non-zero values x such that -band < x < band, band > 0 are set to -band if x < 0 and band if x > 0.
  * @param v array
  * @param d1 array size
  * @param band band value
  */
-SPHINXBASE_EXPORT void band_nz_1d(float32 *v, uint32 d1, float32 band);
+void band_nz_1d(float32 *v, uint32 d1, float32 band);
 
 /**
  * Floor 3-d array
@@ -102,7 +101,7 @@ SPHINXBASE_EXPORT void band_nz_1d(float32 *v, uint32 d1, float32 band);
  * @param d3 dimension
  * @param floor floor value
  **/
-SPHINXBASE_EXPORT void floor_nz_3d(float32 ***m, uint32 d1, uint32 d2, uint32 d3, float32 floor);
+void floor_nz_3d(float32 ***m, uint32 d1, uint32 d2, uint32 d3, float32 floor);
 
 /**
  * Floor 1-d array
@@ -110,7 +109,7 @@ SPHINXBASE_EXPORT void floor_nz_3d(float32 ***m, uint32 d1, uint32 d2, uint32 d3
  * @param d1 dimension
  * @param floor floor value
  **/
-SPHINXBASE_EXPORT void floor_nz_1d(float32 *v, uint32 d1, float32 floor);
+void floor_nz_1d(float32 *v, uint32 d1, float32 floor);
 
 /**
  * Calculate the determinant of a positive definite matrix.
