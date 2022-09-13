@@ -42,12 +42,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "sphinxbase/err.h"
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/strfuncs.h"
-#include "sphinxbase/filename.h"
+#include <pocketsphinx/err.h>
+#include "util/ckd_alloc.h"
+#include "util/strfuncs.h"
+#include "util/filename.h"
 
-#include "ngram_model_set.h"
+#include "lm/ngram_model_set.h"
 
 static ngram_funcs_t ngram_model_set_funcs;
 

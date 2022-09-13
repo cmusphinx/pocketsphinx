@@ -42,7 +42,7 @@
 #ifndef __NGRAM_MODEL_SET_H__
 #define __NGRAM_MODEL_SET_H__
 
-#include "ngram_model_internal.h"
+#include "lm/ngram_model_internal.h"
 
 /**
  * Subclass of ngram_model for grouping language models.

@@ -49,11 +49,7 @@
 #ifndef __VECTOR_H__
 #define __VECTOR_H__
 
-/* System headers. */
 #include <stdio.h>
-
-/* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
 
 #ifdef __cplusplus
 extern "C" {

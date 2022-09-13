@@ -55,9 +55,7 @@ extern "C" {
 #include <types.h>
 #endif
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-#include <sphinxbase/prim_type.h>
+#include <pocketsphinx/prim_type.h>
 
 /**
  * List element allocator object.
@@ -67,17 +65,14 @@ typedef struct listelem_alloc_s listelem_alloc_t;
 /**
  * Initialize and return a list element allocator.
  */
-SPHINXBASE_EXPORT
 listelem_alloc_t * listelem_alloc_init(size_t elemsize);
 
 /**
  * Finalize and release all memory associated with a list element allocator.
  */
-SPHINXBASE_EXPORT
 void listelem_alloc_free(listelem_alloc_t *le);
 
 
-SPHINXBASE_EXPORT
 void *__listelem_malloc__(listelem_alloc_t *le, char *file, int line);
 
 /** 
@@ -85,7 +80,6 @@ void *__listelem_malloc__(listelem_alloc_t *le, char *file, int line);
  */
 #define listelem_malloc(le)	__listelem_malloc__((le),__FILE__,__LINE__)
 
-SPHINXBASE_EXPORT
 void *__listelem_malloc_id__(listelem_alloc_t *le, char *file, int line,
                              int32 *out_id);
 
@@ -97,13 +91,11 @@ void *__listelem_malloc_id__(listelem_alloc_t *le, char *file, int line,
 /**
  * Retrieve a list element by its identifier.
  */
-SPHINXBASE_EXPORT
 void *listelem_get_item(listelem_alloc_t *le, int32 id);
 
 /**
  * Free list element of given size 
  */
-SPHINXBASE_EXPORT
 void __listelem_free__(listelem_alloc_t *le, void *elem, char *file, int line);
 
 /** 
@@ -114,7 +106,6 @@ void __listelem_free__(listelem_alloc_t *le, void *elem, char *file, int line);
 /**
    Print number of allocation, numer of free operation stats 
 */
-SPHINXBASE_EXPORT
 void listelem_stats(listelem_alloc_t *le);
 
 

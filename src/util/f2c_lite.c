@@ -4,7 +4,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "sphinxbase/f2c.h"
+#include "util/f2c.h"
 
 #ifdef _MSC_VER
 #pragma warning (disable: 4244)

@@ -38,10 +38,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "sphinxbase/err.h"
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/listelem_alloc.h"
-#include "sphinxbase/glist.h"
+#include "util/err.h"
+#include "util/ckd_alloc.h"
+#include "util/listelem_alloc.h"
+#include "util/glist.h"
 
 /**
  * Fast linked list allocator.

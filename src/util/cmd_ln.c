@@ -75,12 +75,11 @@
 #include <unistd.h>
 #endif
 
-#include "sphinxbase/cmd_ln.h"
-#include "sphinxbase/err.h"
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/hash_table.h"
-#include "sphinxbase/case.h"
-#include "sphinxbase/strfuncs.h"
+#include "util/cmd_ln.h"
+#include "util/ckd_alloc.h"
+#include "util/hash_table.h"
+#include "util/case.h"
+#include "util/strfuncs.h"
 
 #include "pocketsphinx_internal.h"
 

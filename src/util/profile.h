@@ -86,9 +86,7 @@ extern "C" {
 
 #include <stdio.h>
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-#include <sphinxbase/prim_type.h>
+#include <pocketsphinx/prim_type.h>
 
 
 /**
@@ -112,7 +110,6 @@ typedef struct {
  * Initialize a counter
  * @return an initialized counter 
  */ 
-SPHINXBASE_EXPORT
 pctr_t* pctr_new (
 	char *name   /**< The name of the counter */
 	);
@@ -121,14 +118,12 @@ pctr_t* pctr_new (
  * Reset a counter
  */ 
 
-SPHINXBASE_EXPORT
 void pctr_reset (pctr_t *ctr  /**< A pointer of a counter */
 	);
 
 /**
  * Print a counter
  */ 
-SPHINXBASE_EXPORT
 void pctr_print(FILE *fp,      /**< A file pointer */
 		pctr_t *ctr   /**< A pointer of a counter */
 	);
@@ -136,7 +131,6 @@ void pctr_print(FILE *fp,      /**< A file pointer */
 /**
  * Increment a counter
  */ 
-SPHINXBASE_EXPORT
 void pctr_increment (pctr_t *ctr, /**< A pointer of a counter */
 		     int32 inc   /**< The increment of the counter */
 	);
@@ -144,7 +138,6 @@ void pctr_increment (pctr_t *ctr, /**< A pointer of a counter */
 /**
    Free the counter 
 */
-SPHINXBASE_EXPORT
 void pctr_free(pctr_t* ctr /**< A pointer of a counter */ 
 	);
 
@@ -168,23 +161,19 @@ typedef struct {
 
 
 /** Start timing using tmr */
-SPHINXBASE_EXPORT
 void ptmr_start (ptmr_t *tmr /**< The timer*/
 	);
 
 /** Stop timing and accumulate tmr->{t_cpu, t_elapsed, t_tot_cpu, t_tot_elapsed} */
-SPHINXBASE_EXPORT
 void ptmr_stop (ptmr_t *tmr  /**< The timer*/
 	);
 
 /** Reset tmr->{t_cpu, t_elapsed} to 0.0 */
-SPHINXBASE_EXPORT
 void ptmr_reset (ptmr_t *tmr  /**< The timer*/
 	);
 
 /** Reset tmr->{t_cpu, t_elapsed, t_tot_cpu, t_tot_elapsed} to 0.0 
  */
-SPHINXBASE_EXPORT
 void ptmr_init (ptmr_t *tmr /**< The timer*/
 	);
 
@@ -193,7 +182,6 @@ void ptmr_init (ptmr_t *tmr /**< The timer*/
  * Reset t_cpu, t_elapsed of all timer modules in array tmr[] to 0.0.
  * The array should be terminated with a sentinel with .name = NULL.
  */
-SPHINXBASE_EXPORT
 void ptmr_reset_all (ptmr_t *tmr /**< The timer*/
 	);
 
@@ -201,7 +189,6 @@ void ptmr_reset_all (ptmr_t *tmr /**< The timer*/
  * Print t_cpu for all timer modules in tmr[], normalized by norm (i.e., t_cpu/norm).
  * The array should be terminated with a sentinel with .name = NULL.
  */
-SPHINXBASE_EXPORT
 void ptmr_print_all (FILE *fp,    /**< The file pointer */
 		     ptmr_t *tmr, /**< The timer*/
 		     float64 norm
@@ -212,7 +199,6 @@ void ptmr_print_all (FILE *fp,    /**< The file pointer */
  * Return the processor clock speed (in MHz); only available on some machines (Alphas).
  * The dummy argument can be any integer value.
  */
-SPHINXBASE_EXPORT
 int32 host_pclk (int32 dummy);
 
 
@@ -221,7 +207,6 @@ int32 host_pclk (int32 dummy);
  * number to a temporary file and reading it back.  * Return value:
  * 0 if BIG-ENDIAN, 1 if LITTLE-ENDIAN, -1 if error.  
  */
-SPHINXBASE_EXPORT
 int32 host_endian ( void );
 
 #ifdef __cplusplus

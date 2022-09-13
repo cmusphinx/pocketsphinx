@@ -65,20 +65,17 @@
  * 		Copied from Eric Thayer.
  */
 
-/* System headers. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <math.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/bitvec.h>
+#include <pocketsphinx/err.h>
 
-/* Local headers. */
-#include "vector.h"
+#include "util/ckd_alloc.h"
+#include "util/bitvec.h"
+#include "util/vector.h"
 
 #if defined(_WIN32)
 #define srandom	srand

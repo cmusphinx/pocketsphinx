@@ -41,16 +41,12 @@
  * 		Started.
  */
 
-/* System headers. */
 #include <assert.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
-#include "blkarray_list.h"
+#include "util/ckd_alloc.h"
+#include "util/blkarray_list.h"
 
 
 #define BLKARRAY_DEFAULT_MAXBLKS	16380

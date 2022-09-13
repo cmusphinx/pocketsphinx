@@ -61,9 +61,7 @@
 #ifndef _LIBUTIL_FILENAME_H_
 #define _LIBUTIL_FILENAME_H_
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-#include <sphinxbase/prim_type.h>
+#include <pocketsphinx/prim_type.h>
 
 /**\file filename.h
  *\brief File names related operation
@@ -79,14 +77,12 @@ extern "C" {
 /**
  * Returns the last part of the path, without modifying anything in memory.
  */
-SPHINXBASE_EXPORT
 const char *path2basename(const char *path);
 
 /**
  * Strip off filename from the given path and copy the directory name into dir
  * Caller must have allocated dir (hint: it's always shorter than path).
  */
-SPHINXBASE_EXPORT
 void path2dirname(const char *path, char *dir);
 
 
@@ -95,13 +91,11 @@ void path2dirname(const char *path, char *dir);
  * the rest into the given root argument.  Caller must have
  * allocated root.
  */
-SPHINXBASE_EXPORT
 void strip_fileext(const char *file, char *root);
 
 /**
  * Test whether a pathname is absolute for the current OS.
  */
-SPHINXBASE_EXPORT
 int path_is_absolute(const char *file);
 
 #ifdef __cplusplus

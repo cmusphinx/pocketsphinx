@@ -40,11 +40,9 @@
 
 #include <string.h>
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
+#include <pocketsphinx/prim_type.h>
 
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/ckd_alloc.h>
+#include "util/ckd_alloc.h"
 
 /** 
  * @file bitvec.h
@@ -77,7 +75,6 @@ typedef uint32 bitvec_t;
 /**
  * Resize a bit vector, clear the remaining bits
  */
-SPHINXBASE_EXPORT
 bitvec_t *bitvec_realloc(bitvec_t *vec,	/* In: Bit vector to search */
 			 size_t old_len, /* In: Old length */
                          size_t new_len); /* In: New lenght of above bit vector */
@@ -144,7 +141,6 @@ bitvec_t *bitvec_realloc(bitvec_t *vec,	/* In: Bit vector to search */
  * @param len is the length of bit vector <code>vec</code>
  * @return the number of bits being set in vector <code>vec</code>
  */
-SPHINXBASE_EXPORT
 size_t bitvec_count_set(bitvec_t *vec,	/* In: Bit vector to search */
                         size_t len);	/* In: Lenght of above bit vector */
 

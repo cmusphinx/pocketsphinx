@@ -61,6 +61,10 @@
 #ifndef __S2_BYTEORDER_H__
 #define __S2_BYTEORDER_H__	1
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 /* Macro to byteswap an int16 variable.  x = ptr to variable */
 #define SWAP_INT16(x)	*(x) = ((0x00ff & (*(x))>>8) | (0xff00 & (*(x))<<8))
 

@@ -48,18 +48,14 @@
 #ifndef __FSG_MODEL_H__
 #define __FSG_MODEL_H__
 
-/* System headers. */
 #include <stdio.h>
 #include <string.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/glist.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/bitvec.h>
-#include <sphinxbase/hash_table.h>
-#include <sphinxbase/listelem_alloc.h>
-#include <sphinxbase/sphinxbase_export.h>
+#include <pocketsphinx.h>
+#include "util/glist.h"
+#include "util/bitvec.h"
+#include "util/hash_table.h"
+#include "util/listelem_alloc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -152,7 +148,6 @@ typedef struct fsg_arciter_s fsg_arciter_t;
 /**
  * Create a new FSG.
  */
-SPHINXBASE_EXPORT
 fsg_model_t *fsg_model_init(char const *name, logmath_t *lmath,
                             float32 lw, int32 n_state);
 
@@ -195,13 +190,11 @@ fsg_model_t *fsg_model_init(char const *name, logmath_t *lmath,
  * Return value: a new fsg_model_t structure if the file is successfully
  * read, NULL otherwise.
  */
-SPHINXBASE_EXPORT
 fsg_model_t *fsg_model_readfile(const char *file, logmath_t *lmath, float32 lw);
 
 /**
  * Like fsg_model_readfile(), but from an already open stream.
  */
-SPHINXBASE_EXPORT
 fsg_model_t *fsg_model_read(FILE *fp, logmath_t *lmath, float32 lw);
 
 /**
@@ -209,7 +202,6 @@ fsg_model_t *fsg_model_read(FILE *fp, logmath_t *lmath, float32 lw);
  *
  * @return Pointer to retained FSG.
  */
-SPHINXBASE_EXPORT
 fsg_model_t *fsg_model_retain(fsg_model_t *fsg);
 
 /**
@@ -217,7 +209,6 @@ fsg_model_t *fsg_model_retain(fsg_model_t *fsg);
  *
  * @return new reference count (0 if freed completely)
  */
-SPHINXBASE_EXPORT
 int fsg_model_free(fsg_model_t *fsg);
 
 /**
@@ -225,7 +216,6 @@ int fsg_model_free(fsg_model_t *fsg);
  *
  * @return Word ID for this new word.
  */
-SPHINXBASE_EXPORT
 int fsg_model_word_add(fsg_model_t *fsg, char const *word);
 
 /**
@@ -233,7 +223,6 @@ int fsg_model_word_add(fsg_model_t *fsg, char const *word);
  *
  * @return Word ID for this word
  */
-SPHINXBASE_EXPORT
 int fsg_model_word_id(fsg_model_t *fsg, char const *word);
 
 /**
@@ -242,7 +231,6 @@ int fsg_model_word_id(fsg_model_t *fsg, char const *word);
  * Duplicates (i.e., two transitions between the same states, with the
  * same word label) are flagged and only the highest prob retained.
  */
-SPHINXBASE_EXPORT
 void fsg_model_trans_add(fsg_model_t * fsg,
                          int32 from, int32 to, int32 logp, int32 wid);
 
@@ -256,7 +244,6 @@ void fsg_model_trans_add(fsg_model_t * fsg,
  * @return 1 if a new transition was added, 0 if the prob of an existing
  * transition was upgraded; -1 if nothing was changed.
  */
-SPHINXBASE_EXPORT
 int32 fsg_model_null_trans_add(fsg_model_t * fsg, int32 from, int32 to, int32 logp);
 
 /**
@@ -273,7 +260,6 @@ int32 fsg_model_null_trans_add(fsg_model_t * fsg, int32 from, int32 to, int32 lo
  * @return 1 if a new transition was added, 0 if the prob of an existing
  * transition was upgraded; -1 if nothing was changed.
  */
-SPHINXBASE_EXPORT
 int32 fsg_model_tag_trans_add(fsg_model_t * fsg, int32 from, int32 to,
                               int32 logp, int32 wid);
 
@@ -283,42 +269,35 @@ int32 fsg_model_tag_trans_add(fsg_model_t * fsg, int32 from, int32 to,
  * @param nulls List of null transitions, or NULL to find them automatically.
  * @return Updated list of null transitions.
  */
-SPHINXBASE_EXPORT
 glist_t fsg_model_null_trans_closure(fsg_model_t * fsg, glist_t nulls);
 
 /**
  * Get the list of transitions (if any) from state i to j.
  */
-SPHINXBASE_EXPORT
 glist_t fsg_model_trans(fsg_model_t *fsg, int32 i, int32 j);
 
 /**
  * Get an iterator over the outgoing transitions from state i.
  */
-SPHINXBASE_EXPORT
 fsg_arciter_t *fsg_model_arcs(fsg_model_t *fsg, int32 i);
 
 /**
  * Get the current arc from the arc iterator.
  */
-SPHINXBASE_EXPORT
 fsg_link_t *fsg_arciter_get(fsg_arciter_t *itor);
 
 /**
  * Move the arc iterator forward.
  */
-SPHINXBASE_EXPORT
 fsg_arciter_t *fsg_arciter_next(fsg_arciter_t *itor);
 
 /**
  * Free the arc iterator (early termination)
  */
-SPHINXBASE_EXPORT
 void fsg_arciter_free(fsg_arciter_t *itor);
 /**
  * Get the null transition (if any) from state i to j.
  */
-SPHINXBASE_EXPORT
 fsg_link_t *fsg_model_null_trans(fsg_model_t *fsg, int32 i, int32 j);
 
 /**
@@ -327,51 +306,43 @@ fsg_link_t *fsg_model_null_trans(fsg_model_t *fsg, int32 i, int32 j);
  * @param state state to add a self-loop to, or -1 for all states.
  * @param silprob probability of silence transition.
  */
-SPHINXBASE_EXPORT
 int fsg_model_add_silence(fsg_model_t * fsg, char const *silword,
                           int state, float32 silprob);
 
 /**
  * Add alternate pronunciation transitions for a word in given FSG.
  */
-SPHINXBASE_EXPORT
 int fsg_model_add_alt(fsg_model_t * fsg, char const *baseword,
                       char const *altword);
 
 /**
  * Write FSG to a file.
  */
-SPHINXBASE_EXPORT
 void fsg_model_write(fsg_model_t *fsg, FILE *fp);
 
 /**
  * Write FSG to a file.
  */
-SPHINXBASE_EXPORT
 void fsg_model_writefile(fsg_model_t *fsg, char const *file);
 
 /**
  * Write FSG to a file in AT&T FSM format.
  */
-SPHINXBASE_EXPORT
 void fsg_model_write_fsm(fsg_model_t *fsg, FILE *fp);
 
 /**
  * Write FSG to a file in AT&T FSM format.
  */
-SPHINXBASE_EXPORT
 void fsg_model_writefile_fsm(fsg_model_t *fsg, char const *file);
 
 /**
  * Write FSG symbol table to a file (for AT&T FSM)
  */
-SPHINXBASE_EXPORT
 void fsg_model_write_symtab(fsg_model_t *fsg, FILE *file);
 
 /**
  * Write FSG symbol table to a file (for AT&T FSM)
  */
-SPHINXBASE_EXPORT
 void fsg_model_writefile_symtab(fsg_model_t *fsg, char const *file);
 
 #ifdef __cplusplus

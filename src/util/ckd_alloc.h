@@ -89,9 +89,7 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-#include <sphinxbase/prim_type.h>
+#include <pocketsphinx/prim_type.h>
 
 /** \file ckd_alloc.h
  *\brief Sphinx's memory allocation/deallocation routines.
@@ -124,7 +122,6 @@ extern "C" {
  * allocation fails rather than exiting or calling longjmp().
  * @return Pointer to a previously set <code>jmp_buf</code>, if any.
  */
-SPHINXBASE_EXPORT
 jmp_buf *ckd_set_jump(jmp_buf *env, int abort);
 
 /**
@@ -140,15 +137,12 @@ void ckd_fail(char *format, ...);
  * ckd_set_jump(), above.
  */
 
-SPHINXBASE_EXPORT
 void *__ckd_calloc__(size_t n_elem, size_t elem_size,
 		     const char *caller_file, int caller_line);
 
-SPHINXBASE_EXPORT
 void *__ckd_malloc__(size_t size,
 		     const char *caller_file, int caller_line);
 
-SPHINXBASE_EXPORT
 void *__ckd_realloc__(void *ptr, size_t new_size,
 		      const char *caller_file, int caller_line);
 
@@ -156,7 +150,6 @@ void *__ckd_realloc__(void *ptr, size_t new_size,
  * Like strdup, except that if an error occurs it prints a diagnostic message and
  * exits. If origin in NULL the function also returns NULL.
  */
-SPHINXBASE_EXPORT
 char *__ckd_salloc__(const char *origstr,
 		     const char *caller_file, int caller_line);
 
@@ -164,7 +157,6 @@ char *__ckd_salloc__(const char *origstr,
  * Allocate a 2-D array and return ptr to it (ie, ptr to vector of ptrs).
  * The data area is allocated in one block so it can also be treated as a 1-D array.
  */
-SPHINXBASE_EXPORT
 void *__ckd_calloc_2d__(size_t d1, size_t d2,	/* In: #elements in the 2 dimensions */
                         size_t elemsize,	/* In: Size (#bytes) of each element */
                         const char *caller_file, int caller_line);	/* In */
@@ -173,7 +165,6 @@ void *__ckd_calloc_2d__(size_t d1, size_t d2,	/* In: #elements in the 2 dimensio
  * Allocate a 3-D array and return ptr to it.
  * The data area is allocated in one block so it can also be treated as a 1-D array.
  */
-SPHINXBASE_EXPORT
 void *__ckd_calloc_3d__(size_t d1, size_t d2, size_t d3,	/* In: #elems in the dims */
                         size_t elemsize,		/* In: Size (#bytes) per element */
                         const char *caller_file, int caller_line);	/* In */
@@ -182,7 +173,6 @@ void *__ckd_calloc_3d__(size_t d1, size_t d2, size_t d3,	/* In: #elems in the di
  * Allocate a 34D array and return ptr to it.
  * The data area is allocated in one block so it can also be treated as a 1-D array.
  */
-SPHINXBASE_EXPORT
 void ****__ckd_calloc_4d__(size_t d1,
 			   size_t d2,
 			   size_t d3,
@@ -194,7 +184,6 @@ void ****__ckd_calloc_4d__(size_t d1,
 /**
  * Overlay a 3-D array over a previously allocated storage area.
  **/
-SPHINXBASE_EXPORT
 void * __ckd_alloc_3d_ptr(size_t d1,
                           size_t d2,
                           size_t d3,
@@ -206,7 +195,6 @@ void * __ckd_alloc_3d_ptr(size_t d1,
 /**
  * Overlay a s-D array over a previously allocated storage area.
  **/
-SPHINXBASE_EXPORT
 void *__ckd_alloc_2d_ptr(size_t d1,
                          size_t d2,
                          void *store,
@@ -217,25 +205,21 @@ void *__ckd_alloc_2d_ptr(size_t d1,
 /**
  * Test and free a 1-D array
  */
-SPHINXBASE_EXPORT
 void ckd_free(void *ptr);
 
 /**
  * Free a 2-D array (ptr) previously allocated by ckd_calloc_2d
  */
-SPHINXBASE_EXPORT
 void ckd_free_2d(void *ptr);
 
 /**
  * Free a 3-D array (ptr) previously allocated by ckd_calloc_3d
  */
-SPHINXBASE_EXPORT
 void ckd_free_3d(void *ptr);
 
 /**
  * Free a 4-D array (ptr) previously allocated by ckd_calloc_4d
  */
-SPHINXBASE_EXPORT
 void ckd_free_4d(void *ptr);
 
 /**

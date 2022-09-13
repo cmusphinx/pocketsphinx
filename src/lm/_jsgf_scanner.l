@@ -37,8 +37,8 @@
 /* YOU MUST USE FLEX 2.6.1 OR NEWER TO PROCESS THIS FILE!!! */
 %{
 
-#include "jsgf_internal.h"
-#include "jsgf_parser.h"
+#include "lm/jsgf_internal.h"
+#include "lm/jsgf_parser.h"
 
 %}
 

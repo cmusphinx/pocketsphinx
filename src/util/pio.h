@@ -87,9 +87,7 @@
 #include <sys/stat.h>
 #endif
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-#include <sphinxbase/prim_type.h>
+#include <pocketsphinx/prim_type.h>
 
 /** \file pio.h
  * \brief file IO related operations.  
@@ -113,7 +111,6 @@ extern "C" {
  * Like fopen, but use popen and zcat if it is determined that "file" is compressed
  * (i.e., has a .z, .Z, .gz, or .GZ extension).
  */
-SPHINXBASE_EXPORT
 FILE *fopen_comp (const char *file,		/**< In: File to be opened */
 		  const char *mode,		/**< In: "r" or "w", as with normal fopen */
 		  int32 *ispipe	/**< Out: On return *ispipe is TRUE iff file
@@ -123,7 +120,6 @@ FILE *fopen_comp (const char *file,		/**< In: File to be opened */
 /**
  * Close a file opened using fopen_comp.
  */
-SPHINXBASE_EXPORT
 void fclose_comp (FILE *fp,		/**< In: File pointer to be closed */
 		  int32 ispipe	/**< In: ispipe argument that was returned by the
 				   corresponding fopen_comp() call */
@@ -133,7 +129,6 @@ void fclose_comp (FILE *fp,		/**< In: File pointer to be closed */
  * Open a file for reading, but if file not present try to open compressed version (if
  * file is uncompressed, and vice versa).
  */
-SPHINXBASE_EXPORT
 FILE *fopen_compchk (const char *file,	/**< In: File to be opened */
 		     int32 *ispipe	/**< Out: On return *ispipe is TRUE iff file
 					   was opened via a pipe */
@@ -142,7 +137,6 @@ FILE *fopen_compchk (const char *file,	/**< In: File to be opened */
 /**
  * Wrapper around fopen to check for failure and E_FATAL if failed.
  */
-SPHINXBASE_EXPORT
 FILE *_myfopen(const char *file, const char *mode,
 	       const char *pgm, int32 line);	/* In: __FILE__, __LINE__ from where called */
 #define myfopen(file,mode)	_myfopen((file),(mode),__FILE__,__LINE__)
@@ -155,7 +149,6 @@ FILE *_myfopen(const char *file, const char *mode,
  * beyond EOF will trigger such retries, wasting about a minute in retries.
  * Arguments identical to regular fread.
  */
-SPHINXBASE_EXPORT
 int32 fread_retry(void *pointer, int32 size, int32 num_items, FILE *stream);
 
 /**
@@ -168,7 +161,6 @@ int32 fread_retry(void *pointer, int32 size, int32 num_items, FILE *stream);
  * @param out_len Output: if not NULL, length of the string read.
  * @return allocated string containing the line, or NULL on error or EOF.
  */
-SPHINXBASE_EXPORT
 char *fread_line(FILE *stream, size_t *out_len);
 
 /**
@@ -186,31 +178,26 @@ typedef struct lineiter_t {
 /**
  * Start reading lines from a file.
  */
-SPHINXBASE_EXPORT
 lineiter_t *lineiter_start(FILE *fh);
 
 /**
  * Start reading lines from a file, skip comments and trim lines.
  */
-SPHINXBASE_EXPORT
 lineiter_t *lineiter_start_clean(FILE *fh);
 
 /**
  * Move to the next line in the file.
  */
-SPHINXBASE_EXPORT
 lineiter_t *lineiter_next(lineiter_t *li);
 
 /**
  * Stop reading lines from a file.
  */
-SPHINXBASE_EXPORT
 void lineiter_free(lineiter_t *li);
 
 /**
  * Returns current line number.
  */
-SPHINXBASE_EXPORT
 int lineiter_lineno(lineiter_t *li);
 
 
@@ -239,13 +226,11 @@ typedef struct bit_encode_s bit_encode_t;
 /**
  * Attach bitstream encoder to a file.
  */
-SPHINXBASE_EXPORT
 bit_encode_t *bit_encode_attach(FILE *outfh);
 
 /**
  * Retain pointer to a bit encoder.
  */
-SPHINXBASE_EXPORT
 bit_encode_t *bit_encode_retain(bit_encode_t *be);
 
 /**
@@ -253,25 +238,21 @@ bit_encode_t *bit_encode_retain(bit_encode_t *be);
  *
  * Note that this does NOT flush any leftover bits.
  */
-SPHINXBASE_EXPORT
 int bit_encode_free(bit_encode_t *be);
 
 /**
  * Write bits to encoder.
  */
-SPHINXBASE_EXPORT
 int bit_encode_write(bit_encode_t *be, unsigned char const *bits, int nbits);
 
 /**
  * Write lowest-order bits of codeword to encoder.
  */
-SPHINXBASE_EXPORT
 int bit_encode_write_cw(bit_encode_t *be, uint32 codeword, int nbits);
 
 /**
  * Flush any unwritten bits, zero-padding if necessary.
  */
-SPHINXBASE_EXPORT
 int bit_encode_flush(bit_encode_t *be);
 
 /**
@@ -283,14 +264,12 @@ int bit_encode_flush(bit_encode_t *be);
  * Like fread_retry, but for stat.  Arguments identical to regular stat.
  * Return value: 0 if successful, -1 if stat failed several attempts.
  */
-SPHINXBASE_EXPORT
 int32 stat_retry (const char *file, struct stat *statbuf);
 
 /**
  * Return time of last modification for the given file, or -1 if stat fails.
  */
 
-SPHINXBASE_EXPORT
 int32 stat_mtime (const char *file);
 
 /**
@@ -298,7 +277,6 @@ int32 stat_mtime (const char *file);
  *
  * @return 0 on success, <0 on failure.
  */
-SPHINXBASE_EXPORT
 int build_directory(const char *path);
 
 #ifdef __cplusplus

@@ -45,12 +45,9 @@
 
 #include <stdarg.h>
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/mmio.h>
+#include <pocketsphinx.h>
+
+#include "util/mmio.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,8 +98,7 @@ typedef enum ngram_file_type_e {
  *              elsewhere, you must retain it with logmath_retain().
  * @return newly created ngram_model_t.
  */
-SPHINXBASE_EXPORT
-ngram_model_t *ngram_model_read(cmd_ln_t *config,
+ngram_model_t *ngram_model_read(ps_config_t *config,
 				const char *file_name,
                                 ngram_file_type_t file_type,
 				logmath_t *lmath);
@@ -112,7 +108,6 @@ ngram_model_t *ngram_model_read(cmd_ln_t *config,
  *
  * @return 0 for success, <0 on error
  */
-SPHINXBASE_EXPORT
 int ngram_model_write(ngram_model_t *model, const char *file_name,
 		      ngram_file_type_t format);
 
@@ -121,7 +116,6 @@ int ngram_model_write(ngram_model_t *model, const char *file_name,
  *
  * @return the guessed file type, or NGRAM_INVALID if none could be guessed.
  */
-SPHINXBASE_EXPORT
 ngram_file_type_t ngram_file_name_to_type(const char *file_name);
 
 /**
@@ -129,7 +123,6 @@ ngram_file_type_t ngram_file_name_to_type(const char *file_name);
  *
  * @return file type, or NGRAM_INVALID if no such file type exists.
  */
-SPHINXBASE_EXPORT
 ngram_file_type_t ngram_str_to_type(const char *str_name);
 
 /**
@@ -138,7 +131,6 @@ ngram_file_type_t ngram_str_to_type(const char *str_name);
  * @return read-only string with the name for this file type, or NULL
  * if no such type exists.
  */
-SPHINXBASE_EXPORT
 char const *ngram_type_to_str(int type);
 
 /**
@@ -146,7 +138,6 @@ char const *ngram_type_to_str(int type);
  *
  * @return Pointer to retained model.
  */
-SPHINXBASE_EXPORT
 ngram_model_t *ngram_model_retain(ngram_model_t *model);
 
 /**
@@ -154,7 +145,6 @@ ngram_model_t *ngram_model_retain(ngram_model_t *model);
  *
  * @return new reference count (0 if freed completely)
  */
-SPHINXBASE_EXPORT
 int ngram_model_free(ngram_model_t *model);
 
 /**
@@ -171,7 +161,6 @@ typedef enum ngram_case_e {
  * WARNING: This is not Unicode aware, so any non-ASCII characters
  * will not be converted.
  */
-SPHINXBASE_EXPORT
 int ngram_model_casefold(ngram_model_t *model, int kase);
 
 /**
@@ -185,7 +174,6 @@ int ngram_model_casefold(ngram_model_t *model, int kase);
  *
  * To remove all weighting, call ngram_apply_weights(model, 1.0, 1.0).
  */
-SPHINXBASE_EXPORT
 int ngram_model_apply_weights(ngram_model_t *model,
                               float32 lw, float32 wip);
 
@@ -196,7 +184,6 @@ int ngram_model_apply_weights(ngram_model_t *model,
  * @param out_log_wip Output: (optional) logarithm of word insertion penalty.
  * @return language weight.
  */
-SPHINXBASE_EXPORT
 float32 ngram_model_get_weights(ngram_model_t *model, int32 *out_log_wip);
 
 /**
@@ -231,13 +218,11 @@ float32 ngram_model_get_weights(ngram_model_t *model, int32 *out_log_wip);
  * large negative number.  To obtain this number for comparison, call
  * ngram_zero().
  */
-SPHINXBASE_EXPORT
 int32 ngram_score(ngram_model_t *model, const char *word, ...);
 
 /**
  * Quick trigram score lookup.
  */
-SPHINXBASE_EXPORT
 int32 ngram_tg_score(ngram_model_t *model,
                      int32 w3, int32 w2, int32 w1,
                      int32 *n_used);
@@ -245,7 +230,6 @@ int32 ngram_tg_score(ngram_model_t *model,
 /**
  * Quick bigram score lookup.
  */
-SPHINXBASE_EXPORT
 int32 ngram_bg_score(ngram_model_t *model,
                      int32 w2, int32 w1,
                      int32 *n_used);
@@ -253,7 +237,6 @@ int32 ngram_bg_score(ngram_model_t *model,
 /**
  * Quick general N-Gram score lookup.
  */
-SPHINXBASE_EXPORT
 int32 ngram_ng_score(ngram_model_t *model, int32 wid, int32 *history,
                      int32 n_hist, int32 *n_used);
 
@@ -267,7 +250,6 @@ int32 ngram_ng_score(ngram_model_t *model, int32 wid, int32 *history,
  * @note When backing off to a unigram from a bigram or trigram, the
  * unigram weight (interpolation with uniform) is not removed.
  */
-SPHINXBASE_EXPORT
 int32 ngram_probv(ngram_model_t *model, const char *word, ...);
 
 /**
@@ -280,7 +262,6 @@ int32 ngram_probv(ngram_model_t *model, const char *word, ...);
  * @note When backing off to a unigram from a bigram or trigram, the
  * unigram weight (interpolation with uniform) is not removed.
  */
-SPHINXBASE_EXPORT
 int32 ngram_prob(ngram_model_t *model, const char* const *words, int32 n);
 
 /**
@@ -289,7 +270,6 @@ int32 ngram_prob(ngram_model_t *model, const char* const *words, int32 n);
  * See documentation for ngram_ng_score() and ngram_apply_weights()
  * for an explanation of this.
  */
-SPHINXBASE_EXPORT
 int32 ngram_ng_prob(ngram_model_t *model, int32 wid, int32 *history,
                     int32 n_hist, int32 *n_used);
 
@@ -304,19 +284,16 @@ int32 ngram_ng_prob(ngram_model_t *model, int32 wid, int32 *history,
  * @param score The N-Gram score to convert
  * @return The raw log-probability value.
  */
-SPHINXBASE_EXPORT
 int32 ngram_score_to_prob(ngram_model_t *model, int32 score);
 
 /**
  * Look up numerical word ID.
  */
-SPHINXBASE_EXPORT
 int32 ngram_wid(ngram_model_t *model, const char *word);
 
 /**
  * Look up word string for numerical word ID.
  */
-SPHINXBASE_EXPORT
 const char *ngram_word(ngram_model_t *model, int32 wid);
 
 /**
@@ -332,25 +309,21 @@ const char *ngram_word(ngram_model_t *model, int32 wid);
  * @return The ID for the unknown word, or NGRAM_INVALID_WID if none
  * exists.
  */
-SPHINXBASE_EXPORT
 int32 ngram_unknown_wid(ngram_model_t *model);
 
 /**
  * Get the "zero" log-probability value for a language model.
  */
-SPHINXBASE_EXPORT
 int32 ngram_zero(ngram_model_t *model);
 
 /**
  * Get the order of the N-gram model (i.e. the "N" in "N-gram")
  */
-SPHINXBASE_EXPORT
 int32 ngram_model_get_size(ngram_model_t *model);
 
 /**
  * Get the counts of the various N-grams in the model.
  */
-SPHINXBASE_EXPORT
 uint32 const *ngram_model_get_counts(ngram_model_t *model);
 
 /**
@@ -366,19 +339,16 @@ typedef struct ngram_iter_s ngram_iter_t;
  * @return An iterator over the requested M, or NULL if no N-grams of
  * order M+1 exist.
  */
-SPHINXBASE_EXPORT
 ngram_iter_t *ngram_model_mgrams(ngram_model_t *model, int m);
 
 /**
  * Get an iterator over M-grams pointing to the specified M-gram.
  */
-SPHINXBASE_EXPORT
 ngram_iter_t *ngram_iter(ngram_model_t *model, const char *word, ...);
 
 /**
  * Get an iterator over M-grams pointing to the specified M-gram.
  */
-SPHINXBASE_EXPORT
 ngram_iter_t *ngram_ng_iter(ngram_model_t *model, int32 wid, int32 *history, int32 n_hist);
 
 /**
@@ -389,7 +359,6 @@ ngram_iter_t *ngram_ng_iter(ngram_model_t *model, int32 wid, int32 *history, int
  * @param out_bowt Output: Backoff weight for this M-gram.
  * @return read-only array of word IDs.
  */
-SPHINXBASE_EXPORT
 int32 const *ngram_iter_get(ngram_iter_t *itor,
                             int32 *out_score,
                             int32 *out_bowt);
@@ -399,19 +368,16 @@ int32 const *ngram_iter_get(ngram_iter_t *itor,
  *
  * @param itor Iterator pointing to the M-1-gram to get successors of.
  */
-SPHINXBASE_EXPORT
 ngram_iter_t *ngram_iter_successors(ngram_iter_t *itor);
 
 /**
  * Advance an M-gram iterator.
  */
-SPHINXBASE_EXPORT
 ngram_iter_t *ngram_iter_next(ngram_iter_t *itor);
 
 /**
  * Terminate an M-gram iterator.
  */
-SPHINXBASE_EXPORT
 void ngram_iter_free(ngram_iter_t *itor);
 
 /**
@@ -426,7 +392,6 @@ void ngram_iter_free(ngram_iter_t *itor);
  * @param weight Weight of this word relative to the uniform distribution.
  * @return The word ID for the new word.
  */
-SPHINXBASE_EXPORT
 int32 ngram_model_add_word(ngram_model_t *model,
                            const char *word, float32 weight);
 
@@ -443,7 +408,6 @@ int32 ngram_model_add_word(ngram_model_t *model,
  *
  * @return 0 for success, <0 for error
  */
-SPHINXBASE_EXPORT
 int32 ngram_model_read_classdef(ngram_model_t *model,
                                 const char *file_name);
 
@@ -455,7 +419,6 @@ int32 ngram_model_read_classdef(ngram_model_t *model,
  * <code>classweight</code> will be ignored.  Otherwise, a new unigram
  * will be created as in ngram_model_add_word().
  */
-SPHINXBASE_EXPORT
 int32 ngram_model_add_class(ngram_model_t *model,
                             const char *classname,
                             float32 classweight,
@@ -472,7 +435,6 @@ int32 ngram_model_add_class(ngram_model_t *model,
  * @param weight Weight of this word relative to the within-class uniform distribution.
  * @return The word ID for the new word.
  */
-SPHINXBASE_EXPORT
 int32 ngram_model_add_class_word(ngram_model_t *model,
                                  const char *classname,
                                  const char *word,
@@ -502,8 +464,7 @@ int32 ngram_model_add_class_word(ngram_model_t *model,
  *                for no interpolation.
  * @param n_models Number of elements in the arrays passed to this function.
  */
-SPHINXBASE_EXPORT
-ngram_model_t *ngram_model_set_init(cmd_ln_t *config,
+ngram_model_t *ngram_model_set_init(ps_config_t *config,
                                     ngram_model_t **models,
                                     char **names,
                                     const float32 *weights,
@@ -539,15 +500,13 @@ ngram_model_t *ngram_model_set_init(cmd_ln_t *config,
  *              elsewhere, you must retain it with logmath_retain().
  * @return newly created language model set.
  */
-SPHINXBASE_EXPORT
-ngram_model_t *ngram_model_set_read(cmd_ln_t *config,
+ngram_model_t *ngram_model_set_read(ps_config_t *config,
                                     const char *lmctlfile,
                                     logmath_t *lmath);
 
 /**
  * Returns the number of language models in a set.
  */
-SPHINXBASE_EXPORT
 int32 ngram_model_set_count(ngram_model_t *set);
 
 /**
@@ -560,7 +519,6 @@ typedef struct ngram_model_set_iter_s ngram_model_set_iter_t;
  *
  * @return iterator pointing to the first language model, or NULL if no models remain.
  */
-SPHINXBASE_EXPORT
 ngram_model_set_iter_t *ngram_model_set_iter(ngram_model_t *set);
 
 /**
@@ -568,13 +526,11 @@ ngram_model_set_iter_t *ngram_model_set_iter(ngram_model_t *set);
  *
  * @return iterator pointing to the next language model, or NULL if no models remain.
  */
-SPHINXBASE_EXPORT
 ngram_model_set_iter_t *ngram_model_set_iter_next(ngram_model_set_iter_t *itor);
 
 /**
  * Finish iteration over a langauge model set.
  */
-SPHINXBASE_EXPORT
 void ngram_model_set_iter_free(ngram_model_set_iter_t *itor);
 
 /**
@@ -584,7 +540,6 @@ void ngram_model_set_iter_free(ngram_model_set_iter_t *itor);
  * @param lmname Output: string name associated with this language model.
  * @return Language model pointed to by this iterator.
  */
-SPHINXBASE_EXPORT
 ngram_model_t *ngram_model_set_iter_model(ngram_model_set_iter_t *itor,
                                           char const **lmname);
 
@@ -594,7 +549,6 @@ ngram_model_t *ngram_model_set_iter_model(ngram_model_set_iter_t *itor,
  * @return the newly selected language model, or NULL if no language
  * model by that name exists.
  */
-SPHINXBASE_EXPORT
 ngram_model_t *ngram_model_set_select(ngram_model_t *set,
                                       const char *name);
 
@@ -604,14 +558,12 @@ ngram_model_t *ngram_model_set_select(ngram_model_t *set,
  * @return language model corresponding to <code>name</code>, or NULL
  * if no language model by that name exists.
  */
-SPHINXBASE_EXPORT
 ngram_model_t *ngram_model_set_lookup(ngram_model_t *set,
                                       const char *name);
 
 /**
  * Get the current language model name, if any.
  */
-SPHINXBASE_EXPORT
 const char *ngram_model_set_current(ngram_model_t *set);
 
 /**
@@ -621,7 +573,6 @@ const char *ngram_model_set_current(ngram_model_t *set);
  * weights will be used.  If no weights were specified to
  * ngram_model_set_init(), then a uniform distribution will be used.
  */
-SPHINXBASE_EXPORT
 ngram_model_t *ngram_model_set_interp(ngram_model_t *set,
                                       const char **names,
                                       const float32 *weights);
@@ -638,7 +589,6 @@ ngram_model_t *ngram_model_set_interp(ngram_model_t *set,
  * <code>set</code>.  Any new words present in <code>model</code>
  * will not be added to the word-ID mapping in this case.
  */
-SPHINXBASE_EXPORT
 ngram_model_t *ngram_model_set_add(ngram_model_t *set,
                                    ngram_model_t *model,
                                    const char *name,
@@ -653,7 +603,6 @@ ngram_model_t *ngram_model_set_add(ngram_model_t *set,
  * @param reuse_widmap Reuse the existing word-ID mapping in
  *                     <code>set</code>.
  */
-SPHINXBASE_EXPORT
 ngram_model_t *ngram_model_set_remove(ngram_model_t *set,
                                       const char *name,
                                       int reuse_widmap);
@@ -661,7 +610,6 @@ ngram_model_t *ngram_model_set_remove(ngram_model_t *set,
 /**
  * Set the word-to-ID mapping for this model set.
  */
-SPHINXBASE_EXPORT
 void ngram_model_set_map_words(ngram_model_t *set,
                                const char **words,
                                int32 n_words);
@@ -673,7 +621,6 @@ void ngram_model_set_map_words(ngram_model_t *set,
  * NGRAM_INVALID_WID if <code>set_wid</code> is invalid or
  * interpolation is enabled.
  */
-SPHINXBASE_EXPORT
 int32 ngram_model_set_current_wid(ngram_model_t *set,
                                   int32 set_wid);
 
@@ -686,13 +633,11 @@ int32 ngram_model_set_current_wid(ngram_model_t *set,
  * model.  Otherwise, returns non-zero if <code>set_wid</code>
  * corresponds to a known word in any language model.
  */
-SPHINXBASE_EXPORT
 int32 ngram_model_set_known_wid(ngram_model_t *set, int32 set_wid);
 
 /**
  * Flush any cached N-Gram information
  */
-SPHINXBASE_EXPORT
 void ngram_model_flush(ngram_model_t *lm);
 
 #ifdef __cplusplus

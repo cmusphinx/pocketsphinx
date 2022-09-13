@@ -40,9 +40,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sphinxbase/hash_table.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/err.h>
+#include <pocketsphinx/err.h>
+
+#include "util/hash_table.h"
+#include "util/ckd_alloc.h"
 
 #include "jsgf_internal.h"
 #include "jsgf_parser.h"

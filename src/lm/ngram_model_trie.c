@@ -42,13 +42,13 @@
 #include "config.h"
 #endif
 
-#include <sphinxbase/err.h>
-#include <sphinxbase/pio.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/byteorder.h>
+#include <pocketsphinx/err.h>
 
-#include "ngram_model_trie.h"
+#include "util/pio.h"
+#include "util/strfuncs.h"
+#include "util/ckd_alloc.h"
+#include "util/byteorder.h"
+#include "lm/ngram_model_trie.h"
 
 static const char trie_hdr[] = "Trie Language Model";
 static const char dmp_hdr[] = "Darpa Trigram LM";

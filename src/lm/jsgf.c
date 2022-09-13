@@ -38,16 +38,17 @@
 #include <string.h>
 #include <assert.h>
 
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/strfuncs.h"
-#include "sphinxbase/hash_table.h"
-#include "sphinxbase/filename.h"
-#include "sphinxbase/err.h"
-#include "sphinxbase/jsgf.h"
+#include <pocketsphinx.h>
 
-#include "jsgf_internal.h"
-#include "jsgf_parser.h"
-#include "jsgf_scanner.h"
+#include "util/ckd_alloc.h"
+#include "util/strfuncs.h"
+#include "util/hash_table.h"
+#include "util/filename.h"
+
+#include "fe/jsgf.h"
+#include "fe/jsgf_internal.h"
+#include "fe/jsgf_parser.h"
+#include "fe/jsgf_scanner.h"
 
 extern int yyparse(void *scanner, jsgf_t * jsgf);
 

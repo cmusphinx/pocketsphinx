@@ -2,7 +2,6 @@
 #define __PRIORITY_QUEUE_H__
 
 #include <stdlib.h>
-#include <sphinxbase/sphinxbase_export.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,19 +24,14 @@ extern "C" {
 
 typedef struct priority_queue_s priority_queue_t;
 
-SPHINXBASE_EXPORT
 priority_queue_t* priority_queue_create(size_t len, int (*compare)(const void *a, const void *b));
 
-SPHINXBASE_EXPORT
 void* priority_queue_poll(priority_queue_t *queue);
 
-SPHINXBASE_EXPORT
 void priority_queue_add(priority_queue_t *queue, void *element);
 
-SPHINXBASE_EXPORT
 size_t priority_queue_size(priority_queue_t *queue);
 
-SPHINXBASE_EXPORT
 void priority_queue_free(priority_queue_t *queue, void (*free_ptr)(void *a));
 
 #ifdef __cplusplus

@@ -75,8 +75,7 @@
 
 #include <string.h>
 
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/sphinxbase_export.h>
+#include <pocketsphinx/prim_type.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,14 +100,12 @@ extern "C" {
    * Convert str to all upper case.
    * @param str is a string.
    */
-SPHINXBASE_EXPORT
 void ucase(char *str);
 
   /** 
    * Convert str to all lower case
    * @param str is a string.
    */
-SPHINXBASE_EXPORT
 void lcase(char *str);
 
   /**
@@ -118,13 +115,11 @@ void lcase(char *str);
    * @param str1 is the first string.
    * @param str2 is the second string. 
    */
-SPHINXBASE_EXPORT
 int32 strcmp_nocase(const char *str1, const char *str2);
 
 /**
  * Like strcmp_nocase() but with a maximum length.
  */
-SPHINXBASE_EXPORT
 int32 strncmp_nocase(const char *str1, const char *str2, size_t len);
 
 

@@ -44,10 +44,7 @@
 
 #include <stdarg.h>
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-#include <sphinxbase/prim_type.h>
-
+#include <pocketsphinx/prim_type.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +58,6 @@ extern "C" {
  * Concatenate a NULL-terminated argument list of strings, returning a
  * newly allocated string.
  **/
-SPHINXBASE_EXPORT
 char *string_join(const char *base, ...);
 
 /**
@@ -79,7 +75,6 @@ enum string_edge_e {
  * @param string string to trim, contents will be modified.
  * @param which one of STRING_START, STRING_END, or STRING_BOTH.
  */
-SPHINXBASE_EXPORT
 char *string_trim(char *string, enum string_edge_e which);
 
 /**
@@ -89,7 +84,6 @@ char *string_trim(char *string, enum string_edge_e which);
  * locale in a threaded program is extremely uncool, therefore we need
  * this since we pass floats as strings in 1000 different places.
  */
-SPHINXBASE_EXPORT
 double atof_c(char const *str);
 
 /* FIXME: Both of these string splitting functions basically suck.  I
@@ -102,7 +96,6 @@ double atof_c(char const *str);
  * every word in the line.
  * Return value: No. of words found; -1 if no. of words in line exceeds n_wptr.
  */
-SPHINXBASE_EXPORT
 int32 str2words (char *line,	/**< In/Out: line to be parsed.  This
 				   string will be modified! (NUL
 				   characters inserted at word
@@ -136,7 +129,6 @@ int32 str2words (char *line,	/**< In/Out: line to be parsed.  This
  * }
  * </pre>
  */
-SPHINXBASE_EXPORT
 int32 nextword (char *line, /**< Input: String being searched for next word.
 			       Will be modified by this function (NUL characters inserted) */
 		const char *delim, /**< Input: A word, if found, must be delimited at either

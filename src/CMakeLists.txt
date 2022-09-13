@@ -48,6 +48,7 @@ lm/jsgf.c
 lm/ngram_model_set.c
 lm/ngrams_raw.c
 lm/jsgf_scanner.c
+lm/bitarr.c
 lm/ngram_model.c
 lm/lm_trie.c
 lm/jsgf_parser.c
@@ -85,7 +86,6 @@ util/err.c
 util/ckd_alloc.c
 util/slapack_lite.c
 util/matrix.c
-util/sbthread.c
 util/bio.c
 util/heap.c
 util/priority_queue.c
@@ -96,7 +96,6 @@ util/logmath.c
 util/glist.c
 util/f2c_lite.c
 util/listelem_alloc.c
-util/bitarr.c
 util/pio.c
 util/genrand.c
   )

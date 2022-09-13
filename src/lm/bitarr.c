@@ -43,9 +43,10 @@
 #include "config.h"
 #endif
 
-#include "sphinxbase/err.h"
-#include "sphinxbase/bitarr.h"
-#include "sphinxbase/byteorder.h"
+#include <pocketsphinx/err.h>
+
+#include "lm/bitarr.h"
+#include "util/byteorder.h"
 
 uint64 bitarr_read_int57(bitarr_address_t address, uint8 length, uint64 mask)
 {

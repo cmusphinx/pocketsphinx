@@ -61,10 +61,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase/sphinxbase_export.h>
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/hash_table.h>
+#include <pocketsphinx/prim_type.h>
+
+#include "util/hash_table.h"
 
 /**
  * @file cmd_ln.h
@@ -189,7 +188,6 @@ typedef struct cmd_ln_s {
  * @param strict Whether to fail on duplicate or unknown arguments.
  * @return A cmd_ln_t* containing the results of command line parsing, or NULL on failure.
  */
-SPHINXBASE_EXPORT
 cmd_ln_t *cmd_ln_init(cmd_ln_t *inout_cmdln, arg_t const *defn, int32 strict, ...);
 
 /**
@@ -197,7 +195,6 @@ cmd_ln_t *cmd_ln_init(cmd_ln_t *inout_cmdln, arg_t const *defn, int32 strict, ..
  *
  * @return pointer to retained command-line argument set.
  */
-SPHINXBASE_EXPORT
 cmd_ln_t *cmd_ln_retain(cmd_ln_t *cmdln);
 
 /**
@@ -205,7 +202,6 @@ cmd_ln_t *cmd_ln_retain(cmd_ln_t *cmdln);
  *
  * @return new reference count (0 if freed completely)
  */
-SPHINXBASE_EXPORT
 int cmd_ln_free_r(cmd_ln_t *cmdln);
 
 /**
@@ -227,7 +223,6 @@ int cmd_ln_free_r(cmd_ln_t *cmdln);
  * @return A cmd_ln_t containing the results of command line parsing,
  *         or NULL on failure.
  **/
-SPHINXBASE_EXPORT
 cmd_ln_t *cmd_ln_parse_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-line to update,
                                                      or NULL to create a new one. */
                          arg_t const *defn,	/**< In: Array of argument name definitions */
@@ -243,7 +238,6 @@ cmd_ln_t *cmd_ln_parse_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-li
  *
  * @return A cmd_ln_t containing the results of command line parsing, or NULL on failure.
  */
-SPHINXBASE_EXPORT
 cmd_ln_t *cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-line to update,
                                                      or NULL to create a new one. */
                               arg_t const *defn,   /**< In: Array of argument name definitions*/
@@ -268,7 +262,6 @@ cmd_ln_t *cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous comma
  *         value is legitimately NULL and where the corresponding flag
  *         is unknown.
  */
-SPHINXBASE_EXPORT
 cmd_ln_val_t *cmd_ln_access_r(cmd_ln_t *cmdln, char const *name);
 
 /**
@@ -282,7 +275,6 @@ cmd_ln_val_t *cmd_ln_access_r(cmd_ln_t *cmdln, char const *name);
  * @return the type of the parameter (as a combination of the ARG_*
  *         bits), or 0 if no such parameter exists.
  */
-SPHINXBASE_EXPORT
 int cmd_ln_type_r(cmd_ln_t *cmdln, char const *name);
 
 /**
@@ -299,7 +291,6 @@ int cmd_ln_type_r(cmd_ln_t *cmdln, char const *name);
  *         value is legitimately NULL and where the corresponding flag
  *         is unknown.
  */
-SPHINXBASE_EXPORT
 char const *cmd_ln_str_r(cmd_ln_t *cmdln, char const *name);
 
 /**
@@ -316,7 +307,6 @@ char const *cmd_ln_str_r(cmd_ln_t *cmdln, char const *name);
  *         value is legitimately NULL and where the corresponding flag
  *         is unknown.
  */
-SPHINXBASE_EXPORT
 char const **cmd_ln_str_list_r(cmd_ln_t *cmdln, char const *name);
 
 /**
@@ -330,7 +320,6 @@ char const **cmd_ln_str_list_r(cmd_ln_t *cmdln, char const *name);
  *         value is legitimately zero and where the corresponding flag
  *         is unknown.
  */
-SPHINXBASE_EXPORT
 long cmd_ln_int_r(cmd_ln_t *cmdln, char const *name);
 
 /**
@@ -344,7 +333,6 @@ long cmd_ln_int_r(cmd_ln_t *cmdln, char const *name);
  *         value is legitimately zero and where the corresponding flag
  *         is unknown.
  */
-SPHINXBASE_EXPORT
 double cmd_ln_float_r(cmd_ln_t *cmdln, char const *name);
 
 /**
@@ -360,7 +348,6 @@ double cmd_ln_float_r(cmd_ln_t *cmdln, char const *name);
  * @param str String value to set.  The command-line object does not
  *            retain ownership of this pointer.
  */
-SPHINXBASE_EXPORT
 void cmd_ln_set_str_r(cmd_ln_t *cmdln, char const *name, char const *str);
 
 /**
@@ -373,7 +360,6 @@ void cmd_ln_set_str_r(cmd_ln_t *cmdln, char const *name, char const *str);
  * @param str String value to set.  The command-line object does not
  *            retain ownership of this pointer.
  */
-SPHINXBASE_EXPORT
 void cmd_ln_set_str_extra_r(cmd_ln_t *cmdln, char const *name, char const *str);
 
 /**
@@ -383,7 +369,6 @@ void cmd_ln_set_str_extra_r(cmd_ln_t *cmdln, char const *name, char const *str);
  * @param name The command-line flag to set.
  * @param iv Integer value to set.
  */
-SPHINXBASE_EXPORT
 void cmd_ln_set_int_r(cmd_ln_t *cmdln, char const *name, long iv);
 
 /**
@@ -393,7 +378,6 @@ void cmd_ln_set_int_r(cmd_ln_t *cmdln, char const *name, long iv);
  * @param name The command-line flag to set.
  * @param fv Integer value to set.
  */
-SPHINXBASE_EXPORT
 void cmd_ln_set_float_r(cmd_ln_t *cmdln, char const *name, double fv);
 
 /**
@@ -417,7 +401,6 @@ void cmd_ln_set_float_r(cmd_ln_t *cmdln, char const *name, double fv);
  * @return True if the command line argument exists (i.e. it
  * was one of the arguments defined in the call to cmd_ln_parse_r().
  */
-SPHINXBASE_EXPORT
 int cmd_ln_exists_r(cmd_ln_t *cmdln, char const *name);
 
 /**
@@ -427,7 +410,6 @@ int cmd_ln_exists_r(cmd_ln_t *cmdln, char const *name);
  * @param cmdln command-line object
  * @param defn array of argument name definitions.
  */
-SPHINXBASE_EXPORT
 void cmd_ln_log_help_r (cmd_ln_t *cmdln, const arg_t *defn);
 
 /**
@@ -436,7 +418,6 @@ void cmd_ln_log_help_r (cmd_ln_t *cmdln, const arg_t *defn);
  * @param cmdln  command-line object
  * @param defn array of argument name definitions.
  */
-SPHINXBASE_EXPORT
 void cmd_ln_log_values_r (cmd_ln_t *cmdln, const arg_t *defn);
 
 
