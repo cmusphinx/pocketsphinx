@@ -160,26 +160,6 @@ typedef struct cmd_ln_s {
 } cmd_ln_t;
 
 /**
- * Create a cmd_ln_t from NULL-terminated list of arguments.
- *
- * This function creates a cmd_ln_t from a NULL-terminated list of
- * argument strings.  For example, to create the equivalent of passing
- * "-hmm foodir -dsratio 2 -lm bar.lm" on the command-line:
- *
- *  config = cmd_ln_init(NULL, defs, TRUE, "-hmm", "foodir", "-dsratio", "2",
- *                       "-lm", "bar.lm", NULL);
- *
- * Note that for simplicity, <strong>all</strong> arguments are passed
- * as strings, regardless of the actual underlying type.
- *
- * @param inout_cmdln Previous command-line to update, or NULL to create a new one.
- * @param defn Array of argument name definitions, or NULL to allow any arguments.
- * @param strict Whether to fail on duplicate or unknown arguments.
- * @return A cmd_ln_t* containing the results of command line parsing, or NULL on failure.
- */
-cmd_ln_t *cmd_ln_init(cmd_ln_t *inout_cmdln, arg_t const *defn, int32 strict, ...);
-
-/**
  * Retain ownership of a command-line argument set.
  *
  * @return pointer to retained command-line argument set.
@@ -220,6 +200,8 @@ cmd_ln_t *cmd_ln_parse_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-li
                          int32 strict           /**< In: Fail on duplicate or unknown
                                                    arguments, or no arguments? */
     );
+
+#define ps_config_parse_args(argc, argv) cmd_ln_parse_r(NULL, ps_args(), argc, argv, TRUE)
 
 /**
  * Parse an arguments file by deliminating on " \r\t\n" and putting each tokens
