@@ -267,15 +267,6 @@ enum fe_error_e {
 };
 
 /**
- * Get the default set of arguments for fe_init_auto_r().
- *
- * @return Pointer to an argument structure which can be passed to
- * cmd_ln_init() in friends to create argument structures for
- * fe_init_auto_r().
- */
-arg_t const *fe_get_args(void);
-
-/**
  * Initialize a front-end object from a command-line parse.
  *
  * @param config Command-line object, as returned by cmd_ln_parse_r()

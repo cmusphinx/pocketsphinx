@@ -53,13 +53,6 @@
 #include "fe/fixpoint.h"
 #include "fe/fe_internal.h"
 #include "fe/fe_warp.h"
-#include "cmdln_macro.h"
-
-
-static const arg_t fe_args[] = {
-    POCKETSPHINX_FE_OPTIONS,
-    { NULL, 0, NULL, NULL }
-};
 
 int
 fe_parse_general_params(cmd_ln_t *config, fe_t * fe)
@@ -306,12 +299,6 @@ fe_init_auto_r(cmd_ln_t *config)
     /*** Initialize the overflow buffers ***/
     fe_start_utt(fe);
     return fe;
-}
-
-arg_t const *
-fe_get_args(void)
-{
-    return fe_args;
 }
 
 cmd_ln_t *

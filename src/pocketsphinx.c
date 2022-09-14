@@ -50,7 +50,6 @@
 #include "util/pio.h"
 #include "lm/jsgf.h"
 #include "util/hash_table.h"
-#include "cmdln_macro.h"
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
 #include "phone_loop_search.h"
@@ -107,13 +106,6 @@ ps_expand_file_config(ps_config_t *config, const char *arg, const char *extra_ar
     }
 }
 
-/* Feature and front-end parameters that may be in feat.params */
-static const arg_t feat_defn[] = {
-    POCKETSPHINX_FE_OPTIONS,
-    POCKETSPHINX_FEAT_OPTIONS,
-    CMDLN_EMPTY_OPTION
-};
-
 void
 ps_expand_model_config(ps_config_t *config)
 {
@@ -141,7 +133,7 @@ ps_expand_model_config(ps_config_t *config)
     /* Look for feat.params in acoustic model dir. */
     if ((featparams = ps_config_str(config, "_featparams"))) {
         if (NULL !=
-            cmd_ln_parse_file_r(config, feat_defn, featparams, FALSE))
+            cmd_ln_parse_file_r(config, ps_args(), featparams, FALSE))
             E_INFO("Parsed model-specific feature parameters from %s\n",
                     featparams);
     }
