@@ -45,37 +45,37 @@
 #include "pocketsphinx_internal.h"
 
 static const arg_t defn[] = {
-  { "-help",
+  { "help",
     ARG_BOOLEAN,
     "no",
     "Shows the usage of the tool"},
 
-  { "-jsgf",
+  { "jsgf",
     REQARG_STRING,
     NULL,
     "Input grammar in jsgf format (required)"},
 
-  { "-toprule",
+  { "toprule",
     ARG_STRING,
     NULL,
     "Root rule name (optional)"},
 
-  { "-fsg",
+  { "fsg",
     ARG_STRING,
     NULL,
     "Output grammar in fsg format"},
 
-  { "-fsm",
+  { "fsm",
     ARG_STRING,
     NULL,
     "Output grammar in FSM format"},
 
-  { "-symtab",
+  { "symtab",
     ARG_STRING,
     NULL,
     "Output symtab for grammar in FSM format"},
 
-  { "-compile",
+  { "compile",
     ARG_BOOLEAN,
     "no",
     "Compute grammar closure to speedup loading"},
@@ -140,16 +140,16 @@ main(int argc, char *argv[])
         return 1;
     }
 
-    if (ps_config_bool(config, "-help")) {
+    if (ps_config_bool(config, "help")) {
         usagemsg(argv[0]);
     }
 
-    jsgf = jsgf_parse_file(ps_config_str(config, "-jsgf"), NULL);
+    jsgf = jsgf_parse_file(ps_config_str(config, "jsgf"), NULL);
     if (jsgf == NULL) {
         return 1;
     }
 
-    rule = ps_config_str(config, "-toprule") ? ps_config_str(config, "-toprule") : NULL;
+    rule = ps_config_str(config, "toprule") ? ps_config_str(config, "toprule") : NULL;
     if (!(fsg = get_fsg(jsgf, rule))) {
         E_ERROR("No fsg was built for the given rule '%s'.\n"
                 "Check rule name; it should be qualified (with grammar name)\n"
@@ -159,14 +159,14 @@ main(int argc, char *argv[])
     }
 
 
-    if (ps_config_bool(config, "-compile")) {
+    if (ps_config_bool(config, "compile")) {
 	fsg_model_null_trans_closure(fsg, NULL);
     }
 
     
-    if (ps_config_str(config, "-fsm")) {
-	const char* outfile = ps_config_str(config, "-fsm");
-	const char* symfile = ps_config_str(config, "-symtab");
+    if (ps_config_str(config, "fsm")) {
+	const char* outfile = ps_config_str(config, "fsm");
+	const char* symfile = ps_config_str(config, "symtab");
         if (outfile)
             fsg_model_writefile_fsm(fsg, outfile);
         else
@@ -175,7 +175,7 @@ main(int argc, char *argv[])
             fsg_model_writefile_symtab(fsg, symfile);
     }
     else {
-        const char *outfile = ps_config_str(config, "-fsg");
+        const char *outfile = ps_config_str(config, "fsg");
         if (outfile)
             fsg_model_writefile(fsg, outfile);
         else

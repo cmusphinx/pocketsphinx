@@ -52,42 +52,42 @@
 #include <math.h>
 
 static const arg_t defn[] = {
-  { "-help",
+  { "help",
     ARG_BOOLEAN,
     "no",
     "Shows the usage of the tool"},
 
-  { "-logbase",
+  { "logbase",
     ARG_FLOATING,
     "1.0001",
     "Base in which all log-likelihoods calculated" },
 
-  { "-i",
+  { "i",
     REQARG_STRING,
     NULL,
     "Input language model file (required)"},
 
-  { "-o",
+  { "o",
     REQARG_STRING,
     NULL,
     "Output language model file (required)"},
 
-  { "-ifmt",
+  { "ifmt",
     ARG_STRING,
     NULL,
     "Input language model format (will guess if not specified)"},
 
-  { "-ofmt",
+  { "ofmt",
     ARG_STRING,
     NULL,
     "Output language model file (will guess if not specified)"},
 
-  { "-case",
+  { "case",
     ARG_STRING,
     NULL,
     "Ether 'lower' or 'upper' - case fold to lower/upper case (NOT UNICODE AWARE)" },
 
-  { "-mmap",
+  { "mmap",
     ARG_BOOLEAN,
     "no",
     "Use memory-mapped I/O for reading binary LM files"},
@@ -122,55 +122,55 @@ main(int argc, char *argv[])
             return 1;
         }
 		
-	if (ps_config_bool(config, "-help")) {
+	if (ps_config_bool(config, "help")) {
 	    usagemsg(argv[0]);
 	}
 
 	/* Create log math object. */
 	if ((lmath = logmath_init
-	     (ps_config_float(config, "-logbase"), 0, 0)) == NULL) {
+	     (ps_config_float(config, "logbase"), 0, 0)) == NULL) {
 		E_FATAL("Failed to initialize log math\n");
 	}
 	
-	if (ps_config_str(config, "-i") == NULL || ps_config_str(config, "-i") == NULL) {
+	if (ps_config_str(config, "i") == NULL || ps_config_str(config, "i") == NULL) {
             E_ERROR("Please specify both input and output models\n");
             goto error_out;
         }	    
 	
 	/* Load the input language model. */
-        if (ps_config_str(config, "-ifmt")) {
-            if ((itype = ngram_str_to_type(ps_config_str(config, "-ifmt")))
+        if (ps_config_str(config, "ifmt")) {
+            if ((itype = ngram_str_to_type(ps_config_str(config, "ifmt")))
                 == NGRAM_INVALID) {
-                E_ERROR("Invalid input type %s\n", ps_config_str(config, "-ifmt"));
+                E_ERROR("Invalid input type %s\n", ps_config_str(config, "ifmt"));
                 goto error_out;
             }
-            lm = ngram_model_read(config, ps_config_str(config, "-i"),
+            lm = ngram_model_read(config, ps_config_str(config, "i"),
                                   itype, lmath);
         }
         else {
-            lm = ngram_model_read(config, ps_config_str(config, "-i"),
+            lm = ngram_model_read(config, ps_config_str(config, "i"),
                                   NGRAM_AUTO, lmath);
 	}
 
 	if (lm == NULL) {
-	    E_ERROR("Failed to read the model from the file '%s'\n", ps_config_str(config, "-i"));
+	    E_ERROR("Failed to read the model from the file '%s'\n", ps_config_str(config, "i"));
 	    goto error_out;
 	}
 
         /* Guess or set the output language model type. */
-        if (ps_config_str(config, "-ofmt")) {
-            if ((otype = ngram_str_to_type(ps_config_str(config, "-ofmt")))
+        if (ps_config_str(config, "ofmt")) {
+            if ((otype = ngram_str_to_type(ps_config_str(config, "ofmt")))
                 == NGRAM_INVALID) {
-                E_ERROR("Invalid output type %s\n", ps_config_str(config, "-ofmt"));
+                E_ERROR("Invalid output type %s\n", ps_config_str(config, "ofmt"));
                 goto error_out;
             }
         }
         else {
-            otype = ngram_file_name_to_type(ps_config_str(config, "-o"));
+            otype = ngram_file_name_to_type(ps_config_str(config, "o"));
         }
 
         /* Case fold if requested. */
-        if ((kase = ps_config_str(config, "-case"))) {
+        if ((kase = ps_config_str(config, "case"))) {
             if (0 == strcmp(kase, "lower")) {
                 ngram_model_casefold(lm, NGRAM_LOWER);
             }
@@ -184,9 +184,9 @@ main(int argc, char *argv[])
         }
 
         /* Write the output language model. */
-        if (ngram_model_write(lm, ps_config_str(config, "-o"), otype) != 0) {
+        if (ngram_model_write(lm, ps_config_str(config, "o"), otype) != 0) {
             E_ERROR("Failed to write language model in format %s to %s\n",
-                    ngram_type_to_str(otype), ps_config_str(config, "-o"));
+                    ngram_type_to_str(otype), ps_config_str(config, "o"));
             goto error_out;
         }
 

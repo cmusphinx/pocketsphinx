@@ -27,9 +27,9 @@ static void
 test_default_fsg()
 {
     cmd_ln_t *config = default_config();
-    ps_config_set_str(config, "-hmm", DATADIR "/tidigits/hmm");
-    ps_config_set_str(config, "-dict", DATADIR "/tidigits/lm/tidigits.dic");
-    ps_config_set_str(config, "-fsg", DATADIR "/tidigits/lm/tidigits.fsg");
+    ps_config_set_str(config, "hmm", DATADIR "/tidigits/hmm");
+    ps_config_set_str(config, "dict", DATADIR "/tidigits/lm/tidigits.dic");
+    ps_config_set_str(config, "fsg", DATADIR "/tidigits/lm/tidigits.fsg");
     ps_decoder_t *ps = ps_init(config);
     TEST_ASSERT(!ps_get_lm(ps, PS_DEFAULT_SEARCH));
     TEST_ASSERT(ps_get_fsg(ps, PS_DEFAULT_SEARCH));
@@ -41,7 +41,7 @@ static void
 test_default_jsgf()
 {
     cmd_ln_t *config = default_config();
-    ps_config_set_str(config, "-jsgf", DATADIR "/goforward.gram");
+    ps_config_set_str(config, "jsgf", DATADIR "/goforward.gram");
     ps_decoder_t *ps = ps_init(config);
     TEST_ASSERT(!ps_get_lm(ps, PS_DEFAULT_SEARCH));
     TEST_ASSERT(ps_get_fsg(ps, PS_DEFAULT_SEARCH));
@@ -53,7 +53,7 @@ static void
 test_default_lm()
 {
     cmd_ln_t *config = default_config();
-    ps_config_set_str(config, "-lm", MODELDIR "/en-us/en-us.lm.bin");
+    ps_config_set_str(config, "lm", MODELDIR "/en-us/en-us.lm.bin");
     ps_decoder_t *ps = ps_init(config);
     TEST_ASSERT(!ps_get_fsg(ps, PS_DEFAULT_SEARCH));
     TEST_ASSERT(ps_get_lm(ps, PS_DEFAULT_SEARCH));
@@ -65,8 +65,8 @@ static void
 test_default_lmctl()
 {
     cmd_ln_t *config = default_config();
-    ps_config_set_str(config, "-lmctl", DATADIR "/test.lmctl");
-    ps_config_set_str(config, "-lmname", "tidigits");
+    ps_config_set_str(config, "lmctl", DATADIR "/test.lmctl");
+    ps_config_set_str(config, "lmname", "tidigits");
     ps_decoder_t *ps = ps_init(config);
     TEST_ASSERT(ps_get_lm(ps, "tidigits"));
     TEST_ASSERT(ps_get_lm(ps, "turtle"));
@@ -86,7 +86,7 @@ test_set_search()
     jsgf_t *jsgf = jsgf_parse_file(DATADIR "/goforward.gram", NULL);
     fsg_model_t *fsg = jsgf_build_fsg(jsgf,
                                       jsgf_get_rule(jsgf, "goforward.move"),
-                                      ps->lmath, ps_config_int(config, "-lw"));
+                                      ps->lmath, ps_config_int(config, "lw"));
     TEST_ASSERT(!ps_set_fsg(ps, "goforward", fsg));
     fsg_model_free(fsg);
     jsgf_grammar_free(jsgf);

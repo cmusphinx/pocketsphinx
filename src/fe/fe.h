@@ -100,120 +100,120 @@ extern "C" {
 #define SEED  -1
 
 #define waveform_to_cepstral_command_line_macro() \
-  { "-logspec", \
+  { "logspec", \
     ARG_BOOLEAN, \
     "no", \
     "Write out logspectral files instead of cepstra" }, \
    \
-  { "-smoothspec", \
+  { "smoothspec", \
     ARG_BOOLEAN, \
     "no", \
     "Write out cepstral-smoothed logspectral files" }, \
    \
-  { "-transform", \
+  { "transform", \
     ARG_STRING, \
     "legacy", \
     "Which type of transform to use to calculate cepstra (legacy, dct, or htk)" }, \
    \
-  { "-alpha", \
+  { "alpha", \
     ARG_FLOATING, \
     ARG_STRINGIFY(DEFAULT_PRE_EMPHASIS_ALPHA), \
     "Preemphasis parameter" }, \
    \
-  { "-samprate", \
+  { "samprate", \
     ARG_INTEGER, \
     ARG_STRINGIFY(DEFAULT_SAMPLING_RATE), \
     "Sampling rate" }, \
    \
-  { "-frate", \
+  { "frate", \
     ARG_INTEGER, \
     ARG_STRINGIFY(DEFAULT_FRAME_RATE), \
     "Frame rate" }, \
    \
-  { "-wlen", \
+  { "wlen", \
     ARG_FLOATING, \
     ARG_STRINGIFY(DEFAULT_WINDOW_LENGTH), \
     "Hamming window length" }, \
    \
-  { "-nfft", \
+  { "nfft", \
     ARG_INTEGER, \
     "0", \
     "Size of FFT, or 0 to set automatically (recommended)" }, \
    \
-  { "-nfilt", \
+  { "nfilt", \
     ARG_INTEGER, \
     ARG_STRINGIFY(DEFAULT_NUM_FILTERS), \
     "Number of filter banks" }, \
    \
-  { "-lowerf", \
+  { "lowerf", \
     ARG_FLOATING, \
     ARG_STRINGIFY(DEFAULT_LOWER_FILT_FREQ), \
     "Lower edge of filters" }, \
    \
-  { "-upperf", \
+  { "upperf", \
     ARG_FLOATING, \
     ARG_STRINGIFY(DEFAULT_UPPER_FILT_FREQ), \
     "Upper edge of filters" }, \
    \
-  { "-unit_area", \
+  { "unit_area", \
     ARG_BOOLEAN, \
     "yes", \
     "Normalize mel filters to unit area" }, \
    \
-  { "-round_filters", \
+  { "round_filters", \
     ARG_BOOLEAN, \
     "yes", \
     "Round mel filter frequencies to DFT points" }, \
    \
-  { "-ncep", \
+  { "ncep", \
     ARG_INTEGER, \
     ARG_STRINGIFY(DEFAULT_NUM_CEPSTRA), \
     "Number of cep coefficients" }, \
    \
-  { "-doublebw", \
+  { "doublebw", \
     ARG_BOOLEAN, \
     "no", \
     "Use double bandwidth filters (same center freq)" }, \
    \
-  { "-lifter", \
+  { "lifter", \
     ARG_INTEGER, \
     "0", \
     "Length of sin-curve for liftering, or 0 for no liftering." }, \
    \
-  { "-input_endian", \
+  { "input_endian", \
     ARG_STRING, \
     NATIVE_ENDIAN, \
     "Endianness of input data, big or little, ignored if NIST or MS Wav" }, \
    \
-  { "-warp_type", \
+  { "warp_type", \
     ARG_STRING, \
     DEFAULT_WARP_TYPE, \
     "Warping function type (or shape)" }, \
    \
-  { "-warp_params", \
+  { "warp_params", \
     ARG_STRING, \
     NULL, \
     "Parameters defining the warping function" }, \
    \
-  { "-dither", \
+  { "dither", \
     ARG_BOOLEAN, \
     "no", \
     "Add 1/2-bit noise" }, \
    \
-  { "-seed", \
+  { "seed", \
     ARG_INTEGER, \
     ARG_STRINGIFY(SEED), \
     "Seed for random number generator; if less than zero, pick our own" }, \
    \
-  { "-remove_dc", \
+  { "remove_dc", \
     ARG_BOOLEAN, \
     "no", \
     "Remove DC offset from each frame" }, \
-  { "-remove_noise", \
+  { "remove_noise", \
     ARG_BOOLEAN,                          \
     "no",                                        \
     "Remove noise using spectral subtraction" }, \
-  { "-verbose",                                 \
+  { "verbose",                                 \
           ARG_BOOLEAN,                          \
           "no",                                 \
           "Show input filenames" }

@@ -224,7 +224,7 @@ main(int argc, char *argv[])
 
     /* Now test -remove_noise */
     fe_free(fe);
-    ps_config_set_bool(config, "-remove_noise", TRUE);
+    ps_config_set_bool(config, "remove_noise", TRUE);
     TEST_ASSERT(fe = fe_init_auto_r(config));
     E_INFO("Testing all data at once (1024 samples)\n");
     inptr = &buf[0];

@@ -64,8 +64,8 @@ acmod_init_am(acmod_t *acmod)
     char const *mdeffn, *tmatfn, *mllrfn, *hmmdir;
 
     /* Read model definition. */
-    if ((mdeffn = ps_config_str(acmod->config, "_mdef")) == NULL) {
-        if ((hmmdir = ps_config_str(acmod->config, "-hmm")) == NULL)
+    if ((mdeffn = ps_config_str(acmod->config, "mdef")) == NULL) {
+        if ((hmmdir = ps_config_str(acmod->config, "hmm")) == NULL)
             E_ERROR("Acoustic model definition is not specified either "
                     "with -mdef option or with -hmm\n");
         else
@@ -81,23 +81,23 @@ acmod_init_am(acmod_t *acmod)
     }
 
     /* Read transition matrices. */
-    if ((tmatfn = ps_config_str(acmod->config, "_tmat")) == NULL) {
+    if ((tmatfn = ps_config_str(acmod->config, "tmat")) == NULL) {
         E_ERROR("No tmat file specified\n");
         return -1;
     }
     acmod->tmat = tmat_init(tmatfn, acmod->lmath,
-                            ps_config_float(acmod->config, "-tmatfloor"),
+                            ps_config_float(acmod->config, "tmatfloor"),
                             TRUE);
 
     /* Read the acoustic models. */
-    if ((ps_config_str(acmod->config, "_mean") == NULL)
-        || (ps_config_str(acmod->config, "_var") == NULL)
-        || (ps_config_str(acmod->config, "_tmat") == NULL)) {
+    if ((ps_config_str(acmod->config, "mean") == NULL)
+        || (ps_config_str(acmod->config, "var") == NULL)
+        || (ps_config_str(acmod->config, "tmat") == NULL)) {
         E_ERROR("No mean/var/tmat files specified\n");
         return -1;
     }
 
-    if (ps_config_str(acmod->config, "_senmgau")) {
+    if (ps_config_str(acmod->config, "senmgau")) {
         E_INFO("Using general multi-stream GMM computation\n");
         acmod->mgau = ms_mgau_init(acmod, acmod->lmath, acmod->mdef);
         if (acmod->mgau == NULL)
@@ -119,7 +119,7 @@ acmod_init_am(acmod_t *acmod)
     }
 
     /* If there is an MLLR transform, apply it. */
-    if ((mllrfn = ps_config_str(acmod->config, "-mllr"))) {
+    if ((mllrfn = ps_config_str(acmod->config, "mllr"))) {
         ps_mllr_t *mllr = ps_mllr_read(mllrfn);
         if (mllr == NULL)
             return -1;
@@ -151,42 +151,42 @@ acmod_reinit_feat(acmod_t *acmod, fe_t *fe, feat_t *fcb)
         fcb = feat_retain(fcb);
     else {
         fcb =
-            feat_init(ps_config_str(acmod->config, "-feat"),
-                      cmn_type_from_str(ps_config_str(acmod->config,"-cmn")),
-                      ps_config_bool(acmod->config, "-varnorm"),
-                      agc_type_from_str(ps_config_str(acmod->config, "-agc")),
-                      1, ps_config_int(acmod->config, "-ceplen"));
+            feat_init(ps_config_str(acmod->config, "feat"),
+                      cmn_type_from_str(ps_config_str(acmod->config,"cmn")),
+                      ps_config_bool(acmod->config, "varnorm"),
+                      agc_type_from_str(ps_config_str(acmod->config, "agc")),
+                      1, ps_config_int(acmod->config, "ceplen"));
         if (fcb == NULL)
             return -1;
 
-        if (ps_config_str(acmod->config, "_lda")) {
+        if (ps_config_str(acmod->config, "lda")) {
             E_INFO("Reading linear feature transformation from %s\n",
-                   ps_config_str(acmod->config, "_lda"));
+                   ps_config_str(acmod->config, "lda"));
             if (feat_read_lda(fcb,
-                              ps_config_str(acmod->config, "_lda"),
-                              ps_config_int(acmod->config, "-ldadim")) < 0)
+                              ps_config_str(acmod->config, "lda"),
+                              ps_config_int(acmod->config, "ldadim")) < 0)
                 return -1;
         }
 
-        if (ps_config_str(acmod->config, "-svspec")) {
+        if (ps_config_str(acmod->config, "svspec")) {
             int32 **subvecs;
             E_INFO("Using subvector specification %s\n",
-                   ps_config_str(acmod->config, "-svspec"));
-            if ((subvecs = parse_subvecs(ps_config_str(acmod->config, "-svspec"))) == NULL)
+                   ps_config_str(acmod->config, "svspec"));
+            if ((subvecs = parse_subvecs(ps_config_str(acmod->config, "svspec"))) == NULL)
                 return -1;
             if ((feat_set_subvecs(fcb, subvecs)) < 0)
                 return -1;
         }
 
-        if (0 != strcmp(ps_config_str(acmod->config, "-agc"), "none")) {
+        if (0 != strcmp(ps_config_str(acmod->config, "agc"), "none")) {
             agc_set_threshold(fcb->agc_struct,
-                              ps_config_float(acmod->config, "-agcthresh"));
+                              ps_config_float(acmod->config, "agcthresh"));
         }
 
         if (fcb->cmn_struct
-            && ps_config_str(acmod->config, "-cmninit")) {
-            E_INFO("Setting initial CMN to %s\n", ps_config_str(acmod->config, "-cmninit"));
-            cmn_set_repr(fcb->cmn_struct, ps_config_str(acmod->config, "-cmninit"));
+            && ps_config_str(acmod->config, "cmninit")) {
+            E_INFO("Setting initial CMN to %s\n", ps_config_str(acmod->config, "cmninit"));
+            cmn_set_repr(fcb->cmn_struct, ps_config_str(acmod->config, "cmninit"));
         }
     }
     if (acmod_feat_mismatch(acmod, fcb)) {
@@ -207,7 +207,7 @@ acmod_reinit_feat(acmod_t *acmod, fe_t *fe, feat_t *fcb)
                       sizeof(**acmod->mfc_buf));
 
     /* Feature buffer has to be at least as large as MFCC buffer. */
-    acmod->n_feat_alloc = acmod->n_mfc_alloc + ps_config_int(acmod->config, "-pl_window");
+    acmod->n_feat_alloc = acmod->n_mfc_alloc + ps_config_int(acmod->config, "pl_window");
     if (acmod->feat_buf)
         feat_array_free(acmod->feat_buf);
     acmod->feat_buf = feat_array_alloc(acmod->fcb, acmod->n_feat_alloc);
@@ -222,10 +222,10 @@ int
 acmod_fe_mismatch(acmod_t *acmod, fe_t *fe)
 {
     /* Output vector dimension needs to be the same. */
-    if (ps_config_int(acmod->config, "-ceplen") != fe_get_output_size(fe)) {
+    if (ps_config_int(acmod->config, "ceplen") != fe_get_output_size(fe)) {
         E_ERROR("Configured feature length %d doesn't match feature "
                 "extraction output size %d\n",
-                ps_config_int(acmod->config, "-ceplen"),
+                ps_config_int(acmod->config, "ceplen"),
                 fe_get_output_size(fe));
         return TRUE;
     }
@@ -238,10 +238,10 @@ int
 acmod_feat_mismatch(acmod_t *acmod, feat_t *fcb)
 {
     /* Feature type needs to be the same. */
-    if (0 != strcmp(ps_config_str(acmod->config, "-feat"), feat_name(fcb)))
+    if (0 != strcmp(ps_config_str(acmod->config, "feat"), feat_name(fcb)))
         return TRUE;
     /* Input vector dimension needs to be the same. */
-    if (ps_config_int(acmod->config, "-ceplen") != feat_cepsize(fcb))
+    if (ps_config_int(acmod->config, "ceplen") != feat_cepsize(fcb))
         return TRUE;
     /* FIXME: Need to check LDA and stuff too. */
     return FALSE;
@@ -272,7 +272,7 @@ acmod_init(ps_config_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb)
     acmod->senone_active = ckd_calloc(bin_mdef_n_sen(acmod->mdef),
                                                      sizeof(*acmod->senone_active));
     acmod->log_zero = logmath_get_zero(acmod->lmath);
-    acmod->compallsen = ps_config_bool(config, "-compallsen");
+    acmod->compallsen = ps_config_bool(config, "compallsen");
     return acmod;
 
 error_out:
@@ -340,7 +340,7 @@ acmod_write_senfh_header(acmod_t *acmod, FILE *logfh)
     sprintf(logbasestr, "%f", logmath_get_base(acmod->lmath));
     return bio_writehdr(logfh,
                         "version", "0.1",
-                        "mdef_file", ps_config_str(acmod->config, "_mdef"),
+                        "mdef_file", ps_config_str(acmod->config, "mdef"),
                         "n_sen", nsenstr,
                         "logbase", logbasestr, NULL);
 }
@@ -835,7 +835,7 @@ acmod_set_insenfh(acmod_t *acmod, FILE *senfh)
     acmod->insenfh = senfh;
     if (senfh == NULL) {
         acmod->n_feat_frame = 0;
-        acmod->compallsen = ps_config_bool(acmod->config, "-compallsen");
+        acmod->compallsen = ps_config_bool(acmod->config, "compallsen");
         return 0;
     }
     acmod->compallsen = TRUE;

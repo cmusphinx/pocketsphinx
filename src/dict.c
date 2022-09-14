@@ -257,8 +257,8 @@ dict_init(ps_config_t *config, bin_mdef_t * mdef)
     char const *dictfile = NULL, *fillerfile = NULL;
 
     if (config) {
-        dictfile = ps_config_str(config, "-dict");
-        fillerfile = ps_config_str(config, "_fdict");
+        dictfile = ps_config_str(config, "dict");
+        fillerfile = ps_config_str(config, "fdict");
     }
 
     /*
@@ -323,7 +323,7 @@ dict_init(ps_config_t *config, bin_mdef_t * mdef)
 
     /* Create new hash table for word strings; case-insensitive word strings */
     if (config)
-        d->nocase = ps_config_bool(config, "-dictcase");
+        d->nocase = ps_config_bool(config, "dictcase");
     d->ht = hash_table_new(d->max_words, d->nocase);
 
     /* Digest main dictionary file */

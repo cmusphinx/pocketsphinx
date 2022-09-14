@@ -165,8 +165,8 @@ ngram_model_read(cmd_ln_t * config,
         float32 lw = 1.0;
         float32 wip = 1.0;
 
-        lw = ps_config_float(config, "-lw");
-        wip = ps_config_float(config, "-wip");
+        lw = ps_config_float(config, "lw");
+        wip = ps_config_float(config, "wip");
 
         ngram_model_apply_weights(model, lw, wip);
     }

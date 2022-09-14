@@ -60,8 +60,8 @@ fe_parse_general_params(cmd_ln_t *config, fe_t * fe)
     int j, frate, window_samples;
 
     fe->config = ps_config_retain(config);
-    fe->sampling_rate = ps_config_int(config, "-samprate");
-    frate = ps_config_int(config, "-frate");
+    fe->sampling_rate = ps_config_int(config, "samprate");
+    frate = ps_config_int(config, "frate");
     if (frate > MAX_INT16 || frate > fe->sampling_rate || frate < 1) {
         E_ERROR
             ("Frame rate %d can not be bigger than sample rate %.02f\n",
@@ -70,22 +70,22 @@ fe_parse_general_params(cmd_ln_t *config, fe_t * fe)
     }
 
     fe->frame_rate = (int16)frate;
-    if (ps_config_bool(config, "-dither")) {
+    if (ps_config_bool(config, "dither")) {
         fe->dither = 1;
-        fe->dither_seed = ps_config_int(config, "-seed");
+        fe->dither_seed = ps_config_int(config, "seed");
     }
 #ifdef WORDS_BIGENDIAN
     /* i.e. if input_endian is *not* "big", then fe->swap is true. */
-    fe->swap = strcmp("big", ps_config_str(config, "-input_endian"));
+    fe->swap = strcmp("big", ps_config_str(config, "input_endian"));
 #else        
     /* and vice versa */
-    fe->swap = strcmp("little", ps_config_str(config, "-input_endian"));
+    fe->swap = strcmp("little", ps_config_str(config, "input_endian"));
 #endif
-    fe->window_length = ps_config_float(config, "-wlen");
-    fe->pre_emphasis_alpha = ps_config_float(config, "-alpha");
+    fe->window_length = ps_config_float(config, "wlen");
+    fe->pre_emphasis_alpha = ps_config_float(config, "alpha");
 
-    fe->num_cepstra = (uint8)ps_config_int(config, "-ncep");
-    fe->fft_size = (int16)ps_config_int(config, "-nfft");
+    fe->num_cepstra = (uint8)ps_config_int(config, "ncep");
+    fe->fft_size = (int16)ps_config_int(config, "nfft");
 
     window_samples = (int)(fe->window_length * fe->sampling_rate);
     E_INFO("Frames are %d samples at intervals of %d\n",
@@ -124,22 +124,22 @@ fe_parse_general_params(cmd_ln_t *config, fe_t * fe)
         }
     }
 
-    fe->remove_dc = ps_config_bool(config, "-remove_dc");
+    fe->remove_dc = ps_config_bool(config, "remove_dc");
 
-    if (0 == strcmp(ps_config_str(config, "-transform"), "dct"))
+    if (0 == strcmp(ps_config_str(config, "transform"), "dct"))
         fe->transform = DCT_II;
-    else if (0 == strcmp(ps_config_str(config, "-transform"), "legacy"))
+    else if (0 == strcmp(ps_config_str(config, "transform"), "legacy"))
         fe->transform = LEGACY_DCT;
-    else if (0 == strcmp(ps_config_str(config, "-transform"), "htk"))
+    else if (0 == strcmp(ps_config_str(config, "transform"), "htk"))
         fe->transform = DCT_HTK;
     else {
         E_ERROR("Invalid transform type (values are 'dct', 'legacy', 'htk')\n");
         return -1;
     }
 
-    if (ps_config_bool(config, "-logspec"))
+    if (ps_config_bool(config, "logspec"))
         fe->log_spec = RAW_LOG_SPEC;
-    if (ps_config_bool(config, "-smoothspec"))
+    if (ps_config_bool(config, "smoothspec"))
         fe->log_spec = SMOOTH_LOG_SPEC;
 
     return 0;
@@ -151,24 +151,24 @@ fe_parse_melfb_params(cmd_ln_t *config, fe_t *fe, melfb_t * mel)
     mel->sampling_rate = fe->sampling_rate;
     mel->fft_size = fe->fft_size;
     mel->num_cepstra = fe->num_cepstra;
-    mel->num_filters = ps_config_int(config, "-nfilt");
+    mel->num_filters = ps_config_int(config, "nfilt");
 
     if (fe->log_spec)
         fe->feature_dimension = mel->num_filters;
     else
         fe->feature_dimension = fe->num_cepstra;
 
-    mel->upper_filt_freq = ps_config_float(config, "-upperf");
-    mel->lower_filt_freq = ps_config_float(config, "-lowerf");
+    mel->upper_filt_freq = ps_config_float(config, "upperf");
+    mel->lower_filt_freq = ps_config_float(config, "lowerf");
 
-    mel->doublewide = ps_config_bool(config, "-doublebw");
+    mel->doublewide = ps_config_bool(config, "doublebw");
 
-    mel->warp_type = ps_config_str(config, "-warp_type");
-    mel->warp_params = ps_config_str(config, "-warp_params");
-    mel->lifter_val = ps_config_int(config, "-lifter");
+    mel->warp_type = ps_config_str(config, "warp_type");
+    mel->warp_params = ps_config_str(config, "warp_params");
+    mel->lifter_val = ps_config_int(config, "lifter");
 
-    mel->unit_area = ps_config_bool(config, "-unit_area");
-    mel->round_filters = ps_config_bool(config, "-round_filters");
+    mel->unit_area = ps_config_bool(config, "unit_area");
+    mel->round_filters = ps_config_bool(config, "round_filters");
 
     if (fe_warp_set(mel, mel->warp_type) != FE_SUCCESS) {
         E_ERROR("Failed to initialize the warping function.\n");
@@ -277,7 +277,7 @@ fe_init_auto_r(cmd_ln_t *config)
     
     fe_build_melfilters(fe->mel_fb);
     fe_compute_melcosine(fe->mel_fb);
-    if (ps_config_bool(config, "-remove_noise"))
+    if (ps_config_bool(config, "remove_noise"))
         fe->noise_stats = fe_init_noisestats(fe->mel_fb->num_filters);
 
     /* Create temporary FFT, spectrum and mel-spectrum buffers. */
@@ -292,7 +292,7 @@ fe_init_auto_r(cmd_ln_t *config)
     fe->sss = ckd_calloc(fe->fft_size / 4, sizeof(*fe->sss));
     fe_create_twiddle(fe);
 
-    if (ps_config_bool(config, "-verbose")) {
+    if (ps_config_bool(config, "verbose")) {
         fe_print_current(fe);
     }
 

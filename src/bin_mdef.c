@@ -400,7 +400,7 @@ bin_mdef_read(ps_config_t *config, const char *filename)
     m->ciname = ckd_calloc(m->n_ciphone, sizeof(*m->ciname));
 
     /* Decide whether to read in the whole file or mmap it. */
-    do_mmap = config ? ps_config_bool(config, "-mmap") : TRUE;
+    do_mmap = config ? ps_config_bool(config, "mmap") : TRUE;
     if (swap) {
         E_WARN("-mmap specified, but mdef is other-endian.  Will not memory-map.\n");
         do_mmap = FALSE;

@@ -386,22 +386,19 @@ kws_search_init(const char *name,
 
     kwss->beam =
         (int32) logmath_log(acmod->lmath,
-                            ps_config_float(config,
-                                             "-beam")) >> SENSCR_SHIFT;
+                            ps_config_float(config, "beam")) >> SENSCR_SHIFT;
 
     kwss->plp =
         (int32) logmath_log(acmod->lmath,
-                            ps_config_float(config,
-                                             "-kws_plp")) >> SENSCR_SHIFT;
+                            ps_config_float(config, "kws_plp")) >> SENSCR_SHIFT;
 
 
     kwss->def_threshold =
         (int32) logmath_log(acmod->lmath,
                             ps_config_float(config,
-                                             "-kws_threshold")) >>
-        SENSCR_SHIFT;
+                                            "kws_threshold")) >> SENSCR_SHIFT;
 
-    kwss->delay = (int32) ps_config_int(config, "-kws_delay");
+    kwss->delay = (int32) ps_config_int(config, "kws_delay");
 
     E_INFO("KWS(beam: %d, plp: %d, default threshold %d, delay %d)\n",
            kwss->beam, kwss->plp, kwss->def_threshold, kwss->delay);
@@ -442,7 +439,7 @@ kws_search_free(ps_search_t * search)
     kwss = (kws_search_t *) search;
 
     n_speech = (double)kwss->n_tot_frame
-        / ps_config_int(ps_search_config(kwss), "-frate");
+        / ps_config_int(ps_search_config(kwss), "frate");
 
     E_INFO("TOTAL kws %.2f CPU %.3f xRT\n",
            kwss->perf.t_tot_cpu,
@@ -652,7 +649,7 @@ kws_search_finish(ps_search_t * search)
     cf = ps_search_acmod(kwss)->output_frame;
     if (cf > 0) {
         double n_speech = (double) (cf + 1)
-            / ps_config_int(ps_search_config(kwss), "-frate");
+            / ps_config_int(ps_search_config(kwss), "frate");
         E_INFO("kws %.2f CPU %.3f xRT\n",
                kwss->perf.t_cpu, kwss->perf.t_cpu / n_speech);
         E_INFO("kws %.2f wall %.3f xRT\n",

@@ -76,7 +76,7 @@ main(int argc, char *argv[])
     cmd_ln_set_str_extra_r(config, "_senmgau", NULL);	
 
     /* Ensure that -cmninit does what it should */
-    ps_config_set_str(config, "-cmninit",
+    ps_config_set_str(config, "cmninit",
                      "41.00,-5.29,-0.12,5.09,2.48,-4.07,-1.37,-1.78,-5.08,-2.05,-6.45,-1.42,1.17");
     TEST_ASSERT(acmod = acmod_init(config, lmath, NULL, NULL));
     assert_cmninit(acmod->fcb->cmn_struct);
@@ -115,8 +115,8 @@ main(int argc, char *argv[])
     }
     TEST_EQUAL(0, acmod_end_utt(acmod));
     /* Make sure -cmninit was updated. */
-    TEST_ASSERT(ps_config_str(config, "-cmninit") != NULL);
-    E_INFO("New -cmninit: %s\n", ps_config_str(config, "-cmninit"));
+    TEST_ASSERT(ps_config_str(config, "cmninit") != NULL);
+    E_INFO("New -cmninit: %s\n", ps_config_str(config, "cmninit"));
     nread = 0;
     {
         int16 best_score;
@@ -148,8 +148,8 @@ main(int argc, char *argv[])
     acmod_process_raw(acmod, &bptr, &nsamps, TRUE);
     TEST_EQUAL(0, acmod_end_utt(acmod));
     /* Make sure -cmninit was updated. */
-    TEST_ASSERT(ps_config_str(config, "-cmninit") != NULL);
-    E_INFO("New -cmninit: %s\n", ps_config_str(config, "-cmninit"));
+    TEST_ASSERT(ps_config_str(config, "cmninit") != NULL);
+    E_INFO("New -cmninit: %s\n", ps_config_str(config, "cmninit"));
     {
         int16 best_score;
         int frame_idx = -1, best_senid;
@@ -203,8 +203,8 @@ main(int argc, char *argv[])
     }
     TEST_EQUAL(0, acmod_end_utt(acmod));
     /* Make sure -cmninit was updated. */
-    TEST_ASSERT(ps_config_str(config, "-cmninit") != NULL);
-    E_INFO("New -cmninit: %s\n", ps_config_str(config, "-cmninit"));
+    TEST_ASSERT(ps_config_str(config, "cmninit") != NULL);
+    E_INFO("New -cmninit: %s\n", ps_config_str(config, "cmninit"));
     nfr = 0;
     acmod_process_cep(acmod, &cptr, &nfr, FALSE);
     {
@@ -241,8 +241,8 @@ main(int argc, char *argv[])
     acmod_process_cep(acmod, &cptr, &nfr, TRUE);
     TEST_EQUAL(0, acmod_end_utt(acmod));
     /* Make sure -cmninit was updated. */
-    TEST_ASSERT(ps_config_str(config, "-cmninit") != NULL);
-    E_INFO("New -cmninit: %s\n", ps_config_str(config, "-cmninit"));
+    TEST_ASSERT(ps_config_str(config, "cmninit") != NULL);
+    E_INFO("New -cmninit: %s\n", ps_config_str(config, "cmninit"));
     {
         int16 best_score;
         int frame_idx = -1, best_senid;

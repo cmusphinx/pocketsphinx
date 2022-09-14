@@ -53,62 +53,62 @@
 #include <math.h>
 
 static const arg_t defn[] = {
-  { "-help",
+  { "help",
     ARG_BOOLEAN,
     "no",
     "Shows the usage of the tool"},
 
-  { "-logbase",
+  { "logbase",
     ARG_FLOATING,
     "1.0001",
     "Base in which all log-likelihoods calculated" },
 
-  { "-lm",
+  { "lm",
     ARG_STRING,
     NULL,
     "Language model file"},
 
-  { "-probdef",
+  { "probdef",
     ARG_STRING,
     NULL,
     "Probability definition file for classes in LM"},
 
-  { "-lmctlfn",
+  { "lmctlfn",
     ARG_STRING,
     NULL,
     "Control file listing a set of language models"},
 
-  { "-lmname",
+  { "lmname",
     ARG_STRING,
     NULL,
     "Name of language model in -lmctlfn to use for all utterances" },
 
-  { "-lsn",
+  { "lsn",
     ARG_STRING,
     NULL,
     "Transcription file to evaluate"},
 
-  { "-text",
+  { "text",
     ARG_STRING,
     NULL,
     "Text string to evaluate"},
 
-  { "-mmap",
+  { "mmap",
     ARG_BOOLEAN,
     "no",
     "Use memory-mapped I/O for reading binary LM files"},
 
-  { "-lw",
+  { "lw",
     ARG_FLOATING,
     "1.0",
     "Language model weight" },
 
-  { "-wip",
+  { "wip",
     ARG_FLOATING,
     "1.0",
     "Word insertion probability" },
 
-  { "-verbose",
+  { "verbose",
     ARG_BOOLEAN,
     "no",
     "Print details of perplexity calculation" },
@@ -295,31 +295,31 @@ main(int argc, char *argv[])
             return 1;
         }
 
-        verbose = ps_config_bool(config, "-verbose");
+        verbose = ps_config_bool(config, "verbose");
 
 	/* Create log math object. */
 	if ((lmath = logmath_init
-	     (ps_config_float(config, "-logbase"), 0, 0)) == NULL) {
+	     (ps_config_float(config, "logbase"), 0, 0)) == NULL) {
 		E_FATAL("Failed to initialize log math\n");
 	}
 
 	/* Load the language model. */
-	lmfn = ps_config_str(config, "-lm");
+	lmfn = ps_config_str(config, "lm");
 	if (lmfn == NULL
 	    || (lm = ngram_model_read(config, lmfn,
 				      NGRAM_AUTO, lmath)) == NULL) {
 		E_FATAL("Failed to load language model from %s\n",
-			ps_config_str(config, "-lm"));
+			ps_config_str(config, "lm"));
 	}
-        if ((probdefn = ps_config_str(config, "-probdef")) != NULL)
+        if ((probdefn = ps_config_str(config, "probdef")) != NULL)
             ngram_model_read_classdef(lm, probdefn);
         ngram_model_apply_weights(lm,
-                                  ps_config_float(config, "-lw"),
-                                  ps_config_float(config, "-wip"));
+                                  ps_config_float(config, "lw"),
+                                  ps_config_float(config, "wip"));
 
 	/* Now evaluate some text. */
-	lsnfn = ps_config_str(config, "-lsn");
-	text = ps_config_str(config, "-text");
+	lsnfn = ps_config_str(config, "lsn");
+	text = ps_config_str(config, "text");
 	if (lsnfn) {
 		evaluate_file(lm, lmath, lsnfn);
 	}

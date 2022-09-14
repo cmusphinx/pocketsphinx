@@ -33,9 +33,9 @@ main(int argc, char *argv[])
 	ps_add_word(ps, "hellosomething", "HH EH L OW S", TRUE);
 
         /* Reinit features only, words should remain */
-        ps_config_set_str(config, "-cmninit", "41,-4,1");
+        ps_config_set_str(config, "cmninit", "41,-4,1");
 	TEST_EQUAL(0, ps_reinit_feat(ps, config));
-        TEST_EQUAL(0, strcmp(ps_config_str(ps_get_config(ps), "-cmninit"),
+        TEST_EQUAL(0, strcmp(ps_config_str(ps_get_config(ps), "cmninit"),
                              "41,-4,1"));
         pron = ps_lookup_word(ps, "foobie");
         TEST_ASSERT(pron != NULL);
@@ -48,7 +48,7 @@ main(int argc, char *argv[])
         pron = ps_lookup_word(ps, "foobie");
         TEST_ASSERT(pron == NULL);
         /* Hooray! -cmninit isn't in feat.params anymore, so yes! */
-        TEST_EQUAL(0, strcmp(ps_config_str(ps_get_config(ps), "-cmninit"),
+        TEST_EQUAL(0, strcmp(ps_config_str(ps_get_config(ps), "cmninit"),
                                 "41,-4,1"));
 
 	ps_free(ps);
