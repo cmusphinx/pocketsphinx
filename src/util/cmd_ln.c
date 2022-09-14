@@ -155,7 +155,7 @@ cmd_ln_val_init(int t, const char *name, const char *str)
     cmd_ln_val_t *v;
 
     v = ckd_calloc(1, sizeof(*v));
-    if (anytype_from_str(t, name, &v->val) == NULL) {
+    if (anytype_from_str(&v->val, t, str) == NULL) {
         ckd_free(v);
         return NULL;
     }
