@@ -329,11 +329,6 @@ cmd_ln_parse_r(ps_config_t *inout_cmdln, const arg_t * defn,
         n = 0;
     }
 
-    /* Allocate memory for argument values */
-    if (cmdln->ht == NULL)
-        cmdln->ht = hash_table_new(n, 0 /* argument names are case-sensitive */ );
-
-
     /* skip argv[0] if it doesn't start with dash (starting with a
      * dash would only happen if called from parse_options()) */
     argstart = 0;
@@ -388,22 +383,6 @@ cmd_ln_parse_r(ps_config_t *inout_cmdln, const arg_t * defn,
                 v = hash_table_replace(cmdln->ht, val->name, (void *)val);
                 cmd_ln_val_free((cmd_ln_val_t *)v);
             }
-        }
-    }
-
-    /* Fill in default values, if any, for unspecified arguments */
-    for (i = 0; i < n; i++) {
-        cmd_ln_val_t *val;
-        void *v;
-
-        if (hash_table_lookup(cmdln->ht, defn[i].name, &v) < 0) {
-            if ((val = cmd_ln_val_init(defn[i].type, defn[i].name, defn[i].deflt)) == NULL) {
-                E_ERROR
-                    ("Bad default argument value for %s: %s\n",
-                     defn[i].name, defn[i].deflt);
-                goto error;
-            }
-            hash_table_enter(cmdln->ht, val->name, (void *)val);
         }
     }
 
