@@ -190,10 +190,70 @@ error_out:
     return NULL;
 }
 
+int
+build_json(ps_config_t *config, char *json, int len)
+{
+    hash_iter_t *itor;
+    char *ptr = json;
+    int l, rv = 0;
+
+    if ((l = snprintf(ptr, len, "{\n")) < 0)
+        return -1;
+    rv += l;
+    len -= l;
+    if (ptr)
+        ptr += l;
+    for (itor = hash_table_iter(config->ht); itor;
+         itor = hash_table_iter_next(itor)) {
+        const char *key = hash_entry_key(itor->ent);
+        cmd_ln_val_t *cval = hash_entry_val(itor->ent);
+        if (cval->type & ARG_STRING) {
+            /* FIXME: ESCAPING! */
+            if ((l = snprintf(ptr, len, "\t\"%s\": \"%s\"\n",
+                              key, (char *)cval->val.ptr)) < 0)
+                return -1;
+        }
+        else if (cval->type & ARG_INTEGER) {
+            if ((l = snprintf(ptr, len, "\t\"%s\": %ld\n",
+                              key, cval->val.i)) < 0)
+                return -1;
+        }
+        else if (cval->type & ARG_BOOLEAN) {
+            if ((l = snprintf(ptr, len, "\t\"%s\": %s\n",
+                              key,
+                              cval->val.i ? "true" : "false")) < 0)
+                return -1;
+        }
+        else if (cval->type & ARG_FLOATING) {
+            if ((l = snprintf(ptr, len, "\t\"%s\": %g\n",
+                              key, cval->val.fl)) < 0)
+                return -1;
+        }
+        else {
+            E_ERROR("Unknown type %d for parameter %s\n",
+                    cval->type, key);
+        }
+        rv += l;
+        len -= l;
+        if (ptr)
+            ptr += l;
+    }
+    return rv;
+}
+        
 const char *
 ps_config_serialize_json(ps_config_t *config)
 {
-    return NULL;
+    char *json;
+    int len = build_json(config, NULL, 0);
+    if (len < 0)
+        return NULL;
+    json = ckd_malloc(len + 1);
+    if (build_json(config, json, len + 1) != len) {
+        ckd_free(json);
+        return NULL;
+    }
+    return json;
 }
 
 ps_type_t
@@ -403,7 +463,7 @@ anytype_from_int(anytype_t *val, int t, long i)
             E_ERROR_SYSTEM("snprintf() failed");
             return NULL;
         }
-        val->ptr = ckd_calloc(len + 1, 1);
+        val->ptr = ckd_malloc(len + 1);
         if (snprintf(val->ptr, len + 1, "%ld", i) != len) {
             E_ERROR_SYSTEM("snprintf() failed");
             return NULL;
@@ -456,7 +516,7 @@ anytype_from_float(anytype_t *val, int t, double f)
             E_ERROR_SYSTEM("snprintf() failed");
             return NULL;
         }
-        val->ptr = ckd_calloc(len + 1, 1);
+        val->ptr = ckd_malloc(len + 1);
         if (snprintf(val->ptr, len + 1, "%g", f) != len) {
             E_ERROR_SYSTEM("snprintf() failed");
             return NULL;
