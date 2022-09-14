@@ -120,8 +120,8 @@ typedef struct ps_seg_s ps_seg_t;
 /**
  * Create a configuration with default values.
  *
- * @return Newly created configuration or NULL on failure (such as
- * invalid or missing parameters).
+ * @return Newly created configuration or NULL on failure (should not
+ * happen, but check it anyway).
  */
 POCKETSPHINX_EXPORT
 ps_config_t *ps_config_init(void);
@@ -148,9 +148,9 @@ int ps_config_free(ps_config_t *config);
  * between key/value pairs.  Basically, it's degenerate YAML.  So, for
  * example, this is accepted:
  *
- *    hmm: fr-fr
- *    samprate: 8000
- *    keyprhase: "hello world"
+ *     hmm: fr-fr
+ *     samprate: 8000
+ *     keyprhase: "hello world"
  *
  * Of course, valid JSON is also accepted, but who wants to use that.
  *
@@ -208,7 +208,7 @@ POCKETSPHINX_EXPORT
 const anytype_t *ps_config_get(ps_config_t *config, const char *name);
 
 /**
- * Set the value of a configuration parameter.
+ * Set or unset the value of a configuration parameter.
  *
  * This will coerce the value to the proper type, so you can, for
  * example, pass it a string with ARG_STRING as the type when adding
@@ -216,36 +216,100 @@ const anytype_t *ps_config_get(ps_config_t *config, const char *name);
  * *not* be the same as the one passed in the value.
  *
  * @param config Configuration object.
- * @param name Name of the parameter to retrieve.
+ * @param name Name of the parameter to set.  Must exist.
  * @param val Pointer to the value (strings will be copied) inside an
  * anytype_t union.  On 64-bit little-endian platforms, you *can* cast
  * a pointer to int, long, double, or char* here, but that doesn't
- * necessarily mean that you *should*.
+ * necessarily mean that you *should*.  As a convenience, you can pass
+ * NULL here to reset a parameter to its default value.
  * @param t Type of the value in `val`, will be coerced to the type of
  * the actual parameter if necessary.
  * @return Pointer to the parameter's value, or NULL on failure
- * (e.g. type mismatch).  This pointer (and any pointers inside it) is
- * owned by the ps_config_t.
+ * (unknown parameter, usually).  This pointer (and any pointers
+ * inside it) is owned by the ps_config_t.
  */
 POCKETSPHINX_EXPORT
 const anytype_t *ps_config_set(ps_config_t *config, const char *name,
                                const anytype_t *val, ps_type_t t);
 
+/**
+ * Get an integer-valued parameter.
+ *
+ * If the parameter does not have an integer or boolean type, this
+ * will print an error and return 0.  So don't do that.
+ */
 POCKETSPHINX_EXPORT
 long ps_config_int(ps_config_t *config, const char *name);
+
+/**
+ * Get a boolean-valued parameter.
+ *
+ * If the parameter does not have an integer or boolean type, this
+ * will print an error and return 0.  The return value is either 0 or
+ * 1 (if the parameter has an integer type, any non-zero value will
+ * return 1).
+ */
 POCKETSPHINX_EXPORT
 int ps_config_bool(ps_config_t *config, const char *name);
+
+/**
+ * Get a floating-point parameter.
+ *
+ * If the parameter does not have a floating-point type, this will
+ * print an error and return 0.
+ */
 POCKETSPHINX_EXPORT
 double ps_config_float(ps_config_t *config, const char *name);
+
+/**
+ * Get a string parameter.
+ *
+ * If the parameter does not have a string type, this will print an
+ * error and return NULL.  Notably, it will *NOT* format an integer or
+ * float for you, because that would involve allocating memory.  So
+ * don't do that.
+ */
 POCKETSPHINX_EXPORT
 const char *ps_config_str(ps_config_t *config, const char *name);
 
+/**
+ * Set an integer-valued parameter.
+ *
+ * If the parameter does not have an integer or boolean type, this
+ * will convert `val` appropriately.
+ */
 POCKETSPHINX_EXPORT
 const anytype_t *ps_config_set_int(ps_config_t *config, const char *name, long val);
+
+/**
+ * Set a boolean-valued parameter.
+ *
+ * If the parameter does not have an integer or boolean type, this
+ * will convert `val` appropriately.
+ */
 POCKETSPHINX_EXPORT
 const anytype_t *ps_config_set_bool(ps_config_t *config, const char *name, int val);
+
+/**
+ * Set a floating-point parameter.
+ *
+ * If the parameter does not have a floating-point type, this will
+ * convert `val` appropriately.
+ */
 POCKETSPHINX_EXPORT
 const anytype_t *ps_config_set_float(ps_config_t *config, const char *name, double val);
+
+/**
+ * Set a string-valued parameter.
+ *
+ * If the parameter does not have a string type, this will convert
+ * `val` appropriately.  For boolean parameters, any string matching
+ * `/^[yt1]/` will be true, while any string matching `/^[nf0]/` will
+ * be false.  NULL is also false.
+ *
+ * This function is used for configuration from JSON, you may want to
+ * use it for your own configuration files too.
+ */
 POCKETSPHINX_EXPORT
 const anytype_t *ps_config_set_str(ps_config_t *config, const char *name, const char *val);
 

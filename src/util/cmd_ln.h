@@ -409,8 +409,12 @@ void cmd_ln_log_help_r (cmd_ln_t *cmdln, const arg_t *defn);
  */
 void cmd_ln_log_values_r (cmd_ln_t *cmdln, const arg_t *defn);
 
-cmd_ln_val_t * cmd_ln_val_init(int t, const char *name, const char *str);
+cmd_ln_val_t *cmd_ln_val_init(int t, const char *name, const char *str);
 void cmd_ln_val_free(cmd_ln_val_t *val);
+
+anytype_t *anytype_from_str(anytype_t *val, int t, const char *str);
+anytype_t *anytype_from_int(anytype_t *val, int t, long i);
+anytype_t *anytype_from_float(anytype_t *val, int t, double f);
 
 #ifdef __cplusplus
 }

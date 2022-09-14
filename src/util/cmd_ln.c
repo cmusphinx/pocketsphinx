@@ -153,56 +153,12 @@ cmd_ln_val_t *
 cmd_ln_val_init(int t, const char *name, const char *str)
 {
     cmd_ln_val_t *v;
-    anytype_t val;
 
-    if (str == NULL) {
-        memset(&val, 0, sizeof(val));
+    v = ckd_calloc(1, sizeof(*v));
+    if (anytype_from_str(t, name, &v->val) == NULL) {
+        ckd_free(v);
+        return NULL;
     }
-    else {
-        int valid = 1;
-        switch (t) {
-        case ARG_INTEGER:
-        case REQARG_INTEGER:
-            if (sscanf(str, "%ld", &val.i) != 1)
-                valid = 0;
-            break;
-        case ARG_FLOATING:
-        case REQARG_FLOATING:
-            if (str == NULL || str[0] == 0)
-            valid = 0;
-            val.fl = atof_c(str);
-            break;
-        case ARG_BOOLEAN:
-        case REQARG_BOOLEAN:
-            if ((str[0] == 'y') || (str[0] == 't') ||
-                (str[0] == 'Y') || (str[0] == 'T') || (str[0] == '1')) {
-                val.i = TRUE;
-            }
-            else if ((str[0] == 'n') || (str[0] == 'f') ||
-                     (str[0] == 'N') || (str[0] == 'F') |
-                     (str[0] == '0')) {
-                val.i = FALSE;
-            }
-            else {
-                E_ERROR("Unparsed boolean value '%s'\n", str);
-                valid = 0;
-            }
-            break;
-        case ARG_STRING:
-        case REQARG_STRING:
-            val.ptr = ckd_salloc(str);
-            break;
-        default:
-            E_ERROR("Unknown argument type: %d\n", t);
-            valid = 0;
-        }
-
-        if (valid == 0)
-            return NULL;
-    }
-
-    v = (cmd_ln_val_t *)ckd_calloc(1, sizeof(*v));
-    memcpy(v, &val, sizeof(val));
     v->type = t;
     v->name = ckd_salloc(name);
 
