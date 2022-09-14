@@ -1,4 +1,4 @@
-#include <sphinxbase/logmath.h>
+#include <pocketsphinx/logmath.h>
 
 #include "test_macros.h"
 

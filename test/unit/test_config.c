@@ -1,7 +1,5 @@
 #include <pocketsphinx.h>
-
 #include "pocketsphinx_internal.h"
-
 #include "test_macros.h"
 
 #define LEN(array) (sizeof(array) / sizeof(array[0]))
@@ -25,7 +23,6 @@ static char *good_json = \
     "}";
 static char *cmd_argv[] = {
     "pocketsphinx",
-    "live",
     "-hmm",
     "en-us",
     "-samprate",
@@ -38,7 +35,6 @@ static char *cmd_argv[] = {
 static int cmd_argc = LEN(cmd_argv);
 static char *bad_argv[] = {
     "pocketsphinx",
-    "single",
     "-hmm",
     "en-us",
     "-samprate",
@@ -62,7 +58,6 @@ static void
 check_live_args(ps_config_t *config)
 {
     /* Check parsed values */
-    TEST_EQUAL(0, strcmp("live", ps_config_command(config)));
     TEST_EQUAL(0, strcmp("en-us", ps_config_str(config, "hmm")));
     TEST_EQUAL(16000, ps_config_int(config, "samprate"));
     TEST_EQUAL_FLOAT(5e-3, ps_config_float(config, "beam"));
@@ -81,12 +76,12 @@ test_config_init(void)
 {
     ps_config_t *config;
 
-    TEST_ASSERT(config = ps_config_init(NULL));
+    TEST_ASSERT(config = ps_config_init());
     ps_config_retain(config);
     TEST_EQUAL(1, ps_config_free(config));
     TEST_EQUAL(0, ps_config_free(config));
 
-    TEST_ASSERT(config = ps_config_init("live"));
+    TEST_ASSERT(config = ps_config_init());
     TEST_ASSERT(ps_config_set_str(config, "hmm", "en-us"));
     TEST_ASSERT(ps_config_set_int(config, "samprate", 16000));
     TEST_ASSERT(ps_config_set_float(config, "beam", 0.005));
@@ -98,11 +93,11 @@ static void
 test_config_args(void)
 {
     ps_config_t *config;
-    TEST_ASSERT(config = ps_config_parse_args(NULL, good_argc, good_argv));
+    TEST_ASSERT(config = ps_config_parse_args(good_argc, good_argv));
     TEST_EQUAL(0, ps_config_free(config));
-    TEST_EQUAL(NULL, ps_config_parse_args(NULL, bad_argc, bad_argv));
+    TEST_EQUAL(NULL, ps_config_parse_args(bad_argc, bad_argv));
 
-    TEST_ASSERT(config = ps_config_parse_args(NULL, cmd_argc, cmd_argv));
+    TEST_ASSERT(config = ps_config_parse_args(cmd_argc, cmd_argv));
     check_live_args(config);
     TEST_EQUAL(0, ps_config_free(config));
 }
@@ -111,15 +106,15 @@ static void
 test_config_json(void)
 {
     ps_config_t *config;
-    TEST_ASSERT(config = ps_config_parse_json(NULL, NULL, good_json));
+    TEST_ASSERT(config = ps_config_parse_json(NULL, good_json));
     TEST_EQUAL(0, ps_config_free(config));
-    TEST_EQUAL(NULL, ps_config_parse_json(NULL, NULL, bad_json));
+    TEST_EQUAL(NULL, ps_config_parse_json(NULL, bad_json));
 
-    TEST_ASSERT(config = ps_config_parse_json(NULL, "live", good_json));
+    TEST_ASSERT(config = ps_config_parse_json(NULL, good_json));
     check_live_args(config);
     TEST_EQUAL(0, ps_config_free(config));
 
-    TEST_ASSERT(config = ps_config_parse_json(NULL, "live", ugly_json));
+    TEST_ASSERT(config = ps_config_parse_json(NULL, ugly_json));
     check_live_args(config);
     TEST_EQUAL(0, ps_config_free(config));
 }

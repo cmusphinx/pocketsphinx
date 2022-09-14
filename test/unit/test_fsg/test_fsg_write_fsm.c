@@ -1,5 +1,5 @@
-#include <sphinxbase/jsgf.h>
-#include <sphinxbase/fsg_model.h>
+#include "lm/jsgf.h"
+#include "lm/fsg_model.h"
 
 #include "test_macros.h"
 

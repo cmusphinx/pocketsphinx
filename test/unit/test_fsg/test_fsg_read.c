@@ -1,4 +1,4 @@
-#include <sphinxbase/fsg_model.h>
+#include "lm/fsg_model.h"
 
 #include "test_macros.h"
 

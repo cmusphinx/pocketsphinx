@@ -2,8 +2,8 @@
 #include <string.h>
 #include <pocketsphinx.h>
 
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/err.h>
+#include <pocketsphinx/logmath.h>
+#include <pocketsphinx/err.h>
 
 #include "acmod.h"
 #include "test_macros.h"

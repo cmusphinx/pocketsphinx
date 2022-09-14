@@ -3,7 +3,7 @@
  */
 
 #include <sphinxbase/bitarr.h>
-#include <sphinxbase/err.h>
+#include <pocketsphinx/err.h>
 #include "test_macros.h"
 
 #include <stdio.h>

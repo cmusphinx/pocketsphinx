@@ -4,7 +4,7 @@
  */
 
 #include <sphinxbase/hash_table.h>
-#include <sphinxbase/ckd_alloc.h>
+#include "util/ckd_alloc.h"
 
 #include "test_macros.h"
 

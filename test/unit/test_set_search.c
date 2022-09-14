@@ -1,4 +1,4 @@
-#include <sphinxbase/jsgf.h>
+#include "lm/jsgf.h"
 
 #include <pocketsphinx.h>
 #include <pocketsphinx_internal.h>

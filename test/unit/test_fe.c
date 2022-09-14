@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sphinxbase/fe.h>
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/err.h>
+#include "fe/fe.h"
+#include "util/cmd_ln.h"
+#include "util/ckd_alloc.h"
+#include <pocketsphinx/err.h>
 
 #include "test_macros.h"
 

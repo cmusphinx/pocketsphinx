@@ -1,6 +1,6 @@
-#include <sphinxbase/ngram_model.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/strfuncs.h>
+#include "lm/ngram_model.h"
+#include <pocketsphinx/logmath.h>
+#include "util/strfuncs.h"
 
 #include "test_macros.h"
 

@@ -2,8 +2,8 @@
 #include <string.h>
 
 #include <pocketsphinx.h>
-#include <bin_mdef.h>
 
+#include "bin_mdef.h"
 #include "dict.h"
 #include "dict2pid.h"
 #include "test_macros.h"
@@ -14,7 +14,7 @@ main(int argc, char *argv[])
 	bin_mdef_t *mdef;
 	dict_t *dict;
 	dict2pid_t *d2p;
-	cmd_ln_t *config;
+	ps_config_t *config;
 
 	(void)argc;
 	(void)argv;

@@ -12,7 +12,7 @@ main(int argc, char *argv[])
 {
 	bin_mdef_t *mdef;
 	dict_t *dict;
-	cmd_ln_t *config;
+	ps_config_t *config;
 
 	int i;
 	char buf[100];
