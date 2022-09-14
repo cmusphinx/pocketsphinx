@@ -340,11 +340,17 @@ cmd_ln_parse_r(ps_config_t *inout_cmdln, const arg_t * defn,
     for (j = argstart; j < argc; j += 2) {
         arg_t *argdef;
         cmd_ln_val_t *val;
+        char *name;
         void *v;
 
-        if (hash_table_lookup(defidx, argv[j], &v) < 0) {
+        name = argv[j];
+        if (*name && *name == '-')
+            ++name;
+        if (*name && *name == '-')
+            ++name;
+        if (hash_table_lookup(defidx, name, &v) < 0) {
             if (strict) {
-                E_ERROR("Unknown argument name '%s'\n", argv[j]);
+                E_ERROR("Unknown argument name '%s'\n", name);
                 goto error;
             }
             else if (defn == NULL)
@@ -356,16 +362,15 @@ cmd_ln_parse_r(ps_config_t *inout_cmdln, const arg_t * defn,
 
         /* Enter argument value */
         if (j + 1 >= argc) {
-            E_ERROR("Argument value for '%s' missing\n", argv[j]);
+            E_ERROR("Argument value for '%s' missing\n", name);
             goto error;
         }
 
         if (argdef == NULL)
-            val = cmd_ln_val_init(ARG_STRING, argv[j], argv[j + 1]);
+            val = cmd_ln_val_init(ARG_STRING, name, argv[j + 1]);
         else {
-            if ((val = cmd_ln_val_init(argdef->type, argv[j], argv[j + 1])) == NULL) {
-                E_ERROR("Bad argument value for %s: %s\n", argv[j],
-                        argv[j + 1]);
+            if ((val = cmd_ln_val_init(argdef->type, name, argv[j + 1])) == NULL) {
+                E_ERROR("Bad argument value for %s: %s\n", name, argv[j + 1]);
                 goto error;
             }
         }
@@ -373,16 +378,8 @@ cmd_ln_parse_r(ps_config_t *inout_cmdln, const arg_t * defn,
         if ((v = hash_table_enter(cmdln->ht, val->name, (void *)val)) !=
             (void *)val)
         {
-            if (strict) {
-                cmd_ln_val_free(val);
-                E_ERROR("Duplicate argument name in arguments: %s\n",
-                        argdef->name);
-                goto error;
-            }
-            else {
-                v = hash_table_replace(cmdln->ht, val->name, (void *)val);
-                cmd_ln_val_free((cmd_ln_val_t *)v);
-            }
+            v = hash_table_replace(cmdln->ht, val->name, (void *)val);
+            cmd_ln_val_free((cmd_ln_val_t *)v);
         }
     }
 

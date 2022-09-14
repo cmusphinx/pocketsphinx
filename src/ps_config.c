@@ -35,7 +35,7 @@
 #include "util/strfuncs.h"
 
 #include "pocketsphinx_internal.h"
-#include "cmdln_macro.h"
+#include "config_macro.h"
 #include "jsmn.h"
 
 static const arg_t ps_args_def[] = {
