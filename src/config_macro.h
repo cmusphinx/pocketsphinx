@@ -168,7 +168,7 @@
       "Initial backpointer table size" },                                                       \
 { "maxwpf",                                                                                    \
       ARG_INTEGER,                                                                                \
-      "1",                                                                                     \
+      "-1",                                                                                     \
       "Maximum number of distinct word exits at each frame (or -1 for no pruning)" },           \
 { "maxhmmpf",                                                                                  \
       ARG_INTEGER,                                                                                \
