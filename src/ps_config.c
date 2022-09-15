@@ -50,25 +50,27 @@ ps_args(void)
 }
 
 ps_config_t *
-ps_config_init(void)
+ps_config_init(const arg_t *defn)
 {
     ps_config_t *config = ckd_calloc(1, sizeof(*config));
     int i, ndef;
     
     config->refcount = 1;
-
-    for (ndef = 0; ps_args_def[ndef].name; ndef++)
+    if (defn)
+        config->defn = defn;
+    else
+        config->defn = ps_args_def;
+    for (ndef = 0; config->defn[ndef].name; ndef++)
         ;
     config->ht = hash_table_new(ndef, FALSE);
-    config->defn = ps_args_def;
     for (i = 0; i < ndef; i++) {
         cmd_ln_val_t *val;
-        if ((val = cmd_ln_val_init(ps_args_def[i].type,
-                                   ps_args_def[i].name,
-                                   ps_args_def[i].deflt)) == NULL) {
+        if ((val = cmd_ln_val_init(config->defn[i].type,
+                                   config->defn[i].name,
+                                   config->defn[i].deflt)) == NULL) {
             E_ERROR
                 ("Bad default argument value for %s: %s\n",
-                 ps_args_def[i].name, ps_args_def[i].deflt);
+                 config->defn[i].name, config->defn[i].deflt);
             continue;
         }
         hash_table_enter(config->ht, val->name, (void *)val);
@@ -155,7 +157,7 @@ ps_config_parse_json(ps_config_t *config,
     if (json == NULL)
         return NULL;
     if (config == NULL) {
-        if ((config = ps_config_init()) == NULL)
+        if ((config = ps_config_init(NULL)) == NULL)
             return NULL;
         new_config = TRUE;
     }

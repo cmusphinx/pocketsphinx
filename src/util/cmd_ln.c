@@ -301,15 +301,13 @@ cmd_ln_parse_r(ps_config_t *inout_cmdln, const arg_t * defn,
     hash_table_t *defidx = NULL;
     ps_config_t *cmdln;
 
-
     /* Construct command-line object */
-    if (inout_cmdln == NULL)
-        cmdln = ps_config_init();
-    else {
-        cmdln = inout_cmdln;
-        /* FIXME: ... what if it wasn't before? */
+    if (inout_cmdln == NULL) {
+        cmdln = ps_config_init(defn);
         cmdln->defn = defn;
     }
+    else /* FIXME: definitions should just be in the ps_config_t */
+        cmdln = inout_cmdln;
 
     /* Build a hash table for argument definitions */
     defidx = hash_table_new(50, 0);

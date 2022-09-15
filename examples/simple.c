@@ -26,7 +26,7 @@ main(int argc, char *argv[])
     short buf[BUFLEN];
     size_t len;
 
-    config = ps_config_init();
+    config = ps_config_init(NULL);
     ps_default_search_args(config);
     if ((decoder = ps_init(config)) == NULL)
         E_FATAL("PocketSphinx decoder init failed\n");

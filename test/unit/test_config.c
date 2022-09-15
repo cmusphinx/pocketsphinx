@@ -76,12 +76,12 @@ test_config_init(void)
 {
     ps_config_t *config;
 
-    TEST_ASSERT(config = ps_config_init());
+    TEST_ASSERT(config = ps_config_init(NULL));
     ps_config_retain(config);
     TEST_EQUAL(1, ps_config_free(config));
     TEST_EQUAL(0, ps_config_free(config));
 
-    TEST_ASSERT(config = ps_config_init());
+    TEST_ASSERT(config = ps_config_init(NULL));
     TEST_ASSERT(ps_config_set_str(config, "hmm", "en-us"));
     TEST_ASSERT(ps_config_set_int(config, "samprate", 16000));
     TEST_ASSERT(ps_config_set_float(config, "beam", 0.005));
@@ -93,11 +93,11 @@ static void
 test_config_args(void)
 {
     ps_config_t *config;
-    TEST_ASSERT(config = ps_config_parse_args(good_argc, good_argv));
+    TEST_ASSERT(config = ps_config_parse_args(NULL, good_argc, good_argv));
     TEST_EQUAL(0, ps_config_free(config));
-    TEST_EQUAL(NULL, ps_config_parse_args(bad_argc, bad_argv));
+    TEST_EQUAL(NULL, ps_config_parse_args(NULL, bad_argc, bad_argv));
 
-    TEST_ASSERT(config = ps_config_parse_args(cmd_argc, cmd_argv));
+    TEST_ASSERT(config = ps_config_parse_args(NULL, cmd_argc, cmd_argv));
     check_live_args(config);
     TEST_EQUAL(0, ps_config_free(config));
 }

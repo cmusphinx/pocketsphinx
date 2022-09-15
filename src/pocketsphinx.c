@@ -793,7 +793,7 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
     (void)format;
     /* Create a new scratch config to load this dict (so existing one
      * won't be affected if it fails) */
-    newconfig = ps_config_init();
+    newconfig = ps_config_init(NULL);
     ps_config_set_bool(newconfig, "dictcase",
                        ps_config_bool(ps->config, "dictcase"));
     ps_config_set_str(newconfig, "dict", dictfile);

@@ -202,7 +202,8 @@ cmd_ln_t *cmd_ln_parse_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-li
                                                    arguments, or no arguments? */
     );
 
-#define ps_config_parse_args(argc, argv) cmd_ln_parse_r(NULL, ps_args(), argc, argv, TRUE)
+#define ps_config_parse_args(defn, argc, argv) \
+    cmd_ln_parse_r(NULL, (defn) == NULL ? ps_args() : (defn), argc, argv, FALSE)
 
 /**
  * Parse an arguments file by deliminating on " \r\t\n" and putting each tokens

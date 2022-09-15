@@ -120,11 +120,15 @@ typedef struct ps_seg_s ps_seg_t;
 /**
  * Create a configuration with default values.
  *
+ * @param defn Array of arg_t defining and describing parameters,
+ * terminated by an arg_t with `name == NULL`.  You should usually
+ * just pass NULL here, which will result in the standard set of
+ * parameters being used.
  * @return Newly created configuration or NULL on failure (should not
  * happen, but check it anyway).
  */
 POCKETSPHINX_EXPORT
-ps_config_t *ps_config_init(void);
+ps_config_t *ps_config_init(const arg_t *defn);
 
 /**
  * Retain a pointer to a configuration object.

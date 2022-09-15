@@ -91,7 +91,7 @@ main(int argc, char *argv[])
 	(void)argc;
 	(void)argv;
 	lmath = logmath_init(1.0001, 0, 0);
-	config = ps_config_init();
+	config = ps_config_init(NULL);
         ps_config_set_bool(config, "compallsen", TRUE);
 	cmd_ln_parse_file_r(config, ps_args(), MODELDIR "/en-us/en-us/feat.params", FALSE);
 

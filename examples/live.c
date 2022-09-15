@@ -44,7 +44,7 @@ main(int argc, char *argv[])
     short *frame;
     size_t frame_size;
 
-    config = ps_config_init();
+    config = ps_config_init(NULL);
     ps_default_search_args(config);
     if ((decoder = ps_init(config)) == NULL)
         E_FATAL("PocketSphinx decoder init failed\n");
