@@ -44,15 +44,15 @@ main(int argc, char *argv[])
     lmath = logmath_init(1.0001, 0, 0);
     config = ps_config_parse_json(
         NULL,
-        "-compallsen: true,"
-        "-cmn: live,"
-        "-tmatfloor: 0.0001,"
-        "-mixwfloor: 0.001,"
-        "-varfloor: 0.0001,"
-        "-mmap: no,"
-        "-topn: 4,"
-        "-ds: 1,"
-        "-samprate: 16000");
+        "compallsen: true,"
+        "cmn: live,"
+        "tmatfloor: 0.0001,"
+        "mixwfloor: 0.001,"
+        "varfloor: 0.0001,"
+        "mmap: no,"
+        "topn: 4,"
+        "ds: 1,"
+        "samprate: 16000");
     TEST_ASSERT(config);
     cmd_ln_parse_file_r(config, ps_args(), MODELDIR "/en-us/en-us/feat.params", FALSE);
 
