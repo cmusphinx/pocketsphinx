@@ -36,6 +36,8 @@
 #ifndef __PS_MODEL_H__
 #define __PS_MODEL_H__
 
+#include <stdio.h>
+
 #include <pocketsphinx/prim_type.h>
 #include <pocketsphinx/logmath.h>
 #include <pocketsphinx/export.h>
@@ -206,6 +208,22 @@ fsg_model_t *jsgf_read_string(const char *string, logmath_t * lmath, float32 lw)
  */
 POCKETSPHINX_EXPORT
 int jsgf_write_fsg(jsgf_t *grammar, jsgf_rule_t *rule, FILE *outfh);
+
+/**
+ * Retain ownership of an FSG.
+ *
+ * @return Pointer to retained FSG.
+ */
+POCKETSPHINX_EXPORT
+fsg_model_t *fsg_model_retain(fsg_model_t *fsg);
+
+/**
+ * Free the given word FSG.
+ *
+ * @return new reference count (0 if freed completely)
+ */
+POCKETSPHINX_EXPORT
+int fsg_model_free(fsg_model_t *fsg);
 
 /**
  * @struct ngram_class_t

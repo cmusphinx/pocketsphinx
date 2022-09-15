@@ -198,20 +198,6 @@ fsg_model_t *fsg_model_readfile(const char *file, logmath_t *lmath, float32 lw);
 fsg_model_t *fsg_model_read(FILE *fp, logmath_t *lmath, float32 lw);
 
 /**
- * Retain ownership of an FSG.
- *
- * @return Pointer to retained FSG.
- */
-fsg_model_t *fsg_model_retain(fsg_model_t *fsg);
-
-/**
- * Free the given word FSG.
- *
- * @return new reference count (0 if freed completely)
- */
-int fsg_model_free(fsg_model_t *fsg);
-
-/**
  * Add a word to the FSG vocabulary.
  *
  * @return Word ID for this new word.
