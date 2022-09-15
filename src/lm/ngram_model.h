@@ -47,8 +47,6 @@
 
 #include <pocketsphinx.h>
 
-#include "util/mmio.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

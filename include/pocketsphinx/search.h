@@ -165,6 +165,7 @@ const char* ps_search_iter_val(ps_search_iter_t *itor);
 
 
 /* Forward declare these (not public API) */
+/* FIXME: No, they have to be public, make it so, #1 */
 typedef struct ngram_model_s ngram_model_t;
 typedef struct fsg_model_s fsg_model_t;
 
