@@ -43,6 +43,10 @@
 /* Public headers. */
 #include <pocketsphinx.h>
 
+/* Necessary private headers. */
+#include "fe/fe.h"
+#include "feat/feat.h"
+
 /**
  * Helper macro to stringify enums and other non-string values for
  * default arguments.
