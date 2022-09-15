@@ -443,6 +443,12 @@ main(int argc, char *argv[])
         rv = process_inputs(live, config, inputs, ninputs);
     else if (0 == strcmp(command, "single"))
         rv = process_inputs(single, config, inputs, ninputs);
+    else if (0 == strcmp(command, "help")) {
+        fprintf(stderr, "Usage: %s [soxflags | help | live | single] [INPUTS...]\n",
+                argv[0]);
+        err_set_loglevel(ERR_INFO);
+        cmd_ln_log_help_r(NULL, ps_args());
+    }
     else {
         E_ERROR("Unknown command \"%s\"\n", command);
         return 1;

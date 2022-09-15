@@ -6,6 +6,7 @@ pocketsphinx \- Run speech recognition on audio data
 [ \fIoptions\fR... ]
 [ \fBlive\fR |
 \fBsingle\fR |
+\fBhelp\fR |
 \fBsoxflags\fR ]
 [ \fIinputs\fR... ]
 .SH DESCRIPTION
@@ -43,6 +44,9 @@ be present.
 .TP
 .B single
 Recognize the input as a single utterance, and write a JSON object in the same format described above.
+.TP
+.B help
+Print a usage and help text with a list of possible arguments.
 .TP
 .B soxflags
 Return arguments to ‘\f[CR]sox\fP’ which will create the appropriate
