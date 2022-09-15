@@ -88,20 +88,16 @@ hmmdir_exists(const char *path)
 #endif
 
 static void
-ps_expand_file_config(ps_config_t *config, const char *arg, const char *extra_arg,
+ps_expand_file_config(ps_config_t *config, const char *arg,
 	              const char *hmmdir, const char *file)
 {
     const char *val;
-    if ((val = ps_config_str(config, arg)) != NULL) {
-	cmd_ln_set_str_extra_r(config, extra_arg, val);
-    } else if (hmmdir == NULL) {
-        cmd_ln_set_str_extra_r(config, extra_arg, NULL);
-    } else {
+    if ((val = ps_config_str(config, arg)) == NULL) {
         char *tmp = string_join(hmmdir, "/", file, NULL);
         if (file_exists(tmp))
-	    cmd_ln_set_str_extra_r(config, extra_arg, tmp);
+	    ps_config_set_str(config, arg, tmp);
 	else
-	    cmd_ln_set_str_extra_r(config, extra_arg, NULL);
+	    ps_config_set_str(config, arg, NULL);
         ckd_free(tmp);
     }
 }
@@ -111,24 +107,20 @@ ps_expand_model_config(ps_config_t *config)
 {
     char const *hmmdir, *featparams;
 
-    /* Disable memory mapping on Blackfin (FIXME: should be uClinux in general). */
-#ifdef __ADSPBLACKFIN__
-    E_INFO("Will not use mmap() on uClinux/Blackfin.");
-    ps_config_set_bool(config, "mmap", FALSE);
-#endif
-
     /* Get acoustic model filenames and add them to the command-line */
     hmmdir = ps_config_str(config, "hmm");
-    ps_expand_file_config(config, "-mdef", "_mdef", hmmdir, "mdef");
-    ps_expand_file_config(config, "-mean", "_mean", hmmdir, "means");
-    ps_expand_file_config(config, "-var", "_var", hmmdir, "variances");
-    ps_expand_file_config(config, "-tmat", "_tmat", hmmdir, "transition_matrices");
-    ps_expand_file_config(config, "-mixw", "_mixw", hmmdir, "mixture_weights");
-    ps_expand_file_config(config, "-sendump", "_sendump", hmmdir, "sendump");
-    ps_expand_file_config(config, "-fdict", "_fdict", hmmdir, "noisedict");
-    ps_expand_file_config(config, "-lda", "_lda", hmmdir, "feature_transform");
-    ps_expand_file_config(config, "-featparams", "_featparams", hmmdir, "feat.params");
-    ps_expand_file_config(config, "-senmgau", "_senmgau", hmmdir, "senmgau");
+    if (hmmdir) {
+        ps_expand_file_config(config, "mdef", hmmdir, "mdef");
+        ps_expand_file_config(config, "mean", hmmdir, "means");
+        ps_expand_file_config(config, "var", hmmdir, "variances");
+        ps_expand_file_config(config, "tmat", hmmdir, "transition_matrices");
+        ps_expand_file_config(config, "mixw", hmmdir, "mixture_weights");
+        ps_expand_file_config(config, "sendump", hmmdir, "sendump");
+        ps_expand_file_config(config, "fdict", hmmdir, "noisedict");
+        ps_expand_file_config(config, "lda", hmmdir, "feature_transform");
+        ps_expand_file_config(config, "featparams", hmmdir, "feat.params");
+        ps_expand_file_config(config, "senmgau", hmmdir, "senmgau");
+    }
 
     /* Look for feat.params in acoustic model dir. */
     if ((featparams = ps_config_str(config, "featparams"))) {
@@ -803,13 +795,13 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
      * won't be affected if it fails) */
     newconfig = ps_config_init();
     ps_config_set_bool(newconfig, "dictcase",
-                          ps_config_bool(ps->config, "dictcase"));
+                       ps_config_bool(ps->config, "dictcase"));
     ps_config_set_str(newconfig, "dict", dictfile);
     if (fdictfile)
-        cmd_ln_set_str_extra_r(newconfig, "_fdict", fdictfile);
+        ps_config_set_str(newconfig, "fdict", fdictfile);
     else
-        cmd_ln_set_str_extra_r(newconfig, "_fdict",
-                               ps_config_str(ps->config, "fdict"));
+        ps_config_set_str(newconfig, "fdict",
+                          ps_config_str(ps->config, "fdict"));
 
     /* Try to load it. */
     if ((dict = dict_init(newconfig, ps->acmod->mdef)) == NULL) {
