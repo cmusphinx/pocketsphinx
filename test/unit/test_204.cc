@@ -27,28 +27,19 @@ int main(int argc, char** argv)
 
     lm = logmath_init(1.0001, 0, 0);
 
-    char* args[] = {
-        strdup("-samprate"),
-        strdup("18098.744141"),
-        strdup("-frate"),
-        strdup("6068"),
-        strdup("-svspec"),
-        strdup("0-12/13-25/26-38"),
-    };
-
-    config = cmd_ln_parse_r(NULL, ps_args(), sizeof(args) / sizeof(args[0]), args, FALSE);
-    if ( config == nullptr ) {
-        abort();
-    }
-
-    cmd_ln_set_str_extra_r(config, "_mdef", MODELDIR "/en-us/en-us/mdef");
-    cmd_ln_set_str_extra_r(config, "_mean", MODELDIR "/en-us/en-us/means");
-    cmd_ln_set_str_extra_r(config, "_var", MODELDIR "/en-us/en-us/variances");
-    cmd_ln_set_str_extra_r(config, "_tmat", MODELDIR "/en-us/en-us/transition_matrices");
-    cmd_ln_set_str_extra_r(config, "_sendump", MODELDIR "/en-us/en-us/sendump");
-    cmd_ln_set_str_extra_r(config, "_mixw", NULL);
-    cmd_ln_set_str_extra_r(config, "_lda", NULL);
-    cmd_ln_set_str_extra_r(config, "_senmgau", NULL);
+    config = ps_config_parse_json(
+        NULL,
+        "samprate: 18098.744141,"
+        "frate: 6068,"
+        "svspec: \"0-12/13-25/26-38\"");
+    ps_config_set_str(config, "mdef", MODELDIR "/en-us/en-us/mdef");
+    ps_config_set_str(config, "mean", MODELDIR "/en-us/en-us/means");
+    ps_config_set_str(config, "var", MODELDIR "/en-us/en-us/variances");
+    ps_config_set_str(config, "tmat", MODELDIR "/en-us/en-us/transition_matrices");
+    ps_config_set_str(config, "sendump", MODELDIR "/en-us/en-us/sendump");
+    ps_config_set_str(config, "mixw", NULL);
+    ps_config_set_str(config, "lda", NULL);
+    ps_config_set_str(config, "senmgau", NULL);
 
     acmod = acmod_init(config, lm, nullptr, nullptr);
 
