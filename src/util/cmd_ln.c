@@ -100,7 +100,7 @@ arg_strlen(const arg_t * defn, int32 * namelen, int32 * deflen)
 
     *namelen = *deflen = 0;
     for (i = 0; defn[i].name; i++) {
-        l = strlen(defn[i].name);
+        l = strlen(defn[i].name) + 1; /* leading dash */
         if (*namelen < l)
             *namelen = l;
 
@@ -207,9 +207,9 @@ arg_log_r(ps_config_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
     pos = arg_sort(defn, n);
     for (i = 0; i < n; i++) {
         if (lineno)
-            E_INFO("%-*s", namelen, pos[i]->name);
+            E_INFO("-%-*s", namelen, pos[i]->name);
         else
-            E_INFOCONT("%-*s", namelen, pos[i]->name);
+            E_INFOCONT("-%-*s", namelen, pos[i]->name);
         if (pos[i]->deflt)
             E_INFOCONT("%-*s", deflen, pos[i]->deflt);
         else
