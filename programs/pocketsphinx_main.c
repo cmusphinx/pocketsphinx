@@ -48,6 +48,7 @@
 
 #include "util/ckd_alloc.h"
 #include "pocketsphinx_internal.h"
+#include "soundfiles.h"
 
 static int global_done = 0;
 static void
@@ -163,7 +164,7 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
 }
 
 static int
-live(ps_config_t *config)
+live(ps_config_t *config, FILE *infile)
 {
     ps_decoder_t *decoder = NULL;
     ps_endpointer_t *ep = NULL;
@@ -192,7 +193,7 @@ live(ps_config_t *config)
         int prev_in_speech = ps_endpointer_in_speech(ep);
         size_t len, end_samples;
         if ((len = fread(frame, sizeof(frame[0]),
-                         frame_size, stdin)) != frame_size) {
+                         frame_size, infile)) != frame_size) {
             if (len > 0) {
                 speech = ps_endpointer_end_stream(ep, frame,
                                                   frame_size,
@@ -236,7 +237,7 @@ error_out:
 }
 
 static int
-single(ps_config_t *config)
+single(ps_config_t *config, FILE *infile)
 {
     ps_decoder_t *decoder = NULL;
     short *data, *ptr;
@@ -259,9 +260,9 @@ single(ps_config_t *config)
             data = ckd_realloc(data, data_size * sizeof(*data));
             ptr = data + len;
         }
-        len = fread(ptr, sizeof(*ptr), block_size, stdin);
+        len = fread(ptr, sizeof(*ptr), block_size, infile);
         if (len == 0) {
-            if (feof(stdin))
+            if (feof(infile))
                 break;
             else
                 E_ERROR_SYSTEM("Failed to read %d bytes\n",
@@ -345,7 +346,7 @@ soxflags(ps_config_t *config)
     return 0;
 }
 
-static const char *
+static char *
 find_command(int *argc, char **argv)
 {
     int i;
@@ -362,28 +363,86 @@ find_command(int *argc, char **argv)
     return "live";
 }
 
+static char **
+find_inputs(int *argc, char **argv, int *ninputs)
+{
+    char **inputs = NULL;
+    int i = 1;
+    *ninputs = 0;
+    while (i < *argc) {
+        char *arg = argv[i];
+        /* Bubble-bogo-bobo-backward-sort them to the end of argv. */
+        if (arg && arg[0] && arg[0] != '-') {
+            memmove(&argv[i],
+                    &argv[i + 1],
+                    (*argc - i - 1) * sizeof(argv[i]));
+            --*argc;
+            argv[*argc] = arg;
+            inputs = &argv[*argc];
+            ++*ninputs;
+        }
+        else
+            i += 2;
+    }
+    return inputs;
+}
+
+int
+process_inputs(int (*func)(ps_config_t *, FILE *),
+               ps_config_t *config,
+               char **inputs, int ninputs)
+{
+    int rv = 0;
+    
+    if (ninputs == 0)
+        return func(config, stdin);
+    else {
+        int i, rv_one;
+        for (i = 0; i < ninputs; ++i) {
+            /* They come to us in reverse order */
+            char *file = inputs[ninputs - i - 1];
+            FILE *fh = fopen(file, "rb");
+            if (fh == NULL) {
+                E_ERROR_SYSTEM("Failed to open %s for reading", file);
+                rv = -1;
+                continue;
+            }
+            if ((rv_one = read_file_header(file, fh, config)) < 0) {
+                fclose(fh);
+                rv = rv_one;
+                continue;
+            }
+            if ((rv_one = func(config, fh)) < 0) {
+                rv = rv_one;
+                E_ERROR("Recognition failed on %s\n", file);
+            }
+            fclose(fh);
+        }
+    }
+    return rv;
+}
+
 int
 main(int argc, char *argv[])
 {
     ps_config_t *config;
-    const char *command;
-    int rv;
+    char *command;
+    char **inputs;
+    int rv, ninputs;
 
     command = find_command(&argc, argv);
+    inputs = find_inputs(&argc, argv, &ninputs);
     if ((config = ps_config_parse_args(NULL, argc, argv)) == NULL) {
         cmd_ln_log_help_r(NULL, ps_args());
         return 1;
     }
     ps_default_search_args(config);
-    if (0 == strcmp(command, "soxflags")) {
+    if (0 == strcmp(command, "soxflags"))
         rv = soxflags(config);
-    }
-    else if (0 == strcmp(command, "live")) {
-        rv = live(config);
-    }
-    else if (0 == strcmp(command, "single")) {
-        rv = single(config);
-    }
+    else if (0 == strcmp(command, "live"))
+        rv = process_inputs(live, config, inputs, ninputs);
+    else if (0 == strcmp(command, "single"))
+        rv = process_inputs(single, config, inputs, ninputs);
     else {
         E_ERROR("Unknown command \"%s\"\n", command);
         return 1;

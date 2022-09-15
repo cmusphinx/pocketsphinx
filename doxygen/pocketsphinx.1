@@ -7,22 +7,24 @@ pocketsphinx \- Run speech recognition on audio data
 [ \fBlive\fR |
 \fBsingle\fR |
 \fBsoxflags\fR ]
+[ \fIinputs\fR... ]
 .SH DESCRIPTION
 .PP
 The ‘\f[CR]pocketsphinx\fP’ command-line program reads single-channel
-16-bit PCM audio from standard input and attemps to recognize speech
-in it using the default acoustic and language model. It accepts a
-large number of options which you probably don't care about, and a
-\fIcommand\fP which defaults to ‘\f[CR]live\fP’. The commands are as
-follows:
+16-bit PCM audio from standard input or one or more input files, and
+attemps to recognize speech in it using the default acoustic and
+language model. The input files can be raw audio, WAV, or NIST Sphere
+files, though some of these may not be recognized properly.  It
+accepts a large number of options which you probably don't care about,
+and a \fIcommand\fP which defaults to ‘\f[CR]live\fP’. The commands
+are as follows:
 .TP
 .B live
-Detect speech segments in standard input, run
-recognition on them (using those options you don't care about), and
-write the results to standard output in line-delimited JSON. I
-realize this isn't the prettiest format, but it sure beats XML. Each
-line contains a JSON object with these fields, which have short names
-to make the lines more readable:
+Detect speech segments in input files, run recognition on them (using
+those options you don't care about), and write the results to standard
+output in line-delimited JSON. I realize this isn't the prettiest
+format, but it sure beats XML. Each line contains a JSON object with
+these fields, which have short names to make the lines more readable:
 .IP
 "b": Start time in seconds, from the beginning of the stream
 .IP

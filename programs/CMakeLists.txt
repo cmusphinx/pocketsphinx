@@ -8,7 +8,7 @@ set(POCKETSPHINX_PROGRAMS
   pocketsphinx_pitch
   )
 foreach(PROGRAM ${POCKETSPHINX_PROGRAMS})
-  add_executable(${PROGRAM} ${PROGRAM}.c)
+  add_executable(${PROGRAM} ${PROGRAM}.c soundfiles.c)
   target_link_libraries(${PROGRAM} pocketsphinx)
   target_include_directories(
     ${PROGRAM} PRIVATE ${CMAKE_SOURCE_DIR}/src
