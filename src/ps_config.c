@@ -132,6 +132,9 @@ json_error(int err)
     case JSMN_ERROR_PART:
         errstr = "JSMN_ERROR_PART - JSON string is too short, expecting more JSON data";
         break;
+    case 0:
+        errstr = "JSON string appears to be empty";
+        break;
     default:
         errstr = "Unknown error";
     }
@@ -156,34 +159,34 @@ ps_config_parse_json(ps_config_t *config,
     }
     jsmn_init(&parser);
     jslen = strlen(json);
-    if ((ntok = jsmn_parse(&parser, json, jslen, NULL, 0)) < 0) {
+    if ((ntok = jsmn_parse(&parser, json, jslen, NULL, 0)) <= 0) {
         json_error(ntok);
         goto error_out;
     }
+    /* Need to reset the parser before second pass! */
+    jsmn_init(&parser);
     tokens = ckd_calloc(ntok, sizeof(*tokens));
-    if ((ntok = jsmn_parse(&parser, json, jslen, tokens, ntok)) < 0) {
-        json_error(ntok);
+    if ((i = jsmn_parse(&parser, json, jslen, tokens, ntok)) != ntok) {
+        json_error(i);
         goto error_out;
     }
-    if (ntok == 0 || tokens[0].type != JSMN_OBJECT) {
-        E_ERROR("Expected JSON object at top level\n");
-        goto error_out;
-    }
-    /* JSMN is really a tokenizer more than a parser, but that is all
-     * you need for JSON. */
-    for (i = 1; i < ntok; ++i) {
+    /* Accept missing top-level object. */
+    i = 0;
+    if (tokens[0].type == JSMN_OBJECT)
+        ++i;
+    while (i < ntok) {
         key = ckd_calloc(tokens[i].end - tokens[i].start + 1, 1);
         memcpy(key, json + tokens[i].start, tokens[i].end - tokens[i].start);
-        if (tokens[i].type != JSMN_STRING) {
-            E_ERROR("Expected string key, got %s\n", key);
+        if (tokens[i].type != JSMN_STRING && tokens[i].type != JSMN_PRIMITIVE) {
+            E_ERROR("Expected string or primitive key, got %s\n", key);
             goto error_out;
         }
-        if (i + 1 == ntok) {
+        if (++i == ntok) {
             E_ERROR("Missing value for %s\n", key);
             goto error_out;
         }
-        val = ckd_calloc(tokens[i+1].end - tokens[i+1].start + 1, 1);
-        memcpy(val, json + tokens[i+1].start, tokens[i+1].end - tokens[i+1].start);
+        val = ckd_calloc(tokens[i].end - tokens[i].start + 1, 1);
+        memcpy(val, json + tokens[i].start, tokens[i].end - tokens[i].start);
         if (ps_config_set_str(config, key, val) == NULL) {
             E_ERROR("Unknown or invalid parameter %s\n", key);
             goto error_out;
@@ -191,6 +194,7 @@ ps_config_parse_json(ps_config_t *config,
         ckd_free(key);
         ckd_free(val);
         key = val = NULL;
+        ++i;
     }
 
     ckd_free(key);
