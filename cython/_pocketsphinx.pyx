@@ -69,13 +69,7 @@ cdef class Config:
             self.config = ps_config_init(NULL)
         if kwargs:
             for k, v in kwargs.items():
-                if v is None:
-                    ps_config_set_str(self.config,
-                                      k.encode('utf-8'), NULL)
-                else:
-                    ps_config_set_str(self.config,
-                                      k.encode('utf-8'),
-                                      v.encode('utf-8'))
+                self[k] = v
             
 
     def default_search_args(self):
@@ -109,6 +103,26 @@ cdef class Config:
         cdef Config self = Config.__new__(Config)
         self.config = config
         return self
+
+    @staticmethod
+    def parse_file(str path):
+        """DEPRECATED: Parse a config file.
+
+        This reads a configuration file in "command-line" format, for example::
+
+            -arg1 value -arg2 value
+            -arg3 value
+
+        Args:
+            path(str): Path to configuration file.
+        Returns:
+            Config: Parsed config, or None on error.
+        """
+        cdef ps_config_t *config = cmd_ln_parse_file_r(NULL, ps_args(),
+                                                       path.encode(), False)
+        if config == NULL:
+            return None
+        return Config.create_from_ptr(config)
 
     @staticmethod
     def parse_json(json):
@@ -177,6 +191,12 @@ cdef class Config:
             ps_config_set_str(self.config, self._normalize_key(key), NULL)
         else:
             ps_config_set_str(self.config, self._normalize_key(key), val.encode('utf-8'))
+
+    def set_string_extra(self, key, val):
+        if val == None:
+            cmd_ln_set_str_extra_r(self.config, self._normalize_key(key), NULL)
+        else:
+            cmd_ln_set_str_extra_r(self.config, self._normalize_key(key), val.encode('utf-8'))
 
     def exists(self, key):
         return key in self

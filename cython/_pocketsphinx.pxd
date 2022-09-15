@@ -75,6 +75,10 @@ cdef extern from "util/cmd_ln.h":
         const arg_t *defn
     ctypedef struct cmd_ln_val_t:
         int type
+    void cmd_ln_set_str_extra_r(ps_config_t *config,
+                                const char *name, const char *str)
+    ps_config_t *cmd_ln_parse_file_r(ps_config_t *inout_cmdln, arg_t *defn,
+                                    const char *path, int strict)
 
 
 cdef extern from "lm/ngram_model.h":
