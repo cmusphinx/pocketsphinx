@@ -106,6 +106,8 @@ static void
 test_config_json(void)
 {
     ps_config_t *config;
+    char *json;
+    
     TEST_ASSERT(config = ps_config_parse_json(NULL, good_json));
     TEST_EQUAL(0, ps_config_free(config));
     TEST_EQUAL(NULL, ps_config_parse_json(NULL, bad_json));
@@ -115,8 +117,16 @@ test_config_json(void)
     TEST_EQUAL(0, ps_config_free(config));
 
     TEST_ASSERT(config = ps_config_parse_json(NULL, ugly_json));
+    /* Make a copy now, before it changes in check_live_args */
+    json = ckd_salloc(ps_config_serialize_json(config));
     check_live_args(config);
     TEST_EQUAL(0, ps_config_free(config));
+
+    /* Check that serialized JSON gives the same result */
+    TEST_ASSERT(config = ps_config_parse_json(NULL, json));
+    check_live_args(config);
+    TEST_EQUAL(0, ps_config_free(config));
+    ckd_free(json);
 }
 
 int

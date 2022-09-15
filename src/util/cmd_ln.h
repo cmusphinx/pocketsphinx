@@ -157,6 +157,7 @@ typedef struct cmd_ln_s {
     char **f_argv;
     uint32 f_argc;
     arg_t const *defn;
+    char *json;
 } cmd_ln_t;
 
 /**

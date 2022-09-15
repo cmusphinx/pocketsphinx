@@ -114,6 +114,8 @@ ps_config_free(ps_config_t *config)
         config->f_argv = NULL;
         config->f_argc = 0;
     }
+    if (config->json)
+        ckd_free(config->json);
     ckd_free(config);
     return 0;
 }
@@ -214,7 +216,7 @@ error_out:
     return NULL;
 }
 
-int
+static int
 build_json(ps_config_t *config, char *json, int len)
 {
     hash_iter_t *itor;
@@ -224,32 +226,35 @@ build_json(ps_config_t *config, char *json, int len)
     if ((l = snprintf(ptr, len, "{\n")) < 0)
         return -1;
     rv += l;
-    len -= l;
-    if (ptr)
+    if (ptr) {
+        len -= l;
         ptr += l;
+    }
     for (itor = hash_table_iter(config->ht); itor;
          itor = hash_table_iter_next(itor)) {
         const char *key = hash_entry_key(itor->ent);
         cmd_ln_val_t *cval = hash_entry_val(itor->ent);
         if (cval->type & ARG_STRING) {
+            if (cval->val.ptr == NULL)
+                continue;
             /* FIXME: ESCAPING! */
-            if ((l = snprintf(ptr, len, "\t\"%s\": \"%s\"\n",
+            if ((l = snprintf(ptr, len, "\t\"%s\": \"%s\",\n",
                               key, (char *)cval->val.ptr)) < 0)
                 return -1;
         }
         else if (cval->type & ARG_INTEGER) {
-            if ((l = snprintf(ptr, len, "\t\"%s\": %ld\n",
+            if ((l = snprintf(ptr, len, "\t\"%s\": %ld,\n",
                               key, cval->val.i)) < 0)
                 return -1;
         }
         else if (cval->type & ARG_BOOLEAN) {
-            if ((l = snprintf(ptr, len, "\t\"%s\": %s\n",
+            if ((l = snprintf(ptr, len, "\t\"%s\": %s,\n",
                               key,
                               cval->val.i ? "true" : "false")) < 0)
                 return -1;
         }
         else if (cval->type & ARG_FLOATING) {
-            if ((l = snprintf(ptr, len, "\t\"%s\": %g\n",
+            if ((l = snprintf(ptr, len, "\t\"%s\": %g,\n",
                               key, cval->val.fl)) < 0)
                 return -1;
         }
@@ -258,9 +263,22 @@ build_json(ps_config_t *config, char *json, int len)
                     cval->type, key);
         }
         rv += l;
-        len -= l;
-        if (ptr)
+        if (ptr) {
+            len -= l;
             ptr += l;
+        }
+    }
+    /* Back off last comma because JSON is awful */
+    if (ptr && ptr > json + 1) {
+        len += 2;
+        ptr -= 2;
+    }
+    if ((l = snprintf(ptr, len, "\n}\n")) < 0)
+        return -1;
+    rv += l;
+    if (ptr) {
+        len -= l;
+        ptr += l;
     }
     return rv;
 }
@@ -268,16 +286,17 @@ build_json(ps_config_t *config, char *json, int len)
 const char *
 ps_config_serialize_json(ps_config_t *config)
 {
-    char *json;
     int len = build_json(config, NULL, 0);
     if (len < 0)
         return NULL;
-    json = ckd_malloc(len + 1);
-    if (build_json(config, json, len + 1) != len) {
-        ckd_free(json);
-        return NULL;
+    if (config->json)
+        ckd_free(config->json);
+    config->json = ckd_malloc(len + 1);
+    if (build_json(config, config->json, len + 1) != len) {
+        ckd_free(config->json);
+        config->json = NULL;
     }
-    return json;
+    return config->json;
 }
 
 ps_type_t
