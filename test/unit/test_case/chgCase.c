@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sphinxbase/case.h>
+#include "util/case.h"
 #include <pocketsphinx/err.h>
 
 #define MAX_STR_LEN 64

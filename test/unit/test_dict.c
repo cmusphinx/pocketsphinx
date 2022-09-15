@@ -19,10 +19,11 @@ main(int argc, char *argv[])
 
 	(void)argc;
 	(void)argv;
-	TEST_ASSERT(config = cmd_ln_init(NULL, NULL, FALSE,
-						   "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
-						   "_fdict", MODELDIR "/en-us/en-us/noisedict",
-						   NULL));
+	TEST_ASSERT(config =
+                    ps_config_parse_json(
+                        NULL,
+                        "dict: \"" MODELDIR "/en-us/cmudict-en-us.dict\","
+                        "fdict: \"" MODELDIR "/en-us/en-us/noisedict\""));
 
 	/* Test dictionary in standard fashion. */
 	TEST_ASSERT(mdef = bin_mdef_read(NULL, MODELDIR "/en-us/en-us/mdef"));

@@ -14,9 +14,10 @@ main(int argc, char *argv[])
     (void)argc;
     (void)argv;
     TEST_ASSERT(config =
-            cmd_ln_init(NULL, ps_args(), TRUE,
-                "-hmm", MODELDIR "/en-us/en-us",
-                "-kws", DATADIR "/goforward.kws",
-                "-dict", MODELDIR "/en-us/cmudict-en-us.dict", NULL));
+                ps_config_parse_json(
+                    NULL,
+                    "hmm: \"" MODELDIR "/en-us/en-us\","
+                    "kws: \"" DATADIR "/goforward.kws\","
+                    "dict: \"" MODELDIR "/en-us/cmudict-en-us.dict\""));
     return ps_decoder_test(config, "KEYPHRASE", "forward");
 }

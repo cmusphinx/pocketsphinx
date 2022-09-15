@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "util/strfuncs.h"
-#include <sphinxbase/pio.h>
+#include "util/pio.h"
 #include "util/ckd_alloc.h"
 
 int

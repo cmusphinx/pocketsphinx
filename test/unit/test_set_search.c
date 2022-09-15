@@ -2,15 +2,17 @@
 
 #include <pocketsphinx.h>
 #include <pocketsphinx_internal.h>
+#include "lm/ngram_model.h"
 
 #include "test_macros.h"
 
 static cmd_ln_t *
 default_config()
 {
-    return cmd_ln_init(NULL, ps_args(), TRUE,
-                       "-hmm", MODELDIR "/en-us/en-us",
-                       "-dict", MODELDIR "/en-us/cmudict-en-us.dict", NULL);
+    return ps_config_parse_json(
+        NULL,
+        "hmm: \"" MODELDIR "/en-us/en-us\","
+        "dict: \"" MODELDIR "/en-us/cmudict-en-us.dict\"");
 }
 
 static void

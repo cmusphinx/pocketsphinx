@@ -5,7 +5,7 @@
  */
 
 #include "util/ckd_alloc.h"
-#include <sphinxbase/bio.h>
+#include "util/bio.h"
 #include "test_macros.h"
 
 #include <stdio.h>

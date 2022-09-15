@@ -1,6 +1,7 @@
 #include <pocketsphinx.h>
 #include <stdio.h>
 #include <string.h>
+#include "util/ckd_alloc.h"
 
 #include "test_macros.h"
 
@@ -8,24 +9,22 @@ int
 main(int argc, char *argv[])
 {
 	ps_decoder_t *ps;
-	cmd_ln_t *config;
+	ps_config_t *config;
         char *pron;
 
 	(void)argc;
 	(void)argv;
 	TEST_ASSERT(config =
-		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", DATADIR "/tidigits/hmm",
-				"-dict", DATADIR "/tidigits/lm/tidigits.dic",
-				NULL));
+                    ps_config_parse_json(
+                        NULL, "hmm: \"" DATADIR "/tidigits/hmm\","
+                        "dict: \"" DATADIR "/tidigits/lm/tidigits.dic\""));
 	TEST_ASSERT(ps = ps_init(config));
 	ps_config_free(config);
 
 	TEST_ASSERT(config =
-		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/en-us/en-us",
-				"-dict", MODELDIR "/en-us/cmudict-en-us.dict",
-				NULL));
+                    ps_config_parse_json(
+                        NULL, "hmm: \"" MODELDIR "/en-us/en-us\","
+                        "dict: \"" MODELDIR "/en-us/cmudict-en-us.dict\""));
 	TEST_EQUAL(0, ps_reinit(ps, config));
 
 	/* Reinit when adding words */

@@ -3,7 +3,7 @@
  * @author David Huggins-Daines <dhdaines@gmail.com>
  */
 
-#include <sphinxbase/hash_table.h>
+#include "util/hash_table.h"
 #include "util/ckd_alloc.h"
 
 #include "test_macros.h"

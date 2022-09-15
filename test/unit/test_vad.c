@@ -6,6 +6,7 @@
  */
 
 #include <pocketsphinx.h>
+#include "util/ckd_alloc.h"
 #include "test_macros.h"
 
 static const char *expecteds[] = {

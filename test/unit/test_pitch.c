@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include <sphinxbase/yin.h>
+#include "fe/yin.h"
 #include "util/ckd_alloc.h"
 
 #include "test_macros.h"

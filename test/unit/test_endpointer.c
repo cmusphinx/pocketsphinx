@@ -5,6 +5,7 @@
  * Author: David Huggins-Daines <dhdaines@gmail.com>
  */
 #include <pocketsphinx.h>
+#include "util/ckd_alloc.h"
 #include "test_macros.h"
 
 static int sample_rates[] = {

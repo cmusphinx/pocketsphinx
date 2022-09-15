@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <sphinxbase/hash_table.h>
+#include "util/hash_table.h"
 #include <pocketsphinx/err.h>
 
 /* Explore a more complicated case for deletion */

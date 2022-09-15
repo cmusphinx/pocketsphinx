@@ -91,19 +91,18 @@ main(int argc, char *argv[])
 	(void)argc;
 	(void)argv;
 	lmath = logmath_init(1.0001, 0, 0);
-	config = cmd_ln_init(NULL, ps_args(), TRUE,
-	     "-compallsen", "yes",
-	     NULL);
+	config = ps_config_init();
+        ps_config_set_bool(config, "compallsen", TRUE);
 	cmd_ln_parse_file_r(config, ps_args(), MODELDIR "/en-us/en-us/feat.params", FALSE);
 
-	cmd_ln_set_str_extra_r(config, "_mdef", MODELDIR "/en-us/en-us/mdef");
-	cmd_ln_set_str_extra_r(config, "_mean", MODELDIR "/en-us/en-us/means");
-	cmd_ln_set_str_extra_r(config, "_var", MODELDIR "/en-us/en-us/variances");
-	cmd_ln_set_str_extra_r(config, "_tmat", MODELDIR "/en-us/en-us/transition_matrices");
-	cmd_ln_set_str_extra_r(config, "_sendump", MODELDIR "/en-us/en-us/sendump");
-	cmd_ln_set_str_extra_r(config, "_mixw", NULL);
-	cmd_ln_set_str_extra_r(config, "_lda", NULL);
-	cmd_ln_set_str_extra_r(config, "_senmgau", NULL);	
+	cmd_ln_set_str_extra_r(config, "mdef", MODELDIR "/en-us/en-us/mdef");
+	cmd_ln_set_str_extra_r(config, "mean", MODELDIR "/en-us/en-us/means");
+	cmd_ln_set_str_extra_r(config, "var", MODELDIR "/en-us/en-us/variances");
+	cmd_ln_set_str_extra_r(config, "tmat", MODELDIR "/en-us/en-us/transition_matrices");
+	cmd_ln_set_str_extra_r(config, "sendump", MODELDIR "/en-us/en-us/sendump");
+	cmd_ln_set_str_extra_r(config, "mixw", NULL);
+	cmd_ln_set_str_extra_r(config, "lda", NULL);
+	cmd_ln_set_str_extra_r(config, "senmgau", NULL);	
 	
 	TEST_ASSERT(config);
 	TEST_ASSERT((acmod = acmod_init(config, lmath, NULL, NULL)));

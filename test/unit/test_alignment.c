@@ -17,10 +17,9 @@ main(int argc, char *argv[])
 
 	(void)argc;
 	(void)argv;
-	config = cmd_ln_init(NULL, NULL, FALSE,
-			     "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
-			     "_fdict", MODELDIR "/en-us/en-us/noisedict",
-			     NULL);
+	config = ps_config_parse_json(NULL,
+                                      "dict: \"" MODELDIR "/en-us/cmudict-en-us.dict\", "
+                                      "fdict: \"" MODELDIR "/en-us/en-us/noisedict\"");
 	mdef = bin_mdef_read(NULL, MODELDIR "/en-us/en-us/mdef");
 	dict = dict_init(config, mdef);
 	d2p = dict2pid_build(mdef, dict);

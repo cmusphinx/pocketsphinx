@@ -25,10 +25,11 @@ main(int argc, char *argv[])
     (void)argc;
     (void)argv;
     TEST_ASSERT(config =
-            cmd_ln_init(NULL, ps_args(), TRUE,
-                "-hmm", MODELDIR "/en-us/en-us",
-                "-dict", DATADIR "/turtle.dic",
-                "-samprate", "16000", NULL));
+                ps_config_parse_json(
+                    NULL,
+                    "hmm: \"" MODELDIR "/en-us/en-us\","
+                    "dict: \"" DATADIR "/turtle.dic\","
+                    "samprate: 16000"));
     TEST_ASSERT(ps = ps_init(config));
 
     jsgf = jsgf_parse_file(DATADIR "/goforward.gram", NULL);
@@ -52,11 +53,12 @@ main(int argc, char *argv[])
 
 
     TEST_ASSERT(config =
-            cmd_ln_init(NULL, ps_args(), TRUE,
-                "-hmm", MODELDIR "/en-us/en-us",
-                "-dict", DATADIR "/turtle.dic",
-                "-jsgf", DATADIR "/goforward.gram",
-                "-samprate", "16000", NULL));
+                ps_config_parse_json(
+                    NULL,
+                    "hmm: \"" MODELDIR "/en-us/en-us\","
+                    "dict: \"" DATADIR "/turtle.dic\","
+                    "jsgf: \"" DATADIR "/goforward.gram\","
+                    "samprate: 16000"));
     TEST_ASSERT(ps = ps_init(config));
     TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
     ps_decode_raw(ps, rawfh, -1);
@@ -69,12 +71,12 @@ main(int argc, char *argv[])
     ps_config_free(config);
 
     TEST_ASSERT(config =
-            cmd_ln_init(NULL, ps_args(), TRUE,
-                "-hmm", MODELDIR "/en-us/en-us",
-                "-dict", DATADIR "/turtle.dic",
-                "-jsgf", DATADIR "/goforward.gram",
-                "-toprule", "goforward.move2",
-                "-samprate", "16000", NULL));
+                ps_config_parse_json(
+                    NULL,
+                    "hmm: \"" MODELDIR "/en-us/en-us\","
+                    "dict: \"" DATADIR "/turtle.dic\","
+                    "jsgf: \"" DATADIR "/goforward.gram\","
+                    "toprule: goforward.move2, samprate: 16000"));
     TEST_ASSERT(ps = ps_init(config));
     TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
     ps_decode_raw(ps, rawfh, -1);
@@ -87,11 +89,11 @@ main(int argc, char *argv[])
     fclose(rawfh);
 
     TEST_ASSERT(config =
-            cmd_ln_init(NULL, ps_args(), TRUE,
-                "-hmm", MODELDIR "/en-us/en-us",
-                "-dict", DATADIR "/turtle.dic",
-                "-jsgf", DATADIR "/defective.gram",
-                NULL));
+                ps_config_parse_json(
+                    NULL,
+                    "hmm: \"" MODELDIR "/en-us/en-us\","
+                    "dict: \"" DATADIR "/turtle.dic\","
+                    "jsgf: \"" DATADIR "/defective.gram\","));
     TEST_ASSERT(NULL == ps_init(config));
     ps_config_free(config);
 
