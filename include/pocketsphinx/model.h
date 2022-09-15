@@ -174,17 +174,6 @@ fsg_model_t *jsgf_build_fsg(jsgf_t *grammar, jsgf_rule_t *rule,
                             logmath_t *lmath, float32 lw);
 
 /**
- * Build a Sphinx FSG object from a JSGF rule.
- *
- * This differs from jsgf_build_fsg() in that it does not do closure
- * on epsilon transitions or any other postprocessing.  For the time
- * being this is necessary in order to write it to a file.
- */
-POCKETSPHINX_EXPORT
-fsg_model_t *jsgf_build_fsg_raw(jsgf_t *grammar, jsgf_rule_t *rule,
-                                logmath_t *lmath, float32 lw);
-
-/**
  * Read JSGF from file and return FSG object from it.
  *
  * This function looks for a first public rule in jsgf and constructs JSGF from it.
