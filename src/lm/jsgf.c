@@ -964,3 +964,20 @@ jsgf_parse_string(const char *string, jsgf_t * parent)
 
     return jsgf;
 }
+
+jsgf_rule_iter_t *
+jsgf_rule_iter_next(jsgf_rule_iter_t *itor)
+{
+    return hash_table_iter_next(itor);
+}
+
+jsgf_rule_t *jsgf_rule_iter_rule(jsgf_rule_iter_t *itor)
+{
+    return ((jsgf_rule_t *)(itor)->ent->val);
+}
+
+void
+jsgf_rule_iter_free(jsgf_rule_iter_t *itor)
+{
+    return hash_table_iter_free(itor);
+}

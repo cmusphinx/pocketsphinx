@@ -50,6 +50,7 @@
 /* PocketSphinx API headers */
 #include <pocketsphinx/vad.h>
 #include <pocketsphinx/endpointer.h>
+#include <pocketsphinx/model.h>
 #include <pocketsphinx/search.h>
 #include <pocketsphinx/export.h>
 #include <pocketsphinx/lattice.h>

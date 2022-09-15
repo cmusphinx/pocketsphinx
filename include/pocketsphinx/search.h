@@ -72,6 +72,8 @@
 #ifndef __PS_SEARCH_H__
 #define __PS_SEARCH_H__
 
+#include <pocketsphinx/model.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -163,11 +165,6 @@ void ps_search_iter_free(ps_search_iter_t *itor);
 POCKETSPHINX_EXPORT
 const char* ps_search_iter_val(ps_search_iter_t *itor);
 
-
-/* Forward declare these (not public API) */
-/* FIXME: No, they have to be public, make it so, #1 */
-typedef struct ngram_model_s ngram_model_t;
-typedef struct fsg_model_s fsg_model_t;
 
 /**
  * Get the language model set object for this decoder.
