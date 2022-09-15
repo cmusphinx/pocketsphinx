@@ -346,18 +346,20 @@ soxflags(ps_config_t *config)
 }
 
 static const char *
-find_command(int argc, char *argv[])
+find_command(int *argc, char **argv)
 {
-    /* Very unsophisticated, assume that it is at the end of the
-     * key/value arguments, we will maybe get a real argument parser
-     * one of these days. */
-    if (argc % 2) {
-        /* No extra argument */
-        return "live";
+    int i;
+    for (i = 1; i < *argc; i += 2) {
+        char *arg = argv[i];
+        if (arg && arg[0] && arg[0] != '-') {
+            memmove(&argv[i],
+                    &argv[i + 1],
+                    (*argc - i - 1) * sizeof(argv[i]));
+            --*argc;
+            return arg;
+        }
     }
-    else {
-        return argv[argc-1];
-    }
+    return "live";
 }
 
 int
@@ -367,12 +369,12 @@ main(int argc, char *argv[])
     const char *command;
     int rv;
 
-    if ((config = cmd_ln_parse_r(NULL, ps_args(), argc, argv, TRUE)) == NULL) {
+    command = find_command(&argc, argv);
+    if ((config = ps_config_parse_args(NULL, argc, argv)) == NULL) {
         cmd_ln_log_help_r(NULL, ps_args());
         return 1;
     }
     ps_default_search_args(config);
-    command = find_command(argc, argv);
     if (0 == strcmp(command, "soxflags")) {
         rv = soxflags(config);
     }
