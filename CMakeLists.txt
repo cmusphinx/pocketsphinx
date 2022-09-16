@@ -109,6 +109,7 @@ else()
   configure_file(pocketsphinx.pc.in pocketsphinx.pc @ONLY)
   install(TARGETS pocketsphinx LIBRARY)
   install(DIRECTORY include TYPE INCLUDE)
+  install(DIRECTORY ${CMAKE_BINARY_DIR}/include TYPE INCLUDE)
   install(FILES ${CMAKE_BINARY_DIR}/pocketsphinx.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 endif()
 
