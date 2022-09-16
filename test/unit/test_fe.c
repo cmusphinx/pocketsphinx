@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sphinxbase/fe.h>
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/err.h>
+#include "fe/fe.h"
+#include "util/cmd_ln.h"
+#include "util/ckd_alloc.h"
+#include <pocketsphinx/err.h>
 
 #include "test_macros.h"
 
@@ -224,7 +224,7 @@ main(int argc, char *argv[])
 
     /* Now test -remove_noise */
     fe_free(fe);
-    cmd_ln_set_boolean_r(config, "-remove_noise", TRUE);
+    ps_config_set_bool(config, "remove_noise", TRUE);
     TEST_ASSERT(fe = fe_init_auto_r(config));
     E_INFO("Testing all data at once (1024 samples)\n");
     inptr = &buf[0];
@@ -257,7 +257,7 @@ main(int argc, char *argv[])
     ckd_free_2d(cepbuf1);
     ckd_free_2d(cepbuf2);
     fclose(raw);
-    cmd_ln_free_r(config);
+    ps_config_free(config);
 
 
     return 0;

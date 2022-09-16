@@ -9,7 +9,7 @@
 # Author: David Huggins-Daines <dhdaines@gmail.com>
 
 
-cdef extern from "sphinxbase/err.h":
+cdef extern from "pocketsphinx/err.h":
     cdef enum err_e:
         ERR_DEBUG,
         ERR_INFO,
@@ -23,7 +23,7 @@ cdef extern from "sphinxbase/err.h":
     const char *err_set_loglevel_str(const char *lvl)
 
 
-cdef extern from "sphinxbase/logmath.h":
+cdef extern from "pocketsphinx/logmath.h":
     ctypedef struct logmath_t:
         pass
     
@@ -44,12 +44,12 @@ cdef extern from "sphinxbase/logmath.h":
 
     int logmath_get_zero(logmath_t *lmath)
 
-cdef extern from "sphinxbase/fe.h":
+cdef extern from "fe/fe.h":
     ctypedef struct fe_t:
         pass
     int fe_get_output_size(fe_t *fe)
 
-cdef extern from "sphinxbase/hash_table.h":
+cdef extern from "util/hash_table.h":
     ctypedef struct hash_table_t:
         pass
     ctypedef struct hash_entry_t:
@@ -61,7 +61,7 @@ cdef extern from "sphinxbase/hash_table.h":
     const char *hash_entry_key(hash_entry_t *ent)
 
 
-cdef extern from "sphinxbase/ckd_alloc.h":
+cdef extern from "util/ckd_alloc.h":
     void *ckd_alloc_2d_ptr(size_t d1,
                            size_t d2,
                            void *store,
@@ -69,49 +69,19 @@ cdef extern from "sphinxbase/ckd_alloc.h":
     void ckd_free(void *ptr)
 
 
-cdef extern from "sphinxbase/cmd_ln.h":
-    ctypedef struct arg_t:
-        const char *name
-        int type
-        const char *deflt
-        const char *doc
-    ctypedef struct cmd_ln_t:
+cdef extern from "util/cmd_ln.h":
+    ctypedef struct pocketsphinx_config_t:
         hash_table_t *ht
         const arg_t *defn
-    cdef enum:
-        ARG_REQUIRED,
-        ARG_INTEGER,
-        ARG_FLOATING,
-        ARG_STRING,
-        ARG_BOOLEAN,
-        REQARG_INTEGER,
-        REQARG_FLOATING,
-        REQARG_STRING,
-        REQARG_BOOLEAN
     ctypedef struct cmd_ln_val_t:
         int type
-        
-    cmd_ln_t *cmd_ln_parse_r(cmd_ln_t *inout_cmdln, arg_t *defn,
-                             int argc, char **argv, int strict)
-    cmd_ln_t *cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, arg_t *defn,
-                                  const char *path, int strict)
-    cmd_ln_t *cmd_ln_retain(cmd_ln_t *cmdln)
-    int cmd_ln_free_r(cmd_ln_t *cmdln)
-
-    double cmd_ln_float_r(cmd_ln_t *cmdln, const char *name)
-    int cmd_ln_type_r(cmd_ln_t *cmdln, const char *name)
-    long cmd_ln_int_r(cmd_ln_t *cmdln, const char *name)
-    const char *cmd_ln_str_r(cmd_ln_t *cmdln, const char *name)
-    void cmd_ln_set_str_r(cmd_ln_t *cmdln, const char *name, const char *str)
-    void cmd_ln_set_str_extra_r(cmd_ln_t *cmdln, const char *name, const char *str)
-    void cmd_ln_set_int_r(cmd_ln_t *cmdln, const char *name, long iv)
-    void cmd_ln_set_float_r(cmd_ln_t *cmdln, const char *name, double fv)
-    cmd_ln_val_t *cmd_ln_access_r(cmd_ln_t *cmdln, const char *name)
-
-    int cmd_ln_exists_r(cmd_ln_t *cmdln, const char *name)
+    void cmd_ln_set_str_extra_r(ps_config_t *config,
+                                const char *name, const char *str)
+    ps_config_t *cmd_ln_parse_file_r(ps_config_t *inout_cmdln, arg_t *defn,
+                                    const char *path, int strict)
 
 
-cdef extern from "sphinxbase/ngram_model.h":
+cdef extern from "lm/ngram_model.h":
     cdef enum ngram_file_type_e:
         NGRAM_INVALID,
         NGRAM_AUTO,
@@ -128,7 +98,7 @@ cdef extern from "sphinxbase/ngram_model.h":
         pass
     ctypedef struct ngram_model_set_iter_t:
         pass
-    ngram_model_t *ngram_model_read(cmd_ln_t *config,
+    ngram_model_t *ngram_model_read(ps_config_t *config,
 				    const char *file_name,
                                     ngram_file_type_t file_type,
 				    logmath_t *lmath)
@@ -186,12 +156,12 @@ cdef extern from "sphinxbase/ngram_model.h":
                                    const char *classname,
                                    const char *word,
                                    float weight)
-    ngram_model_t *ngram_model_set_init(cmd_ln_t *config,
+    ngram_model_t *ngram_model_set_init(ps_config_t *config,
                                         ngram_model_t **models,
                                         char **names,
                                         const float *weights,
                                         int n_models)
-    ngram_model_t *ngram_model_set_read(cmd_ln_t *config,
+    ngram_model_t *ngram_model_set_read(ps_config_t *config,
                                         const char *lmctlfile,
                                         logmath_t *lmath)
     int ngram_model_set_count(ngram_model_t *set)
@@ -225,7 +195,7 @@ cdef extern from "sphinxbase/ngram_model.h":
     void ngram_model_flush(ngram_model_t *lm)
 
 
-cdef extern from "sphinxbase/fsg_model.h":
+cdef extern from "lm/fsg_model.h":
     ctypedef struct fsg_model_t:
         int start_state
         int final_state
@@ -256,7 +226,7 @@ cdef extern from "sphinxbase/fsg_model.h":
     void fsg_model_writefile_symtab(fsg_model_t *fsg, const char *file)
 
 
-cdef extern from "sphinxbase/jsgf.h":
+cdef extern from "lm/jsgf.h":
     ctypedef struct jsgf_t:
         pass
     ctypedef struct jsgf_rule_t:
@@ -329,20 +299,64 @@ cdef extern from "pocketsphinx/lattice.h":
     int ps_lattice_n_frames(ps_lattice_t *dag)
 
 
+# Still need this unfortunately
+cdef extern from "util/cmd_ln.h":
+    ctypedef struct ps_config_t:
+        hash_table_t *ht
+        arg_t *defn
+    ps_config_t *ps_config_parse_args(const arg_t *defn, int argc, char **argv)
+
 cdef extern from "pocketsphinx.h":
+    cdef enum ps_type_t:
+        ARG_REQUIRED,
+        ARG_INTEGER,
+        ARG_FLOATING,
+        ARG_STRING,
+        ARG_BOOLEAN,
+        REQARG_INTEGER,
+        REQARG_FLOATING,
+        REQARG_STRING,
+        REQARG_BOOLEAN
+    ctypedef struct arg_t:
+        const char *name
+        int type
+        const char *deflt
+        const char *doc 
     ctypedef struct ps_decoder_t:
         pass
     ctypedef struct ps_seg_t:
         pass
     ctypedef struct ps_nbest_t:
         pass
+    ctypedef union anytype_t:
+        long i
+        float fl
+        void *ptr
+    ps_config_t *ps_config_init(const arg_t *defn)
+    ps_config_t *ps_config_retain(ps_config_t *config)
+    int ps_config_free(ps_config_t *config)
+    ps_config_t *ps_config_parse_json(ps_config_t *config, const char *json)
+    const char *ps_config_serialize_json(ps_config_t *config)
+    ps_type_t ps_config_typeof(ps_config_t *config, const char *name)
+    const anytype_t *ps_config_get(ps_config_t *config, const char *name)
+    const anytype_t *ps_config_set(ps_config_t *config, const char *name,
+                                   const anytype_t *val, ps_type_t t)
+    long ps_config_int(ps_config_t *config, const char *name)
+    int ps_config_bool(ps_config_t *config, const char *name)
+    double ps_config_float(ps_config_t *config, const char *name)
+    const char *ps_config_str(ps_config_t *config, const char *name)
+    const anytype_t *ps_config_set_int(ps_config_t *config, const char *name, long val)
+    const anytype_t *ps_config_set_bool(ps_config_t *config, const char *name, int val)
+    const anytype_t *ps_config_set_float(ps_config_t *config, const char *name, double val)
+    const anytype_t *ps_config_set_str(ps_config_t *config, const char *name, const char *val)
     arg_t *ps_args()
-    ps_decoder_t *ps_init(cmd_ln_t *config)
+    ps_decoder_t *ps_init(ps_config_t *config)
     int ps_free(ps_decoder_t *ps)
     const char *ps_default_modeldir()
-    void ps_default_search_args(cmd_ln_t *config)
-    int ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
-    int ps_reinit_feat(ps_decoder_t *ps, cmd_ln_t *config)
+    void ps_default_search_args(ps_config_t *config)
+    void ps_expand_model_config(ps_config_t *config)
+    int ps_reinit(ps_decoder_t *ps, ps_config_t *config)
+    int ps_reinit_feat(ps_decoder_t *ps, ps_config_t *config)
     const char *ps_get_cmn(ps_decoder_t *ps, int update)
     int ps_set_cmn(ps_decoder_t *ps, const char *cmn)
     logmath_t *ps_get_logmath(ps_decoder_t *ps)
@@ -378,9 +392,8 @@ cdef extern from "pocketsphinx.h":
                          double *out_ncpu, double *out_nwall)
     void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
                          double *out_ncpu, double *out_nwall)
-    fe_t *ps_get_fe(ps_decoder_t *ps)
     int ps_get_n_frames(ps_decoder_t *ps)
-    cmd_ln_t *ps_get_config(ps_decoder_t *ps)
+    ps_config_t *ps_get_config(ps_decoder_t *ps)
     int ps_load_dict(ps_decoder_t *ps, const char *dictfile,
                      const char *fdictfile, const char *format)
     int ps_save_dict(ps_decoder_t *ps, const char *dictfile,

@@ -41,9 +41,7 @@
 #include <float.h>
 #include <assert.h>
 
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
+#include <pocketsphinx/prim_type.h>
 
 /** \file s3types.h
  * \brief Size definition of semantically units. Common for both s3 and s3.X decoder. 

@@ -28,12 +28,12 @@
  * ====================================================================
  */
 
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/err.h>
-#include <pocketsphinx/endpointer.h>
-
 #include <string.h>
 #include <assert.h>
+
+#include <pocketsphinx.h>
+
+#include "util/ckd_alloc.h"
 
 struct ps_endpointer_s {
     ps_vad_t *vad;

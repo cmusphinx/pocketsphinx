@@ -42,13 +42,8 @@
 #ifndef __PS_ALIGNMENT_H__
 #define __PS_ALIGNMENT_H__
 
-/* System headers. */
+#include <pocketsphinx.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
-#include <pocketsphinx/export.h>
-
-/* Local headers. */
 #include "dict2pid.h"
 #include "hmm.h"
 
@@ -104,80 +99,67 @@ typedef struct ps_alignment_iter_s ps_alignment_iter_t;
 /**
  * Create a new, empty alignment.
  */
-POCKETSPHINX_EXPORT
 ps_alignment_t *ps_alignment_init(dict2pid_t *d2p);
 
 /**
  * Retain an alighment
  */
-POCKETSPHINX_EXPORT
 ps_alignment_t *ps_alignment_retain(ps_alignment_t *al);
 
 /**
  * Release an alignment
  */
-POCKETSPHINX_EXPORT
 int ps_alignment_free(ps_alignment_t *al);
 
 /**
  * Append a word.
  */
-POCKETSPHINX_EXPORT
 int ps_alignment_add_word(ps_alignment_t *al,
                           int32 wid, int duration);
 
 /**
  * Populate lower layers using available word information.
  */
-POCKETSPHINX_EXPORT
 int ps_alignment_populate(ps_alignment_t *al);
 
 /**
  * Populate lower layers using context-independent phones.
  */
-POCKETSPHINX_EXPORT
 int ps_alignment_populate_ci(ps_alignment_t *al);
 
 /**
  * Propagate timing information up from state sequence.
  */
-POCKETSPHINX_EXPORT
 int ps_alignment_propagate(ps_alignment_t *al);
 
 /**
  * Number of words.
  */
-POCKETSPHINX_EXPORT
 int ps_alignment_n_words(ps_alignment_t *al);
 
 /**
  * Number of phones.
  */
-POCKETSPHINX_EXPORT
 int ps_alignment_n_phones(ps_alignment_t *al);
 
 /**
  * Number of states.
  */
-POCKETSPHINX_EXPORT
 int ps_alignment_n_states(ps_alignment_t *al);
 
 /**
  * Iterate over the alignment starting at the first word.
  */
-POCKETSPHINX_EXPORT
 ps_alignment_iter_t *ps_alignment_words(ps_alignment_t *al);
 
 /**
  * Iterate over the alignment starting at the first phone.
  */
-POCKETSPHINX_EXPORT
 ps_alignment_iter_t *ps_alignment_phones(ps_alignment_t *al);
 
 /**
  * Iterate over the alignment starting at the first state.
  */
-POCKETSPHINX_EXPORT
 ps_alignment_iter_t *ps_alignment_states(ps_alignment_t *al);
 
 /**
@@ -185,13 +167,11 @@ ps_alignment_iter_t *ps_alignment_states(ps_alignment_t *al);
  *
  * The iterator retains ownership of this so don't try to free it.
  */
-POCKETSPHINX_EXPORT
 ps_alignment_entry_t *ps_alignment_iter_get(ps_alignment_iter_t *itor);
 
 /**
  * Move alignment iterator to given index.
  */
-POCKETSPHINX_EXPORT
 ps_alignment_iter_t *ps_alignment_iter_goto(ps_alignment_iter_t *itor, int pos);
 
 /**
@@ -200,7 +180,6 @@ ps_alignment_iter_t *ps_alignment_iter_goto(ps_alignment_iter_t *itor, int pos);
  * If the end of the alignment is reached, this will free the iterator
  * and return NULL.
  */
-POCKETSPHINX_EXPORT
 ps_alignment_iter_t *ps_alignment_iter_next(ps_alignment_iter_t *itor);
 
 /**
@@ -209,7 +188,6 @@ ps_alignment_iter_t *ps_alignment_iter_next(ps_alignment_iter_t *itor);
  * If the start of the alignment is reached, this will free the iterator
  * and return NULL.
  */
-POCKETSPHINX_EXPORT
 ps_alignment_iter_t *ps_alignment_iter_prev(ps_alignment_iter_t *itor);
 
 /**
@@ -217,20 +195,17 @@ ps_alignment_iter_t *ps_alignment_iter_prev(ps_alignment_iter_t *itor);
  *
  * If there is no parent node, NULL is returned.
  */
-POCKETSPHINX_EXPORT
 ps_alignment_iter_t *ps_alignment_iter_up(ps_alignment_iter_t *itor);
 /**
  * Get a new iterator starting at the first child of the current node.
  *
  * If there is no child node, NULL is returned.
  */
-POCKETSPHINX_EXPORT
 ps_alignment_iter_t *ps_alignment_iter_down(ps_alignment_iter_t *itor);
 
 /**
  * Release an iterator before completing all iterations.
  */
-POCKETSPHINX_EXPORT
 int ps_alignment_iter_free(ps_alignment_iter_t *itor);
 
 #ifdef __cplusplus

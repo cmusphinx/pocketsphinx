@@ -14,16 +14,17 @@ main(int argc, char *argv[])
 	(void)argc;
 	(void)argv;
 	TEST_ASSERT(config =
-		    cmd_ln_init(NULL, ps_args(), TRUE,
-				"-hmm", MODELDIR "/en-us/en-us",
-				"-lm", MODELDIR "/en-us/en-us.lm.bin",
-				"-dict", MODELDIR "/en-us/cmudict-en-us.dict",
-				"-fwdflatlw", "6.5",
-				"-fwdtree", "no",
-				"-fwdflat", "yes",
-				"-bestpath", "no",
-				"-fwdflatbeam", "1e-30",
-				"-fwdflatwbeam", "1e-20",
-				"-samprate", "16000", NULL));
+		    ps_config_parse_json(
+                        NULL,
+                        "hmm: \"" MODELDIR "/en-us/en-us\","
+                        "lm: \"" MODELDIR "/en-us/en-us.lm.bin\","
+                        "dict: \"" MODELDIR "/en-us/cmudict-en-us.dict\","
+                        "fwdflatlw: 6.5,"
+                        "fwdtree: false,"
+                        "fwdflat: true,"
+                        "bestpath: false,"
+                        "fwdflatbeam: 1e-30,"
+                        "fwdflatwbeam: 1e-20,"
+                        "samprate: 16000"));
 	return ps_decoder_test(config, "FWDFLAT", "go forward ten meters");
 }

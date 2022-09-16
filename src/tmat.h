@@ -38,7 +38,8 @@
 #define _S3_TMAT_H_
 
 #include <stdio.h>
-#include <sphinxbase/logmath.h>
+
+#include <pocketsphinx/logmath.h>
 
 /** \file tmat.h
  *  \brief Transition matrix data structure.

@@ -43,19 +43,13 @@
 #include <unistd.h>
 #endif
 
-/* SphinxBase headers. */
-#include <sphinxbase/err.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/filename.h>
-#include <sphinxbase/pio.h>
-#include <sphinxbase/jsgf.h>
-#include <sphinxbase/hash_table.h>
-
-/* PocketSphinx headers. */
 #include <pocketsphinx.h>
 
-/* Local headers. */
-#include "cmdln_macro.h"
+#include "util/strfuncs.h"
+#include "util/filename.h"
+#include "util/pio.h"
+#include "lm/jsgf.h"
+#include "util/hash_table.h"
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
 #include "phone_loop_search.h"
@@ -67,11 +61,6 @@
 #include "allphone_search.h"
 #include "state_align_search.h"
 #include "fe/fe_internal.h"
-
-static const arg_t ps_args_def[] = {
-    POCKETSPHINX_OPTIONS,
-    CMDLN_EMPTY_OPTION
-};
 
 /* I'm not sure what the portable way to do this is. */
 static int
@@ -99,59 +88,44 @@ hmmdir_exists(const char *path)
 #endif
 
 static void
-ps_expand_file_config(ps_config_t *config, const char *arg, const char *extra_arg,
+ps_expand_file_config(ps_config_t *config, const char *arg,
 	              const char *hmmdir, const char *file)
 {
     const char *val;
-    if ((val = cmd_ln_str_r(config, arg)) != NULL) {
-	cmd_ln_set_str_extra_r(config, extra_arg, val);
-    } else if (hmmdir == NULL) {
-        cmd_ln_set_str_extra_r(config, extra_arg, NULL);
-    } else {
+    if ((val = ps_config_str(config, arg)) == NULL) {
         char *tmp = string_join(hmmdir, "/", file, NULL);
         if (file_exists(tmp))
-	    cmd_ln_set_str_extra_r(config, extra_arg, tmp);
+	    ps_config_set_str(config, arg, tmp);
 	else
-	    cmd_ln_set_str_extra_r(config, extra_arg, NULL);
+	    ps_config_set_str(config, arg, NULL);
         ckd_free(tmp);
     }
 }
-
-/* Feature and front-end parameters that may be in feat.params */
-static const arg_t feat_defn[] = {
-    waveform_to_cepstral_command_line_macro(),
-    cepstral_to_feature_command_line_macro(),
-    CMDLN_EMPTY_OPTION
-};
 
 void
 ps_expand_model_config(ps_config_t *config)
 {
     char const *hmmdir, *featparams;
 
-    /* Disable memory mapping on Blackfin (FIXME: should be uClinux in general). */
-#ifdef __ADSPBLACKFIN__
-    E_INFO("Will not use mmap() on uClinux/Blackfin.");
-    cmd_ln_set_boolean_r(config, "-mmap", FALSE);
-#endif
-
     /* Get acoustic model filenames and add them to the command-line */
-    hmmdir = cmd_ln_str_r(config, "-hmm");
-    ps_expand_file_config(config, "-mdef", "_mdef", hmmdir, "mdef");
-    ps_expand_file_config(config, "-mean", "_mean", hmmdir, "means");
-    ps_expand_file_config(config, "-var", "_var", hmmdir, "variances");
-    ps_expand_file_config(config, "-tmat", "_tmat", hmmdir, "transition_matrices");
-    ps_expand_file_config(config, "-mixw", "_mixw", hmmdir, "mixture_weights");
-    ps_expand_file_config(config, "-sendump", "_sendump", hmmdir, "sendump");
-    ps_expand_file_config(config, "-fdict", "_fdict", hmmdir, "noisedict");
-    ps_expand_file_config(config, "-lda", "_lda", hmmdir, "feature_transform");
-    ps_expand_file_config(config, "-featparams", "_featparams", hmmdir, "feat.params");
-    ps_expand_file_config(config, "-senmgau", "_senmgau", hmmdir, "senmgau");
+    hmmdir = ps_config_str(config, "hmm");
+    if (hmmdir) {
+        ps_expand_file_config(config, "mdef", hmmdir, "mdef");
+        ps_expand_file_config(config, "mean", hmmdir, "means");
+        ps_expand_file_config(config, "var", hmmdir, "variances");
+        ps_expand_file_config(config, "tmat", hmmdir, "transition_matrices");
+        ps_expand_file_config(config, "mixw", hmmdir, "mixture_weights");
+        ps_expand_file_config(config, "sendump", hmmdir, "sendump");
+        ps_expand_file_config(config, "fdict", hmmdir, "noisedict");
+        ps_expand_file_config(config, "lda", hmmdir, "feature_transform");
+        ps_expand_file_config(config, "featparams", hmmdir, "feat.params");
+        ps_expand_file_config(config, "senmgau", hmmdir, "senmgau");
+    }
 
     /* Look for feat.params in acoustic model dir. */
-    if ((featparams = cmd_ln_str_r(config, "_featparams"))) {
+    if ((featparams = ps_config_str(config, "featparams"))) {
         if (NULL !=
-            cmd_ln_parse_file_r(config, feat_defn, featparams, FALSE))
+            cmd_ln_parse_file_r(config, ps_args(), featparams, FALSE))
             E_INFO("Parsed model-specific feature parameters from %s\n",
                     featparams);
     }
@@ -197,32 +171,32 @@ void
 ps_default_search_args(ps_config_t *config)
 {
 #ifdef MODELDIR
-    const char *hmmdir = cmd_ln_str_r(config, "-hmm");
-    const char *lmfile = cmd_ln_str_r(config, "-lm");
-    const char *dictfile = cmd_ln_str_r(config, "-dict");
+    const char *hmmdir = ps_config_str(config, "hmm");
+    const char *lmfile = ps_config_str(config, "lm");
+    const char *dictfile = ps_config_str(config, "dict");
 
     E_INFO("Looking for default model in " MODELDIR "\n");
     if (hmmdir == NULL && hmmdir_exists(MODELDIR "/en-us/en-us")) {
         hmmdir = MODELDIR "/en-us/en-us";
         E_INFO("Loading default acoustic model from %s\n", hmmdir);
-        cmd_ln_set_str_r(config, "-hmm", hmmdir);
+        ps_config_set_str(config, "hmm", hmmdir);
     }
 
-    if (lmfile == NULL && !cmd_ln_str_r(config, "-fsg")
-        && !cmd_ln_str_r(config, "-jsgf")
-        && !cmd_ln_str_r(config, "-lmctl")
-        && !cmd_ln_str_r(config, "-kws")
-        && !cmd_ln_str_r(config, "-keyphrase")
+    if (lmfile == NULL && !ps_config_str(config, "fsg")
+        && !ps_config_str(config, "jsgf")
+        && !ps_config_str(config, "lmctl")
+        && !ps_config_str(config, "kws")
+        && !ps_config_str(config, "keyphrase")
         && file_exists(MODELDIR "/en-us/en-us.lm.bin")) {
         lmfile = MODELDIR "/en-us/en-us.lm.bin";
         E_INFO("Loading default language model from %s\n", lmfile);
-        cmd_ln_set_str_r(config, "-lm", lmfile);
+        ps_config_set_str(config, "lm", lmfile);
     }
 
     if (dictfile == NULL && file_exists(MODELDIR "/en-us/cmudict-en-us.dict")) {
         dictfile = MODELDIR "/en-us/cmudict-en-us.dict";
         E_INFO("Loading default dictionary from %s\n", dictfile);
-        cmd_ln_set_str_r(config, "-dict", dictfile);
+        ps_config_set_str(config, "dict", dictfile);
     }
 #else
     (void)config;
@@ -234,8 +208,8 @@ int
 ps_reinit_feat(ps_decoder_t *ps, ps_config_t *config)
 {
     if (config && config != ps->config) {
-        cmd_ln_free_r(ps->config);
-        ps->config = cmd_ln_retain(config);
+        ps_config_free(ps->config);
+        ps->config = ps_config_retain(config);
     }
     return acmod_reinit_feat(ps->acmod, NULL, NULL);
 }
@@ -248,22 +222,22 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
     int32 lw;
 
     if (config && config != ps->config) {
-        cmd_ln_free_r(ps->config);
-        ps->config = cmd_ln_retain(config);
+        ps_config_free(ps->config);
+        ps->config = ps_config_retain(config);
     }
 
     /* Set up logging. We need to do this earlier because we want to dump
      * the information to the configured log, not to the stderr. */
     if (config) {
         const char *logfn, *loglevel;
-        logfn = cmd_ln_str_r(ps->config, "-logfn");
+        logfn = ps_config_str(ps->config, "logfn");
         if (logfn) {
             if (err_set_logfile(logfn) < 0) {
                 E_ERROR("Cannot redirect log output\n");
                 return -1;
             }
         }
-        loglevel = cmd_ln_str_r(ps->config, "-loglevel");
+        loglevel = ps_config_str(ps->config, "loglevel");
         if (loglevel) {
             if (err_set_loglevel_str(loglevel) == NULL) {
                 E_ERROR("Invalid log level: %s\n", loglevel);
@@ -272,9 +246,9 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
         }
     }
     
-    ps->mfclogdir = cmd_ln_str_r(ps->config, "-mfclogdir");
-    ps->rawlogdir = cmd_ln_str_r(ps->config, "-rawlogdir");
-    ps->senlogdir = cmd_ln_str_r(ps->config, "-senlogdir");
+    ps->mfclogdir = ps_config_str(ps->config, "mfclogdir");
+    ps->rawlogdir = ps_config_str(ps->config, "rawlogdir");
+    ps->senlogdir = ps_config_str(ps->config, "senlogdir");
 
     /* Fill in some default arguments. */
     ps_expand_model_config(ps->config);
@@ -301,11 +275,11 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
     /* Logmath computation (used in acmod and search) */
     if (ps->lmath == NULL
         || (logmath_get_base(ps->lmath) !=
-            (float64)cmd_ln_float32_r(ps->config, "-logbase"))) {
+            ps_config_float(ps->config, "logbase"))) {
         if (ps->lmath)
             logmath_free(ps->lmath);
         ps->lmath = logmath_init
-            ((float64)cmd_ln_float32_r(ps->config, "-logbase"), 0, TRUE);
+            (ps_config_float(ps->config, "logbase"), 0, TRUE);
     }
 
     /* Acoustic model (this is basically everything that
@@ -315,7 +289,7 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
 
 
 
-    if (cmd_ln_int32_r(ps->config, "-pl_window") > 0) {
+    if (ps_config_int(ps->config, "pl_window") > 0) {
         /* Initialize an auxiliary phone loop search, which will run in
          * "parallel" with FSG or N-Gram search. */
         if ((ps->phone_loop =
@@ -333,26 +307,26 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
     if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
         return -1;
 
-    lw = cmd_ln_float32_r(ps->config, "-lw");
+    lw = ps_config_float(ps->config, "lw");
 
     /* Determine whether we are starting out in FSG or N-Gram search mode.
      * If neither is used skip search initialization. */
 
     /* Load KWS if one was specified in config */
-    if ((keyphrase = cmd_ln_str_r(ps->config, "-keyphrase"))) {
+    if ((keyphrase = ps_config_str(ps->config, "keyphrase"))) {
         if (ps_set_keyphrase(ps, PS_DEFAULT_SEARCH, keyphrase))
             return -1;
         ps_set_search(ps, PS_DEFAULT_SEARCH);
     }
 
-    if ((path = cmd_ln_str_r(ps->config, "-kws"))) {
+    if ((path = ps_config_str(ps->config, "kws"))) {
         if (ps_set_kws(ps, PS_DEFAULT_SEARCH, path))
             return -1;
         ps_set_search(ps, PS_DEFAULT_SEARCH);
     }
 
     /* Load an FSG if one was specified in config */
-    if ((path = cmd_ln_str_r(ps->config, "-fsg"))) {
+    if ((path = ps_config_str(ps->config, "fsg"))) {
         fsg_model_t *fsg = fsg_model_readfile(path, ps->lmath, lw);
         if (!fsg)
             return -1;
@@ -365,26 +339,26 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
     }
     
     /* Or load a JSGF grammar */
-    if ((path = cmd_ln_str_r(ps->config, "-jsgf"))) {
+    if ((path = ps_config_str(ps->config, "jsgf"))) {
         if (ps_set_jsgf_file(ps, PS_DEFAULT_SEARCH, path)
             || ps_set_search(ps, PS_DEFAULT_SEARCH))
             return -1;
     }
 
-    if ((path = cmd_ln_str_r(ps->config, "-allphone"))) {
+    if ((path = ps_config_str(ps->config, "allphone"))) {
         if (ps_set_allphone_file(ps, PS_DEFAULT_SEARCH, path)
                 || ps_set_search(ps, PS_DEFAULT_SEARCH))
                 return -1;
     }
 
-    if ((path = cmd_ln_str_r(ps->config, "-lm")) && 
-        !cmd_ln_str_r(ps->config, "-allphone")) {
+    if ((path = ps_config_str(ps->config, "lm")) && 
+        !ps_config_str(ps->config, "allphone")) {
         if (ps_set_lm_file(ps, PS_DEFAULT_SEARCH, path)
             || ps_set_search(ps, PS_DEFAULT_SEARCH))
             return -1;
     }
 
-    if ((path = cmd_ln_str_r(ps->config, "-lmctl"))) {
+    if ((path = ps_config_str(ps->config, "lmctl"))) {
         const char *name;
         ngram_model_t *lmset;
         ngram_model_set_iter_t *lmset_it;
@@ -406,7 +380,7 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
         }
         ngram_model_free(lmset);
 
-        name = cmd_ln_str_r(ps->config, "-lmname");
+        name = ps_config_str(ps->config, "lmname");
         if (name)
             ps_set_search(ps, name);
         else {
@@ -453,12 +427,6 @@ ps_init(ps_config_t *config)
     return ps;
 }
 
-arg_t const *
-ps_args(void)
-{
-    return ps_args_def;
-}
-
 ps_decoder_t *
 ps_retain(ps_decoder_t *ps)
 {
@@ -478,7 +446,7 @@ ps_free(ps_decoder_t *ps)
     dict2pid_free(ps->d2p);
     acmod_free(ps->acmod);
     logmath_free(ps->lmath);
-    cmd_ln_free_r(ps->config);
+    ps_config_free(ps->config);
     ckd_free(ps);
     return 0;
 }
@@ -530,7 +498,7 @@ ps_set_search(ps_decoder_t *ps, const char *name)
     ps->search = search;
     /* Set pl window depending on the search */
     if (!strcmp(PS_SEARCH_TYPE_NGRAM, ps_search_type(search))) {
-        ps->pl_window = cmd_ln_int32_r(ps->config, "-pl_window");
+        ps->pl_window = ps_config_int(ps->config, "pl_window");
     } else {
         ps->pl_window = 0;
     }
@@ -749,7 +717,7 @@ ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
 
   rule = NULL;
   /* Take the -toprule if specified. */
-  if ((toprule = cmd_ln_str_r(ps->config, "-toprule"))) {
+  if ((toprule = ps_config_str(ps->config, "toprule"))) {
       rule = jsgf_get_rule(jsgf, toprule);
       if (rule == NULL) {
           E_ERROR("Start rule %s not found\n", toprule);
@@ -765,7 +733,7 @@ ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
       }
   }
 
-  lw = cmd_ln_float32_r(ps->config, "-lw");
+  lw = ps_config_float(ps->config, "lw");
   fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, lw);
   result = ps_set_fsg(ps, name, fsg);
   fsg_model_free(fsg);
@@ -788,7 +756,7 @@ ps_set_jsgf_string(ps_decoder_t *ps, const char *name, const char *jsgf_string)
 
   rule = NULL;
   /* Take the -toprule if specified. */
-  if ((toprule = cmd_ln_str_r(ps->config, "-toprule"))) {
+  if ((toprule = ps_config_str(ps->config, "toprule"))) {
       rule = jsgf_get_rule(jsgf, toprule);
       if (rule == NULL) {
           E_ERROR("Start rule %s not found\n", toprule);
@@ -804,7 +772,7 @@ ps_set_jsgf_string(ps_decoder_t *ps, const char *name, const char *jsgf_string)
       }
   }
 
-  lw = cmd_ln_float32_r(ps->config, "-lw");
+  lw = ps_config_float(ps->config, "lw");
   fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, lw);
   result = ps_set_fsg(ps, name, fsg);
   fsg_model_free(fsg);
@@ -825,31 +793,31 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
     (void)format;
     /* Create a new scratch config to load this dict (so existing one
      * won't be affected if it fails) */
-    newconfig = cmd_ln_init(NULL, ps_args(), TRUE, NULL);
-    cmd_ln_set_boolean_r(newconfig, "-dictcase",
-                         cmd_ln_boolean_r(ps->config, "-dictcase"));
-    cmd_ln_set_str_r(newconfig, "-dict", dictfile);
+    newconfig = ps_config_init(NULL);
+    ps_config_set_bool(newconfig, "dictcase",
+                       ps_config_bool(ps->config, "dictcase"));
+    ps_config_set_str(newconfig, "dict", dictfile);
     if (fdictfile)
-        cmd_ln_set_str_extra_r(newconfig, "_fdict", fdictfile);
+        ps_config_set_str(newconfig, "fdict", fdictfile);
     else
-        cmd_ln_set_str_extra_r(newconfig, "_fdict",
-                               cmd_ln_str_r(ps->config, "_fdict"));
+        ps_config_set_str(newconfig, "fdict",
+                          ps_config_str(ps->config, "fdict"));
 
     /* Try to load it. */
     if ((dict = dict_init(newconfig, ps->acmod->mdef)) == NULL) {
-        cmd_ln_free_r(newconfig);
+        ps_config_free(newconfig);
         return -1;
     }
 
     /* Reinit the dict2pid. */
     if ((d2p = dict2pid_build(ps->acmod->mdef, dict)) == NULL) {
-        cmd_ln_free_r(newconfig);
+        ps_config_free(newconfig);
         return -1;
     }
 
     /* Success!  Update the existing config to reflect new dicts and
      * drop everything into place. */
-    cmd_ln_free_r(newconfig);
+    ps_config_free(newconfig);
     dict_free(ps->dict);
     ps->dict = dict;
     dict2pid_free(ps->d2p);
@@ -1264,7 +1232,7 @@ ps_end_utt(ps_decoder_t *ps)
     ptmr_stop(&ps->perf);
 
     /* Log a backtrace if requested. */
-    if (cmd_ln_boolean_r(ps->config, "-backtrace")) {
+    if (ps_config_bool(ps->config, "backtrace")) {
         const char* hyp;
         ps_seg_t *seg;
         int32 score;
@@ -1471,7 +1439,7 @@ ps_get_utt_time(ps_decoder_t *ps, double *out_nspeech,
 {
     int32 frate;
 
-    frate = cmd_ln_int32_r(ps->config, "-frate");
+    frate = ps_config_int(ps->config, "frate");
     *out_nspeech = (double)ps->acmod->output_frame / frate;
     *out_ncpu = ps->perf.t_cpu;
     *out_nwall = ps->perf.t_elapsed;
@@ -1483,7 +1451,7 @@ ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
 {
     int32 frate;
 
-    frate = cmd_ln_int32_r(ps->config, "-frate");
+    frate = ps_config_int(ps->config, "frate");
     *out_nspeech = (double)ps->n_frame / frate;
     *out_ncpu = ps->perf.t_tot_cpu;
     *out_nwall = ps->perf.t_tot_elapsed;

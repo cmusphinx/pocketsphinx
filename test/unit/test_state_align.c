@@ -70,10 +70,12 @@ main(int argc, char *argv[])
 
     (void)argc;
     (void)argv;
-    config = cmd_ln_init(NULL, ps_args(), FALSE,
-                 "-hmm", MODELDIR "/en-us/en-us",
-                 "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
-                 "-samprate", "16000", NULL);
+    TEST_ASSERT(config =
+                ps_config_parse_json(
+                    NULL,
+                    "hmm: \"" MODELDIR "/en-us/en-us\","
+                    "dict: \"" MODELDIR "/en-us/cmudict-en-us.dict\","
+                    "samprate: 16000"));
     TEST_ASSERT(ps = ps_init(config));
     dict = ps->dict;
     d2p = ps->d2p;
@@ -175,6 +177,6 @@ main(int argc, char *argv[])
     TEST_EQUAL(NULL, seg);
 
     ps_free(ps);
-    cmd_ln_free_r(config);
+    ps_config_free(config);
     return 0;
 }

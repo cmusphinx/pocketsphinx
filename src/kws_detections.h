@@ -39,10 +39,7 @@
 #ifndef __KWS_DETECTIONS_H__
 #define __KWS_DETECTIONS_H__
 
-/* SphinxBase headers. */
-#include <sphinxbase/glist.h>
-
-/* Local headers. */
+#include "util/glist.h"
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
 

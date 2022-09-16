@@ -35,15 +35,11 @@
  *
  */
 
-/* System headers. */
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/bio.h>
-
-/* Local headers. */
+#include "util/bio.h"
 #include "ms_senone.h"
 
 #define MIXW_PARAM_VERSION	"1.0"

@@ -43,14 +43,15 @@
 #include "config.h"
 #endif
 
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/byteorder.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/priority_queue.h>
+#include <pocketsphinx/prim_type.h>
+#include <pocketsphinx/err.h>
 
-#include "lm_trie.h"
-#include "lm_trie_quant.h"
+#include "util/byteorder.h"
+#include "util/ckd_alloc.h"
+#include "util/priority_queue.h"
+
+#include "lm/lm_trie.h"
+#include "lm/lm_trie_quant.h"
 
 static void lm_trie_alloc_ngram(lm_trie_t * trie, uint32 * counts, int order);
 

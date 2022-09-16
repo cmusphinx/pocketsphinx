@@ -96,12 +96,9 @@
 #ifndef _LIBFBS_MS_CONT_MGAU_H_
 #define _LIBFBS_MS_CONT_MGAU_H_
 
-/* SphinxBase headers. */
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/feat.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
+#include "feat/feat.h"
 #include "acmod.h"
 #include "bin_mdef.h"
 #include "ms_gauden.h"

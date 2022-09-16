@@ -2,7 +2,7 @@
 NOTE: This is generated code. Look in README.python for information on
       remaking this file.
 */
-#include "sphinxbase/f2c.h"
+#include "util/f2c.h"
 
 #ifdef HAVE_CONFIG
 #include "config.h"

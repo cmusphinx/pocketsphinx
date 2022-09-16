@@ -42,14 +42,10 @@
 #ifndef __HMM_H__
 #define __HMM_H__
 
-/* System headers. */
 #include <stdio.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/fixpoint.h>
-#include <sphinxbase/listelem_alloc.h>
-
-/* PocketSphinx headers. */
+#include "fe/fixpoint.h"
+#include "util/listelem_alloc.h"
 #include "bin_mdef.h"
 
 #ifdef __cplusplus

@@ -43,8 +43,9 @@
 #ifndef __TIED_MGAU_COMMON_H__
 #define __TIED_MGAU_COMMON_H__
 
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/fixpoint.h>
+#include <pocketsphinx/logmath.h>
+
+#include "fe/fixpoint.h"
 
 #ifdef __cplusplus
 extern "C" {

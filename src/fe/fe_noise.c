@@ -53,13 +53,13 @@
 
 #include <math.h>
 
-#include "sphinxbase/prim_type.h"
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/strfuncs.h"
-#include "sphinxbase/err.h"
+#include <pocketsphinx.h>
 
-#include "fe_noise.h"
-#include "fe_internal.h"
+#include "util/ckd_alloc.h"
+#include "util/strfuncs.h"
+
+#include "fe/fe_noise.h"
+#include "fe/fe_internal.h"
 
 /* Noise supression constants */
 #define SMOOTH_WINDOW 4

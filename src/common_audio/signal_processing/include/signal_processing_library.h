@@ -19,7 +19,7 @@
 
 #include <string.h>
 
-#include <sphinxbase/sphinx_config.h>
+#include <pocketsphinx/sphinx_config.h>
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #else

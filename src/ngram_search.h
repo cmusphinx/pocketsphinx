@@ -42,15 +42,10 @@
 #ifndef __NGRAM_SEARCH_H__
 #define __NGRAM_SEARCH_H__
 
-/* SphinxBase headers. */
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/ngram_model.h>
-#include <sphinxbase/listelem_alloc.h>
-#include <sphinxbase/err.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
-#include <pocketsphinx/export.h>
+#include "lm/ngram_model.h"
+#include "util/listelem_alloc.h"
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
 
@@ -408,7 +403,6 @@ void ngram_search_free_all_rc(ngram_search_t *ngs, int32 w);
  *
  * @return the backpointer index of the best word exit.
  */
-POCKETSPHINX_EXPORT
 int ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score);
 
 /**
@@ -416,7 +410,6 @@ int ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_s
  *
  * @return a <strong>read-only</strong> string with the best hypothesis.
  */
-POCKETSPHINX_EXPORT
 char const *ngram_search_bp_hyp(ngram_search_t *ngs, int bpidx);
 
 /**
@@ -427,7 +420,6 @@ void ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf);
 /**
  * Construct a word lattice from the current hypothesis.
  */
-POCKETSPHINX_EXPORT
 ps_lattice_t *ngram_search_lattice(ps_search_t *search);
 
 /**

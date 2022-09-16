@@ -5,8 +5,8 @@
 #ifndef __RTC_BASE_TYPEDEFS_H__
 #define __RTC_BASE_TYPEDEFS_H__
 
-#include <sphinxbase/sphinx_config.h>
-#include <sphinxbase/prim_type.h>
+#include <pocketsphinx/sphinx_config.h>
+#include <pocketsphinx/prim_type.h>
 
 #ifndef HAVE_STDINT_H
 typedef int32		int32_t;

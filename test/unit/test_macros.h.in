@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include <sphinxbase/logmath.h>
+#include <pocketsphinx/logmath.h>
 
 #define EPSILON 0.01
 #define TEST_ASSERT(x) if (!(x)) { fprintf(stderr, "FAIL: %s\n", #x); exit(1); }

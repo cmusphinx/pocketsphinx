@@ -47,13 +47,10 @@
 #ifndef __PHONE_LOOP_SEARCH_H__
 #define __PHONE_LOOP_SEARCH_H__
 
-/* SphinxBase headers. */
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/ngram_model.h>
-#include <sphinxbase/listelem_alloc.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
+#include "lm/ngram_model.h"
+#include "util/listelem_alloc.h"
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
 

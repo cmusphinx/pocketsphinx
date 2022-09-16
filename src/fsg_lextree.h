@@ -39,11 +39,9 @@
 #ifndef __S2_FSG_LEXTREE_H__
 #define __S2_FSG_LEXTREE_H__
 
-/* SphinxBase headers. */
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/fsg_model.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
+#include "lm/fsg_model.h"
 #include "hmm.h"
 #include "dict.h"
 #include "dict2pid.h"

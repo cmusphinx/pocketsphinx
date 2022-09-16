@@ -38,16 +38,17 @@
 #include <string.h>
 #include <assert.h>
 
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/strfuncs.h"
-#include "sphinxbase/hash_table.h"
-#include "sphinxbase/filename.h"
-#include "sphinxbase/err.h"
-#include "sphinxbase/jsgf.h"
+#include <pocketsphinx.h>
 
-#include "jsgf_internal.h"
-#include "jsgf_parser.h"
-#include "jsgf_scanner.h"
+#include "util/ckd_alloc.h"
+#include "util/strfuncs.h"
+#include "util/hash_table.h"
+#include "util/filename.h"
+
+#include "lm/jsgf.h"
+#include "lm/jsgf_internal.h"
+#include "lm/jsgf_parser.h"
+#include "lm/jsgf_scanner.h"
 
 extern int yyparse(void *scanner, jsgf_t * jsgf);
 
@@ -871,7 +872,6 @@ jsgf_set_search_path(jsgf_t * jsgf, const char *filename)
 #if !defined(_WIN32_WCE)
     if ((jsgf_path = getenv("JSGF_PATH")) != NULL) {
         char *word, *c;
-        /* FIXME: This should be a function in libsphinxbase. */
         word = jsgf_path = ckd_salloc(jsgf_path);
         while ((c = strchr(word, ':'))) {
             *c = '\0';
@@ -963,4 +963,21 @@ jsgf_parse_string(const char *string, jsgf_t * parent)
     yylex_destroy(yyscanner);
 
     return jsgf;
+}
+
+jsgf_rule_iter_t *
+jsgf_rule_iter_next(jsgf_rule_iter_t *itor)
+{
+    return hash_table_iter_next(itor);
+}
+
+jsgf_rule_t *jsgf_rule_iter_rule(jsgf_rule_iter_t *itor)
+{
+    return ((jsgf_rule_t *)(itor)->ent->val);
+}
+
+void
+jsgf_rule_iter_free(jsgf_rule_iter_t *itor)
+{
+    return hash_table_iter_free(itor);
 }

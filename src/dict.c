@@ -35,14 +35,11 @@
  *
  */
 
-/* System headers. */
 #include <string.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/pio.h>
-#include <sphinxbase/strfuncs.h>
-
-/* Local headers. */
+#include "util/pio.h"
+#include "util/ckd_alloc.h"
+#include "util/strfuncs.h"
 #include "dict.h"
 
 
@@ -260,8 +257,8 @@ dict_init(ps_config_t *config, bin_mdef_t * mdef)
     char const *dictfile = NULL, *fillerfile = NULL;
 
     if (config) {
-        dictfile = cmd_ln_str_r(config, "-dict");
-        fillerfile = cmd_ln_str_r(config, "_fdict");
+        dictfile = ps_config_str(config, "dict");
+        fillerfile = ps_config_str(config, "fdict");
     }
 
     /*
@@ -325,8 +322,8 @@ dict_init(ps_config_t *config, bin_mdef_t * mdef)
         d->mdef = bin_mdef_retain(mdef);
 
     /* Create new hash table for word strings; case-insensitive word strings */
-    if (config && cmd_ln_exists_r(config, "-dictcase"))
-        d->nocase = cmd_ln_boolean_r(config, "-dictcase");
+    if (config)
+        d->nocase = ps_config_bool(config, "dictcase");
     d->ht = hash_table_new(d->max_words, d->nocase);
 
     /* Digest main dictionary file */

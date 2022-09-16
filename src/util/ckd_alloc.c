@@ -94,8 +94,9 @@
 #pragma warning (disable: 4996)
 #endif
 
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/err.h"
+#include <pocketsphinx/err.h>
+
+#include "util/ckd_alloc.h"
 
 /**
  * Target for longjmp() on failure.

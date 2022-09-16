@@ -10,7 +10,7 @@
 		http://www.netlib.org/f2c/libf2c.zip
 */
 
-#include "sphinxbase/f2c.h"
+#include "util/f2c.h"
 
 #ifdef _MSC_VER
 #pragma warning (disable: 4244)

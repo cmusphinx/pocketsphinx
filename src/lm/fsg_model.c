@@ -36,15 +36,15 @@
 #include <string.h>
 #include <assert.h>
 
-/* SphinxBase headers. */
-#include "sphinxbase/err.h"
-#include "sphinxbase/pio.h"
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/prim_type.h"
-#include "sphinxbase/strfuncs.h"
-#include "sphinxbase/hash_table.h"
-#include "sphinxbase/fsg_model.h"
-#include "sphinxbase/bitvec.h"
+#include <pocketsphinx.h>
+
+#include "util/pio.h"
+#include "util/ckd_alloc.h"
+#include "util/strfuncs.h"
+#include "util/hash_table.h"
+#include "util/bitvec.h"
+
+#include "lm/fsg_model.h"
 
 /**
  * Adjacency list (opaque) for a state in an FSG.

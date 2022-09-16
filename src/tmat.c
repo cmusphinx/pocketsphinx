@@ -35,19 +35,16 @@
  *
  */
 
-/* System headers. */
 #include <string.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/bio.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
+#include "util/ckd_alloc.h"
+#include "util/bio.h"
+#include "util/vector.h"
+
 #include "tmat.h"
 #include "hmm.h"
-#include "vector.h"
 
 #define TMAT_PARAM_VERSION		"1.0"
 

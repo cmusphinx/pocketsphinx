@@ -19,27 +19,26 @@ int
 main(int argc, char *argv[])
 {
     ps_decoder_t *decoder;
-    cmd_ln_t *config;
+    ps_config_t *config;
     char *soxcmd;
     FILE *sox;
     #define BUFLEN 4096 // about 250ms
     short buf[BUFLEN];
     size_t len;
 
-    if ((config = cmd_ln_parse_r(NULL, ps_args(), argc, argv, FALSE)) == NULL)
-        E_FATAL("Command line parse failed\n");
+    config = ps_config_init(NULL);
     ps_default_search_args(config);
     if ((decoder = ps_init(config)) == NULL)
         E_FATAL("PocketSphinx decoder init failed\n");
     #define SOXCMD "sox -q -r %ld -c 1 -b 16 -e signed-integer -d -t raw -"
     len = snprintf(NULL, 0, SOXCMD,
-                   cmd_ln_int_r(config, "-samprate"));
+                   ps_config_int(config, "samprate"));
     if ((soxcmd = malloc(len + 1)) == NULL)
         E_FATAL_SYSTEM("Failed to allocate string");
     if (signal(SIGINT, catch_sig) == SIG_ERR)
         E_FATAL_SYSTEM("Failed to set SIGINT handler");
     if (snprintf(soxcmd, len + 1, SOXCMD,
-                 cmd_ln_int_r(config, "-samprate")) != len)
+                 ps_config_int(config, "samprate")) != len)
         E_FATAL_SYSTEM("snprintf() failed");
     if ((sox = popen(soxcmd, "r")) == NULL)
         E_FATAL_SYSTEM("Failed to popen(%s)", soxcmd);
@@ -59,8 +58,8 @@ main(int argc, char *argv[])
         E_ERROR_SYSTEM("Failed to pclose(sox)");
     if (ps_get_hyp(decoder, NULL) != NULL)
         printf("%s\n", ps_get_hyp(decoder, NULL));
-    cmd_ln_free_r(config);
     ps_free(decoder);
+    ps_config_free(config);
         
     return 0;
 }

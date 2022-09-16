@@ -38,16 +38,13 @@
  * @author Bhiksha Raj <bhiksha@cs.cmu.edu>
  */
 
-/* System headers. */
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/err.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
+#include "util/ckd_alloc.h"
 #include "fsg_lextree.h"
 
 #define __FSG_DBG__		0

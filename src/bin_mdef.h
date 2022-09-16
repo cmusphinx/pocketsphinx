@@ -52,14 +52,9 @@ extern "C" {
 }
 #endif
 
-/* SphinxBase headers. */
-#include <sphinxbase/mmio.h>
-#include <sphinxbase/cmd_ln.h>
-#include <pocketsphinx/export.h>
-
-/* Public headers. */
 #include <pocketsphinx.h>
 
+#include "util/mmio.h"
 #include "mdef.h"
 
 #define BIN_MDEF_FORMAT_VERSION 1
@@ -171,39 +166,37 @@ struct bin_mdef_s {
 /**
  * Read a binary mdef from a file.
  */
-POCKETSPHINX_EXPORT
 bin_mdef_t *bin_mdef_read(ps_config_t *config, const char *filename);
+
 /**
  * Read a text mdef from a file (creating an in-memory binary mdef).
  */
-POCKETSPHINX_EXPORT
 bin_mdef_t *bin_mdef_read_text(ps_config_t *config, const char *filename);
+
 /**
  * Write a binary mdef to a file.
  */
-POCKETSPHINX_EXPORT
 int bin_mdef_write(bin_mdef_t *m, const char *filename);
+
 /**
  * Write a binary mdef to a text file.
  */
-POCKETSPHINX_EXPORT
 int bin_mdef_write_text(bin_mdef_t *m, const char *filename);
+
 /**
  * Retain a pointer to a bin_mdef_t.
  */
-POCKETSPHINX_EXPORT
 bin_mdef_t *bin_mdef_retain(bin_mdef_t *m);
+
 /**
  * Release a pointer to a binary mdef.
  */
-POCKETSPHINX_EXPORT
 int bin_mdef_free(bin_mdef_t *m);
 
 /**
  * Context-independent phone lookup.
  * @return phone id for ciphone.
  */
-POCKETSPHINX_EXPORT
 int bin_mdef_ciphone_id(bin_mdef_t *m,	       /**< In: Model structure being queried */
 			const char *ciphone);  /**< In: ciphone for which id wanted */
 
@@ -211,17 +204,14 @@ int bin_mdef_ciphone_id(bin_mdef_t *m,	       /**< In: Model structure being que
  * Case-insensitive context-independent phone lookup.
  * @return phone id for ciphone.
  */
-POCKETSPHINX_EXPORT
 int bin_mdef_ciphone_id_nocase(bin_mdef_t *m,	     /**< In: Model structure being queried */
 			       const char *ciphone); /**< In: ciphone for which id wanted */
 
 /* Return value: READ-ONLY ciphone string name for the given ciphone id */
-POCKETSPHINX_EXPORT
 const char *bin_mdef_ciphone_str(bin_mdef_t *m,	/**< In: Model structure being queried */
 				 int32 ci);	/**< In: ciphone id for which name wanted */
 
 /* Return value: phone id for the given constituents if found, else -1 */
-POCKETSPHINX_EXPORT
 int bin_mdef_phone_id(bin_mdef_t *m,	/**< In: Model structure being queried */
 		      int32 b,		/**< In: base ciphone id */
 		      int32 l,		/**< In: left context ciphone id */
@@ -229,7 +219,6 @@ int bin_mdef_phone_id(bin_mdef_t *m,	/**< In: Model structure being queried */
 		      int32 pos);	/**< In: Word position */
 
 /* Look up a phone id, backing off to other word positions. */
-POCKETSPHINX_EXPORT
 int bin_mdef_phone_id_nearest(bin_mdef_t * m, int32 b,
 			      int32 l, int32 r, int32 pos);
 
@@ -238,7 +227,6 @@ int bin_mdef_phone_id_nearest(bin_mdef_t * m, int32 b,
  *
  * @return 0 if successful, -1 if error.
  */
-POCKETSPHINX_EXPORT
 int bin_mdef_phone_str(bin_mdef_t *m,	/**< In: Model structure being queried */
 		       int pid,		/**< In: phone id being queried */
 		       char *buf);	/**< Out: On return, buf has the string */

@@ -42,12 +42,10 @@
 #ifndef __S2_SEMI_MGAU_H__
 #define __S2_SEMI_MGAU_H__
 
-/* SphinxBase headesr. */
-#include <sphinxbase/fe.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/mmio.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
+#include "fe/fe.h"
+#include "util/mmio.h"
 #include "acmod.h"
 #include "hmm.h"
 #include "bin_mdef.h"
