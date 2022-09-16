@@ -11,10 +11,12 @@ add_library(_pocketsphinx MODULE ${_pocketsphinx})
 target_link_libraries(_pocketsphinx pocketsphinx)
 target_include_directories(
   _pocketsphinx PRIVATE ${PYTHON_INCLUDE_DIR}
-  _pocketsphinx PRIVATE ${PROJECT_SOURCE_DIR}/src
-  _pocketsphinx PRIVATE ${PROJECT_SOURCE_DIR}/include
-  _pocketsphinx PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  _pocketsphinx PRIVATE ${CMAKE_BINARY_DIR} # for config.h
+  _pocketsphinx PRIVATE ${CMAKE_BINARY_DIR}
+  _pocketsphinx PRIVATE ${CMAKE_SOURCE_DIR}/src
+  _pocketsphinx PUBLIC ${CMAKE_SOURCE_DIR}/include
+  _pocketsphinx PUBLIC ${CMAKE_BINARY_DIR}/include
+  _pocketsphinx INTERFACE ${CMAKE_SOURCE_DIR}/include
+  _pocketsphinx INTERFACE ${CMAKE_BINARY_DIR}/include
   )
 python_extension_module(_pocketsphinx)
 install(TARGETS _pocketsphinx LIBRARY DESTINATION cython/pocketsphinx)
