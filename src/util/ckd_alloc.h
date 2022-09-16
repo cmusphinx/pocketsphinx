@@ -90,6 +90,8 @@
 #include <setjmp.h>
 
 #include <pocketsphinx/prim_type.h>
+#include <pocketsphinx/export.h>
+
 
 /** \file ckd_alloc.h
  *\brief Sphinx's memory allocation/deallocation routines.
@@ -136,13 +138,15 @@ void ckd_fail(char *format, ...);
  * message if any error occurs, with any other behaviour determined by
  * ckd_set_jump(), above.
  */
-
+POCKETSPHINX_EXPORT
 void *__ckd_calloc__(size_t n_elem, size_t elem_size,
 		     const char *caller_file, int caller_line);
 
+POCKETSPHINX_EXPORT
 void *__ckd_malloc__(size_t size,
 		     const char *caller_file, int caller_line);
 
+POCKETSPHINX_EXPORT
 void *__ckd_realloc__(void *ptr, size_t new_size,
 		      const char *caller_file, int caller_line);
 
@@ -150,6 +154,7 @@ void *__ckd_realloc__(void *ptr, size_t new_size,
  * Like strdup, except that if an error occurs it prints a diagnostic message and
  * exits. If origin in NULL the function also returns NULL.
  */
+POCKETSPHINX_EXPORT
 char *__ckd_salloc__(const char *origstr,
 		     const char *caller_file, int caller_line);
 
@@ -157,6 +162,7 @@ char *__ckd_salloc__(const char *origstr,
  * Allocate a 2-D array and return ptr to it (ie, ptr to vector of ptrs).
  * The data area is allocated in one block so it can also be treated as a 1-D array.
  */
+POCKETSPHINX_EXPORT
 void *__ckd_calloc_2d__(size_t d1, size_t d2,	/* In: #elements in the 2 dimensions */
                         size_t elemsize,	/* In: Size (#bytes) of each element */
                         const char *caller_file, int caller_line);	/* In */
@@ -205,11 +211,13 @@ void *__ckd_alloc_2d_ptr(size_t d1,
 /**
  * Test and free a 1-D array
  */
+POCKETSPHINX_EXPORT
 void ckd_free(void *ptr);
 
 /**
  * Free a 2-D array (ptr) previously allocated by ckd_calloc_2d
  */
+POCKETSPHINX_EXPORT
 void ckd_free_2d(void *ptr);
 
 /**

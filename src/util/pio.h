@@ -88,6 +88,7 @@
 #endif
 
 #include <pocketsphinx/prim_type.h>
+#include <pocketsphinx/export.h>
 
 /** \file pio.h
  * \brief file IO related operations.  
@@ -161,6 +162,7 @@ int32 fread_retry(void *pointer, int32 size, int32 num_items, FILE *stream);
  * @param out_len Output: if not NULL, length of the string read.
  * @return allocated string containing the line, or NULL on error or EOF.
  */
+POCKETSPHINX_EXPORT
 char *fread_line(FILE *stream, size_t *out_len);
 
 /**
@@ -178,6 +180,7 @@ typedef struct lineiter_t {
 /**
  * Start reading lines from a file.
  */
+POCKETSPHINX_EXPORT
 lineiter_t *lineiter_start(FILE *fh);
 
 /**
@@ -188,6 +191,7 @@ lineiter_t *lineiter_start_clean(FILE *fh);
 /**
  * Move to the next line in the file.
  */
+POCKETSPHINX_EXPORT
 lineiter_t *lineiter_next(lineiter_t *li);
 
 /**
@@ -277,6 +281,7 @@ int32 stat_mtime (const char *file);
  *
  * @return 0 on success, <0 on failure.
  */
+POCKETSPHINX_EXPORT
 int build_directory(const char *path);
 
 #ifdef __cplusplus

@@ -53,6 +53,7 @@ extern "C" {
 #endif
 
 #include <pocketsphinx.h>
+#include <pocketsphinx/export.h>
 
 #include "util/mmio.h"
 #include "mdef.h"
@@ -166,21 +167,25 @@ struct bin_mdef_s {
 /**
  * Read a binary mdef from a file.
  */
+POCKETSPHINX_EXPORT
 bin_mdef_t *bin_mdef_read(ps_config_t *config, const char *filename);
 
 /**
  * Read a text mdef from a file (creating an in-memory binary mdef).
  */
+POCKETSPHINX_EXPORT
 bin_mdef_t *bin_mdef_read_text(ps_config_t *config, const char *filename);
 
 /**
  * Write a binary mdef to a file.
  */
+POCKETSPHINX_EXPORT
 int bin_mdef_write(bin_mdef_t *m, const char *filename);
 
 /**
  * Write a binary mdef to a text file.
  */
+POCKETSPHINX_EXPORT
 int bin_mdef_write_text(bin_mdef_t *m, const char *filename);
 
 /**

@@ -62,6 +62,7 @@
 #include <stdarg.h>
 
 #include <pocketsphinx.h>
+#include <pocketsphinx/export.h>
 
 #include "util/hash_table.h"
 
@@ -193,6 +194,7 @@ int cmd_ln_free_r(cmd_ln_t *cmdln);
  * @return A cmd_ln_t containing the results of command line parsing,
  *         or NULL on failure.
  **/
+POCKETSPHINX_EXPORT
 cmd_ln_t *cmd_ln_parse_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-line to update,
                                                      or NULL to create a new one. */
                          arg_t const *defn,	/**< In: Array of argument name definitions */
@@ -211,6 +213,7 @@ cmd_ln_t *cmd_ln_parse_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-li
  *
  * @return A cmd_ln_t containing the results of command line parsing, or NULL on failure.
  */
+POCKETSPHINX_EXPORT
 cmd_ln_t *cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-line to update,
                                                      or NULL to create a new one. */
                               arg_t const *defn,   /**< In: Array of argument name definitions*/
@@ -256,6 +259,7 @@ void cmd_ln_set_str_extra_r(cmd_ln_t *cmdln, char const *name, char const *str);
  * @param cmdln command-line object
  * @param defn array of argument name definitions.
  */
+POCKETSPHINX_EXPORT
 void cmd_ln_log_help_r (cmd_ln_t *cmdln, const arg_t *defn);
 
 /**

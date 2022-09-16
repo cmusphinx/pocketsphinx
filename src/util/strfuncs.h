@@ -45,6 +45,7 @@
 #include <stdarg.h>
 
 #include <pocketsphinx/prim_type.h>
+#include <pocketsphinx/export.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,6 +59,7 @@ extern "C" {
  * Concatenate a NULL-terminated argument list of strings, returning a
  * newly allocated string.
  **/
+POCKETSPHINX_EXPORT
 char *string_join(const char *base, ...);
 
 /**
@@ -75,6 +77,7 @@ enum string_edge_e {
  * @param string string to trim, contents will be modified.
  * @param which one of STRING_START, STRING_END, or STRING_BOTH.
  */
+POCKETSPHINX_EXPORT
 char *string_trim(char *string, enum string_edge_e which);
 
 /**
@@ -84,6 +87,7 @@ char *string_trim(char *string, enum string_edge_e which);
  * locale in a threaded program is extremely uncool, therefore we need
  * this since we pass floats as strings in 1000 different places.
  */
+POCKETSPHINX_EXPORT
 double atof_c(char const *str);
 
 /* FIXME: Both of these string splitting functions basically suck.  I
@@ -96,6 +100,7 @@ double atof_c(char const *str);
  * every word in the line.
  * Return value: No. of words found; -1 if no. of words in line exceeds n_wptr.
  */
+POCKETSPHINX_EXPORT
 int32 str2words (char *line,	/**< In/Out: line to be parsed.  This
 				   string will be modified! (NUL
 				   characters inserted at word

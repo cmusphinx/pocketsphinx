@@ -52,6 +52,8 @@
 #include <string.h>
 
 #include <pocketsphinx.h>
+#include <pocketsphinx/export.h>
+
 #include "util/glist.h"
 #include "util/bitvec.h"
 #include "util/hash_table.h"
@@ -190,6 +192,7 @@ fsg_model_t *fsg_model_init(char const *name, logmath_t *lmath,
  * Return value: a new fsg_model_t structure if the file is successfully
  * read, NULL otherwise.
  */
+POCKETSPHINX_EXPORT
 fsg_model_t *fsg_model_readfile(const char *file, logmath_t *lmath, float32 lw);
 
 /**
@@ -255,6 +258,7 @@ int32 fsg_model_tag_trans_add(fsg_model_t * fsg, int32 from, int32 to,
  * @param nulls List of null transitions, or NULL to find them automatically.
  * @return Updated list of null transitions.
  */
+POCKETSPHINX_EXPORT
 glist_t fsg_model_null_trans_closure(fsg_model_t * fsg, glist_t nulls);
 
 /**
@@ -304,31 +308,37 @@ int fsg_model_add_alt(fsg_model_t * fsg, char const *baseword,
 /**
  * Write FSG to a file.
  */
+POCKETSPHINX_EXPORT
 void fsg_model_write(fsg_model_t *fsg, FILE *fp);
 
 /**
  * Write FSG to a file.
  */
+POCKETSPHINX_EXPORT
 void fsg_model_writefile(fsg_model_t *fsg, char const *file);
 
 /**
  * Write FSG to a file in AT&T FSM format.
  */
+POCKETSPHINX_EXPORT
 void fsg_model_write_fsm(fsg_model_t *fsg, FILE *fp);
 
 /**
  * Write FSG to a file in AT&T FSM format.
  */
+POCKETSPHINX_EXPORT
 void fsg_model_writefile_fsm(fsg_model_t *fsg, char const *file);
 
 /**
  * Write FSG symbol table to a file (for AT&T FSM)
  */
+POCKETSPHINX_EXPORT
 void fsg_model_write_symtab(fsg_model_t *fsg, FILE *file);
 
 /**
  * Write FSG symbol table to a file (for AT&T FSM)
  */
+POCKETSPHINX_EXPORT
 void fsg_model_writefile_symtab(fsg_model_t *fsg, char const *file);
 
 #ifdef __cplusplus

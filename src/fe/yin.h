@@ -50,6 +50,7 @@ extern "C" {
 #endif
 
 #include <pocketsphinx/prim_type.h>
+#include <pocketsphinx/export.h>
 
 /**
  * Frame-based moving-window pitch estimator.
@@ -59,22 +60,26 @@ typedef struct yin_s yin_t;
 /**
  * Initialize moving-window pitch estimation.
  */
+POCKETSPHINX_EXPORT
 yin_t *yin_init(int frame_size, float search_threshold,
                 float search_range, int smooth_window);
 
 /**
  * Free a moving-window pitch estimator.
  */
+POCKETSPHINX_EXPORT
 void yin_free(yin_t *pe);
 
 /**
  * Start processing an utterance.
  */
+POCKETSPHINX_EXPORT
 void yin_start(yin_t *pe);
 
 /**
  * Mark the end of an utterance.
  */
+POCKETSPHINX_EXPORT
 void yin_end(yin_t *pe);
 
 /**
@@ -84,6 +89,7 @@ void yin_end(yin_t *pe);
  * @param frame Frame of <code>frame_size</code> (see
  * yin_init()) samples of audio data.
  */
+POCKETSPHINX_EXPORT
 void yin_write(yin_t *pe, int16 const *frame);
 
 /**
@@ -99,6 +105,7 @@ void yin_write(yin_t *pe, int16 const *frame);
  * @return Non-zero if enough data was avaliable to return a pitch
  *         estimate, zero otherwise.
  */
+POCKETSPHINX_EXPORT
 int yin_read(yin_t *pe, uint16 *out_period, uint16 *out_bestdiff);
 
 #ifdef __cplusplus

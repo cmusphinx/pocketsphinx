@@ -62,6 +62,7 @@
 #define _LIBUTIL_FILENAME_H_
 
 #include <pocketsphinx/prim_type.h>
+#include <pocketsphinx/export.h>
 
 /**\file filename.h
  *\brief File names related operation
@@ -83,6 +84,7 @@ const char *path2basename(const char *path);
  * Strip off filename from the given path and copy the directory name into dir
  * Caller must have allocated dir (hint: it's always shorter than path).
  */
+POCKETSPHINX_EXPORT
 void path2dirname(const char *path, char *dir);
 
 

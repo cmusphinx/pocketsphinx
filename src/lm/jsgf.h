@@ -48,6 +48,7 @@
 
 /* Not much here anymore! */
 #include <pocketsphinx/model.h>
+#include <pocketsphinx/export.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,6 +65,11 @@ extern "C" {
  * @return new JSGF grammar object, or NULL on failure.
  */
 jsgf_t *jsgf_grammar_new(jsgf_t *parent);
+
+POCKETSPHINX_EXPORT
+fsg_model_t *jsgf_build_fsg_raw(jsgf_t * grammar, jsgf_rule_t * rule,
+                   logmath_t * lmath, float32 lw);
+
 
 #ifdef __cplusplus
 }
