@@ -39,16 +39,11 @@
  * @file ngram_search.c N-Gram based multi-pass search ("FBS")
  */
 
-/* System headers. */
 #include <string.h>
 #include <assert.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/listelem_alloc.h>
-#include <sphinxbase/err.h>
-
-/* Local headers. */
+#include "util/ckd_alloc.h"
+#include "util/listelem_alloc.h"
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
 #include "ngram_search.h"
@@ -103,37 +98,37 @@ ngram_search_calc_beams(ngram_search_t *ngs)
     acmod = ps_search_acmod(ngs);
 
     /* Log beam widths. */
-    ngs->beam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam"))>>SENSCR_SHIFT;
-    ngs->wbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-wbeam"))>>SENSCR_SHIFT;
-    ngs->pbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-pbeam"))>>SENSCR_SHIFT;
-    ngs->lpbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-lpbeam"))>>SENSCR_SHIFT;
-    ngs->lponlybeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-lponlybeam"))>>SENSCR_SHIFT;
-    ngs->fwdflatbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatbeam"))>>SENSCR_SHIFT;
-    ngs->fwdflatwbeam = logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-fwdflatwbeam"))>>SENSCR_SHIFT;
+    ngs->beam = logmath_log(acmod->lmath, ps_config_float(config, "beam"))>>SENSCR_SHIFT;
+    ngs->wbeam = logmath_log(acmod->lmath, ps_config_float(config, "wbeam"))>>SENSCR_SHIFT;
+    ngs->pbeam = logmath_log(acmod->lmath, ps_config_float(config, "pbeam"))>>SENSCR_SHIFT;
+    ngs->lpbeam = logmath_log(acmod->lmath, ps_config_float(config, "lpbeam"))>>SENSCR_SHIFT;
+    ngs->lponlybeam = logmath_log(acmod->lmath, ps_config_float(config, "lponlybeam"))>>SENSCR_SHIFT;
+    ngs->fwdflatbeam = logmath_log(acmod->lmath, ps_config_float(config, "fwdflatbeam"))>>SENSCR_SHIFT;
+    ngs->fwdflatwbeam = logmath_log(acmod->lmath, ps_config_float(config, "fwdflatwbeam"))>>SENSCR_SHIFT;
 
     /* Absolute pruning parameters. */
-    ngs->maxwpf = cmd_ln_int32_r(config, "-maxwpf");
-    ngs->maxhmmpf = cmd_ln_int32_r(config, "-maxhmmpf");
+    ngs->maxwpf = ps_config_int(config, "maxwpf");
+    ngs->maxhmmpf = ps_config_int(config, "maxhmmpf");
 
     /* Various penalties which may or may not be useful. */
-    ngs->wip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-wip")) >>SENSCR_SHIFT;
-    ngs->nwpen = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-nwpen")) >>SENSCR_SHIFT;
-    ngs->pip = logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-pip")) >>SENSCR_SHIFT;
+    ngs->wip = logmath_log(acmod->lmath, ps_config_float(config, "wip")) >>SENSCR_SHIFT;
+    ngs->nwpen = logmath_log(acmod->lmath, ps_config_float(config, "nwpen")) >>SENSCR_SHIFT;
+    ngs->pip = logmath_log(acmod->lmath, ps_config_float(config, "pip")) >>SENSCR_SHIFT;
     ngs->silpen = ngs->pip
-        + (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-silprob"))>>SENSCR_SHIFT);
+        + (logmath_log(acmod->lmath, ps_config_float(config, "silprob"))>>SENSCR_SHIFT);
     ngs->fillpen = ngs->pip
-        + (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-fillprob"))>>SENSCR_SHIFT);
+        + (logmath_log(acmod->lmath, ps_config_float(config, "fillprob"))>>SENSCR_SHIFT);
 
     /* Language weight ratios for fwdflat and bestpath search. */
     ngs->fwdflat_fwdtree_lw_ratio =
-        cmd_ln_float32_r(config, "-fwdflatlw")
-        / cmd_ln_float32_r(config, "-lw");
+        ps_config_float(config, "fwdflatlw")
+        / ps_config_float(config, "lw");
     ngs->bestpath_fwdtree_lw_ratio =
-        cmd_ln_float32_r(config, "-bestpathlw")
-        / cmd_ln_float32_r(config, "-lw");
+        ps_config_float(config, "bestpathlw")
+        / ps_config_float(config, "lw");
 
     /* Acoustic score scale for posterior probabilities. */
-    ngs->ascale = 1.0 / cmd_ln_float32_r(config, "-ascale");
+    ngs->ascale = 1.0 / ps_config_float(config, "ascale");
 }
 
 ps_search_t *
@@ -149,8 +144,8 @@ ngram_search_init(const char *name,
 
     /* Make the acmod's feature buffer growable if we are doing two-pass
      * search. */
-    acmod_set_grow(acmod, cmd_ln_boolean_r(config, "-fwdflat") &&
-                          cmd_ln_boolean_r(config, "-fwdtree"));
+    acmod_set_grow(acmod, ps_config_bool(config, "fwdflat") &&
+                          ps_config_bool(config, "fwdtree"));
 
     ngs = ckd_calloc(1, sizeof(*ngs));
     ps_search_init(&ngs->base, &ngram_funcs, PS_SEARCH_TYPE_NGRAM, name, config, acmod, dict, d2p);
@@ -179,7 +174,7 @@ ngram_search_init(const char *name,
 
     /* FIXME: All these structures need to be made dynamic with
      * garbage collection. */
-    ngs->bp_table_size = cmd_ln_int32_r(config, "-latsize");
+    ngs->bp_table_size = ps_config_int(config, "latsize");
     ngs->bp_table = ckd_calloc(ngs->bp_table_size,
                                sizeof(*ngs->bp_table));
     /* FIXME: This thing is frickin' huge. */
@@ -211,19 +206,19 @@ ngram_search_init(const char *name,
     ngram_search_update_widmap(ngs);
 
     /* Initialize fwdtree, fwdflat, bestpath modules if necessary. */
-    if (cmd_ln_boolean_r(config, "-fwdtree")) {
+    if (ps_config_bool(config, "fwdtree")) {
         ngram_fwdtree_init(ngs);
         ngs->fwdtree = TRUE;
         ngs->fwdtree_perf.name = "fwdtree";
         ptmr_init(&ngs->fwdtree_perf);
     }
-    if (cmd_ln_boolean_r(config, "-fwdflat")) {
+    if (ps_config_bool(config, "fwdflat")) {
         ngram_fwdflat_init(ngs);
         ngs->fwdflat = TRUE;
         ngs->fwdflat_perf.name = "fwdflat";
         ptmr_init(&ngs->fwdflat_perf);
     }
-    if (cmd_ln_boolean_r(config, "-bestpath")) {
+    if (ps_config_bool(config, "bestpath")) {
         ngs->bestpath = TRUE;
         ngs->bestpath_perf.name = "bestpath";
         ptmr_init(&ngs->bestpath_perf);
@@ -296,7 +291,7 @@ ngram_search_free(ps_search_t *search)
         ngram_fwdflat_deinit(ngs);
     if (ngs->bestpath) {
         double n_speech = (double)ngs->n_tot_frame
-            / cmd_ln_int32_r(ps_search_config(ngs), "-frate");
+            / ps_config_int(ps_search_config(ngs), "frate");
 
         E_INFO("TOTAL bestpath %.2f CPU %.3f xRT\n",
                ngs->bestpath_perf.t_tot_cpu,
@@ -867,7 +862,7 @@ ngram_search_hyp(ps_search_t *search, int32 *out_score)
         hyp = ps_lattice_hyp(dag, link);
         ptmr_stop(&ngs->bestpath_perf);
         n_speech = (double)dag->n_frames
-            / cmd_ln_int32_r(ps_search_config(ngs), "-frate");
+            / ps_config_int(ps_search_config(ngs), "frate");
         E_INFO("bestpath %.2f CPU %.3f xRT\n",
                ngs->bestpath_perf.t_cpu,
                ngs->bestpath_perf.t_cpu / n_speech);
@@ -1022,7 +1017,7 @@ ngram_search_seg_iter(ps_search_t *search)
                                    ngs->bestpath_fwdtree_lw_ratio);
         ptmr_stop(&ngs->bestpath_perf);
         n_speech = (double)dag->n_frames
-            / cmd_ln_int32_r(ps_search_config(ngs), "-frate");
+            / ps_config_int(ps_search_config(ngs), "frate");
         E_INFO("bestpath %.2f CPU %.3f xRT\n",
                ngs->bestpath_perf.t_cpu,
                ngs->bestpath_perf.t_cpu / n_speech);
@@ -1223,7 +1218,7 @@ ngram_search_lattice(ps_search_t *search)
     float lwf;
 
     ngs = (ngram_search_t *)search;
-    min_endfr = cmd_ln_int32_r(ps_search_config(search), "-min_endfr");
+    min_endfr = ps_config_int(ps_search_config(search), "min_endfr");
 
     /* If the best score is WORST_SCORE or worse, there is no way to
      * make a lattice. */

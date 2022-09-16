@@ -42,12 +42,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "sphinxbase/err.h"
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/strfuncs.h"
-#include "sphinxbase/filename.h"
+#include <pocketsphinx/err.h>
+#include "util/ckd_alloc.h"
+#include "util/strfuncs.h"
+#include "util/filename.h"
 
-#include "ngram_model_set.h"
+#include "lm/ngram_model_set.h"
 
 static ngram_funcs_t ngram_model_set_funcs;
 
@@ -121,7 +121,7 @@ build_widmap(ngram_model_t * base, logmath_t * lmath, int32 n)
 }
 
 ngram_model_t *
-ngram_model_set_init(cmd_ln_t * config,
+ngram_model_set_init(ps_config_t * config,
                      ngram_model_t ** models,
                      char **names, const float32 * weights, int32 n_models)
 {
@@ -183,7 +183,7 @@ ngram_model_set_init(cmd_ln_t * config,
 }
 
 ngram_model_t *
-ngram_model_set_read(cmd_ln_t * config,
+ngram_model_set_read(ps_config_t * config,
                      const char *lmctlfile, logmath_t * lmath)
 {
     FILE *ctlfp;

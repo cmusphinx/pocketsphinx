@@ -14,15 +14,15 @@ main(int argc, char *argv[])
     (void)argc;
     (void)argv;
     TEST_ASSERT(config =
-            cmd_ln_init(NULL, ps_args(), TRUE,
-                "-hmm", MODELDIR "/en-us/en-us",
-                "-lm", MODELDIR "/en-us/en-us.lm.bin",
-                "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
-                "-fwdtree", "yes",
-                "-fwdflat", "yes",
-                "-bestpath", "yes",
-                "-mfclogdir", ".",
-                "-rawlogdir", ".",
-                "-samprate", "16000", NULL));
+                ps_config_parse_json(
+                    NULL,
+                    "hmm: \"" MODELDIR "/en-us/en-us\","
+                    "lm: \"" MODELDIR "/en-us/en-us.lm.bin\","
+                    "dict: \"" MODELDIR "/en-us/cmudict-en-us.dict\","
+                    "fwdtree: true,"
+                    "fwdflat: true,"
+                    "bestpath: true,"
+                    "mfclogdir: \".\", rawlogdir: \".\","
+                    "samprate: 16000"));
     return ps_decoder_test(config, "BESTPATH", "go forward ten meters");
 }

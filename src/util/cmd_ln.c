@@ -75,18 +75,19 @@
 #include <unistd.h>
 #endif
 
-#include "sphinxbase/cmd_ln.h"
-#include "sphinxbase/err.h"
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/hash_table.h"
-#include "sphinxbase/case.h"
-#include "sphinxbase/strfuncs.h"
+#include "util/cmd_ln.h"
+#include "util/ckd_alloc.h"
+#include "util/hash_table.h"
+#include "util/case.h"
+#include "util/strfuncs.h"
+
+#include "pocketsphinx_internal.h"
 
 static void
-arg_log_r(cmd_ln_t *, arg_t const *, int32, int32);
+arg_log_r(ps_config_t *, arg_t const *, int32, int32);
 
-static cmd_ln_t *
-parse_options(cmd_ln_t *, const arg_t *, int32, char* [], int32);
+static ps_config_t *
+parse_options(ps_config_t *, const arg_t *, int32, char* [], int32);
 
 /*
  * Find max length of name and default fields in the given defn array.
@@ -99,7 +100,7 @@ arg_strlen(const arg_t * defn, int32 * namelen, int32 * deflen)
 
     *namelen = *deflen = 0;
     for (i = 0; defn[i].name; i++) {
-        l = strlen(defn[i].name);
+        l = strlen(defn[i].name) + 1; /* leading dash */
         if (*namelen < l)
             *namelen = l;
 
@@ -114,7 +115,6 @@ arg_strlen(const arg_t * defn, int32 * namelen, int32 * deflen)
 
     return i;
 }
-
 
 static int32
 cmp_name(const void *a, const void *b)
@@ -138,99 +138,50 @@ arg_sort(const arg_t * defn, int32 n)
     return pos;
 }
 
-static size_t
-strnappend(char **dest, size_t *dest_allocation,
-       const char *source, size_t n)
+cmd_ln_val_t *
+cmd_ln_access_r(ps_config_t *cmdln, const char *name)
 {
-    size_t source_len, required_allocation;
-
-    if (dest == NULL || dest_allocation == NULL)
-        return -1;
-    if (*dest == NULL && *dest_allocation != 0)
-        return -1;
-    if (source == NULL)
-        return *dest_allocation;
-
-    source_len = strlen(source);
-    if (n && n < source_len)
-        source_len = n;
-
-    required_allocation = (*dest ? strlen(*dest) : 0) + source_len + 1;
-    if (*dest_allocation < required_allocation) {
-        if (*dest_allocation == 0) {
-            *dest = (char *)ckd_calloc(required_allocation * 2, 1);
-        } else {
-            *dest = (char *)ckd_realloc(*dest, required_allocation * 2);
-        }
-        *dest_allocation = required_allocation * 2;
+    void *val;
+    if (hash_table_lookup(cmdln->ht, name, &val) < 0) {
+        E_ERROR("Unknown argument: %s\n", name);
+        return NULL;
     }
-
-    strncat(*dest, source, source_len);
-
-    return *dest_allocation;
+    return (cmd_ln_val_t *)val;
 }
 
-static size_t
-strappend(char **dest, size_t *dest_allocation,
-       const char *source)
+cmd_ln_val_t *
+cmd_ln_val_init(int t, const char *name, const char *str)
 {
-    return strnappend(dest, dest_allocation, source, 0);
+    cmd_ln_val_t *v;
+
+    v = ckd_calloc(1, sizeof(*v));
+    if (anytype_from_str(&v->val, t, str) == NULL) {
+        ckd_free(v);
+        return NULL;
+    }
+    v->type = t;
+    v->name = ckd_salloc(name);
+
+    return v;
 }
 
-static char*
-arg_resolve_env(const char *str)
+void
+cmd_ln_val_free(cmd_ln_val_t *val)
 {
-    char *resolved_str = NULL;
-    char env_name[100];
-    const char *env_val;
-    size_t alloced = 0;
-    const char *i = str, *j;
-
-    /* calculate required resolved_str size */
-    do {
-        j = strstr(i, "$(");
-        if (j != NULL) {
-            if (j != i) {
-                strnappend(&resolved_str, &alloced, i, j - i);
-                i = j;
-            }
-            j = strchr(i + 2, ')');
-            if (j != NULL) {
-                if (j - (i + 2) < 100) {
-                    strncpy(env_name, i + 2, j - (i + 2));
-                    env_name[j - (i + 2)] = '\0';
-                    #if !defined(_WIN32_WCE)
-                    env_val = getenv(env_name);
-                    if (env_val)
-                        strappend(&resolved_str, &alloced, env_val);
-                    #else
-                    env_val = 0;
-                    #endif
-                }
-                i = j + 1;
-            } else {
-                /* unclosed, copy and skip */
-                j = i + 2;
-                strnappend(&resolved_str, &alloced, i, j - i);
-                i = j;
-            }
-        } else {
-            strappend(&resolved_str, &alloced, i);
-        }
-    } while(j != NULL);
-
-    return resolved_str;
+    if (val->type & ARG_STRING)
+        ckd_free(val->val.ptr);
+    ckd_free(val->name);
+    ckd_free(val);
 }
+
 
 static void
-arg_log_r(cmd_ln_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
+arg_log_r(ps_config_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
 {
     arg_t const **pos;
     int32 i, n;
-    size_t l;
     int32 namelen, deflen;
     cmd_ln_val_t const *vp;
-    char const **array;
 
     /* No definitions, do nothing. */
     if (defn == NULL)
@@ -256,9 +207,9 @@ arg_log_r(cmd_ln_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
     pos = arg_sort(defn, n);
     for (i = 0; i < n; i++) {
         if (lineno)
-            E_INFO("%-*s", namelen, pos[i]->name);
+            E_INFO("-%-*s", namelen, pos[i]->name);
         else
-            E_INFOCONT("%-*s", namelen, pos[i]->name);
+            E_INFOCONT("-%-*s", namelen, pos[i]->name);
         if (pos[i]->deflt)
             E_INFOCONT("%-*s", deflen, pos[i]->deflt);
         else
@@ -284,15 +235,6 @@ arg_log_r(cmd_ln_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
                     if (vp->val.ptr)
                         E_INFOCONT("    %s", (char *)vp->val.ptr);
                     break;
-                case ARG_STRING_LIST:
-                    array = (char const**)vp->val.ptr;
-                    if (array) {
-                        E_INFOCONT("    ");
-                        for (l = 0; array[l] != 0; l++) {
-                            E_INFOCONT("%s,", array[l]);
-                        }
-                    }
-                    break;
                 case ARG_BOOLEAN:
                 case REQARG_BOOLEAN:
                     E_INFOCONT("    %s", vp->val.i ? "yes" : "no");
@@ -309,109 +251,16 @@ arg_log_r(cmd_ln_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
     E_INFOCONT("\n");
 }
 
-static char **
-parse_string_list(const char *str)
-{
-    int count, i, j;
-    const char *p;
-    char **result;
-
-    p = str;
-    count = 1;
-    while (*p) {
-	if (*p == ',')
-    	    count++;
-        p++;
-    }
-    /* Should end with NULL */
-    result = (char **) ckd_calloc(count + 1, sizeof(char *));
-    p = str;
-    for (i = 0; i < count; i++) {
-	for (j = 0; p[j] != ',' && p[j] != 0; j++);
-	result[i] = (char *)ckd_calloc(j + 1, sizeof(char));
-        strncpy( result[i], p, j);
-        p = p + j + 1;
-    }
-    return result;
-}
-
-static cmd_ln_val_t *
-cmd_ln_val_init(int t, const char *name, const char *str)
-{
-    cmd_ln_val_t *v;
-    anytype_t val;
-    char *e_str;
-
-    if (!str) {
-        /* For lack of a better default value. */
-        memset(&val, 0, sizeof(val));
-    }
-    else {
-        int valid = 1;
-        e_str = arg_resolve_env(str);
-
-        switch (t) {
-        case ARG_INTEGER:
-        case REQARG_INTEGER:
-            if (sscanf(e_str, "%ld", &val.i) != 1)
-                valid = 0;
-            break;
-        case ARG_FLOATING:
-        case REQARG_FLOATING:
-            if (e_str == NULL || e_str[0] == 0)
-            valid = 0;
-            val.fl = atof_c(e_str);
-            break;
-        case ARG_BOOLEAN:
-        case REQARG_BOOLEAN:
-            if ((e_str[0] == 'y') || (e_str[0] == 't') ||
-                (e_str[0] == 'Y') || (e_str[0] == 'T') || (e_str[0] == '1')) {
-                val.i = TRUE;
-            }
-            else if ((e_str[0] == 'n') || (e_str[0] == 'f') ||
-                     (e_str[0] == 'N') || (e_str[0] == 'F') |
-                     (e_str[0] == '0')) {
-                val.i = FALSE;
-            }
-            else {
-                E_ERROR("Unparsed boolean value '%s'\n", str);
-                valid = 0;
-            }
-            break;
-        case ARG_STRING:
-        case REQARG_STRING:
-            val.ptr = ckd_salloc(e_str);
-            break;
-        case ARG_STRING_LIST:
-            val.ptr = parse_string_list(e_str);
-            break;
-        default:
-            E_ERROR("Unknown argument type: %d\n", t);
-            valid = 0;
-        }
-
-        ckd_free(e_str);
-        if (valid == 0)
-            return NULL;
-    }
-
-    v = (cmd_ln_val_t *)ckd_calloc(1, sizeof(*v));
-    memcpy(v, &val, sizeof(val));
-    v->type = t;
-    v->name = ckd_salloc(name);
-
-    return v;
-}
 
 /*
  * Handles option parsing for cmd_ln_parse_file_r() and cmd_ln_init()
  * also takes care of storing argv.
  * DO NOT call it from cmd_ln_parse_r()
  */
-static cmd_ln_t *
-parse_options(cmd_ln_t *cmdln, const arg_t *defn, int32 argc, char* argv[], int32 strict)
+static ps_config_t *
+parse_options(ps_config_t *cmdln, const arg_t *defn, int32 argc, char* argv[], int32 strict)
 {
-    cmd_ln_t *new_cmdln;
+    ps_config_t *new_cmdln;
 
     new_cmdln = cmd_ln_parse_r(cmdln, defn, argc, argv, strict);
     /* If this failed then clean up and return NULL. */
@@ -444,42 +293,21 @@ parse_options(cmd_ln_t *cmdln, const arg_t *defn, int32 argc, char* argv[], int3
     return new_cmdln;
 }
 
-void
-cmd_ln_val_free(cmd_ln_val_t *val)
-{
-    int i;
-    if (val->type & ARG_STRING_LIST) {
-        char ** array = (char **)val->val.ptr;
-        if (array) {
-            for (i = 0; array[i] != NULL; i++) {
-                ckd_free(array[i]);
-            }
-            ckd_free(array);
-        }
-    }
-    if (val->type & ARG_STRING)
-        ckd_free(val->val.ptr);
-    ckd_free(val->name);
-    ckd_free(val);
-}
-
-
-cmd_ln_t *
-cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn,
+ps_config_t *
+cmd_ln_parse_r(ps_config_t *inout_cmdln, const arg_t * defn,
                int32 argc, char *argv[], int strict)
 {
     int32 i, j, n, argstart;
     hash_table_t *defidx = NULL;
-    cmd_ln_t *cmdln;
+    ps_config_t *cmdln;
 
     /* Construct command-line object */
     if (inout_cmdln == NULL) {
-        cmdln = (cmd_ln_t*)ckd_calloc(1, sizeof(*cmdln));
-        cmdln->refcount = 1;
+        cmdln = ps_config_init(defn);
+        cmdln->defn = defn;
     }
-    else
+    else /* FIXME: definitions should just be in the ps_config_t */
         cmdln = inout_cmdln;
-    cmdln->defn = defn;
 
     /* Build a hash table for argument definitions */
     defidx = hash_table_new(50, 0);
@@ -499,11 +327,6 @@ cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn,
         n = 0;
     }
 
-    /* Allocate memory for argument values */
-    if (cmdln->ht == NULL)
-        cmdln->ht = hash_table_new(n, 0 /* argument names are case-sensitive */ );
-
-
     /* skip argv[0] if it doesn't start with dash (starting with a
      * dash would only happen if called from parse_options()) */
     argstart = 0;
@@ -515,11 +338,17 @@ cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn,
     for (j = argstart; j < argc; j += 2) {
         arg_t *argdef;
         cmd_ln_val_t *val;
+        char *name;
         void *v;
 
-        if (hash_table_lookup(defidx, argv[j], &v) < 0) {
+        name = argv[j];
+        if (*name && *name == '-')
+            ++name;
+        if (*name && *name == '-')
+            ++name;
+        if (hash_table_lookup(defidx, name, &v) < 0) {
             if (strict) {
-                E_ERROR("Unknown argument name '%s'\n", argv[j]);
+                E_ERROR("Unknown argument name '%s'\n", name);
                 goto error;
             }
             else if (defn == NULL)
@@ -531,16 +360,15 @@ cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn,
 
         /* Enter argument value */
         if (j + 1 >= argc) {
-            E_ERROR("Argument value for '%s' missing\n", argv[j]);
+            E_ERROR("Argument value for '%s' missing\n", name);
             goto error;
         }
 
         if (argdef == NULL)
-            val = cmd_ln_val_init(ARG_STRING, argv[j], argv[j + 1]);
+            val = cmd_ln_val_init(ARG_STRING, name, argv[j + 1]);
         else {
-            if ((val = cmd_ln_val_init(argdef->type, argv[j], argv[j + 1])) == NULL) {
-                E_ERROR("Bad argument value for %s: %s\n", argv[j],
-                        argv[j + 1]);
+            if ((val = cmd_ln_val_init(argdef->type, name, argv[j + 1])) == NULL) {
+                E_ERROR("Bad argument value for %s: %s\n", name, argv[j + 1]);
                 goto error;
             }
         }
@@ -548,32 +376,8 @@ cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn,
         if ((v = hash_table_enter(cmdln->ht, val->name, (void *)val)) !=
             (void *)val)
         {
-            if (strict) {
-                cmd_ln_val_free(val);
-                E_ERROR("Duplicate argument name in arguments: %s\n",
-                        argdef->name);
-                goto error;
-            }
-            else {
-                v = hash_table_replace(cmdln->ht, val->name, (void *)val);
-                cmd_ln_val_free((cmd_ln_val_t *)v);
-            }
-        }
-    }
-
-    /* Fill in default values, if any, for unspecified arguments */
-    for (i = 0; i < n; i++) {
-        cmd_ln_val_t *val;
-        void *v;
-
-        if (hash_table_lookup(cmdln->ht, defn[i].name, &v) < 0) {
-            if ((val = cmd_ln_val_init(defn[i].type, defn[i].name, defn[i].deflt)) == NULL) {
-                E_ERROR
-                    ("Bad default argument value for %s: %s\n",
-                     defn[i].name, defn[i].deflt);
-                goto error;
-            }
-            hash_table_enter(cmdln->ht, val->name, (void *)val);
+            v = hash_table_replace(cmdln->ht, val->name, (void *)val);
+            cmd_ln_val_free((cmd_ln_val_t *)v);
         }
     }
 
@@ -595,7 +399,7 @@ cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn,
         if (defidx)
             hash_table_free(defidx);
         if (inout_cmdln == NULL)
-            cmd_ln_free_r(cmdln);
+            ps_config_free(cmdln);
         return NULL;
     }
 
@@ -606,50 +410,13 @@ cmd_ln_parse_r(cmd_ln_t *inout_cmdln, const arg_t * defn,
     if (defidx)
         hash_table_free(defidx);
     if (inout_cmdln == NULL)
-        cmd_ln_free_r(cmdln);
+        ps_config_free(cmdln);
     E_ERROR("Failed to parse arguments list\n");
     return NULL;
 }
 
-cmd_ln_t *
-cmd_ln_init(cmd_ln_t *inout_cmdln, const arg_t *defn, int32 strict, ...)
-{
-    va_list args;
-    const char *arg, *val;
-    char **f_argv;
-    int32 f_argc;
-
-    va_start(args, strict);
-    f_argc = 0;
-    while ((arg = va_arg(args, const char *))) {
-        ++f_argc;
-        val = va_arg(args, const char*);
-        if (val == NULL) {
-            E_ERROR("Number of arguments must be even!\n");
-            return NULL;
-        }
-        ++f_argc;
-    }
-    va_end(args);
-
-    /* Now allocate f_argv */
-    f_argv = (char**)ckd_calloc(f_argc, sizeof(*f_argv));
-    va_start(args, strict);
-    f_argc = 0;
-    while ((arg = va_arg(args, const char *))) {
-        f_argv[f_argc] = ckd_salloc(arg);
-        ++f_argc;
-        val = va_arg(args, const char*);
-        f_argv[f_argc] = ckd_salloc(val);
-        ++f_argc;
-    }
-    va_end(args);
-
-    return parse_options(inout_cmdln, defn, f_argc, f_argv, strict);
-}
-
-cmd_ln_t *
-cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, const arg_t * defn, const char *filename, int32 strict)
+ps_config_t *
+cmd_ln_parse_file_r(ps_config_t *inout_cmdln, const arg_t * defn, const char *filename, int32 strict)
 {
     FILE *file;
     int argc;
@@ -780,7 +547,7 @@ cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, const arg_t * defn, const char *filen
 }
 
 void
-cmd_ln_log_help_r(cmd_ln_t *cmdln, arg_t const* defn)
+cmd_ln_log_help_r(ps_config_t *cmdln, arg_t const* defn)
 {
     if (defn == NULL)
         return;
@@ -788,14 +555,14 @@ cmd_ln_log_help_r(cmd_ln_t *cmdln, arg_t const* defn)
     if (cmdln == NULL) {
         cmdln = cmd_ln_parse_r(NULL, defn, 0, NULL, FALSE);
         arg_log_r(cmdln, defn, TRUE, FALSE);
-        cmd_ln_free_r(cmdln);
+        ps_config_free(cmdln);
     }
     else
         arg_log_r(cmdln, defn, TRUE, FALSE);
 }
 
 void
-cmd_ln_log_values_r(cmd_ln_t *cmdln, arg_t const* defn)
+cmd_ln_log_values_r(ps_config_t *cmdln, arg_t const* defn)
 {
     if (defn == NULL)
         return;
@@ -803,111 +570,8 @@ cmd_ln_log_values_r(cmd_ln_t *cmdln, arg_t const* defn)
     arg_log_r(cmdln, defn, FALSE, FALSE);
 }
 
-int
-cmd_ln_exists_r(cmd_ln_t *cmdln, const char *name)
-{
-    void *val;
-    if (cmdln == NULL)
-        return FALSE;
-    return (hash_table_lookup(cmdln->ht, name, &val) == 0);
-}
-
-cmd_ln_val_t *
-cmd_ln_access_r(cmd_ln_t *cmdln, const char *name)
-{
-    void *val;
-    if (hash_table_lookup(cmdln->ht, name, &val) < 0) {
-        E_ERROR("Unknown argument: %s\n", name);
-        return NULL;
-    }
-    return (cmd_ln_val_t *)val;
-}
-
-int
-cmd_ln_type_r(cmd_ln_t *cmdln, char const *name)
-{
-    cmd_ln_val_t *val = cmd_ln_access_r(cmdln, name);
-    if (val == NULL)
-        return 0;
-    return val->type;
-}
-
-
-char const *
-cmd_ln_str_r(cmd_ln_t *cmdln, char const *name)
-{
-    cmd_ln_val_t *val;
-    val = cmd_ln_access_r(cmdln, name);
-    if (val == NULL)
-        return NULL;
-    if (!(val->type & ARG_STRING)) {
-        E_ERROR("Argument %s does not have string type\n", name);
-        return NULL;
-    }
-    return (char const *)val->val.ptr;
-}
-
-char const **
-cmd_ln_str_list_r(cmd_ln_t *cmdln, char const *name)
-{
-    cmd_ln_val_t *val;
-    val = cmd_ln_access_r(cmdln, name);
-    if (val == NULL)
-        return NULL;
-    if (!(val->type & ARG_STRING_LIST)) {
-        E_ERROR("Argument %s does not have string list type\n", name);
-        return NULL;
-    }
-    return (char const **)val->val.ptr;
-}
-
-long
-cmd_ln_int_r(cmd_ln_t *cmdln, char const *name)
-{
-    cmd_ln_val_t *val;
-    val = cmd_ln_access_r(cmdln, name);
-    if (val == NULL)
-        return 0L;
-    if (!(val->type & (ARG_INTEGER | ARG_BOOLEAN))) {
-        E_ERROR("Argument %s does not have integer type\n", name);
-        return 0L;
-    }
-    return val->val.i;
-}
-
-double
-cmd_ln_float_r(cmd_ln_t *cmdln, char const *name)
-{
-    cmd_ln_val_t *val;
-    val = cmd_ln_access_r(cmdln, name);
-    if (val == NULL)
-        return 0.0;
-    if (!(val->type & ARG_FLOATING)) {
-        E_ERROR("Argument %s does not have floating-point type\n", name);
-        return 0.0;
-    }
-    return val->val.fl;
-}
-
 void
-cmd_ln_set_str_r(cmd_ln_t *cmdln, char const *name, char const *str)
-{
-    cmd_ln_val_t *val;
-    val = cmd_ln_access_r(cmdln, name);
-    if (val == NULL) {
-        E_ERROR("Unknown argument: %s\n", name);
-        return;
-    }
-    if (!(val->type & ARG_STRING)) {
-        E_ERROR("Argument %s does not have string type\n", name);
-        return;
-    }
-    ckd_free(val->val.ptr);
-    val->val.ptr = ckd_salloc(str);
-}
-
-void
-cmd_ln_set_str_extra_r(cmd_ln_t *cmdln, char const *name, char const *str)
+cmd_ln_set_str_extra_r(ps_config_t *cmdln, char const *name, char const *str)
 {
     cmd_ln_val_t *val;
     if (hash_table_lookup(cmdln->ht, name, (void **)&val) < 0) {
@@ -921,81 +585,6 @@ cmd_ln_set_str_extra_r(cmd_ln_t *cmdln, char const *name, char const *str)
         ckd_free(val->val.ptr);
         val->val.ptr = ckd_salloc(str);
     }
-}
-
-void
-cmd_ln_set_int_r(cmd_ln_t *cmdln, char const *name, long iv)
-{
-    cmd_ln_val_t *val;
-    val = cmd_ln_access_r(cmdln, name);
-    if (val == NULL) {
-        E_ERROR("Unknown argument: %s\n", name);
-        return;
-    }
-    if (!(val->type & (ARG_INTEGER | ARG_BOOLEAN))) {
-        E_ERROR("Argument %s does not have integer type\n", name);
-        return;
-    }
-    val->val.i = iv;
-}
-
-void
-cmd_ln_set_float_r(cmd_ln_t *cmdln, char const *name, double fv)
-{
-    cmd_ln_val_t *val;
-    val = cmd_ln_access_r(cmdln, name);
-    if (val == NULL) {
-        E_ERROR("Unknown argument: %s\n", name);
-        return;
-    }
-    if (!(val->type & ARG_FLOATING)) {
-        E_ERROR("Argument %s does not have floating-point type\n", name);
-        return;
-    }
-    val->val.fl = fv;
-}
-
-cmd_ln_t *
-cmd_ln_retain(cmd_ln_t *cmdln)
-{
-    ++cmdln->refcount;
-    return cmdln;
-}
-
-int
-cmd_ln_free_r(cmd_ln_t *cmdln)
-{
-    if (cmdln == NULL)
-        return 0;
-    if (--cmdln->refcount > 0)
-        return cmdln->refcount;
-
-    if (cmdln->ht) {
-        glist_t entries;
-        gnode_t *gn;
-        int32 n;
-
-        entries = hash_table_tolist(cmdln->ht, &n);
-        for (gn = entries; gn; gn = gnode_next(gn)) {
-            hash_entry_t *e = (hash_entry_t *)gnode_ptr(gn);
-            cmd_ln_val_free((cmd_ln_val_t *)e->val);
-        }
-        glist_free(entries);
-        hash_table_free(cmdln->ht);
-        cmdln->ht = NULL;
-    }
-
-    if (cmdln->f_argv) {
-        int32 i;
-        for (i = 0; i < (int32)cmdln->f_argc; ++i) {
-            ckd_free(cmdln->f_argv[i]);
-        }
-        ckd_free(cmdln->f_argv);
-        cmdln->f_argv = NULL;
-        cmdln->f_argc = 0;
-    }
-    ckd_free(cmdln);
-    return 0;
 }
 
 /* vim: set ts=4 sw=4: */

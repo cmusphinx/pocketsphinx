@@ -42,13 +42,13 @@
 #include "config.h"
 #endif
 
-#include <sphinxbase/err.h>
-#include <sphinxbase/pio.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/byteorder.h>
+#include <pocketsphinx/err.h>
 
-#include "ngram_model_trie.h"
+#include "util/pio.h"
+#include "util/strfuncs.h"
+#include "util/ckd_alloc.h"
+#include "util/byteorder.h"
+#include "lm/ngram_model_trie.h"
 
 static const char trie_hdr[] = "Trie Language Model";
 static const char dmp_hdr[] = "Darpa Trigram LM";
@@ -165,7 +165,7 @@ read_1grams_arpa(lineiter_t ** li, uint32 count, ngram_model_t * base,
 }
 
 ngram_model_t *
-ngram_model_trie_read_arpa(cmd_ln_t * config,
+ngram_model_trie_read_arpa(ps_config_t * config,
                            const char *path, logmath_t * lmath)
 {
     FILE *fp;
@@ -346,7 +346,7 @@ read_word_str(ngram_model_t * base, FILE * fp, int do_swap)
 }
 
 ngram_model_t *
-ngram_model_trie_read_bin(cmd_ln_t * config,
+ngram_model_trie_read_bin(ps_config_t * config,
                           const char *path, logmath_t * lmath)
 {
     int32 is_pipe;
@@ -441,7 +441,7 @@ ngram_model_trie_write_bin(ngram_model_t * base, const char *path)
 }
 
 ngram_model_t *
-ngram_model_trie_read_dmp(cmd_ln_t * config,
+ngram_model_trie_read_dmp(ps_config_t * config,
                           const char *file_name, logmath_t * lmath)
 {
     uint8 do_swap;

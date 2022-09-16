@@ -38,14 +38,13 @@ int
 main(int argc, char *argv[])
 {
     ps_decoder_t *decoder;
+    ps_config_t *config;
     ps_endpointer_t *ep;
-    cmd_ln_t *config;
     FILE *sox;
     short *frame;
     size_t frame_size;
 
-    if ((config = cmd_ln_parse_r(NULL, ps_args(), argc, argv, FALSE)) == NULL)
-        E_FATAL("Command line parse failed\n");
+    config = ps_config_init(NULL);
     ps_default_search_args(config);
     if ((decoder = ps_init(config)) == NULL)
         E_FATAL("PocketSphinx decoder init failed\n");
@@ -99,6 +98,7 @@ main(int argc, char *argv[])
         E_ERROR_SYSTEM("Failed to pclose(sox)");
     ps_endpointer_free(ep);
     ps_free(decoder);
+    ps_config_free(config);
         
     return 0;
 }

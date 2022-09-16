@@ -41,15 +41,10 @@
 #define __S2_FSG_SEARCH_H__
 
 
-/* SphinxBase headers. */
-#include <sphinxbase/glist.h>
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/fsg_model.h>
-
-/* Public headers. */
 #include <pocketsphinx.h>
 
-/* Local headers. */
+#include "util/glist.h"
+#include "lm/fsg_model.h"
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
 #include "fsg_history.h"

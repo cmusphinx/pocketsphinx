@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/pio.h>
-#include <sphinxbase/ckd_alloc.h>
+#include "util/strfuncs.h"
+#include "util/pio.h"
+#include "util/ckd_alloc.h"
 
 int
 main(int argc, char *argv[])

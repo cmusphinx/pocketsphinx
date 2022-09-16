@@ -37,14 +37,14 @@
 
 #include <string.h>
 
-#include <sphinxbase/err.h>
-#include <sphinxbase/pio.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/byteorder.h>
+#include <pocketsphinx/err.h>
 
-#include "ngram_model_internal.h"
-#include "ngrams_raw.h"
+#include "util/pio.h"
+#include "util/strfuncs.h"
+#include "util/ckd_alloc.h"
+#include "util/byteorder.h"
+#include "lm/ngram_model_internal.h"
+#include "lm/ngrams_raw.h"
 
 int
 ngram_ord_comparator(const void *a_raw, const void *b_raw)

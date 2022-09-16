@@ -42,9 +42,6 @@
 #ifndef __NGRAM_SEARCH_FWDFLAT_H__
 #define __NGRAM_SEARCH_FWDFLAT_H__
 
-/* SphinxBase headers. */
-
-/* Local headers. */
 #include "ngram_search.h"
 
 #ifdef __cplusplus

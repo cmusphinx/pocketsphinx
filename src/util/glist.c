@@ -66,8 +66,8 @@
 #include <string.h>
 #include <assert.h>
 
-#include "sphinxbase/glist.h"
-#include "sphinxbase/ckd_alloc.h"
+#include "util/glist.h"
+#include "util/ckd_alloc.h"
 
 
 glist_t

@@ -140,7 +140,7 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
 
     fclose(rawfh);
     ps_free(ps);
-    cmd_ln_free_r(config);
+    ps_config_free(config);
     ckd_free_2d(cepbuf);
     ckd_free(buf);
     ckd_free(prev_cmn);

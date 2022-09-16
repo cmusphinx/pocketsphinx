@@ -37,9 +37,6 @@
 #ifndef FE_WARP_PIECEWIDE_LINEAR_H
 #define FE_WARP_PIECEWIDE_LINEAR_H
 
-#include "sphinxbase/fe.h"
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif

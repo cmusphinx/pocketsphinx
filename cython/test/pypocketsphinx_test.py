@@ -38,8 +38,8 @@ class TestRawDecoder(TestCase):
 
     def test_raw_decoder_hypothesis(self):
         self.assertEqual(self.ps.hypothesis(), "go forward ten years")
-        self.assertEqual(self.ps.score(), -8240)
-        self.assertAlmostEqual(self.ps.confidence(), 0.05714680720514542, 3)
+        self.assertEqual(self.ps.score(), -8237)
+        self.assertAlmostEqual(self.ps.confidence(), 0.01, 3)
 
     def test_raw_decoder_segments(self):
         self.assertEqual(
@@ -52,15 +52,15 @@ class TestRawDecoder(TestCase):
             self.ps.best(),
             [
                 ("go forward ten years", -28492),
-                ("go forward ten meters", -28543),
-                ("go for word ten meters", -29077),
-                ("go forward ten liters", -29085),
-                ("go forward ten leaders", -29099),
-                ("go forward can meters", -29175),
-                ("go for word ten years", -29217),
-                ("go for work ten meters", -29254),
-                ("go forward ten readers", -29255),
-                ("go forward can leaders", -29265),
+                ("go forward ten meters", -28547),
+                ("go for word ten meters", -29079),
+                ("go forward ten liters", -29084),
+                ("go forward ten leaders", -29098),
+                ("go forward can meters", -29174),
+                ("go for word ten years", -29216),
+                ("go forward ten readers", -29254),
+                ("go for work ten meters", -29259),
+                ("go forward can leaders", -29261),
             ],
         )
 
@@ -71,7 +71,7 @@ class TestCepDecoder(TestCase):
             hmm=os.path.join(MODELDIR, "en-us/en-us"),
             lm=os.path.join(MODELDIR, "en-us/en-us.lm.bin"),
             dict=os.path.join(MODELDIR, "en-us/cmudict-en-us.dict"),
-            verbose=True
+            verbose=True,
         )
         with open(os.path.join(DATADIR, "goforward.mfc"), "rb") as f:
             with ps.start_utterance():
@@ -79,8 +79,8 @@ class TestCepDecoder(TestCase):
                 buf = f.read(13780)
                 ps.process_cep(buf, False, True)
         self.assertEqual(ps.hypothesis(), "go forward ten meters")
-        self.assertEqual(ps.score(), -7095)
-        self.assertEqual(ps.probability(), -32715)
+        self.assertEqual(ps.score(), -7103)
+        self.assertEqual(ps.probability(), -33134)
 
 
 class TestJsgf(TestCase):
@@ -110,16 +110,22 @@ class TestJsgf(TestCase):
 class TestKws(TestCase):
     def test_kws(self):
         segments = []
-        for phrase in AudioFile(os.path.join(DATADIR, "goforward.raw"),
-                                keyphrase="forward", kws_threshold=1e20):
+        for phrase in AudioFile(
+            os.path.join(DATADIR, "goforward.raw"),
+            keyphrase="forward",
+            kws_threshold=1e20,
+        ):
             segments = phrase.segments(detailed=True)
         self.assertEqual(segments, [("forward", -706, 63, 121)])
 
     def test_kws_badapi(self):
         segments = []
-        for phrase in AudioFile(audio_file=os.path.join(DATADIR, "goforward.raw"),
-                                lm=False,  # Make sure this still works
-                                keyphrase="forward", kws_threshold=1e20):
+        for phrase in AudioFile(
+            audio_file=os.path.join(DATADIR, "goforward.raw"),
+            lm=False,  # Make sure this still works
+            keyphrase="forward",
+            kws_threshold=1e20,
+        ):
             segments = phrase.segments(detailed=True)
         self.assertEqual(segments, [("forward", -706, 63, 121)])
 

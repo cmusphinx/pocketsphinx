@@ -44,18 +44,12 @@
 #ifndef __POCKETSPHINX_INTERNAL_H__
 #define __POCKETSPHINX_INTERNAL_H__
 
-/* SphinxBase headers. */
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/fe.h>
-#include <sphinxbase/feat.h>
-#include <sphinxbase/hash_table.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/profile.h>
+#include "fe/fe.h"
+#include "feat/feat.h"
+#include "util/cmd_ln.h"
+#include "util/hash_table.h"
+#include "util/profile.h"
 
-/* Public headers. */
-#include <pocketsphinx.h>
-
-/* Local headers. */
 #include "acmod.h"
 #include "dict.h"
 #include "dict2pid.h"

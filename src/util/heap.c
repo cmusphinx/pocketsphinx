@@ -67,9 +67,10 @@
 #include <string.h>
 #include <assert.h>
 
-#include "sphinxbase/heap.h"
-#include "sphinxbase/err.h"
-#include "sphinxbase/ckd_alloc.h"
+#include <pocketsphinx/err.h>
+
+#include "util/heap.h"
+#include "util/ckd_alloc.h"
 
 /**
  * One node on the heap

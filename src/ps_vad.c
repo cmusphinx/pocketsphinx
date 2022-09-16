@@ -31,9 +31,10 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/err.h>
+#include <pocketsphinx/err.h>
 #include <pocketsphinx/vad.h>
+
+#include "util/ckd_alloc.h"
 
 #include "common_audio/vad/include/webrtc_vad.h"
 #include "common_audio/vad/vad_core.h"

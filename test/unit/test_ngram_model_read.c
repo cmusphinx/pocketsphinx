@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include <pocketsphinx.h>
+#include "lm/ngram_model.h"
 
 #include "test_macros.h"
 
@@ -10,7 +11,7 @@ main(int argc, char *argv[])
 {
     char const *hyp;
     ps_decoder_t *ps;
-    cmd_ln_t *config;
+    ps_config_t *config;
     ngram_model_t *lm;
     FILE *rawfh;
     int32 score;
@@ -19,12 +20,13 @@ main(int argc, char *argv[])
     (void)argv;
     /* First decode it with the crappy WSJ language model. */
     TEST_ASSERT(config =
-                cmd_ln_init(NULL, ps_args(), TRUE,
-                            "-hmm", MODELDIR "/en-us/en-us",
-                            "-lm", MODELDIR "/en-us/en-us.lm.bin",
-                            "-dict", DATADIR "/defective.dic",
-                            "-dictcase", "yes",
-                            "-samprate", "16000", NULL));
+                ps_config_parse_json(
+                    NULL,
+                    "hmm: \"" MODELDIR "/en-us/en-us\","
+                    "lm: \"" MODELDIR "/en-us/en-us.lm.bin\","
+                    "dict: \"" DATADIR "/defective.dic\","
+                    "dictcase: true,"
+                    "samprate: 16000"));
     TEST_ASSERT(ps = ps_init(config));
     TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
 
@@ -89,7 +91,7 @@ main(int argc, char *argv[])
 
     fclose(rawfh);
     ps_free(ps);
-    cmd_ln_free_r(config);
+    ps_config_free(config);
 
     return 0;
 }

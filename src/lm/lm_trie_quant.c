@@ -37,10 +37,11 @@
 
 #include <math.h>
 
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/byteorder.h>
-#include <sphinxbase/err.h>
+#include <pocketsphinx/prim_type.h>
+#include <pocketsphinx/err.h>
+
+#include "util/ckd_alloc.h"
+#include "util/byteorder.h"
 
 #include "ngram_model_internal.h"
 #include "lm_trie_quant.h"

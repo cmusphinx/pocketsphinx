@@ -68,7 +68,6 @@
  *
  */
 
-/* Local headers. */
 #include "ms_mgau.h"
 
 static ps_mgaufuncs_t ms_mgau_funcs = {
@@ -96,9 +95,9 @@ ms_mgau_init(acmod_t *acmod, logmath_t *lmath, bin_mdef_t *mdef)
     msg->g = NULL;
     msg->s = NULL;
     
-    if ((g = msg->g = gauden_init(cmd_ln_str_r(config, "_mean"),
-                             cmd_ln_str_r(config, "_var"),
-                             cmd_ln_float32_r(config, "-varfloor"),
+    if ((g = msg->g = gauden_init(ps_config_str(config, "mean"),
+                             ps_config_str(config, "var"),
+                             ps_config_float(config, "varfloor"),
                              lmath)) == NULL) {
 	E_ERROR("Failed to read means and variances\n");	
 	goto error_out;
@@ -119,12 +118,12 @@ ms_mgau_init(acmod_t *acmod, logmath_t *lmath, bin_mdef_t *mdef)
     }
 
     s = msg->s = senone_init(msg->g,
-                             cmd_ln_str_r(config, "_mixw"),
-                             cmd_ln_str_r(config, "_senmgau"),
-                             cmd_ln_float32_r(config, "-mixwfloor"),
+                             ps_config_str(config, "mixw"),
+                             ps_config_str(config, "senmgau"),
+                             ps_config_float(config, "mixwfloor"),
                              lmath, mdef);
 
-    s->aw = cmd_ln_int32_r(config, "-aw");
+    s->aw = ps_config_int(config, "aw");
 
     /* Verify senone parameters against gauden parameters */
     if (s->n_feat != (uint32)g->n_feat)
@@ -140,7 +139,7 @@ ms_mgau_init(acmod_t *acmod, logmath_t *lmath, bin_mdef_t *mdef)
         E_ERROR("Senones use fewer codebooks (%d) than present (%d)\n",
                 s->n_gauden, g->n_mgau);
 
-    msg->topn = cmd_ln_int32_r(config, "-topn");
+    msg->topn = ps_config_int(config, "topn");
     E_INFO("The value of topn: %d\n", msg->topn);
     if (msg->topn == 0 || msg->topn > msg->g->n_density) {
         E_WARN

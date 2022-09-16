@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sphinxbase/listelem_alloc.h>
+#include "util/listelem_alloc.h"
 
 #include "test_macros.h"
 

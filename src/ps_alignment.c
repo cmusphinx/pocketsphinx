@@ -39,12 +39,7 @@
  * @file ps_alignment.c Multi-level alignment structure
  */
 
-/* System headers. */
-
-/* SphinxBase headers. */
-#include <sphinxbase/ckd_alloc.h>
-
-/* Local headers. */
+#include "util/ckd_alloc.h"
 #include "ps_alignment.h"
 
 ps_alignment_t *

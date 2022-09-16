@@ -35,21 +35,17 @@
  *
  */
 
-/* System headers. */
 #include <stdio.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/pio.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/filename.h>
-#include <sphinxbase/byteorder.h>
-
-/* PocketSphinx headers. */
 #include <pocketsphinx.h>
 
-/* S3kr3t headerz. */
-#include "cmdln_macro.h"
+#include "util/ckd_alloc.h"
+#include "util/strfuncs.h"
+#include "util/filename.h"
+#include "util/byteorder.h"
+#include "util/pio.h"
+#include "lm/fsg_model.h"
+#include "config_macro.h"
 #include "pocketsphinx_internal.h"
 
 /* Silvio Moioli: setbuf doesn't exist in Windows CE */
@@ -62,132 +58,132 @@ static const arg_t ps_args_def[] = {
     POCKETSPHINX_OPTIONS,
     /* Various options specific to batch-mode processing. */
     /* Argument file. */
-    { "-argfile",
+    { "argfile",
       ARG_STRING,
       NULL,
       "Argument file giving extra arguments." },
     /* Control file. */
-    { "-ctl",
+    { "ctl",
       ARG_STRING,
       NULL,
       "Control file listing utterances to be processed" },
-    { "-ctloffset",
+    { "ctloffset",
       ARG_INTEGER,
       "0",
       "No. of utterances at the beginning of -ctl file to be skipped" },
-    { "-ctlcount",
+    { "ctlcount",
       ARG_INTEGER,
       "-1",
       "No. of utterances to be processed (after skipping -ctloffset entries)" },
-    { "-ctlincr",
+    { "ctlincr",
       ARG_INTEGER,
       "1",
       "Do every Nth line in the control file" },
-    { "-mllrctl",
+    { "mllrctl",
       ARG_STRING,
       NULL,
       "Control file listing MLLR transforms to use for each utterance" },
-    { "-mllrdir",
+    { "mllrdir",
       ARG_STRING,
       NULL,
       "Base directory for MLLR transforms" },
-    { "-mllrext",
+    { "mllrext",
       ARG_STRING,
       NULL,
       "File extension for MLLR transforms (including leading dot)" },
-    { "-lmnamectl",
+    { "lmnamectl",
       ARG_STRING,
       NULL,
       "Control file listing LM name to use for each utterance" },
-    { "-fsgctl",
+    { "fsgctl",
       ARG_STRING,
       NULL,
       "Control file listing FSG file to use for each utterance" },
-    { "-fsgdir",
+    { "fsgdir",
       ARG_STRING,
       NULL,
       "Base directory for FSG files" },
-    { "-fsgext",
+    { "fsgext",
       ARG_STRING,
       NULL,
       "File extension for FSG files (including leading dot)" },
-    { "-alignctl",
+    { "alignctl",
       ARG_STRING,
       NULL,
       "Control file listing transcript files to force-align to utts" },
-    { "-aligndir",
+    { "aligndir",
       ARG_STRING,
       NULL,
       "Base directory for transcript files" },
-    { "-alignext",
+    { "alignext",
       ARG_STRING,
       NULL,
       "File extension for transcript files (including leading dot)" },
 
     /* Input file types and locations. */
-    { "-adcin",
+    { "adcin",
       ARG_BOOLEAN,
       "no",
       "Input is raw audio data" },
-    { "-adchdr",
+    { "adchdr",
       ARG_INTEGER,
       "0",
       "Size of audio file header in bytes (headers are ignored)" },
-    { "-senin",
+    { "senin",
       ARG_BOOLEAN,
       "no",
       "Input is senone score dump files" },
-    { "-cepdir",
+    { "cepdir",
       ARG_STRING,
       NULL,
       "Input files directory (prefixed to filespecs in control file)" },
-    { "-cepext",
+    { "cepext",
       ARG_STRING,
       ".mfc",
       "Input files extension (suffixed to filespecs in control file)" },
 
     /* Output files. */
-    { "-hyp",
+    { "hyp",
       ARG_STRING,
       NULL,
       "Recognition output file name" },
-    { "-hypseg",
+    { "hypseg",
       ARG_STRING,
       NULL,
       "Recognition output with segmentation file name" },
-    { "-ctm",
+    { "ctm",
       ARG_STRING,
       NULL,
       "Recognition output in CTM file format (may require post-sorting)" },
-    { "-outlatdir",
+    { "outlatdir",
       ARG_STRING,
       NULL,
       "Directory for dumping word lattices" },
-    { "-outlatfmt",
+    { "outlatfmt",
       ARG_STRING,
       "s3",
       "Format for dumping word lattices (s3 or htk)" },
-    { "-outlatext",
+    { "outlatext",
       ARG_STRING,
       ".lat",
       "Filename extension for dumping word lattices" },
-    { "-outlatbeam",
+    { "outlatbeam",
       ARG_FLOATING,
       "1e-5",
       "Minimum posterior probability for output lattice nodes" },
-    { "-build_outdirs",
+    { "build_outdirs",
       ARG_BOOLEAN,
       "yes",
       "Create missing subdirectories in output directory" },
-    { "-nbestdir",
+    { "nbestdir",
       ARG_STRING,
       NULL,
       "Directory for writing N-best hypothesis lists" },
-    { "-nbestext",
+    { "nbestext",
       ARG_STRING,
       ".hyp",
       "Extension for N-best hypothesis list files" },
-    { "-nbest",
+    { "nbest",
       ARG_INTEGER,
       "0",
       "Number of N-best hypotheses to write to -nbestdir (0 for no N-best)" },
@@ -267,8 +263,8 @@ process_mllrctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
     ckd_free(lastfile);
     lastfile = ckd_salloc(file);
 
-    mllrext = cmd_ln_str_r(config, "-mllrext");
-    if ((mllrdir = cmd_ln_str_r(config, "-mllrdir")))
+    mllrext = ps_config_str(config, "mllrext");
+    if ((mllrdir = ps_config_str(config, "mllrdir")))
         infile = string_join(mllrdir, "/", file, 
                              mllrext ? mllrext : "", NULL);
     else if (mllrext)
@@ -297,8 +293,8 @@ process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *fname)
     fsg_model_t *fsg;
     int err;
     char *path = NULL;
-    const char *fsgdir = cmd_ln_str_r(config, "-fsgdir");
-    const char *fsgext = cmd_ln_str_r(config, "-fsgext");
+    const char *fsgdir = ps_config_str(config, "fsgdir");
+    const char *fsgext = ps_config_str(config, "fsgext");
 
     if (fname == NULL)
         return 0;
@@ -311,7 +307,7 @@ process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *fname)
         path = ckd_salloc(fname);
 
     fsg = fsg_model_readfile(path, ps_get_logmath(ps),
-                                          cmd_ln_float32_r(config, "-lw"));
+                                          ps_config_float(config, "lw"));
     err = 0;
     if (!fsg) {
         err = -1;
@@ -353,8 +349,8 @@ process_alignctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *fname)
 {
     int err;
     char *path = NULL;
-    const char *aligndir = cmd_ln_str_r(config, "-aligndir");
-    const char *alignext = cmd_ln_str_r(config, "-alignext");
+    const char *aligndir = ps_config_str(config, "aligndir");
+    const char *alignext = ps_config_str(config, "alignext");
     char *text = NULL;
     size_t nchars, nread;
     FILE *fh;
@@ -409,7 +405,7 @@ build_outdir_one(cmd_ln_t *config, char const *arg, char const *uttpath)
 {
     char const *dir;
 
-    if ((dir = cmd_ln_str_r(config, arg)) != NULL) {
+    if ((dir = ps_config_str(config, arg)) != NULL) {
         char *dirname = string_join(dir, "/", uttpath, NULL);
         build_directory(dirname);
         ckd_free(dirname);
@@ -423,11 +419,11 @@ build_outdirs(cmd_ln_t *config, char const *uttid)
     char *uttpath = ckd_salloc(uttid);
 
     path2dirname(uttid, uttpath);
-    build_outdir_one(config, "-outlatdir", uttpath);
-    build_outdir_one(config, "-mfclogdir", uttpath);
-    build_outdir_one(config, "-rawlogdir", uttpath);
-    build_outdir_one(config, "-senlogdir", uttpath);
-    build_outdir_one(config, "-nbestdir", uttpath);
+    build_outdir_one(config, "outlatdir", uttpath);
+    build_outdir_one(config, "mfclogdir", uttpath);
+    build_outdir_one(config, "rawlogdir", uttpath);
+    build_outdir_one(config, "senlogdir", uttpath);
+    build_outdir_one(config, "nbestdir", uttpath);
     ckd_free(uttpath);
 
     return 0;
@@ -446,8 +442,8 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
         return -1;
     }
     
-    cepdir = cmd_ln_str_r(config, "-cepdir");
-    cepext = cmd_ln_str_r(config, "-cepext");
+    cepdir = ps_config_str(config, "cepdir");
+    cepext = ps_config_str(config, "cepext");
 
     /* Build input filename. */
     infile = string_join(cepdir ? cepdir : "",
@@ -461,26 +457,26 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
         return -1;
     }
     /* Build output directories. */
-    if (cmd_ln_boolean_r(config, "-build_outdirs"))
+    if (ps_config_bool(config, "build_outdirs"))
         build_outdirs(config, uttid);
 
-    if (cmd_ln_boolean_r(config, "-senin")) {
+    if (ps_config_bool(config, "senin")) {
         /* start and end frames not supported. */
         ps_decode_senscr(ps, infh);
     }
-    else if (cmd_ln_boolean_r(config, "-adcin")) {
+    else if (ps_config_bool(config, "adcin")) {
         
         if (ef != -1) {
             ef = (int32)((ef - sf)
-                         * ((double)cmd_ln_int_r(config, "-samprate")
-                            / cmd_ln_int_r(config, "-frate"))
-                         + ((double)cmd_ln_int_r(config, "-samprate")
-                            * cmd_ln_float_r(config, "-wlen")));
+                         * ((double)ps_config_int(config, "samprate")
+                            / ps_config_int(config, "frate"))
+                         + ((double)ps_config_int(config, "samprate")
+                            * ps_config_float(config, "wlen")));
         }
         sf = (int32)(sf
-                     * ((double)cmd_ln_int_r(config, "-samprate")
-                        / cmd_ln_int32_r(config, "-frate")));
-        fseek(infh, cmd_ln_int32_r(config, "-adchdr") + sf * sizeof(int16), SEEK_SET);
+                     * ((double)ps_config_int(config, "samprate")
+                        / ps_config_int(config, "frate")));
+        fseek(infh, ps_config_int(config, "adchdr") + sf * sizeof(int16), SEEK_SET);
         ps_decode_raw(ps, infh, ef);
     }
     else {
@@ -488,7 +484,7 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
         int nfr;
 
         if (NULL == (mfcs = read_mfc_file(infh, sf, ef, &nfr,
-                                          cmd_ln_int32_r(config, "-ceplen")))) {
+                                          ps_config_int(config, "ceplen")))) {
             E_ERROR("Failed to read MFCC from the file '%s'\n", infile);
             fclose(infh);
             ckd_free(infile);
@@ -519,12 +515,12 @@ write_lattice(ps_decoder_t *ps, char const *latdir, char const *uttid)
     }
     config = ps_get_config(ps);
     outfile = string_join(latdir, "/", uttid,
-                          cmd_ln_str_r(config, "-outlatext"), NULL);
+                          ps_config_str(config, "outlatext"), NULL);
     /* Prune lattice. */
     lmath = ps_get_logmath(ps);
-    beam = logmath_log(lmath, cmd_ln_float64_r(config, "-outlatbeam"));
+    beam = logmath_log(lmath, ps_config_float(config, "outlatbeam"));
     ps_lattice_posterior_prune(lat, beam);
-    if (0 == strcmp("htk", cmd_ln_str_r(config, "-outlatfmt"))) {
+    if (0 == strcmp("htk", ps_config_str(config, "outlatfmt"))) {
         if (ps_lattice_write_htk(lat, outfile) < 0) {
             E_ERROR("Failed to write lattice to %s\n", outfile);
             return -1;
@@ -551,8 +547,8 @@ write_nbest(ps_decoder_t *ps, char const *nbestdir, char const *uttid)
 
     config = ps_get_config(ps);
     outfile = string_join(nbestdir, "/", uttid,
-                          cmd_ln_str_r(config, "-nbestext"), NULL);
-    n = cmd_ln_int32_r(config, "-nbest");
+                          ps_config_str(config, "nbestext"), NULL);
+    n = ps_config_int(config, "nbest");
     fh = fopen(outfile, "w");
     if (fh == NULL) {
         E_ERROR_SYSTEM("Failed to write a lattice to file %s\n", outfile);
@@ -673,42 +669,42 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
     char const *str;
     int frate;
 
-    ctloffset = cmd_ln_int32_r(config, "-ctloffset");
-    ctlcount = cmd_ln_int32_r(config, "-ctlcount");
-    ctlincr = cmd_ln_int32_r(config, "-ctlincr");
-    outlatdir = cmd_ln_str_r(config, "-outlatdir");
-    nbestdir = cmd_ln_str_r(config, "-nbestdir");
-    frate = cmd_ln_int32_r(config, "-frate");
+    ctloffset = ps_config_int(config, "ctloffset");
+    ctlcount = ps_config_int(config, "ctlcount");
+    ctlincr = ps_config_int(config, "ctlincr");
+    outlatdir = ps_config_str(config, "outlatdir");
+    nbestdir = ps_config_str(config, "nbestdir");
+    frate = ps_config_int(config, "frate");
 
-    if ((str = cmd_ln_str_r(config, "-mllrctl"))) {
+    if ((str = ps_config_str(config, "mllrctl"))) {
         mllrfh = fopen(str, "r");
         if (mllrfh == NULL) {
             E_ERROR_SYSTEM("Failed to open MLLR control file file %s", str);
             goto done;
         }
     }
-    if ((str = cmd_ln_str_r(config, "-fsgctl"))) {
+    if ((str = ps_config_str(config, "fsgctl"))) {
         fsgfh = fopen(str, "r");
         if (fsgfh == NULL) {
             E_ERROR_SYSTEM("Failed to open FSG control file file %s", str);
             goto done;
         }
     }
-    if ((str = cmd_ln_str_r(config, "-alignctl"))) {
+    if ((str = ps_config_str(config, "alignctl"))) {
         alignfh = fopen(str, "r");
         if (alignfh == NULL) {
             E_ERROR_SYSTEM("Failed to open alignment control file file %s", str);
             goto done;
         }
     }
-    if ((str = cmd_ln_str_r(config, "-lmnamectl"))) {
+    if ((str = ps_config_str(config, "lmnamectl"))) {
         lmfh = fopen(str, "r");
         if (lmfh == NULL) {
             E_ERROR_SYSTEM("Failed to open LM name control file file %s", str);
             goto done;
         }
     }
-    if ((str = cmd_ln_str_r(config, "-hyp"))) {
+    if ((str = ps_config_str(config, "hyp"))) {
         hypfh = fopen(str, "w");
         if (hypfh == NULL) {
             E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing", str);
@@ -716,7 +712,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
         }
         setbuf(hypfh, NULL);
     }
-    if ((str = cmd_ln_str_r(config, "-hypseg"))) {
+    if ((str = ps_config_str(config, "hypseg"))) {
         hypsegfh = fopen(str, "w");
         if (hypsegfh == NULL) {
             E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing", str);
@@ -724,7 +720,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
         }
         setbuf(hypsegfh, NULL);
     }
-    if ((str = cmd_ln_str_r(config, "-ctm"))) {
+    if ((str = ps_config_str(config, "ctm"))) {
         ctmfh = fopen(str, "w");
         if (ctmfh == NULL) {
             E_ERROR_SYSTEM("Failed to open hypothesis file %s for writing", str);
@@ -891,7 +887,7 @@ main(int32 argc, char *argv[])
     config = cmd_ln_parse_r(NULL, ps_args_def, argc, argv, TRUE);
 
     /* Handle argument file as -argfile. */
-    if (config && (ctl = cmd_ln_str_r(config, "-argfile")) != NULL) {
+    if (config && (ctl = ps_config_str(config, "argfile")) != NULL) {
         config = cmd_ln_parse_file_r(config, ps_args_def, ctl, FALSE);
     }
     
@@ -902,7 +898,7 @@ main(int32 argc, char *argv[])
         return 1;
     }
 
-    if ((ctl = cmd_ln_str_r(config, "-ctl")) == NULL) {
+    if ((ctl = ps_config_str(config, "ctl")) == NULL) {
         E_FATAL("-ctl argument not present, nothing to do in batch mode!\n");
     }
     if ((ctlfh = fopen(ctl, "r")) == NULL) {
@@ -911,7 +907,7 @@ main(int32 argc, char *argv[])
 
     ps_default_search_args(config);
     if (!(ps = ps_init(config))) {
-        cmd_ln_free_r(config);
+        ps_config_free(config);
         fclose(ctlfh);
         E_FATAL("PocketSphinx decoder init failed\n");
     }
@@ -920,7 +916,7 @@ main(int32 argc, char *argv[])
 
     fclose(ctlfh);
     ps_free(ps);
-    cmd_ln_free_r(config);
+    ps_config_free(config);
     return 0;
 }
 

@@ -38,11 +38,10 @@
 #ifndef __LM_TRIE_H__
 #define __LM_TRIE_H__
 
-#include <sphinxbase/pio.h>
-#include <sphinxbase/bitarr.h>
-
-#include "ngram_model_internal.h"
-#include "lm_trie_quant.h"
+#include "util/pio.h"
+#include "lm/bitarr.h"
+#include "lm/ngram_model_internal.h"
+#include "lm/lm_trie_quant.h"
 
 typedef struct unigram_s {
     float prob;

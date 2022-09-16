@@ -72,8 +72,7 @@
 #ifndef __PS_SEARCH_H__
 #define __PS_SEARCH_H__
 
-#include <sphinxbase/fsg_model.h>
-#include <sphinxbase/ngram_model.h>
+#include <pocketsphinx/model.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -87,6 +86,8 @@ extern "C" {
  */
 typedef struct ps_search_iter_s ps_search_iter_t;
 
+/* Forward-declare this because header files are an atrocity. */
+typedef struct ps_decoder_s ps_decoder_t;
 
 /**
  * Actives search with the provided name.

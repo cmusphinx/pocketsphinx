@@ -39,17 +39,14 @@
  * @file hmm.h Implementation of HMM base structure.
  */
 
-/* System headers. */
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/err.h>
+#include <pocketsphinx/err.h>
 
-/* Local headers. */
+#include "util/ckd_alloc.h"
 #include "hmm.h"
 
 hmm_context_t *

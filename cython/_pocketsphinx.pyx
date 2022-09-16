@@ -26,28 +26,19 @@ cdef class Config:
     manipulating `Config` objects.  There are a large number of
     parameters, most of which are not important or subject to change.
 
-    A `Config` can be initialized from a list of arguments as on a
-    command line::
-
-        config = Config("-hmm", "path/to/things", "-dict", "my.dict")
-
-    It can also be initialized with keyword arguments::
+    A `Config` can be initialized with keyword arguments::
 
         config = Config(hmm="path/to/things", dict="my.dict")
 
-    Finally it can also be initialized by parsing a file::
+    It can also be initialized by parsing JSON (either as bytes or str):
 
-        config = Config.parse_file("feat.params")
+        config = Config.parse_json('{"hmm": "path/to/things",
+                                     "dict": "my.dict"}')
 
-    It is possible to access the `Config` either with the set_*
-    methods or directly by setting and getting keys, as with a Python
-    dictionary.  The set_* methods are not recommended as they require
-    the user to know the type of the configuration parameter and to
-    pre-pend a leading '-' character.  That is, the following are
-    equivalent::
+    The "parser" is very much not strict, so you can also pass a sort
+    of pseudo-YAML to it, e.g.:
 
-        config.get_string("-dict")
-        config["dict"]
+        config = Config.parse_json('hmm: path/to/things, dict: my.dict')
 
     In general, a `Config` mostly acts like a dictionary, and can be
     iterated over in the same fashion.  However, attempting to access
@@ -56,22 +47,15 @@ cdef class Config:
     See :doc:`config_params` for a description of existing parameters.
 
  """
-    cdef cmd_ln_t *cmd_ln
+    cdef ps_config_t *config
 
     # This is __init__ so we can bypass it if necessary
     def __init__(self, *args, **kwargs):
         cdef char **argv
-        if args or kwargs:
+        # Undocumented command-line parsing
+        if args:
             args = [str(k).encode('utf-8')
                     for k in args]
-            for k, v in kwargs.items():
-                if len(k) > 0 and k[0] != '-':
-                    k = "-" + k
-                args.append(k.encode('utf-8'))
-                if v is None:
-                    args.append(None)
-                else:
-                    args.append(str(v).encode('utf-8'))
             argv = <char **> malloc((len(args) + 1) * sizeof(char *))
             argv[len(args)] = NULL
             for i, buf in enumerate(args):
@@ -79,11 +63,14 @@ cdef class Config:
                     argv[i] = NULL
                 else:
                     argv[i] = buf
-            self.cmd_ln = cmd_ln_parse_r(NULL, ps_args(),
-                                         len(args), argv, 0)
+            self.config = ps_config_parse_args(NULL, len(args), argv)
             free(argv)
         else:
-            self.cmd_ln = cmd_ln_parse_r(NULL, ps_args(), 0, NULL, 0)
+            self.config = ps_config_init(NULL)
+        if kwargs:
+            for k, v in kwargs.items():
+                self[k] = v
+            
 
     def default_search_args(self):
         """Set arguments for the default acoustic and language model.
@@ -112,14 +99,14 @@ cdef class Config:
                 self.set_string("-dict", default_dict)
 
     @staticmethod
-    cdef create_from_ptr(cmd_ln_t *cmd_ln):
+    cdef create_from_ptr(ps_config_t *config):
         cdef Config self = Config.__new__(Config)
-        self.cmd_ln = cmd_ln
+        self.config = config
         return self
 
     @staticmethod
     def parse_file(str path):
-        """Parse a config file.
+        """DEPRECATED: Parse a config file.
 
         This reads a configuration file in "command-line" format, for example::
 
@@ -131,153 +118,157 @@ cdef class Config:
         Returns:
             Config: Parsed config, or None on error.
         """
-        cdef cmd_ln_t *config = cmd_ln_parse_file_r(NULL, ps_args(),
-                                                    path.encode(), False)
+        cdef ps_config_t *config = cmd_ln_parse_file_r(NULL, ps_args(),
+                                                       path.encode(), False)
         if config == NULL:
             return None
         return Config.create_from_ptr(config)
 
+    @staticmethod
+    def parse_json(json):
+        """Parse JSON (or pseudo-YAML) configuration
+
+        Args:
+            json(bytes|str): JSON data.
+        Returns:
+            Config: Parsed config, or None on error.
+        """
+        cdef ps_config_t *config
+        if not isinstance(json, bytes):
+            json = json.encode("utf-8")
+        config = ps_config_parse_json(NULL, json)
+        if config == NULL:
+            return None
+        return Config.create_from_ptr(config)
+
+    def dumps(self):
+        """Serialize configuration to a JSON-formatted `str`.
+
+        This produces JSON from a configuration object, with default
+        values included.
+
+        Returns:
+            str: Serialized JSON
+        Raises:
+            RuntimeError: if serialization fails somehow.
+        """
+        cdef const char *json = ps_config_serialize_json(self.config)
+        if json == NULL:
+            raise RuntimeError("JSON serialization failed")
+        return json.decode("utf-8")
+
     def __dealloc__(self):
-        cmd_ln_free_r(self.cmd_ln)
+        ps_config_free(self.config)
 
     def get_float(self, key):
-        return cmd_ln_float_r(self.cmd_ln, key.encode('utf-8'))
+        return ps_config_float(self.config, self._normalize_key(key))
 
     def get_int(self, key):
-        return cmd_ln_int_r(self.cmd_ln, key.encode('utf-8'))
+        return ps_config_int(self.config, self._normalize_key(key))
 
     def get_string(self, key):
-        cdef const char *val = cmd_ln_str_r(self.cmd_ln,
-                                            key.encode('utf-8'))
+        cdef const char *val = ps_config_str(self.config,
+                                             self._normalize_key(key))
         if val == NULL:
             return None
         else:
             return val.decode('utf-8')
 
     def get_boolean(self, key):
-        return cmd_ln_int_r(self.cmd_ln, key.encode('utf-8')) != 0
+        return ps_config_bool(self.config, self._normalize_key(key))
 
     def set_float(self, key, double val):
-        cmd_ln_set_float_r(self.cmd_ln, key.encode('utf-8'), val)
+        ps_config_set_float(self.config, self._normalize_key(key), val)
 
     def set_int(self, key, long val):
-        cmd_ln_set_int_r(self.cmd_ln, key.encode('utf-8'), val)
+        ps_config_set_int(self.config, self._normalize_key(key), val)
 
     def set_boolean(self, key, val):
-        cmd_ln_set_int_r(self.cmd_ln, key.encode('utf-8'), val != 0)
+        ps_config_set_bool(self.config, self._normalize_key(key), bool(val))
 
     def set_string(self, key, val):
         if val == None:
-            cmd_ln_set_str_r(self.cmd_ln, key.encode('utf-8'), NULL)
+            ps_config_set_str(self.config, self._normalize_key(key), NULL)
         else:
-            cmd_ln_set_str_r(self.cmd_ln, key.encode('utf-8'), val.encode('utf-8'))
+            ps_config_set_str(self.config, self._normalize_key(key), val.encode('utf-8'))
 
     def set_string_extra(self, key, val):
         if val == None:
-            cmd_ln_set_str_extra_r(self.cmd_ln, key.encode('utf-8'), NULL)
+            cmd_ln_set_str_extra_r(self.config, self._normalize_key(key), NULL)
         else:
-            cmd_ln_set_str_extra_r(self.cmd_ln, key.encode('utf-8'), val.encode('utf-8'))
+            cmd_ln_set_str_extra_r(self.config, self._normalize_key(key), val.encode('utf-8'))
 
     def exists(self, key):
         return key in self
 
     cdef _normalize_key(self, key):
-        # Note, returns a Python bytes string, to avoid unsafe temps
-        if len(key) > 0:
-            if key[0] == "_":
-                # Ask for underscore, get underscore
-                return key.encode('utf-8')
-            elif key[0] == "-":
-                # Ask for dash, get underscore or dash
-                under_key = ("_" + key[1:]).encode('utf-8')
-                if cmd_ln_exists_r(self.cmd_ln, under_key):
-                    return under_key
-                else:
-                    return key.encode('utf-8')
-            else:
-                # No dash or underscore, try underscore, then dash
-                under_key = ("_" + key).encode('utf-8')
-                if cmd_ln_exists_r(self.cmd_ln, under_key):
-                    return under_key
-                dash_key = ("-" + key).encode('utf-8')
-                if cmd_ln_exists_r(self.cmd_ln, dash_key):
-                    return dash_key
+        if key[0] in "-_":
+            key = key[1:]
         return key.encode('utf-8')
 
-    cdef _normalize_ckey(self, const char *ckey):
-        key = ckey.decode('utf-8')
-        if len(key) == 0:
-            return key
-        if key[0] in "-_":
-            return key[1:]
-
     def __contains__(self, key):
-        return cmd_ln_exists_r(self.cmd_ln, self._normalize_key(key))
+        return ps_config_typeof(self.config, self._normalize_key(key)) != 0
 
     def __getitem__(self, key):
         cdef const char *cval
-        cdef cmd_ln_val_t *at;
+        cdef const anytype_t *at;
+        cdef int t
+
         ckey = self._normalize_key(key)
-        at = cmd_ln_access_r(self.cmd_ln, ckey)
+        at = ps_config_get(self.config, ckey)
         if at == NULL:
             raise KeyError("Unknown key %s" % key)
-        elif at.type & ARG_STRING:
-            cval = cmd_ln_str_r(self.cmd_ln, ckey)
+        t = ps_config_typeof(self.config, ckey)
+        if t & ARG_STRING:
+            cval = <const char *>at.ptr
             if cval == NULL:
                 return None
             else:
                 return cval.decode('utf-8')
-        elif at.type & ARG_INTEGER:
-            return cmd_ln_int_r(self.cmd_ln, ckey)
-        elif at.type & ARG_FLOATING:
-            return cmd_ln_float_r(self.cmd_ln, ckey)
-        elif at.type & ARG_BOOLEAN:
-            return cmd_ln_int_r(self.cmd_ln, ckey) != 0
+        elif t & ARG_INTEGER:
+            return at.i
+        elif t & ARG_FLOATING:
+            return at.fl
+        elif t & ARG_BOOLEAN:
+            return bool(at.i)
         else:
-            raise ValueError("Unable to handle parameter type %d" % at.type)
+            raise ValueError("Unable to handle parameter type %d" % t)
 
     def __setitem__(self, key, val):
-        cdef cmd_ln_val_t *at;
+        cdef int t
         ckey = self._normalize_key(key)
-        at = cmd_ln_access_r(self.cmd_ln, ckey)
-        if at == NULL:
-            # FIXME: for now ... but should handle this
+        t = ps_config_typeof(self.config, ckey)
+        if t == 0:
             raise KeyError("Unknown key %s" % key)
-        elif at.type & ARG_STRING:
+        if t & ARG_STRING:
             if val is None:
-                cmd_ln_set_str_r(self.cmd_ln, ckey, NULL)
+                ps_config_set_str(self.config, ckey, NULL)
             else:
-                cmd_ln_set_str_r(self.cmd_ln, ckey, str(val).encode('utf-8'))
-        elif at.type & ARG_INTEGER:
-            cmd_ln_set_int_r(self.cmd_ln, ckey, int(val))
-        elif at.type & ARG_FLOATING:
-            cmd_ln_set_float_r(self.cmd_ln, ckey, float(val))
-        elif at.type & ARG_BOOLEAN:
-            cmd_ln_set_int_r(self.cmd_ln, ckey, val != 0)
+                ps_config_set_str(self.config, ckey, str(val).encode('utf-8'))
+        elif t & ARG_INTEGER:
+            ps_config_set_int(self.config, ckey, int(val))
+        elif t & ARG_FLOATING:
+            ps_config_set_float(self.config, ckey, float(val))
+        elif t & ARG_BOOLEAN:
+            ps_config_set_bool(self.config, ckey, bool(val))
         else:
-            raise ValueError("Unable to handle parameter type %d" % at.type)
+            raise ValueError("Unable to handle parameter type %d" % t)
 
     def __iter__(self):
-        cdef hash_table_t *ht = self.cmd_ln.ht
+        cdef hash_table_t *ht = self.config.ht
         cdef hash_iter_t *itor
-        cdef const char *ckey
-        keys = set()
-        itor = hash_table_iter(self.cmd_ln.ht)
+        itor = hash_table_iter(self.config.ht)
         while itor != NULL:
             ckey = hash_entry_key(itor.ent)
-            key = self._normalize_ckey(ckey)
-            keys.add(key)
+            yield ckey.decode('utf-8')
             itor = hash_table_iter_next(itor)
-        return iter(keys)
 
     def items(self):
-        keys = list(self)
-        for key in keys:
+        for key in self:
             yield (key, self[key])
 
     def __len__(self):
-        # Incredibly, the only way to do this, but necessary also
-        # because of dash and underscore magic.
+        # Incredibly, the only way to do this
         return sum(1 for _ in self)
 
     def describe(self):
@@ -291,7 +282,7 @@ cdef class Config:
             default values and documentation
 
         """
-        cdef const arg_t *arg = self.cmd_ln.defn
+        cdef const arg_t *arg = self.config.defn
         cdef int base_type
         while arg != NULL and arg.name != NULL:
             name = arg.name.decode('utf-8')
@@ -517,7 +508,7 @@ cdef class NGramModel:
     cdef ngram_model_t *lm
 
     def __init__(self, Config config, LogMath logmath, str path):
-        cdef ngram_model_t *lm = ngram_model_read(config.cmd_ln,
+        cdef ngram_model_t *lm = ngram_model_read(config.config,
                                                   path.encode("utf-8"),
                                                   NGRAM_AUTO,
                                                   logmath.lmath)
@@ -788,7 +779,7 @@ cdef class Decoder:
         if self.config is None:
             raise ValueError, "Failed to parse argument list"
         self.config.default_search_args()
-        self.ps = ps_init(self.config.cmd_ln)
+        self.ps = ps_init(self.config.config)
         if self.ps == NULL:
             raise RuntimeError, "Failed to initialize PocketSphinx"
 
@@ -806,12 +797,12 @@ cdef class Decoder:
             RuntimeError: On invalid configuration or other failure to
                           reinitialize decoder.
         """
-        cdef cmd_ln_t *cconfig
+        cdef ps_config_t *cconfig
         if config is None:
             cconfig = NULL
         else:
             self.config = config
-            cconfig = config.cmd_ln
+            cconfig = config.config
         if ps_reinit(self.ps, cconfig) != 0:
             raise RuntimeError("Failed to reinitialize decoder configuration")
 
@@ -826,12 +817,12 @@ cdef class Decoder:
             RuntimeError: On invalid configuration or other failure to
                           initialize feature extraction.
         """
-        cdef cmd_ln_t *cconfig
+        cdef ps_config_t *cconfig
         if config is None:
             cconfig = NULL
         else:
             self.config = config
-            cconfig = config.cmd_ln
+            cconfig = config.config
         if ps_reinit_feat(self.ps, cconfig) < 0:
             raise RuntimeError("Failed to reinitialize feature extraction")
 
@@ -916,7 +907,7 @@ cdef class Decoder:
             RuntimeError: If processing fails.
         """
         cdef const unsigned char[:] cdata = data
-        cdef int ncep = fe_get_output_size(ps_get_fe(self.ps))
+        cdef int ncep = self.config["ceplen"]
         cdef int nfr = len(cdata) // (ncep * sizeof(float))
         cdef float **feats = <float **>ckd_alloc_2d_ptr(nfr, ncep, <void *>&cdata[0], sizeof(float))
         rv = ps_process_cep(self.ps, feats, nfr, no_search, full_utt)
@@ -1047,7 +1038,7 @@ cdef class Decoder:
         """
         cdef float lw
 
-        lw = cmd_ln_float_r(self.config.cmd_ln, "-lw")
+        lw = ps_config_float(self.config.config, "-lw")
         return FsgModel.readfile(filename, self.get_logmath(), lw)
 
     def read_jsgf(self, str filename):
@@ -1063,7 +1054,7 @@ cdef class Decoder:
         """
         cdef float lw
 
-        lw = cmd_ln_float_r(self.config.cmd_ln, "-lw")
+        lw = ps_config_float(self.config.config, "-lw")
         return FsgModel.jsgf_read_file(filename, self.get_logmath(), lw)
 
     def create_fsg(self, str name, int start_state, int final_state, transitions):
@@ -1101,7 +1092,7 @@ cdef class Decoder:
         cdef float lw
         cdef int wid
 
-        lw = cmd_ln_float_r(self.config.cmd_ln, "-lw")
+        lw = ps_config_float(self.config.config, "-lw")
         lmath = self.get_logmath()
         n_state = max(itertools.chain(*((t[0], t[1]) for t in transitions))) + 1
         fsg = FsgModel(name, lmath, lw, n_state)
@@ -1159,7 +1150,7 @@ cdef class Decoder:
             if rule == NULL:
                 jsgf_grammar_free(jsgf)
                 raise RuntimeError("No public rules found in JSGF")
-        lw = cmd_ln_float_r(self.config.cmd_ln, "-lw")
+        lw = ps_config_float(self.config.config, "-lw")
         lmath = ps_get_logmath(self.ps)
         cdef fsg_model_t *cfsg = jsgf_build_fsg(jsgf, rule, lmath, lw)
         jsgf_grammar_free(jsgf)

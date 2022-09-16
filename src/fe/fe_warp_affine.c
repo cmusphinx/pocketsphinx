@@ -56,11 +56,11 @@
 #pragma warning (disable: 4996)
 #endif
 
-#include "sphinxbase/strfuncs.h"
-#include "sphinxbase/err.h"
+#include <pocketsphinx.h>
 
-#include "fe_warp.h"
-#include "fe_warp_affine.h"
+#include "util/strfuncs.h"
+#include "fe/fe_warp.h"
+#include "fe/fe_warp_affine.h"
 
 #define N_PARAM		2
 #define YES             1

@@ -39,14 +39,9 @@
 #ifndef __KWS_SEARCH_H__
 #define __KWS_SEARCH_H__
 
-/* SphinxBase headers. */
-#include <sphinxbase/glist.h>
-#include <sphinxbase/cmd_ln.h>
-
-/* Public headers. */
 #include <pocketsphinx.h>
 
-/* Local headers. */
+#include "util/glist.h"
 #include "pocketsphinx_internal.h"
 #include "kws_detections.h"
 #include "hmm.h"

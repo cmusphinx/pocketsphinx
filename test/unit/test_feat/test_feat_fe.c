@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include <sphinxbase/fe.h>
-#include <sphinxbase/feat.h>
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/ckd_alloc.h>
+#include "fe/fe.h"
+#include "feat/feat.h"
+#include "util/cmd_ln.h"
+#include "util/ckd_alloc.h"
 
 #include "test_macros.h"
 
@@ -147,7 +147,7 @@ main(int argc, char *argv[])
 	feat_array_free(featbuf2);
 	feat_free(fcb);
 	ckd_free_2d(cepbuf);
-	cmd_ln_free_r(config);
+	ps_config_free(config);
 
 	return 0;
 }

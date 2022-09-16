@@ -39,9 +39,10 @@
 #include <config.h>
 #endif
 
-#include <sphinxbase/priority_queue.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/err.h>
+#include <pocketsphinx/err.h>
+
+#include "util/priority_queue.h"
+#include "util/ckd_alloc.h"
 
 struct priority_queue_s {
     void **pointers;

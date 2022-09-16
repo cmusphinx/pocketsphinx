@@ -37,9 +37,6 @@
 #ifndef FE_WARP_inverse_linear_H
 #define FE_WARP_inverse_linear_H
 
-#include "sphinxbase/fe.h"
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif

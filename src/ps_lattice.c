@@ -39,19 +39,17 @@
  * @file ps_lattice.c Word graph search.
  */
 
-/* System headers. */
 #include <assert.h>
 #include <string.h>
 #include <math.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/listelem_alloc.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/pio.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
+#include "util/ckd_alloc.h"
+#include "util/listelem_alloc.h"
+#include "util/strfuncs.h"
+#include "util/pio.h"
+
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
 #include "ngram_search.h"
@@ -404,7 +402,7 @@ ps_lattice_read(ps_decoder_t *ps,
         dag->search = ps->search;
         dag->dict = dict_retain(ps->dict);
         dag->lmath = logmath_retain(ps->lmath);
-        dag->frate = cmd_ln_int32_r(dag->search->config, "-frate");
+        dag->frate = ps_config_int(dag->search->config, "frate");
     }
     else {
         dag->dict = dict_init(NULL, NULL);
@@ -607,11 +605,11 @@ ps_lattice_read(ps_decoder_t *ps,
          * not exist in the language model.  FIXME: This is
          * potentially buggy, as we already do this before outputting
          * lattices. */
-        pip = logmath_log(dag->lmath, cmd_ln_float32_r(ps->config, "-pip"));
+        pip = logmath_log(dag->lmath, ps_config_float(ps->config, "pip"));
         silpen = pip + logmath_log(dag->lmath,
-                                   cmd_ln_float32_r(ps->config, "-silprob"));
+                                   ps_config_float(ps->config, "silprob"));
         fillpen = pip + logmath_log(dag->lmath,
-                                    cmd_ln_float32_r(ps->config, "-fillprob"));
+                                    ps_config_float(ps->config, "fillprob"));
         ps_lattice_penalize_fillers(dag, silpen, fillpen);
     }
 
@@ -640,7 +638,7 @@ ps_lattice_init_search(ps_search_t *search, int n_frame)
     dag->search = search;
     dag->dict = dict_retain(search->dict);
     dag->lmath = logmath_retain(search->acmod->lmath);
-    dag->frate = cmd_ln_int32_r(dag->search->config, "-frate");
+    dag->frate = ps_config_int(dag->search->config, "frate");
     dag->silence = dict_silwid(dag->dict);
     dag->n_frames = n_frame;
     dag->latnode_alloc = listelem_alloc_init(sizeof(ps_latnode_t));

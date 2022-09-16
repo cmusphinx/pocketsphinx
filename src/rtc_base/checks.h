@@ -37,7 +37,7 @@ RTC_NORETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
 #ifdef __cplusplus
 }  // extern "C"
 #endif */
-#include <sphinxbase/err.h>
+#include <pocketsphinx/err.h>
 #define rtc_FatalMessage(file, line, msg) E_FATAL(msg)
 
 #ifdef RTC_DISABLE_CHECK_MSG

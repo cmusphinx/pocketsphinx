@@ -41,14 +41,8 @@
 #ifndef _MS_SENONE_H_
 #define _MS_SENONE_H_
 
+#include <pocketsphinx.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/logmath.h>
-
-/* Local headers. */
 #include "ms_gauden.h"
 #include "bin_mdef.h"
 

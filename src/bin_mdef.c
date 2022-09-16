@@ -46,19 +46,15 @@
  * 	David Huggins-Daines <dhdaines@gmail.com>
  *********************************************************************/
 
-/* System headers. */
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/byteorder.h>
-#include <sphinxbase/case.h>
-#include <sphinxbase/err.h>
+#include <pocketsphinx.h>
 
-/* Local headers. */
+#include "util/ckd_alloc.h"
+#include "util/byteorder.h"
+#include "util/case.h"
 #include "mdef.h"
 #include "bin_mdef.h"
 
@@ -404,7 +400,7 @@ bin_mdef_read(ps_config_t *config, const char *filename)
     m->ciname = ckd_calloc(m->n_ciphone, sizeof(*m->ciname));
 
     /* Decide whether to read in the whole file or mmap it. */
-    do_mmap = config ? cmd_ln_boolean_r(config, "-mmap") : TRUE;
+    do_mmap = config ? ps_config_bool(config, "mmap") : TRUE;
     if (swap) {
         E_WARN("-mmap specified, but mdef is other-endian.  Will not memory-map.\n");
         do_mmap = FALSE;

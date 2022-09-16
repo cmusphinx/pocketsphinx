@@ -5,6 +5,7 @@ set(TESTS
   test_alignment
   test_allphone
   test_bitvec
+  test_config
   test_dict2pid
   test_dict
   test_fe
@@ -46,7 +47,6 @@ endforeach()
 
 add_subdirectory(test_alloc)
 add_subdirectory(test_case)
-add_subdirectory(test_cmdln)
 add_subdirectory(test_feat)
 add_subdirectory(test_fsg)
 add_subdirectory(test_hash)
