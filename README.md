@@ -53,12 +53,25 @@ Usage
 -----
 
 The `pocketsphinx` command-line program reads single-channel 16-bit
-PCM audio from standard input and attemps to recognize speech in it
-using the default acoustic and language model.  It accepts a large
-number of options which you probably don't care about, and a *command*
-which defaults to `live`.  The commands are as follows:
+PCM audio from standard input or one or more files, and attemps to
+recognize speech in it using the default acoustic and language model.
+It accepts a large number of options which you probably don't care
+about, and a *command* which defaults to `live`.
 
-  - `live`: Detect speech segments in standard input, run recognition
+If you have a single-channel WAV file called "speech.wav" and you want
+to recognize speech in it, you can try doing this (the results may not
+be wonderful):
+
+    pocketsphinx single speech.wav
+    
+If your input is in some other format I suggest converting it with
+`sox` as described below.
+
+The commands are as follows:
+
+  - `help`: Print a long list of those options you don't care about.
+
+  - `live`: Detect speech segments in each input, run recognition
     on them (using those options you don't care about), and write the
     results to standard output in line-delimited JSON.  I realize this
     isn't the prettiest format, but it sure beats XML.  Each line
@@ -77,7 +90,7 @@ which defaults to `live`.  The commands are as follows:
       also support hierarchical results in which case `w` could be
       present.
 
-  - `single`: Recognize the input as a single utterance, and write a
+  - `single`: Recognize each input as a single utterance, and write a
     JSON object in the same format described above.
 
   - `soxflags`: Return arguments to `sox` which will create the
