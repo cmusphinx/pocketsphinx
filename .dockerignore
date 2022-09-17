@@ -11,3 +11,4 @@ DartConfiguration.tcl
 cmake_install.cmake
 Dockerfile
 *.whl
+dist
