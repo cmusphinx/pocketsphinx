@@ -151,8 +151,9 @@ static ps_search_t *
 ps_find_search(ps_decoder_t *ps, char const *name)
 {
     void *search = NULL;
+    if (name == NULL)
+        return ps->search;
     hash_table_lookup(ps->searches, name, &search);
-
     return (ps_search_t *) search;
 }
 
