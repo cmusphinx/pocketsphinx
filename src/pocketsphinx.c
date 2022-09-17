@@ -314,15 +314,15 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
 
     /* Load KWS if one was specified in config */
     if ((keyphrase = ps_config_str(ps->config, "keyphrase"))) {
-        if (ps_set_keyphrase(ps, PS_DEFAULT_SEARCH, keyphrase))
+        if (ps_add_keyphrase(ps, PS_DEFAULT_SEARCH, keyphrase))
             return -1;
-        ps_set_search(ps, PS_DEFAULT_SEARCH);
+        ps_activate_search(ps, PS_DEFAULT_SEARCH);
     }
 
     if ((path = ps_config_str(ps->config, "kws"))) {
-        if (ps_set_kws(ps, PS_DEFAULT_SEARCH, path))
+        if (ps_add_kws(ps, PS_DEFAULT_SEARCH, path))
             return -1;
-        ps_set_search(ps, PS_DEFAULT_SEARCH);
+        ps_activate_search(ps, PS_DEFAULT_SEARCH);
     }
 
     /* Load an FSG if one was specified in config */
@@ -330,31 +330,31 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
         fsg_model_t *fsg = fsg_model_readfile(path, ps->lmath, lw);
         if (!fsg)
             return -1;
-        if (ps_set_fsg(ps, PS_DEFAULT_SEARCH, fsg)) {
+        if (ps_add_fsg(ps, PS_DEFAULT_SEARCH, fsg)) {
             fsg_model_free(fsg);
             return -1;
         }
         fsg_model_free(fsg);
-        ps_set_search(ps, PS_DEFAULT_SEARCH);
+        ps_activate_search(ps, PS_DEFAULT_SEARCH);
     }
     
     /* Or load a JSGF grammar */
     if ((path = ps_config_str(ps->config, "jsgf"))) {
-        if (ps_set_jsgf_file(ps, PS_DEFAULT_SEARCH, path)
-            || ps_set_search(ps, PS_DEFAULT_SEARCH))
+        if (ps_add_jsgf_file(ps, PS_DEFAULT_SEARCH, path)
+            || ps_activate_search(ps, PS_DEFAULT_SEARCH))
             return -1;
     }
 
     if ((path = ps_config_str(ps->config, "allphone"))) {
-        if (ps_set_allphone_file(ps, PS_DEFAULT_SEARCH, path)
-                || ps_set_search(ps, PS_DEFAULT_SEARCH))
+        if (ps_add_allphone_file(ps, PS_DEFAULT_SEARCH, path)
+                || ps_activate_search(ps, PS_DEFAULT_SEARCH))
                 return -1;
     }
 
     if ((path = ps_config_str(ps->config, "lm")) && 
         !ps_config_str(ps->config, "allphone")) {
-        if (ps_set_lm_file(ps, PS_DEFAULT_SEARCH, path)
-            || ps_set_search(ps, PS_DEFAULT_SEARCH))
+        if (ps_add_lm_file(ps, PS_DEFAULT_SEARCH, path)
+            || ps_activate_search(ps, PS_DEFAULT_SEARCH))
             return -1;
     }
 
@@ -372,7 +372,7 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
             lmset_it; lmset_it = ngram_model_set_iter_next(lmset_it)) {    
             ngram_model_t *lm = ngram_model_set_iter_model(lmset_it, &name);            
             E_INFO("adding search %s\n", name);
-            if (ps_set_lm(ps, name, lm)) {
+            if (ps_add_lm(ps, name, lm)) {
                 ngram_model_set_iter_free(lmset_it);
         	ngram_model_free(lmset);
                 return -1;
@@ -382,7 +382,7 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
 
         name = ps_config_str(ps->config, "lmname");
         if (name)
-            ps_set_search(ps, name);
+            ps_activate_search(ps, name);
         else {
             E_ERROR("No default LM name (-lmname) for `-lmctl'\n");
             return -1;
@@ -482,7 +482,7 @@ ps_update_mllr(ps_decoder_t *ps, ps_mllr_t *mllr)
 }
 
 int
-ps_set_search(ps_decoder_t *ps, const char *name)
+ps_activate_search(ps_decoder_t *ps, const char *name)
 {
     ps_search_t *search;
 
@@ -507,7 +507,7 @@ ps_set_search(ps_decoder_t *ps, const char *name)
 }
 
 const char*
-ps_get_search(ps_decoder_t *ps)
+ps_current_search(ps_decoder_t *ps)
 {
     hash_iter_t *search_it;
     const char* name = NULL;
@@ -522,7 +522,7 @@ ps_get_search(ps_decoder_t *ps)
 }
 
 int 
-ps_unset_search(ps_decoder_t *ps, const char *name)
+ps_remove_search(ps_decoder_t *ps, const char *name)
 {
     ps_search_t *search = hash_table_delete(ps->searches, name);
     if (!search)
@@ -601,7 +601,7 @@ set_search_internal(ps_decoder_t *ps, ps_search_t *search)
 }
 
 int
-ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
+ps_add_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
 {
     ps_search_t *search;
     search = ngram_search_init(name, lm, ps->config, ps->acmod, ps->dict, ps->d2p);
@@ -609,7 +609,7 @@ ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
 }
 
 int
-ps_set_lm_file(ps_decoder_t *ps, const char *name, const char *path)
+ps_add_lm_file(ps_decoder_t *ps, const char *name, const char *path)
 {
   ngram_model_t *lm;
   int result;
@@ -618,13 +618,13 @@ ps_set_lm_file(ps_decoder_t *ps, const char *name, const char *path)
   if (!lm)
       return -1;
 
-  result = ps_set_lm(ps, name, lm);
+  result = ps_add_lm(ps, name, lm);
   ngram_model_free(lm);
   return result;
 }
 
 int
-ps_set_allphone(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
+ps_add_allphone(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
 {
     ps_search_t *search;
     search = allphone_search_init(name, lm, ps->config, ps->acmod, ps->dict, ps->d2p);
@@ -632,7 +632,7 @@ ps_set_allphone(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
 }
 
 int
-ps_set_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
+ps_add_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
 {
   ngram_model_t *lm;
   int result;
@@ -640,7 +640,7 @@ ps_set_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
   lm = NULL;
   if (path)
     lm = ngram_model_read(ps->config, path, NGRAM_AUTO, ps->lmath);
-  result = ps_set_allphone(ps, name, lm);
+  result = ps_add_allphone(ps, name, lm);
   if (lm)
       ngram_model_free(lm);
   return result;
@@ -679,7 +679,7 @@ ps_set_align(ps_decoder_t *ps, const char *name, const char *text)
 }
 
 int
-ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyfile)
+ps_add_kws(ps_decoder_t *ps, const char *name, const char *keyfile)
 {
     ps_search_t *search;
     search = kws_search_init(name, NULL, keyfile, ps->config, ps->acmod, ps->dict, ps->d2p);
@@ -687,7 +687,7 @@ ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyfile)
 }
 
 int
-ps_set_keyphrase(ps_decoder_t *ps, const char *name, const char *keyphrase)
+ps_add_keyphrase(ps_decoder_t *ps, const char *name, const char *keyphrase)
 {
     ps_search_t *search;
     search = kws_search_init(name, keyphrase, NULL, ps->config, ps->acmod, ps->dict, ps->d2p);
@@ -695,7 +695,7 @@ ps_set_keyphrase(ps_decoder_t *ps, const char *name, const char *keyphrase)
 }
 
 int
-ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
+ps_add_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
 {
     ps_search_t *search;
     search = fsg_search_init(name, fsg, ps->config, ps->acmod, ps->dict, ps->d2p);
@@ -703,7 +703,7 @@ ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
 }
 
 int 
-ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
+ps_add_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
 {
   fsg_model_t *fsg;
   jsgf_rule_t *rule;
@@ -735,14 +735,14 @@ ps_set_jsgf_file(ps_decoder_t *ps, const char *name, const char *path)
 
   lw = ps_config_float(ps->config, "lw");
   fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, lw);
-  result = ps_set_fsg(ps, name, fsg);
+  result = ps_add_fsg(ps, name, fsg);
   fsg_model_free(fsg);
   jsgf_grammar_free(jsgf);
   return result;
 }
 
 int 
-ps_set_jsgf_string(ps_decoder_t *ps, const char *name, const char *jsgf_string)
+ps_add_jsgf_string(ps_decoder_t *ps, const char *name, const char *jsgf_string)
 {
   fsg_model_t *fsg;
   jsgf_rule_t *rule;
@@ -774,7 +774,7 @@ ps_set_jsgf_string(ps_decoder_t *ps, const char *name, const char *jsgf_string)
 
   lw = ps_config_float(ps->config, "lw");
   fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, lw);
-  result = ps_set_fsg(ps, name, fsg);
+  result = ps_add_fsg(ps, name, fsg);
   fsg_model_free(fsg);
   jsgf_grammar_free(jsgf);
   return result;
