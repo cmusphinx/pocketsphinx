@@ -39,8 +39,8 @@ main(int argc, char *argv[])
     fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, 7.5);
     TEST_ASSERT(fsg);
     fsg_model_write(fsg, stdout);
-    ps_set_fsg(ps, "goforward.move2", fsg);
-    ps_set_search(ps, "goforward.move2"); 
+    ps_add_fsg(ps, "goforward.move2", fsg);
+    ps_activate_search(ps, "goforward.move2"); 
     TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
     ps_decode_raw(ps, rawfh, -1);
     hyp = ps_get_hyp(ps, &score);

@@ -648,7 +648,7 @@ ps_add_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
 }
 
 int
-ps_set_align(ps_decoder_t *ps, const char *name, const char *text)
+ps_add_align(ps_decoder_t *ps, const char *name, const char *text)
 {
     ps_search_t *search;
     ps_alignment_t *alignment;

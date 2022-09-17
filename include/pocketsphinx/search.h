@@ -61,8 +61,8 @@
  * The exact design of a searches depends on your application. For
  * example, you might want to listen for activation keyphrase first
  * and once keyphrase is recognized switch to ngram search to
- * recognize actual command. Once yourecognized the command, you can
- * switch to grammar search to recognize the confirmation and then
+ * recognize actual command. Once you have recognized the command, you
+ * can switch to grammar search to recognize the confirmation and then
  * switch back to keyphrase listening mode to wait for another
  * command.
  *
@@ -101,7 +101,6 @@ typedef struct ps_decoder_s ps_decoder_t;
  */
 POCKETSPHINX_EXPORT
 int ps_activate_search(ps_decoder_t *ps, const char *name);
-#define ps_set_search(ps, name) ps_activate_search(ps, name)
 
 /**
  * Returns name of current search in decoder
@@ -110,7 +109,6 @@ int ps_activate_search(ps_decoder_t *ps, const char *name);
  */
 POCKETSPHINX_EXPORT 
 const char* ps_current_search(ps_decoder_t *ps);
-#define ps_get_search(ps) ps_current_search(ps)
 
 /**
  * Removes a search module and releases its resources.
@@ -124,7 +122,6 @@ const char* ps_current_search(ps_decoder_t *ps);
  */
 POCKETSPHINX_EXPORT
 int ps_remove_search(ps_decoder_t *ps, const char *name);
-#define ps_unset_search(ps, name) ps_remove_search(ps, name)
 
 /**
  * Returns iterator over current searches 
@@ -192,7 +189,6 @@ ngram_model_t *ps_get_lm(ps_decoder_t *ps, const char *name);
  */ 
 POCKETSPHINX_EXPORT
 int ps_add_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
-#define ps_set_lm(ps, name, lm) ps_add_lm(ps, name, lm)
 
 /**
  * Adds new search based on N-gram language model.
@@ -203,7 +199,6 @@ int ps_add_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
  */
 POCKETSPHINX_EXPORT
 int ps_add_lm_file(ps_decoder_t *ps, const char *name, const char *path);
-#define ps_set_lm_file(ps, name, path) ps_add_lm_file(ps, name, lm)
 
 /**
  * Get the finite-state grammar set object associated with a search.
@@ -225,7 +220,6 @@ fsg_model_t *ps_get_fsg(ps_decoder_t *ps, const char *name);
  */
 POCKETSPHINX_EXPORT
 int ps_add_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg);
-#define ps_set_fsg(ps, name, fsg) ps_add_fsg(ps, name, fsg)
 
 /**
  * Adds new search using JSGF model.
@@ -236,7 +230,6 @@ int ps_add_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg);
  */
 POCKETSPHINX_EXPORT
 int ps_add_jsgf_file(ps_decoder_t *ps, const char *name, const char *path);
-#define ps_set_jsgf_file(ps, name, path) ps_add_jsgf_file(ps, name, path)
 
 /**
  * Adds new search using JSGF model.
@@ -247,7 +240,6 @@ int ps_add_jsgf_file(ps_decoder_t *ps, const char *name, const char *path);
  */
 POCKETSPHINX_EXPORT
 int ps_add_jsgf_string(ps_decoder_t *ps, const char *name, const char *jsgf_string);
-#define ps_set_jsgf_string(ps, name, jsgf_string) ps_add_jsgf_string(ps, name, jsgf_string)
 
 /**
  * Get the keyphrase associated with a KWS search
@@ -269,7 +261,6 @@ const char* ps_get_kws(ps_decoder_t *ps, const char *name);
  */
 POCKETSPHINX_EXPORT 
 int ps_add_kws(ps_decoder_t *ps, const char *name, const char *keyfile);
-#define ps_add_kws(ps, name, keyfile) ps_add_kws(ps, name, keyfile)
 
 /**
  * Adds new keyphrase to spot
@@ -281,7 +272,6 @@ int ps_add_kws(ps_decoder_t *ps, const char *name, const char *keyfile);
  */
 POCKETSPHINX_EXPORT 
 int ps_add_keyphrase(ps_decoder_t *ps, const char *name, const char *keyphrase);
-#define ps_set_keyphrase(ps, name, keyphrase) ps_add_keyphrase(ps, name, keyphrase)
 
 /**
  * Adds new search based on phone N-gram language model.
@@ -293,7 +283,6 @@ int ps_add_keyphrase(ps_decoder_t *ps, const char *name, const char *keyphrase);
  */ 
 POCKETSPHINX_EXPORT
 int ps_add_allphone(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
-#define ps_set_allphone(ps, name, lm) ps_add_allphone(ps, name, lm)
 
 /**
  * Adds new search based on phone N-gram language model.
@@ -304,7 +293,24 @@ int ps_add_allphone(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
  */
 POCKETSPHINX_EXPORT
 int ps_add_allphone_file(ps_decoder_t *ps, const char *name, const char *path);
-#define ps_set_allphone_file(ps, name, path) ps_add_allphone_file(ps, name, path)
+
+/**
+ * Adds new search based on forced alignment.
+ *
+ * Convenient method to and create a forced aligner for a piece of
+ * text.  Note that this is currently less than useful, as it depends
+ * on the word sequence exactly matching the input, including
+ * alternate pronunciations and silences.
+ *
+ * @param ps Decoder
+ * @param name Name for this search (could be anything, such as an utterance
+ *   label or the name of the input file)
+ * @param words String containing whitespace-separated words for alignment.
+ *   These words are assumed to exist in the current dictionary.
+ * 
+ */
+POCKETSPHINX_EXPORT
+int ps_add_align(ps_decoder_t *ps, const char *name, const char *words);
 
 #ifdef __cplusplus
 }
