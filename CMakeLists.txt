@@ -94,7 +94,7 @@ else()
 
   # Set the default model directory to the install location
   set(MODELDIR ${CMAKE_INSTALL_FULL_DATADIR}/pocketsphinx/model)
-  option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+  option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
   if(BUILD_SHARED_LIBS)
     add_definitions(-DSPHINX_DLL)
   endif()
