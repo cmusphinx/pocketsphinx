@@ -37,9 +37,7 @@ class TestDecoder(unittest.TestCase):
 
     def test_decoder(self):
         decoder = Decoder()
-
-        lmath = decoder.get_logmath()
-        print("log(1e-150) = ", lmath.log(1e-150))
+        print("log(1e-150) = ", decoder.logmath.log(1e-150))
         print("Pronunciation for word 'hello' is ", decoder.lookup_word("hello"))
         self.assertEqual("HH AH L OW", decoder.lookup_word("hello"))
         print("Pronunciation for word 'abcdf' is ", decoder.lookup_word("abcdf"))

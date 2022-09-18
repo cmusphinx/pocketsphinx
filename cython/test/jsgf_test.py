@@ -33,13 +33,18 @@ class TestJsgf(unittest.TestCase):
         # Switch to JSGF grammar
         jsgf = Jsgf(os.path.join(DATADIR, "goforward.gram"))
         rule = jsgf.get_rule("goforward.move2")
-        fsg = jsgf.build_fsg(rule, decoder.get_logmath(), 7.5)
+        fsg = jsgf.build_fsg(rule, decoder.logmath, 7.5)
         fsg.writefile("goforward.fsg")
         self.assertTrue(os.path.exists("goforward.fsg"))
         os.remove("goforward.fsg")
 
-        decoder.set_fsg("goforward", fsg)
-        decoder.set_search("goforward") # FIXME: This API sucks
+        decoder.add_fsg("goforward", fsg)
+        self.assertNotEqual(decoder.current_search(), "goforward")
+        decoder.activate_search("goforward")
+        self.assertEqual(decoder.current_search(), "goforward")
+        self.assertTrue(decoder.get_fsg())
+        self.assertTrue(decoder.get_fsg("goforward"))
+        self.assertIsNone(decoder.get_lm("foobiebletch"))
 
         decoder.start_utt()
         with open(os.path.join(DATADIR, "goforward.raw"), "rb") as stream:

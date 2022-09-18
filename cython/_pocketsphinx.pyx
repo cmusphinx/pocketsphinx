@@ -13,6 +13,7 @@ from libc.string cimport memcpy
 import itertools
 import logging
 import pocketsphinx
+import warnings
 import os
 cimport _pocketsphinx
 
@@ -120,6 +121,8 @@ cdef class Config:
         """
         cdef ps_config_t *config = cmd_ln_parse_file_r(NULL, ps_args(),
                                                        path.encode(), False)
+        warnings.warn("parse_file() is deprecated, use JSON configuration instead",
+                      DeprecationWarning)
         if config == NULL:
             return None
         return Config.create_from_ptr(config)
@@ -768,23 +771,23 @@ cdef class Decoder:
         RuntimeError: On invalid configuration or other failure to
                       reinitialize decoder.
     """
-    cdef ps_decoder_t *ps
-    cdef public Config config
+    cdef ps_decoder_t *_ps
+    cdef Config _config
 
     def __init__(self, *args, **kwargs):
         if len(args) == 1 and isinstance(args[0], Config):
-            self.config = args[0]
+            self._config = args[0]
         else:
-            self.config = Config(*args, **kwargs)
-        if self.config is None:
+            self._config = Config(*args, **kwargs)
+        if self._config is None:
             raise ValueError, "Failed to parse argument list"
-        self.config.default_search_args()
-        self.ps = ps_init(self.config.config)
-        if self.ps == NULL:
+        self._config.default_search_args()
+        self._ps = ps_init(self._config.config)
+        if self._ps == NULL:
             raise RuntimeError, "Failed to initialize PocketSphinx"
 
     def __dealloc__(self):
-        ps_free(self.ps)
+        ps_free(self._ps)
 
     def reinit(self, Config config=None):
         """Reinitialize the decoder.
@@ -801,9 +804,9 @@ cdef class Decoder:
         if config is None:
             cconfig = NULL
         else:
-            self.config = config
+            self._config = config
             cconfig = config.config
-        if ps_reinit(self.ps, cconfig) != 0:
+        if ps_reinit(self._ps, cconfig) != 0:
             raise RuntimeError("Failed to reinitialize decoder configuration")
 
     def reinit_feat(self, Config config=None):
@@ -821,9 +824,9 @@ cdef class Decoder:
         if config is None:
             cconfig = NULL
         else:
-            self.config = config
+            self._config = config
             cconfig = config.config
-        if ps_reinit_feat(self.ps, cconfig) < 0:
+        if ps_reinit_feat(self._ps, cconfig) < 0:
             raise RuntimeError("Failed to reinitialize feature extraction")
 
     def get_cmn(self, update=False):
@@ -834,7 +837,7 @@ cdef class Decoder:
         Returns:
           str: Cepstral mean as a comma-separated list of numbers.
         """
-        cdef const char *cmn = ps_get_cmn(self.ps, update)
+        cdef const char *cmn = ps_get_cmn(self._ps, update)
         return cmn.decode("utf-8")
     
     def set_cmn(self, cmn):
@@ -843,7 +846,7 @@ cdef class Decoder:
         Args:
           cmn(str): Cepstral mean as a comma-separated list of numbers.
         """
-        cdef int rv = ps_set_cmn(self.ps, cmn.encode("utf-8"))
+        cdef int rv = ps_set_cmn(self._ps, cmn.encode("utf-8"))
         if rv != 0:
             raise ValueError("Invalid CMN string")
         
@@ -852,7 +855,9 @@ cdef class Decoder:
 
         This method can be called at the beginning of a new audio
         stream (but this is not necessary)."""
-        cdef int rv = ps_start_stream(self.ps)
+        cdef int rv = ps_start_stream(self._ps)
+        warnings.warn("start_stream() is deprecated and unnecessary",
+                      DeprecationWarning)
         if rv < 0:
             raise RuntimeError("Failed to start audio stream")
 
@@ -866,7 +871,7 @@ cdef class Decoder:
             RuntimeError: If processing fails to start (usually if it
                           has already been started).
         """
-        if ps_start_utt(self.ps) < 0:
+        if ps_start_utt(self._ps) < 0:
             raise RuntimeError, "Failed to start utterance processing"
 
     def get_in_speech(self):
@@ -876,7 +881,9 @@ cdef class Decoder:
         return True as long as `ps_start_utt` has been previously
         called.
         """
-        return ps_get_in_speech(self.ps)
+        warnings.warn("get_in_speech() is deprecated and does nothing useful",
+                      DeprecationWarning)
+        return ps_get_in_speech(self._ps)
 
     def process_raw(self, data, no_search=False, full_utt=False):
         """Process a block of raw audio.
@@ -891,7 +898,7 @@ cdef class Decoder:
         """
         cdef const unsigned char[:] cdata = data
         cdef Py_ssize_t n_samples = len(cdata) // 2
-        if ps_process_raw(self.ps, <const short *>&cdata[0],
+        if ps_process_raw(self._ps, <const short *>&cdata[0],
                           n_samples, no_search, full_utt) < 0:
             raise RuntimeError, "Failed to process %d samples of audio data" % len / 2
 
@@ -907,10 +914,10 @@ cdef class Decoder:
             RuntimeError: If processing fails.
         """
         cdef const unsigned char[:] cdata = data
-        cdef int ncep = self.config["ceplen"]
+        cdef int ncep = self._config["ceplen"]
         cdef int nfr = len(cdata) // (ncep * sizeof(float))
         cdef float **feats = <float **>ckd_alloc_2d_ptr(nfr, ncep, <void *>&cdata[0], sizeof(float))
-        rv = ps_process_cep(self.ps, feats, nfr, no_search, full_utt)
+        rv = ps_process_cep(self._ps, feats, nfr, no_search, full_utt)
         ckd_free(feats)
         if rv < 0:
             raise RuntimeError, "Failed to process %d frames of MFCC data" % nfr
@@ -923,7 +930,7 @@ cdef class Decoder:
         internal buffers and finalizing recognition results.
 
         """
-        if ps_end_utt(self.ps) < 0:
+        if ps_end_utt(self._ps) < 0:
             raise RuntimeError, "Failed to stop utterance processing"
 
     def hyp(self):
@@ -936,11 +943,11 @@ cdef class Decoder:
         cdef logmath_t *lmath
         cdef int score
 
-        hyp = ps_get_hyp(self.ps, &score)
+        hyp = ps_get_hyp(self._ps, &score)
         if hyp == NULL:
              return None
-        lmath = ps_get_logmath(self.ps)
-        prob = ps_get_prob(self.ps)
+        lmath = ps_get_logmath(self._ps)
+        prob = ps_get_prob(self._ps)
         return Hypothesis(hyp.decode('utf-8'),
                           logmath_exp(lmath, score),
                           logmath_exp(lmath, prob))
@@ -956,8 +963,8 @@ cdef class Decoder:
         """
         cdef logmath_t *lmath
         cdef const char *uttid
-        lmath = ps_get_logmath(self.ps)
-        return logmath_exp(lmath, ps_get_prob(self.ps))
+        lmath = ps_get_logmath(self._ps)
+        return logmath_exp(lmath, ps_get_prob(self._ps))
 
     def add_word(self, str word, str phones, update=True):
         """Add a word to the pronunciation dictionary.
@@ -976,7 +983,7 @@ cdef class Decoder:
         Raises:
             RuntimeError: If adding word failed for some reason.
         """
-        cdef rv = ps_add_word(self.ps, word.encode("utf-8"),
+        cdef rv = ps_add_word(self._ps, word.encode("utf-8"),
                               phones.encode("utf-8"), update)
         if rv < 0:
             raise RuntimeError("Failed to add word %s" % word)
@@ -991,7 +998,7 @@ cdef class Decoder:
             str: Space-separated list of phones, or None if not found.
         """
         cdef const char *cphones
-        cphones = ps_lookup_word(self.ps, word.encode("utf-8"))
+        cphones = ps_lookup_word(self._ps, word.encode("utf-8"))
         if cphones == NULL:
             return None
         else:
@@ -1005,10 +1012,10 @@ cdef class Decoder:
         """
         cdef ps_seg_t *itor
         cdef logmath_t *lmath
-        itor = ps_seg_iter(self.ps)
+        itor = ps_seg_iter(self._ps)
         if itor == NULL:
             return
-        lmath = ps_get_logmath(self.ps)
+        lmath = ps_get_logmath(self._ps)
         return SegmentList.create(itor, lmath)
 
 
@@ -1020,10 +1027,10 @@ cdef class Decoder:
         """
         cdef ps_nbest_t *itor
         cdef logmath_t *lmath
-        itor = ps_nbest(self.ps)
+        itor = ps_nbest(self._ps)
         if itor == NULL:
             return
-        lmath = ps_get_logmath(self.ps)
+        lmath = ps_get_logmath(self._ps)
         return NBestList.create(itor, lmath)
 
 
@@ -1038,7 +1045,7 @@ cdef class Decoder:
         """
         cdef float lw
 
-        lw = ps_config_float(self.config.config, "-lw")
+        lw = ps_config_float(self._config.config, "-lw")
         return FsgModel.readfile(filename, self.get_logmath(), lw)
 
     def read_jsgf(self, str filename):
@@ -1054,7 +1061,7 @@ cdef class Decoder:
         """
         cdef float lw
 
-        lw = ps_config_float(self.config.config, "-lw")
+        lw = ps_config_float(self._config.config, "-lw")
         return FsgModel.jsgf_read_file(filename, self.get_logmath(), lw)
 
     def create_fsg(self, str name, int start_state, int final_state, transitions):
@@ -1092,7 +1099,7 @@ cdef class Decoder:
         cdef float lw
         cdef int wid
 
-        lw = ps_config_float(self.config.config, "-lw")
+        lw = ps_config_float(self._config.config, "-lw")
         lmath = self.get_logmath()
         n_state = max(itertools.chain(*((t[0], t[1]) for t in transitions))) + 1
         fsg = FsgModel(name, lmath, lw, n_state)
@@ -1150,45 +1157,54 @@ cdef class Decoder:
             if rule == NULL:
                 jsgf_grammar_free(jsgf)
                 raise RuntimeError("No public rules found in JSGF")
-        lw = ps_config_float(self.config.config, "-lw")
-        lmath = ps_get_logmath(self.ps)
+        lw = ps_config_float(self._config.config, "-lw")
+        lmath = ps_get_logmath(self._ps)
         cdef fsg_model_t *cfsg = jsgf_build_fsg(jsgf, rule, lmath, lw)
         jsgf_grammar_free(jsgf)
         return FsgModel.create_from_ptr(cfsg)
 
-    def get_fsg(self, str name):
-        """Get the actual FsgModel for an FSG search.
+    def get_fsg(self, str name = None):
+        """Get the currently active FsgModel or the model for a
+        specific search module.
 
         Args:
-            name(str): Name of search module for this FSG.
+            name(str): Name of search module for this FSG.  If this is
+            None (the default), the currently active FSG will be
+            returned.
         Returns:
             FsgModel: FSG corresponding to `name`, or None if not found.
         """
-        cdef fsg_model_t *fsg = ps_get_fsg(self.ps, name.encode("utf-8"))
+        cdef fsg_model_t *fsg
+        if name is None:
+            fsg = ps_get_fsg(self._ps, NULL)
+        else:
+            fsg = ps_get_fsg(self._ps, name.encode("utf-8"))
         if fsg == NULL:
             return None
-        return FsgModel.create_from_ptr(fsg_model_retain(fsg))
+        else:
+            return FsgModel.create_from_ptr(fsg_model_retain(fsg))
 
-    def set_fsg(self, str name, FsgModel fsg):
-        """Create a search module from an FSG.
-
-        Note that because the API is stupid, you will have to call
-        `set_search(name)` in order to actually enable this FSG.
+    def add_fsg(self, str name, FsgModel fsg):
+        """Create (but do not activate) a search module for a finite-state
+        grammar.
 
         Args:
             name(str): Search module name to associate to this FSG.
             fsg(FsgModel): Previously loaded or constructed grammar.
         Raises:
             RuntimeError: If adding FSG failed for some reason.
+
         """
-        if ps_set_fsg(self.ps, name.encode("utf-8"), fsg.fsg) != 0:
+        if ps_add_fsg(self._ps, name.encode("utf-8"), fsg.fsg) != 0:
             raise RuntimeError("Failed to set FSG in decoder")
 
-    def set_jsgf_file(self, name, filename):
-        """Create a search module from a JSGF file.
+    def set_fsg(self, str name, FsgModel fsg):
+        warnings.warn("set_fsg() is deprecated, use add_fsg() instead",
+                      DeprecationWarning)
+        self.add_fsg(name, fsg)
 
-        Note that because the API is stupid, you will have to call
-        `set_search(name)` in order to actually enable this grammar.
+    def add_jsgf_file(self, name, filename):
+        """Create (but do not activate) a search module from a JSGF file.
 
         Args:
             filename(str): Path to a JSGF file to load.
@@ -1196,15 +1212,18 @@ cdef class Decoder:
         Raises:
             RuntimeError: If adding grammar failed for some reason.
         """
-        if ps_set_jsgf_file(self.ps, name.encode("utf-8"),
+        if ps_add_jsgf_file(self._ps, name.encode("utf-8"),
                             filename.encode()) != 0:
             raise RuntimeError("Failed to set JSGF from %s" % filename)
 
-    def set_jsgf_string(self, name, jsgf_string):
-        """Create a search module from JSGF as bytes or string.
+    def set_jsgf_file(self, name, filename):
+        warnings.warn("set_jsgf_file() is deprecated, use add_jsgf_file() instead",
+                      DeprecationWarning)
+        self.add_jsgf_file(name, filename)
 
-        Note that because the API is stupid, you will have to call
-        `set_search(name)` in order to actually enable this grammar.
+    def add_jsgf_string(self, name, jsgf_string):
+        """Create (but do not activate) a search module from JSGF
+        as bytes or string.
 
         Args:
             jsgf_string(bytes|str): JSGF grammar as string or UTF-8 encoded
@@ -1215,24 +1234,39 @@ cdef class Decoder:
         """
         if not isinstance(jsgf_string, bytes):
             jsgf_string = jsgf_string.encode("utf-8")
-        if ps_set_jsgf_string(self.ps, name.encode("utf-8"), jsgf_string) != 0:
+        if ps_add_jsgf_string(self._ps, name.encode("utf-8"), jsgf_string) != 0:
             raise ValueError("Failed to parse JSGF in decoder")
 
-    def get_kws(self, str name):
-        """Get keyphrases as text from a search module.
+    def set_jsgf_string(self, name, jsgf_string):
+        warnings.warn("set_jsgf_string() is deprecated, use add_jsgf_string() instead",
+                      DeprecationWarning)
+        self.add_jsgf_string(name, jsgf_string)
+
+    def get_kws(self, str name = None):
+        """Get keyphrases as text from current or specified search module.
 
         Args:
-            name(str): Search module name for keywords.
+            name(str): Search module name for keywords.  If this is
+            None, the currently active keywords are returned if
+            keyword search is active.
         Returns:
-            str: List of keywords as lines (i.e. separated by '\\\\n')
+            str: List of keywords as lines (i.e. separated by '\\\\n'),
+            or None if the specified search could not be found, or if
+            `name` is None and keyword search is not currently active.
         """
-        return ps_get_kws(self.ps, name.encode("utf-8")).decode("utf-8")
+        cdef const char *kws
+        if name is None:
+            kws = ps_get_kws(self._ps, NULL)
+        else:
+            kws = ps_get_kws(self._ps, name.encode("utf-8"))
+        if kws == NULL:
+            return None
+        else:
+            return kws.decode("utf-8")
 
-    def set_kws(self, str name, str keyfile):
-        """Create keyphrase recognition search module from a file.
-
-        Note that because the API is stupid, you will have to call
-        `set_search(name)` in order to actually enable keyphrase search.
+    def add_kws(self, str name, str keyfile):
+        """Create (but do not activate) keyphrase recognition search module
+        from a file.
 
         Args:
             name(str): Search module name to associate to these keyphrases.
@@ -1240,16 +1274,18 @@ cdef class Decoder:
         Raises:
             RuntimeError: If adding keyphrases failed for some reason.
         """
-        cdef int rv = ps_set_kws(self.ps, name.encode("utf-8"), keyfile.encode())
+        cdef int rv = ps_add_kws(self._ps, name.encode("utf-8"), keyfile.encode())
         if rv < 0:
             return RuntimeError("Failed to set keyword search %s from %s"
                                 % (name, keyfile))
 
-    def set_keyphrase(self, str name, str keyphrase):
-        """Create search module from a single keyphrase.
+    def set_kws(self, str name, str keyfile):
+        warnings.warn("set_kws() is deprecated, use add_kws() instead",
+                      DeprecationWarning)
+        self.add_kws(name, keyfile)
 
-        Note that because the API is stupid, you will have to call
-        `set_search(name)` in order to actually enable keyphrase search.
+    def add_keyphrase(self, str name, str keyphrase):
+        """Create (but do not activate) search module from a single keyphrase.
 
         Args:
             name(str): Search module name to associate to this keyphrase.
@@ -1257,17 +1293,19 @@ cdef class Decoder:
         Raises:
             RuntimeError: If adding keyphrase failed for some reason.
         """
-        cdef int rv = ps_set_keyphrase(self.ps, name.encode("utf-8"),
+        cdef int rv = ps_add_keyphrase(self._ps, name.encode("utf-8"),
                                        keyphrase.encode("utf-8"))
         if rv < 0:
             return RuntimeError("Failed to set keyword search %s from phrase %s"
                                 % (name, keyphrase))
 
-    def set_allphone_file(self, str name, str lmfile = None):
-        """Create a phoneme recognition search module.
+    def set_keyphrase(self, str name, str keyphrase):
+        warnings.warn("set_keyphrase() is deprecated, use add_keyphrase() instead",
+                      DeprecationWarning)
+        self.add_keyphrase(name, keyphrase)
 
-        Note that because the API is stupid, you will have to call
-        `set_search(name)` in order to actually enable allphone search.
+    def add_allphone_file(self, str name, str lmfile = None):
+        """Create (but do not activate) a phoneme recognition search module.
 
         Args:
             name(str): Search module name to associate to allphone search.
@@ -1278,22 +1316,33 @@ cdef class Decoder:
         """
         cdef int rv
         if lmfile is None:
-            rv = ps_set_allphone_file(self.ps, name.encode("utf-8"), NULL)
+            rv = ps_add_allphone_file(self._ps, name.encode("utf-8"), NULL)
         else:
-            rv = ps_set_allphone_file(self.ps, name.encode("utf-8"), lmfile.encode())
+            rv = ps_add_allphone_file(self._ps, name.encode("utf-8"), lmfile.encode())
         if rv < 0:
             return RuntimeError("Failed to set allphone search %s from %s"
                                 % (name, lmfile))
+
+    def set_allphone_file(self, str name, str keyfile):
+        warnings.warn("set_allphone_file() is deprecated, use add_allphone_file() instead",
+                      DeprecationWarning)
+        self.add_allphone_file(name, keyfile)
+
     def get_lattice(self):
         """Get word lattice from current recognition result.
 
         Returns:
             Lattice: Word lattice from current result.
         """
-        cdef ps_lattice_t *lattice = ps_get_lattice(self.ps)
+        cdef ps_lattice_t *lattice = ps_get_lattice(self._ps)
         if lattice == NULL:
             return None
         return Lattice.create_from_ptr(ps_lattice_retain(lattice))
+
+    @property
+    def config(self):
+        """Configuration object."""
+        return self._config
 
     def get_config(self):
         """Get current configuration.
@@ -1301,33 +1350,37 @@ cdef class Decoder:
         Returns:
             Config: Current configuration.
         """
-        return self.config
+        return self._config
 
     # These two do not belong here but they're here for compatibility
     @staticmethod
     def default_config():
         """Get the default configuration.
 
-        This does the same thing as simply creating a `Config` and is
-        here for historical reasons.
+        DEPRECATED: This does the same thing as simply creating a
+        `Config` and is here for historical reasons.
 
         Returns:
             Config: Default configuration.
         """
+        warnings.warn("default_config() is deprecated, just call Config() constructor",
+                      DeprecationWarning)
         return Config()
 
     @staticmethod
     def file_config(str path):
         """Parse configuration from a file.
 
-        This simply calls `Config.parse_file` and is here for historical
-        reasons.
+        DEPRECATED: This simply calls `Config.parse_file` and is here
+        for historical reasons.
 
         Args:
             path(str): Path to arguments file.
         Returns:
             Config: Configuration parsed from `path`.
         """
+        warnings.warn("file_config() is deprecated, use JSON configuration please",
+                      DeprecationWarning)
         return Config.parse_file(path)
 
     def load_dict(self, str dict_path, str fdict_path = None, str _format = None):
@@ -1359,7 +1412,7 @@ cdef class Decoder:
         if fdict_path is not None:
             bacon = fdict_path.encode()
             cfdict = bacon
-        rv = ps_load_dict(self.ps, cdict, cfdict, cformat)
+        rv = ps_load_dict(self._ps, cdict, cfdict, cformat)
         if rv < 0:
             raise RuntimeError("Failed to load dictionary from %s and %s"
                                % (dict_path, fdict_path))
@@ -1386,28 +1439,33 @@ cdef class Decoder:
         if dict_path is not None:
             eggs = dict_path.encode()
             cdict = eggs
-        rv = ps_save_dict(self.ps, cdict, cformat)
+        rv = ps_save_dict(self._ps, cdict, cformat)
         if rv < 0:
             raise RuntimeError("Failed to save dictionary to %s" % dict_path)
 
-    def get_lm(self, str name):
-        """Get the N-Gram language model associated with a search module.
+    def get_lm(self, str name = None):
+        """Get the current N-Gram language model or the one associated with a
+        search module.
 
         Args:
-            name(str): Name of search module for this language model.
+            name(str): Name of search module for this language model.  If this
+            is None (default) the current LM will be returned if any.
         Returns:
             NGramModel: Model corresponding to `name`, or None if not found.
+
         """
-        cdef ngram_model_t *lm = ps_get_lm(self.ps, name.encode("utf-8"))
+        cdef ngram_model_t *lm
+        if name is None:
+            lm = ps_get_lm(self._ps, NULL)
+        else:
+            lm = ps_get_lm(self._ps, name.encode("utf-8"))
         if lm == NULL:
             return None
         return NGramModel.create_from_ptr(ngram_model_retain(lm))
 
-    def set_lm(self, str name, NGramModel lm):
-        """Create a search module for an N-Gram language model.
-
-        Note that because the API is stupid, you will have to call
-        `set_search(name)` in order to actually enable this LM.
+    def add_lm(self, str name, NGramModel lm):
+        """Create (but do not activate) a search module for an N-Gram language
+        model.
 
         Args:
             name(str): Search module name to associate to this LM.
@@ -1415,15 +1473,18 @@ cdef class Decoder:
         Raises:
             RuntimeError: If adding LM failed for some reason.
         """
-        cdef int rv = ps_set_lm(self.ps, name.encode("utf-8"), lm.lm)
+        cdef int rv = ps_add_lm(self._ps, name.encode("utf-8"), lm.lm)
         if rv < 0:
             raise RuntimeError("Failed to set language model %s" % name)
 
-    def set_lm_file(self, str name, str path):
-        """Load a language model from a file into the decoder.
+    def set_lm(self, str name, NGramModel lm):
+        warnings.warn("set_lm() is deprecated, use add_lm() instead",
+                      DeprecationWarning)
+        self.add_lm(name, lm)
 
-        Note that because the API is stupid, you will have to call
-        `set_search(name)` in order to actually enable this LM.
+    def add_lm_file(self, str name, str path):
+        """Load (but do not activate a language model from a file into the
+        decoder.
 
         Args:
             name(str): Search module name to associate to this LM.
@@ -1431,63 +1492,84 @@ cdef class Decoder:
         Raises:
             RuntimeError: If adding LM failed for some reason.
         """
-        cdef int rv = ps_set_lm_file(self.ps, name.encode("utf-8"), path.encode())
+        cdef int rv = ps_add_lm_file(self._ps, name.encode("utf-8"), path.encode())
         if rv < 0:
             raise RuntimeError("Failed to set language model %s from %s"
                                % (name, path))
 
+    def set_lm_file(self, str name, str path):
+        warnings.warn("set_lm_file() is deprecated, use add_lm_file() instead",
+                      DeprecationWarning)
+        self.add_lm_file(name, path)
+
+    @property
+    def logmath(self):
+        """LogMath object for this decoder."""
+        return self.get_logmath()
+    
     def get_logmath(self):
         """Get the LogMath object for this decoder.
 
         Returns:
             LogMath: Current log-math computation object.
         """
-        cdef logmath_t *lmath = ps_get_logmath(self.ps)
+        cdef logmath_t *lmath = ps_get_logmath(self._ps)
         return LogMath.create_from_ptr(logmath_retain(lmath))
 
-    def set_search(self, str search_name):
-        """Actually use a language model or grammar you loaded.
+    def activate_search(self, str search_name):
+        """Activate a search module
 
-        This activates a "search module" that was created with one of
-        the very badly named functions `set_fsg`, `set_lm`,
-        `set_lm_file`, `set_allphone_file`, `set_keyphrase`,
-        `set_kws`, or `set_align`.
+        This activates a "search module" that was created with the
+        methods `add_fsg`, `add_lm`, `add_lm_file`,
+        `add_allphone_file`, `add_keyphrase`, `add_kws`, or
+        `add_align`.
 
-        I might be the one responsible for this bad API. Sorry.
+        This API is still bad, but at least the method names make
+        sense now.
 
         Args:
             search_name(str): Name of search module to activate.
         Raises:
             KeyError: If `search_name` doesn't actually exist.
         """
-        cdef int rv = ps_set_search(self.ps, search_name.encode("utf-8"))
+        cdef int rv = ps_activate_search(self._ps, search_name.encode("utf-8"))
         if rv < 0:
             raise KeyError("Unable to set search %s" % search_name)
 
-    def unset_search(self, str search_name):
-        """Remove a search (LM, grammar, etc) freeing resources.
+    def set_search(self, str search_name):
+        warnings.warn("set_search() is deprecated, use activate_search() instead",
+                      DeprecationWarning)
+        self.activate_search(search_name)
 
-        What a dumb name for a method.  Oh well.
+    def remove_search(self, str search_name):
+        """Remove a search (LM, grammar, etc) freeing resources.
 
         Args:
             search_name(str): Name of search module to remove.
         Raises:
             KeyError: If `search_name` doesn't actually exist.
         """
-        cdef int rv = ps_unset_search(self.ps, search_name.encode("utf-8"))
+        cdef int rv = ps_remove_search(self._ps, search_name.encode("utf-8"))
         if rv < 0:
             raise KeyError("Unable to unset search %s" % search_name)
 
-    def get_search(self):
-        """Get the name of the current search (LM, grammar, etc).
+    def unset_search(self, str search_name):
+        warnings.warn("unset_search() is deprecated, use remove_search() instead",
+                      DeprecationWarning)
+        self.remove_search(search_name)
 
-        This is pretty important if you want to get the current LM or
-        FSG or what have you.
+    def current_search(self):
+        """Get the name of the current search (LM, grammar, etc).
 
         Returns:
             str: Name of currently active search module.
         """
-        return ps_get_search(self.ps).decode("utf-8")
+        return ps_current_search(self._ps).decode("utf-8")
+
+    def get_search(self):
+        warnings.warn("get_search() is deprecated, use current_search() instead",
+                      DeprecationWarning)
+        return self.current_search()
 
     def n_frames(self):
         """Get the number of frames processed up to this point.
@@ -1495,7 +1577,7 @@ cdef class Decoder:
         Returns:
             int: Like it says.
         """
-        return ps_get_n_frames(self.ps)
+        return ps_get_n_frames(self._ps)
 
 cdef class Vad:
     """Voice activity detection class.

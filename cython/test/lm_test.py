@@ -27,7 +27,7 @@ class TestLM(unittest.TestCase):
         # Load "turtle" language model and decode again.
         lm = NGramModel(
             decoder.config,
-            decoder.get_logmath(),
+            decoder.logmath,
             os.path.join(DATADIR, "turtle.lm.bin"),
         )
         print(lm.prob(["you"]))
@@ -35,8 +35,10 @@ class TestLM(unittest.TestCase):
         print(lm.prob(["you", "are", "what"]))
         print(lm.prob(["lost", "are", "you"]))
 
-        decoder.set_lm("turtle", lm)
-        decoder.set_search("turtle")
+        decoder.add_lm("turtle", lm)
+        self.assertNotEqual(decoder.current_search(), "turtle")
+        decoder.activate_search("turtle")
+        self.assertEqual(decoder.current_search(), "turtle")
         decoder.start_utt()
         with open(os.path.join(DATADIR, "goforward.raw"), "rb") as stream:
             while True:
@@ -50,8 +52,8 @@ class TestLM(unittest.TestCase):
         print('Decoding with "turtle" language:', decoder.hyp().hypstr)
         self.assertEqual("", decoder.hyp().hypstr)
 
-        ## The word 'meters' isn't in the loaded dictionary.
-        ## Let's add it manually.
+        # The word 'meters' isn't in the loaded dictionary.
+        # Let's add it manually.
         decoder.add_word("foobie", "F UW B IY", False)
         decoder.add_word("meters", "M IY T ER Z", True)
         decoder.start_utt()

@@ -9,7 +9,8 @@ DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")
 
 
 class TestConfig(unittest.TestCase):
-    def test_config(self):
+    def test_bogus_old_config(self):
+        """Test backward-compatibility. DO NOT USE Config THIS WAY!"""
         config = Decoder.default_config()
         intval = 256
         floatval = 0.025

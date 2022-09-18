@@ -313,13 +313,13 @@ process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *fname)
         err = -1;
         goto error_out;
     }
-    if (ps_set_fsg(ps, fname, fsg)) {
+    if (ps_add_fsg(ps, fname, fsg)) {
         err = -1;
         goto error_out;
     }
 
     E_INFO("Using FSG: %s\n", fname);
-    if (ps_set_search(ps, fname))
+    if (ps_activate_search(ps, fname))
         err = -1;
 
 error_out:
@@ -337,7 +337,7 @@ process_lmnamectl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *lmname)
         return 0;
 
     E_INFO("Using language model: %s\n", lmname);
-    if (ps_set_search(ps, lmname)) {
+    if (ps_activate_search(ps, lmname)) {
         E_ERROR("No such language model: %s\n", lmname);
         return -1;
     }
@@ -384,13 +384,13 @@ process_alignctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *fname)
         goto error_out;
     }
     /* Always use the same name so that we don't leak memory (hopefully). */
-    if (ps_set_align(ps, "align", text)) {
+    if (ps_add_align(ps, "align", text)) {
         err = -1;
         goto error_out;
     }
 
     E_INFO("Force-aligning with transcript from: %s\n", fname);
-    if (ps_set_search(ps, "align"))
+    if (ps_activate_search(ps, "align"))
         err = -1;
 
 error_out:
