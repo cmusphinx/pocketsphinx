@@ -49,14 +49,14 @@
  * <li>align - creates time alignments for a fixed word sequence.</li>
  * </ul>
  * 
- * Each search has a name and can be referenced by a name, names are
- * application-specific. The function ps_set_search allows to activate
- * the search previously added by a name. Only single search can be
- * activated at time.
+ * Each search module has a name and can be referenced by name. These
+ * names are application-specific. The function ps_activate_search()
+ * activates a search module previously added by a name. Only one
+ * search module can be activated at time.
  *
- * To add the search one needs to point to the grammar/language model
- * describing the search. The location of the grammar is specific to the
- * application.
+ * To add the search module one needs to point to the grammar/language
+ * model describing the search. The location of the grammar is
+ * specific to the application.
  * 
  * The exact design of a searches depends on your application. For
  * example, you might want to listen for activation keyphrase first and once
