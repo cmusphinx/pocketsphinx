@@ -771,23 +771,23 @@ cdef class Decoder:
         RuntimeError: On invalid configuration or other failure to
                       reinitialize decoder.
     """
-    cdef ps_decoder_t *ps
-    cdef public Config config
+    cdef ps_decoder_t *_ps
+    cdef Config _config
 
     def __init__(self, *args, **kwargs):
         if len(args) == 1 and isinstance(args[0], Config):
-            self.config = args[0]
+            self._config = args[0]
         else:
-            self.config = Config(*args, **kwargs)
-        if self.config is None:
+            self._config = Config(*args, **kwargs)
+        if self._config is None:
             raise ValueError, "Failed to parse argument list"
-        self.config.default_search_args()
-        self.ps = ps_init(self.config.config)
-        if self.ps == NULL:
+        self._config.default_search_args()
+        self._ps = ps_init(self._config.config)
+        if self._ps == NULL:
             raise RuntimeError, "Failed to initialize PocketSphinx"
 
     def __dealloc__(self):
-        ps_free(self.ps)
+        ps_free(self._ps)
 
     def reinit(self, Config config=None):
         """Reinitialize the decoder.
@@ -804,9 +804,9 @@ cdef class Decoder:
         if config is None:
             cconfig = NULL
         else:
-            self.config = config
+            self._config = config
             cconfig = config.config
-        if ps_reinit(self.ps, cconfig) != 0:
+        if ps_reinit(self._ps, cconfig) != 0:
             raise RuntimeError("Failed to reinitialize decoder configuration")
 
     def reinit_feat(self, Config config=None):
@@ -824,9 +824,9 @@ cdef class Decoder:
         if config is None:
             cconfig = NULL
         else:
-            self.config = config
+            self._config = config
             cconfig = config.config
-        if ps_reinit_feat(self.ps, cconfig) < 0:
+        if ps_reinit_feat(self._ps, cconfig) < 0:
             raise RuntimeError("Failed to reinitialize feature extraction")
 
     def get_cmn(self, update=False):
@@ -837,7 +837,7 @@ cdef class Decoder:
         Returns:
           str: Cepstral mean as a comma-separated list of numbers.
         """
-        cdef const char *cmn = ps_get_cmn(self.ps, update)
+        cdef const char *cmn = ps_get_cmn(self._ps, update)
         return cmn.decode("utf-8")
     
     def set_cmn(self, cmn):
@@ -846,7 +846,7 @@ cdef class Decoder:
         Args:
           cmn(str): Cepstral mean as a comma-separated list of numbers.
         """
-        cdef int rv = ps_set_cmn(self.ps, cmn.encode("utf-8"))
+        cdef int rv = ps_set_cmn(self._ps, cmn.encode("utf-8"))
         if rv != 0:
             raise ValueError("Invalid CMN string")
         
@@ -855,7 +855,7 @@ cdef class Decoder:
 
         This method can be called at the beginning of a new audio
         stream (but this is not necessary)."""
-        cdef int rv = ps_start_stream(self.ps)
+        cdef int rv = ps_start_stream(self._ps)
         warnings.warn("start_stream() is deprecated and unnecessary",
                       DeprecationWarning)
         if rv < 0:
@@ -871,7 +871,7 @@ cdef class Decoder:
             RuntimeError: If processing fails to start (usually if it
                           has already been started).
         """
-        if ps_start_utt(self.ps) < 0:
+        if ps_start_utt(self._ps) < 0:
             raise RuntimeError, "Failed to start utterance processing"
 
     def get_in_speech(self):
@@ -883,7 +883,7 @@ cdef class Decoder:
         """
         warnings.warn("get_in_speech() is deprecated and does nothing useful",
                       DeprecationWarning)
-        return ps_get_in_speech(self.ps)
+        return ps_get_in_speech(self._ps)
 
     def process_raw(self, data, no_search=False, full_utt=False):
         """Process a block of raw audio.
@@ -898,7 +898,7 @@ cdef class Decoder:
         """
         cdef const unsigned char[:] cdata = data
         cdef Py_ssize_t n_samples = len(cdata) // 2
-        if ps_process_raw(self.ps, <const short *>&cdata[0],
+        if ps_process_raw(self._ps, <const short *>&cdata[0],
                           n_samples, no_search, full_utt) < 0:
             raise RuntimeError, "Failed to process %d samples of audio data" % len / 2
 
@@ -914,10 +914,10 @@ cdef class Decoder:
             RuntimeError: If processing fails.
         """
         cdef const unsigned char[:] cdata = data
-        cdef int ncep = self.config["ceplen"]
+        cdef int ncep = self._config["ceplen"]
         cdef int nfr = len(cdata) // (ncep * sizeof(float))
         cdef float **feats = <float **>ckd_alloc_2d_ptr(nfr, ncep, <void *>&cdata[0], sizeof(float))
-        rv = ps_process_cep(self.ps, feats, nfr, no_search, full_utt)
+        rv = ps_process_cep(self._ps, feats, nfr, no_search, full_utt)
         ckd_free(feats)
         if rv < 0:
             raise RuntimeError, "Failed to process %d frames of MFCC data" % nfr
@@ -930,7 +930,7 @@ cdef class Decoder:
         internal buffers and finalizing recognition results.
 
         """
-        if ps_end_utt(self.ps) < 0:
+        if ps_end_utt(self._ps) < 0:
             raise RuntimeError, "Failed to stop utterance processing"
 
     def hyp(self):
@@ -943,11 +943,11 @@ cdef class Decoder:
         cdef logmath_t *lmath
         cdef int score
 
-        hyp = ps_get_hyp(self.ps, &score)
+        hyp = ps_get_hyp(self._ps, &score)
         if hyp == NULL:
              return None
-        lmath = ps_get_logmath(self.ps)
-        prob = ps_get_prob(self.ps)
+        lmath = ps_get_logmath(self._ps)
+        prob = ps_get_prob(self._ps)
         return Hypothesis(hyp.decode('utf-8'),
                           logmath_exp(lmath, score),
                           logmath_exp(lmath, prob))
@@ -963,8 +963,8 @@ cdef class Decoder:
         """
         cdef logmath_t *lmath
         cdef const char *uttid
-        lmath = ps_get_logmath(self.ps)
-        return logmath_exp(lmath, ps_get_prob(self.ps))
+        lmath = ps_get_logmath(self._ps)
+        return logmath_exp(lmath, ps_get_prob(self._ps))
 
     def add_word(self, str word, str phones, update=True):
         """Add a word to the pronunciation dictionary.
@@ -983,7 +983,7 @@ cdef class Decoder:
         Raises:
             RuntimeError: If adding word failed for some reason.
         """
-        cdef rv = ps_add_word(self.ps, word.encode("utf-8"),
+        cdef rv = ps_add_word(self._ps, word.encode("utf-8"),
                               phones.encode("utf-8"), update)
         if rv < 0:
             raise RuntimeError("Failed to add word %s" % word)
@@ -998,7 +998,7 @@ cdef class Decoder:
             str: Space-separated list of phones, or None if not found.
         """
         cdef const char *cphones
-        cphones = ps_lookup_word(self.ps, word.encode("utf-8"))
+        cphones = ps_lookup_word(self._ps, word.encode("utf-8"))
         if cphones == NULL:
             return None
         else:
@@ -1012,10 +1012,10 @@ cdef class Decoder:
         """
         cdef ps_seg_t *itor
         cdef logmath_t *lmath
-        itor = ps_seg_iter(self.ps)
+        itor = ps_seg_iter(self._ps)
         if itor == NULL:
             return
-        lmath = ps_get_logmath(self.ps)
+        lmath = ps_get_logmath(self._ps)
         return SegmentList.create(itor, lmath)
 
 
@@ -1027,10 +1027,10 @@ cdef class Decoder:
         """
         cdef ps_nbest_t *itor
         cdef logmath_t *lmath
-        itor = ps_nbest(self.ps)
+        itor = ps_nbest(self._ps)
         if itor == NULL:
             return
-        lmath = ps_get_logmath(self.ps)
+        lmath = ps_get_logmath(self._ps)
         return NBestList.create(itor, lmath)
 
 
@@ -1045,7 +1045,7 @@ cdef class Decoder:
         """
         cdef float lw
 
-        lw = ps_config_float(self.config.config, "-lw")
+        lw = ps_config_float(self._config.config, "-lw")
         return FsgModel.readfile(filename, self.get_logmath(), lw)
 
     def read_jsgf(self, str filename):
@@ -1061,7 +1061,7 @@ cdef class Decoder:
         """
         cdef float lw
 
-        lw = ps_config_float(self.config.config, "-lw")
+        lw = ps_config_float(self._config.config, "-lw")
         return FsgModel.jsgf_read_file(filename, self.get_logmath(), lw)
 
     def create_fsg(self, str name, int start_state, int final_state, transitions):
@@ -1099,7 +1099,7 @@ cdef class Decoder:
         cdef float lw
         cdef int wid
 
-        lw = ps_config_float(self.config.config, "-lw")
+        lw = ps_config_float(self._config.config, "-lw")
         lmath = self.get_logmath()
         n_state = max(itertools.chain(*((t[0], t[1]) for t in transitions))) + 1
         fsg = FsgModel(name, lmath, lw, n_state)
@@ -1157,8 +1157,8 @@ cdef class Decoder:
             if rule == NULL:
                 jsgf_grammar_free(jsgf)
                 raise RuntimeError("No public rules found in JSGF")
-        lw = ps_config_float(self.config.config, "-lw")
-        lmath = ps_get_logmath(self.ps)
+        lw = ps_config_float(self._config.config, "-lw")
+        lmath = ps_get_logmath(self._ps)
         cdef fsg_model_t *cfsg = jsgf_build_fsg(jsgf, rule, lmath, lw)
         jsgf_grammar_free(jsgf)
         return FsgModel.create_from_ptr(cfsg)
@@ -1176,9 +1176,9 @@ cdef class Decoder:
         """
         cdef fsg_model_t *fsg
         if name is None:
-            fsg = ps_get_fsg(self.ps, NULL)
+            fsg = ps_get_fsg(self._ps, NULL)
         else:
-            fsg = ps_get_fsg(self.ps, name.encode("utf-8"))
+            fsg = ps_get_fsg(self._ps, name.encode("utf-8"))
         if fsg == NULL:
             return None
         else:
@@ -1195,7 +1195,7 @@ cdef class Decoder:
             RuntimeError: If adding FSG failed for some reason.
 
         """
-        if ps_add_fsg(self.ps, name.encode("utf-8"), fsg.fsg) != 0:
+        if ps_add_fsg(self._ps, name.encode("utf-8"), fsg.fsg) != 0:
             raise RuntimeError("Failed to set FSG in decoder")
 
     def set_fsg(self, str name, FsgModel fsg):
@@ -1212,7 +1212,7 @@ cdef class Decoder:
         Raises:
             RuntimeError: If adding grammar failed for some reason.
         """
-        if ps_add_jsgf_file(self.ps, name.encode("utf-8"),
+        if ps_add_jsgf_file(self._ps, name.encode("utf-8"),
                             filename.encode()) != 0:
             raise RuntimeError("Failed to set JSGF from %s" % filename)
 
@@ -1234,7 +1234,7 @@ cdef class Decoder:
         """
         if not isinstance(jsgf_string, bytes):
             jsgf_string = jsgf_string.encode("utf-8")
-        if ps_add_jsgf_string(self.ps, name.encode("utf-8"), jsgf_string) != 0:
+        if ps_add_jsgf_string(self._ps, name.encode("utf-8"), jsgf_string) != 0:
             raise ValueError("Failed to parse JSGF in decoder")
 
     def set_jsgf_string(self, name, jsgf_string):
@@ -1256,9 +1256,9 @@ cdef class Decoder:
         """
         cdef const char *kws
         if name is None:
-            kws = ps_get_kws(self.ps, NULL)
+            kws = ps_get_kws(self._ps, NULL)
         else:
-            kws = ps_get_kws(self.ps, name.encode("utf-8"))
+            kws = ps_get_kws(self._ps, name.encode("utf-8"))
         if kws == NULL:
             return None
         else:
@@ -1274,7 +1274,7 @@ cdef class Decoder:
         Raises:
             RuntimeError: If adding keyphrases failed for some reason.
         """
-        cdef int rv = ps_add_kws(self.ps, name.encode("utf-8"), keyfile.encode())
+        cdef int rv = ps_add_kws(self._ps, name.encode("utf-8"), keyfile.encode())
         if rv < 0:
             return RuntimeError("Failed to set keyword search %s from %s"
                                 % (name, keyfile))
@@ -1293,7 +1293,7 @@ cdef class Decoder:
         Raises:
             RuntimeError: If adding keyphrase failed for some reason.
         """
-        cdef int rv = ps_add_keyphrase(self.ps, name.encode("utf-8"),
+        cdef int rv = ps_add_keyphrase(self._ps, name.encode("utf-8"),
                                        keyphrase.encode("utf-8"))
         if rv < 0:
             return RuntimeError("Failed to set keyword search %s from phrase %s"
@@ -1316,9 +1316,9 @@ cdef class Decoder:
         """
         cdef int rv
         if lmfile is None:
-            rv = ps_add_allphone_file(self.ps, name.encode("utf-8"), NULL)
+            rv = ps_add_allphone_file(self._ps, name.encode("utf-8"), NULL)
         else:
-            rv = ps_add_allphone_file(self.ps, name.encode("utf-8"), lmfile.encode())
+            rv = ps_add_allphone_file(self._ps, name.encode("utf-8"), lmfile.encode())
         if rv < 0:
             return RuntimeError("Failed to set allphone search %s from %s"
                                 % (name, lmfile))
@@ -1334,22 +1334,23 @@ cdef class Decoder:
         Returns:
             Lattice: Word lattice from current result.
         """
-        cdef ps_lattice_t *lattice = ps_get_lattice(self.ps)
+        cdef ps_lattice_t *lattice = ps_get_lattice(self._ps)
         if lattice == NULL:
             return None
         return Lattice.create_from_ptr(ps_lattice_retain(lattice))
 
+    @property
+    def config(self):
+        """Configuration object."""
+        return self._config
+
     def get_config(self):
         """Get current configuration.
-
-        DEPRECATED: Just use the `config` property instead, duh.
 
         Returns:
             Config: Current configuration.
         """
-        warnings.warn("get_config() is deprecated, access the config property directly",
-                      DeprecationWarning)
-        return self.config
+        return self._config
 
     # These two do not belong here but they're here for compatibility
     @staticmethod
@@ -1411,7 +1412,7 @@ cdef class Decoder:
         if fdict_path is not None:
             bacon = fdict_path.encode()
             cfdict = bacon
-        rv = ps_load_dict(self.ps, cdict, cfdict, cformat)
+        rv = ps_load_dict(self._ps, cdict, cfdict, cformat)
         if rv < 0:
             raise RuntimeError("Failed to load dictionary from %s and %s"
                                % (dict_path, fdict_path))
@@ -1438,7 +1439,7 @@ cdef class Decoder:
         if dict_path is not None:
             eggs = dict_path.encode()
             cdict = eggs
-        rv = ps_save_dict(self.ps, cdict, cformat)
+        rv = ps_save_dict(self._ps, cdict, cformat)
         if rv < 0:
             raise RuntimeError("Failed to save dictionary to %s" % dict_path)
 
@@ -1455,9 +1456,9 @@ cdef class Decoder:
         """
         cdef ngram_model_t *lm
         if name is None:
-            lm = ps_get_lm(self.ps, NULL)
+            lm = ps_get_lm(self._ps, NULL)
         else:
-            lm = ps_get_lm(self.ps, name.encode("utf-8"))
+            lm = ps_get_lm(self._ps, name.encode("utf-8"))
         if lm == NULL:
             return None
         return NGramModel.create_from_ptr(ngram_model_retain(lm))
@@ -1472,7 +1473,7 @@ cdef class Decoder:
         Raises:
             RuntimeError: If adding LM failed for some reason.
         """
-        cdef int rv = ps_add_lm(self.ps, name.encode("utf-8"), lm.lm)
+        cdef int rv = ps_add_lm(self._ps, name.encode("utf-8"), lm.lm)
         if rv < 0:
             raise RuntimeError("Failed to set language model %s" % name)
 
@@ -1491,7 +1492,7 @@ cdef class Decoder:
         Raises:
             RuntimeError: If adding LM failed for some reason.
         """
-        cdef int rv = ps_add_lm_file(self.ps, name.encode("utf-8"), path.encode())
+        cdef int rv = ps_add_lm_file(self._ps, name.encode("utf-8"), path.encode())
         if rv < 0:
             raise RuntimeError("Failed to set language model %s from %s"
                                % (name, path))
@@ -1501,13 +1502,18 @@ cdef class Decoder:
                       DeprecationWarning)
         self.add_lm_file(name, path)
 
+    @property
+    def logmath(self):
+        """LogMath object for this decoder."""
+        return self.get_logmath()
+    
     def get_logmath(self):
         """Get the LogMath object for this decoder.
 
         Returns:
             LogMath: Current log-math computation object.
         """
-        cdef logmath_t *lmath = ps_get_logmath(self.ps)
+        cdef logmath_t *lmath = ps_get_logmath(self._ps)
         return LogMath.create_from_ptr(logmath_retain(lmath))
 
     def activate_search(self, str search_name):
@@ -1526,7 +1532,7 @@ cdef class Decoder:
         Raises:
             KeyError: If `search_name` doesn't actually exist.
         """
-        cdef int rv = ps_activate_search(self.ps, search_name.encode("utf-8"))
+        cdef int rv = ps_activate_search(self._ps, search_name.encode("utf-8"))
         if rv < 0:
             raise KeyError("Unable to set search %s" % search_name)
 
@@ -1543,7 +1549,7 @@ cdef class Decoder:
         Raises:
             KeyError: If `search_name` doesn't actually exist.
         """
-        cdef int rv = ps_remove_search(self.ps, search_name.encode("utf-8"))
+        cdef int rv = ps_remove_search(self._ps, search_name.encode("utf-8"))
         if rv < 0:
             raise KeyError("Unable to unset search %s" % search_name)
 
@@ -1558,7 +1564,7 @@ cdef class Decoder:
         Returns:
             str: Name of currently active search module.
         """
-        return ps_current_search(self.ps).decode("utf-8")
+        return ps_current_search(self._ps).decode("utf-8")
 
     def get_search(self):
         warnings.warn("get_search() is deprecated, use current_search() instead",
@@ -1571,7 +1577,7 @@ cdef class Decoder:
         Returns:
             int: Like it says.
         """
-        return ps_get_n_frames(self.ps)
+        return ps_get_n_frames(self._ps)
 
 cdef class Vad:
     """Voice activity detection class.
