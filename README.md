@@ -25,9 +25,9 @@ have one of those.  In addition, the audio library, which never really
 built or worked correctly on any platform at all, has simply been
 removed.
 
-There is no longer any dependency on SphinxBase, because there is no
-reason for SphinxBase to exist.  You can just link against the
-PocketSphinx library, which now includes all of its functionality.
+There is no longer any dependency on SphinxBase.  There is no
+SphinxBase anymore.  This is not the SphinxBase you're looking for.
+All your SphinxBase are belong to us.
 
 To install the Python module in a virtual environment (replace
 `~/ve_pocketsphinx` with the virtual environment you wish to create),
