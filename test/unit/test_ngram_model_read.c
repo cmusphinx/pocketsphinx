@@ -38,8 +38,8 @@ main(int argc, char *argv[])
     /* Now load the turtle language model. */
     lm = ngram_model_read(config, DATADIR "/turtle.lm.bin",
                           NGRAM_AUTO, ps_get_logmath(ps));
-    ps_set_lm(ps, "turtle", lm);
-    ps_set_search(ps, "turtle");
+    ps_add_lm(ps, "turtle", lm);
+    ps_activate_search(ps, "turtle");
     clearerr(rawfh);
     fseek(rawfh, 0, SEEK_SET);
     TEST_ASSERT(ps_decode_raw(ps, rawfh, -1));

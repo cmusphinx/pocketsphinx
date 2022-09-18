@@ -128,8 +128,8 @@ main(int argc, char *argv[])
     ps_alignment_free(al);
 
     /* Test alignment through the decoder/search API */
-    TEST_EQUAL(0, ps_set_align(ps, "align", "go forward ten meters"));
-    ps_set_search(ps, "align");
+    TEST_EQUAL(0, ps_add_align(ps, "align", "go forward ten meters"));
+    ps_activate_search(ps, "align");
     do_decode(ps);
     TEST_EQUAL(0, strcmp(ps_get_hyp(ps, &i), "<s> go forward ten meters </s>"));
     seg = ps_seg_iter(ps);

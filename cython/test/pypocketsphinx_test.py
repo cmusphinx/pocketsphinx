@@ -99,8 +99,8 @@ class TestJsgf(TestCase):
         jsgf = Jsgf(os.path.join(DATADIR, "goforward.gram"))
         rule = jsgf.get_rule("goforward.move2")
         fsg = jsgf.build_fsg(rule, ps.get_logmath(), 7.5)
-        ps.set_fsg("goforward", fsg)
-        ps.set_search("goforward")
+        ps.add_fsg("goforward", fsg)
+        ps.activate_search("goforward")
 
         # Decoding with 'goforward' grammar
         ps.decode(os.path.join(DATADIR, "goforward.raw"))
@@ -145,8 +145,8 @@ class TestLm(TestCase):
         # Switch to 'turtle' language model
         turtle_lm = os.path.join(DATADIR, "turtle.lm.bin")
         lm = NGramModel(ps.get_config(), ps.get_logmath(), turtle_lm)
-        ps.set_lm("turtle", lm)
-        ps.set_search("turtle")
+        ps.add_lm("turtle", lm)
+        ps.activate_search("turtle")
 
         # Decoding with 'turtle' language model
         ps.decode(os.path.join(DATADIR, "goforward.raw"))
