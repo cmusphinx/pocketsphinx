@@ -95,7 +95,7 @@ typedef struct ps_decoder_s ps_decoder_t;
  * Actives search with the provided name.
  *
  * Activates search with the provided name. The search must be added before
- * using either ps_set_fsg(), ps_set_lm() or ps_set_kws().
+ * using either ps_add_fsg(), ps_add_lm() or ps_add_kws().
  *
  * @return 0 on success, -1 on failure
  */
@@ -126,7 +126,7 @@ int ps_remove_search(ps_decoder_t *ps, const char *name);
 /**
  * Returns iterator over current searches 
  *
- * @see ps_set_search
+ * @see ps_activate_search
  */
 POCKETSPHINX_EXPORT
 ps_search_iter_t *ps_search_iter(ps_decoder_t *ps);
@@ -136,7 +136,7 @@ ps_search_iter_t *ps_search_iter(ps_decoder_t *ps);
  * 
  * This function automatically frees the iterator object upon reaching
  * the final entry.
- * @see ps_set_search
+ * @see ps_activate_search
  */
 POCKETSPHINX_EXPORT
 ps_search_iter_t *ps_search_iter_next(ps_search_iter_t *itor);
@@ -144,7 +144,7 @@ ps_search_iter_t *ps_search_iter_next(ps_search_iter_t *itor);
 /**
  * Retrieves the name of the search the iterator points to.
  *
- * @see ps_set_search
+ * @see ps_activate_search
  */
 POCKETSPHINX_EXPORT
 const char* ps_search_iter_val(ps_search_iter_t *itor);
@@ -152,7 +152,7 @@ const char* ps_search_iter_val(ps_search_iter_t *itor);
 /**
  * Delete an unfinished search iterator
  *
- * @see ps_set_search
+ * @see ps_activate_search
  */
 POCKETSPHINX_EXPORT
 void ps_search_iter_free(ps_search_iter_t *itor);
@@ -162,7 +162,7 @@ void ps_search_iter_free(ps_search_iter_t *itor);
  * 
  * This function automatically frees the iterator object upon reaching
  * the final entry.
- * @see ps_set_search
+ * @see ps_activate_search
  */
 POCKETSPHINX_EXPORT
 const char* ps_search_iter_val(ps_search_iter_t *itor);
@@ -185,7 +185,7 @@ ngram_model_t *ps_get_lm(ps_decoder_t *ps, const char *name);
  * Associates N-gram search with the provided name. The search can be activated
  * using ps_activate_search().
  *
- * @see ps_set_search.
+ * @see ps_activate_search.
  */ 
 POCKETSPHINX_EXPORT
 int ps_add_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
@@ -236,7 +236,7 @@ int ps_add_jsgf_file(ps_decoder_t *ps, const char *name, const char *path);
  *
  * Convenience method to parse JSGF model from string and create a search.
  *
- * @see ps_set_fsg
+ * @see ps_add_fsg
  */
 POCKETSPHINX_EXPORT
 int ps_add_jsgf_string(ps_decoder_t *ps, const char *name, const char *jsgf_string);
@@ -289,7 +289,7 @@ int ps_add_allphone(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
  *
  * Convenient method to load N-gram model and create a search.
  * 
- * @see ps_set_allphone
+ * @see ps_add_allphone
  */
 POCKETSPHINX_EXPORT
 int ps_add_allphone_file(ps_decoder_t *ps, const char *name, const char *path);
