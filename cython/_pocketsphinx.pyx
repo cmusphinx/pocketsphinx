@@ -1169,8 +1169,8 @@ cdef class Decoder:
 
         Args:
             name(str): Name of search module for this FSG.  If this is
-            None (the default), the currently active FSG will be
-            returned.
+                       None (the default), the currently active FSG will be
+                       returned.
         Returns:
             FsgModel: FSG corresponding to `name`, or None if not found.
         """
@@ -1449,7 +1449,7 @@ cdef class Decoder:
 
         Args:
             name(str): Name of search module for this language model.  If this
-            is None (default) the current LM will be returned if any.
+                       is None (default) the current LM will be returned.
         Returns:
             NGramModel: Model corresponding to `name`, or None if not found.
 
