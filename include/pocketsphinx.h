@@ -54,6 +54,7 @@
 #include <pocketsphinx/search.h>
 #include <pocketsphinx/export.h>
 #include <pocketsphinx/lattice.h>
+#include <pocketsphinx/alignment.h>
 #include <pocketsphinx/mllr.h>
 
 /* Namum manglium ii domum */
@@ -878,6 +879,15 @@ ps_seg_t *ps_nbest_seg(ps_nbest_t *nbest);
  */
 POCKETSPHINX_EXPORT
 void ps_nbest_free(ps_nbest_t *nbest);
+
+/**
+ * Find the best state-level (and by extension phone-level) alignment
+ * for the current hypothesis.
+ *
+ * This function may take some time to complete.
+ */
+POCKETSPHINX_EXPORT
+ps_alignment_t *ps_get_alignment(ps_decoder_t *ps);
 
 /**
  * Get performance information for the current utterance.

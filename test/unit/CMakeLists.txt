@@ -31,6 +31,7 @@ set(TESTS
   test_simple
   test_state_align
   test_vad
+  test_word_align
   test_endpointer
   )
 foreach(TEST_EXECUTABLE ${TESTS})

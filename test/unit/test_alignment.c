@@ -1,6 +1,6 @@
 #include <pocketsphinx.h>
 
-#include "ps_alignment.h"
+#include "ps_alignment_internal.h"
 #include "pocketsphinx_internal.h"
 
 #include "test_macros.h"

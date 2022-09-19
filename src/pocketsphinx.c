@@ -52,6 +52,7 @@
 #include "util/hash_table.h"
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
+#include "ps_alignment_internal.h"
 #include "phone_loop_search.h"
 #include "kws_search.h"
 #include "fsg_search_internal.h"
@@ -648,7 +649,7 @@ ps_add_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
 }
 
 int
-ps_add_align(ps_decoder_t *ps, const char *name, const char *text)
+ps_set_align_text(ps_decoder_t *ps, const char *text)
 {
     ps_search_t *search;
     ps_alignment_t *alignment;
@@ -673,10 +674,12 @@ ps_add_align(ps_decoder_t *ps, const char *name, const char *text)
     }
     ps_alignment_add_word(alignment, dict_wordid(ps->dict, "</s>"), 0);
     ps_alignment_populate(alignment);
-    search = state_align_search_init(name, ps->config, ps->acmod, alignment);
+    search = state_align_search_init(PS_DEFAULT_SEARCH, ps->config, ps->acmod, alignment);
     ps_alignment_free(alignment);
     ckd_free(textbuf);
-    return set_search_internal(ps, search);
+    set_search_internal(ps, search);
+    /* This is kind of a dumb way to do this but we're stuck with it for now */
+    return ps_activate_search(ps, PS_DEFAULT_SEARCH);
 }
 
 int

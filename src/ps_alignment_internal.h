@@ -35,16 +35,12 @@
  *
  */
 
-/**
- * @file state_align_search.h State (and phone and word) alignment search.
- */
-
-#ifndef __STATE_ALIGN_SEARCH_H__
-#define __STATE_ALIGN_SEARCH_H__
+#ifndef __PS_ALIGNMENT_INTERNAL_H__
+#define __PS_ALIGNMENT_INTERNAL_H__
 
 #include <pocketsphinx.h>
-#include "pocketsphinx_internal.h"
-#include "ps_alignment_internal.h"
+
+#include "dict2pid.h"
 #include "hmm.h"
 
 #ifdef __cplusplus
@@ -55,40 +51,33 @@ extern "C" {
 #endif
 
 /**
- * History structure
+ * Create a new, empty alignment.
  */
-struct state_align_hist_s {
-    uint16 id;
-    int32 score;
-};
-typedef struct state_align_hist_s state_align_hist_t;
+ps_alignment_t *ps_alignment_init(dict2pid_t *d2p);
 
 /**
- * Forced alignment search structure.
+ * Append a word.
  */
-struct state_align_search_s {
-    ps_search_t base;       /**< Base search structure. */
-    hmm_context_t *hmmctx;  /**< HMM context structure. */
-    ps_alignment_t *al;     /**< Alignment structure being operated on. */
-    hmm_t *hmms;            /**< Vector of HMMs corresponding to phone level. */
-    int n_phones;	    /**< Number of HMMs (phones). */
+int ps_alignment_add_word(ps_alignment_t *al,
+                          int32 wid, int duration);
 
-    int frame;              /**< Current frame being processed. */
-    int32 best_score;       /**< Best score in current frame. */
+/**
+ * Populate lower layers using available word information.
+ */
+int ps_alignment_populate(ps_alignment_t *al);
 
-    int n_emit_state;       /**< Number of emitting states (tokens per frame) */
-    state_align_hist_t *tokens;         /**< Tokens (backpointers) for state alignment. */
-    int n_fr_alloc;         /**< Number of frames of tokens allocated. */
-};
-typedef struct state_align_search_s state_align_search_t;
+/**
+ * Populate lower layers using context-independent phones.
+ */
+int ps_alignment_populate_ci(ps_alignment_t *al);
 
-ps_search_t *state_align_search_init(const char *name,
-				     cmd_ln_t *config,
-                                     acmod_t *acmod,
-                                     ps_alignment_t *al);
+/**
+ * Propagate timing information up from state sequence.
+ */
+int ps_alignment_propagate(ps_alignment_t *al);
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif /* __STATE_ALIGN_SEARCH_H__ */
+#endif /* __PS_ALIGNMENT_INTERNAL_H__ */

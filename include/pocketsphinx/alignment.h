@@ -42,10 +42,7 @@
 #ifndef __PS_ALIGNMENT_H__
 #define __PS_ALIGNMENT_H__
 
-#include <pocketsphinx.h>
-
-#include "dict2pid.h"
-#include "hmm.h"
+#include <pocketsphinx/prim_type.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,6 +77,9 @@ struct ps_alignment_vector_s {
 };
 typedef struct ps_alignment_vector_s ps_alignment_vector_t;
 
+/* Internal data structure you are not allowed to see!  Not for you! */
+typedef struct dict2pid_s dict2pid_t;
+
 struct ps_alignment_s {
     int refcount;
     dict2pid_t *d2p;
@@ -97,11 +97,6 @@ struct ps_alignment_iter_s {
 typedef struct ps_alignment_iter_s ps_alignment_iter_t;
 
 /**
- * Create a new, empty alignment.
- */
-ps_alignment_t *ps_alignment_init(dict2pid_t *d2p);
-
-/**
  * Retain an alighment
  */
 ps_alignment_t *ps_alignment_retain(ps_alignment_t *al);
@@ -110,27 +105,6 @@ ps_alignment_t *ps_alignment_retain(ps_alignment_t *al);
  * Release an alignment
  */
 int ps_alignment_free(ps_alignment_t *al);
-
-/**
- * Append a word.
- */
-int ps_alignment_add_word(ps_alignment_t *al,
-                          int32 wid, int duration);
-
-/**
- * Populate lower layers using available word information.
- */
-int ps_alignment_populate(ps_alignment_t *al);
-
-/**
- * Populate lower layers using context-independent phones.
- */
-int ps_alignment_populate_ci(ps_alignment_t *al);
-
-/**
- * Propagate timing information up from state sequence.
- */
-int ps_alignment_propagate(ps_alignment_t *al);
 
 /**
  * Number of words.

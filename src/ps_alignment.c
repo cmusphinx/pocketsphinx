@@ -40,7 +40,7 @@
  */
 
 #include "util/ckd_alloc.h"
-#include "ps_alignment.h"
+#include "ps_alignment_internal.h"
 
 ps_alignment_t *
 ps_alignment_init(dict2pid_t *d2p)

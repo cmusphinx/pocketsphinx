@@ -295,22 +295,25 @@ POCKETSPHINX_EXPORT
 int ps_add_allphone_file(ps_decoder_t *ps, const char *name, const char *path);
 
 /**
- * Adds new search based on forced alignment.
+ * Sets up decoder to force-align a word sequence.
  *
- * Convenient method to and create a forced aligner for a piece of
- * text.  Note that this is currently less than useful, as it depends
- * on the word sequence exactly matching the input, including
- * alternate pronunciations and silences.
+ * Unlike the `ps_add_*` functions, this activates the resulting
+ * search immediately, since force-alignment is nearly always a single
+ * shot.  Currently "under the hood" this is an FSG search but you
+ * shouldn't depend on that.
+ *
+ * Decoding proceeds as normal, though only this word sequence will be
+ * recognized, with silences and alternate pronunciations inserted.
+ * Word alignments are available with ps_seg_iter().  To obtain
+ * phoneme or state segmentations, call ps_get_alignment().
  *
  * @param ps Decoder
- * @param name Name for this search (could be anything, such as an utterance
- *   label or the name of the input file)
  * @param words String containing whitespace-separated words for alignment.
- *   These words are assumed to exist in the current dictionary.
+ *              These words are assumed to exist in the current dictionary.
  * 
  */
 POCKETSPHINX_EXPORT
-int ps_add_align(ps_decoder_t *ps, const char *name, const char *words);
+int ps_set_align_text(ps_decoder_t *ps, const char *words);
 
 #ifdef __cplusplus
 }
