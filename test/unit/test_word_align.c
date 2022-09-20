@@ -16,7 +16,7 @@ do_decode(ps_decoder_t *ps)
     hyp = ps_get_hyp(ps, &score);
     printf("%s (%ld samples, %d score)\n", hyp, nsamp, score);
     TEST_ASSERT(nsamp > 0);
-    TEST_EQUAL(0, strcmp(hyp, "<s> go forward ten meters </s>"));
+    TEST_EQUAL(0, strcmp(hyp, "go forward ten meters"));
     fclose(rawfh);
 
     return 0;
@@ -42,11 +42,11 @@ main(int argc, char *argv[])
     /* Test alignment through the decoder/search API */
     TEST_EQUAL(0, ps_set_align_text(ps, "go forward ten meters"));
     do_decode(ps);
-    TEST_EQUAL(0, strcmp(ps_get_hyp(ps, &i), "<s> go forward ten meters </s>"));
+    TEST_EQUAL(0, strcmp(ps_get_hyp(ps, &i), "go forward ten meters"));
     seg = ps_seg_iter(ps);
     ps_seg_frames(seg, &sf, &ef);
     printf("%s %d %d\n", ps_seg_word(seg), sf, ef);
-    TEST_EQUAL(0, strcmp("<s>", ps_seg_word(seg)));
+    TEST_EQUAL(0, strcmp("<sil>", ps_seg_word(seg)));
     TEST_ASSERT(ef > sf);
     last_ef = ef;
     seg = ps_seg_next(seg);
@@ -80,7 +80,7 @@ main(int argc, char *argv[])
     seg = ps_seg_next(seg);
     ps_seg_frames(seg, &sf, &ef);
     printf("%s %d %d\n", ps_seg_word(seg), sf, ef);
-    TEST_EQUAL(0, strcmp("</s>", ps_seg_word(seg)));
+    TEST_EQUAL(0, strcmp("<sil>", ps_seg_word(seg)));
     TEST_ASSERT(sf > last_ef);
     TEST_ASSERT(ef > sf);
     last_ef = ef;
