@@ -651,34 +651,49 @@ ps_add_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
 int
 ps_set_align_text(ps_decoder_t *ps, const char *text)
 {
-    ps_search_t *search;
-    ps_alignment_t *alignment;
+    fsg_model_t *fsg;
     char *textbuf = ckd_salloc(text);
     char *ptr, *word, delimfound;
-    int n;
+    int n, nwords;
 
     textbuf = string_trim(textbuf, STRING_BOTH);
-    alignment = ps_alignment_init(ps->d2p);
-    ps_alignment_add_word(alignment, dict_wordid(ps->dict, "<s>"), 0);
-    for (ptr = textbuf;
-         (n = nextword(ptr, " \t\n\r", &word, &delimfound)) >= 0;
-         ptr = word + n, *ptr = delimfound) {
+    /* First pass: count and verify words */
+    nwords = 0;
+    ptr = textbuf;
+    while ((n = nextword(ptr, " \t\n\r", &word, &delimfound)) >= 0) {
         int wid;
         if ((wid = dict_wordid(ps->dict, word)) == BAD_S3WID) {
             E_ERROR("Unknown word %s\n", word);
             ckd_free(textbuf);
-            ps_alignment_free(alignment);
             return -1;
         }
-        ps_alignment_add_word(alignment, wid, 0);
+        ptr = word + n;
+        *ptr = delimfound;
+        ++nwords;
     }
-    ps_alignment_add_word(alignment, dict_wordid(ps->dict, "</s>"), 0);
-    ps_alignment_populate(alignment);
-    search = state_align_search_init(PS_DEFAULT_SEARCH, ps->config, ps->acmod, alignment);
-    ps_alignment_free(alignment);
-    ckd_free(textbuf);
-    set_search_internal(ps, search);
-    /* This is kind of a dumb way to do this but we're stuck with it for now */
+    /* Second pass: make fsg */
+    fsg = fsg_model_init("_align", ps->lmath,
+                         ps_config_float(ps->config, "lw"),
+                         nwords + 1);
+    nwords = 0;
+    ptr = textbuf;
+    while ((n = nextword(ptr, " \t\n\r", &word, &delimfound)) >= 0) {
+        int wid;
+        if ((wid = dict_wordid(ps->dict, word)) == BAD_S3WID) {
+            E_ERROR("Unknown word %s\n", word);
+            ckd_free(textbuf);
+            return -1;
+        }
+        wid = fsg_model_word_add(fsg, word);
+        fsg_model_trans_add(fsg, nwords, nwords + 1, 0, wid);
+        ptr = word + n;
+        *ptr = delimfound;
+        ++nwords;
+    }
+    fsg->start_state = 0;
+    fsg->final_state = nwords;
+    if (ps_add_fsg(ps, PS_DEFAULT_SEARCH, fsg) < 0)
+        return -1;
     return ps_activate_search(ps, PS_DEFAULT_SEARCH);
 }
 
