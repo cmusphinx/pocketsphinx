@@ -120,7 +120,7 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
     double st;
 
     maxlen = format_hyp(NULL, 0, ep, decoder);
-    maxlen += 2; /* ",{" */
+    maxlen += 6; /* "w":,[ */
     lmath = ps_get_logmath(decoder);
     frate = ps_config_int(ps_get_config(decoder), "frate");
     if (ep == NULL)
@@ -129,7 +129,7 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
         st = ps_endpointer_speech_start(ep);
     for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
         maxlen += format_seg(NULL, 0, itor, st, frate, lmath);
-        maxlen++; /* "," or "}" at end */
+        maxlen++; /* , or ] at end */
     }
     maxlen++; /* final } */
     maxlen++; /* trailing \0 */
@@ -141,9 +141,9 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
     maxlen -= len;
 
     assert(maxlen > 2);
-    strcpy(ptr, ",{");
-    ptr += 2;
-    maxlen -= 2;
+    strcpy(ptr, ",\"w\":[");
+    ptr += 6;
+    maxlen -= 6;
 
     for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
         assert(maxlen > 0);
@@ -154,7 +154,7 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
         maxlen--;
     }
     --ptr;
-    *ptr++ = '}';
+    *ptr++ = ']';
     assert(maxlen == 2);
     *ptr++ = '}';
     --maxlen;
