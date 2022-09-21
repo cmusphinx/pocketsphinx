@@ -383,15 +383,11 @@ process_alignctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *fname)
         E_ERROR_SYSTEM("Failed to close transcript file %s", path);
         goto error_out;
     }
-    /* Always use the same name so that we don't leak memory (hopefully). */
-    if (ps_add_align(ps, "align", text)) {
+    if (ps_set_align_text(ps, text)) {
         err = -1;
         goto error_out;
     }
-
     E_INFO("Force-aligning with transcript from: %s\n", fname);
-    if (ps_activate_search(ps, "align"))
-        err = -1;
 
 error_out:
     ckd_free(path);
