@@ -881,15 +881,6 @@ POCKETSPHINX_EXPORT
 void ps_nbest_free(ps_nbest_t *nbest);
 
 /**
- * Find the best state-level (and by extension phone-level) alignment
- * for the current hypothesis.
- *
- * This function may take some time to complete.
- */
-POCKETSPHINX_EXPORT
-ps_alignment_t *ps_get_alignment(ps_decoder_t *ps);
-
-/**
  * Get performance information for the current utterance.
  *
  * @param ps Decoder.
