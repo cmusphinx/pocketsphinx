@@ -384,6 +384,13 @@ find_inputs(int *argc, char **argv, int *ninputs)
         else
             i += 2;
     }
+    /* Now reverse them.  I won't be passing Google's coding interview
+       any time soon, not that it matters in this particular case. */
+    for (i = 0; i < *ninputs / 2; ++i) {
+        char *tmp = inputs[i];
+        inputs[i] = inputs[*ninputs - i - 1];
+        inputs[*ninputs - i - 1] = tmp;
+    }
     return inputs;
 }
 
@@ -399,8 +406,7 @@ process_inputs(int (*func)(ps_config_t *, FILE *),
     else {
         int i, rv_one;
         for (i = 0; i < ninputs; ++i) {
-            /* They come to us in reverse order */
-            char *file = inputs[ninputs - i - 1];
+            char *file = inputs[i];
             FILE *fh = fopen(file, "rb");
             if (fh == NULL) {
                 E_ERROR_SYSTEM("Failed to open %s for reading", file);
