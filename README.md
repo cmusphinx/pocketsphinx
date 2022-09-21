@@ -86,12 +86,35 @@ The commands are as follows:
     - `t`: Full text of recognition result
     - `w`: List of segments (usually words), each of which in turn
       contains the `b`, `d`, `p`, and `t` fields, for start, end,
-      probability, and the text of the word.  In the future we may
-      also support hierarchical results in which case `w` could be
-      present.
+      probability, and the text of the word.  If `-state_align yes`
+      has been passed, then a `w` field will be present containing
+      phone segmentations, each of which in turn will contain a `w`
+      field with a state segmentation.
 
   - `single`: Recognize each input as a single utterance, and write a
     JSON object in the same format described above.
+    
+  - `align`: Align a single input file (or `-` for standard input) to
+    a word sequence, and write a JSON object in the same format
+    described above.  The first positional argument is the input, and
+    all subsequent ones are concatenated to make the text, to avoid
+    surprises if you forget to quote it.  You are responsible for
+    normalizing the text to remove punctuation, uppercase, centipedes,
+    etc. For example:
+    
+        pocketsphinx align goforward.wav "go forward ten meters"
+        
+    By default, only word-level alignment is done.  To get phone and
+    state alignments, pass `-state_align yes` in the flags, e.g.:
+    
+        pocketsphinx -state_align yes align audio.wav text
+        
+    This will make not particularly readable output, but you can use
+    [jq](https://stedolan.github.io/jq/) to clean it up, e.g.:
+    
+        pocketsphinx align audio.wav text | jq '[.w,.b]|tostring'
+        
+    There are many, many other possibilities, of course.
 
   - `soxflags`: Return arguments to `sox` which will create the
     appropriate input format.  Note that because the `sox`
@@ -108,7 +131,7 @@ The commands are as follows:
 By default only errors are printed to standard error, but if you want
 more information you can pass `-loglevel INFO`.  Partial results are
 not printed, maybe they will be in the future, but don't hold your
-breath.  Force-alignment is likely to be supported soon, however.
+breath.
 
 Programming
 -----------

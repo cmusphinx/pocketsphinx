@@ -237,16 +237,12 @@ error_out:
 }
 
 static int
-single(ps_config_t *config, FILE *infile)
+decode_single(ps_decoder_t *decoder, FILE *infile)
 {
-    ps_decoder_t *decoder = NULL;
-    short *data, *ptr;
     size_t data_size, block_size;
+    short *data, *ptr;
+    int rv = 0;
 
-    if ((decoder = ps_init(config)) == NULL) {
-        E_FATAL("PocketSphinx decoder init failed\n");
-        goto error_out;
-    }
     data_size = 65536;
     block_size = 2048;
     ptr = data = ckd_calloc(data_size, sizeof(*data));
@@ -264,29 +260,107 @@ single(ps_config_t *config, FILE *infile)
         if (len == 0) {
             if (feof(infile))
                 break;
-            else
+            else {
                 E_ERROR_SYSTEM("Failed to read %d bytes\n",
                                sizeof(*ptr) * block_size);
+                rv = -1;
+                goto error_out;
+            }
         }
         ptr += len;
     }
-    ps_start_utt(decoder);
-    if (ps_process_raw(decoder, data, ptr - data, FALSE, TRUE) < 0) {
+    if ((rv = ps_start_utt(decoder)) < 0)
+        goto error_out;
+    if ((rv = ps_process_raw(decoder, data, ptr - data, FALSE, TRUE)) < 0) {
         E_ERROR("ps_process_raw() failed\n");
         goto error_out;
     }
-    ps_end_utt(decoder);
+    if ((rv = ps_end_utt(decoder)) < 0)
+        goto error_out;
     output_hyp(NULL, decoder);
-    ckd_free(data);
-    ps_free(decoder);
-    return 0;
-
+    /* Fall through intentionally */
 error_out:
-    if (data)
-        ckd_free(data);
+    ckd_free(data);
+    return rv;
+}
+
+static int
+single(ps_config_t *config, FILE *infile)
+{
+    ps_decoder_t *decoder;
+    int rv = 0;
+
+    if ((decoder = ps_init(config)) == NULL) {
+        E_FATAL("PocketSphinx decoder init failed\n");
+        return -1;
+    }
+    rv = decode_single(decoder, infile);
+    ps_free(decoder);
+    return rv;
+}
+
+static char *
+string_array_join(char **strings, int nstrings)
+{
+    char *joined, *ptr;
+    int i, *len, jlen;
+
+    len = ckd_malloc(nstrings * sizeof(*len));
+    for (jlen = i = 0; i < nstrings; ++i) {
+        len[i] = strlen(strings[i]);
+        jlen += len[i] + 1;
+    }
+    ptr = joined = ckd_malloc(jlen);
+    for (i = 0; i < nstrings; ++i) {
+        memcpy(ptr, strings[i], len[i]);
+        ptr += len[i];
+        *ptr++ = ' ';
+    }
+    *--ptr = '\0';
+    ckd_free(len);
+    return joined;
+}
+
+static int
+align(ps_config_t *config, char **inputs, int ninputs)
+{
+    int rv = 0, is_stdin = FALSE;
+    ps_decoder_t *decoder = NULL;
+    char *text = NULL;
+    FILE *fh = NULL;
+
+    if (ninputs < 2) {
+        E_ERROR("Usage: pocketsphinx align INFILE TEXT...\n");
+        return -1;
+    }
+    if (0 == strcmp(inputs[0], "-")) {
+        is_stdin = TRUE;
+        fh = stdin;
+    }
+    else if ((fh = fopen(inputs[0], "rb")) == NULL) {
+        E_ERROR_SYSTEM("Failed to open %s for input", inputs[0]);
+        goto error_out;
+    }
+    if ((rv = read_file_header(inputs[0], fh, config)) < 0)
+        goto error_out;
+    if ((decoder = ps_init(config)) == NULL) {
+        E_FATAL("PocketSphinx decoder init failed\n");
+        rv = -1;
+        goto error_out;
+    }
+    text = string_array_join(inputs + 1, ninputs - 1);
+    if ((rv = ps_set_align_text(decoder, text)) < 0)
+        goto error_out;
+    rv = decode_single(decoder, fh);
+    /* Fall through intentionally. */
+error_out:
+    if (fh && !is_stdin)
+        fclose(fh);
+    if (text)
+        ckd_free(text);
     if (decoder)
         ps_free(decoder);
-    return -1;
+    return rv;
 }
 
 #if 0
@@ -449,8 +523,10 @@ main(int argc, char *argv[])
         rv = process_inputs(live, config, inputs, ninputs);
     else if (0 == strcmp(command, "single"))
         rv = process_inputs(single, config, inputs, ninputs);
+    else if (0 == strcmp(command, "align"))
+        rv = align(config, inputs, ninputs);
     else if (0 == strcmp(command, "help")) {
-        fprintf(stderr, "Usage: %s [soxflags | help | live | single] [INPUTS...]\n",
+        fprintf(stderr, "Usage: %s [soxflags | help | live | single | align] [INPUTS...]\n",
                 argv[0]);
         err_set_loglevel(ERR_INFO);
         cmd_ln_log_help_r(NULL, ps_args());
