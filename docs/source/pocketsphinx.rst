@@ -8,7 +8,7 @@ Decoder class
 
 .. autoclass:: pocketsphinx.Decoder
    :members:
-   :undoc-members:
+   :no-undoc-members:
 
 Simple Recognition classes
 --------------------------
