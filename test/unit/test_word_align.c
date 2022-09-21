@@ -2,6 +2,7 @@
 #include <pocketsphinx.h>
 
 #include "test_macros.h"
+#include "pocketsphinx_internal.h"
 
 static int
 do_decode(ps_decoder_t *ps)
@@ -16,7 +17,8 @@ do_decode(ps_decoder_t *ps)
     hyp = ps_get_hyp(ps, &score);
     printf("%s (%ld samples, %d score)\n", hyp, nsamp, score);
     TEST_ASSERT(nsamp > 0);
-    TEST_EQUAL(0, strcmp(hyp, "go forward ten meters"));
+    TEST_ASSERT((0 == strcmp(hyp, "go forward ten meters")
+                 || 0 == strcmp(hyp, "<sil> go forward ten meters <sil>")));
     fclose(rawfh);
 
     return 0;
@@ -26,12 +28,15 @@ int
 main(int argc, char *argv[])
 {
     ps_decoder_t *ps;
+    ps_alignment_t *al;
+    ps_alignment_iter_t *itor;
     ps_seg_t *seg;
     ps_config_t *config;
     int i, sf, ef, last_ef;
 
     (void)argc;
     (void)argv;
+    err_set_loglevel(ERR_INFO);
     TEST_ASSERT(config =
                 ps_config_parse_json(
                     NULL,
@@ -86,6 +91,30 @@ main(int argc, char *argv[])
     last_ef = ef;
     seg = ps_seg_next(seg);
     TEST_EQUAL(NULL, seg);
+
+    /* Test second pass alignment */
+    TEST_EQUAL(0, ps_set_alignment(ps, NULL));
+    TEST_ASSERT(al = ps_get_alignment(ps));
+    /* It should have no durations assigned. */
+    for (itor = ps_alignment_phones(al); itor;
+	 itor = ps_alignment_iter_next(itor)) {
+	ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
+        TEST_EQUAL(0, ent->start);
+        TEST_EQUAL(0, ent->duration);
+    }
+    do_decode(ps);
+    TEST_ASSERT(al = ps_get_alignment(ps));
+    /* It should have durations assigned. */
+    for (itor = ps_alignment_phones(al); itor;
+	 itor = ps_alignment_iter_next(itor)) {
+	ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
+
+	printf("%s %d %d\n",
+	       bin_mdef_ciphone_str(ps->acmod->mdef, ent->id.pid.cipid),
+	       ent->start, ent->duration);
+        TEST_ASSERT(0 != ent->duration);
+    }
+    
     ps_free(ps);
     ps_config_free(config);
 
