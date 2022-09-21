@@ -110,9 +110,10 @@ The commands are as follows:
         pocketsphinx -state_align yes align audio.wav text
         
     This will make not particularly readable output, but you can use
-    [jq](https://stedolan.github.io/jq/) to clean it up, e.g.:
+    [jq](https://stedolan.github.io/jq/) to clean it up.  For example,
+    you can get just the word names and start times like this:
     
-        pocketsphinx align audio.wav text | jq '[.w,.b]|tostring'
+        pocketsphinx align audio.wav text | jq '.w[]|[.t,.b]'
         
     There are many, many other possibilities, of course.
 
