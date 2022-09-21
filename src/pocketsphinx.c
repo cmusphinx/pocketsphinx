@@ -706,10 +706,15 @@ ps_set_align_text(ps_decoder_t *ps, const char *text)
         *ptr = delimfound;
         ++nwords;
     }
+    ckd_free(textbuf);
     fsg->start_state = 0;
     fsg->final_state = nwords;
-    if (ps_add_fsg(ps, PS_DEFAULT_SEARCH, fsg) < 0)
+    if (ps_add_fsg(ps, PS_DEFAULT_SEARCH, fsg) < 0) {
+        fsg_model_free(fsg);
         return -1;
+    }
+    /* FIXME: Should rethink ownership semantics, this is annoying. */
+    fsg_model_free(fsg);
     return ps_activate_search(ps, PS_DEFAULT_SEARCH);
 }
 
