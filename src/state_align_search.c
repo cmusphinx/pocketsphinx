@@ -297,7 +297,8 @@ state_align_search_fill_iter(ps_seg_t *seg)
     seg->ef = entry->start + entry->duration - 1;
     seg->ascr = entry->score;
     seg->lscr = 0;
-    seg->word = dict_wordstr(ps_search_dict(seg->search), entry->id.wid);
+    seg->text = dict_wordstr(ps_search_dict(seg->search), entry->id.wid);
+    seg->wid = entry->id.wid;
 }
 
 static ps_seg_t *

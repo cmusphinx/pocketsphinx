@@ -84,7 +84,8 @@ kws_seg_fill(kws_seg_t *itor)
 {
     kws_detection_t* detection = (kws_detection_t*)gnode_ptr(itor->detection);
 
-    itor->base.word = detection->keyphrase;
+    itor->base.text = detection->keyphrase;
+    itor->base.wid = BAD_S3WID;
     itor->base.sf = detection->sf;
     itor->base.ef = detection->ef;
     itor->base.prob = detection->prob;

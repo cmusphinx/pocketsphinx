@@ -181,9 +181,10 @@ typedef struct ps_segfuncs_s {
 struct ps_seg_s {
     ps_segfuncs_t *vt;     /**< V-table of seg methods */
     ps_search_t *search;   /**< Search object from whence this came */
-    char const *word;      /**< Word string (pointer into dictionary hash) */
+    const char *text;      /**< Textual representation of segment */
     frame_idx_t sf;        /**< Start frame. */
     frame_idx_t ef;        /**< End frame. */
+    s3wid_t wid;           /**< Word ID (*not* base word ID). */
     int32 ascr;            /**< Acoustic score. */
     int32 lscr;            /**< Language model score. */
     int32 prob;            /**< Log posterior probability. */

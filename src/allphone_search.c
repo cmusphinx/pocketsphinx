@@ -81,7 +81,8 @@ allphone_search_fill_iter(ps_seg_t *seg, phseg_t *phseg)
     seg->ef = phseg->ef;
     seg->ascr = phseg->score;
     seg->lscr = phseg->tscore;
-    seg->word = bin_mdef_ciphone_str(ps_search_acmod(seg->search)->mdef, phseg->ci);
+    seg->text = bin_mdef_ciphone_str(ps_search_acmod(seg->search)->mdef, phseg->ci);
+    seg->wid = BAD_S3WID;
 }
 
 static ps_seg_t *

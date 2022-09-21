@@ -891,7 +891,8 @@ ngram_search_bp2itor(ps_seg_t *seg, int bp)
 
     be = &ngs->bp_table[bp];
     pbe = be->bp == -1 ? NULL : &ngs->bp_table[be->bp];
-    seg->word = dict_wordstr(ps_search_dict(ngs), be->wid);
+    seg->text = dict_wordstr(ps_search_dict(ngs), be->wid);
+    seg->wid = be->wid;
     seg->ef = be->frame;
     seg->sf = pbe ? pbe->frame + 1 : 0;
     seg->prob = 0; /* Bogus value... */

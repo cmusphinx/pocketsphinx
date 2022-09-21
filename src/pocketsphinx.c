@@ -563,27 +563,43 @@ ngram_model_t *
 ps_get_lm(ps_decoder_t *ps, const char *name)
 {
     ps_search_t *search =  ps_find_search(ps, name);
-    if (search && strcmp(PS_SEARCH_TYPE_NGRAM, ps_search_type(search)))
+    if (search == NULL)
         return NULL;
-    return search ? ((ngram_search_t *) search)->lmset : NULL;
+    if (0 != strcmp(PS_SEARCH_TYPE_NGRAM, ps_search_type(search)))
+        return NULL;
+    return ((ngram_search_t *) search)->lmset;
 }
 
 fsg_model_t *
 ps_get_fsg(ps_decoder_t *ps, const char *name)
 {
     ps_search_t *search = ps_find_search(ps, name);
-    if (search && strcmp(PS_SEARCH_TYPE_FSG, ps_search_type(search)))
+    if (search == NULL)
         return NULL;
-    return search ? ((fsg_search_t *) search)->fsg : NULL;
+    if (0 != strcmp(PS_SEARCH_TYPE_FSG, ps_search_type(search)))
+        return NULL;
+    return ((fsg_search_t *) search)->fsg;
 }
 
 const char*
-ps_get_kws(ps_decoder_t *ps, const char* name)
+ps_get_kws(ps_decoder_t *ps, const char *name)
 {
     ps_search_t *search = ps_find_search(ps, name);
-    if (search && strcmp(PS_SEARCH_TYPE_KWS, ps_search_type(search)))
+    if (search == NULL)
         return NULL;
-    return search ? kws_search_get_keyphrases(search) : NULL;
+    if (0 != strcmp(PS_SEARCH_TYPE_KWS, ps_search_type(search)))
+        return NULL;
+    return kws_search_get_keyphrases(search);
+}
+
+ps_alignment_t *
+ps_get_alignment(ps_decoder_t *ps)
+{
+    if (ps->search == NULL)
+        return NULL;
+    if (0 != strcmp(PS_SEARCH_TYPE_STATE_ALIGN, ps_search_type(ps->search)))
+        return NULL;
+    return ((state_align_search_t *) ps->search)->al;
 }
 
 static int
@@ -695,6 +711,46 @@ ps_set_align_text(ps_decoder_t *ps, const char *text)
     if (ps_add_fsg(ps, PS_DEFAULT_SEARCH, fsg) < 0)
         return -1;
     return ps_activate_search(ps, PS_DEFAULT_SEARCH);
+}
+
+int
+ps_set_alignment(ps_decoder_t *ps, ps_alignment_t *al)
+{
+    ps_search_t *search;
+    int new_alignment = FALSE;
+    
+    if (al == NULL) {
+        ps_seg_t *seg;
+        seg = ps_seg_iter(ps);
+        if (seg == NULL)
+            return -1;
+        al = ps_alignment_init(ps->d2p);
+        new_alignment = TRUE;
+        while (seg) {
+            if (seg->wid == BAD_S3WID) {
+                E_ERROR("No word ID for segment %s, cannot align\n",
+                        seg->text);
+                goto error_out;
+            }
+            ps_alignment_add_word(al, seg->wid, 0);
+            seg = ps_seg_next(seg);
+        }
+        /* FIXME: Add cionly parameter as in SoundSwallower */
+        if (ps_alignment_populate(al) < 0)
+            goto error_out;
+    }
+    search = state_align_search_init("_state_align", ps->config, ps->acmod, al);
+    if (search == NULL)
+        goto error_out;
+    if (!new_alignment)
+        ps_alignment_free(al);
+    if (set_search_internal(ps, search) < 0)
+        goto error_out;
+    return ps_activate_search(ps, "_state_align");
+error_out:
+    if (new_alignment)
+        ps_alignment_free(al);
+    return -1;
 }
 
 int
@@ -1337,7 +1393,7 @@ ps_seg_next(ps_seg_t *seg)
 char const *
 ps_seg_word(ps_seg_t *seg)
 {
-    return seg->word;
+    return seg->text;
 }
 
 void

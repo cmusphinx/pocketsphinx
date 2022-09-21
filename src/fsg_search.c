@@ -1068,7 +1068,8 @@ fsg_seg_bp2itor(ps_seg_t *seg, fsg_hist_entry_t *hist_entry)
 
     if ((bp = fsg_hist_entry_pred(hist_entry)) >= 0)
         ph = fsg_history_entry_get(fsgs->history, bp);
-    seg->word = fsg_model_word_str(fsgs->fsg, hist_entry->fsglink->wid);
+    seg->text = fsg_model_word_str(fsgs->fsg, hist_entry->fsglink->wid);
+    seg->wid = hist_entry->fsglink->wid;
     seg->ef = fsg_hist_entry_frame(hist_entry);
     seg->sf = ph ? fsg_hist_entry_frame(ph) + 1 : 0;
     /* This is kind of silly but it happens for null transitions. */

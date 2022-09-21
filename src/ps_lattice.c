@@ -956,7 +956,8 @@ ps_lattice_link2itor(ps_seg_t *seg, ps_latlink_t *link, int to)
             }
         }
     }
-    seg->word = dict_wordstr(ps_search_dict(seg->search), node->wid);
+    seg->text = dict_wordstr(ps_search_dict(seg->search), node->wid);
+    seg->wid = node->wid;
     seg->sf = node->sf;
     seg->ascr = link->ascr << SENSCR_SHIFT;
     /* Compute language model score from best predecessors. */
@@ -1855,7 +1856,8 @@ ps_astar_node2itor(astar_seg_t *itor)
         seg->ef = node->lef;
     else
         seg->ef = itor->nodes[itor->cur + 1]->sf - 1;
-    seg->word = dict_wordstr(ps_search_dict(seg->search), node->wid);
+    seg->text = dict_wordstr(ps_search_dict(seg->search), node->wid);
+    seg->wid = node->wid;
     seg->sf = node->sf;
     seg->prob = 0; /* FIXME: implement forward-backward */
 }
