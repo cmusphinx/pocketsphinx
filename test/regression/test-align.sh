@@ -31,3 +31,4 @@ fi
 
 # Check the decoding results
 grep AVERAGE $bn.log
+compare_table "matchseg" $data/librivox/test-align.matchseg $bn.matchseg 1000000
