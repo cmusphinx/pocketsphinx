@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 import os
-from pocketsphinx import Decoder, Config
+from pocketsphinx import Decoder, Config, get_model_path
 import unittest
+import tempfile
 
 MODELDIR = os.path.join(os.path.dirname(__file__), "../../model")
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")
@@ -92,6 +93,23 @@ class TestConfigHash(unittest.TestCase):
         config["nfft"] = "1024"
         self.assertEqual(config["nfft"], 1024)
 
+    def test_config_defaults(self):
+        # System-wide defaults
+        config = Config()
+        self.assertEqual(config["hmm"], get_model_path("en-us/en-us"))
+        self.assertEqual(config["lm"], get_model_path("en-us/en-us.lm.bin"))
+        self.assertEqual(config["dict"], get_model_path("en-us/cmudict-en-us.dict"))
+        # Override them
+        config = Config(hmm=None, lm=None, dict=None)
+        self.assertEqual(config["hmm"], None)
+        self.assertEqual(config["lm"], None)
+        self.assertEqual(config["dict"], None)
+        # Legacy method of overriding
+        config = Config(lm=False)
+        self.assertEqual(config["hmm"], get_model_path("en-us/en-us"))
+        self.assertEqual(config["lm"], None)
+        self.assertEqual(config["dict"], get_model_path("en-us/cmudict-en-us.dict"))
+
 
 class TestConfigIter(unittest.TestCase):
     def test_config__iter(self):
@@ -137,6 +155,36 @@ class TestConfigDefn(unittest.TestCase):
             if defn.name == "hmm":
                 self.assertTrue(defn.required)
 
+
+class TestConfigJSON(unittest.TestCase):
+    def assert_parsed(self, config):
+        self.assertEqual(config["hmm"], "/path/to/some/stuff")
+        self.assertEqual(config["samprate"], 11025)
+        self.assertAlmostEqual(config["beam"], 1e-69)
+
+    def test_config_parse(self):
+        config = Config.parse_json("""
+{
+        "hmm": "/path/to/some/stuff",
+        "samprate": 11025,
+        "beam": 1e-69
+}
+""")
+        self.assert_parsed(config)
+        with tempfile.TemporaryFile(mode="w+t") as tf:
+            tf.write(config.dumps())
+            tf.flush()
+            tf.seek(0, 0)
+            json = tf.read()
+        config2 = Config.parse_json(json)
+        self.assert_parsed(config2)
+        for k in config:
+            self.assertAlmostEqual(config[k], config2[k], 2)
+        config3 = Config.parse_json(
+            "hmm: /path/to/some/stuff, samprate: 11025, beam: 1e-69")
+        self.assert_parsed(config3)
+        for k in config:
+            self.assertAlmostEqual(config[k], config3[k], 2)
 
 if __name__ == "__main__":
     unittest.main()

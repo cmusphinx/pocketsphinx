@@ -14,6 +14,8 @@ class TestKWS(unittest.TestCase):
 
         # Process audio chunk by chunk. On keyphrase detected perform action and restart search
         decoder = Decoder(keyphrase="forward",
+                          loglevel="INFO",
+                          lm=None,
                           kws_threshold=1e20)
         decoder.start_utt()
         while True:
