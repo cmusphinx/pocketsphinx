@@ -88,11 +88,6 @@ class Pocketsphinx(Decoder):
     """
 
     def __init__(self, **kwargs):
-        # This never actually worked despite what the documentation
-        # said, but let's at least avoid nasty surprises
-        for badkey in ("lm", "dict", "dic"):
-            if badkey in kwargs and kwargs[badkey] is False:
-                del kwargs[badkey]
         if kwargs.get("dic") is not None and kwargs.get("dict") is None:
             kwargs["dict"] = kwargs.pop("dic")
         if kwargs.pop("verbose", False) is True:

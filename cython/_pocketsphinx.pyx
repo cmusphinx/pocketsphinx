@@ -45,6 +45,17 @@ cdef class Config:
     iterated over in the same fashion.  However, attempting to access
     a parameter that does not already exist will raise a `KeyError`.
 
+    Many parameters have default values.  Also, when constructing a
+    `Config` directly (as opposed to parsing JSON), `hmm`, `lm`, and
+    `dict` are set to the default models (some kind of US English
+    models of unknown origin + CMUDict).  You can prevent this by
+    passing `None` for any of these parameters, e.g.:
+
+        config = Config(lm=None)  # Do not load a language model
+
+    You may also call `default_search_args()` after the fact to set
+    them.  Note that this will set them unconditionally.
+
     See :doc:`config_params` for a description of existing parameters.
 
  """
@@ -68,36 +79,36 @@ cdef class Config:
             free(argv)
         else:
             self.config = ps_config_init(NULL)
+        # Set default search arguments
+        self.default_search_args()
+        # Now override them from kwargs (including None)
         if kwargs:
             for k, v in kwargs.items():
-                self[k] = v
-            
+                # Special dispensation to support the thing which was
+                # documented but never actually worked, i.e. setting a
+                # string value to False (should be None) to remove the
+                # default.  Note that all this is quite inefficient as
+                # we end up calling _normalize_key repeatedly.
+                ckey = self._normalize_key(k)
+                if ps_config_typeof(self.config, ckey) & ARG_STRING:
+                    if v is False:
+                        v = None
+                self[ckey] = v
 
     def default_search_args(self):
         """Set arguments for the default acoustic and language model.
 
         Set `hmm`, `lm`, and `dict` to the default ones (some kind of
-        US English models of unknown origin + CMUDict) if they weren't
-        already defined.
+        US English models of unknown origin + CMUDict).  This will
+        overwrite any previous values for these parameters, and does
+        not check if the files exist.
         """
-        # Yes, full of race conditions, don't really care (should we?)
-        if self.get_string("-hmm") is None:
-            default_am = pocketsphinx.get_model_path("en-us/en-us")
-            if os.path.exists(os.path.join(default_am, "means")):
-                self.set_string("-hmm", default_am)
-        if (self.get_string("-lm") is None
-            # This API sucks.
-            and self.get_string("-jsgf") is None
-            and self.get_string("-lmctl") is None
-            and self.get_string("-kws") is None
-            and self.get_string("-keyphrase") is None):
-            default_lm = pocketsphinx.get_model_path("en-us/en-us.lm.bin")
-            if os.path.exists(default_lm):
-                self.set_string("-lm", default_lm)
-        if self.get_string("-dict") is None:
-            default_dict = pocketsphinx.get_model_path("en-us/cmudict-en-us.dict")
-            if os.path.exists(default_dict):
-                self.set_string("-dict", default_dict)
+        default_am = pocketsphinx.get_model_path("en-us/en-us")
+        self.set_string("hmm", default_am)
+        default_lm = pocketsphinx.get_model_path("en-us/en-us.lm.bin")
+        self.set_string("lm", default_lm)
+        default_dict = pocketsphinx.get_model_path("en-us/cmudict-en-us.dict")
+        self.set_string("dict", default_dict)
 
     @staticmethod
     cdef create_from_ptr(ps_config_t *config):
@@ -205,9 +216,13 @@ cdef class Config:
         return key in self
 
     cdef _normalize_key(self, key):
-        if key[0] in "-_":
-            key = key[1:]
-        return key.encode('utf-8')
+        if isinstance(key, bytes):
+            # Assume already normalized
+            return key
+        else:
+            if key[0] in "-_":
+                key = key[1:]
+            return key.encode('utf-8')
 
     def __contains__(self, key):
         return ps_config_typeof(self.config, self._normalize_key(key)) != 0
@@ -747,9 +762,18 @@ cdef class Decoder:
 
     See :doc:`config_params` for a description of keyword arguments.
 
-    Note that `hmm`, `lm`, and `dict` are set to the default ones
-    (some kind of US English models of unknown origin + CMUDict) if
-    not already defined.
+    Note that, as described in `Config`, `hmm`, `lm`, and `dict` are
+    set to the default ones (some kind of US English models of unknown
+    origin + CMUDict) if not defined.  You can prevent this by passing
+    `None` for any of these parameters, e.g.:
+
+        ps = Decoder(lm=None)  # Do not load a language model
+
+    You may also pass a pre-defined `Config` object as the only
+    argument to the constructor, e.g.:
+
+        config = Config.parse_json(json)
+        ps = Decoder(config)
 
     Args:
         config(Config): Optional configuration object.  You can also
@@ -781,7 +805,6 @@ cdef class Decoder:
             self._config = Config(*args, **kwargs)
         if self._config is None:
             raise ValueError, "Failed to parse argument list"
-        self._config.default_search_args()
         self._ps = ps_init(self._config.config)
         if self._ps == NULL:
             raise RuntimeError, "Failed to initialize PocketSphinx"
