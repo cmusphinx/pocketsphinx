@@ -95,9 +95,10 @@ typedef struct ps_decoder_s ps_decoder_t;
 /**
  * Actives search with the provided name.
  *
- * Activates search with the provided name. The search must be added before
- * using either ps_add_fsg(), ps_add_lm() or ps_add_kws().
- *
+ * @param name Name of search module to activate. This must have been
+ * previously added by either ps_add_fsg(), ps_add_lm(), or
+ * ps_add_kws().  If NULL, it will re-activate the default search,
+ * which is useful when running second-pass alignment, for instance.
  * @return 0 on success, -1 on failure
  */
 POCKETSPHINX_EXPORT
