@@ -493,9 +493,11 @@ ps_activate_search(ps_decoder_t *ps, const char *name)
         return -1;
     }
 
-    if (!(search = ps_find_search(ps, name))) {
+    if (name == NULL)
+        name = PS_DEFAULT_SEARCH;
+
+    if (!(search = ps_find_search(ps, name)))
         return -1;
-    }
 
     ps->search = search;
     /* Set pl window depending on the search */
