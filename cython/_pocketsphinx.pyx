@@ -1539,23 +1539,31 @@ cdef class Decoder:
         cdef logmath_t *lmath = ps_get_logmath(self._ps)
         return LogMath.create_from_ptr(logmath_retain(lmath))
 
-    def activate_search(self, str search_name):
+    def activate_search(self, str search_name = None):
         """Activate a search module
 
         This activates a "search module" that was created with the
         methods `add_fsg`, `add_lm`, `add_lm_file`,
-        `add_allphone_file`, `add_keyphrase`, `add_kws`, or
-        `add_align`.
+        `add_allphone_file`, `add_keyphrase`, or `add_kws`.
 
         This API is still bad, but at least the method names make
         sense now.
 
         Args:
-            search_name(str): Name of search module to activate.
+            search_name(str): Name of search module to activate.  If
+            None (or not given), then the default search module, the
+            one created with the Decoder, for instance, will be
+            (re-)activated.
+
         Raises:
             KeyError: If `search_name` doesn't actually exist.
+
         """
-        cdef int rv = ps_activate_search(self._ps, search_name.encode("utf-8"))
+        cdef int rv
+        if search_name is None:
+            rv = ps_activate_search(self._ps, NULL)
+        else:
+            rv = ps_activate_search(self._ps, search_name.encode("utf-8"))
         if rv < 0:
             raise KeyError("Unable to set search %s" % search_name)
 
