@@ -88,8 +88,7 @@ The commands are as follows:
       contains the `b`, `d`, `p`, and `t` fields, for start, end,
       probability, and the text of the word.  If `-phone_align yes`
       has been passed, then a `w` field will be present containing
-      phone segmentations, each of which in turn will contain a `w`
-      field with a state segmentation.
+      phone segmentations, in the same format.
 
   - `single`: Recognize each input as a single utterance, and write a
     JSON object in the same format described above.
