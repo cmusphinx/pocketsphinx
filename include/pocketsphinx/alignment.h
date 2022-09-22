@@ -69,31 +69,11 @@ struct ps_alignment_entry_s {
     uint16 parent;
     uint16 child;
 };
+
 typedef struct ps_alignment_entry_s ps_alignment_entry_t;
 
-struct ps_alignment_vector_s {
-    ps_alignment_entry_t *seq;
-    uint16 n_ent, n_alloc;
-};
-typedef struct ps_alignment_vector_s ps_alignment_vector_t;
-
-/* Internal data structure you are not allowed to see!  Not for you! */
-typedef struct dict2pid_s dict2pid_t;
-
-struct ps_alignment_s {
-    int refcount;
-    dict2pid_t *d2p;
-    ps_alignment_vector_t word;
-    ps_alignment_vector_t sseq;
-    ps_alignment_vector_t state;
-};
 typedef struct ps_alignment_s ps_alignment_t;
 
-struct ps_alignment_iter_s {
-    ps_alignment_t *al;
-    ps_alignment_vector_t *vec;
-    int pos;
-};
 typedef struct ps_alignment_iter_s ps_alignment_iter_t;
 
 /**
