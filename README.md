@@ -86,7 +86,7 @@ The commands are as follows:
     - `t`: Full text of recognition result
     - `w`: List of segments (usually words), each of which in turn
       contains the `b`, `d`, `p`, and `t` fields, for start, end,
-      probability, and the text of the word.  If `-state_align yes`
+      probability, and the text of the word.  If `-phone_align yes`
       has been passed, then a `w` field will be present containing
       phone segmentations, each of which in turn will contain a `w`
       field with a state segmentation.
@@ -104,16 +104,20 @@ The commands are as follows:
     
         pocketsphinx align goforward.wav "go forward ten meters"
         
-    By default, only word-level alignment is done.  To get phone and
-    state alignments, pass `-state_align yes` in the flags, e.g.:
+    By default, only word-level alignment is done.  To get phone
+    alignments, pass `-phone_align yes` in the flags, e.g.:
     
-        pocketsphinx -state_align yes align audio.wav text
+        pocketsphinx -phone_align yes align audio.wav $text
         
     This will make not particularly readable output, but you can use
     [jq](https://stedolan.github.io/jq/) to clean it up.  For example,
     you can get just the word names and start times like this:
     
-        pocketsphinx align audio.wav text | jq '.w[]|[.t,.b]'
+        pocketsphinx align audio.wav $text | jq '.w[]|[.t,.b]'
+        
+    Or you could get the phone names and durations like this:
+    
+        pocketsphinx -phone_align yes align audio.wav $text | jq '.w[]|.w[]|[.t,.d]'
         
     There are many, many other possibilities, of course.
 

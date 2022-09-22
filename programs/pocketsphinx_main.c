@@ -47,8 +47,20 @@
 #include <pocketsphinx.h>
 
 #include "util/ckd_alloc.h"
+#include "config_macro.h"
 #include "pocketsphinx_internal.h"
 #include "soundfiles.h"
+
+/* Le sigh.  Didn't want to have to do this. */
+static const arg_t ps_main_args_def[] = {
+    POCKETSPHINX_OPTIONS,
+    { "phone_align",
+      ARG_BOOLEAN,
+      "no",
+      "Run a second pass to align phones and print their durations "
+      "(DOES NOT WORK IN LIVE MODE)." },
+    CMDLN_EMPTY_OPTION
+};
 
 static int global_done = 0;
 static void
@@ -109,12 +121,96 @@ format_seg(char *outptr, int len, ps_seg_t *seg,
     return len;
 }
 
+static int
+format_seg_align(char *outptr, int maxlen,
+                 ps_alignment_iter_t *itor, ps_seg_t *seg,
+                 double utt_start, int frate,
+                 logmath_t *lmath)
+{
+    ps_alignment_iter_t *ditor;
+    double prob, st, dur;
+    int sf, ef, len;
+    const char *word;
+    ps_alignment_entry_t *ent;
+    uint16 parent;
+    
+    ps_seg_frames(seg, &sf, &ef);
+    st = utt_start + (double)sf / frate;
+    dur = (double)(ef + 1 - sf) / frate;
+    word = ps_seg_word(seg);
+    if (word == NULL)
+        word = "";
+    prob = logmath_exp(lmath, ps_seg_prob(seg, NULL, NULL, NULL));
+
+    len = snprintf(outptr, maxlen, HYP_FORMAT, st, dur, prob, word);
+    if (outptr)
+        outptr += len;
+    if (maxlen)
+        maxlen -= len;
+
+    len += 6; /* "w":,[ */
+    if (outptr) {
+        memcpy(outptr, ",\"w\":[", 6);
+        outptr += 6;
+    }
+    if (maxlen)
+        maxlen -= 6;
+    
+    ditor = ps_alignment_iter_down(itor);
+    ent = ps_alignment_iter_get(ditor);
+    parent = ent->parent;
+    while (ditor != NULL) {
+        int hyplen;
+
+        st = utt_start + (double)ent->start / frate;
+        dur = (double)ent->duration / frate;
+        prob = logmath_exp(lmath, ent->score);
+        word = bin_mdef_ciphone_str(seg->search->acmod->mdef, ent->id.pid.cipid);
+        hyplen = snprintf(outptr, maxlen, HYP_FORMAT, st, dur, prob, word);
+        len += hyplen;
+        if (outptr)
+            outptr += hyplen;
+        if (maxlen)
+            maxlen -= hyplen;
+
+        len++; /* } */
+        if (outptr)
+            *outptr++ = '}';
+        if (maxlen)
+            maxlen--;
+
+        ditor = ps_alignment_iter_next(ditor);
+        if (ditor != NULL) {
+            ent = ps_alignment_iter_get(ditor);
+            if (ent->parent != parent) {
+                ps_alignment_iter_free(ditor);
+                break;
+            }
+            len++;
+            if (outptr)
+                *outptr++ = ',';
+            if (maxlen)
+                maxlen--;
+        }
+    }
+
+    len += 2;
+    if (outptr) {
+        *outptr++ = ']';
+        *outptr++ = '}';
+        *outptr = '\0';
+    }
+    if (maxlen)
+        maxlen--;
+    
+    return len;
+}
+
 static void
-output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
+output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder, ps_alignment_t *alignment)
 {
     logmath_t *lmath;
     char *hyp_json, *ptr;
-    ps_seg_t *itor;
     int frate;
     int maxlen, len;
     double st;
@@ -127,9 +223,23 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
         st = 0.0;
     else
         st = ps_endpointer_speech_start(ep);
-    for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
-        maxlen += format_seg(NULL, 0, itor, st, frate, lmath);
-        maxlen++; /* , or ] at end */
+    if (alignment) {
+        ps_alignment_iter_t *itor;
+        ps_seg_t *seg;
+        for (itor = ps_alignment_words(alignment), seg = ps_seg_iter(decoder);
+             itor; itor = ps_alignment_iter_next(itor), seg = ps_seg_next(seg)) {
+            /* This should be guaranteed by the API, but just in case. */
+            assert(seg != NULL);
+            maxlen += format_seg_align(NULL, 0, itor, seg, st, frate, lmath);
+            maxlen++; /* , or ] at end */
+        }
+    }
+    else {
+        ps_seg_t *itor;
+        for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
+            maxlen += format_seg(NULL, 0, itor, st, frate, lmath);
+            maxlen++; /* , or ] at end */
+        }
     }
     maxlen++; /* final } */
     maxlen++; /* trailing \0 */
@@ -140,18 +250,34 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
     ptr += len;
     maxlen -= len;
 
-    assert(maxlen > 2);
-    strcpy(ptr, ",\"w\":[");
+    assert(maxlen > 6);
+    memcpy(ptr, ",\"w\":[", 6);
     ptr += 6;
     maxlen -= 6;
 
-    for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
-        assert(maxlen > 0);
-        len = format_seg(ptr, maxlen, itor, st, frate, lmath);
-        ptr += len;
-        maxlen -= len;
-        *ptr++ = ',';
-        maxlen--;
+    if (alignment) {
+        ps_alignment_iter_t *itor;
+        ps_seg_t *seg;
+        for (itor = ps_alignment_words(alignment), seg = ps_seg_iter(decoder);
+             itor && seg; itor = ps_alignment_iter_next(itor), seg = ps_seg_next(seg)) {
+            assert(maxlen > 0);
+            len = format_seg_align(ptr, maxlen, itor, seg, st, frate, lmath);
+            ptr += len;
+            maxlen -= len;
+            *ptr++ = ',';
+            maxlen--;
+        }
+    }
+    else {
+        ps_seg_t *itor;
+        for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
+            assert(maxlen > 0);
+            len = format_seg(ptr, maxlen, itor, st, frate, lmath);
+            ptr += len;
+            maxlen -= len;
+            *ptr++ = ',';
+            maxlen--;
+        }
     }
     --ptr;
     *ptr++ = ']';
@@ -217,7 +343,9 @@ live(ps_config_t *config, FILE *infile)
                 E_INFO("Speech end at %.2f\n",
                        ps_endpointer_speech_end(ep));
                 ps_end_utt(decoder);
-                output_hyp(ep, decoder);
+                if (ps_config_bool(decoder->config, "phone_align"))
+                    E_WARN("State alignment not yet supported in live mode\n");
+                output_hyp(ep, decoder, NULL);
             }
         }
     }
@@ -239,6 +367,7 @@ error_out:
 static int
 decode_single(ps_decoder_t *decoder, FILE *infile)
 {
+    ps_alignment_t *alignment = NULL;
     size_t data_size, block_size;
     short *data, *ptr;
     int rv = 0;
@@ -277,7 +406,22 @@ decode_single(ps_decoder_t *decoder, FILE *infile)
     }
     if ((rv = ps_end_utt(decoder)) < 0)
         goto error_out;
-    output_hyp(NULL, decoder);
+    if (ps_config_bool(decoder->config, "phone_align")) {
+        if (ps_set_alignment(decoder, NULL) < 0)
+            goto error_out;
+        if ((rv = ps_start_utt(decoder)) < 0)
+            goto error_out;
+        if ((rv = ps_process_raw(decoder, data, ptr - data, FALSE, TRUE)) < 0) {
+            E_ERROR("ps_process_raw() failed\n");
+            goto error_out;
+        }
+        if ((rv = ps_end_utt(decoder)) < 0)
+            goto error_out;
+        if ((alignment = ps_get_alignment(decoder)) == NULL)
+            goto error_out;
+        ps_activate_search(decoder, NULL);
+    }
+    output_hyp(NULL, decoder, alignment);
     /* Fall through intentionally */
 error_out:
     ckd_free(data);
@@ -512,8 +656,8 @@ main(int argc, char *argv[])
 
     command = find_command(&argc, argv);
     inputs = find_inputs(&argc, argv, &ninputs);
-    if ((config = ps_config_parse_args(NULL, argc, argv)) == NULL) {
-        cmd_ln_log_help_r(NULL, ps_args());
+    if ((config = ps_config_parse_args(ps_main_args_def, argc, argv)) == NULL) {
+        cmd_ln_log_help_r(NULL, ps_main_args_def);
         return 1;
     }
     ps_default_search_args(config);
