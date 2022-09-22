@@ -70,6 +70,10 @@ struct ps_alignment_iter_s {
     int pos;
 };
 
+#define ps_alignment_n_words(al) (int)(al)->word.n_ent
+#define ps_alignment_n_phones(al) (int)(al)->sseq.n_ent
+#define ps_alignment_n_states(al) (int)(al)->state.n_ent
+
 /**
  * Create a new, empty alignment.
  */
