@@ -104,7 +104,10 @@ struct ps_search_s {
     char *type;
     char *name;
     
-    ps_search_t *pls;      /**< Phoneme loop for lookahead. */
+    /**
+     * Phoneme loop for lookahead.  Reference (not retained) to
+     * phone_loop in the parent ps_decoder_t. */
+    ps_search_t *pls;
     cmd_ln_t *config;      /**< Configuration. */
     acmod_t *acmod;        /**< Acoustic model. */
     dict_t *dict;        /**< Pronunciation dictionary. */
