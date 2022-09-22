@@ -36,7 +36,8 @@
  */
 
 /**
- * @file ps_alignment.h Multi-level alignment structure
+ * @file ps_alignment.h
+ * @brief Multi-level alignment structure
  */
 
 #ifndef __PS_ALIGNMENT_H__
@@ -51,29 +52,56 @@ extern "C" {
 }
 #endif
 
-#define PS_ALIGNMENT_NONE ((uint16)0xffff)
+/**
+ * Value indicating no parent or child for an entry.
+ */
+#define PS_ALIGNMENT_NONE -1
 
-struct ps_alignment_entry_s {
+/**
+ * @struct ps_alignment_entry_t
+ * @brief Entry (phone, word, or state) in an alignment
+ */
+typedef struct ps_alignment_entry_s {
+    int32 start;  /**< Start frame index. */
+    int32 duration; /**< Duration in frames. */
+    int32 score;  /**< Alignment score (fairly meaningless). */
+    /**
+     * Index of parent node.
+     *
+     * You can use this to determine if you have crossed a parent
+     * boundary.  For example if you wish to iterate only over phones
+     * inside a word, you can store this for the first phone and stop
+     * iterating once it changes. */
+    int parent;
+    int child;  /**< Index of child node. */
+    /**
+     * ID or IDs for this entry.
+     *
+     * This is complex, though perhaps not needlessly so.  We need all
+     * this information to do state alignment.
+     */
     union {
-        int32 wid;
+        int32 wid;  /**< Word ID (for words) */
         struct {
-            uint16 ssid;
-            uint16 cipid;
-            uint16 tmatid;
+            int16 cipid;  /**< Phone ID, which you care about. */
+            uint16 ssid;  /**< Senone sequence ID, which you don't. */
+            int32 tmatid; /**< Transition matrix ID, almost certainly
+                             the same as cipid. */
         } pid;
         uint16 senid;
     } id;
-    int16 start;
-    int16 duration;
-    int32 score;
-    uint16 parent;
-    uint16 child;
-};
+} ps_alignment_entry_t;
 
-typedef struct ps_alignment_entry_s ps_alignment_entry_t;
-
+/**
+ * @struct ps_alignment_t
+ * @brief Multi-level alignment (words, phones, states) over an utterance.
+ */
 typedef struct ps_alignment_s ps_alignment_t;
 
+/**
+ * @struct ps_alignment_iter_t
+ * @brief Iterator over entries in an alignment.
+ */
 typedef struct ps_alignment_iter_s ps_alignment_iter_t;
 
 /**
