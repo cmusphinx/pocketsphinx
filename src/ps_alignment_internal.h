@@ -120,7 +120,7 @@ ps_alignment_t *ps_alignment_init(dict2pid_t *d2p);
  * Append a word.
  */
 int ps_alignment_add_word(ps_alignment_t *al,
-                          int32 wid, int duration);
+                          int32 wid, int start, int duration);
 
 /**
  * Populate lower layers using available word information.

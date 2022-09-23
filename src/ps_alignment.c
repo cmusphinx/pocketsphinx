@@ -111,17 +111,14 @@ ps_alignment_vector_empty(ps_alignment_vector_t *vec)
 
 int
 ps_alignment_add_word(ps_alignment_t *al,
-                      int32 wid, int duration)
+                      int32 wid, int start, int duration)
 {
     ps_alignment_entry_t *ent;
 
     if ((ent = ps_alignment_vector_grow_one(&al->word)) == NULL)
         return 0;
     ent->id.wid = wid;
-    if (al->word.n_ent > 1)
-        ent->start = ent[-1].start + ent[-1].duration;
-    else
-        ent->start = 0;
+    ent->start = start;
     ent->duration = duration;
     ent->score = 0;
     ent->parent = PS_ALIGNMENT_NONE;

@@ -62,12 +62,12 @@ main(int argc, char *argv[])
     acmod = ps->acmod;
 
     al = ps_alignment_init(d2p);
-    TEST_EQUAL(1, ps_alignment_add_word(al, dict_wordid(dict, "<s>"), 0));
-    TEST_EQUAL(2, ps_alignment_add_word(al, dict_wordid(dict, "go"), 0));
-    TEST_EQUAL(3, ps_alignment_add_word(al, dict_wordid(dict, "forward"), 0));
-    TEST_EQUAL(4, ps_alignment_add_word(al, dict_wordid(dict, "ten"), 0));
-    TEST_EQUAL(5, ps_alignment_add_word(al, dict_wordid(dict, "meters"), 0));
-    TEST_EQUAL(6, ps_alignment_add_word(al, dict_wordid(dict, "</s>"), 0));
+    TEST_EQUAL(1, ps_alignment_add_word(al, dict_wordid(dict, "<s>"), 0, 0));
+    TEST_EQUAL(2, ps_alignment_add_word(al, dict_wordid(dict, "go"), 0, 0));
+    TEST_EQUAL(3, ps_alignment_add_word(al, dict_wordid(dict, "forward"), 0, 0));
+    TEST_EQUAL(4, ps_alignment_add_word(al, dict_wordid(dict, "ten"), 0, 0));
+    TEST_EQUAL(5, ps_alignment_add_word(al, dict_wordid(dict, "meters"), 0, 0));
+    TEST_EQUAL(6, ps_alignment_add_word(al, dict_wordid(dict, "</s>"), 0, 0));
     TEST_EQUAL(0, ps_alignment_populate(al));
 
     TEST_ASSERT(search = state_align_search_init("state_align", config, acmod, al));

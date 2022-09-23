@@ -26,10 +26,10 @@ main(int argc, char *argv[])
 	d2p = dict2pid_build(mdef, dict);
 
 	al = ps_alignment_init(d2p);
-	TEST_EQUAL(1, ps_alignment_add_word(al, dict_wordid(dict, "<s>"), 0));
-	TEST_EQUAL(2, ps_alignment_add_word(al, dict_wordid(dict, "hello"), 0));
-	TEST_EQUAL(3, ps_alignment_add_word(al, dict_wordid(dict, "world"), 0));
-	TEST_EQUAL(4, ps_alignment_add_word(al, dict_wordid(dict, "</s>"), 0));
+	TEST_EQUAL(1, ps_alignment_add_word(al, dict_wordid(dict, "<s>"), 0, 0));
+	TEST_EQUAL(2, ps_alignment_add_word(al, dict_wordid(dict, "hello"), 0, 0));
+	TEST_EQUAL(3, ps_alignment_add_word(al, dict_wordid(dict, "world"), 0, 0));
+	TEST_EQUAL(4, ps_alignment_add_word(al, dict_wordid(dict, "</s>"), 0, 0));
 	TEST_EQUAL(0, ps_alignment_populate(al));
 
 	itor = ps_alignment_words(al);
