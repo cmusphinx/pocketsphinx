@@ -1694,7 +1694,7 @@ cdef class Decoder:
         cdef ps_alignment_t *al = ps_get_alignment(self._ps)
         if al == NULL:
             return None
-        return Alignment.create_from_ptr(al)
+        return Alignment.create_from_ptr(ps_alignment_retain(al))
 
     def n_frames(self):
         """Get the number of frames processed up to this point.
