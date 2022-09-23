@@ -349,7 +349,8 @@ int ps_set_alignment(ps_decoder_t *ps, ps_alignment_t *al);
  * know the state sequence.
  *
  * @return Current alignment, or NULL if none.  This pointer is owned
- * by the decoder.
+ * by the decoder, so you must call ps_alignment_retain() on it if you
+ * wish to keep it outside the lifetime of the decoder.
  */
 POCKETSPHINX_EXPORT
 ps_alignment_t *ps_get_alignment(ps_decoder_t *ps);

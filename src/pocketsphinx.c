@@ -746,6 +746,8 @@ ps_set_alignment(ps_decoder_t *ps, ps_alignment_t *al)
         if (ps_alignment_populate(al) < 0)
             goto error_out;
     }
+    else
+        al = ps_alignment_retain(al);
     search = state_align_search_init("_state_align", ps->config, ps->acmod, al);
     if (search == NULL)
         goto error_out;
