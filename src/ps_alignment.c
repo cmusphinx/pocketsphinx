@@ -363,6 +363,7 @@ ps_alignment_words(ps_alignment_t *al)
     itor->al = al;
     itor->vec = &al->word;
     itor->pos = 0;
+    itor->parent = PS_ALIGNMENT_NONE;
     return itor;
 }
 
@@ -377,6 +378,8 @@ ps_alignment_phones(ps_alignment_t *al)
     itor->al = al;
     itor->vec = &al->sseq;
     itor->pos = 0;
+    /* Iterate over *all* phones */
+    itor->parent = PS_ALIGNMENT_NONE;
     return itor;
 }
 
@@ -391,6 +394,8 @@ ps_alignment_states(ps_alignment_t *al)
     itor->al = al;
     itor->vec = &al->state;
     itor->pos = 0;
+    /* Iterate over *all* states */
+    itor->parent = PS_ALIGNMENT_NONE;
     return itor;
 }
 
@@ -400,9 +405,59 @@ ps_alignment_iter_get(ps_alignment_iter_t *itor)
     return itor->vec->seq + itor->pos;
 }
 
+const char *
+ps_alignment_iter_name(ps_alignment_iter_t *itor)
+{
+    ps_alignment_entry_t *ent;
+    if (itor == NULL)
+        return NULL;
+    ent = ps_alignment_iter_get(itor);
+    if (itor->vec == &itor->al->word) {
+        return dict_wordstr(itor->al->d2p->dict,
+                            ent->id.wid);
+    }
+    else if (itor->vec == &itor->al->sseq) {
+        return bin_mdef_ciphone_str(itor->al->d2p->mdef,
+                                    ent->id.pid.cipid);
+    }
+    else if (itor->vec == &itor->al->state) {
+        int len = snprintf(NULL, 0, "%u", ent->id.senid);
+        if (len == 0) {
+            E_ERROR_SYSTEM("snprintf() failed");
+            return NULL;
+        }
+        if (itor->name)
+            ckd_free(itor->name);
+        itor->name = ckd_malloc(len + 1);
+        if (snprintf(itor->name, len + 1, "%u", ent->id.senid) != len) {
+            E_ERROR_SYSTEM("snprintf() failed");
+            return NULL;
+        }
+        return itor->name;
+    }
+    else
+        return NULL;
+}
+
+int
+ps_alignment_iter_seg(ps_alignment_iter_t *itor, int *start, int *duration)
+{
+    ps_alignment_entry_t *ent;
+    if (itor == NULL)
+        return 0;
+    ent = ps_alignment_iter_get(itor);
+    if (start)
+        *start = ent->start;
+    if (duration)
+        *duration = ent->duration;
+    return ent->score;
+}
+
 int
 ps_alignment_iter_free(ps_alignment_iter_t *itor)
 {
+    if (itor->name)
+        ckd_free(itor->name);
     ckd_free(itor);
     return 0;
 }
@@ -417,6 +472,9 @@ ps_alignment_iter_goto(ps_alignment_iter_t *itor, int pos)
         return NULL;
     }
     itor->pos = pos;
+    /* Switch to this word/phone as parent */
+    if (itor->parent != PS_ALIGNMENT_NONE)
+        itor->parent = itor->vec->seq[itor->pos].parent;
     return itor;
 }
 
@@ -429,15 +487,8 @@ ps_alignment_iter_next(ps_alignment_iter_t *itor)
         ps_alignment_iter_free(itor);
         return NULL;
     }
-    return itor;
-}
-
-ps_alignment_iter_t *
-ps_alignment_iter_prev(ps_alignment_iter_t *itor)
-{
-    if (itor == NULL)
-        return NULL;
-    if (--itor->pos < 0) {
+    if (itor->parent != PS_ALIGNMENT_NONE
+        && itor->vec->seq[itor->pos].parent != itor->parent) {
         ps_alignment_iter_free(itor);
         return NULL;
     }
@@ -445,27 +496,7 @@ ps_alignment_iter_prev(ps_alignment_iter_t *itor)
 }
 
 ps_alignment_iter_t *
-ps_alignment_iter_up(ps_alignment_iter_t *itor)
-{
-    ps_alignment_iter_t *itor2;
-    if (itor == NULL)
-        return NULL;
-    if (itor->vec == &itor->al->word)
-        return NULL;
-    if (itor->vec->seq[itor->pos].parent == PS_ALIGNMENT_NONE)
-        return NULL;
-    itor2 = ckd_calloc(1, sizeof(*itor2));
-    itor2->al = itor->al;
-    itor2->pos = itor->vec->seq[itor->pos].parent;
-    if (itor->vec == &itor->al->sseq)
-        itor2->vec = &itor->al->word;
-    else
-        itor2->vec = &itor->al->sseq;
-    return itor2;
-}
-
-ps_alignment_iter_t *
-ps_alignment_iter_down(ps_alignment_iter_t *itor)
+ps_alignment_iter_children(ps_alignment_iter_t *itor)
 {
     ps_alignment_iter_t *itor2;
     if (itor == NULL)
@@ -477,6 +508,8 @@ ps_alignment_iter_down(ps_alignment_iter_t *itor)
     itor2 = ckd_calloc(1, sizeof(*itor2));
     itor2->al = itor->al;
     itor2->pos = itor->vec->seq[itor->pos].child;
+    /* Iterate over only parent's phones/states */
+    itor2->parent = itor->pos;
     if (itor->vec == &itor->al->word)
         itor2->vec = &itor->al->sseq;
     else

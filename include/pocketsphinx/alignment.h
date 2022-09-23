@@ -58,41 +58,6 @@ extern "C" {
 #define PS_ALIGNMENT_NONE -1
 
 /**
- * @struct ps_alignment_entry_t
- * @brief Entry (phone, word, or state) in an alignment
- */
-typedef struct ps_alignment_entry_s {
-    int32 start;  /**< Start frame index. */
-    int32 duration; /**< Duration in frames. */
-    int32 score;  /**< Alignment score (fairly meaningless). */
-    /**
-     * Index of parent node.
-     *
-     * You can use this to determine if you have crossed a parent
-     * boundary.  For example if you wish to iterate only over phones
-     * inside a word, you can store this for the first phone and stop
-     * iterating once it changes. */
-    int parent;
-    int child;  /**< Index of child node. */
-    /**
-     * ID or IDs for this entry.
-     *
-     * This is complex, though perhaps not needlessly so.  We need all
-     * this information to do state alignment.
-     */
-    union {
-        int32 wid;  /**< Word ID (for words) */
-        struct {
-            int16 cipid;  /**< Phone ID, which you care about. */
-            uint16 ssid;  /**< Senone sequence ID, which you don't. */
-            int32 tmatid; /**< Transition matrix ID, almost certainly
-                             the same as cipid. */
-        } pid;
-        uint16 senid;
-    } id;
-} ps_alignment_entry_t;
-
-/**
  * @struct ps_alignment_t
  * @brief Multi-level alignment (words, phones, states) over an utterance.
  */
@@ -130,16 +95,22 @@ ps_alignment_iter_t *ps_alignment_phones(ps_alignment_t *al);
 ps_alignment_iter_t *ps_alignment_states(ps_alignment_t *al);
 
 /**
- * Get the alignment entry pointed to by an iterator.
+ * Get the human-readable name of the current segment for an alignment.
  *
- * The iterator retains ownership of this so don't try to free it.
+ * @return Name of this segment as a string (word, phone, or state
+ * number).  This pointer is owned by the iterator, do not free it
+ * yourself.
  */
-ps_alignment_entry_t *ps_alignment_iter_get(ps_alignment_iter_t *itor);
+const char *ps_alignment_iter_name(ps_alignment_iter_t *itor);
 
 /**
- * Move alignment iterator to given index.
+ * Get the timing and score information for the current segment of an aligment.
+ *
+ * @arg start Output pointer for start frame
+ * @arg duration Output pointer for duration
+ * @return Acoustic score for this segment
  */
-ps_alignment_iter_t *ps_alignment_iter_goto(ps_alignment_iter_t *itor, int pos);
+int ps_alignment_iter_seg(ps_alignment_iter_t *itor, int *start, int *duration);
 
 /**
  * Move an alignment iterator forward.
@@ -150,25 +121,11 @@ ps_alignment_iter_t *ps_alignment_iter_goto(ps_alignment_iter_t *itor, int pos);
 ps_alignment_iter_t *ps_alignment_iter_next(ps_alignment_iter_t *itor);
 
 /**
- * Move an alignment iterator back.
+ * Iterate over the children of the current alignment entry.
  *
- * If the start of the alignment is reached, this will free the iterator
- * and return NULL.
+ * If there are no child nodes, NULL is returned.
  */
-ps_alignment_iter_t *ps_alignment_iter_prev(ps_alignment_iter_t *itor);
-
-/**
- * Get a new iterator starting at the parent of the current node.
- *
- * If there is no parent node, NULL is returned.
- */
-ps_alignment_iter_t *ps_alignment_iter_up(ps_alignment_iter_t *itor);
-/**
- * Get a new iterator starting at the first child of the current node.
- *
- * If there is no child node, NULL is returned.
- */
-ps_alignment_iter_t *ps_alignment_iter_down(ps_alignment_iter_t *itor);
+ps_alignment_iter_t *ps_alignment_iter_children(ps_alignment_iter_t *itor);
 
 /**
  * Release an iterator before completing all iterations.
