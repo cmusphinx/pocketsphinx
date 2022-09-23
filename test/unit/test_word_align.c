@@ -95,14 +95,12 @@ main(int argc, char *argv[])
     /* Test second pass alignment */
     TEST_EQUAL(0, ps_set_alignment(ps, NULL));
     TEST_ASSERT(al = ps_get_alignment(ps));
-    /* It should have no durations assigned. */
     for (itor = ps_alignment_phones(al); itor;
 	 itor = ps_alignment_iter_next(itor)) {
         int score, start, duration;
 	score = ps_alignment_iter_seg(itor, &start, &duration);
         TEST_EQUAL(0, score);
-        TEST_EQUAL(0, start);
-        TEST_EQUAL(0, duration);
+        /* Durations are propagated down from words. */
     }
     do_decode(ps);
     TEST_ASSERT(al = ps_get_alignment(ps));

@@ -94,6 +94,8 @@ prune_hmms(state_align_search_t *sas, int frame_idx)
         hmm_t *hmm = sas->hmms + i;
         if (hmm_frame(hmm) < frame_idx)
             continue;
+        if (nf < sas->sf[i] || nf > sas->ef[i])
+            continue;
         hmm_frame(hmm) = nf;
     }
 }
@@ -406,7 +408,7 @@ state_align_search_init(const char *name,
 {
     state_align_search_t *sas;
     ps_alignment_iter_t *itor;
-    hmm_t *hmm;
+    int i;
 
     sas = ckd_calloc(1, sizeof(*sas));
     ps_search_init(ps_search_base(sas), &state_align_search_funcs,
@@ -424,11 +426,19 @@ state_align_search_init(const char *name,
     sas->n_phones = ps_alignment_n_phones(al);
     sas->n_emit_state = ps_alignment_n_states(al);
     sas->hmms = ckd_calloc(sas->n_phones, sizeof(*sas->hmms));
-    for (hmm = sas->hmms, itor = ps_alignment_phones(al); itor;
-         ++hmm, itor = ps_alignment_iter_next(itor)) {
+    sas->sf = ckd_calloc(sas->n_phones, sizeof(*sas->sf));
+    sas->ef = ckd_calloc(sas->n_phones, sizeof(*sas->ef));
+    for (i = 0, itor = ps_alignment_phones(al);
+         i < sas->n_phones && itor;
+         ++i, itor = ps_alignment_iter_next(itor)) {
         ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
-        hmm_init(sas->hmmctx, hmm, FALSE,
+        hmm_init(sas->hmmctx, &sas->hmms[i], FALSE,
                  ent->id.pid.ssid, ent->id.pid.tmatid);
+        sas->sf[i] = ent->start;
+        if (ent->duration)
+            sas->ef[i] = ent->start + ent->duration;
+        else
+            sas->ef[i] = INT_MAX;
     }
     return ps_search_base(sas);
 }

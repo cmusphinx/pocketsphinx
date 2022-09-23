@@ -739,7 +739,7 @@ ps_set_alignment(ps_decoder_t *ps, ps_alignment_t *al)
                         seg->text);
                 goto error_out;
             }
-            ps_alignment_add_word(al, seg->wid, seg->sf, seg->ef - seg->sf);
+            ps_alignment_add_word(al, seg->wid, seg->sf, seg->ef - seg->sf + 1);
             seg = ps_seg_next(seg);
         }
         /* FIXME: Add cionly parameter as in SoundSwallower */

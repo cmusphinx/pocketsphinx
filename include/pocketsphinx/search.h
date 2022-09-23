@@ -327,16 +327,21 @@ int ps_set_align_text(ps_decoder_t *ps, const char *words);
  * To align, run or re-run decoding as usual, then call
  * ps_get_alignment() to get the resulting alignment.  Note that if
  * you call this function *before* rerunning decoding, you can obtain
- * the phone and state sequence, but the durations will all be zero.
+ * the phone and state sequence, but the durations will be invalid
+ * (phones and states will inherit the parent word's duration).
  *
  * @param ps Decoder object.
  * @param al Usually NULL, which means to construct an alignment from
- * the current search hypothesis (this does not work with allphone or
- * keyword spotting).  You can also pass a ps_alignment_t here if you
- * have one.  The search will reference but not copy it, so after
- * running decoding it will be updated with new durations.
+ *           the current search hypothesis (this does not work with
+ *           allphone or keyword spotting).  You can also pass a
+ *           ps_alignment_t here if you have one.  The search will
+ *           retain but not copy it, so after running decoding it will
+ *           be updated with new durations.  You can set starts and
+ *           durations for words or phones (not states) to constrain
+ *           the alignment.
  * @return 0 for success, -1 for error (if there is no search
- * hypothesis, or it cannot be aligned due to missing word IDs)
+ *         hypothesis, or it cannot be aligned due to missing word
+ *         IDs)
  */
 POCKETSPHINX_EXPORT
 int ps_set_alignment(ps_decoder_t *ps, ps_alignment_t *al);
@@ -349,8 +354,9 @@ int ps_set_alignment(ps_decoder_t *ps, ps_alignment_t *al);
  * know the state sequence.
  *
  * @return Current alignment, or NULL if none.  This pointer is owned
- * by the decoder, so you must call ps_alignment_retain() on it if you
- * wish to keep it outside the lifetime of the decoder.
+ *         by the decoder, so you must call ps_alignment_retain() on
+ *         it if you wish to keep it outside the lifetime of the
+ *         decoder.
  */
 POCKETSPHINX_EXPORT
 ps_alignment_t *ps_get_alignment(ps_decoder_t *ps);
