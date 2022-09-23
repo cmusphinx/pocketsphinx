@@ -1602,6 +1602,100 @@ cdef class Decoder:
                       DeprecationWarning)
         return self.current_search()
 
+    def set_align_text(self, text):
+        """Set a word sequence for alignment *and* enable alignment mode.
+
+        Unlike the `add_*` methods and the deprecated, badly-named
+        `set_*` methods, this really does immediately enable the
+        resulting search module.  This is because alignment is
+        typically a one-shot deal, i.e. you are not likely to create a
+        list of different alignments and keep them around.  If you
+        really want to do that, perhaps you should use FSG search
+        instead.  Or let me know and perhaps I'll add an
+        `add_align_text` method.
+
+        You must do any text normalization yourself.  For word-level
+        alignment, once you call this, simply decode and get the
+        segmentation in the usual manner.  For phone-level alignment,
+        see `set_alignment` and `get_alignment`.
+
+        Args:
+            text(str): Sentence to align, as whitespace-separated
+                       words.  All words must be present in the
+                       dictionary.
+        Raises:
+            RuntimeError: If text is invalid somehow.
+        """
+        cdef int rv = ps_set_align_text(self._ps, text.encode("utf-8"))
+        if rv < 0:
+            raise RuntimeError("Failed to set up alignment of %s" % (text))
+
+    def set_alignment(self, Alignment alignment = None):
+        """Set up *and* activate sub-word alignment mode.
+
+        For efficiency reasons, decoding and word-level alignment (as
+        done by `set_align_text`) do not track alignments at the
+        sub-word level.  This is fine for a lot of use cases, but
+        obviously not all of them.  If you want to obtain phone or
+        state level alignments, you must run a second pass of
+        alignment, which is what this function sets you up to do.  The
+        sequence is something like this:
+
+            decoder.set_align_text("hello world")
+            decoder.start_utt()
+            decoder.process_raw(data, full_utt=True)
+            decoder.end_utt()
+            decoder.set_alignment()
+            decoder.start_utt()
+            decoder.process_raw(data, full_utt=True)
+            decoder.end_utt()
+            for word in decoder.get_alignment():
+                for phone in word:
+                    for state in phone:
+                        print(word, phone, state)
+
+        That's a lot of code, so it may get simplified, either here or
+        in a derived class, before release.
+
+        Note that if you are using this with N-Gram or FSG decoding,
+        you can restore the default search module afterwards by
+        calling activate_search() with no argument.
+
+        Args:
+            alignment(Alignment): Pre-constructed `Alignment` object.
+                  Currently you can't actually do anything with this.
+        Raises:
+            RuntimeError: If current hypothesis cannot be aligned (such
+                          as when using keyphrase or allphone search).
+
+        """
+        cdef int rv
+        if alignment is not None:
+            rv = ps_set_alignment(self._ps, alignment._al)
+        else:
+            rv = ps_set_alignment(self._ps, NULL)
+        if rv < 0:
+            raise RuntimeError("Failed to set up sub-word alignment")
+
+    def get_alignment(self):
+        """Get the current sub-word alignment, if any.
+        
+        This will return something if `ps_set_alignment` has been
+        called, but it will not contain an actual *alignment*
+        (i.e. phone and state durations) unless a second pass of
+        decoding has been run.
+
+        If the decoder is not in sub-word alignment mode then it will
+        return None.
+
+        Returns:
+            Alignment - if an alignment exists.
+        """
+        cdef ps_alignment_t *al = ps_get_alignment(self._ps)
+        if al == NULL:
+            return None
+        return Alignment.create_from_ptr(al)
+
     def n_frames(self):
         """Get the number of frames processed up to this point.
 
@@ -1813,6 +1907,75 @@ cdef class Endpointer:
         if outbuf == NULL:
             return None
         return (<const unsigned char *>&outbuf[0])[:out_n_samples * 2]
+
+cdef class AlignmentEntry:
+    cdef public int start
+    cdef public int duration
+    cdef public int score
+    cdef public str name
+    # DANGER! Not retained!
+    cdef ps_alignment_iter_t *itor
+    @staticmethod
+    cdef create_from_iter(ps_alignment_iter_t *itor):
+        cdef AlignmentEntry self
+        self = AlignmentEntry.__new__(AlignmentEntry)
+        self.score = ps_alignment_iter_seg(itor, &self.start, &self.duration)
+        self.name = ps_alignment_iter_name(itor).decode('utf-8')
+        self.itor = itor  # DANGER! DANGER!
+        return self
+
+    def __iter__(self):
+        cdef ps_alignment_iter_t *itor = ps_alignment_iter_children(self.itor)
+        while itor != NULL:
+            c = AlignmentEntry.create_from_iter(itor)
+            yield c
+            itor = ps_alignment_iter_next(itor)
+        # FIXME: will leak memory if iteration stopped short!
+
+cdef class Alignment:
+    """Sub-word alignment alignment.
+
+    For the moment this is read-only.
+    """
+    cdef ps_alignment_t *_al
+    
+    @staticmethod
+    cdef create_from_ptr(ps_alignment_t *al):
+        cdef Alignment self = Alignment.__new__(Alignment)
+        self._al = al
+        return self
+
+    def __dealloc__(self):
+        if self._al != NULL:
+            ps_alignment_free(self._al)
+
+    def __iter__(self):
+        return self.words()
+
+    def words(self):
+        """Iterate over words in the alignment."""
+        cdef ps_alignment_iter_t *itor = ps_alignment_words(self._al)
+        while itor != NULL:
+            w = AlignmentEntry.create_from_iter(itor)
+            yield w
+            itor = ps_alignment_iter_next(itor)
+        # FIXME: will leak memory if iteration stopped short!
+
+    def phones(self):
+        """Iterate over phones in the alignment."""
+        cdef ps_alignment_iter_t *itor = ps_alignment_phones(self._al)
+        while itor != NULL:
+            p = AlignmentEntry.create_from_iter(itor)
+            yield p
+            itor = ps_alignment_iter_next(itor)
+
+    def states(self):
+        """Iterate over states in the alignment."""
+        cdef ps_alignment_iter_t *itor = ps_alignment_states(self._al)
+        while itor != NULL:
+            s = AlignmentEntry.create_from_iter(itor)
+            yield s
+            itor = ps_alignment_iter_next(itor)
 
 def set_loglevel(level):
     """Set internal log level of PocketSphinx.
