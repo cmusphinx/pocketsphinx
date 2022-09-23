@@ -98,21 +98,23 @@ main(int argc, char *argv[])
     /* It should have no durations assigned. */
     for (itor = ps_alignment_phones(al); itor;
 	 itor = ps_alignment_iter_next(itor)) {
-	ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
-        TEST_EQUAL(0, ent->start);
-        TEST_EQUAL(0, ent->duration);
+        int score, start, duration;
+	score = ps_alignment_iter_seg(itor, &start, &duration);
+        TEST_EQUAL(0, score);
+        TEST_EQUAL(0, start);
+        TEST_EQUAL(0, duration);
     }
     do_decode(ps);
     TEST_ASSERT(al = ps_get_alignment(ps));
     /* It should have durations assigned. */
     for (itor = ps_alignment_phones(al); itor;
 	 itor = ps_alignment_iter_next(itor)) {
-	ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
-
-	printf("%s %d %d\n",
-	       bin_mdef_ciphone_str(ps->acmod->mdef, ent->id.pid.cipid),
-	       ent->start, ent->duration);
-        TEST_ASSERT(0 != ent->duration);
+        int score, start, duration;
+	score = ps_alignment_iter_seg(itor, &start, &duration);
+	printf("%s %d %d %d\n",
+               ps_alignment_iter_name(itor),
+	       start, duration, score);
+        TEST_ASSERT(0 != duration);
     }
     
     ps_free(ps);
