@@ -49,6 +49,7 @@
 #include "util/ckd_alloc.h"
 #include "config_macro.h"
 #include "pocketsphinx_internal.h"
+#include "ps_alignment_internal.h"
 #include "soundfiles.h"
 
 /* Le sigh.  Didn't want to have to do this. */
@@ -127,12 +128,10 @@ format_seg_align(char *outptr, int maxlen,
                  double utt_start, int frate,
                  logmath_t *lmath)
 {
-    ps_alignment_iter_t *ditor;
+    ps_alignment_iter_t *pitor;
     double prob, st, dur;
     int sf, ef, len;
     const char *word;
-    ps_alignment_entry_t *ent;
-    uint16 parent;
     
     ps_seg_frames(seg, &sf, &ef);
     st = utt_start + (double)sf / frate;
@@ -156,16 +155,15 @@ format_seg_align(char *outptr, int maxlen,
     if (maxlen)
         maxlen -= 6;
     
-    ditor = ps_alignment_iter_down(itor);
-    ent = ps_alignment_iter_get(ditor);
-    parent = ent->parent;
-    while (ditor != NULL) {
+    pitor = ps_alignment_iter_children(itor);
+    while (pitor != NULL) {
+        int start, duration, score;
         int hyplen;
-
-        st = utt_start + (double)ent->start / frate;
-        dur = (double)ent->duration / frate;
-        prob = logmath_exp(lmath, ent->score);
-        word = bin_mdef_ciphone_str(seg->search->acmod->mdef, ent->id.pid.cipid);
+        score = ps_alignment_iter_seg(pitor, &start, &duration);
+        st = utt_start + (double)start / frate;
+        dur = (double)duration / frate;
+        prob = logmath_exp(lmath, score);
+        word = ps_alignment_iter_name(pitor);
         hyplen = snprintf(outptr, maxlen, HYP_FORMAT, st, dur, prob, word);
         len += hyplen;
         if (outptr)
@@ -179,13 +177,8 @@ format_seg_align(char *outptr, int maxlen,
         if (maxlen)
             maxlen--;
 
-        ditor = ps_alignment_iter_next(ditor);
-        if (ditor != NULL) {
-            ent = ps_alignment_iter_get(ditor);
-            if (ent->parent != parent) {
-                ps_alignment_iter_free(ditor);
-                break;
-            }
+        pitor = ps_alignment_iter_next(pitor);
+        if (pitor != NULL) {
             len++;
             if (outptr)
                 *outptr++ = ',';
