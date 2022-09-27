@@ -1253,12 +1253,13 @@ ps_process_cep(ps_decoder_t *ps,
     int n_searchfr = 0;
 
 #ifdef FIXED_POINT
-    mfcc_t **idata = ckd_calloc_2d(n_frames,
-                                   ps->acmod->fcb->cepsize,
-                                   sizeof(**idata));
+    mfcc_t **idata, **ptr;
+    ptr = idata = ckd_calloc_2d(n_frames,
+                                fe_get_output_size(ps->acmod->fe),
+                                sizeof(**idata));
     fe_float_to_mfcc(ps->acmod->fe, data, idata, n_frames);
 #else
-    mfcc_t *idata = data;
+    mfcc_t **ptr = data;
 #endif
 
     if (no_search)
@@ -1268,7 +1269,7 @@ ps_process_cep(ps_decoder_t *ps,
         int nfr;
 
         /* Process some data into features. */
-        if ((nfr = acmod_process_cep(ps->acmod, &idata,
+        if ((nfr = acmod_process_cep(ps->acmod, &ptr,
                                      &n_frames, full_utt)) < 0)
             return nfr;
 
