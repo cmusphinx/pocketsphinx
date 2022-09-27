@@ -111,7 +111,7 @@ main(int argc, char *argv[])
         E_INFOCONT("%.2f,%.2f ",
 		   MFCC2FLOAT(cepbuf1[nfr][i]),
 		   MFCC2FLOAT(cepbuf2[nfr][i]));
-        TEST_EQUAL_FLOAT(cepbuf1[nfr][i], cepbuf2[nfr][i]);
+        TEST_EQUAL_MFCC(cepbuf1[nfr][i], cepbuf2[nfr][i]);
       }
       E_INFOCONT("\n");
     }
@@ -168,7 +168,7 @@ main(int argc, char *argv[])
         E_INFOCONT("%.2f,%.2f ",
 		   MFCC2FLOAT(cepbuf1[nfr][i]),
 		   MFCC2FLOAT(cepbuf2[nfr][i]));
-        TEST_EQUAL_FLOAT(cepbuf1[nfr][i], cepbuf2[nfr][i]);
+        TEST_EQUAL_MFCC(cepbuf1[nfr][i], cepbuf2[nfr][i]);
       }
       E_INFOCONT("\n");
     }
@@ -217,7 +217,7 @@ main(int argc, char *argv[])
         E_INFOCONT("%.2f,%.2f ",
 		   MFCC2FLOAT(cepbuf1[nfr][i]),
 		   MFCC2FLOAT(cepbuf2[nfr][i]));
-        TEST_EQUAL_FLOAT(cepbuf1[nfr][i], cepbuf2[nfr][i]);
+        TEST_EQUAL_MFCC(cepbuf1[nfr][i], cepbuf2[nfr][i]);
       }
       E_INFOCONT("\n");
     }
