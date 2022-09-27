@@ -21,7 +21,7 @@ else
     fail "run"
 fi
 
-if grep -q 'define FIXED' config.h; then
+if grep -q 'define FIXED' "${CMAKE_BINARY_DIR}/config.h"; then
    ref="$data/librivox/$bn.fixed.json"
 else
    ref="$data/librivox/$bn.json"
