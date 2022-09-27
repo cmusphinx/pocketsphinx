@@ -12,7 +12,7 @@ sox $data/librivox/*.wav $(run_program pocketsphinx soxflags) | \
                 -hmm $model/en-us/en-us \
                 -lm $model/en-us/en-us.lm.bin \
                 -dict $model/en-us/cmudict-en-us.dict - \
-                > $bn.json 2>$bn.log
+                2>$bn.log >$bn.json
 
 # Test whether it actually completed
 if [ $? = 0 ]; then
@@ -21,5 +21,11 @@ else
     fail "run"
 fi
 
+if grep -q 'define FIXED' config.h; then
+   ref="$data/librivox/$bn.fixed.json"
+else
+   ref="$data/librivox/$bn.json"
+fi
+
 # Check the decoding results
-compare_table "match" $data/librivox/$bn.json $bn.json 1000000
+compare_table "match" $ref $bn.json 1000000
