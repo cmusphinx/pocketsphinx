@@ -60,6 +60,12 @@ static const arg_t ps_main_args_def[] = {
       "no",
       "Run a second pass to align phones and print their durations "
       "(DOES NOT WORK IN LIVE MODE)." },
+    { "state_align",
+      ARG_BOOLEAN,
+      "no",
+      "Run a second pass to align phones and states and print their durations "
+      "(Implies -phone_align) "
+      "(DOES NOT WORK IN LIVE MODE)." },
     CMDLN_EMPTY_OPTION
 };
 
@@ -123,17 +129,13 @@ format_seg(char *outptr, int len, ps_seg_t *seg,
 }
 
 static int
-format_seg_align(char *outptr, int maxlen,
-                 ps_alignment_iter_t *itor, ps_seg_t *seg,
-                 double utt_start, int frate,
-                 logmath_t *lmath)
+format_align_iter(char *outptr, int maxlen,
+                  ps_alignment_iter_t *itor, double utt_start, int frate, logmath_t *lmath)
 {
-    ps_alignment_iter_t *pitor;
-    int start, duration, score, len;
+    int start, duration, score;
     double prob, st, dur;
     const char *word;
 
-    (void)seg;
     score = ps_alignment_iter_seg(itor, &start, &duration);
     st = utt_start + (double)start / frate;
     dur = (double)duration / frate;
@@ -142,11 +144,25 @@ format_seg_align(char *outptr, int maxlen,
     if (word == NULL)
         word = "";
 
-    len = snprintf(outptr, maxlen, HYP_FORMAT, st, dur, prob, word);
+    return snprintf(outptr, maxlen, HYP_FORMAT, st, dur, prob, word);
+}
+
+static int
+format_seg_align(char *outptr, int maxlen,
+                 ps_alignment_iter_t *itor,
+                 double utt_start, int frate,
+                 logmath_t *lmath, int state_align)
+{
+    ps_alignment_iter_t *pitor;
+    int len = 0, hyplen;
+
+    hyplen = format_align_iter(outptr, maxlen,
+                               itor, utt_start, frate, lmath);
+    len += hyplen;
     if (outptr)
-        outptr += len;
+        outptr += hyplen;
     if (maxlen)
-        maxlen -= len;
+        maxlen -= hyplen;
 
     len += 6; /* "w":,[ */
     if (outptr) {
@@ -158,25 +174,59 @@ format_seg_align(char *outptr, int maxlen,
     
     pitor = ps_alignment_iter_children(itor);
     while (pitor != NULL) {
-        int hyplen;
-        score = ps_alignment_iter_seg(pitor, &start, &duration);
-        st = utt_start + (double)start / frate;
-        dur = (double)duration / frate;
-        prob = logmath_exp(lmath, score);
-        word = ps_alignment_iter_name(pitor);
-        hyplen = snprintf(outptr, maxlen, HYP_FORMAT, st, dur, prob, word);
+        hyplen = format_align_iter(outptr, maxlen,
+                                   pitor, utt_start, frate, lmath);
         len += hyplen;
         if (outptr)
             outptr += hyplen;
         if (maxlen)
             maxlen -= hyplen;
 
+        /* FIXME: refactor with recursion, someday */
+        if (state_align) {
+            ps_alignment_iter_t *sitor = ps_alignment_iter_children(pitor);
+            len += 6; /* "w":,[ */
+            if (outptr) {
+                memcpy(outptr, ",\"w\":[", 6);
+                outptr += 6;
+            }
+            if (maxlen)
+                maxlen -= 6;
+            while (sitor != NULL) {
+                hyplen = format_align_iter(outptr, maxlen,
+                                           sitor, utt_start, frate, lmath);
+                len += hyplen;
+                if (outptr)
+                    outptr += hyplen;
+                if (maxlen)
+                    maxlen -= hyplen;
+
+                len++; /* } */
+                if (outptr)
+                    *outptr++ = '}';
+                if (maxlen)
+                    maxlen--;
+                sitor = ps_alignment_iter_next(sitor);
+                if (sitor != NULL) {
+                    len++;
+                    if (outptr)
+                        *outptr++ = ',';
+                    if (maxlen)
+                        maxlen--;
+                }
+            }
+            len++;
+            if (outptr)
+                *outptr++ = ']';
+            if (maxlen)
+                maxlen--;
+        }
+
         len++; /* } */
         if (outptr)
             *outptr++ = '}';
         if (maxlen)
             maxlen--;
-
         pitor = ps_alignment_iter_next(pitor);
         if (pitor != NULL) {
             len++;
@@ -207,6 +257,7 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder, ps_alignment_t *alignment
     int frate;
     int maxlen, len;
     double st;
+    int state_align = ps_config_bool(decoder->config, "state_align");
 
     maxlen = format_hyp(NULL, 0, ep, decoder);
     maxlen += 6; /* "w":,[ */
@@ -218,12 +269,10 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder, ps_alignment_t *alignment
         st = ps_endpointer_speech_start(ep);
     if (alignment) {
         ps_alignment_iter_t *itor;
-        ps_seg_t *seg;
-        for (itor = ps_alignment_words(alignment), seg = ps_seg_iter(decoder);
-             itor; itor = ps_alignment_iter_next(itor), seg = ps_seg_next(seg)) {
-            /* This should be guaranteed by the API, but just in case. */
-            assert(seg != NULL);
-            maxlen += format_seg_align(NULL, 0, itor, seg, st, frate, lmath);
+        for (itor = ps_alignment_words(alignment);
+             itor; itor = ps_alignment_iter_next(itor)) {
+            maxlen += format_seg_align(NULL, 0, itor, st, frate,
+                                       lmath, state_align);
             maxlen++; /* , or ] at end */
         }
     }
@@ -250,11 +299,11 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder, ps_alignment_t *alignment
 
     if (alignment) {
         ps_alignment_iter_t *itor;
-        ps_seg_t *seg;
-        for (itor = ps_alignment_words(alignment), seg = ps_seg_iter(decoder);
-             itor && seg; itor = ps_alignment_iter_next(itor), seg = ps_seg_next(seg)) {
+        for (itor = ps_alignment_words(alignment); itor;
+             itor = ps_alignment_iter_next(itor)) {
             assert(maxlen > 0);
-            len = format_seg_align(ptr, maxlen, itor, seg, st, frate, lmath);
+            len = format_seg_align(ptr, maxlen, itor, st, frate, lmath,
+                                   state_align);
             ptr += len;
             maxlen -= len;
             *ptr++ = ',';
@@ -337,7 +386,7 @@ live(ps_config_t *config, FILE *infile)
                        ps_endpointer_speech_end(ep));
                 ps_end_utt(decoder);
                 if (ps_config_bool(decoder->config, "phone_align"))
-                    E_WARN("State alignment not yet supported in live mode\n");
+                    E_WARN("Subword alignment not yet supported in live mode\n");
                 output_hyp(ep, decoder, NULL);
             }
         }
@@ -675,6 +724,8 @@ main(int argc, char *argv[])
         return 1;
     }
     ps_default_search_args(config);
+    if (ps_config_bool(config, "state_align"))
+        ps_config_set_bool(config, "phone_align", TRUE);
     if (0 == strcmp(command, "soxflags"))
         rv = soxflags(config);
     else if (0 == strcmp(command, "live"))
