@@ -4,7 +4,8 @@
 #include "test_macros.h"
 #include "pocketsphinx_internal.h"
 
-#define AUSTEN_TEXT "and mister john dashwood had then leisure to consider how much there might be prudently in his power to do for them"
+//#define AUSTEN_TEXT "and mister john dashwood had then leisure to consider how much there might be prudently in his power to do for them"
+#define AUSTEN_TEXT "he was not an ill disposed young man"
 static int
 do_decode(ps_decoder_t *ps)
 {
@@ -13,7 +14,7 @@ do_decode(ps_decoder_t *ps)
     long nsamp;
     int score;
     
-    TEST_ASSERT(rawfh = fopen(DATADIR "/librivox/sense_and_sensibility_01_austen_64kb-0870.wav", "rb"));
+    TEST_ASSERT(rawfh = fopen(DATADIR "/librivox/sense_and_sensibility_01_austen_64kb-0880.wav", "rb"));
     fseek(rawfh, 44, SEEK_SET);
     nsamp = ps_decode_raw(ps, rawfh, -1);
     hyp = ps_get_hyp(ps, &score);
@@ -43,7 +44,7 @@ main(int argc, char *argv[])
     TEST_ASSERT(config =
                 ps_config_parse_json(
                     NULL,
-                    "loglevel: INFO,"
+                    "loglevel: INFO, bestpath: false,"
                     "hmm: \"" MODELDIR "/en-us/en-us\","
                     "dict: \"" MODELDIR "/en-us/cmudict-en-us.dict\","
                     "samprate: 16000"));
@@ -119,9 +120,9 @@ main(int argc, char *argv[])
         ps_seg_frames(seg, &sf, &ef);
         TEST_ASSERT(seg);
 	score = ps_alignment_iter_seg(itor, &start, &duration);
-        printf("%s %d %d %d %d %s %d %d\n", ps_seg_word(seg),
+        printf("%s %d %d %d %d %s %d %d %d\n", ps_seg_word(seg),
                sfs[i], efs[i], sf, ef,
-               ps_alignment_iter_name(itor), start, duration);
+               ps_alignment_iter_name(itor), start, duration, score);
         TEST_EQUAL(sf, sfs[i]);
         TEST_EQUAL(ef, efs[i]);
         TEST_ASSERT(score != 0);
@@ -137,8 +138,8 @@ main(int argc, char *argv[])
             ps_alignment_iter_t *sitor;
             int state_start, state_duration;
             score = ps_alignment_iter_seg(pitor, &start, &duration);
-            printf("%s %d %d %s %d %d\n", ps_seg_word(seg), sf, ef,
-                   ps_alignment_iter_name(pitor), start, duration);
+            printf("%s %d %d %s %d %d %d\n", ps_seg_word(seg), sf, ef,
+                   ps_alignment_iter_name(pitor), start, duration, score);
             /* State segmentations should be constrained by phones */
             sitor = ps_alignment_iter_children(pitor);
             score = ps_alignment_iter_seg(sitor, &state_start, &state_duration);
@@ -146,8 +147,9 @@ main(int argc, char *argv[])
             TEST_EQUAL(state_start, start);
             while (sitor) {
                 score = ps_alignment_iter_seg(sitor, &state_start, &state_duration);
-                printf("%s %d %d %s %d %d\n", ps_seg_word(seg), sf, ef,
-                       ps_alignment_iter_name(sitor), state_start, state_duration);
+                printf("%s %d %d %s %d %d %d\n", ps_seg_word(seg), sf, ef,
+                       ps_alignment_iter_name(sitor), state_start, state_duration,
+                       score);
                 sitor = ps_alignment_iter_next(sitor);
             }
             /* Last state should fill phone duration */
