@@ -44,7 +44,7 @@
 
 #include <pocketsphinx.h>
 #include "pocketsphinx_internal.h"
-#include "ps_alignment.h"
+#include "ps_alignment_internal.h"
 #include "hmm.h"
 
 #ifdef __cplusplus
@@ -71,6 +71,9 @@ struct state_align_search_s {
     hmm_context_t *hmmctx;  /**< HMM context structure. */
     ps_alignment_t *al;     /**< Alignment structure being operated on. */
     hmm_t *hmms;            /**< Vector of HMMs corresponding to phone level. */
+    int *sf;                /**< Vector of minimum start frames for HMMs. */
+    int *ef;                /**< Vector of maximum exit frames for HMMs.
+                                 (note that exit frame = end frame + 1) */
     int n_phones;	    /**< Number of HMMs (phones). */
 
     int frame;              /**< Current frame being processed. */

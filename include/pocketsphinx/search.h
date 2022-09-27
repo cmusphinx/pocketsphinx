@@ -75,6 +75,7 @@
 #define __PS_SEARCH_H__
 
 #include <pocketsphinx/model.h>
+#include <pocketsphinx/alignment.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,9 +95,10 @@ typedef struct ps_decoder_s ps_decoder_t;
 /**
  * Actives search with the provided name.
  *
- * Activates search with the provided name. The search must be added before
- * using either ps_add_fsg(), ps_add_lm() or ps_add_kws().
- *
+ * @param name Name of search module to activate. This must have been
+ * previously added by either ps_add_fsg(), ps_add_lm(), or
+ * ps_add_kws().  If NULL, it will re-activate the default search,
+ * which is useful when running second-pass alignment, for instance.
  * @return 0 on success, -1 on failure
  */
 POCKETSPHINX_EXPORT
@@ -295,22 +297,69 @@ POCKETSPHINX_EXPORT
 int ps_add_allphone_file(ps_decoder_t *ps, const char *name, const char *path);
 
 /**
- * Adds new search based on forced alignment.
+ * Set up decoder to force-align a word sequence.
  *
- * Convenient method to and create a forced aligner for a piece of
- * text.  Note that this is currently less than useful, as it depends
- * on the word sequence exactly matching the input, including
- * alternate pronunciations and silences.
+ * Unlike the `ps_add_*` functions, this activates the search module
+ * immediately, since force-alignment is nearly always a single shot.
+ * Currently "under the hood" this is an FSG search but you shouldn't
+ * depend on that.
+ *
+ * Decoding proceeds as normal, though only this word sequence will be
+ * recognized, with silences and alternate pronunciations inserted.
+ * Word alignments are available with ps_seg_iter().  To obtain
+ * phoneme or state segmentations, you must subsequently call
+ * ps_set_alignment() and re-run decoding.  It's tough son, but it's life.
  *
  * @param ps Decoder
- * @param name Name for this search (could be anything, such as an utterance
- *   label or the name of the input file)
  * @param words String containing whitespace-separated words for alignment.
- *   These words are assumed to exist in the current dictionary.
+ *              These words are assumed to exist in the current dictionary.
  * 
  */
 POCKETSPHINX_EXPORT
-int ps_add_align(ps_decoder_t *ps, const char *name, const char *words);
+int ps_set_align_text(ps_decoder_t *ps, const char *words);
+
+/**
+ * Set up decoder to run phone and state-level alignment.
+ *
+ * Unlike the `ps_add_*` functions, this activates the search module
+ * immediately, since force-alignment is nearly always a single shot.
+ *
+ * To align, run or re-run decoding as usual, then call
+ * ps_get_alignment() to get the resulting alignment.  Note that if
+ * you call this function *before* rerunning decoding, you can obtain
+ * the phone and state sequence, but the durations will be invalid
+ * (phones and states will inherit the parent word's duration).
+ *
+ * @param ps Decoder object.
+ * @param al Usually NULL, which means to construct an alignment from
+ *           the current search hypothesis (this does not work with
+ *           allphone or keyword spotting).  You can also pass a
+ *           ps_alignment_t here if you have one.  The search will
+ *           retain but not copy it, so after running decoding it will
+ *           be updated with new durations.  You can set starts and
+ *           durations for words or phones (not states) to constrain
+ *           the alignment.
+ * @return 0 for success, -1 for error (if there is no search
+ *         hypothesis, or it cannot be aligned due to missing word
+ *         IDs)
+ */
+POCKETSPHINX_EXPORT
+int ps_set_alignment(ps_decoder_t *ps, ps_alignment_t *al);
+
+/**
+ * Get the alignment associated with the current search module.
+ *
+ * As noted above, if decoding has not been run, this will contain
+ * invalid durations, but that may still be useful if you just want to
+ * know the state sequence.
+ *
+ * @return Current alignment, or NULL if none.  This pointer is owned
+ *         by the decoder, so you must call ps_alignment_retain() on
+ *         it if you wish to keep it outside the lifetime of the
+ *         decoder.
+ */
+POCKETSPHINX_EXPORT
+ps_alignment_t *ps_get_alignment(ps_decoder_t *ps);
 
 #ifdef __cplusplus
 }

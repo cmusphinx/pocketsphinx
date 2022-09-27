@@ -52,6 +52,7 @@
 #include "util/hash_table.h"
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
+#include "ps_alignment_internal.h"
 #include "phone_loop_search.h"
 #include "kws_search.h"
 #include "fsg_search_internal.h"
@@ -492,9 +493,11 @@ ps_activate_search(ps_decoder_t *ps, const char *name)
         return -1;
     }
 
-    if (!(search = ps_find_search(ps, name))) {
+    if (name == NULL)
+        name = PS_DEFAULT_SEARCH;
+
+    if (!(search = ps_find_search(ps, name)))
         return -1;
-    }
 
     ps->search = search;
     /* Set pl window depending on the search */
@@ -562,27 +565,43 @@ ngram_model_t *
 ps_get_lm(ps_decoder_t *ps, const char *name)
 {
     ps_search_t *search =  ps_find_search(ps, name);
-    if (search && strcmp(PS_SEARCH_TYPE_NGRAM, ps_search_type(search)))
+    if (search == NULL)
         return NULL;
-    return search ? ((ngram_search_t *) search)->lmset : NULL;
+    if (0 != strcmp(PS_SEARCH_TYPE_NGRAM, ps_search_type(search)))
+        return NULL;
+    return ((ngram_search_t *) search)->lmset;
 }
 
 fsg_model_t *
 ps_get_fsg(ps_decoder_t *ps, const char *name)
 {
     ps_search_t *search = ps_find_search(ps, name);
-    if (search && strcmp(PS_SEARCH_TYPE_FSG, ps_search_type(search)))
+    if (search == NULL)
         return NULL;
-    return search ? ((fsg_search_t *) search)->fsg : NULL;
+    if (0 != strcmp(PS_SEARCH_TYPE_FSG, ps_search_type(search)))
+        return NULL;
+    return ((fsg_search_t *) search)->fsg;
 }
 
 const char*
-ps_get_kws(ps_decoder_t *ps, const char* name)
+ps_get_kws(ps_decoder_t *ps, const char *name)
 {
     ps_search_t *search = ps_find_search(ps, name);
-    if (search && strcmp(PS_SEARCH_TYPE_KWS, ps_search_type(search)))
+    if (search == NULL)
         return NULL;
-    return search ? kws_search_get_keyphrases(search) : NULL;
+    if (0 != strcmp(PS_SEARCH_TYPE_KWS, ps_search_type(search)))
+        return NULL;
+    return kws_search_get_keyphrases(search);
+}
+
+ps_alignment_t *
+ps_get_alignment(ps_decoder_t *ps)
+{
+    if (ps->search == NULL)
+        return NULL;
+    if (0 != strcmp(PS_SEARCH_TYPE_STATE_ALIGN, ps_search_type(ps->search)))
+        return NULL;
+    return ((state_align_search_t *) ps->search)->al;
 }
 
 static int
@@ -648,35 +667,99 @@ ps_add_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
 }
 
 int
-ps_add_align(ps_decoder_t *ps, const char *name, const char *text)
+ps_set_align_text(ps_decoder_t *ps, const char *text)
 {
-    ps_search_t *search;
-    ps_alignment_t *alignment;
+    fsg_model_t *fsg;
     char *textbuf = ckd_salloc(text);
     char *ptr, *word, delimfound;
-    int n;
+    int n, nwords;
 
     textbuf = string_trim(textbuf, STRING_BOTH);
-    alignment = ps_alignment_init(ps->d2p);
-    ps_alignment_add_word(alignment, dict_wordid(ps->dict, "<s>"), 0);
-    for (ptr = textbuf;
-         (n = nextword(ptr, " \t\n\r", &word, &delimfound)) >= 0;
-         ptr = word + n, *ptr = delimfound) {
+    /* First pass: count and verify words */
+    nwords = 0;
+    ptr = textbuf;
+    while ((n = nextword(ptr, " \t\n\r", &word, &delimfound)) >= 0) {
         int wid;
         if ((wid = dict_wordid(ps->dict, word)) == BAD_S3WID) {
             E_ERROR("Unknown word %s\n", word);
             ckd_free(textbuf);
-            ps_alignment_free(alignment);
             return -1;
         }
-        ps_alignment_add_word(alignment, wid, 0);
+        ptr = word + n;
+        *ptr = delimfound;
+        ++nwords;
     }
-    ps_alignment_add_word(alignment, dict_wordid(ps->dict, "</s>"), 0);
-    ps_alignment_populate(alignment);
-    search = state_align_search_init(name, ps->config, ps->acmod, alignment);
-    ps_alignment_free(alignment);
+    /* Second pass: make fsg */
+    fsg = fsg_model_init("_align", ps->lmath,
+                         ps_config_float(ps->config, "lw"),
+                         nwords + 1);
+    nwords = 0;
+    ptr = textbuf;
+    while ((n = nextword(ptr, " \t\n\r", &word, &delimfound)) >= 0) {
+        int wid;
+        if ((wid = dict_wordid(ps->dict, word)) == BAD_S3WID) {
+            E_ERROR("Unknown word %s\n", word);
+            ckd_free(textbuf);
+            return -1;
+        }
+        wid = fsg_model_word_add(fsg, word);
+        fsg_model_trans_add(fsg, nwords, nwords + 1, 0, wid);
+        ptr = word + n;
+        *ptr = delimfound;
+        ++nwords;
+    }
     ckd_free(textbuf);
-    return set_search_internal(ps, search);
+    fsg->start_state = 0;
+    fsg->final_state = nwords;
+    if (ps_add_fsg(ps, PS_DEFAULT_SEARCH, fsg) < 0) {
+        fsg_model_free(fsg);
+        return -1;
+    }
+    /* FIXME: Should rethink ownership semantics, this is annoying. */
+    fsg_model_free(fsg);
+    return ps_activate_search(ps, PS_DEFAULT_SEARCH);
+}
+
+int
+ps_set_alignment(ps_decoder_t *ps, ps_alignment_t *al)
+{
+    ps_search_t *search;
+    int new_alignment = FALSE;
+    
+    if (al == NULL) {
+        ps_seg_t *seg;
+        seg = ps_seg_iter(ps);
+        if (seg == NULL)
+            return -1;
+        al = ps_alignment_init(ps->d2p);
+        new_alignment = TRUE;
+        while (seg) {
+            if (seg->wid == BAD_S3WID) {
+                E_ERROR("No word ID for segment %s, cannot align\n",
+                        seg->text);
+                goto error_out;
+            }
+            ps_alignment_add_word(al, seg->wid, seg->sf, seg->ef - seg->sf + 1);
+            seg = ps_seg_next(seg);
+        }
+        /* FIXME: Add cionly parameter as in SoundSwallower */
+        if (ps_alignment_populate(al) < 0)
+            goto error_out;
+    }
+    else
+        al = ps_alignment_retain(al);
+    search = state_align_search_init("_state_align", ps->config, ps->acmod, al);
+    if (search == NULL)
+        goto error_out;
+    if (new_alignment)
+        ps_alignment_free(al);
+    if (set_search_internal(ps, search) < 0)
+        goto error_out;
+    return ps_activate_search(ps, "_state_align");
+error_out:
+    if (new_alignment)
+        ps_alignment_free(al);
+    return -1;
 }
 
 int
@@ -1319,7 +1402,7 @@ ps_seg_next(ps_seg_t *seg)
 char const *
 ps_seg_word(ps_seg_t *seg)
 {
-    return seg->word;
+    return seg->text;
 }
 
 void

@@ -474,8 +474,8 @@ fsg_search_pnode_exit(fsg_search_t *fsgs, fsg_pnode_t * pnode)
     if (fsg_model_is_filler(fsgs->fsg, wid)
         /* FIXME: This might be slow due to repeated calls to dict_to_id(). */
         || (dict_is_single_phone(ps_search_dict(fsgs),
-                                   dict_wordid(ps_search_dict(fsgs),
-                                               fsg_model_word_str(fsgs->fsg, wid))))) {
+                                 dict_wordid(ps_search_dict(fsgs),
+                                             fsg_model_word_str(fsgs->fsg, wid))))) {
         /* Create a dummy context structure that applies to all right contexts */
         fsg_pnode_add_all_ctxt(&ctxt);
 
@@ -1068,12 +1068,13 @@ fsg_seg_bp2itor(ps_seg_t *seg, fsg_hist_entry_t *hist_entry)
 
     if ((bp = fsg_hist_entry_pred(hist_entry)) >= 0)
         ph = fsg_history_entry_get(fsgs->history, bp);
-    seg->word = fsg_model_word_str(fsgs->fsg, hist_entry->fsglink->wid);
+    seg->text = fsg_model_word_str(fsgs->fsg, hist_entry->fsglink->wid);
+    /* Make sure to convert the word IDs!!! */
+    seg->wid = dict_wordid(seg->search->dict, seg->text);
     seg->ef = fsg_hist_entry_frame(hist_entry);
     seg->sf = ph ? fsg_hist_entry_frame(ph) + 1 : 0;
     /* This is kind of silly but it happens for null transitions. */
     if (seg->sf > seg->ef) seg->sf = seg->ef;
-    seg->prob = 0; /* Bogus value... */
     /* "Language model" score = transition probability. */
     seg->lback = 1;
     seg->lscr = fsg_link_logs2prob(hist_entry->fsglink) >> SENSCR_SHIFT;
@@ -1083,6 +1084,7 @@ fsg_seg_bp2itor(ps_seg_t *seg, fsg_hist_entry_t *hist_entry)
     }
     else
         seg->ascr = hist_entry->score - seg->lscr;
+    seg->prob = seg->lscr + seg->ascr; /* Somewhat approximate value... */
 }
 
 
@@ -1256,7 +1258,7 @@ find_start_node(fsg_search_t *fsgs, ps_lattice_t *dag)
     /* Look for all nodes starting in frame zero with some exits. */
     for (node = dag->nodes; node; node = node->next) {
         if (node->sf == 0 && node->exits) {
-            E_INFO("Start node %s.%d:%d:%d\n",
+            E_INFO("Start node candidate %s.%d:%d:%d\n",
                    fsg_model_word_str(fsgs->fsg, node->wid),
                    node->sf, node->fef, node->lef);
             start = glist_add_ptr(start, node);
@@ -1295,7 +1297,7 @@ find_end_node(fsg_search_t *fsgs, ps_lattice_t *dag)
     /* Look for all nodes ending in last frame with some entries. */
     for (node = dag->nodes; node; node = node->next) {
         if (node->lef == dag->n_frames - 1 && node->entries) {
-            E_INFO("End node %s.%d:%d:%d (%d)\n",
+            E_INFO("End node candidate %s.%d:%d:%d (%d)\n",
                    fsg_model_word_str(fsgs->fsg, node->wid),
                    node->sf, node->fef, node->lef, node->info.best_exit);
             end = glist_add_ptr(end, node);

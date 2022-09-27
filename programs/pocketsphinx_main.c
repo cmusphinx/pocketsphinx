@@ -47,8 +47,27 @@
 #include <pocketsphinx.h>
 
 #include "util/ckd_alloc.h"
+#include "config_macro.h"
 #include "pocketsphinx_internal.h"
+#include "ps_alignment_internal.h"
 #include "soundfiles.h"
+
+/* Le sigh.  Didn't want to have to do this. */
+static const arg_t ps_main_args_def[] = {
+    POCKETSPHINX_OPTIONS,
+    { "phone_align",
+      ARG_BOOLEAN,
+      "no",
+      "Run a second pass to align phones and print their durations "
+      "(DOES NOT WORK IN LIVE MODE)." },
+    { "state_align",
+      ARG_BOOLEAN,
+      "no",
+      "Run a second pass to align phones and states and print their durations "
+      "(Implies -phone_align) "
+      "(DOES NOT WORK IN LIVE MODE)." },
+    CMDLN_EMPTY_OPTION
+};
 
 static int global_done = 0;
 static void
@@ -109,15 +128,136 @@ format_seg(char *outptr, int len, ps_seg_t *seg,
     return len;
 }
 
+static int
+format_align_iter(char *outptr, int maxlen,
+                  ps_alignment_iter_t *itor, double utt_start, int frate, logmath_t *lmath)
+{
+    int start, duration, score;
+    double prob, st, dur;
+    const char *word;
+
+    score = ps_alignment_iter_seg(itor, &start, &duration);
+    st = utt_start + (double)start / frate;
+    dur = (double)duration / frate;
+    prob = logmath_exp(lmath, score);
+    word = ps_alignment_iter_name(itor);
+    if (word == NULL)
+        word = "";
+
+    return snprintf(outptr, maxlen, HYP_FORMAT, st, dur, prob, word);
+}
+
+static int
+format_seg_align(char *outptr, int maxlen,
+                 ps_alignment_iter_t *itor,
+                 double utt_start, int frate,
+                 logmath_t *lmath, int state_align)
+{
+    ps_alignment_iter_t *pitor;
+    int len = 0, hyplen;
+
+    hyplen = format_align_iter(outptr, maxlen,
+                               itor, utt_start, frate, lmath);
+    len += hyplen;
+    if (outptr)
+        outptr += hyplen;
+    if (maxlen)
+        maxlen -= hyplen;
+
+    len += 6; /* "w":,[ */
+    if (outptr) {
+        memcpy(outptr, ",\"w\":[", 6);
+        outptr += 6;
+    }
+    if (maxlen)
+        maxlen -= 6;
+    
+    pitor = ps_alignment_iter_children(itor);
+    while (pitor != NULL) {
+        hyplen = format_align_iter(outptr, maxlen,
+                                   pitor, utt_start, frate, lmath);
+        len += hyplen;
+        if (outptr)
+            outptr += hyplen;
+        if (maxlen)
+            maxlen -= hyplen;
+
+        /* FIXME: refactor with recursion, someday */
+        if (state_align) {
+            ps_alignment_iter_t *sitor = ps_alignment_iter_children(pitor);
+            len += 6; /* "w":,[ */
+            if (outptr) {
+                memcpy(outptr, ",\"w\":[", 6);
+                outptr += 6;
+            }
+            if (maxlen)
+                maxlen -= 6;
+            while (sitor != NULL) {
+                hyplen = format_align_iter(outptr, maxlen,
+                                           sitor, utt_start, frate, lmath);
+                len += hyplen;
+                if (outptr)
+                    outptr += hyplen;
+                if (maxlen)
+                    maxlen -= hyplen;
+
+                len++; /* } */
+                if (outptr)
+                    *outptr++ = '}';
+                if (maxlen)
+                    maxlen--;
+                sitor = ps_alignment_iter_next(sitor);
+                if (sitor != NULL) {
+                    len++;
+                    if (outptr)
+                        *outptr++ = ',';
+                    if (maxlen)
+                        maxlen--;
+                }
+            }
+            len++;
+            if (outptr)
+                *outptr++ = ']';
+            if (maxlen)
+                maxlen--;
+        }
+
+        len++; /* } */
+        if (outptr)
+            *outptr++ = '}';
+        if (maxlen)
+            maxlen--;
+        pitor = ps_alignment_iter_next(pitor);
+        if (pitor != NULL) {
+            len++;
+            if (outptr)
+                *outptr++ = ',';
+            if (maxlen)
+                maxlen--;
+        }
+    }
+
+    len += 2;
+    if (outptr) {
+        *outptr++ = ']';
+        *outptr++ = '}';
+        *outptr = '\0';
+    }
+    if (maxlen)
+        maxlen--;
+    
+    return len;
+}
+
 static void
-output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
+output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder, ps_alignment_t *alignment)
 {
     logmath_t *lmath;
     char *hyp_json, *ptr;
-    ps_seg_t *itor;
     int frate;
     int maxlen, len;
     double st;
+    int state_align = ps_config_bool(decoder->config, "state_align");
 
     maxlen = format_hyp(NULL, 0, ep, decoder);
     maxlen += 6; /* "w":,[ */
@@ -127,9 +267,21 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
         st = 0.0;
     else
         st = ps_endpointer_speech_start(ep);
-    for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
-        maxlen += format_seg(NULL, 0, itor, st, frate, lmath);
-        maxlen++; /* , or ] at end */
+    if (alignment) {
+        ps_alignment_iter_t *itor;
+        for (itor = ps_alignment_words(alignment);
+             itor; itor = ps_alignment_iter_next(itor)) {
+            maxlen += format_seg_align(NULL, 0, itor, st, frate,
+                                       lmath, state_align);
+            maxlen++; /* , or ] at end */
+        }
+    }
+    else {
+        ps_seg_t *itor;
+        for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
+            maxlen += format_seg(NULL, 0, itor, st, frate, lmath);
+            maxlen++; /* , or ] at end */
+        }
     }
     maxlen++; /* final } */
     maxlen++; /* trailing \0 */
@@ -140,18 +292,34 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder)
     ptr += len;
     maxlen -= len;
 
-    assert(maxlen > 2);
-    strcpy(ptr, ",\"w\":[");
+    assert(maxlen > 6);
+    memcpy(ptr, ",\"w\":[", 6);
     ptr += 6;
     maxlen -= 6;
 
-    for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
-        assert(maxlen > 0);
-        len = format_seg(ptr, maxlen, itor, st, frate, lmath);
-        ptr += len;
-        maxlen -= len;
-        *ptr++ = ',';
-        maxlen--;
+    if (alignment) {
+        ps_alignment_iter_t *itor;
+        for (itor = ps_alignment_words(alignment); itor;
+             itor = ps_alignment_iter_next(itor)) {
+            assert(maxlen > 0);
+            len = format_seg_align(ptr, maxlen, itor, st, frate, lmath,
+                                   state_align);
+            ptr += len;
+            maxlen -= len;
+            *ptr++ = ',';
+            maxlen--;
+        }
+    }
+    else {
+        ps_seg_t *itor;
+        for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
+            assert(maxlen > 0);
+            len = format_seg(ptr, maxlen, itor, st, frate, lmath);
+            ptr += len;
+            maxlen -= len;
+            *ptr++ = ',';
+            maxlen--;
+        }
     }
     --ptr;
     *ptr++ = ']';
@@ -217,7 +385,9 @@ live(ps_config_t *config, FILE *infile)
                 E_INFO("Speech end at %.2f\n",
                        ps_endpointer_speech_end(ep));
                 ps_end_utt(decoder);
-                output_hyp(ep, decoder);
+                if (ps_config_bool(decoder->config, "phone_align"))
+                    E_WARN("Subword alignment not yet supported in live mode\n");
+                output_hyp(ep, decoder, NULL);
             }
         }
     }
@@ -237,16 +407,13 @@ error_out:
 }
 
 static int
-single(ps_config_t *config, FILE *infile)
+decode_single(ps_decoder_t *decoder, FILE *infile)
 {
-    ps_decoder_t *decoder = NULL;
-    short *data, *ptr;
+    ps_alignment_t *alignment = NULL;
     size_t data_size, block_size;
+    short *data, *ptr;
+    int rv = 0;
 
-    if ((decoder = ps_init(config)) == NULL) {
-        E_FATAL("PocketSphinx decoder init failed\n");
-        goto error_out;
-    }
     data_size = 65536;
     block_size = 2048;
     ptr = data = ckd_calloc(data_size, sizeof(*data));
@@ -264,29 +431,125 @@ single(ps_config_t *config, FILE *infile)
         if (len == 0) {
             if (feof(infile))
                 break;
-            else
+            else {
                 E_ERROR_SYSTEM("Failed to read %d bytes\n",
                                sizeof(*ptr) * block_size);
+                rv = -1;
+                goto error_out;
+            }
         }
         ptr += len;
     }
-    ps_start_utt(decoder);
-    if (ps_process_raw(decoder, data, ptr - data, FALSE, TRUE) < 0) {
+    if ((rv = ps_start_utt(decoder)) < 0)
+        goto error_out;
+    if ((rv = ps_process_raw(decoder, data, ptr - data, FALSE, TRUE)) < 0) {
         E_ERROR("ps_process_raw() failed\n");
         goto error_out;
     }
-    ps_end_utt(decoder);
-    output_hyp(NULL, decoder);
-    ckd_free(data);
-    ps_free(decoder);
-    return 0;
-
+    if ((rv = ps_end_utt(decoder)) < 0)
+        goto error_out;
+    if (ps_config_bool(decoder->config, "phone_align")) {
+        if (ps_set_alignment(decoder, NULL) < 0)
+            goto error_out;
+        if ((rv = ps_start_utt(decoder)) < 0)
+            goto error_out;
+        if ((rv = ps_process_raw(decoder, data, ptr - data, FALSE, TRUE)) < 0) {
+            E_ERROR("ps_process_raw() failed\n");
+            goto error_out;
+        }
+        if ((rv = ps_end_utt(decoder)) < 0)
+            goto error_out;
+        if ((alignment = ps_get_alignment(decoder)) == NULL)
+            goto error_out;
+        ps_activate_search(decoder, NULL);
+    }
+    output_hyp(NULL, decoder, alignment);
+    /* Fall through intentionally */
 error_out:
-    if (data)
-        ckd_free(data);
+    ckd_free(data);
+    return rv;
+}
+
+static int
+single(ps_config_t *config, FILE *infile)
+{
+    ps_decoder_t *decoder;
+    int rv = 0;
+
+    if ((decoder = ps_init(config)) == NULL) {
+        E_FATAL("PocketSphinx decoder init failed\n");
+        return -1;
+    }
+    rv = decode_single(decoder, infile);
+    ps_free(decoder);
+    return rv;
+}
+
+static char *
+string_array_join(char **strings, int nstrings)
+{
+    char *joined, *ptr;
+    int i, *len, jlen;
+
+    len = ckd_malloc(nstrings * sizeof(*len));
+    for (jlen = i = 0; i < nstrings; ++i) {
+        len[i] = strlen(strings[i]);
+        jlen += len[i] + 1;
+    }
+    ptr = joined = ckd_malloc(jlen);
+    for (i = 0; i < nstrings; ++i) {
+        memcpy(ptr, strings[i], len[i]);
+        ptr += len[i];
+        *ptr++ = ' ';
+    }
+    *--ptr = '\0';
+    ckd_free(len);
+    return joined;
+}
+
+static int
+align(ps_config_t *config, char **inputs, int ninputs)
+{
+    int rv = 0, is_stdin = FALSE;
+    ps_decoder_t *decoder = NULL;
+    char *text = NULL;
+    FILE *fh = NULL;
+
+    if (ninputs < 2) {
+        E_ERROR("Usage: pocketsphinx align INFILE TEXT...\n");
+        return -1;
+    }
+    /* Please do not use bestpath for alignment. */
+    ps_config_set_bool(config, "bestpath", FALSE);
+    ps_config_set_str(config, "lm", NULL);
+    if (0 == strcmp(inputs[0], "-")) {
+        is_stdin = TRUE;
+        fh = stdin;
+    }
+    else if ((fh = fopen(inputs[0], "rb")) == NULL) {
+        E_ERROR_SYSTEM("Failed to open %s for input", inputs[0]);
+        goto error_out;
+    }
+    if ((rv = read_file_header(inputs[0], fh, config)) < 0)
+        goto error_out;
+    if ((decoder = ps_init(config)) == NULL) {
+        E_FATAL("PocketSphinx decoder init failed\n");
+        rv = -1;
+        goto error_out;
+    }
+    text = string_array_join(inputs + 1, ninputs - 1);
+    if ((rv = ps_set_align_text(decoder, text)) < 0)
+        goto error_out;
+    rv = decode_single(decoder, fh);
+    /* Fall through intentionally. */
+error_out:
+    if (fh && !is_stdin)
+        fclose(fh);
+    if (text)
+        ckd_free(text);
     if (decoder)
         ps_free(decoder);
-    return -1;
+    return rv;
 }
 
 #if 0
@@ -372,7 +635,9 @@ find_inputs(int *argc, char **argv, int *ninputs)
     while (i < *argc) {
         char *arg = argv[i];
         /* Bubble-bogo-bobo-backward-sort them to the end of argv. */
-        if (arg && arg[0] && arg[0] != '-') {
+        if (arg && arg[0]
+            /* "-" on its own is an input, otherwise, - starts args. */
+            && (arg[0] != '-' || arg[1] == '\0')) {
             memmove(&argv[i],
                     &argv[i + 1],
                     (*argc - i - 1) * sizeof(argv[i]));
@@ -383,6 +648,13 @@ find_inputs(int *argc, char **argv, int *ninputs)
         }
         else
             i += 2;
+    }
+    /* Now reverse them.  I won't be passing Google's coding interview
+       any time soon, not that it matters in this particular case. */
+    for (i = 0; i < *ninputs / 2; ++i) {
+        char *tmp = inputs[i];
+        inputs[i] = inputs[*ninputs - i - 1];
+        inputs[*ninputs - i - 1] = tmp;
     }
     return inputs;
 }
@@ -399,11 +671,16 @@ process_inputs(int (*func)(ps_config_t *, FILE *),
     else {
         int i, rv_one;
         for (i = 0; i < ninputs; ++i) {
-            /* They come to us in reverse order */
-            char *file = inputs[ninputs - i - 1];
-            FILE *fh = fopen(file, "rb");
-            if (fh == NULL) {
-                E_ERROR_SYSTEM("Failed to open %s for reading", file);
+            char *file = inputs[i];
+            int is_stdin = FALSE;
+            FILE *fh;
+
+            if (0 == strcmp(file, "-")) {
+                is_stdin = TRUE;
+                fh = stdin;
+            }
+            else if ((fh = fopen(file, "rb")) == NULL) {
+                E_ERROR_SYSTEM("Failed to open %s for input", file);
                 rv = -1;
                 continue;
             }
@@ -416,10 +693,19 @@ process_inputs(int (*func)(ps_config_t *, FILE *),
                 rv = rv_one;
                 E_ERROR("Recognition failed on %s\n", file);
             }
-            fclose(fh);
+            if (!is_stdin)
+                fclose(fh);
         }
     }
     return rv;
+}
+
+void
+usage(char *name)
+{
+    fprintf(stderr, "Usage: %s [soxflags | help | live | single | align] INPUTS...\n", name);
+    err_set_loglevel(ERR_INFO);
+    cmd_ln_log_help_r(NULL, ps_args());
 }
 
 int
@@ -432,22 +718,24 @@ main(int argc, char *argv[])
 
     command = find_command(&argc, argv);
     inputs = find_inputs(&argc, argv, &ninputs);
-    if ((config = ps_config_parse_args(NULL, argc, argv)) == NULL) {
-        cmd_ln_log_help_r(NULL, ps_args());
+    if ((ninputs == 0 && 0 != strcmp(command, "soxflags"))
+        || (config = ps_config_parse_args(ps_main_args_def, argc, argv)) == NULL) {
+        usage(argv[0]);
         return 1;
     }
     ps_default_search_args(config);
+    if (ps_config_bool(config, "state_align"))
+        ps_config_set_bool(config, "phone_align", TRUE);
     if (0 == strcmp(command, "soxflags"))
         rv = soxflags(config);
     else if (0 == strcmp(command, "live"))
         rv = process_inputs(live, config, inputs, ninputs);
     else if (0 == strcmp(command, "single"))
         rv = process_inputs(single, config, inputs, ninputs);
+    else if (0 == strcmp(command, "align"))
+        rv = align(config, inputs, ninputs);
     else if (0 == strcmp(command, "help")) {
-        fprintf(stderr, "Usage: %s [soxflags | help | live | single] [INPUTS...]\n",
-                argv[0]);
-        err_set_loglevel(ERR_INFO);
-        cmd_ln_log_help_r(NULL, ps_args());
+        usage(argv[0]);
     }
     else {
         E_ERROR("Unknown command \"%s\"\n", command);

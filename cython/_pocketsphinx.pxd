@@ -422,7 +422,9 @@ cdef extern from "pocketsphinx/search.h":
     int ps_add_keyphrase(ps_decoder_t *ps, const char *name, const char *keyphrase)
     int ps_add_allphone(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
     int ps_add_allphone_file(ps_decoder_t *ps, const char *name, const char *path)
-    int ps_add_align(ps_decoder_t *ps, const char *name, const char *words)
+    int ps_set_align_text(ps_decoder_t *ps, const char *words)
+    int ps_set_alignment(ps_decoder_t *ps, ps_alignment_t *al)
+    ps_alignment_t *ps_get_alignment(ps_decoder_t *ps)
 
 cdef extern from "pocketsphinx/vad.h":
     ctypedef struct ps_vad_t:
@@ -472,3 +474,37 @@ cdef extern from "pocketsphinx/endpointer.h":
     int ps_endpointer_in_speech(ps_endpointer_t *ep)
     double ps_endpointer_speech_start(ps_endpointer_t *ep)
     double ps_endpointer_speech_end(ps_endpointer_t *ep)
+
+cdef extern from "pocketsphinx/alignment.h":
+    ctypedef struct ps_alignment_t:
+        pass
+    ctypedef struct ps_alignment_iter_t:
+        pass
+    ctypedef struct pid_struct:
+        short cipid
+        unsigned short ssid
+        int tmat
+    ctypedef union id_union:
+        int wid
+        pid_struct pid
+        unsigned short senid
+    ctypedef struct ps_alignment_entry_t:
+        int start
+        int duration
+        int score
+        id_union id
+        int parent
+        int child
+    ps_alignment_t *ps_alignment_retain(ps_alignment_t *al)
+    int ps_alignment_free(ps_alignment_t *al)
+    int ps_alignment_n_words(ps_alignment_t *al)
+    int ps_alignment_n_phones(ps_alignment_t *al)
+    int ps_alignment_n_states(ps_alignment_t *al)
+    ps_alignment_iter_t *ps_alignment_words(ps_alignment_t *al)
+    ps_alignment_iter_t *ps_alignment_phones(ps_alignment_t *al)
+    ps_alignment_iter_t *ps_alignment_states(ps_alignment_t *al)
+    ps_alignment_iter_t *ps_alignment_iter_next(ps_alignment_iter_t *itor)
+    ps_alignment_iter_t *ps_alignment_iter_children(ps_alignment_iter_t *itor)
+    int ps_alignment_iter_seg(ps_alignment_iter_t *itor, int *start, int *duration)
+    const char *ps_alignment_iter_name(ps_alignment_iter_t *itor)
+    int ps_alignment_iter_free(ps_alignment_iter_t *itor)

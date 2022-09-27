@@ -1,4 +1,4 @@
-.TH POCKETSPHINX 1 "2016-04-01"
+.TH POCKETSPHINX 1 "2022-09-27"
 .SH NAME
 pocketsphinx \- Run speech recognition on audio data
 .SH SYNOPSIS
@@ -8,17 +8,17 @@ pocketsphinx \- Run speech recognition on audio data
 \fBsingle\fR |
 \fBhelp\fR |
 \fBsoxflags\fR ]
-[ \fIinputs\fR... ]
+\fIINPUTS\fR...
 .SH DESCRIPTION
 .PP
 The ‘\f[CR]pocketsphinx\fP’ command-line program reads single-channel
-16-bit PCM audio from standard input or one or more input files, and
-attemps to recognize speech in it using the default acoustic and
-language model. The input files can be raw audio, WAV, or NIST Sphere
-files, though some of these may not be recognized properly.  It
-accepts a large number of options which you probably don't care about,
-and a \fIcommand\fP which defaults to ‘\f[CR]live\fP’. The commands
-are as follows:
+16-bit PCM audio one or more input files (or ‘\f[CR]-\fP’ to read from
+standard input), and attemps to recognize speech in it using the
+default acoustic and language model. The input files can be raw audio,
+WAV, or NIST Sphere files, though some of these may not be recognized
+properly.  It accepts a large number of options which you probably
+don't care about, and a \fIcommand\fP which defaults to
+‘\f[CR]live\fP’. The commands are as follows:
 .TP
 .B live
 Detect speech segments in input files, run recognition on them (using
@@ -45,6 +45,43 @@ be present.
 .B single
 Recognize the input as a single utterance, and write a JSON object in the same format described above.
 .TP
+.B align
+
+Align a single input file (or ‘\f[CR]-\fP’ for standard input) to a word
+sequence, and write a JSON object in the same format described above.
+The first positional argument is the input, and all subsequent ones
+are concatenated to make the text, to avoid surprises if you forget to
+quote it.  You are responsible for normalizing the text to remove
+punctuation, uppercase, centipedes, etc. For example:
+
+.EX
+    pocketsphinx align goforward.wav "go forward ten meters"
+.EE
+
+By default, only word-level alignment is done.  To get phone
+alignments, pass `-phone_align yes` in the flags, e.g.:
+
+.EX    
+    pocketsphinx -phone_align yes align audio.wav $text
+.EE        
+
+This will make not particularly readable output, but you can use
+.B jq
+(https://stedolan.github.io/jq/) to clean it up.  For example,
+you can get just the word names and start times like this:
+
+.EX    
+    pocketsphinx align audio.wav $text | jq '.w[]|[.t,.b]'
+.EE        
+
+Or you could get the phone names and durations like this:
+
+.EX    
+    pocketsphinx -phone_align yes align audio.wav $text | jq '.w[]|.w[]|[.t,.d]'
+.EE        
+
+There are many, many other possibilities, of course.
+.TP
 .B help
 Print a usage and help text with a list of possible arguments.
 .TP
@@ -54,12 +91,15 @@ input format. Note that because the ‘\f[CR]sox\fP’ command-line is
 slightly quirky these must always come \fIafter\fP the filename or
 ‘\f[CR]-d\fP’ (which tells ‘\f[CR]sox\fP’ to read from the
 microphone). You can run live recognition like this:
+
 .EX
- sox -d $(pocketsphinx soxflags) | pocketsphinx
+    sox -d $(pocketsphinx soxflags) | pocketsphinx -
 .EE
+
 or decode from a file named "audio.mp3" like this:
+
 .EX
-sox audio.mp3 $(pocketsphinx soxflags) | pocketsphinx
+    sox audio.mp3 $(pocketsphinx soxflags) | pocketsphinx -
 .EE
 .PP
 By default only errors are printed to standard error, but if you want more information you can pass ‘\f[CR]-loglevel INFO\fP’. Partial results are not printed, maybe they will be in the future, but don't hold your breath. Force-alignment is likely to be supported soon, however.

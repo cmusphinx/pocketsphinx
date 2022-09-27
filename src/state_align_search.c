@@ -8,27 +8,27 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
+ * This work was supported in part by funding from the Defense Advanced
+ * Research Projects Agency and the National Science Foundation of the
  * United States of America, and the CMU Sphinx Speech Consortium.
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
@@ -94,6 +94,11 @@ prune_hmms(state_align_search_t *sas, int frame_idx)
         hmm_t *hmm = sas->hmms + i;
         if (hmm_frame(hmm) < frame_idx)
             continue;
+        /* Enforce alignment constraint: due to non-emitting states,
+         * previous phone's HMM remains active in first frame of its
+         * successor. */
+        if (nf > sas->ef[i])
+            continue;
         hmm_frame(hmm) = nf;
     }
 }
@@ -110,6 +115,9 @@ phone_transition(state_align_search_t *sas, int frame_idx)
 
         hmm = sas->hmms + i;
         if (hmm_frame(hmm) != nf)
+            continue;
+        /* Enforce alignment constraint for initial state of each phone. */
+        if (nf < sas->sf[i + 1])
             continue;
 
         newphone_score = hmm_out_score(hmm);
@@ -174,7 +182,8 @@ state_align_search_step(ps_search_t *search, int frame_idx)
 
     /* Calculate senone scores. */
     for (i = 0; i < sas->n_phones; ++i)
-        acmod_activate_hmm(acmod, sas->hmms + i);
+        if (hmm_frame(&sas->hmms[i]) == frame_idx)
+            acmod_activate_hmm(acmod, &sas->hmms[i]);
     senscr = acmod_score(acmod, &frame_idx);
 
     /* Renormalize here if needed. */
@@ -184,7 +193,7 @@ state_align_search_step(ps_search_t *search, int frame_idx)
                frame_idx, sas->best_score);
         renormalize_hmms(sas, frame_idx, sas->best_score);
     }
-    
+
     /* Viterbi step. */
     sas->best_score = evaluate_hmms(sas, senscr, frame_idx);
     prune_hmms(sas, frame_idx);
@@ -268,6 +277,8 @@ state_align_search_free(ps_search_t *search)
     ps_search_base_free(search);
     ckd_free(sas->hmms);
     ckd_free(sas->tokens);
+    ckd_free(sas->sf);
+    ckd_free(sas->ef);
     hmm_context_free(sas->hmmctx);
     ps_alignment_free(sas->al);
     ckd_free(sas);
@@ -283,7 +294,10 @@ static void
 state_align_search_seg_free(ps_seg_t * seg)
 {
     state_align_seg_t *itor = (state_align_seg_t *)seg;
-    ps_alignment_iter_free(itor->itor);
+    if (itor->itor != NULL) {
+        /* If we hit the end of the alignment, it was already freed! */
+        ps_alignment_iter_free(itor->itor);
+    }
     ckd_free(itor);
 }
 
@@ -297,7 +311,8 @@ state_align_search_fill_iter(ps_seg_t *seg)
     seg->ef = entry->start + entry->duration - 1;
     seg->ascr = entry->score;
     seg->lscr = 0;
-    seg->word = dict_wordstr(ps_search_dict(seg->search), entry->id.wid);
+    seg->text = dict_wordstr(ps_search_dict(seg->search), entry->id.wid);
+    seg->wid = entry->id.wid;
 }
 
 static ps_seg_t *
@@ -333,7 +348,7 @@ state_align_search_seg_iter(ps_search_t * search)
        purposes of the decoder API we will just iterate over words,
        which is the most likely/useful use case.  We will also expose
        the rest of the alignment API separately. */
-    
+
     itor = ps_alignment_words(sas->al);
     if (itor == NULL)
         return NULL;
@@ -342,7 +357,7 @@ state_align_search_seg_iter(ps_search_t * search)
     seg->base.search = search;
     seg->itor = itor;
     state_align_search_fill_iter((ps_seg_t *)seg);
-    
+
     return (ps_seg_t *)seg;
 }
 
@@ -362,23 +377,32 @@ state_align_search_hyp(ps_search_t *search, int32 *out_score)
     if (itor == NULL)
         return NULL;
     for (hyp_len = 0; itor; itor = ps_alignment_iter_next(itor)) {
-        const char *word = dict_wordstr(ps_search_dict(search),
-                                        ps_alignment_iter_get(itor)->id.wid); 
-        if (word == NULL) {
-            E_ERROR("Unknown word id %d in alignment",
-                    ps_alignment_iter_get(itor)->id.wid);
-            return NULL;
+        const char *word;
+        int32 wid = ps_alignment_iter_get(itor)->id.wid;
+
+        if (dict_real_word(ps_search_dict(search), wid)) {
+            word = dict_basestr(ps_search_dict(search),
+                                ps_alignment_iter_get(itor)->id.wid);
+            if (word == NULL) {
+                E_ERROR("Unknown word id %d in alignment",
+                        ps_alignment_iter_get(itor)->id.wid);
+                return NULL;
+            }
+            hyp_len += strlen(word) + 1;
         }
-        hyp_len += strlen(word) + 1;
     }
     search->hyp_str = ckd_calloc(hyp_len + 1, sizeof(*search->hyp_str));
     for (itor = ps_alignment_words(sas->al);
          itor; itor = ps_alignment_iter_next(itor)) {
         ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
-        const char *word = dict_wordstr(ps_search_dict(search),
-                                        ent->id.wid); 
-        strcat(search->hyp_str, word);
-        strcat(search->hyp_str, " ");
+        int32 wid = ent->id.wid;
+        const char *word;
+        if (dict_real_word(ps_search_dict(search), wid)) {
+            word = dict_basestr(ps_search_dict(search),
+                                ent->id.wid);
+            strcat(search->hyp_str, word);
+            strcat(search->hyp_str, " ");
+        }
         *out_score = ent->score;
     }
     search->hyp_str[strlen(search->hyp_str) - 1] = '\0';
@@ -405,7 +429,7 @@ state_align_search_init(const char *name,
 {
     state_align_search_t *sas;
     ps_alignment_iter_t *itor;
-    hmm_t *hmm;
+    int i;
 
     sas = ckd_calloc(1, sizeof(*sas));
     ps_search_init(ps_search_base(sas), &state_align_search_funcs,
@@ -423,11 +447,22 @@ state_align_search_init(const char *name,
     sas->n_phones = ps_alignment_n_phones(al);
     sas->n_emit_state = ps_alignment_n_states(al);
     sas->hmms = ckd_calloc(sas->n_phones, sizeof(*sas->hmms));
-    for (hmm = sas->hmms, itor = ps_alignment_phones(al); itor;
-         ++hmm, itor = ps_alignment_iter_next(itor)) {
+    sas->sf = ckd_calloc(sas->n_phones, sizeof(*sas->sf));
+    sas->ef = ckd_calloc(sas->n_phones, sizeof(*sas->ef));
+    for (i = 0, itor = ps_alignment_phones(al);
+         i < sas->n_phones && itor;
+         ++i, itor = ps_alignment_iter_next(itor)) {
         ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
-        hmm_init(sas->hmmctx, hmm, FALSE,
+        hmm_init(sas->hmmctx, &sas->hmms[i], FALSE,
                  ent->id.pid.ssid, ent->id.pid.tmatid);
+        if (ent-> start > 0)
+            sas->sf[i] = ent->start;
+        else
+            sas->sf[i] = 0; /* Always active */
+        if (ent->duration > 0)
+            sas->ef[i] = ent->start + ent->duration;
+        else
+            sas->ef[i] = INT_MAX; /* Always active */
     }
     return ps_search_base(sas);
 }

@@ -54,6 +54,7 @@
 #include <pocketsphinx/search.h>
 #include <pocketsphinx/export.h>
 #include <pocketsphinx/lattice.h>
+#include <pocketsphinx/alignment.h>
 #include <pocketsphinx/mllr.h>
 
 /* Namum manglium ii domum */

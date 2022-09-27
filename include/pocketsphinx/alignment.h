@@ -36,16 +36,14 @@
  */
 
 /**
- * @file ps_alignment.h Multi-level alignment structure
+ * @file ps_alignment.h
+ * @brief Multi-level alignment structure
  */
 
 #ifndef __PS_ALIGNMENT_H__
 #define __PS_ALIGNMENT_H__
 
-#include <pocketsphinx.h>
-
-#include "dict2pid.h"
-#include "hmm.h"
+#include <pocketsphinx/prim_type.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,52 +52,22 @@ extern "C" {
 }
 #endif
 
-#define PS_ALIGNMENT_NONE ((uint16)0xffff)
-
-struct ps_alignment_entry_s {
-    union {
-        int32 wid;
-        struct {
-            uint16 ssid;
-            uint16 cipid;
-            uint16 tmatid;
-        } pid;
-        uint16 senid;
-    } id;
-    int16 start;
-    int16 duration;
-    int32 score;
-    uint16 parent;
-    uint16 child;
-};
-typedef struct ps_alignment_entry_s ps_alignment_entry_t;
-
-struct ps_alignment_vector_s {
-    ps_alignment_entry_t *seq;
-    uint16 n_ent, n_alloc;
-};
-typedef struct ps_alignment_vector_s ps_alignment_vector_t;
-
-struct ps_alignment_s {
-    int refcount;
-    dict2pid_t *d2p;
-    ps_alignment_vector_t word;
-    ps_alignment_vector_t sseq;
-    ps_alignment_vector_t state;
-};
-typedef struct ps_alignment_s ps_alignment_t;
-
-struct ps_alignment_iter_s {
-    ps_alignment_t *al;
-    ps_alignment_vector_t *vec;
-    int pos;
-};
-typedef struct ps_alignment_iter_s ps_alignment_iter_t;
+/**
+ * Value indicating no parent or child for an entry.
+ */
+#define PS_ALIGNMENT_NONE -1
 
 /**
- * Create a new, empty alignment.
+ * @struct ps_alignment_t
+ * @brief Multi-level alignment (words, phones, states) over an utterance.
  */
-ps_alignment_t *ps_alignment_init(dict2pid_t *d2p);
+typedef struct ps_alignment_s ps_alignment_t;
+
+/**
+ * @struct ps_alignment_iter_t
+ * @brief Iterator over entries in an alignment.
+ */
+typedef struct ps_alignment_iter_s ps_alignment_iter_t;
 
 /**
  * Retain an alighment
@@ -110,42 +78,6 @@ ps_alignment_t *ps_alignment_retain(ps_alignment_t *al);
  * Release an alignment
  */
 int ps_alignment_free(ps_alignment_t *al);
-
-/**
- * Append a word.
- */
-int ps_alignment_add_word(ps_alignment_t *al,
-                          int32 wid, int duration);
-
-/**
- * Populate lower layers using available word information.
- */
-int ps_alignment_populate(ps_alignment_t *al);
-
-/**
- * Populate lower layers using context-independent phones.
- */
-int ps_alignment_populate_ci(ps_alignment_t *al);
-
-/**
- * Propagate timing information up from state sequence.
- */
-int ps_alignment_propagate(ps_alignment_t *al);
-
-/**
- * Number of words.
- */
-int ps_alignment_n_words(ps_alignment_t *al);
-
-/**
- * Number of phones.
- */
-int ps_alignment_n_phones(ps_alignment_t *al);
-
-/**
- * Number of states.
- */
-int ps_alignment_n_states(ps_alignment_t *al);
 
 /**
  * Iterate over the alignment starting at the first word.
@@ -163,16 +95,22 @@ ps_alignment_iter_t *ps_alignment_phones(ps_alignment_t *al);
 ps_alignment_iter_t *ps_alignment_states(ps_alignment_t *al);
 
 /**
- * Get the alignment entry pointed to by an iterator.
+ * Get the human-readable name of the current segment for an alignment.
  *
- * The iterator retains ownership of this so don't try to free it.
+ * @return Name of this segment as a string (word, phone, or state
+ * number).  This pointer is owned by the iterator, do not free it
+ * yourself.
  */
-ps_alignment_entry_t *ps_alignment_iter_get(ps_alignment_iter_t *itor);
+const char *ps_alignment_iter_name(ps_alignment_iter_t *itor);
 
 /**
- * Move alignment iterator to given index.
+ * Get the timing and score information for the current segment of an aligment.
+ *
+ * @arg start Output pointer for start frame
+ * @arg duration Output pointer for duration
+ * @return Acoustic score for this segment
  */
-ps_alignment_iter_t *ps_alignment_iter_goto(ps_alignment_iter_t *itor, int pos);
+int ps_alignment_iter_seg(ps_alignment_iter_t *itor, int *start, int *duration);
 
 /**
  * Move an alignment iterator forward.
@@ -183,25 +121,11 @@ ps_alignment_iter_t *ps_alignment_iter_goto(ps_alignment_iter_t *itor, int pos);
 ps_alignment_iter_t *ps_alignment_iter_next(ps_alignment_iter_t *itor);
 
 /**
- * Move an alignment iterator back.
+ * Iterate over the children of the current alignment entry.
  *
- * If the start of the alignment is reached, this will free the iterator
- * and return NULL.
+ * If there are no child nodes, NULL is returned.
  */
-ps_alignment_iter_t *ps_alignment_iter_prev(ps_alignment_iter_t *itor);
-
-/**
- * Get a new iterator starting at the parent of the current node.
- *
- * If there is no parent node, NULL is returned.
- */
-ps_alignment_iter_t *ps_alignment_iter_up(ps_alignment_iter_t *itor);
-/**
- * Get a new iterator starting at the first child of the current node.
- *
- * If there is no child node, NULL is returned.
- */
-ps_alignment_iter_t *ps_alignment_iter_down(ps_alignment_iter_t *itor);
+ps_alignment_iter_t *ps_alignment_iter_children(ps_alignment_iter_t *itor);
 
 /**
  * Release an iterator before completing all iterations.
