@@ -375,23 +375,32 @@ state_align_search_hyp(ps_search_t *search, int32 *out_score)
     if (itor == NULL)
         return NULL;
     for (hyp_len = 0; itor; itor = ps_alignment_iter_next(itor)) {
-        const char *word = dict_basestr(ps_search_dict(search),
-                                        ps_alignment_iter_get(itor)->id.wid); 
-        if (word == NULL) {
-            E_ERROR("Unknown word id %d in alignment",
-                    ps_alignment_iter_get(itor)->id.wid);
-            return NULL;
+        const char *word;
+        int32 wid = ps_alignment_iter_get(itor)->id.wid;
+
+        if (dict_real_word(ps_search_dict(search), wid)) {
+            word = dict_basestr(ps_search_dict(search),
+                                ps_alignment_iter_get(itor)->id.wid);
+            if (word == NULL) {
+                E_ERROR("Unknown word id %d in alignment",
+                        ps_alignment_iter_get(itor)->id.wid);
+                return NULL;
+            }
+            hyp_len += strlen(word) + 1;
         }
-        hyp_len += strlen(word) + 1;
     }
     search->hyp_str = ckd_calloc(hyp_len + 1, sizeof(*search->hyp_str));
     for (itor = ps_alignment_words(sas->al);
          itor; itor = ps_alignment_iter_next(itor)) {
         ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
-        const char *word = dict_basestr(ps_search_dict(search),
-                                        ent->id.wid); 
-        strcat(search->hyp_str, word);
-        strcat(search->hyp_str, " ");
+        int32 wid = ent->id.wid;
+        const char *word;
+        if (dict_real_word(ps_search_dict(search), wid)) {
+            word = dict_basestr(ps_search_dict(search),
+                                ent->id.wid);
+            strcat(search->hyp_str, word);
+            strcat(search->hyp_str, " ");
+        }
         *out_score = ent->score;
     }
     search->hyp_str[strlen(search->hyp_str) - 1] = '\0';
