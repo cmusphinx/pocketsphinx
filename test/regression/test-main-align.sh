@@ -23,6 +23,13 @@ for wav in $data/librivox/*.wav; do \
                 -dict $model/en-us/cmudict-en-us.dict \
                 align $wav $(cat $data/librivox/$utt.txt) \
                 > $utt.phone.json 2>>$bn.phone.log
+    run_program pocketsphinx \
+                -loglevel INFO \
+                -state_align yes \
+                -hmm $model/en-us/en-us \
+                -dict $model/en-us/cmudict-en-us.dict \
+                align $wav $(cat $data/librivox/$utt.txt) \
+                > $utt.state.json 2>>$bn.state.log
 
     # Test whether it actually completed
     if [ $? = 0 ]; then
@@ -33,4 +40,5 @@ for wav in $data/librivox/*.wav; do \
     # Check the decoding results
     compare_table "match" $data/librivox/$utt.json $utt.json 1000000
     compare_table "match" $data/librivox/$utt.phone.json $utt.phone.json 1000000
+    compare_table "match" $data/librivox/$utt.state.json $utt.state.json 1000000
 done
