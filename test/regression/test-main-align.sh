@@ -15,14 +15,14 @@ for wav in $data/librivox/*.wav; do \
                 -hmm $model/en-us/en-us \
                 -dict $model/en-us/cmudict-en-us.dict \
                 align $wav $(cat $data/librivox/$utt.txt) \
-                > $utt.json 2>$bn.log
+                > $utt.json 2>>$bn.log
     run_program pocketsphinx \
                 -loglevel INFO \
                 -phone_align yes \
                 -hmm $model/en-us/en-us \
                 -dict $model/en-us/cmudict-en-us.dict \
                 align $wav $(cat $data/librivox/$utt.txt) \
-                > $utt.phone.json 2>$bn.phone.log
+                > $utt.phone.json 2>>$bn.phone.log
 
     # Test whether it actually completed
     if [ $? = 0 ]; then
