@@ -277,6 +277,8 @@ state_align_search_free(ps_search_t *search)
     ps_search_base_free(search);
     ckd_free(sas->hmms);
     ckd_free(sas->tokens);
+    ckd_free(sas->sf);
+    ckd_free(sas->ef);
     hmm_context_free(sas->hmmctx);
     ps_alignment_free(sas->al);
     ckd_free(sas);
