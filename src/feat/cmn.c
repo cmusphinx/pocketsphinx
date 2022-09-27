@@ -92,9 +92,9 @@ cmn_update_repr(cmn_t *cmn)
     
     len = 0;
     for (i = 0; i < cmn->veclen; ++i) {
-        int nbytes = snprintf(NULL, 0, "%g,", cmn->cmn_mean[i]);
+        int nbytes = snprintf(NULL, 0, "%g,", MFCC2FLOAT(cmn->cmn_mean[i]));
         if (nbytes <= 0) {
-            E_ERROR_SYSTEM("Failed to format %g for cmninit", cmn->cmn_mean[i]);
+            E_ERROR_SYSTEM("Failed to format %g for cmninit", MFCC2FLOAT(cmn->cmn_mean[i]));
             return NULL;
         }
         len += nbytes;
@@ -108,7 +108,8 @@ cmn_update_repr(cmn_t *cmn)
         return NULL;
     }
     for (i = 0; i < cmn->veclen; ++i)
-        ptr += snprintf(ptr, cmn->repr + len - ptr, "%g,", cmn->cmn_mean[i]);
+        ptr += snprintf(ptr, cmn->repr + len - ptr, "%g,",
+                        MFCC2FLOAT(cmn->cmn_mean[i]));
     *--ptr = '\0';
 
     return cmn->repr;
