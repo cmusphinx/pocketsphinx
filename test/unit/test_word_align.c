@@ -122,11 +122,8 @@ main(int argc, char *argv[])
         printf("%s %d %d %d %d %s %d %d\n", ps_seg_word(seg),
                sfs[i], efs[i], sf, ef,
                ps_alignment_iter_name(itor), start, duration);
-        /* FIXME: We can sometimes exit (and thus start the next word)
-         * early, usually in cases where silence ought to be inserted
-         * but isn't.  Not yet sure how to fix this. */
-        TEST_ASSERT(sf <= sfs[i]);
-        TEST_ASSERT(ef <= efs[i]);
+        TEST_EQUAL(sf, sfs[i]);
+        TEST_EQUAL(ef, efs[i]);
         TEST_ASSERT(score != 0);
         TEST_EQUAL(start, sf);
         TEST_EQUAL(duration, ef - sf + 1);

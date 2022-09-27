@@ -94,7 +94,10 @@ prune_hmms(state_align_search_t *sas, int frame_idx)
         hmm_t *hmm = sas->hmms + i;
         if (hmm_frame(hmm) < frame_idx)
             continue;
-        if (nf < sas->sf[i] || nf > sas->ef[i])
+        /* Enforce alignment constraint: due to non-emitting states,
+         * previous phone's HMM remains active in first frame of its
+         * successor. */
+        if (nf > sas->ef[i])
             continue;
         hmm_frame(hmm) = nf;
     }
@@ -112,6 +115,9 @@ phone_transition(state_align_search_t *sas, int frame_idx)
 
         hmm = sas->hmms + i;
         if (hmm_frame(hmm) != nf)
+            continue;
+        /* Enforce alignment constraint for initial state of each phone. */
+        if (nf < sas->sf[i + 1])
             continue;
 
         newphone_score = hmm_out_score(hmm);
