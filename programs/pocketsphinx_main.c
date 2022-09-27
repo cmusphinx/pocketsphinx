@@ -129,17 +129,18 @@ format_seg_align(char *outptr, int maxlen,
                  logmath_t *lmath)
 {
     ps_alignment_iter_t *pitor;
+    int start, duration, score, len;
     double prob, st, dur;
-    int sf, ef, len;
     const char *word;
-    
-    ps_seg_frames(seg, &sf, &ef);
-    st = utt_start + (double)sf / frate;
-    dur = (double)(ef + 1 - sf) / frate;
-    word = ps_seg_word(seg);
+
+    (void)seg;
+    score = ps_alignment_iter_seg(itor, &start, &duration);
+    st = utt_start + (double)start / frate;
+    dur = (double)duration / frate;
+    prob = logmath_exp(lmath, score);
+    word = ps_alignment_iter_name(itor);
     if (word == NULL)
         word = "";
-    prob = logmath_exp(lmath, ps_seg_prob(seg, NULL, NULL, NULL));
 
     len = snprintf(outptr, maxlen, HYP_FORMAT, st, dur, prob, word);
     if (outptr)
@@ -157,7 +158,6 @@ format_seg_align(char *outptr, int maxlen,
     
     pitor = ps_alignment_iter_children(itor);
     while (pitor != NULL) {
-        int start, duration, score;
         int hyplen;
         score = ps_alignment_iter_seg(pitor, &start, &duration);
         st = utt_start + (double)start / frate;
