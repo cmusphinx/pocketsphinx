@@ -470,6 +470,9 @@ align(ps_config_t *config, char **inputs, int ninputs)
         E_ERROR("Usage: pocketsphinx align INFILE TEXT...\n");
         return -1;
     }
+    /* Please do not use bestpath for alignment. */
+    ps_config_set_bool(config, "bestpath", FALSE);
+    ps_config_set_str(config, "lm", NULL);
     if (0 == strcmp(inputs[0], "-")) {
         is_stdin = TRUE;
         fh = stdin;
