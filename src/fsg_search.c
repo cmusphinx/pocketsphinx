@@ -1258,7 +1258,7 @@ find_start_node(fsg_search_t *fsgs, ps_lattice_t *dag)
     /* Look for all nodes starting in frame zero with some exits. */
     for (node = dag->nodes; node; node = node->next) {
         if (node->sf == 0 && node->exits) {
-            E_INFO("Start node %s.%d:%d:%d\n",
+            E_INFO("Start node candidate %s.%d:%d:%d\n",
                    fsg_model_word_str(fsgs->fsg, node->wid),
                    node->sf, node->fef, node->lef);
             start = glist_add_ptr(start, node);
@@ -1297,7 +1297,7 @@ find_end_node(fsg_search_t *fsgs, ps_lattice_t *dag)
     /* Look for all nodes ending in last frame with some entries. */
     for (node = dag->nodes; node; node = node->next) {
         if (node->lef == dag->n_frames - 1 && node->entries) {
-            E_INFO("End node %s.%d:%d:%d (%d)\n",
+            E_INFO("End node candidate %s.%d:%d:%d (%d)\n",
                    fsg_model_word_str(fsgs->fsg, node->wid),
                    node->sf, node->fef, node->lef, node->info.best_exit);
             end = glist_add_ptr(end, node);
