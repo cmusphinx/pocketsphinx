@@ -286,7 +286,10 @@ static void
 state_align_search_seg_free(ps_seg_t * seg)
 {
     state_align_seg_t *itor = (state_align_seg_t *)seg;
-    ps_alignment_iter_free(itor->itor);
+    if (itor->itor != NULL) {
+        /* If we hit the end of the alignment, it was already freed! */
+        ps_alignment_iter_free(itor->itor);
+    }
     ckd_free(itor);
 }
 
