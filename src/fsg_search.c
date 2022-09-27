@@ -474,8 +474,8 @@ fsg_search_pnode_exit(fsg_search_t *fsgs, fsg_pnode_t * pnode)
     if (fsg_model_is_filler(fsgs->fsg, wid)
         /* FIXME: This might be slow due to repeated calls to dict_to_id(). */
         || (dict_is_single_phone(ps_search_dict(fsgs),
-                                   dict_wordid(ps_search_dict(fsgs),
-                                               fsg_model_word_str(fsgs->fsg, wid))))) {
+                                 dict_wordid(ps_search_dict(fsgs),
+                                             fsg_model_word_str(fsgs->fsg, wid))))) {
         /* Create a dummy context structure that applies to all right contexts */
         fsg_pnode_add_all_ctxt(&ctxt);
 
@@ -1069,12 +1069,12 @@ fsg_seg_bp2itor(ps_seg_t *seg, fsg_hist_entry_t *hist_entry)
     if ((bp = fsg_hist_entry_pred(hist_entry)) >= 0)
         ph = fsg_history_entry_get(fsgs->history, bp);
     seg->text = fsg_model_word_str(fsgs->fsg, hist_entry->fsglink->wid);
-    seg->wid = hist_entry->fsglink->wid;
+    /* Make sure to convert the word IDs!!! */
+    seg->wid = dict_wordid(seg->search->dict, seg->text);
     seg->ef = fsg_hist_entry_frame(hist_entry);
     seg->sf = ph ? fsg_hist_entry_frame(ph) + 1 : 0;
     /* This is kind of silly but it happens for null transitions. */
     if (seg->sf > seg->ef) seg->sf = seg->ef;
-    seg->prob = 0; /* Bogus value... */
     /* "Language model" score = transition probability. */
     seg->lback = 1;
     seg->lscr = fsg_link_logs2prob(hist_entry->fsglink) >> SENSCR_SHIFT;
@@ -1084,6 +1084,7 @@ fsg_seg_bp2itor(ps_seg_t *seg, fsg_hist_entry_t *hist_entry)
     }
     else
         seg->ascr = hist_entry->score - seg->lscr;
+    seg->prob = seg->lscr + seg->ascr; /* Somewhat approximate value... */
 }
 
 
