@@ -56,7 +56,8 @@ The `pocketsphinx` command-line program reads single-channel 16-bit
 PCM audio from standard input or one or more files, and attemps to
 recognize speech in it using the default acoustic and language model.
 It accepts a large number of options which you probably don't care
-about, and a *command* which defaults to `live`.
+about, a *command* which defaults to `live`, and one or more inputs
+(except in `align` mode), or `-` to read from standard input.
 
 If you have a single-channel WAV file called "speech.wav" and you want
 to recognize speech in it, you can try doing this (the results may not
@@ -126,11 +127,11 @@ The commands are as follows:
     filename or `-d` (which tells `sox` to read from the microphone).
     You can run live recognition like this:
     
-        sox -d $(pocketsphinx soxflags) | pocketsphinx
+        sox -d $(pocketsphinx soxflags) | pocketsphinx -
 
     or decode from a file named "audio.mp3" like this:
     
-        sox audio.mp3 $(pocketsphinx soxflags) | pocketsphinx
+        sox audio.mp3 $(pocketsphinx soxflags) | pocketsphinx -
         
 By default only errors are printed to standard error, but if you want
 more information you can pass `-loglevel INFO`.  Partial results are

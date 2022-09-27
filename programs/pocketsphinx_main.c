@@ -586,7 +586,9 @@ find_inputs(int *argc, char **argv, int *ninputs)
     while (i < *argc) {
         char *arg = argv[i];
         /* Bubble-bogo-bobo-backward-sort them to the end of argv. */
-        if (arg && arg[0] && arg[0] != '-') {
+        if (arg && arg[0]
+            /* "-" on its own is an input, otherwise, - starts args. */
+            && (arg[0] != '-' || arg[1] == '\0')) {
             memmove(&argv[i],
                     &argv[i + 1],
                     (*argc - i - 1) * sizeof(argv[i]));
@@ -621,9 +623,15 @@ process_inputs(int (*func)(ps_config_t *, FILE *),
         int i, rv_one;
         for (i = 0; i < ninputs; ++i) {
             char *file = inputs[i];
-            FILE *fh = fopen(file, "rb");
-            if (fh == NULL) {
-                E_ERROR_SYSTEM("Failed to open %s for reading", file);
+            int is_stdin = FALSE;
+            FILE *fh;
+
+            if (0 == strcmp(file, "-")) {
+                is_stdin = TRUE;
+                fh = stdin;
+            }
+            else if ((fh = fopen(file, "rb")) == NULL) {
+                E_ERROR_SYSTEM("Failed to open %s for input", file);
                 rv = -1;
                 continue;
             }
@@ -636,10 +644,19 @@ process_inputs(int (*func)(ps_config_t *, FILE *),
                 rv = rv_one;
                 E_ERROR("Recognition failed on %s\n", file);
             }
-            fclose(fh);
+            if (!is_stdin)
+                fclose(fh);
         }
     }
     return rv;
+}
+
+void
+usage(char *name)
+{
+    fprintf(stderr, "Usage: %s [soxflags | help | live | single | align] INPUTS...\n", name);
+    err_set_loglevel(ERR_INFO);
+    cmd_ln_log_help_r(NULL, ps_args());
 }
 
 int
@@ -652,8 +669,8 @@ main(int argc, char *argv[])
 
     command = find_command(&argc, argv);
     inputs = find_inputs(&argc, argv, &ninputs);
-    if ((config = ps_config_parse_args(ps_main_args_def, argc, argv)) == NULL) {
-        cmd_ln_log_help_r(NULL, ps_main_args_def);
+    if (ninputs == 0 || (config = ps_config_parse_args(ps_main_args_def, argc, argv)) == NULL) {
+        usage(argv[0]);
         return 1;
     }
     ps_default_search_args(config);
@@ -666,10 +683,7 @@ main(int argc, char *argv[])
     else if (0 == strcmp(command, "align"))
         rv = align(config, inputs, ninputs);
     else if (0 == strcmp(command, "help")) {
-        fprintf(stderr, "Usage: %s [soxflags | help | live | single | align] [INPUTS...]\n",
-                argv[0]);
-        err_set_loglevel(ERR_INFO);
-        cmd_ln_log_help_r(NULL, ps_args());
+        usage(argv[0]);
     }
     else {
         E_ERROR("Unknown command \"%s\"\n", command);
