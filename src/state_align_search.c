@@ -176,7 +176,8 @@ state_align_search_step(ps_search_t *search, int frame_idx)
 
     /* Calculate senone scores. */
     for (i = 0; i < sas->n_phones; ++i)
-        acmod_activate_hmm(acmod, sas->hmms + i);
+        if (hmm_frame(&sas->hmms[i]) == frame_idx)
+            acmod_activate_hmm(acmod, &sas->hmms[i]);
     senscr = acmod_score(acmod, &frame_idx);
 
     /* Renormalize here if needed. */
@@ -434,11 +435,14 @@ state_align_search_init(const char *name,
         ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
         hmm_init(sas->hmmctx, &sas->hmms[i], FALSE,
                  ent->id.pid.ssid, ent->id.pid.tmatid);
-        sas->sf[i] = ent->start;
-        if (ent->duration)
+        if (ent-> start > 0)
+            sas->sf[i] = ent->start;
+        else
+            sas->sf[i] = 0; /* Always active */
+        if (ent->duration > 0)
             sas->ef[i] = ent->start + ent->duration;
         else
-            sas->ef[i] = INT_MAX;
+            sas->ef[i] = INT_MAX; /* Always active */
     }
     return ps_search_base(sas);
 }
