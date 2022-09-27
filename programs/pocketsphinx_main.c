@@ -669,7 +669,8 @@ main(int argc, char *argv[])
 
     command = find_command(&argc, argv);
     inputs = find_inputs(&argc, argv, &ninputs);
-    if (ninputs == 0 || (config = ps_config_parse_args(ps_main_args_def, argc, argv)) == NULL) {
+    if ((ninputs == 0 && 0 != strcmp(command, "soxflags"))
+        || (config = ps_config_parse_args(ps_main_args_def, argc, argv)) == NULL) {
         usage(argv[0]);
         return 1;
     }
