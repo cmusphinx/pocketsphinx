@@ -129,6 +129,62 @@ test_config_json(void)
     ckd_free(json);
 }
 
+static void
+test_validate_config(void)
+{
+    ps_config_t *config;
+    TEST_ASSERT(config =
+                ps_config_parse_json(
+                    NULL,
+                    "hmm: \"" MODELDIR "/en-us/en-us\","
+                    "lm: \"" MODELDIR "/en-us/en-us.lm.bin\","
+                    "dict: \"" MODELDIR "/en-us/cmudict-en-us.dict\","
+                    "fwdtree: true,"
+                    "fwdflat: false,"
+                    "bestpath: false,"
+                    "samprate: 16000"));
+    TEST_EQUAL(0, ps_config_validate(config));
+    ps_config_free(config);
+    TEST_ASSERT(config =
+                ps_config_parse_json(
+                    NULL,
+                    "hmm: \"" MODELDIR "/en-us/en-us\","
+                    "lm: \"" MODELDIR "/en-us/en-us.lm.bin\","
+                    "jsgf: \"" DATADIR "/goforward.gram\","
+                    "dict: \"" MODELDIR "/en-us/cmudict-en-us.dict\","
+                    "fwdtree: true,"
+                    "fwdflat: false,"
+                    "bestpath: false,"
+                    "samprate: 16000"));
+    TEST_ASSERT(ps_config_validate(config) < 0);
+    ps_config_free(config);
+    TEST_ASSERT(config =
+                ps_config_parse_json(
+                    NULL,
+                    "hmm: \"" MODELDIR "/en-us/en-us\","
+                    "kws: \"" DATADIR "/goforward.kws\","
+                    "jsgf: \"" DATADIR "/goforward.gram\","
+                    "fsg: \"" DATADIR "/goforward.fsg\","
+                    "dict: \"" MODELDIR "/en-us/cmudict-en-us.dict\","
+                    "fwdtree: true,"
+                    "fwdflat: false,"
+                    "bestpath: false,"
+                    "samprate: 16000"));
+    TEST_ASSERT(ps_config_validate(config) < 0);
+    ps_config_free(config);
+    TEST_ASSERT(config =
+                ps_config_parse_json(
+                    NULL,
+                    "hmm: \"" MODELDIR "/en-us/en-us\","
+                    "keyphrase: \"bonjour alexis\","
+                    "fwdtree: true,"
+                    "fwdflat: false,"
+                    "bestpath: false,"
+                    "samprate: 16000"));
+    TEST_EQUAL(0, ps_config_validate(config));
+    ps_config_free(config);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -137,6 +193,7 @@ main(int argc, char *argv[])
     test_config_init();
     test_config_args();
     test_config_json();
+    test_validate_config();
     
     return 0;
 }
