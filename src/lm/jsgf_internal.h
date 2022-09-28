@@ -72,7 +72,6 @@ extern "C" {
 typedef struct jsgf_rhs_s jsgf_rhs_t;
 typedef struct jsgf_atom_s jsgf_atom_t;
 typedef struct jsgf_link_s jsgf_link_t;
-typedef struct jsgf_rule_stack_s jsgf_rule_stack_t;
 
 struct jsgf_s {
     char *version;  /**< JSGF version (from header) */
@@ -91,17 +90,14 @@ struct jsgf_s {
     glist_t rulestack;     /**< Stack of currently expanded rules. */
 };
 
-/* A type to keep track of the stack of rules currently being expanded. */
-struct jsgf_rule_stack_s {
-    jsgf_rule_t *rule;  /**< The rule being expanded */
-    int entry;          /**< The entry-state for this expansion */
-};
-
 struct jsgf_rule_s {
     int refcnt;      /**< Reference count. */
     char *name;      /**< Rule name (NULL for an alternation/grouping) */
     int is_public;   /**< Is this rule marked 'public'? */
     jsgf_rhs_t *rhs; /**< Expansion */
+
+    int entry;       /**< Entry state for current instance of this rule. */
+    int exit;        /**< Exit state for current instance of this rule. */
 };
 
 struct jsgf_rhs_s {

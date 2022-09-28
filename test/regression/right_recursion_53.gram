@@ -1,0 +1,8 @@
+#JSGF V1.0; 
+
+// See https://github.com/cmusphinx/pocketsphinx/issues/53
+
+grammar testGrammar;
+<unit>     = (METER|CENTIMETER|MILE);
+<number>  = (ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN|HUNDRED|THOUSAND)+;
+public <phrases> = (WHAT IS YOUR NAME)  |  (<number> <unit> (EQUAL TO) [HOW MANY] <unit>) ;

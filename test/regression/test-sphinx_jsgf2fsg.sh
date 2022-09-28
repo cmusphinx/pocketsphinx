@@ -12,8 +12,12 @@ rm -f $tmpout
 JSGF_PATH=$tests/regression
 export JSGF_PATH
 for r in $rules; do
-    run_program sphinx_jsgf2fsg/sphinx_jsgf2fsg \
+    run_program pocketsphinx_jsgf2fsg \
 	-jsgf $tests/regression/test.gram -toprule $r -fsg $r.out 2>>$tmpout
     compare_table $r $r.out $tests/regression/$r.fsg
 done
+
+run_program pocketsphinx_jsgf2fsg \
+	    -jsgf $tests/regression/right_recursion_53.gram -fsg right_recursion_53.fsg 2>>$tmpout
+compare_table right_recursion_53 right_recursion_53.fsg $tests/regression/right_recursion_53.fsg
 
