@@ -681,7 +681,7 @@ int ps_process_raw(ps_decoder_t *ps,
  */
 POCKETSPHINX_EXPORT
 int ps_process_cep(ps_decoder_t *ps,
-                   float **data,
+                   float32 **data,
                    int n_frames,
                    int no_search,
                    int full_utt);

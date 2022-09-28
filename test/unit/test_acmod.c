@@ -29,8 +29,8 @@ assert_cmninit(cmn_t *cmn)
 {
     int i;
     for (i = 0; i < cmn->veclen; ++i) {
-        TEST_EQUAL_FLOAT(cmn->cmn_mean[i], cmninit[i]);
-        TEST_EQUAL_FLOAT(cmn->sum[i], cmninit[i] * CMN_WIN);
+        TEST_EQUAL_MFCC(cmn->cmn_mean[i], cmninit[i]);
+        TEST_EQUAL_MFCC(cmn->sum[i], cmninit[i] * CMN_WIN);
     }
 }
 

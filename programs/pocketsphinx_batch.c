@@ -191,13 +191,13 @@ static const arg_t ps_args_def[] = {
     CMDLN_EMPTY_OPTION
 };
 
-static mfcc_t **
+static float32 **
 read_mfc_file(FILE *infh, int sf, int ef, int *out_nfr, int ceplen)
 {
     long flen;
     int32 nmfc, nfr;
     float32 *floats;
-    mfcc_t **mfcs;
+    float32 **mfcs;
     int swap, i;
 
     fseek(infh, 0, SEEK_END);
@@ -238,10 +238,6 @@ read_mfc_file(FILE *infh, int sf, int ef, int *out_nfr, int ceplen)
         for (i = 0; i < nfr * ceplen; ++i)
             SWAP_FLOAT32(&floats[i]);
     }
-#ifdef FIXED_POINT
-    for (i = 0; i < nfr * ceplen; ++i)
-        mfcs[0][i] = FLOAT2MFCC(floats[i]);
-#endif
     *out_nfr = nfr;
     return mfcs;
 }
@@ -476,7 +472,7 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
         ps_decode_raw(ps, infh, ef);
     }
     else {
-        mfcc_t **mfcs;
+        float32 **mfcs;
         int nfr;
 
         if (NULL == (mfcs = read_mfc_file(infh, sf, ef, &nfr,

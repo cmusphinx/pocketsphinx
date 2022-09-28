@@ -1245,12 +1245,22 @@ ps_process_raw(ps_decoder_t *ps,
 
 int
 ps_process_cep(ps_decoder_t *ps,
-               mfcc_t **data,
+               float32 **data,
                int32 n_frames,
                int no_search,
                int full_utt)
 {
     int n_searchfr = 0;
+
+#ifdef FIXED_POINT
+    mfcc_t **idata, **ptr;
+    ptr = idata = ckd_calloc_2d(n_frames,
+                                fe_get_output_size(ps->acmod->fe),
+                                sizeof(**idata));
+    fe_float_to_mfcc(ps->acmod->fe, data, idata, n_frames);
+#else
+    mfcc_t **ptr = data;
+#endif
 
     if (no_search)
         acmod_set_grow(ps->acmod, TRUE);
@@ -1259,7 +1269,7 @@ ps_process_cep(ps_decoder_t *ps,
         int nfr;
 
         /* Process some data into features. */
-        if ((nfr = acmod_process_cep(ps->acmod, &data,
+        if ((nfr = acmod_process_cep(ps->acmod, &ptr,
                                      &n_frames, full_utt)) < 0)
             return nfr;
 
@@ -1270,6 +1280,9 @@ ps_process_cep(ps_decoder_t *ps,
             return nfr;
         n_searchfr += nfr;
     }
+#ifdef FIXED_POINT
+    ckd_free_2d(idata);
+#endif
 
     return n_searchfr;
 }

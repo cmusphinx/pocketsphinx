@@ -5,6 +5,7 @@
 #include <pocketsphinx/logmath.h>
 
 #include "acmod.h"
+#include "ptm_mgau.h"
 #include "test_macros.h"
 
 static const mfcc_t cmninit[13] = {
@@ -118,6 +119,8 @@ main(int argc, char *argv[])
 
     printf("Rewound (MFCC):\n");
     TEST_EQUAL(0, acmod_rewind(acmod));
+    /* Clear fast history buffers to ensure repeatability */
+    ptm_mgau_reset_fast_hist(acmod->mgau);
     {
         int16 best_score;
         int frame_idx = -1, best_senid;

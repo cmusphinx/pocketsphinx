@@ -11,6 +11,7 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
 {
     ps_decoder_t *ps;
     mfcc_t **cepbuf;
+    float32 **floatbuf;
     FILE *rawfh;
     int16 *buf;
     int16 const *bptr;
@@ -93,9 +94,18 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
     fe_end_utt(ps->acmod->fe, cepbuf[nfr], &i);
 
     /* Decode it with process_cep() */
+#ifdef FIXED_POINT
+    floatbuf = ckd_calloc_2d(nfr + 1,
+                             fe_get_output_size(ps->acmod->fe),
+                             sizeof(**floatbuf));
+    fe_mfcc_to_float(ps->acmod->fe, cepbuf, floatbuf, nfr + 1);
+#else
+    floatbuf = cepbuf;
+#endif
+
     TEST_EQUAL(0, ps_start_utt(ps));
     for (i = 0; i < nfr; ++i) {
-        ps_process_cep(ps, cepbuf + i, 1, FALSE, FALSE);
+        ps_process_cep(ps, floatbuf + i, 1, FALSE, FALSE);
         if (i == nfr - 5) {
             /* Test updating CMN while decoding */
             TEST_ASSERT(0 != strcmp(prev_cmn, ps_get_cmn(ps, TRUE)));
@@ -141,6 +151,9 @@ ps_decoder_test(cmd_ln_t *config, char const *sname, char const *expected)
     fclose(rawfh);
     ps_free(ps);
     ps_config_free(config);
+#ifdef FIXED_POINT
+    ckd_free_2d(floatbuf);
+#endif
     ckd_free_2d(cepbuf);
     ckd_free(buf);
     ckd_free(prev_cmn);

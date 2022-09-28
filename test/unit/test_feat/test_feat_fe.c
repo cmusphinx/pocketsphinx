@@ -99,7 +99,7 @@ main(int argc, char *argv[])
 		int32 j;
 		printf("%-4d ", i);
 		for (j = 0; (uint32)j < feat_dimension(fcb); ++j) {
-			TEST_EQUAL_FLOAT(featbuf1[i][0][j], featbuf2[i][0][j]);
+			TEST_EQUAL_MFCC(featbuf1[i][0][j], featbuf2[i][0][j]);
 		}
 		if (i % 10 == 9)
 			printf("\n");
@@ -135,7 +135,7 @@ main(int argc, char *argv[])
 		int32 j;
 		printf("%-4d ", i);
 		for (j = 0; (uint32)j < feat_dimension(fcb); ++j)
-			TEST_EQUAL_FLOAT(featbuf1[i][0][j], featbuf2[i][0][j]);
+			TEST_EQUAL_MFCC(featbuf1[i][0][j], featbuf2[i][0][j]);
 		if (i % 10 == 9)
 			printf("\n");
 	}
