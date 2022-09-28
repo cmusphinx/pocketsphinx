@@ -873,9 +873,9 @@ ptm_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
     s->hist = ckd_calloc(s->n_fast_hist, sizeof(*s->hist));
     /* s->f will be a rotating pointer into s->hist. */
     s->f = s->hist;
-    ptm_mgau_reset_fast_hist(s);
 
     ps = (ps_mgau_t *)s;
+    ptm_mgau_reset_fast_hist(ps);
     ps->vt = &ptm_mgau_funcs;
     return ps;
 error_out:
