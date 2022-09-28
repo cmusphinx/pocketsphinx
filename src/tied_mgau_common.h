@@ -57,7 +57,7 @@ extern "C" {
 #define MGAU_MIXW_VERSION	"1.0"   /* Sphinx-3 file format version for mixw */
 #define MGAU_PARAM_VERSION	"1.0"   /* Sphinx-3 file format version for mean/var */
 #define NONE		-1
-#define WORST_DIST	(int32)(0x80000000)
+#define WORST_DIST	MAX_NEG_INT32
 
 /** Subtract GMM component b (assumed to be positive) and saturate */
 #ifdef FIXED_POINT

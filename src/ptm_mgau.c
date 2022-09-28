@@ -126,7 +126,10 @@ eval_topn(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
             obs += 4;
             mean += 4;
         }
-        insertion_sort_topn(topn, i, (int32)d);
+        if (d < (mfcc_t)MAX_NEG_INT32)  /* Redundant if FIXED_POINT */
+            insertion_sort_topn(topn, i, MAX_NEG_INT32);
+        else
+            insertion_sort_topn(topn, i, (int32)d);
     }
 
     return topn[0].score;
@@ -213,7 +216,10 @@ eval_cb(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
         }
         if (i < s->max_topn)
             continue;       /* already there.  Don't insert */
-        insertion_sort_cb(&cur, worst, best, cw, (int32)d);
+        if (d < (mfcc_t)MAX_NEG_INT32)  /* Redundant if FIXED_POINT */
+            insertion_sort_cb(&cur, worst, best, cw, MAX_NEG_INT32);
+        else
+            insertion_sort_cb(&cur, worst, best, cw, (int32)d);
     }
 
     return best->score;
@@ -271,7 +277,6 @@ ptm_mgau_codebook_norm(ptm_mgau_t *s, mfcc_t **z, int frame)
             if (norm < s->f->topn[i][j][0].score >> SENSCR_SHIFT)
                 norm = s->f->topn[i][j][0].score >> SENSCR_SHIFT;
         }
-        assert(norm != WORST_SCORE);
         for (i = 0; i < s->g->n_mgau; ++i) {
             int32 k;
             if (bitvec_is_clear(s->f->mgau_active, i))

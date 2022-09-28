@@ -215,7 +215,7 @@ ms_cont_mgau_frame_eval(ps_mgau_t * mg,
 	for (gid = 0; gid < g->n_mgau; gid++)
 	    gauden_dist(g, gid, topn, feat, msg->dist[gid]);
 
-	best = (int32) 0x7fffffff;
+	best = MAX_INT32;
 	for (s = 0; (uint32)s < sen->n_sen; s++) {
 	    senscr[s] = senone_eval(sen, s, msg->dist[sen->mgau[s]], topn);
 	    if (best > senscr[s]) {
@@ -253,7 +253,7 @@ ms_cont_mgau_frame_eval(ps_mgau_t * mg,
 		gauden_dist(g, gid, topn, feat, msg->dist[gid]);
 	}
 
-	best = (int32) 0x7fffffff;
+	best = MAX_INT32;
 	n = 0;
 	for (i = 0; i < n_senone_active; i++) {
 	    int32 s = senone_active[i] + n;
