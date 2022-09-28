@@ -126,8 +126,8 @@ eval_topn(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
             obs += 4;
             mean += 4;
         }
-        if (d < (mfcc_t)INT_MIN)  /* Redundant if FIXED_POINT */
-            insertion_sort_topn(topn, i, INT_MIN);
+        if (d < (mfcc_t)MAX_NEG_INT32)  /* Redundant if FIXED_POINT */
+            insertion_sort_topn(topn, i, MAX_NEG_INT32);
         else
             insertion_sort_topn(topn, i, (int32)d);
     }
@@ -216,8 +216,8 @@ eval_cb(ptm_mgau_t *s, int cb, int feat, mfcc_t *z)
         }
         if (i < s->max_topn)
             continue;       /* already there.  Don't insert */
-        if (d < (mfcc_t)INT_MIN)  /* Redundant if FIXED_POINT */
-            insertion_sort_cb(&cur, worst, best, cw, INT_MIN);
+        if (d < (mfcc_t)MAX_NEG_INT32)  /* Redundant if FIXED_POINT */
+            insertion_sort_cb(&cur, worst, best, cw, MAX_NEG_INT32);
         else
             insertion_sort_cb(&cur, worst, best, cw, (int32)d);
     }
