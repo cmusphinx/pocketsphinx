@@ -761,6 +761,34 @@ read_mixw(ptm_mgau_t * s, char const *file_name, double SmoothMin)
     return n_sen;
 }
 
+void
+ptm_mgau_reset_fast_hist(ps_mgau_t *ps)
+{
+    ptm_mgau_t *s = (ptm_mgau_t *)ps;
+    int i;
+
+    for (i = 0; i < s->n_fast_hist; ++i) {
+        int j, k, m;
+        /* Top-N codewords for every codebook and feature. */
+        s->hist[i].topn = ckd_calloc_3d(s->g->n_mgau, s->g->n_feat,
+                                        s->max_topn, sizeof(ptm_topn_t));
+        /* Initialize them to sane (yet arbitrary) defaults. */
+        for (j = 0; j < s->g->n_mgau; ++j) {
+            for (k = 0; k < s->g->n_feat; ++k) {
+                for (m = 0; m < s->max_topn; ++m) {
+                    s->hist[i].topn[j][k][m].cw = m;
+                    s->hist[i].topn[j][k][m].score = WORST_DIST;
+                }
+            }
+        }
+        /* Active codebook mapping (just codebook, not features,
+           at least not yet) */
+        s->hist[i].mgau_active = bitvec_alloc(s->g->n_mgau);
+        /* Start with them all on, prune them later. */
+        bitvec_set_all(s->hist[i].mgau_active, s->g->n_mgau);
+    }
+}
+
 ps_mgau_t *
 ptm_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
 {
@@ -845,26 +873,7 @@ ptm_mgau_init(acmod_t *acmod, bin_mdef_t *mdef)
     s->hist = ckd_calloc(s->n_fast_hist, sizeof(*s->hist));
     /* s->f will be a rotating pointer into s->hist. */
     s->f = s->hist;
-    for (i = 0; i < s->n_fast_hist; ++i) {
-        int j, k, m;
-        /* Top-N codewords for every codebook and feature. */
-        s->hist[i].topn = ckd_calloc_3d(s->g->n_mgau, s->g->n_feat,
-                                        s->max_topn, sizeof(ptm_topn_t));
-        /* Initialize them to sane (yet arbitrary) defaults. */
-        for (j = 0; j < s->g->n_mgau; ++j) {
-            for (k = 0; k < s->g->n_feat; ++k) {
-                for (m = 0; m < s->max_topn; ++m) {
-                    s->hist[i].topn[j][k][m].cw = m;
-                    s->hist[i].topn[j][k][m].score = WORST_DIST;
-                }
-            }
-        }
-        /* Active codebook mapping (just codebook, not features,
-           at least not yet) */
-        s->hist[i].mgau_active = bitvec_alloc(s->g->n_mgau);
-        /* Start with them all on, prune them later. */
-        bitvec_set_all(s->hist[i].mgau_active, s->g->n_mgau);
-    }
+    ptm_mgau_reset_fast_hist(s);
 
     ps = (ps_mgau_t *)s;
     ps->vt = &ptm_mgau_funcs;
