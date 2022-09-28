@@ -53,7 +53,7 @@
 #define M_PI	3.1415926535897932385e0
 #endif
 
-#define WORST_DIST	(int32)(0x80000000)
+#define WORST_DIST	MAX_NEG_INT32
 
 void
 gauden_dump(const gauden_t * g)

@@ -798,7 +798,7 @@ allphone_backtrace(allphone_search_t * allphs, int32 f, int32 *out_score)
         return;
 
     /* Find bestscore */
-    best = (int32) 0x80000000;
+    best = MAX_NEG_INT32;
     best_idx = -1;
     while (frm == last_frm && hist_idx > 0) {
         h = blkarray_list_get(allphs->history, hist_idx);

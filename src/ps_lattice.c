@@ -575,6 +575,7 @@ ps_lattice_read(ps_decoder_t *ps,
         pd = darray[from];
         d = darray[to];
         if (logratio != 1.0f)
+            /* FIXME: possible under/overflow!!! */
             ascr = (int32)(ascr * logratio);
         ps_lattice_link(dag, pd, d, ascr, d->sf - 1);
     }
@@ -1372,6 +1373,7 @@ ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
         }
     }
     /* FIXME: floating point... */
+    /* FIXME: possible under/overflow!!! */
     dag->norm += (int32)(dag->final_node_ascr << SENSCR_SHIFT) * ascale;
 
     E_INFO("Bestpath score: %d\n", bestescr);
