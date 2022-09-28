@@ -94,11 +94,14 @@ eval_topn(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
             d = GMMSUB(d, compl);
             ++var;
         }
-        topn[i].score = (int32)d;
+        if (d < (mfcc_t)MAX_NEG_INT32)  /* Redundant if FIXED_POINT */
+            topn[i].score = MAX_NEG_INT32;
+        else
+            topn[i].score = (int32)d;
         if (i == 0)
             continue;
         vtmp = topn[i];
-        for (j = i - 1; j >= 0 && (int32)d > topn[j].score; j--) {
+        for (j = i - 1; j >= 0 && vtmp.score > topn[j].score; j--) {
             topn[j + 1] = topn[j];
         }
         topn[j + 1] = vtmp;
@@ -126,7 +129,7 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
         mfcc_t d;
         mfcc_t *obs;
         vqFeature_t *cur;
-        int32 cw, j;
+        int32 cw, j, d_int;
 
         d = *detP;
         obs = z;
@@ -144,7 +147,11 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
             var += (ceplen - j);
             continue;
         }
-        if ((int32)d < worst->score)
+        if (d < (mfcc_t)MAX_NEG_INT32)
+            d_int = MAX_NEG_INT32;
+        else
+            d_int = (int32) d;
+        if (d_int < worst->score)
             continue;
         for (i = 0; i < s->max_topn; i++) {
             /* already there, so don't need to insert */
@@ -154,11 +161,11 @@ eval_cb(s2_semi_mgau_t *s, int32 feat, mfcc_t *z)
         if (i < s->max_topn)
             continue;       /* already there.  Don't insert */
         /* remaining code inserts codeword and dist in correct spot */
-        for (cur = worst - 1; cur >= best && (int32)d >= cur->score; --cur)
+        for (cur = worst - 1; cur >= best && d_int >= cur->score; --cur)
             memcpy(cur + 1, cur, sizeof(vqFeature_t));
         ++cur;
         cur->codeword = cw;
-        cur->score = (int32)d;
+        cur->score = d_int;
     }
 }
 

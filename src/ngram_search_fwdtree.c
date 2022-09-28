@@ -1196,7 +1196,7 @@ bptable_maxwpf(ngram_search_t *ngs, int frame_idx)
         return;
 
     /* Allow only one filler word exit (the best) per frame */
-    bestscr = (int32) 0x80000000;
+    bestscr = MAX_NEG_INT32;
     bestbpe = NULL;
     n = 0;
     for (bp = ngs->bp_table_idx[frame_idx]; bp < ngs->bpidx; bp++) {
@@ -1221,7 +1221,7 @@ bptable_maxwpf(ngram_search_t *ngs, int frame_idx)
          - ngs->bp_table_idx[frame_idx]) - n;  /* No. of entries after limiting fillers */
     for (; n > ngs->maxwpf; --n) {
         /* Find worst BPTable entry */
-        worstscr = (int32) 0x7fffffff;
+        worstscr = MAX_INT32;
         worstbpe = NULL;
         for (bp = ngs->bp_table_idx[frame_idx]; (bp < ngs->bpidx); bp++) {
             bpe = &(ngs->bp_table[bp]);
@@ -1334,7 +1334,7 @@ word_transition(ngram_search_t *ngs, int frame_idx)
      */
     for (i = 0; i < ngs->n_1ph_LMwords; i++) {
         w = ngs->single_phone_wid[i];
-        ngs->last_ltrans[w].dscr = (int32) 0x80000000;
+        ngs->last_ltrans[w].dscr = MAX_NEG_INT32;
     }
     for (bp = ngs->bp_table_idx[frame_idx]; bp < ngs->bpidx; bp++) {
         bpe = &(ngs->bp_table[bp]);

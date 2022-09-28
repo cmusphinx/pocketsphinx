@@ -372,13 +372,20 @@ senone_eval(senone_t * s, int id, gauden_dist_t ** dist, int32 n_top)
     for (f = 0; (uint32)f < s->n_feat; f++) {
         fdist = dist[f];
 
-	fden = ((int32)fdist[0].dist + ((1<<SENSCR_SHIFT) - 1)) >> SENSCR_SHIFT;
+        if (fdist[0].dist < (mfcc_t)MAX_NEG_INT32)
+            fden = MAX_NEG_INT32 >> SENSCR_SHIFT;
+        else
+            fden = ((int32)fdist[0].dist + ((1<<SENSCR_SHIFT) - 1)) >> SENSCR_SHIFT;
         fscr = (s->n_gauden > 1)
 	    ? (fden + -s->pdf[id][f][fdist[0].id])  /* untransposed */
 	    : (fden + -s->pdf[f][fdist[0].id][id]); /* transposed */
         /* Remaining of n_top codewords for feature f */
         for (t = 1; t < n_top; t++) {
-	    fden = ((int32)fdist[t].dist + ((1<<SENSCR_SHIFT) - 1)) >> SENSCR_SHIFT;
+            if (fdist[t].dist < (mfcc_t)MAX_NEG_INT32)
+                fden = MAX_NEG_INT32 >> SENSCR_SHIFT;
+            else
+                fden = ((int32)fdist[t].dist + ((1<<SENSCR_SHIFT) - 1)) >> SENSCR_SHIFT;
+                
             fwscr = (s->n_gauden > 1) ?
                 (fden + -s->pdf[id][f][fdist[t].id]) :
                 (fden + -s->pdf[f][fdist[t].id][id]);

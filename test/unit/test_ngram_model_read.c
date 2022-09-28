@@ -25,7 +25,7 @@ main(int argc, char *argv[])
                     "hmm: \"" MODELDIR "/en-us/en-us\","
                     "lm: \"" MODELDIR "/en-us/en-us.lm.bin\","
                     "dict: \"" DATADIR "/defective.dic\","
-                    "dictcase: true,"
+                    "dictcase: true, loglevel: INFO, bestpath: false, fwdflat: false,"
                     "samprate: 16000"));
     TEST_ASSERT(ps = ps_init(config));
     TEST_ASSERT(rawfh = fopen(DATADIR "/goforward.raw", "rb"));
