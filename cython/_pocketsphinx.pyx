@@ -48,13 +48,26 @@ cdef class Config:
     Many parameters have default values.  Also, when constructing a
     `Config` directly (as opposed to parsing JSON), `hmm`, `lm`, and
     `dict` are set to the default models (some kind of US English
-    models of unknown origin + CMUDict).  You can prevent this by
+    models of unknown origin + CMUDict). You can prevent this by
     passing `None` for any of these parameters, e.g.:
 
         config = Config(lm=None)  # Do not load a language model
 
+    Decoder initialization **will fail** if more than one of `lm`,
+    `jsgf`, `fsg`, `keyphrase`, `kws`, `allphone`, or `lmctl` are set
+    in the configuration.  To make life easier, and because there is
+    no possible case in which you would do this intentionally, if you
+    initialize a `Decoder` or `Config` with any of these (and not
+    `lm`), the default `lm` value will be removed.  This is not the
+    case if you decide to set one of them in an existing `Config`, so
+    in that case you must make sure to set `lm` to `None`:
+
+        config["jsgf"] = "spam_eggs_and_spam.gram"
+        config["lm"] = None
+
     You may also call `default_search_args()` after the fact to set
-    them.  Note that this will set them unconditionally.
+    `hmm`, `lm`, and `dict` to the system defaults.  Note that this
+    will set them unconditionally.
 
     See :doc:`config_params` for a description of existing parameters.
 
@@ -83,13 +96,20 @@ cdef class Config:
         self.default_search_args()
         # Now override them from kwargs (including None)
         if kwargs:
+            # Remove lm if a different search was specified
+            for s in ("jsgf", "fsg", "kws", "keyphrase",
+                      "allphone", "lmctl"):
+                if s in kwargs:
+                    ps_config_set_str(self.config, "lm", NULL)
+                    break
             for k, v in kwargs.items():
+                # Note that all this is quite inefficient as we end up
+                # calling _normalize_key repeatedly.
+                ckey = self._normalize_key(k)
                 # Special dispensation to support the thing which was
                 # documented but never actually worked, i.e. setting a
                 # string value to False (should be None) to remove the
-                # default.  Note that all this is quite inefficient as
-                # we end up calling _normalize_key repeatedly.
-                ckey = self._normalize_key(k)
+                # default.
                 if ps_config_typeof(self.config, ckey) & ARG_STRING:
                     if v is False:
                         v = None
@@ -769,7 +789,14 @@ cdef class Decoder:
 
         ps = Decoder(lm=None)  # Do not load a language model
 
-    You may also pass a pre-defined `Config` object as the only
+    Decoder initialization **will fail** if more than one of `lm`,
+    `jsgf`, `fsg`, `keyphrase`, `kws`, `allphone`, or `lmctl` are set
+    in the configuration.  To make life easier, and because there is
+    no possible case in which you would do this intentionally, if you
+    initialize a `Decoder` or `Config` with any of these (and not
+    `lm`), the default `lm` value will be removed.
+
+    You can also pass a pre-defined `Config` object as the only
     argument to the constructor, e.g.:
 
         config = Config.parse_json(json)

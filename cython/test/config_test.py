@@ -110,6 +110,21 @@ class TestConfigHash(unittest.TestCase):
         self.assertEqual(config["lm"], None)
         self.assertEqual(config["dict"], get_model_path("en-us/cmudict-en-us.dict"))
 
+    def test_stupid_config_hacks(self):
+        """Test various backward-compatibility special cases."""
+        config = Config()
+        self.assertEqual(config["lm"], get_model_path("en-us/en-us.lm.bin"))
+        config = Config(jsgf="spam_eggs_and_spam.gram")
+        self.assertIsNone(config["lm"])
+        self.assertEqual(config["jsgf"], "spam_eggs_and_spam.gram")
+        with self.assertRaises(RuntimeError):
+            config = Config()
+            config["jsgf"] = os.path.join(DATADIR, "goforward.gram")
+            _ = Decoder(config)
+        with self.assertRaises(RuntimeError):
+            _ = Decoder(kws=os.path.join(DATADIR, "goforward.kws"),
+                        jsgf=os.path.join(DATADIR, "goforward.gram"))
+        _ = Decoder(jsgf=os.path.join(DATADIR, "goforward.gram"))
 
 class TestConfigIter(unittest.TestCase):
     def test_config__iter(self):
@@ -120,8 +135,9 @@ class TestConfigIter(unittest.TestCase):
         for key, value in config.items():
             self.assertTrue(key in config)
             self.assertEqual(config[key], value)
-        config = Decoder.default_config()
+        config = Config()
         self.assertEqual(default_len, len(config))
+        config["lm"] = None
         config["hmm"] = os.path.join(MODELDIR, "en-us", "en-us")
         config["fsg"] = os.path.join(DATADIR, "goforward.fsg")
         config["dict"] = os.path.join(DATADIR, "turtle.dic")

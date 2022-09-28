@@ -145,6 +145,16 @@ POCKETSPHINX_EXPORT
 int ps_config_free(ps_config_t *config);
 
 /**
+ * Validate configuration.
+ *
+ * Currently this just checks that you haven't specified multiple
+ * types of grammars or language models at the same time.
+ *
+ * @return 0 for success, <0 for failure.
+ */
+int ps_config_validate(ps_config_t *config);
+
+/**
  * Create or update a configuration by parsing slightly extended JSON.
  *
  * This function parses a JSON object in non-strict mode to produce a

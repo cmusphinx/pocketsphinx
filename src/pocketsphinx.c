@@ -223,6 +223,16 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
     const char *keyphrase;
     int32 lw;
 
+    /* Enforce only one of keyphrase, kws, fsg, jsgf, allphone, lm */
+    if (config) {
+        if (ps_config_validate(config) < 0)
+            return -1;
+    }
+    else if (ps->config) {
+        if (ps_config_validate(ps->config) < 0)
+            return -1;
+    }
+
     if (config && config != ps->config) {
         ps_config_free(ps->config);
         ps->config = ps_config_retain(config);
@@ -289,8 +299,6 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
     if ((ps->acmod = acmod_init(ps->config, ps->lmath, NULL, NULL)) == NULL)
         return -1;
 
-
-
     if (ps_config_int(ps->config, "pl_window") > 0) {
         /* Initialize an auxiliary phone loop search, which will run in
          * "parallel" with FSG or N-Gram search. */
@@ -314,21 +322,17 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
     /* Determine whether we are starting out in FSG or N-Gram search mode.
      * If neither is used skip search initialization. */
 
-    /* Load KWS if one was specified in config */
     if ((keyphrase = ps_config_str(ps->config, "keyphrase"))) {
         if (ps_add_keyphrase(ps, PS_DEFAULT_SEARCH, keyphrase))
             return -1;
         ps_activate_search(ps, PS_DEFAULT_SEARCH);
     }
-
-    if ((path = ps_config_str(ps->config, "kws"))) {
+    else if ((path = ps_config_str(ps->config, "kws"))) {
         if (ps_add_kws(ps, PS_DEFAULT_SEARCH, path))
             return -1;
         ps_activate_search(ps, PS_DEFAULT_SEARCH);
     }
-
-    /* Load an FSG if one was specified in config */
-    if ((path = ps_config_str(ps->config, "fsg"))) {
+    else if ((path = ps_config_str(ps->config, "fsg"))) {
         fsg_model_t *fsg = fsg_model_readfile(path, ps->lmath, lw);
         if (!fsg)
             return -1;
@@ -339,28 +343,22 @@ ps_reinit(ps_decoder_t *ps, ps_config_t *config)
         fsg_model_free(fsg);
         ps_activate_search(ps, PS_DEFAULT_SEARCH);
     }
-    
-    /* Or load a JSGF grammar */
-    if ((path = ps_config_str(ps->config, "jsgf"))) {
+    else if ((path = ps_config_str(ps->config, "jsgf"))) {
         if (ps_add_jsgf_file(ps, PS_DEFAULT_SEARCH, path)
             || ps_activate_search(ps, PS_DEFAULT_SEARCH))
             return -1;
     }
-
-    if ((path = ps_config_str(ps->config, "allphone"))) {
+    else if ((path = ps_config_str(ps->config, "allphone"))) {
         if (ps_add_allphone_file(ps, PS_DEFAULT_SEARCH, path)
-                || ps_activate_search(ps, PS_DEFAULT_SEARCH))
-                return -1;
+            || ps_activate_search(ps, PS_DEFAULT_SEARCH))
+            return -1;
     }
-
-    if ((path = ps_config_str(ps->config, "lm")) && 
-        !ps_config_str(ps->config, "allphone")) {
+    else if ((path = ps_config_str(ps->config, "lm"))) {
         if (ps_add_lm_file(ps, PS_DEFAULT_SEARCH, path)
             || ps_activate_search(ps, PS_DEFAULT_SEARCH))
             return -1;
     }
-
-    if ((path = ps_config_str(ps->config, "lmctl"))) {
+    else if ((path = ps_config_str(ps->config, "lmctl"))) {
         const char *name;
         ngram_model_t *lmset;
         ngram_model_set_iter_t *lmset_it;

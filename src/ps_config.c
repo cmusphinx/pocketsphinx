@@ -122,6 +122,46 @@ ps_config_free(ps_config_t *config)
     return 0;
 }
 
+static const char *searches[] = {
+    "lm",
+    "jsgf",
+    "fsg",
+    "keyphrase",
+    "kws",
+    "allphone",
+    "lmctl"
+};
+static const int nsearches = sizeof(searches)/sizeof(searches[0]);
+    
+int
+ps_config_validate(ps_config_t *config)
+{
+    int i, found = 0;
+    for (i = 0; i < nsearches; ++i) {
+        if (ps_config_str(config, searches[i]) != NULL)
+            if (++found > 1)
+                break;
+    }
+    if (found > 1) {
+        int len = strlen("Only one of ");
+        char *msg;
+        for (i = 0; i < nsearches; ++i)
+            len += strlen(searches[i]) + 2;
+        len += strlen("can be enabled at a time in config\n");
+        msg = ckd_malloc(len + 1);
+        strcpy(msg, "Only one of ");
+        for (i = 0; i < nsearches; ++i) {
+            strcat(msg, searches[i]);
+            strcat(msg, ", ");
+        }
+        strcat(msg, "can be enabled at a time in config\n");
+        E_ERROR(msg);
+        ckd_free(msg);
+        return -1;
+    }
+    return 0;
+}
+
 void
 json_error(int err)
 {
