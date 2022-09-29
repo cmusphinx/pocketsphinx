@@ -344,7 +344,7 @@ live(ps_config_t *config, FILE *infile)
         goto error_out;
     }
     if ((ep = ps_endpointer_init(0, 0.0,
-                                 3, ps_config_int(config, "samprate"),
+                                 0, ps_config_int(config, "samprate"),
                                  0)) == NULL) {
         E_ERROR("PocketSphinx endpointer init failed\n");
         goto error_out;
