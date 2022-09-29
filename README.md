@@ -1,4 +1,4 @@
-PocketSphinx 5.0.0 release candidate 4
+PocketSphinx 5.0.0 release candidate 5
 ======================================
 
 This is PocketSphinx, one of Carnegie Mellon University's open source large
@@ -71,6 +71,9 @@ If your input is in some other format I suggest converting it with
 The commands are as follows:
 
   - `help`: Print a long list of those options you don't care about.
+  
+  - `config`: Dump configuration as JSON to standard output (can be
+    loaded with the `-config` option).
 
   - `live`: Detect speech segments in each input, run recognition
     on them (using those options you don't care about), and write the

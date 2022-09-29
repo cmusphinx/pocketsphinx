@@ -20,6 +20,13 @@ properly.  It accepts a large number of options which you probably
 don't care about, and a \fIcommand\fP which defaults to
 ‘\f[CR]live\fP’. The commands are as follows:
 .TP
+.B help
+Print a long list of those options you don't care about.
+.TP
+.B config
+Dump configuration as JSON to standard output (can be loaded with the
+‘\f[CR]-config\fP’ option). 
+.TP
 .B live
 Detect speech segments in input files, run recognition on them (using
 those options you don't care about), and write the results to standard
