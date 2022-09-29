@@ -693,7 +693,11 @@ fsg_model_read(FILE * fp, logmath_t * lmath, float32 lw)
     }
     hash_table_free(vocab);
 
-    /* Do transitive closure on null transitions */
+    /* Do transitive closure on null transitions.  FIXME: This is
+     * actually quite inefficient as it *creates* a lot of new links
+     * as opposed to just *calculating* the epsilon-closure for each
+     * state.  Ideally we would epsilon-remove or determinize the FSG
+     * (but note that tag transitions are not really epsilons...) */
     nulls = fsg_model_null_trans_closure(fsg, nulls);
     glist_free(nulls);
 
