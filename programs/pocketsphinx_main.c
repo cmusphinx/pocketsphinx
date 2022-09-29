@@ -55,6 +55,10 @@
 /* Le sigh.  Didn't want to have to do this. */
 static const arg_t ps_main_args_def[] = {
     POCKETSPHINX_OPTIONS,
+    { "config",
+      ARG_STRING,
+      NULL,
+      "JSON file with configuration." },
     { "phone_align",
       ARG_BOOLEAN,
       "no",
@@ -700,10 +704,18 @@ process_inputs(int (*func)(ps_config_t *, FILE *),
     return rv;
 }
 
+static int
+print_config(ps_config_t *config)
+{
+    if (puts(ps_config_serialize_json(config)) < 0)
+        return -1;
+    return 0;
+}
+
 void
 usage(char *name)
 {
-    fprintf(stderr, "Usage: %s [soxflags | help | live | single | align] INPUTS...\n", name);
+    fprintf(stderr, "Usage: %s [soxflags | config | help | live | single | align] INPUTS...\n", name);
     err_set_loglevel(ERR_INFO);
     cmd_ln_log_help_r(NULL, ps_args());
 }
@@ -712,22 +724,59 @@ int
 main(int argc, char *argv[])
 {
     ps_config_t *config;
+    const char *conffile;
     char *command;
     char **inputs;
     int rv, ninputs;
 
     command = find_command(&argc, argv);
     inputs = find_inputs(&argc, argv, &ninputs);
-    if ((ninputs == 0 && 0 != strcmp(command, "soxflags"))
-        || (config = ps_config_parse_args(ps_main_args_def, argc, argv)) == NULL) {
+    /* Only soxflags and config take no arguments */
+    if (ninputs == 0) {
+        if ((0 != strcmp(command, "soxflags"))
+            && 0 != strcmp(command, "config")) {
+            usage(argv[0]);
+            return 1;
+        }
+    }
+    /* If arg parsing fails */
+    if ((config = ps_config_parse_args(ps_main_args_def, argc, argv)) == NULL) {
         usage(argv[0]);
         return 1;
     }
     ps_default_search_args(config);
     if (ps_config_bool(config, "state_align"))
         ps_config_set_bool(config, "phone_align", TRUE);
+    if ((conffile = ps_config_str(config, "config")) != NULL) {
+        char *json;
+        FILE *infh;
+        size_t len;
+        if ((infh = fopen(conffile, "rt")) == NULL) {
+            E_ERROR_SYSTEM("Failed to open config file %s", conffile);
+            return 1;
+        }
+        fseek(infh, 0, SEEK_END);
+        len = (size_t)ftell(infh);
+        fseek(infh, 0, SEEK_SET);
+        json = ckd_malloc(len + 1);
+        if (fread(json, 1, len, infh) != len) {
+            E_ERROR_SYSTEM("Failed to read config file %s", conffile);
+            ckd_free(json);
+            fclose(infh);
+            return 1;
+        }
+        json[len] = '\0';
+        fclose(infh);
+        config = ps_config_parse_json(config, json);
+        ckd_free(json);
+        if (config == NULL)
+            return 1;
+        ps_config_set_str(config, "config", NULL);
+    }
     if (0 == strcmp(command, "soxflags"))
         rv = soxflags(config);
+    else if (0 == strcmp(command, "config"))
+        rv = print_config(config);
     else if (0 == strcmp(command, "live"))
         rv = process_inputs(live, config, inputs, ninputs);
     else if (0 == strcmp(command, "single"))
