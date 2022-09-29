@@ -57,9 +57,11 @@ extern "C" {
  * Segmentation "iterator" for KWS history.
  */
 typedef struct kws_seg_s {
-    ps_seg_t base;       /**< Base structure. */
-    gnode_t *detection;  /**< Keyphrase detection correspondent to segment. */
-    frame_idx_t last_frame; /**< Last frame to raise the detection */
+    ps_seg_t base;                /**< Base structure. */
+    kws_detection_t **detections; /**< Vector of current detections. */
+    frame_idx_t last_frame;       /**< Last frame to raise the detection. */
+    int n_detections;             /**< Size of vector. */
+    int pos;                      /**< Position of iterator. */
 } kws_seg_t;
 
 typedef struct kws_keyphrase_s {

@@ -19,5 +19,5 @@ main(int argc, char *argv[])
                     "hmm: \"" MODELDIR "/en-us/en-us\","
                     "kws: \"" DATADIR "/goforward.kws\","
                     "dict: \"" MODELDIR "/en-us/cmudict-en-us.dict\""));
-    return ps_decoder_test(config, "KEYPHRASE", "forward");
+    return ps_decoder_test(config, "KEYPHRASE", "forward meters");
 }
