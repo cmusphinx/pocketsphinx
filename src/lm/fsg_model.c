@@ -46,26 +46,6 @@
 
 #include "lm/fsg_model.h"
 
-/**
- * Adjacency list (opaque) for a state in an FSG.
- *
- * Actually we use hash tables so that random access is a bit faster.
- * Plus it allows us to make the lookup code a bit less ugly.
- */
-
-struct trans_list_s {
-    hash_table_t *null_trans;   /* Null transitions keyed by state. */
-    hash_table_t *trans;        /* Lists of non-null transitions keyed by state. */
-};
-
-/**
- * Implementation of arc iterator.
- */
-struct fsg_arciter_s {
-    hash_iter_t *itor, *null_itor;
-    gnode_t *gn;
-};
-
 #define FSG_MODEL_BEGIN_DECL		"FSG_BEGIN"
 #define FSG_MODEL_END_DECL		"FSG_END"
 #define FSG_MODEL_N_DECL			"N"
@@ -713,7 +693,11 @@ fsg_model_read(FILE * fp, logmath_t * lmath, float32 lw)
     }
     hash_table_free(vocab);
 
-    /* Do transitive closure on null transitions */
+    /* Do transitive closure on null transitions.  FIXME: This is
+     * actually quite inefficient as it *creates* a lot of new links
+     * as opposed to just *calculating* the epsilon-closure for each
+     * state.  Ideally we would epsilon-remove or determinize the FSG
+     * (but note that tag transitions are not really epsilons...) */
     nulls = fsg_model_null_trans_closure(fsg, nulls);
     glist_free(nulls);
 
@@ -937,4 +921,101 @@ fsg_model_writefile_symtab(fsg_model_t * fsg, char const *file)
     fsg_model_write_symtab(fsg, fp);
 
     fclose(fp);
+}
+
+static void
+apply_closure(fsg_model_t *fsg, bitvec_t *active)
+{
+    int state;
+
+    /* This is a bit slow, sorry. */
+    for (state = 0; state < fsg_model_n_state(fsg); ++state) {
+        hash_table_t *null_trans;
+        hash_iter_t *itor;
+
+        if (!bitvec_is_set(active, state))
+            continue;
+        null_trans = fsg->trans[state].null_trans;
+        if (null_trans == NULL)
+            continue;
+        /* We assume closure has already been done, so no need to
+         * continue following epsilons. */
+        for (itor = hash_table_iter(null_trans);
+             itor != NULL; itor = hash_table_iter_next(itor)) {
+            fsg_link_t *link = (fsg_link_t *)hash_entry_val(itor->ent);
+            bitvec_set(active, link->to_state);
+            E_INFO("epsilon %d -> %d\n", state, link->to_state);
+        }
+    }
+}
+
+int
+fsg_model_accept(fsg_model_t *fsg, char const *words)
+{
+    char *ptr, *mutable_words, *word, delimfound;
+    bitvec_t *active, *next;
+    int n, found = 0;
+
+    if (fsg == NULL || words == NULL)
+        return 0;
+
+    active = bitvec_alloc(fsg_model_n_state(fsg));
+    next = bitvec_alloc(fsg_model_n_state(fsg));
+    bitvec_set(active, fsg_model_start_state(fsg));
+
+    /* For each input word */
+    ptr = mutable_words = ckd_salloc(words);
+    while ((n = nextword(ptr, " \t\r\n\v\f",
+                         &word, &delimfound)) >= 0) {
+        int wid = fsg_model_word_id(fsg, word);
+        int state;
+        bitvec_t *tmp;
+
+        E_INFO("word: %s\n", word);
+        /* Expand using previously calculated closure. */
+        apply_closure(fsg, active);
+
+        /* Consume the current word, following all non-epsilon
+         * transitions possible. */
+        if (wid < 0) {
+            /* Immediate fail */
+            E_INFO("word %s not found!\n", word);
+            goto done;
+        }
+        /* Again, my apologies, this is a bit slow. */
+        for (state = 0; state < fsg_model_n_state(fsg); ++state) {
+            fsg_arciter_t *itor;
+            if (!bitvec_is_set(active, state))
+                continue;
+            for (itor = fsg_model_arcs(fsg, state);
+                 itor != NULL; itor = fsg_arciter_next(itor)) {
+                fsg_link_t *link = fsg_arciter_get(itor);
+                /* Ignore epsilons, we already did them. */
+                if (link->wid == wid) {
+                    bitvec_set(next, link->to_state);
+                    E_INFO("%s %d -> %d\n",
+                           word, state, link->to_state);
+                }
+            }
+        }
+
+        /* Update active list. */
+        tmp = active;
+        active = next;
+        next = tmp;
+        bitvec_clear_all(next, fsg_model_n_state(fsg));
+        
+        word[n] = delimfound;
+        ptr = word + n;
+    }
+    /* Did we reach the final state? First expand any epsilons, then
+     * we'll find out! */
+    apply_closure(fsg, active);
+    found = bitvec_is_set(active, fsg_model_final_state(fsg));
+
+done:
+    bitvec_free(active);
+    bitvec_free(next);
+    ckd_free(mutable_words);
+    return found != 0;
 }

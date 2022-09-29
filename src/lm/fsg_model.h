@@ -86,9 +86,15 @@ typedef struct fsg_link_s {
 
 /**
  * @struct trans_list_t
- * @brief Adjacency list (opaque) for a state in an FSG.
+ * @brief Adjacency list for a state in an FSG.
+ *
+ * Actually we use hash tables so that random access is a bit faster.
+ * Plus it allows us to make the lookup code a bit less ugly.
  */
-typedef struct trans_list_s trans_list_t;
+typedef struct trans_list_s {
+    hash_table_t *null_trans;   /* Null transitions keyed by state. */
+    hash_table_t *trans;        /* Lists of non-null transitions keyed by state. */
+} trans_list_t;
 
 /**
  * @struct fsg_model_t
@@ -129,8 +135,12 @@ typedef struct fsg_model_s {
 
 /**
  * Iterator over arcs.
+ * Implementation of arc iterator.
  */
-typedef struct fsg_arciter_s fsg_arciter_t;
+typedef struct fsg_arciter_s {
+    hash_iter_t *itor, *null_itor;
+    gnode_t *gn;
+} fsg_arciter_t;
 
 /**
  * Have silence transitions been added?
@@ -340,6 +350,15 @@ void fsg_model_write_symtab(fsg_model_t *fsg, FILE *file);
  */
 POCKETSPHINX_EXPORT
 void fsg_model_writefile_symtab(fsg_model_t *fsg, char const *file);
+
+/**
+ * Check that an FSG accepts a word sequence
+ *
+ * @param words Whitespace-separated word sequence
+ * @return 1 if accept, 0 if not accept, -1 if "U.D.O."
+ */
+POCKETSPHINX_EXPORT
+int fsg_model_accept(fsg_model_t *fsg, char const *words);
 
 #ifdef __cplusplus
 }

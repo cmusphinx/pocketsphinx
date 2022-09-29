@@ -10,8 +10,10 @@ import <polite.startPolite>;
 import <polite.endPolite>;
 
 
-public <rightRecursion> = <action> | (<action> and <rightRecursion> ) ;
+public <rightRecursion> = <action> | <actionRecursion>;
 <action> = stop | start;
+<actionRecursion> = <action> and <rightRecursion>;
+
 
 
 public <nestedRightRecursion> = something | <Y> ;

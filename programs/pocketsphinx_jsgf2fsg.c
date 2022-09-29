@@ -80,6 +80,11 @@ static const arg_t defn[] = {
     "no",
     "Compute grammar closure to speedup loading"},
 
+  { "loglevel",
+    ARG_STRING,
+    "WARN",
+    "Minimum level of log messages (DEBUG, INFO, WARN, ERROR)" },
+
   { NULL, 0, NULL, NULL }
 };
 
@@ -131,7 +136,7 @@ main(int argc, char *argv[])
     jsgf_t *jsgf;
     fsg_model_t *fsg;
     cmd_ln_t *config;
-    const char *rule;
+    const char *rule, *loglevel;
         
     if ((config = cmd_ln_parse_r(NULL, defn, argc, argv, TRUE)) == NULL) {
         /* This probably just means that we got no arguments. */
@@ -142,6 +147,14 @@ main(int argc, char *argv[])
 
     if (ps_config_bool(config, "help")) {
         usagemsg(argv[0]);
+    }
+
+    loglevel = ps_config_str(config, "loglevel");
+    if (loglevel) {
+        if (err_set_loglevel_str(loglevel) == NULL) {
+            E_ERROR("Invalid log level: %s\n", loglevel);
+            return -1;
+        }
     }
 
     jsgf = jsgf_parse_file(ps_config_str(config, "jsgf"), NULL);
