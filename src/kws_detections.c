@@ -102,6 +102,7 @@ kws_detections_hyp_str(kws_detections_t *detections, int frame, int delay)
 
     hyp_str = (char *)ckd_calloc(len, sizeof(char));
     c = hyp_str;
+    detections->detect_list = glist_reverse(detections->detect_list);
     for (gn = detections->detect_list; gn; gn = gnode_next(gn)) {
 	kws_detection_t *det = (kws_detection_t *)gnode_ptr(gn);
 	if (det->ef < frame - delay) {
@@ -115,6 +116,7 @@ kws_detections_hyp_str(kws_detections_t *detections, int frame, int delay)
         c--;
 	*c = '\0';
     }
+    detections->detect_list = glist_reverse(detections->detect_list);
     return hyp_str;
 }
 
