@@ -608,6 +608,7 @@ gst_pocketsphinx_init(GstPocketSphinx * ps)
         gst_pad_new_from_static_template(&sink_factory, "sink");
     ps->srcpad =
         gst_pad_new_from_static_template(&src_factory, "src");
+    ps->adapter = gst_adapter_new();
 
     /* Parse default command-line options. */
     ps->config = ps_config_init(NULL);
@@ -641,6 +642,15 @@ gst_pocketsphinx_change_state(GstElement *element, GstStateChange transition)
                           ("Failed to initialize PocketSphinx"));
 	        return GST_STATE_CHANGE_FAILURE;
 	    }
+            ps->ep = ps_endpointer_init(0, 0.0, 0,
+                                        ps_config_int(ps->config, "samprate"), 0);
+	    if (ps->ep == NULL) {
+	        GST_ELEMENT_ERROR(GST_ELEMENT(ps), LIBRARY, INIT,
+                          ("Failed to initialize PocketSphinx endpointer"),
+                          ("Failed to initialize PocketSphinx endpointer"));
+	        return GST_STATE_CHANGE_FAILURE;
+	    }
+            ps->frame_size = ps_endpointer_frame_size(ps->ep) * 2;
             break;
          case GST_STATE_CHANGE_READY_TO_NULL:
             ps_free(ps->ps);
@@ -669,52 +679,45 @@ static GstFlowReturn
 gst_pocketsphinx_chain(GstPad * pad, GstObject *parent, GstBuffer * buffer)
 {
     GstPocketSphinx *ps;
-    GstMapInfo info;
-    gboolean in_speech;
 
     (void)pad;
     ps = GST_POCKETSPHINX(parent);
 
-    /* Start an utterance for the first buffer we get */
-    if (!ps->listening_started) {
-        ps->listening_started = TRUE;
-        ps->speech_started = FALSE;
-        ps_start_utt(ps->ps);
-    }
+    gst_adapter_push(ps->adapter, buffer);
+    while (gst_adapter_available(ps->adapter) >= ps->frame_size) {
+        const guint *data = gst_adapter_map(ps->adapter, ps->frame_size);
+        int prev_in_speech = ps_endpointer_in_speech(ps->ep);
+        const int16 *speech = ps_endpointer_process(ps->ep, (int16 *)data);
+        if (speech != NULL) {
+            if (!prev_in_speech)
+                ps_start_utt(ps->ps);
+            ps_process_raw(ps->ps,
+                           speech, ps->frame_size / 2,
+                           FALSE, FALSE);
+            if (!ps_endpointer_in_speech(ps->ep)) {
+                gst_pocketsphinx_finalize_utt(ps);
+            } else if (ps->last_result_time == 0
+                       /* Get a partial result every now and then, see if it is different. */
+                       /* Check every 100 milliseconds. */
+                       || (GST_BUFFER_TIMESTAMP(buffer) - ps->last_result_time) > 100*10*1000) {
+                int32 score;
+                char const *hyp;
 
-    gst_buffer_map (buffer, &info, GST_MAP_READ);
-    ps_process_raw(ps->ps,
-                   (short*) info.data,
-                   info.size / sizeof(short),
-                   FALSE, FALSE);
-    gst_buffer_unmap (buffer, &info);
-
-    in_speech = ps_get_in_speech(ps->ps);
-    if (in_speech && !ps->speech_started) {
-    	ps->speech_started = TRUE;
-    }
-    if (!in_speech && ps->speech_started) {
-	gst_pocketsphinx_finalize_utt(ps);
-    } else if (ps->last_result_time == 0
-        /* Get a partial result every now and then, see if it is different. */
-        /* Check every 100 milliseconds. */
-        || (GST_BUFFER_TIMESTAMP(buffer) - ps->last_result_time) > 100*10*1000) {
-        int32 score;
-        char const *hyp;
-
-        hyp = ps_get_hyp(ps->ps, &score);
-        ps->last_result_time = GST_BUFFER_TIMESTAMP(buffer);
-        if (hyp && strlen(hyp) > 0) {
-            if (ps->last_result == NULL || 0 != strcmp(ps->last_result, hyp)) {
-                g_free(ps->last_result);
-                ps->last_result = g_strdup(hyp);
-                gst_pocketsphinx_post_message(ps, FALSE, ps->last_result_time,
-                    ps_get_prob(ps->ps), hyp);
+                hyp = ps_get_hyp(ps->ps, &score);
+                ps->last_result_time = GST_BUFFER_TIMESTAMP(buffer);
+                if (hyp && strlen(hyp) > 0) {
+                    if (ps->last_result == NULL || 0 != strcmp(ps->last_result, hyp)) {
+                        g_free(ps->last_result);
+                        ps->last_result = g_strdup(hyp);
+                        gst_pocketsphinx_post_message(ps, FALSE, ps->last_result_time,
+                                                      ps_get_prob(ps->ps), hyp);
+                    }
+                }
             }
         }
-    }
-
-    gst_buffer_unref(buffer);
+        gst_adapter_unmap(ps->adapter);
+        gst_adapter_flush(ps->adapter, ps->frame_size);
+    }        
     return GST_FLOW_OK;
 }
 
@@ -727,11 +730,8 @@ gst_pocketsphinx_finalize_utt(GstPocketSphinx *ps)
     int32 score;
 
     hyp = NULL;
-    if (!ps->listening_started)
-	return;
 
     ps_end_utt(ps->ps);
-    ps->listening_started = FALSE;
     hyp = ps_get_hyp(ps->ps, &score);
 
     if (hyp) {

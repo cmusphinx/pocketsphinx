@@ -40,6 +40,7 @@
 #define __GST_POCKETSPHINX_H__
 
 #include <gst/gst.h>
+#include <gst/base/gstadapter.h>
 #include <pocketsphinx.h>
 
 G_BEGIN_DECLS
@@ -61,16 +62,16 @@ typedef struct _GstPocketSphinxClass GstPocketSphinxClass;
 struct _GstPocketSphinx
 {
     GstElement element;
-
+    GstAdapter *adapter;
     GstPad *sinkpad, *srcpad;
 
     ps_decoder_t *ps;
+    ps_endpointer_t *ep;
     ps_config_t *config;
 
-    gchar *latdir;                 /**< Output directory for word lattices. */
+    size_t frame_size;
 
-    gboolean speech_started;
-    gboolean listening_started;
+    gchar *latdir;                 /**< Output directory for word lattices. */
     gint uttno;
 
     GstClockTime last_result_time; /**< Timestamp of last partial result. */
