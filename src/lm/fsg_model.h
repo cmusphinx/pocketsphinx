@@ -351,6 +351,15 @@ void fsg_model_write_symtab(fsg_model_t *fsg, FILE *file);
 POCKETSPHINX_EXPORT
 void fsg_model_writefile_symtab(fsg_model_t *fsg, char const *file);
 
+/**
+ * Check that an FSG accepts a word sequence
+ *
+ * @param words Whitespace-separated word sequence
+ * @return 1 if accept, 0 if not accept, -1 if "U.D.O."
+ */
+POCKETSPHINX_EXPORT
+int fsg_model_accept(fsg_model_t *fsg, char const *words);
+
 #ifdef __cplusplus
 }
 #endif
