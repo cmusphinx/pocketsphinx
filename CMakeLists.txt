@@ -111,6 +111,11 @@ else()
   install(DIRECTORY include TYPE INCLUDE)
   install(DIRECTORY ${CMAKE_BINARY_DIR}/include TYPE INCLUDE)
   install(FILES ${CMAKE_BINARY_DIR}/pocketsphinx.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+  option(BUILD_GSTREAMER "Build GStreamer plugin" OFF)
+  if(BUILD_GSTREAMER)
+    add_subdirectory(gst)
+  endif()
 endif()
 
 # Can print this at the end, just to know what it was
