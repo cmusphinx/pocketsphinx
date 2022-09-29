@@ -124,6 +124,7 @@ class TestConfigIter(unittest.TestCase):
         self.assertEqual(default_len, len(config))
         config["hmm"] = os.path.join(MODELDIR, "en-us", "en-us")
         config["fsg"] = os.path.join(DATADIR, "goforward.fsg")
+        config["lm"] = None  # It won't do this automatically
         config["dict"] = os.path.join(DATADIR, "turtle.dic")
         self.assertEqual(default_len, len(config))
         for key in config:
