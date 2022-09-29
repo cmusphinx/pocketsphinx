@@ -65,7 +65,7 @@ struct _GstPocketSphinx
     GstPad *sinkpad, *srcpad;
 
     ps_decoder_t *ps;
-    cmd_ln_t *config;
+    ps_config_t *config;
 
     gchar *latdir;                 /**< Output directory for word lattices. */
 

@@ -91,8 +91,9 @@
 #include <string.h>
 #include <gst/gst.h>
 
-#include <sphinxbase/err.h>
-#include <sphinxbase/strfuncs.h>
+#include <pocketsphinx/err.h>
+#include "util/strfuncs.h"
+#include "util/ckd_alloc.h"
 
 #include "gstpocketsphinx.h"
 
@@ -153,12 +154,6 @@ enum
  * Static data.
  */
 
-/* Default command line. (will go away soon and be constructed using properties) */
-static char *default_argv[] = {
-    "gst-pocketsphinx",
-};
-static const int default_argc = sizeof(default_argv)/sizeof(default_argv[0]);
-
 static GstStaticPadTemplate sink_factory =
     GST_STATIC_PAD_TEMPLATE("sink",
                             GST_PAD_SINK,
@@ -176,6 +171,12 @@ static GstStaticPadTemplate src_factory =
                             GST_STATIC_CAPS("text/plain")
 	);
 
+static void
+wrap_ps_free(void *ps)
+{
+    (void)ps_free((ps_decoder_t *)ps);
+}
+
 /*
  * Boxing of ps_decoder_t.
  */
@@ -189,7 +190,7 @@ ps_decoder_get_type(void)
             ("PSDecoder",
              /* Conveniently, these should just work. */
              (GBoxedCopyFunc) ps_retain,
-             (GBoxedFreeFunc) ps_free);
+             (GBoxedFreeFunc) wrap_ps_free);
     }
 
     return ps_decoder_type;
@@ -357,9 +358,9 @@ gst_pocketsphinx_set_string(GstPocketSphinx *ps,
                             const gchar *key, const GValue *value)
 {
     if (value != NULL) {
-        cmd_ln_set_str_r(ps->config, key, g_value_get_string(value));
+        ps_config_set_str(ps->config, key, g_value_get_string(value));
     } else {
-        cmd_ln_set_str_r(ps->config, key, NULL);
+        ps_config_set_str(ps->config, key, NULL);
     }
 }
 
@@ -367,21 +368,21 @@ static void
 gst_pocketsphinx_set_int(GstPocketSphinx *ps,
                          const gchar *key, const GValue *value)
 {
-    cmd_ln_set_int32_r(ps->config, key, g_value_get_int(value));
+    ps_config_set_int(ps->config, key, g_value_get_int(value));
 }
 
 static void
 gst_pocketsphinx_set_boolean(GstPocketSphinx *ps,
                              const gchar *key, const GValue *value)
 {
-    cmd_ln_set_boolean_r(ps->config, key, g_value_get_boolean(value));
+    ps_config_set_bool(ps->config, key, g_value_get_boolean(value));
 }
 
 static void
 gst_pocketsphinx_set_double(GstPocketSphinx *ps,
                          const gchar *key, const GValue *value)
 {
-    cmd_ln_set_float_r(ps->config, key, g_value_get_double(value));
+    ps_config_set_float(ps->config, key, g_value_get_double(value));
 }
 
 static void
@@ -393,91 +394,91 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
     switch (prop_id) {
     
     case PROP_HMM_DIR:
-        gst_pocketsphinx_set_string(ps, "-hmm", value);
+        gst_pocketsphinx_set_string(ps, "hmm", value);
         break;
     case PROP_LM_FILE:
         /* FSG and LM are mutually exclusive. */
-        gst_pocketsphinx_set_string(ps, "-lm", value);
-        gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
-        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
-        gst_pocketsphinx_set_string(ps, "-allphone", NULL);
-        gst_pocketsphinx_set_string(ps, "-kws", NULL);
-        gst_pocketsphinx_set_string(ps, "-jsgf", NULL);
+        gst_pocketsphinx_set_string(ps, "lm", value);
+        gst_pocketsphinx_set_string(ps, "lmctl", NULL);
+        gst_pocketsphinx_set_string(ps, "fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "allphone", NULL);
+        gst_pocketsphinx_set_string(ps, "kws", NULL);
+        gst_pocketsphinx_set_string(ps, "jsgf", NULL);
         break;
     case PROP_LMCTL_FILE:
         /* FSG and LM are mutually exclusive. */
-        gst_pocketsphinx_set_string(ps, "-lm", NULL);
-        gst_pocketsphinx_set_string(ps, "-lmctl", value);
-        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
-        gst_pocketsphinx_set_string(ps, "-allphone", NULL);
-        gst_pocketsphinx_set_string(ps, "-kws", NULL);
-        gst_pocketsphinx_set_string(ps, "-jsgf", NULL);
+        gst_pocketsphinx_set_string(ps, "lm", NULL);
+        gst_pocketsphinx_set_string(ps, "lmctl", value);
+        gst_pocketsphinx_set_string(ps, "fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "allphone", NULL);
+        gst_pocketsphinx_set_string(ps, "kws", NULL);
+        gst_pocketsphinx_set_string(ps, "jsgf", NULL);
         break;
     case PROP_DICT_FILE:
-        gst_pocketsphinx_set_string(ps, "-dict", value);
+        gst_pocketsphinx_set_string(ps, "dict", value);
         break;
     case PROP_MLLR_FILE:
-        gst_pocketsphinx_set_string(ps, "-mllr", value);
+        gst_pocketsphinx_set_string(ps, "mllr", value);
         break;
     case PROP_FSG_FILE:
         /* FSG and LM are mutually exclusive */
-        gst_pocketsphinx_set_string(ps, "-lm", NULL);
-        gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
-        gst_pocketsphinx_set_string(ps, "-fsg", value);
-        gst_pocketsphinx_set_string(ps, "-allphone", NULL);
-        gst_pocketsphinx_set_string(ps, "-kws", NULL);
-        gst_pocketsphinx_set_string(ps, "-jsgf", NULL);
+        gst_pocketsphinx_set_string(ps, "lm", NULL);
+        gst_pocketsphinx_set_string(ps, "lmctl", NULL);
+        gst_pocketsphinx_set_string(ps, "fsg", value);
+        gst_pocketsphinx_set_string(ps, "allphone", NULL);
+        gst_pocketsphinx_set_string(ps, "kws", NULL);
+        gst_pocketsphinx_set_string(ps, "jsgf", NULL);
         break;
     case PROP_ALLPHONE_FILE:
         /* FSG and LM are mutually exclusive. */
-        gst_pocketsphinx_set_string(ps, "-lm", NULL);
-        gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
-        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
-        gst_pocketsphinx_set_string(ps, "-allphone", value);
-        gst_pocketsphinx_set_string(ps, "-kws", NULL);
-        gst_pocketsphinx_set_string(ps, "-jsgf", NULL);
+        gst_pocketsphinx_set_string(ps, "lm", NULL);
+        gst_pocketsphinx_set_string(ps, "lmctl", NULL);
+        gst_pocketsphinx_set_string(ps, "fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "allphone", value);
+        gst_pocketsphinx_set_string(ps, "kws", NULL);
+        gst_pocketsphinx_set_string(ps, "jsgf", NULL);
         break;
     case PROP_KWS_FILE:
         /* FSG and LM are mutually exclusive. */
-        gst_pocketsphinx_set_string(ps, "-lm", NULL);
-        gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
-        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
-        gst_pocketsphinx_set_string(ps, "-allphone", NULL);
-        gst_pocketsphinx_set_string(ps, "-jsgf", NULL);
-        gst_pocketsphinx_set_string(ps, "-kws", value);
+        gst_pocketsphinx_set_string(ps, "lm", NULL);
+        gst_pocketsphinx_set_string(ps, "lmctl", NULL);
+        gst_pocketsphinx_set_string(ps, "fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "allphone", NULL);
+        gst_pocketsphinx_set_string(ps, "jsgf", NULL);
+        gst_pocketsphinx_set_string(ps, "kws", value);
         break;
     case PROP_JSGF_FILE:
         /* FSG and LM are mutually exclusive. */
-        gst_pocketsphinx_set_string(ps, "-lm", NULL);
-        gst_pocketsphinx_set_string(ps, "-lmctl", NULL);
-        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
-        gst_pocketsphinx_set_string(ps, "-allphone", NULL);
-        gst_pocketsphinx_set_string(ps, "-kws", NULL);
-        gst_pocketsphinx_set_string(ps, "-jsgf", value);
+        gst_pocketsphinx_set_string(ps, "lm", NULL);
+        gst_pocketsphinx_set_string(ps, "lmctl", NULL);
+        gst_pocketsphinx_set_string(ps, "fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "allphone", NULL);
+        gst_pocketsphinx_set_string(ps, "kws", NULL);
+        gst_pocketsphinx_set_string(ps, "jsgf", value);
         break;
     case PROP_FWDFLAT:
-        gst_pocketsphinx_set_boolean(ps, "-fwdflat", value);
+        gst_pocketsphinx_set_boolean(ps, "fwdflat", value);
         break;
     case PROP_BESTPATH:
-        gst_pocketsphinx_set_boolean(ps, "-bestpath", value);
+        gst_pocketsphinx_set_boolean(ps, "bestpath", value);
         break;
     case PROP_MAXHMMPF:
-        gst_pocketsphinx_set_int(ps, "-maxhmmpf", value);
+        gst_pocketsphinx_set_int(ps, "maxhmmpf", value);
         break;
     case PROP_MAXWPF:
-        gst_pocketsphinx_set_int(ps, "-maxwpf", value);
+        gst_pocketsphinx_set_int(ps, "maxwpf", value);
         break;
     case PROP_BEAM:
-        gst_pocketsphinx_set_double(ps, "-beam", value);
+        gst_pocketsphinx_set_double(ps, "beam", value);
         break;
     case PROP_PBEAM:
-        gst_pocketsphinx_set_double(ps, "-pbeam", value);
+        gst_pocketsphinx_set_double(ps, "pbeam", value);
         break;
     case PROP_WBEAM:
-        gst_pocketsphinx_set_double(ps, "-wbeam", value);
+        gst_pocketsphinx_set_double(ps, "wbeam", value);
         break;
     case PROP_DSRATIO:
-        gst_pocketsphinx_set_int(ps, "-ds", value);
+        gst_pocketsphinx_set_int(ps, "ds", value);
         break;
 
 
@@ -487,12 +488,12 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
         ps->latdir = g_strdup(g_value_get_string(value));
         break;
     case PROP_LM_NAME:
-        gst_pocketsphinx_set_string(ps, "-fsg", NULL);
-        gst_pocketsphinx_set_string(ps, "-lm", NULL);
-        gst_pocketsphinx_set_string(ps, "-allphone", NULL);
-        gst_pocketsphinx_set_string(ps, "-kws", NULL);
-        gst_pocketsphinx_set_string(ps, "-jsgf", NULL);
-        gst_pocketsphinx_set_string(ps, "-lmname", value);
+        gst_pocketsphinx_set_string(ps, "fsg", NULL);
+        gst_pocketsphinx_set_string(ps, "lm", NULL);
+        gst_pocketsphinx_set_string(ps, "allphone", NULL);
+        gst_pocketsphinx_set_string(ps, "kws", NULL);
+        gst_pocketsphinx_set_string(ps, "jsgf", NULL);
+        gst_pocketsphinx_set_string(ps, "lmname", value);
 
         /**
          * Chances are that lmctl is already loaded and all
@@ -501,7 +502,7 @@ gst_pocketsphinx_set_property(GObject * object, guint prop_id,
          */
 
         if (value != NULL && ps->ps) {
-    	    ps_set_search(ps->ps, g_value_get_string(value));
+    	    ps_activate_search(ps->ps, g_value_get_string(value));
         }
         break;
     default:
@@ -525,61 +526,61 @@ gst_pocketsphinx_get_property(GObject * object, guint prop_id,
         g_value_set_boxed(value, ps->ps);
         break;
     case PROP_HMM_DIR:
-        g_value_set_string(value, cmd_ln_str_r(ps->config, "-hmm"));
+        g_value_set_string(value, ps_config_str(ps->config, "hmm"));
         break;
     case PROP_LM_FILE:
-        g_value_set_string(value, cmd_ln_str_r(ps->config, "-lm"));
+        g_value_set_string(value, ps_config_str(ps->config, "lm"));
         break;
     case PROP_LMCTL_FILE:
-        g_value_set_string(value, cmd_ln_str_r(ps->config, "-lmctl"));
+        g_value_set_string(value, ps_config_str(ps->config, "lmctl"));
         break;
     case PROP_LM_NAME:
-        g_value_set_string(value, cmd_ln_str_r(ps->config, "-lmname"));
+        g_value_set_string(value, ps_config_str(ps->config, "lmname"));
         break;
     case PROP_DICT_FILE:
-        g_value_set_string(value, cmd_ln_str_r(ps->config, "-dict"));
+        g_value_set_string(value, ps_config_str(ps->config, "dict"));
         break;
     case PROP_MLLR_FILE:
-        g_value_set_string(value, cmd_ln_str_r(ps->config, "-mllr"));
+        g_value_set_string(value, ps_config_str(ps->config, "mllr"));
         break;
     case PROP_FSG_FILE:
-        g_value_set_string(value, cmd_ln_str_r(ps->config, "-fsg"));
+        g_value_set_string(value, ps_config_str(ps->config, "fsg"));
         break;
     case PROP_ALLPHONE_FILE:
-        g_value_set_string(value, cmd_ln_str_r(ps->config, "-allphone"));
+        g_value_set_string(value, ps_config_str(ps->config, "allphone"));
         break;
     case PROP_KWS_FILE:
-        g_value_set_string(value, cmd_ln_str_r(ps->config, "-kws"));
+        g_value_set_string(value, ps_config_str(ps->config, "kws"));
         break;
     case PROP_JSGF_FILE:
-        g_value_set_string(value, cmd_ln_str_r(ps->config, "-jsgf"));
+        g_value_set_string(value, ps_config_str(ps->config, "jsgf"));
         break;
     case PROP_FWDFLAT:
-        g_value_set_boolean(value, cmd_ln_boolean_r(ps->config, "-fwdflat"));
+        g_value_set_boolean(value, ps_config_bool(ps->config, "fwdflat"));
         break;
     case PROP_BESTPATH:
-        g_value_set_boolean(value, cmd_ln_boolean_r(ps->config, "-bestpath"));
+        g_value_set_boolean(value, ps_config_bool(ps->config, "bestpath"));
         break;
     case PROP_LATDIR:
         g_value_set_string(value, ps->latdir);
         break;
     case PROP_MAXHMMPF:
-        g_value_set_int(value, cmd_ln_int32_r(ps->config, "-maxhmmpf"));
+        g_value_set_int(value, ps_config_int(ps->config, "maxhmmpf"));
         break;
     case PROP_MAXWPF:
-        g_value_set_int(value, cmd_ln_int32_r(ps->config, "-maxwpf"));
+        g_value_set_int(value, ps_config_int(ps->config, "maxwpf"));
         break;
     case PROP_BEAM:
-        g_value_set_double(value, cmd_ln_float_r(ps->config, "-beam"));
+        g_value_set_double(value, ps_config_float(ps->config, "beam"));
         break;
     case PROP_PBEAM:
-        g_value_set_double(value, cmd_ln_float_r(ps->config, "-pbeam"));
+        g_value_set_double(value, ps_config_float(ps->config, "pbeam"));
         break;
     case PROP_WBEAM:
-        g_value_set_double(value, cmd_ln_float_r(ps->config, "-wbeam"));
+        g_value_set_double(value, ps_config_float(ps->config, "wbeam"));
         break;
     case PROP_DSRATIO:
-        g_value_set_int(value, cmd_ln_int32_r(ps->config, "-ds"));
+        g_value_set_int(value, ps_config_int(ps->config, "ds"));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -593,7 +594,7 @@ gst_pocketsphinx_finalize(GObject * gobject)
     GstPocketSphinx *ps = GST_POCKETSPHINX(gobject);
 
     ps_free(ps->ps);
-    cmd_ln_free_r(ps->config);
+    ps_config_free(ps->config);
     g_free(ps->last_result);
     g_free(ps->latdir);
 
@@ -609,7 +610,7 @@ gst_pocketsphinx_init(GstPocketSphinx * ps)
         gst_pad_new_from_static_template(&src_factory, "src");
 
     /* Parse default command-line options. */
-    ps->config = cmd_ln_parse_r(NULL, ps_args(), default_argc, default_argv, FALSE);
+    ps->config = ps_config_init(NULL);
     ps_default_search_args(ps->config);
 
     /* Set up pads. */
@@ -671,6 +672,7 @@ gst_pocketsphinx_chain(GstPad * pad, GstObject *parent, GstBuffer * buffer)
     GstMapInfo info;
     gboolean in_speech;
 
+    (void)pad;
     ps = GST_POCKETSPHINX(parent);
 
     /* Start an utterance for the first buffer we get */
@@ -777,8 +779,9 @@ static void
 gst_pocketsphinx_log(void *user_data, err_lvl_t lvl, const char *fmt, ...)
 {
     static const int gst_level[ERR_MAX] = {GST_LEVEL_DEBUG, GST_LEVEL_INFO,
-             GST_LEVEL_INFO, GST_LEVEL_WARNING, GST_LEVEL_ERROR, GST_LEVEL_ERROR};
+             GST_LEVEL_WARNING, GST_LEVEL_ERROR, GST_LEVEL_ERROR};
 
+    (void)user_data;
      va_list ap;
      va_start(ap, fmt);
      gst_debug_log_valist(pocketsphinx_debug, gst_level[lvl], "", "", 0, NULL, fmt, ap);
@@ -791,6 +794,7 @@ plugin_init(GstPlugin * plugin)
 {
 
     err_set_callback(gst_pocketsphinx_log, NULL);
+    err_set_loglevel(ERR_INFO);
 
     if (!gst_element_register(plugin, "pocketsphinx",
                               GST_RANK_NONE, GST_TYPE_POCKETSPHINX))
