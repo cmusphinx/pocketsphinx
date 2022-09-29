@@ -2,6 +2,7 @@ set(TEST_EXECUTABLES
   test_fsg_read
   test_fsg_jsgf
   test_fsg_write_fsm
+  test_fsg_accept
   )
 foreach(TEST_EXECUTABLE ${TEST_EXECUTABLES})
   add_executable(${TEST_EXECUTABLE} EXCLUDE_FROM_ALL ${TEST_EXECUTABLE}.c)
