@@ -278,6 +278,7 @@ importname2rulename(char *importname)
     }
 }
 
+#define RECURSION -2
 static int expand_rule(jsgf_t *grammar, jsgf_rule_t *rule);
 static int
 expand_rhs(jsgf_t *grammar, jsgf_rule_t *rule, jsgf_rhs_t *rhs)
@@ -336,8 +337,10 @@ expand_rhs(jsgf_t *grammar, jsgf_rule_t *rule, jsgf_rhs_t *rhs)
                     return -1;
                 }
                 /* Add a link back to the beginning of this rule instance */
-                E_INFO("Right recursion %s %d => %d\n", atom->name, lastnode, subrule->entry);
+                E_INFO("Right recursion %s %d => %d\n", atom->name, lastnode,
+                       subrule->entry);
                 jsgf_add_link(grammar, atom, lastnode, subrule->entry);
+                return RECURSION;
             }
             else {
                 /* Expand the subrule */
@@ -391,6 +394,9 @@ expand_rule(jsgf_t * grammar, jsgf_rule_t * rule)
         lastnode = expand_rhs(grammar, rule, rhs);
         if (lastnode == -1) {
             return -1;
+        }
+        else if (lastnode == RECURSION) {
+            /* Do nothing. */
         }
         else {
             jsgf_add_link(grammar, NULL, lastnode, rule->exit);
