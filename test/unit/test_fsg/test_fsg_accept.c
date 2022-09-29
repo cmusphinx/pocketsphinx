@@ -101,6 +101,7 @@ main(int argc, char *argv[])
     TEST_EQUAL(FALSE, fsg_model_accept(fsg, "ONE TWO WHAT IS YOUR NAME"));
     TEST_EQUAL(FALSE, fsg_model_accept(fsg, "THOUSAND WHAT IS YOUR NAME"));
     fsg_model_free(fsg);
+    logmath_free(lmath);
     
     return 0;
 }
