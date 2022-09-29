@@ -46,26 +46,6 @@
 
 #include "lm/fsg_model.h"
 
-/**
- * Adjacency list (opaque) for a state in an FSG.
- *
- * Actually we use hash tables so that random access is a bit faster.
- * Plus it allows us to make the lookup code a bit less ugly.
- */
-
-struct trans_list_s {
-    hash_table_t *null_trans;   /* Null transitions keyed by state. */
-    hash_table_t *trans;        /* Lists of non-null transitions keyed by state. */
-};
-
-/**
- * Implementation of arc iterator.
- */
-struct fsg_arciter_s {
-    hash_iter_t *itor, *null_itor;
-    gnode_t *gn;
-};
-
 #define FSG_MODEL_BEGIN_DECL		"FSG_BEGIN"
 #define FSG_MODEL_END_DECL		"FSG_END"
 #define FSG_MODEL_N_DECL			"N"
