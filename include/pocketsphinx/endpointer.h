@@ -132,6 +132,11 @@ ps_vad_t *ps_endpointer_vad(ps_endpointer_t *ep);
 #define ps_endpointer_frame_size(ep) ps_vad_frame_size(ps_endpointer_vad(ep))
 
 /**
+ * Get the frame length required by the endpointer.
+ */
+#define ps_endpointer_frame_length(ep) ps_vad_frame_length(ps_endpointer_vad(ep))
+
+/**
  * Get the sample rate required by the endpointer.
  */
 #define ps_endpointer_sample_rate(ep) ps_vad_sample_rate(ps_endpointer_vad(ep))
