@@ -1805,7 +1805,7 @@ cdef class Vad:
                         integers).  Must be of length `frame_bytes`
                         (in bytes).
         Returns:
-          (boolean) Classification as speech or not speech.
+          boolean: Classification as speech or not speech.
         Raises:
           IndexError: `buf` is of invalid size.
           ValueError: Other internal VAD error.
@@ -1924,7 +1924,7 @@ cdef class Endpointer:
                         integers).  Must be of length `frame_bytes`
                         (in bytes).
         Returns:
-          (bytes) Frame of speech data, or None if none detected.
+          bytes: Frame of speech data, or None if none detected.
         Raises:
           IndexError: `buf` is of invalid size.
           ValueError: Other internal VAD error.
@@ -1953,8 +1953,8 @@ cdef class Endpointer:
                         integers).  Must be of length `frame_bytes`
                         (in bytes) *or less*.
         Returns:
-          (bytes) Remaining speech data (could be more than one frame),
-                  or None if none detected.
+          bytes: Remaining speech data (could be more than one frame),
+          or None if none detected.
         Raises:
           IndexError: `buf` is of invalid size.
           ValueError: Other internal VAD error.
