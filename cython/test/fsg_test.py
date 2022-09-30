@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import unittest
-from pocketsphinx import LogMath, FsgModel
+from pocketsphinx import LogMath, FsgModel, Decoder
 
 
 class FsgTest(unittest.TestCase):
@@ -15,7 +15,22 @@ class FsgTest(unittest.TestCase):
         self.assertEqual(fsg.word_add("world"), 1)
 
         fsg.add_silence("<sil>", 1, 0.5)
-        # TODO: Test everything else!!!
+
+        decoder = Decoder()
+        fsg = decoder.create_fsg("mygrammar",
+                                 start_state=0, final_state=3,
+                                 transitions=[(0, 1, 0.75, "hello"),
+                                              (0, 1, 0.25, "goodbye"),
+                                              (1, 2, 0.75, "beautiful"),
+                                              (1, 2, 0.25, "cruel"),
+                                              (2, 3, 1.0, "world")])
+        self.assertTrue(fsg.accept("hello beautiful world"))
+        self.assertTrue(fsg.accept("hello cruel world"))
+        self.assertTrue(fsg.accept("goodbye beautiful world"))
+        self.assertTrue(fsg.accept("goodbye cruel world"))
+        self.assertFalse(fsg.accept("goodbye world"))
+        self.assertFalse(fsg.accept("hello world"))
+        self.assertFalse(fsg.accept("hello dead parrot"))
 
 
 if __name__ == "__main__":

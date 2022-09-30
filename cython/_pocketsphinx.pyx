@@ -656,10 +656,19 @@ cdef class FsgModel:
     def word_str(self, wid):
         return fsg_model_word_str(self.fsg, wid).decode("utf-8")
 
+    def accept(self, words):
+        return fsg_model_accept(self.fsg, words.encode("utf-8")) != 0
+
     def word_add(self, word):
         if not isinstance(word, bytes):
             word = word.encode("utf-8")
         return fsg_model_word_add(self.fsg, word)
+
+    def set_start_state(self, state):
+        self.fsg.start_state = state
+
+    def set_final_state(self, state):
+        self.fsg.final_state = state
 
     def trans_add(self, int src, int dst, int logp, int wid):
         fsg_model_trans_add(self.fsg, src, dst, logp, wid)
@@ -889,7 +898,7 @@ cdef class Decoder:
         """
         cdef const char *cmn = ps_get_cmn(self._ps, update)
         return cmn.decode("utf-8")
-    
+
     def set_cmn(self, cmn):
         """Get current cepstral mean.
 
@@ -899,7 +908,7 @@ cdef class Decoder:
         cdef int rv = ps_set_cmn(self._ps, cmn.encode("utf-8"))
         if rv != 0:
             raise ValueError("Invalid CMN string")
-        
+
     def start_stream(self):
         """Reset noise statistics.
 
@@ -1560,7 +1569,7 @@ cdef class Decoder:
     def logmath(self):
         """Read-only property containing LogMath object for this decoder."""
         return self.get_logmath()
-    
+
     def get_logmath(self):
         """Get the LogMath object for this decoder.
 
@@ -1713,7 +1722,7 @@ cdef class Decoder:
 
     def get_alignment(self):
         """Get the current sub-word alignment, if any.
-        
+
         This will return something if `ps_set_alignment` has been
         called, but it will not contain an actual *alignment*
         (i.e. phone and state durations) unless a second pass of
@@ -2024,7 +2033,7 @@ cdef class Alignment:
     each of their children, as described in `AlignmentEntry`.
     """
     cdef ps_alignment_t *_al
-    
+
     @staticmethod
     cdef create_from_ptr(ps_alignment_t *al):
         cdef Alignment self = Alignment.__new__(Alignment)

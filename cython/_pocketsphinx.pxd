@@ -211,6 +211,7 @@ cdef extern from "lm/fsg_model.h":
     int fsg_model_word_add(fsg_model_t *fsg, const char *word)
     int fsg_model_word_id(fsg_model_t *fsg, const char *word)
     const char *fsg_model_word_str(fsg_model_t *fsg, int wid)
+    int fsg_model_accept(fsg_model_t *fsg, const char *words)
     void fsg_model_trans_add(fsg_model_t * fsg,
                              int source, int dest, int logp, int wid)
     int fsg_model_null_trans_add(fsg_model_t * fsg, int source, int dest,
