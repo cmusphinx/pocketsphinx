@@ -1104,7 +1104,7 @@ cdef class Decoder:
         """
         cdef float lw
 
-        lw = ps_config_float(self._config.config, "-lw")
+        lw = ps_config_float(self._config.config, "lw")
         return FsgModel.readfile(filename, self.get_logmath(), lw)
 
     def read_jsgf(self, str filename):
@@ -1120,7 +1120,7 @@ cdef class Decoder:
         """
         cdef float lw
 
-        lw = ps_config_float(self._config.config, "-lw")
+        lw = ps_config_float(self._config.config, "lw")
         return FsgModel.jsgf_read_file(filename, self.get_logmath(), lw)
 
     def create_fsg(self, str name, int start_state, int final_state, transitions):
@@ -1158,7 +1158,7 @@ cdef class Decoder:
         cdef float lw
         cdef int wid
 
-        lw = ps_config_float(self._config.config, "-lw")
+        lw = ps_config_float(self._config.config, "lw")
         lmath = self.get_logmath()
         n_state = max(itertools.chain(*((t[0], t[1]) for t in transitions))) + 1
         fsg = FsgModel(name, lmath, lw, n_state)
@@ -1216,7 +1216,7 @@ cdef class Decoder:
             if rule == NULL:
                 jsgf_grammar_free(jsgf)
                 raise RuntimeError("No public rules found in JSGF")
-        lw = ps_config_float(self._config.config, "-lw")
+        lw = ps_config_float(self._config.config, "lw")
         lmath = ps_get_logmath(self._ps)
         cdef fsg_model_t *cfsg = jsgf_build_fsg(jsgf, rule, lmath, lw)
         jsgf_grammar_free(jsgf)
