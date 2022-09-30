@@ -164,53 +164,6 @@ fsg_model_t *fsg_model_init(char const *name, logmath_t *lmath,
                             float32 lw, int32 n_state);
 
 /**
- * Read a word FSG from the given file and return a pointer to the structure
- * created.  Return NULL if any error occurred.
- * 
- * File format:
- * 
- * <pre>
- *   Any number of comment lines; ignored
- *   FSG_BEGIN [<fsgname>]
- *   N <#states>
- *   S <start-state ID>
- *   F <final-state ID>
- *   T <from-state> <to-state> <prob> [<word-string>]
- *   T ...
- *   ... (any number of state transitions)
- *   FSG_END
- *   Any number of comment lines; ignored
- * </pre>
- * 
- * The FSG spec begins with the line containing the keyword FSG_BEGIN.
- * It has an optional fsg name string.  If not present, the FSG has the empty
- * string as its name.
- * 
- * Following the FSG_BEGIN declaration is the number of states, the start
- * state, and the final state, each on a separate line.  States are numbered
- * in the range [0 .. <numberofstate>-1].
- * 
- * These are followed by all the state transitions, each on a separate line,
- * and terminated by the FSG_END line.  A state transition has the given
- * probability of being taken, and emits the given word.  The word emission
- * is optional; if word-string omitted, it is an epsilon or null transition.
- * 
- * Comments can also be embedded within the FSG body proper (i.e. between
- * FSG_BEGIN and FSG_END): any line with a # character in col 1 is treated
- * as a comment line.
- * 
- * Return value: a new fsg_model_t structure if the file is successfully
- * read, NULL otherwise.
- */
-POCKETSPHINX_EXPORT
-fsg_model_t *fsg_model_readfile(const char *file, logmath_t *lmath, float32 lw);
-
-/**
- * Like fsg_model_readfile(), but from an already open stream.
- */
-fsg_model_t *fsg_model_read(FILE *fp, logmath_t *lmath, float32 lw);
-
-/**
  * Add a word to the FSG vocabulary.
  *
  * @return Word ID for this new word.
@@ -315,50 +268,6 @@ int fsg_model_add_silence(fsg_model_t * fsg, char const *silword,
 int fsg_model_add_alt(fsg_model_t * fsg, char const *baseword,
                       char const *altword);
 
-/**
- * Write FSG to a file.
- */
-POCKETSPHINX_EXPORT
-void fsg_model_write(fsg_model_t *fsg, FILE *fp);
-
-/**
- * Write FSG to a file.
- */
-POCKETSPHINX_EXPORT
-void fsg_model_writefile(fsg_model_t *fsg, char const *file);
-
-/**
- * Write FSG to a file in AT&T FSM format.
- */
-POCKETSPHINX_EXPORT
-void fsg_model_write_fsm(fsg_model_t *fsg, FILE *fp);
-
-/**
- * Write FSG to a file in AT&T FSM format.
- */
-POCKETSPHINX_EXPORT
-void fsg_model_writefile_fsm(fsg_model_t *fsg, char const *file);
-
-/**
- * Write FSG symbol table to a file (for AT&T FSM)
- */
-POCKETSPHINX_EXPORT
-void fsg_model_write_symtab(fsg_model_t *fsg, FILE *file);
-
-/**
- * Write FSG symbol table to a file (for AT&T FSM)
- */
-POCKETSPHINX_EXPORT
-void fsg_model_writefile_symtab(fsg_model_t *fsg, char const *file);
-
-/**
- * Check that an FSG accepts a word sequence
- *
- * @param words Whitespace-separated word sequence
- * @return 1 if accept, 0 if not accept, -1 if "U.D.O."
- */
-POCKETSPHINX_EXPORT
-int fsg_model_accept(fsg_model_t *fsg, char const *words);
 
 #ifdef __cplusplus
 }
