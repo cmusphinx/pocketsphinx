@@ -464,6 +464,7 @@ cdef extern from "pocketsphinx/endpointer.h":
     int ps_endpointer_free(ps_endpointer_t *ep)
     ps_vad_t *ps_endpointer_vad(ps_endpointer_t *ep)
     size_t ps_endpointer_frame_size(ps_endpointer_t *ep)
+    double ps_endpointer_frame_length(ps_endpointer_t *ep)
     int ps_endpointer_sample_rate(ps_endpointer_t *ep)
     const short *ps_endpointer_process(ps_endpointer_t *ep,
                                        const short *frame)
