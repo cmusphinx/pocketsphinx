@@ -71,6 +71,10 @@ Other classes
    :members:
    :undoc-members:
 
+.. autoclass:: pocketsphinx.Lattice
+   :members:
+   :undoc-members:
+
 .. autoclass:: pocketsphinx.Segment
    :no-members:
 

@@ -31,13 +31,13 @@ cdef class Config:
 
         config = Config(hmm="path/to/things", dict="my.dict")
 
-    It can also be initialized by parsing JSON (either as bytes or str):
+    It can also be initialized by parsing JSON (either as bytes or str)::
 
         config = Config.parse_json('{"hmm": "path/to/things",
                                      "dict": "my.dict"}')
 
     The "parser" is very much not strict, so you can also pass a sort
-    of pseudo-YAML to it, e.g.:
+    of pseudo-YAML to it, e.g.::
 
         config = Config.parse_json('hmm: path/to/things, dict: my.dict')
 
@@ -49,7 +49,7 @@ cdef class Config:
     `Config` directly (as opposed to parsing JSON), `hmm`, `lm`, and
     `dict` are set to the default models (some kind of US English
     models of unknown origin + CMUDict). You can prevent this by
-    passing `None` for any of these parameters, e.g.:
+    passing `None` for any of these parameters, e.g.::
 
         config = Config(lm=None)  # Do not load a language model
 
@@ -60,7 +60,7 @@ cdef class Config:
     initialize a `Decoder` or `Config` with any of these (and not
     `lm`), the default `lm` value will be removed.  This is not the
     case if you decide to set one of them in an existing `Config`, so
-    in that case you must make sure to set `lm` to `None`:
+    in that case you must make sure to set `lm` to `None`::
 
         config["jsgf"] = "spam_eggs_and_spam.gram"
         config["lm"] = None
@@ -404,7 +404,7 @@ cdef class Segment:
     Attributes:
       word(str): Name of word.
       start_frame(int): Index of start frame.
-      end_frame(int): Index of start frame.
+      end_frame(int): Index of end frame (inclusive!)
       ascore(float): Acoustic score (density).
       lscore(float): Language model score (joint probability).
       lback(int): Language model backoff order.
@@ -785,7 +785,7 @@ cdef class Decoder:
     Note that, as described in `Config`, `hmm`, `lm`, and `dict` are
     set to the default ones (some kind of US English models of unknown
     origin + CMUDict) if not defined.  You can prevent this by passing
-    `None` for any of these parameters, e.g.:
+    `None` for any of these parameters, e.g.::
 
         ps = Decoder(lm=None)  # Do not load a language model
 
@@ -797,7 +797,7 @@ cdef class Decoder:
     `lm`), the default `lm` value will be removed.
 
     You can also pass a pre-defined `Config` object as the only
-    argument to the constructor, e.g.:
+    argument to the constructor, e.g.::
 
         config = Config.parse_json(json)
         ps = Decoder(config)
@@ -1391,14 +1391,18 @@ cdef class Decoder:
 
     @property
     def config(self):
-        """Configuration object."""
+        """Read-only property containing configuration object."""
         return self._config
 
     def get_config(self):
         """Get current configuration.
 
+        DEPRECATED: This does the same thing as simply accessing
+        `config` and is here for historical reasons.
+
         Returns:
             Config: Current configuration.
+
         """
         return self._config
 
@@ -1554,11 +1558,14 @@ cdef class Decoder:
 
     @property
     def logmath(self):
-        """LogMath object for this decoder."""
+        """Read-only property containing LogMath object for this decoder."""
         return self.get_logmath()
     
     def get_logmath(self):
         """Get the LogMath object for this decoder.
+
+        DEPRECATED: This does the same thing as simply accessing
+        `logmath` and is here for historical reasons.
 
         Returns:
             LogMath: Current log-math computation object.
@@ -1666,7 +1673,7 @@ cdef class Decoder:
         obviously not all of them.  If you want to obtain phone or
         state level alignments, you must run a second pass of
         alignment, which is what this function sets you up to do.  The
-        sequence is something like this:
+        sequence is something like this::
 
             decoder.set_align_text("hello world")
             decoder.start_utt()
@@ -1750,12 +1757,6 @@ cdef class Vad:
                            `frame_bytes` and `frame_length`
                            attributes to determine the input size.
 
-    Attributes:
-      sample_rate(int): Sampling rate of input (default is 16000)
-      frame_bytes(int): Number of bytes in a frame accepted by `process`.
-      frame_length(float): Length of a frame (*may be different from
-                           the one requested in the constructor*!)
-
     Raises:
       ValueError: Invalid input parameter (see above).
     """
@@ -1779,14 +1780,21 @@ cdef class Vad:
 
     @property
     def frame_bytes(self):
+        """int: Number of bytes (not samples) required in an input frame.
+
+        You *must* pass input of this size, as `bytes`, to the `Vad`.
+        """
         return ps_vad_frame_size(self._vad) * 2
 
     @property
     def frame_length(self):
+        """float: Length of a frame in seconds (*may be different from the one
+        requested in the constructor*!)"""
         return ps_vad_frame_length(self._vad)
 
     @property
     def sample_rate(self):
+        """int: Sampling rate of input data."""
         return ps_vad_sample_rate(self._vad)
 
     def is_speech(self, frame, sample_rate=None):
@@ -1833,15 +1841,6 @@ cdef class Endpointer:
                            `frame_bytes` and `frame_length`
                            attributes to determine the input size.
 
-    Attributes:
-      sample_rate(int): Sampling rate of input (default is 16000)
-      frame_bytes(int): Number of bytes in a frame accepted by `process`.
-      frame_length(float): Length of a frame (*may be different from
-                           the one requested in the constructor*!)
-      in_speech(boolean): Are we currently in a speech region?
-      speech_start(float): Start of previous speech segment.
-      speech_end(float): End of previous speech segment.
-
     Raises:
       ValueError: Invalid input parameter.  Also raised if the ratio
                   makes it impossible to do endpointing (i.e. it
@@ -1865,22 +1864,56 @@ cdef class Endpointer:
 
     @property
     def frame_bytes(self):
+        """int: Number of bytes (not samples) required in an input frame.
+
+        You *must* pass input of this size, as `bytes`, to the `Endpointer`.
+        """
         return ps_endpointer_frame_size(self._ep) * 2
 
     @property
+    def frame_length(self):
+        """float: Length of a frame in secondsq (*may be different from the one
+        requested in the constructor*!)"""
+        return ps_endpointer_frame_length(self._ep)
+
+    @property
     def sample_rate(self):
+        """int: Sampling rate of input data."""
         return ps_endpointer_sample_rate(self._ep)
 
     @property
     def in_speech(self):
+        """bool: Is the endpointer currently in a speech segment?
+
+        To detect transitions from non-speech to speech, check this
+        before `process`.  If it was `False` but `process` returns
+        data, then speech has started::
+
+            prev_in_speech = ep.in_speech
+            speech = ep.process(frame)
+            if speech is not None:
+                if prev_in_speech:
+                    print("Speech started at", ep.speech_start)
+
+        Likewise, to detect transitions from speech to non-speech,
+        call this *after* `process`.  If `process` returned data but
+        this returns `False`, then speech has stopped::
+
+            speech = ep.process(frame)
+            if speech is not None:
+                if not ep.in_speech:
+                    print("Speech ended at", ep.speech_end)
+        """
         return ps_endpointer_in_speech(self._ep)
 
     @property
     def speech_start(self):
+        """float: Start time of current speech region."""
         return ps_endpointer_speech_start(self._ep)
 
     @property
     def speech_end(self):
+        """float: End time of current speech region."""
         return ps_endpointer_speech_end(self._ep)
 
     def process(self, frame):
@@ -1910,6 +1943,11 @@ cdef class Endpointer:
     def end_stream(self, frame):
         """Read a final frame of data and return speech if any.
 
+        This function should only be called at the end of the input
+        stream (and then, only if you are currently in a speech
+        region).  It will return any remaining speech data detected by
+        the endpointer.
+
         Args:
           frame(bytes): Buffer containing speech data (16-bit signed
                         integers).  Must be of length `frame_bytes`
@@ -1920,6 +1958,7 @@ cdef class Endpointer:
         Raises:
           IndexError: `buf` is of invalid size.
           ValueError: Other internal VAD error.
+
         """
         cdef const unsigned char[:] cframe = frame
         cdef Py_ssize_t n_samples = len(cframe) // 2
@@ -1936,6 +1975,24 @@ cdef class Endpointer:
         return (<const unsigned char *>&outbuf[0])[:out_n_samples * 2]
 
 cdef class AlignmentEntry:
+    """Entry (word, phone, state) in an alignment.
+
+    Iterating over this will iterate over its children (i.e. the
+    phones in a word or the states in a phone) if any.  For example::
+
+        for word in decoder.get_alignment():
+            print("%s from %.2f to %.2f" % (word.name, word.start,
+                                            word.start + word.duration))
+            for phone in word:
+                print("%s at %.2f duration %.2f" %
+                      (phone.name, phone.start, phone.duration))
+
+    Attributes:
+      name(str): Name of segment (word, phone name, state id)
+      start(int): Index of start frame.
+      duration(int): Duration in frames.
+      score(float): Acoustic score (density).
+    """
     cdef public int start
     cdef public int duration
     cdef public int score
@@ -1960,9 +2017,11 @@ cdef class AlignmentEntry:
         # FIXME: will leak memory if iteration stopped short!
 
 cdef class Alignment:
-    """Sub-word alignment alignment.
+    """Sub-word alignment as returned by `get_alignment`.
 
-    For the moment this is read-only.
+    For the moment this is read-only.  You are able to iterate over
+    the words, phones, or states in it, as well as sub-iterating over
+    each of their children, as described in `AlignmentEntry`.
     """
     cdef ps_alignment_t *_al
     
