@@ -7,17 +7,33 @@ default values.
 
 .. method:: Config(*args, **kwargs)
 
-   Create a PocketSphinx configuration.  This constructor can be
-   called with a list of arguments corresponding to a command-line, in
-   which case the parameter names should be prefixed with a '-'.
-   Otherwise, pass the keyword arguments described below.  For
-   example, the following invocations are equivalent::
+   Create a PocketSphinx configuration from keyword arguments
+   described below.  For example::
 
-        config = Config("-hmm", "path/to/things", "-dict", "my.dict")
         config = Config(hmm="path/to/things", dict="my.dict")
 
    The same keyword arguments can also be passed directly to the
    constructor for `pocketsphinx.Decoder`.
+
+   Many parameters have default values.  Also, when constructing a
+   `Config` directly (as opposed to parsing JSON), `hmm`, `lm`, and
+   `dict` are set to the default models (some kind of US English
+   models of unknown origin + CMUDict). You can prevent this by
+   passing `None` for any of these parameters, e.g.::
+
+       config = Config(lm=None)  # Do not load a language model
+
+   Decoder initialization **will fail** if more than one of `lm`,
+   `jsgf`, `fsg`, `keyphrase`, `kws`, `allphone`, or `lmctl` are set
+   in the configuration.  To make life easier, and because there is no
+   possible case in which you would do this intentionally, if you
+   initialize a `Decoder` or `Config` with any of these (and not
+   `lm`), the default `lm` value will be removed.  This is not the
+   case if you decide to set one of them in an existing `Config`, so
+   in that case you must make sure to set `lm` to `None`::
+
+        config["jsgf"] = "spam_eggs_and_spam.gram"
+        config["lm"] = None
 
 
    :keyword str hmm: Directory containing acoustic model files.
