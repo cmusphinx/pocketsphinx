@@ -42,3 +42,11 @@ for wav in $data/librivox/*.wav; do \
     compare_table "match" $data/librivox/$utt.phone.json $utt.phone.json 1000000
     compare_table "match" $data/librivox/$utt.state.json $utt.state.json 1000000
 done
+
+run_program pocketsphinx \
+            -loglevel INFO \
+            -hmm $model/en-us/en-us \
+            -lm $model/en-us/en-us.lm.bin \
+            -dict $model/en-us/cmudict-en-us.dict align $data/null.wav " " \
+            2>>$bn.log >null-align.json
+compare_table "match" $data/null-align.json null-align.json 1000000

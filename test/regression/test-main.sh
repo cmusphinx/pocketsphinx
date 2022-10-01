@@ -29,3 +29,11 @@ fi
 
 # Check the decoding results
 compare_table "match" $ref $bn.json 1000000
+
+run_program pocketsphinx \
+            -loglevel INFO \
+            -hmm $model/en-us/en-us \
+            -lm $model/en-us/en-us.lm.bin \
+            -dict $model/en-us/cmudict-en-us.dict single $data/null.wav \
+            2>>$bn.log >null.json
+compare_table "match" $data/null.json null.json 1000000
