@@ -272,17 +272,20 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder, ps_alignment_t *alignment
     else
         st = ps_endpointer_speech_start(ep);
     if (alignment) {
-        ps_alignment_iter_t *itor;
-        for (itor = ps_alignment_words(alignment);
-             itor; itor = ps_alignment_iter_next(itor)) {
+        ps_alignment_iter_t *itor = ps_alignment_words(alignment);
+        if (itor == NULL)
+            maxlen++; /* ] at end */
+        for (; itor; itor = ps_alignment_iter_next(itor)) {
             maxlen += format_seg_align(NULL, 0, itor, st, frate,
                                        lmath, state_align);
             maxlen++; /* , or ] at end */
         }
     }
     else {
-        ps_seg_t *itor;
-        for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
+        ps_seg_t *itor = ps_seg_iter(decoder);
+        if (itor == NULL)
+            maxlen++; /* ] at end */
+        for (; itor; itor = ps_seg_next(itor)) {
             maxlen += format_seg(NULL, 0, itor, st, frate, lmath);
             maxlen++; /* , or ] at end */
         }
@@ -315,8 +318,12 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder, ps_alignment_t *alignment
         }
     }
     else {
-        ps_seg_t *itor;
-        for (itor = ps_seg_iter(decoder); itor; itor = ps_seg_next(itor)) {
+        ps_seg_t *itor = ps_seg_iter(decoder);
+        if (itor == NULL) {
+            *ptr++ = ']'; /* Gets overwritten below... */
+            maxlen--;
+        }
+        for (; itor; itor = ps_seg_next(itor)) {
             assert(maxlen > 0);
             len = format_seg(ptr, maxlen, itor, st, frate, lmath);
             ptr += len;
