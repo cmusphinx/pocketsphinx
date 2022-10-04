@@ -10,13 +10,15 @@
  *
  * This file shows how to use PocketSphinx to recognize a single input
  * file.  To compile it, assuming you have built the library as in
- * \ref unix_install, you can run:
+ * \ref unix_install "these directions", you can run:
  *
  *     cmake --build build --target simple
  *
  * Alternately, if PocketSphinx is installed system-wide, you can run:
  *
  *     gcc -o simple simple.c $(pkg-config --libs --cflags pocketsphinx)
+ *
+ *
  */
 
 #include <pocketsphinx.h>

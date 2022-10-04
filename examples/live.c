@@ -13,13 +13,15 @@
  *
  * This file shows how to use PocketSphinx to recognize a single input
  * file.  To compile it, assuming you have built the library as in
- * \ref unix_install, you can run:
+ * \ref unix_install "these directions", you can run:
  *
  *     cmake --build build --target live
  *
  * Alternately, if PocketSphinx is installed system-wide, you can run:
  *
  *     gcc -o live live.c $(pkg-config --libs --cflags pocketsphinx)
+ *
+ *
  */
 #include <pocketsphinx.h>
 #include <signal.h>
@@ -61,6 +63,7 @@ main(int argc, char *argv[])
     short *frame;
     size_t frame_size;
 
+    (void)argc; (void)argv;
     config = ps_config_init(NULL);
     ps_default_search_args(config);
     if ((decoder = ps_init(config)) == NULL)
