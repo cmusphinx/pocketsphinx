@@ -478,14 +478,17 @@ int ps_reinit_feat(ps_decoder_t *ps, ps_config_t *config);
  * This is the string representation of the current cepstral mean,
  * which represents the acoustic channel conditions in live
  * recognition.  This can be used to initialize the decoder with the
- * `-cmninit` flag.
+ * `cmninit` option, e.g.:
+ *
+ *     config = ps_config_parse_json(NULL, "cmninit: 42,-1,0");
  *
  * @param ps Decoder
  * @param update Update the cepstral mean using data processed so far.
  * @return String representation of cepstral mean, as
- *         `-ceplen` comma-separated numbers.  This pointer is owned
- *         by the decoder and only valid until the next call to
- *         ps_get_cmn(), ps_set_cmn() or ps_end_utt().
+ *         `ps_config_get_int(config, "ceplen")` comma-separated
+ *         numbers.  This pointer is owned by the decoder and only
+ *         valid until the next call to ps_get_cmn(), ps_set_cmn() or
+ *         ps_end_utt().
  */
 POCKETSPHINX_EXPORT
 const char *ps_get_cmn(ps_decoder_t *ps, int update);
@@ -493,15 +496,17 @@ const char *ps_get_cmn(ps_decoder_t *ps, int update);
 /**
  * Set the current cepstral mean from a string.
  *
- * This does the same thing as setting `-cmninit` and running
- * `ps_reinit_feat()` but is more efficient, and can also be
- * done in the middle of an utterance if you like.
+ * This does the same thing as setting `cmninit` with
+ * ps_config_set_string() and running `ps_reinit_feat()` but is more
+ * efficient, and can also be done in the middle of an utterance if
+ * you like.
  *
  * @param ps Decoder
- * @param cmn String representation of cepstral mean, as
- *            up to `-ceplen` comma-separated numbers (any
- *            missing values will be zero-filled).
- * @return 0 for success of -1 for invalid input.
+
+ * @param cmn String representation of cepstral mean, as up to
+ *            `ps_config_get_int(config, "ceplen")` -separated numbers
+ *            (any missing values will be zero-filled).  @return 0 for
+ *            success of -1 for invalid input.
  */
 POCKETSPHINX_EXPORT
 int ps_set_cmn(ps_decoder_t *ps, const char *cmn);
@@ -975,7 +980,7 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * @mainpage PocketSphinx API Documentation
  * @author David Huggins-Daines <dhdaines@gmail.com>
  * @version 5.0.0
- * @date October 3, 2022
+ * @date October 4, 2022
  *
  * @section intro_sec Introduction
  *
@@ -990,21 +995,9 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * for you once you have installed C++ and CMake support as described
  * at https://code.visualstudio.com/docs/languages/cpp
  *
- * @subsection python_install Python module install
- *
  * The easiest way to program PocketSphinx is with the Python module.
- * This can be installed in a
- * [VirtualEnv](https://docs.python.org/3/library/venv.html) or
- * [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html)
- * environment without affecting the rest of your system.  For
- * example, from the *top-level source directory*:
- *
- *     python3 -m venv ~/ve_pocketsphinx
- *     . ~/ve_pocketsphinx/bin/activate
- *     pip install .
- *
- * There is no need to create a separate build directory as `pip` will
- * do this for you.
+ * See http://pocketsphinx.readthedocs.io/ for installation and usage
+ * instructions.
  *
  * @subsection unix_install Unix-like systems
  *
@@ -1026,11 +1019,6 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  *
  *     cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/.local
  *
- * In this case you may also need to set the `LD_LIBRARY_PATH`
- * environment variable so that the PocketSphinx library can be found:
- *
- *     export LD_LIBRARY_PATH=$HOME/.local/lib
- *
  * @subsection windows_install Windows
  *
  * On Windows, the process is similar, but you will need to tell CMake
@@ -1038,16 +1026,51 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * many of them.  The build is known to work with `nmake` but it is
  * easiest just to use Visual Studio Code, which should automatically
  * detect and offer to run the build when you add the source directory
- * to your list of directories.  Once built, you will find the DLL and
- * EXE files in `build\Debug` or `build\Release` depending on your
- * build type.  If the EXE files do not run, you need to ensure that
- * `pocketsphinx.dll` is located in the same directory as them.
+ * to your list of directories.  Once built, you will find the EXE
+ * files in `build\Debug` or `build\Release` depending on your build
+ * type.
+ *
+ * @subsection build_options Compilation options
+ *
+ * By default, PocketSphinx does *not* build shared libraries, as
+ * there are not very many executables, and the library is quite smol.
+ * If you insist on building them, you can add `BUILD_SHARED_LIBS=ON`
+ * to the CMake configuration.  This is done either in the CMake GUI,
+ * in Visual Studio Code, or with the `-D` option to the first CMake
+ * command-line above, e.g.:
+ *
+ *     cmake -S. -B build -DBUILD_SHARED_LIBS=ON
+ *
+ * GStreamer support is not built by default, but can be enabled with
+ * `BUILD_GSTREAMER=ON`.
+ *
+ * PocketSphinx uses a mixture of fixed and floating-point computation
+ * by default, but can be configured to use fixed-point (nearly)
+ * exclusively with `FIXED_POINT=ON`.
  *
  * @section programming_sec Using the Library
  *
- * The Python interface is documented at
- * http://pocketsphinx.readthedocs.io/ where you will find a quick
- * start guide as well as a full API reference.
+ * Minimally, to do speech recognition, you must first create a
+ * configuration, using `ps_config_t` and its associated functions.
+ * This configuration is then passed to ps_init() to initialize the
+ * decoder.  You must (unfortunately) "free" the configuration with
+ * ps_config_free() to avoid memory leaks.
+ *
+ * At this point, you can start an "utterance" (a section of speech
+ * you wish to recognize) with ps_start_utt() and pass audio data to
+ * the decoder with ps_process_raw().  When finished, call
+ * ps_end_utt() to finalize recognition.  The result can then be
+ * obtained with ps_get_hyp().  To get a detailed word segmentation,
+ * use ps_seg_iter().  To get the N-best results, use ps_nbest().
+ *
+ * A concrete example can be found in \ref simple.c.
+ *
+ * You may, however, wish to do more interesting things like
+ * segmenting and recognizing speech from an audio stream.  As
+ * described below, PocketSphinx will *not* handle the details of
+ * microphone input for you, because doing this in a reliable and
+ * portable way is outside the scope of a speech recognizer.  If you
+ * have `sox`, you can use the method shown in \ref live.c.
  *
  * @section faq_sec Frequently Asked Questions
  *
@@ -1074,7 +1097,7 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * not appropriate for the task, domain, dialect, or whatever it is
  * you're trying to recognize.  You may wish to consider writing a
  * JSGF grammar and using it instead of the default language model
- * (with the `-jsgf` flag).  Or you can get an N-best list or word
+ * (with the `jsgf` parameter).  Or you can get an N-best list or word
  * lattice and rescore it with a better language model, such as a
  * recurrent neural network or a human being.
  *
@@ -1083,13 +1106,12 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * problem with the input audio.  The sampling rate could be wrong, or
  * even if it's correct, you may have narrow-band data.  Try to look
  * at the spectrogram (Audacity can show you this) and see if it looks
- * empty or flat below the frequency in the `-upperf` flag.
+ * empty or flat below the frequency in the `upperf` parameter.
  * Alternately it could just be very noisy.  In particular, if the
  * noise consists of other people talking, automatic speech
  * recognition will nearly always fail.
  *
- * @subsection faq_tech Why don't you support (pick one or more: WFST,
- * fMLLR, SAT, DNN, CTC, LAS, CNN, RNN, LSTM, etc)?
+ * @subsection faq_tech Why don't you support (pick one or more: WFST, fMLLR, SAT, DNN, CTC, LAS, CNN, RNN, LSTM, etc)?
  *
  * Not because there's anything wrong with those things (except LAS,
  * which is kind of a dumb idea) but simply because PocketSphinx does
