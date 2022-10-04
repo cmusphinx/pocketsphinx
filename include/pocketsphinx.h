@@ -917,8 +917,8 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
 /**
  * @mainpage PocketSphinx API Documentation
  * @author David Huggins-Daines <dhdaines@gmail.com>
- * @version 5.0.0rc5
- * @date September 28, 2022
+ * @version 5.0.0
+ * @date October 3, 2022
  *
  * @section intro_sec Introduction
  *
@@ -989,7 +989,7 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * @section programming_sec Using the Library
  *
  * The Python interface is documented at
- * http://pocketsphinx.readthedocs.io/, where you will find a quick
+ * http://pocketsphinx.readthedocs.io/ where you will find a quick
  * start guide as well as a full API reference.
  *
  * @section faq_sec Frequently Asked Questions
