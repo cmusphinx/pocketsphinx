@@ -74,7 +74,6 @@ file_exists(const char *path)
     return (tmp != NULL);
 }
 
-#ifdef MODELDIR
 static int
 hmmdir_exists(const char *path)
 {
@@ -86,7 +85,6 @@ hmmdir_exists(const char *path)
     ckd_free(mdef);
     return (tmp != NULL);
 }
-#endif
 
 static void
 ps_expand_file_config(ps_config_t *config, const char *arg,
@@ -161,49 +159,64 @@ ps_find_search(ps_decoder_t *ps, char const *name)
 const char *
 ps_default_modeldir(void)
 {
+    const char *modeldir = getenv("POCKETSPHINX_PATH");
 #ifdef MODELDIR
-    return MODELDIR;
-#else
-    return NULL;
+    if (modeldir == NULL)
+        modeldir = MODELDIR;
 #endif
+    return modeldir;
 }
 
 /* Set default acoustic and language models if they are not defined in configuration. */
 void
 ps_default_search_args(ps_config_t *config)
 {
-#ifdef MODELDIR
-    const char *hmmdir = ps_config_str(config, "hmm");
-    const char *lmfile = ps_config_str(config, "lm");
-    const char *dictfile = ps_config_str(config, "dict");
+    const char *modeldir = ps_default_modeldir();
 
-    E_INFO("Looking for default model in " MODELDIR "\n");
-    if (hmmdir == NULL && hmmdir_exists(MODELDIR "/en-us/en-us")) {
-        hmmdir = MODELDIR "/en-us/en-us";
-        E_INFO("Loading default acoustic model from %s\n", hmmdir);
-        ps_config_set_str(config, "hmm", hmmdir);
-    }
+    if (modeldir) {
+        const char *hmmdir = ps_config_str(config, "hmm");
+        const char *lmfile = ps_config_str(config, "lm");
+        const char *dictfile = ps_config_str(config, "dict");
+        int maxlen;
+        char *path;
+    
+        maxlen = snprintf(NULL, 0, "%s/en-us/cmudict-en-us.dict", modeldir);
+        if (maxlen < 0)
+            E_FATAL_SYSTEM("snprintf() failed, giving up all hope");
+        path = ckd_malloc(++maxlen);
 
-    if (lmfile == NULL && !ps_config_str(config, "fsg")
-        && !ps_config_str(config, "jsgf")
-        && !ps_config_str(config, "lmctl")
-        && !ps_config_str(config, "kws")
-        && !ps_config_str(config, "keyphrase")
-        && file_exists(MODELDIR "/en-us/en-us.lm.bin")) {
-        lmfile = MODELDIR "/en-us/en-us.lm.bin";
-        E_INFO("Loading default language model from %s\n", lmfile);
-        ps_config_set_str(config, "lm", lmfile);
-    }
+        E_INFO("Looking for default model in %s\n", modeldir);
+        snprintf(path, maxlen, "%s/en-us/en-us", modeldir);
+        if (hmmdir == NULL && hmmdir_exists(path)) {
+            hmmdir = path;
+            E_INFO("Loading default acoustic model from %s\n", hmmdir);
+            ps_config_set_str(config, "hmm", hmmdir);
+        }
 
-    if (dictfile == NULL && file_exists(MODELDIR "/en-us/cmudict-en-us.dict")) {
-        dictfile = MODELDIR "/en-us/cmudict-en-us.dict";
-        E_INFO("Loading default dictionary from %s\n", dictfile);
-        ps_config_set_str(config, "dict", dictfile);
+        snprintf(path, maxlen, "%s/en-us/en-us.lm.bin", modeldir);
+        if (lmfile == NULL && !ps_config_str(config, "fsg")
+            && !ps_config_str(config, "jsgf")
+            && !ps_config_str(config, "lmctl")
+            && !ps_config_str(config, "kws")
+            && !ps_config_str(config, "keyphrase")
+            && file_exists(path)) {
+            lmfile = path;
+            E_INFO("Loading default language model from %s\n", lmfile);
+            ps_config_set_str(config, "lm", lmfile);
+        }
+
+        snprintf(path, maxlen, "%s/en-us/cmudict-en-us.dict", modeldir);
+        if (dictfile == NULL && file_exists(path)) {
+            dictfile = path;
+            E_INFO("Loading default dictionary from %s\n", dictfile);
+            ps_config_set_str(config, "dict", dictfile);
+        }
+        ckd_free(path);
     }
-#else
-    (void)config;
-    E_INFO("No system default model directory exists.\n");
-#endif
+    else
+        E_INFO("No system default model directory exists "
+               "and POCKETSPHINX_PATH is not set."
+               "(Python users can probably ignore this message)\n");
 }
 
 int

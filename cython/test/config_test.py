@@ -109,6 +109,10 @@ class TestConfigHash(unittest.TestCase):
         self.assertEqual(config["hmm"], get_model_path("en-us/en-us"))
         self.assertEqual(config["lm"], None)
         self.assertEqual(config["dict"], get_model_path("en-us/cmudict-en-us.dict"))
+        # Check that POCKETSPHINX_PATH is respected
+        os.environ["POCKETSPHINX_PATH"] = MODELDIR
+        config = Config()
+        self.assertEqual(config["hmm"], os.path.join(MODELDIR, "en-us/en-us"))
 
     def test_stupid_config_hacks(self):
         """Test various backward-compatibility special cases."""

@@ -66,11 +66,17 @@ def get_model_path(subpath=None):
     """Return path to the model directory, or optionally, a specific file
     or directory within it.
 
+    If the POCKETSPHINX_PATH environment variable is set, it will be
+    returned here, otherwise the default is determined by your
+    PocketSphinx installation, and may or may not be writable by you.
+
     Args:
         subpath: An optional path to add to the model directory.
 
     Returns:
-        The requested path within the model directory."""
+        The requested path within the model directory.
+
+    """
     model_path = pocketsphinx._ps_default_modeldir()
     if model_path is None:
         model_path = os.path.join(os.path.dirname(__file__), "model")
