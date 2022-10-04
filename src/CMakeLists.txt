@@ -98,6 +98,7 @@ util/f2c_lite.c
 util/listelem_alloc.c
 util/pio.c
 util/genrand.c
+util/soundfiles.c
   )
 target_include_directories(
   pocketsphinx PRIVATE ${CMAKE_BINARY_DIR}

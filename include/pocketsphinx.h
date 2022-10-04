@@ -330,6 +330,60 @@ POCKETSPHINX_EXPORT
 const anytype_t *ps_config_set_str(ps_config_t *config, const char *name, const char *val);
 
 /**
+ * Set configuration parameters (actually just sample rate) from a
+ * sound file.
+ *
+ * If the file is unreadable, unsupported or incompatible with the
+ * existing feature extraction parameters, this will print an error
+ * message and fail (return -1).
+ *
+ * If it is of an unknown type, it will be treated as raw data.  So
+ * beware!  Currently we only support WAV and NIST Sphere files.  We
+ * attempt to recognize Ogg, MP3 (but not really, because it is very
+ * difficult to do reliably), and FLAC, but do not support them.  For
+ * everything else, there's SoX (tm).
+ *
+ * Currently, the file must be seekable, so you can't use this on
+ * standard input, for instance.
+ *
+ * @param config Configuration to update from file.
+ * @param fh Previously opened file handle.
+ * @param file Name of open file handle for logging (optional, can be NULL)
+ */
+POCKETSPHINX_EXPORT
+int ps_config_soundfile(ps_config_t *config, FILE *fh, const char *file);
+
+/**
+ * Read a WAV header and set configuration parameters.
+ *
+ * This works like ps_config_soundfile() but assumes that you already
+ * know it's a WAV file.
+ *
+ * Unlike ps_config_soundfile(), the file does *not* have to be seekable.
+ *
+ * @param config Configuration to update from file.
+ * @param fh Previously opened file handle.
+ * @param file Name of open file handle for logging (optional, can be NULL)
+ */
+POCKETSPHINX_EXPORT
+int ps_config_wavfile(ps_config_t *config, FILE *infh, const char *file);
+
+/**
+ * Read a NIST header and set configuration parameters.
+ *
+ * This works like ps_config_soundfile() but assumes that you already
+ * know it's a NIST file.
+ *
+ * Unlike ps_config_soundfile(), the file does *not* have to be seekable.
+ *
+ * @param config Configuration to update from file.
+ * @param fh Previously opened file handle.
+ * @param file Name of open file handle for logging (optional, can be NULL)
+ */
+POCKETSPHINX_EXPORT
+int ps_config_nistfile(ps_config_t *config, FILE *infh, const char *file);
+
+/**
  * Sets default grammar and language model if they are not set explicitly and
  * are present in the default search path.
  */

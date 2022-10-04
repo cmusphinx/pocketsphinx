@@ -40,86 +40,73 @@
 #endif
 
 #include <string.h>
-
+#include <pocketsphinx.h>
 #include "util/byteorder.h"
-#include "soundfiles.h"
-
-int
-guess_file_type(char const *file, FILE *infh, ps_config_t *config)
-{
-    char header[4];
-
-    fseek(infh, 0, SEEK_SET);
-    if (fread(header, 1, 4, infh) != 4) {
-        E_ERROR_SYSTEM("Failed to read 4 byte header");
-        return -1;
-    }
-    if (0 == memcmp(header, "RIFF", 4)) {
-        E_INFO("%s appears to be a WAV file\n", file);
-        if (ps_config_typeof(config, "mswav") != 0) {
-            ps_config_set_bool(config, "mswav", TRUE);
-            ps_config_set_bool(config, "nist", FALSE);
-            ps_config_set_bool(config, "raw", FALSE);
-        }
-    }
-    else if (0 == memcmp(header, "NIST", 4)) {
-        E_INFO("%s appears to be a NIST SPHERE file\n", file);
-        if (ps_config_typeof(config, "mswav") != 0) {
-            ps_config_set_bool(config, "mswav", FALSE);
-            ps_config_set_bool(config, "nist", TRUE);
-            ps_config_set_bool(config, "raw", FALSE);
-        }
-    }
-    else {
-        E_INFO("%s appears to be raw data\n", file);
-        if (ps_config_typeof(config, "mswav") != 0) {
-            ps_config_set_bool(config, "mswav", FALSE);
-            ps_config_set_bool(config, "nist", FALSE);
-            ps_config_set_bool(config, "raw", TRUE);
-        }
-    }
-    fseek(infh, 0, SEEK_SET);
-    return 0;
-}
+#include "util/ckd_alloc.h"
 
 #define TRY_FREAD(ptr, size, nmemb, stream)                             \
     if (fread(ptr, size, nmemb, stream) != (nmemb)) {                   \
-        E_ERROR_SYSTEM("Failed to read %d bytes", size * nmemb);       \
+        E_ERROR_SYSTEM("Failed to read %d bytes", size * nmemb);        \
+        rv = -1;                                                        \
         goto error_out;                                                 \
     }
 
 int
-read_file_header(const char *file, FILE *infh, ps_config_t *config)
+ps_config_soundfile(ps_config_t *config, FILE *infh, const char *file)
 {
     char header[4];
+    int rv = 0;
 
+    if (file == NULL)
+        file = "(input filehandle)";
     fseek(infh, 0, SEEK_SET);
     TRY_FREAD(header, 1, 4, infh);
     fseek(infh, 0, SEEK_SET);
 
     if (0 == memcmp(header, "RIFF", 4)) {
-        E_INFO("%s, appears to be a WAV file\n", file);
-        return read_riff_header(infh, config);
+        E_INFO("%s appears to be a WAV file\n", file);
+        rv = ps_config_wavfile(config, infh, file);
     }
     else if (0 == memcmp(header, "NIST", 4)) {
         E_INFO("%s appears to be a NIST SPHERE file\n", file);
-        return read_nist_header(infh, config);
+        rv = ps_config_nistfile(config, infh, file);
+    }
+    else if (0 == memcmp(header, "OggS", 4)) {
+        E_INFO("%s appears to be an UNSUPPORTED Ogg file\n", file);
+        rv = -1;
+        goto error_out;
+    }
+    else if (0 == memcmp(header, "fLaC", 4)) {
+        E_INFO("%s appears to be an UNSUPPORTED FLAC file\n", file);
+        rv = -1;
+        goto error_out;
+    }
+    else if (0 == memcmp(header, "\xff\xff\xff", 3)
+             || 0 == memcmp(header, "\xff\xff\xfe", 3)) {
+        E_INFO("%s might be an MP3 file, but who knows really! "
+               "UNSUPPORTED!\n", file);
+        rv = -1;
+        goto error_out;
     }
     else {
         E_INFO("%s appears to be raw data\n", file);
-        return 0;
     }
+
 error_out:
-    return -1;
+    return rv;
 }
 
 int
-read_riff_header(FILE *infh, ps_config_t *config)
+ps_config_wavfile(ps_config_t *config, FILE *infh, const char *file)
 {
     char id[4];
     int32 intval, header_len;
     int16 shortval;
+    int rv = 0;
 
+    if (file == NULL)
+        file = "(input filehandle)";
+        
     /* RIFF files are little-endian by definition. */
     ps_config_set_str(config, "input_endian", "little");
 
@@ -130,13 +117,15 @@ read_riff_header(FILE *infh, ps_config_t *config)
     /* 'WAVE' */
     TRY_FREAD(id, 1, 4, infh);
     if (0 != memcmp(id, "WAVE", 4)) {
-        E_ERROR("This is not a WAVE file\n");
+        E_ERROR("%s is not a WAVE file\n", file);
+        rv = -1;
         goto error_out;
     }
     /* 'fmt ' */
     TRY_FREAD(id, 1, 4, infh);
     if (0 != memcmp(id, "fmt ", 4)) {
         E_ERROR("Format chunk missing\n");
+        rv = -1;
         goto error_out;
     }
     /* Length of 'fmt ' chunk */
@@ -148,7 +137,8 @@ read_riff_header(FILE *infh, ps_config_t *config)
     TRY_FREAD(&shortval, 2, 1, infh);
     SWAP_LE_16(&shortval);
     if (shortval != 1) { /* PCM */
-        E_ERROR("WAVE file is not in PCM format\n");
+        E_ERROR("%s is not in PCM format\n", file);
+        rv = -1;
         goto error_out;
     }
 
@@ -156,7 +146,8 @@ read_riff_header(FILE *infh, ps_config_t *config)
     TRY_FREAD(&shortval, 2, 1, infh);
     SWAP_LE_16(&shortval);
     if (shortval != 1) { /* PCM */
-        E_ERROR("WAVE file is not single channel\n");
+        E_ERROR("%s is not single channel\n", file);
+        rv = -1;
         goto error_out;
     }
 
@@ -166,7 +157,7 @@ read_riff_header(FILE *infh, ps_config_t *config)
     if (ps_config_int(config, "samprate") == 0)
         ps_config_set_int(config, "samprate", intval);
     else if (ps_config_int(config, "samprate") != intval) {
-        E_WARN("WAVE file sampling rate %d != -samprate %d\n",
+        E_WARN("WAVE file sampling rate %d != samprate %d\n",
                intval, ps_config_int(config, "samprate"));
     }
 
@@ -180,13 +171,23 @@ read_riff_header(FILE *infh, ps_config_t *config)
     TRY_FREAD(&shortval, 2, 1, infh);
     SWAP_LE_16(&shortval);
     if (shortval != 16) {
-        E_ERROR("WAVE file is not 16-bit\n");
+        E_ERROR("%s is not 16-bit\n", file);
+        rv = -1;
         goto error_out;
     }
 
     /* Any extra parameters. */
-    if (header_len > 16)
-        fseek(infh, header_len - 16, SEEK_CUR);
+    if (header_len > 16) {
+        /* Avoid seeking... */
+        char *spam = malloc(header_len - 16);
+        if (fread(spam, 1, header_len - 16, infh) != (size_t)(header_len - 16)) {
+            E_ERROR_SYSTEM("%s: Failed to read extra header", file);
+            rv = -1;
+        }
+        ckd_free(spam);
+        if (rv == -1)
+            goto error_out;
+    }
 
     /* Now skip to the 'data' chunk. */
     while (1) {
@@ -197,25 +198,36 @@ read_riff_header(FILE *infh, ps_config_t *config)
             break;
         }
         else {
+            char *spam;
             /* Some other stuff... */
             /* Number of bytes of ... whatever */
             TRY_FREAD(&intval, 4, 1, infh);
             SWAP_LE_32(&intval);
-            fseek(infh, intval, SEEK_CUR);
+            /* Avoid seeking... */
+            spam = malloc(intval);
+            if (fread(spam, 1, intval, infh) != (size_t)intval) {
+                E_ERROR_SYSTEM("%s: Failed to read %s chunk", file, id);
+                rv = -1;
+            }
+            ckd_free(spam);
+            if (rv == -1)
+                goto error_out;
         }
     }
 
-    /* We are ready to rumble. */
-    return 0;
 error_out:
-    return -1;
+    return rv;
 }
 
 int
-read_nist_header(FILE *infh, ps_config_t *config)
+ps_config_nistfile(ps_config_t *config, FILE *infh, const char *file)
 {
     char hdr[1024];
     char *line, *c;
+    int rv = 0;
+
+    if (file == NULL)
+        file = "(input filehandle)";
 
     TRY_FREAD(hdr, 1, 1024, infh);
     hdr[1023] = '\0';
@@ -224,6 +236,7 @@ read_nist_header(FILE *infh, ps_config_t *config)
      * (don't bother with other stuff) */
     if ((line = strstr(hdr, "sample_rate")) == NULL) {
         E_ERROR("No sampling rate in NIST header!\n");
+        rv = -1;
         goto error_out;
     }
     c = strchr(line, '\n');
@@ -231,13 +244,14 @@ read_nist_header(FILE *infh, ps_config_t *config)
     c = strrchr(line, ' ');
     if (c == NULL) {
         E_ERROR("Could not find sampling rate!\n");
+        rv = -1;
         goto error_out;
     }
     ++c;
     if (ps_config_int(config, "samprate") == 0)
         ps_config_set_int(config, "samprate", atoi(c));
     else if (ps_config_int(config, "samprate") != atoi(c)) {
-        E_WARN("NIST file sampling rate %d != -samprate %d\n",
+        E_WARN("NIST file sampling rate %d != samprate %d\n",
                atoi(c), ps_config_int(config, "samprate"));
     }
 
@@ -245,6 +259,7 @@ read_nist_header(FILE *infh, ps_config_t *config)
         line[strlen(line)] = ' ';
     if ((line = strstr(hdr, "sample_byte_format")) == NULL) {
         E_ERROR("No sample byte format in NIST header!\n");
+        rv = -1;
         goto error_out;
     }
     c = strchr(line, '\n');
@@ -252,6 +267,7 @@ read_nist_header(FILE *infh, ps_config_t *config)
     c = strrchr(line, ' ');
     if (c == NULL) {
         E_ERROR("Could not find sample byte order!\n");
+        rv = -1;
         goto error_out;
     }
     ++c;
@@ -263,11 +279,10 @@ read_nist_header(FILE *infh, ps_config_t *config)
     }
     else {
         E_ERROR("Unknown byte order %s\n", c);
+        rv = -1;
         goto error_out;
     }
 
-    /* We are ready to rumble. */
-    return 0;
 error_out:
-    return -1;
+    return rv;
 }

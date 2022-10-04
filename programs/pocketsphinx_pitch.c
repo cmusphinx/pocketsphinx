@@ -52,7 +52,6 @@
 #include "fe/yin.h"
 
 #include "pocketsphinx_internal.h"
-#include "soundfiles.h"
 
 static arg_t defn[] = {
   { "i",
@@ -156,6 +155,44 @@ static arg_t defn[] = {
 static int extract_pitch(const char *in, const char *out, cmd_ln_t *config);
 static int run_control_file(const char *ctl, cmd_ln_t *config);
 
+static int
+guess_file_type(char const *file, FILE *infh, ps_config_t *config)
+{
+    char header[4];
+
+    fseek(infh, 0, SEEK_SET);
+    if (fread(header, 1, 4, infh) != 4) {
+        E_ERROR_SYSTEM("Failed to read 4 byte header");
+        return -1;
+    }
+    if (0 == memcmp(header, "RIFF", 4)) {
+        E_INFO("%s appears to be a WAV file\n", file);
+        if (ps_config_typeof(config, "mswav") != 0) {
+            ps_config_set_bool(config, "mswav", TRUE);
+            ps_config_set_bool(config, "nist", FALSE);
+            ps_config_set_bool(config, "raw", FALSE);
+        }
+    }
+    else if (0 == memcmp(header, "NIST", 4)) {
+        E_INFO("%s appears to be a NIST SPHERE file\n", file);
+        if (ps_config_typeof(config, "mswav") != 0) {
+            ps_config_set_bool(config, "mswav", FALSE);
+            ps_config_set_bool(config, "nist", TRUE);
+            ps_config_set_bool(config, "raw", FALSE);
+        }
+    }
+    else {
+        E_INFO("%s appears to be raw data\n", file);
+        if (ps_config_typeof(config, "mswav") != 0) {
+            ps_config_set_bool(config, "mswav", FALSE);
+            ps_config_set_bool(config, "nist", FALSE);
+            ps_config_set_bool(config, "raw", TRUE);
+        }
+    }
+    fseek(infh, 0, SEEK_SET);
+    return 0;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -220,11 +257,11 @@ extract_pitch(const char *in, const char *out, cmd_ln_t *config)
     /* Grab the sampling rate and byte order from the header and also
      * make sure this is 16-bit linear PCM. */
     if (ps_config_bool(config, "mswav")) {
-        if (read_riff_header(infh, config) < 0)
+        if (ps_config_wavfile(config, infh, in) < 0)
             goto error_out;
     }
     else if (ps_config_bool(config, "nist")) {
-        if (read_nist_header(infh, config) < 0)
+        if (ps_config_nistfile(config, infh, in) < 0)
             goto error_out;
     }
     else if (ps_config_bool(config, "raw")) {

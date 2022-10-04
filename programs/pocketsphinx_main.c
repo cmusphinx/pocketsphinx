@@ -50,7 +50,6 @@
 #include "config_macro.h"
 #include "pocketsphinx_internal.h"
 #include "ps_alignment_internal.h"
-#include "soundfiles.h"
 
 /* Le sigh.  Didn't want to have to do this. */
 static const arg_t ps_main_args_def[] = {
@@ -541,7 +540,7 @@ align(ps_config_t *config, char **inputs, int ninputs)
         E_ERROR_SYSTEM("Failed to open %s for input", inputs[0]);
         goto error_out;
     }
-    if ((rv = read_file_header(inputs[0], fh, config)) < 0)
+    if ((rv = ps_config_soundfile(config, fh, inputs[0])) < 0)
         goto error_out;
     if ((decoder = ps_init(config)) == NULL) {
         E_FATAL("PocketSphinx decoder init failed\n");
@@ -695,7 +694,7 @@ process_inputs(int (*func)(ps_config_t *, FILE *),
                 rv = -1;
                 continue;
             }
-            if ((rv_one = read_file_header(file, fh, config)) < 0) {
+            if ((rv_one = ps_config_soundfile(config, fh, file)) < 0) {
                 fclose(fh);
                 rv = rv_one;
                 continue;
