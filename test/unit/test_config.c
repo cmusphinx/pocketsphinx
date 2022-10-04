@@ -185,6 +185,21 @@ test_validate_config(void)
     ps_config_free(config);
 }
 
+static void
+test_config_default(void)
+{
+    ps_config_t *config;
+    TEST_ASSERT(config = ps_config_init(NULL));
+    setenv("POCKETSPHINX_PATH", MODELDIR, 1);
+    ps_default_search_args(config);
+    TEST_EQUAL(0, strcmp(ps_config_str(config, "hmm"),
+                         MODELDIR "/en-us/en-us"));
+    TEST_EQUAL(0, strcmp(ps_config_str(config, "lm"),
+                         MODELDIR "/en-us/en-us.lm.bin"));
+    TEST_EQUAL(0, strcmp(ps_config_str(config, "dict"),
+                         MODELDIR "/en-us/cmudict-en-us.dict"));
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -194,6 +209,7 @@ main(int argc, char *argv[])
     test_config_args();
     test_config_json();
     test_validate_config();
+    test_config_default();
     
     return 0;
 }
