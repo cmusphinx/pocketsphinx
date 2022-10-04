@@ -4,60 +4,70 @@
  *
  * Author: David Huggins-Daines <dhdaines@gmail.com>
  */
-#include <pocketsphinx.h>
-#include <signal.h>
+/**
+ * @example simple.c
+ * @brief Simplest possible example of speech recognition in C.
+ *
+ * This file shows how to use PocketSphinx to recognize a single input file.
+ */
 
-static int global_done = 0;
-void
-catch_sig(int signum)
-{
-    (void)signum;
-    global_done = 1;
-}
+#include <pocketsphinx.h>
+#include <stdlib.h>
 
 int
 main(int argc, char *argv[])
 {
     ps_decoder_t *decoder;
     ps_config_t *config;
-    char *soxcmd;
-    FILE *sox;
-    #define BUFLEN 4096 // about 250ms
-    short buf[BUFLEN];
-    size_t len;
+    FILE *fh;
+    short *buf;
+    size_t len, nsamples;
 
+    /* Look for a single audio file as input parameter. */
+    if (argc < 2)
+        E_FATAL("Usage: %s FILE\n");
+    if ((fh = fopen(argv[1], "rb")) == NULL)
+        E_FATAL_SYSTEM("Failed to open %s", argv[1]);
+
+    /* Get the size of the input. */
+    if (fseek(fh, 0, SEEK_END) < 0)
+        E_FATAL_SYSTEM("Unable to find end of input file %s", argv[1]);
+    len = ftell(fh);
+    rewind(fh);
+
+    /* Initialize configuration from input file. */
     config = ps_config_init(NULL);
     ps_default_search_args(config);
+    if (ps_config_soundfile(config, fh, argv[1]) < 0)
+        E_FATAL("Unsupported input file %s\n", argv[1]);
     if ((decoder = ps_init(config)) == NULL)
         E_FATAL("PocketSphinx decoder init failed\n");
-    #define SOXCMD "sox -q -r %ld -c 1 -b 16 -e signed-integer -d -t raw -"
-    len = snprintf(NULL, 0, SOXCMD,
-                   ps_config_int(config, "samprate"));
-    if ((soxcmd = malloc(len + 1)) == NULL)
-        E_FATAL_SYSTEM("Failed to allocate string");
-    if (signal(SIGINT, catch_sig) == SIG_ERR)
-        E_FATAL_SYSTEM("Failed to set SIGINT handler");
-    if (snprintf(soxcmd, len + 1, SOXCMD,
-                 ps_config_int(config, "samprate")) != len)
-        E_FATAL_SYSTEM("snprintf() failed");
-    if ((sox = popen(soxcmd, "r")) == NULL)
-        E_FATAL_SYSTEM("Failed to popen(%s)", soxcmd);
-    free(soxcmd);
-    ps_start_utt(decoder);
-    while (!global_done) {
-        const char *hyp;
-        if ((len = fread(buf, sizeof(buf[0]), BUFLEN, sox)) == 0)
-            break;
-        if (ps_process_raw(decoder, buf, len, FALSE, FALSE) < 0)
-            E_FATAL("ps_process_raw() failed\n");
-        if ((hyp = ps_get_hyp(decoder, NULL)) != NULL)
-            printf("%s\n", hyp);
-    }
-    ps_end_utt(decoder);
-    if (pclose(sox) < 0)
-        E_ERROR_SYSTEM("Failed to pclose(sox)");
+
+    /* Allocate data (skipping header) */
+    len -= ftell(fh);
+    if ((buf = malloc(len)) == NULL)
+        E_FATAL_SYSTEM("Unable to allocate %d bytes", len);
+    /* Read input */
+    nsamples = fread(buf, sizeof(buf[0]), len / sizeof(buf[0]), fh);
+    if (nsamples != len / sizeof(buf[0]))
+        E_FATAL_SYSTEM("Unable to read %d samples", len / sizeof(buf[0]));
+
+    /* Recognize it! */
+    if (ps_start_utt(decoder) < 0)
+        E_FATAL("Failed to start processing\n");
+    if (ps_process_raw(decoder, buf, nsamples, FALSE, TRUE) < 0)
+        E_FATAL("ps_process_raw() failed\n");
+    if (ps_end_utt(decoder) < 0)
+        E_FATAL("Failed to end processing\n");
+
+    /* Print the result */
     if (ps_get_hyp(decoder, NULL) != NULL)
         printf("%s\n", ps_get_hyp(decoder, NULL));
+
+    /* Clean up */
+    if (fclose(fh) < 0)
+        E_FATAL_SYSTEM("Failed to close %s", argv[1]);
+    free(buf);
     ps_free(decoder);
     ps_config_free(config);
         
