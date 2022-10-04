@@ -36,7 +36,7 @@
  */
 
 /**
- * @file ps_alignment.h
+ * @file alignment.h
  * @brief Multi-level alignment structure
  */
 
