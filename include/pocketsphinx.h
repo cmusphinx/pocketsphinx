@@ -386,6 +386,9 @@ int ps_config_nistfile(ps_config_t *config, FILE *infh, const char *file);
 /**
  * Sets default grammar and language model if they are not set explicitly and
  * are present in the default search path.
+ *
+ * If the POCKETSPHINX_PATH environment variable is set, this function
+ * will look there instead of the path configured at compile time.
  */
 POCKETSPHINX_EXPORT
 void ps_default_search_args(ps_config_t *config);
