@@ -13,37 +13,23 @@ Or if PocketSphinx is installed:
 
     cc -o simple simple.c $(pkg-config --static --libs --cflags pocketsphinx)
 
-`simple.c` and `live.c` will accept the same set of command-line
-arguments as `pocketsphinx`, so for example, if you have not installed
-PocketSphinx, you will need to specify the acoustic and language
-models, e.g.:
+If PocketSphinx has not been installed, you will need to set the
+`POCKETSPHINX_PATH` environment variable to run the examples:
 
-    ./simple -hmm ../model/en-us/en-us \
-        -lm ../model/en-us/en-us.lm.bin \
-        -dict ../model/en-us/cmudict-en-us.dict
+    POCKETSPHINX_PATH=../model ./simple
 
 The Python scripts, assuming you have installed the `pocketsphinx`
 module (see [the top-leve README](../README.md) for instructions), can
 just be run as-is:
 
-    python simple.py
+    python simple.py spam.wav
     
 Simplest possible example
 -------------------------
 
-The examples `simple.c` and `simple.py` just recognize speech
-endlessly, until you stop them with Control-C.  They, like all the
-other examples below, use [SoX](http://sox.sourceforge.net/) to get
-audio from the default input device.  Feel free to modify them to read
-from standard input.
-
-Voice activity detection
-------------------------
-
-The examples `vad.c` and `vad.py` just *detect* speech/non-speech
-transitions endlessly, until you stop them with Control-C.  Note that
-this does VAD at the frame level (30ms) only, which is probably not
-what you want.
+The examples `simple.c` and `simple.py` read an entire audio file
+(only WAV files are supported) and recognize it as a single, possibly
+long, utterance.
 
 Segmentation
 ------------

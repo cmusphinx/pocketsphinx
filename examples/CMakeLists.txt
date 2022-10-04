@@ -1,7 +1,6 @@
 set(EXAMPLES
   live
   simple
-  vad
   )
 foreach(EXAMPLE ${EXAMPLES})
   add_executable(${EXAMPLE} EXCLUDE_FROM_ALL ${EXAMPLE}.c)

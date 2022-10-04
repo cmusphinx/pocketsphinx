@@ -4,6 +4,23 @@
  *
  * Author: David Huggins-Daines <dhdaines@gmail.com>
  */
+/**
+ * @example live.c
+ * @brief Speech recognition with live audio input and endpointing.
+ *
+ * This file shows how to use PocketSphinx in conjunction with `sox`
+ * to detect and recognize speech from the default audio input device.
+ *
+ * This file shows how to use PocketSphinx to recognize a single input
+ * file.  To compile it, assuming you have built the library as in
+ * \ref unix_install, you can run:
+ *
+ *     cmake --build build --target live
+ *
+ * Alternately, if PocketSphinx is installed system-wide, you can run:
+ *
+ *     gcc -o live live.c $(pkg-config --libs --cflags pocketsphinx)
+ */
 #include <pocketsphinx.h>
 #include <signal.h>
 
