@@ -77,30 +77,35 @@ typedef struct ps_alignment_iter_s ps_alignment_iter_t;
  * Retain an alighment
  * @memberof ps_alignment_t
  */
+POCKETSPHINX_EXPORT
 ps_alignment_t *ps_alignment_retain(ps_alignment_t *al);
 
 /**
  * Release an alignment
  * @memberof ps_alignment_t
  */
+POCKETSPHINX_EXPORT
 int ps_alignment_free(ps_alignment_t *al);
 
 /**
  * Iterate over the alignment starting at the first word.
  * @memberof ps_alignment_t
  */
+POCKETSPHINX_EXPORT
 ps_alignment_iter_t *ps_alignment_words(ps_alignment_t *al);
 
 /**
  * Iterate over the alignment starting at the first phone.
  * @memberof ps_alignment_t
  */
+POCKETSPHINX_EXPORT
 ps_alignment_iter_t *ps_alignment_phones(ps_alignment_t *al);
 
 /**
  * Iterate over the alignment starting at the first state.
  * @memberof ps_alignment_t
  */
+POCKETSPHINX_EXPORT
 ps_alignment_iter_t *ps_alignment_states(ps_alignment_t *al);
 
 /**
@@ -111,6 +116,7 @@ ps_alignment_iter_t *ps_alignment_states(ps_alignment_t *al);
  * number).  This pointer is owned by the iterator, do not free it
  * yourself.
  */
+POCKETSPHINX_EXPORT
 const char *ps_alignment_iter_name(ps_alignment_iter_t *itor);
 
 /**
@@ -121,6 +127,7 @@ const char *ps_alignment_iter_name(ps_alignment_iter_t *itor);
  * @arg duration Output pointer for duration
  * @return Acoustic score for this segment
  */
+POCKETSPHINX_EXPORT
 int ps_alignment_iter_seg(ps_alignment_iter_t *itor, int *start, int *duration);
 
 /**
@@ -131,6 +138,7 @@ int ps_alignment_iter_seg(ps_alignment_iter_t *itor, int *start, int *duration);
  *
  * @memberof ps_alignment_iter_t
  */
+POCKETSPHINX_EXPORT
 ps_alignment_iter_t *ps_alignment_iter_next(ps_alignment_iter_t *itor);
 
 /**
@@ -140,6 +148,7 @@ ps_alignment_iter_t *ps_alignment_iter_next(ps_alignment_iter_t *itor);
  *
  * @memberof ps_alignment_iter_t
  */
+POCKETSPHINX_EXPORT
 ps_alignment_iter_t *ps_alignment_iter_children(ps_alignment_iter_t *itor);
 
 /**
@@ -147,6 +156,7 @@ ps_alignment_iter_t *ps_alignment_iter_children(ps_alignment_iter_t *itor);
  *
  * @memberof ps_alignment_iter_t
  */
+POCKETSPHINX_EXPORT
 int ps_alignment_iter_free(ps_alignment_iter_t *itor);
 
 #ifdef __cplusplus
