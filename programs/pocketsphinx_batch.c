@@ -646,6 +646,38 @@ write_ctm(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int32 f
     return 0;
 }
 
+static char *
+get_align_hyp(ps_decoder_t *ps, int *out_score)
+{
+    ps_seg_t *itor;
+    char *out, *ptr;
+    int len;
+    
+    if (ps_get_hyp(ps, out_score) == NULL)
+        return ckd_salloc("");
+    len = 0;
+    for (itor = ps_seg_iter(ps); itor; itor = ps_seg_next(itor)) {
+        /* FIXME: Need to handle tag transitions somehow... */
+        if (itor->wid < 0)
+            continue;
+        len += strlen(itor->text);
+        len++;
+    }
+    if (len == 0)
+        return ckd_salloc("");
+    ptr = out = ckd_malloc(len);
+    for (itor = ps_seg_iter(ps); itor; itor = ps_seg_next(itor)) {
+        if (itor->wid < 0)
+            continue;
+        len = strlen(itor->text);
+        memcpy(ptr, itor->text, len);
+        ptr += len;
+        *ptr++ = ' ';
+    }
+    *--ptr = '\0';
+    return out;
+}
+
 static void
 process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
 {
@@ -814,11 +846,21 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                 continue;
             if(process_ctl_line(ps, config, file, uttid, sf, ef) < 0)
                 continue;
-            hyp = ps_get_hyp(ps, &score);
-            
-            /* Write out results and such. */
+            /* Special case for force-alignment: report silences and
+             * alternate pronunciations.  This isn't done
+             * automatically because Reasons.  (API consistency but
+             * also because force-alignment is really secretly FSG
+             * search at the moment). */
             if (hypfh) {
-                fprintf(hypfh, "%s (%s %d)\n", hyp ? hyp : "", uttid, score);
+                if (alignfile) {
+                    char *align_hyp = get_align_hyp(ps, &score);
+                    fprintf(hypfh, "%s (%s %d)\n", align_hyp, uttid, score);
+                    ckd_free(align_hyp);
+                }
+                else {
+                    hyp = ps_get_hyp(ps, &score);
+                    fprintf(hypfh, "%s (%s %d)\n", hyp ? hyp : "", uttid, score);
+                }
             }
             if (hypsegfh) {
                 write_hypseg(hypsegfh, ps, uttid);
