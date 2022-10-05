@@ -102,7 +102,10 @@ typedef signed int ssize_t;
 #endif
 
 /**
- * Union of basic types.
+ * @union anytype_t
+ * @brief Literally any type!
+ *
+ * (correction: not literally any type, but all the ones we use for configuration)
  */
 typedef union anytype_s {
     void *ptr;
