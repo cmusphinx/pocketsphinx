@@ -185,6 +185,35 @@ json_error(int err)
     E_ERROR("JSON parsing failed: %s\n", errstr);
 }
 
+size_t
+unescape(char *out, const char *in, size_t len)
+{
+   char *ptr = out;
+   size_t i;
+
+   for (i = 0; i < len; ++i) {
+      int c = in[i];
+      if (c == '\\') {
+          switch (in[i+1]) {
+          case '"':  *ptr++ = '"'; i++; break;
+          case '\\': *ptr++ = '\\'; i++; break;
+          case 'b':  *ptr++ = '\b'; i++; break;
+          case 'f':  *ptr++ = '\f'; i++; break;
+          case 'n': *ptr++ = '\n'; i++; break;
+          case 'r': *ptr++ = '\r'; i++; break;
+          case 't': *ptr++ = '\t'; i++; break;
+          default:
+              E_WARN("Unsupported escape sequence \\%c\n", in[i+1]);
+              *ptr++ = c;
+          }
+      }
+      else {
+          *ptr++ = c;
+      }
+   }
+   return ptr - out;
+}
+
 ps_config_t *
 ps_config_parse_json(ps_config_t *config,
                      const char *json)
@@ -220,7 +249,7 @@ ps_config_parse_json(ps_config_t *config,
         ++i;
     while (i < ntok) {
         key = ckd_calloc(tokens[i].end - tokens[i].start + 1, 1);
-        memcpy(key, json + tokens[i].start, tokens[i].end - tokens[i].start);
+        unescape(key, json + tokens[i].start, tokens[i].end - tokens[i].start);
         if (tokens[i].type != JSMN_STRING && tokens[i].type != JSMN_PRIMITIVE) {
             E_ERROR("Expected string or primitive key, got %s\n", key);
             goto error_out;
@@ -230,7 +259,7 @@ ps_config_parse_json(ps_config_t *config,
             goto error_out;
         }
         val = ckd_calloc(tokens[i].end - tokens[i].start + 1, 1);
-        memcpy(val, json + tokens[i].start, tokens[i].end - tokens[i].start);
+        unescape(val, json + tokens[i].start, tokens[i].end - tokens[i].start);
         if (ps_config_set_str(config, key, val) == NULL) {
             E_ERROR("Unknown or invalid parameter %s\n", key);
             goto error_out;
@@ -258,6 +287,167 @@ error_out:
     return NULL;
 }
 
+/* Following two functions are:
+ *
+ * Copyright (C) 2014 James McLaughlin.  All rights reserved.
+ * https://github.com/udp/json-builder
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+static size_t measure_string (unsigned int length,
+                              const char *str)
+{
+   unsigned int i;
+   size_t measured_length = 0;
+
+   for(i = 0; i < length; ++ i)
+   {
+      int c = str[i];
+
+      switch (c)
+      {
+      case '"':
+      case '\\':
+      case '\b':
+      case '\f':
+      case '\n':
+      case '\r':
+      case '\t':
+
+         measured_length += 2;
+         break;
+
+      default:
+
+         ++ measured_length;
+         break;
+      };
+   };
+
+   return measured_length;
+}
+
+#define PRINT_ESCAPED(c) do {  \
+   *buf ++ = '\\';             \
+   *buf ++ = (c);              \
+} while(0);                    \
+
+static size_t serialize_string(char *buf,
+                               unsigned int length,
+                               const char *str)
+{
+   char *orig_buf = buf;
+   unsigned int i;
+
+   for(i = 0; i < length; ++ i)
+   {
+      int c = str [i];
+
+      switch (c)
+      {
+      case '"':   PRINT_ESCAPED ('\"');  continue;
+      case '\\':  PRINT_ESCAPED ('\\');  continue;
+      case '\b':  PRINT_ESCAPED ('b');   continue;
+      case '\f':  PRINT_ESCAPED ('f');   continue;
+      case '\n':  PRINT_ESCAPED ('n');   continue;
+      case '\r':  PRINT_ESCAPED ('r');   continue;
+      case '\t':  PRINT_ESCAPED ('t');   continue;
+
+      default:
+
+         *buf ++ = c;
+         break;
+      };
+   };
+
+   return buf - orig_buf;
+}
+/* End code from json-builder */
+
+static int
+serialize_key(char *ptr, int maxlen, const char *key)
+{
+    int slen, len = 0;
+    if (ptr) {
+        *ptr++ = '\t';
+        *ptr++ = '"';
+        maxlen -= 2;
+    }
+    len += 2; /* \t\" */
+    if (ptr) {
+        assert(maxlen > 0);
+        slen = serialize_string(ptr, strlen(key), key);
+        ptr += slen;
+        maxlen -= slen;
+    }
+    else {
+        slen = measure_string(strlen(key), key);
+    }
+    len += slen;
+    
+    if (ptr) {
+        assert(maxlen > 0);
+        *ptr++ = '"';
+        *ptr++ = ':';
+        *ptr++ = ' ';
+        maxlen -= 3;
+    }
+    len += 3; /* "\": " */
+    return len;
+}
+
+static int
+serialize_value(char *ptr, int maxlen, const char *val)
+{
+    int slen, len = 0;
+    if (ptr) {
+        *ptr++ = '"';
+        maxlen--;
+    }
+    len++; /* \" */
+    if (ptr) {
+        assert(maxlen > 0);
+        slen = serialize_string(ptr, strlen(val), val);
+        ptr += slen;
+        maxlen -= slen;
+    }
+    else {
+        slen = measure_string(strlen(val), val);
+    }
+    len += slen;
+    
+    if (ptr) {
+        assert(maxlen > 0);
+        *ptr++ = '"';
+        *ptr++ = ',';
+        *ptr++ = '\n';
+        maxlen -= 3;
+    }
+    len += 3; /* "\",\n" */
+    return len;
+}
+
 static int
 build_json(ps_config_t *config, char *json, int len)
 {
@@ -276,28 +466,33 @@ build_json(ps_config_t *config, char *json, int len)
          itor = hash_table_iter_next(itor)) {
         const char *key = hash_entry_key(itor->ent);
         cmd_ln_val_t *cval = hash_entry_val(itor->ent);
+        if (cval->type & ARG_STRING && cval->val.ptr == NULL)
+            continue;
+        if ((l = serialize_key(ptr, len, key)) < 0)
+            return -1;
+        rv += l;
+        if (ptr) {
+            len -= l;
+            ptr += l;
+        }
         if (cval->type & ARG_STRING) {
-            if (cval->val.ptr == NULL)
-                continue;
-            /* FIXME: ESCAPING! */
-            if ((l = snprintf(ptr, len, "\t\"%s\": \"%s\",\n",
-                              key, (char *)cval->val.ptr)) < 0)
+            if ((l = serialize_value(ptr, len,
+                                     (char *)cval->val.ptr)) < 0)
                 return -1;
         }
         else if (cval->type & ARG_INTEGER) {
-            if ((l = snprintf(ptr, len, "\t\"%s\": %ld,\n",
-                              key, cval->val.i)) < 0)
+            if ((l = snprintf(ptr, len, "%ld,\n",
+                              cval->val.i)) < 0)
                 return -1;
         }
         else if (cval->type & ARG_BOOLEAN) {
-            if ((l = snprintf(ptr, len, "\t\"%s\": %s,\n",
-                              key,
+            if ((l = snprintf(ptr, len, "%s,\n",
                               cval->val.i ? "true" : "false")) < 0)
                 return -1;
         }
         else if (cval->type & ARG_FLOATING) {
-            if ((l = snprintf(ptr, len, "\t\"%s\": %g,\n",
-                              key, cval->val.fl)) < 0)
+            if ((l = snprintf(ptr, len, "%g,\n",
+                              cval->val.fl)) < 0)
                 return -1;
         }
         else {

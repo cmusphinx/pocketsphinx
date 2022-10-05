@@ -53,6 +53,15 @@ static char *bad_json = \
     "}";
 static char *ugly_json = \
     "hmm: en-us samprate: 16000 beam: 0.005 backtrace: true";
+static char *hard_json = \
+    "{ \"hmm\": \"\\\\model\\\\en-us\",\n"
+    "  \"keyphrase\": \"spam\tspam \\\"spam\\\" eggs\\nand spam\"\n"
+    "}";
+/* FIXME: Someday this will be supported */
+static char *bad_hard_json = \
+    "{ \"hmm\": \"\\\\model\\\\en-us\",\n"
+    "  \"keyphrase\": \"spam\tspam \\\"spam\\\"\\u0020eggs\\nand spam\"\n"
+    "}";
 
 static void
 check_live_args(ps_config_t *config)
@@ -127,6 +136,27 @@ test_config_json(void)
     check_live_args(config);
     TEST_EQUAL(0, ps_config_free(config));
     ckd_free(json);
+
+    TEST_ASSERT(config = ps_config_parse_json(NULL, hard_json));
+    printf("%s\n", ps_config_str(config, "hmm"));
+    printf("%s\n", ps_config_str(config, "keyphrase"));
+    TEST_EQUAL(0, strcmp(ps_config_str(config, "hmm"),
+                         "\\model\\en-us"));
+    TEST_EQUAL(0, strcmp(ps_config_str(config, "keyphrase"),
+                         "spam\tspam \"spam\" eggs\nand spam"));
+    json = ckd_salloc(ps_config_serialize_json(config));
+    ps_config_free(config);
+
+    TEST_ASSERT(config = ps_config_parse_json(NULL, json));
+    printf("%s\n", ps_config_str(config, "hmm"));
+    printf("%s\n", ps_config_str(config, "keyphrase"));
+    TEST_EQUAL(0, strcmp(ps_config_str(config, "hmm"),
+                         "\\model\\en-us"));
+    TEST_EQUAL(0, strcmp(ps_config_str(config, "keyphrase"),
+                         "spam\tspam \"spam\" eggs\nand spam"));
+    ps_config_free(config);
+    ckd_free(json);
+    TEST_EQUAL(NULL, ps_config_parse_json(NULL, bad_hard_json));
 }
 
 static void
@@ -198,6 +228,7 @@ test_config_default(void)
                          MODELDIR "/en-us/en-us.lm.bin"));
     TEST_EQUAL(0, strcmp(ps_config_str(config, "dict"),
                          MODELDIR "/en-us/cmudict-en-us.dict"));
+    ps_config_free(config);
 }
 
 int

@@ -222,7 +222,7 @@ static int jsmn_parse_string(jsmn_parser *parser, const char *js,
 
     /* Backslash: Quoted symbol expected */
     if (c == '\\' && parser->pos + 1 < len) {
-      int i;
+      /* int i; */
       parser->pos++;
       switch (js[parser->pos]) {
       /* Allowed escaped symbols */
@@ -235,6 +235,7 @@ static int jsmn_parse_string(jsmn_parser *parser, const char *js,
       case 'n':
       case 't':
         break;
+#if 0 /* FIXME: PocketSphinx not supporting these at the moment */
       /* Allows escaped symbol \uXXXX */
       case 'u':
         parser->pos++;
@@ -251,6 +252,7 @@ static int jsmn_parse_string(jsmn_parser *parser, const char *js,
         }
         parser->pos--;
         break;
+#endif
       /* Unexpected symbol */
       default:
         parser->pos = start;

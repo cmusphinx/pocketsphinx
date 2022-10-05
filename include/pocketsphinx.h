@@ -166,9 +166,12 @@ int ps_config_validate(ps_config_t *config);
  *
  *     hmm: fr-fr
  *     samprate: 8000
- *     keyprhase: "hello world"
+ *     keyphrase: "hello world"
  *
  * Of course, valid JSON is also accepted, but who wants to use that.
+ *
+ * Well, mostly.  Unicode escape sequences (e.g. `"\u0020"`) are *not*
+ * supported at the moment, so please don't use them.
  *
  * @arg config Previously existing ps_config_t to update, or NULL to
  * create a new one.
