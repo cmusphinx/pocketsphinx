@@ -3,6 +3,20 @@ name: Build
 on: [push, pull_request]
 
 jobs:
+  make_sdist:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Build SDist
+      run: pipx run build --sdist
+
+    - uses: actions/upload-artifact@v3
+      with:
+        path: dist/*.tar.gz
+  
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -13,16 +27,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Source distribution
-        run: |
-          pip3 install build
-          python3 -m build -s
-          
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.8.1
 
       - uses: actions/upload-artifact@v3
         with:
-          path: |
-            ./wheelhouse/*.whl
-            ./dist/*.tar.gz
+          path: ./wheelhouse/*.whl
