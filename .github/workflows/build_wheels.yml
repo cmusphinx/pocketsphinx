@@ -13,9 +13,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Source distribution
+        run: |
+          pip install build
+          python -m build -s
+          
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.8.1
 
       - uses: actions/upload-artifact@v3
         with:
+          path: ./dist/*.tar.gz
           path: ./wheelhouse/*.whl
