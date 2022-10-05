@@ -72,12 +72,12 @@ cdef extern from "util/ckd_alloc.h":
 cdef extern from "util/cmd_ln.h":
     ctypedef struct pocketsphinx_config_t:
         hash_table_t *ht
-        const arg_t *defn
+        const ps_arg_t *defn
     ctypedef struct cmd_ln_val_t:
         int type
     void cmd_ln_set_str_extra_r(ps_config_t *config,
                                 const char *name, const char *str)
-    ps_config_t *cmd_ln_parse_file_r(ps_config_t *inout_cmdln, arg_t *defn,
+    ps_config_t *cmd_ln_parse_file_r(ps_config_t *inout_cmdln, ps_arg_t *defn,
                                     const char *path, int strict)
 
 
@@ -304,8 +304,8 @@ cdef extern from "pocketsphinx/lattice.h":
 cdef extern from "util/cmd_ln.h":
     ctypedef struct ps_config_t:
         hash_table_t *ht
-        arg_t *defn
-    ps_config_t *ps_config_parse_args(const arg_t *defn, int argc, char **argv)
+        ps_arg_t *defn
+    ps_config_t *ps_config_parse_args(const ps_arg_t *defn, int argc, char **argv)
 
 cdef extern from "pocketsphinx.h":
     cdef enum ps_type_t:
@@ -318,7 +318,7 @@ cdef extern from "pocketsphinx.h":
         REQARG_FLOATING,
         REQARG_STRING,
         REQARG_BOOLEAN
-    ctypedef struct arg_t:
+    ctypedef struct ps_arg_t:
         const char *name
         int type
         const char *deflt
@@ -333,7 +333,7 @@ cdef extern from "pocketsphinx.h":
         long i
         float fl
         void *ptr
-    ps_config_t *ps_config_init(const arg_t *defn)
+    ps_config_t *ps_config_init(const ps_arg_t *defn)
     ps_config_t *ps_config_retain(ps_config_t *config)
     int ps_config_free(ps_config_t *config)
     ps_config_t *ps_config_parse_json(ps_config_t *config, const char *json)
@@ -350,7 +350,7 @@ cdef extern from "pocketsphinx.h":
     const anytype_t *ps_config_set_bool(ps_config_t *config, const char *name, int val)
     const anytype_t *ps_config_set_float(ps_config_t *config, const char *name, double val)
     const anytype_t *ps_config_set_str(ps_config_t *config, const char *name, const char *val)
-    arg_t *ps_args()
+    ps_arg_t *ps_args()
     ps_decoder_t *ps_init(ps_config_t *config)
     int ps_free(ps_decoder_t *ps)
     const char *ps_default_modeldir()

@@ -11,7 +11,7 @@
 int
 main(int argc, char *argv[])
 {
-	static const arg_t fe_args[] = {
+	static const ps_arg_t fe_args[] = {
 		waveform_to_cepstral_command_line_macro(),
 		{ NULL, 0, NULL, NULL }
 	};

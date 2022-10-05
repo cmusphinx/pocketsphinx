@@ -44,7 +44,7 @@
 #include "lm/jsgf.h"
 #include "pocketsphinx_internal.h"
 
-static const arg_t defn[] = {
+static const ps_arg_t defn[] = {
   { "help",
     ARG_BOOLEAN,
     "no",

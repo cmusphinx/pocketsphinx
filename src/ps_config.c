@@ -38,19 +38,19 @@
 #include "config_macro.h"
 #include "jsmn.h"
 
-static const arg_t ps_args_def[] = {
+static const ps_arg_t ps_args_def[] = {
     POCKETSPHINX_OPTIONS,
     CMDLN_EMPTY_OPTION
 };
 
-arg_t const *
+ps_arg_t const *
 ps_args(void)
 {
     return ps_args_def;
 }
 
 ps_config_t *
-ps_config_init(const arg_t *defn)
+ps_config_init(const ps_arg_t *defn)
 {
     ps_config_t *config = ckd_calloc(1, sizeof(*config));
     int i, ndef;
@@ -416,12 +416,12 @@ static const anytype_t *
 ps_config_unset(ps_config_t *config, char const *name)
 {
     cmd_ln_val_t *cval = cmd_ln_access_r(config, name);
-    const arg_t *arg;
+    const ps_arg_t *arg;
     if (cval == NULL) {
         E_ERROR("Unknown parameter %s\n", name);
         return NULL;
     }
-    /* FIXME: Perhaps cmd_ln_val_t should store a pointer to arg_t */
+    /* FIXME: Perhaps cmd_ln_val_t should store a pointer to ps_arg_t */
     for (arg = config->defn; arg->name; ++arg) {
         if (0 == strcmp(arg->name, name)) {
             if (anytype_from_str(&cval->val, cval->type, arg->deflt) == NULL)

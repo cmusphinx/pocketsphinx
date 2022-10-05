@@ -52,7 +52,7 @@
 #include <string.h>
 #include <math.h>
 
-static const arg_t defn[] = {
+static const ps_arg_t defn[] = {
   { "help",
     ARG_BOOLEAN,
     "no",

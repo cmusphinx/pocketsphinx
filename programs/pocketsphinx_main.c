@@ -52,7 +52,7 @@
 #include "ps_alignment_internal.h"
 
 /* Le sigh.  Didn't want to have to do this. */
-static const arg_t ps_main_args_def[] = {
+static const ps_arg_t ps_main_args_def[] = {
     POCKETSPHINX_OPTIONS,
     { "config",
       ARG_STRING,

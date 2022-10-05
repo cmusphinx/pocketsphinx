@@ -84,17 +84,17 @@
 #include "pocketsphinx_internal.h"
 
 static void
-arg_log_r(ps_config_t *, arg_t const *, int32, int32);
+arg_log_r(ps_config_t *, ps_arg_t const *, int32, int32);
 
 static ps_config_t *
-parse_options(ps_config_t *, const arg_t *, int32, char* [], int32);
+parse_options(ps_config_t *, const ps_arg_t *, int32, char* [], int32);
 
 /*
  * Find max length of name and default fields in the given defn array.
  * Return #items in defn array.
  */
 static int32
-arg_strlen(const arg_t * defn, int32 * namelen, int32 * deflen)
+arg_strlen(const ps_arg_t * defn, int32 * namelen, int32 * deflen)
 {
     int32 i, l;
 
@@ -120,20 +120,20 @@ static int32
 cmp_name(const void *a, const void *b)
 {
     return (strcmp_nocase
-            ((* (arg_t**) a)->name,
-             (* (arg_t**) b)->name));
+            ((* (ps_arg_t**) a)->name,
+             (* (ps_arg_t**) b)->name));
 }
 
-static arg_t const **
-arg_sort(const arg_t * defn, int32 n)
+static ps_arg_t const **
+arg_sort(const ps_arg_t * defn, int32 n)
 {
-    const arg_t ** pos;
+    const ps_arg_t ** pos;
     int32 i;
 
-    pos = (arg_t const **) ckd_calloc(n, sizeof(arg_t *));
+    pos = (ps_arg_t const **) ckd_calloc(n, sizeof(ps_arg_t *));
     for (i = 0; i < n; ++i)
         pos[i] = &defn[i];
-    qsort(pos, n, sizeof(arg_t *), cmp_name);
+    qsort(pos, n, sizeof(ps_arg_t *), cmp_name);
 
     return pos;
 }
@@ -176,9 +176,9 @@ cmd_ln_val_free(cmd_ln_val_t *val)
 
 
 static void
-arg_log_r(ps_config_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
+arg_log_r(ps_config_t *cmdln, const ps_arg_t * defn, int32 doc, int32 lineno)
 {
-    arg_t const **pos;
+    ps_arg_t const **pos;
     int32 i, n;
     int32 namelen, deflen;
     cmd_ln_val_t const *vp;
@@ -258,7 +258,7 @@ arg_log_r(ps_config_t *cmdln, const arg_t * defn, int32 doc, int32 lineno)
  * DO NOT call it from cmd_ln_parse_r()
  */
 static ps_config_t *
-parse_options(ps_config_t *cmdln, const arg_t *defn, int32 argc, char* argv[], int32 strict)
+parse_options(ps_config_t *cmdln, const ps_arg_t *defn, int32 argc, char* argv[], int32 strict)
 {
     ps_config_t *new_cmdln;
 
@@ -294,7 +294,7 @@ parse_options(ps_config_t *cmdln, const arg_t *defn, int32 argc, char* argv[], i
 }
 
 ps_config_t *
-cmd_ln_parse_r(ps_config_t *inout_cmdln, const arg_t * defn,
+cmd_ln_parse_r(ps_config_t *inout_cmdln, const ps_arg_t * defn,
                int32 argc, char *argv[], int strict)
 {
     int32 i, j, n, argstart;
@@ -336,7 +336,7 @@ cmd_ln_parse_r(ps_config_t *inout_cmdln, const arg_t * defn,
 
     /* Parse command line arguments (name-value pairs) */
     for (j = argstart; j < argc; j += 2) {
-        arg_t *argdef;
+        ps_arg_t *argdef;
         cmd_ln_val_t *val;
         char *name;
         void *v;
@@ -356,7 +356,7 @@ cmd_ln_parse_r(ps_config_t *inout_cmdln, const arg_t * defn,
             else
                 continue;
         }
-        argdef = (arg_t *)v;
+        argdef = (ps_arg_t *)v;
 
         /* Enter argument value */
         if (j + 1 >= argc) {
@@ -416,7 +416,7 @@ cmd_ln_parse_r(ps_config_t *inout_cmdln, const arg_t * defn,
 }
 
 ps_config_t *
-cmd_ln_parse_file_r(ps_config_t *inout_cmdln, const arg_t * defn, const char *filename, int32 strict)
+cmd_ln_parse_file_r(ps_config_t *inout_cmdln, const ps_arg_t * defn, const char *filename, int32 strict)
 {
     FILE *file;
     int argc;
@@ -547,7 +547,7 @@ cmd_ln_parse_file_r(ps_config_t *inout_cmdln, const arg_t * defn, const char *fi
 }
 
 void
-cmd_ln_log_help_r(ps_config_t *cmdln, arg_t const* defn)
+cmd_ln_log_help_r(ps_config_t *cmdln, ps_arg_t const* defn)
 {
     if (defn == NULL)
         return;
@@ -562,7 +562,7 @@ cmd_ln_log_help_r(ps_config_t *cmdln, arg_t const* defn)
 }
 
 void
-cmd_ln_log_values_r(ps_config_t *cmdln, arg_t const* defn)
+cmd_ln_log_values_r(ps_config_t *cmdln, ps_arg_t const* defn)
 {
     if (defn == NULL)
         return;

@@ -93,7 +93,7 @@ typedef struct cmd_ln_val_s {
 } cmd_ln_val_t;
 
 /**
- * @name Values for arg_t::type
+ * @name Values for ps_arg_t::type
  */
 /* @{ */
 /**
@@ -157,7 +157,7 @@ typedef struct cmd_ln_s {
     hash_table_t *ht;
     char **f_argv;
     uint32 f_argc;
-    arg_t const *defn;
+    ps_arg_t const *defn;
     char *json;
 } cmd_ln_t;
 
@@ -197,7 +197,7 @@ int cmd_ln_free_r(cmd_ln_t *cmdln);
 POCKETSPHINX_EXPORT
 cmd_ln_t *cmd_ln_parse_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-line to update,
                                                      or NULL to create a new one. */
-                         arg_t const *defn,	/**< In: Array of argument name definitions */
+                         ps_arg_t const *defn,	/**< In: Array of argument name definitions */
                          int32 argc,		/**< In: Number of actual arguments */
                          char *argv[],		/**< In: Actual arguments */
                          int32 strict           /**< In: Fail on duplicate or unknown
@@ -216,7 +216,7 @@ cmd_ln_t *cmd_ln_parse_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-li
 POCKETSPHINX_EXPORT
 cmd_ln_t *cmd_ln_parse_file_r(cmd_ln_t *inout_cmdln, /**< In/Out: Previous command-line to update,
                                                      or NULL to create a new one. */
-                              arg_t const *defn,   /**< In: Array of argument name definitions*/
+                              ps_arg_t const *defn,   /**< In: Array of argument name definitions*/
                               char const *filename,/**< In: A file that contains all
                                                      the arguments */ 
                               int32 strict         /**< In: Fail on duplicate or unknown
@@ -260,7 +260,7 @@ void cmd_ln_set_str_extra_r(cmd_ln_t *cmdln, char const *name, char const *str);
  * @param defn array of argument name definitions.
  */
 POCKETSPHINX_EXPORT
-void cmd_ln_log_help_r (cmd_ln_t *cmdln, const arg_t *defn);
+void cmd_ln_log_help_r (cmd_ln_t *cmdln, const ps_arg_t *defn);
 
 /**
  * Print current configuration values and defaults.
@@ -268,7 +268,7 @@ void cmd_ln_log_help_r (cmd_ln_t *cmdln, const arg_t *defn);
  * @param cmdln  command-line object
  * @param defn array of argument name definitions.
  */
-void cmd_ln_log_values_r (cmd_ln_t *cmdln, const arg_t *defn);
+void cmd_ln_log_values_r (cmd_ln_t *cmdln, const ps_arg_t *defn);
 
 cmd_ln_val_t *cmd_ln_val_init(int t, const char *name, const char *str);
 void cmd_ln_val_free(cmd_ln_val_t *val);

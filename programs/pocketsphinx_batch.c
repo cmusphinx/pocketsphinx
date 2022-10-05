@@ -54,7 +54,7 @@
     }
 #endif
 
-static const arg_t ps_args_def[] = {
+static const ps_arg_t ps_args_def[] = {
     POCKETSPHINX_OPTIONS,
     /* Various options specific to batch-mode processing. */
     /* Argument file. */

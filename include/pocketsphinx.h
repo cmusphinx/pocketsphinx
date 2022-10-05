@@ -84,53 +84,53 @@ typedef enum ps_type_e  {
 
 /**
  * @struct ps_arg_t
- * Definition of configuration parameter.
+ * @brief Definition of a configuration parameter.
  */
-typedef struct arg_s {
+typedef struct ps_arg_s {
 	char const *name;   /**< Name of the command line switch */
 	int type;           /**< Type of the argument in question */
 	char const *deflt;  /**< Default value (as a character string), or NULL if none */
 	char const *doc;    /**< Documentation/description string */
-} arg_t;
+} ps_arg_t;
 
 /* Opaque structures */
 
 /**
  * @struct ps_config_t
- * PocketSphinx configuration object.
+ * @brief configuration object.
  */
 typedef struct cmd_ln_s ps_config_t;
 
 /**
  * @struct ps_decoder_t
- * PocketSphinx speech recognizer object.
+ * @brief Speech recognizer object.
  */
 typedef struct ps_decoder_s ps_decoder_t;
 
 /**
  * @struct ps_astar_t
- * PocketSphinx N-best hypothesis iterator object.
+ * @brief N-best hypothesis iterator object.
  */
 typedef struct ps_astar_s ps_nbest_t;
 
 /**
  * @struct ps_seg_t
- * PocketSphinx segmentation iterator object.
+ * @brief Segmentation iterator object.
  */
 typedef struct ps_seg_s ps_seg_t;
 
 /**
  * Create a configuration with default values.
  *
- * @param defn Array of arg_t defining and describing parameters,
- * terminated by an arg_t with `name == NULL`.  You should usually
+ * @param defn Array of ps_arg_t defining and describing parameters,
+ * terminated by an ps_arg_t with `name == NULL`.  You should usually
  * just pass NULL here, which will result in the standard set of
  * parameters being used.
  * @return Newly created configuration or NULL on failure (should not
  * happen, but check it anyway).
  */
 POCKETSPHINX_EXPORT
-ps_config_t *ps_config_init(const arg_t *defn);
+ps_config_t *ps_config_init(const ps_arg_t *defn);
 
 /**
  * Retain a pointer to a configuration object.
@@ -518,7 +518,7 @@ int ps_set_cmn(ps_decoder_t *ps, const char *cmn);
  * on Win32 and Symbian (and possibly other platforms).
  */
 POCKETSPHINX_EXPORT
-arg_t const *ps_args(void);
+ps_arg_t const *ps_args(void);
 
 /**
  * Retain a pointer to the decoder.

@@ -320,7 +320,7 @@ cdef class Config:
             default values and documentation
 
         """
-        cdef const arg_t *arg = self.config.defn
+        cdef const ps_arg_t *arg = self.config.defn
         cdef int base_type
         while arg != NULL and arg.name != NULL:
             name = arg.name.decode('utf-8')

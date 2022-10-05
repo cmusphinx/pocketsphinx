@@ -53,7 +53,7 @@
 
 #include "pocketsphinx_internal.h"
 
-static arg_t defn[] = {
+static ps_arg_t defn[] = {
   { "i",
     ARG_STRING,
     NULL,
