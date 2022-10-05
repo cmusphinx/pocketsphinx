@@ -1124,7 +1124,7 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  *
  * @subsection faq_blank There is literally no output!
  *
- * If by this you mean it doesn't give the copious logging like it
+ * If by this you mean it doesn't spew copious logging output like it
  * used to, you can solve this by passing `-loglevel INFO` on the
  * command-line, or setting the `loglevel` parameter to `"INFO"`, or
  * calling err_set_loglevel() with `ERR_INFO`.
