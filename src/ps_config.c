@@ -211,6 +211,7 @@ unescape(char *out, const char *in, size_t len)
           *ptr++ = c;
       }
    }
+   *ptr = '\0';
    return ptr - out;
 }
 
@@ -248,7 +249,7 @@ ps_config_parse_json(ps_config_t *config,
     if (tokens[0].type == JSMN_OBJECT)
         ++i;
     while (i < ntok) {
-        key = ckd_calloc(tokens[i].end - tokens[i].start + 1, 1);
+        key = ckd_malloc(tokens[i].end - tokens[i].start + 1);
         unescape(key, json + tokens[i].start, tokens[i].end - tokens[i].start);
         if (tokens[i].type != JSMN_STRING && tokens[i].type != JSMN_PRIMITIVE) {
             E_ERROR("Expected string or primitive key, got %s\n", key);
@@ -258,7 +259,7 @@ ps_config_parse_json(ps_config_t *config,
             E_ERROR("Missing value for %s\n", key);
             goto error_out;
         }
-        val = ckd_calloc(tokens[i].end - tokens[i].start + 1, 1);
+        val = ckd_malloc(tokens[i].end - tokens[i].start + 1);
         unescape(val, json + tokens[i].start, tokens[i].end - tokens[i].start);
         if (ps_config_set_str(config, key, val) == NULL) {
             E_ERROR("Unknown or invalid parameter %s\n", key);
