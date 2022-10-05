@@ -1069,8 +1069,12 @@ fsg_seg_bp2itor(ps_seg_t *seg, fsg_hist_entry_t *hist_entry)
     if ((bp = fsg_hist_entry_pred(hist_entry)) >= 0)
         ph = fsg_history_entry_get(fsgs->history, bp);
     seg->text = fsg_model_word_str(fsgs->fsg, hist_entry->fsglink->wid);
-    /* Make sure to convert the word IDs!!! */
-    seg->wid = dict_wordid(seg->search->dict, seg->text);
+    /* Make sure to convert the word IDs!!! (unless they're null) */
+    /* FIXME: Need to deal with tag transitions somehow. */
+    if (hist_entry->fsglink->wid < 0)
+        seg->wid = hist_entry->fsglink->wid;
+    else
+        seg->wid = dict_wordid(seg->search->dict, seg->text);
     seg->ef = fsg_hist_entry_frame(hist_entry);
     seg->sf = ph ? fsg_hist_entry_frame(ph) + 1 : 0;
     /* This is kind of silly but it happens for null transitions. */
