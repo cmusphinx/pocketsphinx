@@ -18,7 +18,9 @@ run_program pocketsphinx_batch \
     -cepext .wav \
     -adcin yes \
     -adchdr 44 \
+    -hyp $bn.align \
     -hypseg $bn.matchseg \
+    -bestpath no \
     -backtrace yes \
     > $bn.log 2>&1
 
@@ -32,3 +34,4 @@ fi
 # Check the decoding results
 grep AVERAGE $bn.log
 compare_table "matchseg" $data/librivox/test-align.matchseg $bn.matchseg 1000000
+compare_table "matchseg" $data/librivox/test-align.align $bn.align 1000000
