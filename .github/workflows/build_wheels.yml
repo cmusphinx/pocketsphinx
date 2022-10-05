@@ -23,5 +23,6 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          path: ./dist/*.tar.gz
-          path: ./wheelhouse/*.whl
+          path:
+            - ./wheelhouse/*.whl
+            - ./dist/*.tar.gz
