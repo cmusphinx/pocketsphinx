@@ -69,6 +69,9 @@
  * If only a simple recognition is required it is sufficient to add a
  * single search or just configure the required mode with
  * configuration options.
+ *
+ * Because Doxygen is Bad Software, the actual function definitions
+ * can only exist in \ref ps_decoder_t.  Sorry about that.
  */
 
 #ifndef __PS_SEARCH_H__
@@ -85,7 +88,8 @@ extern "C" {
 #endif
 
 /**
- * PocketSphinx search iterator.
+ * @struct ps_search_iter_t pocketsphinx/search.h
+ * @brief Iterator over search modules.
  */
 typedef struct ps_search_iter_s ps_search_iter_t;
 
@@ -95,6 +99,7 @@ typedef struct ps_decoder_s ps_decoder_t;
 /**
  * Actives search with the provided name.
  *
+ * @memberof ps_decoder_t
  * @param name Name of search module to activate. This must have been
  * previously added by either ps_add_fsg(), ps_add_lm(), or
  * ps_add_kws().  If NULL, it will re-activate the default search,
@@ -107,6 +112,7 @@ int ps_activate_search(ps_decoder_t *ps, const char *name);
 /**
  * Returns name of current search in decoder
  *
+ * @memberof ps_decoder_t
  * @see ps_activate_search
  */
 POCKETSPHINX_EXPORT 
@@ -118,6 +124,7 @@ const char* ps_current_search(ps_decoder_t *ps);
  * Removes a search module previously added with
  * using ps_add_fsg(), ps_add_lm(), ps_add_kws(), etc.
  *
+ * @memberof ps_decoder_t
  * @see ps_add_fsg
  * @see ps_add_lm
  * @see ps_add_kws
@@ -128,6 +135,7 @@ int ps_remove_search(ps_decoder_t *ps, const char *name);
 /**
  * Returns iterator over current searches 
  *
+ * @memberof ps_decoder_t
  * @see ps_activate_search
  */
 POCKETSPHINX_EXPORT
@@ -136,6 +144,7 @@ ps_search_iter_t *ps_search_iter(ps_decoder_t *ps);
 /**
  * Updates search iterator to point to the next position.
  * 
+ * @memberof ps_search_iter_t
  * This function automatically frees the iterator object upon reaching
  * the final entry.
  * @see ps_activate_search
@@ -146,6 +155,7 @@ ps_search_iter_t *ps_search_iter_next(ps_search_iter_t *itor);
 /**
  * Retrieves the name of the search the iterator points to.
  *
+ * @memberof ps_search_iter_t
  * @see ps_activate_search
  */
 POCKETSPHINX_EXPORT
@@ -154,6 +164,7 @@ const char* ps_search_iter_val(ps_search_iter_t *itor);
 /**
  * Delete an unfinished search iterator
  *
+ * @memberof ps_search_iter_t
  * @see ps_activate_search
  */
 POCKETSPHINX_EXPORT
@@ -162,6 +173,7 @@ void ps_search_iter_free(ps_search_iter_t *itor);
 /**
  * Updates search iterator to point to the next position.
  * 
+ * @memberof ps_search_iter_t
  * This function automatically frees the iterator object upon reaching
  * the final entry.
  * @see ps_activate_search
@@ -172,6 +184,7 @@ const char* ps_search_iter_val(ps_search_iter_t *itor);
 /**
  * Get the language model or lmset object associated with a search.
  *
+ * @memberof ps_decoder_t
  * @arg name Name of language model search, or NULL for current search.
  * @return The language model (possibly set of language models) object
  *         for this decoder.  The decoder retains ownership of this
@@ -187,6 +200,7 @@ ngram_model_t *ps_get_lm(ps_decoder_t *ps, const char *name);
  * Associates N-gram search with the provided name. The search can be activated
  * using ps_activate_search().
  *
+ * @memberof ps_decoder_t
  * @see ps_activate_search.
  */ 
 POCKETSPHINX_EXPORT
@@ -197,6 +211,7 @@ int ps_add_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
  *
  * Convenient method to load N-gram model and create a search.
  * 
+ * @memberof ps_decoder_t
  * @see ps_add_lm
  */
 POCKETSPHINX_EXPORT
@@ -205,6 +220,7 @@ int ps_add_lm_file(ps_decoder_t *ps, const char *name, const char *path);
 /**
  * Get the finite-state grammar set object associated with a search.
  *
+ * @memberof ps_decoder_t
  * @arg name Name of FSG search, or NULL for current search.
  * @return The current FSG set object for this decoder, or
  *         NULL if `name` does not correspond to an FSG search.
@@ -218,6 +234,7 @@ fsg_model_t *ps_get_fsg(ps_decoder_t *ps, const char *name);
  * Associates FSG search with the provided name. The search can be
  * activated using ps_activate_search().
  *
+ * @memberof ps_decoder_t
  * @see ps_activate_search
  */
 POCKETSPHINX_EXPORT
@@ -228,6 +245,7 @@ int ps_add_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg);
  *
  * Convenient method to load JSGF model and create a search.
  *
+ * @memberof ps_decoder_t
  * @see ps_add_fsg
  */
 POCKETSPHINX_EXPORT
@@ -238,6 +256,7 @@ int ps_add_jsgf_file(ps_decoder_t *ps, const char *name, const char *path);
  *
  * Convenience method to parse JSGF model from string and create a search.
  *
+ * @memberof ps_decoder_t
  * @see ps_add_fsg
  */
 POCKETSPHINX_EXPORT
@@ -246,6 +265,7 @@ int ps_add_jsgf_string(ps_decoder_t *ps, const char *name, const char *jsgf_stri
 /**
  * Get the keyphrase associated with a KWS search
  *
+ * @memberof ps_decoder_t
  * @arg name Name of KWS search, or NULL for current search.
  * @return The current keyphrase to spot, or NULL if `name` does not
  * correspond to a KWS search
@@ -259,6 +279,7 @@ const char* ps_get_kws(ps_decoder_t *ps, const char *name);
  * Associates KWS search with the provided name. The search can be activated
  * using ps_activate_search().
  *
+ * @memberof ps_decoder_t
  * @see ps_activate_search
  */
 POCKETSPHINX_EXPORT 
@@ -270,6 +291,7 @@ int ps_add_kws(ps_decoder_t *ps, const char *name, const char *keyfile);
  * Associates KWS search with the provided name. The search can be activated
  * using ps_activate_search().
  *
+ * @memberof ps_decoder_t
  * @see ps_activate_search
  */
 POCKETSPHINX_EXPORT 
@@ -281,6 +303,7 @@ int ps_add_keyphrase(ps_decoder_t *ps, const char *name, const char *keyphrase);
  * Associates N-gram search with the provided name. The search can be activated
  * using ps_activate_search().
  *
+ * @memberof ps_decoder_t
  * @see ps_activate_search.
  */ 
 POCKETSPHINX_EXPORT
@@ -291,6 +314,7 @@ int ps_add_allphone(ps_decoder_t *ps, const char *name, ngram_model_t *lm);
  *
  * Convenient method to load N-gram model and create a search.
  * 
+ * @memberof ps_decoder_t
  * @see ps_add_allphone
  */
 POCKETSPHINX_EXPORT
@@ -310,6 +334,7 @@ int ps_add_allphone_file(ps_decoder_t *ps, const char *name, const char *path);
  * phoneme or state segmentations, you must subsequently call
  * ps_set_alignment() and re-run decoding.  It's tough son, but it's life.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder
  * @param words String containing whitespace-separated words for alignment.
  *              These words are assumed to exist in the current dictionary.
@@ -330,6 +355,7 @@ int ps_set_align_text(ps_decoder_t *ps, const char *words);
  * the phone and state sequence, but the durations will be invalid
  * (phones and states will inherit the parent word's duration).
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder object.
  * @param al Usually NULL, which means to construct an alignment from
  *           the current search hypothesis (this does not work with
@@ -353,6 +379,7 @@ int ps_set_alignment(ps_decoder_t *ps, ps_alignment_t *al);
  * invalid durations, but that may still be useful if you just want to
  * know the state sequence.
  *
+ * @memberof ps_decoder_t
  * @return Current alignment, or NULL if none.  This pointer is owned
  *         by the decoder, so you must call ps_alignment_retain() on
  *         it if you wish to keep it outside the lifetime of the

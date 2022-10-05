@@ -102,7 +102,7 @@ typedef signed int ssize_t;
 #endif
 
 /**
- * @union anytype_t
+ * @union anytype_t pocketsphinx/prim_type.h
  * @brief Literally any type!
  *
  * (correction: not literally any type, but all the ones we use for configuration)

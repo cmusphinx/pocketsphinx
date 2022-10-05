@@ -30,6 +30,9 @@
 /**
  * @file vad.h
  * @brief Simple voice activity detection
+ *
+ * Because doxygen is Bad Software, the actual documentation can only
+ * exist in \ref ps_vad_t.  Sorry about that.
  */
 
 #ifndef __PS_VAD_H__
@@ -47,12 +50,14 @@ extern "C" {
 #endif
 
 /**
- * Voice activity detector.
+ * @struct ps_vad_t pocketsphinx/vad.h
+ * @brief Voice activity detector.
  */
 typedef struct ps_vad_s ps_vad_t;
 
 /**
- * Voice activity detection "aggressiveness" levels.
+ * @enum ps_vad_mode_e pocketsphinx/vad.h
+ * @brief Voice activity detection "aggressiveness" levels.
  */
 typedef enum ps_vad_mode_e {
     PS_VAD_LOOSE = 0,
@@ -62,7 +67,8 @@ typedef enum ps_vad_mode_e {
 } ps_vad_mode_t;
 
 /**
- * Classification of input frames returned by ps_vad_classify().
+ * @enum ps_vad_class_e pocketsphinx/vad.h
+ * @brief Classification of input frames returned by ps_vad_classify().
  */
 typedef enum ps_vad_class_e {
     PS_VAD_ERROR = -1,
@@ -82,6 +88,7 @@ typedef enum ps_vad_class_e {
 /**
  * Initialize voice activity detection.
  *
+ * @memberof ps_vad_t
  * @param mode "Aggressiveness" of voice activity detection.  Stricter
  *             values (see ps_vad_mode_t) are less likely to
  *             misclassify non-speech as speech.
@@ -101,6 +108,7 @@ ps_vad_t *ps_vad_init(ps_vad_mode_t mode, int sample_rate, double frame_length);
 /**
  * Retain a pointer to voice activity detector.
  *
+ * @memberof ps_vad_t
  * @param vad Voice activity detector.
  * @return Voice activity detector with incremented reference count.
  */
@@ -110,6 +118,7 @@ ps_vad_t *ps_vad_retain(ps_vad_t *vad);
 /**
  * Release a pointer to voice activity detector.
  *
+ * @memberof ps_vad_t
  * @param vad Voice activity detector.
  * @return New reference count (0 if freed).
  */
@@ -119,6 +128,7 @@ int ps_vad_free(ps_vad_t *vad);
 /**
  * Set the input parameters for voice activity detection.
  *
+ * @memberof ps_vad_t
  * @param sample_rate Sampling rate of input, or 0 for default (which can
  *                    be obtained with ps_vad_sample_rate()).  Only 8000,
  *                    16000, 32000, 48000 are directly supported, others
@@ -139,6 +149,7 @@ int ps_vad_set_input_params(ps_vad_t *vad, int sample_rate, double frame_length)
 /**
  * Get the sampling rate expected by voice activity detection.
  *
+ * @memberof ps_vad_t
  * @param vad Voice activity detector.
  * @return Expected sampling rate.
  */
@@ -152,6 +163,7 @@ int ps_vad_sample_rate(ps_vad_t *vad);
  * ps_vad_classify() contain this number of samples (zero-pad them if
  * necessary).
  *
+ * @memberof ps_vad_t
  * @param vad Voice activity detector.
  * @return Size, in samples, of the frames passed to ps_vad_classify().
  */
@@ -168,6 +180,7 @@ size_t ps_vad_frame_size(ps_vad_t *vad);
 /**
  * Classify a frame as speech or not speech.
  *
+ * @memberof ps_vad_t
  * @param vad Voice activity detector.
  * @param frame Frame of input, **must** contain the number of
  *              samples returned by ps_vad_frame_size().

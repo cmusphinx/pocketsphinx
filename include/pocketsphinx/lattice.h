@@ -38,6 +38,9 @@
 /**
  * @file lattice.h
  * @brief Word lattices
+ *
+ * Because doxygen is Bad Software, the actual documentation can only
+ * exist in \ref ps_lattice_t.  Sorry about that.
  */
 
 #ifndef __PS_LATTICE_H__
@@ -55,13 +58,13 @@ extern "C" {
 #endif
 
 /**
- * @struct ps_lattice_t
+ * @struct ps_lattice_t pocketsphinx/lattice.h
  * @brief Word graph structure used in bestpath/nbest search.
  */
 typedef struct ps_lattice_s ps_lattice_t;
 
 /**
- * @struct ps_latnode_t
+ * @struct ps_latnode_t pocketsphinx/lattice.h
  * @brief Node in a word lattice
  *
  * A node corresponds to a number of hypothesized instances of a word
@@ -70,13 +73,13 @@ typedef struct ps_lattice_s ps_lattice_t;
 typedef struct ps_latnode_s ps_latnode_t;
 
 /**
- * @struct ps_latnode_iter_t
+ * @struct ps_latnode_iter_t pocketsphinx/lattice.h
  * @brief Iterator over DAG nodes.
  */
 typedef struct ps_latnode_s ps_latnode_iter_t; /* pay no attention to the man behind the curtain */
 
 /**
- * @struct ps_latlink_t
+ * @struct ps_latlink_t pocketsphinx/lattice.h
  * @brief Link between DAG nodes.
  *
  * A link corresponds to a single hypothesized instance of a word with
@@ -85,7 +88,7 @@ typedef struct ps_latnode_s ps_latnode_iter_t; /* pay no attention to the man be
 typedef struct ps_latlink_s ps_latlink_t;
 
 /**
- * @struct ps_latlink_iter_t
+ * @struct ps_latlink_iter_t pocketsphinx/lattice.h
  * @brief Iterator over DAG links.
  */
 typedef struct latlink_list_s ps_latlink_iter_t;
@@ -96,6 +99,7 @@ struct ps_decoder_s;
 /**
  * Read a lattice from a file on disk.
  *
+ * @memberof ps_lattice_t
  * @param ps Decoder to use for processing this lattice, or NULL.
  * @param file Path to lattice file.
  * @return Newly created lattice, or NULL for failure.
@@ -111,6 +115,7 @@ ps_lattice_t *ps_lattice_read(struct ps_decoder_s *ps,
  * preventing it from being freed automatically.  You must call
  * ps_lattice_free() to free it after having called this function.
  *
+ * @memberof ps_lattice_t
  * @return pointer to the retained lattice.
  */
 POCKETSPHINX_EXPORT
@@ -119,6 +124,7 @@ ps_lattice_t *ps_lattice_retain(ps_lattice_t *dag);
 /**
  * Free a lattice.
  *
+ * @memberof ps_lattice_t
  * @return new reference count (0 if dag was freed)
  */
 POCKETSPHINX_EXPORT
@@ -127,6 +133,7 @@ int ps_lattice_free(ps_lattice_t *dag);
 /**
  * Write a lattice to disk.
  *
+ * @memberof ps_lattice_t
  * @return 0 for success, <0 on failure.
  */
 POCKETSPHINX_EXPORT
@@ -135,6 +142,7 @@ int ps_lattice_write(ps_lattice_t *dag, char const *filename);
 /**
  * Write a lattice to disk in HTK format
  *
+ * @memberof ps_lattice_t
  * @return 0 for success, <0 on failure.
  */
 POCKETSPHINX_EXPORT
@@ -143,6 +151,7 @@ int ps_lattice_write_htk(ps_lattice_t *dag, char const *filename);
 /**
  * Get the log-math computation object for this lattice
  *
+ * @memberof ps_lattice_t
  * @return The log-math object for this lattice.  The lattice retains
  *         ownership of this pointer, so you should not attempt to
  *         free it manually.  Use logmath_retain() if you wish to
@@ -158,6 +167,7 @@ logmath_t *ps_lattice_get_logmath(ps_lattice_t *dag);
  * @note No particular order of traversal is guaranteed, and you
  * should not depend on this.
  *
+ * @memberof ps_lattice_t
  * @param dag Lattice to iterate over.
  * @return Iterator over lattice nodes.
  */
@@ -166,6 +176,7 @@ ps_latnode_iter_t *ps_latnode_iter(ps_lattice_t *dag);
 
 /**
  * Move to next node in iteration.
+ * @memberof ps_latnode_iter_t
  * @param itor Node iterator.
  * @return Updated node iterator, or NULL if finished
  */
@@ -174,6 +185,7 @@ ps_latnode_iter_t *ps_latnode_iter_next(ps_latnode_iter_t *itor);
 
 /**
  * Stop iterating over nodes.
+ * @memberof ps_latnode_iter_t
  * @param itor Node iterator.
  */
 POCKETSPHINX_EXPORT
@@ -181,6 +193,7 @@ void ps_latnode_iter_free(ps_latnode_iter_t *itor);
 
 /**
  * Get node from iterator.
+ * @memberof ps_latnode_iter_t
  */
 POCKETSPHINX_EXPORT
 ps_latnode_t *ps_latnode_iter_node(ps_latnode_iter_t *itor);
@@ -188,6 +201,7 @@ ps_latnode_t *ps_latnode_iter_node(ps_latnode_iter_t *itor);
 /**
  * Get start and end time range for a node.
  *
+ * @memberof ps_latnode_iter_t
  * @param node Node inquired about.
  * @param out_fef Output: End frame of first exit from this node.
  * @param out_lef Output: End frame of last exit from this node.
@@ -199,6 +213,7 @@ int ps_latnode_times(ps_latnode_t *node, int16 *out_fef, int16 *out_lef);
 /**
  * Get word string for this node.
  *
+ * @memberof ps_latnode_t
  * @param dag Lattice to which node belongs.
  * @param node Node inquired about.
  * @return Word string for this node (possibly a pronunciation variant).
@@ -209,6 +224,7 @@ char const *ps_latnode_word(ps_lattice_t *dag, ps_latnode_t *node);
 /**
  * Get base word string for this node.
  *
+ * @memberof ps_latnode_t
  * @param dag Lattice to which node belongs.
  * @param node Node inquired about.
  * @return Base word string for this node.
@@ -219,6 +235,7 @@ char const *ps_latnode_baseword(ps_lattice_t *dag, ps_latnode_t *node);
 /**
  * Iterate over exits from this node.
  *
+ * @memberof ps_latnode_t
  * @param node Node inquired about.
  * @return Iterator over exit links from this node.
  */
@@ -228,6 +245,7 @@ ps_latlink_iter_t *ps_latnode_exits(ps_latnode_t *node);
 /**
  * Iterate over entries to this node.
  *
+ * @memberof ps_latnode_t
  * @param node Node inquired about.
  * @return Iterator over entry links to this node.
  */
@@ -237,6 +255,7 @@ ps_latlink_iter_t *ps_latnode_entries(ps_latnode_t *node);
 /**
  * Get best posterior probability and associated acoustic score from a lattice node.
  *
+ * @memberof ps_latnode_t
  * @param dag Lattice to which node belongs.
  * @param node Node inquired about.
  * @param out_link Output: exit link with highest posterior probability
@@ -252,6 +271,7 @@ int32 ps_latnode_prob(ps_lattice_t *dag, ps_latnode_t *node,
 /**
  * Get next link from a lattice link iterator.
  *
+ * @memberof ps_latlink_iter_t
  * @param itor Iterator.
  * @return Updated iterator, or NULL if finished.
  */
@@ -260,6 +280,7 @@ ps_latlink_iter_t *ps_latlink_iter_next(ps_latlink_iter_t *itor);
 
 /**
  * Stop iterating over links.
+ * @memberof ps_latlink_iter_t
  * @param itor Link iterator.
  */
 POCKETSPHINX_EXPORT
@@ -267,6 +288,7 @@ void ps_latlink_iter_free(ps_latlink_iter_t *itor);
 
 /**
  * Get link from iterator.
+ * @memberof ps_latlink_iter_t
  */
 POCKETSPHINX_EXPORT
 ps_latlink_t *ps_latlink_iter_link(ps_latlink_iter_t *itor);
@@ -277,6 +299,7 @@ ps_latlink_t *ps_latlink_iter_link(ps_latlink_iter_t *itor);
  * @note these are <strong>inclusive</strong> - i.e. the last frame of
  * this word is ef, not ef-1.
  *
+ * @memberof ps_latlink_t
  * @param link Link inquired about.
  * @param out_sf Output: (optional) start frame of this link.
  * @return End frame of this link.
@@ -287,6 +310,7 @@ int ps_latlink_times(ps_latlink_t *link, int16 *out_sf);
 /**
  * Get destination and source nodes from a lattice link
  *
+ * @memberof ps_latlink_t
  * @param link Link inquired about
  * @param out_src Output: (optional) source node.
  * @return destination node
@@ -297,6 +321,7 @@ ps_latnode_t *ps_latlink_nodes(ps_latlink_t *link, ps_latnode_t **out_src);
 /**
  * Get word string from a lattice link.
  *
+ * @memberof ps_latlink_t
  * @param dag Lattice to which node belongs.
  * @param link Link inquired about
  * @return Word string for this link (possibly a pronunciation variant).
@@ -307,6 +332,7 @@ char const *ps_latlink_word(ps_lattice_t *dag, ps_latlink_t *link);
 /**
  * Get base word string from a lattice link.
  *
+ * @memberof ps_latlink_t
  * @param dag Lattice to which node belongs.
  * @param link Link inquired about
  * @return Base word string for this link
@@ -317,6 +343,7 @@ char const *ps_latlink_baseword(ps_lattice_t *dag, ps_latlink_t *link);
 /**
  * Get predecessor link in best path.
  *
+ * @memberof ps_latlink_t
  * @param link Link inquired about
  * @return Best previous link from bestpath search, if any.  Otherwise NULL
  */
@@ -326,6 +353,7 @@ ps_latlink_t *ps_latlink_pred(ps_latlink_t *link);
 /**
  * Get acoustic score and posterior probability from a lattice link.
  *
+ * @memberof ps_latlink_t
  * @param dag Lattice to which node belongs.
  * @param link Link inquired about
  * @param out_ascr Output: (optional) acoustic score.
@@ -339,6 +367,8 @@ int32 ps_latlink_prob(ps_lattice_t *dag, ps_latlink_t *link, int32 *out_ascr);
 /**
  * Create a directed link between "from" and "to" nodes, but if a link already exists,
  * choose one with the best link_scr.
+ *
+ * @memberof ps_lattice_t
  */
 POCKETSPHINX_EXPORT
 void ps_lattice_link(ps_lattice_t *dag, ps_latnode_t *from, ps_latnode_t *to,
@@ -354,6 +384,7 @@ void ps_lattice_link(ps_lattice_t *dag, ps_latnode_t *from, ps_latnode_t *to,
  * impression that multiple traversals are possible at once, no
  * separate iterator structure is provided.
  *
+ * @memberof ps_lattice_t
  * @param dag Lattice to be traversed.
  * @param start Start node (source) of traversal.
  * @param end End node (goal) of traversal.
@@ -365,6 +396,7 @@ ps_latlink_t *ps_lattice_traverse_edges(ps_lattice_t *dag, ps_latnode_t *start, 
 /**
  * Get the next link in forward traversal.
  *
+ * @memberof ps_lattice_t
  * @param dag Lattice to be traversed.
  * @param end End node (goal) of traversal.
  * @return Next link in traversal.
@@ -377,6 +409,7 @@ ps_latlink_t *ps_lattice_traverse_next(ps_lattice_t *dag, ps_latnode_t *end);
  *
  * @note See ps_lattice_traverse_edges() for why this API is the way it is.
  *
+ * @memberof ps_lattice_t
  * @param dag Lattice to be traversed.
  * @param start Start node (goal) of traversal.
  * @param end End node (source) of traversal.
@@ -388,6 +421,7 @@ ps_latlink_t *ps_lattice_reverse_edges(ps_lattice_t *dag, ps_latnode_t *start, p
 /**
  * Get the next link in reverse traversal.
  *
+ * @memberof ps_lattice_t
  * @param dag Lattice to be traversed.
  * @param start Start node (goal) of traversal.
  * @return Next link in traversal.
@@ -401,6 +435,7 @@ ps_latlink_t *ps_lattice_reverse_next(ps_lattice_t *dag, ps_latnode_t *start);
  * This function calculates both the best path as well as the forward
  * probability used in confidence estimation.
  *
+ * @memberof ps_lattice_t
  * @return Final link in best path, NULL on error.
  */
 POCKETSPHINX_EXPORT
@@ -412,6 +447,7 @@ ps_latlink_t *ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
  *
  * This function assumes that bestpath search has already been done.
  *
+ * @memberof ps_lattice_t
  * @return Posterior probability of the utterance as a whole.
  */
 POCKETSPHINX_EXPORT
@@ -423,6 +459,7 @@ int32 ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
  *
  * This function assumes that ps_lattice_posterior() has already been called.
  *
+ * @memberof ps_lattice_t
  * @param beam Minimum posterior probability for links. This is
  *         expressed in the log-base used in the decoder.  To convert
  *         from linear floating-point, use
@@ -446,6 +483,7 @@ int32 ps_lattice_ngram_expand(ps_lattice_t *dag, ngram_model_t *lm);
 /**
  * Get the number of frames in the lattice.
  *
+ * @memberof ps_lattice_t
  * @param dag The lattice in question.
  * @return Number of frames in this lattice.
  */

@@ -38,6 +38,9 @@
 /**
  * @file mllr.h
  * @brief Model-space linear transforms for speaker adaptation
+ *
+ * Because doxygen is Bad Software, the actual documentation can only
+ * exist in \ref ps_mllr_t.  Sorry about that.
  */
 
 #ifndef __PS_MLLR_H__
@@ -54,24 +57,28 @@ extern "C" {
 #endif
 
 /**
- * Feature space linear transform object.
+ * @struct ps_mllr_t pocketsphinx/mllr.h
+ * @brief Linear transform object.
  */
 typedef struct ps_mllr_s ps_mllr_t;
 
 /**
  * Read a speaker-adaptive linear transform from a file.
+ * @memberof ps_mllr_t
  */
 POCKETSPHINX_EXPORT
 ps_mllr_t *ps_mllr_read(char const *file);
 
 /**
  * Retain a pointer to a linear transform.
+ * @memberof ps_mllr_t
  */
 POCKETSPHINX_EXPORT
 ps_mllr_t *ps_mllr_retain(ps_mllr_t *mllr);
 
 /**
  * Release a pointer to a linear transform.
+ * @memberof ps_mllr_t
  */
 POCKETSPHINX_EXPORT
 int ps_mllr_free(ps_mllr_t *mllr);

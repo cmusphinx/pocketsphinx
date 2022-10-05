@@ -38,6 +38,9 @@
 /**
  * @file alignment.h
  * @brief Multi-level alignment structure
+ *
+ * Because doxygen is Bad Software, the actual documentation can only
+ * exist in \ref ps_alignment_t.  Sorry about that.
  */
 
 #ifndef __PS_ALIGNMENT_H__
@@ -54,49 +57,56 @@ extern "C" {
 
 /**
  * Value indicating no parent or child for an entry.
+ * @related ps_alignment_t
  */
 #define PS_ALIGNMENT_NONE -1
 
 /**
- * @struct ps_alignment_t
+ * @struct ps_alignment_t pocketsphinx/alignment.h
  * @brief Multi-level alignment (words, phones, states) over an utterance.
  */
 typedef struct ps_alignment_s ps_alignment_t;
 
 /**
- * @struct ps_alignment_iter_t
+ * @struct ps_alignment_iter_t pocketsphinx/alignment.h
  * @brief Iterator over entries in an alignment.
  */
 typedef struct ps_alignment_iter_s ps_alignment_iter_t;
 
 /**
  * Retain an alighment
+ * @memberof ps_alignment_t
  */
 ps_alignment_t *ps_alignment_retain(ps_alignment_t *al);
 
 /**
  * Release an alignment
+ * @memberof ps_alignment_t
  */
 int ps_alignment_free(ps_alignment_t *al);
 
 /**
  * Iterate over the alignment starting at the first word.
+ * @memberof ps_alignment_t
  */
 ps_alignment_iter_t *ps_alignment_words(ps_alignment_t *al);
 
 /**
  * Iterate over the alignment starting at the first phone.
+ * @memberof ps_alignment_t
  */
 ps_alignment_iter_t *ps_alignment_phones(ps_alignment_t *al);
 
 /**
  * Iterate over the alignment starting at the first state.
+ * @memberof ps_alignment_t
  */
 ps_alignment_iter_t *ps_alignment_states(ps_alignment_t *al);
 
 /**
  * Get the human-readable name of the current segment for an alignment.
  *
+ * @memberof ps_alignment_iter_t
  * @return Name of this segment as a string (word, phone, or state
  * number).  This pointer is owned by the iterator, do not free it
  * yourself.
@@ -106,6 +116,7 @@ const char *ps_alignment_iter_name(ps_alignment_iter_t *itor);
 /**
  * Get the timing and score information for the current segment of an aligment.
  *
+ * @memberof ps_alignment_iter_t
  * @arg start Output pointer for start frame
  * @arg duration Output pointer for duration
  * @return Acoustic score for this segment
@@ -117,6 +128,8 @@ int ps_alignment_iter_seg(ps_alignment_iter_t *itor, int *start, int *duration);
  *
  * If the end of the alignment is reached, this will free the iterator
  * and return NULL.
+ *
+ * @memberof ps_alignment_iter_t
  */
 ps_alignment_iter_t *ps_alignment_iter_next(ps_alignment_iter_t *itor);
 
@@ -124,11 +137,15 @@ ps_alignment_iter_t *ps_alignment_iter_next(ps_alignment_iter_t *itor);
  * Iterate over the children of the current alignment entry.
  *
  * If there are no child nodes, NULL is returned.
+ *
+ * @memberof ps_alignment_iter_t
  */
 ps_alignment_iter_t *ps_alignment_iter_children(ps_alignment_iter_t *itor);
 
 /**
  * Release an iterator before completing all iterations.
+ *
+ * @memberof ps_alignment_iter_t
  */
 int ps_alignment_iter_free(ps_alignment_iter_t *itor);
 

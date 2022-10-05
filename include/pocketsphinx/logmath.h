@@ -38,6 +38,9 @@
  * @file logmath.h
  * @brief Fast integer logarithmic addition operations.
  *
+ * Because doxygen is Bad Software, the actual documentation can only
+ * exist in \ref logmath_t.  Sorry about that.
+ * 
  * In evaluating HMM models, probability values are often kept in log
  * domain, to avoid overflow.  To enable these logprob values to be
  * held in int32 variables without significant loss of precision, a
@@ -84,7 +87,8 @@ extern "C" {
 #endif
 
 /**
- * Integer log math computation table.
+ * @struct logadd_t pocketsphinx/logmath.h
+ * @brief Integer log math computation table.
  *
  * This is exposed here to allow log-add computations to be inlined.
  */
@@ -101,7 +105,8 @@ struct logadd_s {
 };
 
 /**
- * Integer log math computation class.
+ * @struct logmath_t pocketsphinx/logmath.h
+ * @brief Integer log math computation class.
  */
 typedef struct logmath_s logmath_t;
 
@@ -112,6 +117,7 @@ typedef struct logmath_s logmath_t;
 
 /**
  * Initialize a log math computation table.
+ * @memberof logmath_t
  * @param base The base B in which computation is to be done.
  * @param shift Log values are shifted right by this many bits.
  * @param use_table Whether to use an add table or not
@@ -122,18 +128,21 @@ logmath_t *logmath_init(float64 base, int shift, int use_table);
 
 /**
  * Memory-map (or read) a log table from a file.
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 logmath_t *logmath_read(const char *filename);
 
 /**
  * Write a log table to a file.
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 int32 logmath_write(logmath_t *lmath, const char *filename);
 
 /**
  * Get the log table size and dimensions.
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 int32 logmath_get_table_shape(logmath_t *lmath, uint32 *out_size,
@@ -141,24 +150,28 @@ int32 logmath_get_table_shape(logmath_t *lmath, uint32 *out_size,
 
 /**
  * Get the log base.
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 float64 logmath_get_base(logmath_t *lmath);
 
 /**
  * Get the smallest possible value represented in this base.
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 int logmath_get_zero(logmath_t *lmath);
 
 /**
  * Get the width of the values in a log table.
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 int logmath_get_width(logmath_t *lmath);
 
 /**
  * Get the shift of the values in a log table.
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 int logmath_get_shift(logmath_t *lmath);
@@ -166,6 +179,7 @@ int logmath_get_shift(logmath_t *lmath);
 /**
  * Retain ownership of a log table.
  *
+ * @memberof logmath_t
  * @return pointer to retained log table.
  */
 POCKETSPHINX_EXPORT
@@ -174,6 +188,7 @@ logmath_t *logmath_retain(logmath_t *lmath);
 /**
  * Free a log table.
  *
+ * @memberof logmath_t
  * @return new reference count (0 if freed completely)
  */
 POCKETSPHINX_EXPORT
@@ -181,60 +196,70 @@ int logmath_free(logmath_t *lmath);
 
 /**
  * Add two values in log space exactly and slowly (without using add table).
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 int logmath_add_exact(logmath_t *lmath, int logb_p, int logb_q);
 
 /**
  * Add two values in log space (i.e. return log(exp(p)+exp(q)))
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 int logmath_add(logmath_t *lmath, int logb_p, int logb_q);
 
 /**
  * Convert linear floating point number to integer log in base B.
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 int logmath_log(logmath_t *lmath, float64 p);
 
 /**
  * Convert integer log in base B to linear floating point.
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 float64 logmath_exp(logmath_t *lmath, int logb_p);
 
 /**
  * Convert natural log (in floating point) to integer log in base B.
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 int logmath_ln_to_log(logmath_t *lmath, float64 log_p);
 
 /**
  * Convert integer log in base B to natural log (in floating point).
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 float64 logmath_log_to_ln(logmath_t *lmath, int logb_p);
 
 /**
  * Convert base 10 log (in floating point) to integer log in base B.
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 int logmath_log10_to_log(logmath_t *lmath, float64 log_p);
 
 /**
  * Convert base 10 log (in floating point) to float log in base B.
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 float logmath_log10_to_log_float(logmath_t *lmath, float64 log_p);
 
 /**
  * Convert integer log in base B to base 10 log (in floating point).
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 float64 logmath_log_to_log10(logmath_t *lmath, int logb_p);
 
 /**
  * Convert float log in base B to base 10 log.
+ * @memberof logmath_t
  */
 POCKETSPHINX_EXPORT
 float64 logmath_log_float_to_log10(logmath_t *lmath, float log_p);

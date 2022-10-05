@@ -31,6 +31,10 @@
 /**
  * @file model.h
  * @brief Public API for language models
+ *
+ * Because doxygen is Bad Software, the actual documentation can only
+ * exist in \ref jsgf_t, \ref fsg_model_t, and \ref ngram_model_t.
+ * Sorry about that.
  */
 
 #ifndef __PS_MODEL_H__
@@ -53,19 +57,19 @@ extern "C" {
 typedef struct cmd_ln_s ps_config_t;
 
 /**
- * @struct jsgf_t
+ * @struct jsgf_t pocketsphinx/model.h
  * @brief JSGF parser
  */
 typedef struct jsgf_s jsgf_t;
 
 /**
- * @struct jsgf_rule_t
+ * @struct jsgf_rule_t pocketsphinx/model.h
  * @brief Rule in a parsed JSGF grammar.
  */
 typedef struct jsgf_rule_s jsgf_rule_t;
 
 /**
- * @struct fsg_model_t
+ * @struct fsg_model_t pocketsphinx/model.h
  * @brief Finite-state grammar.
  *
  * States are simply integers 0..n_state-1.
@@ -76,7 +80,7 @@ typedef struct jsgf_rule_s jsgf_rule_t;
 typedef struct fsg_model_s fsg_model_t;
 
 /**
- * @struct ngram_model_t
+ * @struct ngram_model_t pocketsphinx/model.h
  * @brief N-Gram based language model.
  */
 typedef struct ngram_model_s ngram_model_t;
@@ -84,6 +88,7 @@ typedef struct ngram_model_s ngram_model_t;
 /**
  * Parse a JSGF grammar from a file.
  *
+ * @memberof jsgf_t
  * @param filename the name of the file to parse.
  * @param parent optional parent grammar for this one (NULL, usually).
  * @return new JSGF grammar object, or NULL on failure.
@@ -94,7 +99,8 @@ jsgf_t *jsgf_parse_file(const char *filename, jsgf_t *parent);
 /**
  * Parse a JSGF grammar from a string.
  *
- * @param 0-terminated string with grammar.
+ * @memberof jsgf_t
+ * @param string 0-terminated string with grammar.
  * @param parent optional parent grammar for this one (NULL, usually).
  * @return new JSGF grammar object, or NULL on failure.
  */
@@ -103,71 +109,83 @@ jsgf_t *jsgf_parse_string(const char *string, jsgf_t *parent);
 
 /**
  * Get the grammar name from the file.
+ * @memberof jsgf_t
  */
 POCKETSPHINX_EXPORT
 char const *jsgf_grammar_name(jsgf_t *jsgf);
 
 /**
  * Free a JSGF grammar.
+ * @memberof jsgf_t
  */
 POCKETSPHINX_EXPORT
 void jsgf_grammar_free(jsgf_t *jsgf);
 
 /**
  * Get a rule by name from a grammar. Name should not contain brackets.
+ * @memberof jsgf_t
  */
 POCKETSPHINX_EXPORT
 jsgf_rule_t *jsgf_get_rule(jsgf_t *grammar, const char *name);
 
 /**
  * Returns the first public rule of the grammar
+ * @memberof jsgf_t
  */
 POCKETSPHINX_EXPORT
 jsgf_rule_t *jsgf_get_public_rule(jsgf_t *grammar);
 
 /**
  * Get the rule name from a rule.
+ * @memberof jsgf_rule_t
  */
 POCKETSPHINX_EXPORT
 char const *jsgf_rule_name(jsgf_rule_t *rule);
 
 /**
  * Test if a rule is public or not.
+ * @memberof jsgf_rule_t
  */
 POCKETSPHINX_EXPORT
 int jsgf_rule_public(jsgf_rule_t *rule);
 
 /**
- * Iterator over rules in a grammar.
+ * @struct jsgf_rule_iter_t
+ * @brief Iterator over rules in a grammar.
  */
 typedef struct hash_iter_s jsgf_rule_iter_t;
 
 /**
  * Get an iterator over all rules in a grammar.
+ * @memberof jsgf_t
  */
 POCKETSPHINX_EXPORT
 jsgf_rule_iter_t *jsgf_rule_iter(jsgf_t *grammar);
 
 /**
  * Advance an iterator to the next rule in the grammar.
+ * @memberof jsgf_rule_iter_t
  */
 POCKETSPHINX_EXPORT
 jsgf_rule_iter_t *jsgf_rule_iter_next(jsgf_rule_iter_t *itor);
 
 /**
  * Get the current rule in a rule iterator.
+ * @memberof jsgf_rule_iter_t
  */
 POCKETSPHINX_EXPORT
 jsgf_rule_t *jsgf_rule_iter_rule(jsgf_rule_iter_t *itor);
 
 /**
  * Free a rule iterator (if the end hasn't been reached).
+ * @memberof jsgf_rule_iter_t
  */
 POCKETSPHINX_EXPORT
 void jsgf_rule_iter_free(jsgf_rule_iter_t *itor);
 
 /**
  * Build a Sphinx FSG object from a JSGF rule.
+ * @memberof jsgf_t
  */
 POCKETSPHINX_EXPORT
 fsg_model_t *jsgf_build_fsg(jsgf_t *grammar, jsgf_rule_t *rule,
@@ -177,6 +195,7 @@ fsg_model_t *jsgf_build_fsg(jsgf_t *grammar, jsgf_rule_t *rule,
  * Read JSGF from file and return FSG object from it.
  *
  * This function looks for a first public rule in jsgf and constructs JSGF from it.
+ * @memberof fsg_model_t
  */
 POCKETSPHINX_EXPORT
 fsg_model_t *jsgf_read_file(const char *file, logmath_t * lmath, float32 lw);
@@ -185,6 +204,7 @@ fsg_model_t *jsgf_read_file(const char *file, logmath_t * lmath, float32 lw);
  * Read JSGF from string and return FSG object from it.
  *
  * This function looks for a first public rule in jsgf and constructs JSGF from it.
+ * @memberof fsg_model_t
  */
 POCKETSPHINX_EXPORT
 fsg_model_t *jsgf_read_string(const char *string, logmath_t * lmath, float32 lw);
@@ -194,6 +214,7 @@ fsg_model_t *jsgf_read_string(const char *string, logmath_t * lmath, float32 lw)
  *
  * This does a direct conversion without doing transitive closure on
  * null transitions and so forth.
+ * @memberof jsgf_t
  */
 POCKETSPHINX_EXPORT
 int jsgf_write_fsg(jsgf_t *grammar, jsgf_rule_t *rule, FILE *outfh);
@@ -202,6 +223,7 @@ int jsgf_write_fsg(jsgf_t *grammar, jsgf_rule_t *rule, FILE *outfh);
  * Retain ownership of an FSG.
  *
  * @return Pointer to retained FSG.
+ * @memberof fsg_model_t
  */
 POCKETSPHINX_EXPORT
 fsg_model_t *fsg_model_retain(fsg_model_t *fsg);
@@ -209,6 +231,7 @@ fsg_model_t *fsg_model_retain(fsg_model_t *fsg);
 /**
  * Free the given word FSG.
  *
+ * @memberof fsg_model_t
  * @return new reference count (0 if freed completely)
  */
 POCKETSPHINX_EXPORT
@@ -252,12 +275,14 @@ int fsg_model_free(fsg_model_t *fsg);
  * 
  * Return value: a new fsg_model_t structure if the file is successfully
  * read, NULL otherwise.
+ * @memberof fsg_model_t
  */
 POCKETSPHINX_EXPORT
 fsg_model_t *fsg_model_readfile(const char *file, logmath_t *lmath, float32 lw);
 
 /**
  * Like fsg_model_readfile(), but from an already open stream.
+ * @memberof fsg_model_t
  */
 POCKETSPHINX_EXPORT
 fsg_model_t *fsg_model_read(FILE *fp, logmath_t *lmath, float32 lw);
@@ -265,6 +290,7 @@ fsg_model_t *fsg_model_read(FILE *fp, logmath_t *lmath, float32 lw);
 /**
  * Check that an FSG accepts a word sequence
  *
+ * @memberof fsg_model_t
  * @param words Whitespace-separated word sequence
  * @return 1 if accepts, 0 if not.
  */
@@ -273,48 +299,54 @@ int fsg_model_accept(fsg_model_t *fsg, char const *words);
 
 /**
  * Write FSG to a file.
+ * @memberof fsg_model_t
  */
 POCKETSPHINX_EXPORT
 void fsg_model_write(fsg_model_t *fsg, FILE *fp);
 
 /**
  * Write FSG to a file.
+ * @memberof fsg_model_t
  */
 POCKETSPHINX_EXPORT
 void fsg_model_writefile(fsg_model_t *fsg, char const *file);
 
 /**
  * Write FSG to a file in AT&T FSM format.
+ * @memberof fsg_model_t
  */
 POCKETSPHINX_EXPORT
 void fsg_model_write_fsm(fsg_model_t *fsg, FILE *fp);
 
 /**
  * Write FSG to a file in AT&T FSM format.
+ * @memberof fsg_model_t
  */
 POCKETSPHINX_EXPORT
 void fsg_model_writefile_fsm(fsg_model_t *fsg, char const *file);
 
 /**
  * Write FSG symbol table to a file (for AT&T FSM)
+ * @memberof fsg_model_t
  */
 POCKETSPHINX_EXPORT
 void fsg_model_write_symtab(fsg_model_t *fsg, FILE *file);
 
 /**
  * Write FSG symbol table to a file (for AT&T FSM)
+ * @memberof fsg_model_t
  */
 POCKETSPHINX_EXPORT
 void fsg_model_writefile_symtab(fsg_model_t *fsg, char const *file);
 
 /**
- * @struct ngram_class_t
+ * @struct ngram_class_t pocketsphinx/model.h
  * @brief Word class in an N-Gram model.
  */
 typedef struct ngram_class_s ngram_class_t;
 
 /**
- * @typedef ngram_file_type_t
+ * @enum ngram_file_type_e pocketsphinx/model.h
  * @brief File types for N-Gram files
  */
 typedef enum ngram_file_type_e {
@@ -336,6 +368,7 @@ typedef enum ngram_file_type_e {
  *  - -lw (float32) language weight to apply to the model
  *  - -wip (float32) word insertion penalty to apply to the model
  *
+ * @memberof ngram_model_t
  * @param file_name path to the file to read.
  * @param file_type type of the file, or NGRAM_AUTO to determine automatically.
  * @param lmath Log-math parameters to use for probability
@@ -354,6 +387,7 @@ ngram_model_t *ngram_model_read(ps_config_t *config,
 /**
  * Write an N-Gram model to disk.
  *
+ * @memberof ngram_model_t
  * @return 0 for success, <0 on error
  */
 POCKETSPHINX_EXPORT
@@ -363,6 +397,7 @@ int ngram_model_write(ngram_model_t *model, const char *file_name,
 /**
  * Guess the file type for an N-Gram model from the filename.
  *
+ * @memberof ngram_model_t
  * @return the guessed file type, or NGRAM_INVALID if none could be guessed.
  */
 POCKETSPHINX_EXPORT
@@ -371,6 +406,7 @@ ngram_file_type_t ngram_file_name_to_type(const char *file_name);
 /**
  * Get the N-Gram file type from a string.
  *
+ * @memberof ngram_model_t
  * @return file type, or NGRAM_INVALID if no such file type exists.
  */
 POCKETSPHINX_EXPORT
@@ -379,6 +415,7 @@ ngram_file_type_t ngram_str_to_type(const char *str_name);
 /**
  * Get the canonical name for an N-Gram file type.
  *
+ * @memberof ngram_model_t
  * @return read-only string with the name for this file type, or NULL
  * if no such type exists.
  */
@@ -388,6 +425,7 @@ char const *ngram_type_to_str(int type);
 /**
  * Retain ownership of an N-Gram model.
  *
+ * @memberof ngram_model_t
  * @return Pointer to retained model.
  */
 POCKETSPHINX_EXPORT
@@ -396,17 +434,19 @@ ngram_model_t *ngram_model_retain(ngram_model_t *model);
 /**
  * Release memory associated with an N-Gram model.
  *
+ * @memberof ngram_model_t
  * @return new reference count (0 if freed completely)
  */
 POCKETSPHINX_EXPORT
 int ngram_model_free(ngram_model_t *model);
 
 /**
- * Constants for case folding.
+ * @enum ngram_case_e pocketsphinx/model.h
+ * @brief Constants for case folding.
  */
 typedef enum ngram_case_e {
-    NGRAM_UPPER,
-    NGRAM_LOWER
+    NGRAM_UPPER,  /**< Upper case */
+    NGRAM_LOWER   /**< Lower case */
 } ngram_case_t;
 
 /**
@@ -414,6 +454,8 @@ typedef enum ngram_case_e {
  *
  * WARNING: This is not Unicode aware, so any non-ASCII characters
  * will not be converted.
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 int ngram_model_casefold(ngram_model_t *model, int kase);
@@ -428,6 +470,8 @@ int ngram_model_casefold(ngram_model_t *model, int kase);
  * N-Gram probability estimate.
  *
  * To remove all weighting, call ngram_apply_weights(model, 1.0, 1.0).
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 int ngram_model_apply_weights(ngram_model_t *model,
@@ -436,6 +480,7 @@ int ngram_model_apply_weights(ngram_model_t *model,
 /**
  * Get the current weights from a language model.
  *
+ * @memberof ngram_model_t
  * @param model The model in question.
  * @param out_log_wip Output: (optional) logarithm of word insertion penalty.
  * @return language weight.
@@ -474,12 +519,16 @@ float32 ngram_model_get_weights(ngram_model_t *model, int32 *out_log_wip);
  * unknown, this function will return a "zero" log-probability, i.e. a
  * large negative number.  To obtain this number for comparison, call
  * ngram_zero().
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 int32 ngram_score(ngram_model_t *model, const char *word, ...);
 
 /**
  * Quick trigram score lookup.
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 int32 ngram_tg_score(ngram_model_t *model,
@@ -488,6 +537,8 @@ int32 ngram_tg_score(ngram_model_t *model,
 
 /**
  * Quick bigram score lookup.
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 int32 ngram_bg_score(ngram_model_t *model,
@@ -496,6 +547,8 @@ int32 ngram_bg_score(ngram_model_t *model,
 
 /**
  * Quick general N-Gram score lookup.
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 int32 ngram_ng_score(ngram_model_t *model, int32 wid, int32 *history,
@@ -508,6 +561,7 @@ int32 ngram_ng_score(ngram_model_t *model, int32 wid, int32 *history,
  * language model file, before any language weighting, interpolation,
  * or insertion penalty has been applied.
  *
+ * @memberof ngram_model_t
  * @note When backing off to a unigram from a bigram or trigram, the
  * unigram weight (interpolation with uniform) is not removed.
  */
@@ -523,6 +577,7 @@ int32 ngram_probv(ngram_model_t *model, const char *word, ...);
  *
  * @note When backing off to a unigram from a bigram or trigram, the
  * unigram weight (interpolation with uniform) is not removed.
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 int32 ngram_prob(ngram_model_t *model, const char* const *words, int32 n);
@@ -532,6 +587,8 @@ int32 ngram_prob(ngram_model_t *model, const char* const *words, int32 n);
  *
  * See documentation for ngram_ng_score() and ngram_apply_weights()
  * for an explanation of this.
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 int32 ngram_ng_prob(ngram_model_t *model, int32 wid, int32 *history,
@@ -544,6 +601,7 @@ int32 ngram_ng_prob(ngram_model_t *model, int32 wid, int32 *history,
  * removed, since there is no way to know which order of N-Gram
  * generated <code>score</code>.
  * 
+ * @memberof ngram_model_t
  * @param model The N-Gram model from which score was obtained.
  * @param score The N-Gram score to convert
  * @return The raw log-probability value.
@@ -553,12 +611,16 @@ int32 ngram_score_to_prob(ngram_model_t *model, int32 score);
 
 /**
  * Look up numerical word ID.
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 int32 ngram_wid(ngram_model_t *model, const char *word);
 
 /**
  * Look up word string for numerical word ID.
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 const char *ngram_word(ngram_model_t *model, int32 wid);
@@ -573,6 +635,7 @@ const char *ngram_word(ngram_model_t *model, int32 wid);
  * zero probability).  If this is a closed vocabulary model, this
  * function will return NGRAM_INVALID_WID.
  *
+ * @memberof ngram_model_t
  * @return The ID for the unknown word, or NGRAM_INVALID_WID if none
  * exists.
  */
@@ -581,30 +644,41 @@ int32 ngram_unknown_wid(ngram_model_t *model);
 
 /**
  * Get the "zero" log-probability value for a language model.
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 int32 ngram_zero(ngram_model_t *model);
 
 /**
  * Get the order of the N-gram model (i.e. the "N" in "N-gram")
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 int32 ngram_model_get_size(ngram_model_t *model);
 
 /**
  * Get the counts of the various N-grams in the model.
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 uint32 const *ngram_model_get_counts(ngram_model_t *model);
 
 /**
- * M-gram iterator object.
+ * @struct ngram_iter_t pocketsphinx/model.h
+ * @brief M-gram (yes, **M**-gram) iterator object.
+ *
+ * This is an iterator over the N-Gram successors of a given word or
+ * N-1-Gram, that is why it is called "M" and not "N".
  */
 typedef struct ngram_iter_s ngram_iter_t;
 
 /**
  * Iterate over all M-grams.
  *
+ * @memberof ngram_model_t
  * @param model Language model to query.
  * @param m Order of the M-Grams requested minus one (i.e. order of the history)
  * @return An iterator over the requested M, or NULL if no N-grams of
@@ -615,12 +689,16 @@ ngram_iter_t *ngram_model_mgrams(ngram_model_t *model, int m);
 
 /**
  * Get an iterator over M-grams pointing to the specified M-gram.
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 ngram_iter_t *ngram_iter(ngram_model_t *model, const char *word, ...);
 
 /**
  * Get an iterator over M-grams pointing to the specified M-gram.
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 ngram_iter_t *ngram_ng_iter(ngram_model_t *model, int32 wid, int32 *history, int32 n_hist);
@@ -628,6 +706,7 @@ ngram_iter_t *ngram_ng_iter(ngram_model_t *model, int32 wid, int32 *history, int
 /**
  * Get information from the current M-gram in an iterator.
  *
+ * @memberof ngram_iter_t
  * @param out_score Output: Score for this M-gram (including any word
  *                          penalty and language weight).
  * @param out_bowt Output: Backoff weight for this M-gram.
@@ -641,6 +720,7 @@ int32 const *ngram_iter_get(ngram_iter_t *itor,
 /**
  * Iterate over all M-gram successors of an M-1-gram.
  *
+ * @memberof ngram_iter_t
  * @param itor Iterator pointing to the M-1-gram to get successors of.
  */
 POCKETSPHINX_EXPORT
@@ -648,12 +728,14 @@ ngram_iter_t *ngram_iter_successors(ngram_iter_t *itor);
 
 /**
  * Advance an M-gram iterator.
+ * @memberof ngram_iter_t
  */
 POCKETSPHINX_EXPORT
 ngram_iter_t *ngram_iter_next(ngram_iter_t *itor);
 
 /**
  * Terminate an M-gram iterator.
+ * @memberof ngram_iter_t
  */
 POCKETSPHINX_EXPORT
 void ngram_iter_free(ngram_iter_t *itor);
@@ -665,6 +747,7 @@ void ngram_iter_free(ngram_iter_t *itor);
  * model sets, and may be subject to change.  Currently this will add
  * the word to all of the submodels
  *
+ * @memberof ngram_model_t
  * @param model The model to add a word to.
  * @param word Text of the word to add.
  * @param weight Weight of this word relative to the uniform distribution.
@@ -685,6 +768,7 @@ int32 ngram_model_add_word(ngram_model_t *model,
  * is to suffix them with ":class_tag", where class_tag is the class
  * tag minus the enclosing square brackets.
  *
+ * @memberof ngram_model_t
  * @return 0 for success, <0 for error
  */
 POCKETSPHINX_EXPORT
@@ -698,6 +782,7 @@ int32 ngram_model_read_classdef(ngram_model_t *model,
  * <code>model</code>, then it will be converted to a class tag, and
  * <code>classweight</code> will be ignored.  Otherwise, a new unigram
  * will be created as in ngram_model_add_word().
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 int32 ngram_model_add_class(ngram_model_t *model,
@@ -710,6 +795,7 @@ int32 ngram_model_add_class(ngram_model_t *model,
 /**
  * Add a word to a class in a language model.
  *
+ * @memberof ngram_model_t
  * @param model The model to add a word to.
  * @param classname Name of the class to add this word to.
  * @param word Text of the word to add.
@@ -739,6 +825,7 @@ int32 ngram_model_add_class_word(ngram_model_t *model,
  * currently the only) one is that they <strong>must</strong> all
  * share the same log-math parameters.
  *
+ * @memberof ngram_model_t
  * @param config Any configuration parameters to be shared between models.
  * @param models Array of pointers to previously created language models.
  * @param names Array of strings to use as unique identifiers for LMs.
@@ -774,6 +861,7 @@ ngram_model_t *ngram_model_set_init(ps_config_t *config,
  * 
  * No "comments" allowed in this file.
  *
+ * @memberof ngram_model_t
  * @param config Configuration parameters.
  * @param lmctlfile Path to the language model control file.
  * @param lmath Log-math parameters to use for probability
@@ -790,18 +878,21 @@ ngram_model_t *ngram_model_set_read(ps_config_t *config,
 
 /**
  * Returns the number of language models in a set.
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 int32 ngram_model_set_count(ngram_model_t *set);
 
 /**
- * Iterator over language models in a set.
+ * @struct ngram_model_set_iter_t pocketsphinx/model.h
+ * @brief Iterator over language models in a set.
  */
 typedef struct ngram_model_set_iter_s ngram_model_set_iter_t;
 
 /**
  * Begin iterating over language models in a set.
  *
+ * @memberof ngram_model_t
  * @return iterator pointing to the first language model, or NULL if no models remain.
  */
 POCKETSPHINX_EXPORT
@@ -810,6 +901,7 @@ ngram_model_set_iter_t *ngram_model_set_iter(ngram_model_t *set);
 /**
  * Move to the next language model in a set.
  *
+ * @memberof ngram_model_set_iter_t
  * @return iterator pointing to the next language model, or NULL if no models remain.
  */
 POCKETSPHINX_EXPORT
@@ -817,6 +909,7 @@ ngram_model_set_iter_t *ngram_model_set_iter_next(ngram_model_set_iter_t *itor);
 
 /**
  * Finish iteration over a langauge model set.
+ * @memberof ngram_model_set_iter_t
  */
 POCKETSPHINX_EXPORT
 void ngram_model_set_iter_free(ngram_model_set_iter_t *itor);
@@ -824,6 +917,7 @@ void ngram_model_set_iter_free(ngram_model_set_iter_t *itor);
 /**
  * Get language model and associated name from an iterator.
  *
+ * @memberof ngram_model_set_iter_t
  * @param itor the iterator
  * @param lmname Output: string name associated with this language model.
  * @return Language model pointed to by this iterator.
@@ -835,6 +929,7 @@ ngram_model_t *ngram_model_set_iter_model(ngram_model_set_iter_t *itor,
 /**
  * Select a single language model from a set for scoring.
  *
+ * @memberof ngram_model_t
  * @return the newly selected language model, or NULL if no language
  * model by that name exists.
  */
@@ -845,6 +940,7 @@ ngram_model_t *ngram_model_set_select(ngram_model_t *set,
 /**
  * Look up a language model by name from a set.
  *
+ * @memberof ngram_model_t
  * @return language model corresponding to <code>name</code>, or NULL
  * if no language model by that name exists.
  */
@@ -854,6 +950,7 @@ ngram_model_t *ngram_model_set_lookup(ngram_model_t *set,
 
 /**
  * Get the current language model name, if any.
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 const char *ngram_model_set_current(ngram_model_t *set);
@@ -864,6 +961,8 @@ const char *ngram_model_set_current(ngram_model_t *set);
  * If <code>weights</code> is NULL, any previously initialized set of
  * weights will be used.  If no weights were specified to
  * ngram_model_set_init(), then a uniform distribution will be used.
+ *
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 ngram_model_t *ngram_model_set_interp(ngram_model_t *set,
@@ -873,6 +972,7 @@ ngram_model_t *ngram_model_set_interp(ngram_model_t *set,
 /**
  * Add a language model to a set.
  *
+ * @memberof ngram_model_t
  * @param set The language model set to add to.
  * @param model The language model to add.
  * @param name The name to associate with this model.
@@ -892,6 +992,7 @@ ngram_model_t *ngram_model_set_add(ngram_model_t *set,
 /**
  * Remove a language model from a set.
  *
+ * @memberof ngram_model_t
  * @param set The language model set to remove from.
  * @param name The name associated with the model to remove.
  * @param reuse_widmap Reuse the existing word-ID mapping in
@@ -904,6 +1005,7 @@ ngram_model_t *ngram_model_set_remove(ngram_model_t *set,
 
 /**
  * Set the word-to-ID mapping for this model set.
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 void ngram_model_set_map_words(ngram_model_t *set,
@@ -913,6 +1015,7 @@ void ngram_model_set_map_words(ngram_model_t *set,
 /**
  * Query the word-ID mapping for the current language model.
  *
+ * @memberof ngram_model_t
  * @return the local word ID in the current language model, or
  * NGRAM_INVALID_WID if <code>set_wid</code> is invalid or
  * interpolation is enabled.
@@ -925,6 +1028,7 @@ int32 ngram_model_set_current_wid(ngram_model_t *set,
  * Test whether a word ID corresponds to a known word in the current
  * state of the language model set.
  *
+ * @memberof ngram_model_t
  * @return If there is a current language model, returns non-zero if
  * <code>set_wid</code> corresponds to a known word in that language
  * model.  Otherwise, returns non-zero if <code>set_wid</code>
@@ -935,6 +1039,7 @@ int32 ngram_model_set_known_wid(ngram_model_t *set, int32 set_wid);
 
 /**
  * Flush any cached N-Gram information
+ * @memberof ngram_model_t
  */
 POCKETSPHINX_EXPORT
 void ngram_model_flush(ngram_model_t *lm);

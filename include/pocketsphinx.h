@@ -33,6 +33,30 @@
  */
 /**
  * @file pocketsphinx.h Main header file for the PocketSphinx decoder.
+ *
+ * This is the only header file you should need to include in order to
+ * write code using PocketSphinx.  The documentation for its various
+ * functions and structures is actually located on the pages for those
+ * structures, and because Doxygen does not seem smart enough to put
+ * links in the "Typedefs" list above, here they are for your
+ * convenience:
+ *
+ * - \ref ps_config_t
+ * - \ref ps_arg_t
+ * - \ref ps_decoder_t
+ * - \ref ps_nbest_t
+ * - \ref ps_seg_t
+ *
+ * There are also a few other structures you should be aware of, which
+ * can be useful in writing speech applications:
+ *
+ * - \ref ps_endpointer_t
+ * - \ref ps_vad_t
+ * - \ref jsgf_t
+ * - \ref ngram_model_t
+ *
+ * Finally, to learn about switching language models and grammars, see
+ * <pocketsphinx/search.h>
  */
 
 #ifndef __POCKETSPHINX_H__
@@ -67,8 +91,8 @@ extern "C" {
 
 /* Transparent structures */
 /**
- * @enum ps_type_t
- * Types of configuration parameters.
+ * @enum ps_type_e
+ * @brief Types of configuration parameters.
  */
 typedef enum ps_type_e  {
     ARG_REQUIRED =  (1<<0), /*<< Bit indicating required argument. */
@@ -81,6 +105,10 @@ typedef enum ps_type_e  {
     REQARG_STRING = (ARG_STRING | ARG_REQUIRED),
     REQARG_BOOLEAN = (ARG_BOOLEAN | ARG_REQUIRED)
 } ps_type_t;
+/**
+ * @typedef ps_type_t
+ * @brief Types of configuration parameters.
+ */
 
 /**
  * @struct ps_arg_t
@@ -108,7 +136,7 @@ typedef struct cmd_ln_s ps_config_t;
 typedef struct ps_decoder_s ps_decoder_t;
 
 /**
- * @struct ps_astar_t
+ * @struct ps_nbest_t
  * @brief N-best hypothesis iterator object.
  */
 typedef struct ps_astar_s ps_nbest_t;
@@ -122,6 +150,7 @@ typedef struct ps_seg_s ps_seg_t;
 /**
  * Create a configuration with default values.
  *
+ * @memberof ps_config_t
  * @param defn Array of ps_arg_t defining and describing parameters,
  * terminated by an ps_arg_t with `name == NULL`.  You should usually
  * just pass NULL here, which will result in the standard set of
@@ -134,12 +163,14 @@ ps_config_t *ps_config_init(const ps_arg_t *defn);
 
 /**
  * Retain a pointer to a configuration object.
+ * @memberof ps_config_t
  */
 POCKETSPHINX_EXPORT
 ps_config_t *ps_config_retain(ps_config_t *config);
 
 /**
  * Release a configuration object.
+ * @memberof ps_config_t
  */
 POCKETSPHINX_EXPORT
 int ps_config_free(ps_config_t *config);
@@ -150,6 +181,7 @@ int ps_config_free(ps_config_t *config);
  * Currently this just checks that you haven't specified multiple
  * types of grammars or language models at the same time.
  *
+ * @memberof ps_config_t
  * @return 0 for success, <0 for failure.
  */
 int ps_config_validate(ps_config_t *config);
@@ -173,6 +205,7 @@ int ps_config_validate(ps_config_t *config);
  * Well, mostly.  Unicode escape sequences (e.g. `"\u0020"`) are *not*
  * supported at the moment, so please don't use them.
  *
+ * @memberof ps_config_t
  * @arg config Previously existing ps_config_t to update, or NULL to
  * create a new one.
  * @arg json JSON serialized object as null-terminated UTF-8,
@@ -188,6 +221,7 @@ ps_config_t *ps_config_parse_json(ps_config_t *config, const char *json);
  *
  * Unlike ps_config_parse_json(), this actually produces valid JSON ;-)
  *
+ * @memberof ps_config_t
  * @arg config Configuration object
  * @return Newly created null-terminated JSON string.  The ps_config_t
  * retains ownership of this pointer, which is only valid until the
@@ -200,6 +234,7 @@ const char *ps_config_serialize_json(ps_config_t *config);
 /**
  * Access the type of a configuration parameter.
  *
+ * @memberof ps_config_t
  * @param config Configuration object.
  * @param name Name of the parameter to retrieve.
  * @return the type of the parameter (as a combination of the ARG_*
@@ -216,6 +251,7 @@ ps_type_t ps_config_typeof(ps_config_t *config, char const *name);
  * is thus mainly useful for dynamic language bindings, and you should
  * use ps_config_int(), ps_config_float(), or ps_config_str() instead.
  *
+ * @memberof ps_config_t
  * @param config Configuration object.
  * @param name Name of the parameter to retrieve.
  * @return Pointer to the parameter's value, or NULL if the parameter
@@ -234,6 +270,7 @@ const anytype_t *ps_config_get(ps_config_t *config, const char *name);
  * options from the command-line.  Note that the return pointer will
  * *not* be the same as the one passed in the value.
  *
+ * @memberof ps_config_t
  * @param config Configuration object.
  * @param name Name of the parameter to set.  Must exist.
  * @param val Pointer to the value (strings will be copied) inside an
@@ -256,6 +293,8 @@ const anytype_t *ps_config_set(ps_config_t *config, const char *name,
  *
  * If the parameter does not have an integer or boolean type, this
  * will print an error and return 0.  So don't do that.
+ *
+ * @memberof ps_config_t
  */
 POCKETSPHINX_EXPORT
 long ps_config_int(ps_config_t *config, const char *name);
@@ -267,6 +306,8 @@ long ps_config_int(ps_config_t *config, const char *name);
  * will print an error and return 0.  The return value is either 0 or
  * 1 (if the parameter has an integer type, any non-zero value will
  * return 1).
+ *
+ * @memberof ps_config_t
  */
 POCKETSPHINX_EXPORT
 int ps_config_bool(ps_config_t *config, const char *name);
@@ -276,6 +317,8 @@ int ps_config_bool(ps_config_t *config, const char *name);
  *
  * If the parameter does not have a floating-point type, this will
  * print an error and return 0.
+ *
+ * @memberof ps_config_t
  */
 POCKETSPHINX_EXPORT
 double ps_config_float(ps_config_t *config, const char *name);
@@ -287,6 +330,8 @@ double ps_config_float(ps_config_t *config, const char *name);
  * error and return NULL.  Notably, it will *NOT* format an integer or
  * float for you, because that would involve allocating memory.  So
  * don't do that.
+ *
+ * @memberof ps_config_t
  */
 POCKETSPHINX_EXPORT
 const char *ps_config_str(ps_config_t *config, const char *name);
@@ -296,6 +341,8 @@ const char *ps_config_str(ps_config_t *config, const char *name);
  *
  * If the parameter does not have an integer or boolean type, this
  * will convert `val` appropriately.
+ *
+ * @memberof ps_config_t
  */
 POCKETSPHINX_EXPORT
 const anytype_t *ps_config_set_int(ps_config_t *config, const char *name, long val);
@@ -305,6 +352,8 @@ const anytype_t *ps_config_set_int(ps_config_t *config, const char *name, long v
  *
  * If the parameter does not have an integer or boolean type, this
  * will convert `val` appropriately.
+ *
+ * @memberof ps_config_t
  */
 POCKETSPHINX_EXPORT
 const anytype_t *ps_config_set_bool(ps_config_t *config, const char *name, int val);
@@ -314,6 +363,8 @@ const anytype_t *ps_config_set_bool(ps_config_t *config, const char *name, int v
  *
  * If the parameter does not have a floating-point type, this will
  * convert `val` appropriately.
+ *
+ * @memberof ps_config_t
  */
 POCKETSPHINX_EXPORT
 const anytype_t *ps_config_set_float(ps_config_t *config, const char *name, double val);
@@ -328,6 +379,8 @@ const anytype_t *ps_config_set_float(ps_config_t *config, const char *name, doub
  *
  * This function is used for configuration from JSON, you may want to
  * use it for your own configuration files too.
+ *
+ * @memberof ps_config_t
  */
 POCKETSPHINX_EXPORT
 const anytype_t *ps_config_set_str(ps_config_t *config, const char *name, const char *val);
@@ -349,6 +402,7 @@ const anytype_t *ps_config_set_str(ps_config_t *config, const char *name, const 
  * Currently, the file must be seekable, so you can't use this on
  * standard input, for instance.
  *
+ * @memberof ps_config_t
  * @param config Configuration to update from file.
  * @param fh Previously opened file handle.
  * @param file Name of open file handle for logging (optional, can be NULL)
@@ -364,8 +418,9 @@ int ps_config_soundfile(ps_config_t *config, FILE *fh, const char *file);
  *
  * Unlike ps_config_soundfile(), the file does *not* have to be seekable.
  *
+ * @memberof ps_config_t
  * @param config Configuration to update from file.
- * @param fh Previously opened file handle.
+ * @param infh Previously opened file handle.
  * @param file Name of open file handle for logging (optional, can be NULL)
  */
 POCKETSPHINX_EXPORT
@@ -379,25 +434,40 @@ int ps_config_wavfile(ps_config_t *config, FILE *infh, const char *file);
  *
  * Unlike ps_config_soundfile(), the file does *not* have to be seekable.
  *
+ * @memberof ps_config_t
  * @param config Configuration to update from file.
- * @param fh Previously opened file handle.
+ * @param infh Previously opened file handle.
  * @param file Name of open file handle for logging (optional, can be NULL)
  */
 POCKETSPHINX_EXPORT
 int ps_config_nistfile(ps_config_t *config, FILE *infh, const char *file);
 
 /**
- * Sets default grammar and language model if they are not set explicitly and
- * are present in the default search path.
+ * Sets default acoustic and language model if they are not set explicitly.
  *
- * If the POCKETSPHINX_PATH environment variable is set, this function
- * will look there instead of the path configured at compile time.
+ * This function fills in the configuration with the default acoustic
+ * and language models and dictionary, if (and this is a badly
+ * implemented heuristic) they do not seem to be already filled in.
+ * It is preferable for you to call this *before* doing any other
+ * configuration to avoid confusion.
+ *
+ * The default models are looked for in the directory returned by
+ * ps_default_modeldir(), or, if the `POCKETSPHINX_PATH` environment
+ * variable is set, this function will look there instead.
+ *
+ * If no global model directory was defined at compilation time (this
+ * is useful for relocatable installs such as the Python module) and
+ * `POCKETSPHINX_PATH` is not set, this will simply do nothing.
+ *
+ * @memberof ps_config_t
  */
 POCKETSPHINX_EXPORT
 void ps_default_search_args(ps_config_t *config);
 
 /**
  * Sets default file paths and parameters based on configuration.
+ *
+ * @memberof ps_config_t
  */
 POCKETSPHINX_EXPORT
 void ps_expand_model_config(ps_config_t *config);
@@ -405,6 +475,7 @@ void ps_expand_model_config(ps_config_t *config);
 /**
  * Gets the system default model directory, if any exists.
  *
+ * @relates ps_config_t
  * @return system model directory defined at compile time, or NULL if
  *         not defined (usually in a relocatable installation such as
  *         a Python module).
@@ -415,6 +486,7 @@ const char *ps_default_modeldir(void);
 /**
  * Initialize the decoder from a configuration object.
  *
+ * @memberof ps_config_t
  * @note The decoder retains ownership of the pointer
  * <code>config</code>, so if you are not going to use it
  * elsewhere, you can free it.
@@ -441,6 +513,7 @@ ps_decoder_t *ps_init(ps_config_t *config);
  * @note The decoder retains ownership of the pointer
  * <code>config</code>, so you should free it when no longer used.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
  * @param config An optional new configuration to use.  If this is
  *               NULL, the previous configuration will be reloaded,
@@ -458,14 +531,13 @@ int ps_reinit(ps_decoder_t *ps, ps_config_t *config);
  * For example, if you change the sample rate or the frame rate, and
  * do not want to reconfigure the rest of the decoder.
  *
- * Note that if your code has modified any internal parameters in the
- * \ref acmod_t, these will be overriden by values from the config.
- * Likewise if you have set a custom cepstral mean with ps_set_cmn(),
+ * Note that if you have set a custom cepstral mean with ps_set_cmn(),
  * it will be overridden.
  *
  * @note The decoder retains ownership of the pointer `config`, so you
  * should free it when no longer used.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
  * @param config An optional new configuration to use.  If this is
  *               NULL, the previous configuration will be reloaded,
@@ -485,6 +557,7 @@ int ps_reinit_feat(ps_decoder_t *ps, ps_config_t *config);
  *
  *     config = ps_config_parse_json(NULL, "cmninit: 42,-1,0");
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder
  * @param update Update the cepstral mean using data processed so far.
  * @return String representation of cepstral mean, as
@@ -504,8 +577,8 @@ const char *ps_get_cmn(ps_decoder_t *ps, int update);
  * efficient, and can also be done in the middle of an utterance if
  * you like.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder
-
  * @param cmn String representation of cepstral mean, as up to
  *            `ps_config_get_int(config, "ceplen")` -separated numbers
  *            (any missing values will be zero-filled).  @return 0 for
@@ -515,10 +588,12 @@ POCKETSPHINX_EXPORT
 int ps_set_cmn(ps_decoder_t *ps, const char *cmn);
 
 /**
- * Returns the argument definitions used in ps_init().
+ * Returns the argument definitions used in ps_config_init().
  *
  * This is here to avoid exporting global data, which is problematic
  * on Win32 and Symbian (and possibly other platforms).
+ *
+ * @related ps_config_t
  */
 POCKETSPHINX_EXPORT
 ps_arg_t const *ps_args(void);
@@ -531,6 +606,7 @@ ps_arg_t const *ps_args(void);
  * need to use this function, ever.  It is mainly here for the
  * convenience of scripting language bindings.
  *
+ * @memberof ps_decoder_t
  * @return pointer to retained decoder.
  */
 POCKETSPHINX_EXPORT
@@ -541,6 +617,7 @@ ps_decoder_t *ps_retain(ps_decoder_t *ps);
  *
  * This releases all resources associated with the decoder.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder to be freed.
  * @return New reference count (0 if freed).
  */
@@ -550,6 +627,7 @@ int ps_free(ps_decoder_t *ps);
 /**
  * Get the configuration object for this decoder.
  *
+ * @memberof ps_decoder_t
  * @return The configuration object for this decoder.  The decoder
  *         owns this pointer, so you should not attempt to free it
  *         manually.  Use ps_config_retain() if you wish to reuse it
@@ -561,6 +639,7 @@ ps_config_t *ps_get_config(ps_decoder_t *ps);
 /**
  * Get the log-math computation object for this decoder.
  *
+ * @memberof ps_decoder_t
  * @return The log-math object for this decoder.  The decoder owns
  *         this pointer, so you should not attempt to free it
  *         manually.  Use logmath_retain() if you wish to reuse it
@@ -572,6 +651,7 @@ logmath_t *ps_get_logmath(ps_decoder_t *ps);
 /**
  * Adapt current acoustic model using a linear transform.
  *
+ * @memberof ps_decoder_t
  * @param mllr The new transform to use, or NULL to update the
  *              existing transform.  The decoder retains ownership of
  *              this pointer, so you may free it if you no longer need
@@ -590,6 +670,7 @@ ps_mllr_t *ps_update_mllr(ps_decoder_t *ps, ps_mllr_t *mllr);
  * module(s) to be reinitialized, in the same manner as calling
  * ps_add_word() with update=TRUE.
  *
+ * @memberof ps_decoder_t
  * @param dictfile Path to dictionary file to load.
  * @param fdictfile Path to filler dictionary to load, or NULL to keep
  *                  the existing filler dictionary.
@@ -605,6 +686,7 @@ int ps_load_dict(ps_decoder_t *ps, char const *dictfile,
  *
  * This function dumps the current pronunciation dictionary to a text file.
  *
+ * @memberof ps_decoder_t
  * @param dictfile Path to file where dictionary will be written.
  * @param format Format of the dictionary file, or NULL for the
  *               default (text) format (currently unused, should be NULL)
@@ -621,6 +703,7 @@ int ps_save_dict(ps_decoder_t *ps, char const *dictfile, char const *format);
  * other, it does whatever is necessary to ensure that the word can be
  * recognized.
  *
+ * @memberof ps_decoder_t
  * @param word Word string to add.
  * @param phones Whitespace-separated list of phoneme strings
  *               describing pronunciation of <code>word</code>.
@@ -641,6 +724,7 @@ int ps_add_word(ps_decoder_t *ps,
  * Look up a word in the dictionary and return phone transcription
  * for it.
  *
+ * @memberof ps_decoder_t
  * @param ps Pocketsphinx decoder
  * @param word Word to look for
  *
@@ -660,6 +744,7 @@ char *ps_lookup_word(ps_decoder_t *ps,
  * to determine the sampling rate and endianness of the stream,
  * respectively.  Audio is always assumed to be 16-bit signed PCM.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
  * @param rawfh Previously opened file stream.
  * @param maxsamps Maximum number of samples to read from rawfh, or -1
@@ -673,6 +758,7 @@ long ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
 /**
  * Decode a senone score dump file.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder
  * @param senfh Previously opened file handle positioned at start of file.
  * @return Number of frames read.
@@ -687,20 +773,22 @@ int ps_decode_senscr(ps_decoder_t *ps, FILE *senfh);
  * only effect is to reset the noise removal statistics, which are
  * otherwise retained across utterances.  You do not need to call it.
  *
+ * @memberof ps_decoder_t
  * @return 0 for success, <0 on error.
  */
 POCKETSPHINX_EXPORT
 int ps_start_stream(ps_decoder_t *ps);
 
 /**
- * Checks if the last feed audio buffer contained speech.
+ * Check in-speech status of decoder.
  *
  * @deprecated This function is retained for compatibility but should
  * not be considered a reliable voice activity detector.  It will
  * always return 1 between calls to ps_start_utt() and ps_end_utt().
  * You probably want ps_endpointer_t, but for single frames of data
- * you can also use ps_vad_t
+ * you can also use \ref ps_vad_t.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
  * @return 1 if last buffer contained speech, 0 - otherwise
  */
@@ -714,6 +802,7 @@ int ps_get_in_speech(ps_decoder_t *ps);
  * to the decoder.  It marks the start of a new utterance and
  * reinitializes internal data structures.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder to be started.
  * @return 0 for success, <0 on error.
  */
@@ -723,7 +812,10 @@ int ps_start_utt(ps_decoder_t *ps);
 /**
  * Decode raw audio data.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
+ * @param data Audio data, as 16-bit linear PCM.
+ * @param n_samples Number of samples (not bytes) in `data`.
  * @param no_search If non-zero, perform feature extraction but don't
  *                  do any recognition yet.  This may be necessary if
  *                  your processor has trouble doing recognition in
@@ -743,8 +835,14 @@ int ps_process_raw(ps_decoder_t *ps,
 /**
  * Decode acoustic feature data.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
- * @param data Acoustic feature data, as returned by... something :)
+ * @param data Acoustic feature data, a 2-dimensional array of 32-bit
+ *             floating-point values.  Note that this is not a standard
+ *             2-dimesional C array but rather an array of pointers to
+ *             floats, each of which is one vector (or frame) of
+ *             `ps_config_get_int("ceplen")` values.
+ * @param n_frames Number of vectors in `data`.
  * @param no_search If non-zero, perform feature extraction but don't
  *                  do any recognition yet.  This may be necessary if
  *                  your processor has trouble doing recognition in
@@ -770,6 +868,7 @@ int ps_process_cep(ps_decoder_t *ps,
  * audio, and dynamic features are computed over a sliding window of
  * acoustic features.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
  * @return Number of frames of speech data which have been recognized
  * so far.
@@ -780,6 +879,7 @@ int ps_get_n_frames(ps_decoder_t *ps);
 /**
  * End utterance processing.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
  * @return 0 for success, <0 on error
  */
@@ -789,6 +889,7 @@ int ps_end_utt(ps_decoder_t *ps);
 /**
  * Get hypothesis string and path score.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
  * @param out_best_score Output: path score corresponding to returned string.
  * @return String containing best hypothesis at this point in
@@ -809,6 +910,7 @@ char const *ps_get_hyp(ps_decoder_t *ps, int32 *out_best_score);
  * confidence annotation for partial hypotheses may result in these
  * restrictions being lifted in future versions.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
  * @return Posterior probability of the best hypothesis.
  */
@@ -818,9 +920,7 @@ int32 ps_get_prob(ps_decoder_t *ps);
 /**
  * Get word lattice.
  *
- * There isn't much you can do with this so far, a public API will
- * appear in the future.
- *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
  * @return Word lattice object containing all hypotheses so far.  NULL
  *         if no hypotheses are available.  This pointer is owned by
@@ -834,6 +934,7 @@ ps_lattice_t *ps_get_lattice(ps_decoder_t *ps);
 /**
  * Get an iterator over the word segmentation for the best hypothesis.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
  * @return Iterator over the best hypothesis at this point in
  *         decoding.  NULL if no hypothesis is available.
@@ -844,6 +945,7 @@ ps_seg_t *ps_seg_iter(ps_decoder_t *ps);
 /**
  * Get the next segment in a word segmentation.
  *
+ * @memberof ps_seg_t
  * @param seg Segment iterator.
  * @return Updated iterator with the next segment.  NULL at end of
  *         utterance (the iterator will be freed in this case).
@@ -854,6 +956,7 @@ ps_seg_t *ps_seg_next(ps_seg_t *seg);
 /**
  * Get word string from a segmentation iterator.
  *
+ * @memberof ps_seg_t
  * @param seg Segment iterator.
  * @return Read-only string giving string name of this segment.  This
  * is only valid until the next call to ps_seg_next().
@@ -868,6 +971,7 @@ char const *ps_seg_word(ps_seg_t *seg);
  * to the last frame in which the given word or other segment was
  * active.  Therefore, the actual duration is *out_ef - *out_sf + 1.
  *
+ * @memberof ps_seg_t
  * @param seg Segment iterator.
  * @param out_sf Output: First frame index in segment.
  * @param out_ef Output: Last frame index in segment.
@@ -886,6 +990,7 @@ void ps_seg_frames(ps_seg_t *seg, int *out_sf, int *out_ef);
  * confidence annotation for partial hypotheses may result in these
  * restrictions being lifted in future versions.
  *
+ * @memberof ps_seg_t
  * @param out_ascr Output: acoustic model score for this segment.
  * @param out_lscr Output: language model score for this segment.
  * @param out_lback Output: language model backoff mode for this
@@ -902,6 +1007,7 @@ int32 ps_seg_prob(ps_seg_t *seg, int32 *out_ascr, int32 *out_lscr, int32 *out_lb
 
 /**
  * Finish iterating over a word segmentation early, freeing resources.
+ * @memberof ps_seg_t
  */
 POCKETSPHINX_EXPORT
 void ps_seg_free(ps_seg_t *seg);
@@ -911,6 +1017,7 @@ void ps_seg_free(ps_seg_t *seg);
  * return a NULL which means that there is no hypothesis available for this
  * utterance.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
  * @return Iterator over N-best hypotheses or NULL if no hypothesis is available
  */
@@ -920,6 +1027,7 @@ ps_nbest_t *ps_nbest(ps_decoder_t *ps);
 /**
  * Move an N-best list iterator forward.
  *
+ * @memberof ps_nbest_t
  * @param nbest N-best iterator.
  * @return Updated N-best iterator, or NULL if no more hypotheses are
  *         available (iterator is freed ni this case).
@@ -930,6 +1038,7 @@ ps_nbest_t *ps_nbest_next(ps_nbest_t *nbest);
 /**
  * Get the hypothesis string from an N-best list iterator.
  *
+ * @memberof ps_nbest_t
  * @param nbest N-best iterator.
  * @param out_score Output: Path score for this hypothesis.
  * @return String containing next best hypothesis. Note that this
@@ -941,6 +1050,7 @@ char const *ps_nbest_hyp(ps_nbest_t *nbest, int32 *out_score);
 /**
  * Get the word segmentation from an N-best list iterator.
  *
+ * @memberof ps_nbest_t
  * @param nbest N-best iterator.
  * @return Iterator over the next best hypothesis.
  */
@@ -950,6 +1060,7 @@ ps_seg_t *ps_nbest_seg(ps_nbest_t *nbest);
 /**
  * Finish N-best search early, releasing resources.
  *
+ * @memberof ps_nbest_t
  * @param nbest N-best iterator.
  */
 POCKETSPHINX_EXPORT
@@ -958,6 +1069,7 @@ void ps_nbest_free(ps_nbest_t *nbest);
 /**
  * Get performance information for the current utterance.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
  * @param out_nspeech Output: Number of seconds of speech.
  * @param out_ncpu    Output: Number of seconds of CPU time used.
@@ -970,6 +1082,7 @@ void ps_get_utt_time(ps_decoder_t *ps, double *out_nspeech,
 /**
  * Get overall performance information.
  *
+ * @memberof ps_decoder_t
  * @param ps Decoder.
  * @param out_nspeech Output: Number of seconds of speech.
  * @param out_ncpu    Output: Number of seconds of CPU time used.
@@ -983,14 +1096,17 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * @mainpage PocketSphinx API Documentation
  * @author David Huggins-Daines <dhdaines@gmail.com>
  * @version 5.0.0
- * @date October 4, 2022
+ * @date October 5, 2022
  *
  * @tableofcontents{HTML:1}
  *
  * @section intro_sec Introduction
  *
  * This is the documentation for the PocketSphinx speech recognition
- * engine.  The main API calls are documented in <pocketsphinx.h>.
+ * engine.  The main API calls are documented in \ref ps_decoder_t and
+ * \ref ps_config_t.  The organization of this document is not optimal
+ * due to the limitations of Doxygen, so if you know of a better tool
+ * for documenting object-oriented interfaces in C, please let me know.
  *
  * @section install_sec Installation
  *
@@ -1056,9 +1172,9 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * @section programming_sec Using the Library
  *
  * Minimally, to do speech recognition, you must first create a
- * configuration, using `ps_config_t` and its associated functions.
+ * configuration, using \ref ps_config_t and its associated functions.
  * This configuration is then passed to ps_init() to initialize the
- * decoder, which is returned as a `ps_decoder_t`.  Note that you must
+ * decoder, which is returned as a \ref ps_decoder_t.  Note that you must
  * ultimately release the configuration with ps_config_free() to avoid
  * memory leaks.
  *

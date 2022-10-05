@@ -30,6 +30,9 @@
 /**
  * @file endpointer.h
  * @brief VAD-based endpointer for PocketSphinx
+ *
+ * Because doxygen is Bad Software, the actual documentation can only
+ * exist in \ref ps_endpointer_t.  Sorry about that.
  */
 
 #ifndef __PS_ENDPOINTER_H__
@@ -51,7 +54,7 @@ extern "C" {
 #include <pocketsphinx/vad.h>
 
 /**
- * @struct ps_endpointer_t
+ * @struct ps_endpointer_t pocketsphinx/endpointer.h
  * @brief Simple voice activity detection based endpointing
  */
 typedef struct ps_endpointer_s ps_endpointer_t;
@@ -68,6 +71,7 @@ typedef struct ps_endpointer_s ps_endpointer_t;
 /**
  * Initialize endpointing.
  *
+ * @memberof ps_endpointer_t
  * @param window Seconds of audio to use in speech start/end decision,
  *               or 0 to use the default (PS_ENDPOINTER_DEFAULT_WINDOW).
  * @param ratio Ratio of frames needed to trigger start/end decision,
@@ -101,6 +105,7 @@ ps_endpointer_t *ps_endpointer_init(double window,
 /**
  * Retain a pointer to endpointer
  *
+ * @memberof ps_endpointer_t
  * @param ep Endpointer.
  * @return Endpointer with incremented reference count.
  */
@@ -110,6 +115,7 @@ ps_endpointer_t *ps_endpointer_retain(ps_endpointer_t *ep);
 /**
  * Release a pointer to endpointer.
  *
+ * @memberof ps_endpointer_t
  * @param ep Endpointer
  * @return New reference count (0 if freed).
  */
@@ -119,6 +125,7 @@ int ps_endpointer_free(ps_endpointer_t *ep);
 /**
  * Get the voice activity detector used by the endpointer.
  *
+ * @memberof ps_endpointer_t
  * @return VAD object. The endpointer retains ownership of this
  * object, so you must use ps_vad_retain() if you wish to use it
  * outside of the lifetime of the endpointer.
@@ -147,6 +154,7 @@ ps_vad_t *ps_endpointer_vad(ps_endpointer_t *ep);
  * Note that the endpointer is *not* thread-safe.  You must call all
  * endpointer functions from the same thread.
  *
+ * @memberof ps_endpointer_t
  * @param ep Endpointer.
  * @param frame Frame of data, must contain ps_endpointer_frame_size()
  *              samples.
@@ -163,6 +171,7 @@ const int16 *ps_endpointer_process(ps_endpointer_t *ep,
  * Note that the endpointer is *not* thread-safe.  You must call all
  * endpointer functions from the same thread.
  *
+ * @memberof ps_endpointer_t
  * @param ep Endpointer.
  * @param frame Frame of data, must contain ps_endpointer_frame_size()
  *              samples or less.
@@ -186,6 +195,7 @@ const int16 *ps_endpointer_end_stream(ps_endpointer_t *ep,
  * subsequent call to this function returns 0, this indicates a
  * transition to non-speech.
  *
+ * @memberof ps_endpointer_t
  * @param ep Endpointer.
  * @return non-zero if in a speech segment after processing the last
  *         frame of data.
@@ -195,12 +205,14 @@ int ps_endpointer_in_speech(ps_endpointer_t *ep);
 
 /**
  * Get the start time of the last speech segment.
+ * @memberof ps_endpointer_t
  */
 POCKETSPHINX_EXPORT
 double ps_endpointer_speech_start(ps_endpointer_t *ep);
 
 /**
  * Get the end time of the last speech segment
+ * @memberof ps_endpointer_t
  */
 POCKETSPHINX_EXPORT
 double ps_endpointer_speech_end(ps_endpointer_t *ep);
