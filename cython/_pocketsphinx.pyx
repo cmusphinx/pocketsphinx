@@ -934,7 +934,7 @@ cdef class Decoder:
             raise RuntimeError, "Failed to start utterance processing"
 
     def get_in_speech(self):
-        """Return speech status of previously passed buffer.
+        """Return speech status.
 
         This method is retained for compatibility, but it will always
         return True as long as `ps_start_utt` has been previously
