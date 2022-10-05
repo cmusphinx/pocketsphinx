@@ -982,6 +982,8 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * @version 5.0.0
  * @date October 4, 2022
  *
+ * @tableofcontents{HTML:1}
+ *
  * @section intro_sec Introduction
  *
  * This is the documentation for the PocketSphinx speech recognition
@@ -1053,8 +1055,9 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * Minimally, to do speech recognition, you must first create a
  * configuration, using `ps_config_t` and its associated functions.
  * This configuration is then passed to ps_init() to initialize the
- * decoder.  You must (unfortunately) "free" the configuration with
- * ps_config_free() to avoid memory leaks.
+ * decoder, which is returned as a `ps_decoder_t`.  Note that you must
+ * ultimately release the configuration with ps_config_free() to avoid
+ * memory leaks.
  *
  * At this point, you can start an "utterance" (a section of speech
  * you wish to recognize) with ps_start_utt() and pass audio data to
@@ -1062,6 +1065,9 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * ps_end_utt() to finalize recognition.  The result can then be
  * obtained with ps_get_hyp().  To get a detailed word segmentation,
  * use ps_seg_iter().  To get the N-best results, use ps_nbest().
+ *
+ * When you no longer need the decoder, release its memory with
+ * ps_free().
  *
  * A concrete example can be found in \ref simple.c.
  *
@@ -1073,6 +1079,56 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * have `sox`, you can use the method shown in \ref live.c.
  *
  * @section faq_sec Frequently Asked Questions
+ *
+ * @subsection faq_api My code no longer compiles! Why?
+ *
+ * Some APIs were intentionally broken by the 5.0.0 release.  The most
+ * likely culprit here is the configuration API, where the old
+ * "options" which started with a `-` are now "parameters" which do
+ * not, and instead of a `cmd_ln_t` it is now a `ps_config_t`.  There
+ * is no backward compatibility, you have to change your code
+ * manually.  This is straightforward for the most part.  For example,
+ * instead of writing:
+ *
+ *     cmdln = cmd_ln_init(NULL, "-samprate", "16000", NULL);
+ *     cmd_ln_set_int32_r(NULL, "-maxwpf", 40);
+ *
+ * You should write:
+ *
+ *     config = ps_config_init(NULL);
+ *     ps_config_set_int(config, "samprate", 16000);
+ *     ps_config_set_int(config, "maxwpf", 40);
+ *
+ * Another likely suspect is the \ref pocketsphinx/search.h
+ * "search module API" where the function names have been changed to be more
+ * intuitive.  Wherever you had `ps_set_search` you can use
+ * ps_activate_search(), it is the same function.  Likewise, anything
+ * that was `ps_set_*` is now `ps_add_*`, e.g. ps_add_lm(),
+ * ps_add_fsg(), ps_add_keyphrase().
+ *
+ * @subsection faq_path What does ERROR: "acmod.c, line NN: ..." mean?
+ *
+ * In general you will get "Acoustic model definition is not
+ * specified" or "Folder does not contain acoustic model definition"
+ * errors if PocketSphinx cannot find a model.  If you are trying to
+ * use the default module, perhaps you have not installed
+ * PocketSphinx.  Unfortunately it is not designed to run "in-place",
+ * but you can get around this by setting the `POCKETSPHINX_PATH`
+ * environment variable, e.g.
+ *
+ *     cmake --build build
+ *     POCKETSPHINX_PATH=$PWD/model build/pocketsphinx single foo.wav
+ *
+ * @subsection faq_blank There is literally no output!
+ *
+ * If by this you mean it doesn't give the copious logging like it
+ * used to, you can solve this by passing `-loglevel INFO` on the
+ * command-line, or setting the `loglevel` parameter to `"INFO"`, or
+ * calling err_set_loglevel() with `ERR_INFO`.
+ *
+ * If you mean that you just don't have any recognition result, you
+ * may have forgotten to configure a dictionary.  Or see \ref
+ * faq_error "below" for other reasons the output could be blank.
  *
  * @subsection faq_audio Why doesn't my audio device work?
  *
