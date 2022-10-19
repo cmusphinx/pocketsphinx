@@ -34,6 +34,12 @@ catch_sig(int signum)
     global_done = 1;
 }
 
+/* FIXME: This may not be sufficient. */
+#ifdef WIN32
+#define popen _popen
+#define pclose _pclose
+#endif
+
 static FILE *
 popen_sox(int sample_rate)
 {
