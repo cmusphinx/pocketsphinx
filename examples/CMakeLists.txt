@@ -31,3 +31,5 @@ if(PKG_CONFIG_FOUND)
       live_portaudio PUBLIC ${PORTAUDIO_INCLUDE_DIRS})
   endif()
 endif()
+# Otherwise ... you're on your own, sorry, because PortAudio's claim
+# to include a CMake configuration is blatantly false.
