@@ -12,18 +12,22 @@ endforeach()
 
 add_custom_target(examples DEPENDS ${EXAMPLES})
 
-find_library(PORTAUDIO_LIBRARY portaudio)
-if(PORTAUDIO_LIBRARY)
-  add_executable(live_portaudio EXCLUDE_FROM_ALL live_portaudio.c)
-  target_link_libraries(live_portaudio pocketsphinx ${PORTAUDIO_LIBRARY})
-  target_include_directories(live_portaudio PRIVATE ${CMAKE_BINARY_DIR})
-endif()
+# Try to find portaudio and pulseaudio with pkg-config
+find_package(PkgConfig)
+if(PKG_CONFIG_FOUND)
+  pkg_check_modules(PULSEAUDIO libpulse-simple)
+  if(PULSEAUDIO_FOUND)
+    add_executable(live_pulseaudio EXCLUDE_FROM_ALL live_pulseaudio.c)
+    target_link_libraries(live_pulseaudio pocketsphinx ${PULSEAUDIO_LIBRARIES})
+    target_include_directories(live_pulseaudio PRIVATE ${CMAKE_BINARY_DIR}
+      live_pulseaudio PUBLIC ${PULSEAUDIO_INCLUDE_DIRS})
+  endif()
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(PULSEAUDIO libpulse-simple)
-if(PULSEAUDIO_FOUND)
-  add_executable(live_pulseaudio EXCLUDE_FROM_ALL live_pulseaudio.c)
-  target_link_libraries(live_pulseaudio pocketsphinx ${PULSEAUDIO_LIBRARIES})
-  target_include_directories(live_pulseaudio PRIVATE ${CMAKE_BINARY_DIR}
-    live_pulseaudio PUBLIC ${PULSEAUDIO_INCLUDE_DIRS})
+  pkg_check_modules(PORTAUDIO portaudio-2.0)
+  if(PORTAUDIO_FOUND)
+    add_executable(live_portaudio EXCLUDE_FROM_ALL live_portaudio.c)
+    target_link_libraries(live_portaudio pocketsphinx ${PORTAUDIO_LIBRARIES})
+    target_include_directories(live_portaudio PRIVATE ${CMAKE_BINARY_DIR}
+      live_portaudio PUBLIC ${PORTAUDIO_INCLUDE_DIRS})
+  endif()
 endif()
