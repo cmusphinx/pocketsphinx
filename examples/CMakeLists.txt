@@ -10,6 +10,8 @@ foreach(EXAMPLE ${EXAMPLES})
     )
 endforeach()
 
+add_custom_target(examples DEPENDS ${EXAMPLES})
+
 find_library(PORTAUDIO_LIBRARY portaudio)
 if(PORTAUDIO_LIBRARY)
   add_executable(live_portaudio EXCLUDE_FROM_ALL live_portaudio.c)
@@ -17,4 +19,11 @@ if(PORTAUDIO_LIBRARY)
   target_include_directories(live_portaudio PRIVATE ${CMAKE_BINARY_DIR})
 endif()
 
-add_custom_target(examples DEPENDS ${EXAMPLES})
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(PULSEAUDIO libpulse-simple)
+if(PULSEAUDIO_FOUND)
+  add_executable(live_pulseaudio EXCLUDE_FROM_ALL live_pulseaudio.c)
+  target_link_libraries(live_pulseaudio pocketsphinx ${PULSEAUDIO_LIBRARIES})
+  target_include_directories(live_pulseaudio PRIVATE ${CMAKE_BINARY_DIR}
+    live_pulseaudio PUBLIC ${PULSEAUDIO_INCLUDE_DIRS})
+endif()

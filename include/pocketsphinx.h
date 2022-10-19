@@ -1196,9 +1196,13 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * microphone input for you, because doing this in a reliable and
  * portable way is outside the scope of a speech recognizer.  In
  * theory, [PortAudio](http://www.portaudio.com/) should work across
- * many platforms.  An example using it is in \ref live_portaudio.c
+ * many platforms.  An example using it is in \ref live_portaudio.c.
  *
- * Alternately, you have `sox` on your platform, you can also use the
+ * On GNU/Linux and some other platforms, audio might be handled by
+ * the PulseAudio library/server, in which case you can also use the
+ * technique in \ref live_pulseaudio.c.
+ *
+ * Finally, if you have `sox` on your platform, you can simply use the
  * method shown in \ref live.c.
  *
  * @section faq_sec Frequently Asked Questions

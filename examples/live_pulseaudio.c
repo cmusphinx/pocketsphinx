@@ -5,25 +5,26 @@
  * Author: David Huggins-Daines <dhdaines@gmail.com>
  */
 /**
- * @example live_portaudio.c
+ * @example live_pulseaudio.c
  * @brief Speech recognition with live audio input and endpointing.
  *
  * This file shows how to use PocketSphinx with microphone input using
- * PortAudio (v19 and above).
+ * PulseAudio.
  *
  * To compile it, assuming you have built the library as in
  * \ref unix_install "these directions", you can run:
  *
- *     cmake --build build --target live_portaudio
+ *     cmake --build build --target live_pulseaudio
  *
  * Alternately, if PocketSphinx is installed system-wide, you can run:
  *
- *     gcc -o live_portaudio live_portaudio.c \
- *         $(pkg-config --libs --cflags pocketsphinx portaudio-2.0)
+ *     gcc -o live_pulseaudio live_pulseaudio.c \
+ *         $(pkg-config --libs --cflags pocketsphinx libpulse-simple)
  *
  *
  */
-#include <portaudio.h>
+#include <pulse/simple.h>
+#include <pulse/error.h>
 #include <pocketsphinx.h>
 #include <signal.h>
 
@@ -39,8 +40,9 @@ int
 main(int argc, char *argv[])
 {
 
-    PaStream *stream;
-    PaError err;
+    pa_simple *s;
+    pa_sample_spec ss;
+    int err;
     ps_decoder_t *decoder;
     ps_config_t *config;
     ps_endpointer_t *ep;
@@ -51,10 +53,6 @@ main(int argc, char *argv[])
 
     config = ps_config_init(NULL);
     ps_default_search_args(config);
-
-    if ((err = Pa_Initialize()) != paNoError)
-        E_FATAL("Failed to initialize PortAudio: %s\n",
-                Pa_GetErrorText(err));
     if ((decoder = ps_init(config)) == NULL)
         E_FATAL("PocketSphinx decoder init failed\n");
     if ((ep = ps_endpointer_init(0, 0.0, 0, 0, 0)) == NULL)
@@ -62,22 +60,23 @@ main(int argc, char *argv[])
     frame_size = ps_endpointer_frame_size(ep);
     if ((frame = malloc(frame_size * sizeof(frame[0]))) == NULL)
         E_FATAL_SYSTEM("Failed to allocate frame");
-    if ((err = Pa_OpenDefaultStream(&stream, 1, 0, paInt16,
-                                    ps_config_int(config, "samprate"),
-                                    frame_size, NULL, NULL)) != paNoError)
-        E_FATAL("Failed to open PortAudio stream: %s\n",
-                Pa_GetErrorText(err));
-    if ((err = Pa_StartStream(stream)) != paNoError)
-        E_FATAL("Failed to start PortAudio stream: %s\n",
-                Pa_GetErrorText(err));
+
+    ss.format = PA_SAMPLE_S16NE;
+    ss.channels = 1;
+    ss.rate = ps_config_int(config, "samprate");
+    if ((s = pa_simple_new(NULL, "live_pulseaudio", PA_STREAM_RECORD, NULL,
+                           "live", &ss, NULL, NULL, &err)) == NULL)
+        E_FATAL("Failed to connect to PulseAudio: %s\n",
+                pa_strerror(err));
     if (signal(SIGINT, catch_sig) == SIG_ERR)
         E_FATAL_SYSTEM("Failed to set SIGINT handler");
     while (!global_done) {
         const int16 *speech;
         int prev_in_speech = ps_endpointer_in_speech(ep);
-        if ((err = Pa_ReadStream(stream, frame, frame_size)) != paNoError) {
-            E_ERROR("Error in PortAudio read: %s\n",
-                Pa_GetErrorText(err));
+        if (pa_simple_read(s, frame,
+                           frame_size * sizeof(frame[0]), &err) < 0) {
+            E_ERROR("Error in pa_simple_read: %s\n",
+                    pa_strerror(err));
             break;
         }
         speech = ps_endpointer_process(ep, frame);
@@ -101,12 +100,7 @@ main(int argc, char *argv[])
             }
         }
     }
-    if ((err = Pa_StopStream(stream)) != paNoError)
-        E_FATAL("Failed to stop PortAudio stream: %s\n",
-                Pa_GetErrorText(err));
-    if ((err = Pa_Terminate()) != paNoError)
-        E_FATAL("Failed to terminate PortAudio: %s\n",
-                Pa_GetErrorText(err));
+    pa_simple_free(s);
     free(frame);
     ps_endpointer_free(ep);
     ps_free(decoder);
