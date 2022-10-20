@@ -31,5 +31,23 @@ if(PKG_CONFIG_FOUND)
       live_portaudio PUBLIC ${PORTAUDIO_INCLUDE_DIRS})
   endif()
 endif()
-# Otherwise ... you're on your own, sorry, because PortAudio's claim
-# to include a CMake configuration is blatantly false.
+
+# Try to find portaudio with its old package finder thing
+if(NOT PORTAUDIO_FOUND)
+  find_package(portaudio)
+  if(portaudio_DIR)
+    add_executable(live_portaudio EXCLUDE_FROM_ALL live_portaudio.c)
+    target_link_libraries(live_portaudio pocketsphinx portaudio)
+    set(PORTAUDIO_FOUND 1)
+  endif()
+endif()
+
+# Try to find portaudio with its new package finder thing
+if(NOT PORTAUDIO_FOUND)
+  find_package(PortAudio)
+  if(PortAudio_DIR)
+    add_executable(live_portaudio EXCLUDE_FROM_ALL live_portaudio.c)
+    target_link_libraries(live_portaudio pocketsphinx PortAudio::PortAudio)
+    set(PORTAUDIO_FOUND 1)
+  endif()
+endif()
