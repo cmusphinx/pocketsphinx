@@ -1198,6 +1198,10 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * theory, [PortAudio](http://www.portaudio.com/) should work across
  * many platforms.  An example using it is in \ref live_portaudio.c.
  *
+ * On Windows, an example of using the [Waveform Audio
+ * API](https://learn.microsoft.com/en-us/windows/win32/multimedia/waveform-audio)
+ * can be found in \ref live_win32.c.
+ *
  * On GNU/Linux and some other platforms, audio might be handled by
  * the PulseAudio library/server, in which case you can also use the
  * technique in \ref live_pulseaudio.c.

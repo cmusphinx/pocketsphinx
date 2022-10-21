@@ -9,13 +9,18 @@
  * @brief Speech recognition with live audio input and endpointing.
  *
  * This file shows how to use PocketSphinx with microphone input using
- * the Win32 wave API (the only one of many terrible audio APIs on
- * Windows that isn't made even more terrible by requiring you to use
- * C++ in an unmanaged environment).
+ * the Win32 Waveform Audio API (the only one of many terrible audio
+ * APIs on Windows that isn't made even more terrible by requiring you
+ * to use C++ in an unmanaged environment).
  *
  * To build it, you should be able to find a "live_win32" target in
  * your favorite IDE after running CMake - in Visual Studio Code, look
  * in the "CMake" tab.
+ *
+ * Microphones on Windows tend to be miscalibrated with the recording
+ * level set much too high by default, so the endpointer may give a
+ * lot of false positives at first.  Programs like Audacity seem to
+ * work around this somehow, but I don't really know how they do it.
  */
 
 #include <windows.h>

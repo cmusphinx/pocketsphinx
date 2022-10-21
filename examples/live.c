@@ -24,7 +24,7 @@
  * Sadly, this example does *not* seem to work on Windows, even if you
  * manage to get `sox` in your `PATH` (which is not easy), because it
  * seems that it can't actually read from the microphone.  Try
- * live_portaudio.c instead.
+ * live_win32.c or live_portaudio.c instead.
  */
 #include <pocketsphinx.h>
 #include <signal.h>
