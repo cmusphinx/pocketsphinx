@@ -134,12 +134,14 @@ POCKETSPHINX_EXPORT
 ps_vad_t *ps_endpointer_vad(ps_endpointer_t *ep);
 
 /**
- * Get the frame size required by the endpointer.
+ * Get the frame size (in samples) consumed by the endpointer.
+ *
+ * Multiply this by 2 to get the size of the frame buffer required.
  */
 #define ps_endpointer_frame_size(ep) ps_vad_frame_size(ps_endpointer_vad(ep))
 
 /**
- * Get the frame length required by the endpointer.
+ * Get the frame length (in seconds) consumed by the endpointer.
  */
 #define ps_endpointer_frame_length(ep) ps_vad_frame_length(ps_endpointer_vad(ep))
 
