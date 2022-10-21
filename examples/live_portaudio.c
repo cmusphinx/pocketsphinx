@@ -86,18 +86,24 @@ main(int argc, char *argv[])
             if (!prev_in_speech) {
                 fprintf(stderr, "Speech start at %.2f\n",
                         ps_endpointer_speech_start(ep));
+		fflush(stderr); /* For broken MSYS2 terminal */
                 ps_start_utt(decoder);
             }
             if (ps_process_raw(decoder, speech, frame_size, FALSE, FALSE) < 0)
                 E_FATAL("ps_process_raw() failed\n");
-            if ((hyp = ps_get_hyp(decoder, NULL)) != NULL)
+            if ((hyp = ps_get_hyp(decoder, NULL)) != NULL) {
                 fprintf(stderr, "PARTIAL RESULT: %s\n", hyp);
+		fflush(stderr);
+	    }
             if (!ps_endpointer_in_speech(ep)) {
                 fprintf(stderr, "Speech end at %.2f\n",
                         ps_endpointer_speech_end(ep));
+		fflush(stderr);
                 ps_end_utt(decoder);
-                if ((hyp = ps_get_hyp(decoder, NULL)) != NULL)
-                    printf("%s\n", hyp);
+                if ((hyp = ps_get_hyp(decoder, NULL)) != NULL) {
+		    printf("%s\n", hyp);
+		    fflush(stdout);
+		}
             }
         }
     }
