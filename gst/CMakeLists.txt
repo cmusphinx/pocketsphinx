@@ -1,5 +1,5 @@
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(GOBJECT gobject-2.0 REQUIRED)
+pkg_check_modules(GOBJECT gobject-2.0)
 pkg_check_modules(GSTREAMER gstreamer-1.0 gstreamer-base-1.0)
 add_library(gstpocketsphinx SHARED gstpocketsphinx.c)
 set_property(TARGET pocketsphinx PROPERTY POSITION_INDEPENDENT_CODE on)

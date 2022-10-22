@@ -1194,8 +1194,20 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
  * segmenting and recognizing speech from an audio stream.  As
  * described below, PocketSphinx will *not* handle the details of
  * microphone input for you, because doing this in a reliable and
- * portable way is outside the scope of a speech recognizer.  If you
- * have `sox`, you can use the method shown in \ref live.c.
+ * portable way is outside the scope of a speech recognizer.  In
+ * theory, [PortAudio](http://www.portaudio.com/) should work across
+ * many platforms.  An example using it is in \ref live_portaudio.c.
+ *
+ * On Windows, an example of using the [Waveform Audio
+ * API](https://learn.microsoft.com/en-us/windows/win32/multimedia/waveform-audio)
+ * can be found in \ref live_win32.c.
+ *
+ * On GNU/Linux and some other platforms, audio might be handled by
+ * the PulseAudio library/server, in which case you can also use the
+ * technique in \ref live_pulseaudio.c.
+ *
+ * Finally, if you have `sox` on your platform, you can simply use the
+ * method shown in \ref live.c.
  *
  * @section faq_sec Frequently Asked Questions
  *
