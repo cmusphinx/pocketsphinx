@@ -688,7 +688,7 @@ fsg_model_read(FILE * fp, logmath_t * lmath, float32 lw)
     for (itor = hash_table_iter(vocab); itor;
          itor = hash_table_iter_next(itor)) {
         char const *word = hash_entry_key(itor->ent);
-        int32 wid = (int32) (long) hash_entry_val(itor->ent);
+        int32 wid = (int32) (size_t) hash_entry_val(itor->ent);
         fsg->vocab[wid] = (char *) word;
     }
     hash_table_free(vocab);

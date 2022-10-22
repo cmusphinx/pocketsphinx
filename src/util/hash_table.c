@@ -329,7 +329,7 @@ hash_table_lookup_int32(hash_table_t * h, const char *key, int32 *val)
     if (rv != 0)
         return rv;
     if (val)
-        *val = (int32)(long)vval;
+        *val = (int32)(size_t)vval;
     return 0;
 }
 
@@ -365,7 +365,7 @@ hash_table_lookup_bkey_int32(hash_table_t * h, const char *key, size_t len, int3
     if (rv != 0)
         return rv;
     if (val)
-        *val = (int32)(long)vval;
+        *val = (int32)(size_t)vval;
     return 0;
 }
 
@@ -589,7 +589,7 @@ hash_table_display(hash_table_t * h, int32 showdisplay)
             else
                 printf("%p", e->key);
 
-            printf("|len:%zd|val=%ld|->", e->len, (long)e->val);
+            printf("|len:%zd|val=%zd|->", e->len, (size_t)e->val);
             if (e->next == NULL) {
                 printf("NULL\n");
             }
@@ -600,7 +600,7 @@ hash_table_display(hash_table_t * h, int32 showdisplay)
                 if (showdisplay)
                     printf("%s", e->key);
 
-                printf("|len:%zd|val=%ld|->", e->len, (long)e->val);
+                printf("|len:%zd|val=%zd|->", e->len, (size_t)e->val);
                 if (e->next == NULL) {
                     printf("NULL\n");
                 }

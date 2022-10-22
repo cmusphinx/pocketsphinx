@@ -102,7 +102,7 @@ ciphone_add(mdef_t * m, char *ci, int p)
 
     m->ciphone[p].name = (char *) ckd_salloc(ci);       /* freed in mdef_free */
     if (hash_table_enter(m->ciphone_ht, m->ciphone[p].name,
-                         (void *)(long)p) != (void *)(long)p)
+                         (void *)(size_t)p) != (void *)(size_t)p)
         E_FATAL("hash_table_enter(%s) failed; duplicate CIphone?\n",
                 m->ciphone[p].name);
 }
@@ -469,7 +469,7 @@ sseq_compress(mdef_t * m)
 
     for (gn = g; gn; gn = gnode_next(gn)) {
         he = (hash_entry_t *) gnode_ptr(gn);
-        j = (int32)(long)hash_entry_val(he);
+        j = (int32)(size_t)hash_entry_val(he);
         memcpy(sseq[j], hash_entry_key(he), k);
     }
     glist_free(g);

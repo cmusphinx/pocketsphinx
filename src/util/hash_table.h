@@ -222,7 +222,7 @@ void *hash_table_enter(hash_table_t *h, /**< In: Handle of hash table in which t
  * on 64-bit platforms.
  */
 #define hash_table_enter_int32(h,k,v) \
-    ((int32)(long)hash_table_enter((h),(k),(void *)(long)(v)))
+    ((int32)(size_t)hash_table_enter((h),(k),(void *)(size_t)(v)))
 
 /**
  * Add a new entry with given key and value to hash table h.  If the
@@ -304,7 +304,7 @@ void *hash_table_enter_bkey(hash_table_t *h,	/**< In: Handle of hash table
  * on 64-bit platforms.
  */
 #define hash_table_enter_bkey_int32(h,k,l,v) \
-    ((int32)(long)hash_table_enter_bkey((h),(k),(l),(void *)(long)(v)))
+    ((int32)(size_t)hash_table_enter_bkey((h),(k),(l),(void *)(size_t)(v)))
 
 /**
  * Like hash_table_replace, but with an explicitly specified key length,

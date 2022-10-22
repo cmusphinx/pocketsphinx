@@ -156,7 +156,7 @@ read_1grams_arpa(lineiter_t ** li, uint32 count, ngram_model_t * base,
     for (i = 0; i < count; i++) {
         if ((hash_table_enter
              (base->wid, base->word_str[i],
-              (void *) (long) i)) != (void *) (long) i) {
+              (void *) (size_t) i)) != (void *) (size_t) i) {
             E_WARN("Duplicate word in dictionary: %s\n",
                    base->word_str[i]);
         }
@@ -336,7 +336,7 @@ read_word_str(ngram_model_t * base, FILE * fp, int do_swap)
     for (i = 0; i < base->n_counts[0]; i++) {
         base->word_str[i] = ckd_salloc(tmp_word_str + j);
         if (hash_table_enter(base->wid, base->word_str[i],
-                             (void *) (long) i) != (void *) (long) i) {
+                             (void *) (size_t) i) != (void *) (size_t) i) {
             E_WARN("Duplicate word in dictionary: %s\n",
                    base->word_str[i]);
         }

@@ -638,7 +638,7 @@ ngram_add_word_internal(ngram_model_t * model,
         (model->wid, model->word_str[model->n_words], wid) != wid) {
         E_ERROR
             ("Hash insertion failed for word %s => %p (should not happen)\n",
-             model->word_str[model->n_words], (void *) (long) (wid));
+             model->word_str[model->n_words], (void *) (size_t) (wid));
     }
     /* Increment number of words. */
     ++model->n_words;
