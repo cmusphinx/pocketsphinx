@@ -35,6 +35,7 @@
  *
  */
 /* YOU MUST USE FLEX 2.6.1 OR NEWER TO PROCESS THIS FILE!!! */
+/* Process with flex -o jsgf_scanner.h */
 %{
 
 #include "lm/jsgf_internal.h"
@@ -84,4 +85,5 @@ bom      [\xEF][\xBB][\xBF]
 <DECL>{weight}   { yylval->weight = atof_c(yytext+1); return WEIGHT; }
 <DECL>.          return yytext[0];        /* Single-character tokens */
 
+.|\n; /* Do nothing with unmatched stuff */
 %%

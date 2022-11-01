@@ -58,7 +58,7 @@ void yyerror(yyscan_t lex, jsgf_t *jsgf, const char *s);
 
 %}
 
-%pure-parser
+%define api.pure
 %lex-param { void* yyscanner }
 %parse-param { void* yyscanner }
 %parse-param { jsgf_t *jsgf }
@@ -153,5 +153,6 @@ rule_atom: TOKEN { $$ = jsgf_atom_new($1, 1.0); ckd_free($1); }
 void
 yyerror(yyscan_t lex, jsgf_t *jsgf, const char *s)
 {
+    (void)jsgf;
     E_ERROR("%s at line %d current token '%s'\n", s, yyget_lineno(lex), yyget_text(lex));
 }
