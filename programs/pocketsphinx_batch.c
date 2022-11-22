@@ -820,7 +820,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             E_ERROR("Unexpected extra data in control file at line %d\n", i);
         }
         else {
-            char const *hyp, *file, *uttid;
+            char const *hyp = NULL, *file, *uttid;
             int32 score;
 
             file = wptr[0];

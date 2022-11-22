@@ -167,6 +167,7 @@ fsg_model_tag_trans_add(fsg_model_t * fsg, int32 from, int32 to,
                               (char const *) &link->to_state,
                               sizeof(link->to_state), link);
     assert(link == link2);
+    (void)link2;
 
     return 1;
 }

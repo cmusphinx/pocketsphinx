@@ -90,7 +90,8 @@ typedef struct fsg_search_s {
                                      beams to determine actual effective beams.
                                      For implementing absolute pruning. */
     int32 beam, pbeam, wbeam;	/**< Effective beams after applying beam_factor */
-    int32 lw, pip, wip;         /**< Language weights */
+    float32 lw;         /**< Language weight */
+    int32 pip, wip;     /**< Log insertion penalties */
   
     frame_idx_t frame;		/**< Current frame. */
     uint8 final;		/**< Decoding is finished for this utterance. */

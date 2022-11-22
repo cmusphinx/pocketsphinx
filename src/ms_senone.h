@@ -98,9 +98,10 @@ typedef struct senone_s {
  */
 senone_t *senone_init (gauden_t *g,             /**< In: codebooks */
                        char const *mixwfile,	/**< In: mixing weights file */
-		       char const *mgau_mapfile,/**< In: file specifying mapping from each
-						   senone to mixture gaussian codebook.
-						   If NULL all senones map to codebook 0 */
+                       char const *mgau_mapfile,/**< In: file or magic string specifying
+                                                   mapping from each senone to mixture
+                                                   gaussian codebook.
+                                                   If NULL divine it from gauden_t */
 		       float32 mixwfloor,	/**< In: Floor value for senone weights */
                        logmath_t *lmath,        /**< In: log math computation */
                        bin_mdef_t *mdef         /**< In: model definition */

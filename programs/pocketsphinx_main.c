@@ -790,6 +790,7 @@ main(int argc, char *argv[])
     else if (0 == strcmp(command, "align"))
         rv = align(config, inputs, ninputs);
     else if (0 == strcmp(command, "help")) {
+        rv = 0;
         usage(argv[0]);
     }
     else {

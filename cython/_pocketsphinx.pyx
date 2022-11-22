@@ -1,4 +1,4 @@
-# cython: embedsignature=True
+# cython: embedsignature=True, language_level=3
 # Copyright (c) 2008-2020 Carnegie Mellon University. All rights
 # reserved.
 #
@@ -33,13 +33,19 @@ cdef class Config:
 
     It can also be initialized by parsing JSON (either as bytes or str)::
 
-        config = Config.parse_json('{"hmm": "path/to/things",
-                                     "dict": "my.dict"}')
+        config = Config.parse_json('''{"hmm": "path/to/things",
+                                       "dict": "my.dict"}''')
 
     The "parser" is very much not strict, so you can also pass a sort
     of pseudo-YAML to it, e.g.::
 
-        config = Config.parse_json('hmm: path/to/things, dict: my.dict')
+        config = Config.parse_json("hmm: path/to/things, dict: my.dict")
+
+    You can also initialize an empty `Config` and set arguments in it
+    directly::
+
+        config = Config()
+        config["hmm"] = "path/to/things"
 
     In general, a `Config` mostly acts like a dictionary, and can be
     iterated over in the same fashion.  However, attempting to access

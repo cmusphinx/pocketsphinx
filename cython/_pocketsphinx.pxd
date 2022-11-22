@@ -1,4 +1,4 @@
-# cython: embedsignature=True
+# cython: embedsignature=True, language_level=3
 # Copyright (c) 2008-2020 Carnegie Mellon University. All rights
 # reserved.
 #

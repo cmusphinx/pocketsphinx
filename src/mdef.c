@@ -573,7 +573,7 @@ mdef_init(char *mdeffile, int32 breport)
     if (n_ci >= MAX_INT16)
         E_FATAL("%s: #CI phones (%d) exceeds limit (%d)\n", mdeffile, n_ci,
                 MAX_INT16);
-    if (n_ci + n_tri >= MAX_INT32) /* Comparison is always false... */
+    if ((int64)n_ci + n_tri >= MAX_INT32)
         E_FATAL("%s: #Phones (%d) exceeds limit (%d)\n", mdeffile,
                 n_ci + n_tri, MAX_INT32);
     if (m->n_sen >= MAX_INT16)

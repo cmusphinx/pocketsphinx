@@ -233,9 +233,12 @@ ps_lattice_write(ps_lattice_t *dag, char const *filename)
             "Nodes %d (NODEID WORD STARTFRAME FIRST-ENDFRAME LAST-ENDFRAME)\n",
             i);
     for (i = 0, d = dag->nodes; d; d = d->next, i++) {
+        const char *word = dict_wordstr(dag->dict, d->wid);
+        if (word == NULL)
+            word = "(null)";
         d->id = i;
         fprintf(fp, "%d %s %d %d %d ; %d\n",
-                i, dict_wordstr(dag->dict, d->wid),
+                i, word,
                 d->sf, d->fef, d->lef, d->node_id);
     }
     fprintf(fp, "#\n");
@@ -1396,7 +1399,7 @@ ps_lattice_joint(ps_lattice_t *dag, ps_latlink_t *link, float32 ascale)
     else
         lmset = NULL;
 
-    jprob = (dag->final_node_ascr << SENSCR_SHIFT) * ascale;
+    jprob = (int32)((dag->final_node_ascr << SENSCR_SHIFT) * ascale);
     while (link) {
         if (lmset) {
             int lback;
@@ -1433,7 +1436,7 @@ ps_lattice_joint(ps_lattice_t *dag, ps_latlink_t *link, float32 ascale)
         /* If there is no language model, we assume that the language
            model probability (such as it is) has been included in the
            link score. */
-        jprob += (link->ascr << SENSCR_SHIFT) * ascale;
+        jprob += (int32)((link->ascr << SENSCR_SHIFT) * ascale);
         link = link->best_prev;
     }
 
@@ -1503,14 +1506,14 @@ ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
                 bestend = link;
             }
             /* Imaginary exit link from final node has beta = 1.0 */
-            link->beta = bprob + (dag->final_node_ascr << SENSCR_SHIFT) * ascale;
+            link->beta = bprob + (int32)((dag->final_node_ascr << SENSCR_SHIFT) * ascale);
         }
         else {
             /* Update beta from all outgoing betas. */
             for (x = link->to->exits; x; x = x->next) {
                 link->beta = logmath_add(lmath, link->beta,
                                          x->link->beta + bprob
-                                         + (x->link->ascr << SENSCR_SHIFT) * ascale);
+                                         + (int)((x->link->ascr << SENSCR_SHIFT) * ascale));
             }
         }
     }
