@@ -719,11 +719,19 @@ print_config(ps_config_t *config)
 }
 
 void
-usage(char *name)
+usage(char *name, int help_config)
 {
-    fprintf(stderr, "Usage: %s [soxflags | config | help | live | single | align] INPUTS...\n", name);
-    err_set_loglevel(ERR_INFO);
-    cmd_ln_log_help_r(NULL, ps_args());
+    fprintf(stderr, "Usage: %s [PARAMS] [soxflags | config | help | help-config | live | single | align] INPUTS...\n", name);
+    fprintf(stderr, "Examples:\n");
+    fprintf(stderr, "\tsox input.mp3 $(%s soxflags) | %s single -\n", name, name);
+    fprintf(stderr, "\tsox -qd $(%s soxflags) | %s live -\n", name, name);
+    fprintf(stderr, "\t%s single INPUT\n", name);
+    fprintf(stderr, "\t%s align INPUT WORDS...\n", name);
+    fprintf(stderr, "\nFor detailed PARAMS values, run %s help-config\n", name);
+    if (help_config) {
+        err_set_loglevel(ERR_INFO);
+        cmd_ln_log_help_r(NULL, ps_args());
+    }
 }
 
 int
@@ -740,14 +748,15 @@ main(int argc, char *argv[])
     /* Only soxflags and config take no arguments */
     if (ninputs == 0) {
         if ((0 != strcmp(command, "soxflags"))
-            && 0 != strcmp(command, "config")) {
-            usage(argv[0]);
+            && 0 != strcmp(command, "config")
+            && 0 != strcmp(command, "help-config")) {
+            usage(argv[0], FALSE);
             return 1;
         }
     }
     /* If arg parsing fails */
     if ((config = ps_config_parse_args(ps_main_args_def, argc, argv)) == NULL) {
-        usage(argv[0]);
+        usage(argv[0], FALSE);
         return 1;
     }
     ps_default_search_args(config);
@@ -791,7 +800,11 @@ main(int argc, char *argv[])
         rv = align(config, inputs, ninputs);
     else if (0 == strcmp(command, "help")) {
         rv = 0;
-        usage(argv[0]);
+        usage(argv[0], FALSE);
+    }
+    else if (0 == strcmp(command, "help-config")) {
+        rv = 0;
+        usage(argv[0], TRUE);
     }
     else {
         E_ERROR("Unknown command \"%s\"\n", command);
