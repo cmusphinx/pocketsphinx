@@ -224,7 +224,7 @@ state_align_search_finish(ps_search_t *search)
     /* Best state exiting the last cur_frame. */
     last.id = cur.id = hmm_out_history(final_phone);
     last.score = hmm_out_score(final_phone);
-    if (last.id == 0xffff) {
+    if (last.id == -1) {
         E_ERROR("Failed to reach final state in alignment\n");
         return -1;
     }
@@ -232,6 +232,10 @@ state_align_search_finish(ps_search_t *search)
     last_frame = sas->frame + 1;
     for (cur_frame = sas->frame - 1; cur_frame >= 0; --cur_frame) {
 	cur = sas->tokens[cur_frame * sas->n_emit_state + cur.id];
+        if (cur.id == -1) {
+            E_ERROR("Alignment failed in frame %d\n", cur_frame);
+            return -1;
+        }
         /* State boundary, update alignment entry for next state. */
         if (cur.id != last.id) {
             itor = ps_alignment_iter_goto(itor, last.id);

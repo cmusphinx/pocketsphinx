@@ -58,7 +58,7 @@ extern "C" {
  * History structure
  */
 struct state_align_hist_s {
-    uint16 id;
+    int32 id;
     int32 score;
 };
 typedef struct state_align_hist_s state_align_hist_t;
