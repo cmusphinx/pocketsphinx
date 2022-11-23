@@ -61,13 +61,15 @@ int main(int argc, char *argv[])
     WAVEHDR hdrs[NBUF];
     int i;
 
+    FILE *outfh_noise, *outfh_speech;
+
     (void)argc; (void)argv;
     /* Initialize decoder and endpointer */
     config = ps_config_init(NULL);
     ps_default_search_args(config);
     if ((decoder = ps_init(config)) == NULL)
         E_FATAL("PocketSphinx decoder init failed\n");
-    if ((ep = ps_endpointer_init(0, 0.0, 0,
+    if ((ep = ps_endpointer_init(0, 0.0, PS_VAD_STRICT,
                                  ps_config_int(config, "samprate"),
                                  0)) == NULL)
         E_FATAL("PocketSphinx endpointer init failed\n");
@@ -99,6 +101,10 @@ int main(int argc, char *argv[])
     i = 0;
     if (signal(SIGINT, catch_sig) == SIG_ERR)
         E_FATAL_SYSTEM("Failed to set SIGINT handler");
+    if ((outfh_noise = fopen("live_win32_noise.raw", "wb")) == NULL)
+        E_FATAL_SYSTEM("Failed to open live_win32_noise.raw");
+    if ((outfh_speech = fopen("live_win32_speech.raw", "wb")) == NULL)
+        E_FATAL_SYSTEM("Failed to open live_win32_speech.raw");
     while (!global_done) {
         const int16 *speech;
         WaitForSingleObject(event, INFINITE);
@@ -113,8 +119,14 @@ int main(int argc, char *argv[])
             CHECK(waveInAddBuffer(wavein, &hdrs[i], sizeof(hdrs[i])));
             if (++i == NBUF)
                 i = 0;
-            if (speech != NULL) {
+            if (speech == NULL) {
+                if (fwrite(frame, 2, frame_size, outfh_noise) != frame_size)
+                    E_FATAL_SYSTEM("Failed to write %zu samples of noise", frame_size);
+            }
+            else {
                 const char *hyp;
+                if (fwrite(frame, 2, frame_size, outfh_speech) != frame_size)
+                    E_FATAL_SYSTEM("Failed to write %zu samples of speech", frame_size);
                 if (!prev_in_speech) {
                     fprintf(stderr, "Speech start at %.2f\n",
                             ps_endpointer_speech_start(ep));
@@ -142,6 +154,10 @@ int main(int argc, char *argv[])
         /* Wait for another buffer. */
         ResetEvent(event);
     }
+    if (fclose(outfh_noise) != 0)
+        E_FATAL_SYSTEM("Failed to close noise output file");
+    if (fclose(outfh_speech) != 0)
+        E_FATAL_SYSTEM("Failed to close speech output file");
     /* Stop recording, cancel all buffers, and free them. */
     CHECK(waveInStop(wavein));
     CHECK(waveInReset(wavein));

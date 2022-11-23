@@ -47,6 +47,8 @@ main(int argc, char *argv[])
     short *frame;
     size_t frame_size;
 
+    FILE *outfh_noise, *outfh_speech;
+
     (void)argc; (void)argv;
 
     config = ps_config_init(NULL);
@@ -57,7 +59,7 @@ main(int argc, char *argv[])
                 Pa_GetErrorText(err));
     if ((decoder = ps_init(config)) == NULL)
         E_FATAL("PocketSphinx decoder init failed\n");
-    if ((ep = ps_endpointer_init(0, 0.0, 0, 0, 0)) == NULL)
+    if ((ep = ps_endpointer_init(0, 0.0, PS_VAD_STRICT, 0, 0)) == NULL)
         E_FATAL("PocketSphinx endpointer init failed\n");
     frame_size = ps_endpointer_frame_size(ep);
     if ((frame = malloc(frame_size * sizeof(frame[0]))) == NULL)
@@ -72,6 +74,10 @@ main(int argc, char *argv[])
                 Pa_GetErrorText(err));
     if (signal(SIGINT, catch_sig) == SIG_ERR)
         E_FATAL_SYSTEM("Failed to set SIGINT handler");
+    if ((outfh_noise = fopen("live_portaudio_noise.raw", "wb")) == NULL)
+        E_FATAL_SYSTEM("Failed to open live_portaudio_noise.raw");
+    if ((outfh_speech = fopen("live_portaudio_speech.raw", "wb")) == NULL)
+        E_FATAL_SYSTEM("Failed to open live_portaudio_speech.raw");
     while (!global_done) {
         const int16 *speech;
         int prev_in_speech = ps_endpointer_in_speech(ep);
@@ -81,8 +87,14 @@ main(int argc, char *argv[])
             break;
         }
         speech = ps_endpointer_process(ep, frame);
-        if (speech != NULL) {
+        if (speech == NULL) {
+            if (fwrite(frame, 2, frame_size, outfh_noise) != frame_size)
+                E_FATAL_SYSTEM("Failed to write %zu samples of noise", frame_size);
+        }
+        else {
             const char *hyp;
+            if (fwrite(frame, 2, frame_size, outfh_speech) != frame_size)
+                E_FATAL_SYSTEM("Failed to write %zu samples of speech", frame_size);
             if (!prev_in_speech) {
                 fprintf(stderr, "Speech start at %.2f\n",
                         ps_endpointer_speech_start(ep));
@@ -107,6 +119,10 @@ main(int argc, char *argv[])
             }
         }
     }
+    if (fclose(outfh_noise) != 0)
+        E_FATAL_SYSTEM("Failed to close noise output file");
+    if (fclose(outfh_speech) != 0)
+        E_FATAL_SYSTEM("Failed to close speech output file");
     if ((err = Pa_StopStream(stream)) != paNoError)
         E_FATAL("Failed to stop PortAudio stream: %s\n",
                 Pa_GetErrorText(err));
