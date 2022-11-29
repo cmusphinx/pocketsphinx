@@ -552,12 +552,7 @@ bin_mdef_write(bin_mdef_t * m, const char *filename)
     fwrite(&m->n_sseq, 4, 1, fh);
     fwrite(&m->n_ctx, 4, 1, fh);
     fwrite(&m->n_cd_tree, 4, 1, fh);
-    /* Write this as a 32-bit value to preserve alignment for the
-     * non-mmap case (we want things aligned both from the
-     * beginning of the file and the beginning of the phone
-     * strings). */
-    val = m->sil;
-    fwrite(&val, 4, 1, fh);
+    fwrite(&m->sil, 4, 1, fh);
 
     /* Phone strings. */
     for (i = 0; i < m->n_ciphone; ++i)
@@ -581,6 +576,7 @@ bin_mdef_write(bin_mdef_t * m, const char *filename)
                m->n_sseq * m->n_emit_state, fh);
     }
     else {
+        /* FIXME: This code is never used */
         int32 n;
 
         /* Calculate size of sseq */
