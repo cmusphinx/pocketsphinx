@@ -326,7 +326,9 @@ int ps_add_allphone_file(ps_decoder_t *ps, const char *name, const char *path);
  * Unlike the `ps_add_*` functions, this activates the search module
  * immediately, since force-alignment is nearly always a single shot.
  * Currently "under the hood" this is an FSG search but you shouldn't
- * depend on that.
+ * depend on that.  The search module activated is *not* the default
+ * search, so you can return to that one by calling ps_activate_search
+ * with `NULL`.
  *
  * Decoding proceeds as normal, though only this word sequence will be
  * recognized, with silences and alternate pronunciations inserted.
