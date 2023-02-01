@@ -69,6 +69,7 @@ typedef struct ps_search_s ps_search_t;
 
 /* Search names*/
 #define PS_DEFAULT_SEARCH  "_default"
+#define PS_DEFAULT_ALIGN_SEARCH  "_align"
 #define PS_DEFAULT_PL_SEARCH  "_default_pl"
 
 /* Search types */

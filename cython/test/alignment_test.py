@@ -33,6 +33,18 @@ class TestAlignment(unittest.TestCase):
                 for state in phone:
                     print("\t\t", state.start, state.duration, state.score, state.name)
 
+    def test_default_lm(self):
+        decoder = Decoder()
+        self.assertEqual(decoder.current_search(), "_default")
+        decoder.set_align_text("go forward then meters")
+        self.assertEqual(decoder.current_search(), "_align")
+        self._run_decode(decoder)
+        self.assertEqual(decoder.hyp().hypstr, "go forward then meters")
+        decoder.activate_search()
+        self.assertEqual(decoder.current_search(), "_default")
+        self._run_decode(decoder)
+        self.assertEqual(decoder.hyp().hypstr, "go forward ten meters")
+
 
 if __name__ == "__main__":
     unittest.main()
