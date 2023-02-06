@@ -49,8 +49,8 @@ if ((open (FN1, "<$fn1")) and (open (FN2, "<$fn2"))) {
     chomp($line1);
     chomp($line2);
     next if ($line1 eq $line2);
-    my @field1 = split /[,\s]+/, $line1;
-    my @field2 = split /[,\s]+/, $line2;
+    my @field1 = split /[,:\s]+/, $line1;
+    my @field2 = split /[,:\s]+/, $line2;
     # If the number of tokens in each line is different, the lines,
     # and therefore the files, don't match.
     if ($#field1 != $#field2) {
@@ -66,11 +66,14 @@ if ((open (FN1, "<$fn1")) and (open (FN2, "<$fn2"))) {
 	  $comparison = 0;
 	  last;
 	}
-      } elsif (abs($field1[$i] - $field2[$i]) > $tolerance) {
-	# If the tokens are both numbers, check if they match within
-	# a tolerance
-	$comparison = 0;
-	last;
+      } else {
+        my $diff = abs($field1[$i] - $field2[$i]);
+        if ($diff > $tolerance) {
+          # If the tokens are both numbers, check if they match within
+          # a tolerance
+          $comparison = 0;
+          last;
+        }
       }
     }
     # If there was a mismatch, we can skip to the end of the loop
