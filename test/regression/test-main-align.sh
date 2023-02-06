@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#set -e
-
 : ${CMAKE_BINARY_DIR:=$(pwd)}
 . ${CMAKE_BINARY_DIR}/test/testfuncs.sh
 
