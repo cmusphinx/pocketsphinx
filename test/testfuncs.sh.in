@@ -11,25 +11,25 @@ programs=$builddir
 
 # Automatically report failures on exit
 failures=""
-trap "fail $0" ERR
+trap "fail $0" 4 6 7 10 11
 trap "report_failures" 0
 
 run_program() {
     program="$1"
     shift
-    "$programs/$program" $@
+    "$programs/$program" "$@"
 }
 
 debug_program() {
     program="$1"
     shift
-    gdb --args "$programs/$program" $@
+    gdb --args "$programs/$program" "$@"
 }
 
 memcheck_program() {
     program="$1"
     shift
-    valgrind --leak-check=full "$programs/$program" $@
+    valgrind --leak-check=full "$programs/$program" "$@"
 }
 
 pass() {
@@ -46,7 +46,7 @@ fail() {
 compare_table() {
     title="$1"
     shift
-    if perl "$tests/compare_table.pl" $@ | grep SUCCESS >/dev/null 2>&1; then
+    if perl "$tests/compare_table.pl" "$@" | grep SUCCESS >/dev/null 2>&1; then
 	pass "$title"
     else
 	fail "$title"

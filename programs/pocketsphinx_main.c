@@ -459,6 +459,7 @@ decode_single(ps_decoder_t *decoder, FILE *infile)
     if ((rv = ps_end_utt(decoder)) < 0)
         goto error_out;
     if (ps_config_bool(decoder->config, "phone_align")) {
+        const char *prev_search = ps_current_search(decoder);
         if (ps_set_alignment(decoder, NULL) < 0)
             goto error_out;
         if ((rv = ps_start_utt(decoder)) < 0)
@@ -471,7 +472,7 @@ decode_single(ps_decoder_t *decoder, FILE *infile)
             goto error_out;
         if ((alignment = ps_get_alignment(decoder)) == NULL)
             goto error_out;
-        ps_activate_search(decoder, NULL);
+        ps_activate_search(decoder, prev_search);
     }
     output_hyp(NULL, decoder, alignment);
     /* Fall through intentionally */

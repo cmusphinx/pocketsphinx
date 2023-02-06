@@ -2,6 +2,7 @@ set(TESTS
   test-cards.sh
   test-lm.sh
   test-main.sh
+  test-main-align.sh
   test-align.sh
   test-tidigits-fsg.sh
   test-tidigits-simple.sh
