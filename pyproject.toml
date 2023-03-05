@@ -15,7 +15,8 @@ build = [
       "pp38*",
       "cp36-manylinux_*",
       "cp38-manylinux_*",
-      "cp310-*"
+      "cp310-*",
+      "cp311-*"
 ]
 # PyPy 3.8 will choke on CPython 3.8 build leftovers...
 before-build = "rm -rf _skbuild"
