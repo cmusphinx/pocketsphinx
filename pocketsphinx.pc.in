@@ -11,5 +11,5 @@ Description: Lightweight speech recognition system
 Version: @PROJECT_VERSION@
 URL: @PACKAGE_URL@
 Libs: -L${libdir} -lpocketsphinx
-Libs.private: ${libs} -lm -lpthread
+Libs.private: ${libs} -lm
 Cflags: -I${includedir} -I${includedir}/sphinxbase -I${includedir}/pocketsphinx
