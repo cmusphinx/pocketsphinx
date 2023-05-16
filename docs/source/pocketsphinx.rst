@@ -80,3 +80,10 @@ Other classes
 
 .. autoclass:: pocketsphinx.Hypothesis
    :no-members:
+
+.. autoclass:: pocketsphinx.Alignment
+   :members:
+   :undoc-members:
+
+.. autoclass:: pocketsphinx.AlignmentEntry
+   :no-members:
