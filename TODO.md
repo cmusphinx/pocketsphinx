@@ -1,0 +1,12 @@
+- Documentation:
+  - Update tutorial
+    - LM tutorial use pocketsphinx_lm_convert, pocketsphinx
+    - Training tutorial use Docker
+    - Android tutorial add note that it's out of date
+  - FAQ update for new pocketsphinx program
+  - CLI quick start in README.md
+  - Python quick start in main page of Python docs
+  - C quick start in <pocketsphinx.h>
+- Support NumPy arrays for input (see soundfile usage)
+- Environment variable for model path
+
