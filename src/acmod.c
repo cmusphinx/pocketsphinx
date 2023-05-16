@@ -474,7 +474,7 @@ acmod_log_mfc(acmod_t *acmod,
 
     n = n_frames * feat_cepsize(acmod->fcb);
     /* Swap bytes. */
-#if !WORDS_BIGENDIAN
+#ifndef WORDS_BIGENDIAN
     for (i = 0; i < (n * sizeof(mfcc_t) / sizeof(int32)); ++i) {
             SWAP_INT32(ptr + i);
     }
@@ -485,7 +485,7 @@ acmod_log_mfc(acmod_t *acmod,
     }
 
     /* Swap them back. */
-#if !WORDS_BIGENDIAN
+#ifndef WORDS_BIGENDIAN
     for (i = 0; i < (n * sizeof(mfcc_t) / sizeof(int32)); ++i) {
         SWAP_INT32(ptr + i);
     }
