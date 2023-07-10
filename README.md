@@ -162,7 +162,7 @@ other people contributed as well, see [the AUTHORS file](./AUTHORS)
 for more details.
 
 David Huggins-Daines (the author of this document) is
-guilty^H^H^H^H^Hresponsible for creating `PocketSphinx` which added
+responsible for creating `PocketSphinx` which added
 various speed and memory optimizations, fixed-point computation, JSGF
 support, portability to various platforms, and a somewhat coherent
 API.  He then disappeared for a while.
