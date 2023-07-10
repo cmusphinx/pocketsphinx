@@ -12,4 +12,4 @@ Version: @PROJECT_VERSION@
 URL: @PACKAGE_URL@
 Libs: -L${libdir} -lpocketsphinx
 Libs.private: ${libs} -lm
-Cflags: -I${includedir} -I${includedir}/sphinxbase -I${includedir}/pocketsphinx
+Cflags: -I${includedir} -I${includedir}/pocketsphinx
