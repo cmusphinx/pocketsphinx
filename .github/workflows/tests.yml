@@ -46,3 +46,16 @@ jobs:
           pip install .
       - name: Run tests
         run: pytest
+  pytest-editable:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install
+        run: |
+          sudo apt-get install sox
+          python -m pip install --upgrade pip
+          pip install -r requirements.dev.txt
+          pip install -e .
+      - name: Run tests
+        run: pytest
