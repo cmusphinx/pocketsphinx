@@ -457,13 +457,21 @@ state_align_search_init(const char *name,
          i < sas->n_phones && itor;
          ++i, itor = ps_alignment_iter_next(itor)) {
         ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
+        int min_nframes;
+        
         hmm_init(sas->hmmctx, &sas->hmms[i], FALSE,
                  ent->id.pid.ssid, ent->id.pid.tmatid);
-        if (ent-> start > 0)
+        /* Can't align less than the number of frames in an HMM! */
+        min_nframes = hmm_n_emit_state(&sas->hmms[i]);
+        if (ent->duration < min_nframes)
+            E_WARN("phone %d has impossible duration %d "
+                   "(consider disabling bestpath search)\n",
+                   i, ent->duration);
+        if (ent->start > 0 && ent->duration >= min_nframes)
             sas->sf[i] = ent->start;
         else
             sas->sf[i] = 0; /* Always active */
-        if (ent->duration > 0)
+        if (ent->duration >= min_nframes)
             sas->ef[i] = ent->start + ent->duration;
         else
             sas->ef[i] = INT_MAX; /* Always active */
