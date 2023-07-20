@@ -3,12 +3,13 @@
 import os
 from pocketsphinx import Decoder
 import unittest
+import wave
 
 DATADIR = os.path.join(os.path.dirname(__file__), "../../test/data")
 
 
 class TestAlignment(unittest.TestCase):
-    def _run_decode(self, decoder, expect_fail=False):
+    def _run_decode(self, decoder):
         with open(os.path.join(DATADIR, "goforward.raw"), "rb") as fh:
             buf = fh.read()
             decoder.start_utt()
@@ -44,6 +45,54 @@ class TestAlignment(unittest.TestCase):
         self.assertEqual(decoder.current_search(), "_default")
         self._run_decode(decoder)
         self.assertEqual(decoder.hyp().hypstr, "go forward ten meters")
+
+    def _run_phone_align(self, decoder, buf):
+        decoder.start_utt()
+        decoder.process_raw(buf, no_search=False, full_utt=True)
+        decoder.end_utt()
+        decoder.set_alignment()
+        decoder.start_utt()
+        decoder.process_raw(buf, no_search=False, full_utt=True)
+        decoder.end_utt()
+
+    def test_align_forever(self):
+        decoder = Decoder(loglevel="INFO", backtrace=True, lm=None)
+        decoder.set_align_text("feels like these days go on forever")
+        with wave.open(
+            os.path.join(DATADIR, "forever", "input_2_16k.wav"), "r"
+        ) as infh:
+            data = infh.readframes(infh.getnframes())
+            self._run_phone_align(decoder, data)
+            alignment = decoder.get_alignment()
+            phones = [entry.name for entry in alignment.phones()]
+            self.assertEqual(
+                phones,
+                [
+                    "F",
+                    "IY",
+                    "L",
+                    "Z",
+                    "L",
+                    "AY",
+                    "K",
+                    "DH",
+                    "IY",
+                    "Z",
+                    "D",
+                    "EY",
+                    "Z",
+                    "G",
+                    "OW",
+                    "AO",
+                    "N",
+                    "F",
+                    "ER",
+                    "EH",
+                    "V",
+                    "ER",
+                    "SIL",
+                ],
+            )
 
 
 if __name__ == "__main__":
