@@ -56,9 +56,7 @@ class TestAlignment(unittest.TestCase):
         decoder.end_utt()
 
     def test_align_forever(self):
-        # bestpath=False is very important for now, we will fix the
-        # bug then it won't be necessary
-        decoder = Decoder(bestpath=False, lm=None)
+        decoder = Decoder(loglevel="INFO", backtrace=True, lm=None)
         decoder.set_align_text("feels like these days go on forever")
         with wave.open(
             os.path.join(DATADIR, "forever", "input_2_16k.wav"), "r"
