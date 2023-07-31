@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14) # I like pie
 
-project(PocketSphinx VERSION 5.0.1
+project(PocketSphinx VERSION 5.0.2
   DESCRIPTION "A small speech recognizer"
   HOMEPAGE_URL "https://github.com/cmusphinx/pocketsphinx"
   LANGUAGES C)
