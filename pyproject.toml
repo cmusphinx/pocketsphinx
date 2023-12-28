@@ -1,13 +1,38 @@
 [build-system]
 requires = [
-         "wheel",
-         "setuptools>=45,<64",
-     	 "scikit-build~=0.15",
-	 "Cython",
-         "cmake",
-	 "ninja"
+     	 "scikit-build-core",
+	 "Cython"
 ]
-build-backend = "setuptools.build_meta"
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "pocketsphinx"
+version = "5.0.3"
+description = "Official Python bindings for PocketSphinx"
+readme = "cython/README.md"
+authors = [
+        {name = "David Huggins-Daines", email = "dhdaines@gmail.com"}
+]
+keywords = ["asr", "speech"]
+classifiers = [
+    "Development Status :: 6 - Mature",
+    "Programming Language :: C",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/cmusphinx/pocketsphinx"
+Documentation = "https://pocketsphinx.readthedocs.io/en/latest/"
+Repository = "https://github.com/cmusphinx/pocketsphinx.git"
+Issues = "https://github.com/cmusphinx/pocketsphinx/issues"
+
 [tool.cibuildwheel]
 # Build the versions found in Ubuntu LTS, the stable PyPy, and 3.10
 # everywhere else
@@ -22,3 +47,15 @@ build = [
 before-build = "rm -rf _skbuild"
 # PyPy builds are broken on Windows, and skip 32-bit and musl
 skip = ["*musl*", "*_i686", "*-win32", "pp*win*"]
+
+[tool.isort]
+profile = "black"
+
+[tool.flake8]
+extend-ignore = "E203"
+max-line-length = "88"
+
+[tool.scikit-build]
+cmake.verbose = true
+logging.level = "INFO"
+wheel.packages = ["cython/pocketsphinx"]
