@@ -338,6 +338,7 @@ output_hyp(ps_endpointer_t *ep, ps_decoder_t *decoder, ps_alignment_t *alignment
     --maxlen;
     *ptr = '\0';
     puts(hyp_json);
+    fflush(stdout);
     ckd_free(hyp_json);
 }
 
@@ -716,6 +717,7 @@ print_config(ps_config_t *config)
 {
     if (puts(ps_config_serialize_json(config)) < 0)
         return -1;
+    fflush(stdout);
     return 0;
 }
 

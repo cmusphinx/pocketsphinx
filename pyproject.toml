@@ -14,9 +14,11 @@ authors = [
         {name = "David Huggins-Daines", email = "dhdaines@gmail.com"}
 ]
 keywords = ["asr", "speech"]
+dependencies = ["sounddevice"]
 classifiers = [
     "Development Status :: 6 - Mature",
     "Programming Language :: C",
+    "Programming Language :: Cython",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -25,6 +27,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
 ]
 
 [project.urls]
@@ -34,19 +37,25 @@ Repository = "https://github.com/cmusphinx/pocketsphinx.git"
 Issues = "https://github.com/cmusphinx/pocketsphinx/issues"
 
 [tool.cibuildwheel]
-# Build the versions found in Ubuntu LTS, the stable PyPy, and 3.10
-# everywhere else
+# Build a reduced selection of binaries as there are tons of them
 build = [
-      "pp38*",
-      "cp36-manylinux_*",
-      "cp38-manylinux_*",
+      "pp310*",
+      "cp38-*",
       "cp310-*",
-      "cp311-*"
+      "cp311-*",
+      "cp312-*",
 ]
-# PyPy 3.8 will choke on CPython 3.8 build leftovers...
-before-build = "rm -rf _skbuild"
-# PyPy builds are broken on Windows, and skip 32-bit and musl
-skip = ["*musl*", "*_i686", "*-win32", "pp*win*"]
+# Build only universal wheels for Mac where possible, and skip 32-bit
+# builds to avoid building a gigabyte of stuff all the time
+skip = [
+     "cp*-macosx_x86_64",
+     "cp*-macosx_arm64",
+     "*_i686",
+     "*-win32",
+]
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64", "universal2", "arm64"]
 
 [tool.isort]
 profile = "black"
