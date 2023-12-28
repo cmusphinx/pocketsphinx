@@ -58,6 +58,7 @@ jobs:
         with:
           python-version: ${{ matrix.py }}
       - name: Install sox
+        if: ${{ matrix.os == "ubuntu-latest" }}
         run: sudo apt-get install sox
       - name: Install tox
         run: python -m pip install tox-gh>=1.2
