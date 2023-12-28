@@ -45,3 +45,4 @@ recursive-exclude * *.DS_Store
 recursive-exclude * __pycache__
 recursive-exclude * *.so
 recursive-exclude * *.egg-info
+recursive-exclude venv *
