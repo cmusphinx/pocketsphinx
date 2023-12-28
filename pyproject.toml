@@ -44,11 +44,14 @@ build = [
       "cp311-*",
       "cp312-*",
 ]
-# Build only universal wheels for Mac
+# Build only universal wheels for Mac where possible
 skip = [
      "cp*-macosx_x86_64",
      "cp*-macosx_arm64",
 ]
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64", "universal2", "arm64"]
 
 [tool.isort]
 profile = "black"
