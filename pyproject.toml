@@ -36,19 +36,19 @@ Repository = "https://github.com/cmusphinx/pocketsphinx.git"
 Issues = "https://github.com/cmusphinx/pocketsphinx/issues"
 
 [tool.cibuildwheel]
-# Build the versions found in Ubuntu LTS, the stable PyPy, and 3.10
-# everywhere else
+# Build a reduced selection of binaries as there are tons of them
 build = [
-      "pp38*",
-      "cp36-manylinux_*",
-      "cp38-manylinux_*",
+      "pp310*",
+      "cp38-*",
       "cp310-*",
-      "cp311-*"
+      "cp311-*",
+      "cp312-*",
 ]
-# PyPy 3.8 will choke on CPython 3.8 build leftovers...
-before-build = "rm -rf _skbuild"
-# PyPy builds are broken on Windows, and skip 32-bit and musl
-skip = ["*musl*", "*_i686", "*-win32", "pp*win*"]
+# Build only universal wheels for Mac
+skip = [
+     "cp*-macosx_x86_64",
+     "cp*-macosx_arm64",
+]
 
 [tool.isort]
 profile = "black"
