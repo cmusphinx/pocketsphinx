@@ -1,6 +1,0 @@
-cmake~=3.22.0
-scikit-build~=0.15.0
-Cython~=0.29.0
-setuptools>=45.0.0
-pytest~=7.0.0
-memory-profiler==0.60.0
