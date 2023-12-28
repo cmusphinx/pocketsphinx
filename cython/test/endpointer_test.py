@@ -243,11 +243,14 @@ class EndpointerTest(unittest.TestCase):
                         idx += 1
 
     def testEndpointer(self):
-        set_loglevel("INFO")
-        # 8000, 44100, 48000 give slightly different results unfortunately
-        for sample_rate in 11025, 16000, 22050, 32000:
-            print(sample_rate)
-            self.srtest(sample_rate)
+        try:
+            set_loglevel("INFO")
+            # 8000, 44100, 48000 give slightly different results unfortunately
+            for sample_rate in 11025, 16000, 22050, 32000:
+                print(sample_rate)
+                self.srtest(sample_rate)
+        except OSError as err:
+            self.skipTest("sox not installed: %s" % err)
 
 
 if __name__ == "__main__":

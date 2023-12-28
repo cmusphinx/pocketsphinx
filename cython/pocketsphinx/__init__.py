@@ -33,6 +33,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import collections
+import importlib.util
 import os
 import signal
 from contextlib import contextmanager
@@ -81,7 +82,10 @@ def get_model_path(subpath=None):
     """
     model_path = pocketsphinx._ps_default_modeldir()
     if model_path is None:
-        model_path = os.path.join(os.path.dirname(__file__), "model")
+        # Use importlib to find things (so editable installs work)
+        model_path = importlib.util.find_spec(
+            "pocketsphinx.model"
+        ).submodule_search_locations[0]
     if subpath is not None:
         return os.path.join(model_path, subpath)
     else:
@@ -181,6 +185,7 @@ class AudioFile(Pocketsphinx):
     simple.
 
     """
+
     def __init__(self, audio_file=None, **kwargs):
         signal.signal(signal.SIGINT, self.stop)
 
@@ -239,6 +244,7 @@ class LiveSpeech(Pocketsphinx):
 
         try:
             import sounddevice
+
             assert sounddevice
         except Exception as e:
             # In case PortAudio is not present, for instance

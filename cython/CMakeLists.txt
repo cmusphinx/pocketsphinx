@@ -1,14 +1,19 @@
-find_package(PythonExtensions REQUIRED)
-find_package(Python COMPONENTS Interpreter Development)
-find_package(Cython)
+find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
+find_program(CYTHON "cython")
 
 if(NOT USE_INSTALLED_POCKETSPHINX)
   set_property(TARGET pocketsphinx PROPERTY POSITION_INDEPENDENT_CODE on)
 endif()
 
-add_cython_target(_pocketsphinx _pocketsphinx.pyx)
-add_library(_pocketsphinx MODULE ${_pocketsphinx})
-target_link_libraries(_pocketsphinx pocketsphinx)
+add_custom_command(
+  OUTPUT _pocketsphinx.c
+  DEPENDS _pocketsphinx.pyx
+  VERBATIM
+  COMMAND "${CYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/_pocketsphinx.pyx" --output-file
+          "${CMAKE_CURRENT_BINARY_DIR}/_pocketsphinx.c")
+
+python_add_library(_pocketsphinx MODULE "${CMAKE_CURRENT_BINARY_DIR}/_pocketsphinx.c" WITH_SOABI)
+target_link_libraries(_pocketsphinx PRIVATE pocketsphinx)
 target_include_directories(
   _pocketsphinx PRIVATE ${PYTHON_INCLUDE_DIR}
   _pocketsphinx PRIVATE ${CMAKE_BINARY_DIR}
@@ -18,8 +23,7 @@ target_include_directories(
   _pocketsphinx INTERFACE ${CMAKE_SOURCE_DIR}/include
   _pocketsphinx INTERFACE ${CMAKE_BINARY_DIR}/include
   )
-python_extension_module(_pocketsphinx)
-install(TARGETS _pocketsphinx LIBRARY DESTINATION cython/pocketsphinx)
+install(TARGETS _pocketsphinx LIBRARY DESTINATION pocketsphinx)
 if(NOT USE_INSTALLED_POCKETSPHINX)
-  install(DIRECTORY ${PROJECT_SOURCE_DIR}/model DESTINATION cython/pocketsphinx)
+  install(DIRECTORY ${PROJECT_SOURCE_DIR}/model DESTINATION pocketsphinx)
 endif()
