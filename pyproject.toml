@@ -45,10 +45,13 @@ build = [
       "cp311-*",
       "cp312-*",
 ]
-# Build only universal wheels for Mac where possible
+# Build only universal wheels for Mac where possible, and skip 32-bit
+# builds to avoid building a gigabyte of stuff all the time
 skip = [
      "cp*-macosx_x86_64",
      "cp*-macosx_arm64",
+     "*_i686",
+     "*-win32",
 ]
 
 [tool.cibuildwheel.macos]
