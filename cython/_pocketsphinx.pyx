@@ -610,7 +610,7 @@ cdef class NGramModel:
         cdef const char **cwords
         cdef int prob
         bwords = [w.encode("utf-8") for w in words]
-        cwords = <const char **>malloc(len(bwords))
+        cwords = <const char **>malloc(len(bwords) * sizeof(char *))
         for i, w in enumerate(bwords):
             cwords[i] = w
         prob = ngram_prob(self.lm, cwords, len(words))
