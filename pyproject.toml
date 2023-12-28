@@ -14,6 +14,7 @@ authors = [
         {name = "David Huggins-Daines", email = "dhdaines@gmail.com"}
 ]
 keywords = ["asr", "speech"]
+dependencies = ["sounddevice"]
 classifiers = [
     "Development Status :: 6 - Mature",
     "Programming Language :: C",
