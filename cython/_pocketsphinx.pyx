@@ -1701,7 +1701,7 @@ cdef class Decoder:
             for word in decoder.get_alignment():
                 for phone in word:
                     for state in phone:
-                        print(word, phone, state)
+                        print(word.name, phone.name, state.start)
 
         That's a lot of code, so it may get simplified, either here or
         in a derived class, before release.
