@@ -41,7 +41,7 @@ pip install .
 Install two prerequisites particular to RaspberryOS:
 
 ```
-sudo apt install libpulse-dev libasound-dev portaudio19-dev libportaudio2 libportaudiocpp0 ffmpeg libav-tools
+sudo apt install libpulse-dev libasound2-dev portaudio19-dev libportaudio2 libportaudiocpp0 ffmpeg
 ```
 
 To install the C library and bindings (assuming you have access to
