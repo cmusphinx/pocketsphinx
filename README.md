@@ -38,7 +38,7 @@ python3 -m venv ~/ve_pocketsphinx
 . ~/ve_pocketsphinx/bin/activate
 pip install .
 ```
-Install two prerequisites particular to RaspberryOS:
+Install prerequisite packages particular to RaspberryOS:
 
 ```
 sudo apt install libpulse-dev libasound2-dev portaudio19-dev libportaudio2 libportaudiocpp0 ffmpeg
