@@ -38,6 +38,11 @@ python3 -m venv ~/ve_pocketsphinx
 . ~/ve_pocketsphinx/bin/activate
 pip install .
 ```
+Install two prerequisites particular to RaspberryOS:
+
+```
+sudo apt install libpulse-dev libasound-dev portaudio19-dev libportaudio2 libportaudiocpp0 ffmpeg libav-tools
+```
 
 To install the C library and bindings (assuming you have access to
 /usr/local - if not, use `-DCMAKE_INSTALL_PREFIX` to set a different
