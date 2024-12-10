@@ -908,7 +908,7 @@ POCKETSPHINX_EXPORT
 ngram_model_set_iter_t *ngram_model_set_iter_next(ngram_model_set_iter_t *itor);
 
 /**
- * Finish iteration over a langauge model set.
+ * Finish iteration over a language model set.
  * @memberof ngram_model_set_iter_t
  */
 POCKETSPHINX_EXPORT

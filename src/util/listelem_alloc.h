@@ -104,7 +104,7 @@ void __listelem_free__(listelem_alloc_t *le, void *elem, char *file, int line);
 #define listelem_free(le,el)	__listelem_free__((le),(el),__FILE__,__LINE__)
 
 /**
-   Print number of allocation, numer of free operation stats 
+   Print number of allocation, number of free operation stats 
 */
 void listelem_stats(listelem_alloc_t *le);
 

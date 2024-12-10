@@ -57,7 +57,7 @@
  * Merged from the branch SPHINX3_5_2_RCI_IRII_BRANCH: Put data structure into the cmn_t structure.
  *
  * Revision 1.11.4.2  2005/10/17 04:45:57  arthchan2003
- * Free stuffs in cmn and feat corectly.
+ * Free stuffs in cmn and feat correctly.
  *
  * Revision 1.11.4.1  2005/07/05 06:25:08  arthchan2003
  * Fixed dox-doc.

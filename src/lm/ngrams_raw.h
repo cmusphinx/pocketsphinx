@@ -64,7 +64,7 @@ int ngram_ord_comparator(const void *a_raw, const void *b_raw);
  * Read ngrams of order > 1 from ARPA file
  * @param li     [in] sphinxbase file line iterator that point to bigram description in ARPA file
  * @param wid    [in] hashtable that maps string word representation to id
- * @param lmath  [in] log math used for log convertions
+ * @param lmath  [in] log math used for log conversions
  * @param counts [in] amount of ngrams for each order
  * @param order  [in] maximum order of ngrams
  * @return            raw ngrams of order bigger than 1
@@ -76,11 +76,11 @@ ngram_raw_t **ngrams_raw_read_arpa(lineiter_t ** li, logmath_t * lmath,
 /**
  * Reads ngrams of order > 1 from DMP file.
  * @param fp           [in] file to read from. Position in file corresponds to start of bigram description
- * @param lmath        [in] log math used for log convertions
+ * @param lmath        [in] log math used for log conversions
  * @param counts       [in] amount of ngrams for each order
  * @param order        [in] maximum order of ngrams
- * @param unigram_next [in] array of next word pointers for unigrams. Needed to define forst word of bigrams
- * @param do_swap      [in] wether to do swap of bits
+ * @param unigram_next [in] array of next word pointers for unigrams. Needed to define first word of bigrams
+ * @param do_swap      [in] whether to do swap of bits
  * @return                  raw ngrams of order bigger than 1
  */
 ngram_raw_t **ngrams_raw_read_dmp(FILE * fp, logmath_t * lmath,

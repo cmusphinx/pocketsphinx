@@ -138,13 +138,13 @@ glist_t glist_add_uint32 (glist_t g,  /**< a link list */
  * Create and prepend a new list node containing a single-precision float.
  */  
 glist_t glist_add_float32 (glist_t g, /**< a link list */
-			   float32 val /**< a float32 vlaue */
+			   float32 val /**< a float32 value */
 	);
 /**
  * Create and prepend a new list node containing a double-precision float.
  */  
 glist_t glist_add_float64 (glist_t g, /**< a link list */
-			   float64 val  /**< a float64 vlaue */
+			   float64 val  /**< a float64 value */
 	);
 
 

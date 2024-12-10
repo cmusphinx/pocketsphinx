@@ -77,7 +77,7 @@ main(int argc, char *argv[])
 	ncep = 1;
 	nfr = feat_s2mfc2feat_live(fcb, cptr, &ncep, TRUE, FALSE, fptr);
 	TEST_EQUAL(nfr, 0); /* Not possible to make any frames yet. */
-	TEST_EQUAL(ncep, 1); /* But we shold have consumed one. */
+	TEST_EQUAL(ncep, 1); /* But we should have consumed one. */
 	cptr += ncep;
 	for (i = 1; i < total_frames - 1; ++i) {
 		ncep = 1;

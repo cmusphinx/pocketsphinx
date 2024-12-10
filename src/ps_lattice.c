@@ -851,7 +851,7 @@ ps_lattice_hyp(ps_lattice_t *dag, ps_latlink_t *link)
 
     /* Backtrace again to construct hypothesis string. */
     ckd_free(dag->hyp_str);
-    dag->hyp_str = ckd_calloc(1, len+1); /* extra one incase the hyp is empty */
+    dag->hyp_str = ckd_calloc(1, len+1); /* extra one in case the hyp is empty */
     c = dag->hyp_str + len - 1;
     if (dict_real_word(dag->dict, link->to->basewid)) {
 	char *wstr = dict_wordstr(dag->dict, link->to->basewid);
@@ -988,7 +988,7 @@ ps_lattice_seg_next(ps_seg_t *seg)
         return NULL;
     }
     else if (itor->cur == itor->n_links) {
-        /* Re-use the last link but with the "to" node. */
+        /* Reuse the last link but with the "to" node. */
         ps_lattice_link2itor(seg, itor->links[itor->cur - 1], TRUE);
     }
     else {

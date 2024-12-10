@@ -715,7 +715,7 @@ acmod_process_cep(acmod_t *acmod,
     }
 
 
-    /* FIXME: we can't split the last frame drop properly to be on the bounary, so just return */
+    /* FIXME: we can't split the last frame drop properly to be on the boundary, so just return */
     if (inptr + nfeat > acmod->n_feat_alloc && acmod->state == ACMOD_ENDED) {
 	*inout_n_frames -= ncep;
 	*inout_cep += ncep;

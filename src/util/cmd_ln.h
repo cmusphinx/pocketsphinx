@@ -176,7 +176,7 @@ cmd_ln_t *cmd_ln_retain(cmd_ln_t *cmdln);
 int cmd_ln_free_r(cmd_ln_t *cmdln);
 
 /**
- * Parse a list of strings into argumetns.
+ * Parse a list of strings into arguments.
  *
  * Parse the given list of arguments (name-value pairs) according to
  * the given definitions.  Argument values can be retrieved in future

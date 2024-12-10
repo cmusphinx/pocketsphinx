@@ -40,7 +40,7 @@
 /**
  * SECTION:element-pocketsphix
  *
- * The element runs the speech recohgnition on incomming audio buffers and
+ * The element runs the speech recohgnition on incoming audio buffers and
  * generates an element messages named <classname>&quot;pocketsphinx&quot;</classname>
  * for each hypothesis and one for the final result. The message's structure 
  * contains these fields:
@@ -252,8 +252,8 @@ gst_pocketsphinx_class_init(GstPocketSphinxClass * klass)
                              G_PARAM_READWRITE));
     g_object_class_install_property
         (gobject_class, PROP_JSGF_FILE,
-         g_param_spec_string("jsgf", "Grammer file",
-                             "File with grammer in Java Speech Grammar Format (JSGF)",
+         g_param_spec_string("jsgf", "Grammar file",
+                             "File with grammar in Java Speech Grammar Format (JSGF)",
                              NULL,
                              G_PARAM_READWRITE));
     g_object_class_install_property
