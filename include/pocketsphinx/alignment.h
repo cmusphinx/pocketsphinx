@@ -74,7 +74,7 @@ typedef struct ps_alignment_s ps_alignment_t;
 typedef struct ps_alignment_iter_s ps_alignment_iter_t;
 
 /**
- * Retain an alighment
+ * Retain an alignment
  * @memberof ps_alignment_t
  */
 POCKETSPHINX_EXPORT
@@ -120,7 +120,7 @@ POCKETSPHINX_EXPORT
 const char *ps_alignment_iter_name(ps_alignment_iter_t *itor);
 
 /**
- * Get the timing and score information for the current segment of an aligment.
+ * Get the timing and score information for the current segment of an alignment.
  *
  * @memberof ps_alignment_iter_t
  * @arg start Output pointer for start frame

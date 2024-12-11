@@ -221,7 +221,7 @@ struct ngram_search_s {
      * The word triphone sequences (HMM instances) are transformed
      * into tree structures, one tree per unique left triphone in the
      * entire dictionary (actually diphone, since its left context
-     * varies dyamically during the search process).  The entire set
+     * varies dynamically during the search process).  The entire set
      * of trees of channels is allocated once and for all during
      * initialization (since dynamic management of active CHANs is
      * time consuming), with one exception: the last phones of words,

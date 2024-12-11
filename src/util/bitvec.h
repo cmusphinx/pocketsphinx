@@ -77,7 +77,7 @@ typedef uint32 bitvec_t;
  */
 bitvec_t *bitvec_realloc(bitvec_t *vec,	/* In: Bit vector to search */
 			 size_t old_len, /* In: Old length */
-                         size_t new_len); /* In: New lenght of above bit vector */
+                         size_t new_len); /* In: New length of above bit vector */
 /**
  * Free a bit vector.
  */
@@ -142,7 +142,7 @@ bitvec_t *bitvec_realloc(bitvec_t *vec,	/* In: Bit vector to search */
  * @return the number of bits being set in vector <code>vec</code>
  */
 size_t bitvec_count_set(bitvec_t *vec,	/* In: Bit vector to search */
-                        size_t len);	/* In: Lenght of above bit vector */
+                        size_t len);	/* In: Length of above bit vector */
 
 #ifdef __cplusplus
 }

@@ -102,7 +102,7 @@ void yin_write(yin_t *pe, int16 const *frame);
  *                     associated with <code>*out_pitch</code>, in Q15
  *                     format (i.e. scaled by 32768).  This can be
  *                     interpreted as one minus the probability of voicing.
- * @return Non-zero if enough data was avaliable to return a pitch
+ * @return Non-zero if enough data was available to return a pitch
  *         estimate, zero otherwise.
  */
 POCKETSPHINX_EXPORT

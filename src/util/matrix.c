@@ -173,8 +173,8 @@ determinant(float32 ** a, int32 n)
 
 int32
 solve(float32 **a, /*Input : an n*n matrix A */
-      float32 *b,  /*Input : a n dimesion vector b */
-      float32 *out_x,  /*Output : a n dimesion vector x */
+      float32 *b,  /*Input : a n dimension vector b */
+      float32 *out_x,  /*Output : a n dimension vector x */
       int32   n)
 {
     char uplo;
