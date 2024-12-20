@@ -110,7 +110,7 @@ int32 str2words (char *line,	/**< In/Out: line to be parsed.  This
 				   must be allocated by the caller.
 				   It may be NULL in which case the
 				   number of words will be counted.
-				   This allows you to allcate it to
+				   This allows you to allocate it to
 				   the proper size, e.g.:
 				   
 				   n = str2words(line, NULL, 0);

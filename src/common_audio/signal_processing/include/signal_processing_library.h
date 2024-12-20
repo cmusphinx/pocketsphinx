@@ -48,7 +48,7 @@
 #define WEBRTC_SPL_MUL_16_U16(a, b) ((int32_t)(int16_t)(a) * (uint16_t)(b))
 
 // clang-format off
-// clang-format would choose some identation
+// clang-format would choose some indentation
 // leading to presubmit error (cpplint.py)
 #ifndef WEBRTC_ARCH_ARM_V7
 // For ARMv7 platforms, these are inline functions in spl_inl_armv7.h
@@ -242,7 +242,7 @@ int32_t WebRtcSpl_MinValueW32_mips(const int32_t* vector, size_t length);
 // Input:
 //      - vector : 16-bit input vector.
 //      - length : Number of samples in vector.
-// Ouput:
+// Output:
 //      - max_val : Maximum sample value in `vector`.
 //      - min_val : Minimum sample value in `vector`.
 void WebRtcSpl_MinMaxW16(const int16_t* vector,
@@ -305,7 +305,7 @@ size_t WebRtcSpl_MaxIndexW32(const int32_t* vector, size_t length);
 //      - vector : 16-bit input vector.
 //      - length : Number of samples in vector.
 //
-// Return value  : Index to the mimimum value in vector  (if multiple
+// Return value  : Index to the minimum value in vector  (if multiple
 //                 indexes have the minimum, return the first).
 size_t WebRtcSpl_MinIndexW16(const int16_t* vector, size_t length);
 
@@ -315,7 +315,7 @@ size_t WebRtcSpl_MinIndexW16(const int16_t* vector, size_t length);
 //      - vector : 32-bit input vector.
 //      - length : Number of samples in vector.
 //
-// Return value  : Index to the mimimum value in vector  (if multiple
+// Return value  : Index to the minimum value in vector  (if multiple
 //                 indexes have the minimum, return the first).
 size_t WebRtcSpl_MinIndexW32(const int32_t* vector, size_t length);
 

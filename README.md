@@ -58,7 +58,7 @@ Usage
 -----
 
 The `pocketsphinx` command-line program reads single-channel 16-bit
-PCM audio from standard input or one or more files, and attemps to
+PCM audio from standard input or one or more files, and attempts to
 recognize speech in it using the default acoustic and language model.
 It accepts a large number of options which you probably don't care
 about, a *command* which defaults to `live`, and one or more inputs

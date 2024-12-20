@@ -489,7 +489,7 @@ fe_process_frames_int16(fe_t *fe,
         }
     }
 
-    /* Finally update the frame counter with the number of frames we procesed. */
+    /* Finally update the frame counter with the number of frames we processed. */
     *inout_nframes = outidx; /* FIXME: Not sure why I wrote it this way... */
     return 0;
 }

@@ -125,13 +125,13 @@ void bitarr_write_int25(bitarr_address_t address, uint8 length, uint32 value);
 /**
  * Fills mask for certain int range according to provided max value
  * @param bit_mask mask that is filled
- * @param max_value bigest integer that is going to be stored using this mask
+ * @param max_value biggest integer that is going to be stored using this mask
  */
 void bitarr_mask_from_max(bitarr_mask_t *bit_mask, uint32 max_value);
 
 /**
  * Computes amount of bits required ti store integers upto value provided.
- * @param max_value bigest integer that going to be stored using this amount of bits
+ * @param max_value biggest integer that going to be stored using this amount of bits
  * @return amount of bits required to store integers from range with maximum provided
  */
 uint8 bitarr_required_bits(uint32 max_value);

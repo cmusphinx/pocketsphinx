@@ -1757,7 +1757,7 @@ cdef class Vad:
     """Voice activity detection class.
 
     Args:
-      mode(int): Aggressiveness of voice activity detction (0-3)
+      mode(int): Aggressiveness of voice activity detection (0-3)
       sample_rate(int): Sampling rate of input, default is 16000.
                         Rates other than 8000, 16000, 32000, 48000
                         are only approximately supported, see note
@@ -1841,7 +1841,7 @@ cdef class Endpointer:
       window(float): Length in seconds of window for decision.
       ratio(float): Fraction of window that must be speech or
                     non-speech to make a transition.
-      mode(int): Aggressiveness of voice activity detction (0-3)
+      mode(int): Aggressiveness of voice activity detection (0-3)
       sample_rate(int): Sampling rate of input, default is 16000.
                         Rates other than 8000, 16000, 32000, 48000
                         are only approximately supported, see note

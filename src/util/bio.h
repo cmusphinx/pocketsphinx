@@ -165,7 +165,7 @@ int32 bio_fread (void *buf,		/**< In: buffer to write */
 /**
  * Like fwrite but perform byteswapping and accumulate checksum (the 2 extra arguments).
  *
- * @return the number of elemens written (like fwrite).
+ * @return the number of elements written (like fwrite).
  */
 int32 bio_fwrite(const void *buf,	/**< In: buffer to write */
 		 int32 el_sz,		/**< In: element size */

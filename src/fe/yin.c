@@ -80,7 +80,7 @@ cmn_diff(int16 const *signal, int32 *out_diff, int ndiff)
     for (tscale = 0; tscale < 32; ++tscale)
         if (ndiff & (1<<(31-tscale)))
             break;
-    --tscale; /* Avoid teh overflowz. */
+    --tscale; /* Avoid the overflowz. */
     /* printf("tscale is %d (ndiff - 1) << tscale is %d\n",
        tscale, (ndiff-1) << tscale); */
 
@@ -226,7 +226,7 @@ yin_read(yin_t *pe, uint16 *out_period, uint16 *out_bestdiff)
 
     half_wsize = (pe->wsize-1)/2;
     /* Without any smoothing, just return the current value (don't
-     * need to do anything to the current poitner either). */
+     * need to do anything to the current pointer either). */
     if (half_wsize == 0) {
         if (pe->endut)
             return 0;

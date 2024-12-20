@@ -13,7 +13,7 @@ pocketsphinx \- Run speech recognition on audio data
 .PP
 The ‘\f[CR]pocketsphinx\fP’ command-line program reads single-channel
 16-bit PCM audio one or more input files (or ‘\f[CR]-\fP’ to read from
-standard input), and attemps to recognize speech in it using the
+standard input), and attempts to recognize speech in it using the
 default acoustic and language model. The input files can be raw audio,
 WAV, or NIST Sphere files, though some of these may not be recognized
 properly.  It accepts a large number of options which you probably

@@ -409,7 +409,7 @@ int32 feat_s2mfc2feat_live(feat_t  *fcb,     /**< In: Descriptor from feat_init(
                            mfcc_t **uttcep,  /**< In: Incoming cepstral buffer */
                            int32 *inout_ncep,/**< In: Size of incoming buffer.
                                                 Out: Number of incoming frames consumed. */
-                           int32 beginutt,   /**< In: Begining of utterance flag */
+                           int32 beginutt,   /**< In: Beginning of utterance flag */
                            int32 endutt,     /**< In: End of utterance flag */
                            mfcc_t ***ofeat   /**< In: Output feature buffer.  See
                                                 <strong>VERY IMPORTANT</strong> note
