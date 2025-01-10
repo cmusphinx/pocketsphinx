@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 
 import argparse
-import sys
-from math import log
 import re
+import sys
+import unicodedata as ud
 from collections import defaultdict
 from datetime import date
-import unicodedata as ud
 from io import StringIO
-from typing import Optional, Dict, TextIO, Any
+from math import log
+from typing import Any, Dict, Optional, TextIO
 
 # Author: Kevin Lenzo
 # Based on a Perl script by Alex Rudnicky
+
 
 class ArpaBoLM:
     """
@@ -22,7 +23,7 @@ class ArpaBoLM:
 
     def __init__(
          self,
-         sentfile: Optional[str] = None,
+         sentfile: Optional[TextIO] = None,
          text: Optional[str] = None,
          add_start: bool = False,
          word_file: Optional[str] = None,
@@ -32,8 +33,6 @@ class ArpaBoLM:
          norm: bool = False,
          verbose: bool = False,
     ):
-        self.sentfile = sentfile
-        self.text = text
         self.add_start = add_start
         self.word_file = word_file
         self.word_file_count = word_file_count
@@ -71,10 +70,9 @@ class ArpaBoLM:
         self.prob_2: Any = defaultdict(lambda: defaultdict(float))
         self.alpha_2: Any = defaultdict(lambda: defaultdict(float))
 
-        if self.sentfile is not None:
-            with open(str(sentfile)) as infile:
-                self.read_corpus(infile)
-        if self.text is not None:
+        if sentfile is not None:
+            self.read_corpus(sentfile)
+        if text is not None:
             self.read_corpus(StringIO(text))
 
         if self.word_file is not None:
@@ -235,7 +233,7 @@ class ArpaBoLM:
         try:
             with open(out_path, 'w') as outfile:
                 self.write(outfile)
-        except Exception as e:
+        except Exception:
             return False
         return True
 
@@ -303,7 +301,7 @@ class ArpaBoLM:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description='Create a fixed-backoff ARPA LM')
-    parser.add_argument('-s', '--sentfile', type=str,
+    parser.add_argument('-s', '--sentfile', type=argparse.FileType('rt'),
                         help='sentence transcripts in sphintrain style or one-per-line texts')
     parser.add_argument('-t', '--text', type=str)
     parser.add_argument('-w', '--word-file', type=str,
@@ -326,7 +324,10 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.case and args.case not in ['lower', 'upper']:
-        sys.exit('--case must be lower or upper (if given)')
+        parser.error('--case must be lower or upper (if given)')
+
+    if args.sentfile is None and args.text is None:
+        parser.error('Input must be specified with --sentfile and/or --text')
 
     lm = ArpaBoLM(
         sentfile=args.sentfile,
