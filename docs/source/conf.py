@@ -22,7 +22,7 @@ copyright = '2023, David Huggins-Daines'
 author = 'David Huggins-Daines'
 
 # The full version, including alpha/beta/rc tags
-release = '5.0.3'
+release = '5.0.4'
 
 
 # -- General configuration ---------------------------------------------------
