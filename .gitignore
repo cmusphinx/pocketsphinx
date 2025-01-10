@@ -14,3 +14,9 @@ DartConfiguration.tcl
 cmake_install.cmake
 venv/
 .tox
+Makefile
+config.h
+include/pocketsphinx/sphinx_config.h
+pocketsphinx.pc
+test/testfuncs.sh
+test/unit/test_macros.h

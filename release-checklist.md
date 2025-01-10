@@ -4,7 +4,7 @@
   - docs/source/conf.py
   - doxygen/CMakeLists.txt
   - README.md
-  - setup.cfg
+  - pyproject.toml
   - include/pocketsphinx.h
 - docker build
 - make github release and tag
