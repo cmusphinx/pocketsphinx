@@ -40,7 +40,9 @@ Raspberry Pi OS, Ubuntu, etc), you can install them with:
         libportaudio2 \
         libportaudiocpp0 \
         libpulse-dev \
-        portaudio19-dev
+        libsox-fmt-all \
+        portaudio19-dev \
+        sox
 
 To install the Python module in a virtual environment (replace
 `~/ve_pocketsphinx` with the virtual environment you wish to create),
