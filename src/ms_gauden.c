@@ -158,7 +158,7 @@ gauden_param_read(const char *file_name,
 
     /* #Codebooks */
     if (bio_fread(&n_mgau, sizeof(int32), 1, fp, byteswap, &chksum) != 1) {
-        E_ERROR("Failed to read number fo codebooks from %s\n", file_name);
+        E_ERROR("Failed to read number of codebooks from %s\n", file_name);
         fclose(fp);
         return NULL;
     }

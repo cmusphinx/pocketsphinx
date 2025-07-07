@@ -50,7 +50,7 @@
  * Merged from branch SPHINX3_5_2_RCI_IRII_BRANCH: a, Free buffers correctly. b, Fixed dox-doc.
  * 
  * Revision 1.21.4.3  2005/10/17 04:45:57  arthchan2003
- * Free stuffs in cmn and feat corectly.
+ * Free stuffs in cmn and feat correctly.
  *
  * Revision 1.21.4.2  2005/09/26 02:19:57  arthchan2003
  * Add message to show the directory which the feature is searched for.

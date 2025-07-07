@@ -1,4 +1,4 @@
-PocketSphinx 5.0.3
+PocketSphinx 5.0.4
 ==================
 
 This is PocketSphinx, one of Carnegie Mellon University's open source large
@@ -29,6 +29,21 @@ There is no longer any dependency on SphinxBase.  There is no
 SphinxBase anymore.  This is not the SphinxBase you're looking for.
 All your SphinxBase are belong to us.
 
+There are some other dependencies that you may find useful in order to
+use the example code (though they are not strictly necessary to build
+and install).  On Debian GNU/Linux and its derivatives (such as
+Raspberry Pi OS, Ubuntu, etc), you can install them with:
+
+    sudo apt install \
+        ffmpeg \
+        libasound2-dev \
+        libportaudio2 \
+        libportaudiocpp0 \
+        libpulse-dev \
+        libsox-fmt-all \
+        portaudio19-dev \
+        sox
+
 To install the Python module in a virtual environment (replace
 `~/ve_pocketsphinx` with the virtual environment you wish to create),
 from the top level directory:
@@ -53,7 +68,7 @@ Usage
 -----
 
 The `pocketsphinx` command-line program reads single-channel 16-bit
-PCM audio from standard input or one or more files, and attemps to
+PCM audio from standard input or one or more files, and attempts to
 recognize speech in it using the default acoustic and language model.
 It accepts a large number of options which you probably don't care
 about, a *command* which defaults to `live`, and one or more inputs

@@ -49,7 +49,7 @@
  * @file err.h
  * @brief Implementation of logging routines.
  *
- * Logging, warning, debug and error message output funtionality is provided in this file.
+ * Logging, warning, debug and error message output functionality is provided in this file.
  * Sphinxbase defines several level of logging messages - INFO, WARNING, ERROR, FATAL. By
  * default output goes to standard error output.
  *

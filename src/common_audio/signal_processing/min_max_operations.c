@@ -136,7 +136,7 @@ int32_t WebRtcSpl_MinValueW32C(const int32_t* vector, size_t length) {
 
 // Index of maximum absolute value in a word16 vector.
 size_t WebRtcSpl_MaxAbsIndexW16(const int16_t* vector, size_t length) {
-  // Use type int for local variables, to accomodate the value of abs(-32768).
+  // Use type int for local variables, to accommodate the value of abs(-32768).
 
   size_t i = 0, index = 0;
   int absolute = 0, maximum = 0;

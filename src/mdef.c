@@ -531,7 +531,7 @@ mdef_init(char *mdeffile, int32 breport)
         return NULL;
     }
     if (strncmp(buf, MODEL_DEF_VERSION, strlen(MODEL_DEF_VERSION)) != 0)
-        E_FATAL("Version error: Expecing %s, but read %s\n",
+        E_FATAL("Version error: Expecting %s, but read %s\n",
                 MODEL_DEF_VERSION, buf);
 
     /* Read #base phones, #triphones, #senone mappings defined in header */

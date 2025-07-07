@@ -7,7 +7,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "pocketsphinx"
-version = "5.0.3"
+version = "5.0.4"
 description = "Official Python bindings for PocketSphinx"
 readme = "cython/README.md"
 authors = [
@@ -25,6 +25,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Topic :: Multimedia :: Sound/Audio :: Speech",
@@ -36,6 +37,9 @@ Documentation = "https://pocketsphinx.readthedocs.io/en/latest/"
 Repository = "https://github.com/cmusphinx/pocketsphinx.git"
 Issues = "https://github.com/cmusphinx/pocketsphinx/issues"
 
+[project.scripts]
+pocketsphinx_lm = "pocketsphinx.lm:main"
+
 [tool.cibuildwheel]
 # Build a reduced selection of binaries as there are tons of them
 build = [
@@ -44,6 +48,7 @@ build = [
       "cp310-*",
       "cp311-*",
       "cp312-*",
+      "cp313-*",
 ]
 # Build only universal wheels for Mac where possible, and skip 32-bit
 # builds to avoid building a gigabyte of stuff all the time
