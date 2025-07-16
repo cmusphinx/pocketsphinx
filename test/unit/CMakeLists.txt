@@ -8,6 +8,7 @@ set(TESTS
   test_config
   test_dict2pid
   test_dict
+  test_dict_strcat
   test_fe
   test_fe_warp_overflow
   test_fwdflat

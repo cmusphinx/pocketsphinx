@@ -230,14 +230,20 @@ dict_write(dict_t *dict, char const *filename, char const *format)
         int j, phlen;
         if (!dict_real_word(dict, i))
             continue;
+        char *pos;
         for (phlen = j = 0; j < dict_pronlen(dict, i); ++j)
             phlen += strlen(dict_ciphone_str(dict, i, j)) + 1;
         phones = ckd_calloc(1, phlen);
+        pos = phones;
         for (j = 0; j < dict_pronlen(dict, i); ++j) {
-            strcat(phones, dict_ciphone_str(dict, i, j));
+            const char *phone = dict_ciphone_str(dict, i, j);
+            int len = strlen(phone);
+            memcpy(pos, phone, len);
+            pos += len;
             if (j != dict_pronlen(dict, i) - 1)
-                strcat(phones, " ");
+                *pos++ = ' ';
         }
+        *pos = '\0';
         fprintf(fh, "%-30s %s\n", dict_wordstr(dict, i), phones);
         ckd_free(phones);
     }
