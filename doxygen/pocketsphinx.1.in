@@ -68,9 +68,16 @@ punctuation, uppercase, centipedes, etc. For example:
 By default, only word-level alignment is done.  To get phone
 alignments, pass `-phone_align yes` in the flags, e.g.:
 
-.EX    
+.EX
     pocketsphinx -phone_align yes align audio.wav $text
-.EE        
+.EE
+
+To get state-level alignments, pass `-state_align yes` (this
+automatically enables phone alignment as well):
+
+.EX
+    pocketsphinx -state_align yes align audio.wav $text
+.EE
 
 This will make not particularly readable output, but you can use
 .B jq
@@ -91,6 +98,11 @@ There are many, many other possibilities, of course.
 .TP
 .B help
 Print a usage and help text with a list of possible arguments.
+You can also get command-specific help by specifying a command after help,
+for example 'pocketsphinx help align' will show alignment-specific options.
+.TP
+.B help-config
+Print a long list of all configuration parameters with their descriptions.
 .TP
 .B soxflags
 Return arguments to ‘\f[CR]sox\fP’ which will create the appropriate

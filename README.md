@@ -71,7 +71,11 @@ If your input is in some other format I suggest converting it with
 The commands are as follows:
 
   - `help`: Print a long list of those options you don't care about.
-  
+
+    You can also get command-specific help by running `help <command>`,
+    for example `pocketsphinx help align` will show alignment-specific
+    options.
+
   - `config`: Dump configuration as JSON to standard output (can be
     loaded with the `-config` option).
 
@@ -97,7 +101,7 @@ The commands are as follows:
   - `single`: Recognize each input as a single utterance, and write a
     JSON object in the same format described above.
     
-  - `align`: Align a single input file (or `-` for standard input) to
+  - `align`: Force-align a single audio file to a word sequence, and write
     a word sequence, and write a JSON object in the same format
     described above.  The first positional argument is the input, and
     all subsequent ones are concatenated to make the text, to avoid
@@ -109,9 +113,14 @@ The commands are as follows:
         
     By default, only word-level alignment is done.  To get phone
     alignments, pass `-phone_align yes` in the flags, e.g.:
-    
+
         pocketsphinx -phone_align yes align audio.wav $text
-        
+
+    To get state-level alignments, pass `-state_align yes` (this
+    automatically enables phone alignment as well):
+
+        pocketsphinx -state_align yes align audio.wav $text
+
     This will make not particularly readable output, but you can use
     [jq](https://stedolan.github.io/jq/) to clean it up.  For example,
     you can get just the word names and start times like this:
