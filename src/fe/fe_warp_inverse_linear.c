@@ -131,6 +131,17 @@ fe_warp_inverse_linear_set_parameters(char const *param_str, float sampling_rate
             ("Inverse linear warping takes only one argument, %s ignored.\n",
              tok);
     }
+    
+    /* Clamp parameter to reasonable range to prevent overflow */
+    /* Reasonable range for scaling factor a: 0.1 to 10.0 */
+    if (params[0] < 0.1f) {
+        params[0] = 0.1f;
+        E_WARN("Inverse linear warp parameter 'a' clamped to minimum 0.1\n");
+    } else if (params[0] > 10.0f) {
+        params[0] = 10.0f;
+        E_WARN("Inverse linear warp parameter 'a' clamped to maximum 10.0\n");
+    }
+    
     if (params[0] == 0) {
         is_neutral = YES;
         E_INFO

@@ -131,6 +131,26 @@ fe_warp_affine_set_parameters(char const *param_str, float sampling_rate)
             ("Affine warping takes up to two arguments, %s ignored.\n",
              tok);
     }
+    
+    /* Clamp parameters to reasonable ranges to prevent overflow */
+    /* Reasonable range for scaling factor a: 0.1 to 10.0 */
+    if (params[0] < 0.1f) {
+        params[0] = 0.1f;
+        E_WARN("Affine warp parameter 'a' clamped to minimum 0.1\n");
+    } else if (params[0] > 10.0f) {
+        params[0] = 10.0f;
+        E_WARN("Affine warp parameter 'a' clamped to maximum 10.0\n");
+    }
+    
+    /* Reasonable range for offset b: -nyquist to +nyquist */
+    if (params[1] < -nyquist_frequency) {
+        params[1] = -nyquist_frequency;
+        E_WARN("Affine warp parameter 'b' clamped to minimum -%g\n", nyquist_frequency);
+    } else if (params[1] > nyquist_frequency) {
+        params[1] = nyquist_frequency;
+        E_WARN("Affine warp parameter 'b' clamped to maximum %g\n", nyquist_frequency);
+    }
+    
     if (params[0] == 0) {
         is_neutral = YES;
         E_INFO
