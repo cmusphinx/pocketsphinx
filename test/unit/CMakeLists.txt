@@ -32,6 +32,7 @@ set(TESTS
   test_simple
   test_state_align
   test_vad
+  test_vad_alloc
   test_word_align
   test_endpointer
   )
