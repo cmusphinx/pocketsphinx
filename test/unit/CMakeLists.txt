@@ -33,6 +33,7 @@ set(TESTS
   test_vad
   test_word_align
   test_endpointer
+  test_endpointer_timestamp
   )
 foreach(TEST_EXECUTABLE ${TESTS})
   add_executable(${TEST_EXECUTABLE} EXCLUDE_FROM_ALL ${TEST_EXECUTABLE}.c)
