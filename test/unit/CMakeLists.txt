@@ -9,6 +9,7 @@ set(TESTS
   test_dict2pid
   test_dict
   test_fe
+  test_fe_warp_overflow
   test_fwdflat
   test_fwdtree_bestpath
   test_fwdtree

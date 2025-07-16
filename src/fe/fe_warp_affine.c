@@ -112,9 +112,11 @@ fe_warp_affine_set_parameters(char const *param_str, float sampling_rate)
         return;
     }
     is_neutral = NO;
-    strcpy(temp_param_str, param_str);
+    strncpy(temp_param_str, param_str, sizeof(temp_param_str) - 1);
+    temp_param_str[sizeof(temp_param_str) - 1] = '\0';
     memset(params, 0, N_PARAM * sizeof(float));
-    strcpy(p_str, param_str);
+    strncpy(p_str, param_str, sizeof(p_str) - 1);
+    p_str[sizeof(p_str) - 1] = '\0';
     /* FIXME: strtok() is not re-entrant... */
     tok = strtok(temp_param_str, seps);
     while (tok != NULL) {
