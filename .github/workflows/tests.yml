@@ -8,6 +8,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Wait for dpkg lock
+        run: |
+          while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+            echo "Waiting for dpkg lock to be released..."
+            sleep 5
+          done
       - name: Install
         run: |
           sudo apt-get install sox ninja-build
@@ -23,6 +29,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Wait for dpkg lock
+        run: |
+          while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+            echo "Waiting for dpkg lock to be released..."
+            sleep 5
+          done
       - name: Install
         run: |
           sudo apt-get install sox ninja-build
@@ -56,6 +68,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py }}
+      - name: Wait for dpkg lock
+        if: ${{ startsWith(matrix.os, 'ubuntu') }}
+        run: |
+          while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+            echo "Waiting for dpkg lock to be released..."
+            sleep 5
+          done
       - name: Install sox
         if: ${{ startsWith(matrix.os, 'ubuntu') }}
         run: sudo apt-get install sox
@@ -70,6 +89,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Wait for dpkg lock
+        run: |
+          while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+            echo "Waiting for dpkg lock to be released..."
+            sleep 5
+          done
       - name: Install
         run: |
           sudo apt-get install sox
