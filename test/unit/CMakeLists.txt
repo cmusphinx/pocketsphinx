@@ -12,7 +12,9 @@ set(TESTS
   test_config
   test_dict2pid
   test_dict
+  test_dict_strcat
   test_fe
+  test_fe_warp_overflow
   test_fwdflat
   test_fwdtree_bestpath
   test_fwdtree
@@ -36,6 +38,7 @@ set(TESTS
   test_simple
   test_state_align
   test_vad
+  test_vad_alloc
   test_word_align
   test_endpointer
   test_thread_local_compile
