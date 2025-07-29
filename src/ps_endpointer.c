@@ -258,7 +258,10 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
 
     /* Use callback timestamp if available */
     if (ep->timestamp_cb != NULL) {
-        ep->speech_end = ep->timestamp_cb(ep->timestamp_cb_data);
+        /* Get current timestamp and adjust for frames already in queue */
+        double current_time = ep->timestamp_cb(ep->timestamp_cb_data);
+        double frames_back = ep->n; /* Number of frames already in queue */
+        ep->speech_end = current_time - (frames_back * ep->frame_length);
     } else {
         ep->speech_end = ep->qstart_time;
     }
