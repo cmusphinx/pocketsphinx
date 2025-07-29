@@ -737,6 +737,33 @@ usage(char *name, int help_config)
     }
 }
 
+void
+usage_align(char *name)
+{
+    fprintf(stderr, "Usage: %s [PARAMS] align INPUT WORDS...\n", name);
+    fprintf(stderr, "\nForce-align audio to a word sequence.\n");
+    fprintf(stderr, "\nArguments:\n");
+    fprintf(stderr, "  INPUT     Audio file to align (or '-' for stdin)\n");
+    fprintf(stderr, "  WORDS...  Words to align to (will be concatenated)\n");
+    fprintf(stderr, "\nAlignment-specific options:\n");
+    fprintf(stderr, "  -phone_align yes/no    Run a second pass to align phones and print their durations\n");
+    fprintf(stderr, "                         (default: no)\n");
+    fprintf(stderr, "  -state_align yes/no    Run a second pass to align phones and states and print their\n");
+    fprintf(stderr, "                         durations. This implies -phone_align yes (default: no)\n");
+    fprintf(stderr, "\nExamples:\n");
+    fprintf(stderr, "  # Basic word alignment:\n");
+    fprintf(stderr, "  %s align audio.wav \"hello world\"\n", name);
+    fprintf(stderr, "\n  # Phone-level alignment:\n");
+    fprintf(stderr, "  %s -phone_align yes align audio.wav \"hello world\"\n", name);
+    fprintf(stderr, "\n  # State-level alignment:\n");
+    fprintf(stderr, "  %s -state_align yes align audio.wav \"hello world\"\n", name);
+    fprintf(stderr, "\n  # Extract word timings with jq:\n");
+    fprintf(stderr, "  %s align audio.wav \"hello world\" | jq '.w[]|[.t,.b]'\n", name);
+    fprintf(stderr, "\n  # Extract phone timings with jq:\n");
+    fprintf(stderr, "  %s -phone_align yes align audio.wav \"hello world\" | jq '.w[]|.w[]|[.t,.d]'\n", name);
+    fprintf(stderr, "\nFor all available parameters, run %s help-config\n", name);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -748,11 +775,12 @@ main(int argc, char *argv[])
 
     command = find_command(&argc, argv);
     inputs = find_inputs(&argc, argv, &ninputs);
-    /* Only soxflags and config take no arguments */
+    /* Only soxflags, config, help-config, and help take no or optional arguments */
     if (ninputs == 0) {
         if ((0 != strcmp(command, "soxflags"))
             && 0 != strcmp(command, "config")
-            && 0 != strcmp(command, "help-config")) {
+            && 0 != strcmp(command, "help-config")
+            && 0 != strcmp(command, "help")) {
             usage(argv[0], FALSE);
             return 1;
         }
@@ -803,7 +831,19 @@ main(int argc, char *argv[])
         rv = align(config, inputs, ninputs);
     else if (0 == strcmp(command, "help")) {
         rv = 0;
-        usage(argv[0], FALSE);
+        /* Check if a specific command help was requested */
+        if (ninputs > 0) {
+            if (0 == strcmp(inputs[0], "align")) {
+                usage_align(argv[0]);
+            }
+            else {
+                fprintf(stderr, "No specific help available for command '%s'\n", inputs[0]);
+                usage(argv[0], FALSE);
+            }
+        }
+        else {
+            usage(argv[0], FALSE);
+        }
     }
     else if (0 == strcmp(command, "help-config")) {
         rv = 0;
