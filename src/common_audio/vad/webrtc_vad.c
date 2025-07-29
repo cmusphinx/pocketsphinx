@@ -24,7 +24,9 @@ static const int kMaxFrameLengthMs = 30;
 
 VadInst* WebRtcVad_Create(void) {
   VadInstT* self = (VadInstT*)malloc(sizeof(VadInstT));
-
+  if (self == NULL) {
+    return NULL;
+  }
   self->init_flag = 0;
 
   return (VadInst*)self;

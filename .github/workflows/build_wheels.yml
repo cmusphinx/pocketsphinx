@@ -2,7 +2,7 @@ name: Build
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 jobs:
@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.22.0
+        uses: pypa/cibuildwheel@v3.1.1
 
       - name: Upload
         uses: actions/upload-artifact@v3
