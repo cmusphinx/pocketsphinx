@@ -16,6 +16,7 @@ set(TESTS
   test_jsgf
   test_keyphrase
   test_lattice
+  test_lm_convert
   test_ngram_model_read
   test_log_shifted
   test_log_int8
