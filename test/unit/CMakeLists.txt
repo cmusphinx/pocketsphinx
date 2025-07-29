@@ -41,6 +41,7 @@ set(TESTS
   test_vad_alloc
   test_word_align
   test_endpointer
+  test_endpointer_timestamp
   test_thread_local_compile
   test_thread_local_basic
   test_thread_utils_self
