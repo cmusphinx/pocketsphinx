@@ -52,6 +52,12 @@ struct ps_endpointer_s {
     void *timestamp_cb_data;
     double timestamp_offset;
     double last_audio_timestamp;
+    /* Performance optimizations */
+    double cached_timestamp;
+    int timestamp_cached;
+    int speech_count;
+    int16 *scratch_buf;
+    int8 *scratch_is_speech;
 };
 
 ps_endpointer_t *
@@ -95,6 +101,14 @@ ps_endpointer_init(double window,
     ep->timestamp_cb_data = NULL;
     ep->timestamp_offset = 0.0;
     ep->last_audio_timestamp = 0.0;
+    /* Initialize performance optimizations */
+    ep->cached_timestamp = 0.0;
+    ep->timestamp_cached = 0;
+    ep->speech_count = 0;
+    ep->scratch_buf = ckd_calloc(sizeof(*ep->scratch_buf),
+                                  ep->maxlen * ep->frame_size);
+    ep->scratch_is_speech = ckd_calloc(sizeof(*ep->scratch_is_speech),
+                                        ep->maxlen);
     return ep;
 error_out:
     ps_endpointer_free(ep);
@@ -120,6 +134,10 @@ ps_endpointer_free(ps_endpointer_t *ep)
         ckd_free(ep->buf);
     if (ep->is_speech)
         ckd_free(ep->is_speech);
+    if (ep->scratch_buf)
+        ckd_free(ep->scratch_buf);
+    if (ep->scratch_is_speech)
+        ckd_free(ep->scratch_is_speech);
     ckd_free(ep);
     return 0;
 }
@@ -148,28 +166,35 @@ static void
 ep_clear(ps_endpointer_t *ep)
 {
     ep->n = 0;
+    ep->speech_count = 0;
 }
 
 static int
 ep_speech_count(ps_endpointer_t *ep)
 {
-    int count = 0;
-    if (ep_empty(ep))
-        ;
-    else if (ep_full(ep)) {
-        int i;
-        for (i = 0; i < ep->maxlen; ++i)
-            count += ep->is_speech[i];
-    }
-    else {
-        int i = ep->pos, end = (ep->pos + ep->n) % ep->maxlen;
-        count = ep->is_speech[i++];
-        while (i != end) {
-            count += ep->is_speech[i++];
-            i = i % ep->maxlen;
+    return ep->speech_count;
+}
+
+/* Get current timestamp with caching for efficiency */
+static double
+ep_get_current_timestamp(ps_endpointer_t *ep)
+{
+    if (ep->timestamp_cb) {
+        if (!ep->timestamp_cached) {
+            ep->cached_timestamp = ep->timestamp_cb(ep->timestamp_cb_data);
+            ep->timestamp_cached = 1;
         }
+        return ep->cached_timestamp;
+    } else {
+        return ep->last_audio_timestamp;
     }
-    return count;
+}
+
+/* Clear timestamp cache - call at start of each public API function */
+static void
+ep_clear_timestamp_cache(ps_endpointer_t *ep)
+{
+    ep->timestamp_cached = 0;
 }
 
 static int
@@ -178,7 +203,17 @@ ep_push(ps_endpointer_t *ep, int is_speech, const int16 *frame)
     int i = (ep->pos + ep->n) % ep->maxlen;
     int16 *dest = ep->buf + (i * ep->frame_size);
     memcpy(dest, frame, sizeof(*ep->buf) * ep->frame_size);
+
+    if (ep_full(ep)) {
+        /* Buffer is full, we're replacing the oldest frame */
+        if (ep->is_speech[i])
+            ep->speech_count--;  /* Remove old frame from count */
+    }
+
     ep->is_speech[i] = is_speech;
+    if (is_speech)
+        ep->speech_count++;  /* Add new frame to count */
+
     if (ep_full(ep)) {
         ep->qstart_time += ep->frame_length;
         ep->pos = (ep->pos + 1) % ep->maxlen;
@@ -197,6 +232,11 @@ ep_pop(ps_endpointer_t *ep, int *out_is_speech)
     ep->qstart_time += ep->frame_length;
     if (out_is_speech)
         *out_is_speech = ep->is_speech[ep->pos];
+
+    /* Update speech count */
+    if (ep->is_speech[ep->pos])
+        ep->speech_count--;
+
     pcm = ep->buf + (ep->pos * ep->frame_size);
     ep->pos = (ep->pos + 1) % ep->maxlen;
     ep->n--;
@@ -206,18 +246,14 @@ ep_pop(ps_endpointer_t *ep, int *out_is_speech)
 static void
 ep_linearize(ps_endpointer_t *ep)
 {
-    int16 *tmp_pcm;
-    uint8 *tmp_is_speech;
-
     if (ep->pos == 0)
         return;
+
+    /* Use pre-allocated scratch buffers */
     /* Second part of data: | **** ^ .. | */
-    tmp_pcm = ckd_calloc(sizeof(*ep->buf),
-                         ep->pos * ep->frame_size);
-    tmp_is_speech = ckd_calloc(sizeof(*ep->is_speech), ep->pos);
-    memcpy(tmp_pcm, ep->buf,
+    memcpy(ep->scratch_buf, ep->buf,
            sizeof(*ep->buf) * ep->pos * ep->frame_size);
-    memcpy(tmp_is_speech, ep->is_speech,
+    memcpy(ep->scratch_is_speech, ep->is_speech,
            sizeof(*ep->is_speech) * ep->pos);
 
     /* First part of data: | .... ^ ** | -> | ** ---- |  */
@@ -227,15 +263,13 @@ ep_linearize(ps_endpointer_t *ep)
             sizeof(*ep->is_speech) * (ep->maxlen - ep->pos));
 
     /* Second part of data: | .. **** | */
-    memcpy(ep->buf + (ep->maxlen - ep->pos) * ep->frame_size, tmp_pcm,
+    memcpy(ep->buf + (ep->maxlen - ep->pos) * ep->frame_size, ep->scratch_buf,
            sizeof(*ep->buf) * ep->pos * ep->frame_size);
-    memcpy(ep->is_speech + (ep->maxlen - ep->pos), tmp_is_speech,
+    memcpy(ep->is_speech + (ep->maxlen - ep->pos), ep->scratch_is_speech,
            sizeof(*ep->is_speech) * ep->pos);
 
     /* Update pointer */
     ep->pos = 0;
-    ckd_free(tmp_pcm);
-    ckd_free(tmp_is_speech);
 }
 
 const int16 *
@@ -250,6 +284,9 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
         return NULL;
     }
 
+    /* Clear timestamp cache for this API call */
+    ep_clear_timestamp_cache(ep);
+
     if (out_nsamp)
         *out_nsamp = 0;
     if (!ep->in_speech)
@@ -257,9 +294,9 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
     ep->in_speech = FALSE;
 
     /* Use callback timestamp if available */
+    double current_time = ep_get_current_timestamp(ep);
     if (ep->timestamp_cb != NULL) {
-        /* Get current timestamp and adjust for frames already in queue */
-        double current_time = ep->timestamp_cb(ep->timestamp_cb_data);
+        /* Adjust for frames already in queue */
         double frames_back = ep->n; /* Number of frames already in queue */
         ep->speech_end = current_time - (frames_back * ep->frame_length);
     } else {
@@ -277,8 +314,7 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
                 *out_nsamp += ep->frame_size;
             /* Calculate proper timestamp for this frame */
             if (ep->timestamp_cb != NULL) {
-                /* For external timestamps, use current time minus time elapsed since this frame */
-                double current_time = ep->timestamp_cb(ep->timestamp_cb_data);
+                /* For external timestamps, use cached time minus time elapsed since this frame */
                 double frames_back = (ep->n - 1); /* Number of frames back in queue */
                 ep->speech_end = current_time - (frames_back * ep->frame_length);
             } else {
@@ -298,12 +334,8 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
             /* Update audio timestamp for tracking */
             ep->last_audio_timestamp += (double)nsamp / ps_endpointer_sample_rate(ep);
 
-            /* Use callback if available, otherwise use audio timestamp */
-            if (ep->timestamp_cb != NULL) {
-                ep->timestamp = ep->timestamp_cb(ep->timestamp_cb_data);
-            } else {
-                ep->timestamp = ep->last_audio_timestamp;
-            }
+            /* Use cached timestamp */
+            ep->timestamp = ep_get_current_timestamp(ep);
 
             if (out_nsamp)
                 *out_nsamp += nsamp;
@@ -321,6 +353,10 @@ ps_endpointer_process(ps_endpointer_t *ep,
                       const int16 *frame)
 {
     int is_speech, speech_count;
+
+    /* Clear timestamp cache for this API call */
+    ep_clear_timestamp_cache(ep);
+
     if (ep == NULL || ep->vad == NULL)
         return NULL;
     if (ep->in_speech && ep_full(ep)) {
@@ -333,12 +369,8 @@ ps_endpointer_process(ps_endpointer_t *ep,
     /* Update audio timestamp for tracking */
     ep->last_audio_timestamp += ep->frame_length;
 
-    /* Use callback if available, otherwise use audio timestamp */
-    if (ep->timestamp_cb != NULL) {
-        ep->timestamp = ep->timestamp_cb(ep->timestamp_cb_data);
-    } else {
-        ep->timestamp = ep->last_audio_timestamp;
-    }
+    /* Use cached timestamp */
+    ep->timestamp = ep_get_current_timestamp(ep);
 
     speech_count = ep_speech_count(ep);
     E_DEBUG("%.2f %d %d %d\n", ep->timestamp, speech_count,
@@ -353,10 +385,9 @@ ps_endpointer_process(ps_endpointer_t *ep,
 
             /* Calculate speech end timestamp */
             if (ep->timestamp_cb != NULL) {
-                /* Use current timestamp minus frames in queue */
-                double current_time = ep->timestamp_cb(ep->timestamp_cb_data);
+                /* Use cached timestamp minus frames in queue */
                 double frames_back = ep->n;
-                ep->speech_end = current_time - (frames_back * ep->frame_length);
+                ep->speech_end = ep->timestamp - (frames_back * ep->frame_length);
             } else {
                 ep->speech_end = ep->qstart_time;
             }
@@ -369,10 +400,9 @@ ps_endpointer_process(ps_endpointer_t *ep,
         if (speech_count > ep->start_frames) {
             /* Calculate speech start timestamp */
             if (ep->timestamp_cb != NULL) {
-                /* Use current timestamp minus frames in queue */
-                double current_time = ep->timestamp_cb(ep->timestamp_cb_data);
+                /* Use cached timestamp minus frames in queue */
                 double frames_back = ep->n - 1;
-                ep->speech_start = current_time - (frames_back * ep->frame_length);
+                ep->speech_start = ep->timestamp - (frames_back * ep->frame_length);
             } else {
                 ep->speech_start = ep->qstart_time;
             }
@@ -434,11 +464,6 @@ ps_endpointer_timestamp(ps_endpointer_t *ep)
     if (ep == NULL)
         return 0.0;
 
-    if (ep->timestamp_cb != NULL) {
-        /* Use external timestamp source */
-        return ep->timestamp_cb(ep->timestamp_cb_data);
-    } else {
-        /* Use audio-based timestamp */
-        return ep->timestamp;
-    }
+    /* Don't clear cache here as this might be called multiple times */
+    return ep_get_current_timestamp(ep);
 }
