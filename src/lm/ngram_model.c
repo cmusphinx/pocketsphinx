@@ -165,8 +165,13 @@ ngram_model_read(cmd_ln_t * config,
         float32 lw = 1.0;
         float32 wip = 1.0;
 
-        lw = ps_config_float(config, "lw");
-        wip = ps_config_float(config, "wip");
+        /* Only read weights if they are defined in the config.
+         * This allows tools like pocketsphinx_lm_convert to work
+         * without defining these decoder-specific parameters. */
+        if (ps_config_typeof(config, "lw"))
+            lw = ps_config_float(config, "lw");
+        if (ps_config_typeof(config, "wip"))
+            wip = ps_config_float(config, "wip");
 
         ngram_model_apply_weights(model, lw, wip);
     }

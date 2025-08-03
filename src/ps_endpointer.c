@@ -7,7 +7,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -48,6 +48,10 @@ struct ps_endpointer_s {
     int pos, n;
     double qstart_time, timestamp;
     double speech_start, speech_end;
+    ps_endpointer_timestamp_cb_t timestamp_cb;
+    void *timestamp_cb_data;
+    double timestamp_offset;
+    double last_audio_timestamp;
 };
 
 ps_endpointer_t *
@@ -87,6 +91,10 @@ ps_endpointer_init(double window,
                          ep->maxlen * ep->frame_size);
     ep->is_speech = ckd_calloc(1, ep->maxlen);
     ep->pos = ep->n = 0;
+    ep->timestamp_cb = NULL;
+    ep->timestamp_cb_data = NULL;
+    ep->timestamp_offset = 0.0;
+    ep->last_audio_timestamp = 0.0;
     return ep;
 error_out:
     ps_endpointer_free(ep);
@@ -241,13 +249,22 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
                 ep->frame_size);
         return NULL;
     }
-    
+
     if (out_nsamp)
         *out_nsamp = 0;
     if (!ep->in_speech)
         return NULL;
     ep->in_speech = FALSE;
-    ep->speech_end = ep->qstart_time;
+
+    /* Use callback timestamp if available */
+    if (ep->timestamp_cb != NULL) {
+        /* Get current timestamp and adjust for frames already in queue */
+        double current_time = ep->timestamp_cb(ep->timestamp_cb_data);
+        double frames_back = ep->n; /* Number of frames already in queue */
+        ep->speech_end = current_time - (frames_back * ep->frame_length);
+    } else {
+        ep->speech_end = ep->qstart_time;
+    }
 
     /* Rotate the buffer so we can return data in a single call. */
     ep_linearize(ep);
@@ -258,7 +275,15 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
         if (is_speech) {
             if (out_nsamp)
                 *out_nsamp += ep->frame_size;
-            ep->speech_end = ep->qstart_time;
+            /* Calculate proper timestamp for this frame */
+            if (ep->timestamp_cb != NULL) {
+                /* For external timestamps, use current time minus time elapsed since this frame */
+                double current_time = ep->timestamp_cb(ep->timestamp_cb_data);
+                double frames_back = (ep->n - 1); /* Number of frames back in queue */
+                ep->speech_end = current_time - (frames_back * ep->frame_length);
+            } else {
+                ep->speech_end = ep->qstart_time;
+            }
         }
         else
             break;
@@ -270,8 +295,16 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
             /* Not fatal, we just lose data. */
         }
         else {
-            ep->timestamp +=
-                (double)nsamp / ps_endpointer_sample_rate(ep);
+            /* Update audio timestamp for tracking */
+            ep->last_audio_timestamp += (double)nsamp / ps_endpointer_sample_rate(ep);
+
+            /* Use callback if available, otherwise use audio timestamp */
+            if (ep->timestamp_cb != NULL) {
+                ep->timestamp = ep->timestamp_cb(ep->timestamp_cb_data);
+            } else {
+                ep->timestamp = ep->last_audio_timestamp;
+            }
+
             if (out_nsamp)
                 *out_nsamp += nsamp;
             memcpy(ep->buf + ep->pos * ep->frame_size,
@@ -296,7 +329,17 @@ ps_endpointer_process(ps_endpointer_t *ep,
     }
     is_speech = ps_vad_classify(ep->vad, frame);
     ep_push(ep, is_speech, frame);
-    ep->timestamp += ep->frame_length;
+
+    /* Update audio timestamp for tracking */
+    ep->last_audio_timestamp += ep->frame_length;
+
+    /* Use callback if available, otherwise use audio timestamp */
+    if (ep->timestamp_cb != NULL) {
+        ep->timestamp = ep->timestamp_cb(ep->timestamp_cb_data);
+    } else {
+        ep->timestamp = ep->last_audio_timestamp;
+    }
+
     speech_count = ep_speech_count(ep);
     E_DEBUG("%.2f %d %d %d\n", ep->timestamp, speech_count,
             ep->start_frames, ep->end_frames);
@@ -307,14 +350,32 @@ ps_endpointer_process(ps_endpointer_t *ep,
                prevent overlapping segments.  It's also closer to what
                human annotators will do. */
             int16 *pcm = ep_pop(ep, NULL);
-            ep->speech_end = ep->qstart_time;
+
+            /* Calculate speech end timestamp */
+            if (ep->timestamp_cb != NULL) {
+                /* Use current timestamp minus frames in queue */
+                double current_time = ep->timestamp_cb(ep->timestamp_cb_data);
+                double frames_back = ep->n;
+                ep->speech_end = current_time - (frames_back * ep->frame_length);
+            } else {
+                ep->speech_end = ep->qstart_time;
+            }
+
             ep->in_speech = FALSE;
             return pcm;
         }
     }
     else {
         if (speech_count > ep->start_frames) {
-            ep->speech_start = ep->qstart_time;
+            /* Calculate speech start timestamp */
+            if (ep->timestamp_cb != NULL) {
+                /* Use current timestamp minus frames in queue */
+                double current_time = ep->timestamp_cb(ep->timestamp_cb_data);
+                double frames_back = ep->n - 1;
+                ep->speech_start = current_time - (frames_back * ep->frame_length);
+            } else {
+                ep->speech_start = ep->qstart_time;
+            }
             ep->speech_end = 0;
             ep->in_speech = TRUE;
         }
@@ -341,4 +402,43 @@ double
 ps_endpointer_speech_end(ps_endpointer_t *ep)
 {
     return ep->speech_end;
+}
+
+int
+ps_endpointer_set_timestamp_func(ps_endpointer_t *ep,
+                                ps_endpointer_timestamp_cb_t cb,
+                                void *user_data)
+{
+    if (ep == NULL)
+        return -1;
+
+    ep->timestamp_cb = cb;
+    ep->timestamp_cb_data = user_data;
+
+    /* If setting a callback, calculate the offset between audio time
+     * and external time to maintain continuity */
+    if (cb != NULL) {
+        double external_time = cb(user_data);
+        ep->timestamp_offset = external_time - ep->last_audio_timestamp;
+    } else {
+        /* Reverting to audio timestamps, reset offset */
+        ep->timestamp_offset = 0.0;
+    }
+
+    return 0;
+}
+
+double
+ps_endpointer_timestamp(ps_endpointer_t *ep)
+{
+    if (ep == NULL)
+        return 0.0;
+
+    if (ep->timestamp_cb != NULL) {
+        /* Use external timestamp source */
+        return ep->timestamp_cb(ep->timestamp_cb_data);
+    } else {
+        /* Use audio-based timestamp */
+        return ep->timestamp;
+    }
 }

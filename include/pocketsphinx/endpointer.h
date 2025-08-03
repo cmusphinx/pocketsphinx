@@ -7,7 +7,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -58,6 +58,18 @@ extern "C" {
  * @brief Simple voice activity detection based endpointing
  */
 typedef struct ps_endpointer_s ps_endpointer_t;
+
+/**
+ * Callback function type for external timestamp sources.
+ *
+ * This callback allows applications to provide their own timestamp
+ * source (e.g., system time, monotonic clock) to avoid timestamp
+ * drift between audio clock and system clock.
+ *
+ * @param user_data User-provided data passed to ps_endpointer_set_timestamp_func()
+ * @return Current timestamp in seconds
+ */
+typedef double (*ps_endpointer_timestamp_cb_t)(void *user_data);
 
 /**
  * Default window in seconds of audio to use for speech start/end decision.
@@ -218,6 +230,42 @@ double ps_endpointer_speech_start(ps_endpointer_t *ep);
  */
 POCKETSPHINX_EXPORT
 double ps_endpointer_speech_end(ps_endpointer_t *ep);
+
+/**
+ * Set a callback function to provide external timestamps.
+ *
+ * By default, the endpointer uses audio sample counts to calculate
+ * timestamps. This can cause drift between audio time and system time
+ * when the audio clock is not synchronized with the system clock.
+ *
+ * This function allows you to provide an external timestamp source
+ * (e.g., system time, monotonic clock) to avoid this drift.
+ *
+ * @memberof ps_endpointer_t
+ * @param ep Endpointer.
+ * @param cb Callback function that returns current time in seconds,
+ *           or NULL to revert to audio-based timestamps.
+ * @param user_data User data to pass to the callback function.
+ * @return 0 for success, -1 for error.
+ */
+POCKETSPHINX_EXPORT
+int ps_endpointer_set_timestamp_func(ps_endpointer_t *ep,
+                                     ps_endpointer_timestamp_cb_t cb,
+                                     void *user_data);
+
+/**
+ * Get the current timestamp from the endpointer.
+ *
+ * This returns the current timestamp used by the endpointer, which
+ * may be based on audio samples or an external timestamp source if
+ * one has been set with ps_endpointer_set_timestamp_func().
+ *
+ * @memberof ps_endpointer_t
+ * @param ep Endpointer.
+ * @return Current timestamp in seconds.
+ */
+POCKETSPHINX_EXPORT
+double ps_endpointer_timestamp(ps_endpointer_t *ep);
 
 #ifdef __cplusplus
 }
