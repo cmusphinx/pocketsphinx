@@ -4,11 +4,9 @@ PocketSphinx 5.0.4
 This is PocketSphinx, one of Carnegie Mellon University's open source large
 vocabulary, speaker-independent continuous speech recognition engines.
 
-Although this was at one point a research system, active development
-has largely ceased and it has become very, very far from the state of
-the art.  I am making a release, because people are nonetheless using
-it, and there are a number of historical errors in the build system
-and API which needed to be corrected.
+Though the algorithms and models implemented by PocketSphinx are now
+quite old (dating back to the 1970s in some cases!) they are still
+useful in many applications due to their compactness and efficiency.
 
 The version number is strangely large because there was a "release"
 that people are using called 5prealpha, and we will use proper
