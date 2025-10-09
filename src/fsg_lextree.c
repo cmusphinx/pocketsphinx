@@ -711,8 +711,8 @@ fsg_psubtree_init(fsg_lextree_t *lextree,
     n_ci = bin_mdef_n_ciphone(lextree->mdef);
     if (n_ci > (FSG_PNODE_CTXT_BVSZ * 32)) {
         E_FATAL
-            ("#phones > %d; increase FSG_PNODE_CTXT_BVSZ and recompile\n",
-             FSG_PNODE_CTXT_BVSZ * 32);
+            ("#phones (%d) exceeds maximum supported (%d)\n",
+             n_ci, FSG_PNODE_CTXT_BVSZ * 32);
     }
 
     n_arc = 0;
