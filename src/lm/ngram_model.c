@@ -146,6 +146,8 @@ ngram_model_read(cmd_ln_t * config,
         }
     case NGRAM_ARPA:
         model = ngram_model_trie_read_arpa(config, file_name, lmath);
+        if (model == NULL)
+            return NULL;
         break;
     case NGRAM_BIN:
         if ((model =
