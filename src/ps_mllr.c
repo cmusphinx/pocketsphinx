@@ -67,7 +67,7 @@ ps_mllr_read(char const *regmatfile)
     }
     mllr->n_class = n;
 
-    if ((fscanf(fp, "%d", &n) != 1)) {
+    if ((fscanf(fp, "%d", &n) != 1) || (n < 1)) {
         E_ERROR("Failed to read number of feature streams\n");
         goto error_out;
     }
@@ -79,7 +79,7 @@ ps_mllr_read(char const *regmatfile)
     mllr->h = (float32 ***) ckd_calloc(mllr->n_feat, sizeof(float32 *));
 
     for (i = 0; i < mllr->n_feat; ++i) {
-        if (fscanf(fp, "%d", &n) != 1) {
+        if ((fscanf(fp, "%d", &n) != 1) || (n < 1)) {
             E_ERROR("Failed to read stream length for feature %d\n", i);
             goto error_out;
         }
