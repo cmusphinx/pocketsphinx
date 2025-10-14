@@ -206,7 +206,7 @@ ps_config_wavfile(ps_config_t *config, FILE *infh, const char *file)
             /* Avoid seeking... */
             spam = malloc(intval);
             if (fread(spam, 1, intval, infh) != (size_t)intval) {
-                E_ERROR_SYSTEM("%s: Failed to read %s chunk", file, id);
+                E_ERROR_SYSTEM("%s: Failed to read %c%c%c%c chunk", file, id[0], id[1], id[2], id[3]);
                 rv = -1;
             }
             ckd_free(spam);
