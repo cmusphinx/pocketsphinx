@@ -6,22 +6,17 @@
 # the CMU Sphinx system. See LICENSE for more information.
 
 
-from gi import pygtkcompat
 import gi
 
 gi.require_version('Gst', '1.0')
-from gi.repository import GObject, Gst
+gi.require_version('Gtk', '3.0')
+from gi.repository import GObject, Gst, Gtk
 GObject.threads_init()
 Gst.init(None)
     
 gst = Gst
     
-print("Using pygtkcompat and Gst from gi")
-
-pygtkcompat.enable() 
-pygtkcompat.enable_gtk(version='3.0')
-
-import gtk
+print("Using PyGObject and Gst from gi")
 
 class DemoApp(object):
     """GStreamer/PocketSphinx Demo Application"""
@@ -32,16 +27,16 @@ class DemoApp(object):
 
     def init_gui(self):
         """Initialize the GUI components"""
-        self.window = gtk.Window()
-        self.window.connect("delete-event", gtk.main_quit)
+        self.window = Gtk.Window()
+        self.window.connect("delete-event", Gtk.main_quit)
         self.window.set_default_size(400,200)
         self.window.set_border_width(10)
-        vbox = gtk.VBox()
-        self.textbuf = gtk.TextBuffer()
-        self.text = gtk.TextView(buffer=self.textbuf)
-        self.text.set_wrap_mode(gtk.WRAP_WORD)
+        vbox = Gtk.VBox()
+        self.textbuf = Gtk.TextBuffer()
+        self.text = Gtk.TextView(buffer=self.textbuf)
+        self.text.set_wrap_mode(Gtk.WrapMode.WORD)
         vbox.pack_start(self.text)
-        self.button = gtk.ToggleButton("Speak")
+        self.button = Gtk.ToggleButton("Speak")
         self.button.connect('clicked', self.button_clicked)
         vbox.pack_start(self.button, False, False, 5)
         self.window.add(vbox)
@@ -101,4 +96,4 @@ class DemoApp(object):
             self.pipeline.set_state(gst.State.PAUSED)
 
 app = DemoApp()
-gtk.main()
+Gtk.main()
