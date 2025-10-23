@@ -54,13 +54,11 @@ extern "C" {
 #endif
 
 /*
- * Compile-time constant determining the size of the
- * bitvector fsg_pnode_t.fsg_pnode_ctxt_t.bv.  (See below.)
- * But it makes memory allocation simpler and more efficient.
- * Make it smaller (2) to save memory if your phoneset has less than
- * 64 phones.
+ * Size of the bitvector fsg_pnode_t.fsg_pnode_ctxt_t.bv.
+ * Each uint32 provides 32 bits, so BVSZ * 32 = max number of phones.
+ * BVSZ=8 supports up to 256 phones, which covers all known phonesets.
  */
-#define FSG_PNODE_CTXT_BVSZ	4
+#define FSG_PNODE_CTXT_BVSZ	8
 
 typedef struct fsg_pnode_ctxt_s {
     uint32 bv[FSG_PNODE_CTXT_BVSZ];
@@ -154,30 +152,11 @@ typedef struct fsg_pnode_s {
 #define fsg_pnode_add_ctxt(p,c)	((p)->ctxt.bv[(c)>>5] |= (1 << ((c)&0x001f)))
 
 /*
- * The following is macroized because its called very frequently
- * ::: uint32 fsg_pnode_ctxt_sub (fsg_pnode_ctxt_t *src, fsg_pnode_ctxt_t *sub);
- */
-/*
  * Subtract bitvector sub from bitvector src (src updated with the result).
  * Return 0 if result is all 0, non-zero otherwise.
+ * Uses generic implementation to support arbitrary BVSZ values.
  */
-
-#if (FSG_PNODE_CTXT_BVSZ == 1)
-    #define FSG_PNODE_CTXT_SUB(src,sub) \
-    ((src)->bv[0] = (~((sub)->bv[0]) & (src)->bv[0]))
-#elif (FSG_PNODE_CTXT_BVSZ == 2)
-    #define FSG_PNODE_CTXT_SUB(src,sub) \
-    (((src)->bv[0] = (~((sub)->bv[0]) & (src)->bv[0])) | \
-     ((src)->bv[1] = (~((sub)->bv[1]) & (src)->bv[1])))
-#elif (FSG_PNODE_CTXT_BVSZ == 4)
-    #define FSG_PNODE_CTXT_SUB(src,sub) \
-    (((src)->bv[0] = (~((sub)->bv[0]) & (src)->bv[0]))  | \
-     ((src)->bv[1] = (~((sub)->bv[1]) & (src)->bv[1]))  | \
-     ((src)->bv[2] = (~((sub)->bv[2]) & (src)->bv[2]))  | \
-     ((src)->bv[3] = (~((sub)->bv[3]) & (src)->bv[3])))
-#else
-    #define FSG_PNODE_CTXT_SUB(src,sub) fsg_pnode_ctxt_sub_generic((src),(sub))
-#endif
+#define FSG_PNODE_CTXT_SUB(src,sub) fsg_pnode_ctxt_sub_generic((src),(sub))
 
 /**
  * Collection of lextrees for an FSG.
