@@ -26,8 +26,15 @@ aaberg AA B ER G
 aachen AA K AH N
 aachener AA K AH N ER
 aaker AA K ER
+aalborg AO L B AO R G
+aalborg(2) AA L B AO R G
+aalburg AE L B ER G
+aalen AE L AH N
+aalen(2) AA L AH N
 aaliyah AA L IY AA
 aalseth AA L S EH TH
+aalsmeer AA L S M IH R
+aalto AA L T OW
 aamodt AA M AH T
 aancor AA N K AO R
 aardema AA R D EH M AH
@@ -481,6 +488,7 @@ academies AH K AE D AH M IY Z
 academy AH K AE D AH M IY
 academy's AH K AE D AH M IY Z
 acadia AH K EY D IY AH
+acaena AH S IY N AH
 acampo AH K AA M P OW
 acampora AH K AE M P ER AH
 acampsia AH K AE M P S Y AH
@@ -731,6 +739,8 @@ achiever AH CH IY V ER
 achievers AH CH IY V ER Z
 achieves AH CH IY V Z
 achieving AH CH IY V IH NG
+achill AE K IH L
+achill's AE K IH L Z
 achille AH K IH L IY
 achilles AH K IH L IY Z
 achilles' AH K IH L IY Z
@@ -796,6 +806,8 @@ acoff AE K AO F
 acog AH K AO G
 acolyte AE K AH L AY T
 acolytes AE K AH L AY T S
+acomb EY K AH M
+acomb(2) Y AE K AH M
 acord AH K AO R D
 acordia AH K AO R D IY AH
 acorn EY K AO R N
@@ -1007,6 +1019,7 @@ adaptors AH D AE P T ER Z
 adapts AH D AE P T S
 adar AH D AA R
 adarand AE D AH R AE N D
+adare AH D EH R
 adas EY D AH Z
 aday AH D EY
 adaza AH D AA Z AH
@@ -2217,7 +2230,9 @@ aisle(2) AY AH L
 aisles AY L Z
 aisles(2) AY AH L Z
 aisling EY S L IH NG
+aisling(2) AE SH L IH NG
 aislinn EY S L IH N
+aislinn(2) AE SH L IH NG
 aist EY S T
 aitchison EY CH IH S AH N
 aithne EY TH N
@@ -4142,9 +4157,7 @@ anesthetics AE N AH S TH EH T IH K S
 anesthetist AH N EH S TH AH T AH S T
 anette AH N EH T
 aneurism AE N Y UH R IH Z AH M
-aneurism(2) AE N Y UH R IH Z M
 aneurysm AE N Y UH R IH Z AH M
-aneurysm(2) AE N Y UH R IH Z M
 anew AH N UW
 anew(2) AH N Y UW
 anfal EY EH N EH F EY EH L
@@ -6512,7 +6525,7 @@ athletes AE TH L IY T S
 athletes' AE TH L IY T S
 athletic AE TH L EH T IH K
 athletically AE TH L EH T IH K L IY
-athleticism AE TH L EH T IH S IH Z M
+athleticism AE TH L EH T IH S IH Z AH M
 athletics AE TH L EH T IH K S
 athlone AE TH L OW N
 athwart AH TH W AO R T
@@ -7346,6 +7359,8 @@ aykroyd EY K R OY D
 aykroyd(2) AY K R OY D
 ayler EY L ER
 ayles EY L Z
+aylesbury EY L Z B ER IY
+aylesbury's EY L Z B ER IY Z
 aylesworth EY L Z W ER TH
 aylesworth(2) EY AH L Z W ER TH
 ayling EY L IH NG
@@ -7439,7 +7454,7 @@ ba B IY EY
 ba(2) B AA
 ba'ath B AA TH
 ba'ath(2) B AH AA TH
-ba'athism B AA TH IH Z M
+ba'athism B AA TH IH Z AH M
 ba'athist B AA TH IH S T
 ba'athists B AA TH IH S T S
 baa B IY EY EY
@@ -11336,6 +11351,8 @@ bicentenary B AY S EH N T IH N EH R IY
 bicentennial B AY S EH N T EH N IY AH L
 bicep B AY S EH P
 biceps B AY S EH P S
+bicester B IH S T ER
+bicester's B IH S T ER Z
 bichler B IH K AH L ER
 bichler(2) B IH K L ER
 bichon B IY SH AO N
@@ -13779,7 +13796,7 @@ borrowed B AA R OW D
 borrower B AA R OW ER
 borrower's B AA R OW ER Z
 borrowers B AA R OW ER Z
-borrowers' B AO R AH ER Z
+borrowers' B AA R OW ER Z
 borrowing B AA R OW IH NG
 borrowings B AA R OW IH NG Z
 borrowman B AA R OW M AH N
@@ -17447,6 +17464,7 @@ caisson(2) K EH S AH N
 caissons K EY S AH N Z
 caissons(2) K EH S AH N Z
 caitlin K EY T L IH N
+caitlin(2) K AE T L IY N
 caito K EY T OW
 cajole K AH JH OW L
 cajoled K AH JH OW L D
@@ -18465,6 +18483,7 @@ cardio K AA R D IY OW
 cardiologist K AA R D IY AA L AH JH IH S T
 cardiologists K AA R D IY AA L AH JH IH S T S
 cardiology K AA R D IY AA L AH JH IY
+cardiomyopathy K AA R D IY OW M AY AA P AH TH IY
 cardiopulmonary K AA R D IY OW P UH L M AH N EH R IY
 cardiovascular K AA R D IY OW V AE S K Y AH L ER
 cardis K AA R D IH S
@@ -25771,7 +25790,8 @@ coslett K AA S L IH T
 cosma K OW Z M AH
 cosmair K AO Z M EH R
 cosman K AA S M AH N
-cosme K OW Z M
+cosme K OW Z M EY
+cosme(2) K OW Z M IY
 cosmetic K AA Z M EH T IH K
 cosmetically K AO Z M EH T IH K L IY
 cosmetics K AA Z M EH T IH K S
@@ -28181,6 +28201,7 @@ daiichi D AY IY CH IY
 daikin D EY K IH N
 daikon D AY K AO N
 dail D EY L
+dail(2) D OY L
 daile D EY L
 dailey D EY L IY
 dailies D EY L IY Z
@@ -29347,6 +29368,7 @@ declaimed D IH K L EY M D
 declarant D IH K L EH R AH N T
 declaration D EH K L ER EY SH AH N
 declarations D EH K L ER EY SH AH N Z
+declarative D IH K L EH R AH T IH V
 declaratory D IH K L EH R AH T AO R IY
 declare D IH K L EH R
 declared D IH K L EH R D
@@ -30691,6 +30713,7 @@ depaula D IH P AO L AH
 depaulo D IH P AO L OW
 depauw D AH P AW
 depaz D AH P AE Z
+depeche D EH P EH SH
 depend D IH P EH N D
 dependability D IH P EH N D AH B IH L IH T IY
 dependable D IH P EH N D AH B AH L
@@ -37762,7 +37785,11 @@ emulating EH M Y AH L EY T IH NG
 emulation EH M Y AH L EY SH AH N
 emulator EH M Y AH L EY T ER
 emulex EH M Y UW L AH K S
+emulsified IH M AH L S AH F AY D
 emulsifier IH M AH L S AH F AY ER
+emulsifies IH M AH L S AH F AY Z
+emulsify IH M AH L S AH F AY
+emulsifying IH M AH L S AH F AY IH NG
 emulsion IH M AH L SH AH N
 en EH N
 ena EH N AH
@@ -39105,7 +39132,8 @@ eslick EH S L IH K
 eslinger EH S AH L IH NG ER
 eslinger(2) EH S L IH NG ER
 esmark EH S M AA R K
-esme EH Z M
+esme EH Z M EY
+esme(2) EH Z M IY
 esmerelda EH S M ER EH L D AH
 esmine EH Z M AH N
 esmond EH Z M AH N D
@@ -42554,6 +42582,7 @@ findling F IH N D AH L IH NG
 findling(2) F IH N D L IH NG
 finds F AY N D Z
 fine F AY N
+fine(2) F IH N AH
 fineberg F AY N B ER G
 fined F AY N D
 finefrock F AY N F R AA K
@@ -46161,6 +46190,7 @@ galvez G AA L V EH Z
 galvin G AE L V IH N
 galvin's G AE L V IH N Z
 galway G AA L W EY
+galway's G AA L W EY Z
 galyean G AE L IY AH N
 galyen G AE L IY EH N
 galyon G AE L IY AA N
@@ -48581,7 +48611,7 @@ glotfelty G L AA T F IH L T IY
 glottal G L AA T AH L
 glottis G L AA T AH S
 glotzbach G L AA T S B AA K
-gloucester G L AO S T ER
+gloucester G L AA S T ER
 glove G L AH V
 gloved G L AH V D
 glover G L AH V ER
@@ -57823,6 +57853,7 @@ hydrocarbon HH AY D R OW K AA R B AH N
 hydrocarbons HH AY D R OW K AA R B AH N Z
 hydrocephalic HH AY D R OW S EH F AA L IH K
 hydrocephalus HH AY D R OW S EH F AH L AH S
+hydrocortisone HH AY D R OW K AO R T AH Z OW N
 hydroelectric HH AY D R OW IH L EH K T R IH K
 hydroencephalus HH AY D R OW AH N S EH F AH L AH S
 hydrofoil HH AY D R AH F OY L
@@ -59085,7 +59116,7 @@ incredulity IH N K R AH D UW L IH T IY
 incredulous IH N K R EH JH AH L AH S
 increment IH N K R AH M AH N T
 incremental IH N K R AH M EH N T AH L
-incrementalism IH N K R AH M EH N T AH L IH Z M
+incrementalism IH N K R AH M EH N T AH L IH Z AH M
 incrementally IH N K R AH M EH N T AH L IY
 incremented IH N K R AH M EH N T IH D
 increments IH NG K R AH M AH N T S
@@ -59207,6 +59238,8 @@ indifference IH N D IH F ER AH N S
 indifference(2) IH N D IH F R AH N S
 indifferent IH N D IH F R AH N T
 indifferent(2) IH N D IH F ER AH N T
+indifferently IH N D IH F R AH N T L IY
+indifferently(2) IH N D IH F ER AH N T L IY
 indigenous IH N D IH JH AH N AH S
 indigenously IH N D IH JH AH N AH S L IY
 indigent IH N D IH JH AH N T
@@ -60365,7 +60398,7 @@ interleukin IH N T ER L UW K IH N
 interlink IH N T ER L IH NG K
 interlinked IH N T ER L IH NG K T
 interlock IH N T ER L AA K
-interlocked IH N T ER L AA K D
+interlocked IH N T ER L AA K T
 interlocking IH N T ER L AA K IH NG
 interlocutor IH N T ER L AA K Y AH T ER
 interlocutors IH N T ER L AA K Y AH T ER Z
@@ -61567,7 +61600,7 @@ jaffray's JH AE F R EY Z
 jaffrey JH AE F R IY
 jagdish JH AE G D IH SH
 jager JH EY G ER
-jagged JH AE G D
+jagged JH AE G AH D
 jagger JH AE G ER
 jagger's JH AE G ER Z
 jaggers JH AE G ER Z
@@ -64775,6 +64808,8 @@ kilgus K IH L G AH S
 kilian K IH L IY AH N
 kilimanjaro K IH L IY M AH N JH AA R OW
 kilimanjaro(2) K IH L AH M AH N JH AA R OW
+kilkenny K IH L K EH N IY
+kilkenny's K IH L K EH N IY Z
 kilker K IH L K ER
 kill K IH L
 killam K IH L AH M
@@ -69812,7 +69847,7 @@ lesabres L EH S AH B R AH S
 lesage L EH S IH JH
 lesane L EY S AA N EY
 lesbian L EH Z B IY AH N
-lesbianism L EH Z B IY AH N IH Z M
+lesbianism L EH Z B IY AH N IH Z AH M
 lesbians L EH Z B IY AH N Z
 lescaze L AH S K EY Z
 lesch L EH SH
@@ -69906,6 +69941,7 @@ letter L EH T ER
 lettered L EH T ER D
 letterhead L EH T ER HH EH D
 lettering L EH T ER IH NG
+letterkenny L EH T ER K EH N IY
 letterman L EH T ER M AH N
 letterman's L EH T ER M AH N Z
 letterpress L EH T ER P R EH S
@@ -75107,7 +75143,10 @@ maryanne M EH R IY AE N
 marybeth M EH R IY B EH TH
 maryland M EH R AH L AH N D
 maryland's M EH R AH L AH N D Z
-marylebone M ER L AH B OW N
+marylebone M AA R L IH B AH N
+marylebone(2) M ER L AH B OW N
+marylebone(3) M AE R IH L AH B AH N
+marylebone(4) M AE R IH B AH N
 marylin M AE R IH L IH N
 marylou M AE R IY L UW
 marymount M EH R IY M AW N T
@@ -75973,6 +76012,7 @@ mcauley M AH K AO L IY
 mcauliff M AH K AO L AH F
 mcauliffe M AH K AO L AH F
 mcauliffe's M AH K AO L AH F S
+mcavinchey M AH K AE V IH N CH IY
 mcavity M AH K AE V AH T IY
 mcavoy M AE K AH V OY
 mcbain M AH K B EY N
@@ -81037,8 +81077,7 @@ morman M AO R M AH N
 mormile M AO R M AY L
 mormino M AO R M IY N OW
 mormon M AO R M AH N
-mormonism M AO R M AH N IH Z M
-mormonism(2) M AO R M AH N IH Z AH M
+mormonism M AO R M AH N IH Z AH M
 mormons M AO R M AH N Z
 morn M AO R N
 morna M AO R N AH
@@ -81822,7 +81861,6 @@ multifunctional M AH L T IY F AH NG K SH AH N AH L
 multilateral M AH L T IH L AE T ER AH L
 multilateral(2) M AH L T IY L AE T ER AH L
 multilateralism M AH L T IH L AE T ER AH L IH Z AH M
-multilateralism(2) M AH L T IH L AE T ER AH L IH Z M
 multilaterally M AH L T IH L AE T ER AH L IY
 multilaterally(2) M AH L T IY L AE T ER AH L IY
 multilayer M AH L T IY L EY ER
@@ -83732,7 +83770,9 @@ newbury N UW B EH R IY
 newbury's N UW B EH R IY Z
 newby N UW B IY
 newcastle N UW K AE S AH L
+newcastle(2) N Y UW K AE S AH L
 newcastle's N UW K AE S AH L Z
+newcastle's(2) N Y UW K AE S AH L Z
 newcom N UW K AH M
 newcomb N UW K AH M
 newcombe N UW K AH M
@@ -83913,6 +83953,7 @@ nial N AY AH L
 niall N AY L
 niam N AY AH M
 niamh N AY AH M
+niamh(2) N IY V
 nib N IH B
 nibbe N IH B
 nibble N IH B AH L
@@ -89177,7 +89218,9 @@ pantano P AA N T AA N OW
 panted P AE N T IH D
 pantel P AA N T EH L
 panter P AE N T ER
+pantera P AE N T EH R AH
 pantera's P AA N T EH R AH Z
+pantera's(2) P AE N T EH R AH Z
 pantex P AE N T EH K S
 panthea P AE N TH IY AH
 pantheistic P AE N TH IY IH S T IH K
@@ -89538,7 +89581,6 @@ parliament P AA R L AH M AH N T
 parliament's P AA R L AH M AH N T S
 parliamentarian P AA R L AH M AH N T EH R IY AH N
 parliamentarianism P AA R L AH M AH N T EH R IY AH N IH Z AH M
-parliamentarianism(2) P AA R L AH M AH N T EH R IY AH N IH Z M
 parliamentarians P AA R L AH M EH N T EH R IY AH N Z
 parliamentary P AA R L AH M EH N T ER IY
 parliamentary(2) P AA R L AH M EH N ER IY
@@ -93105,8 +93147,8 @@ plenty(2) P L EH N IY
 plenum P L EH N AH M
 plenum's P L EH N AH M Z
 pleomorphic P L IY AH M AO F IH K
-pleomorphism P L IY AH M AO F IH Z M
-pleonasm P L IY AH N AE Z M
+pleomorphism P L IY AH M AO F IH Z AH M
+pleonasm P L IY AH N AE Z AH M
 plescia P L EY SH Y AH
 plese P L IY Z
 pleshar P L EH SH AA R
@@ -93730,7 +93772,7 @@ polymerizes P AA L IH M ER AY Z AH Z
 polymers P AA L IH M ER Z
 polymorph P AA L IY M AO R F
 polymorphic P AA L IY M AO R F IH K
-polymorphism P AA L IY M AO R F IH Z M
+polymorphism P AA L IY M AO R F IH Z AH M
 polynesia P AA L IH N IY ZH AH
 polynesian P AA L IH N IY ZH AH N
 polynomial P AA L IY N OW M IY AH L
@@ -94247,7 +94289,7 @@ postmaster(2) P OW S M AE S T ER
 postmasters P OW S T M AE S T ER Z
 postmasters(2) P OW S M AE S T ER Z
 postmodern P OW S T M AA D ER N
-postmodernism P OW S T M AA D ER N IH Z M
+postmodernism P OW S T M AA D ER N IH Z AH M
 postmortem P OW S T M AO R T EH M
 postnatal P OW S T N EY T AH L
 poston P OW S T AH N
@@ -97094,11 +97136,15 @@ quavering K W EY V ER IH NG
 quavers K W EY V ER Z
 quay K IY
 quay(2) K EY
+quay's K IY Z
+quay's(2) K EY Z
 quaye K EY
 quaye(2) K W EY
 quayle K W EY L
 quayle's K W EY L Z
 quayles K W EY L Z
+quays K IY Z
+quays(2) K EY Z
 quazulu K W AA Z UW L UW
 quazulu's K W AA Z UW L UW Z
 qubilah K UW B IH L AH
@@ -98632,7 +98678,7 @@ realisations R IY L AH Z EY SH AH N Z
 realise R IY AH L AY Z
 realised R IY AH L AY Z D
 realises R IY AH L AY Z IH Z
-realism R IY AH L IH Z M
+realism R IY AH L IH Z AH M
 realist R IY AH L IH S T
 realistic R IY AH L IH S T IH K
 realistically R IY AH L IH S T IH K L IY
@@ -104306,6 +104352,8 @@ ruinous R UW AH N AH S
 ruins R UW AH N Z
 ruins(2) R UW IH N Z
 ruis R UW IH Z
+ruislip R AY S L IH P
+ruislip's R AY S L IH P S
 ruiter R UW T ER
 ruiz R UW IY Z
 rujith R UW JH IY TH
@@ -108806,6 +108854,8 @@ septic S EH P T IH K
 septima S EH P T IY M AH
 septimus S EH P T IH M IH S
 septuagenarian S EH P CH UW AH JH AH N EH R IY AH N
+sepultura S EH P UH L T UH R UH
+sepultura's S EH P UH L T UH R UH Z
 sepulvado S EY P UW L V AA D OW
 sepulveda S EY P UW L V EY D AH
 sequa S EH K W AH
@@ -109325,7 +109375,7 @@ sham SH AE M
 shamalia SH AH M AA L Y AH
 shamalia(2) SH AH M EY L Y AH
 shaman SH EY M AH N
-shamanism SH EY M AH N IH Z M
+shamanism SH EY M AH N IH Z AH M
 shamanists SH EY M AH N IH S T S
 shamans SH EY M AH N Z
 shamas SH AE M AH S
@@ -110413,7 +110463,10 @@ shrewdest SH R UW D AH S T
 shrewdly SH R UW D L IY
 shrewdness SH R UW D N AH S
 shrewsberry SH R UW Z B EH R IY
-shrewsbury SH R UW Z B EH R IY
+shrewsbury SH R OW Z B R IY
+shrewsbury(2) SH R UW Z B EH R IY
+shrewsbury's SH R OW Z B R IY Z
+shrewsbury's(2) SH R UW Z B EH R IY Z
 shri SH R IY
 shriber SH R AY B ER
 shribman SH R IH B M AH N
@@ -110899,7 +110952,7 @@ sigwald S IH G W AH L D
 sihanouk S IY AH N UH K
 sikes S AY K S
 sikh S IY K
-sikhism S IY K IH Z M
+sikhism S IY K IH Z AH M
 sikhs S IY K S
 sikkema S IH K IY M AH
 siklie S IH K L IY
@@ -111235,6 +111288,7 @@ sinkler S IH NG K L ER
 sinko S IH NG K OW
 sinks S IH NG K S
 sinn S IH N
+sinn(2) SH IH N
 sinned S IH N D
 sinner S IH N ER
 sinners S IH N ER Z
@@ -111259,6 +111313,7 @@ sinusoidal S AY N AH S OY D AH L
 sinusoidally S AY N AH S OY D AH L IY
 sinyard S IH N Y AA R D
 siobhan SH AW B AA N
+siobhan(2) SH AH V AO N
 sioux S UW
 sip S IH P
 sipa S IY P AH
@@ -113222,6 +113277,7 @@ sorcerer S AO R S ER ER
 sorcerers S AO R S ER ER Z
 sorcery S AO R S ER IY
 sorcha S AO R K AH
+sorcha(2) S AH R AH K AH
 sorci S AO R CH IY
 sordid S AO R D AH D
 sordoni S AO R D OW N IY
@@ -114033,7 +114089,7 @@ spiritedness S P IH R IH T IH D N AH S
 spirito S P IH R IY T OW
 spirits S P IH R IH T S
 spiritual S P IH R IH CH UW AH L
-spiritualism S P IH R IH CH UW AH L IH Z M
+spiritualism S P IH R IH CH UW AH L IH Z AH M
 spiritualist S P IH R IH CH UW AH L IH S T
 spiritualists S P IH R IH CH UW AH L IH S T S
 spirituality S P IH R IH CH UW AE L AH T IY
@@ -115835,9 +115891,9 @@ stillwell's S T IH L W EH L Z
 stils S T IH L Z
 stilson S T IH L S AH N
 stilt S T IH L T
-stilton S T IH L T AH N
 stilted S T IH L T IH D
 stiltner S T IH L T N ER
+stilton S T IH L T AH N
 stilts S T IH L T S
 stilwell S T IH L W EH L
 stimac S T IH M AH K
@@ -117076,6 +117132,7 @@ subscribing S AH B S K R AY B IH NG
 subscription S AH B S K R IH P SH AH N
 subscriptions S AH B S K R IH P SH AH N Z
 subsection S AH B S EH K SH AH N
+subsequence S AH B S IY K W AH N S
 subsequent S AH B S AH K W AH N T
 subsequently S AH B S AH K W AH N T L IY
 subservience S AH B S ER V IY AH N S
@@ -118772,8 +118829,8 @@ t's T IY Z
 t-bone T IY B OW N
 t-lam T IY L AE M
 t-mobile T IY M OW B IY L
-t-shirt T IY S ER T
-t-shirts T IY S ER T S
+t-shirt T IY SH ER T
+t-shirts T IY SH ER T S
 t. T IY
 t.'s T IY Z
 t.s T IY Z
@@ -119297,6 +119354,8 @@ tanzer T AE N Z ER
 tanzi T AE N Z IY
 tao T AW
 tao(2) D AW
+taoiseach T IY SH AH K
+taoiseach's T IY SH AH K S
 taoism D AW IH Z AH M
 taoist D AW IH S T
 taoists D AW AH S T S
@@ -120717,6 +120776,7 @@ theone TH IY AA N
 theophania TH IY AH F AE N IY AH
 theophila TH EY AH F IY L AH
 theora TH IY ER AH
+theorbo TH IY AO R B OW
 theorem TH IH R AH M
 theorems TH IH R AH M Z
 theoretical TH IY ER EH T IH K AH L
@@ -121400,7 +121460,9 @@ tierce T IY R S
 tierco T IY R K OW
 tiered T IY R D
 tiernan T IH R N AH N
+tiernan(2) T IY R N AH N
 tierney T IH R N IY
+tierney(2) T IY R N IY
 tierno T IH R N OW
 tiers T IY R Z
 ties T AY Z
@@ -122596,6 +122658,8 @@ trabucco T R AA B UW K OW
 trabue T R AA B W EH
 trac T R AE K
 trace T R EY S
+traceabilities T R EY S AH B IH L IH T IY Z
+traceability T R EY S AH B IH L IH T IY
 traceable T R EY S AH B AH L
 traced T R EY S T
 tracer T R EY S ER
@@ -123275,8 +123339,7 @@ triassic T R AY AE S IH K
 triathlon T R AY AE TH L AH N
 trib T R IH B
 tribal T R AY B AH L
-tribalism T R AY B AH L IH Z M
-tribalism(2) T R AY B AH L IH Z AH M
+tribalism T R AY B AH L IH Z AH M
 tribasa T R AY B AE S AH
 tribbett T R IH B IH T
 tribbey T R IH B IY
@@ -123849,6 +123912,7 @@ tub T AH B
 tuba T UW B AH
 tubal T UW B AH L
 tubb T AH B
+tubbercurry T AH B ER K AH R IY
 tubbs T AH B Z
 tubby T AH B IY
 tube T UW B
@@ -124381,6 +124445,7 @@ tycoons T AY K UW N Z
 tydings T AY D IH NG Z
 tye T AY
 tyer T AY ER
+tyers T AY ER Z
 tygar T AY G AA R
 tygart T AY G AA R T
 tyger T AY G ER
@@ -126025,7 +126090,7 @@ urbanek ER B AE N EH K
 urbani ER B AA N IY
 urbaniak ER B AE N IY AE K
 urbanik ER B AE N IH K
-urbanism ER B AH N IH Z M
+urbanism ER B AH N IH Z AH M
 urbanite ER B AH N AY T
 urbanites ER B AH N AY T S
 urbanization ER B AH N AH Z EY SH AH N
@@ -129490,6 +129555,7 @@ waterfall W AO T ER F AO L
 waterfalls W AO T ER F AO L Z
 waterfield W AO T ER F IY L D
 waterford W AO T ER F ER D
+waterford's W AO T ER F ER D Z
 waterfowl W AO T ER F AW L
 waterfront W AO T ER F R AH N T
 waterfronts W AO T ER F R AH N T S
@@ -130392,6 +130458,8 @@ westlake W EH S T L EY K
 westland W EH S T L AH N D
 westleigh W EH S T L AY
 westley W EH S T L IY
+westlife W EH S T L AY F
+westlife's W EH S T L AY F S
 westling W EH S T L IH NG
 westlund W EH S T L AH N D
 westman W EH S T M AH N
@@ -130462,6 +130530,8 @@ wetzler W EH T S L ER
 wetzstein W EH T S T AY N
 wetzstein(2) W EH T S T IY N
 wever W IY V ER
+wexford W EH K S F ER D
+wexford's W EH K S F ER D Z
 wexler W EH K S L ER
 wexner W EH K S N ER
 wey W EY
@@ -132245,6 +132315,8 @@ wobegon W OW B AH G AA N
 wobig W OW B IH G
 wobst W AA B S T
 woburn W UW B ER N
+wodehouse W UH D HH AW S
+wodehouse's W UH D HH AW S AH Z
 wodel W AO D AH L
 woe W OW
 woebegone W OW B IH G AO N
@@ -132429,8 +132501,8 @@ wondra W AA N D R AH
 wondrous W AH N D R AH S
 wong W AO NG
 wong's W AO NG Z
-wonk W AA N K
-wonks W AA N K S
+wonk W AA NG K
+wonks W AA NG K S
 wonksahachee W AA N K S AH HH AE CH IY
 wonnacott W AH N AH K AA T
 wont W OW N T
@@ -132591,7 +132663,7 @@ wor W AO R
 wor(2) D AH B EH L Y UW OW AA R
 wor(3) D AH B AH Y UW OW AA R
 worcester W UH S T ER
-worcestershire W UH S T AH SH ER
+worcestershire W UH S T ER SH ER
 word W ER D
 word's W ER D Z
 worded W ER D IH D
@@ -133274,6 +133346,7 @@ yarchoan Y AA R CH OW N
 yard Y AA R D
 yard's Y AA R D Z
 yardage Y AA R D IH JH
+yardbirds Y AA R D B ER D Z
 yarde Y AA R D
 yardeni Y AA R D IY N IY
 yarder Y AA R D ER
@@ -134578,6 +134651,7 @@ zoeller Z OW L ER
 zoellick Z OW L IH K
 zoellner Z OW L N ER
 zoete Z OW T IY
+zoey Z OW IY
 zofagart Z OW F AH G AA R T
 zofran Z OW F R AE N
 zogby Z AO G B IY
@@ -134610,7 +134684,10 @@ zongol Z AO NG G AO L
 zoning Z OW N IH NG
 zoo Z UW
 zoo's Z UW Z
+zooey Z OW IY
 zook Z UH K
+zoolander Z UW L AE N D ER
+zoolander's Z UW L AE N D ER Z
 zoological Z UW L AA JH IH K AH L
 zoologist Z OW AA L AH JH AH S T
 zoologists Z OW AA L AH JH AH S T S
@@ -134619,6 +134696,7 @@ zoom Z UW M
 zoomed Z UW M D
 zooming Z UW M IH NG
 zooms Z UW M Z
+zooropa Z UW R OW P AH
 zoos Z UW Z
 zoot-suit Z UW T S UW T
 zopfi Z OW P F IY
