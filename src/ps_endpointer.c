@@ -53,11 +53,11 @@ struct ps_endpointer_s {
     double timestamp_offset;
     double last_audio_timestamp;
     /* Performance optimizations */
-    double cached_timestamp;
-    int timestamp_cached;
-    int speech_count;
-    int16 *scratch_buf;
-    int8 *scratch_is_speech;
+    double cached_timestamp;        /* Cached result from timestamp callback */
+    int timestamp_cached;           /* Flag indicating if cached timestamp is valid */
+    int speech_count;               /* Running count of speech frames in buffer */
+    int16 *scratch_buf;            /* Pre-allocated buffer for data reorganization */
+    int8 *scratch_is_speech;       /* Pre-allocated buffer for speech flag reorganization */
 };
 
 ps_endpointer_t *
@@ -175,7 +175,12 @@ ep_speech_count(ps_endpointer_t *ep)
     return ep->speech_count;
 }
 
-/* Get current timestamp with caching for efficiency */
+/* Get current timestamp with caching for efficiency
+ *
+ * Caches the result of timestamp callbacks to avoid redundant calls
+ * within the same processing cycle. The cache is cleared at the start
+ * of each new processing cycle to ensure fresh timestamps.
+ */
 static double
 ep_get_current_timestamp(ps_endpointer_t *ep)
 {
@@ -190,7 +195,11 @@ ep_get_current_timestamp(ps_endpointer_t *ep)
     }
 }
 
-/* Clear timestamp cache - call at start of each public API function */
+/* Clear timestamp cache - call at start of each public API function
+ *
+ * Ensures fresh timestamps are obtained for each new processing cycle
+ * while allowing reuse within the same cycle.
+ */
 static void
 ep_clear_timestamp_cache(ps_endpointer_t *ep)
 {
@@ -213,6 +222,8 @@ ep_push(ps_endpointer_t *ep, int is_speech, const int16 *frame)
     ep->is_speech[i] = is_speech;
     if (is_speech)
         ep->speech_count++;  /* Add new frame to count */
+
+    /* Maintains running count of speech frames for efficient retrieval */
 
     if (ep_full(ep)) {
         ep->qstart_time += ep->frame_length;
@@ -249,7 +260,11 @@ ep_linearize(ps_endpointer_t *ep)
     if (ep->pos == 0)
         return;
 
-    /* Use pre-allocated scratch buffers */
+    /* Use pre-allocated scratch buffers for data reorganization
+     *
+     * Reuses buffers allocated at initialization time to avoid
+     * memory allocation overhead during real-time processing.
+     */
     /* Second part of data: | **** ^ .. | */
     memcpy(ep->scratch_buf, ep->buf,
            sizeof(*ep->buf) * ep->pos * ep->frame_size);
@@ -284,7 +299,11 @@ ps_endpointer_end_stream(ps_endpointer_t *ep,
         return NULL;
     }
 
-    /* Clear timestamp cache for this API call */
+    /* Clear timestamp cache for this API call
+     *
+     * Ensures fresh timestamp at start of processing cycle,
+     * then reuses cached value for all calculations within the cycle.
+     */
     ep_clear_timestamp_cache(ep);
 
     if (out_nsamp)
@@ -354,7 +373,11 @@ ps_endpointer_process(ps_endpointer_t *ep,
 {
     int is_speech, speech_count;
 
-    /* Clear timestamp cache for this API call */
+    /* Clear timestamp cache for this API call
+     *
+     * Ensures fresh timestamp at start of processing cycle,
+     * then reuses cached value for all calculations within the cycle.
+     */
     ep_clear_timestamp_cache(ep);
 
     if (ep == NULL || ep->vad == NULL)
