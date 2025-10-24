@@ -242,6 +242,7 @@ class ArpaBoLM:
                         adjusted_count = count
 
                     prob = adjusted_count / total_adjusted if total_adjusted > 0 else 0.0
+                    prob = min(prob, 1.0)
                     self.probs[0][word] = prob
             else:
                 self._compute_order_probabilities_good_turing(order)
@@ -263,6 +264,7 @@ class ArpaBoLM:
                         adjusted_count = count
 
                     prob = adjusted_count / total_count if total_count > 0 else 0.0
+                    prob = min(prob, 1.0)
                     self._set_ngram_prob(self.probs[order], ngram_words, prob)
             else:
                 for word, value in gram_dict.items():
