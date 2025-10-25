@@ -43,6 +43,10 @@ class ArpaBoLM:
         lm.compute()
         lm.write_file("model.arpa")
 
+    Normalization:
+        - unicode_norm (default: True): Applies NFC normalization to entire lines
+        - token_norm (default: False): Strips punctuation/symbols from tokens
+
     Binary Format:
         This tool outputs ARPA text format. To convert to binary format for
         use with PocketSphinx, use the pocketsphinx_lm_convert tool:
@@ -60,7 +64,6 @@ class ArpaBoLM:
     DEFAULT_DISCOUNT_MASS = 0.3
     DEFAULT_DISCOUNT_STEP = 0.05
     MAX_DISCOUNT_MASS = 1.0
-    SPHINX_FORMAT_SAMPLE_SIZE = 10
     KNESER_NEY_DISCOUNT = 0.75
 
     @staticmethod
@@ -88,7 +91,8 @@ class ArpaBoLM:
         discount_mass: Optional[float] = None,
         discount_step: float = 0.05,
         case: Optional[str] = None,
-        norm: bool = False,
+        unicode_norm: bool = True,
+        token_norm: bool = False,
         verbose: bool = False,
         max_order: int = 3,
         smoothing_method: str = "good_turing",
@@ -98,7 +102,8 @@ class ArpaBoLM:
         self.word_file_count = word_file_count
         self.discount_mass = discount_mass
         self.case = case
-        self.norm = norm
+        self.unicode_norm = unicode_norm
+        self.token_norm = token_norm
         self.verbose = verbose
         self.max_order = max_order
         self.smoothing_method = smoothing_method
@@ -379,11 +384,13 @@ class ArpaBoLM:
                 token = token.strip()
                 if not token:
                     continue
+                if self.unicode_norm:
+                    token = ud.normalize('NFC', token)
                 if self.case == "lower":
                     token = token.lower()
                 elif self.case == "upper":
                     token = token.upper()
-                if self.norm:
+                if self.token_norm:
                     token = self.norm_token(token)
                 token_count += 1
                 if token not in self.grams[0]:
@@ -400,44 +407,16 @@ class ArpaBoLM:
 
     def norm_token(self, token: str) -> str:
         """
-        Normalize token: convert to NFC form and strip leading/trailing punctuation/symbols
+        Normalize token: strip leading/trailing punctuation/symbols
         """
         if token in ('<s>', '</s>'):
             return token
 
-        token = ud.normalize('NFC', token)
         while token and ud.category(token[0])[0] in self.NORM_EXCLUDE_CATEGORIES:
             token = token[1:]
         while token and ud.category(token[-1])[0] in self.NORM_EXCLUDE_CATEGORIES:
             token = token[:-1]
         return token
-
-    def _detect_sphinx_format(self, infile) -> bool:
-        """
-        Detect if file is in sphinx sentfile format (ALL lines start with <s>).
-        Checks first N non-empty lines - all must have markers to be considered sphinx format.
-        """
-        start_pos = infile.tell()
-
-        lines_checked = 0
-        all_have_markers = True
-
-        for line in infile:
-            line = line.strip()
-            if not line:
-                continue
-
-            lines_checked += 1
-
-            if not (line.startswith('<s>') and '</s>' in line):
-                all_have_markers = False
-                break
-
-            if lines_checked >= self.SPHINX_FORMAT_SAMPLE_SIZE:
-                break
-
-        infile.seek(start_pos)
-        return all_have_markers and lines_checked > 0
 
     def _process_corpus_line(self, line: str, add_markers: bool) -> Optional[List[str]]:
         """Process a single line from corpus: normalize, clean, add markers.
@@ -445,25 +424,43 @@ class ArpaBoLM:
         Returns:
             List of words, or None if line should be skipped
         """
+        # Unicode normalize the whole line first (default on)
+        if self.unicode_norm:
+            line = ud.normalize('NFC', line)
+
         if self.case == "lower":
             line = line.lower()
         elif self.case == "upper":
             line = line.upper()
 
         line = line.strip()
-        line = re.sub(r"(.+)\s+\(.+\)$", r"\1", line)
+
+        # Determine if line has markers:
+        # 1. Sphinx sentfile format: <s> .* </s> (filename) - strip parens, has markers
+        # 2. Text with markers: <s> .* </s> - has markers
+        # 3. Plain text without markers - needs markers added
+        has_markers = False
+        if re.search(r'^<s>.*</s>\s+\(.*\)$', line):
+            # Sphinx sentfile format - strip the (filename) part
+            line = re.sub(r'\s+\(.*\)$', '', line)
+            has_markers = True
+        elif line.startswith('<s>') and line.endswith('</s>'):
+            # Text with markers (but not sentfile format)
+            has_markers = True
 
         words = line.split()
         if not words:
             return None
 
-        if add_markers:
+        # Add markers if needed and requested
+        if add_markers and not has_markers:
             words = [w for w in words if w not in ('<s>', '</s>')]
             if not words:
                 return None
             words = ["<s>"] + words + ["</s>"]
 
-        if self.norm:
+        if self.token_norm:
+            # Normalize individual tokens (strip punctuation, etc.)
             words = [self.norm_token(w) for w in words]
             words = [w for w in words if len(w)]
             if not words:
@@ -474,24 +471,17 @@ class ArpaBoLM:
     def read_corpus(self, infile):
         """
         Read in a text training corpus from a file handle.
-        Auto-detects sphinx sentfile format (with <s> and </s> markers).
+        Handles three formats automatically per line:
+        - Sphinx sentfile: <s> .* </s> (filename)
+        - Text with markers: <s> .* </s>
+        - Plain text without markers
         """
         if self.verbose:
             print("Reading corpus file, breaking per newline.", file=self.logfile)
 
-        add_markers = self.add_start
-        if hasattr(infile, 'seek'):
-            is_sphinx_format = self._detect_sphinx_format(infile)
-            if is_sphinx_format:
-                add_markers = False
-                if self.verbose:
-                    print("Detected sphinx sentfile format (has <s> and </s>), not adding markers", file=self.logfile)
-            elif self.add_start and self.verbose:
-                print("Plain text format detected, adding <s> and </s> markers", file=self.logfile)
-
         sent_count = 0
         for line in infile:
-            words = self._process_corpus_line(line, add_markers)
+            words = self._process_corpus_line(line, self.add_start)
             if words is None:
                 continue
 
@@ -721,7 +711,8 @@ class ArpaBoLM:
 
         corpus_stats.extend([
             f"with fixed discount mass {self.discount_mass}",
-            "with simple normalization" if self.norm else "",
+            "with unicode normalization" if self.unicode_norm else "",
+            "with token normalization" if self.token_norm else "",
         ])
 
         print("Corpus:", " ".join(corpus_stats), file=outfile)
@@ -1098,8 +1089,10 @@ def main() -> None:
                         help="case fold: lower or upper")
     parser.add_argument("--no-add-start", dest="add_start", action="store_false",
                         help="skip sentence markers (auto-detects sphinx format)")
-    parser.add_argument("-n", "--norm", action="store_true",
-                        help="normalize tokens (NFC, strip punctuation)")
+    parser.add_argument("--no-unicode-norm", dest="unicode_norm", action="store_false",
+                        help="disable unicode normalization (NFC) on lines (default: enabled)")
+    parser.add_argument("-n", "--token-norm", dest="token_norm", action="store_true",
+                        help="normalize tokens (strip punctuation/symbols)")
     parser.add_argument("-o", "--output", type=str,
                         help="output file (default: stdout)")
     parser.add_argument("-v", "--verbose", action="store_true",
@@ -1132,8 +1125,10 @@ def main() -> None:
                 lm.case = args.case
             if args.add_start is not None:
                 lm.add_start = args.add_start
-            if args.norm is not None:
-                lm.norm = args.norm
+            if args.unicode_norm is not None:
+                lm.unicode_norm = args.unicode_norm
+            if args.token_norm is not None:
+                lm.token_norm = args.token_norm
             if args.discount_step:
                 lm.discount_step = args.discount_step
 
@@ -1150,7 +1145,8 @@ def main() -> None:
             discount_step=args.discount_step,
             case=args.case,
             add_start=args.add_start,
-            norm=args.norm,
+            unicode_norm=args.unicode_norm,
+            token_norm=args.token_norm,
             verbose=args.verbose,
             max_order=args.max_order,
             smoothing_method=args.smoothing_method,
