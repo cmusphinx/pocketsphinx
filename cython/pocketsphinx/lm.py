@@ -930,8 +930,8 @@ class ArpaBoLM:
                     if prob is not None and prob > 0:
                         print(f"  Found {order+1}-gram probability: P({word}|{' '.join(context_words)}) = {prob:.6f}")
 
-                        # Show backoff weights for lower orders
-                        if order > 0:
+                        # Show backoff weights for lower orders (only if discount_mass is set)
+                        if order > 0 and self.discount_mass is not None:
                             alpha = self._get_ngram_prob(self.alphas[order-1], context_words)
                             if isinstance(alpha, dict):
                                 alpha = 1.0
@@ -1019,6 +1019,9 @@ class ArpaBoLM:
                 else:
                     print("Please enter a sentence to debug or a command")
 
+            except EOFError:
+                print("\nGoodbye!")
+                break
             except KeyboardInterrupt:
                 print("\nGoodbye!")
                 break
