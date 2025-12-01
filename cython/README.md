@@ -1,5 +1,5 @@
-PocketSphinx 5.0.4
-==================
+PocketSphinx 5.1.0rc1
+=====================
 
 This is PocketSphinx, one of Carnegie Mellon University's open source large
 vocabulary, speaker-independent continuous speech recognition engines.

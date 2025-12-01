@@ -1,13 +1,13 @@
 [build-system]
 requires = [
-     	 "scikit-build-core",
-	 "Cython"
+    "scikit-build-core>=0.10",
+    "Cython"
 ]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "pocketsphinx"
-version = "5.1.0pre1"
+version = "5.1.0rc1"
 description = "Official Python bindings for PocketSphinx"
 readme = "cython/README.md"
 authors = [
@@ -71,6 +71,7 @@ extend-ignore = "E203"
 max-line-length = "88"
 
 [tool.scikit-build]
-cmake.verbose = true
+minimum-version = "build-system.requires"
+build.verbose = true
 logging.level = "INFO"
 wheel.packages = ["cython/pocketsphinx"]
