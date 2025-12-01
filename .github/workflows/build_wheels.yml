@@ -18,6 +18,7 @@ jobs:
 
     - uses: actions/upload-artifact@v5
       with:
+        name: source
         path: dist/*.tar.gz
   
   build_wheels:
@@ -37,4 +38,5 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v5
         with:
+          name: wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
