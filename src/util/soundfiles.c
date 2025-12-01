@@ -43,6 +43,7 @@
 #include <pocketsphinx.h>
 #include "util/byteorder.h"
 #include "util/ckd_alloc.h"
+#include "util/cmd_ln.h"
 
 #define TRY_FREAD(ptr, size, nmemb, stream)                             \
     if (fread(ptr, size, nmemb, stream) != (nmemb)) {                   \
@@ -50,6 +51,22 @@
         rv = -1;                                                        \
         goto error_out;                                                 \
     }
+
+static int
+arg_was_set(ps_config_t *config, const char *name)
+{
+    uint32 i;
+    cmd_ln_t *cmdln = (cmd_ln_t *)config;
+    for (i = 0; i < cmdln->f_argc; i++) {
+        if (cmdln->f_argv[i] && cmdln->f_argv[i][0] == '-') {
+            const char *arg = cmdln->f_argv[i] + 1;
+            if (*arg == '-') arg++;
+            if (0 == strcmp(arg, name))
+                return 1;
+        }
+    }
+    return 0;
+}
 
 int
 ps_config_soundfile(ps_config_t *config, FILE *infh, const char *file)
@@ -154,9 +171,9 @@ ps_config_wavfile(ps_config_t *config, FILE *infh, const char *file)
     /* Sampling rate (finally!) */
     TRY_FREAD(&intval, 4, 1, infh);
     SWAP_LE_32(&intval);
-    if (ps_config_int(config, "samprate") == 0)
+    if (!arg_was_set(config, "samprate")) {
         ps_config_set_int(config, "samprate", intval);
-    else if (ps_config_int(config, "samprate") != intval) {
+    } else if (ps_config_int(config, "samprate") != intval) {
         E_WARN("WAVE file sampling rate %d != samprate %d\n",
                intval, ps_config_int(config, "samprate"));
     }
