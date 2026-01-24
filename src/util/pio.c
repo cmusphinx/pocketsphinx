@@ -56,6 +56,10 @@
 #include <sys/stat.h>
 #endif
 
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>
+#endif
+
 #if defined(_WIN32) && !defined(CYGWIN)
 #include <direct.h>
 #endif
@@ -77,6 +81,118 @@ enum {
     COMP_GZIP,
     COMP_BZIP2
 };
+
+#ifdef HAVE_POPEN
+/**
+ * Safe popen replacement that uses fork/exec to avoid shell injection.
+ * The filename is passed directly to execvp as an argument, not through
+ * shell interpretation.
+ *
+ * @param program The program to execute (e.g., "gunzip", "gzip")
+ * @param args Array of arguments (must be NULL-terminated)
+ * @param mode "r" for reading, "w" for writing
+ * @param pid_out Output parameter for child PID (needed for safe_pclose)
+ * @return FILE pointer on success, NULL on failure
+ */
+static FILE *
+safe_popen(const char *program, char *const args[], const char *mode, pid_t *pid_out)
+{
+    int pipefd[2];
+    pid_t pid;
+    FILE *fp;
+    int parent_end, child_end;
+
+    if (pipe(pipefd) == -1) {
+        return NULL;
+    }
+
+    if (mode[0] == 'r') {
+        parent_end = 0;  /* parent reads from pipe */
+        child_end = 1;   /* child writes to pipe */
+    } else {
+        parent_end = 1;  /* parent writes to pipe */
+        child_end = 0;   /* child reads from pipe */
+    }
+
+    pid = fork();
+    if (pid == -1) {
+        close(pipefd[0]);
+        close(pipefd[1]);
+        return NULL;
+    }
+
+    if (pid == 0) {
+        /* Child process */
+        close(pipefd[parent_end]);
+        if (mode[0] == 'r') {
+            dup2(pipefd[child_end], STDOUT_FILENO);
+        } else {
+            dup2(pipefd[child_end], STDIN_FILENO);
+        }
+        close(pipefd[child_end]);
+        execvp(program, args);
+        _exit(127);  /* exec failed */
+    }
+
+    /* Parent process */
+    close(pipefd[child_end]);
+    fp = fdopen(pipefd[parent_end], mode);
+    if (fp == NULL) {
+        close(pipefd[parent_end]);
+        waitpid(pid, NULL, 0);
+        return NULL;
+    }
+
+    *pid_out = pid;
+    return fp;
+}
+
+/**
+ * Close a FILE opened with safe_popen and wait for child.
+ */
+static int
+safe_pclose(FILE *fp, pid_t pid)
+{
+    int status;
+    fclose(fp);
+    waitpid(pid, &status, 0);
+    return status;
+}
+
+/* Storage for child PIDs - simple approach using a small fixed array */
+#define MAX_COMP_PIPES 16
+static struct {
+    FILE *fp;
+    pid_t pid;
+} comp_pipes[MAX_COMP_PIPES];
+static int n_comp_pipes = 0;
+
+static void
+register_comp_pipe(FILE *fp, pid_t pid)
+{
+    if (n_comp_pipes < MAX_COMP_PIPES) {
+        comp_pipes[n_comp_pipes].fp = fp;
+        comp_pipes[n_comp_pipes].pid = pid;
+        n_comp_pipes++;
+    }
+}
+
+static pid_t
+find_comp_pipe(FILE *fp)
+{
+    int i;
+    for (i = 0; i < n_comp_pipes; i++) {
+        if (comp_pipes[i].fp == fp) {
+            pid_t pid = comp_pipes[i].pid;
+            /* Remove from array */
+            comp_pipes[i] = comp_pipes[n_comp_pipes - 1];
+            n_comp_pipes--;
+            return pid;
+        }
+    }
+    return -1;
+}
+#endif /* HAVE_POPEN */
 
 static void
 guess_comptype(char const *file, int32 *ispipe, int32 *isgz)
@@ -122,50 +238,111 @@ fopen_comp(const char *file, const char *mode, int32 * ispipe)
         E_FATAL("No popen() on WinCE\n");
 #else
         if (strcmp(mode, "r") == 0) {
-            char *command;
+            /*
+             * Security fix: Use fork/exec instead of popen with shell command.
+             * This prevents command injection via malicious filenames.
+             * The filename is passed directly as an argument to execvp,
+             * bypassing shell interpretation entirely.
+             */
+            pid_t pid;
+            char *args[4];
+            const char *program;
+
             switch (isgz) {
             case COMP_GZIP:
-                command = string_join("gunzip" EXEEXT, " -c ", file, NULL);
+                program = "gunzip" EXEEXT;
+                args[0] = "gunzip";
+                args[1] = "-c";
+                args[2] = (char *)file;
+                args[3] = NULL;
                 break;
             case COMP_COMPRESS:
-                command = string_join("zcat" EXEEXT, " ", file, NULL);
+                program = "zcat" EXEEXT;
+                args[0] = "zcat";
+                args[1] = (char *)file;
+                args[2] = NULL;
+                args[3] = NULL;
                 break;
             case COMP_BZIP2:
-                command = string_join("bunzip2" EXEEXT, " -c ", file, NULL);
+                program = "bunzip2" EXEEXT;
+                args[0] = "bunzip2";
+                args[1] = "-c";
+                args[2] = (char *)file;
+                args[3] = NULL;
                 break;
             default:
-                command = NULL; /* Make compiler happy. */
-                E_FATAL("Unknown  compression type %d\n", isgz);
-            }
-            if ((fp = popen(command, mode)) == NULL) {
-                E_ERROR_SYSTEM("Failed to open a pipe for a command '%s' mode '%s'", command, mode);
-                ckd_free(command);
+                E_FATAL("Unknown compression type %d\n", isgz);
                 return NULL;
             }
-            ckd_free(command);
+
+            if ((fp = safe_popen(program, args, mode, &pid)) == NULL) {
+                E_ERROR_SYSTEM("Failed to decompress file '%s'", file);
+                return NULL;
+            }
+            register_comp_pipe(fp, pid);
         }
         else if (strcmp(mode, "w") == 0) {
-            char *command;
-            switch (isgz) {
-            case COMP_GZIP:
-                command = string_join("gzip" EXEEXT, " > ", file, NULL);
-                break;
-            case COMP_COMPRESS:
-                command = string_join("compress" EXEEXT, " -c > ", file, NULL);
-                break;
-            case COMP_BZIP2:
-                command = string_join("bzip2" EXEEXT, " > ", file, NULL);
-                break;
-            default:
-                command = NULL; /* Make compiler happy. */
-                E_FATAL("Unknown compression type %d\n", isgz);
-            }
-            if ((fp = popen(command, mode)) == NULL) {
-                E_ERROR_SYSTEM("Failed to open a pipe for a command '%s' mode '%s'", command, mode);
-                ckd_free(command);
+            /*
+             * For write mode, we need to redirect output to a file.
+             * We use fork/exec and redirect stdout to the file in the child.
+             */
+            pid_t pid;
+            int pipefd[2];
+
+            if (pipe(pipefd) == -1) {
+                E_ERROR_SYSTEM("Failed to create pipe for compression");
                 return NULL;
             }
-            ckd_free(command);
+
+            pid = fork();
+            if (pid == -1) {
+                close(pipefd[0]);
+                close(pipefd[1]);
+                E_ERROR_SYSTEM("Failed to fork for compression");
+                return NULL;
+            }
+
+            if (pid == 0) {
+                /* Child process */
+                FILE *outfile;
+                close(pipefd[1]);  /* Close write end */
+                dup2(pipefd[0], STDIN_FILENO);
+                close(pipefd[0]);
+
+                /* Open output file and redirect stdout */
+                outfile = fopen(file, "w");
+                if (outfile == NULL) {
+                    _exit(1);
+                }
+                dup2(fileno(outfile), STDOUT_FILENO);
+                fclose(outfile);
+
+                switch (isgz) {
+                case COMP_GZIP:
+                    execlp("gzip" EXEEXT, "gzip", "-c", NULL);
+                    break;
+                case COMP_COMPRESS:
+                    execlp("compress" EXEEXT, "compress", "-c", NULL);
+                    break;
+                case COMP_BZIP2:
+                    execlp("bzip2" EXEEXT, "bzip2", "-c", NULL);
+                    break;
+                default:
+                    break;
+                }
+                _exit(127);  /* exec failed */
+            }
+
+            /* Parent process */
+            close(pipefd[0]);  /* Close read end */
+            fp = fdopen(pipefd[1], mode);
+            if (fp == NULL) {
+                close(pipefd[1]);
+                waitpid(pid, NULL, 0);
+                E_ERROR_SYSTEM("Failed to open pipe for compression");
+                return NULL;
+            }
+            register_comp_pipe(fp, pid);
         }
         else {
             E_ERROR("Compressed file operation for mode %s is not supported\n", mode);
@@ -186,11 +363,21 @@ fclose_comp(FILE * fp, int32 ispipe)
 {
     if (ispipe) {
 #ifdef HAVE_POPEN
+        /*
+         * Use our safe close mechanism that properly waits for the child
+         * process spawned by safe_popen().
+         */
+        pid_t pid = find_comp_pipe(fp);
+        if (pid > 0) {
+            safe_pclose(fp, pid);
+        } else {
+            /* Fallback for any pipes not in our tracking (shouldn't happen) */
 #if defined(_WIN32) && (!defined(__SYMBIAN32__))
-        _pclose(fp);
+            _pclose(fp);
 #else
-        pclose(fp);
+            pclose(fp);
 #endif
+        }
 #endif
     }
     else
