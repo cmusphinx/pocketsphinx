@@ -1,0 +1,8 @@
+To all Convoso-ians!
+
+This is our fork of the github.com/cmusphinx/pocketsphinx package.  It is set up so that we can, via the github.com UI, sync the default branch of that repo to ours, but it does so manually.
+
+Please follow typical repo patterns:   Fork your feature branches for dev work off of staging.  Then the merge process, after PR, would be feature branch -> staging -> candidate -> main.
+
+Once changes are in main, if you feel that they are pertinent for the cmusphinx project, please check with superiors if necessay in order to submit a PR back to cmusphinx/pocketsphinx for potential inclusion.
+
