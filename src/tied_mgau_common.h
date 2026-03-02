@@ -112,6 +112,7 @@ fast_logmath_add(logmath_t *lmath, int mlx, int mly)
 {
     logadd_t *t = LOGMATH_TABLE(lmath);
     int d, r;
+    int res = 0;
 
     /* d must be positive, obviously. */
     if (mlx > mly) {
@@ -123,7 +124,14 @@ fast_logmath_add(logmath_t *lmath, int mlx, int mly)
         r = mlx;
     }
 
-    return r - (((uint8 *)t->table)[d]);
+    /* protect againt invalid read */
+    if (d+1 > (int)t->table_size || d < 0) {
+        return 0;
+    }
+
+    res = r - (((uint8 *)t->table)[d]);
+
+    return res >= 0 ? res : 0;
 }
 
 #ifdef __cplusplus

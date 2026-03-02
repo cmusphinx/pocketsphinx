@@ -1151,6 +1151,11 @@ prune_channels(ngram_search_t *ngs, int frame_idx)
             b = (ngs->best_score - hmm_bestscore(&rhmm->hmm)) / bw;
             if (b >= 256)
                 b = 255;
+            else if (b < 0) {
+                if (ngs->best_score < WORST_SCORE)
+                    ngs->best_score = WORST_SCORE;
+                continue;
+            }
             ++bins[b];
         }
         /* For each active non-root channel. */
@@ -1163,6 +1168,13 @@ prune_channels(ngram_search_t *ngs, int frame_idx)
             b = (ngs->best_score - hmm_bestscore(&hmm->hmm)) / bw;
             if (b >= 256)
                 b = 255;
+            else if (b < 0) {
+                if (ngs->best_score < WORST_SCORE)
+                    ngs->best_score = WORST_SCORE;
+
+                continue;
+            }
+
             ++bins[b];
         }
         /* Walk down the bins to find the new beam. */
