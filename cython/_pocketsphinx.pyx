@@ -1668,6 +1668,10 @@ cdef class Decoder:
         segmentation in the usual manner.  For phone-level alignment,
         see `set_alignment` and `get_alignment`.
 
+        Pruning for this pass uses ``align_beam``, ``align_pbeam``, and
+        ``align_wbeam`` by default; set ``align_use_main_beams`` to use the
+        main decoder ``beam``/``pbeam``/``wbeam`` instead.
+
         Args:
             text(str): Sentence to align, as whitespace-separated
                        words.  All words must be present in the

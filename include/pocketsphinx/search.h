@@ -336,6 +336,11 @@ int ps_add_allphone_file(ps_decoder_t *ps, const char *name, const char *path);
  * phoneme or state segmentations, you must subsequently call
  * ps_set_alignment() and re-run decoding.  It's tough son, but it's life.
  *
+ * By default, pruning uses align_beam, align_pbeam, and align_wbeam
+ * rather than beam, pbeam, and wbeam.  If align_use_main_beams is enabled,
+ * the main decoder beams are used instead.  Defaults for align_* are tuned
+ * for forced alignment and are independent of LVCSR beam defaults.
+ *
  * @memberof ps_decoder_t
  * @param ps Decoder
  * @param words String containing whitespace-separated words for alignment.

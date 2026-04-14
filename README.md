@@ -120,8 +120,10 @@ The commands are as follows:
     all subsequent ones are concatenated to make the text, to avoid
     surprises if you forget to quote it.  You are responsible for
     normalizing the text to remove punctuation, uppercase, centipedes,
-    etc. For example:
-    
+    etc.  Forced alignment uses `align_beam`, `align_pbeam`, and
+    `align_wbeam` instead of `beam`, `pbeam`, and `wbeam`; see
+    `pocketsphinx help-config`.  For example:
+
         pocketsphinx align goforward.wav "go forward ten meters"
         
     By default, only word-level alignment is done.  To get phone

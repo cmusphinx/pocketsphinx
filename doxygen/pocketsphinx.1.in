@@ -59,7 +59,12 @@ sequence, and write a JSON object in the same format described above.
 The first positional argument is the input, and all subsequent ones
 are concatenated to make the text, to avoid surprises if you forget to
 quote it.  You are responsible for normalizing the text to remove
-punctuation, uppercase, centipedes, etc. For example:
+punctuation, uppercase, centipedes, etc.
+Forced alignment uses
+\fIalign_beam\fP, \fIalign_pbeam\fP, and \fIalign_wbeam\fP
+instead of \fIbeam\fP, \fIpbeam\fP, and \fIwbeam\fP; defaults are
+independent of LVCSR tuning (see \fBpocketsphinx help-config\fP).
+For example:
 
 .EX
     pocketsphinx align goforward.wav "go forward ten meters"
