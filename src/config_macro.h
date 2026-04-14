@@ -61,6 +61,8 @@
         POCKETSPHINX_FEAT_OPTIONS,   \
         POCKETSPHINX_ACMOD_OPTIONS,  \
         POCKETSPHINX_BEAM_OPTIONS,   \
+        POCKETSPHINX_ALIGN_BEAM_OPTIONS, \
+        POCKETSPHINX_ALIGN_FSG_OPTIONS, \
         POCKETSPHINX_SEARCH_OPTIONS, \
         POCKETSPHINX_DICT_OPTIONS,   \
         POCKETSPHINX_NGRAM_OPTIONS,  \
@@ -143,6 +145,32 @@
       ARG_FLOATING,                                                      \
       "3.0",                                                            \
       "Weight for phoneme lookahead penalties" }                        \
+
+/** Beam widths for forced-alignment FSG (ps_set_align_text, align subcommand). */
+#define POCKETSPHINX_ALIGN_BEAM_OPTIONS                                 \
+{ "align_beam",                                                        \
+      ARG_FLOATING,                                                      \
+      "1e-48",                                                          \
+      "Beam width for each frame in forced-alignment FSG search "       \
+      "(independent of beam)" },                                        \
+    { "align_pbeam",                                                   \
+      ARG_FLOATING,                                                      \
+      "1e-48",                                                          \
+      "Phone-transition beam for forced-alignment FSG search "          \
+      "(independent of pbeam)" },                                       \
+    { "align_wbeam",                                                   \
+      ARG_FLOATING,                                                      \
+      "1e-48",                                                          \
+      "Word-exit beam for forced-alignment FSG search "                 \
+      "(independent of wbeam)" }                                        \
+
+/** Toggle: use main decoder beams for forced-alignment FSG instead of align_*. */
+#define POCKETSPHINX_ALIGN_FSG_OPTIONS                                  \
+{ "align_use_main_beams",                                              \
+      ARG_BOOLEAN,                                                      \
+      "no",                                                             \
+      "If yes, forced-alignment FSG uses beam, pbeam, wbeam instead of " \
+      "align_beam, align_pbeam, align_wbeam" }                          \
 
 /** Options defining other parameters for tuning the search. */
 #define POCKETSPHINX_SEARCH_OPTIONS \

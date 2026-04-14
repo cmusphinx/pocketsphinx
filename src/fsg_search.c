@@ -171,6 +171,23 @@ fsg_search_add_altpron(fsg_search_t *fsgs, fsg_model_t *fsg)
     return n_alt;
 }
 
+static void
+fsg_search_beam_config(ps_config_t *config, char const *name,
+                       float *beam, float *pbeam, float *wbeam)
+{
+    if (name != NULL && strcmp(name, PS_DEFAULT_ALIGN_SEARCH) == 0
+        && !ps_config_bool(config, "align_use_main_beams")) {
+        *beam = ps_config_float(config, "align_beam");
+        *pbeam = ps_config_float(config, "align_pbeam");
+        *wbeam = ps_config_float(config, "align_wbeam");
+    }
+    else {
+        *beam = ps_config_float(config, "beam");
+        *pbeam = ps_config_float(config, "pbeam");
+        *wbeam = ps_config_float(config, "wbeam");
+    }
+}
+
 ps_search_t *
 fsg_search_init(const char *name,
 		fsg_model_t *fsg,
@@ -196,16 +213,21 @@ fsg_search_init(const char *name,
     fsgs->frame = -1;
 
     /* Get search pruning parameters */
-    fsgs->beam_factor = 1.0f;
-    fsgs->beam = fsgs->beam_orig
-        = (int32) logmath_log(acmod->lmath, ps_config_float(config, "beam"))
-        >> SENSCR_SHIFT;
-    fsgs->pbeam = fsgs->pbeam_orig
-        = (int32) logmath_log(acmod->lmath, ps_config_float(config, "pbeam"))
-        >> SENSCR_SHIFT;
-    fsgs->wbeam = fsgs->wbeam_orig
-        = (int32) logmath_log(acmod->lmath, ps_config_float(config, "wbeam"))
-        >> SENSCR_SHIFT;
+    {
+        float fl_beam, fl_pbeam, fl_wbeam;
+
+        fsgs->beam_factor = 1.0f;
+        fsg_search_beam_config(config, name, &fl_beam, &fl_pbeam, &fl_wbeam);
+        fsgs->beam = fsgs->beam_orig
+            = (int32) logmath_log(acmod->lmath, fl_beam)
+            >> SENSCR_SHIFT;
+        fsgs->pbeam = fsgs->pbeam_orig
+            = (int32) logmath_log(acmod->lmath, fl_pbeam)
+            >> SENSCR_SHIFT;
+        fsgs->wbeam = fsgs->wbeam_orig
+            = (int32) logmath_log(acmod->lmath, fl_wbeam)
+            >> SENSCR_SHIFT;
+    }
 
     /* LM related weights/penalties */
     fsgs->lw = ps_config_float(config, "lw");

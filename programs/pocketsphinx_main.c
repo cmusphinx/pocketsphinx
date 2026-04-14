@@ -753,6 +753,8 @@ usage_align(char *name)
     fprintf(stderr, "  INPUT     Audio file to align (or '-' for stdin)\n");
     fprintf(stderr, "  WORDS...  Words to align to (will be concatenated)\n");
     fprintf(stderr, "\nAlignment-specific options:\n");
+    fprintf(stderr, "  -align_beam FLOAT       Beam for forced-alignment FSG (see also -align_pbeam, -align_wbeam)\n");
+    fprintf(stderr, "  -align_use_main_beams yes/no  Use -beam/-pbeam/-wbeam for alignment FSG (default: no)\n");
     fprintf(stderr, "  -phone_align yes/no    Run a second pass to align phones and print their durations\n");
     fprintf(stderr, "                         (default: no)\n");
     fprintf(stderr, "  -state_align yes/no    Run a second pass to align phones and states and print their\n");
