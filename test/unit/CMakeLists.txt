@@ -40,6 +40,7 @@ set(TESTS
   test_vad
   test_vad_alloc
   test_word_align
+  test_align_fsg_beam
   test_endpointer
   test_endpointer_timestamp
   test_thread_local_compile
