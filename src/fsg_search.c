@@ -264,6 +264,11 @@ fsg_search_init(const char *name,
     if (ps_config_bool(config, "bestpath"))
         fsgs->bestpath = TRUE;
 #endif
+    /* Forced-alignment FSG: hyp() must list the full transcript. Lattice
+     * bestpath can return a shorter string than the Viterbi backtrace (see
+     * pocketsphinx_main align(), which disables bestpath). */
+    if (name != NULL && strcmp(name, PS_DEFAULT_ALIGN_SEARCH) == 0)
+        fsgs->bestpath = FALSE;
 
     if (fsg_search_reinit(ps_search_base(fsgs),
                           ps_search_dict(fsgs),
