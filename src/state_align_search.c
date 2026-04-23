@@ -94,10 +94,12 @@ prune_hmms(state_align_search_t *sas, int frame_idx)
         hmm_t *hmm = sas->hmms + i;
         if (hmm_frame(hmm) < frame_idx)
             continue;
-        /* Enforce alignment constraint: due to non-emitting states,
-         * previous phone's HMM remains active in first frame of its
-         * successor. */
-        if (nf > sas->ef[i])
+        /* ef[i] is the exclusive end frame (= start + duration).
+         * Once nf reaches ef[i] the phone has used its full window;
+         * stop advancing so it is not scored in the next frame.
+         * phone_transition is allowed to fire at this last active
+         * frame via the complementary check in phone_transition. */
+        if (nf >= sas->ef[i])
             continue;
         hmm_frame(hmm) = nf;
     }
@@ -114,7 +116,13 @@ phone_transition(state_align_search_t *sas, int frame_idx)
         int32 newphone_score;
 
         hmm = sas->hmms + i;
-        if (hmm_frame(hmm) != nf)
+        /* Allow transition from phones that were active this frame,
+         * whether they were advanced to nf (normal case) or left at
+         * frame_idx by prune_hmms because they hit their ef boundary.
+         * The original check (hmm_frame != nf) silently blocked
+         * cross-word transitions when the phone was evaluated at
+         * exactly its last allowed frame. */
+        if (hmm_frame(hmm) < frame_idx)
             continue;
         /* Enforce alignment constraint for initial state of each phone. */
         if (nf < sas->sf[i + 1])
@@ -123,9 +131,12 @@ phone_transition(state_align_search_t *sas, int frame_idx)
         newphone_score = hmm_out_score(hmm);
         nhmm = hmm + 1;
         if (hmm_frame(nhmm) < frame_idx) {
+            /* Successor is inactive: enter it fresh with the new frame. */
             hmm_enter(nhmm, newphone_score, hmm_out_history(hmm), nf);
             continue;
         }
+        /* Successor is already active: update score/history only (Viterbi
+         * competition), never bump its hmm_frame to a later value. */
         if (newphone_score BETTER_THAN hmm_in_score(nhmm)) {
             hmm_in_score(nhmm) = newphone_score;
             hmm_in_history(nhmm) = hmm_out_history(hmm);
@@ -461,7 +472,7 @@ state_align_search_init(const char *name,
          ++i, itor = ps_alignment_iter_next(itor)) {
         ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
         int min_nframes;
-        
+
         hmm_init(sas->hmmctx, &sas->hmms[i], FALSE,
                  ent->id.pid.ssid, ent->id.pid.tmatid);
         /* Can't align less than the number of frames in an HMM! */
