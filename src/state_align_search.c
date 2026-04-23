@@ -121,11 +121,14 @@ phone_transition(state_align_search_t *sas, int frame_idx)
             continue;
 
         newphone_score = hmm_out_score(hmm);
-        /* Transition into next phone using the usual Viterbi rule. */
         nhmm = hmm + 1;
-        if (hmm_frame(nhmm) < frame_idx
-            || newphone_score BETTER_THAN hmm_in_score(nhmm)) {
+        if (hmm_frame(nhmm) < frame_idx) {
             hmm_enter(nhmm, newphone_score, hmm_out_history(hmm), nf);
+            continue;
+        }
+        if (newphone_score BETTER_THAN hmm_in_score(nhmm)) {
+            hmm_in_score(nhmm) = newphone_score;
+            hmm_in_history(nhmm) = hmm_out_history(hmm);
         }
     }
 }
