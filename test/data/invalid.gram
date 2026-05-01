@@ -1,0 +1,5 @@
+#JSGF V1.0;
+
+grammar invalid;
+
+import does_not_exist;

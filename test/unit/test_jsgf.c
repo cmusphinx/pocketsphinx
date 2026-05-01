@@ -24,6 +24,19 @@ main(int argc, char *argv[])
 
     (void)argc;
     (void)argv;
+
+    jsgf = jsgf_parse_file(DATADIR "/invalid.gram", NULL);
+    TEST_ASSERT(NULL == jsgf);
+
+    TEST_ASSERT(config =
+                ps_config_parse_json(
+                    NULL,
+                    "hmm: \"" MODELDIR "/en-us/en-us\","
+                    "dict: \"" DATADIR "/turtle.dic\","
+                    "jsgf: \"" DATADIR "/defective.gram\","));
+    TEST_ASSERT(NULL == ps_init(config));
+    ps_config_free(config);
+
     TEST_ASSERT(config =
                 ps_config_parse_json(
                     NULL,
@@ -37,6 +50,7 @@ main(int argc, char *argv[])
     rule = jsgf_get_rule(jsgf, "goforward.move2");
     TEST_ASSERT(rule);
     fsg = jsgf_build_fsg(jsgf, rule, ps->lmath, 7.5);
+    jsgf_grammar_free(jsgf);
     TEST_ASSERT(fsg);
     fsg_model_write(fsg, stdout);
     ps_add_fsg(ps, "goforward.move2", fsg);
@@ -47,6 +61,7 @@ main(int argc, char *argv[])
     prob = ps_get_prob(ps);
     printf("%s (%d, %d)\n", hyp, score, prob);
     TEST_EQUAL(0, strcmp("go forward ten meters", hyp));
+    fsg_model_free(fsg);
     ps_free(ps);
     fclose(rawfh);
     ps_config_free(config);
@@ -87,15 +102,6 @@ main(int argc, char *argv[])
     ps_free(ps);
     ps_config_free(config);
     fclose(rawfh);
-
-    TEST_ASSERT(config =
-                ps_config_parse_json(
-                    NULL,
-                    "hmm: \"" MODELDIR "/en-us/en-us\","
-                    "dict: \"" DATADIR "/turtle.dic\","
-                    "jsgf: \"" DATADIR "/defective.gram\","));
-    TEST_ASSERT(NULL == ps_init(config));
-    ps_config_free(config);
 
     return 0;
 }

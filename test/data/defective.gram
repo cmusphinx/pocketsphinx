@@ -2,4 +2,6 @@
 
 grammar defective;
 
+import <goforward.move>;
+
 public <defective> = really_bad_word;
