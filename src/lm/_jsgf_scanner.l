@@ -43,7 +43,6 @@
 %}
 
 %option 8bit reentrant bison-bridge noyywrap yylineno never-interactive nounput nounistd
-%option header-file="jsgf_scanner.h"
 %s COMMENT
 %s DECL
 %s DECLCOMMENT

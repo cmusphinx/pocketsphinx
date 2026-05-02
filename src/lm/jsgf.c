@@ -38,12 +38,19 @@
 #include <string.h>
 #include <assert.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <pocketsphinx.h>
 
 #include "util/ckd_alloc.h"
 #include "util/strfuncs.h"
 #include "util/hash_table.h"
 #include "util/filename.h"
+
+/* Define this before including jsgf_scanner.h */
+#define YY_NO_UNISTD_H 1
 
 #include "lm/jsgf.h"
 #include "lm/jsgf_internal.h"
