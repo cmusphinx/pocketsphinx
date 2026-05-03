@@ -38,12 +38,19 @@
 #include <string.h>
 #include <assert.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <pocketsphinx.h>
 
 #include "util/ckd_alloc.h"
 #include "util/strfuncs.h"
 #include "util/hash_table.h"
 #include "util/filename.h"
+
+/* Define this before including jsgf_scanner.h */
+#define YY_NO_UNISTD_H 1
 
 #include "lm/jsgf.h"
 #include "lm/jsgf_internal.h"
@@ -216,6 +223,9 @@ jsgf_grammar_name(jsgf_t * jsgf)
     return jsgf->name;
 }
 
+/**
+ * Return a newly allocated, fully qualified name.
+ */
 static char *
 jsgf_fullname(jsgf_t * jsgf, const char *name)
 {
@@ -561,6 +571,7 @@ jsgf_read_file(const char *file, logmath_t * lmath, float32 lw)
     }
     if (rule == NULL) {
         E_ERROR("No public rules found in %s\n", file);
+        jsgf_grammar_free(jsgf);
         return NULL;
     }
     fsg = jsgf_build_fsg(jsgf, rule, lmath, lw);
@@ -591,8 +602,8 @@ jsgf_read_string(const char *string, logmath_t * lmath, float32 lw)
         }
     }
     if (rule == NULL) {
-        jsgf_grammar_free(jsgf);
         E_ERROR("No public rules found in input string\n");
+        jsgf_grammar_free(jsgf);
         return NULL;
     }
     fsg = jsgf_build_fsg(jsgf, rule, lmath, lw);
@@ -625,6 +636,7 @@ jsgf_define_rule(jsgf_t * jsgf, char *name, jsgf_rhs_t * rhs,
     jsgf_rule_t *rule;
     void *val;
 
+    /* One way or another, allocate a new string for name */
     if (name == NULL) {
         name = ckd_malloc(strlen(jsgf->name) + 16);
         sprintf(name, "<%s.g%05d>", jsgf->name,
@@ -637,6 +649,7 @@ jsgf_define_rule(jsgf_t * jsgf, char *name, jsgf_rhs_t * rhs,
         name = newname;
     }
 
+    /* Create a new copy of name for the rule */
     rule = ckd_calloc(1, sizeof(*rule));
     rule->refcnt = 1;
     rule->name = ckd_salloc(name);
@@ -645,9 +658,14 @@ jsgf_define_rule(jsgf_t * jsgf, char *name, jsgf_rhs_t * rhs,
 
     E_INFO("Defined rule: %s%s\n",
            rule->is_public ? "PUBLIC " : "", rule->name);
+    /* name is always allocated in our hash tables */
     val = hash_table_enter(jsgf->rules, name, rule);
     if (val != (void *) rule) {
         E_WARN("Multiply defined symbol: %s\n", name);
+        ckd_free(name);
+        jsgf_rule_free(rule);
+        /* Callee expects to own the return value so retain it. */
+        return jsgf_rule_retain((jsgf_rule_t *)val);
     }
     return rule;
 }
@@ -701,6 +719,7 @@ jsgf_import_rule(jsgf_t * jsgf, char *name)
 {
     char *c, *path, *newpath;
     size_t namelen, packlen;
+    hash_iter_t *itor;
     void *val;
     jsgf_t *imp;
     int import_all;
@@ -743,7 +762,7 @@ jsgf_import_rule(jsgf_t * jsgf, char *name)
      * here, by adding any prefixes from jsgf->name to it. */
     /* See if we have parsed it already */
     if (hash_table_lookup(jsgf->imports, path, &val) == 0) {
-        E_INFO("Already imported %s\n", path);
+        E_INFO("Reusing already imported %s\n", path);
         imp = val;
         ckd_free(path);
     }
@@ -752,48 +771,64 @@ jsgf_import_rule(jsgf_t * jsgf, char *name)
         imp = jsgf_parse_file(path, jsgf);
         val = hash_table_enter(jsgf->imports, path, imp);
         if (val != (void *) imp) {
+            /* This should never happen but be defensive... */
             E_WARN("Multiply imported file: %s\n", path);
+            ckd_free(path);
+            jsgf_grammar_free(imp);
+            imp = (jsgf_t *)val;
         }
     }
-    if (imp != NULL) {
-        hash_iter_t *itor;
-        /* Look for public rules matching rulename. */
-        for (itor = hash_table_iter(imp->rules); itor;
-             itor = hash_table_iter_next(itor)) {
-            hash_entry_t *he = itor->ent;
-            jsgf_rule_t *rule = hash_entry_val(he);
-            int rule_matches;
-            char *rule_name = importname2rulename(name);
+    if (imp == NULL)
+        return NULL;
 
-            if (import_all) {
-                /* Match package name (symbol table is shared) */
-                rule_matches =
-                    !strncmp(rule_name, rule->name, packlen + 1);
+    /* Look for public rules matching rulename. */
+    for (itor = hash_table_iter(imp->rules); itor;
+         itor = hash_table_iter_next(itor)) {
+        hash_entry_t *he = itor->ent;
+        jsgf_rule_t *rule = hash_entry_val(he);
+        int rule_matches;
+        char *rule_name = importname2rulename(name);
+
+        if (import_all) {
+            /* Match package name (symbol table is shared) */
+            rule_matches =
+                !strncmp(rule_name, rule->name, packlen + 1);
+        }
+        else {
+            /* Exact match */
+            rule_matches = !strcmp(rule_name, rule->name);
+        }
+        ckd_free(rule_name);
+        if (rule->is_public && rule_matches) {
+            void *val;
+            char *newname;
+
+            /* Link this rule into the current namespace. */
+            c = strrchr(rule->name, '.');
+            assert(c != NULL);
+            newname = jsgf_fullname(jsgf, c);
+
+            /* A check for rule == val does not work, because it could
+             * be the same rule if we already imported it! */
+            if (hash_table_lookup(jsgf->rules, newname, &val) == 0) {
+                E_INFO("Ignoring multiple import of %s", rule->name);
+                ckd_free(newname);
+                /* Don't free rule since it already exists! */
+                continue;
             }
-            else {
-                /* Exact match */
-                rule_matches = !strcmp(rule_name, rule->name);
+            E_INFO("Importing %s to %s \n", rule->name, newname);
+            val = hash_table_enter(jsgf->rules, newname,
+                                   jsgf_rule_retain(rule));
+            if (val != (void *) rule) {
+                ckd_free(newname);
+                /* Dereference it so it will get freed. */
+                jsgf_rule_free(rule);
+                rule = (jsgf_rule_t *)val;
+                E_WARN("Using previously defined rule: %s\n", rule->name);
             }
-            ckd_free(rule_name);
-            if (rule->is_public && rule_matches) {
-                void *val;
-                char *newname;
-
-                /* Link this rule into the current namespace. */
-                c = strrchr(rule->name, '.');
-                assert(c != NULL);
-                newname = jsgf_fullname(jsgf, c);
-
-                E_INFO("Imported %s\n", newname);
-                val = hash_table_enter(jsgf->rules, newname,
-                                       jsgf_rule_retain(rule));
-                if (val != (void *) rule) {
-                    E_WARN("Multiply defined symbol: %s\n", newname);
-                }
-                if (!import_all) {
-                    hash_table_iter_free(itor);
-                    return rule;
-                }
+            if (!import_all) {
+                hash_table_iter_free(itor);
+                return rule;
             }
         }
     }
@@ -848,7 +883,7 @@ jsgf_parse_file(const char *filename, jsgf_t * parent)
         in = fopen(filename, "r");
         if (in == NULL) {
             E_ERROR_SYSTEM("Failed to open %s for parsing", filename);
-            return NULL;
+            goto error_out;
         }
         yyset_in(in, yyscanner);
     }
@@ -862,15 +897,19 @@ jsgf_parse_file(const char *filename, jsgf_t * parent)
     if (yyrv != 0) {
         E_ERROR("Failed to parse JSGF grammar from '%s'\n",
                 filename ? filename : "(stdin)");
-        jsgf_grammar_free(jsgf);
-        yylex_destroy(yyscanner);
-        return NULL;
+        goto error_out;
     }
     if (in)
         fclose(in);
     yylex_destroy(yyscanner);
-
     return jsgf;
+
+ error_out:
+    if (in)
+        fclose(in);
+    yylex_destroy(yyscanner);
+    jsgf_grammar_free(jsgf);
+    return NULL;
 }
 
 jsgf_t *
