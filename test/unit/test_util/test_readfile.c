@@ -17,6 +17,9 @@ main(int argc, char *argv[])
 {
     size_t nsamps;
     int16 *data;
+    ps_config_t *config;
+    const char *filename = TESTDATADIR "/chan3.wav";
+    FILE *infh;
     
     (void)argc;
     (void)argv;
@@ -24,6 +27,21 @@ main(int argc, char *argv[])
     TEST_EQUAL(230108, nsamps);
     
     ckd_free(data);
+
+    config = ps_config_init(NULL);
+    infh = fopen(filename, "rb");
+    TEST_ASSERT(0 == ps_config_wavfile(config, infh, filename));
+    fclose(infh);
+
+    infh = fopen(DATADIR "/evil.wav", "rb");
+    TEST_ASSERT(-1 == ps_config_wavfile(config, infh, filename));
+    fclose(infh);
+
+    infh = fopen(DATADIR "/bad.wav", "rb");
+    TEST_ASSERT(-1 == ps_config_wavfile(config, infh, filename));
+    fclose(infh);
+
+    ps_config_free(config);
 
     return 0;
 }
