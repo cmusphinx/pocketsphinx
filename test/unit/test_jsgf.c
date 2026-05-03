@@ -28,6 +28,9 @@ main(int argc, char *argv[])
     jsgf = jsgf_parse_file(DATADIR "/invalid.gram", NULL);
     TEST_ASSERT(NULL == jsgf);
 
+    jsgf = jsgf_parse_file(DATADIR "/fuzzed.gram", NULL);
+    TEST_ASSERT(NULL == jsgf);
+
     TEST_ASSERT(config =
                 ps_config_parse_json(
                     NULL,
