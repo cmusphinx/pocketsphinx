@@ -506,7 +506,7 @@ hash_table_enter(hash_table_t * h, const char *key, void *val)
 
     hash = key2hash(h, key);
     len = strlen(key);
-    return (enter(h, hash, key, len, val, 0));
+    return (enter(h, hash, key, len, val, FALSE));
 }
 
 void *
@@ -517,7 +517,7 @@ hash_table_replace(hash_table_t * h, const char *key, void *val)
 
     hash = key2hash(h, key);
     len = strlen(key);
-    return (enter(h, hash, key, len, val, 1));
+    return (enter(h, hash, key, len, val, TRUE));
 }
 
 void *
@@ -542,7 +542,7 @@ hash_table_enter_bkey(hash_table_t * h, const char *key, size_t len, void *val)
     hash = key2hash(h, str);
     ckd_free(str);
 
-    return (enter(h, hash, key, len, val, 0));
+    return (enter(h, hash, key, len, val, FALSE));
 }
 
 void *
@@ -555,7 +555,7 @@ hash_table_replace_bkey(hash_table_t * h, const char *key, size_t len, void *val
     hash = key2hash(h, str);
     ckd_free(str);
 
-    return (enter(h, hash, key, len, val, 1));
+    return (enter(h, hash, key, len, val, TRUE));
 }
 
 void *

@@ -31,6 +31,7 @@ main(int argc, char *argv[])
     TEST_ASSERT(config =
                 ps_config_parse_json(
                     NULL,
+                    "loglevel: \"INFO\","
                     "hmm: \"" MODELDIR "/en-us/en-us\","
                     "dict: \"" DATADIR "/turtle.dic\","
                     "jsgf: \"" DATADIR "/defective.gram\","));

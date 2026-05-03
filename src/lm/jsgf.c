@@ -762,7 +762,7 @@ jsgf_import_rule(jsgf_t * jsgf, char *name)
      * here, by adding any prefixes from jsgf->name to it. */
     /* See if we have parsed it already */
     if (hash_table_lookup(jsgf->imports, path, &val) == 0) {
-        E_INFO("Already imported %s\n", path);
+        E_INFO("Reusing already imported %s\n", path);
         imp = val;
         ckd_free(path);
     }
@@ -771,7 +771,7 @@ jsgf_import_rule(jsgf_t * jsgf, char *name)
         imp = jsgf_parse_file(path, jsgf);
         val = hash_table_enter(jsgf->imports, path, imp);
         if (val != (void *) imp) {
-            /* This should not happen but be defensive... */
+            /* This should never happen but be defensive... */
             E_WARN("Multiply imported file: %s\n", path);
             ckd_free(path);
             jsgf_grammar_free(imp);
@@ -808,14 +808,23 @@ jsgf_import_rule(jsgf_t * jsgf, char *name)
             assert(c != NULL);
             newname = jsgf_fullname(jsgf, c);
 
-            E_INFO("Imported %s\n", newname);
+            /* A check for rule == val does not work, because it could
+             * be the same rule if we already imported it! */
+            if (hash_table_lookup(jsgf->rules, newname, &val) == 0) {
+                E_INFO("Ignoring multiple import of %s", rule->name);
+                ckd_free(newname);
+                /* Don't free rule since it already exists! */
+                continue;
+            }
+            E_INFO("Importing %s to %s \n", rule->name, newname);
             val = hash_table_enter(jsgf->rules, newname,
                                    jsgf_rule_retain(rule));
             if (val != (void *) rule) {
-                E_WARN("Multiply defined symbol: %s\n", newname);
                 ckd_free(newname);
+                /* Dereference it so it will get freed. */
                 jsgf_rule_free(rule);
                 rule = (jsgf_rule_t *)val;
+                E_WARN("Using previously defined rule: %s\n", rule->name);
             }
             if (!import_all) {
                 hash_table_iter_free(itor);
