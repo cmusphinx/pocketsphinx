@@ -257,7 +257,7 @@ state_align_search_finish(ps_search_t *search)
             ent = ps_alignment_iter_get(itor);
             ent->start = cur_frame + 1;
             ent->duration = last_frame - ent->start;
-            ent->score =  last.score - cur.score;
+            ent->score = last.score - cur.score;
             E_DEBUG("state %d start %d end %d\n", last.id,
                     ent->start, last_frame);
     	    last = cur;
