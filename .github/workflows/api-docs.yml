@@ -38,6 +38,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # was: actions/checkout@v6
         with:
           repository: cmusphinx/cmusphinx.github.io
+          ssh-key: ${{ secrets.SSH_DEPLOY_KEY }}
           
       - name: Remove Previous Docs
         run: rm -rf doc/pocketsphinx
@@ -50,6 +51,8 @@ jobs:
 
       - name: Commit upstream
         run: |
+            git config user.name "Documentation Updater"
+            git config user.email "dhd+pocketsphinx@ecolingui.ca"
             git add doc/pocketsphinx
             git commit -m 'chore: update PocketSphinx API documentation'
             git push
