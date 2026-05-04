@@ -1,0 +1,48 @@
+name: Update API Documentation
+on:
+  workflow_dispatch:
+  release:
+    types:
+      - published
+
+permissions: {}
+
+jobs:
+  build-docs:
+    name: Build API Documentation
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # was: actions/checkout@v6
+
+    - name: Install doxygen
+      run: sudo apt-get install doxygen
+
+    - name: Build doxygen
+      run: |
+          cmake -S. -Bbuild
+          cmake --build build --target docs
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # was: actions/upload-artifact@v7
+      with:
+        name: api-docs
+        path: build/doxygen/html
+
+  commit-docs:
+    name: Update cmusphinx.github.io
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # was: actions/checkout@v6
+        with:
+          repository: https://github.com/cmusphinx/cmusphinx.github.io
+          
+      - name: Download Artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: api-docs
+          path: doc/pocketsphinx
+
+      - name: Check to see what we did
+        run: ls -lR doc/pocketsphinx
