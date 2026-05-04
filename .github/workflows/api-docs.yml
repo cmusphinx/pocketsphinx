@@ -41,7 +41,7 @@ jobs:
         with:
           ssh-key: ${{ secrets.SSH_DEPLOY_KEY }}
           persist-credentials: false
-          repository: git@github.com:cmusphinx/cmusphinx.github.io.git
+          repository: cmusphinx/cmusphinx.github.io
           
       - name: Remove Previous Docs
         run: rm -rf doc/pocketsphinx
