@@ -88,6 +88,26 @@ serialize = [
     "{major}.{minor}.{patch}",
 ]
 
+[[tool.bumpversion.files]]
+filename = "CMakeLists.txt"
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+serialize = ["{major}.{minor}.{patch}"]
+
+[[tool.bumpversion.files]]
+filename = "cython/README.md"
+
+[[tool.bumpversion.files]]
+filename = "docs/source/conf.py"
+
+[[tool.bumpversion.files]]
+filename = "doxygen/CMakeLists.txt"
+
+[[tool.bumpversion.files]]
+filename = "README.md"
+
+[[tool.bumpversion.files]]
+filename = "include/pocketsphinx.h"
+
 [tool.bumpversion.parts.pre_l]
 values = ["rc", "final"]
 optional_value = "final"
