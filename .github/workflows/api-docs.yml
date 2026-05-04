@@ -42,7 +42,6 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # was: actions/checkout@v6
         with:
           ssh-key: ${{ secrets.SSH_DEPLOY_KEY }}
-          persist-credentials: false
           repository: cmusphinx/cmusphinx.github.io
           
       - name: Remove Previous Docs
