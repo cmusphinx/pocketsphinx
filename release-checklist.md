@@ -8,6 +8,5 @@
   - include/pocketsphinx.h
 - docker build
 - make github release and tag
-- upload wheels to PyPI
 - make doxygen docs and upload to cmusphinx.github.io
 - post on cmusphinx.github.io

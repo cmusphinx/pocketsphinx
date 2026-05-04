@@ -7,7 +7,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "pocketsphinx"
-version = "5.1.0rc1"
+version = "5.1.0rc2"
 description = "Official Python bindings for PocketSphinx"
 readme = "cython/README.md"
 authors = [
@@ -44,11 +44,7 @@ pocketsphinx_lm = "pocketsphinx.lm:main"
 enable = [ "pypy" ]
 # Build a reduced selection of binaries as there are tons of them
 build = [
-      "pp311*",
-      "cp39-*",
-      "cp310-*",
       "cp311-*",
-      "cp312-*",
       "cp313-*",
 ]
 # Build only universal wheels for Mac where possible, and skip 32-bit
