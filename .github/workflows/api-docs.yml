@@ -39,11 +39,17 @@ jobs:
         with:
           repository: cmusphinx/cmusphinx.github.io
           
+      - name: Remove Previous Docs
+        run: rm -rf doc/pocketsphinx
+
       - name: Download Artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: api-docs
           path: doc/pocketsphinx
 
-      - name: Check to see what we did
-        run: ls -lR
+      - name: Commit upstream
+        run: |
+            git add doc/pocketsphinx
+            git commit -m 'chore: update PocketSphinx API documentation'
+            git push
