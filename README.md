@@ -172,7 +172,56 @@ also read the [documentation for the Python
 API](https://pocketsphinx.readthedocs.io) or [the C
 API](https://cmusphinx.github.io/doc/pocketsphinx/)
 
-Authors
+Development
+-----------
+
+There isn't quite enough information here for potential developers,
+but here's a start.  The C API documentation is built with Doxygen,
+which will be auto-detected when running CMake.  If you have it
+installed, you can build the docs with:
+
+    cmake --build build --target docs
+
+There is a suite of regression and unit tests, run with:
+
+    cmake --build build --target check
+
+You can run it somewhat faster with:
+
+    cd build && ctest -j4  # or however many CPUs you want to use
+
+Somewhat confusingly (because readthedocs needs it, I think?), the
+Python API documentation is in the `docs` directory which has nothing
+to do with the abovementioned CMake target.  These use some extra
+dependencies named in `docs/requirements.txt`.  To build the
+documentation first set up a virtual environment, then run `make` in
+the `docs` directory, with one of its many targets (`html` here will
+make multi-page HTML documentation):
+
+    python3 -m venv ~/ve_pocketsphinx
+    . ~/ve_pocketsphinx/bin/activate
+    pip install -r docs/requirements.txt
+    make -C docs html
+
+There are also Python regression tests, of course, which for some
+reason require `memory_profiler`:
+
+    python3 -m venv ~/ve_pocketsphinx
+    . ~/ve_pocketsphinx/bin/activate
+    pip install -e .
+    pip install memory_profiler
+    pytest
+
+Most, but not all of the release process is managed with GitHub
+Actions, namely the "Release" and "Update API Documentation"
+workflows.  The notable exception here is updating the version, which
+is done with [Bump My
+Version](https://github.com/callowayproject/bump-my-version).
+
+Also, the [Read The Docs](https://pocketsphinx.readthedocs.io) pages
+must be updated manually, it seems (maybe this will be fixed soon).
+
+AUTHORS
 -------
 
 PocketSphinx is ultimately based on `Sphinx-II` which in turn was

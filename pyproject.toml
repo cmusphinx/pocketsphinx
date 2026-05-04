@@ -71,3 +71,23 @@ minimum-version = "build-system.requires"
 build.verbose = true
 logging.level = "INFO"
 wheel.packages = ["cython/pocketsphinx"]
+
+# boilerplate from the bump-my-version docs!
+[tool.bumpversion]
+parse = """(?x)
+    (?P<major>0|[1-9]\\d*)\\.
+    (?P<minor>0|[1-9]\\d*)\\.
+    (?P<patch>0|[1-9]\\d*)
+    (?:
+        (?P<pre_l>[a-zA-Z-]+)         # pre-release label
+        (?P<pre_n>0|[1-9]\\d*)        # pre-release version number
+    )?                                # pre-release section is optional
+"""
+serialize = [
+    "{major}.{minor}.{patch}{pre_l}{pre_n}",
+    "{major}.{minor}.{patch}",
+]
+
+[tool.bumpversion.parts.pre_l]
+values = ["rc", "final"]
+optional_value = "final"
