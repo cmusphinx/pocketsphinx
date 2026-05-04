@@ -871,7 +871,7 @@ jsgf_t *
 jsgf_parse_file(const char *filename, jsgf_t * parent)
 {
     yyscan_t yyscanner;
-    jsgf_t *jsgf;
+    jsgf_t *jsgf = NULL;
     int yyrv;
     FILE *in = NULL;
 
