@@ -1,4 +1,4 @@
-PocketSphinx 5.1.0rc2
+PocketSphinx 5.1.0
 =====================
 
 This is PocketSphinx, one of Carnegie Mellon University's open source large
