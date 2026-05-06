@@ -1095,7 +1095,7 @@ void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
 /**
  * @mainpage PocketSphinx API Documentation
  * @author David Huggins-Daines <dhdaines@gmail.com>
- * @version 5.1.0rc2
+ * @version 5.1.0
  * @date May 4th, 2026
  *
  * @tableofcontents{HTML:1}
