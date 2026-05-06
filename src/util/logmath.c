@@ -164,7 +164,7 @@ logmath_init(float64 base, int shift, int use_table)
 logmath_t *
 logmath_read(const char *file_name)
 {
-    logmath_t *lmath;
+    logmath_t *lmath = NULL;
     char **argname, **argval;
     int32 byteswap, i;
     int chksum_present, do_mmap;
@@ -181,8 +181,7 @@ logmath_read(const char *file_name)
     /* Read header, including argument-value info and 32-bit byteorder magic */
     if (bio_readhdr(fp, &argname, &argval, &byteswap) < 0) {
         E_ERROR("Failed to read the header from the file '%s'\n", file_name);
-        fclose(fp);
-        return NULL;
+        goto error_out;
     }
 
     lmath = ckd_calloc(1, sizeof(*lmath));
@@ -227,24 +226,33 @@ logmath_read(const char *file_name)
         goto error_out;
     }
 
+    /* We have no config argument, so, will always mmap unless it's not possible. */
+    do_mmap = TRUE;
+
     /* Check alignment constraints for memory mapping */
-    do_mmap = 1;
     pos = ftell(fp);
     if (pos & ((long)lmath->t.width - 1)) {
         E_WARN("%s: Data start %ld is not aligned on %d-byte boundary, will not memory map\n",
                   file_name, pos, lmath->t.width);
-        do_mmap = 0;
+        do_mmap = FALSE;
     }
     /* Check byte order for memory mapping */
     if (byteswap) {
         E_WARN("%s: Data is wrong-endian, will not memory map\n", file_name);
-        do_mmap = 0;
+        do_mmap = FALSE;
     }
 
     if (do_mmap) {
         lmath->filemap = mmio_file_read(file_name);
-        lmath->t.table = (char *)mmio_file_ptr(lmath->filemap) + pos;
+        if (lmath->filemap == NULL) {
+            E_ERROR_SYSTEM("%s: memory mapping failed, falling back to stdio", file_name);
+            do_mmap = FALSE;
+        }
     }
+
+    /* Map or allocate the table depending on whether a mapping exists */
+    if (lmath->filemap)
+        lmath->t.table = (char *)mmio_file_ptr(lmath->filemap) + pos;
     else {
         lmath->t.table = ckd_calloc(lmath->t.table_size, lmath->t.width);
         if ((uint32)bio_fread(lmath->t.table, lmath->t.width, lmath->t.table_size,
@@ -254,7 +262,7 @@ logmath_read(const char *file_name)
             goto error_out;
         }
         if (chksum_present)
-            bio_verify_chksum(fp, byteswap, chksum);
+            bio_verify_chksum(fp, byteswap, chksum);  /* does not return on error */
 
         if (fread(&i, 1, 1, fp) == 1) {
             E_ERROR("%s: More data than expected\n", file_name);
@@ -262,9 +270,10 @@ logmath_read(const char *file_name)
         }
     }
     fclose(fp);
-
     return lmath;
+
 error_out:
+    fclose(fp);
     logmath_free(lmath);
     return NULL;
 }

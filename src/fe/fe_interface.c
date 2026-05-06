@@ -90,10 +90,10 @@ fe_parse_general_params(cmd_ln_t *config, fe_t * fe)
     window_samples = (int)(fe->window_length * fe->sampling_rate);
     E_INFO("Frames are %d samples at intervals of %d\n",
            window_samples, (int)(fe->sampling_rate / frate));
-    if (window_samples > MAX_INT16) {
+    if (window_samples > 0x4000) {
         /* This is extremely unlikely! */
         E_ERROR("Frame size exceeds maximum FFT size (%d > %d)\n",
-                window_samples, MAX_INT16);
+                window_samples, 0x4000);
         return -1;
     }
 

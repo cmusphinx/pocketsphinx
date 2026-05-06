@@ -46,6 +46,8 @@ main(int argc, char *argv[])
 	rv = logmath_write(lmath, "tmp.logadd");
 	TEST_EQUAL(rv, 0);
 	logmath_free(lmath);
+	lmath = logmath_read("NON_EXISTENT_FOO.logadd");
+	TEST_ASSERT(lmath == NULL);
 	lmath = logmath_read("tmp.logadd");
 	TEST_ASSERT(lmath);
 	printf("log(1e-150) = %d\n", logmath_log(lmath, 1e-150));

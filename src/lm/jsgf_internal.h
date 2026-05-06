@@ -53,7 +53,6 @@
 #include "lm/fsg_model.h"
 #include "lm/jsgf.h"
 
-
 /* Flex uses strdup which is missing on WinCE */
 #if defined(_WIN32) || defined(_WIN32_WCE)
 #define strdup _strdup

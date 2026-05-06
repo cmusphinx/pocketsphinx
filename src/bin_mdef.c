@@ -401,18 +401,21 @@ bin_mdef_read(ps_config_t *config, const char *filename)
 
     /* Decide whether to read in the whole file or mmap it. */
     do_mmap = config ? ps_config_bool(config, "mmap") : TRUE;
-    if (swap) {
-        E_WARN("-mmap specified, but mdef is other-endian.  Will not memory-map.\n");
+    if (do_mmap && swap) {
+        E_WARN("-mmap specified, but %s is other-endian.  Will not memory-map.\n",
+               filename);
         do_mmap = FALSE;
     } 
     /* Actually try to mmap it. */
     if (do_mmap) {
         m->filemap = mmio_file_read(filename);
-        if (m->filemap == NULL)
+        if (m->filemap == NULL) {
+            E_ERROR_SYSTEM("-mmap specified, but memory mapping of %s failed", filename);
             do_mmap = FALSE;
+        }
     }
     pos = ftell(fh);
-    if (do_mmap) {
+    if (m->filemap) {
         /* Get the base pointer from the memory map. */
         m->ciname[0] = (char *)mmio_file_ptr(m->filemap) + pos;
         /* Success! */

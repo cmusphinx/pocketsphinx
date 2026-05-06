@@ -7,7 +7,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "pocketsphinx"
-version = "5.1.0rc1"
+version = "5.1.0rc2"
 description = "Official Python bindings for PocketSphinx"
 readme = "cython/README.md"
 authors = [
@@ -44,11 +44,7 @@ pocketsphinx_lm = "pocketsphinx.lm:main"
 enable = [ "pypy" ]
 # Build a reduced selection of binaries as there are tons of them
 build = [
-      "pp311*",
-      "cp39-*",
-      "cp310-*",
       "cp311-*",
-      "cp312-*",
       "cp313-*",
 ]
 # Build only universal wheels for Mac where possible, and skip 32-bit
@@ -75,3 +71,43 @@ minimum-version = "build-system.requires"
 build.verbose = true
 logging.level = "INFO"
 wheel.packages = ["cython/pocketsphinx"]
+
+# boilerplate from the bump-my-version docs!
+[tool.bumpversion]
+parse = """(?x)
+    (?P<major>0|[1-9]\\d*)\\.
+    (?P<minor>0|[1-9]\\d*)\\.
+    (?P<patch>0|[1-9]\\d*)
+    (?:
+        (?P<pre_l>[a-zA-Z-]+)         # pre-release label
+        (?P<pre_n>0|[1-9]\\d*)        # pre-release version number
+    )?                                # pre-release section is optional
+"""
+serialize = [
+    "{major}.{minor}.{patch}{pre_l}{pre_n}",
+    "{major}.{minor}.{patch}",
+]
+
+[[tool.bumpversion.files]]
+filename = "CMakeLists.txt"
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+serialize = ["{major}.{minor}.{patch}"]
+
+[[tool.bumpversion.files]]
+filename = "cython/README.md"
+
+[[tool.bumpversion.files]]
+filename = "docs/source/conf.py"
+
+[[tool.bumpversion.files]]
+filename = "doxygen/CMakeLists.txt"
+
+[[tool.bumpversion.files]]
+filename = "README.md"
+
+[[tool.bumpversion.files]]
+filename = "include/pocketsphinx.h"
+
+[tool.bumpversion.parts.pre_l]
+values = ["rc", "final"]
+optional_value = "final"

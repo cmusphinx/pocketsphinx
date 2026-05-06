@@ -1,7 +1,7 @@
-FROM alpine:latest as runtime
+FROM alpine:latest AS runtime
 RUN apk add --no-cache python3 py3-pip sox portaudio alsa-utils alsaconf
 
-FROM runtime as build
+FROM runtime AS build
 RUN apk add --no-cache cmake ninja gcc musl-dev python3-dev pkgconfig
 
 COPY . /pocketsphinx

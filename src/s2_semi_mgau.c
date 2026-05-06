@@ -1028,6 +1028,13 @@ read_sendump(s2_semi_mgau_t *s, bin_mdef_t *mdef, char const *file)
     /* Allocate memory for pdfs (or memory map them) */
     if (do_mmap) {
         s->sendump_mmap = mmio_file_read(file);
+        if (s->sendump_mmap == NULL) {
+            E_ERROR_SYSTEM("%s: memory mapping failed, falling back to stdio", file);
+            do_mmap = FALSE;
+        }
+    }
+
+    if (s->sendump_mmap) {
         /* Get cluster codebook if any. */
         if (n_clust) {
             s->mixw_cb = ((uint8 *) mmio_file_ptr(s->sendump_mmap)) + offset;

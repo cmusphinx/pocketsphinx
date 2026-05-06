@@ -45,6 +45,9 @@
 #include "util/hash_table.h"
 #include "util/ckd_alloc.h"
 
+/* Define this before including jsgf_scanner.h */
+#define YY_NO_UNISTD_H 1
+
 #include "jsgf_internal.h"
 #include "jsgf_parser.h"
 #include "jsgf_scanner.h"
@@ -58,7 +61,7 @@ void yyerror(yyscan_t lex, jsgf_t *jsgf, const char *s);
 
 %}
 
-%pure-parser
+%define api.pure
 %lex-param { void* yyscanner }
 %parse-param { void* yyscanner }
 %parse-param { jsgf_t *jsgf }
@@ -73,6 +76,7 @@ void yyerror(yyscan_t lex, jsgf_t *jsgf, const char *s);
 
 %token           HEADER GRAMMAR IMPORT PUBLIC
 %token <name>    TOKEN RULENAME TAG
+%destructor { free($$); } <name>
 %token <weight>  WEIGHT
 %type  <atom>    rule_atom rule_item tagged_rule_item
 %type  <rhs>     rule_expansion alternate_list
@@ -153,5 +157,6 @@ rule_atom: TOKEN { $$ = jsgf_atom_new($1, 1.0); ckd_free($1); }
 void
 yyerror(yyscan_t lex, jsgf_t *jsgf, const char *s)
 {
+    (void) jsgf;
     E_ERROR("%s at line %d current token '%s'\n", s, yyget_lineno(lex), yyget_text(lex));
 }

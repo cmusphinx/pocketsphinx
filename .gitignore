@@ -20,3 +20,8 @@ include/pocketsphinx/sphinx_config.h
 pocketsphinx.pc
 test/testfuncs.sh
 test/unit/test_macros.h
+test/regression/*.json
+test/regression/*.log
+/Testing
+_test_solve.out
+test/unit/**/*.out

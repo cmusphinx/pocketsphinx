@@ -1,0 +1,63 @@
+name: Update API Documentation
+on:
+  workflow_dispatch:
+  release:
+    types:
+      - published
+
+permissions: {}
+
+jobs:
+  build-docs:
+    name: Build API Documentation
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # was: actions/checkout@v6
+      with:
+        persist-credentials: false
+
+    - name: Install doxygen
+      run: sudo apt-get install doxygen
+
+    - name: Build doxygen
+      run: |
+          cmake -S. -Bbuild
+          cmake --build build --target docs
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # was: actions/upload-artifact@v7
+      with:
+        name: api-docs
+        path: build/doxygen/html
+
+  commit-docs:
+    name: Update cmusphinx.github.io
+    needs: build-docs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # was: actions/checkout@v6
+        with:
+          ssh-key: ${{ secrets.SSH_DEPLOY_KEY }}
+          repository: cmusphinx/cmusphinx.github.io
+          
+      - name: Remove Previous Docs
+        run: rm -rf doc/pocketsphinx
+
+      - name: Download Artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: api-docs
+          path: doc/pocketsphinx
+
+      - name: Commit upstream
+        run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add doc/pocketsphinx
+            if git commit -m 'chore: update PocketSphinx API documentation'; then
+                git push
+            fi

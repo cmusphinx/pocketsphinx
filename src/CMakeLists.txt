@@ -131,3 +131,15 @@ else()
   set_property(TARGET pocketsphinx PROPERTY
     COMPILE_DEFINITIONS POCKETSPHINX_EXPORTS;SPHINXBASE_EXPORTS)
 endif()
+find_package(BISON 3.0.0)
+if(BISON_FOUND)
+  bison_target(JSGFParser lm/jsgf_parser.y
+    ${CMAKE_CURRENT_SOURCE_DIR}/lm/jsgf_parser.c
+    DEFINES_FILE ${CMAKE_CURRENT_SOURCE_DIR}/lm/jsgf_parser.h)
+endif()
+find_package(FLEX)
+if(FLEX_FOUND)
+  flex_target(JSGFScanner lm/_jsgf_scanner.l
+    ${CMAKE_CURRENT_SOURCE_DIR}/lm/jsgf_scanner.c
+    DEFINES_FILE ${CMAKE_CURRENT_SOURCE_DIR}/lm/jsgf_scanner.h)
+endif()
