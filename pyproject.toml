@@ -38,6 +38,7 @@ Issues = "https://github.com/cmusphinx/pocketsphinx/issues"
 
 [project.scripts]
 pocketsphinx_lm = "pocketsphinx.lm:main"
+pocketsphinx_to_textgrid = "pocketsphinx.to_textgrid:main"
 
 [tool.cibuildwheel]
 # Build PyPy
