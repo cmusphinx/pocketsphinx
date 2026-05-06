@@ -1,7 +1,7 @@
-
 /* -*- c-basic-offset: 4 -*- */
 #include <pocketsphinx.h>
 
+#include "pocketsphinx/alignment.h"
 #include "ps_alignment_internal.h"
 #include "state_align_search.h"
 #include "pocketsphinx_internal.h"
@@ -77,11 +77,27 @@ main(int argc, char *argv[])
 
     for (itor = ps_alignment_words(al); itor;
 	 itor = ps_alignment_iter_next(itor)) {
-	ps_alignment_entry_t *ent = ps_alignment_iter_get(itor);
+        int start, duration, score;
+        ps_alignment_iter_t *pitor;
 
+        score = ps_alignment_iter_seg(itor, &start, &duration);
+        (void) score;
 	printf("%s %d %d\n",
-	       dict_wordstr(dict, ent->id.wid),
-	       ent->start, ent->duration);
+               ps_alignment_iter_name(itor),
+	       start, duration);
+        for (pitor = ps_alignment_iter_children(itor); pitor; pitor = ps_alignment_iter_next(pitor)) {
+            score = ps_alignment_iter_seg(pitor, &start, &duration);
+            ps_alignment_iter_t *sitor;
+            printf("  %s %d %d\n",
+                   ps_alignment_iter_name(pitor),
+                   start, duration);
+            for (sitor = ps_alignment_iter_children(pitor); sitor;
+                 sitor = ps_alignment_iter_next(sitor)) {
+                score = ps_alignment_iter_seg(sitor, &start, &duration);
+                printf("    %s %d %d\n", ps_alignment_iter_name(sitor), start,
+                       duration);
+            }
+        }
     }
     itor = ps_alignment_words(al);
     TEST_EQUAL(ps_alignment_iter_get(itor)->start, 0);
