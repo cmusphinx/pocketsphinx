@@ -52,8 +52,8 @@ for evil in not-enough-ngrams too-many-ngrams; do
                 -i $data/$evil.arpa \
                 -o $bn.bin \
                 > $bn.log 2>&1
+    # Expect failure
     if [ $? = 0 ]; then
-        # Expect failure
         fail "$evil.arpa -> bin"
     else
         pass "$evil.arpa -> bin"
@@ -62,11 +62,13 @@ for evil in not-enough-ngrams too-many-ngrams; do
                 -i $data/$evil.lm.bin \
                 -o $bn.arpa \
                 > $bn.log 2>&1
+    # Expect failure and an error
     if [ $? = 0 ]; then
-        # Expect failure
         fail "$evil.bin -> arpa"
-    else
+    elif grep -q order $bn.log; then
         pass "$evil.bin -> arpa"
+    else
+        fail "$evil.bin -> arpa"
     fi
 done
 
