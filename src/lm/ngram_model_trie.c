@@ -310,23 +310,30 @@ ngram_model_trie_write_arpa(ngram_model_t * base, const char *path)
     return fclose(fp);
 }
 
-static void
+static int
 read_word_str(ngram_model_t * base, FILE * fp, int do_swap)
 {
-    int32 k;
-    uint32 i, j;
-    char *tmp_word_str;
+    uint32 i, j, k;
+    char *tmp_word_str = NULL;
+
     /* read ascii word strings */
     base->writable = TRUE;
-    fread(&k, sizeof(k), 1, fp);
+    if (fread(&k, sizeof(k), 1, fp) != 1) {
+        E_ERROR_SYSTEM("Cannot read size of word data");
+        goto error_out;
+    }
     if (do_swap)
         SWAP_INT32(&k);
     E_INFO("#word_str: %d\n", k);
-    tmp_word_str = (char *) ckd_calloc((size_t) k, 1);
-    fread(tmp_word_str, 1, (size_t) k, fp);
+    tmp_word_str = ckd_calloc(k, 1);
+    if (fread(tmp_word_str, 1, k, fp) != k) {
+        E_ERROR_SYSTEM("Cannot read word data");
+        goto error_out;
+    }
 
+    /* FIXME: This is not necessary if we don't copy all the strings... */
     /* First make sure string just read contains n_counts[0] words (PARANOIA!!) */
-    for (i = 0, j = 0; i < (uint32) k; i++)
+    for (i = 0, j = 0; i < k; i++)
         if (tmp_word_str[i] == '\0')
             j++;
     if (j != base->n_counts[0]) {
@@ -335,7 +342,9 @@ read_word_str(ngram_model_t * base, FILE * fp, int do_swap)
              j, base->n_counts[0]);
     }
 
-    /* Break up string just read into words */
+    /* Break up string just read into words (FIXME: This is a lot of
+     * unnecessary memory fragmentation, we can just keep pointers
+     * into the block of strings...) */
     j = 0;
     for (i = 0; i < base->n_counts[0]; i++) {
         base->word_str[i] = ckd_salloc(tmp_word_str + j);
@@ -344,9 +353,15 @@ read_word_str(ngram_model_t * base, FILE * fp, int do_swap)
             E_WARN("Duplicate word in dictionary: %s\n",
                    base->word_str[i]);
         }
+        /* FIXME: Redundant strlen() here with the ckd_salloc above! */
         j += strlen(base->word_str[i]) + 1;
     }
     free(tmp_word_str);
+    return 0;
+
+error_out:
+    ckd_free(tmp_word_str);
+    return -1;
 }
 
 ngram_model_t *
@@ -356,7 +371,7 @@ ngram_model_trie_read_bin(ps_config_t * config,
     int32 is_pipe;
     FILE *fp;
     size_t hdr_size;
-    char *hdr;
+    char *hdr = NULL;
     int cmp_res;
     uint8 i, order = 0;
     uint32 counts[NGRAM_MAX_ORDER];
@@ -371,23 +386,31 @@ ngram_model_trie_read_bin(ps_config_t * config,
     }
     hdr_size = strlen(trie_hdr);
     hdr = (char *) ckd_calloc(hdr_size + 1, sizeof(*hdr));
-    fread(hdr, sizeof(*hdr), hdr_size, fp);
+    if (fread(hdr, sizeof(*hdr), hdr_size, fp) != hdr_size) {
+        E_ERROR_SYSTEM("Cannot read binary LM header");
+        goto error_out;
+    }
     cmp_res = strcmp(hdr, trie_hdr);
-    ckd_free(hdr);
     if (cmp_res) {
         E_INFO("Header doesn't match\n");
         goto error_out;
     }
     model = (ngram_model_trie_t *) ckd_calloc(1, sizeof(*model));
     base = &model->base;
-    fread(&order, sizeof(order), 1, fp);
+    if (fread(&order, sizeof(order), 1, fp) != 1) {
+        E_ERROR_SYSTEM("Cannot read N-gram order");
+        goto error_out;
+    }
     /* TODO: Support more than 5-grams */
     if (order > NGRAM_MAX_ORDER) {
         E_ERROR("N-Gram order %d out of range\n", order);
         goto error_out;
     }
     for (i = 0; i < order; i++) {
-        fread(&counts[i], sizeof(counts[i]), 1, fp);
+        if (fread(&counts[i], sizeof(counts[i]), 1, fp) != 1) {
+            E_ERROR_SYSTEM("Cannot read %d-gram count", i + 1);
+            goto error_out;
+        }
         if (SWAP_LM_TRIE)
             SWAP_INT32(&counts[i]);
         E_INFO("#%d-grams: %d\n", i + 1, counts[i]);
@@ -401,12 +424,15 @@ ngram_model_trie_read_bin(ps_config_t * config,
     }
 
     model->trie = lm_trie_read_bin(counts, order, fp);
-    read_word_str(base, fp, SWAP_LM_TRIE);
-    fclose_comp(fp, is_pipe);
+    if (read_word_str(base, fp, SWAP_LM_TRIE) != 0)
+        goto error_out;
 
+    ckd_free(hdr);
+    fclose_comp(fp, is_pipe);
     return base;
 
 error_out:
+    ckd_free(hdr);
     fclose_comp(fp, is_pipe);
     ngram_model_free(base);
     return NULL;
@@ -482,7 +508,10 @@ ngram_model_trie_read_dmp(ps_config_t * config,
     }
 
     do_swap = FALSE;
-    fread(&k, sizeof(k), 1, fp);
+    if (fread(&k, sizeof(k), 1, fp) != 1) {
+        E_ERROR_SYSTEM("Cannot read DMP header");
+        goto error_out;
+    }
     if (k != strlen(dmp_hdr) + 1) {
         SWAP_INT32(&k);
         if (k != strlen(dmp_hdr) + 1) {
@@ -602,10 +631,22 @@ ngram_model_trie_read_dmp(ps_config_t * config,
 
         /* Skip over the mapping ID, we don't care about it. */
         /* Read the weights from actual unigram structure. */
-        fread(&mapid, sizeof(int32), 1, fp);
-        fread(&weightp, sizeof(weightp), 1, fp);
-        fread(&weightb, sizeof(weightb), 1, fp);
-        fread(&bigrams, sizeof(int32), 1, fp);
+        if (fread(&mapid, sizeof(int32), 1, fp) != 1) {
+            E_ERROR_SYSTEM("Failed to read mapping ID");
+            goto error_out;
+        }
+        if (fread(&weightp, sizeof(weightp), 1, fp) != 1) {
+            E_ERROR_SYSTEM("Failed to read probability");
+            goto error_out;
+        }
+        if (fread(&weightb, sizeof(weightb), 1, fp) != 1) {
+            E_ERROR_SYSTEM("Failed to read backoff weight");
+            goto error_out;
+        }
+        if (fread(&bigrams, sizeof(int32), 1, fp) != 1) {
+            E_ERROR_SYSTEM("Failed to read bigram pointer");
+            goto error_out;
+        }
         if (do_swap) {
             SWAP_INT32(&weightp.l);
             SWAP_INT32(&weightb.l);

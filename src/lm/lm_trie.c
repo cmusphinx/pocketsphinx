@@ -8,27 +8,27 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
+ * This work was supported in part by funding from the Defense Advanced
+ * Research Projects Agency and the National Science Foundation of the
  * United States of America, and the CMU Sphinx Speech Consortium.
  *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND
+ * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
  * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ====================================================================
@@ -59,9 +59,9 @@ static uint32
 base_size(uint32 entries, uint32 max_vocab, uint8 remaining_bits)
 {
     uint8 total_bits = bitarr_required_bits(max_vocab) + remaining_bits;
-    /* Extra entry for next pointer at the end.  
+    /* Extra entry for next pointer at the end.
      * +7 then / 8 to round up bits and convert to bytes
-     * +sizeof(uint64) so that ReadInt57 etc don't go segfault.  
+     * +sizeof(uint64) so that ReadInt57 etc don't go segfault.
      * Note that this waste is O(order), not O(number of ngrams).*/
     return ((1 + entries) * total_bits + 7) / 8 + sizeof(uint64);
 }
@@ -192,7 +192,7 @@ lm_trie_fix_counts(ngram_raw_t ** raw_ngrams, uint32 * counts,
     memcpy(fixed_counts, counts, order * sizeof(*fixed_counts));
     for (i = 2; i <= order; i++) {
         ngram_raw_t *tmp_ngram;
-        
+
         if (counts[i - 1] <= 0)
             continue;
 
@@ -270,7 +270,7 @@ recursive_insert(lm_trie_t * trie, ngram_raw_t ** raw_ngrams,
         (uint32 *) ckd_calloc(order - 1, sizeof(*raw_ngrams_ptr));
     for (i = 2; i <= order; ++i) {
         ngram_raw_t *tmp_ngram;
-        
+
         if (counts[i - 1] <= 0)
             continue;
 
@@ -517,7 +517,7 @@ lm_trie_build(lm_trie_t * trie, ngram_raw_t ** raw_ngrams, uint32 * counts, uint
 
     lm_trie_fix_counts(raw_ngrams, counts, out_counts, order);
     lm_trie_alloc_ngram(trie, out_counts, order);
-    
+
     if (order > 1)
         E_INFO("Training quantizer\n");
     for (i = 2; i < order; i++) {
