@@ -25,3 +25,4 @@ test/regression/*.log
 /Testing
 _test_solve.out
 test/unit/**/*.out
+.cache

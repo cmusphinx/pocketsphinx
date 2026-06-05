@@ -447,6 +447,25 @@ fread_retry(void *pointer, int32 size, int32 num_items, FILE * stream)
     return num_items;
 }
 
+size_t
+fread_skip(size_t nbytes, FILE *infh)
+{
+    char buf[4096];
+    size_t total = 0;
+
+    while (nbytes) {
+        size_t nread, toread = nbytes;
+
+        if (toread > sizeof(buf))
+            toread = sizeof(buf);
+        nread = fread(buf, 1, toread, infh);
+        total += nread;
+        if (nread != toread)
+            break;
+        nbytes -= nread;
+    }
+    return total;
+}
 
 #ifdef _WIN32_WCE /* No stat() on WinCE */
 int32
