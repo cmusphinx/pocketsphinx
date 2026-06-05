@@ -55,8 +55,10 @@ for evil in not-enough-ngrams too-many-ngrams; do
     # Expect failure
     if [ $? = 0 ]; then
         fail "$evil.arpa -> bin"
-    else
+    elif grep -q order $bn.log; then
         pass "$evil.arpa -> bin"
+    else
+        fail "$evil.arpa -> bin"
     fi
     run_program pocketsphinx_lm_convert \
                 -i $data/$evil.lm.bin \
