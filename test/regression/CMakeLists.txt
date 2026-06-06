@@ -1,6 +1,7 @@
 set(TESTS
   test-cards.sh
   test-lm.sh
+  test-lm-convert.sh
   test-main.sh
   test-main-align.sh
   test-align.sh

@@ -837,6 +837,8 @@ feat_init(char const *type, cmn_type_t cmn, int32 varnorm,
         i = 0;
         fcb->out_dim = 0;
         fcb->cepsize = 0;
+        /* NOTE: This looks unsafe but isn't, because wd is allocated
+         * as the same size as mtype, and strp is a pointer into mtype. */
         while (sscanf(strp, "%s%n", wd, &l) == 1) {
             strp += l;
             if ((i >= fcb->n_stream)

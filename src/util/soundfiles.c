@@ -44,6 +44,7 @@
 #include "util/byteorder.h"
 #include "util/ckd_alloc.h"
 #include "util/cmd_ln.h"
+#include "util/pio.h"
 
 #define TRY_FREAD(ptr, size, nmemb, stream)                             \
     if (fread(ptr, size, nmemb, stream) != (nmemb)) {                   \
@@ -111,26 +112,6 @@ ps_config_soundfile(ps_config_t *config, FILE *infh, const char *file)
 
 error_out:
     return rv;
-}
-
-size_t
-fread_skip(size_t nbytes, FILE *infh)
-{
-    char buf[4096];
-    size_t total = 0;
-
-    while (nbytes) {
-        size_t nread, toread = nbytes;
-
-        if (toread > sizeof(buf))
-            toread = sizeof(buf);
-        nread = fread(buf, 1, toread, infh);
-        total += nread;
-        if (nread != toread)
-            break;
-        nbytes -= nread;
-    }
-    return total;
 }
 
 int

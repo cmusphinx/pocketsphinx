@@ -210,6 +210,10 @@ ngram_model_init(ngram_model_t * base,
                  ngram_funcs_t * funcs,
                  logmath_t * lmath, int32 n, int32 n_unigram)
 {
+    if (n == 0) {
+        E_ERROR("Invalid N-Gram order %d\n", n);
+        return -1;
+    }
     base->refcount = 1;
     base->funcs = funcs;
     base->n = n;
@@ -279,8 +283,10 @@ ngram_model_free(ngram_model_t * model)
         (*model->funcs->free) (model);
     if (model->writable) {
         /* Free all words. */
-        for (i = 0; i < model->n_words; ++i) {
-            ckd_free(model->word_str[i]);
+        if (model->word_str) {
+            for (i = 0; i < model->n_words; ++i) {
+                ckd_free(model->word_str[i]);
+            }
         }
     }
     else {

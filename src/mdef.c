@@ -302,12 +302,12 @@ parse_tmat_senmap(mdef_t * m, char *line, long off, int p)
     }
 
     /* Check for the last non-emitting state N */
-    if ((sscanf(lp, "%s%n", word, &wlen) != 1) || (strcmp(word, "N") != 0))
+    if ((sscanf(lp, "%1023s%n", word, &wlen) != 1) || (strcmp(word, "N") != 0))
         E_FATAL("Missing non-emitting state spec: %s\n", line);
     lp += wlen;
 
     /* Check for end of line */
-    if (sscanf(lp, "%s%n", word, &wlen) == 1)
+    if (sscanf(lp, "%1023s%n", word, &wlen) == 1)
         E_FATAL("Non-empty beyond non-emitting final state: %s\n", line);
 }
 
@@ -322,7 +322,7 @@ parse_base_line(mdef_t * m, char *line, int p)
     lp = line;
 
     /* Read base phone name */
-    if (sscanf(lp, "%s%n", word, &wlen) != 1)
+    if (sscanf(lp, "%1023s%n", word, &wlen) != 1)
         E_FATAL("Missing base phone name: %s\n", line);
     lp += wlen;
 
@@ -337,14 +337,14 @@ parse_base_line(mdef_t * m, char *line, int p)
 
     /* Read and skip "-" for lc, rc, wpos */
     for (n = 0; n < 3; n++) {
-        if ((sscanf(lp, "%s%n", word, &wlen) != 1)
+        if ((sscanf(lp, "%1023s%n", word, &wlen) != 1)
             || (strcmp(word, "-") != 0))
             E_FATAL("Bad context info for base phone: %s\n", line);
         lp += wlen;
     }
 
     /* Read filler attribute, if present */
-    if (sscanf(lp, "%s%n", word, &wlen) != 1)
+    if (sscanf(lp, "%1023s%n", word, &wlen) != 1)
         E_FATAL("Missing filler attribute field: %s\n", line);
     lp += wlen;
     if (strcmp(word, "filler") == 0)
@@ -372,7 +372,7 @@ parse_tri_line(mdef_t * m, char *line, int p)
     lp = line;
 
     /* Read base phone name */
-    if (sscanf(lp, "%s%n", word, &wlen) != 1)
+    if (sscanf(lp, "%1023s%n", word, &wlen) != 1)
         E_FATAL("Missing base phone name: %s\n", line);
     lp += wlen;
 
@@ -381,7 +381,7 @@ parse_tri_line(mdef_t * m, char *line, int p)
         E_FATAL("Unknown base phone: %s\n", line);
 
     /* Read lc */
-    if (sscanf(lp, "%s%n", word, &wlen) != 1)
+    if (sscanf(lp, "%1023s%n", word, &wlen) != 1)
         E_FATAL("Missing left context: %s\n", line);
     lp += wlen;
     lc = mdef_ciphone_id(m, word);
@@ -389,7 +389,7 @@ parse_tri_line(mdef_t * m, char *line, int p)
         E_FATAL("Unknown left context: %s\n", line);
 
     /* Read rc */
-    if (sscanf(lp, "%s%n", word, &wlen) != 1)
+    if (sscanf(lp, "%1023s%n", word, &wlen) != 1)
         E_FATAL("Missing right context: %s\n", line);
     lp += wlen;
     rc = mdef_ciphone_id(m, word);
@@ -397,7 +397,7 @@ parse_tri_line(mdef_t * m, char *line, int p)
         E_FATAL("Unknown right  context: %s\n", line);
 
     /* Read tripone word-position within word */
-    if ((sscanf(lp, "%s%n", word, &wlen) != 1) || (word[1] != '\0'))
+    if ((sscanf(lp, "%1023s%n", word, &wlen) != 1) || (word[1] != '\0'))
         E_FATAL("Missing or bad word-position spec: %s\n", line);
     lp += wlen;
     switch (word[0]) {
@@ -418,7 +418,7 @@ parse_tri_line(mdef_t * m, char *line, int p)
     }
 
     /* Read filler attribute, if present.  Must match base phone attribute */
-    if (sscanf(lp, "%s%n", word, &wlen) != 1)
+    if (sscanf(lp, "%1023s%n", word, &wlen) != 1)
         E_FATAL("Missing filler attribute field: %s\n", line);
     lp += wlen;
     if (((strcmp(word, "filler") == 0) && (m->ciphone[(int) ci].filler)) ||
@@ -545,7 +545,7 @@ mdef_init(char *mdeffile, int32 breport)
         if (noncomment_line(buf, sizeof(buf), fp) < 0)
             E_FATAL("Incomplete header\n");
 
-        if ((sscanf(buf, "%d %s", &n, tag) != 2) || (n < 0))
+        if ((sscanf(buf, "%d %1023s", &n, tag) != 2) || (n < 0))
             E_FATAL("Error in header: %s\n", buf);
 
         if (strcmp(tag, "n_base") == 0)

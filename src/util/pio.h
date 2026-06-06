@@ -153,6 +153,11 @@ FILE *_myfopen(const char *file, const char *mode,
 int32 fread_retry(void *pointer, int32 size, int32 num_items, FILE *stream);
 
 /**
+ * Skip past some unused data in a file without using fseek().
+ */
+size_t fread_skip(size_t nbytes, FILE *infh);
+
+/**
  * Read a line of arbitrary length from a file and return it as a
  * newly allocated string.
  *
