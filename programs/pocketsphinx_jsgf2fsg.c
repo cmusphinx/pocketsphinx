@@ -127,6 +127,7 @@ get_fsg(jsgf_t *grammar, const char *name)
 
     lmath = logmath_init(1.0001, 0, 0);
     fsg = jsgf_build_fsg_raw(grammar, rule, lmath, 1.0);
+    logmath_free(lmath);
     return fsg;
 }
 
@@ -196,6 +197,7 @@ main(int argc, char *argv[])
     }
     fsg_model_free(fsg);
     jsgf_grammar_free(jsgf);
+    ps_config_free(config);
 
     return 0;
 }
