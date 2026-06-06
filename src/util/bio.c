@@ -188,7 +188,7 @@ int32
 bio_readhdr(FILE * fp, char ***argname, char ***argval, int32 * swap)
 {
     __BIGSTACKVARIABLE__ char line[16384], word[4096];
-    int32 i, l;
+    int32 i, wordlen;
     int32 lineno;
 
     *argname = (char **) ckd_calloc(BIO_HDRARG_MAX + 1, sizeof(char *));
@@ -210,7 +210,8 @@ bio_readhdr(FILE * fp, char ***argname, char ***argval, int32 * swap)
             }
             lineno++;
 
-            if (sscanf(line, "%s%n", word, &l) != 1) {
+            /* FIXME: this is not pretty, but it should work */
+            if (sscanf(line, "%4095s%n", word, &wordlen) != 1) {
                 E_ERROR("Header format error, line %d\n", lineno);
                 goto error_out;
             }
@@ -227,7 +228,7 @@ bio_readhdr(FILE * fp, char ***argname, char ***argval, int32 * swap)
             }
 
             (*argname)[i] = ckd_salloc(word);
-            if (sscanf(line + l, "%s", word) != 1) {      /* Multi-word values not allowed */
+            if (sscanf(line + wordlen, "%4095s", word) != 1) {      /* Multi-word values not allowed */
                 E_ERROR("Header format error, line %d\n", lineno);
                 goto error_out;
             }
@@ -237,7 +238,7 @@ bio_readhdr(FILE * fp, char ***argname, char ***argval, int32 * swap)
     }
     else {
         /* Old format (without checksums); the first entry must be the version# */
-        if (sscanf(line, "%s", word) != 1) {
+        if (sscanf(line, "%4095s", word) != 1) {
             E_ERROR("Header format error, line %d\n", lineno);
             goto error_out;
         }
