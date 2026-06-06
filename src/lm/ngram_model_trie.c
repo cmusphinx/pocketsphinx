@@ -313,8 +313,9 @@ ngram_model_trie_write_arpa(ngram_model_t * base, const char *path)
 static int
 read_word_str(ngram_model_t * base, FILE * fp, int do_swap)
 {
-    uint32 i, j, k;
+    uint32 i, k;
     char *tmp_word_str = NULL;
+    char *word, *ptr, *end;
 
     /* read ascii word strings */
     base->writable = TRUE;
@@ -331,30 +332,33 @@ read_word_str(ngram_model_t * base, FILE * fp, int do_swap)
         goto error_out;
     }
 
-    /* FIXME: This is not necessary if we don't copy all the strings... */
-    /* First make sure string just read contains n_counts[0] words (PARANOIA!!) */
-    for (i = 0, j = 0; i < k; i++)
-        if (tmp_word_str[i] == '\0')
-            j++;
-    if (j != base->n_counts[0]) {
-        E_ERROR
-            ("Error reading word strings (%d doesn't match n_unigrams %d)\n",
-             j, base->n_counts[0]);
-    }
-
-    /* Break up string just read into words (FIXME: This is a lot of
-     * unnecessary memory fragmentation, we can just keep pointers
-     * into the block of strings...) */
-    j = 0;
-    for (i = 0; i < base->n_counts[0]; i++) {
-        base->word_str[i] = ckd_salloc(tmp_word_str + j);
-        if (hash_table_enter(base->wid, base->word_str[i],
-                             (void *) (size_t) i) != (void *) (size_t) i) {
-            E_WARN("Duplicate word in dictionary: %s\n",
-                   base->word_str[i]);
+    /* Copy words out of the block of chars (TODO: we could avoid
+     * copying here, in fact we could mmap this) */
+    end = tmp_word_str + k;
+    i = 0;
+    for (word = ptr = tmp_word_str; ptr != end; ptr++) {
+        if (i == base->n_counts[0]) {
+            E_ERROR
+                ("Error reading word strings (%d >= n_unigrams %d)\n",
+                 i, base->n_counts[0]);
+            goto error_out;
         }
-        /* FIXME: Redundant strlen() here with the ckd_salloc above! */
-        j += strlen(base->word_str[i]) + 1;
+        /* Copy it with the trailing NUL */
+        if (*ptr == '\0') {
+            base->word_str[i] = ckd_malloc(ptr - word + 1);
+            memcpy(base->word_str[i], word, ptr - word + 1);
+            if (hash_table_enter(base->wid, base->word_str[i],
+                                 (void *)(size_t)i) != (void *)(size_t)i) {
+                E_WARN("Duplicate word in dictionary: %s\n", base->word_str[i]);
+            }
+            word = ptr + 1;
+            i++;
+        }
+    }
+    if (i != base->n_counts[0]) {
+        E_ERROR("Error reading word strings (%d != n_unigrams %d)\n", i,
+                base->n_counts[0]);
+        goto error_out;
     }
     free(tmp_word_str);
     return 0;
