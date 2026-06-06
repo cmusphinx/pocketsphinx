@@ -82,6 +82,9 @@ void yyerror(yyscan_t lex, jsgf_t *jsgf, const char *s);
 %type  <rhs>     rule_expansion alternate_list
 %type  <name>    grammar_header
 %type  <rule>    rule_group rule_optional
+%destructor { jsgf_rule_free($$); } <rule>
+%destructor { jsgf_rhs_free($$); } <rhs>
+%destructor { jsgf_atom_free($$); } <atom>
 %%
 
 grammar: header

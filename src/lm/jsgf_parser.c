@@ -544,10 +544,10 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    87,    87,    88,    89,    92,    95,    96,    97,    98,
-     102,   105,   106,   109,   112,   113,   116,   117,   120,   121,
-     126,   128,   132,   133,   137,   138,   141,   144,   147,   148,
-     149,   150,   151,   152
+       0,    90,    90,    91,    92,    95,    98,    99,   100,   101,
+     105,   108,   109,   112,   115,   116,   119,   120,   123,   124,
+     129,   131,   135,   136,   140,   141,   144,   147,   150,   151,
+     152,   153,   154,   155
 };
 #endif
 
@@ -909,6 +909,48 @@ yydestruct (const char *yymsg,
 #line 910 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
         break;
 
+    case YYSYMBOL_alternate_list: /* alternate_list  */
+#line 86 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+            { jsgf_rhs_free(((*yyvaluep).rhs)); }
+#line 916 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+        break;
+
+    case YYSYMBOL_rule_expansion: /* rule_expansion  */
+#line 86 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+            { jsgf_rhs_free(((*yyvaluep).rhs)); }
+#line 922 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+        break;
+
+    case YYSYMBOL_tagged_rule_item: /* tagged_rule_item  */
+#line 87 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+            { jsgf_atom_free(((*yyvaluep).atom)); }
+#line 928 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+        break;
+
+    case YYSYMBOL_rule_item: /* rule_item  */
+#line 87 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+            { jsgf_atom_free(((*yyvaluep).atom)); }
+#line 934 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+        break;
+
+    case YYSYMBOL_rule_group: /* rule_group  */
+#line 85 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+            { jsgf_rule_free(((*yyvaluep).rule)); }
+#line 940 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+        break;
+
+    case YYSYMBOL_rule_optional: /* rule_optional  */
+#line 85 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+            { jsgf_rule_free(((*yyvaluep).rule)); }
+#line 946 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+        break;
+
+    case YYSYMBOL_rule_atom: /* rule_atom  */
+#line 87 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+            { jsgf_atom_free(((*yyvaluep).atom)); }
+#line 952 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+        break;
+
       default:
         break;
     }
@@ -1180,145 +1222,145 @@ yyreduce:
   switch (yyn)
     {
   case 5: /* header: jsgf_header grammar_header  */
-#line 92 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 95 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
                                    { jsgf->name = (yyvsp[0].name); }
-#line 1186 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+#line 1228 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
   case 7: /* jsgf_header: HEADER TOKEN ';'  */
-#line 96 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 99 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
                            { jsgf->version = (yyvsp[-1].name); }
-#line 1192 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+#line 1234 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
   case 8: /* jsgf_header: HEADER TOKEN TOKEN ';'  */
-#line 97 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 100 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
                                  { jsgf->version = (yyvsp[-2].name); jsgf->charset = (yyvsp[-1].name); }
-#line 1198 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+#line 1240 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
   case 9: /* jsgf_header: HEADER TOKEN TOKEN TOKEN ';'  */
-#line 98 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 101 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
                                        { jsgf->version = (yyvsp[-3].name); jsgf->charset = (yyvsp[-2].name);
 					 jsgf->locale = (yyvsp[-1].name); }
-#line 1205 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+#line 1247 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
   case 10: /* grammar_header: GRAMMAR TOKEN ';'  */
-#line 102 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 105 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
                                   { (yyval.name) = (yyvsp[-1].name); }
-#line 1211 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+#line 1253 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
   case 13: /* import_statement: IMPORT RULENAME ';'  */
-#line 109 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 112 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
                                       { jsgf_import_rule(jsgf, (yyvsp[-1].name)); ckd_free((yyvsp[-1].name)); }
-#line 1217 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+#line 1259 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
   case 16: /* rule: RULENAME '=' alternate_list ';'  */
-#line 116 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 119 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
                                       { jsgf_define_rule(jsgf, (yyvsp[-3].name), (yyvsp[-1].rhs), 0); ckd_free((yyvsp[-3].name)); }
-#line 1223 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+#line 1265 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
   case 17: /* rule: PUBLIC RULENAME '=' alternate_list ';'  */
-#line 117 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 120 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
                                           { jsgf_define_rule(jsgf, (yyvsp[-3].name), (yyvsp[-1].rhs), 1); ckd_free((yyvsp[-3].name)); }
-#line 1229 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+#line 1271 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
   case 18: /* alternate_list: rule_expansion  */
-#line 120 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 123 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
                                { (yyval.rhs) = (yyvsp[0].rhs); (yyval.rhs)->atoms = glist_reverse((yyval.rhs)->atoms); }
-#line 1235 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+#line 1277 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
   case 19: /* alternate_list: alternate_list '|' rule_expansion  */
-#line 121 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 124 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
                                             { (yyval.rhs) = (yyvsp[0].rhs);
                                               (yyval.rhs)->atoms = glist_reverse((yyval.rhs)->atoms);
                                               (yyval.rhs)->alt = (yyvsp[-2].rhs); }
-#line 1243 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+#line 1285 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
   case 20: /* rule_expansion: tagged_rule_item  */
-#line 126 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 129 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
                                  { (yyval.rhs) = ckd_calloc(1, sizeof(*(yyval.rhs)));
 				   (yyval.rhs)->atoms = glist_add_ptr((yyval.rhs)->atoms, (yyvsp[0].atom)); }
-#line 1250 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+#line 1292 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
   case 21: /* rule_expansion: rule_expansion tagged_rule_item  */
-#line 128 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 131 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
                                           { (yyval.rhs) = (yyvsp[-1].rhs);
 					    (yyval.rhs)->atoms = glist_add_ptr((yyval.rhs)->atoms, (yyvsp[0].atom)); }
-#line 1257 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+#line 1299 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
   case 23: /* tagged_rule_item: tagged_rule_item TAG  */
-#line 133 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 136 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
                                { (yyval.atom) = (yyvsp[-1].atom);
 				 (yyval.atom)->tags = glist_add_ptr((yyval.atom)->tags, (yyvsp[0].name)); }
-#line 1264 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
-    break;
-
-  case 25: /* rule_item: WEIGHT rule_atom  */
-#line 138 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
-                           { (yyval.atom) = (yyvsp[0].atom); (yyval.atom)->weight = (yyvsp[-1].weight); }
-#line 1270 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
-    break;
-
-  case 26: /* rule_group: '(' alternate_list ')'  */
-#line 141 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
-                                   { (yyval.rule) = jsgf_define_rule(jsgf, NULL, (yyvsp[-1].rhs), 0); }
-#line 1276 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
-    break;
-
-  case 27: /* rule_optional: '[' alternate_list ']'  */
-#line 144 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
-                                      { (yyval.rule) = jsgf_optional_new(jsgf, (yyvsp[-1].rhs)); }
-#line 1282 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
-    break;
-
-  case 28: /* rule_atom: TOKEN  */
-#line 147 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
-                 { (yyval.atom) = jsgf_atom_new((yyvsp[0].name), 1.0); ckd_free((yyvsp[0].name)); }
-#line 1288 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
-    break;
-
-  case 29: /* rule_atom: RULENAME  */
-#line 148 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
-                   { (yyval.atom) = jsgf_atom_new((yyvsp[0].name), 1.0); ckd_free((yyvsp[0].name)); }
-#line 1294 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
-    break;
-
-  case 30: /* rule_atom: rule_group  */
-#line 149 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
-                     { (yyval.atom) = jsgf_atom_new((yyvsp[0].rule)->name, 1.0); }
-#line 1300 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
-    break;
-
-  case 31: /* rule_atom: rule_optional  */
-#line 150 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
-                        { (yyval.atom) = jsgf_atom_new((yyvsp[0].rule)->name, 1.0); }
 #line 1306 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
-  case 32: /* rule_atom: rule_atom '*'  */
-#line 151 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
-                        { (yyval.atom) = jsgf_kleene_new(jsgf, (yyvsp[-1].atom), 0); }
+  case 25: /* rule_item: WEIGHT rule_atom  */
+#line 141 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+                           { (yyval.atom) = (yyvsp[0].atom); (yyval.atom)->weight = (yyvsp[-1].weight); }
 #line 1312 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
-  case 33: /* rule_atom: rule_atom '+'  */
-#line 152 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
-                        { (yyval.atom) = jsgf_kleene_new(jsgf, (yyvsp[-1].atom), 1); }
+  case 26: /* rule_group: '(' alternate_list ')'  */
+#line 144 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+                                   { (yyval.rule) = jsgf_define_rule(jsgf, NULL, (yyvsp[-1].rhs), 0); }
 #line 1318 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
     break;
 
+  case 27: /* rule_optional: '[' alternate_list ']'  */
+#line 147 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+                                      { (yyval.rule) = jsgf_optional_new(jsgf, (yyvsp[-1].rhs)); }
+#line 1324 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+    break;
 
-#line 1322 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+  case 28: /* rule_atom: TOKEN  */
+#line 150 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+                 { (yyval.atom) = jsgf_atom_new((yyvsp[0].name), 1.0); ckd_free((yyvsp[0].name)); }
+#line 1330 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+    break;
+
+  case 29: /* rule_atom: RULENAME  */
+#line 151 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+                   { (yyval.atom) = jsgf_atom_new((yyvsp[0].name), 1.0); ckd_free((yyvsp[0].name)); }
+#line 1336 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+    break;
+
+  case 30: /* rule_atom: rule_group  */
+#line 152 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+                     { (yyval.atom) = jsgf_atom_new((yyvsp[0].rule)->name, 1.0); }
+#line 1342 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+    break;
+
+  case 31: /* rule_atom: rule_optional  */
+#line 153 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+                        { (yyval.atom) = jsgf_atom_new((yyvsp[0].rule)->name, 1.0); }
+#line 1348 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+    break;
+
+  case 32: /* rule_atom: rule_atom '*'  */
+#line 154 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+                        { (yyval.atom) = jsgf_kleene_new(jsgf, (yyvsp[-1].atom), 0); }
+#line 1354 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+    break;
+
+  case 33: /* rule_atom: rule_atom '+'  */
+#line 155 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+                        { (yyval.atom) = jsgf_kleene_new(jsgf, (yyvsp[-1].atom), 1); }
+#line 1360 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
+    break;
+
+
+#line 1364 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.c"
 
       default: break;
     }
@@ -1511,7 +1553,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 155 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
+#line 158 "/home/dhd/work/pocketsphinx/src/lm/jsgf_parser.y"
 
 
 void

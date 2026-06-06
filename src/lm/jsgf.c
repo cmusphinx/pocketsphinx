@@ -143,19 +143,20 @@ jsgf_grammar_free(jsgf_t * jsgf)
     ckd_free(jsgf);
 }
 
-static void
+int
 jsgf_rhs_free(jsgf_rhs_t * rhs)
 {
     gnode_t *gn;
 
     if (rhs == NULL)
-        return;
+        return 0;
 
     jsgf_rhs_free(rhs->alt);
     for (gn = rhs->atoms; gn; gn = gnode_next(gn))
         jsgf_atom_free(gnode_ptr(gn));
     glist_free(rhs->atoms);
     ckd_free(rhs);
+    return 0;
 }
 
 jsgf_atom_t *
