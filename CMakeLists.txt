@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 
-project(PocketSphinx VERSION 5.1.0
+project(PocketSphinx VERSION 5.1.1
   DESCRIPTION "A small speech recognizer"
   HOMEPAGE_URL "https://github.com/cmusphinx/pocketsphinx"
   LANGUAGES C)

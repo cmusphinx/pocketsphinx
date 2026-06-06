@@ -7,7 +7,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "pocketsphinx"
-version = "5.1.0"
+version = "5.1.1rc0"
 description = "Official Python bindings for PocketSphinx"
 readme = "cython/README.md"
 authors = [
