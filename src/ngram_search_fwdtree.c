@@ -79,6 +79,10 @@ init_search_tree(ngram_search_t *ngs)
     ndiph = 0;
     ngs->n_1ph_words = 0;
     n_ci = bin_mdef_n_ciphone(ps_search_acmod(ngs)->mdef);
+    /* Allocate and zero-initialize the root channel lookup table indexed by
+     * (ciphone, ci2phone) for constant-time root channel lookup.
+     */
+    ngs->root_lookup = (root_chan_t ***)ckd_calloc_2d(n_ci, n_ci, sizeof(root_chan_t *));
     /* Allocate a bitvector with flags for each possible diphone. */
     dimap = bitvec_alloc(n_ci * n_ci);
     for (w = 0; w < n_words; w++) {
@@ -175,7 +179,7 @@ create_search_channels(ngram_search_t *ngs)
 {
     chan_t *hmm;
     root_chan_t *rhmm;
-    int32 w, i, j, p, ph, tmatid;
+    int32 w, j, p, ph, tmatid;
     int32 n_words;
     dict_t *dict = ps_search_dict(ngs);
     dict2pid_t *d2p = ps_search_dict2pid(ngs);
@@ -210,12 +214,14 @@ create_search_channels(ngram_search_t *ngs)
          * allocate one if not found. */
         ciphone = dict_first_phone(dict, w);
         ci2phone = dict_second_phone(dict, w);
-        for (i = 0; i < ngs->n_root_chan; ++i) {
-            if (ngs->root_chan[i].ciphone == ciphone
-                && ngs->root_chan[i].ci2phone == ci2phone)
-                break;
-        }
-        if (i == ngs->n_root_chan) {
+
+        /* Lookup an existing root channel for the first two CI phones.
+         * This replaces the previous O(n_root_chan) linear search with
+         * an O(1) table lookup.
+         */
+        rhmm = ngs->root_lookup[ciphone][ci2phone];
+
+        if (rhmm == NULL) {
             rhmm = &(ngs->root_chan[ngs->n_root_chan]);
             rhmm->hmm.tmatid = bin_mdef_pid2tmatid(ps_search_acmod(ngs)->mdef, ciphone);
             /* Begin with CI phone?  Not sure this makes a difference... */
@@ -223,10 +229,10 @@ create_search_channels(ngram_search_t *ngs)
                 bin_mdef_pid2ssid(ps_search_acmod(ngs)->mdef, ciphone);
             rhmm->ciphone = ciphone;
             rhmm->ci2phone = ci2phone;
+            /* Cache the newly created root channel for constant-time lookups. */
+            ngs->root_lookup[ciphone][ci2phone] = rhmm;
             ngs->n_root_chan++;
         }
-        else
-            rhmm = &(ngs->root_chan[i]);
 
         E_DEBUG("word %s rhmm %d\n", dict_wordstr(dict, w), rhmm - ngs->root_chan);
         /* Now, rhmm = root channel for w.  Go on to remaining phones */
