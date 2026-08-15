@@ -79,6 +79,10 @@ static const ps_arg_t ps_args_def[] = {
       ARG_INTEGER,
       "1",
       "Do every Nth line in the control file" },
+    { "stream_reset",
+      ARG_BOOLEAN,
+      "no",
+      "Reset noise-removal statistics before each control-file entry, for control files whose entries are independent recordings" },
     { "mllrctl",
       ARG_STRING,
       NULL,
@@ -836,6 +840,9 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             E_INFO("Decoding '%s'\n", uttid);
 
             /* Do actual decoding. */
+            if (ps_config_bool(config, "stream_reset")
+                && ps_config_bool(config, "remove_noise"))
+                ps_start_stream(ps);
             if(process_mllrctl_line(ps, config, mllrfile) < 0)
                 continue;
             if(process_lmnamectl_line(ps, config, lmname) < 0)

@@ -3,6 +3,7 @@ set(TESTS
   test-lm.sh
   test-lm-convert.sh
   test-main.sh
+  test-batch-stream-reset.sh
   test-main-align.sh
   test-align.sh
   test-tidigits-fsg.sh
