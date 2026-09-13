@@ -149,6 +149,7 @@ struct fe_s {
     noise_stats_t *noise_stats;
 };
 
+POCKETSPHINX_EXPORT
 void fe_init_dither(int32 seed);
 
 /* Load a frame of data into the fe. */

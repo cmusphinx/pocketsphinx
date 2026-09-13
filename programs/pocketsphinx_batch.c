@@ -46,6 +46,7 @@
 #include "util/pio.h"
 #include "lm/fsg_model.h"
 #include "config_macro.h"
+#include "fe/fe_internal.h"
 #include "pocketsphinx_internal.h"
 
 /* Silvio Moioli: setbuf doesn't exist in Windows CE */
@@ -79,6 +80,10 @@ static const ps_arg_t ps_args_def[] = {
       ARG_INTEGER,
       "1",
       "Do every Nth line in the control file" },
+    { "stream_reset",
+      ARG_BOOLEAN,
+      "yes",
+      "Reset noise removal statistics and dither seed before each control file entry" },
     { "mllrctl",
       ARG_STRING,
       NULL,
@@ -836,6 +841,12 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
             E_INFO("Decoding '%s'\n", uttid);
 
             /* Do actual decoding. */
+            if (ps_config_bool(config, "stream_reset")) {
+                if (ps_config_bool(config, "remove_noise"))
+                    ps_start_stream(ps);
+                if (ps_config_bool(config, "dither"))
+                    fe_init_dither(ps_config_int(config, "seed"));
+            }
             if(process_mllrctl_line(ps, config, mllrfile) < 0)
                 continue;
             if(process_lmnamectl_line(ps, config, lmname) < 0)
