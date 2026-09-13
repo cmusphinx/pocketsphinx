@@ -19,6 +19,7 @@ run_program pocketsphinx_batch \
     -cepdir $data \
     -cepext .raw \
     -adcin yes \
+    -dither yes \
     -hyp $bn.hyp \
     2>$bn.log
 
