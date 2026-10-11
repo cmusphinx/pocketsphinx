@@ -60,7 +60,7 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33
         # To test uploads to TestPyPI, uncomment the following:
         # with:
         #   repository-url: https://test.pypi.org/legacy/
